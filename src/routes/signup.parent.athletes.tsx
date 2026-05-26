@@ -65,7 +65,7 @@ function ParentAthletesPage() {
     setSubmitting(true);
     try {
       await linkAthletes({ data: { code, athletes: cleaned } });
-      navigate({ to: "/parent" });
+      navigate({ to: "/signup/parent/goals", search: { code } });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");
     } finally {
