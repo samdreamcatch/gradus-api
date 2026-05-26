@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -17,20 +17,8 @@ import {
 import { coachInviteQueryOptions } from "@/hooks/use-coach-invite";
 import { InviteCard } from "@/components/onboarding/invite-card";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { getMyRole } from "@/lib/parent-signup.functions";
 
-export const Route = createFileRoute("/_authenticated/onboarding")({
-  beforeLoad: async () => {
-    // /onboarding is the coach onboarding wizard. Bounce parents back to /parent
-    // so they don't get auto-converted into coaches by entering the wizard.
-    try {
-      const { role } = await getMyRole();
-      if (role === "parent") throw redirect({ to: "/parent" });
-    } catch (e) {
-      // Re-throw redirects; swallow lookup errors and let the page render.
-      if (e && typeof e === "object" && "to" in e) throw e;
-    }
-  },
+export const Route = createFileRoute("/_authenticated/coach/onboarding")({
   loader: ({ context }) => {
     // Prime both queries — invite is shown on step 5.
     context.queryClient.prefetchQuery(coachInviteQueryOptions);
@@ -38,6 +26,7 @@ export const Route = createFileRoute("/_authenticated/onboarding")({
   },
   component: OnboardingPage,
 });
+
 
 type LevelEntry = { sport: string; levelKey: string; hoursPerWeek: number };
 

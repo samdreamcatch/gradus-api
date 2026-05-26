@@ -45,10 +45,12 @@ export const startParentSignup = createServerFn({ method: "POST" })
       .maybeSingle();
     if (existing.error) throw new Error(existing.error.message);
 
+    const coachId = codeLookup.data.coach_id;
+
     if (existing.data) {
       const upd = await supabaseAdmin
         .from("parent_profiles")
-        .update({ first_name: data.firstName, last_name: data.lastName })
+        .update({ first_name: data.firstName, last_name: data.lastName, coach_id: coachId })
         .eq("id", existing.data.id);
       if (upd.error) throw new Error(upd.error.message);
     } else {
@@ -56,11 +58,52 @@ export const startParentSignup = createServerFn({ method: "POST" })
         user_id: userId,
         first_name: data.firstName,
         last_name: data.lastName,
+        coach_id: coachId,
       });
       if (ins.error) throw new Error(ins.error.message);
     }
 
     return { code: data.code };
+  });
+
+/**
+ * Returns whether the signed-in parent has finished signup (has at least one
+ * athlete) and the invite code for their coach (used to resume the wizard).
+ */
+export const getParentSignupStatus = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const userId = context.userId;
+    const parent = await supabaseAdmin
+      .from("parent_profiles")
+      .select("id, coach_id")
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (parent.error) throw new Error(parent.error.message);
+    if (!parent.data) return { hasParentProfile: false, hasAthletes: false, inviteCode: null };
+
+    const athletes = await supabaseAdmin
+      .from("athletes")
+      .select("id")
+      .eq("parent_id", parent.data.id)
+      .limit(1);
+    if (athletes.error) throw new Error(athletes.error.message);
+
+    let inviteCode: string | null = null;
+    if (parent.data.coach_id) {
+      const code = await supabaseAdmin
+        .from("coach_invite_codes")
+        .select("code")
+        .eq("coach_id", parent.data.coach_id)
+        .maybeSingle();
+      if (!code.error && code.data) inviteCode = code.data.code;
+    }
+
+    return {
+      hasParentProfile: true,
+      hasAthletes: (athletes.data ?? []).length > 0,
+      inviteCode,
+    };
   });
 
 /**

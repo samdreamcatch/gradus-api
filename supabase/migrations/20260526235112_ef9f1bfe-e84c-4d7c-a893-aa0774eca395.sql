@@ -1,0 +1,1 @@
+ALTER TABLE public.parent_profiles ADD COLUMN coach_id uuid REFERENCES public.coach_profiles(id) ON DELETE SET NULL;
