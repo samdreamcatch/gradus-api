@@ -116,7 +116,7 @@ function ParentSchedulePage() {
   const athletes = data?.athletes ?? [];
   const current = athletes[index];
   const slots: Slot[] = byAthlete[current?.id ?? ""] ?? [
-    { dayOfWeek: null, startMinute: null, endMinute: null, frequency: "weekly", weeksOfMonth: [] },
+    { dayOfWeek: null, startMinute: null, endMinute: null, frequency: "weekly", weeksOfMonth: [], startsOn: null },
   ];
 
   const setSlots = (next: Slot[]) => {
@@ -128,7 +128,7 @@ function ParentSchedulePage() {
   const addSlot = () =>
     setSlots([
       ...slots,
-      { dayOfWeek: null, startMinute: null, endMinute: null, frequency: "weekly", weeksOfMonth: [] },
+      { dayOfWeek: null, startMinute: null, endMinute: null, frequency: "weekly", weeksOfMonth: [], startsOn: null },
     ]);
   const removeSlot = (i: number) =>
     setSlots(slots.length === 1 ? slots : slots.filter((_, idx) => idx !== i));
@@ -149,7 +149,11 @@ function ParentSchedulePage() {
             startMinute: s.startMinute,
             endMinute: s.endMinute,
             frequency: s.frequency,
-            weeksOfMonth: s.frequency === "weekly" ? [] : [...s.weeksOfMonth].sort((a, b) => a - b),
+            weeksOfMonth:
+              s.frequency === "weekly" || s.frequency === "biweekly"
+                ? []
+                : [...s.weeksOfMonth].sort((a, b) => a - b),
+            startsOn: s.frequency === "biweekly" && s.startsOn ? toISODate(s.startsOn) : null,
           }));
 
     for (const s of cleaned) {
