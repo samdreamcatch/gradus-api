@@ -286,6 +286,15 @@ function OnboardingPage() {
         )}
 
         {step === 5 && (
+          <Step
+            title="Invite parents"
+            subtitle="Generate your invite code. Parents enter it to add their athlete to your roster."
+          >
+            <InviteCard />
+          </Step>
+        )}
+
+        {step === 6 && (
           <Step title="Looks good?" subtitle="Review and finish.">
             <ReviewSummary
               firstName={firstName}
@@ -304,7 +313,7 @@ function OnboardingPage() {
           >
             Back
           </Button>
-          {step < 5 ? (
+          {step < 6 ? (
             <Button onClick={handleContinue} disabled={!canContinue || busy}>
               {busy ? "Saving…" : "Continue"}
             </Button>
