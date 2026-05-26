@@ -132,22 +132,33 @@ function ParentAthletesPage() {
             <div className="space-y-3 pt-1">
               {athletes.map((a, i) => (
                 <div key={i} className="flex items-start gap-2">
-                  <div className="grid flex-1 grid-cols-2 gap-2">
+                  <div className="flex-1 space-y-2">
+                    <div className="grid grid-cols-2 gap-2">
+                      <Input
+                        value={a.firstName}
+                        onChange={(e) => updateAthlete(i, "firstName", e.target.value)}
+                        maxLength={80}
+                        required={i === 0}
+                        aria-label={`Athlete ${i + 1} first name`}
+                        placeholder="First name"
+                      />
+                      <Input
+                        value={a.lastName}
+                        onChange={(e) => updateAthlete(i, "lastName", e.target.value)}
+                        maxLength={80}
+                        required={i === 0}
+                        aria-label={`Athlete ${i + 1} last name`}
+                        placeholder="Last name"
+                      />
+                    </div>
                     <Input
-                      value={a.firstName}
-                      onChange={(e) => updateAthlete(i, "firstName", e.target.value)}
-                      maxLength={80}
+                      type="date"
+                      value={a.birthdate}
+                      onChange={(e) => updateAthlete(i, "birthdate", e.target.value)}
                       required={i === 0}
-                      aria-label={`Athlete ${i + 1} first name`}
-                      placeholder="First name"
-                    />
-                    <Input
-                      value={a.lastName}
-                      onChange={(e) => updateAthlete(i, "lastName", e.target.value)}
-                      maxLength={80}
-                      required={i === 0}
-                      aria-label={`Athlete ${i + 1} last name`}
-                      placeholder="Last name"
+                      max={new Date().toISOString().slice(0, 10)}
+                      aria-label={`Athlete ${i + 1} birthdate`}
+                      placeholder="Birthdate"
                     />
                   </div>
                   {athletes.length > 1 && (
@@ -163,6 +174,7 @@ function ParentAthletesPage() {
                   )}
                 </div>
               ))}
+
             </div>
             <Button
               type="button"
