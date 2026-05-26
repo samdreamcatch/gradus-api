@@ -1,0 +1,1 @@
+ALTER TABLE public.athlete_lesson_slots ADD COLUMN frequency text NOT NULL DEFAULT 'weekly' CHECK (frequency IN ('weekly','biweekly','twice_monthly','monthly'));
