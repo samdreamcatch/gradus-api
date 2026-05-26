@@ -14,7 +14,74 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      coach_levels: {
+        Row: {
+          coach_id: string
+          created_at: string
+          id: string
+          level_key: string
+          practice_hours_per_week: number
+          sport: string
+          updated_at: string
+        }
+        Insert: {
+          coach_id: string
+          created_at?: string
+          id?: string
+          level_key: string
+          practice_hours_per_week?: number
+          sport: string
+          updated_at?: string
+        }
+        Update: {
+          coach_id?: string
+          created_at?: string
+          id?: string
+          level_key?: string
+          practice_hours_per_week?: number
+          sport?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coach_levels_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "coach_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coach_profiles: {
+        Row: {
+          created_at: string
+          first_name: string
+          id: string
+          last_name: string
+          onboarded_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          first_name?: string
+          id?: string
+          last_name?: string
+          onboarded_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          first_name?: string
+          id?: string
+          last_name?: string
+          onboarded_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

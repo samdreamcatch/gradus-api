@@ -1,21 +1,73 @@
-# Align Tennis pen to design-system hex
+## Coach Onboarding — Slice 2
 
-Update the three Tennis pen tokens in `src/styles.css` to match the Gradus spec exactly:
+### Sports & pre-seeded levels
 
-| Token | Hex | OKLCH |
-|---|---|---|
-| `--pen-tennis` (fill) | `#8DE160` | `oklch(0.847 0.218 132)` |
-| `--pen-tennis-ink` (ink-on-paper text) | `#1F4D00` | `oklch(0.339 0.118 132)` |
-| `--pen-tennis-wash` (soft background) | `#F0FDE8` | `oklch(0.982 0.035 132)` |
+Catalog hard-coded in `src/lib/coach-sports.ts`:
 
-Only `:root` changes. Dark-mode values stay brightened as before but re-tuned to the same hue (132). No other files touched. `--accent`, `--accent-foreground`, `--accent-ink` already resolve through these vars, so the login page "Gradus" highlight, the primary button, and the underlined "Sign up" link will all pick up the new green automatically.
+- **Tennis** — USTA NTRP: 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0, 7.0
+- **Golf** — Beginner, High handicap (19+), Mid handicap (10–18), Low handicap (1–9), Scratch (0 or better)
+- **Figure Skating** — U.S. Figure Skating test track: Basic Skills, Pre-Preliminary, Preliminary, Pre-Juvenile, Juvenile, Intermediate, Novice, Junior, Senior
 
-No component, route, or layout changes.
+Each level stored by a stable `level_key` (e.g. `ntrp_3_5`) so the display label can evolve without breaking data.
 
----
+### Data model (new migration)
 
-For future small visual tweaks like this (text, color, font), you can use **Visual Edits** — click the Edit button at the bottom-left of the chat box, pick the element on the page, and change it directly. Free for direct property edits.
+- `coach_profiles` — one row per coach: `user_id` (unique FK to auth.users), `first_name`, `last_name`, `onboarded_at` (null until wizard completed).
+- `coach_levels` — one row per (coach, sport, level_key): `coach_id`, `sport`, `level_key`, `practice_hours_per_week` (numeric, 0–40). Unique on `(coach_id, sport, level_key)`. The set of sports a coach coaches = distinct sports in this table.
 
-<presentation-actions>
-<presentation-link url="https://docs.lovable.dev/features/visual-edit">Read more about Visual Edits</presentation-link>
-</presentation-actions>
+Both tables: RLS on, policies scoped to `auth.uid() = coach_profiles.user_id` (coach can only read/write their own data). Auto-update `updated_at` trigger.
+
+### Server functions (`src/lib/coach-profile.functions.ts`)
+
+All use `requireSupabaseAuth` middleware:
+
+- `getCoachProfile()` → returns `{ profile, levels }` or `{ profile: null, levels: [] }`
+- `saveCoachProfile({ firstName, lastName })` → upsert
+- `saveCoachLevels({ entries: [{ sport, levelKey, hoursPerWeek }] })` → replaces the coach's full level set in one transaction
+- `completeOnboarding()` → stamps `onboarded_at = now()`
+
+Wrapped via `useQuery`/`useMutation` in `src/hooks/use-coach-profile.ts`.
+
+### Routes
+
+- `src/routes/_authenticated/onboarding.tsx` — the wizard. On mount: if `onboarded_at` is set, redirect to `/coach`.
+- `src/routes/_authenticated/coach.tsx` — on mount: if `onboarded_at` is null, redirect to `/onboarding`. Add a "Settings" link.
+- `src/routes/_authenticated/coach.settings.tsx` — same form sections as the wizard, but in a single editable page (not stepped). Saves field-by-field.
+
+Login flow: signup → `/coach` → redirect to `/onboarding` → finish wizard → `/coach`.
+
+### Wizard UX
+
+5 steps in a paper-card layout consistent with the design system:
+
+1. **Your name** — First / Last inputs.
+2. **Sports you coach** — toggle chips for Tennis, Golf, Figure Skating (multi-select, at least one required). Uses pen-highlight on selected chip.
+3. **Levels per sport** — for each selected sport, a checkbox list of its pre-seeded levels. At least one level per sport required.
+4. **Practice expectations** — for each selected level, a numeric input "hours/week" with a Caveat-styled hint ("e.g. 3 hours"). Accepts decimals, 0–40.
+5. **Review** — read-only summary; "Finish" calls `completeOnboarding` then routes to `/coach`.
+
+Top of card: small progress indicator (1 of 5) plus step title in Fraunces. "Back"/"Continue" buttons; "Continue" disabled until current step validates. Each step's data persists to Supabase as the user advances (so a refresh mid-wizard resumes where they left off).
+
+### Settings page
+
+Single scrollable page with three sections (Name, Sports & levels, Practice expectations). Each section has its own "Save" button. No step gating. Reuses the same form components as the wizard via shared sub-components in `src/components/onboarding/`.
+
+### Files
+
+New:
+- migration (coach_profiles, coach_levels, RLS, trigger)
+- `src/lib/coach-sports.ts`
+- `src/lib/coach-profile.functions.ts`
+- `src/hooks/use-coach-profile.ts`
+- `src/routes/_authenticated/onboarding.tsx`
+- `src/routes/_authenticated/coach.settings.tsx`
+- `src/components/onboarding/` — `wizard-shell.tsx`, `name-step.tsx`, `sports-step.tsx`, `levels-step.tsx`, `practice-step.tsx`, `review-step.tsx`, `sport-chip.tsx`
+
+Modified:
+- `src/routes/_authenticated/coach.tsx` — onboarding gate + Settings link
+
+### Out of scope (call out)
+
+- No athlete/student records yet — this slice is profile-only.
+- No avatar upload, bio, credentials, or scheduling.
+- No org/team concept — single coach per account.
