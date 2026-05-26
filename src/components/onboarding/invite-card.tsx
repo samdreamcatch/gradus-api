@@ -1,19 +1,8 @@
 import { useState } from "react";
-import { Copy, Check, RefreshCw } from "lucide-react";
+import { Copy, Check } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { useCoachInvite, useRotateCoachInvite } from "@/hooks/use-coach-invite";
+import { useCoachInvite } from "@/hooks/use-coach-invite";
 
 interface InviteCardProps {
   /** When true, render only the code chip + copy button (no headline/rotate). */
@@ -22,7 +11,6 @@ interface InviteCardProps {
 
 export function InviteCard({ compact = false }: InviteCardProps) {
   const { data, isLoading, error } = useCoachInvite();
-  const rotate = useRotateCoachInvite();
   const [copied, setCopied] = useState(false);
 
   const code = data?.code;
@@ -39,14 +27,7 @@ export function InviteCard({ compact = false }: InviteCardProps) {
     }
   };
 
-  const handleRotate = async () => {
-    try {
-      await rotate.mutateAsync();
-      toast.success("New code generated. The old code no longer works.");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't rotate code");
-    }
-  };
+
 
   const chip = (
     <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
