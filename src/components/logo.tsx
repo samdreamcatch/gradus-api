@@ -27,12 +27,12 @@ export function Logo({ className }: LogoProps) {
         style={{
           position: "absolute",
           left: "-0.02em",
-          right: "-0.14em",
+          right: "-0.45em",
           top: "44%",
           height: "42%",
           background:
-            "linear-gradient(to right, color-mix(in oklab, var(--pen-tennis) 90%, transparent) 0%, color-mix(in oklab, var(--pen-tennis) 60%, transparent) 45%, color-mix(in oklab, var(--pen-tennis) 20%, transparent) 80%, transparent 100%)",
-          transform: "rotate(-1deg)",
+            "linear-gradient(to right, color-mix(in oklab, var(--pen-tennis) 90%, transparent) 0%, color-mix(in oklab, var(--pen-tennis) 60%, transparent) 50%, color-mix(in oklab, var(--pen-tennis) 25%, transparent) 80%, transparent 100%)",
+          transform: "rotate(-2.5deg)",
           transformOrigin: "left center",
           zIndex: 0,
           pointerEvents: "none",
