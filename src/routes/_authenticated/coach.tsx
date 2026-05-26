@@ -26,8 +26,7 @@ function CoachHome() {
   };
 
   const sports = Array.from(new Set(data.levels.map((l) => l.sport))) as SportKey[];
-  const displayName =
-    `${data.profile.firstName} ${data.profile.lastName}`.trim() || "Coach";
+  const displayName = data.profile.firstName.trim() || "Coach";
 
   if (!data.profile.onboardedAt) return null;
 
@@ -72,8 +71,9 @@ function CoachHome() {
                         className="flex justify-between border-b border-divider/60 py-1.5 text-sm"
                       >
                         <span className="text-text-primary">{lvl?.label ?? e.levelKey}</span>
-                        <span className="font-hand text-text-secondary">
-                          {e.hoursPerWeek} hrs / week
+                        <span className="text-text-secondary">
+                          <span className="text-text-primary font-semibold">{e.hoursPerWeek}</span>{" "}
+                          <span className="font-hand text-lg text-accent-ink">hrs / week</span>
                         </span>
                       </li>
                     );

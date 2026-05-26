@@ -248,7 +248,7 @@ function OnboardingPage() {
                               <div className="text-sm font-semibold text-text-primary">
                                 {lvl.label}
                               </div>
-                              <div className="font-hand text-sm text-text-secondary">
+                              <div className="font-hand text-lg text-accent-ink">
                                 hrs / week
                               </div>
                             </div>
@@ -367,8 +367,9 @@ function ReviewSummary({
                     className="flex justify-between border-b border-divider/60 py-1.5 text-sm"
                   >
                     <span className="text-text-primary">{lvl.label}</span>
-                    <span className="font-hand text-text-secondary">
-                      {e.hoursPerWeek} hrs / week
+                    <span className="text-text-secondary">
+                      <span className="text-text-primary font-semibold">{e.hoursPerWeek}</span>{" "}
+                      <span className="font-hand text-lg text-accent-ink">hrs / week</span>
                     </span>
                   </li>
                 );
