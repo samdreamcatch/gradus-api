@@ -166,8 +166,12 @@ function ParentSchedulePage() {
         setFormError(
           need === 1
             ? "Pick which week of the month for every monthly lesson."
-            : "Pick 2 weeks of the month for every biweekly or 2x-monthly lesson.",
+            : "Pick 2 weeks of the month for every 2x-monthly lesson.",
         );
+        return;
+      }
+      if (s.frequency === "biweekly" && !s.startsOn) {
+        setFormError("Pick a starting date for every every-other-week lesson.");
         return;
       }
     }
