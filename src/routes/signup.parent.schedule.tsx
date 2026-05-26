@@ -234,6 +234,24 @@ function ParentSchedulePage() {
                       </SelectContent>
                     </Select>
                   </div>
+                  <div className="min-w-[150px] flex-1 space-y-1">
+                    <Label className="text-xs text-text-tertiary">Frequency</Label>
+                    <Select
+                      value={slot.frequency}
+                      onValueChange={(v) => updateSlot(i, { frequency: v as Frequency })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Frequency" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {FREQUENCIES.map((f) => (
+                          <SelectItem key={f.value} value={f.value}>
+                            {f.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                   {slots.length > 1 && (
                     <Button
                       type="button"
