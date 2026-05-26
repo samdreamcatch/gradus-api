@@ -75,8 +75,9 @@ export function InviteCard({ compact = false }: InviteCardProps) {
   return (
     <div>
       {chip}
-      <p className="mt-3 font-hand text-lg text-accent-ink">
-        Share this with parents to add their athlete to your roster.
+      <p className="mt-3 font-hand text-lg text-accent-ink whitespace-pre-wrap">
+        Share this with parents to add their athlete to your roster.{"\n\n"}
+        Find your code any time in settings.
       </p>
 
 
