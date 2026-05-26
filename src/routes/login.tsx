@@ -5,6 +5,7 @@ import { lovable } from "@/integrations/lovable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Logo } from "@/components/logo";
 
 export const Route = createFileRoute("/login")({
   validateSearch: (s: Record<string, unknown>) => ({
@@ -76,8 +77,8 @@ function LoginPage() {
           <p className="text-xs font-bold uppercase tracking-widest text-accent-ink">
             Welcome to
           </p>
-          <h1 className="mt-2 text-5xl font-bold">
-            <span className="pen-highlight">Gradus</span>
+          <h1 className="mt-2">
+            <Logo className="text-6xl" />
           </h1>
           <p className="mt-4 text-sm text-muted-foreground">
             {mode === "signup" ? "Create your coach account" : "Sign in to your account"}
