@@ -71,7 +71,7 @@ function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4 py-12">
+    <div className="flex min-h-dvh items-center justify-center px-4 py-12">
       <div className="w-full max-w-md rounded-2xl bg-card p-8 shadow-[0_10px_40px_-12px_rgba(0,0,0,0.15)]">
         <div className="mb-8 text-center">
           <p className="text-xs font-bold uppercase tracking-widest text-accent-ink">

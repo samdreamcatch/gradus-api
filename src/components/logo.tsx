@@ -26,6 +26,7 @@ export function Logo({ className }: LogoProps) {
       {/* Highlighter stripe — sits behind the glyphs */}
       <span
         aria-hidden="true"
+        role="presentation"
         style={{
           position: "absolute",
           left: "-0.02em",
