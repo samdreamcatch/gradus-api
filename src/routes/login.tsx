@@ -39,9 +39,10 @@ function LoginPage() {
     try {
       const { role } = await fetchRole();
       if (role === "parent") navigate({ to: "/parent" });
-      else navigate({ to: "/coach" });
+      else if (role === "coach") navigate({ to: "/coach" });
+      else navigate({ to: "/" });
     } catch {
-      navigate({ to: "/coach" });
+      navigate({ to: "/" });
     }
   };
 
