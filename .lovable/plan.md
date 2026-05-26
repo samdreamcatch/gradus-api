@@ -1,84 +1,94 @@
-# Coach invite code — MVP (reusable per-coach)
+# Plan: extend parent onboarding with goals, schedule, and athlete QR invite
 
-## Behavior summary
-- Each coach owns exactly one reusable invite code, generated automatically at the end of onboarding.
-- Coach can copy it and rotate it manually from onboarding (new final step) and from settings.
-- Rotation invalidates the previous code immediately.
-- No expiry, no max-uses, no per-parent invites in this slice. Per-parent targeted invites land with the roster slice.
-- Auto-join on redeem (with coach revoke later) is a parent-side concern → not built here.
+## Flow after changes
 
-## Data model (one new table)
+```
+/signup/parent              (account + invite code) — unchanged
+   ↓
+/signup/parent/athletes     (add athletes)          — unchanged form, "Continue" instead of "Finish"
+   ↓
+/signup/parent/goals        NEW — loops per athlete: sport (if needed), current level, season goal, long-term goal
+   ↓
+/signup/parent/schedule     NEW — loops per athlete: list of {day, start, end} slots
+   ↓
+/parent                     stub page + QR invite card
+```
 
-`coach_invite_codes`
-- `id uuid` (pk)
-- `coach_id uuid` (FK → `coach_profiles.id`, **unique** — one code per coach)
-- `code text` (**unique**, 8 chars, Crockford base32 excluding I/L/O/0/1 to avoid lookalikes, generated server-side)
-- `created_at`, `updated_at` (with the standard trigger)
+The athletes step will switch from final-submit to "Save & continue", redirecting to `/signup/parent/goals?code=…`. The goals & schedule routes load the parent's athletes (scoped to the invite code's coach) and step through them one at a time using local state.
 
-RLS — scoped through `coach_profiles.user_id = auth.uid()`, same pattern as `coach_levels`:
-- SELECT / INSERT / UPDATE / DELETE: only the owning coach.
-- No public read. Redemption lookup will happen later inside an `auth`-elevated server fn on the parent flow, so no broad anon policy needed.
+## Database (one migration)
 
-Code generation lives in a Postgres helper (`public.generate_invite_code()` returning text) so we get a single source of truth and a retry-on-collision loop inside one transaction.
+New tables, all RLS-scoped to the owning parent + the linked coach:
 
-### Why a separate table (not a column on `coach_profiles`)
-- Keeps the unique index on `code` isolated and cheap to look up by parents later.
-- Lets us extend with `kind`, `target_email`, `redeemed_at`, `max_uses` for per-parent invites in the roster slice without reshaping `coach_profiles`.
-- Rotation timestamp (`updated_at`) gives a free audit trail.
+- `athlete_goals` — `id`, `athlete_id`, `coach_id`, `sport` (text, references coach_levels.sport), `current_level_key` (text), `season_goal_key` (text), `long_term_goal` (text, max 2000), timestamps. Unique on `(athlete_id, coach_id, sport)`.
+- `athlete_lesson_slots` — `id`, `athlete_id`, `coach_id`, `day_of_week` (smallint 0–6, Sun=0), `start_minute` (smallint 0–1439), `end_minute` (smallint 0–1439, > start), timestamps. Index on `(athlete_id, coach_id)`.
+- `athlete_invite_codes` — `id`, `parent_id`, `athlete_id`, `code` (text, unique, 8-char `A–Z2–9` like coach codes), `used_at` (timestamp, nullable), timestamps.
 
-## Server functions (`src/lib/coach-invite.functions.ts`)
+Times stored as integer minutes-from-midnight so we don't fight Postgres `time` serialization; UI converts to/from 12-hour display.
 
-Both protected by `requireSupabaseAuth`. Both resolve the caller's `coach_profiles.id` first (same `ensureProfile` helper pattern already in `coach-profile.functions.ts`).
+RLS:
+- Parents CRUD rows where parent owns the athlete (via `parent_profiles → athletes`).
+- Coaches SELECT rows for athletes on their roster (via `coach_athletes`).
+- `athlete_invite_codes`: parent-owned CRUD; public lookup-by-code happens through an admin server fn (no broad anon SELECT policy).
 
-- `getCoachInviteCode()` → returns `{ code }`. Creates a row on first call (so the wizard can render the code without a separate "generate" click). Idempotent.
-- `rotateCoachInviteCode()` → calls `generate_invite_code()`, updates the row, returns the new `{ code }`. Server-side only — never let the client propose the code.
+GRANTs: `SELECT, INSERT, UPDATE, DELETE` to `authenticated`; `ALL` to `service_role`. No anon.
 
-## Hook (`src/hooks/use-coach-invite.ts`)
-- `coachInviteQueryOptions` (queryKey `["coach-invite"]`)
-- `useCoachInvite()` → suspense-friendly query
-- `useRotateCoachInvite()` → mutation that invalidates the query and shows a sonner toast
+## Server functions (`src/lib/parent-signup.functions.ts`)
 
-## UI
+Add:
+- `listAthletesForCode({ code })` — returns athletes for the signed-in parent linked to the coach behind `code`, plus the coach's sports + sport catalog metadata (levels list).
+- `saveAthleteGoals({ code, athleteId, sport, currentLevelKey, seasonGoalKey, longTermGoal })` — upserts on `(athlete_id, coach_id, sport)`. Validates that `currentLevelKey` and `seasonGoalKey` exist in the catalog for `sport`, `longTermGoal` ≤ 2000 chars.
+- `saveAthleteSchedule({ code, athleteId, slots: [{ dayOfWeek, startMinute, endMinute }] })` — replaces all slots for `(athlete_id, coach_id)`. Validates 0–6 / 0–1439 / end > start, max 20 slots.
+- `getOrCreateAthleteInviteCode({ athleteId })` — returns existing or generates new 8-char code (same alphabet as coach codes); returns the public invite URL (`<origin>/signup/athlete?code=…`) for QR encoding.
+- `listAthletesWithInviteCodes()` — for /parent page, returns parent's athletes + their codes/URLs.
 
-### Onboarding — new step between "Practice hours" and "Review"
-Step 5 of 6: **"Invite parents"**
-- Headline: "Share this code with parents to add their athlete to your roster."
-- Big monospace code chip, "Copy code" button, subtle "Generate a new code" link with a confirmation dialog ("This will invalidate the old code. Continue?")
-- "Continue" advances to Review. Review step gets a small "Your invite code" line at the bottom so it's visible before Finish.
+All protected with `requireSupabaseAuth`; coach-side reads use the existing middleware client; admin elevation only where strictly needed (code generation collision retry).
 
-### Settings page — new section "Invite code"
-Same component as the wizard step, dropped into the settings stack with its own card and "Save" affordance unnecessary (rotation is the only action).
+## Routes
 
-### Coach dashboard
-Add a small "Invite code" line under the header: the code in mono, with a "Copy" button. Keeps it one tap away when a parent asks.
+### `src/routes/signup.parent.athletes.tsx` (edit)
+- Change submit handler to `navigate({ to: "/signup/parent/goals", search: { code } })` instead of `/parent`.
+- Button text "Continue" instead of "Finish".
 
-All three surfaces consume the same `<InviteCodeCard />` component to avoid drift.
+### `src/routes/signup.parent.goals.tsx` (new)
+- `validateSearch`: same `{ code }` schema as athletes route.
+- Loader prefetches `listAthletesForCode`.
+- Component state: `index` (which athlete), plus per-athlete `{ sport, currentLevelKey, seasonGoalKey, longTermGoal }`.
+- For each athlete:
+  - If coach has 1 sport → auto-set sport, skip picker.
+  - If multiple → `Select` of coach's sports.
+  - `Select` for current level (from `SPORTS` catalog for the chosen sport).
+  - `Select` for season goal (same level list; client-side hint "must be at or above current level" — soft validation only).
+  - `Textarea` for long-term goal (max 2000, optional).
+- "Save & next" calls `saveAthleteGoals` then advances; on last athlete → navigate to `/signup/parent/schedule?code=…`.
+- Progress chip: `Athlete X of N`.
 
-## Design system adherence
-- Code chip: `bg-elevated` border `border-divider` rounded `rounded-md`, `font-mono` `text-h3`, generous letter-spacing.
-- Copy/Rotate use existing shadcn `Button` with `variant="outline"` and `variant="ghost"` respectively.
-- Confirmation uses shadcn `AlertDialog`.
-- Toasts via existing sonner Toaster.
-- Caveat is reserved for the supporting "share this with parents" annotation under the code, at `text-lg` per the AAA rules we just landed.
+### `src/routes/signup.parent.schedule.tsx` (new)
+- Same loader/structure as goals route.
+- For each athlete: list of slot rows with `Select` day (Sun–Sat), `Select` start time, `Select` end time. Time options are 15-min increments rendered in 12-hour format (`6:00 AM` … `9:45 PM`), stored as minutes. "+ Add another time" / per-row remove.
+- At least one valid slot required (parent can also leave empty and use a "Skip — no fixed schedule" link if they don't know it).
+- Last athlete → `saveAthleteSchedule` then navigate to `/parent`.
 
-## Files
-**New**
-- `supabase/migrations/<ts>_coach_invite_codes.sql` (table + RLS + generator function + updated_at trigger)
-- `src/lib/coach-invite.functions.ts`
-- `src/hooks/use-coach-invite.ts`
-- `src/components/onboarding/invite-card.tsx` (shared display + copy + rotate dialog)
-- `src/components/onboarding/invite-step.tsx` (thin wizard step wrapping `<InviteCard />`)
+### `src/routes/_authenticated/parent.tsx` (edit)
+- Keep header + sign-out.
+- Fetch `listAthletesWithInviteCodes` via `useSuspenseQuery`.
+- For each athlete, render a card with name + a QR code (using `qrcode.react`) of the athlete's invite URL, plus the 8-char code as fallback text and a copy button.
+- Caption: "Optional — only needed if your athlete has their own phone."
 
-**Edited**
-- `src/routes/_authenticated/onboarding.tsx` — insert the new step in the wizard, bump total-step count, thread state.
-- `src/routes/_authenticated/coach.settings.tsx` — add the section.
-- `src/routes/_authenticated/coach.tsx` — add the inline invite code line in the header card.
+### `src/routes/signup.athlete.tsx` (new, minimal stub)
+- `validateSearch` for `?code`.
+- Renders "Athlete signup coming soon — your parent has invited you." plus the code, so QR scans land somewhere real and don't 404. Real athlete auth flow is out of scope for this PR.
 
-## Out of scope (deferred to roster slice)
-- Parent-side redemption page, parent accounts, athlete records.
-- Per-parent targeted invites with `target_email` / `redeemed_at`.
-- Coach roster view, revoking individual links, link history.
-- Shareable `/join/CODE` URLs and QR codes — user chose copyable code only.
+## Design system usage
 
-## Open question (non-blocking)
-Format preference: `A3K9F2X7` (8 char, no prefix, easiest to type) vs `GRADUS-A3K9F2` (branded, slightly more to type). I'll default to **`A3K9F2X7`** for typing speed unless you'd rather brand it.
+All new screens reuse the existing onboarding card chrome (`rounded-2xl bg-card p-8 shadow-card`, accent-ink step labels, Fraunces headings, Caveat for soft hints like "hrs / week" already used in coach onboarding). Time/day pickers use shadcn `Select`. Schedule rows use the same `border border-divider bg-elevated` row pattern as coach onboarding's hours step. QR card uses `bg-elevated`, divider border, and `font-mono tracking-[0.25em]` for the 8-char code (matches the existing invite-code styling).
+
+## Dependency
+
+Add `qrcode.react` for the QR component (pure JS, Worker-safe).
+
+## Out of scope
+
+- Real athlete signup UI / auth (stub page only).
+- Editing goals/schedule after onboarding (will live in a parent settings page later).
+- Calendar-based scheduling / timezone handling (slots are weekly, parent's local 12-hour entry).
