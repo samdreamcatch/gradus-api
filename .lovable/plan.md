@@ -1,73 +1,75 @@
-## Coach Onboarding — Slice 2
+# First-name welcome + Handwritten font accessibility pass
 
-### Sports & pre-seeded levels
+## 1. First-name welcome
 
-Catalog hard-coded in `src/lib/coach-sports.ts`:
+**File:** `src/routes/_authenticated/coach.tsx`
 
-- **Tennis** — USTA NTRP: 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0, 7.0
-- **Golf** — Beginner, High handicap (19+), Mid handicap (10–18), Low handicap (1–9), Scratch (0 or better)
-- **Figure Skating** — U.S. Figure Skating test track: Basic Skills, Pre-Preliminary, Preliminary, Pre-Juvenile, Juvenile, Intermediate, Novice, Junior, Senior
+- Change the welcome line to use `firstName` only, falling back to `"Coach"` when empty.
+- Keep the `pen-highlight` styling on the name.
 
-Each level stored by a stable `level_key` (e.g. `ntrp_3_5`) so the display label can evolve without breaking data.
+```
+const displayName = data.profile.firstName.trim() || "Coach";
+// <h1>Welcome back, <span className="pen-highlight">{displayName}</span></h1>
+```
 
-### Data model (new migration)
+No other surfaces currently render the full name, so this is a one-line change.
 
-- `coach_profiles` — one row per coach: `user_id` (unique FK to auth.users), `first_name`, `last_name`, `onboarded_at` (null until wizard completed).
-- `coach_levels` — one row per (coach, sport, level_key): `coach_id`, `sport`, `level_key`, `practice_hours_per_week` (numeric, 0–40). Unique on `(coach_id, sport, level_key)`. The set of sports a coach coaches = distinct sports in this table.
+## 2. AAA accessibility pass on the handwritten font (Caveat)
 
-Both tables: RLS on, policies scoped to `auth.uid() = coach_profiles.user_id` (coach can only read/write their own data). Auto-update `updated_at` trigger.
+### What AAA actually requires
+- **Contrast:** 7:1 for normal text, 4.5:1 for "large" text (≥18.66px bold or ≥24px regular).
+- **Readability:** WCAG SC 1.4.8 (AAA) — users must be able to read content without decorative-script barriers. Cursive/script fonts like Caveat are allowed, but only when:
+  - they're **not the sole carrier** of essential info (a sighted user with low vision or dyslexia must still be able to parse it), and
+  - they're rendered at a comfortable size and weight.
 
-### Server functions (`src/lib/coach-profile.functions.ts`)
+### Audit of current Caveat usage
 
-All use `requireSupabaseAuth` middleware:
+| File | Line | Context | Issue |
+|---|---|---|---|
+| `coach.tsx` | 75 | `font-hand text-text-secondary` inside a `text-sm` row — renders Caveat at **14px** showing `"{hours} hrs / week"` | Too small for a script face; carries the essential hours value; contrast borderline at this size |
+| `coach.settings.tsx` | 280 | `font-hand text-sm text-text-secondary` — hint text | 14px Caveat is hard to read; hint is non-essential so contrast can be relaxed but size shouldn't be |
+| `onboarding.tsx` | 251 | `font-hand text-sm text-text-secondary` — hint text | Same as above |
+| `onboarding.tsx` | 370 | `font-hand text-text-secondary` — review summary value | Carries essential info in script |
 
-- `getCoachProfile()` → returns `{ profile, levels }` or `{ profile: null, levels: [] }`
-- `saveCoachProfile({ firstName, lastName })` → upsert
-- `saveCoachLevels({ entries: [{ sport, levelKey, hoursPerWeek }] })` → replaces the coach's full level set in one transaction
-- `completeOnboarding()` → stamps `onboarded_at = now()`
+### Token check (already in `src/styles.css`)
+- `--text-secondary` is annotated `~7.2:1` on background → **passes AAA for normal text** in sans, but Caveat's thin strokes effectively reduce perceived contrast. Safer to use `--text-primary` (or `--accent-ink`) wherever Caveat carries data.
+- `--text-tertiary` is "AAA large / AA normal" → **not safe** under Caveat at small sizes. Not currently used with `font-hand`, keep it that way.
 
-Wrapped via `useQuery`/`useMutation` in `src/hooks/use-coach-profile.ts`.
+### Fixes
 
-### Routes
+**A. Never render essential data only in Caveat.**
+- `coach.tsx:75` — the "12 hrs / week" value is the data. Replace `font-hand` with the regular sans body face and keep `text-text-secondary`. Reserve Caveat for the surrounding annotation feel (e.g., the "hrs / week" suffix or a separate label), not the number itself.
+- `onboarding.tsx:370` (review step) — same treatment: render the value in sans, AAA contrast.
 
-- `src/routes/_authenticated/onboarding.tsx` — the wizard. On mount: if `onboarded_at` is set, redirect to `/coach`.
-- `src/routes/_authenticated/coach.tsx` — on mount: if `onboarded_at` is null, redirect to `/onboarding`. Add a "Settings" link.
-- `src/routes/_authenticated/coach.settings.tsx` — same form sections as the wizard, but in a single editable page (not stepped). Saves field-by-field.
+**B. When Caveat is decorative (hints), make it pass the "large text" bar.**
+- Bump `font-hand` hint instances from `text-sm` (14px) to **`text-lg` (18px) with `font-bold`** (Caveat is loaded at 500/700; use 700). This pushes it into the large-text AAA bracket (4.5:1) and improves legibility.
+- Switch the color from `text-text-secondary` to **`text-accent-ink`** for hints, which is the darkest pen color on paper and is the ink token designed for this case.
+- Apply to `coach.settings.tsx:280` and `onboarding.tsx:251`.
 
-Login flow: signup → `/coach` → redirect to `/onboarding` → finish wizard → `/coach`.
+**C. Add a global rule in `src/styles.css` so future Caveat usage stays safe.**
 
-### Wizard UX
+Add a `.font-hand` base rule that ships a minimum line-height and slightly heavier default weight, so a developer who reaches for it can't accidentally render 14px regular Caveat:
 
-5 steps in a paper-card layout consistent with the design system:
+```
+@layer base {
+  .font-hand {
+    font-weight: 700;
+    line-height: 1.25;
+    letter-spacing: 0.005em;
+  }
+}
+```
 
-1. **Your name** — First / Last inputs.
-2. **Sports you coach** — toggle chips for Tennis, Golf, Figure Skating (multi-select, at least one required). Uses pen-highlight on selected chip.
-3. **Levels per sport** — for each selected sport, a checkbox list of its pre-seeded levels. At least one level per sport required.
-4. **Practice expectations** — for each selected level, a numeric input "hours/week" with a Caveat-styled hint ("e.g. 3 hours"). Accepts decimals, 0–40.
-5. **Review** — read-only summary; "Finish" calls `completeOnboarding` then routes to `/coach`.
+### Verification
 
-Top of card: small progress indicator (1 of 5) plus step title in Fraunces. "Back"/"Continue" buttons; "Continue" disabled until current step validates. Each step's data persists to Supabase as the user advances (so a refresh mid-wizard resumes where they left off).
+After the edits, sanity-check at the current `/coach` viewport (390×815) that:
+- the welcome reads "Welcome back, **Maxwell**" (first name only),
+- the per-level rows show hours in the sans face,
+- the Caveat hints render at ~18px bold in `--accent-ink`.
 
-### Settings page
+No contrast math regressions expected since the tokens themselves don't change.
 
-Single scrollable page with three sections (Name, Sports & levels, Practice expectations). Each section has its own "Save" button. No step gating. Reuses the same form components as the wizard via shared sub-components in `src/components/onboarding/`.
-
-### Files
-
-New:
-- migration (coach_profiles, coach_levels, RLS, trigger)
-- `src/lib/coach-sports.ts`
-- `src/lib/coach-profile.functions.ts`
-- `src/hooks/use-coach-profile.ts`
-- `src/routes/_authenticated/onboarding.tsx`
-- `src/routes/_authenticated/coach.settings.tsx`
-- `src/components/onboarding/` — `wizard-shell.tsx`, `name-step.tsx`, `sports-step.tsx`, `levels-step.tsx`, `practice-step.tsx`, `review-step.tsx`, `sport-chip.tsx`
-
-Modified:
-- `src/routes/_authenticated/coach.tsx` — onboarding gate + Settings link
-
-### Out of scope (call out)
-
-- No athlete/student records yet — this slice is profile-only.
-- No avatar upload, bio, credentials, or scheduling.
-- No org/team concept — single coach per account.
+## Out of scope
+- No changes to the pen color system, layout, or data model.
+- No new components.
+- Dark-mode tokens already mirror the light-mode AAA posture; no separate fix needed.
