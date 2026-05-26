@@ -77,9 +77,10 @@ export const redeemInviteCodeAsParent = createServerFn({ method: "POST" })
     }
 
     // 3. Insert athletes.
-    const athleteRows = data.athletes.map((first_name) => ({
+    const athleteRows = data.athletes.map((a) => ({
       parent_id: parentId,
-      first_name,
+      first_name: a.firstName,
+      last_name: a.lastName,
     }));
     const athletesIns = await supabaseAdmin
       .from("athletes")
