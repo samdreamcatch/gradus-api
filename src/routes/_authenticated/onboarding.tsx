@@ -13,10 +13,16 @@ import {
   useSaveCoachLevels,
   useSaveCoachProfile,
 } from "@/hooks/use-coach-profile";
+import { coachInviteQueryOptions } from "@/hooks/use-coach-invite";
+import { InviteCard } from "@/components/onboarding/invite-card";
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 export const Route = createFileRoute("/_authenticated/onboarding")({
-  loader: ({ context }) => context.queryClient.ensureQueryData(coachProfileQueryOptions),
+  loader: ({ context }) => {
+    // Prime both queries — invite is shown on step 5.
+    context.queryClient.prefetchQuery(coachInviteQueryOptions);
+    return context.queryClient.ensureQueryData(coachProfileQueryOptions);
+  },
   component: OnboardingPage,
 });
 
