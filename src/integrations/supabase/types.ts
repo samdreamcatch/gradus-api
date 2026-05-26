@@ -14,6 +14,105 @@ export type Database = {
   }
   public: {
     Tables: {
+      athlete_goals: {
+        Row: {
+          athlete_id: string
+          coach_id: string
+          created_at: string
+          current_level_key: string
+          id: string
+          long_term_goal: string
+          season_goal_key: string
+          sport: string
+          updated_at: string
+        }
+        Insert: {
+          athlete_id: string
+          coach_id: string
+          created_at?: string
+          current_level_key: string
+          id?: string
+          long_term_goal?: string
+          season_goal_key: string
+          sport: string
+          updated_at?: string
+        }
+        Update: {
+          athlete_id?: string
+          coach_id?: string
+          created_at?: string
+          current_level_key?: string
+          id?: string
+          long_term_goal?: string
+          season_goal_key?: string
+          sport?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      athlete_invite_codes: {
+        Row: {
+          athlete_id: string
+          code: string
+          created_at: string
+          id: string
+          parent_id: string
+          updated_at: string
+          used_at: string | null
+        }
+        Insert: {
+          athlete_id: string
+          code: string
+          created_at?: string
+          id?: string
+          parent_id: string
+          updated_at?: string
+          used_at?: string | null
+        }
+        Update: {
+          athlete_id?: string
+          code?: string
+          created_at?: string
+          id?: string
+          parent_id?: string
+          updated_at?: string
+          used_at?: string | null
+        }
+        Relationships: []
+      }
+      athlete_lesson_slots: {
+        Row: {
+          athlete_id: string
+          coach_id: string
+          created_at: string
+          day_of_week: number
+          end_minute: number
+          id: string
+          start_minute: number
+          updated_at: string
+        }
+        Insert: {
+          athlete_id: string
+          coach_id: string
+          created_at?: string
+          day_of_week: number
+          end_minute: number
+          id?: string
+          start_minute: number
+          updated_at?: string
+        }
+        Update: {
+          athlete_id?: string
+          coach_id?: string
+          created_at?: string
+          day_of_week?: number
+          end_minute?: number
+          id?: string
+          start_minute?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       athletes: {
         Row: {
           created_at: string
