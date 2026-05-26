@@ -1,4 +1,4 @@
-import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { createFileRoute, isRedirect, Link, redirect } from "@tanstack/react-router";
 import { ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Logo } from "@/components/logo";
@@ -13,8 +13,8 @@ export const Route = createFileRoute("/")({
       if (role === "parent") throw redirect({ to: "/parent" });
       if (role === "coach") throw redirect({ to: "/coach" });
     } catch (e) {
-      // Re-throw redirects; swallow auth errors and just show the picker.
-      if (e && typeof e === "object" && "isRedirect" in e) throw e;
+      if (isRedirect(e)) throw e;
+      // Otherwise: show picker (e.g. role lookup failed).
     }
   },
   component: RolePicker,
