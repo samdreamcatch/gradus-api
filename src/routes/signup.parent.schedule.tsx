@@ -290,7 +290,7 @@ function ParentSchedulePage() {
                       value={slot.frequency}
                       onValueChange={(v) => {
                         const f = v as Frequency;
-                        updateSlot(i, { frequency: f, weeksOfMonth: [] });
+                        updateSlot(i, { frequency: f, weeksOfMonth: [], startsOn: null });
                       }}
                     >
                       <SelectTrigger>
