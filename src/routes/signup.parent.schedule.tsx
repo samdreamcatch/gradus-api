@@ -138,11 +138,21 @@ function ParentSchedulePage() {
             startMinute: s.startMinute,
             endMinute: s.endMinute,
             frequency: s.frequency,
+            weeksOfMonth: s.frequency === "weekly" ? [] : [...s.weeksOfMonth].sort((a, b) => a - b),
           }));
 
     for (const s of cleaned) {
       if (s.endMinute <= s.startMinute) {
         setFormError("End time must be after start time for every slot.");
+        return;
+      }
+      const need = weeksRequired(s.frequency);
+      if (need > 0 && s.weeksOfMonth.length !== need) {
+        setFormError(
+          need === 1
+            ? "Pick which week of the month for every monthly lesson."
+            : "Pick 2 weeks of the month for every biweekly or 2x-monthly lesson.",
+        );
         return;
       }
     }
