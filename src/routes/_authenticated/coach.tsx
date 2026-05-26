@@ -28,7 +28,7 @@ function CoachHome() {
     "…";
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4">
+    <div className="flex min-h-dvh items-center justify-center px-4">
       <div className="w-full max-w-xl rounded-2xl bg-card p-10 shadow-[0_10px_40px_-12px_rgba(0,0,0,0.15)]">
         <p className="text-xs font-bold uppercase tracking-widest text-accent-ink">
           Coach
