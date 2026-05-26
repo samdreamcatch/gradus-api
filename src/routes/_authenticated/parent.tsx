@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { QRCodeSVG } from "qrcode.react";
@@ -7,9 +7,31 @@ import { Copy, Check } from "lucide-react";
 import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { listAthletesWithInviteCodes } from "@/lib/parent-signup.functions";
+import {
+  listAthletesWithInviteCodes,
+  getParentSignupStatus,
+} from "@/lib/parent-signup.functions";
 
 export const Route = createFileRoute("/_authenticated/parent")({
+  beforeLoad: async () => {
+    try {
+      const status = await getParentSignupStatus();
+      if (!status.hasParentProfile) return; // Not a parent — let page render (or other guards handle).
+      if (!status.hasAthletes) {
+        if (status.inviteCode) {
+          throw redirect({
+            to: "/signup/parent/athletes",
+            search: { code: status.inviteCode },
+          });
+        }
+        // Legacy parent with no stored coach — send back to start of signup.
+        throw redirect({ to: "/signup/parent" });
+      }
+    } catch (e) {
+      if (e && typeof e === "object" && "to" in e) throw e;
+      // Swallow lookup errors and let the page render.
+    }
+  },
   component: ParentHome,
 });
 
