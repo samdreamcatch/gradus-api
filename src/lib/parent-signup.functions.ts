@@ -315,6 +315,7 @@ export const saveAthleteSchedule = createServerFn({ method: "POST" })
               startMinute: z.number().int().min(0).max(1439),
               endMinute: z.number().int().min(1).max(1440),
               frequency: z.enum(["weekly", "biweekly", "twice_monthly", "monthly"]).default("weekly"),
+              weeksOfMonth: z.array(z.number().int().min(1).max(5)).default([]),
             }),
           )
           .max(20),
