@@ -277,7 +277,7 @@ function PracticeSection({ levels }: { levels: LevelEntry[] }) {
                           <div className="text-sm font-semibold text-text-primary">
                             {lvl.label}
                           </div>
-                          <div className="font-hand text-sm text-text-secondary">
+                          <div className="font-hand text-lg text-accent-ink">
                             hrs / week
                           </div>
                         </div>
