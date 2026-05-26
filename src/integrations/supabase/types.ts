@@ -87,6 +87,7 @@ export type Database = {
           created_at: string
           day_of_week: number
           end_minute: number
+          frequency: string
           id: string
           start_minute: number
           updated_at: string
@@ -97,6 +98,7 @@ export type Database = {
           created_at?: string
           day_of_week: number
           end_minute: number
+          frequency?: string
           id?: string
           start_minute: number
           updated_at?: string
@@ -107,6 +109,7 @@ export type Database = {
           created_at?: string
           day_of_week?: number
           end_minute?: number
+          frequency?: string
           id?: string
           start_minute?: number
           updated_at?: string

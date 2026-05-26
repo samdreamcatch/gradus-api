@@ -37,6 +37,14 @@ const DAYS = [
   { value: 6, label: "Saturday" },
 ];
 
+type Frequency = "weekly" | "biweekly" | "twice_monthly" | "monthly";
+const FREQUENCIES: { value: Frequency; label: string }[] = [
+  { value: "weekly", label: "Weekly" },
+  { value: "biweekly", label: "Every other week" },
+  { value: "twice_monthly", label: "2x per month" },
+  { value: "monthly", label: "1x per month" },
+];
+
 // 15-min increments from 6:00 AM (360) to 9:45 PM (1305)
 const TIME_OPTIONS: { value: number; label: string }[] = [];
 for (let m = 360; m <= 1305; m += 15) {
@@ -50,7 +58,12 @@ for (let m = 360; m <= 1305; m += 15) {
   });
 }
 
-type Slot = { dayOfWeek: number | null; startMinute: number | null; endMinute: number | null };
+type Slot = {
+  dayOfWeek: number | null;
+  startMinute: number | null;
+  endMinute: number | null;
+  frequency: Frequency;
+};
 
 function ParentSchedulePage() {
   const { code } = Route.useSearch();
@@ -71,7 +84,7 @@ function ParentSchedulePage() {
   const athletes = data?.athletes ?? [];
   const current = athletes[index];
   const slots: Slot[] = byAthlete[current?.id ?? ""] ?? [
-    { dayOfWeek: null, startMinute: null, endMinute: null },
+    { dayOfWeek: null, startMinute: null, endMinute: null, frequency: "weekly" },
   ];
 
   const setSlots = (next: Slot[]) => {
@@ -81,7 +94,10 @@ function ParentSchedulePage() {
   const updateSlot = (i: number, patch: Partial<Slot>) =>
     setSlots(slots.map((s, idx) => (idx === i ? { ...s, ...patch } : s)));
   const addSlot = () =>
-    setSlots([...slots, { dayOfWeek: null, startMinute: null, endMinute: null }]);
+    setSlots([
+      ...slots,
+      { dayOfWeek: null, startMinute: null, endMinute: null, frequency: "weekly" },
+    ]);
   const removeSlot = (i: number) =>
     setSlots(slots.length === 1 ? slots : slots.filter((_, idx) => idx !== i));
 
@@ -93,13 +109,14 @@ function ParentSchedulePage() {
       ? []
       : slots
           .filter(
-            (s): s is { dayOfWeek: number; startMinute: number; endMinute: number } =>
+            (s): s is Slot & { dayOfWeek: number; startMinute: number; endMinute: number } =>
               s.dayOfWeek !== null && s.startMinute !== null && s.endMinute !== null,
           )
           .map((s) => ({
             dayOfWeek: s.dayOfWeek,
             startMinute: s.startMinute,
             endMinute: s.endMinute,
+            frequency: s.frequency,
           }));
 
     for (const s of cleaned) {
@@ -212,6 +229,24 @@ function ParentSchedulePage() {
                         {TIME_OPTIONS.map((t) => (
                           <SelectItem key={t.value} value={String(t.value)}>
                             {t.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="min-w-[150px] flex-1 space-y-1">
+                    <Label className="text-xs text-text-tertiary">Frequency</Label>
+                    <Select
+                      value={slot.frequency}
+                      onValueChange={(v) => updateSlot(i, { frequency: v as Frequency })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Frequency" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {FREQUENCIES.map((f) => (
+                          <SelectItem key={f.value} value={f.value}>
+                            {f.label}
                           </SelectItem>
                         ))}
                       </SelectContent>
