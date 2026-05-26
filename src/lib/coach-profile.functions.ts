@@ -1,0 +1,136 @@
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { SPORT_KEYS } from "./coach-sports";
+
+export interface CoachProfileDTO {
+  id: string;
+  firstName: string;
+  lastName: string;
+  onboardedAt: string | null;
+}
+
+export interface CoachLevelDTO {
+  sport: string;
+  levelKey: string;
+  hoursPerWeek: number;
+}
+
+async function ensureProfile(supabase: ReturnType<typeof getSupabase>, userId: string) {
+  const existing = await supabase
+    .from("coach_profiles")
+    .select("id, first_name, last_name, onboarded_at")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (existing.error) throw new Error(existing.error.message);
+  if (existing.data) return existing.data;
+
+  const created = await supabase
+    .from("coach_profiles")
+    .insert({ user_id: userId })
+    .select("id, first_name, last_name, onboarded_at")
+    .single();
+  if (created.error) throw new Error(created.error.message);
+  return created.data;
+}
+
+// Helper type alias (cannot import the supabase type without the client module)
+function getSupabase(): never {
+  throw new Error("type-only helper");
+}
+
+export const getCoachProfile = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    const profile = await ensureProfile(supabase as never, userId);
+
+    const levels = await supabase
+      .from("coach_levels")
+      .select("sport, level_key, practice_hours_per_week")
+      .eq("coach_id", profile.id);
+    if (levels.error) throw new Error(levels.error.message);
+
+    return {
+      profile: {
+        id: profile.id,
+        firstName: profile.first_name,
+        lastName: profile.last_name,
+        onboardedAt: profile.onboarded_at,
+      } as CoachProfileDTO,
+      levels: (levels.data ?? []).map((r) => ({
+        sport: r.sport,
+        levelKey: r.level_key,
+        hoursPerWeek: Number(r.practice_hours_per_week),
+      })) as CoachLevelDTO[],
+    };
+  });
+
+const nameSchema = z.object({
+  firstName: z.string().trim().min(1, "Required").max(80),
+  lastName: z.string().trim().min(1, "Required").max(80),
+});
+
+export const saveCoachProfile = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => nameSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const profile = await ensureProfile(supabase as never, userId);
+    const { error } = await supabase
+      .from("coach_profiles")
+      .update({ first_name: data.firstName, last_name: data.lastName })
+      .eq("id", profile.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+const levelsSchema = z.object({
+  entries: z
+    .array(
+      z.object({
+        sport: z.enum(SPORT_KEYS as [string, ...string[]]),
+        levelKey: z.string().min(1).max(64).regex(/^[a-z0-9_]+$/),
+        hoursPerWeek: z.number().min(0).max(40),
+      }),
+    )
+    .max(200),
+});
+
+export const saveCoachLevels = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => levelsSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const profile = await ensureProfile(supabase as never, userId);
+
+    // Replace strategy: delete all then insert. RLS scopes both to this coach.
+    const del = await supabase.from("coach_levels").delete().eq("coach_id", profile.id);
+    if (del.error) throw new Error(del.error.message);
+
+    if (data.entries.length > 0) {
+      const rows = data.entries.map((e) => ({
+        coach_id: profile.id,
+        sport: e.sport,
+        level_key: e.levelKey,
+        practice_hours_per_week: e.hoursPerWeek,
+      }));
+      const ins = await supabase.from("coach_levels").insert(rows);
+      if (ins.error) throw new Error(ins.error.message);
+    }
+
+    return { ok: true };
+  });
+
+export const completeOnboarding = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    const profile = await ensureProfile(supabase as never, userId);
+    const { error } = await supabase
+      .from("coach_profiles")
+      .update({ onboarded_at: new Date().toISOString() })
+      .eq("id", profile.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
