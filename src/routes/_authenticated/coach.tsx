@@ -57,6 +57,15 @@ function CoachHome() {
           </div>
         </div>
 
+        <div className="mt-8 rounded-xl border border-divider bg-elevated p-5">
+          <p className="text-xs font-bold uppercase tracking-widest text-accent-ink">
+            Invite code
+          </p>
+          <div className="mt-3">
+            <InviteCard compact />
+          </div>
+        </div>
+
         <div className="mt-10 space-y-8">
           {sports.map((sportKey) => {
             const sport = getSport(sportKey)!;
