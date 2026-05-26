@@ -91,6 +91,7 @@ export type Database = {
           id: string
           start_minute: number
           updated_at: string
+          weeks_of_month: number[]
         }
         Insert: {
           athlete_id: string
@@ -102,6 +103,7 @@ export type Database = {
           id?: string
           start_minute: number
           updated_at?: string
+          weeks_of_month?: number[]
         }
         Update: {
           athlete_id?: string
@@ -113,6 +115,7 @@ export type Database = {
           id?: string
           start_minute?: number
           updated_at?: string
+          weeks_of_month?: number[]
         }
         Relationships: []
       }

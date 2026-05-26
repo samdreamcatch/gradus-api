@@ -63,7 +63,28 @@ type Slot = {
   startMinute: number | null;
   endMinute: number | null;
   frequency: Frequency;
+  weeksOfMonth: number[];
 };
+
+const WEEK_OPTIONS: { value: number; label: string }[] = [
+  { value: 1, label: "1st" },
+  { value: 2, label: "2nd" },
+  { value: 3, label: "3rd" },
+  { value: 4, label: "4th" },
+  { value: 5, label: "Last" },
+];
+
+function weeksHelpText(f: Frequency): string {
+  if (f === "biweekly") return "Pick the 2 weeks of the month this lesson falls on.";
+  if (f === "twice_monthly") return "Pick the 2 weeks of the month for this lesson.";
+  if (f === "monthly") return "Pick the week of the month for this lesson.";
+  return "";
+}
+function weeksRequired(f: Frequency): number {
+  if (f === "biweekly" || f === "twice_monthly") return 2;
+  if (f === "monthly") return 1;
+  return 0;
+}
 
 function ParentSchedulePage() {
   const { code } = Route.useSearch();
@@ -84,7 +105,7 @@ function ParentSchedulePage() {
   const athletes = data?.athletes ?? [];
   const current = athletes[index];
   const slots: Slot[] = byAthlete[current?.id ?? ""] ?? [
-    { dayOfWeek: null, startMinute: null, endMinute: null, frequency: "weekly" },
+    { dayOfWeek: null, startMinute: null, endMinute: null, frequency: "weekly", weeksOfMonth: [] },
   ];
 
   const setSlots = (next: Slot[]) => {
@@ -96,7 +117,7 @@ function ParentSchedulePage() {
   const addSlot = () =>
     setSlots([
       ...slots,
-      { dayOfWeek: null, startMinute: null, endMinute: null, frequency: "weekly" },
+      { dayOfWeek: null, startMinute: null, endMinute: null, frequency: "weekly", weeksOfMonth: [] },
     ]);
   const removeSlot = (i: number) =>
     setSlots(slots.length === 1 ? slots : slots.filter((_, idx) => idx !== i));
@@ -117,11 +138,21 @@ function ParentSchedulePage() {
             startMinute: s.startMinute,
             endMinute: s.endMinute,
             frequency: s.frequency,
+            weeksOfMonth: s.frequency === "weekly" ? [] : [...s.weeksOfMonth].sort((a, b) => a - b),
           }));
 
     for (const s of cleaned) {
       if (s.endMinute <= s.startMinute) {
         setFormError("End time must be after start time for every slot.");
+        return;
+      }
+      const need = weeksRequired(s.frequency);
+      if (need > 0 && s.weeksOfMonth.length !== need) {
+        setFormError(
+          need === 1
+            ? "Pick which week of the month for every monthly lesson."
+            : "Pick 2 weeks of the month for every biweekly or 2x-monthly lesson.",
+        );
         return;
       }
     }
@@ -238,7 +269,10 @@ function ParentSchedulePage() {
                     <Label className="text-xs text-text-tertiary">Frequency</Label>
                     <Select
                       value={slot.frequency}
-                      onValueChange={(v) => updateSlot(i, { frequency: v as Frequency })}
+                      onValueChange={(v) => {
+                        const f = v as Frequency;
+                        updateSlot(i, { frequency: f, weeksOfMonth: [] });
+                      }}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Frequency" />
@@ -262,6 +296,46 @@ function ParentSchedulePage() {
                     >
                       <X className="size-4" />
                     </Button>
+                  )}
+                  {slot.frequency !== "weekly" && (
+                    <div className="basis-full space-y-1.5">
+                      <Label className="text-xs text-text-tertiary">
+                        {weeksHelpText(slot.frequency)}
+                      </Label>
+                      <div className="flex flex-wrap gap-1.5">
+                        {WEEK_OPTIONS.map((w) => {
+                          const selected = slot.weeksOfMonth.includes(w.value);
+                          const max = weeksRequired(slot.frequency);
+                          const toggle = () => {
+                            if (selected) {
+                              updateSlot(i, {
+                                weeksOfMonth: slot.weeksOfMonth.filter((x) => x !== w.value),
+                              });
+                            } else {
+                              const next =
+                                slot.weeksOfMonth.length >= max
+                                  ? [...slot.weeksOfMonth.slice(1), w.value]
+                                  : [...slot.weeksOfMonth, w.value];
+                              updateSlot(i, { weeksOfMonth: next });
+                            }
+                          };
+                          return (
+                            <button
+                              key={w.value}
+                              type="button"
+                              onClick={toggle}
+                              className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                                selected
+                                  ? "border-accent bg-accent text-accent-foreground"
+                                  : "border-divider bg-card text-text-secondary hover:border-accent/50"
+                              }`}
+                            >
+                              {w.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
                   )}
                 </div>
               ))}
