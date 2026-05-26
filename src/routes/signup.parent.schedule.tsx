@@ -269,7 +269,10 @@ function ParentSchedulePage() {
                     <Label className="text-xs text-text-tertiary">Frequency</Label>
                     <Select
                       value={slot.frequency}
-                      onValueChange={(v) => updateSlot(i, { frequency: v as Frequency })}
+                      onValueChange={(v) => {
+                        const f = v as Frequency;
+                        updateSlot(i, { frequency: f, weeksOfMonth: [] });
+                      }}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Frequency" />
@@ -293,6 +296,46 @@ function ParentSchedulePage() {
                     >
                       <X className="size-4" />
                     </Button>
+                  )}
+                  {slot.frequency !== "weekly" && (
+                    <div className="basis-full space-y-1.5">
+                      <Label className="text-xs text-text-tertiary">
+                        {weeksHelpText(slot.frequency)}
+                      </Label>
+                      <div className="flex flex-wrap gap-1.5">
+                        {WEEK_OPTIONS.map((w) => {
+                          const selected = slot.weeksOfMonth.includes(w.value);
+                          const max = weeksRequired(slot.frequency);
+                          const toggle = () => {
+                            if (selected) {
+                              updateSlot(i, {
+                                weeksOfMonth: slot.weeksOfMonth.filter((x) => x !== w.value),
+                              });
+                            } else {
+                              const next =
+                                slot.weeksOfMonth.length >= max
+                                  ? [...slot.weeksOfMonth.slice(1), w.value]
+                                  : [...slot.weeksOfMonth, w.value];
+                              updateSlot(i, { weeksOfMonth: next });
+                            }
+                          };
+                          return (
+                            <button
+                              key={w.value}
+                              type="button"
+                              onClick={toggle}
+                              className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                                selected
+                                  ? "border-accent bg-accent text-accent-foreground"
+                                  : "border-divider bg-card text-text-secondary hover:border-accent/50"
+                              }`}
+                            >
+                              {w.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
                   )}
                 </div>
               ))}
