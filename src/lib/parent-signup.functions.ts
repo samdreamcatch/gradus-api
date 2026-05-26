@@ -153,7 +153,9 @@ export const linkAthletesToCoach = createServerFn({ method: "POST" })
       parent_id: parentId,
       first_name: a.firstName,
       last_name: a.lastName,
+      birthdate: a.birthdate,
     }));
+
     const athletesIns = await supabaseAdmin
       .from("athletes")
       .insert(athleteRows)
