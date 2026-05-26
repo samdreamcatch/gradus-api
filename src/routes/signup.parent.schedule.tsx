@@ -105,7 +105,7 @@ function ParentSchedulePage() {
   const athletes = data?.athletes ?? [];
   const current = athletes[index];
   const slots: Slot[] = byAthlete[current?.id ?? ""] ?? [
-    { dayOfWeek: null, startMinute: null, endMinute: null, frequency: "weekly" },
+    { dayOfWeek: null, startMinute: null, endMinute: null, frequency: "weekly", weeksOfMonth: [] },
   ];
 
   const setSlots = (next: Slot[]) => {
@@ -117,7 +117,7 @@ function ParentSchedulePage() {
   const addSlot = () =>
     setSlots([
       ...slots,
-      { dayOfWeek: null, startMinute: null, endMinute: null, frequency: "weekly" },
+      { dayOfWeek: null, startMinute: null, endMinute: null, frequency: "weekly", weeksOfMonth: [] },
     ]);
   const removeSlot = (i: number) =>
     setSlots(slots.length === 1 ? slots : slots.filter((_, idx) => idx !== i));
