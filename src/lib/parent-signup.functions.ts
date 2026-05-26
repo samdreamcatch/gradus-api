@@ -3,38 +3,31 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
-const schema = z.object({
-  firstName: z.string().trim().min(1, "First name required").max(80),
-  lastName: z.string().trim().min(1, "Last name required").max(80),
-  code: z
-    .string()
-    .trim()
-    .toUpperCase()
-    .length(8, "Invite code must be 8 characters")
-    .regex(/^[A-Z2-9]+$/, "Invalid characters in code"),
-  athletes: z
-    .array(
-      z.object({
-        firstName: z.string().trim().min(1, "Athlete first name required").max(80),
-        lastName: z.string().trim().min(1, "Athlete last name required").max(80),
-      }),
-    )
-    .min(1, "Add at least one athlete")
-    .max(20),
-});
+const codeSchema = z
+  .string()
+  .trim()
+  .toUpperCase()
+  .length(8, "Invite code must be 8 characters")
+  .regex(/^[A-Z2-9]+$/, "Invalid characters in code");
 
 /**
- * Creates the parent's profile, athletes, and coach<>athlete links from an
- * invite code. The invite-code lookup uses the admin client because parents
- * have no relationship to the coach yet (RLS would block them).
+ * Step 1: validate the coach's invite code and create/update the parent profile.
+ * Returns the (normalized) code so the next screen can fetch coach details.
  */
-export const redeemInviteCodeAsParent = createServerFn({ method: "POST" })
+export const startParentSignup = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => schema.parse(input))
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        firstName: z.string().trim().min(1, "First name required").max(80),
+        lastName: z.string().trim().min(1, "Last name required").max(80),
+        code: codeSchema,
+      })
+      .parse(input),
+  )
   .handler(async ({ data, context }) => {
     const userId = context.userId;
 
-    // 1. Resolve coach from invite code (admin — bypasses RLS).
     const codeLookup = await supabaseAdmin
       .from("coach_invite_codes")
       .select("coach_id")
@@ -44,39 +37,114 @@ export const redeemInviteCodeAsParent = createServerFn({ method: "POST" })
     if (!codeLookup.data) {
       throw new Error("That invite code isn't valid. Double-check with your coach.");
     }
-    const coachId = codeLookup.data.coach_id;
 
-    // 2. Ensure parent_profile (admin to handle the rare race where it exists already).
-    const existingProfile = await supabaseAdmin
+    const existing = await supabaseAdmin
       .from("parent_profiles")
       .select("id")
       .eq("user_id", userId)
       .maybeSingle();
-    if (existingProfile.error) throw new Error(existingProfile.error.message);
+    if (existing.error) throw new Error(existing.error.message);
 
-    let parentId: string;
-    if (existingProfile.data) {
-      parentId = existingProfile.data.id;
+    if (existing.data) {
       const upd = await supabaseAdmin
         .from("parent_profiles")
         .update({ first_name: data.firstName, last_name: data.lastName })
-        .eq("id", parentId);
+        .eq("id", existing.data.id);
       if (upd.error) throw new Error(upd.error.message);
     } else {
-      const created = await supabaseAdmin
-        .from("parent_profiles")
-        .insert({
-          user_id: userId,
-          first_name: data.firstName,
-          last_name: data.lastName,
-        })
-        .select("id")
-        .single();
-      if (created.error) throw new Error(created.error.message);
-      parentId = created.data.id;
+      const ins = await supabaseAdmin.from("parent_profiles").insert({
+        user_id: userId,
+        first_name: data.firstName,
+        last_name: data.lastName,
+      });
+      if (ins.error) throw new Error(ins.error.message);
     }
 
-    // 3. Insert athletes.
+    return { code: data.code };
+  });
+
+/**
+ * Returns the coach's name and the sports they coach, looked up by invite code.
+ * Used on the "add athletes" screen so the parent sees who they're linking to.
+ */
+export const getCoachByInviteCode = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ code: codeSchema }).parse(input))
+  .handler(async ({ data }) => {
+    const codeLookup = await supabaseAdmin
+      .from("coach_invite_codes")
+      .select("coach_id")
+      .eq("code", data.code)
+      .maybeSingle();
+    if (codeLookup.error) throw new Error(codeLookup.error.message);
+    if (!codeLookup.data) throw new Error("Invalid invite code.");
+
+    const coachId = codeLookup.data.coach_id;
+
+    const [profile, levels] = await Promise.all([
+      supabaseAdmin
+        .from("coach_profiles")
+        .select("first_name,last_name")
+        .eq("id", coachId)
+        .single(),
+      supabaseAdmin.from("coach_levels").select("sport").eq("coach_id", coachId),
+    ]);
+    if (profile.error) throw new Error(profile.error.message);
+
+    const sports = Array.from(new Set((levels.data ?? []).map((l) => l.sport)));
+    return {
+      coachId,
+      firstName: profile.data.first_name,
+      lastName: profile.data.last_name,
+      sports,
+    };
+  });
+
+/**
+ * Creates athletes for the current parent and links each one to the coach
+ * resolved from the invite code.
+ */
+export const linkAthletesToCoach = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        code: codeSchema,
+        athletes: z
+          .array(
+            z.object({
+              firstName: z.string().trim().min(1, "Athlete first name required").max(80),
+              lastName: z.string().trim().min(1, "Athlete last name required").max(80),
+            }),
+          )
+          .min(1, "Add at least one athlete")
+          .max(20),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const userId = context.userId;
+
+    const codeLookup = await supabaseAdmin
+      .from("coach_invite_codes")
+      .select("coach_id")
+      .eq("code", data.code)
+      .maybeSingle();
+    if (codeLookup.error) throw new Error(codeLookup.error.message);
+    if (!codeLookup.data) throw new Error("Invalid invite code.");
+    const coachId = codeLookup.data.coach_id;
+
+    const parent = await supabaseAdmin
+      .from("parent_profiles")
+      .select("id")
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (parent.error) throw new Error(parent.error.message);
+    if (!parent.data) {
+      throw new Error("Parent profile not found. Please complete signup first.");
+    }
+    const parentId = parent.data.id;
+
     const athleteRows = data.athletes.map((a) => ({
       parent_id: parentId,
       first_name: a.firstName,
@@ -88,14 +156,11 @@ export const redeemInviteCodeAsParent = createServerFn({ method: "POST" })
       .select("id");
     if (athletesIns.error) throw new Error(athletesIns.error.message);
 
-    // 4. Link each athlete to the coach.
     const linkRows = (athletesIns.data ?? []).map((a) => ({
       coach_id: coachId,
       athlete_id: a.id,
     }));
-    const linksIns = await supabaseAdmin
-      .from("coach_athletes")
-      .insert(linkRows);
+    const linksIns = await supabaseAdmin.from("coach_athletes").insert(linkRows);
     if (linksIns.error) throw new Error(linksIns.error.message);
 
     return { ok: true };
