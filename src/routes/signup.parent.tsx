@@ -9,10 +9,6 @@ import { Logo } from "@/components/logo";
 import { startParentSignup } from "@/lib/parent-signup.functions";
 
 export const Route = createFileRoute("/signup/parent")({
-  beforeLoad: async () => {
-    const { data } = await supabase.auth.getSession();
-    if (data.session) throw redirect({ to: "/parent" });
-  },
   component: ParentSignupPage,
 });
 
