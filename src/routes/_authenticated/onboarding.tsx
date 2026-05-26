@@ -13,10 +13,16 @@ import {
   useSaveCoachLevels,
   useSaveCoachProfile,
 } from "@/hooks/use-coach-profile";
+import { coachInviteQueryOptions } from "@/hooks/use-coach-invite";
+import { InviteCard } from "@/components/onboarding/invite-card";
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 export const Route = createFileRoute("/_authenticated/onboarding")({
-  loader: ({ context }) => context.queryClient.ensureQueryData(coachProfileQueryOptions),
+  loader: ({ context }) => {
+    // Prime both queries — invite is shown on step 5.
+    context.queryClient.prefetchQuery(coachInviteQueryOptions);
+    return context.queryClient.ensureQueryData(coachProfileQueryOptions);
+  },
   component: OnboardingPage,
 });
 
@@ -116,13 +122,13 @@ function OnboardingPage() {
       <div className="w-full max-w-2xl rounded-2xl bg-card p-8 shadow-[0_10px_40px_-12px_rgba(0,0,0,0.15)] sm:p-10">
         <div className="mb-8 flex items-center justify-between">
           <p className="text-xs font-bold uppercase tracking-widest text-accent-ink">
-            Step {step} of 5
+            Step {step} of 6
           </p>
           <div className="flex gap-1.5">
-            {[1, 2, 3, 4, 5].map((n) => (
+            {[1, 2, 3, 4, 5, 6].map((n) => (
               <span
                 key={n}
-                className={`h-1.5 w-8 rounded-full ${
+                className={`h-1.5 w-6 rounded-full ${
                   n <= step ? "bg-accent" : "bg-divider"
                 }`}
               />
@@ -280,6 +286,15 @@ function OnboardingPage() {
         )}
 
         {step === 5 && (
+          <Step
+            title="Invite parents"
+            subtitle="Generate your invite code. Parents enter it to add their athlete to your roster."
+          >
+            <InviteCard />
+          </Step>
+        )}
+
+        {step === 6 && (
           <Step title="Looks good?" subtitle="Review and finish.">
             <ReviewSummary
               firstName={firstName}
@@ -298,7 +313,7 @@ function OnboardingPage() {
           >
             Back
           </Button>
-          {step < 5 ? (
+          {step < 6 ? (
             <Button onClick={handleContinue} disabled={!canContinue || busy}>
               {busy ? "Saving…" : "Continue"}
             </Button>

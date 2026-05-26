@@ -14,6 +14,38 @@ export type Database = {
   }
   public: {
     Tables: {
+      coach_invite_codes: {
+        Row: {
+          coach_id: string
+          code: string
+          created_at: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          coach_id: string
+          code: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          coach_id?: string
+          code?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coach_invite_codes_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: true
+            referencedRelation: "coach_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coach_levels: {
         Row: {
           coach_id: string
