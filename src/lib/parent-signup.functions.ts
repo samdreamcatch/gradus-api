@@ -365,7 +365,8 @@ export const saveAthleteSchedule = createServerFn({ method: "POST" })
           start_minute: s.startMinute,
           end_minute: s.endMinute,
           frequency: s.frequency,
-          weeks_of_month: s.frequency === "weekly" ? [] : s.weeksOfMonth,
+          weeks_of_month: s.frequency === "biweekly" || s.frequency === "weekly" ? [] : s.weeksOfMonth,
+          starts_on: s.frequency === "biweekly" ? s.startsOn : null,
         })),
       );
       if (ins.error) throw new Error(ins.error.message);
