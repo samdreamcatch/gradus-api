@@ -115,12 +115,16 @@ export const linkAthletesToCoach = createServerFn({ method: "POST" })
             z.object({
               firstName: z.string().trim().min(1, "Athlete first name required").max(80),
               lastName: z.string().trim().min(1, "Athlete last name required").max(80),
+              birthdate: z
+                .string()
+                .regex(/^\d{4}-\d{2}-\d{2}$/, "Birthdate required"),
             }),
           )
           .min(1, "Add at least one athlete")
           .max(20),
       })
       .parse(input),
+
   )
   .handler(async ({ data, context }) => {
     const userId = context.userId;
