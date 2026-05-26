@@ -16,7 +16,7 @@ export function Logo({ className }: LogoProps) {
         fontFamily: "var(--font-display)",
         fontWeight: 500,
         fontVariationSettings: '"SOFT" 100, "WONK" 1, "opsz" 144',
-        fontStyle: "italic",
+        fontStyle: "normal",
         lineHeight: 1,
         color: "var(--text-primary)",
         letterSpacing: "-0.015em",
