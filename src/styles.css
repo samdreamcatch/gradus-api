@@ -55,7 +55,7 @@
   --text-disabled: oklch(0.72 0.01 260);
 
   /* Tennis pen — default accent */
-  --pen-tennis: oklch(0.847 0.17 119);       /* desaturated tennis green */
+  --pen-tennis: oklch(0.847 0.19 119);       /* desaturated tennis green */
   --pen-tennis-wash: oklch(0.982 0.03 119);
   --pen-tennis-ink: oklch(0.339 0.095 119);
 
@@ -78,7 +78,7 @@
   --text-tertiary: oklch(0.55 0.015 260);
   --text-disabled: oklch(0.4 0.015 260);
 
-  --pen-tennis: oklch(0.847 0.17 119);
+  --pen-tennis: oklch(0.847 0.19 119);
   --pen-tennis-wash: oklch(0.32 0.06 119);
   --pen-tennis-ink: oklch(0.96 0.04 119);
 
