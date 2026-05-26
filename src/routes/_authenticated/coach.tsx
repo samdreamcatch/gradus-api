@@ -33,7 +33,7 @@ function CoachHome() {
         <p className="text-xs font-bold uppercase tracking-widest text-accent-ink">
           Coach
         </p>
-        <h1 className="mt-2 text-4xl font-bold">
+        <h1 className="mt-2 text-4xl">
           Signed in as <span className="pen-highlight">{displayName}</span>
         </h1>
         <p className="mt-4 text-sm text-muted-foreground">
