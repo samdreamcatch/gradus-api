@@ -96,8 +96,8 @@
     color: var(--color-foreground);
     font-family: var(--font-sans);
     background-image:
-      radial-gradient(1200px 800px at 100% 0%, color-mix(in oklab, var(--accent) 18%, transparent), transparent 60%),
-      radial-gradient(1000px 700px at 0% 100%, color-mix(in oklab, var(--accent) 14%, transparent), transparent 60%),
+      radial-gradient(1200px 800px at 100% 0%, color-mix(in oklab, var(--accent) 34%, transparent), transparent 60%),
+      radial-gradient(1000px 700px at 0% 100%, color-mix(in oklab, var(--accent) 28%, transparent), transparent 60%),
       repeating-linear-gradient(
         to bottom,
         transparent 0px,
