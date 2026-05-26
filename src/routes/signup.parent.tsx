@@ -26,14 +26,17 @@ function ParentSignupPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [code, setCode] = useState("");
-  const [athletes, setAthletes] = useState<string[]>([""]);
+  const [athletes, setAthletes] = useState<{ firstName: string; lastName: string }[]>([
+    { firstName: "", lastName: "" },
+  ]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const updateAthlete = (i: number, v: string) => {
-    setAthletes((arr) => arr.map((a, idx) => (idx === i ? v : a)));
+  const updateAthlete = (i: number, field: "firstName" | "lastName", v: string) => {
+    setAthletes((arr) => arr.map((a, idx) => (idx === i ? { ...a, [field]: v } : a)));
   };
-  const addAthlete = () => setAthletes((arr) => [...arr, ""]);
+  const addAthlete = () =>
+    setAthletes((arr) => [...arr, { firstName: "", lastName: "" }]);
   const removeAthlete = (i: number) =>
     setAthletes((arr) => (arr.length === 1 ? arr : arr.filter((_, idx) => idx !== i)));
 
@@ -41,9 +44,11 @@ function ParentSignupPage() {
     e.preventDefault();
     setError(null);
 
-    const cleanedAthletes = athletes.map((a) => a.trim()).filter(Boolean);
+    const cleanedAthletes = athletes
+      .map((a) => ({ firstName: a.firstName.trim(), lastName: a.lastName.trim() }))
+      .filter((a) => a.firstName && a.lastName);
     if (cleanedAthletes.length === 0) {
-      setError("Add at least one athlete.");
+      setError("Add at least one athlete with first and last name.");
       return;
     }
 
@@ -127,17 +132,28 @@ function ParentSignupPage() {
           </div>
 
           <div className="space-y-2">
-            <Label>Athlete first name{athletes.length > 1 ? "s" : ""}</Label>
-            <div className="space-y-2">
+            <Label>Athlete name{athletes.length > 1 ? "s" : ""}</Label>
+            <div className="space-y-3">
               {athletes.map((a, i) => (
-                <div key={i} className="flex items-center gap-2">
-                  <Input
-                    value={a}
-                    onChange={(e) => updateAthlete(i, e.target.value)}
-                    placeholder={`Athlete ${i + 1}`}
-                    maxLength={80}
-                    required={i === 0}
-                  />
+                <div key={i} className="flex items-start gap-2">
+                  <div className="grid flex-1 grid-cols-2 gap-2">
+                    <Input
+                      value={a.firstName}
+                      onChange={(e) => updateAthlete(i, "firstName", e.target.value)}
+                      placeholder="First name"
+                      maxLength={80}
+                      required={i === 0}
+                      aria-label={`Athlete ${i + 1} first name`}
+                    />
+                    <Input
+                      value={a.lastName}
+                      onChange={(e) => updateAthlete(i, "lastName", e.target.value)}
+                      placeholder="Last name"
+                      maxLength={80}
+                      required={i === 0}
+                      aria-label={`Athlete ${i + 1} last name`}
+                    />
+                  </div>
                   {athletes.length > 1 && (
                     <Button
                       type="button"
