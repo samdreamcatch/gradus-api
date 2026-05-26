@@ -22,7 +22,7 @@ function CoachHome() {
 
   // Gate: not onboarded → wizard
   useEffect(() => {
-    if (!data.profile.onboardedAt) navigate({ to: "/onboarding" });
+    if (!data.profile.onboardedAt) navigate({ to: "/coach/onboarding" });
   }, [data.profile.onboardedAt, navigate]);
 
   const handleSignOut = async () => {
