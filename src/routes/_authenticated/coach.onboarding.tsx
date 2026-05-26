@@ -19,7 +19,7 @@ import { InviteCard } from "@/components/onboarding/invite-card";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { getMyRole } from "@/lib/parent-signup.functions";
 
-export const Route = createFileRoute("/_authenticated/onboarding")({
+export const Route = createFileRoute("/_authenticated/coach/onboarding")({
   beforeLoad: async () => {
     // /onboarding is the coach onboarding wizard. Bounce parents back to /parent
     // so they don't get auto-converted into coaches by entering the wizard.
