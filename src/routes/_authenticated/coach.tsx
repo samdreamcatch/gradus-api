@@ -4,10 +4,15 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { coachProfileQueryOptions } from "@/hooks/use-coach-profile";
+import { coachInviteQueryOptions } from "@/hooks/use-coach-invite";
+import { InviteCard } from "@/components/onboarding/invite-card";
 import { getSport, getSportLevel, type SportKey } from "@/lib/coach-sports";
 
 export const Route = createFileRoute("/_authenticated/coach")({
-  loader: ({ context }) => context.queryClient.ensureQueryData(coachProfileQueryOptions),
+  loader: ({ context }) => {
+    context.queryClient.prefetchQuery(coachInviteQueryOptions);
+    return context.queryClient.ensureQueryData(coachProfileQueryOptions);
+  },
   component: CoachHome,
 });
 
