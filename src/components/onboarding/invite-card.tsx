@@ -51,7 +51,7 @@ export function InviteCard({ compact = false }: InviteCardProps) {
   const chip = (
     <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
       <div
-        aria-label="Your invite code"
+        aria-label="Your parent invite code"
         className="flex-1 rounded-md border border-divider bg-elevated px-5 py-4 text-center font-mono text-2xl tracking-[0.25em] text-text-primary sm:text-3xl"
       >
         {isLoading || !code ? (

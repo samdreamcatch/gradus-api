@@ -287,7 +287,7 @@ function OnboardingPage() {
 
         {step === 5 && (
           <Step
-            title="Invite parents"
+            title="Invite Parents"
             subtitle="Generate your invite code. Parents enter it to add their athlete to your roster."
           >
             <InviteCard />

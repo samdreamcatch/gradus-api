@@ -59,7 +59,7 @@ function CoachHome() {
 
         <div className="mt-8 rounded-xl border border-divider bg-elevated p-5">
           <p className="text-xs font-bold uppercase tracking-widest text-accent-ink">
-            Invite code
+            Invite Parents
           </p>
           <div className="mt-3">
             <InviteCard compact />
