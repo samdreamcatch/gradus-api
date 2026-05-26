@@ -1,19 +1,8 @@
 import { useState } from "react";
-import { Copy, Check, RefreshCw } from "lucide-react";
+import { Copy, Check } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { useCoachInvite, useRotateCoachInvite } from "@/hooks/use-coach-invite";
+import { useCoachInvite } from "@/hooks/use-coach-invite";
 
 interface InviteCardProps {
   /** When true, render only the code chip + copy button (no headline/rotate). */
@@ -22,7 +11,6 @@ interface InviteCardProps {
 
 export function InviteCard({ compact = false }: InviteCardProps) {
   const { data, isLoading, error } = useCoachInvite();
-  const rotate = useRotateCoachInvite();
   const [copied, setCopied] = useState(false);
 
   const code = data?.code;
@@ -39,14 +27,7 @@ export function InviteCard({ compact = false }: InviteCardProps) {
     }
   };
 
-  const handleRotate = async () => {
-    try {
-      await rotate.mutateAsync();
-      toast.success("New code generated. The old code no longer works.");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't rotate code");
-    }
-  };
+
 
   const chip = (
     <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
@@ -98,39 +79,6 @@ export function InviteCard({ compact = false }: InviteCardProps) {
         Share this with parents to add their athlete to your roster.
       </p>
 
-      <div className="mt-6 flex items-center justify-between border-t border-divider/60 pt-4">
-        <p className="text-xs uppercase tracking-wider text-text-secondary">
-          Shared too widely?
-        </p>
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              disabled={!code || rotate.isPending}
-            >
-              <RefreshCw className="size-4" aria-hidden />
-              {rotate.isPending ? "Generating…" : "Generate a new code"}
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Generate a new invite code?</AlertDialogTitle>
-              <AlertDialogDescription>
-                The current code will stop working immediately. Anyone you've
-                already shared it with will need the new code to join.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleRotate}>
-                Generate new code
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </div>
 
       {error && (
         <p className="mt-2 text-xs text-destructive">{(error as Error).message}</p>
