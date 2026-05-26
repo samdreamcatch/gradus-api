@@ -45,8 +45,8 @@
   /* Surfaces — cool slate paper */
   --background: oklch(0.972 0.005 250);   /* #F5F6FA */
   --foreground: oklch(0.27 0.02 260);      /* #1F2937 ink */
-  --card: oklch(1 0 0 / 0.72);             /* translucent so paper shows through */
-  --elevated: oklch(0.982 0.004 250 / 0.78);
+  --card: oklch(1 0 0 / 0.55);             /* translucent so paper shows through */
+  --elevated: oklch(0.982 0.004 250 / 0.62);
   --divider: oklch(0.92 0.005 260);        /* #E6E7EB */
 
   --text-primary: oklch(0.27 0.02 260);
@@ -69,8 +69,8 @@
 .dark {
   --background: oklch(0.22 0.02 260);
   --foreground: oklch(0.95 0.005 250);
-  --card: oklch(0.27 0.02 260 / 0.7);
-  --elevated: oklch(0.3 0.02 260 / 0.78);
+  --card: oklch(0.27 0.02 260 / 0.55);
+  --elevated: oklch(0.3 0.02 260 / 0.62);
   --divider: oklch(0.35 0.02 260);
 
   --text-primary: oklch(0.95 0.005 250);
