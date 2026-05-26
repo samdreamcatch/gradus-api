@@ -362,6 +362,7 @@ export const saveAthleteSchedule = createServerFn({ method: "POST" })
           day_of_week: s.dayOfWeek,
           start_minute: s.startMinute,
           end_minute: s.endMinute,
+          frequency: s.frequency,
         })),
       );
       if (ins.error) throw new Error(ins.error.message);
