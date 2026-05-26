@@ -23,7 +23,7 @@
   --color-foreground: var(--foreground);
   --color-card: var(--card);
   --color-card-foreground: var(--foreground);
-  --color-popover: var(--card);
+  --color-popover: var(--popover);
   --color-popover-foreground: var(--foreground);
   --color-elevated: var(--elevated);
   --color-muted: var(--elevated);
