@@ -8,9 +8,12 @@ import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/logo";
 
 export const Route = createFileRoute("/login")({
-  validateSearch: (s: Record<string, unknown>) => ({
-    redirect: typeof s.redirect === "string" ? s.redirect : "/coach",
-  }),
+  validateSearch: (s: Record<string, unknown>) => {
+    const raw = typeof s.redirect === "string" ? s.redirect : "/coach";
+    // Only allow internal paths to prevent open-redirect attacks
+    const safe = raw.startsWith("/") && !raw.startsWith("//") ? raw : "/coach";
+    return { redirect: safe };
+  },
   beforeLoad: async ({ search }) => {
     const { data } = await supabase.auth.getSession();
     if (data.session) throw redirect({ to: search.redirect });
