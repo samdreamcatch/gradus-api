@@ -1,13 +1,12 @@
 import { useState, type FormEvent } from "react";
 import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { Plus, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/logo";
-import { redeemInviteCodeAsParent } from "@/lib/parent-signup.functions";
+import { startParentSignup } from "@/lib/parent-signup.functions";
 
 export const Route = createFileRoute("/signup/parent")({
   beforeLoad: async () => {
@@ -19,39 +18,19 @@ export const Route = createFileRoute("/signup/parent")({
 
 function ParentSignupPage() {
   const navigate = useNavigate();
-  const redeem = useServerFn(redeemInviteCodeAsParent);
+  const start = useServerFn(startParentSignup);
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [code, setCode] = useState("");
-  const [athletes, setAthletes] = useState<{ firstName: string; lastName: string }[]>([
-    { firstName: "", lastName: "" },
-  ]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-
-  const updateAthlete = (i: number, field: "firstName" | "lastName", v: string) => {
-    setAthletes((arr) => arr.map((a, idx) => (idx === i ? { ...a, [field]: v } : a)));
-  };
-  const addAthlete = () =>
-    setAthletes((arr) => [...arr, { firstName: "", lastName: "" }]);
-  const removeAthlete = (i: number) =>
-    setAthletes((arr) => (arr.length === 1 ? arr : arr.filter((_, idx) => idx !== i)));
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
-
-    const cleanedAthletes = athletes
-      .map((a) => ({ firstName: a.firstName.trim(), lastName: a.lastName.trim() }))
-      .filter((a) => a.firstName && a.lastName);
-    if (cleanedAthletes.length === 0) {
-      setError("Add at least one athlete with first and last name.");
-      return;
-    }
-
     setLoading(true);
     try {
       const { error: signUpErr } = await supabase.auth.signUp({
@@ -64,17 +43,11 @@ function ParentSignupPage() {
       });
       if (signUpErr) throw signUpErr;
 
-      // signUp signs the user in (assuming email confirmations off).
-      await redeem({
-        data: {
-          firstName,
-          lastName,
-          code: code.trim().toUpperCase(),
-          athletes: cleanedAthletes,
-        },
+      const { code: normalized } = await start({
+        data: { firstName, lastName, code: code.trim().toUpperCase() },
       });
 
-      navigate({ to: "/parent" });
+      navigate({ to: "/signup/parent/athletes", search: { code: normalized } });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");
     } finally {
@@ -131,50 +104,10 @@ function ParentSignupPage() {
             <p className="text-xs text-text-tertiary">Ask your coach for their 8-character code.</p>
           </div>
 
-          <div className="space-y-2">
-            <Label>Athlete name{athletes.length > 1 ? "s" : ""}</Label>
-            <div className="space-y-3">
-              {athletes.map((a, i) => (
-                <div key={i} className="flex items-start gap-2">
-                  <div className="grid flex-1 grid-cols-2 gap-2">
-                    <Input
-                      value={a.firstName}
-                      onChange={(e) => updateAthlete(i, "firstName", e.target.value)}
-                      maxLength={80}
-                      required={i === 0}
-                      aria-label={`Athlete ${i + 1} first name`}
-                    />
-                    <Input
-                      value={a.lastName}
-                      onChange={(e) => updateAthlete(i, "lastName", e.target.value)}
-                      maxLength={80}
-                      required={i === 0}
-                      aria-label={`Athlete ${i + 1} last name`}
-                    />
-                  </div>
-                  {athletes.length > 1 && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => removeAthlete(i)}
-                      aria-label={`Remove athlete ${i + 1}`}
-                    >
-                      <X className="size-4" />
-                    </Button>
-                  )}
-                </div>
-              ))}
-            </div>
-            <Button type="button" variant="ghost" size="sm" onClick={addAthlete} className="text-accent-ink">
-              <Plus className="size-4" /> Add another athlete
-            </Button>
-          </div>
-
           {error && <p className="text-sm text-destructive">{error}</p>}
 
           <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "Creating account..." : "Create parent account"}
+            {loading ? "Creating account..." : "Continue"}
           </Button>
         </form>
 
