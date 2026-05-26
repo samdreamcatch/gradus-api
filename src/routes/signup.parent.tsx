@@ -119,7 +119,7 @@ function ParentSignupPage() {
               required
               maxLength={8}
               minLength={8}
-              placeholder="A3K9F2X7"
+              placeholder="––––––––"
               className="font-mono tracking-[0.25em] uppercase"
               autoComplete="off"
             />
