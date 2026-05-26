@@ -38,7 +38,7 @@ export const SPORTS: Sport[] = [
   },
   {
     key: "golf",
-    label: "Golf",
+    label: "Golf: Practice Expectations",
     standard: "USGA handicap brackets",
     levels: [
       { key: "beginner", label: "Beginner", hint: "No handicap yet" },
