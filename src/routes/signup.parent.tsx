@@ -140,7 +140,6 @@ function ParentSignupPage() {
                     <Input
                       value={a.firstName}
                       onChange={(e) => updateAthlete(i, "firstName", e.target.value)}
-                      placeholder="First name"
                       maxLength={80}
                       required={i === 0}
                       aria-label={`Athlete ${i + 1} first name`}
@@ -148,7 +147,6 @@ function ParentSignupPage() {
                     <Input
                       value={a.lastName}
                       onChange={(e) => updateAthlete(i, "lastName", e.target.value)}
-                      placeholder="Last name"
                       maxLength={80}
                       required={i === 0}
                       aria-label={`Athlete ${i + 1} last name`}
