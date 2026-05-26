@@ -84,7 +84,7 @@ function ParentSchedulePage() {
   const athletes = data?.athletes ?? [];
   const current = athletes[index];
   const slots: Slot[] = byAthlete[current?.id ?? ""] ?? [
-    { dayOfWeek: null, startMinute: null, endMinute: null },
+    { dayOfWeek: null, startMinute: null, endMinute: null, frequency: "weekly" },
   ];
 
   const setSlots = (next: Slot[]) => {
@@ -94,7 +94,10 @@ function ParentSchedulePage() {
   const updateSlot = (i: number, patch: Partial<Slot>) =>
     setSlots(slots.map((s, idx) => (idx === i ? { ...s, ...patch } : s)));
   const addSlot = () =>
-    setSlots([...slots, { dayOfWeek: null, startMinute: null, endMinute: null }]);
+    setSlots([
+      ...slots,
+      { dayOfWeek: null, startMinute: null, endMinute: null, frequency: "weekly" },
+    ]);
   const removeSlot = (i: number) =>
     setSlots(slots.length === 1 ? slots : slots.filter((_, idx) => idx !== i));
 
@@ -106,13 +109,14 @@ function ParentSchedulePage() {
       ? []
       : slots
           .filter(
-            (s): s is { dayOfWeek: number; startMinute: number; endMinute: number } =>
+            (s): s is Slot & { dayOfWeek: number; startMinute: number; endMinute: number } =>
               s.dayOfWeek !== null && s.startMinute !== null && s.endMinute !== null,
           )
           .map((s) => ({
             dayOfWeek: s.dayOfWeek,
             startMinute: s.startMinute,
             endMinute: s.endMinute,
+            frequency: s.frequency,
           }));
 
     for (const s of cleaned) {
