@@ -11,6 +11,7 @@ import {
 
 import appCss from "../styles.css?url";
 import { supabase } from "@/integrations/supabase/client";
+import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
   return (
@@ -102,6 +103,7 @@ function RootComponent() {
       <main id="main">
         <Outlet />
       </main>
+      <Toaster />
     </QueryClientProvider>
   );
 }
