@@ -63,7 +63,28 @@ type Slot = {
   startMinute: number | null;
   endMinute: number | null;
   frequency: Frequency;
+  weeksOfMonth: number[];
 };
+
+const WEEK_OPTIONS: { value: number; label: string }[] = [
+  { value: 1, label: "1st" },
+  { value: 2, label: "2nd" },
+  { value: 3, label: "3rd" },
+  { value: 4, label: "4th" },
+  { value: 5, label: "Last" },
+];
+
+function weeksHelpText(f: Frequency): string {
+  if (f === "biweekly") return "Pick the 2 weeks of the month this lesson falls on.";
+  if (f === "twice_monthly") return "Pick the 2 weeks of the month for this lesson.";
+  if (f === "monthly") return "Pick the week of the month for this lesson.";
+  return "";
+}
+function weeksRequired(f: Frequency): number {
+  if (f === "biweekly" || f === "twice_monthly") return 2;
+  if (f === "monthly") return 1;
+  return 0;
+}
 
 function ParentSchedulePage() {
   const { code } = Route.useSearch();
