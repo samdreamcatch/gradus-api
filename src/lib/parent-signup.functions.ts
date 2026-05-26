@@ -13,7 +13,12 @@ const schema = z.object({
     .length(8, "Invite code must be 8 characters")
     .regex(/^[A-Z2-9]+$/, "Invalid characters in code"),
   athletes: z
-    .array(z.string().trim().min(1, "Athlete name required").max(80))
+    .array(
+      z.object({
+        firstName: z.string().trim().min(1, "Athlete first name required").max(80),
+        lastName: z.string().trim().min(1, "Athlete last name required").max(80),
+      }),
+    )
     .min(1, "Add at least one athlete")
     .max(20),
 });
