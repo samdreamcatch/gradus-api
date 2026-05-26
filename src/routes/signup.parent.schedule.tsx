@@ -316,7 +316,46 @@ function ParentSchedulePage() {
                       <X className="size-4" />
                     </Button>
                   )}
-                  {slot.frequency !== "weekly" && (
+                  {slot.frequency === "biweekly" && (
+                    <div className="basis-full space-y-1.5">
+                      <Label className="text-xs text-text-tertiary">
+                        Starting from — the lesson repeats every 2 weeks from this date.
+                      </Label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className={cn(
+                              "w-full justify-start text-left font-normal",
+                              !slot.startsOn && "text-text-tertiary",
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 size-4" />
+                            {slot.startsOn ? format(slot.startsOn, "EEE, MMM d, yyyy") : "Pick a start date"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={slot.startsOn ?? undefined}
+                            onSelect={(d) => updateSlot(i, { startsOn: d ?? null })}
+                            disabled={(date) =>
+                              slot.dayOfWeek !== null && date.getDay() !== slot.dayOfWeek
+                            }
+                            initialFocus
+                            className={cn("p-3 pointer-events-auto")}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      {slot.dayOfWeek === null && (
+                        <p className="text-xs text-text-tertiary">
+                          Tip: pick a day above first so the calendar only shows matching dates.
+                        </p>
+                      )}
+                    </div>
+                  )}
+                  {(slot.frequency === "twice_monthly" || slot.frequency === "monthly") && (
                     <div className="basis-full space-y-1.5">
                       <Label className="text-xs text-text-tertiary">
                         {weeksHelpText(slot.frequency)}
