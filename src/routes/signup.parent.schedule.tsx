@@ -37,6 +37,14 @@ const DAYS = [
   { value: 6, label: "Saturday" },
 ];
 
+type Frequency = "weekly" | "biweekly" | "twice_monthly" | "monthly";
+const FREQUENCIES: { value: Frequency; label: string }[] = [
+  { value: "weekly", label: "Weekly" },
+  { value: "biweekly", label: "Every other week" },
+  { value: "twice_monthly", label: "2x per month" },
+  { value: "monthly", label: "1x per month" },
+];
+
 // 15-min increments from 6:00 AM (360) to 9:45 PM (1305)
 const TIME_OPTIONS: { value: number; label: string }[] = [];
 for (let m = 360; m <= 1305; m += 15) {
@@ -50,7 +58,12 @@ for (let m = 360; m <= 1305; m += 15) {
   });
 }
 
-type Slot = { dayOfWeek: number | null; startMinute: number | null; endMinute: number | null };
+type Slot = {
+  dayOfWeek: number | null;
+  startMinute: number | null;
+  endMinute: number | null;
+  frequency: Frequency;
+};
 
 function ParentSchedulePage() {
   const { code } = Route.useSearch();
