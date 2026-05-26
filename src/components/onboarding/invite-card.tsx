@@ -100,7 +100,7 @@ export function InviteCard({ compact = false }: InviteCardProps) {
 
       <div className="mt-6 flex items-center justify-between border-t border-divider/60 pt-4">
         <p className="text-xs uppercase tracking-wider text-text-secondary">
-          Lost or shared too widely?
+          Shared too widely?
         </p>
         <AlertDialog>
           <AlertDialogTrigger asChild>
