@@ -68,6 +68,7 @@ type Slot = {
   endMinute: number | null;
   frequency: Frequency;
   weeksOfMonth: number[];
+  startsOn: Date | null;
 };
 
 const WEEK_OPTIONS: { value: number; label: string }[] = [
@@ -79,15 +80,21 @@ const WEEK_OPTIONS: { value: number; label: string }[] = [
 ];
 
 function weeksHelpText(f: Frequency): string {
-  if (f === "biweekly") return "Pick the 2 weeks of the month this lesson falls on.";
   if (f === "twice_monthly") return "Pick the 2 weeks of the month for this lesson.";
   if (f === "monthly") return "Pick the week of the month for this lesson.";
   return "";
 }
 function weeksRequired(f: Frequency): number {
-  if (f === "biweekly" || f === "twice_monthly") return 2;
+  if (f === "twice_monthly") return 2;
   if (f === "monthly") return 1;
   return 0;
+}
+
+function toISODate(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }
 
 function ParentSchedulePage() {
