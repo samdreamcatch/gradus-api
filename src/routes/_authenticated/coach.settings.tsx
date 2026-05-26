@@ -46,7 +46,7 @@ function SettingsPage() {
         <NameSection firstName={data.profile.firstName} lastName={data.profile.lastName} />
         <LevelsSection levels={data.levels} />
         <PracticeSection levels={data.levels} />
-        <SectionCard title="Invite code">
+        <SectionCard title="Invite Parents">
           <InviteCard />
         </SectionCard>
       </div>
