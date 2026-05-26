@@ -298,6 +298,7 @@ export type Database = {
       }
       parent_profiles: {
         Row: {
+          coach_id: string | null
           created_at: string
           first_name: string
           id: string
@@ -306,6 +307,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          coach_id?: string | null
           created_at?: string
           first_name?: string
           id?: string
@@ -314,6 +316,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          coach_id?: string | null
           created_at?: string
           first_name?: string
           id?: string
@@ -321,7 +324,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "parent_profiles_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "coach_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
