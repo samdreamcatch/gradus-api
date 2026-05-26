@@ -122,13 +122,13 @@ function OnboardingPage() {
       <div className="w-full max-w-2xl rounded-2xl bg-card p-8 shadow-[0_10px_40px_-12px_rgba(0,0,0,0.15)] sm:p-10">
         <div className="mb-8 flex items-center justify-between">
           <p className="text-xs font-bold uppercase tracking-widest text-accent-ink">
-            Step {step} of 5
+            Step {step} of 6
           </p>
           <div className="flex gap-1.5">
-            {[1, 2, 3, 4, 5].map((n) => (
+            {[1, 2, 3, 4, 5, 6].map((n) => (
               <span
                 key={n}
-                className={`h-1.5 w-8 rounded-full ${
+                className={`h-1.5 w-6 rounded-full ${
                   n <= step ? "bg-accent" : "bg-divider"
                 }`}
               />
