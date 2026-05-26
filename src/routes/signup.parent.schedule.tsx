@@ -2,10 +2,14 @@ import { useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { Plus, X } from "lucide-react";
+import { Plus, X, CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
 import { z } from "zod";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -64,6 +68,7 @@ type Slot = {
   endMinute: number | null;
   frequency: Frequency;
   weeksOfMonth: number[];
+  startsOn: Date | null;
 };
 
 const WEEK_OPTIONS: { value: number; label: string }[] = [
@@ -75,15 +80,21 @@ const WEEK_OPTIONS: { value: number; label: string }[] = [
 ];
 
 function weeksHelpText(f: Frequency): string {
-  if (f === "biweekly") return "Pick the 2 weeks of the month this lesson falls on.";
   if (f === "twice_monthly") return "Pick the 2 weeks of the month for this lesson.";
   if (f === "monthly") return "Pick the week of the month for this lesson.";
   return "";
 }
 function weeksRequired(f: Frequency): number {
-  if (f === "biweekly" || f === "twice_monthly") return 2;
+  if (f === "twice_monthly") return 2;
   if (f === "monthly") return 1;
   return 0;
+}
+
+function toISODate(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }
 
 function ParentSchedulePage() {
@@ -105,7 +116,7 @@ function ParentSchedulePage() {
   const athletes = data?.athletes ?? [];
   const current = athletes[index];
   const slots: Slot[] = byAthlete[current?.id ?? ""] ?? [
-    { dayOfWeek: null, startMinute: null, endMinute: null, frequency: "weekly", weeksOfMonth: [] },
+    { dayOfWeek: null, startMinute: null, endMinute: null, frequency: "weekly", weeksOfMonth: [], startsOn: null },
   ];
 
   const setSlots = (next: Slot[]) => {
@@ -117,7 +128,7 @@ function ParentSchedulePage() {
   const addSlot = () =>
     setSlots([
       ...slots,
-      { dayOfWeek: null, startMinute: null, endMinute: null, frequency: "weekly", weeksOfMonth: [] },
+      { dayOfWeek: null, startMinute: null, endMinute: null, frequency: "weekly", weeksOfMonth: [], startsOn: null },
     ]);
   const removeSlot = (i: number) =>
     setSlots(slots.length === 1 ? slots : slots.filter((_, idx) => idx !== i));
@@ -138,7 +149,11 @@ function ParentSchedulePage() {
             startMinute: s.startMinute,
             endMinute: s.endMinute,
             frequency: s.frequency,
-            weeksOfMonth: s.frequency === "weekly" ? [] : [...s.weeksOfMonth].sort((a, b) => a - b),
+            weeksOfMonth:
+              s.frequency === "weekly" || s.frequency === "biweekly"
+                ? []
+                : [...s.weeksOfMonth].sort((a, b) => a - b),
+            startsOn: s.frequency === "biweekly" && s.startsOn ? toISODate(s.startsOn) : null,
           }));
 
     for (const s of cleaned) {
@@ -151,8 +166,12 @@ function ParentSchedulePage() {
         setFormError(
           need === 1
             ? "Pick which week of the month for every monthly lesson."
-            : "Pick 2 weeks of the month for every biweekly or 2x-monthly lesson.",
+            : "Pick 2 weeks of the month for every 2x-monthly lesson.",
         );
+        return;
+      }
+      if (s.frequency === "biweekly" && !s.startsOn) {
+        setFormError("Pick a starting date for every every-other-week lesson.");
         return;
       }
     }
@@ -271,7 +290,7 @@ function ParentSchedulePage() {
                       value={slot.frequency}
                       onValueChange={(v) => {
                         const f = v as Frequency;
-                        updateSlot(i, { frequency: f, weeksOfMonth: [] });
+                        updateSlot(i, { frequency: f, weeksOfMonth: [], startsOn: null });
                       }}
                     >
                       <SelectTrigger>
@@ -297,7 +316,46 @@ function ParentSchedulePage() {
                       <X className="size-4" />
                     </Button>
                   )}
-                  {slot.frequency !== "weekly" && (
+                  {slot.frequency === "biweekly" && (
+                    <div className="basis-full space-y-1.5">
+                      <Label className="text-xs text-text-tertiary">
+                        Starting from — the lesson repeats every 2 weeks from this date.
+                      </Label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className={cn(
+                              "w-full justify-start text-left font-normal",
+                              !slot.startsOn && "text-text-tertiary",
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 size-4" />
+                            {slot.startsOn ? format(slot.startsOn, "EEE, MMM d, yyyy") : "Pick a start date"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={slot.startsOn ?? undefined}
+                            onSelect={(d) => updateSlot(i, { startsOn: d ?? null })}
+                            disabled={(date) =>
+                              slot.dayOfWeek !== null && date.getDay() !== slot.dayOfWeek
+                            }
+                            initialFocus
+                            className={cn("p-3 pointer-events-auto")}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      {slot.dayOfWeek === null && (
+                        <p className="text-xs text-text-tertiary">
+                          Tip: pick a day above first so the calendar only shows matching dates.
+                        </p>
+                      )}
+                    </div>
+                  )}
+                  {(slot.frequency === "twice_monthly" || slot.frequency === "monthly") && (
                     <div className="basis-full space-y-1.5">
                       <Label className="text-xs text-text-tertiary">
                         {weeksHelpText(slot.frequency)}

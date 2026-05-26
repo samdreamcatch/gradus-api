@@ -90,6 +90,7 @@ export type Database = {
           frequency: string
           id: string
           start_minute: number
+          starts_on: string | null
           updated_at: string
           weeks_of_month: number[]
         }
@@ -102,6 +103,7 @@ export type Database = {
           frequency?: string
           id?: string
           start_minute: number
+          starts_on?: string | null
           updated_at?: string
           weeks_of_month?: number[]
         }
@@ -114,6 +116,7 @@ export type Database = {
           frequency?: string
           id?: string
           start_minute?: number
+          starts_on?: string | null
           updated_at?: string
           weeks_of_month?: number[]
         }
