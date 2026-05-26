@@ -19,7 +19,7 @@ export interface Sport {
 export const SPORTS: Sport[] = [
   {
     key: "tennis",
-    label: "Tennis",
+    label: "Tennis: Practice Expectations",
     standard: "USTA NTRP",
     levels: [
       { key: "ntrp_1_0", label: "NTRP 1.0", hint: "Just starting" },
