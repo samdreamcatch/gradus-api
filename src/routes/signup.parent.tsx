@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,11 @@ export const Route = createFileRoute("/signup/parent")({
 });
 
 function ParentSignupPage() {
+  const location = useLocation();
+  if (location.pathname !== "/signup/parent") {
+    return <Outlet />;
+  }
+
   const navigate = useNavigate();
   const start = useServerFn(startParentSignup);
 
