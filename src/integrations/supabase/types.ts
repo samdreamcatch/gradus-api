@@ -124,6 +124,7 @@ export type Database = {
       }
       athletes: {
         Row: {
+          birthdate: string | null
           created_at: string
           first_name: string
           id: string
@@ -132,6 +133,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          birthdate?: string | null
           created_at?: string
           first_name: string
           id?: string
@@ -140,6 +142,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          birthdate?: string | null
           created_at?: string
           first_name?: string
           id?: string

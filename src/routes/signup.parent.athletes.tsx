@@ -37,16 +37,21 @@ function ParentAthletesPage() {
     queryFn: () => fetchCoach({ data: { code } }),
   });
 
-  const [athletes, setAthletes] = useState<{ firstName: string; lastName: string }[]>([
-    { firstName: "", lastName: "" },
-  ]);
+  const [athletes, setAthletes] = useState<
+    { firstName: string; lastName: string; birthdate: string }[]
+  >([{ firstName: "", lastName: "", birthdate: "" }]);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const updateAthlete = (i: number, field: "firstName" | "lastName", v: string) => {
+  const updateAthlete = (
+    i: number,
+    field: "firstName" | "lastName" | "birthdate",
+    v: string,
+  ) => {
     setAthletes((arr) => arr.map((a, idx) => (idx === i ? { ...a, [field]: v } : a)));
   };
-  const addAthlete = () => setAthletes((arr) => [...arr, { firstName: "", lastName: "" }]);
+  const addAthlete = () =>
+    setAthletes((arr) => [...arr, { firstName: "", lastName: "", birthdate: "" }]);
   const removeAthlete = (i: number) =>
     setAthletes((arr) => (arr.length === 1 ? arr : arr.filter((_, idx) => idx !== i)));
 
@@ -55,10 +60,14 @@ function ParentAthletesPage() {
     setError(null);
 
     const cleaned = athletes
-      .map((a) => ({ firstName: a.firstName.trim(), lastName: a.lastName.trim() }))
-      .filter((a) => a.firstName && a.lastName);
+      .map((a) => ({
+        firstName: a.firstName.trim(),
+        lastName: a.lastName.trim(),
+        birthdate: a.birthdate,
+      }))
+      .filter((a) => a.firstName && a.lastName && a.birthdate);
     if (cleaned.length === 0) {
-      setError("Add at least one athlete with first and last name.");
+      setError("Add at least one athlete with name and birthdate.");
       return;
     }
 
@@ -72,6 +81,7 @@ function ParentAthletesPage() {
       setSubmitting(false);
     }
   };
+
 
   const coachName = coach ? `${coach.firstName} ${coach.lastName}`.trim() : null;
 
@@ -122,22 +132,33 @@ function ParentAthletesPage() {
             <div className="space-y-3 pt-1">
               {athletes.map((a, i) => (
                 <div key={i} className="flex items-start gap-2">
-                  <div className="grid flex-1 grid-cols-2 gap-2">
+                  <div className="flex-1 space-y-2">
+                    <div className="grid grid-cols-2 gap-2">
+                      <Input
+                        value={a.firstName}
+                        onChange={(e) => updateAthlete(i, "firstName", e.target.value)}
+                        maxLength={80}
+                        required={i === 0}
+                        aria-label={`Athlete ${i + 1} first name`}
+                        placeholder="First name"
+                      />
+                      <Input
+                        value={a.lastName}
+                        onChange={(e) => updateAthlete(i, "lastName", e.target.value)}
+                        maxLength={80}
+                        required={i === 0}
+                        aria-label={`Athlete ${i + 1} last name`}
+                        placeholder="Last name"
+                      />
+                    </div>
                     <Input
-                      value={a.firstName}
-                      onChange={(e) => updateAthlete(i, "firstName", e.target.value)}
-                      maxLength={80}
+                      type="date"
+                      value={a.birthdate}
+                      onChange={(e) => updateAthlete(i, "birthdate", e.target.value)}
                       required={i === 0}
-                      aria-label={`Athlete ${i + 1} first name`}
-                      placeholder="First name"
-                    />
-                    <Input
-                      value={a.lastName}
-                      onChange={(e) => updateAthlete(i, "lastName", e.target.value)}
-                      maxLength={80}
-                      required={i === 0}
-                      aria-label={`Athlete ${i + 1} last name`}
-                      placeholder="Last name"
+                      max={new Date().toISOString().slice(0, 10)}
+                      aria-label={`Athlete ${i + 1} birthdate`}
+                      placeholder="Birthdate"
                     />
                   </div>
                   {athletes.length > 1 && (
@@ -153,6 +174,7 @@ function ParentAthletesPage() {
                   )}
                 </div>
               ))}
+
             </div>
             <Button
               type="button"
