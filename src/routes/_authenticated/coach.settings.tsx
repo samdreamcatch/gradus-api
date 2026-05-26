@@ -13,9 +13,14 @@ import {
   useSaveCoachLevels,
   useSaveCoachProfile,
 } from "@/hooks/use-coach-profile";
+import { coachInviteQueryOptions } from "@/hooks/use-coach-invite";
+import { InviteCard } from "@/components/onboarding/invite-card";
 
 export const Route = createFileRoute("/_authenticated/coach/settings")({
-  loader: ({ context }) => context.queryClient.ensureQueryData(coachProfileQueryOptions),
+  loader: ({ context }) => {
+    context.queryClient.prefetchQuery(coachInviteQueryOptions);
+    return context.queryClient.ensureQueryData(coachProfileQueryOptions);
+  },
   component: SettingsPage,
 });
 
@@ -41,6 +46,9 @@ function SettingsPage() {
         <NameSection firstName={data.profile.firstName} lastName={data.profile.lastName} />
         <LevelsSection levels={data.levels} />
         <PracticeSection levels={data.levels} />
+        <SectionCard title="Invite code">
+          <InviteCard />
+        </SectionCard>
       </div>
     </div>
   );
