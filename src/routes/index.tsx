@@ -2,15 +2,20 @@ import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Logo } from "@/components/logo";
+import { getMyRole } from "@/lib/parent-signup.functions";
 
 export const Route = createFileRoute("/")({
   beforeLoad: async () => {
     const { data } = await supabase.auth.getSession();
-    // Signed-in users get sent to their workspace. We don't know which role
-    // without a server call — let /login handle that branching by reusing
-    // its post-signin redirect logic. For simplicity, send them to /coach
-    // and the _authenticated guard / route component will sort it out.
-    if (data.session) throw redirect({ to: "/coach" });
+    if (!data.session) return;
+    try {
+      const { role } = await getMyRole();
+      if (role === "parent") throw redirect({ to: "/parent" });
+      if (role === "coach") throw redirect({ to: "/coach" });
+    } catch (e) {
+      // Re-throw redirects; swallow auth errors and just show the picker.
+      if (e && typeof e === "object" && "isRedirect" in e) throw e;
+    }
   },
   component: RolePicker,
 });
