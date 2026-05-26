@@ -29,6 +29,18 @@ async function ensureProfile(supabase: Client, userId: string) {
   if (existing.error) throw new Error(existing.error.message);
   if (existing.data) return existing.data;
 
+  // Guard: don't silently turn a parent into a coach. A coach_profiles row
+  // should only be created via the explicit coach signup flow.
+  const parent = await supabase
+    .from("parent_profiles")
+    .select("id")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (parent.error) throw new Error(parent.error.message);
+  if (parent.data) {
+    throw new Error("This account is registered as a parent, not a coach.");
+  }
+
   const created = await supabase
     .from("coach_profiles")
     .insert({ user_id: userId })
