@@ -66,7 +66,7 @@ function LoginPage() {
     setLoading(true);
     try {
       const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin + (search.redirect || "/coach"),
+        redirect_uri: window.location.origin + (search.redirect || "/"),
       });
       if (result.error) throw result.error;
       if (!result.redirected) await routeByRole();
