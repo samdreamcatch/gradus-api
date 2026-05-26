@@ -1,75 +1,84 @@
-# First-name welcome + Handwritten font accessibility pass
+# Coach invite code — MVP (reusable per-coach)
 
-## 1. First-name welcome
+## Behavior summary
+- Each coach owns exactly one reusable invite code, generated automatically at the end of onboarding.
+- Coach can copy it and rotate it manually from onboarding (new final step) and from settings.
+- Rotation invalidates the previous code immediately.
+- No expiry, no max-uses, no per-parent invites in this slice. Per-parent targeted invites land with the roster slice.
+- Auto-join on redeem (with coach revoke later) is a parent-side concern → not built here.
 
-**File:** `src/routes/_authenticated/coach.tsx`
+## Data model (one new table)
 
-- Change the welcome line to use `firstName` only, falling back to `"Coach"` when empty.
-- Keep the `pen-highlight` styling on the name.
+`coach_invite_codes`
+- `id uuid` (pk)
+- `coach_id uuid` (FK → `coach_profiles.id`, **unique** — one code per coach)
+- `code text` (**unique**, 8 chars, Crockford base32 excluding I/L/O/0/1 to avoid lookalikes, generated server-side)
+- `created_at`, `updated_at` (with the standard trigger)
 
-```
-const displayName = data.profile.firstName.trim() || "Coach";
-// <h1>Welcome back, <span className="pen-highlight">{displayName}</span></h1>
-```
+RLS — scoped through `coach_profiles.user_id = auth.uid()`, same pattern as `coach_levels`:
+- SELECT / INSERT / UPDATE / DELETE: only the owning coach.
+- No public read. Redemption lookup will happen later inside an `auth`-elevated server fn on the parent flow, so no broad anon policy needed.
 
-No other surfaces currently render the full name, so this is a one-line change.
+Code generation lives in a Postgres helper (`public.generate_invite_code()` returning text) so we get a single source of truth and a retry-on-collision loop inside one transaction.
 
-## 2. AAA accessibility pass on the handwritten font (Caveat)
+### Why a separate table (not a column on `coach_profiles`)
+- Keeps the unique index on `code` isolated and cheap to look up by parents later.
+- Lets us extend with `kind`, `target_email`, `redeemed_at`, `max_uses` for per-parent invites in the roster slice without reshaping `coach_profiles`.
+- Rotation timestamp (`updated_at`) gives a free audit trail.
 
-### What AAA actually requires
-- **Contrast:** 7:1 for normal text, 4.5:1 for "large" text (≥18.66px bold or ≥24px regular).
-- **Readability:** WCAG SC 1.4.8 (AAA) — users must be able to read content without decorative-script barriers. Cursive/script fonts like Caveat are allowed, but only when:
-  - they're **not the sole carrier** of essential info (a sighted user with low vision or dyslexia must still be able to parse it), and
-  - they're rendered at a comfortable size and weight.
+## Server functions (`src/lib/coach-invite.functions.ts`)
 
-### Audit of current Caveat usage
+Both protected by `requireSupabaseAuth`. Both resolve the caller's `coach_profiles.id` first (same `ensureProfile` helper pattern already in `coach-profile.functions.ts`).
 
-| File | Line | Context | Issue |
-|---|---|---|---|
-| `coach.tsx` | 75 | `font-hand text-text-secondary` inside a `text-sm` row — renders Caveat at **14px** showing `"{hours} hrs / week"` | Too small for a script face; carries the essential hours value; contrast borderline at this size |
-| `coach.settings.tsx` | 280 | `font-hand text-sm text-text-secondary` — hint text | 14px Caveat is hard to read; hint is non-essential so contrast can be relaxed but size shouldn't be |
-| `onboarding.tsx` | 251 | `font-hand text-sm text-text-secondary` — hint text | Same as above |
-| `onboarding.tsx` | 370 | `font-hand text-text-secondary` — review summary value | Carries essential info in script |
+- `getCoachInviteCode()` → returns `{ code }`. Creates a row on first call (so the wizard can render the code without a separate "generate" click). Idempotent.
+- `rotateCoachInviteCode()` → calls `generate_invite_code()`, updates the row, returns the new `{ code }`. Server-side only — never let the client propose the code.
 
-### Token check (already in `src/styles.css`)
-- `--text-secondary` is annotated `~7.2:1` on background → **passes AAA for normal text** in sans, but Caveat's thin strokes effectively reduce perceived contrast. Safer to use `--text-primary` (or `--accent-ink`) wherever Caveat carries data.
-- `--text-tertiary` is "AAA large / AA normal" → **not safe** under Caveat at small sizes. Not currently used with `font-hand`, keep it that way.
+## Hook (`src/hooks/use-coach-invite.ts`)
+- `coachInviteQueryOptions` (queryKey `["coach-invite"]`)
+- `useCoachInvite()` → suspense-friendly query
+- `useRotateCoachInvite()` → mutation that invalidates the query and shows a sonner toast
 
-### Fixes
+## UI
 
-**A. Never render essential data only in Caveat.**
-- `coach.tsx:75` — the "12 hrs / week" value is the data. Replace `font-hand` with the regular sans body face and keep `text-text-secondary`. Reserve Caveat for the surrounding annotation feel (e.g., the "hrs / week" suffix or a separate label), not the number itself.
-- `onboarding.tsx:370` (review step) — same treatment: render the value in sans, AAA contrast.
+### Onboarding — new step between "Practice hours" and "Review"
+Step 5 of 6: **"Invite parents"**
+- Headline: "Share this code with parents to add their athlete to your roster."
+- Big monospace code chip, "Copy code" button, subtle "Generate a new code" link with a confirmation dialog ("This will invalidate the old code. Continue?")
+- "Continue" advances to Review. Review step gets a small "Your invite code" line at the bottom so it's visible before Finish.
 
-**B. When Caveat is decorative (hints), make it pass the "large text" bar.**
-- Bump `font-hand` hint instances from `text-sm` (14px) to **`text-lg` (18px) with `font-bold`** (Caveat is loaded at 500/700; use 700). This pushes it into the large-text AAA bracket (4.5:1) and improves legibility.
-- Switch the color from `text-text-secondary` to **`text-accent-ink`** for hints, which is the darkest pen color on paper and is the ink token designed for this case.
-- Apply to `coach.settings.tsx:280` and `onboarding.tsx:251`.
+### Settings page — new section "Invite code"
+Same component as the wizard step, dropped into the settings stack with its own card and "Save" affordance unnecessary (rotation is the only action).
 
-**C. Add a global rule in `src/styles.css` so future Caveat usage stays safe.**
+### Coach dashboard
+Add a small "Invite code" line under the header: the code in mono, with a "Copy" button. Keeps it one tap away when a parent asks.
 
-Add a `.font-hand` base rule that ships a minimum line-height and slightly heavier default weight, so a developer who reaches for it can't accidentally render 14px regular Caveat:
+All three surfaces consume the same `<InviteCodeCard />` component to avoid drift.
 
-```
-@layer base {
-  .font-hand {
-    font-weight: 700;
-    line-height: 1.25;
-    letter-spacing: 0.005em;
-  }
-}
-```
+## Design system adherence
+- Code chip: `bg-elevated` border `border-divider` rounded `rounded-md`, `font-mono` `text-h3`, generous letter-spacing.
+- Copy/Rotate use existing shadcn `Button` with `variant="outline"` and `variant="ghost"` respectively.
+- Confirmation uses shadcn `AlertDialog`.
+- Toasts via existing sonner Toaster.
+- Caveat is reserved for the supporting "share this with parents" annotation under the code, at `text-lg` per the AAA rules we just landed.
 
-### Verification
+## Files
+**New**
+- `supabase/migrations/<ts>_coach_invite_codes.sql` (table + RLS + generator function + updated_at trigger)
+- `src/lib/coach-invite.functions.ts`
+- `src/hooks/use-coach-invite.ts`
+- `src/components/onboarding/invite-card.tsx` (shared display + copy + rotate dialog)
+- `src/components/onboarding/invite-step.tsx` (thin wizard step wrapping `<InviteCard />`)
 
-After the edits, sanity-check at the current `/coach` viewport (390×815) that:
-- the welcome reads "Welcome back, **Maxwell**" (first name only),
-- the per-level rows show hours in the sans face,
-- the Caveat hints render at ~18px bold in `--accent-ink`.
+**Edited**
+- `src/routes/_authenticated/onboarding.tsx` — insert the new step in the wizard, bump total-step count, thread state.
+- `src/routes/_authenticated/coach.settings.tsx` — add the section.
+- `src/routes/_authenticated/coach.tsx` — add the inline invite code line in the header card.
 
-No contrast math regressions expected since the tokens themselves don't change.
+## Out of scope (deferred to roster slice)
+- Parent-side redemption page, parent accounts, athlete records.
+- Per-parent targeted invites with `target_email` / `redeemed_at`.
+- Coach roster view, revoking individual links, link history.
+- Shareable `/join/CODE` URLs and QR codes — user chose copyable code only.
 
-## Out of scope
-- No changes to the pen color system, layout, or data model.
-- No new components.
-- Dark-mode tokens already mirror the light-mode AAA posture; no separate fix needed.
+## Open question (non-blocking)
+Format preference: `A3K9F2X7` (8 char, no prefix, easiest to type) vs `GRADUS-A3K9F2` (branded, slightly more to type). I'll default to **`A3K9F2X7`** for typing speed unless you'd rather brand it.
