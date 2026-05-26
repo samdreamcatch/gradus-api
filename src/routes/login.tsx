@@ -39,9 +39,10 @@ function LoginPage() {
     try {
       const { role } = await fetchRole();
       if (role === "parent") navigate({ to: "/parent" });
-      else navigate({ to: "/coach" });
+      else if (role === "coach") navigate({ to: "/coach" });
+      else navigate({ to: "/" });
     } catch {
-      navigate({ to: "/coach" });
+      navigate({ to: "/" });
     }
   };
 
@@ -65,7 +66,7 @@ function LoginPage() {
     setLoading(true);
     try {
       const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin + (search.redirect || "/coach"),
+        redirect_uri: window.location.origin + (search.redirect || "/"),
       });
       if (result.error) throw result.error;
       if (!result.redirected) await routeByRole();
