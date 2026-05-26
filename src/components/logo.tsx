@@ -14,7 +14,7 @@ export function Logo({ className }: LogoProps) {
         position: "relative",
         display: "inline-block",
         fontFamily: "var(--font-display)",
-        fontWeight: 680,
+        fontWeight: 600,
         fontVariationSettings: '"SOFT" 100, "WONK" 1, "opsz" 144',
         fontStyle: "normal",
         lineHeight: 1,
