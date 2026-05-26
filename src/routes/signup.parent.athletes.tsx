@@ -168,7 +168,7 @@ function ParentAthletesPage() {
           {error && <p className="text-sm text-destructive">{error}</p>}
 
           <Button type="submit" className="w-full" disabled={submitting || !coach}>
-            {submitting ? "Saving..." : "Finish"}
+            {submitting ? "Saving..." : "Continue"}
           </Button>
         </form>
       </div>
