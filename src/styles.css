@@ -78,9 +78,9 @@
   --text-tertiary: oklch(0.55 0.015 260);
   --text-disabled: oklch(0.4 0.015 260);
 
-  --pen-tennis: oklch(0.847 0.218 132);
-  --pen-tennis-wash: oklch(0.32 0.07 132);
-  --pen-tennis-ink: oklch(0.96 0.05 132);
+  --pen-tennis: oklch(0.92 0.24 118);
+  --pen-tennis-wash: oklch(0.32 0.08 118);
+  --pen-tennis-ink: oklch(0.96 0.06 118);
 
   --accent: var(--pen-tennis);
   --accent-foreground: oklch(0.2 0.04 130);
