@@ -55,9 +55,9 @@
   --text-disabled: oklch(0.82 0.01 260);
 
   /* Tennis pen — default accent */
-  --pen-tennis: oklch(0.847 0.218 132);      /* #8DE160 */
-  --pen-tennis-wash: oklch(0.982 0.035 132); /* #F0FDE8 */
-  --pen-tennis-ink: oklch(0.339 0.118 132);  /* #1F4D00 */
+  --pen-tennis: oklch(0.92 0.24 118);        /* tennis-ball yellow-green ~#D8F23A */
+  --pen-tennis-wash: oklch(0.985 0.05 118);  /* very pale tint */
+  --pen-tennis-ink: oklch(0.36 0.13 118);    /* deep ink for contrast */
 
   --accent: var(--pen-tennis);
   --accent-foreground: var(--pen-tennis-ink);
