@@ -23,10 +23,30 @@ function LoginPage() {
   const search = Route.useSearch();
   const navigate = useNavigate();
   const fetchRole = useServerFn(getMyRole);
+  const { user, isReady } = useAuthReady();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // If the session resolves and the user is already signed in, route them
+  // away from /login. Done in an effect (not beforeLoad) so we don't
+  // redirect during the brief hydration window.
+  useEffect(() => {
+    if (!isReady || !user) return;
+    if (search.redirect) {
+      navigate({ to: search.redirect });
+      return;
+    }
+    fetchRole()
+      .then(({ role }) => {
+        if (role === "parent") navigate({ to: "/parent" });
+        else if (role === "coach") navigate({ to: "/coach" });
+        else navigate({ to: "/" });
+      })
+      .catch(() => navigate({ to: "/" }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isReady, user]);
 
   const routeByRole = async () => {
     if (search.redirect) {
