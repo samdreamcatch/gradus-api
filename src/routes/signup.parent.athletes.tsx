@@ -18,7 +18,8 @@ const searchSchema = z.object({
     .trim()
     .toUpperCase()
     .length(8)
-    .regex(/^[A-Z2-9]+$/),
+    .regex(/^[A-Z2-9]+$/)
+    .optional(),
 });
 
 export const Route = createFileRoute("/signup/parent/athletes")({
