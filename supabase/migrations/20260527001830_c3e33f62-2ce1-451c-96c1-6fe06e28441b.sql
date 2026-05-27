@@ -1,0 +1,1 @@
+DELETE FROM public.coach_profiles WHERE user_id IN (SELECT user_id FROM public.parent_profiles) AND onboarded_at IS NULL AND (first_name IS NULL OR first_name = '');
