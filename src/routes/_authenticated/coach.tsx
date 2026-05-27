@@ -1,39 +1,37 @@
 import { useEffect } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { coachProfileQueryOptions } from "@/hooks/use-coach-profile";
-import { coachInviteQueryOptions } from "@/hooks/use-coach-invite";
 import { InviteCard } from "@/components/onboarding/invite-card";
 import { getSport, getSportLevel, type SportKey } from "@/lib/coach-sports";
 
 export const Route = createFileRoute("/_authenticated/coach")({
-  loader: ({ context }) => {
-    context.queryClient.prefetchQuery(coachInviteQueryOptions);
-    return context.queryClient.ensureQueryData(coachProfileQueryOptions);
-  },
   component: CoachHome,
 });
 
 function CoachHome() {
-  const { data } = useSuspenseQuery(coachProfileQueryOptions);
+  const { data, isLoading } = useQuery(coachProfileQueryOptions);
   const navigate = useNavigate();
 
   // Gate: not onboarded → wizard
   useEffect(() => {
-    if (!data.profile.onboardedAt) navigate({ to: "/coach/onboarding" });
-  }, [data.profile.onboardedAt, navigate]);
+    if (data && !data.profile.onboardedAt) navigate({ to: "/coach/onboarding" });
+  }, [data, navigate]);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     navigate({ to: "/login" });
   };
 
+  if (isLoading || !data) return null;
+
   const sports = Array.from(new Set(data.levels.map((l) => l.sport))) as SportKey[];
   const displayName = data.profile.firstName.trim() || "Coach";
 
   if (!data.profile.onboardedAt) return null;
+
 
   return (
     <div className="mx-auto min-h-dvh max-w-3xl px-4 py-12">
