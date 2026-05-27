@@ -240,12 +240,13 @@ export const getMyRole = createServerFn({ method: "GET" })
 
 const INVITE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 function genCode(len = 8): string {
+  const bytes = new Uint8Array(len);
+  crypto.getRandomValues(bytes);
   let out = "";
   for (let i = 0; i < len; i++) {
-    out += INVITE_ALPHABET[Math.floor(Math.random() * INVITE_ALPHABET.length)];
+    out += INVITE_ALPHABET[bytes[i] % INVITE_ALPHABET.length];
   }
-  // Restrict to A-Z2-9 to match check constraint
-  return out.replace(/[^A-Z2-9]/g, "A");
+  return out;
 }
 
 /**
