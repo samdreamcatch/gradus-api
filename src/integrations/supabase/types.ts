@@ -339,7 +339,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      coach_has_rostered_athlete_of_parent: {
+        Args: { _parent_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
