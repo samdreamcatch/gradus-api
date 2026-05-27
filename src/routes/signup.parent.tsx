@@ -34,15 +34,18 @@ function ParentSignupPage() {
     setError(null);
     setLoading(true);
     try {
-      const { error: signUpErr } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: window.location.origin + "/parent",
-          data: { full_name: `${firstName} ${lastName}`.trim() },
-        },
-      });
-      if (signUpErr) throw signUpErr;
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) {
+        const { error: signUpErr } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: window.location.origin + "/parent",
+            data: { full_name: `${firstName} ${lastName}`.trim() },
+          },
+        });
+        if (signUpErr) throw signUpErr;
+      }
 
       const { code: normalized } = await start({
         data: { firstName, lastName, code: code.trim().toUpperCase() },
