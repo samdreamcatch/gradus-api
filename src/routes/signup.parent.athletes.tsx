@@ -18,7 +18,8 @@ const searchSchema = z.object({
     .trim()
     .toUpperCase()
     .length(8)
-    .regex(/^[A-Z2-9]+$/),
+    .regex(/^[A-Z2-9]+$/)
+    .optional(),
 });
 
 export const Route = createFileRoute("/signup/parent/athletes")({
@@ -34,7 +35,8 @@ function ParentAthletesPage() {
 
   const { data: coach, isLoading, error: coachError } = useQuery({
     queryKey: ["coach-by-code", code],
-    queryFn: () => fetchCoach({ data: { code } }),
+    queryFn: () => fetchCoach({ data: { code: code! } }),
+    enabled: !!code,
   });
 
   const [athletes, setAthletes] = useState<
@@ -73,6 +75,7 @@ function ParentAthletesPage() {
 
     setSubmitting(true);
     try {
+      if (!code) throw new Error("Missing invite code");
       await linkAthletes({ data: { code, athletes: cleaned } });
       navigate({ to: "/signup/parent/goals", search: { code } });
     } catch (e) {
