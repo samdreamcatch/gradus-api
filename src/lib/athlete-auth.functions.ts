@@ -236,8 +236,7 @@ export const verifyAthleteOtp = createServerFn({ method: "POST" })
         email,
         password,
         email_confirm: true,
-        phone: data.phone,
-        user_metadata: { role: "athlete", athlete_id: athleteId },
+        user_metadata: { role: "athlete", athlete_id: athleteId, phone: data.phone },
       });
       if (created.error || !created.data.user) {
         throw new Error(created.error?.message ?? "Could not create account.");
