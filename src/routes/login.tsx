@@ -142,6 +142,12 @@ function LoginPage() {
             Sign up
           </Link>
         </p>
+        <p className="mt-2 text-center text-sm text-text-secondary">
+          Athlete?{" "}
+          <Link to="/login/athlete" className="font-semibold text-accent-ink underline-offset-4 hover:underline">
+            Sign in with your phone
+          </Link>
+        </p>
       </div>
     </div>
   );
