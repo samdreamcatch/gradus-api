@@ -35,7 +35,8 @@ function ParentAthletesPage() {
 
   const { data: coach, isLoading, error: coachError } = useQuery({
     queryKey: ["coach-by-code", code],
-    queryFn: () => fetchCoach({ data: { code } }),
+    queryFn: () => fetchCoach({ data: { code: code! } }),
+    enabled: !!code,
   });
 
   const [athletes, setAthletes] = useState<
