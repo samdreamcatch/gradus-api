@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { QRCodeSVG } from "qrcode.react";
@@ -13,35 +13,42 @@ import {
 } from "@/lib/parent-signup.functions";
 
 export const Route = createFileRoute("/_authenticated/parent")({
-  beforeLoad: async () => {
-    try {
-      const status = await getParentSignupStatus();
-      if (!status.hasParentProfile) return; // Not a parent — let page render (or other guards handle).
-      if (!status.hasAthletes) {
-        if (status.inviteCode) {
-          throw redirect({
-            to: "/signup/parent/athletes",
-            search: { code: status.inviteCode },
-          });
-        }
-        // Legacy parent with no stored coach — send back to start of signup.
-        throw redirect({ to: "/signup/parent" });
-      }
-    } catch (e) {
-      if (e && typeof e === "object" && "to" in e) throw e;
-      // Swallow lookup errors and let the page render.
-    }
-  },
   component: ParentHome,
 });
 
 function ParentHome() {
   const navigate = useNavigate();
   const fetchAthletes = useServerFn(listAthletesWithInviteCodes);
+  const fetchStatus = useServerFn(getParentSignupStatus);
+
+  // Resume-onboarding check runs in the component (not beforeLoad) so it
+  // only fires after AuthGate has confirmed the session and the bearer
+  // token is attached.
+  const { data: status } = useQuery({
+    queryKey: ["parent-signup-status"],
+    queryFn: () => fetchStatus(),
+  });
+
+  useEffect(() => {
+    if (!status) return;
+    if (!status.hasParentProfile) return;
+    if (status.hasAthletes) return;
+    if (status.inviteCode) {
+      navigate({
+        to: "/signup/parent/athletes",
+        search: { code: status.inviteCode },
+      });
+    } else {
+      navigate({ to: "/signup/parent" });
+    }
+  }, [status, navigate]);
+
   const { data } = useQuery({
     queryKey: ["parent-athletes-invite"],
     queryFn: () => fetchAthletes(),
+    enabled: !!status?.hasAthletes,
   });
+
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
