@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
@@ -28,21 +28,29 @@ function ParentSignupPage() {
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [isAuthed, setIsAuthed] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setIsAuthed(!!data.session));
+  }, []);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
     try {
-      const { error: signUpErr } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: window.location.origin + "/parent",
-          data: { full_name: `${firstName} ${lastName}`.trim() },
-        },
-      });
-      if (signUpErr) throw signUpErr;
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) {
+        const { error: signUpErr } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: window.location.origin + "/parent",
+            data: { full_name: `${firstName} ${lastName}`.trim() },
+          },
+        });
+        if (signUpErr) throw signUpErr;
+      }
 
       const { code: normalized } = await start({
         data: { firstName, lastName, code: code.trim().toUpperCase() },
@@ -64,7 +72,9 @@ function ParentSignupPage() {
           <h1 className="mt-2">
             <Logo className="text-6xl" />
           </h1>
-          <p className="mt-4 text-sm text-text-secondary">Create your parent account</p>
+          <p className="mt-4 text-sm text-text-secondary">
+            {isAuthed ? "Let's pick up where you left off" : "Create your parent account"}
+          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -79,15 +89,19 @@ function ParentSignupPage() {
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-          </div>
+          {!isAuthed && (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input id="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+              </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <Input id="password" type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-          </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input id="password" type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+              </div>
+            </>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="code">Coach&apos;s invite code</Label>
