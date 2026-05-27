@@ -14,10 +14,6 @@ export const Route = createFileRoute("/signup/parent")({
 
 function ParentSignupPage() {
   const location = useLocation();
-  if (location.pathname !== "/signup/parent") {
-    return <Outlet />;
-  }
-
   const navigate = useNavigate();
   const start = useServerFn(startParentSignup);
 
@@ -33,6 +29,11 @@ function ParentSignupPage() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setIsAuthed(!!data.session));
   }, []);
+
+  if (location.pathname !== "/signup/parent") {
+    return <Outlet />;
+  }
+
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
