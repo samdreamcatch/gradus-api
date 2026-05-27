@@ -1,44 +1,42 @@
-## Goal
+## Root cause
+`/_authenticated` calls `supabase.auth.getUser()` in `beforeLoad`, and `/login`'s `beforeLoad` calls `getSession()`. During initial hydration these can disagree for a tick: `getUser()` returns no user → redirect to `/login` → `getSession()` then sees the restored session → redirect back to `/parent`. That bounce is the flashing.
 
-Make role boundaries unambiguous in the route tree so a parent can never accidentally land in the coach wizard, and so parents who abandon signup get resumed where they left off.
+The fix is to give the guard a third state: `loading`. While the session is still hydrating, render nothing (or a spinner) and do not redirect.
 
-## Part 1 — Rename `/onboarding` → `/coach/onboarding`
+## Plan
+1. Add a shared `useAuthReady` hook (`src/hooks/use-auth-ready.ts`)
+   - Calls `supabase.auth.getSession()` once on mount; flips `isReady` to true when it resolves.
+   - Subscribes to `onAuthStateChange` to keep `user` fresh.
+   - Returns `{ user, isReady }`.
 
-The wizard at `/onboarding` is 100% coach-specific (writes to `coach_profiles` + `coach_levels`, requires auth, generates a coach invite code). The generic name is what lets parents end up there via stale `redirect=` params or fallback paths.
+2. Convert `/_authenticated` from a `beforeLoad` redirect into a client-side guard component
+   - Remove the `getUser()` call in `beforeLoad`.
+   - In the component: use `useAuthReady`.
+     - `!isReady` → render a minimal loading state (null / spinner), no navigation.
+     - `isReady && !user` → `<Navigate to="/login" search={{ redirect: location.href }} />`.
+     - `isReady && user` → `<Outlet />`.
+   - This eliminates the SSR/hydration race that fires the first wrong redirect.
 
-**Move the file:**
-- `src/routes/_authenticated/onboarding.tsx` → `src/routes/_authenticated/coach.onboarding.tsx`
-- Update `createFileRoute("/_authenticated/onboarding")` → `createFileRoute("/_authenticated/coach/onboarding")`
+3. Make `/login` consistent with the same readiness model
+   - Drop the `beforeLoad` `getSession()` auto-redirect.
+   - In the component: if `isReady && user`, redirect to `search.redirect` (or role-based default). Otherwise render the form.
+   - Prevents the back-bounce when the session resolves a moment after `_authenticated` already kicked us here.
 
-**Drop the parent-bounce `beforeLoad` guard** we added yesterday — it becomes unnecessary because the URL is now explicitly under `/coach/*`. (We keep the `ensureProfile` parent-blocking guard in `coach-profile.functions.ts` as defense-in-depth.)
+4. Keep `/parent` onboarding-resume logic, but only after auth is ready
+   - The existing `beforeLoad` in `_authenticated/parent.tsx` calls `getParentSignupStatus()`, which requires a bearer token. With the guard above, by the time this runs `useAuthReady` has confirmed a session and `attachSupabaseAuth` will attach the token. No structural change needed beyond confirming order.
 
-**Update redirects pointing at the old path:**
-- `src/routes/_authenticated/coach.tsx` — `navigate({ to: "/onboarding" })` → `navigate({ to: "/coach/onboarding" })` in the "not onboarded" gate.
-- Grep for any other `"/onboarding"` strings (login fallbacks, OAuth `redirect_uri`, etc.) and repoint them.
+5. Verify
+   - Sign in as Lorelai → no flicker, lands on `/parent` (or onboarding step) once.
+   - Sign out → lands on `/login` once.
+   - Direct visit to `/parent` while signed out → brief loading, then `/login?redirect=/parent`.
 
-**Layout interaction:** the existing `coach.tsx` file is a leaf route at `/coach`, not a layout. Adding `coach.onboarding.tsx` as a sibling is fine — TanStack treats them as two separate leaves under the `/coach` URL prefix; no `<Outlet />` plumbing needed.
+## Technical details
+Files to change:
+- new: `src/hooks/use-auth-ready.ts`
+- `src/routes/_authenticated.tsx` — replace `beforeLoad` redirect with component-level loading/redirect using `useAuthReady`.
+- `src/routes/login.tsx` — remove `beforeLoad` session check; use `useAuthReady` in the component to redirect already-signed-in users after hydration.
+- `src/routes/_authenticated/parent.tsx` — no logic change; just confirm its `beforeLoad` only runs after the parent guard renders `<Outlet />`.
 
-## Part 2 — Add a resume-signup gate on `/parent`
-
-Mirror the coach pattern: when a parent hits `/parent`, check whether they've completed signup, and if not, bounce them back into the signup wizard at the right step.
-
-**Definition of "completed":** has at least one row in `athletes` linked to their `parent_profiles.id`. (Goals and schedule are nice-to-have but the athlete row is the minimum that makes the parent home page meaningful.)
-
-**Implementation:**
-- In `src/routes/_authenticated/parent.tsx`, change the loader/`beforeLoad` to call a small server fn (`getParentSignupStatus` in `parent-signup.functions.ts`) returning `{ hasAthletes: boolean, inviteCode: string | null }`.
-- If `!hasAthletes`, `throw redirect({ to: "/signup/parent/athletes", search: { code: inviteCode } })`.
-- The invite code comes from `parent_profiles.coach_invite_code` (or whatever column we stored it on during `startParentSignup`) so the wizard can resume without re-asking.
-
-## Part 3 — Verification
-
-After the changes:
-1. Sign in as Lorelai → should land on `/signup/parent/athletes` with her coach's code pre-filled, not on an empty `/parent`.
-2. Sign in as a parent who completed signup (e.g. June Cleaver) → should land on `/parent` normally.
-3. Sign in as an un-onboarded coach → should land on `/coach/onboarding` (new URL).
-4. Manually visit `/onboarding` while signed in as a parent → 404 (the route no longer exists), which is the correct outcome.
-
-## Out of scope
-
-- Renaming `/signup/coach` or restructuring the parent signup sub-routes.
-- Adding a goals/schedule completion check to the parent gate (only athlete presence is gated; the rest stay optional for now).
-- Any visual/UX changes to the wizards themselves.
+Out of scope:
+- No changes to server functions, `start.ts`, or `AuthSync` in `__root.tsx`.
+- No DB changes.

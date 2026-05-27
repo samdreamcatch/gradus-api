@@ -1,15 +1,24 @@
-import { createFileRoute, redirect, Outlet } from "@tanstack/react-router";
-import { supabase } from "@/integrations/supabase/client";
+import { createFileRoute, Navigate, Outlet, useLocation } from "@tanstack/react-router";
+import { useAuthReady } from "@/hooks/use-auth-ready";
 
 export const Route = createFileRoute("/_authenticated")({
-  beforeLoad: async ({ location }) => {
-    // getUser() re-verifies the JWT with the Auth server rather than trusting
-    // a cached session in localStorage. This closes the route-guard gap flagged
-    // by the security scan (ROUTE_ONLY_AUTH_NO_SERVER_GUARD).
-    const { data, error } = await supabase.auth.getUser();
-    if (error || !data.user) {
-      throw redirect({ to: "/login", search: { redirect: location.href } });
-    }
-  },
-  component: () => <Outlet />,
+  component: AuthGate,
 });
+
+function AuthGate() {
+  const { user, isReady } = useAuthReady();
+  const location = useLocation();
+
+  if (!isReady) {
+    // Session is still hydrating from storage. Render nothing rather than
+    // redirecting — redirecting here causes a /login ↔ /parent flicker
+    // when the session resolves a tick later.
+    return null;
+  }
+
+  if (!user) {
+    return <Navigate to="/login" search={{ redirect: location.href }} />;
+  }
+
+  return <Outlet />;
+}
