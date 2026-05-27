@@ -72,7 +72,9 @@ function ParentSignupPage() {
           <h1 className="mt-2">
             <Logo className="text-6xl" />
           </h1>
-          <p className="mt-4 text-sm text-text-secondary">Create your parent account</p>
+          <p className="mt-4 text-sm text-text-secondary">
+            {isAuthed ? "Let's pick up where you left off" : "Create your parent account"}
+          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -87,15 +89,19 @@ function ParentSignupPage() {
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-          </div>
+          {!isAuthed && (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input id="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+              </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <Input id="password" type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-          </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input id="password" type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+              </div>
+            </>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="code">Coach&apos;s invite code</Label>
