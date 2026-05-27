@@ -224,14 +224,14 @@ export const getMyRole = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { supabase } = context;
     const [coach, parent] = await Promise.all([
-      supabase.from("coach_profiles").select("id, created_at").maybeSingle(),
+      supabase.from("coach_profiles").select("id, created_at, onboarded_at").maybeSingle(),
       supabase.from("parent_profiles").select("id, created_at").maybeSingle(),
     ]);
-    // If a user has both profiles (e.g. testing), prefer the most recently created.
+    // When both exist (e.g. a parent who briefly hit the coach wizard and left a stub),
+    // prefer the coach role only if onboarding was actually completed.
     if (coach.data && parent.data) {
-      const coachAt = new Date(coach.data.created_at).getTime();
-      const parentAt = new Date(parent.data.created_at).getTime();
-      return { role: parentAt >= coachAt ? ("parent" as const) : ("coach" as const) };
+      if (coach.data.onboarded_at) return { role: "coach" as const };
+      return { role: "parent" as const };
     }
     if (coach.data) return { role: "coach" as const };
     if (parent.data) return { role: "parent" as const };
