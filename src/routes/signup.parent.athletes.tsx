@@ -75,6 +75,7 @@ function ParentAthletesPage() {
 
     setSubmitting(true);
     try {
+      if (!code) throw new Error("Missing invite code");
       await linkAthletes({ data: { code, athletes: cleaned } });
       navigate({ to: "/signup/parent/goals", search: { code } });
     } catch (e) {
