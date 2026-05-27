@@ -28,6 +28,11 @@ function ParentSignupPage() {
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [isAuthed, setIsAuthed] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setIsAuthed(!!data.session));
+  }, []);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
