@@ -45,6 +45,7 @@ function LoginPage() {
       .then(({ role }) => {
         if (role === "parent") navigate({ to: "/parent" });
         else if (role === "coach") navigate({ to: "/coach" });
+        else if (role === "athlete") navigate({ to: "/athlete" });
         else navigate({ to: "/" });
       })
       .catch(() => navigate({ to: "/" }));
@@ -60,6 +61,7 @@ function LoginPage() {
       const { role } = await fetchRole();
       if (role === "parent") navigate({ to: "/parent" });
       else if (role === "coach") navigate({ to: "/coach" });
+      else if (role === "athlete") navigate({ to: "/athlete" });
       else navigate({ to: "/" });
     } catch {
       navigate({ to: "/" });
@@ -138,6 +140,12 @@ function LoginPage() {
           Need an account?{" "}
           <Link to="/" className="font-semibold text-accent-ink underline-offset-4 hover:underline">
             Sign up
+          </Link>
+        </p>
+        <p className="mt-2 text-center text-sm text-text-secondary">
+          Athlete?{" "}
+          <Link to="/login/athlete" className="font-semibold text-accent-ink underline-offset-4 hover:underline">
+            Sign in with your phone
           </Link>
         </p>
       </div>
