@@ -13,8 +13,11 @@ import { useAuthReady } from "@/hooks/use-auth-ready";
 export const Route = createFileRoute("/login")({
   validateSearch: (s: Record<string, unknown>) => {
     const raw = typeof s.redirect === "string" ? s.redirect : "";
-    const safe = raw.startsWith("/") && !raw.startsWith("//") ? raw : "";
-    return { redirect: safe };
+    const isSafe =
+      raw.startsWith("/") &&
+      !raw.startsWith("//") &&
+      !raw.startsWith("/login");
+    return { redirect: isSafe ? raw : "" };
   },
   component: LoginPage,
 });
