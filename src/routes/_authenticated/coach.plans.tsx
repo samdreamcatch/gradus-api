@@ -369,24 +369,32 @@ function LibraryView({ onSelectMove }: { onSelectMove: (id: string) => void }) {
               </h3>
               <ul className="divide-y divide-divider border-y border-divider">
                 {items.map((m) => (
-                  <li key={m.id} className="flex items-start gap-3 py-2.5">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <p className="truncate text-sm font-bold text-text-primary">
-                          {m.name}
-                        </p>
-                        <span className="shrink-0 rounded-sm bg-elevated px-1.5 py-0.5 text-[10px] font-black uppercase tracking-tight text-text-secondary">
-                          {targetLabel(m.defaultTargetKind, m.defaultTargetValue)}
-                        </span>
+                  <li key={m.id}>
+                    <button
+                      type="button"
+                      onClick={() => onSelectMove(m.id)}
+                      className="flex w-full items-start gap-3 py-2.5 text-left transition active:bg-elevated"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="truncate text-sm font-bold text-text-primary">
+                            {m.name}
+                          </p>
+                          <span className="shrink-0 rounded-sm bg-elevated px-1.5 py-0.5 text-[10px] font-black uppercase tracking-tight text-text-secondary">
+                            {targetLabel(m.defaultTargetKind, m.defaultTargetValue)}
+                          </span>
+                        </div>
+                        {m.cue ? (
+                          <p className="mt-0.5 line-clamp-1 text-xs text-text-secondary">
+                            {m.cue}
+                          </p>
+                        ) : null}
                       </div>
-                      {m.cue ? (
-                        <p className="mt-0.5 line-clamp-1 text-xs text-text-secondary">
-                          {m.cue}
-                        </p>
-                      ) : null}
-                    </div>
-                    <ChevronRight className="mt-1 h-4 w-4 shrink-0 text-text-tertiary" />
+                      <ChevronRight className="mt-1 h-4 w-4 shrink-0 text-text-tertiary" />
+                    </button>
                   </li>
+                ))}
+
                 ))}
               </ul>
             </section>
