@@ -214,11 +214,19 @@ function MoveSheetBody({
     }
   };
 
+  const [confirmArchiveOpen, setConfirmArchiveOpen] = useState(false);
+
   const archive = () => {
     if (!existing) return;
-    if (!window.confirm(`Archive "${existing.name}"? You can recreate it later.`)) return;
+    setConfirmArchiveOpen(true);
+  };
+
+  const confirmArchive = () => {
+    if (!existing) return;
+    setConfirmArchiveOpen(false);
     archiveMutation.mutate({ data: { id: existing.id } });
   };
+
 
   return (
     <>
