@@ -44,6 +44,10 @@ import { listMoves, upsertMove, type MoveDTO } from "@/lib/moves.functions";
 
 
 export const Route = createFileRoute("/_authenticated/coach/plans/$planId")({
+  validateSearch: (s: Record<string, unknown>) => ({
+    kind: s.kind === "template" ? "template" : undefined,
+    athleteId: typeof s.athleteId === "string" ? s.athleteId : undefined,
+  }),
   component: PlanEditorPage,
 });
 
