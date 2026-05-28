@@ -131,39 +131,6 @@ export type Database = {
         }
         Relationships: []
       }
-      athlete_otp_challenges: {
-        Row: {
-          attempts: number
-          code_hash: string
-          consumed_at: string | null
-          created_at: string
-          expires_at: string
-          id: string
-          invite_code: string | null
-          phone: string
-        }
-        Insert: {
-          attempts?: number
-          code_hash: string
-          consumed_at?: string | null
-          created_at?: string
-          expires_at: string
-          id?: string
-          invite_code?: string | null
-          phone: string
-        }
-        Update: {
-          attempts?: number
-          code_hash?: string
-          consumed_at?: string | null
-          created_at?: string
-          expires_at?: string
-          id?: string
-          invite_code?: string | null
-          phone?: string
-        }
-        Relationships: []
-      }
       athletes: {
         Row: {
           birthdate: string | null
@@ -172,7 +139,6 @@ export type Database = {
           id: string
           last_name: string
           parent_id: string
-          phone: string | null
           updated_at: string
           user_id: string | null
         }
@@ -183,7 +149,6 @@ export type Database = {
           id?: string
           last_name?: string
           parent_id: string
-          phone?: string | null
           updated_at?: string
           user_id?: string | null
         }
@@ -194,7 +159,6 @@ export type Database = {
           id?: string
           last_name?: string
           parent_id?: string
-          phone?: string | null
           updated_at?: string
           user_id?: string | null
         }
