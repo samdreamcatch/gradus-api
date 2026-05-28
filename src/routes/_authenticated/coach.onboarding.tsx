@@ -16,6 +16,7 @@ import {
 } from "@/hooks/use-coach-profile";
 import { coachInviteQueryOptions } from "@/hooks/use-coach-invite";
 import { InviteCard } from "@/components/onboarding/invite-card";
+import { CoachBottomNav } from "@/components/coach/bottom-nav";
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 export const Route = createFileRoute("/_authenticated/coach/onboarding")({
@@ -120,7 +121,8 @@ function OnboardingPage() {
   const busy = saveProfile.isPending || saveLevels.isPending || complete.isPending;
 
   return (
-    <div className="flex min-h-dvh items-start justify-center px-4 py-12 sm:items-center">
+    <>
+    <div className="flex min-h-dvh items-start justify-center px-4 pt-12 pb-32 sm:items-center">
       <div className="w-full max-w-2xl rounded-2xl bg-card p-8 shadow-[0_10px_40px_-12px_rgba(0,0,0,0.15)] sm:p-10">
         <div className="mb-8 flex items-center justify-between">
           <p className="text-xs font-bold uppercase tracking-widest text-accent-ink">
@@ -326,6 +328,8 @@ function OnboardingPage() {
         </div>
       </div>
     </div>
+    <CoachBottomNav />
+    </>
   );
 }
 

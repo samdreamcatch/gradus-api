@@ -15,6 +15,7 @@ import {
 } from "@/hooks/use-coach-profile";
 import { coachInviteQueryOptions } from "@/hooks/use-coach-invite";
 import { InviteCard } from "@/components/onboarding/invite-card";
+import { CoachBottomNav } from "@/components/coach/bottom-nav";
 
 export const Route = createFileRoute("/_authenticated/coach/settings")({
   loader: ({ context }) => {
@@ -29,7 +30,8 @@ type LevelEntry = { sport: string; levelKey: string; hoursPerWeek: number };
 function SettingsPage() {
   const { data } = useSuspenseQuery(coachProfileQueryOptions);
   return (
-    <div className="mx-auto min-h-dvh max-w-3xl px-4 py-12">
+    <>
+    <div className="mx-auto min-h-dvh max-w-3xl px-4 pt-12 pb-32">
       <div className="mb-8 flex items-center justify-between">
         <div>
           <p className="text-xs font-bold uppercase tracking-widest text-accent-ink">
@@ -51,6 +53,8 @@ function SettingsPage() {
         </SectionCard>
       </div>
     </div>
+    <CoachBottomNav />
+    </>
   );
 }
 
