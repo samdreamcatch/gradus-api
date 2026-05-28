@@ -70,6 +70,10 @@ function MoveSheetBody({
   const fetchMoves = useServerFn(listMoves);
   const upsertFn = useServerFn(upsertMove);
   const archiveFn = useServerFn(archiveMove);
+  // Capture whether this sheet session was started as a new move,
+  // so we keep showing "Save" (instead of "Duplicate") even after
+  // the row is auto-created on first field commit.
+  const [openedAsNew] = useState(selection === "new");
 
   const { data } = useQuery({
     queryKey: ["moves"],
