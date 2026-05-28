@@ -72,16 +72,25 @@ function MoveSheetBody({
     queryFn: () => fetchMoves(),
   });
   const moves = data?.moves ?? [];
+  const seedCategories = data?.seedCategories ?? [];
   const existing = selection !== "new" ? moves.find((m) => m.id === selection) : undefined;
 
   const sportOptions = useMemo(
     () => Array.from(new Set(moves.map((m) => m.sport).filter(Boolean))).sort(),
     [moves],
   );
-  const categoryOptions = useMemo(
-    () => Array.from(new Set(moves.map((m) => m.category).filter(Boolean))).sort(),
-    [moves],
-  );
+  const normalize = (s: string) => s.trim().toLowerCase().replace(/\s+/g, "_");
+  const currentSport = (existing?.sport ?? (selection === "new" ? undefined : "")) ?? "";
+  const categoryOptions = useMemo(() => {
+    const fromMoves = moves
+      .filter((m) => (currentSport ? normalize(m.sport) === normalize(currentSport) : true))
+      .map((m) => m.category);
+    const fromSeed = seedCategories
+      .filter((s) => (currentSport ? normalize(s.sport) === normalize(currentSport) : true))
+      .map((s) => s.category);
+    return Array.from(new Set([...fromMoves, ...fromSeed].filter(Boolean))).sort();
+  }, [moves, seedCategories, currentSport]);
+
 
   // Local draft for "new" mode (before first save)
   const [draft, setDraft] = useState<Partial<MoveDTO>>({
