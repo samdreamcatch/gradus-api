@@ -543,26 +543,6 @@ function CreatePlanSheet({
   );
 }
 
-function NewMoveStub({
-  open,
-  onOpenChange,
-}: {
-  open: boolean;
-  onOpenChange: (v: boolean) => void;
-}) {
-  return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom">
-        <SheetHeader>
-          <SheetTitle className="font-display text-2xl">New move</SheetTitle>
-        </SheetHeader>
-        <p className="mt-4 text-sm text-text-secondary">
-          Move editor coming up next — tap an existing move to edit for now.
-        </p>
-      </SheetContent>
-    </Sheet>
-  );
-}
 
 /* ---------------- helpers ---------------- */
 
