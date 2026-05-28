@@ -53,8 +53,11 @@ export type Database = {
       athlete_invite_codes: {
         Row: {
           athlete_id: string
+          claimed_at: string | null
+          claimed_by: string | null
           code: string
           created_at: string
+          expires_at: string
           id: string
           parent_id: string
           updated_at: string
@@ -62,8 +65,11 @@ export type Database = {
         }
         Insert: {
           athlete_id: string
+          claimed_at?: string | null
+          claimed_by?: string | null
           code: string
           created_at?: string
+          expires_at?: string
           id?: string
           parent_id: string
           updated_at?: string
@@ -71,8 +77,11 @@ export type Database = {
         }
         Update: {
           athlete_id?: string
+          claimed_at?: string | null
+          claimed_by?: string | null
           code?: string
           created_at?: string
+          expires_at?: string
           id?: string
           parent_id?: string
           updated_at?: string
@@ -122,6 +131,39 @@ export type Database = {
         }
         Relationships: []
       }
+      athlete_otp_challenges: {
+        Row: {
+          attempts: number
+          code_hash: string
+          consumed_at: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          invite_code: string | null
+          phone: string
+        }
+        Insert: {
+          attempts?: number
+          code_hash: string
+          consumed_at?: string | null
+          created_at?: string
+          expires_at: string
+          id?: string
+          invite_code?: string | null
+          phone: string
+        }
+        Update: {
+          attempts?: number
+          code_hash?: string
+          consumed_at?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          invite_code?: string | null
+          phone?: string
+        }
+        Relationships: []
+      }
       athletes: {
         Row: {
           birthdate: string | null
@@ -130,7 +172,9 @@ export type Database = {
           id: string
           last_name: string
           parent_id: string
+          phone: string | null
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           birthdate?: string | null
@@ -139,7 +183,9 @@ export type Database = {
           id?: string
           last_name?: string
           parent_id: string
+          phone?: string | null
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           birthdate?: string | null
@@ -148,7 +194,9 @@ export type Database = {
           id?: string
           last_name?: string
           parent_id?: string
+          phone?: string | null
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: [
           {
