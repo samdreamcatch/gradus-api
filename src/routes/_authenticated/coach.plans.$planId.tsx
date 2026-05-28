@@ -12,6 +12,7 @@ import {
   Save,
   Power,
   Pause,
+  Loader2,
   Send,
   ArrowRight,
 } from "lucide-react";
