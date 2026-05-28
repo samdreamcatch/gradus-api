@@ -433,3 +433,61 @@ export const createPlan = createServerFn({ method: "POST" })
 
     return { id: inserted.id };
   });
+
+/* ---------------- add move to plan ---------------- */
+
+export const addMoveToPlan = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z.object({ planId: z.string().uuid(), moveId: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ context, data }) => {
+    const supabase = context.supabase as Client;
+    const coachId = await getCoachId(supabase, context.userId);
+
+    const { data: plan, error: planErr } = await supabase
+      .from("plans")
+      .select("id, title, coach_id")
+      .eq("id", data.planId)
+      .maybeSingle();
+    if (planErr) throw new Error(planErr.message);
+    if (!plan || plan.coach_id !== coachId) throw new Error("Plan not found");
+
+    const { data: move, error: moveErr } = await supabase
+      .from("moves")
+      .select("id, name, description, cue, why, default_target_kind, default_target_value")
+      .eq("id", data.moveId)
+      .maybeSingle();
+    if (moveErr) throw new Error(moveErr.message);
+    if (!move) throw new Error("Move not found");
+
+    const { data: last, error: posErr } = await supabase
+      .from("plan_moves")
+      .select("position")
+      .eq("plan_id", plan.id)
+      .order("position", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (posErr) throw new Error(posErr.message);
+    const nextPos = (last?.position ?? -1) + 1;
+
+    const { error: insErr } = await supabase.from("plan_moves").insert({
+      plan_id: plan.id,
+      move_id: move.id,
+      position: nextPos,
+      name: move.name,
+      description: move.description,
+      cue: move.cue,
+      why: move.why,
+      target_kind: move.default_target_kind,
+      target_value: move.default_target_value,
+    });
+    if (insErr) throw new Error(insErr.message);
+
+    await supabase
+      .from("plans")
+      .update({ updated_at: new Date().toISOString() })
+      .eq("id", plan.id);
+
+    return { planId: plan.id, planTitle: plan.title || "Untitled plan" };
+  });
