@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { getRequestIP, getRequestHeader } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
@@ -10,14 +11,56 @@ const codeSchema = z
   .length(8, "Invite code must be 8 characters")
   .regex(/^[A-Z2-9]+$/, "Invalid characters in code");
 
+// Rate-limit knobs for the public invite-code lookup. Tuned to allow a
+// legitimate athlete a handful of typos but make name-enumeration impractical.
+const RATE_WINDOW_SECONDS = 60;
+const RATE_MAX_PER_WINDOW = 10;
+
+function clientIp(): string {
+  try {
+    const ip = getRequestIP({ xForwardedFor: true });
+    if (ip) return ip;
+  } catch {
+    // ignore
+  }
+  // Fallback: hash of UA to at least bucket non-IP callers.
+  const ua = (() => {
+    try {
+      return getRequestHeader("user-agent") ?? "";
+    } catch {
+      return "";
+    }
+  })();
+  return `ua:${ua.slice(0, 64)}`;
+}
+
 /**
  * Public lookup: resolve an athlete invite code to a preview of the athlete,
  * the coach, and the sports they work on together. No auth required —
- * holding the code is the credential.
+ * holding the code is the credential. Rate-limited per IP to prevent
+ * brute-force enumeration of athlete/coach PII.
  */
 export const getAthleteInviteSummary = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => z.object({ code: codeSchema }).parse(input))
   .handler(async ({ data }) => {
+    const ip = clientIp();
+
+    // Count recent attempts from this IP.
+    const since = new Date(Date.now() - RATE_WINDOW_SECONDS * 1000).toISOString();
+    const recent = await supabaseAdmin
+      .from("invite_lookup_attempts")
+      .select("id", { count: "exact", head: true })
+      .eq("ip", ip)
+      .gte("attempted_at", since);
+    if ((recent.count ?? 0) >= RATE_MAX_PER_WINDOW) {
+      throw new Error("Too many attempts. Please wait a minute and try again.");
+    }
+
+    // Log this attempt (fire-and-forget on failure — never block the user).
+    await supabaseAdmin
+      .from("invite_lookup_attempts")
+      .insert({ ip, code: data.code, found: false });
+
     const codeRow = await supabaseAdmin
       .from("athlete_invite_codes")
       .select("athlete_id, parent_id, used_at, expires_at, claimed_by")
@@ -29,6 +72,7 @@ export const getAthleteInviteSummary = createServerFn({ method: "POST" })
     if (new Date(codeRow.data.expires_at) < new Date()) {
       throw new Error("This code has expired. Ask your parent for a new one.");
     }
+
 
     const athlete = await supabaseAdmin
       .from("athletes")

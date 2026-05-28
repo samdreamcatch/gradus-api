@@ -344,6 +344,30 @@ export type Database = {
         }
         Relationships: []
       }
+      invite_lookup_attempts: {
+        Row: {
+          attempted_at: string
+          code: string | null
+          found: boolean
+          id: string
+          ip: string
+        }
+        Insert: {
+          attempted_at?: string
+          code?: string | null
+          found?: boolean
+          id?: string
+          ip: string
+        }
+        Update: {
+          attempted_at?: string
+          code?: string | null
+          found?: boolean
+          id?: string
+          ip?: string
+        }
+        Relationships: []
+      }
       parent_profiles: {
         Row: {
           coach_id: string | null
