@@ -1,22 +1,20 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { Plus, ListChecks, Clock, ChevronRight, Search, Loader2 } from "lucide-react";
-import { toast } from "sonner";
+import { Plus, ListChecks, Clock, ChevronRight, Search } from "lucide-react";
 import { CoachBottomNav } from "@/components/coach/bottom-nav";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
   listPlans,
   listCoachAthletes,
-  createPlan,
   type PlanSummaryDTO,
   type PlanStatus,
 } from "@/lib/plans.functions";
 import { listMoves, type MoveDTO } from "@/lib/moves.functions";
 import { MoveSheet } from "@/components/coach/move-sheet";
+import { NewPlanSheet } from "@/components/coach/new-plan-sheet";
 export const Route = createFileRoute("/_authenticated/coach/plans")({
   codeSplitGroupings: [["component"]],
   component: PlansPage,
@@ -30,18 +28,7 @@ function PlansPage() {
   const [planFilter, setPlanFilter] = useState<PlanFilter>("active");
   const [athleteId, setAthleteId] = useState<string>("");
   const [moveSelection, setMoveSelection] = useState<string | null>(null);
-
-  const navigate = useNavigate();
-  const qc = useQueryClient();
-  const createFn = useServerFn(createPlan);
-  const createMutation = useMutation({
-    mutationFn: createFn,
-    onSuccess: ({ id }) => {
-      qc.invalidateQueries({ queryKey: ["plans"] });
-      navigate({ to: "/coach/plans/$planId", params: { planId: id } });
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
+  const [newPlanOpen, setNewPlanOpen] = useState(false);
 
   return (
     <>
@@ -70,28 +57,24 @@ function PlansPage() {
 
         <button
           type="button"
-          disabled={createMutation.isPending}
           onClick={() => {
-            if (tab === "plans") {
-              if (planFilter === "templates") {
-                createMutation.mutate({ data: { kind: "template", title: "Untitled template" } });
-              } else if (!athleteId) {
-                toast.error("Pick an athlete first to create a plan.");
-              } else {
-                createMutation.mutate({ data: { kind: "plan", athleteId, title: "Untitled plan" } });
-              }
-            } else setMoveSelection("new");
+            if (tab === "plans") setNewPlanOpen(true);
+            else setMoveSelection("new");
           }}
           aria-label={tab === "plans" ? "New plan" : "New move"}
-          className="fixed bottom-24 right-5 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-accent text-accent-foreground shadow-page ring-1 ring-black/10 transition active:scale-95 disabled:opacity-60"
+          className="fixed bottom-24 right-5 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-accent text-accent-foreground shadow-page ring-1 ring-black/10 transition active:scale-95"
         >
-          {createMutation.isPending ? (
-            <Loader2 className="h-6 w-6 animate-spin" strokeWidth={2.5} />
-          ) : (
-            <Plus className="h-7 w-7" strokeWidth={2.5} />
-          )}
+          <Plus className="h-7 w-7" strokeWidth={2.5} />
         </button>
       </div>
+
+      <NewPlanSheet
+        open={newPlanOpen}
+        onOpenChange={setNewPlanOpen}
+        initialAthleteId={athleteId}
+        initialMode={planFilter === "templates" ? "template" : "plan"}
+      />
+
 
       <CoachBottomNav />
 
