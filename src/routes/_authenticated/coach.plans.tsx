@@ -1,14 +1,16 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { Plus, ListChecks, Clock, ChevronRight, Search } from "lucide-react";
+import { Plus, ListChecks, Clock, ChevronRight, Search, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { CoachBottomNav } from "@/components/coach/bottom-nav";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import {
   listPlans,
   listCoachAthletes,
+  createPlan,
   type PlanSummaryDTO,
   type PlanStatus,
 } from "@/lib/plans.functions";
@@ -20,7 +22,7 @@ export const Route = createFileRoute("/_authenticated/coach/plans")({
 });
 
 type Tab = "plans" | "library";
-type PlanFilter = "active" | "benched" | "templates";
+type PlanFilter = "active" | "drafts" | "benched" | "templates";
 
 function PlansPage() {
   const [tab, setTab] = useState<Tab>("plans");
