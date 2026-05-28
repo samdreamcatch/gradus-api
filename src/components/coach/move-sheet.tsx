@@ -323,12 +323,13 @@ function MoveSheetBody({
             <Button
               type="button"
               variant="ghost"
+              size="icon"
               onClick={archive}
               disabled={archiveMutation.isPending}
+              aria-label="Archive"
               className="text-destructive hover:text-destructive"
             >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Archive
+              <Trash2 className="h-4 w-4" />
             </Button>
           </div>
         ) : null}
