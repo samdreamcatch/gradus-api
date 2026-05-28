@@ -469,7 +469,7 @@ function PlanMoveTarget({
 }) {
   const [localValue, setLocalValue] = useState(String(value));
   // Sync if external value changes
-  useMemo(() => setLocalValue(String(value)), [value]);
+  useEffect(() => setLocalValue(String(value)), [value]);
 
   const commit = (nextKind: TargetKind, nextValRaw: string) => {
     const n = Math.max(0, Math.min(10000, Number(nextValRaw) || 0));
