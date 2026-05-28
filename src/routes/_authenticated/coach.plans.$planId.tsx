@@ -306,7 +306,7 @@ function PlanEditorPage() {
                 ))}
               </SelectContent>
             </Select>
-            {data.plan.kind === "plan" ? (
+            {!isNew && data?.plan.kind === "plan" ? (
               <div className="mt-3 flex items-center gap-2">
                 <Button
                   type="button"
