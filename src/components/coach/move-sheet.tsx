@@ -39,8 +39,9 @@ export function MoveSheet({
     >
       <SheetContent
         side="bottom"
-        className="max-h-[90vh] overflow-y-auto bg-card"
+        className="max-h-[90vh] overflow-y-auto border-t border-divider bg-card shadow-page [background-image:none]"
       >
+
         {open ? (
           <MoveSheetBody
             selection={selection!}
