@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { coachProfileQueryOptions } from "@/hooks/use-coach-profile";
 import { InviteCard } from "@/components/onboarding/invite-card";
 import { getSport, getSportLevel, type SportKey } from "@/lib/coach-sports";
+import { CoachBottomNav } from "@/components/coach/bottom-nav";
 
 export const Route = createFileRoute("/_authenticated/coach")({
   component: CoachHome,
