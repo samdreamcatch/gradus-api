@@ -11,7 +11,7 @@ type Item = {
 
 const ITEMS: Item[] = [
   { label: "Dashboard", icon: LayoutDashboard, to: "/coach" },
-  { label: "Plans", icon: ClipboardList },
+  { label: "Plans", icon: ClipboardList, to: "/coach/plans" },
   { label: "Roster", icon: Users },
   { label: "Messages", icon: MessageSquare },
 ];
