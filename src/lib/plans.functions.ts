@@ -78,7 +78,7 @@ export const listCoachAthletes = createServerFn({ method: "GET" })
 /* ---------------- list plans ---------------- */
 
 const listInput = z.object({
-  status: z.enum(["active", "benched"]).optional(),
+  status: z.enum(["active", "benched", "draft"]).optional(),
   athleteId: z.string().uuid().optional(),
   kind: z.enum(["plan", "template"]).optional(),
 });
