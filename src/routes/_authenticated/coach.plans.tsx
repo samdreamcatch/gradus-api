@@ -344,7 +344,15 @@ function LibraryView() {
       ) : null}
 
       {grouped.length === 0 ? (
-        <EmptyState message="No moves match." />
+        <EmptyState
+          message={
+            moves.length === 0
+              ? "Your library is empty. Add a move with + or set up sports in your profile to load the starter library."
+              : query.trim() || sport
+                ? "No moves match your filters."
+                : "No moves match."
+          }
+        />
       ) : (
         <div className="space-y-5">
           {grouped.map(([cat, items]) => (
