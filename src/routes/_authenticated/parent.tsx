@@ -76,8 +76,8 @@ function ParentHome() {
       <section className="mt-10">
         <h2 className="font-display text-2xl text-text-primary">Invite your athletes</h2>
         <p className="mt-1 text-sm text-text-secondary">
-          Optional — only needed if your athlete has their own phone. They can scan
-          this code to join.
+          Optional — only needed if your athlete will sign in to their own
+          account. They can scan this code to join.
         </p>
 
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
