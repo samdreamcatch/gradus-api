@@ -1,18 +1,29 @@
-## Why the sheet looks transparent
+Add a one-tap "Add to plan" action to the bottom of the move sheet.
 
-In `src/styles.css`, the `--card` token is intentionally translucent:
+### Server
 
-```
---card: oklch(1 0 0 / 0.55);  /* light */
---card: oklch(0.27 0.02 260 / 0.55);  /* dark */
-```
+In `src/lib/plans.functions.ts`, add `addMoveToPlan({ planId, moveId })`:
+- Verify the plan belongs to the current coach.
+- Load the move (name, description, cue, why, defaultTargetKind, defaultTargetValue) — RLS already ensures it's the coach's.
+- Compute next `position` (max + 1) for that plan.
+- Insert a row in `plan_moves` snapshotting the move fields (`move_id`, `name`, `description`, `cue`, `why`, `target_kind`, `target_value`, `position`).
+- Bump the plan's `updated_at`.
+- Return `{ planId, planTitle }` for the toast.
 
-This is by design so paper grain / ruled lines show through cards on the page. Every previous attempt (`bg-card`, inline `var(--card)`, `[background-image:none]`) inherited that 55% alpha, which is why the library list bleeds through.
+### UI — `src/components/coach/move-sheet.tsx`
 
-The design system already ships a solid counterpart — `--popover` (oklch 1 0 0 in light, 0.27 0.02 260 in dark) — meant exactly for floating surfaces like menus and sheets.
+In the existing footer (only shown when `!isNew && existing`), add a third action on the left: **Add to plan** button (ghost variant, `Plus` icon, same sizing as Duplicate/Archive). Layout becomes: `[Add to plan] [Duplicate] ····· [Archive]`.
 
-## Change
+Tapping opens a `Popover` anchored to the button:
+- Header: small label "Add to a plan".
+- Body: list of the coach's plans (reuse the existing `listPlans` query with `kind: "plan"`, status `active`). Rendered as a scrollable `divide-y divide-divider` list of buttons — each row shows plan title, athlete chip (reuse `StatusPill` styling pattern: just title + small `text-text-tertiary` athlete name), matching the plans list visual language.
+- Empty state: "No active plans yet."
+- Tap a row → calls `addMoveToPlan`, closes popover, toast "Added to {planTitle}", invalidates `["plans"]` and `["plan", planId]` query keys.
 
-In `src/components/coach/move-sheet.tsx`, swap the inline background on `SheetContent` from `var(--card)` to `var(--popover)`. Keep `backgroundImage: 'none'` and the `shadow-page` / border classes.
+All styling uses existing tokens (`bg-popover`, `text-text-primary`, `border-divider`, `divide-divider`). No new design primitives.
 
-That's the only change. No token edits, no other components touched.
+### Out of scope
+
+- No duplicate-detection (coach can intentionally add the same move twice).
+- No reordering UI in the popover — new row goes to the end of the plan.
+- Templates are excluded from the picker; only `kind: "plan"` active plans.

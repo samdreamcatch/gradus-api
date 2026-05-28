@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Copy, Trash2, Loader2 } from "lucide-react";
+import { Copy, Trash2, Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
 import {
   Sheet,
@@ -9,6 +9,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
@@ -18,6 +19,7 @@ import {
   type MoveDTO,
   type TargetKind,
 } from "@/lib/moves.functions";
+import { listPlans, addMoveToPlan } from "@/lib/plans.functions";
 import { MoveField } from "./move-field";
 
 type Mode = "new" | string; // moveId or "new"
@@ -301,20 +303,23 @@ function MoveSheetBody({
         />
 
         {!isNew && existing ? (
-          <div className="flex items-center justify-between gap-3 border-t border-divider pt-4">
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={duplicate}
-              disabled={upsertMutation.isPending}
-            >
-              {savingField === "__dup" ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Copy className="mr-2 h-4 w-4" />
-              )}
-              Duplicate
-            </Button>
+          <div className="flex items-center justify-between gap-2 border-t border-divider pt-4">
+            <div className="flex items-center gap-1">
+              <AddToPlanAction moveId={existing.id} />
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={duplicate}
+                disabled={upsertMutation.isPending}
+              >
+                {savingField === "__dup" ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Copy className="mr-2 h-4 w-4" />
+                )}
+                Duplicate
+              </Button>
+            </div>
             <Button
               type="button"
               variant="ghost"
@@ -409,5 +414,88 @@ function TargetEditor({
         <span className="text-xs font-medium text-text-tertiary">{localKind}</span>
       </div>
     </div>
+  );
+}
+
+function AddToPlanAction({ moveId }: { moveId: string }) {
+  const qc = useQueryClient();
+  const fetchPlans = useServerFn(listPlans);
+  const addFn = useServerFn(addMoveToPlan);
+  const [open, setOpen] = useState(false);
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["plans", { kind: "plan", status: "active" }],
+    queryFn: () => fetchPlans({ data: { kind: "plan", status: "active" } }),
+    enabled: open,
+  });
+
+  const mutation = useMutation({
+    mutationFn: addFn,
+    onSuccess: ({ planId, planTitle }) => {
+      qc.invalidateQueries({ queryKey: ["plans"] });
+      qc.invalidateQueries({ queryKey: ["plan", planId] });
+      toast.success(`Added to ${planTitle}`);
+      setOpen(false);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const plans = data?.plans ?? [];
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button type="button" variant="ghost" disabled={mutation.isPending}>
+          {mutation.isPending ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Plus className="mr-2 h-4 w-4" />
+          )}
+          Add to plan
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-72 p-0">
+        <div className="border-b border-divider px-3 py-2">
+          <span className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
+            Add to a plan
+          </span>
+        </div>
+        <div className="max-h-72 overflow-y-auto">
+          {isLoading ? (
+            <div className="flex items-center justify-center py-6 text-text-tertiary">
+              <Loader2 className="h-4 w-4 animate-spin" />
+            </div>
+          ) : plans.length === 0 ? (
+            <p className="px-3 py-4 text-sm text-text-tertiary">No active plans yet.</p>
+          ) : (
+            <ul className="divide-y divide-divider">
+              {plans.map((p) => (
+                <li key={p.id}>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      mutation.mutate({ data: { planId: p.id, moveId } })
+                    }
+                    disabled={mutation.isPending}
+                    className="block w-full px-3 py-2.5 text-left transition hover:bg-elevated disabled:opacity-50"
+                  >
+                    <p className="truncate text-sm font-bold text-text-primary">
+                      {p.title || "Untitled plan"}
+                    </p>
+                    {p.athleteName ? (
+                      <p className="mt-0.5 text-xs text-text-tertiary">
+                        {p.athleteName}
+                      </p>
+                    ) : (
+                      <p className="mt-0.5 text-xs text-text-tertiary">Unassigned</p>
+                    )}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }
