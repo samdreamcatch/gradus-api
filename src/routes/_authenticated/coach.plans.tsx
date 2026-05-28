@@ -23,7 +23,6 @@ type Tab = "plans" | "library";
 type PlanFilter = "active" | "benched" | "templates";
 
 function PlansPage() {
-function PlansPage() {
   const [tab, setTab] = useState<Tab>("plans");
   const [planFilter, setPlanFilter] = useState<PlanFilter>("active");
   const [athleteId, setAthleteId] = useState<string>("");
