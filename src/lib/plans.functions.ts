@@ -418,7 +418,7 @@ export const createPlan = createServerFn({ method: "POST" })
         notes,
         kind: data.kind,
         athlete_id: data.kind === "template" ? null : (data.athleteId ?? null),
-        status: "benched",
+        status: data.kind === "template" ? "benched" : "draft",
       })
       .select("id")
       .single();
