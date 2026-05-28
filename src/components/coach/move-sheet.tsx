@@ -97,7 +97,7 @@ function MoveSheetBody({
   const [savingField, setSavingField] = useState<string | null>(null);
 
   const isNew = selection === "new" && !existing;
-  const move: MoveDTO | (Partial<MoveDTO> & { id?: undefined }) = existing ?? draft;
+  const move: Partial<MoveDTO> = existing ?? draft;
 
   const upsertMutation = useMutation({
     mutationFn: upsertFn,
@@ -147,21 +147,22 @@ function MoveSheetBody({
       setSavingField(null);
       return;
     }
+    const base = {
+      id: existing.id,
+      sport: existing.sport,
+      category: existing.category,
+      name: existing.name,
+      description: existing.description,
+      cue: existing.cue,
+      why: existing.why,
+      defaultTargetKind: existing.defaultTargetKind,
+      defaultTargetValue: existing.defaultTargetValue,
+    };
     await upsertMutation.mutateAsync({
-      data: {
-        id: existing.id,
-        sport: existing.sport,
-        category: existing.category,
-        name: existing.name,
-        description: existing.description,
-        cue: existing.cue,
-        why: existing.why,
-        defaultTargetKind: existing.defaultTargetKind,
-        defaultTargetValue: existing.defaultTargetValue,
-        [field]: next,
-      } as Parameters<typeof upsertFn>[0]["data"],
+      data: { ...base, [field]: next },
     });
   }
+
 
   const duplicate = async () => {
     if (!existing) return;
