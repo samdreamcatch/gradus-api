@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
@@ -14,7 +14,6 @@ import {
 } from "@/lib/plans.functions";
 import { listMoves, type MoveDTO } from "@/lib/moves.functions";
 import { MoveSheet } from "@/components/coach/move-sheet";
-import { NewPlanSheet } from "@/components/coach/new-plan-sheet";
 export const Route = createFileRoute("/_authenticated/coach/plans")({
   codeSplitGroupings: [["component"]],
   component: PlansPage,
