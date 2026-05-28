@@ -1,22 +1,20 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { Plus, ListChecks, Clock, ChevronRight, Search, Loader2 } from "lucide-react";
-import { toast } from "sonner";
+import { Plus, ListChecks, Clock, ChevronRight, Search } from "lucide-react";
 import { CoachBottomNav } from "@/components/coach/bottom-nav";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
   listPlans,
   listCoachAthletes,
-  createPlan,
   type PlanSummaryDTO,
   type PlanStatus,
 } from "@/lib/plans.functions";
 import { listMoves, type MoveDTO } from "@/lib/moves.functions";
 import { MoveSheet } from "@/components/coach/move-sheet";
+import { NewPlanSheet } from "@/components/coach/new-plan-sheet";
 export const Route = createFileRoute("/_authenticated/coach/plans")({
   codeSplitGroupings: [["component"]],
   component: PlansPage,
