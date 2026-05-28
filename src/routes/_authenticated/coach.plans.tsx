@@ -6,7 +6,6 @@ import { Plus, ListChecks, Clock, ChevronRight, Search, Loader2 } from "lucide-r
 import { toast } from "sonner";
 import { CoachBottomNav } from "@/components/coach/bottom-nav";
 import { Input } from "@/components/ui/input";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
