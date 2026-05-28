@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Copy, Trash2, Loader2 } from "lucide-react";
+import { Copy, Trash2, Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
 import {
   Sheet,
@@ -9,6 +9,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
@@ -18,6 +19,7 @@ import {
   type MoveDTO,
   type TargetKind,
 } from "@/lib/moves.functions";
+import { listPlans, addMoveToPlan } from "@/lib/plans.functions";
 import { MoveField } from "./move-field";
 
 type Mode = "new" | string; // moveId or "new"
