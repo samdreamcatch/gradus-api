@@ -12,6 +12,8 @@ import {
   Save,
   Power,
   Pause,
+  Loader2,
+  ArrowRight,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
@@ -36,7 +38,9 @@ import {
   type PlanMoveDTO,
   type TargetKind,
 } from "@/lib/plans.functions";
-import { listMoves, type MoveDTO } from "@/lib/moves.functions";
+import { listMoves, upsertMove, type MoveDTO } from "@/lib/moves.functions";
+
+
 
 export const Route = createFileRoute("/_authenticated/coach/plans/$planId")({
   component: PlanEditorPage,
@@ -419,18 +423,26 @@ function MovePicker({
   onOpenChange: (v: boolean) => void;
   onAdd: (moves: MoveDTO[]) => void;
 }) {
+  const qc = useQueryClient();
   const fetchMoves = useServerFn(listMoves);
+  const upsertFn = useServerFn(upsertMove);
+
   const { data } = useQuery({
     queryKey: ["moves"],
     queryFn: () => fetchMoves(),
     enabled: open,
   });
   const moves = data?.moves ?? [];
+  const [mode, setMode] = useState<"pick" | "create">("pick");
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<Record<string, MoveDTO>>({});
 
   useEffect(() => {
-    if (open) setSelected({});
+    if (open) {
+      setSelected({});
+      setMode("pick");
+      setQuery("");
+    }
   }, [open]);
 
   const filtered = useMemo(() => {
@@ -446,77 +458,327 @@ function MovePicker({
 
   const count = Object.keys(selected).length;
 
+  const upsertMutation = useMutation({
+    mutationFn: upsertFn,
+    onSuccess: ({ move }) => {
+      qc.invalidateQueries({ queryKey: ["moves"] });
+      onAdd([move]);
+      toast.success("Saved to library");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="flex max-h-[85vh] flex-col">
         <SheetHeader>
-          <SheetTitle className="font-display text-2xl">Add moves</SheetTitle>
+          <SheetTitle className="font-display text-2xl">
+            {mode === "pick" ? "Add moves" : "New move"}
+          </SheetTitle>
         </SheetHeader>
-        <div className="relative mt-3">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-tertiary" />
-          <Input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search moves"
-            className="h-9 pl-9"
+
+        {mode === "pick" ? (
+          <>
+            <div className="mt-3 flex items-center gap-2">
+              <div className="relative flex-1">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-tertiary" />
+                <Input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Search moves"
+                  className="h-9 pl-9"
+                />
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setMode("create")}
+                className="h-9 gap-1"
+              >
+                <Plus className="h-4 w-4" /> New
+              </Button>
+            </div>
+            <ul className="mt-3 flex-1 divide-y divide-divider overflow-y-auto">
+              {filtered.map((m) => {
+                const isSel = !!selected[m.id];
+                return (
+                  <li key={m.id}>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setSelected((prev) => {
+                          const next = { ...prev };
+                          if (next[m.id]) delete next[m.id];
+                          else next[m.id] = m;
+                          return next;
+                        })
+                      }
+                      className={cn(
+                        "flex w-full items-start gap-3 py-2.5 text-left transition",
+                        isSel && "bg-accent/10",
+                      )}
+                    >
+                      <div
+                        className={cn(
+                          "mt-1 flex h-4 w-4 shrink-0 items-center justify-center rounded border",
+                          isSel ? "border-accent bg-accent" : "border-divider",
+                        )}
+                      >
+                        {isSel ? <span className="text-[10px] font-black text-accent-foreground">✓</span> : null}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-bold text-text-primary">
+                          {m.name}
+                        </p>
+                        <p className="text-[11px] font-bold uppercase tracking-widest text-text-tertiary">
+                          {m.category} ·{" "}
+                          {m.defaultTargetKind === "minutes"
+                            ? `${m.defaultTargetValue} min`
+                            : `${m.defaultTargetValue} reps`}
+                        </p>
+                      </div>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+            <div className="mt-3 flex items-center justify-between gap-3 border-t border-divider pt-3">
+              <span className="text-xs font-bold text-text-secondary">
+                {count} selected
+              </span>
+              <Button
+                onClick={() => onAdd(Object.values(selected))}
+                disabled={count === 0}
+              >
+                Add {count > 0 ? count : ""}
+              </Button>
+            </div>
+          </>
+        ) : (
+          <NewMoveForm
+            existingMoves={moves}
+            saving={upsertMutation.isPending}
+            onCancel={() => setMode("pick")}
+            onUseExisting={(m) => onAdd([m])}
+            onCreate={(input) => upsertMutation.mutate({ data: input })}
           />
-        </div>
-        <ul className="mt-3 flex-1 divide-y divide-divider overflow-y-auto">
-          {filtered.map((m) => {
-            const isSel = !!selected[m.id];
-            return (
-              <li key={m.id}>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setSelected((prev) => {
-                      const next = { ...prev };
-                      if (next[m.id]) delete next[m.id];
-                      else next[m.id] = m;
-                      return next;
-                    })
-                  }
-                  className={cn(
-                    "flex w-full items-start gap-3 py-2.5 text-left transition",
-                    isSel && "bg-accent/10",
-                  )}
-                >
-                  <div
-                    className={cn(
-                      "mt-1 flex h-4 w-4 shrink-0 items-center justify-center rounded border",
-                      isSel ? "border-accent bg-accent" : "border-divider",
-                    )}
-                  >
-                    {isSel ? <span className="text-[10px] font-black text-accent-foreground">✓</span> : null}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-bold text-text-primary">
-                      {m.name}
-                    </p>
-                    <p className="text-[11px] font-bold uppercase tracking-widest text-text-tertiary">
-                      {m.category} ·{" "}
-                      {m.defaultTargetKind === "minutes"
-                        ? `${m.defaultTargetValue} min`
-                        : `${m.defaultTargetValue} reps`}
-                    </p>
-                  </div>
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-        <div className="mt-3 flex items-center justify-between gap-3 border-t border-divider pt-3">
-          <span className="text-xs font-bold text-text-secondary">
-            {count} selected
-          </span>
-          <Button
-            onClick={() => onAdd(Object.values(selected))}
-            disabled={count === 0}
-          >
-            Add {count > 0 ? count : ""}
-          </Button>
-        </div>
+        )}
       </SheetContent>
     </Sheet>
+  );
+}
+
+function similarityScore(a: string, b: string): number {
+  const na = a.toLowerCase().trim();
+  const nb = b.toLowerCase().trim();
+  if (!na || !nb) return 0;
+  if (na === nb) return 1;
+  if (na.includes(nb) || nb.includes(na)) return 0.85;
+  const aw = new Set(na.split(/\s+/).filter((w) => w.length > 2));
+  const bw = new Set(nb.split(/\s+/).filter((w) => w.length > 2));
+  if (!aw.size || !bw.size) return 0;
+  let shared = 0;
+  for (const w of aw) if (bw.has(w)) shared++;
+  return shared / Math.max(aw.size, bw.size);
+}
+
+function NewMoveForm({
+  existingMoves,
+  saving,
+  onCancel,
+  onUseExisting,
+  onCreate,
+}: {
+  existingMoves: MoveDTO[];
+  saving: boolean;
+  onCancel: () => void;
+  onUseExisting: (m: MoveDTO) => void;
+  onCreate: (input: {
+    sport: string;
+    category: string;
+    name: string;
+    description: string;
+    cue: string;
+    why: string;
+    defaultTargetKind: "reps" | "minutes";
+    defaultTargetValue: number;
+  }) => void;
+}) {
+  const sportOptions = useMemo(
+    () => Array.from(new Set(existingMoves.map((m) => m.sport).filter(Boolean))).sort(),
+    [existingMoves],
+  );
+
+  const [name, setName] = useState("");
+  const [sport, setSport] = useState(sportOptions[0] ?? "general");
+  const [category, setCategory] = useState("Uncategorized");
+  const [cue, setCue] = useState("");
+  const [targetKind, setTargetKind] = useState<"reps" | "minutes">("reps");
+  const [targetValue, setTargetValue] = useState<number>(10);
+  const [ignoreDupes, setIgnoreDupes] = useState(false);
+
+  const dupes = useMemo(() => {
+    if (!name.trim()) return [];
+    return existingMoves
+      .map((m) => ({ move: m, score: similarityScore(m.name, name) }))
+      .filter((x) => x.score >= 0.6)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 3)
+      .map((x) => x.move);
+  }, [existingMoves, name]);
+
+  const canCreate = name.trim().length > 0 && (dupes.length === 0 || ignoreDupes);
+
+  return (
+    <div className="mt-3 flex flex-1 flex-col overflow-y-auto">
+      <div className="space-y-3 pb-4">
+        <div>
+          <label className="mb-1 block text-[11px] font-black uppercase tracking-widest text-text-tertiary">
+            Name
+          </label>
+          <Input
+            value={name}
+            onChange={(e) => {
+              setName(e.target.value);
+              setIgnoreDupes(false);
+            }}
+            placeholder="Name the move"
+            autoFocus
+          />
+        </div>
+
+        {dupes.length > 0 ? (
+          <div className="rounded-md border border-accent/50 bg-accent/10 p-3">
+            <p className="text-xs font-bold text-text-primary">
+              Already in your library?
+            </p>
+            <ul className="mt-2 divide-y divide-divider">
+              {dupes.map((m) => (
+                <li key={m.id} className="flex items-center justify-between gap-2 py-1.5">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-bold text-text-primary">{m.name}</p>
+                    <p className="text-[11px] font-bold uppercase tracking-widest text-text-tertiary">
+                      {m.category}
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => onUseExisting(m)}
+                    className="gap-1 text-xs"
+                  >
+                    Use <ArrowRight className="h-3 w-3" />
+                  </Button>
+                </li>
+              ))}
+            </ul>
+            <button
+              type="button"
+              onClick={() => setIgnoreDupes((v) => !v)}
+              className="mt-2 text-[11px] font-bold uppercase tracking-widest text-text-secondary hover:text-text-primary"
+            >
+              {ignoreDupes ? "✓ Creating anyway" : "Ignore — create new anyway"}
+            </button>
+          </div>
+        ) : null}
+
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="mb-1 block text-[11px] font-black uppercase tracking-widest text-text-tertiary">
+              Sport
+            </label>
+            <Input
+              value={sport}
+              onChange={(e) => setSport(e.target.value)}
+              list="np-sports"
+            />
+            <datalist id="np-sports">
+              {sportOptions.map((s) => (
+                <option key={s} value={s} />
+              ))}
+            </datalist>
+          </div>
+          <div>
+            <label className="mb-1 block text-[11px] font-black uppercase tracking-widest text-text-tertiary">
+              Category
+            </label>
+            <Input
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="mb-1 block text-[11px] font-black uppercase tracking-widest text-text-tertiary">
+            Default target
+          </label>
+          <div className="flex items-center gap-2">
+            <div className="inline-flex overflow-hidden rounded-md border border-divider">
+              {(["reps", "minutes"] as const).map((k) => (
+                <button
+                  key={k}
+                  type="button"
+                  onClick={() => setTargetKind(k)}
+                  className={cn(
+                    "px-3 py-1.5 text-xs font-bold uppercase tracking-wide",
+                    targetKind === k
+                      ? "bg-accent text-accent-foreground"
+                      : "bg-card text-text-secondary",
+                  )}
+                >
+                  {k}
+                </button>
+              ))}
+            </div>
+            <Input
+              type="number"
+              min={0}
+              value={targetValue}
+              onChange={(e) => setTargetValue(Number(e.target.value) || 0)}
+              className="h-9 w-20"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="mb-1 block text-[11px] font-black uppercase tracking-widest text-text-tertiary">
+            Cue (optional)
+          </label>
+          <Input
+            value={cue}
+            onChange={(e) => setCue(e.target.value)}
+            placeholder="One line the athlete can repeat"
+          />
+        </div>
+      </div>
+
+      <div className="sticky bottom-0 mt-auto flex items-center justify-between gap-3 border-t border-divider bg-popover pt-3">
+        <Button type="button" variant="ghost" onClick={onCancel} disabled={saving}>
+          Back
+        </Button>
+        <Button
+          type="button"
+          disabled={!canCreate || saving}
+          onClick={() =>
+            onCreate({
+              sport: sport.trim() || "general",
+              category: category.trim() || "Uncategorized",
+              name: name.trim(),
+              description: "",
+              cue,
+              why: "",
+              defaultTargetKind: targetKind,
+              defaultTargetValue: targetValue,
+            })
+          }
+          className="gap-2"
+        >
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+          Save to library &amp; add
+        </Button>
+      </div>
+    </div>
   );
 }

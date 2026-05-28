@@ -2,10 +2,9 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { Plus, ListChecks, Clock, ChevronRight, Search } from "lucide-react";
+import { Plus, ListChecks, Clock, ChevronRight, Search, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { CoachBottomNav } from "@/components/coach/bottom-nav";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -18,7 +17,6 @@ import {
 } from "@/lib/plans.functions";
 import { listMoves, type MoveDTO } from "@/lib/moves.functions";
 import { MoveSheet } from "@/components/coach/move-sheet";
-
 export const Route = createFileRoute("/_authenticated/coach/plans")({
   codeSplitGroupings: [["component"]],
   component: PlansPage,
@@ -31,8 +29,19 @@ function PlansPage() {
   const [tab, setTab] = useState<Tab>("plans");
   const [planFilter, setPlanFilter] = useState<PlanFilter>("active");
   const [athleteId, setAthleteId] = useState<string>("");
-  const [createOpen, setCreateOpen] = useState(false);
   const [moveSelection, setMoveSelection] = useState<string | null>(null);
+
+  const navigate = useNavigate();
+  const qc = useQueryClient();
+  const createFn = useServerFn(createPlan);
+  const createMutation = useMutation({
+    mutationFn: createFn,
+    onSuccess: ({ id }) => {
+      qc.invalidateQueries({ queryKey: ["plans"] });
+      navigate({ to: "/coach/plans/$planId", params: { planId: id } });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   return (
     <>
@@ -61,20 +70,24 @@ function PlansPage() {
 
         <button
           type="button"
+          disabled={createMutation.isPending}
           onClick={() => {
-            if (tab === "plans") setCreateOpen(true);
+            if (tab === "plans") createMutation.mutate({ data: { kind: "plan", title: "Untitled plan" } });
             else setMoveSelection("new");
           }}
           aria-label={tab === "plans" ? "New plan" : "New move"}
-          className="fixed bottom-24 right-5 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-accent text-accent-foreground shadow-page ring-1 ring-black/10 transition active:scale-95"
+          className="fixed bottom-24 right-5 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-accent text-accent-foreground shadow-page ring-1 ring-black/10 transition active:scale-95 disabled:opacity-60"
         >
-          <Plus className="h-7 w-7" strokeWidth={2.5} />
+          {createMutation.isPending ? (
+            <Loader2 className="h-6 w-6 animate-spin" strokeWidth={2.5} />
+          ) : (
+            <Plus className="h-7 w-7" strokeWidth={2.5} />
+          )}
         </button>
       </div>
 
       <CoachBottomNav />
 
-      <CreatePlanSheet open={createOpen} onOpenChange={setCreateOpen} />
       <MoveSheet selection={moveSelection} onOpenChange={setMoveSelection} />
     </>
   );
@@ -431,132 +444,9 @@ function FilterChip({
 
 /* ---------------- Create plan sheet ---------------- */
 
-function CreatePlanSheet({
-  open,
-  onOpenChange,
-}: {
-  open: boolean;
-  onOpenChange: (v: boolean) => void;
-}) {
-  const navigate = useNavigate();
-  const qc = useQueryClient();
-  const fetchPlans = useServerFn(listPlans);
-  const createFn = useServerFn(createPlan);
-
-  const { data: templates } = useQuery({
-    queryKey: ["plans", { kind: "template" }],
-    queryFn: () => fetchPlans({ data: { kind: "template" } }),
-    enabled: open,
-  });
-  const { data: existing } = useQuery({
-    queryKey: ["plans", { kind: "plan-all" }],
-    queryFn: () => fetchPlans({ data: { kind: "plan" } }),
-    enabled: open,
-  });
-
-  const mutation = useMutation({
-    mutationFn: createFn,
-    onSuccess: ({ id }) => {
-      qc.invalidateQueries({ queryKey: ["plans"] });
-      onOpenChange(false);
-      navigate({ to: "/coach/plans/$planId", params: { planId: id } });
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-
-  const startFromScratch = () =>
-    mutation.mutate({ data: { kind: "plan", title: "Untitled plan" } });
-  const startFromTemplate = (id: string) =>
-    mutation.mutate({ data: { kind: "plan", fromTemplateId: id } });
-  const duplicate = (id: string) =>
-    mutation.mutate({ data: { kind: "plan", fromPlanId: id } });
-
-  return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto">
-        <SheetHeader>
-          <SheetTitle className="font-display text-2xl">New plan</SheetTitle>
-        </SheetHeader>
-        <div className="mt-4 space-y-5">
-          <Button
-            onClick={startFromScratch}
-            disabled={mutation.isPending}
-            className="h-12 w-full justify-start text-base font-bold"
-          >
-            <Plus className="mr-2 h-5 w-5" />
-            From scratch
-          </Button>
-
-          <Section title="From a template">
-            {(templates?.plans ?? []).length === 0 ? (
-              <p className="text-sm text-text-tertiary">No templates yet.</p>
-            ) : (
-              <ul className="divide-y divide-divider">
-                {templates!.plans.map((t) => (
-                  <li key={t.id}>
-                    <button
-                      type="button"
-                      onClick={() => startFromTemplate(t.id)}
-                      disabled={mutation.isPending}
-                      className="flex w-full items-center justify-between py-2.5 text-left"
-                    >
-                      <span className="font-display text-base font-bold text-text-primary">
-                        {t.title}
-                      </span>
-                      <span className="text-xs font-bold text-text-tertiary">
-                        {t.moveCount} moves
-                      </span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Section>
-
-          <Section title="Duplicate an existing plan">
-            {(existing?.plans ?? []).length === 0 ? (
-              <p className="text-sm text-text-tertiary">No plans yet.</p>
-            ) : (
-              <ul className="divide-y divide-divider">
-                {existing!.plans.map((p) => (
-                  <li key={p.id}>
-                    <button
-                      type="button"
-                      onClick={() => duplicate(p.id)}
-                      disabled={mutation.isPending}
-                      className="flex w-full items-center justify-between py-2.5 text-left"
-                    >
-                      <span className="font-display text-base font-bold text-text-primary">
-                        {p.title}
-                      </span>
-                      <span className="text-xs font-bold text-text-tertiary">
-                        {p.athleteName ?? "—"}
-                      </span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Section>
-        </div>
-      </SheetContent>
-    </Sheet>
-  );
-}
 
 
 /* ---------------- helpers ---------------- */
-
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <section>
-      <p className="mb-1 text-[11px] font-bold uppercase tracking-widest text-text-tertiary">
-        {title}
-      </p>
-      {children}
-    </section>
-  );
-}
 
 function EmptyState({ message }: { message: string }) {
   return (
