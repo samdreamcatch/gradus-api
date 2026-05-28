@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { coachProfileQueryOptions } from "@/hooks/use-coach-profile";
 import { InviteCard } from "@/components/onboarding/invite-card";
 import { getSport, getSportLevel, type SportKey } from "@/lib/coach-sports";
+import { CoachBottomNav } from "@/components/coach/bottom-nav";
 
 export const Route = createFileRoute("/_authenticated/coach")({
   component: CoachHome,
@@ -34,7 +35,9 @@ function CoachHome() {
 
 
   return (
-    <div className="mx-auto min-h-dvh max-w-3xl px-4 py-12">
+    <>
+    <div className="mx-auto min-h-dvh max-w-3xl px-4 pt-12 pb-32">
+
       <div className="rounded-2xl bg-card p-8 shadow-[0_10px_40px_-12px_rgba(0,0,0,0.15)] sm:p-10">
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -99,5 +102,8 @@ function CoachHome() {
         <p className="mt-10 text-sm text-text-secondary">More coming in the next slice.</p>
       </div>
     </div>
+    <CoachBottomNav />
+    </>
   );
 }
+
