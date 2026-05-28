@@ -378,7 +378,7 @@ function PlanEditorPage() {
         className="mt-3 w-full gap-2"
       >
         <Plus className="h-4 w-4" />
-        Add moves from library
+        Add moves from move library
       </Button>
 
       <div className="fixed inset-x-0 bottom-0 z-30 border-t border-divider bg-card/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-card/80">
