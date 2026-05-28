@@ -78,8 +78,6 @@ type PlanFilter = "active" | "benched" | "templates";
   );
 }
 
-}
-
 /* ---------------- Toggle ---------------- */
 
 function SegmentedToggle({ tab, onChange }: { tab: Tab; onChange: (t: Tab) => void }) {
