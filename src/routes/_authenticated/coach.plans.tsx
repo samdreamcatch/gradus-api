@@ -284,7 +284,7 @@ function LibrarySearchStrip() {
   return <div className="mt-3 h-1" aria-hidden />;
 }
 
-function LibraryView() {
+function LibraryView({ onSelectMove }: { onSelectMove: (id: string) => void }) {
   const fetchMoves = useServerFn(listMoves);
   const { data, isLoading } = useQuery({
     queryKey: ["moves"],
