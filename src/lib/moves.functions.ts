@@ -74,8 +74,28 @@ export const listMoves = createServerFn({ method: "GET" })
       .order("category", { ascending: true })
       .order("name", { ascending: true });
     if (error) throw new Error(error.message);
-    return { moves: (data ?? []).map(toDTO) };
+
+    // Curriculum categories from seed_moves, scoped to sports the coach teaches
+    const { data: levels } = await supabase
+      .from("coach_levels")
+      .select("sport")
+      .eq("coach_id", coachId);
+    const sports = Array.from(new Set((levels ?? []).map((l) => l.sport)));
+    let seedCategories: { sport: string; category: string }[] = [];
+    if (sports.length) {
+      const { data: seeds } = await supabase
+        .from("seed_moves")
+        .select("sport, category")
+        .in("sport", sports);
+      seedCategories = seeds ?? [];
+    }
+
+    return {
+      moves: (data ?? []).map(toDTO),
+      seedCategories,
+    };
   });
+
 
 const moveInput = z.object({
   id: z.string().uuid().optional(),
