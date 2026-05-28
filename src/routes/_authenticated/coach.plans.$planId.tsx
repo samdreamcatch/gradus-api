@@ -38,7 +38,8 @@ import {
   type PlanMoveDTO,
   type TargetKind,
 } from "@/lib/plans.functions";
-import { listMoves, type MoveDTO } from "@/lib/moves.functions";
+import { listMoves, upsertMove, type MoveDTO, type TargetKind as MoveTargetKind } from "@/lib/moves.functions";
+
 
 export const Route = createFileRoute("/_authenticated/coach/plans/$planId")({
   component: PlanEditorPage,
