@@ -94,7 +94,7 @@ function SegmentedToggle({ tab, onChange }: { tab: Tab; onChange: (t: Tab) => vo
               : "text-text-secondary hover:text-text-primary",
           )}
         >
-          {t}
+          {t === "library" ? "Move library" : t}
         </button>
       ))}
     </div>
