@@ -30,10 +30,19 @@ function PlansPage() {
   const [tab, setTab] = useState<Tab>("plans");
   const [planFilter, setPlanFilter] = useState<PlanFilter>("active");
   const [athleteId, setAthleteId] = useState<string>("");
-  const [createOpen, setCreateOpen] = useState(false);
   const [moveSelection, setMoveSelection] = useState<string | null>(null);
 
-  return (
+  const navigate = useNavigate();
+  const qc = useQueryClient();
+  const createFn = useServerFn(createPlan);
+  const createMutation = useMutation({
+    mutationFn: createFn,
+    onSuccess: ({ id }) => {
+      qc.invalidateQueries({ queryKey: ["plans"] });
+      navigate({ to: "/coach/plans/$planId", params: { planId: id } });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
     <>
       <div className="mx-auto flex min-h-dvh max-w-3xl flex-col px-4 pt-6 pb-32">
         <header className="sticky top-0 z-20 -mx-4 bg-background/90 px-4 pb-3 pt-2 backdrop-blur supports-[backdrop-filter]:bg-background/70">
