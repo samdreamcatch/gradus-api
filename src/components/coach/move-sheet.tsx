@@ -346,11 +346,11 @@ function TargetEditor({
   const [localValue, setLocalValue] = useState<string>(String(value));
 
   // Sync external updates
-  const kindRef = useMemo(() => ({ kind, value }), [kind, value]);
-  useMemoEffect(() => {
-    setLocalKind(kindRef.kind);
-    setLocalValue(String(kindRef.value));
-  }, [kindRef]);
+  useEffect(() => {
+    setLocalKind(kind);
+    setLocalValue(String(value));
+  }, [kind, value]);
+
 
   const commit = () => {
     const n = Math.max(0, Math.min(10000, Number(localValue) || 0));
