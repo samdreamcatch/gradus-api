@@ -243,7 +243,6 @@ function MoveSheetBody({
             options={sportOptions}
             placeholder="Sport"
             saving={savingField === "sport"}
-            disabled={isNew && !move.name}
             onCommit={(v) => commitField("sport", v)}
           />
           <MoveField
@@ -253,7 +252,6 @@ function MoveSheetBody({
             options={categoryOptions}
             placeholder="Category"
             saving={savingField === "category"}
-            disabled={isNew && !move.name}
             onCommit={(v) => commitField("category", v)}
           />
         </div>
