@@ -71,15 +71,25 @@ function PlansPage() {
 
         <button
           type="button"
+          disabled={createMutation.isPending}
           onClick={() => {
-            if (tab === "plans") setCreateOpen(true);
+            if (tab === "plans") createMutation.mutate({ data: { kind: "plan", title: "Untitled plan" } });
             else setMoveSelection("new");
           }}
           aria-label={tab === "plans" ? "New plan" : "New move"}
-          className="fixed bottom-24 right-5 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-accent text-accent-foreground shadow-page ring-1 ring-black/10 transition active:scale-95"
+          className="fixed bottom-24 right-5 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-accent text-accent-foreground shadow-page ring-1 ring-black/10 transition active:scale-95 disabled:opacity-60"
         >
-          <Plus className="h-7 w-7" strokeWidth={2.5} />
+          {createMutation.isPending ? (
+            <Loader2 className="h-6 w-6 animate-spin" strokeWidth={2.5} />
+          ) : (
+            <Plus className="h-7 w-7" strokeWidth={2.5} />
+          )}
         </button>
+      </div>
+
+      <CoachBottomNav />
+
+
       </div>
 
       <CoachBottomNav />
