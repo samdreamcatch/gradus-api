@@ -86,7 +86,6 @@ export const listMoves = createServerFn({ method: "GET" })
     };
   });
 
-  });
 
 
 const moveInput = z.object({
