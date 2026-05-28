@@ -300,23 +300,24 @@ function MoveSheetBody({
           rows={4}
           saving={savingField === "description"}
           onCommit={(v) => commitField("description", v)}
-        />
-
         {!isNew && existing ? (
-          <div className="flex items-center justify-between gap-3 border-t border-divider pt-4">
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={duplicate}
-              disabled={upsertMutation.isPending}
-            >
-              {savingField === "__dup" ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Copy className="mr-2 h-4 w-4" />
-              )}
-              Duplicate
-            </Button>
+          <div className="flex items-center justify-between gap-2 border-t border-divider pt-4">
+            <div className="flex items-center gap-1">
+              <AddToPlanAction moveId={existing.id} />
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={duplicate}
+                disabled={upsertMutation.isPending}
+              >
+                {savingField === "__dup" ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Copy className="mr-2 h-4 w-4" />
+                )}
+                Duplicate
+              </Button>
+            </div>
             <Button
               type="button"
               variant="ghost"
@@ -327,6 +328,8 @@ function MoveSheetBody({
               <Trash2 className="mr-2 h-4 w-4" />
               Archive
             </Button>
+          </div>
+        ) : null}
           </div>
         ) : null}
       </div>
