@@ -433,14 +433,45 @@ function PlanEditorPage() {
             <span className="font-bold text-text-primary">{moves.length}</span> moves ·{" "}
             <span className="font-bold text-text-primary">{totalMinutes}</span> min
           </div>
-          <Button
-            onClick={handleSave}
-            disabled={saveMutation.isPending}
-            className="gap-2"
-          >
-            <Save className="h-4 w-4" />
-            Save
-          </Button>
+          <div className="flex items-center gap-2">
+            {isTemplate ? (
+              <Button
+                type="button"
+                onClick={() => handleSave()}
+                disabled={saveMutation.isPending}
+                className="gap-2"
+              >
+                {saveMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                Save template
+              </Button>
+            ) : (
+              <>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => handleSave()}
+                  disabled={saveMutation.isPending}
+                  className="gap-2"
+                >
+                  <Save className="h-4 w-4" />
+                  Save for later
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => handleSave({ activate: true })}
+                  disabled={saveMutation.isPending || statusMutation.isPending || !athleteId}
+                  className="gap-2"
+                >
+                  {saveMutation.isPending || statusMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Send className="h-4 w-4" />
+                  )}
+                  Activate &amp; share
+                </Button>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
