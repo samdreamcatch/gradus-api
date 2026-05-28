@@ -171,6 +171,7 @@ function PlansFilterStrip({
   return (
     <div className="mt-3 flex items-center gap-2 overflow-x-auto pb-1">
       {chip("active", "Active")}
+      {chip("drafts", "Drafts")}
       {chip("benched", "Benched")}
       {chip("templates", "Templates")}
       <div className="h-4 w-px shrink-0 bg-divider" />
