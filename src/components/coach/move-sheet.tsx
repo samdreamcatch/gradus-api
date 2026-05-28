@@ -310,20 +310,33 @@ function MoveSheetBody({
           <div className="flex items-center justify-between gap-2 border-t border-divider pt-4">
             <div className="flex items-center gap-1">
               <AddToPlanAction moveId={existing.id} />
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={duplicate}
-                disabled={upsertMutation.isPending}
-              >
-                {savingField === "__dup" ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Copy className="mr-2 h-4 w-4" />
-                )}
-                Duplicate
-              </Button>
-            </div>
+              {openedAsNew ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={onClose}
+                  disabled={upsertMutation.isPending || savingField !== null}
+                >
+                  {upsertMutation.isPending || savingField !== null ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : null}
+                  Save
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={duplicate}
+                  disabled={upsertMutation.isPending}
+                >
+                  {savingField === "__dup" ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Copy className="mr-2 h-4 w-4" />
+                  )}
+                  Duplicate
+                </Button>
+              )}
             <Button
               type="button"
               variant="ghost"
