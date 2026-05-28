@@ -219,7 +219,7 @@ function MoveSheetBody({
             kind="text"
             label="Name"
             value={move.name ?? ""}
-            placeholder={isNew ? "Name this move to save it" : "Add a name"}
+            placeholder={isNew ? "Name this move" : "Add a name"}
             required
             autoEdit={isNew}
             saving={savingField === "name"}
