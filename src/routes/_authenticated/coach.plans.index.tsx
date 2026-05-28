@@ -14,7 +14,7 @@ import {
 } from "@/lib/plans.functions";
 import { listMoves, type MoveDTO } from "@/lib/moves.functions";
 import { MoveSheet } from "@/components/coach/move-sheet";
-export const Route = createFileRoute("/_authenticated/coach/plans")({
+export const Route = createFileRoute("/_authenticated/coach/plans/")({
   codeSplitGroupings: [["component"]],
   component: PlansPage,
 });
