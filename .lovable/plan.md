@@ -1,46 +1,116 @@
-# Athlete Signup Flow
+# /coach/plans — Core Authoring Loop
 
-Three-step wizard that turns a parent-issued 8-char invite code into a real auth account linked to the existing `athletes` row.
+## Scope
 
-## User flow
+Phase 1 (this plan): full CRUD for moves, plans, and templates. Mobile-first, on-brand.
+Phase 2 (separate plan): AI text editor (and later voice) for generating/editing plans + templates.
 
-1. Role picker → "I'm an athlete" (currently disabled) routes to `/signup/athlete`.
-2. **Step 1 — Enter code.** Single 8-char code input (uppercase, `A-Z2-9`). Validates against `athlete_invite_codes` (must exist, not consumed, not expired). On success, advances to step 2 with the code in the URL.
-3. **Step 2 — Confirm identity.** Reads-only preview: first name, last name, sport chip(s), coach name. Big "This is me / Not me" CTA. (The athlete's name and parent-set data are already in the DB — they just confirm.)
-4. **Step 3 — Create account.** Email + password fields. On submit: create Supabase auth user, claim the invite code, attach `auth.uid()` to the `athletes.user_id` column, mark code consumed. Sign the user in and redirect to `/athlete`.
-5. **/athlete placeholder** — minimal "Welcome, {firstName}" page styled with the design system.
+## Data model
 
-## Screens (all reuse design system components)
+New tables (all RLS-scoped to `auth.uid()` via `coach_profiles`):
 
-- `src/routes/signup.athlete.tsx` — Step 1 (replaces current stub). Single code input, `Logo`, paper card, primary `Button`.
-- `src/routes/signup.athlete.confirm.tsx` — Step 2. Reads `?code=`, calls `getAthleteInviteSummary`, shows `SportChip` for the matched sport, coach name, athlete name. "This is me" → next; "Not me" → back to step 1.
-- `src/routes/signup.athlete.account.tsx` — Step 3. Email + password fields (shadcn `Input` + `Label` + `Button`). Inline errors.
-- `src/routes/_authenticated/athlete.tsx` — placeholder dashboard.
-- Update `src/routes/index.tsx` to enable the athlete `RoleButton` (remove `disabled: true`).
+**moves** — coach-owned library entry
+- `coach_id`, `sport`, `category`, `name`
+- `description` (the long coach-facing detail), `cue` (short cue), `why` (rationale)
+- `default_target_kind` (`reps` | `minutes`), `default_target_value` (numeric)
+- `archived_at` (soft delete)
 
-## Server functions (new file `src/lib/athlete-signup.functions.ts`)
+**plans** — a plan or a template
+- `coach_id`, `title`, `notes`
+- `kind`: `'plan'` | `'template'`
+- `athlete_id` (nullable; required when kind=plan)
+- `status`: `'active'` | `'benched'` (only meaningful for kind=plan)
+- `created_at`, `updated_at`
 
-- `getAthleteInviteSummary({ code })` — **public** (no `requireSupabaseAuth`, uses `supabaseAdmin`). Looks up `athlete_invite_codes` by code; validates `used_at IS NULL` and `expires_at > now()`. Joins to `athletes`, `coach_athletes`, `coach_profiles`, `athlete_goals` (for sport) and `coach_levels` (fallback). Returns `{ athleteFirstName, athleteLastName, sports: string[], coachFirstName, coachLastName }`. **Sport logic:** prefer `athlete_goals.sport` rows for this athlete+coach; if empty, fall back to the coach's `coach_levels` sports. (Matches "show only sports this athlete works with this coach on.")
-- `claimAthleteInvite({ code })` — protected with `requireSupabaseAuth`. Re-validates the code, sets `athletes.user_id = auth.uid()` for the linked athlete, writes `used_at = now()` and `claimed_by = auth.uid()` on the code row. Idempotent (no-op if already claimed by same user).
+**plan_moves** — ordered moves inside a plan
+- `plan_id`, `position` (int), `move_id` (nullable — keeps link if move not deleted)
+- Snapshot fields (editable per-plan, do NOT mutate the library):
+  `name`, `description`, `cue`, `why`, `target_kind`, `target_value`
 
-Account creation itself uses `supabase.auth.signUp({ email, password })` directly on the client (browser client), then calls `claimAthleteInvite` once the session is live. This keeps the password out of server logs and matches how the parent flow signs up.
+Validation:
+- Saving with kind=plan requires `athlete_id`; with kind=template requires `athlete_id IS NULL`.
+- Activating a plan: server fn sets `status='benched'` on any existing active plan for that `(coach_id, athlete_id)` pair, then sets new one active. One active per coach per athlete (athlete can still have actives from other coaches).
 
-## Data & security
+Seeding:
+- Migration loads the 158-row CSV into a `seed_moves` table (sport, category, name, description, cue, why, target_kind, target_value).
+- A `seed_coach_library(coach_id)` SQL function inserts rows from `seed_moves` into `moves` filtered by the sports in `coach_levels` for that coach.
+- Run automatically once when a coach first visits /coach/plans (idempotent: skip if they already have any moves).
 
-- Existing `athletes.user_id` column is already nullable — no schema change needed.
-- `athlete_invite_codes` RLS already restricts parents to their own rows; the lookup goes through `supabaseAdmin` (intentional, public by code).
-- New `getMyRole` case: if `athletes.user_id = auth.uid()` (and no coach/parent profile), return `role: "athlete"`. Update `/login` post-login routing and `/` `beforeLoad` to send athletes to `/athlete`.
-- `_authenticated` layout already handles the auth gate for `/athlete`.
+Notes column collapse:
+- CSV columns `Cue Note` + `Cue Note (Athlete)` → single `cue`.
+- `Why Note` + `Why Note (Athlete)` → single `why`.
+- `Coach Note` → `description`.
+- Athlete UI will render with athlete-facing pronouns later; storage is single-source.
 
-## Validation rules
+## Page structure (`/coach/plans`)
 
-- Code: trimmed, uppercased, length 8, `^[A-Z2-9]+$` (matches existing `INVITE_ALPHABET`).
-- Email: zod email, max 255, trim+lowercase.
-- Password: min 8 chars (matches Supabase default).
-- All errors surfaced inline below the relevant field; no toasts for form errors.
+Top-level tab toggle (segmented control, on-brand):
 
-## Out of scope (v1)
+```text
+[ Plans ]  [ Library ]
+```
 
-- Google sign-up (per your choice).
-- Athlete editing their own profile/sport.
-- Phone/OTP path (the `athlete_otp_challenges` table stays untouched).
+### Plans tab
+- Primary filter chips: `Active` · `Benched` · `Templates`
+- Secondary filter: athlete dropdown (only visible when Active/Benched selected; shows coach's rostered athletes + "All")
+- List of plan cards: title, athlete name (or "Template"), move count, summed total (e.g. "8 moves · ~22 min"), status pill
+- FAB / pinned button: `+ New plan` → bottom sheet picker: *From scratch* / *From template* / *Duplicate existing*
+- Tap a card → plan detail/editor route
+
+### Library tab
+- Sport filter chips (only shown if coach teaches >1 sport; pulled from `coach_levels`)
+- Search by name
+- Grouped by category (sticky category headers, sorted alphabetically)
+- Each row: name, cue (1-line), default target ("10 reps" / "5 min"), small edit affordance
+- FAB: `+ New move`
+
+### Plan editor (`/coach/plans/$planId`)
+- Header: editable title, athlete picker (or "Template" toggle), status toggle (Active/Benched) when assigned, total summary
+- Notes textarea
+- Ordered move list (drag-reorder), each item shows name + editable target + collapsible cue/why/description (snapshot edits apply only to this plan)
+- "Add moves" bottom sheet → opens library picker (search + category groups, multi-select), inserts snapshots
+- Save / Delete actions
+
+### Move editor (library)
+- Form: name, sport (locked to coach's sports), category (free-text with existing suggestions), description, cue, why, default target kind + value
+- Archive button (soft delete; existing plan snapshots are unaffected)
+
+## Routes
+
+- `src/routes/_authenticated/coach.plans.tsx` — tab container (already exists, gets rewritten)
+- `src/routes/_authenticated/coach.plans.$planId.tsx` — plan/template editor
+- `src/routes/_authenticated/coach.plans.moves.$moveId.tsx` — move editor
+
+## Server functions (`src/lib/plans.functions.ts`, `src/lib/moves.functions.ts`)
+
+All use `requireSupabaseAuth`; resolve `coach_id` from `coach_profiles` by `user_id`.
+
+- `ensureCoachLibrary()` — idempotent seed on first load
+- `listMoves({ sport? })`, `upsertMove(input)`, `archiveMove(id)`
+- `listPlans({ filter, athleteId? })` — returns plans with move counts + summed total
+- `getPlan(id)` — plan + ordered plan_moves
+- `savePlan(input)` — handles plan vs template validation, snapshot inserts
+- `setPlanStatus({ planId, status })` — handles auto-bench of previous active
+- `duplicatePlan(id, { asTemplate?, athleteId? })`
+
+## Design system
+
+- Tabs: pen-highlight on active tab label, divider underline
+- Filter chips: `bg-elevated` default, `bg-accent text-accent-foreground` selected
+- Plan/move cards: `bg-card` with `shadow-card`, hover lifts to `border-accent/50`
+- Status pill: Tennis pen wash for active, divider grey for benched
+- Empty states: Caveat handwritten copy + small CTA
+- Respect existing `CoachBottomNav` (pb-32)
+
+## Out of scope (Phase 2)
+
+- AI text editor (Lovable AI Gemini Flash) for generating/editing plan content via prompt
+- Voice recording → transcription
+- Athlete-side plan viewer
+- Sharing templates between coaches
+
+## Open assumptions (flag if wrong)
+
+- Categories are coach-editable free text (CSV values pre-seed the dropdown but coach can type new ones).
+- Move snapshots in `plan_moves` are fully independent after creation — editing the library move later doesn't propagate.
+- "Total minutes" sums minutes-kind moves only; reps moves don't contribute to the time estimate (display "8 moves · 5 min + 4 rep drills" style copy).
