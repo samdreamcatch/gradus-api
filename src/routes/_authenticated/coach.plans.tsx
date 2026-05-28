@@ -80,21 +80,26 @@ function PlansPage() {
 /* ---------------- Toggle ---------------- */
 
 function SegmentedToggle({ tab, onChange }: { tab: Tab; onChange: (t: Tab) => void }) {
+  const tabs: { key: Tab; label: string }[] = [
+    { key: "plans", label: "Plans" },
+    { key: "library", label: "Move library" },
+  ];
+
   return (
     <div className="flex rounded-lg bg-divider/40 p-1">
-      {(["plans", "library"] as const).map((t) => (
+      {tabs.map((t) => (
         <button
-          key={t}
+          key={t.key}
           type="button"
-          onClick={() => onChange(t)}
+          onClick={() => onChange(t.key)}
           className={cn(
-            "flex-1 rounded-md py-1.5 text-sm font-bold capitalize transition",
-            tab === t
+            "flex-1 rounded-md py-1.5 text-sm font-bold transition",
+            tab === t.key
               ? "bg-card text-text-primary shadow-sm"
               : "text-text-secondary hover:text-text-primary",
           )}
         >
-          {t}
+          {t.label}
         </button>
       ))}
     </div>
@@ -347,7 +352,7 @@ function LibraryView() {
         <EmptyState
           message={
             moves.length === 0
-              ? "Your library is empty. Add a move with + or set up sports in your profile to load the starter library."
+              ? "Your move library is empty. Add a move with + or set up sports in your profile to load the starter move library."
               : query.trim() || sport
                 ? "No moves match your filters."
                 : "No moves match."
