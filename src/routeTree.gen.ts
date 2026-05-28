@@ -26,6 +26,7 @@ import { Route as SignupAthleteAccountRouteImport } from './routes/signup.athlet
 import { Route as AuthenticatedCoachSettingsRouteImport } from './routes/_authenticated/coach.settings'
 import { Route as AuthenticatedCoachPlansRouteImport } from './routes/_authenticated/coach.plans'
 import { Route as AuthenticatedCoachOnboardingRouteImport } from './routes/_authenticated/coach.onboarding'
+import { Route as AuthenticatedCoachPlansPlanIdRouteImport } from './routes/_authenticated/coach.plans.$planId'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -113,6 +114,12 @@ const AuthenticatedCoachOnboardingRoute =
     path: '/onboarding',
     getParentRoute: () => AuthenticatedCoachRoute,
   } as any)
+const AuthenticatedCoachPlansPlanIdRoute =
+  AuthenticatedCoachPlansPlanIdRouteImport.update({
+    id: '/$planId',
+    path: '/$planId',
+    getParentRoute: () => AuthenticatedCoachPlansRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -124,13 +131,14 @@ export interface FileRoutesByFullPath {
   '/signup/coach': typeof SignupCoachRoute
   '/signup/parent': typeof SignupParentRouteWithChildren
   '/coach/onboarding': typeof AuthenticatedCoachOnboardingRoute
-  '/coach/plans': typeof AuthenticatedCoachPlansRoute
+  '/coach/plans': typeof AuthenticatedCoachPlansRouteWithChildren
   '/coach/settings': typeof AuthenticatedCoachSettingsRoute
   '/signup/athlete/account': typeof SignupAthleteAccountRoute
   '/signup/athlete/confirm': typeof SignupAthleteConfirmRoute
   '/signup/parent/athletes': typeof SignupParentAthletesRoute
   '/signup/parent/goals': typeof SignupParentGoalsRoute
   '/signup/parent/schedule': typeof SignupParentScheduleRoute
+  '/coach/plans/$planId': typeof AuthenticatedCoachPlansPlanIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -142,13 +150,14 @@ export interface FileRoutesByTo {
   '/signup/coach': typeof SignupCoachRoute
   '/signup/parent': typeof SignupParentRouteWithChildren
   '/coach/onboarding': typeof AuthenticatedCoachOnboardingRoute
-  '/coach/plans': typeof AuthenticatedCoachPlansRoute
+  '/coach/plans': typeof AuthenticatedCoachPlansRouteWithChildren
   '/coach/settings': typeof AuthenticatedCoachSettingsRoute
   '/signup/athlete/account': typeof SignupAthleteAccountRoute
   '/signup/athlete/confirm': typeof SignupAthleteConfirmRoute
   '/signup/parent/athletes': typeof SignupParentAthletesRoute
   '/signup/parent/goals': typeof SignupParentGoalsRoute
   '/signup/parent/schedule': typeof SignupParentScheduleRoute
+  '/coach/plans/$planId': typeof AuthenticatedCoachPlansPlanIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -162,13 +171,14 @@ export interface FileRoutesById {
   '/signup/coach': typeof SignupCoachRoute
   '/signup/parent': typeof SignupParentRouteWithChildren
   '/_authenticated/coach/onboarding': typeof AuthenticatedCoachOnboardingRoute
-  '/_authenticated/coach/plans': typeof AuthenticatedCoachPlansRoute
+  '/_authenticated/coach/plans': typeof AuthenticatedCoachPlansRouteWithChildren
   '/_authenticated/coach/settings': typeof AuthenticatedCoachSettingsRoute
   '/signup/athlete/account': typeof SignupAthleteAccountRoute
   '/signup/athlete/confirm': typeof SignupAthleteConfirmRoute
   '/signup/parent/athletes': typeof SignupParentAthletesRoute
   '/signup/parent/goals': typeof SignupParentGoalsRoute
   '/signup/parent/schedule': typeof SignupParentScheduleRoute
+  '/_authenticated/coach/plans/$planId': typeof AuthenticatedCoachPlansPlanIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -189,6 +199,7 @@ export interface FileRouteTypes {
     | '/signup/parent/athletes'
     | '/signup/parent/goals'
     | '/signup/parent/schedule'
+    | '/coach/plans/$planId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -207,6 +218,7 @@ export interface FileRouteTypes {
     | '/signup/parent/athletes'
     | '/signup/parent/goals'
     | '/signup/parent/schedule'
+    | '/coach/plans/$planId'
   id:
     | '__root__'
     | '/'
@@ -226,6 +238,7 @@ export interface FileRouteTypes {
     | '/signup/parent/athletes'
     | '/signup/parent/goals'
     | '/signup/parent/schedule'
+    | '/_authenticated/coach/plans/$planId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -358,18 +371,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCoachOnboardingRouteImport
       parentRoute: typeof AuthenticatedCoachRoute
     }
+    '/_authenticated/coach/plans/$planId': {
+      id: '/_authenticated/coach/plans/$planId'
+      path: '/$planId'
+      fullPath: '/coach/plans/$planId'
+      preLoaderRoute: typeof AuthenticatedCoachPlansPlanIdRouteImport
+      parentRoute: typeof AuthenticatedCoachPlansRoute
+    }
   }
 }
 
+interface AuthenticatedCoachPlansRouteChildren {
+  AuthenticatedCoachPlansPlanIdRoute: typeof AuthenticatedCoachPlansPlanIdRoute
+}
+
+const AuthenticatedCoachPlansRouteChildren: AuthenticatedCoachPlansRouteChildren =
+  {
+    AuthenticatedCoachPlansPlanIdRoute: AuthenticatedCoachPlansPlanIdRoute,
+  }
+
+const AuthenticatedCoachPlansRouteWithChildren =
+  AuthenticatedCoachPlansRoute._addFileChildren(
+    AuthenticatedCoachPlansRouteChildren,
+  )
+
 interface AuthenticatedCoachRouteChildren {
   AuthenticatedCoachOnboardingRoute: typeof AuthenticatedCoachOnboardingRoute
-  AuthenticatedCoachPlansRoute: typeof AuthenticatedCoachPlansRoute
+  AuthenticatedCoachPlansRoute: typeof AuthenticatedCoachPlansRouteWithChildren
   AuthenticatedCoachSettingsRoute: typeof AuthenticatedCoachSettingsRoute
 }
 
 const AuthenticatedCoachRouteChildren: AuthenticatedCoachRouteChildren = {
   AuthenticatedCoachOnboardingRoute: AuthenticatedCoachOnboardingRoute,
-  AuthenticatedCoachPlansRoute: AuthenticatedCoachPlansRoute,
+  AuthenticatedCoachPlansRoute: AuthenticatedCoachPlansRouteWithChildren,
   AuthenticatedCoachSettingsRoute: AuthenticatedCoachSettingsRoute,
 }
 
