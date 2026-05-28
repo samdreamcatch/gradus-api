@@ -89,15 +89,10 @@ function PlansPage() {
 
       <CoachBottomNav />
 
-
-      </div>
-
-      <CoachBottomNav />
-
-      <CreatePlanSheet open={createOpen} onOpenChange={setCreateOpen} />
       <MoveSheet selection={moveSelection} onOpenChange={setMoveSelection} />
     </>
   );
+}
 }
 
 /* ---------------- Toggle ---------------- */
