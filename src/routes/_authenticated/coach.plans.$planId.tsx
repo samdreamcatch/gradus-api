@@ -184,7 +184,7 @@ function PlanEditorPage() {
     ]);
   };
 
-  const handleSave = () => {
+  const handleSave = (opts?: { activate?: boolean }) => {
     if (!title.trim()) {
       toast.error("Give the plan a title.");
       return;
@@ -193,27 +193,52 @@ function PlanEditorPage() {
       toast.error("Assign an athlete or save as template.");
       return;
     }
-    saveMutation.mutate({
-      data: {
-        id: planId,
-        title: title.trim(),
-        notes,
-        kind: isTemplate ? "template" : "plan",
-        athleteId: isTemplate ? null : athleteId,
-        moves: moves.map((m) => ({
-          moveId: m.moveId,
-          name: m.name,
-          description: m.description,
-          cue: m.cue,
-          why: m.why,
-          targetKind: m.targetKind,
-          targetValue: m.targetValue,
-        })),
+    saveMutation.mutate(
+      {
+        data: {
+          id: isNew ? undefined : planId,
+          title: title.trim(),
+          notes,
+          kind: isTemplate ? "template" : "plan",
+          athleteId: isTemplate ? null : athleteId,
+          moves: moves.map((m) => ({
+            moveId: m.moveId,
+            name: m.name,
+            description: m.description,
+            cue: m.cue,
+            why: m.why,
+            targetKind: m.targetKind,
+            targetValue: m.targetValue,
+          })),
+        },
       },
-    });
+      {
+        onSuccess: ({ id }) => {
+          if (opts?.activate && !isTemplate && athleteId) {
+            statusMutation.mutate(
+              { data: { id, status: "active" } },
+              {
+                onSuccess: () => {
+                  toast.success("Plan activated");
+                  navigate({ to: "/coach/plans" });
+                },
+              },
+            );
+            return;
+          }
+          if (isNew) {
+            navigate({
+              to: "/coach/plans/$planId",
+              params: { planId: id },
+              replace: true,
+            });
+          }
+        },
+      },
+    );
   };
 
-  if (isLoading || !data) {
+  if (!isNew && (isLoading || !data)) {
     return (
       <div className="mx-auto min-h-dvh max-w-3xl px-4 pt-6">
         <p className="text-sm text-text-secondary">Loading…</p>
