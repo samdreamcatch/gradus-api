@@ -17,6 +17,7 @@ import {
   type PlanStatus,
 } from "@/lib/plans.functions";
 import { listMoves, type MoveDTO } from "@/lib/moves.functions";
+import { MoveSheet } from "@/components/coach/move-sheet";
 
 export const Route = createFileRoute("/_authenticated/coach/plans")({
   component: PlansPage,
@@ -30,6 +31,7 @@ function PlansPage() {
   const [planFilter, setPlanFilter] = useState<PlanFilter>("active");
   const [athleteId, setAthleteId] = useState<string>("");
   const [createOpen, setCreateOpen] = useState(false);
+  const [moveSelection, setMoveSelection] = useState<string | null>(null);
 
   return (
     <>
@@ -52,13 +54,16 @@ function PlansPage() {
           {tab === "plans" ? (
             <PlansList filter={planFilter} athleteId={athleteId} />
           ) : (
-            <LibraryView />
+            <LibraryView onSelectMove={(id) => setMoveSelection(id)} />
           )}
         </main>
 
         <button
           type="button"
-          onClick={() => setCreateOpen(true)}
+          onClick={() => {
+            if (tab === "plans") setCreateOpen(true);
+            else setMoveSelection("new");
+          }}
           aria-label={tab === "plans" ? "New plan" : "New move"}
           className="fixed bottom-24 right-5 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-accent text-accent-foreground shadow-page ring-1 ring-black/10 transition active:scale-95"
         >
@@ -68,11 +73,8 @@ function PlansPage() {
 
       <CoachBottomNav />
 
-      {tab === "plans" ? (
-        <CreatePlanSheet open={createOpen} onOpenChange={setCreateOpen} />
-      ) : (
-        <NewMoveStub open={createOpen} onOpenChange={setCreateOpen} />
-      )}
+      <CreatePlanSheet open={createOpen} onOpenChange={setCreateOpen} />
+      <MoveSheet selection={moveSelection} onOpenChange={setMoveSelection} />
     </>
   );
 }
@@ -282,7 +284,7 @@ function LibrarySearchStrip() {
   return <div className="mt-3 h-1" aria-hidden />;
 }
 
-function LibraryView() {
+function LibraryView({ onSelectMove }: { onSelectMove: (id: string) => void }) {
   const fetchMoves = useServerFn(listMoves);
   const { data, isLoading } = useQuery({
     queryKey: ["moves"],
@@ -367,23 +369,29 @@ function LibraryView() {
               </h3>
               <ul className="divide-y divide-divider border-y border-divider">
                 {items.map((m) => (
-                  <li key={m.id} className="flex items-start gap-3 py-2.5">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <p className="truncate text-sm font-bold text-text-primary">
-                          {m.name}
-                        </p>
-                        <span className="shrink-0 rounded-sm bg-elevated px-1.5 py-0.5 text-[10px] font-black uppercase tracking-tight text-text-secondary">
-                          {targetLabel(m.defaultTargetKind, m.defaultTargetValue)}
-                        </span>
+                  <li key={m.id}>
+                    <button
+                      type="button"
+                      onClick={() => onSelectMove(m.id)}
+                      className="flex w-full items-start gap-3 py-2.5 text-left transition active:bg-elevated"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="truncate text-sm font-bold text-text-primary">
+                            {m.name}
+                          </p>
+                          <span className="shrink-0 rounded-sm bg-elevated px-1.5 py-0.5 text-[10px] font-black uppercase tracking-tight text-text-secondary">
+                            {targetLabel(m.defaultTargetKind, m.defaultTargetValue)}
+                          </span>
+                        </div>
+                        {m.cue ? (
+                          <p className="mt-0.5 line-clamp-1 text-xs text-text-secondary">
+                            {m.cue}
+                          </p>
+                        ) : null}
                       </div>
-                      {m.cue ? (
-                        <p className="mt-0.5 line-clamp-1 text-xs text-text-secondary">
-                          {m.cue}
-                        </p>
-                      ) : null}
-                    </div>
-                    <ChevronRight className="mt-1 h-4 w-4 shrink-0 text-text-tertiary" />
+                      <ChevronRight className="mt-1 h-4 w-4 shrink-0 text-text-tertiary" />
+                    </button>
                   </li>
                 ))}
               </ul>
@@ -535,26 +543,6 @@ function CreatePlanSheet({
   );
 }
 
-function NewMoveStub({
-  open,
-  onOpenChange,
-}: {
-  open: boolean;
-  onOpenChange: (v: boolean) => void;
-}) {
-  return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom">
-        <SheetHeader>
-          <SheetTitle className="font-display text-2xl">New move</SheetTitle>
-        </SheetHeader>
-        <p className="mt-4 text-sm text-text-secondary">
-          Move editor coming up next — tap an existing move to edit for now.
-        </p>
-      </SheetContent>
-    </Sheet>
-  );
-}
 
 /* ---------------- helpers ---------------- */
 

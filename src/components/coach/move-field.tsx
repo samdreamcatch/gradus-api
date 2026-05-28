@@ -1,0 +1,246 @@
+import { useEffect, useRef, useState } from "react";
+import { cn } from "@/lib/utils";
+
+interface BaseProps {
+  label: string;
+  value: string;
+  onCommit: (next: string) => void | Promise<void>;
+  placeholder?: string;
+  disabled?: boolean;
+  saving?: boolean;
+  className?: string;
+  inputClassName?: string;
+  displayClassName?: string;
+  autoEdit?: boolean;
+  required?: boolean;
+}
+
+interface TextFieldProps extends BaseProps {
+  kind: "text";
+}
+interface TextareaFieldProps extends BaseProps {
+  kind: "textarea";
+  rows?: number;
+}
+interface SelectFieldProps extends BaseProps {
+  kind: "select";
+  options: string[];
+  allowFreeText?: boolean;
+}
+
+export type MoveFieldProps = TextFieldProps | TextareaFieldProps | SelectFieldProps;
+
+export function MoveField(props: MoveFieldProps) {
+  const {
+    label,
+    value,
+    onCommit,
+    placeholder,
+    disabled,
+    saving,
+    className,
+    inputClassName,
+    displayClassName,
+    autoEdit,
+    required,
+  } = props;
+  const [editing, setEditing] = useState(!!autoEdit);
+  const [draft, setDraft] = useState(value);
+  const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | null>(null);
+
+  useEffect(() => {
+    if (!editing) setDraft(value);
+  }, [value, editing]);
+
+  useEffect(() => {
+    if (editing && inputRef.current) {
+      inputRef.current.focus();
+      if ("select" in inputRef.current) inputRef.current.select?.();
+    }
+  }, [editing]);
+
+  const commit = async () => {
+    const next = draft.trim();
+    if (required && !next) {
+      setDraft(value);
+      setEditing(false);
+      return;
+    }
+    if (next === value) {
+      setEditing(false);
+      return;
+    }
+    await onCommit(next);
+    setEditing(false);
+  };
+
+  const cancel = () => {
+    setDraft(value);
+    setEditing(false);
+  };
+
+  const labelEl = (
+    <div className="flex items-center gap-2">
+      <span className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
+        {label}
+      </span>
+      {saving ? (
+        <span className="text-[10px] font-medium text-text-tertiary">Saving…</span>
+      ) : null}
+    </div>
+  );
+
+  if (!editing) {
+    return (
+      <div className={cn("group space-y-1", className)}>
+        {labelEl}
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={() => setEditing(true)}
+          className={cn(
+            "block w-full rounded-md border border-transparent px-2 py-1.5 text-left transition",
+            "hover:border-divider hover:bg-elevated/60",
+            "text-text-primary",
+            displayClassName,
+          )}
+        >
+          {value ? (
+            <span className="whitespace-pre-wrap break-words">{value}</span>
+          ) : (
+            <span className="text-text-tertiary italic">{placeholder ?? "Tap to add"}</span>
+          )}
+        </button>
+      </div>
+    );
+  }
+
+  const sharedInputCls = cn(
+    "block w-full rounded-md border border-accent/60 bg-elevated px-2 py-1.5 text-text-primary",
+    "focus:outline-none focus:ring-2 focus:ring-accent/40",
+    inputClassName,
+  );
+
+  return (
+    <div className={cn("space-y-1", className)}>
+      {labelEl}
+      {props.kind === "text" && (
+        <input
+          ref={(el) => {
+            inputRef.current = el;
+          }}
+          type="text"
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={commit}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              (e.target as HTMLInputElement).blur();
+            } else if (e.key === "Escape") {
+              e.preventDefault();
+              cancel();
+            }
+          }}
+          placeholder={placeholder}
+          className={sharedInputCls}
+        />
+      )}
+      {props.kind === "textarea" && (
+        <textarea
+          ref={(el) => {
+            inputRef.current = el;
+          }}
+          value={draft}
+          rows={props.rows ?? 3}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={commit}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+              e.preventDefault();
+              (e.target as HTMLTextAreaElement).blur();
+            } else if (e.key === "Escape") {
+              e.preventDefault();
+              cancel();
+            }
+          }}
+          placeholder={placeholder}
+          className={cn(sharedInputCls, "resize-y")}
+        />
+      )}
+      {props.kind === "select" && (
+        <SelectOrCombo
+          value={draft}
+          options={props.options}
+          allowFreeText={props.allowFreeText !== false}
+          onChange={setDraft}
+          onCommit={commit}
+          onCancel={cancel}
+          placeholder={placeholder}
+          inputClassName={sharedInputCls}
+          inputRef={(el) => {
+            inputRef.current = el;
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function SelectOrCombo({
+  value,
+  options,
+  allowFreeText,
+  onChange,
+  onCommit,
+  onCancel,
+  placeholder,
+  inputClassName,
+  inputRef,
+}: {
+  value: string;
+  options: string[];
+  allowFreeText: boolean;
+  onChange: (v: string) => void;
+  onCommit: () => void;
+  onCancel: () => void;
+  placeholder?: string;
+  inputClassName?: string;
+  inputRef: (el: HTMLInputElement | null) => void;
+}) {
+  const listId = `mf-list-${label_safe(placeholder ?? "opt")}`;
+  return (
+    <>
+      <input
+        ref={inputRef}
+        type="text"
+        list={allowFreeText ? listId : undefined}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onBlur={onCommit}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            (e.target as HTMLInputElement).blur();
+          } else if (e.key === "Escape") {
+            e.preventDefault();
+            onCancel();
+          }
+        }}
+        placeholder={placeholder}
+        className={inputClassName}
+      />
+      {allowFreeText ? (
+        <datalist id={listId}>
+          {options.map((o) => (
+            <option key={o} value={o} />
+          ))}
+        </datalist>
+      ) : null}
+    </>
+  );
+}
+
+function label_safe(s: string) {
+  return s.replace(/[^a-z0-9]/gi, "-").toLowerCase();
+}
