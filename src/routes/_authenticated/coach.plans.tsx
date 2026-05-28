@@ -201,12 +201,12 @@ function PlansFilterStrip({
 /* ---------------- Plans list ---------------- */
 
 function PlansList({ filter, athleteId }: { filter: PlanFilter; athleteId: string }) {
-  const fetchPlans = useServerFn(listPlans);
   const args = useMemo(() => {
     if (filter === "templates") return { kind: "template" as const };
+    const statusMap = { active: "active", drafts: "draft", benched: "benched" } as const;
     return {
       kind: "plan" as const,
-      status: filter,
+      status: statusMap[filter as "active" | "drafts" | "benched"],
       athleteId: athleteId || undefined,
     };
   }, [filter, athleteId]);
