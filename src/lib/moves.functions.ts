@@ -74,8 +74,19 @@ export const listMoves = createServerFn({ method: "GET" })
       .order("category", { ascending: true })
       .order("name", { ascending: true });
     if (error) throw new Error(error.message);
-    return { moves: (data ?? []).map(toDTO) };
+
+    // Curriculum categories from seed_moves (all sports — small table)
+    const { data: seeds } = await supabase
+      .from("seed_moves")
+      .select("sport, category");
+
+    return {
+      moves: (data ?? []).map(toDTO),
+      seedCategories: seeds ?? [],
+    };
   });
+
+
 
 const moveInput = z.object({
   id: z.string().uuid().optional(),
