@@ -316,7 +316,7 @@ export const setPlanStatus = createServerFn({ method: "POST" })
   .inputValidator((input) =>
     z.object({
       id: z.string().uuid(),
-      status: z.enum(["active", "benched"]),
+      status: z.enum(["active", "benched", "draft"]),
     }).parse(input),
   )
   .handler(async ({ context, data }) => {
@@ -324,21 +324,21 @@ export const setPlanStatus = createServerFn({ method: "POST" })
     const coachId = await getCoachId(supabase, context.userId);
 
     if (data.status === "active") {
-      // Defence-in-depth: verify coach owns this plan before invoking the RPC.
       const { data: owned, error: ownErr } = await supabase
         .from("plans")
-        .select("id")
+        .select("id, athlete_id")
         .eq("id", data.id)
         .eq("coach_id", coachId)
         .maybeSingle();
       if (ownErr) throw new Error(ownErr.message);
       if (!owned) throw new Error("Plan not found");
+      if (!owned.athlete_id) throw new Error("Assign an athlete before activating.");
       const { error } = await supabase.rpc("activate_plan", { _plan_id: data.id });
       if (error) throw new Error(error.message);
     } else {
       const { error } = await supabase
         .from("plans")
-        .update({ status: "benched" })
+        .update({ status: data.status })
         .eq("id", data.id)
         .eq("coach_id", coachId);
       if (error) throw new Error(error.message);
