@@ -43,6 +43,8 @@ function PlansPage() {
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  return (
     <>
       <div className="mx-auto flex min-h-dvh max-w-3xl flex-col px-4 pt-6 pb-32">
         <header className="sticky top-0 z-20 -mx-4 bg-background/90 px-4 pb-3 pt-2 backdrop-blur supports-[backdrop-filter]:bg-background/70">
