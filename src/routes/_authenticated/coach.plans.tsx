@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { Plus, ListChecks, Clock, ChevronRight, Search } from "lucide-react";
+import { Plus, ListChecks, Clock, ChevronRight, Search, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { CoachBottomNav } from "@/components/coach/bottom-nav";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -18,7 +18,6 @@ import {
 } from "@/lib/plans.functions";
 import { listMoves, type MoveDTO } from "@/lib/moves.functions";
 import { MoveSheet } from "@/components/coach/move-sheet";
-
 export const Route = createFileRoute("/_authenticated/coach/plans")({
   codeSplitGroupings: [["component"]],
   component: PlansPage,
