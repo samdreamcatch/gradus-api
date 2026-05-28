@@ -23,11 +23,12 @@ type Tab = "plans" | "library";
 type PlanFilter = "active" | "benched" | "templates";
 
 function PlansPage() {
+function PlansPage() {
   const [tab, setTab] = useState<Tab>("plans");
   const [planFilter, setPlanFilter] = useState<PlanFilter>("active");
   const [athleteId, setAthleteId] = useState<string>("");
   const [moveSelection, setMoveSelection] = useState<string | null>(null);
-  const [newPlanOpen, setNewPlanOpen] = useState(false);
+  const navigate = useNavigate();
 
   return (
     <>
@@ -57,8 +58,16 @@ function PlansPage() {
         <button
           type="button"
           onClick={() => {
-            if (tab === "plans") setNewPlanOpen(true);
-            else setMoveSelection("new");
+            if (tab === "plans") {
+              const search: Record<string, string> = {};
+              if (planFilter === "templates") search.kind = "template";
+              else if (athleteId) search.athleteId = athleteId;
+              navigate({
+                to: "/coach/plans/$planId",
+                params: { planId: "new" },
+                search,
+              });
+            } else setMoveSelection("new");
           }}
           aria-label={tab === "plans" ? "New plan" : "New move"}
           className="fixed bottom-24 right-5 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-accent text-accent-foreground shadow-page ring-1 ring-black/10 transition active:scale-95"
@@ -66,13 +75,6 @@ function PlansPage() {
           <Plus className="h-7 w-7" strokeWidth={2.5} />
         </button>
       </div>
-
-      <NewPlanSheet
-        open={newPlanOpen}
-        onOpenChange={setNewPlanOpen}
-        initialAthleteId={athleteId}
-        initialMode={planFilter === "templates" ? "template" : "plan"}
-      />
 
 
       <CoachBottomNav />
