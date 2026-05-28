@@ -394,8 +394,6 @@ function LibraryView({ onSelectMove }: { onSelectMove: (id: string) => void }) {
                     </button>
                   </li>
                 ))}
-
-                ))}
               </ul>
             </section>
           ))}
