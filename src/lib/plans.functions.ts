@@ -500,3 +500,216 @@ export const addMoveToPlan = createServerFn({ method: "POST" })
 
     return { planId: plan.id, planTitle: plan.title || "Untitled plan" };
   });
+
+/* ---------------- per-field plan updates ---------------- */
+
+async function assertPlanOwned(supabase: Client, planId: string, coachId: string) {
+  const { data, error } = await supabase
+    .from("plans")
+    .select("id, kind, status, athlete_id")
+    .eq("id", planId)
+    .eq("coach_id", coachId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data) throw new Error("Plan not found");
+  return data;
+}
+
+const updatePlanInput = z.object({
+  id: z.string().uuid(),
+  title: z.string().max(160).optional(),
+  notes: z.string().max(4000).optional(),
+  kind: z.enum(["plan", "template"]).optional(),
+  athleteId: z.string().uuid().nullable().optional(),
+});
+
+export const updatePlan = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => updatePlanInput.parse(input))
+  .handler(async ({ context, data }) => {
+    const supabase = context.supabase as Client;
+    const coachId = await getCoachId(supabase, context.userId);
+    await assertPlanOwned(supabase, data.id, coachId);
+
+    const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
+    if (data.title !== undefined) patch.title = data.title;
+    if (data.notes !== undefined) patch.notes = data.notes;
+    if (data.kind !== undefined) {
+      patch.kind = data.kind;
+      if (data.kind === "template") patch.athlete_id = null;
+    }
+    if (data.athleteId !== undefined) patch.athlete_id = data.athleteId;
+
+    const { error } = await supabase
+      .from("plans")
+      .update(patch)
+      .eq("id", data.id)
+      .eq("coach_id", coachId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/* ---------------- per-move plan updates ---------------- */
+
+const planMovePatch = z.object({
+  name: z.string().min(1).max(160).optional(),
+  description: z.string().max(2000).optional(),
+  cue: z.string().max(1000).optional(),
+  why: z.string().max(1000).optional(),
+  targetKind: z.enum(["reps", "minutes"]).optional(),
+  targetValue: z.number().min(0).max(10000).optional(),
+});
+
+export const updatePlanMove = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z.object({ id: z.string().uuid(), patch: planMovePatch }).parse(input),
+  )
+  .handler(async ({ context, data }) => {
+    const supabase = context.supabase as Client;
+    const coachId = await getCoachId(supabase, context.userId);
+
+    // verify ownership through plan_id
+    const { data: pm, error: pmErr } = await supabase
+      .from("plan_moves")
+      .select("plan_id")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (pmErr) throw new Error(pmErr.message);
+    if (!pm) throw new Error("Plan move not found");
+    await assertPlanOwned(supabase, pm.plan_id, coachId);
+
+    const row: Record<string, unknown> = {};
+    if (data.patch.name !== undefined) row.name = data.patch.name;
+    if (data.patch.description !== undefined) row.description = data.patch.description;
+    if (data.patch.cue !== undefined) row.cue = data.patch.cue;
+    if (data.patch.why !== undefined) row.why = data.patch.why;
+    if (data.patch.targetKind !== undefined) row.target_kind = data.patch.targetKind;
+    if (data.patch.targetValue !== undefined) row.target_value = data.patch.targetValue;
+
+    const { error } = await supabase
+      .from("plan_moves")
+      .update(row)
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+
+    await supabase
+      .from("plans")
+      .update({ updated_at: new Date().toISOString() })
+      .eq("id", pm.plan_id);
+
+    return { ok: true };
+  });
+
+export const removePlanMove = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
+  .handler(async ({ context, data }) => {
+    const supabase = context.supabase as Client;
+    const coachId = await getCoachId(supabase, context.userId);
+
+    const { data: pm, error: pmErr } = await supabase
+      .from("plan_moves")
+      .select("plan_id")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (pmErr) throw new Error(pmErr.message);
+    if (!pm) return { ok: true };
+    await assertPlanOwned(supabase, pm.plan_id, coachId);
+
+    const { error } = await supabase
+      .from("plan_moves")
+      .delete()
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+
+    await supabase
+      .from("plans")
+      .update({ updated_at: new Date().toISOString() })
+      .eq("id", pm.plan_id);
+    return { ok: true };
+  });
+
+export const reorderPlanMoves = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z.object({
+      planId: z.string().uuid(),
+      orderedIds: z.array(z.string().uuid()).max(200),
+    }).parse(input),
+  )
+  .handler(async ({ context, data }) => {
+    const supabase = context.supabase as Client;
+    const coachId = await getCoachId(supabase, context.userId);
+    await assertPlanOwned(supabase, data.planId, coachId);
+
+    // Update positions one at a time (small lists; simple + safe under RLS).
+    for (let i = 0; i < data.orderedIds.length; i++) {
+      const id = data.orderedIds[i];
+      const { error } = await supabase
+        .from("plan_moves")
+        .update({ position: i })
+        .eq("id", id)
+        .eq("plan_id", data.planId);
+      if (error) throw new Error(error.message);
+    }
+    return { ok: true };
+  });
+
+export const addLibraryMovesToPlan = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z.object({
+      planId: z.string().uuid(),
+      moveIds: z.array(z.string().uuid()).min(1).max(50),
+    }).parse(input),
+  )
+  .handler(async ({ context, data }) => {
+    const supabase = context.supabase as Client;
+    const coachId = await getCoachId(supabase, context.userId);
+    await assertPlanOwned(supabase, data.planId, coachId);
+
+    const { data: moves, error: mErr } = await supabase
+      .from("moves")
+      .select("id, name, description, cue, why, default_target_kind, default_target_value")
+      .in("id", data.moveIds);
+    if (mErr) throw new Error(mErr.message);
+    if (!moves?.length) return { inserted: 0 };
+
+    const { data: last, error: posErr } = await supabase
+      .from("plan_moves")
+      .select("position")
+      .eq("plan_id", data.planId)
+      .order("position", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (posErr) throw new Error(posErr.message);
+    let nextPos = (last?.position ?? -1) + 1;
+
+    // Preserve the order the caller asked for
+    const byId = new Map(moves.map((m) => [m.id, m]));
+    const rows = data.moveIds
+      .map((id) => byId.get(id))
+      .filter((m): m is NonNullable<typeof m> => !!m)
+      .map((m) => ({
+        plan_id: data.planId,
+        move_id: m.id,
+        position: nextPos++,
+        name: m.name,
+        description: m.description,
+        cue: m.cue,
+        why: m.why,
+        target_kind: m.default_target_kind,
+        target_value: m.default_target_value,
+      }));
+
+    const { error: insErr } = await supabase.from("plan_moves").insert(rows);
+    if (insErr) throw new Error(insErr.message);
+
+    await supabase
+      .from("plans")
+      .update({ updated_at: new Date().toISOString() })
+      .eq("id", data.planId);
+
+    return { inserted: rows.length };
+  });
