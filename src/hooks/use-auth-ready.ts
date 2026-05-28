@@ -14,9 +14,13 @@ export function useAuthReady() {
   useEffect(() => {
     let cancelled = false;
 
-    supabase.auth.getSession().then(({ data }) => {
+    // Use getUser() rather than getSession(): getUser() round-trips to the
+    // auth server and cryptographically verifies the JWT, so a forged
+    // localStorage session can't bypass the route gate. getSession() only
+    // reads from storage.
+    supabase.auth.getUser().then(({ data }) => {
       if (cancelled) return;
-      setUser(data.session?.user ?? null);
+      setUser(data.user ?? null);
       setIsReady(true);
     });
 
@@ -31,6 +35,7 @@ export function useAuthReady() {
       subscription.unsubscribe();
     };
   }, []);
+
 
   return { user, isReady };
 }
