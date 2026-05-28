@@ -208,13 +208,15 @@ function SelectOrCombo({
   inputClassName?: string;
   inputRef: (el: HTMLInputElement | null) => void;
 }) {
-  const listId = `mf-list-${label_safe(placeholder ?? "opt")}`;
-  return (
-    <>
+  const CUSTOM = "__custom__";
+  const isCustom = value !== "" && !options.includes(value);
+  const [mode, setMode] = useState<"select" | "text">(isCustom ? "text" : "select");
+
+  if (mode === "text") {
+    return (
       <input
         ref={inputRef}
         type="text"
-        list={allowFreeText ? listId : undefined}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onBlur={onCommit}
@@ -229,18 +231,52 @@ function SelectOrCombo({
         }}
         placeholder={placeholder}
         className={inputClassName}
+        autoFocus
       />
-      {allowFreeText ? (
-        <datalist id={listId}>
-          {options.map((o) => (
-            <option key={o} value={o} />
-          ))}
-        </datalist>
+    );
+  }
+
+  return (
+    <select
+      value={value}
+      autoFocus
+      onChange={(e) => {
+        const v = e.target.value;
+        if (v === CUSTOM) {
+          setMode("text");
+          onChange("");
+          return;
+        }
+        onChange(v);
+        // Commit on next tick so state has updated
+        setTimeout(onCommit, 0);
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") {
+          e.preventDefault();
+          onCancel();
+        }
+      }}
+      className={cn(inputClassName, "appearance-none pr-8 bg-[length:16px] bg-no-repeat bg-[right_0.5rem_center]")}
+      style={{
+        backgroundImage:
+          "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>\")",
+      }}
+    >
+      {value === "" ? (
+        <option value="" disabled>
+          {placeholder ?? "Select…"}
+        </option>
       ) : null}
-    </>
+      {options.map((o) => (
+        <option key={o} value={o}>
+          {o}
+        </option>
+      ))}
+      {allowFreeText ? (
+        <option value={CUSTOM}>Custom…</option>
+      ) : null}
+    </select>
   );
 }
 
-function label_safe(s: string) {
-  return s.replace(/[^a-z0-9]/gi, "-").toLowerCase();
-}
