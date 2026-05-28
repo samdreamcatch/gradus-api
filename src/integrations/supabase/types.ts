@@ -368,6 +368,62 @@ export type Database = {
         }
         Relationships: []
       }
+      moves: {
+        Row: {
+          archived_at: string | null
+          category: string
+          coach_id: string
+          created_at: string
+          cue: string
+          default_target_kind: string
+          default_target_value: number
+          description: string
+          id: string
+          name: string
+          sport: string
+          updated_at: string
+          why: string
+        }
+        Insert: {
+          archived_at?: string | null
+          category?: string
+          coach_id: string
+          created_at?: string
+          cue?: string
+          default_target_kind?: string
+          default_target_value?: number
+          description?: string
+          id?: string
+          name: string
+          sport: string
+          updated_at?: string
+          why?: string
+        }
+        Update: {
+          archived_at?: string | null
+          category?: string
+          coach_id?: string
+          created_at?: string
+          cue?: string
+          default_target_kind?: string
+          default_target_value?: number
+          description?: string
+          id?: string
+          name?: string
+          sport?: string
+          updated_at?: string
+          why?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "moves_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "coach_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       parent_profiles: {
         Row: {
           coach_id: string | null
@@ -406,15 +462,164 @@ export type Database = {
           },
         ]
       }
+      plan_moves: {
+        Row: {
+          created_at: string
+          cue: string
+          description: string
+          id: string
+          move_id: string | null
+          name: string
+          plan_id: string
+          position: number
+          target_kind: string
+          target_value: number
+          why: string
+        }
+        Insert: {
+          created_at?: string
+          cue?: string
+          description?: string
+          id?: string
+          move_id?: string | null
+          name: string
+          plan_id: string
+          position?: number
+          target_kind: string
+          target_value?: number
+          why?: string
+        }
+        Update: {
+          created_at?: string
+          cue?: string
+          description?: string
+          id?: string
+          move_id?: string | null
+          name?: string
+          plan_id?: string
+          position?: number
+          target_kind?: string
+          target_value?: number
+          why?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_moves_move_id_fkey"
+            columns: ["move_id"]
+            isOneToOne: false
+            referencedRelation: "moves"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_moves_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plans: {
+        Row: {
+          athlete_id: string | null
+          coach_id: string
+          created_at: string
+          id: string
+          kind: string
+          notes: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          athlete_id?: string | null
+          coach_id: string
+          created_at?: string
+          id?: string
+          kind: string
+          notes?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          athlete_id?: string | null
+          coach_id?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          notes?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plans_athlete_id_fkey"
+            columns: ["athlete_id"]
+            isOneToOne: false
+            referencedRelation: "athletes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plans_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "coach_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      seed_moves: {
+        Row: {
+          category: string
+          created_at: string
+          cue: string
+          default_target_kind: string
+          default_target_value: number
+          description: string
+          id: string
+          name: string
+          sport: string
+          why: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          cue?: string
+          default_target_kind: string
+          default_target_value?: number
+          description?: string
+          id?: string
+          name: string
+          sport: string
+          why?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          cue?: string
+          default_target_kind?: string
+          default_target_value?: number
+          description?: string
+          id?: string
+          name?: string
+          sport?: string
+          why?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      activate_plan: { Args: { _plan_id: string }; Returns: undefined }
       coach_has_rostered_athlete_of_parent: {
         Args: { _parent_id: string }
         Returns: boolean
       }
+      seed_coach_library: { Args: { _coach_id: string }; Returns: number }
     }
     Enums: {
       [_ in never]: never
