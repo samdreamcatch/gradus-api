@@ -13,6 +13,7 @@ import {
   Power,
   Pause,
   Loader2,
+  Send,
   ArrowRight,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -43,6 +44,10 @@ import { listMoves, upsertMove, type MoveDTO } from "@/lib/moves.functions";
 
 
 export const Route = createFileRoute("/_authenticated/coach/plans/$planId")({
+  validateSearch: (s: Record<string, unknown>) => ({
+    kind: s.kind === "template" ? "template" : undefined,
+    athleteId: typeof s.athleteId === "string" ? s.athleteId : undefined,
+  }),
   component: PlanEditorPage,
 });
 
@@ -50,6 +55,8 @@ type DraftMove = Omit<PlanMoveDTO, "id" | "position"> & { key: string };
 
 function PlanEditorPage() {
   const { planId } = Route.useParams();
+  const search = Route.useSearch();
+  const isNew = planId === "new";
   const navigate = useNavigate();
   const qc = useQueryClient();
 
@@ -62,6 +69,7 @@ function PlanEditorPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["plan", planId],
     queryFn: () => fetchPlan({ data: { id: planId } }),
+    enabled: !isNew,
   });
   const { data: athletesData } = useQuery({
     queryKey: ["coach-athletes"],
@@ -75,8 +83,16 @@ function PlanEditorPage() {
   const [athleteId, setAthleteId] = useState<string>("");
   const [isTemplate, setIsTemplate] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
+    if (hydrated) return;
+    if (isNew) {
+      setIsTemplate(search.kind === "template");
+      setAthleteId(search.athleteId ?? "");
+      setHydrated(true);
+      return;
+    }
     if (!data?.plan) return;
     setTitle(data.plan.title);
     setNotes(data.plan.notes);
@@ -94,7 +110,8 @@ function PlanEditorPage() {
         targetValue: m.targetValue,
       })),
     );
-  }, [data?.plan]);
+    setHydrated(true);
+  }, [data?.plan, isNew, hydrated, search.kind, search.athleteId]);
 
   const totalMinutes = useMemo(
     () => moves.filter((m) => m.targetKind === "minutes").reduce((s, m) => s + (m.targetValue || 0), 0),
@@ -167,7 +184,7 @@ function PlanEditorPage() {
     ]);
   };
 
-  const handleSave = () => {
+  const handleSave = (opts?: { activate?: boolean }) => {
     if (!title.trim()) {
       toast.error("Give the plan a title.");
       return;
@@ -176,27 +193,52 @@ function PlanEditorPage() {
       toast.error("Assign an athlete or save as template.");
       return;
     }
-    saveMutation.mutate({
-      data: {
-        id: planId,
-        title: title.trim(),
-        notes,
-        kind: isTemplate ? "template" : "plan",
-        athleteId: isTemplate ? null : athleteId,
-        moves: moves.map((m) => ({
-          moveId: m.moveId,
-          name: m.name,
-          description: m.description,
-          cue: m.cue,
-          why: m.why,
-          targetKind: m.targetKind,
-          targetValue: m.targetValue,
-        })),
+    saveMutation.mutate(
+      {
+        data: {
+          id: isNew ? undefined : planId,
+          title: title.trim(),
+          notes,
+          kind: isTemplate ? "template" : "plan",
+          athleteId: isTemplate ? null : athleteId,
+          moves: moves.map((m) => ({
+            moveId: m.moveId,
+            name: m.name,
+            description: m.description,
+            cue: m.cue,
+            why: m.why,
+            targetKind: m.targetKind,
+            targetValue: m.targetValue,
+          })),
+        },
       },
-    });
+      {
+        onSuccess: ({ id }) => {
+          if (opts?.activate && !isTemplate && athleteId) {
+            statusMutation.mutate(
+              { data: { id, status: "active" } },
+              {
+                onSuccess: () => {
+                  toast.success("Plan activated");
+                  navigate({ to: "/coach/plans" });
+                },
+              },
+            );
+            return;
+          }
+          if (isNew) {
+            navigate({
+              to: "/coach/plans/$planId",
+              params: { planId: id },
+              replace: true,
+            });
+          }
+        },
+      },
+    );
   };
 
-  if (isLoading || !data) {
+  if (!isNew && (isLoading || !data)) {
     return (
       <div className="mx-auto min-h-dvh max-w-3xl px-4 pt-6">
         <p className="text-sm text-text-secondary">Loading…</p>
@@ -214,15 +256,17 @@ function PlanEditorPage() {
           <ArrowLeft className="h-3.5 w-3.5" />
           Plans
         </Link>
-        <button
-          type="button"
-          onClick={() => {
-            if (confirm("Delete this plan?")) deleteMutation.mutate({ data: { id: planId } });
-          }}
-          className="text-xs font-bold uppercase tracking-widest text-text-tertiary hover:text-destructive"
-        >
-          Delete
-        </button>
+        {!isNew ? (
+          <button
+            type="button"
+            onClick={() => {
+              if (confirm("Delete this plan?")) deleteMutation.mutate({ data: { id: planId } });
+            }}
+            className="text-xs font-bold uppercase tracking-widest text-text-tertiary hover:text-destructive"
+          >
+            Delete
+          </button>
+        ) : null}
       </div>
 
       <Input
@@ -264,7 +308,7 @@ function PlanEditorPage() {
                 ))}
               </SelectContent>
             </Select>
-            {data.plan.kind === "plan" ? (
+            {!isNew && data?.plan.kind === "plan" ? (
               <div className="mt-3 flex items-center gap-2">
                 <Button
                   type="button"
@@ -391,14 +435,45 @@ function PlanEditorPage() {
             <span className="font-bold text-text-primary">{moves.length}</span> moves ·{" "}
             <span className="font-bold text-text-primary">{totalMinutes}</span> min
           </div>
-          <Button
-            onClick={handleSave}
-            disabled={saveMutation.isPending}
-            className="gap-2"
-          >
-            <Save className="h-4 w-4" />
-            Save
-          </Button>
+          <div className="flex items-center gap-2">
+            {isTemplate ? (
+              <Button
+                type="button"
+                onClick={() => handleSave()}
+                disabled={saveMutation.isPending}
+                className="gap-2"
+              >
+                {saveMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                Save template
+              </Button>
+            ) : (
+              <>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => handleSave()}
+                  disabled={saveMutation.isPending}
+                  className="gap-2"
+                >
+                  <Save className="h-4 w-4" />
+                  Save for later
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => handleSave({ activate: true })}
+                  disabled={saveMutation.isPending || statusMutation.isPending || !athleteId}
+                  className="gap-2"
+                >
+                  {saveMutation.isPending || statusMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Send className="h-4 w-4" />
+                  )}
+                  Activate &amp; share
+                </Button>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
