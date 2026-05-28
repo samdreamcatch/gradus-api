@@ -268,7 +268,6 @@ function MoveSheetBody({
           }}
         />
 
-        {/* Cue */}
         <MoveField
           kind="textarea"
           label="Cue"
@@ -278,9 +277,8 @@ function MoveSheetBody({
           saving={savingField === "cue"}
           disabled={isNew && !move.name}
           onCommit={(v) => commitField("cue", v)}
-          displayClassName="font-hand text-hand text-text-primary"
-          inputClassName="font-hand text-hand text-text-primary"
         />
+
 
         {/* Why */}
         <MoveField
