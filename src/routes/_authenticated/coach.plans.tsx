@@ -26,11 +26,11 @@ export const Route = createFileRoute("/_authenticated/coach/plans")({
 type Tab = "plans" | "library";
 type PlanFilter = "active" | "benched" | "templates";
 
-function PlansPage() {
   const [tab, setTab] = useState<Tab>("plans");
   const [planFilter, setPlanFilter] = useState<PlanFilter>("active");
   const [athleteId, setAthleteId] = useState<string>("");
   const [createOpen, setCreateOpen] = useState(false);
+  const [moveSelection, setMoveSelection] = useState<string | null>(null);
 
   return (
     <>
@@ -53,13 +53,16 @@ function PlansPage() {
           {tab === "plans" ? (
             <PlansList filter={planFilter} athleteId={athleteId} />
           ) : (
-            <LibraryView />
+            <LibraryView onSelectMove={(id) => setMoveSelection(id)} />
           )}
         </main>
 
         <button
           type="button"
-          onClick={() => setCreateOpen(true)}
+          onClick={() => {
+            if (tab === "plans") setCreateOpen(true);
+            else setMoveSelection("new");
+          }}
           aria-label={tab === "plans" ? "New plan" : "New move"}
           className="fixed bottom-24 right-5 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-accent text-accent-foreground shadow-page ring-1 ring-black/10 transition active:scale-95"
         >
@@ -69,13 +72,12 @@ function PlansPage() {
 
       <CoachBottomNav />
 
-      {tab === "plans" ? (
-        <CreatePlanSheet open={createOpen} onOpenChange={setCreateOpen} />
-      ) : (
-        <NewMoveStub open={createOpen} onOpenChange={setCreateOpen} />
-      )}
+      <CreatePlanSheet open={createOpen} onOpenChange={setCreateOpen} />
+      <MoveSheet selection={moveSelection} onOpenChange={setMoveSelection} />
     </>
   );
+}
+
 }
 
 /* ---------------- Toggle ---------------- */
