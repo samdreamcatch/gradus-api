@@ -223,10 +223,9 @@ export const getMyRole = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase } = context;
-    const [coach, parent, athlete] = await Promise.all([
+    const [coach, parent] = await Promise.all([
       supabase.from("coach_profiles").select("id, created_at, onboarded_at").maybeSingle(),
       supabase.from("parent_profiles").select("id, created_at").maybeSingle(),
-      supabase.from("athletes").select("id").eq("user_id", context.userId).maybeSingle(),
     ]);
     // When both exist (e.g. a parent who briefly hit the coach wizard and left a stub),
     // prefer the coach role only if onboarding was actually completed.
@@ -236,7 +235,6 @@ export const getMyRole = createServerFn({ method: "GET" })
     }
     if (coach.data) return { role: "coach" as const };
     if (parent.data) return { role: "parent" as const };
-    if (athlete.data) return { role: "athlete" as const };
     return { role: null };
   });
 
