@@ -531,7 +531,13 @@ export const updatePlan = createServerFn({ method: "POST" })
     const coachId = await getCoachId(supabase, context.userId);
     await assertPlanOwned(supabase, data.id, coachId);
 
-    const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
+    const patch: {
+      updated_at: string;
+      title?: string;
+      notes?: string;
+      kind?: string;
+      athlete_id?: string | null;
+    } = { updated_at: new Date().toISOString() };
     if (data.title !== undefined) patch.title = data.title;
     if (data.notes !== undefined) patch.notes = data.notes;
     if (data.kind !== undefined) {
