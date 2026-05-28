@@ -256,15 +256,17 @@ function PlanEditorPage() {
           <ArrowLeft className="h-3.5 w-3.5" />
           Plans
         </Link>
-        <button
-          type="button"
-          onClick={() => {
-            if (confirm("Delete this plan?")) deleteMutation.mutate({ data: { id: planId } });
-          }}
-          className="text-xs font-bold uppercase tracking-widest text-text-tertiary hover:text-destructive"
-        >
-          Delete
-        </button>
+        {!isNew ? (
+          <button
+            type="button"
+            onClick={() => {
+              if (confirm("Delete this plan?")) deleteMutation.mutate({ data: { id: planId } });
+            }}
+            className="text-xs font-bold uppercase tracking-widest text-text-tertiary hover:text-destructive"
+          >
+            Delete
+          </button>
+        ) : null}
       </div>
 
       <Input
