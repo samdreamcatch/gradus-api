@@ -337,6 +337,7 @@ function MoveSheetBody({
                   Duplicate
                 </Button>
               )}
+            </div>
             <Button
               type="button"
               variant="ghost"
