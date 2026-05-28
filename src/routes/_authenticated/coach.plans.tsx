@@ -448,17 +448,6 @@ function FilterChip({
 
 /* ---------------- helpers ---------------- */
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <section>
-      <p className="mb-1 text-[11px] font-bold uppercase tracking-widest text-text-tertiary">
-        {title}
-      </p>
-      {children}
-    </section>
-  );
-}
-
 function EmptyState({ message }: { message: string }) {
   return (
     <div className="py-12 text-center">
