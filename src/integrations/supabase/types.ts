@@ -619,6 +619,7 @@ export type Database = {
         Args: { _parent_id: string }
         Returns: boolean
       }
+      is_parent_of_athlete: { Args: { _athlete_id: string }; Returns: boolean }
       seed_coach_library: { Args: { _coach_id: string }; Returns: number }
     }
     Enums: {
