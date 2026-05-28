@@ -12,6 +12,7 @@ export const Route = createFileRoute("/")({
       const { role } = await getMyRole();
       if (role === "parent") throw redirect({ to: "/parent" });
       if (role === "coach") throw redirect({ to: "/coach" });
+      if (role === "athlete") throw redirect({ to: "/athlete" });
     } catch (e) {
       if (isRedirect(e)) throw e;
       // Otherwise: show picker (e.g. role lookup failed).
@@ -30,7 +31,7 @@ type Role = {
 const ROLES: Role[] = [
   { key: "parent", label: "I'm a parent", to: "/signup/parent" },
   { key: "coach", label: "I'm a coach", to: "/signup/coach" },
-  { key: "athlete", label: "I'm an athlete", to: "/", disabled: true },
+  { key: "athlete", label: "I'm an athlete", to: "/signup/athlete" },
 ];
 
 function RolePicker() {
