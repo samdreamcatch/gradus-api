@@ -40,7 +40,7 @@ export function MoveSheet({
       <SheetContent
         side="bottom"
         className="max-h-[90vh] overflow-y-auto border-t border-divider shadow-page"
-        style={{ backgroundColor: "var(--card)", backgroundImage: "none" }}
+        style={{ backgroundColor: "var(--popover)", backgroundImage: "none" }}
       >
 
         {open ? (
