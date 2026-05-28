@@ -22,6 +22,7 @@ export const Route = createFileRoute("/_authenticated/coach/plans")({
 });
 
 type Tab = "plans" | "library";
+type PlanFilter = "active" | "drafts" | "benched" | "templates";
 function PlansPage() {
   const [tab, setTab] = useState<Tab>("plans");
   const [planFilter, setPlanFilter] = useState<PlanFilter>("active");
