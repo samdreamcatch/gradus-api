@@ -102,5 +102,8 @@ function CoachHome() {
         <p className="mt-10 text-sm text-text-secondary">More coming in the next slice.</p>
       </div>
     </div>
+    <CoachBottomNav />
+    </>
   );
 }
+
