@@ -55,6 +55,8 @@ type DraftMove = Omit<PlanMoveDTO, "id" | "position"> & { key: string };
 
 function PlanEditorPage() {
   const { planId } = Route.useParams();
+  const search = Route.useSearch();
+  const isNew = planId === "new";
   const navigate = useNavigate();
   const qc = useQueryClient();
 
@@ -67,6 +69,7 @@ function PlanEditorPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["plan", planId],
     queryFn: () => fetchPlan({ data: { id: planId } }),
+    enabled: !isNew,
   });
   const { data: athletesData } = useQuery({
     queryKey: ["coach-athletes"],
@@ -80,8 +83,16 @@ function PlanEditorPage() {
   const [athleteId, setAthleteId] = useState<string>("");
   const [isTemplate, setIsTemplate] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
+    if (hydrated) return;
+    if (isNew) {
+      setIsTemplate(search.kind === "template");
+      setAthleteId(search.athleteId ?? "");
+      setHydrated(true);
+      return;
+    }
     if (!data?.plan) return;
     setTitle(data.plan.title);
     setNotes(data.plan.notes);
@@ -99,7 +110,8 @@ function PlanEditorPage() {
         targetValue: m.targetValue,
       })),
     );
-  }, [data?.plan]);
+    setHydrated(true);
+  }, [data?.plan, isNew, hydrated, search.kind, search.athleteId]);
 
   const totalMinutes = useMemo(
     () => moves.filter((m) => m.targetKind === "minutes").reduce((s, m) => s + (m.targetValue || 0), 0),
