@@ -585,7 +585,14 @@ export const updatePlanMove = createServerFn({ method: "POST" })
     if (!pm) throw new Error("Plan move not found");
     await assertPlanOwned(supabase, pm.plan_id, coachId);
 
-    const row: Record<string, unknown> = {};
+    const row: {
+      name?: string;
+      description?: string;
+      cue?: string;
+      why?: string;
+      target_kind?: string;
+      target_value?: number;
+    } = {};
     if (data.patch.name !== undefined) row.name = data.patch.name;
     if (data.patch.description !== undefined) row.description = data.patch.description;
     if (data.patch.cue !== undefined) row.cue = data.patch.cue;
