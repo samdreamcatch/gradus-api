@@ -1,43 +1,53 @@
-## Diagnosis
+## Move detail + inline editor
 
-The Library view already does what you described:
-- Empty search → returns the full list (`if (!q) return true`)
-- Results are grouped by `category` and sorted alphabetically
+Tapping the `>` on any library row opens a slide-up bottom sheet showing the move as a "notebook page." Every field is read-only at rest; tapping a field flips it to an editor in place and auto-saves on blur / Enter. Same component is reused by the `+` (new move) flow, so we ship the editor at the same time.
 
-The reason you're seeing **"No moves match."** is that there are **0 rows in `moves` for your coach** (the DB has 158 `seed_moves` ready, but `seed_coach_library()` was never called for the existing coaches). So the library renders nothing regardless of the search box.
+### UX
 
-## Plan
+- **Surface**: `Sheet` (`side="bottom"`, max-h 85vh, scrollable) — matches `CreatePlanSheet` / `NewMoveStub`.
+- **Open**: Library row becomes a `button`; chevron stays as visual affordance. Selected move id held in `coach.plans.tsx` state.
+- **Layout** (notebook page, single column):
+  1. Header: `name` (display serif, pen-highlight underline) + meta row `sport · category` chips
+  2. Target pill: `[reps|minutes] × value` — tap to edit kind + value together
+  3. **Cue** — Caveat font, larger, label "Cue"
+  4. **Why** — body, label "Why this matters"
+  5. **Description** — body, full width
+  6. Footer actions: `Duplicate` (ghost), `Archive` (destructive ghost, with confirm)
+- **Inline edit pattern**:
+  - Tap field → swaps to `Input`/`Textarea` with current value focused
+  - Blur or Enter (Esc cancels) → fires `upsertMove` mutation with full move payload + optimistic cache update
+  - Toast on error, silent on success; pen-color border while dirty/saving
+  - Sport + category use a small inline select populated from existing distinct values (free-text fallback)
+  - Target uses a 2-control row: kind toggle (reps/minutes) + numeric input
+- **New move flow**: `+` button opens the same sheet with a blank draft (no id). First save (name required) calls `upsertMove`, returns id, then subsequent field edits patch it. Sheet shows "New move" title until saved.
 
-### 1. Auto-seed each coach's library on first read
-In `src/lib/moves.functions.ts`, inside `listMoves` (server fn):
-- After resolving the coach id, if the coach has zero non-archived moves, call the existing `seed_coach_library(_coach_id)` RPC, then re-query.
-- This is idempotent — the RPC already early-returns if the coach has any moves.
+### Data
 
-Why here vs. onboarding: catches existing coaches (you, currently) without a manual backfill, and survives a coach adding a new sport later (we'll also re-run the RPC when `coach_levels` changes — see step 2).
+- Read: existing `listMoves` (already cached as `["moves"]`).
+- Write: existing `upsertMove` server fn (handles create + update).
+- Archive: existing `archiveMove`.
+- Duplicate: client-side — call `upsertMove` with no `id`, copy all fields, append " (copy)" to name, invalidate `["moves"]`, switch sheet to the new id.
 
-### 2. Re-seed when sports change
-Already covered by the RPC's WHERE clause (it only inserts moves whose sport matches a `coach_levels` row). We'll call it again from the existing "update levels" server fn after a successful upsert, so adding a new sport pulls in its seed moves.
+No schema or server-fn changes required.
 
-### 3. Backfill existing coaches now
-One-shot SQL to call `seed_coach_library()` for every coach who currently has zero moves, so you see the library immediately without waiting for the auto-seed path.
+### Files
 
-### 4. Sharper empty states in `LibraryView`
-Distinguish two cases:
-- Library is genuinely empty (no moves for this coach) → "Your library is empty. Add a move with +" with a hint that seed moves are loading.
-- Library has moves but the query/sport filter excludes everything → keep "No moves match."
+- `src/components/coach/move-sheet.tsx` (new) — the sheet, view + inline-edit fields, duplicate/archive actions. Self-contained, takes `moveId | "new" | null` + `onOpenChange`.
+- `src/components/coach/move-field.tsx` (new) — small primitive: renders read view, swaps to edit input on click, handles blur/Enter/Esc + dirty state. Variants: `text`, `textarea`, `select`, `target`.
+- `src/routes/_authenticated/coach.plans.tsx` — wire library rows + `+` button (in library tab) to open `MoveSheet`; remove `NewMoveStub`.
 
-### 5. Make the heading match the convention
-Library category headers currently use `text-base` bold display. Keep grouping + sort by category as today (already correct) — no change beyond what's above.
+### Design tokens
 
-## Files touched
+- Card surface (`bg-card`), `shadow-card`, `rounded-xl`
+- Name: `font-display text-h2`, pen-highlight via `pen-highlight` utility
+- Cue: `font-hand text-hand text-text-primary`
+- Labels: `text-caption text-text-tertiary`
+- Editing field: `border-accent/50 bg-elevated`, focus ring per design system
+- Chips: existing `FilterChip` look (`border-divider bg-card`)
 
-- `src/lib/moves.functions.ts` — add seed-on-empty check inside `listMoves`.
-- `src/lib/coach-profile.functions.ts` (or wherever the levels upsert lives) — call `seed_coach_library` after a successful levels save.
-- `src/routes/_authenticated/coach.plans.tsx` — split the empty state in `LibraryView`.
-- One-shot SQL backfill via the data tool to seed existing coaches.
+### Out of scope
 
-## Out of scope
-
-- Changing the search behavior or sort order (already matches your spec).
-- Editing or adding seed moves themselves.
-- The Plans tab.
+- Adding media/video to moves
+- Reordering or category management
+- Bulk edit
+- Plan editor (separate later task)
