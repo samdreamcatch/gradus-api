@@ -279,7 +279,6 @@ function MoveSheetBody({
           onCommit={(v) => commitField("cue", v)}
         />
 
-        />
 
         {/* Why */}
         <MoveField
