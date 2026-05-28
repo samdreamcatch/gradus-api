@@ -408,12 +408,4 @@ function TargetEditor({
     </div>
   );
 }
-
-// Tiny effect helper that only re-runs when the memoized object identity changes.
-function useMemoEffect(fn: () => void, deps: unknown[]) {
-  useMemoEffectImpl(fn, deps);
-}
-import { useEffect as _useEffect } from "react";
-function useMemoEffectImpl(fn: () => void, deps: unknown[]) {
-  _useEffect(fn, deps);
 }
