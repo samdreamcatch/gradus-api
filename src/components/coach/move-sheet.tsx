@@ -39,7 +39,8 @@ export function MoveSheet({
     >
       <SheetContent
         side="bottom"
-        className="max-h-[90vh] overflow-y-auto border-t border-divider bg-card shadow-page [background-image:none]"
+        className="max-h-[90vh] overflow-y-auto border-t border-divider shadow-page"
+        style={{ backgroundColor: "var(--card)", backgroundImage: "none" }}
       >
 
         {open ? (
@@ -218,7 +219,7 @@ function MoveSheetBody({
             kind="text"
             label="Name"
             value={move.name ?? ""}
-            placeholder={isNew ? "Name this move to save it" : "Add a name"}
+            placeholder={isNew ? "Name this move" : "Add a name"}
             required
             autoEdit={isNew}
             saving={savingField === "name"}
@@ -242,7 +243,6 @@ function MoveSheetBody({
             options={sportOptions}
             placeholder="Sport"
             saving={savingField === "sport"}
-            disabled={isNew && !move.name}
             onCommit={(v) => commitField("sport", v)}
           />
           <MoveField
@@ -252,7 +252,6 @@ function MoveSheetBody({
             options={categoryOptions}
             placeholder="Category"
             saving={savingField === "category"}
-            disabled={isNew && !move.name}
             onCommit={(v) => commitField("category", v)}
           />
         </div>
@@ -261,7 +260,6 @@ function MoveSheetBody({
         <TargetEditor
           kind={(move.defaultTargetKind as TargetKind) ?? "reps"}
           value={Number(move.defaultTargetValue ?? 0)}
-          disabled={isNew && !move.name}
           saving={savingField === "defaultTargetKind" || savingField === "defaultTargetValue"}
           onCommit={async (k, v) => {
             if (k !== move.defaultTargetKind) await commitField("defaultTargetKind", k);
@@ -276,7 +274,6 @@ function MoveSheetBody({
           placeholder="One line the athlete can repeat to themselves"
           rows={2}
           saving={savingField === "cue"}
-          disabled={isNew && !move.name}
           onCommit={(v) => commitField("cue", v)}
         />
 
@@ -289,7 +286,6 @@ function MoveSheetBody({
           placeholder="What this move develops, in plain language"
           rows={3}
           saving={savingField === "why"}
-          disabled={isNew && !move.name}
           onCommit={(v) => commitField("why", v)}
         />
 
@@ -301,7 +297,6 @@ function MoveSheetBody({
           placeholder="How to perform the move, step by step"
           rows={4}
           saving={savingField === "description"}
-          disabled={isNew && !move.name}
           onCommit={(v) => commitField("description", v)}
         />
 
