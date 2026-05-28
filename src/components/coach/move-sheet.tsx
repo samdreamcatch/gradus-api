@@ -9,6 +9,16 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -204,11 +214,19 @@ function MoveSheetBody({
     }
   };
 
+  const [confirmArchiveOpen, setConfirmArchiveOpen] = useState(false);
+
   const archive = () => {
     if (!existing) return;
-    if (!window.confirm(`Archive "${existing.name}"? You can recreate it later.`)) return;
+    setConfirmArchiveOpen(true);
+  };
+
+  const confirmArchive = () => {
+    if (!existing) return;
+    setConfirmArchiveOpen(false);
     archiveMutation.mutate({ data: { id: existing.id } });
   };
+
 
   return (
     <>
@@ -352,6 +370,26 @@ function MoveSheetBody({
           </div>
         ) : null}
       </div>
+
+      <AlertDialog open={confirmArchiveOpen} onOpenChange={setConfirmArchiveOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Archive "{existing?.name}"?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You can recreate it later.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmArchive}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Archive
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
