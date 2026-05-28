@@ -347,7 +347,7 @@ function LibraryView() {
         <EmptyState
           message={
             moves.length === 0
-              ? "Your library is empty. Add a move with + or set up sports in your profile to load the starter library."
+              ? "Your move library is empty. Add a move with + or set up sports in your profile to load the starter move library."
               : query.trim() || sport
                 ? "No moves match your filters."
                 : "No moves match."
