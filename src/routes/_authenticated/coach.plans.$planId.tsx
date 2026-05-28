@@ -1,75 +1,81 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
-  ArrowLeft,
   ArrowUp,
   ArrowDown,
   Trash2,
   Plus,
   Search,
-  Save,
-  Power,
-  Pause,
   Loader2,
   Send,
   ArrowRight,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import {
   getPlan,
-  savePlan,
+  updatePlan,
+  updatePlanMove,
+  removePlanMove,
+  reorderPlanMoves,
+  addLibraryMovesToPlan,
   setPlanStatus,
   deletePlan,
   listCoachAthletes,
-  type PlanMoveDTO,
   type TargetKind,
 } from "@/lib/plans.functions";
 import { listMoves, upsertMove, type MoveDTO } from "@/lib/moves.functions";
-
-
+import { MoveField } from "@/components/coach/move-field";
 
 export const Route = createFileRoute("/_authenticated/coach/plans/$planId")({
-  validateSearch: (s: Record<string, unknown>) => ({
-    kind: s.kind === "template" ? "template" : undefined,
-    athleteId: typeof s.athleteId === "string" ? s.athleteId : undefined,
-  }),
-  component: PlanEditorPage,
+  component: PlanEditorSheet,
 });
 
-type DraftMove = Omit<PlanMoveDTO, "id" | "position"> & { key: string };
-
-function PlanEditorPage() {
+function PlanEditorSheet() {
   const { planId } = Route.useParams();
-  const search = Route.useSearch();
-  const isNew = planId === "new";
   const navigate = useNavigate();
-  const qc = useQueryClient();
+  const close = () => navigate({ to: "/coach/plans" });
 
+  // Defensive: if someone hits /coach/plans/new directly, bounce back.
+  if (planId === "new") {
+    close();
+    return null;
+  }
+
+  return (
+    <Sheet open onOpenChange={(v) => { if (!v) close(); }}>
+      <SheetContent
+        side="bottom"
+        className="max-h-[92vh] overflow-y-auto border-t border-divider shadow-page"
+        style={{ backgroundColor: "var(--popover)", backgroundImage: "none" }}
+      >
+        <PlanEditorBody planId={planId} onClose={close} />
+      </SheetContent>
+    </Sheet>
+  );
+}
+
+function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => void }) {
+  const qc = useQueryClient();
   const fetchPlan = useServerFn(getPlan);
   const fetchAthletes = useServerFn(listCoachAthletes);
-  const saveFn = useServerFn(savePlan);
+  const updatePlanFn = useServerFn(updatePlan);
+  const updateMoveFn = useServerFn(updatePlanMove);
+  const removeMoveFn = useServerFn(removePlanMove);
+  const reorderFn = useServerFn(reorderPlanMoves);
+  const addMovesFn = useServerFn(addLibraryMovesToPlan);
   const statusFn = useServerFn(setPlanStatus);
   const deleteFn = useServerFn(deletePlan);
 
   const { data, isLoading } = useQuery({
     queryKey: ["plan", planId],
     queryFn: () => fetchPlan({ data: { id: planId } }),
-    enabled: !isNew,
   });
   const { data: athletesData } = useQuery({
     queryKey: ["coach-athletes"],
@@ -77,417 +83,446 @@ function PlanEditorPage() {
   });
   const athletes = athletesData?.athletes ?? [];
 
-  const [title, setTitle] = useState("");
-  const [notes, setNotes] = useState("");
-  const [moves, setMoves] = useState<DraftMove[]>([]);
-  const [athleteId, setAthleteId] = useState<string>("");
-  const [isTemplate, setIsTemplate] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [hydrated, setHydrated] = useState(false);
+  const [savingField, setSavingField] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (hydrated) return;
-    if (isNew) {
-      setIsTemplate(search.kind === "template");
-      setAthleteId(search.athleteId ?? "");
-      setHydrated(true);
-      return;
-    }
-    if (!data?.plan) return;
-    setTitle(data.plan.title);
-    setNotes(data.plan.notes);
-    setAthleteId(data.plan.athleteId ?? "");
-    setIsTemplate(data.plan.kind === "template");
-    setMoves(
-      data.plan.moves.map((m, i) => ({
-        key: `${m.id}-${i}`,
-        moveId: m.moveId,
-        name: m.name,
-        description: m.description,
-        cue: m.cue,
-        why: m.why,
-        targetKind: m.targetKind,
-        targetValue: m.targetValue,
-      })),
-    );
-    setHydrated(true);
-  }, [data?.plan, isNew, hydrated, search.kind, search.athleteId]);
+  const invalidate = () => {
+    qc.invalidateQueries({ queryKey: ["plan", planId] });
+    qc.invalidateQueries({ queryKey: ["plans"] });
+  };
 
-  const totalMinutes = useMemo(
-    () => moves.filter((m) => m.targetKind === "minutes").reduce((s, m) => s + (m.targetValue || 0), 0),
-    [moves],
-  );
-  const isActive = data?.plan?.status === "active";
-
-  const saveMutation = useMutation({
-    mutationFn: saveFn,
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["plans"] });
-      qc.invalidateQueries({ queryKey: ["plan", planId] });
-      toast.success("Saved");
-    },
+  const planUpdate = useMutation({
+    mutationFn: updatePlanFn,
+    onSuccess: invalidate,
+    onError: (e: Error) => toast.error(e.message),
+    onSettled: () => setSavingField(null),
+  });
+  const moveUpdate = useMutation({
+    mutationFn: updateMoveFn,
+    onSuccess: invalidate,
+    onError: (e: Error) => toast.error(e.message),
+    onSettled: () => setSavingField(null),
+  });
+  const moveRemove = useMutation({
+    mutationFn: removeMoveFn,
+    onSuccess: invalidate,
     onError: (e: Error) => toast.error(e.message),
   });
-
+  const moveReorder = useMutation({
+    mutationFn: reorderFn,
+    onSuccess: invalidate,
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const moveAdd = useMutation({
+    mutationFn: addMovesFn,
+    onSuccess: invalidate,
+    onError: (e: Error) => toast.error(e.message),
+  });
   const statusMutation = useMutation({
     mutationFn: statusFn,
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["plans"] });
-      qc.invalidateQueries({ queryKey: ["plan", planId] });
-    },
+    onSuccess: invalidate,
     onError: (e: Error) => toast.error(e.message),
   });
-
   const deleteMutation = useMutation({
     mutationFn: deleteFn,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["plans"] });
-      navigate({ to: "/coach/plans" });
+      onClose();
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const updateMove = (idx: number, patch: Partial<DraftMove>) => {
-    setMoves((prev) => prev.map((m, i) => (i === idx ? { ...m, ...patch } : m)));
-  };
-  const removeMove = (idx: number) => setMoves((prev) => prev.filter((_, i) => i !== idx));
-  const moveUp = (idx: number) => {
-    if (idx === 0) return;
-    setMoves((prev) => {
-      const next = [...prev];
-      [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
-      return next;
-    });
-  };
-  const moveDown = (idx: number) => {
-    setMoves((prev) => {
-      if (idx >= prev.length - 1) return prev;
-      const next = [...prev];
-      [next[idx], next[idx + 1]] = [next[idx + 1], next[idx]];
-      return next;
-    });
-  };
-
-  const addLibraryMoves = (picked: MoveDTO[]) => {
-    setMoves((prev) => [
-      ...prev,
-      ...picked.map((m, i) => ({
-        key: `new-${Date.now()}-${i}`,
-        moveId: m.id,
-        name: m.name,
-        description: m.description,
-        cue: m.cue,
-        why: m.why,
-        targetKind: m.defaultTargetKind,
-        targetValue: m.defaultTargetValue,
-      })),
-    ]);
-  };
-
-  const handleSave = (opts?: { activate?: boolean }) => {
-    if (!title.trim()) {
-      toast.error("Give the plan a title.");
-      return;
-    }
-    if (!isTemplate && !athleteId) {
-      toast.error("Assign an athlete or save as template.");
-      return;
-    }
-    saveMutation.mutate(
-      {
-        data: {
-          id: isNew ? undefined : planId,
-          title: title.trim(),
-          notes,
-          kind: isTemplate ? "template" : "plan",
-          athleteId: isTemplate ? null : athleteId,
-          moves: moves.map((m) => ({
-            moveId: m.moveId,
-            name: m.name,
-            description: m.description,
-            cue: m.cue,
-            why: m.why,
-            targetKind: m.targetKind,
-            targetValue: m.targetValue,
-          })),
-        },
-      },
-      {
-        onSuccess: ({ id }) => {
-          if (opts?.activate && !isTemplate && athleteId) {
-            statusMutation.mutate(
-              { data: { id, status: "active" } },
-              {
-                onSuccess: () => {
-                  toast.success("Plan activated");
-                  navigate({ to: "/coach/plans" });
-                },
-              },
-            );
-            return;
-          }
-          if (isNew) {
-            navigate({
-              to: "/coach/plans/$planId",
-              params: { planId: id },
-              replace: true,
-            });
-          }
-        },
-      },
-    );
-  };
-
-  if (!isNew && (isLoading || !data)) {
+  if (isLoading || !data?.plan) {
     return (
-      <div className="mx-auto min-h-dvh max-w-3xl px-4 pt-6">
-        <p className="text-sm text-text-secondary">Loading…</p>
-      </div>
+      <div className="py-12 text-center text-sm text-text-secondary">Loading…</div>
     );
   }
 
+  const plan = data.plan;
+  const isTemplate = plan.kind === "template";
+  const totalMinutes = plan.moves
+    .filter((m) => m.targetKind === "minutes")
+    .reduce((s, m) => s + m.targetValue, 0);
+
+  const commit = async <K extends string>(field: K, fn: () => Promise<unknown>) => {
+    setSavingField(field);
+    await fn().catch(() => {});
+  };
+
+  const activate = () => {
+    if (!plan.athleteId) {
+      toast.error("Assign an athlete first.");
+      return;
+    }
+    if (!plan.title.trim()) {
+      toast.error("Give the plan a title.");
+      return;
+    }
+    statusMutation.mutate(
+      { data: { id: plan.id, status: "active" } },
+      {
+        onSuccess: () => {
+          toast.success("Plan activated");
+          onClose();
+        },
+      },
+    );
+  };
+
+  const saveTemplate = () => {
+    if (!plan.title.trim()) {
+      toast.error("Give the template a title.");
+      return;
+    }
+    statusMutation.mutate(
+      { data: { id: plan.id, status: "benched" } },
+      {
+        onSuccess: () => {
+          toast.success("Template saved");
+          onClose();
+        },
+      },
+    );
+  };
+
+  const reorder = (from: number, to: number) => {
+    if (to < 0 || to >= plan.moves.length || from === to) return;
+    const ids = plan.moves.map((m) => m.id);
+    const [picked] = ids.splice(from, 1);
+    ids.splice(to, 0, picked);
+    moveReorder.mutate({ data: { planId: plan.id, orderedIds: ids } });
+  };
+
   return (
-    <div className="mx-auto min-h-dvh max-w-3xl px-4 pt-4 pb-40">
-      <div className="mb-4 flex items-center justify-between">
-        <Link
-          to="/coach/plans"
-          className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-widest text-text-secondary hover:text-text-primary"
+    <>
+      <SheetHeader>
+        <SheetTitle className="font-display text-2xl">
+          {isTemplate ? "Template" : plan.status === "draft" ? "New plan" : "Plan"}
+        </SheetTitle>
+      </SheetHeader>
+
+      <div className="mt-5 space-y-5">
+        <MoveField
+          kind="text"
+          label="Title"
+          value={plan.title}
+          placeholder="Name this plan"
+          required
+          autoEdit={!plan.title}
+          saving={savingField === "title"}
+          onCommit={(v) =>
+            commit("title", () => planUpdate.mutateAsync({ data: { id: plan.id, title: v } }))
+          }
+          displayClassName="font-display text-h3 font-black leading-tight tracking-tight"
+          inputClassName="font-display text-h3 font-black leading-tight tracking-tight"
+        />
+
+        {/* Assignment */}
+        <div className="rounded-lg border border-divider bg-card p-3">
+          <div className="flex items-center justify-between gap-3">
+            <label className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
+              Save as template
+            </label>
+            <Switch
+              checked={isTemplate}
+              onCheckedChange={(v) =>
+                commit("kind", () =>
+                  planUpdate.mutateAsync({
+                    data: { id: plan.id, kind: v ? "template" : "plan" },
+                  }),
+                )
+              }
+            />
+          </div>
+          {!isTemplate ? (
+            <div className="mt-3">
+              <MoveField
+                kind="select"
+                label="Athlete"
+                value={
+                  plan.athleteId
+                    ? athletes.find((a) => a.id === plan.athleteId)?.name ?? ""
+                    : ""
+                }
+                options={athletes.map((a) => a.name)}
+                allowFreeText={false}
+                placeholder="Choose an athlete"
+                saving={savingField === "athleteId"}
+                onCommit={(v) => {
+                  const match = athletes.find((a) => a.name === v);
+                  return commit("athleteId", () =>
+                    planUpdate.mutateAsync({
+                      data: { id: plan.id, athleteId: match?.id ?? null },
+                    }),
+                  );
+                }}
+              />
+            </div>
+          ) : null}
+        </div>
+
+        <MoveField
+          kind="textarea"
+          label="Notes for the athlete"
+          value={plan.notes}
+          placeholder="Overall context, focus areas, encouragement…"
+          rows={3}
+          saving={savingField === "notes"}
+          onCommit={(v) =>
+            commit("notes", () => planUpdate.mutateAsync({ data: { id: plan.id, notes: v } }))
+          }
+        />
+
+        {/* Moves */}
+        <div className="mb-2 mt-2 flex items-end justify-between">
+          <h2 className="font-display text-xl font-bold text-text-primary">Moves</h2>
+          <span className="text-xs font-bold text-text-tertiary">
+            {plan.moves.length} · {totalMinutes} min
+          </span>
+        </div>
+
+        <ul className="space-y-3">
+          {plan.moves.map((m, idx) => (
+            <li key={m.id} className="rounded-lg border border-divider bg-card p-3">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0 flex-1 space-y-3">
+                  <MoveField
+                    kind="text"
+                    label={`Move ${idx + 1}`}
+                    value={m.name}
+                    required
+                    saving={savingField === `m-name-${m.id}`}
+                    onCommit={(v) =>
+                      commit(`m-name-${m.id}`, () =>
+                        moveUpdate.mutateAsync({ data: { id: m.id, patch: { name: v } } }),
+                      )
+                    }
+                    displayClassName="text-base font-bold"
+                    inputClassName="text-base font-bold"
+                  />
+                  <PlanMoveTarget
+                    kind={m.targetKind}
+                    value={m.targetValue}
+                    saving={savingField === `m-target-${m.id}`}
+                    onCommit={(k, v) =>
+                      commit(`m-target-${m.id}`, () =>
+                        moveUpdate.mutateAsync({
+                          data: { id: m.id, patch: { targetKind: k, targetValue: v } },
+                        }),
+                      )
+                    }
+                  />
+                  <MoveField
+                    kind="textarea"
+                    label="Description"
+                    value={m.description}
+                    placeholder="How to perform the move"
+                    rows={3}
+                    saving={savingField === `m-desc-${m.id}`}
+                    onCommit={(v) =>
+                      commit(`m-desc-${m.id}`, () =>
+                        moveUpdate.mutateAsync({
+                          data: { id: m.id, patch: { description: v } },
+                        }),
+                      )
+                    }
+                  />
+                  <MoveField
+                    kind="textarea"
+                    label="Cue"
+                    value={m.cue}
+                    placeholder="One line the athlete can repeat"
+                    rows={2}
+                    saving={savingField === `m-cue-${m.id}`}
+                    onCommit={(v) =>
+                      commit(`m-cue-${m.id}`, () =>
+                        moveUpdate.mutateAsync({ data: { id: m.id, patch: { cue: v } } }),
+                      )
+                    }
+                  />
+                  <MoveField
+                    kind="textarea"
+                    label="Why this matters for this athlete"
+                    value={m.why}
+                    placeholder="Tailor it to this plan"
+                    rows={2}
+                    saving={savingField === `m-why-${m.id}`}
+                    onCommit={(v) =>
+                      commit(`m-why-${m.id}`, () =>
+                        moveUpdate.mutateAsync({ data: { id: m.id, patch: { why: v } } }),
+                      )
+                    }
+                  />
+                </div>
+                <div className="flex flex-col items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => reorder(idx, idx - 1)}
+                    disabled={idx === 0}
+                    className="text-text-tertiary disabled:opacity-30"
+                    aria-label="Move up"
+                  >
+                    <ArrowUp className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => reorder(idx, idx + 1)}
+                    disabled={idx === plan.moves.length - 1}
+                    className="text-text-tertiary disabled:opacity-30"
+                    aria-label="Move down"
+                  >
+                    <ArrowDown className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => moveRemove.mutate({ data: { id: m.id } })}
+                    className="mt-1 text-text-tertiary hover:text-destructive"
+                    aria-label="Remove"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            </li>
+          ))}
+        </ul>
+
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => setPickerOpen(true)}
+          className="w-full gap-2"
         >
-          <ArrowLeft className="h-3.5 w-3.5" />
-          Plans
-        </Link>
-        {!isNew ? (
+          <Plus className="h-4 w-4" />
+          Add moves from move library
+        </Button>
+
+        <div className="flex items-center justify-between gap-3 border-t border-divider pt-4">
           <button
             type="button"
             onClick={() => {
-              if (confirm("Delete this plan?")) deleteMutation.mutate({ data: { id: planId } });
+              if (confirm("Delete this plan?")) deleteMutation.mutate({ data: { id: plan.id } });
             }}
             className="text-xs font-bold uppercase tracking-widest text-text-tertiary hover:text-destructive"
           >
             Delete
           </button>
-        ) : null}
-      </div>
-
-      <Input
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        placeholder="Plan title"
-        className="!h-auto border-none bg-transparent px-0 font-display !text-3xl font-black tracking-tight text-text-primary shadow-none focus-visible:ring-0"
-      />
-
-      <Textarea
-        value={notes}
-        onChange={(e) => setNotes(e.target.value)}
-        placeholder="Notes for this plan…"
-        className="mt-2 min-h-[60px] border-none bg-transparent px-0 text-sm shadow-none focus-visible:ring-0"
-      />
-
-      {/* Assignment row */}
-      <div className="mt-4 rounded-lg border border-divider bg-card p-3">
-        <div className="flex items-center justify-between gap-3">
-          <label className="text-xs font-bold uppercase tracking-widest text-text-secondary">
-            Template
-          </label>
-          <Switch checked={isTemplate} onCheckedChange={setIsTemplate} />
+          {isTemplate ? (
+            <Button
+              type="button"
+              onClick={saveTemplate}
+              disabled={statusMutation.isPending}
+              className="gap-2"
+            >
+              {statusMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+              Save template
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              onClick={activate}
+              disabled={statusMutation.isPending || !plan.athleteId}
+              className="gap-2"
+            >
+              {statusMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
+              Activate &amp; share
+            </Button>
+          )}
         </div>
-        {!isTemplate ? (
-          <div className="mt-3">
-            <label className="mb-1 block text-xs font-bold uppercase tracking-widest text-text-secondary">
-              Athlete
-            </label>
-            <Select value={athleteId} onValueChange={setAthleteId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Choose an athlete" />
-              </SelectTrigger>
-              <SelectContent>
-                {athletes.map((a) => (
-                  <SelectItem key={a.id} value={a.id}>
-                    {a.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {!isNew && data?.plan.kind === "plan" ? (
-              <div className="mt-3 flex items-center gap-2">
-                <Button
-                  type="button"
-                  variant={isActive ? "secondary" : "default"}
-                  size="sm"
-                  disabled={!athleteId || statusMutation.isPending}
-                  onClick={() =>
-                    statusMutation.mutate({
-                      data: { id: planId, status: isActive ? "benched" : "active" },
-                    })
-                  }
-                  className="gap-1"
-                >
-                  {isActive ? <Pause className="h-4 w-4" /> : <Power className="h-4 w-4" />}
-                  {isActive ? "Bench" : "Mark active"}
-                </Button>
-                <span className="text-xs text-text-tertiary">
-                  {isActive
-                    ? "This is the active plan for this athlete."
-                    : "Activating benches their current active plan."}
-                </span>
-              </div>
-            ) : null}
-          </div>
-        ) : null}
-      </div>
-
-      {/* Moves */}
-      <div className="mt-6 mb-2 flex items-end justify-between">
-        <h2 className="font-display text-xl font-bold text-text-primary">Moves</h2>
-        <span className="text-xs font-bold text-text-tertiary">
-          {moves.length} · {totalMinutes} min
-        </span>
-      </div>
-
-      <ul className="divide-y divide-divider border-y border-divider">
-        {moves.map((m, idx) => (
-          <li key={m.key} className="py-3">
-            <div className="flex items-start gap-2">
-              <div className="flex flex-col gap-1 pt-1">
-                <button
-                  type="button"
-                  onClick={() => moveUp(idx)}
-                  disabled={idx === 0}
-                  className="text-text-tertiary disabled:opacity-30"
-                  aria-label="Move up"
-                >
-                  <ArrowUp className="h-3.5 w-3.5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => moveDown(idx)}
-                  disabled={idx === moves.length - 1}
-                  className="text-text-tertiary disabled:opacity-30"
-                  aria-label="Move down"
-                >
-                  <ArrowDown className="h-3.5 w-3.5" />
-                </button>
-              </div>
-              <div className="min-w-0 flex-1">
-                <Input
-                  value={m.name}
-                  onChange={(e) => updateMove(idx, { name: e.target.value })}
-                  className="!h-8 border-none bg-transparent px-0 text-sm font-bold shadow-none focus-visible:ring-0"
-                />
-                <div className="mt-1 flex items-center gap-2">
-                  <Input
-                    type="number"
-                    min={0}
-                    value={m.targetValue}
-                    onChange={(e) =>
-                      updateMove(idx, { targetValue: Number(e.target.value) || 0 })
-                    }
-                    className="h-7 w-16"
-                  />
-                  <div className="flex rounded-md bg-elevated p-0.5 text-[11px] font-bold">
-                    {(["reps", "minutes"] as TargetKind[]).map((k) => (
-                      <button
-                        key={k}
-                        type="button"
-                        onClick={() => updateMove(idx, { targetKind: k })}
-                        className={cn(
-                          "rounded px-2 py-0.5 uppercase tracking-tight",
-                          m.targetKind === k
-                            ? "bg-card text-text-primary shadow-sm"
-                            : "text-text-secondary",
-                        )}
-                      >
-                        {k}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                {m.cue ? (
-                  <p className="mt-1 line-clamp-2 text-xs text-text-secondary">{m.cue}</p>
-                ) : null}
-              </div>
-              <button
-                type="button"
-                onClick={() => removeMove(idx)}
-                className="pt-1 text-text-tertiary hover:text-destructive"
-                aria-label="Remove"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
-            </div>
-          </li>
-        ))}
-      </ul>
-
-      <Button
-        type="button"
-        variant="outline"
-        onClick={() => setPickerOpen(true)}
-        className="mt-3 w-full gap-2"
-      >
-        <Plus className="h-4 w-4" />
-        Add moves from move library
-      </Button>
-
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-divider bg-card/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-card/80">
-        <div className="mx-auto flex max-w-3xl items-center justify-between gap-3">
-          <div className="text-xs text-text-secondary">
-            <span className="font-bold text-text-primary">{moves.length}</span> moves ·{" "}
-            <span className="font-bold text-text-primary">{totalMinutes}</span> min
-          </div>
-          <div className="flex items-center gap-2">
-            {isTemplate ? (
-              <Button
-                type="button"
-                onClick={() => handleSave()}
-                disabled={saveMutation.isPending}
-                className="gap-2"
-              >
-                {saveMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                Save template
-              </Button>
-            ) : (
-              <>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => handleSave()}
-                  disabled={saveMutation.isPending}
-                  className="gap-2"
-                >
-                  <Save className="h-4 w-4" />
-                  Save for later
-                </Button>
-                <Button
-                  type="button"
-                  onClick={() => handleSave({ activate: true })}
-                  disabled={saveMutation.isPending || statusMutation.isPending || !athleteId}
-                  className="gap-2"
-                >
-                  {saveMutation.isPending || statusMutation.isPending ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Send className="h-4 w-4" />
-                  )}
-                  Activate &amp; share
-                </Button>
-              </>
-            )}
-          </div>
-        </div>
+        <p className="pb-2 text-center text-[11px] text-text-tertiary">
+          Every change is saved automatically. Drafts live in the Drafts tab until you activate.
+        </p>
       </div>
 
       <MovePicker
         open={pickerOpen}
         onOpenChange={setPickerOpen}
         onAdd={(picked) => {
-          addLibraryMoves(picked);
-          setPickerOpen(false);
+          if (!picked.length) {
+            setPickerOpen(false);
+            return;
+          }
+          moveAdd.mutate(
+            { data: { planId: plan.id, moveIds: picked.map((m) => m.id) } },
+            { onSuccess: () => setPickerOpen(false) },
+          );
         }}
       />
+    </>
+  );
+}
+
+function PlanMoveTarget({
+  kind,
+  value,
+  saving,
+  onCommit,
+}: {
+  kind: TargetKind;
+  value: number;
+  saving?: boolean;
+  onCommit: (kind: TargetKind, value: number) => void | Promise<void>;
+}) {
+  const [localValue, setLocalValue] = useState(String(value));
+  // Sync if external value changes
+  useMemo(() => setLocalValue(String(value)), [value]);
+
+  const commit = (nextKind: TargetKind, nextValRaw: string) => {
+    const n = Math.max(0, Math.min(10000, Number(nextValRaw) || 0));
+    setLocalValue(String(n));
+    if (n !== value || nextKind !== kind) onCommit(nextKind, n);
+  };
+
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center gap-2">
+        <span className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
+          Target
+        </span>
+        {saving ? (
+          <span className="text-[10px] font-medium text-text-tertiary">Saving…</span>
+        ) : null}
+      </div>
+      <div className="flex items-center gap-2">
+        <div className="inline-flex overflow-hidden rounded-md border border-divider">
+          {(["reps", "minutes"] as TargetKind[]).map((k) => (
+            <button
+              key={k}
+              type="button"
+              onClick={() => commit(k, localValue)}
+              className={cn(
+                "px-3 py-1.5 text-xs font-bold uppercase tracking-wide transition",
+                kind === k
+                  ? "bg-accent text-accent-foreground"
+                  : "bg-card text-text-secondary hover:text-text-primary",
+              )}
+            >
+              {k}
+            </button>
+          ))}
+        </div>
+        <input
+          type="number"
+          min={0}
+          max={10000}
+          value={localValue}
+          onChange={(e) => setLocalValue(e.target.value)}
+          onBlur={() => commit(kind, localValue)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+          }}
+          className="h-9 w-20 rounded-md border border-divider bg-card px-2 text-sm font-bold text-text-primary focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/40"
+        />
+        <span className="text-xs font-medium text-text-tertiary">{kind}</span>
+      </div>
     </div>
   );
 }
+
 
 function MovePicker({
   open,
