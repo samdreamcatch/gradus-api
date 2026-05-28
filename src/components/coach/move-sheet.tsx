@@ -39,7 +39,8 @@ export function MoveSheet({
     >
       <SheetContent
         side="bottom"
-        className="max-h-[90vh] overflow-y-auto border-t border-divider bg-card shadow-page [background-image:none]"
+        className="max-h-[90vh] overflow-y-auto border-t border-divider shadow-page"
+        style={{ backgroundColor: "var(--card)", backgroundImage: "none" }}
       >
 
         {open ? (
