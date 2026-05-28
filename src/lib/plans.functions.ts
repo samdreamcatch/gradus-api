@@ -5,7 +5,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
 
 export type PlanKind = "plan" | "template";
-export type PlanStatus = "active" | "benched";
+export type PlanStatus = "active" | "benched" | "draft";
 export type TargetKind = "reps" | "minutes";
 
 type Client = SupabaseClient<Database>;
