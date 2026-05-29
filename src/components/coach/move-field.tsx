@@ -91,18 +91,17 @@ export function MoveField(props: MoveFieldProps) {
       ) : null}
     </div>
   );
-
   if (!editing) {
     return (
-      <div className={cn("group space-y-1", className)}>
+      <div className={cn("group space-y-1.5", className)}>
         {labelEl}
         <button
           type="button"
           disabled={disabled}
           onClick={() => setEditing(true)}
           className={cn(
-            "block w-full rounded-md border border-transparent px-2 py-1.5 text-left transition",
-            "hover:border-divider hover:bg-elevated/60",
+            "block w-full rounded-xl border border-divider px-3 py-2 text-left transition-colors",
+            "hover:border-accent/40",
             "text-text-primary",
             displayClassName,
           )}
@@ -118,9 +117,12 @@ export function MoveField(props: MoveFieldProps) {
   }
 
   const sharedInputCls = cn(
-    "block w-full rounded-md border border-accent/60 bg-elevated px-2 py-1.5 text-text-primary",
-    "focus:outline-none focus:ring-2 focus:ring-accent/40",
+    "block w-full rounded-xl border-2 border-accent bg-[var(--pen-tennis-wash)] px-3 py-2 text-text-primary",
+    "shadow-[0_0_15px_color-mix(in_oklab,var(--accent)_10%,transparent)]",
+    "focus:outline-none",
     inputClassName,
+  );
+
   );
 
   return (
