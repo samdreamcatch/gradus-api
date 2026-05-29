@@ -126,10 +126,6 @@ export const listPlans = createServerFn({ method: "POST" })
       new Set((plans ?? []).map((p) => p.athlete_id).filter((x): x is string => !!x)),
     );
 
-
-    const [movesRes, athletesRes, goalsRes] = await Promise.all([
-      planIds.length
-        ? supabase
     const [movesRes, athletesRes, goalsRes] = await Promise.all([
       planIds.length
         ? supabase
@@ -185,6 +181,12 @@ export const listPlans = createServerFn({ method: "POST" })
       byPlan.set(m.plan_id, cur);
     }
 
+    const athleteSport = new Map<string, string>();
+    for (const g of goalsRes.data ?? []) {
+      athleteSport.set(g.athlete_id, g.sport);
+    }
+
+    const nameOf = new Map<string, string>();
     for (const a of athletesRes.data ?? []) {
       nameOf.set(a.id, `${a.first_name} ${a.last_name}`.trim());
     }
