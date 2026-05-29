@@ -376,12 +376,44 @@ export const savePlan = createServerFn({ method: "POST" })
 
 /* ---------------- status / delete / duplicate ---------------- */
 
+export const MAX_ACTIVE_PLANS_PER_ATHLETE = 2;
+
+export interface ActivationConflict {
+  kind: "needs_confirm" | "needs_bench_choice";
+  activePlans: { id: string; title: string }[];
+}
+
+export const getAthleteActivePlans = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z.object({
+      athleteId: z.string().uuid(),
+      excludePlanId: z.string().uuid().optional(),
+    }).parse(input),
+  )
+  .handler(async ({ context, data }) => {
+    const supabase = context.supabase as Client;
+    const coachId = await getCoachId(supabase, context.userId);
+    let q = supabase
+      .from("plans")
+      .select("id, title")
+      .eq("coach_id", coachId)
+      .eq("athlete_id", data.athleteId)
+      .eq("kind", "plan")
+      .eq("status", "active");
+    if (data.excludePlanId) q = q.neq("id", data.excludePlanId);
+    const { data: rows, error } = await q;
+    if (error) throw new Error(error.message);
+    return { plans: (rows ?? []) as { id: string; title: string }[] };
+  });
+
 export const setPlanStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
     z.object({
       id: z.string().uuid(),
       status: z.enum(["active", "benched", "draft"]),
+      replaceId: z.string().uuid().optional(),
     }).parse(input),
   )
   .handler(async ({ context, data }) => {
@@ -398,7 +430,43 @@ export const setPlanStatus = createServerFn({ method: "POST" })
       if (ownErr) throw new Error(ownErr.message);
       if (!owned) throw new Error("Plan not found");
       if (!owned.athlete_id) throw new Error("Assign an athlete before activating.");
-      const { error } = await supabase.rpc("activate_plan", { _plan_id: data.id });
+
+      // Count other active plans for this athlete from this coach.
+      const { data: others, error: othersErr } = await supabase
+        .from("plans")
+        .select("id")
+        .eq("coach_id", coachId)
+        .eq("athlete_id", owned.athlete_id)
+        .eq("kind", "plan")
+        .eq("status", "active")
+        .neq("id", data.id);
+      if (othersErr) throw new Error(othersErr.message);
+      const activeOthers = (others ?? []) as { id: string }[];
+
+      if (activeOthers.length >= MAX_ACTIVE_PLANS_PER_ATHLETE) {
+        // Already at the cap — require coach to pick one to bench.
+        if (!data.replaceId || !activeOthers.some((p) => p.id === data.replaceId)) {
+          throw new Error("BENCH_CHOICE_REQUIRED");
+        }
+      }
+
+      if (data.replaceId) {
+        if (!activeOthers.some((p) => p.id === data.replaceId)) {
+          throw new Error("Selected plan is not active.");
+        }
+        const { error: bErr } = await supabase
+          .from("plans")
+          .update({ status: "benched" })
+          .eq("id", data.replaceId)
+          .eq("coach_id", coachId);
+        if (bErr) throw new Error(bErr.message);
+      }
+
+      const { error } = await supabase
+        .from("plans")
+        .update({ status: "active" })
+        .eq("id", data.id)
+        .eq("coach_id", coachId);
       if (error) throw new Error(error.message);
     } else {
       const { error } = await supabase
@@ -410,6 +478,7 @@ export const setPlanStatus = createServerFn({ method: "POST" })
     }
     return { ok: true };
   });
+
 
 export const deletePlan = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
