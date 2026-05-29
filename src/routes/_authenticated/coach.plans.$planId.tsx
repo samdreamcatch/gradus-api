@@ -203,6 +203,45 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
     await fn().catch(() => {});
   };
 
+  const performActivate = (replaceId?: string) => {
+    statusMutation.mutate(
+      { data: { id: plan.id, status: "active", ...(replaceId ? { replaceId } : {}) } },
+      {
+        onSuccess: () => {
+          toast.success(replaceId ? "Plan activated · previous plan benched" : "Plan activated");
+          setActiveConflicts(null);
+          setChosenReplaceId(null);
+          onClose();
+        },
+        onError: (e: Error) => {
+          if (e.message === "BENCH_CHOICE_REQUIRED") {
+            // Refetch and surface the choice dialog.
+            void openConflictDialog();
+          } else {
+            toast.error(e.message);
+          }
+        },
+      },
+    );
+  };
+
+  const openConflictDialog = async () => {
+    if (!plan.athleteId) return;
+    try {
+      const { plans } = await getActivesFn({
+        data: { athleteId: plan.athleteId, excludePlanId: plan.id },
+      });
+      if (plans.length === 0) {
+        performActivate();
+        return;
+      }
+      setActiveConflicts(plans);
+      setChosenReplaceId(plans.length === 1 ? plans[0].id : null);
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
+  };
+
   const activate = () => {
     if (!plan.athleteId) {
       toast.error("Assign an athlete first.");
@@ -212,16 +251,10 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
       toast.error("Give the plan a title.");
       return;
     }
-    statusMutation.mutate(
-      { data: { id: plan.id, status: "active" } },
-      {
-        onSuccess: () => {
-          toast.success("Plan activated");
-          onClose();
-        },
-      },
-    );
+    void openConflictDialog();
   };
+
+
 
   const saveTemplate = () => {
     if (!plan.title.trim()) {
