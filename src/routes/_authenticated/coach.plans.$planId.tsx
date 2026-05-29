@@ -497,13 +497,37 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
         </Button>
 
         <div className="flex items-center justify-between gap-3 border-t border-divider pt-4">
-          <button
-            type="button"
-            onClick={() => setConfirmDeleteOpen(true)}
-            className="text-xs font-bold uppercase tracking-widest text-text-tertiary hover:text-destructive"
-          >
-            Delete
-          </button>
+          {plan.status === "active" ? (
+            <button
+              type="button"
+              onClick={() =>
+                statusMutation.mutate(
+                  { data: { id: plan.id, status: "benched" } },
+                  {
+                    onSuccess: () => {
+                      toast.success("Plan benched");
+                      onClose();
+                    },
+                  },
+                )
+              }
+              disabled={statusMutation.isPending}
+              className="text-xs font-bold uppercase tracking-widest text-text-tertiary hover:text-text-primary disabled:opacity-50"
+            >
+              Bench
+            </button>
+          ) : plan.status === "benched" ? (
+            <span />
+          ) : (
+            <button
+              type="button"
+              onClick={() => setConfirmDeleteOpen(true)}
+              className="text-xs font-bold uppercase tracking-widest text-text-tertiary hover:text-destructive"
+            >
+              Delete
+            </button>
+          )}
+
           {isTemplate ? (
             <Button
               type="button"
