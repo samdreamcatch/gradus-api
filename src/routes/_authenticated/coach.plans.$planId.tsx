@@ -88,9 +88,11 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
   const updatePlanFn = useServerFn(updatePlan);
   const updateMoveFn = useServerFn(updatePlanMove);
   const removeMoveFn = useServerFn(removePlanMove);
-  const reorderFn = useServerFn(reorderPlanMoves);
-  const addMovesFn = useServerFn(addLibraryMovesToPlan);
   const statusFn = useServerFn(setPlanStatus);
+  const deleteFn = useServerFn(deletePlan);
+  const createPlanFn = useServerFn(createPlan);
+  const getActivesFn = useServerFn(getAthleteActivePlans);
+
   const deleteFn = useServerFn(deletePlan);
   const createPlanFn = useServerFn(createPlan);
 
