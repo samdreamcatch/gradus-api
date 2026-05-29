@@ -531,11 +531,22 @@ export const updatePlan = createServerFn({ method: "POST" })
     const coachId = await getCoachId(supabase, context.userId);
     await assertPlanOwned(supabase, data.id, coachId);
 
+    // Load current row so we can keep the kind/status/athlete combination
+    // valid per the plans_kind_athlete_chk constraint.
+    const { data: current, error: loadErr } = await supabase
+      .from("plans")
+      .select("kind,status,athlete_id")
+      .eq("id", data.id)
+      .eq("coach_id", coachId)
+      .single();
+    if (loadErr || !current) throw new Error(loadErr?.message ?? "Plan not found");
+
     const patch: {
       updated_at: string;
       title?: string;
       notes?: string;
       kind?: string;
+      status?: string;
       athlete_id?: string | null;
     } = { updated_at: new Date().toISOString() };
     if (data.title !== undefined) patch.title = data.title;
@@ -546,12 +557,32 @@ export const updatePlan = createServerFn({ method: "POST" })
     }
     if (data.athleteId !== undefined) patch.athlete_id = data.athleteId;
 
+    // Resolve the post-patch shape and reconcile against the constraint.
+    const nextKind = patch.kind ?? current.kind;
+    const nextAthlete =
+      patch.athlete_id !== undefined ? patch.athlete_id : current.athlete_id;
+    const nextStatus = current.status;
+
+    if (nextKind === "template") {
+      patch.athlete_id = null;
+      patch.status = "draft";
+    } else if (nextKind === "plan") {
+      if (!nextAthlete) {
+        // plan with no athlete must be a draft
+        patch.status = "draft";
+      } else if (nextStatus === "draft") {
+        // assigning an athlete to a draft keeps it as draft until activated
+        patch.status = "draft";
+      }
+    }
+
     const { error } = await supabase
       .from("plans")
       .update(patch)
       .eq("id", data.id)
       .eq("coach_id", coachId);
     if (error) throw new Error(error.message);
+
     return { ok: true };
   });
 
