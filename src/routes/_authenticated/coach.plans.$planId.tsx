@@ -550,7 +550,7 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
               ) : (
                 <Send className="h-4 w-4" />
               )}
-              {plan.status === "active" ? "Update &amp; share" : "Activate &amp; share"}
+              {plan.status === "active" ? "Update & share" : "Activate & share"}
             </Button>
           )}
         </div>
