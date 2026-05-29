@@ -218,7 +218,8 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
           onCommit={(v) =>
             commit("title", () => planUpdate.mutateAsync({ data: { id: plan.id, title: v } }))
           }
-          displayClassName="font-display text-h3 font-black leading-tight tracking-tight"
+        <div className="rounded-lg border border-divider bg-[var(--pen-tennis-wash)] p-3">
+
           inputClassName="font-display text-h3 font-black leading-tight tracking-tight"
         />
 
