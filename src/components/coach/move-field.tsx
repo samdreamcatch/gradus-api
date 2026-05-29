@@ -175,11 +175,10 @@ export function MoveField(props: MoveFieldProps) {
       {props.kind === "select" && (
         <SelectOrCombo
           value={draft}
-          onCommit={(override) => commit(override)}
-
+          options={props.options}
           allowFreeText={props.allowFreeText !== false}
           onChange={setDraft}
-          onCommit={commit}
+          onCommit={(override) => commit(override)}
           onCancel={cancel}
           placeholder={placeholder}
           inputClassName={sharedInputCls}
@@ -187,6 +186,7 @@ export function MoveField(props: MoveFieldProps) {
             inputRef.current = el;
           }}
         />
+
       )}
     </div>
   );
