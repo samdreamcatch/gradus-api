@@ -200,11 +200,12 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
 
   return (
     <>
-      <SheetHeader>
+      <SheetHeader className="sticky top-0 z-10 -mx-6 -mt-6 border-b border-divider bg-[var(--background)]/95 px-6 py-3 backdrop-blur supports-[backdrop-filter]:bg-[var(--background)]/80">
         <SheetTitle className="font-display text-2xl">
           {isTemplate ? "Template" : plan.status === "draft" ? "New plan" : "Plan"}
         </SheetTitle>
       </SheetHeader>
+
 
       <div className="mt-5 space-y-5">
         <MoveField
