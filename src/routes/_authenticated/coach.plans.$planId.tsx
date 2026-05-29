@@ -146,7 +146,7 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
   const plan = data.plan;
   const isTemplate = plan.kind === "template";
   const totalMinutes = plan.moves
-    .filter((m) => m.targetKind === "minutes")
+    .filter((m) => m.targetKind === "mins")
     .reduce((s, m) => s + m.targetValue, 0);
 
   const commit = async <K extends string>(field: K, fn: () => Promise<unknown>) => {
@@ -290,7 +290,7 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
             <span className="pen-highlight">Moves</span>
           </h2>
           <span className="text-[11px] font-bold uppercase tracking-widest text-text-tertiary">
-            {plan.moves.length} · {totalMinutes} min
+            {plan.moves.length} · {totalMinutes} mins
           </span>
         </div>
 
@@ -522,7 +522,7 @@ function PlanMoveTarget({
       </div>
       <div className="flex items-center gap-2">
         <div className="inline-flex overflow-hidden rounded-md border border-divider">
-          {(["reps", "minutes"] as TargetKind[]).map((k) => (
+          {(["reps", "mins"] as TargetKind[]).map((k) => (
             <button
               key={k}
               type="button"
@@ -675,8 +675,8 @@ function MovePicker({
                         </p>
                         <p className="text-[11px] font-bold uppercase tracking-widest text-text-tertiary">
                           {m.category} ·{" "}
-                          {m.defaultTargetKind === "minutes"
-                            ? `${m.defaultTargetValue} min`
+                          {m.defaultTargetKind === "mins"
+                            ? `${m.defaultTargetValue} mins`
                             : `${m.defaultTargetValue} reps`}
                         </p>
                       </div>
@@ -743,7 +743,7 @@ function NewMoveForm({
     description: string;
     cue: string;
     why: string;
-    defaultTargetKind: "reps" | "minutes";
+    defaultTargetKind: "reps" | "mins";
     defaultTargetValue: number;
   }) => void;
 }) {
@@ -756,7 +756,7 @@ function NewMoveForm({
   const [sport, setSport] = useState(sportOptions[0] ?? "general");
   const [category, setCategory] = useState("Uncategorized");
   const [cue, setCue] = useState("");
-  const [targetKind, setTargetKind] = useState<"reps" | "minutes">("reps");
+  const [targetKind, setTargetKind] = useState<"reps" | "mins">("reps");
   const [targetValue, setTargetValue] = useState<number>(10);
   const [ignoreDupes, setIgnoreDupes] = useState(false);
 
@@ -859,7 +859,7 @@ function NewMoveForm({
           </label>
           <div className="flex items-center gap-2">
             <div className="inline-flex overflow-hidden rounded-md border border-divider">
-              {(["reps", "minutes"] as const).map((k) => (
+              {(["reps", "mins"] as const).map((k) => (
                 <button
                   key={k}
                   type="button"

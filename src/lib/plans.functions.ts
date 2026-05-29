@@ -6,7 +6,7 @@ import type { Database } from "@/integrations/supabase/types";
 
 export type PlanKind = "plan" | "template";
 export type PlanStatus = "active" | "benched" | "draft";
-export type TargetKind = "reps" | "minutes";
+export type TargetKind = "reps" | "mins";
 
 type Client = SupabaseClient<Database>;
 
@@ -129,7 +129,7 @@ export const listPlans = createServerFn({ method: "POST" })
     for (const m of movesRes.data ?? []) {
       const cur = byPlan.get(m.plan_id) ?? { count: 0, minutes: 0 };
       cur.count += 1;
-      if (m.target_kind === "minutes") cur.minutes += Number(m.target_value);
+      if (m.target_kind === "mins") cur.minutes += Number(m.target_value);
       byPlan.set(m.plan_id, cur);
     }
 
@@ -204,7 +204,7 @@ export const getPlan = createServerFn({ method: "POST" })
     }));
 
     const totalMinutes = planMoves
-      .filter((m) => m.targetKind === "minutes")
+      .filter((m) => m.targetKind === "mins")
       .reduce((s, m) => s + m.targetValue, 0);
 
     const dto: PlanDetailDTO = {
@@ -239,7 +239,7 @@ const saveInput = z.object({
       description: z.string().max(2000).default(""),
       cue: z.string().max(1000).default(""),
       why: z.string().max(1000).default(""),
-      targetKind: z.enum(["reps", "minutes"]),
+      targetKind: z.enum(["reps", "mins"]),
       targetValue: z.number().min(0).max(10000),
     }),
   ).max(200),
@@ -562,7 +562,7 @@ const planMovePatch = z.object({
   description: z.string().max(2000).optional(),
   cue: z.string().max(1000).optional(),
   why: z.string().max(1000).optional(),
-  targetKind: z.enum(["reps", "minutes"]).optional(),
+  targetKind: z.enum(["reps", "mins"]).optional(),
   targetValue: z.number().min(0).max(10000).optional(),
 });
 
