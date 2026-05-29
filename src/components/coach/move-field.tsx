@@ -13,7 +13,9 @@ interface BaseProps {
   displayClassName?: string;
   autoEdit?: boolean;
   required?: boolean;
+  hideLabel?: boolean;
 }
+
 
 interface TextFieldProps extends BaseProps {
   kind: "text";
