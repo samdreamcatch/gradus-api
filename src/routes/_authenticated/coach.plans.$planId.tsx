@@ -306,7 +306,7 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
 
                   />
                   <p className="mt-2 text-[11px] text-text-tertiary">
-                    Creates a new draft from this template. The template stays unchanged.
+                    Creates a new draft from this template.
                   </p>
                 </div>
               ) : null}
