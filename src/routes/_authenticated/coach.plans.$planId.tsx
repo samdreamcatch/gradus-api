@@ -78,9 +78,9 @@ function PlanEditorSheet() {
     </Sheet>
   );
 }
-
 function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => void }) {
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const fetchPlan = useServerFn(getPlan);
   const fetchAthletes = useServerFn(listCoachAthletes);
   const updatePlanFn = useServerFn(updatePlan);
@@ -90,6 +90,7 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
   const addMovesFn = useServerFn(addLibraryMovesToPlan);
   const statusFn = useServerFn(setPlanStatus);
   const deleteFn = useServerFn(deletePlan);
+  const createPlanFn = useServerFn(createPlan);
 
   const { data, isLoading } = useQuery({
     queryKey: ["plan", planId],
@@ -105,6 +106,18 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
   const [savingField, setSavingField] = useState<string | null>(null);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [expandedMoves, setExpandedMoves] = useState<Record<string, boolean>>({});
+  const [didInitExpansion, setDidInitExpansion] = useState(false);
+  const [useTemplateOpen, setUseTemplateOpen] = useState(false);
+
+  const useTemplate = useMutation({
+    mutationFn: createPlanFn,
+    onSuccess: ({ id }) => {
+      qc.invalidateQueries({ queryKey: ["plans"] });
+      navigate({ to: "/coach/plans/$planId", params: { planId: id } });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const [didInitExpansion, setDidInitExpansion] = useState(false);
 
   const invalidate = () => {
