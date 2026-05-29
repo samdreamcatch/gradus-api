@@ -224,9 +224,9 @@ function SelectOrCombo({
         ref={inputRef}
         type="text"
         value={value}
+        onChange={(e) => onChange(e.target.value)}
         onBlur={() => onCommit()}
 
-        onBlur={onCommit}
         onKeyDown={(e) => {
           if (e.key === "Enter") {
             e.preventDefault();
