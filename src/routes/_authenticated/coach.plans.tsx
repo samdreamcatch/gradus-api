@@ -2,7 +2,10 @@ import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-rout
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useRef, useState } from "react";
-import { Plus, ListChecks, Clock, ChevronRight, Search, Loader2, Trash2 } from "lucide-react";
+import { Plus, ListChecks, Clock, ChevronRight, Search, Loader2, Trash2, SlidersHorizontal, Check } from "lucide-react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { getCoachProfile } from "@/lib/coach-profile.functions";
+
 import { toast } from "sonner";
 import { CoachBottomNav } from "@/components/coach/bottom-nav";
 import { Input } from "@/components/ui/input";
