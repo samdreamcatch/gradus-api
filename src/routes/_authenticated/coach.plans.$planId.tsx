@@ -256,49 +256,69 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
 
         {/* Assignment */}
         <div className="rounded-lg border border-divider bg-card p-3">
-
-
-          <div className="flex items-center justify-between gap-3">
-            <label className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
-              Save as template
-            </label>
-            <Switch
-              checked={isTemplate}
-              onCheckedChange={(v) =>
-                commit("kind", () =>
+          {isTemplate ? (
+            <MoveField
+              kind="select"
+              label="Assign template to athlete"
+              value=""
+              options={athletes.map((a) => a.name)}
+              allowFreeText={false}
+              placeholder="Choose an athlete"
+              saving={savingField === "athleteId"}
+              onCommit={(v) => {
+                const match = athletes.find((a) => a.name === v);
+                if (!match) return Promise.resolve();
+                return commit("athleteId", () =>
                   planUpdate.mutateAsync({
-                    data: { id: plan.id, kind: v ? "template" : "plan" },
+                    data: { id: plan.id, kind: "plan", athleteId: match.id },
                   }),
-                )
-              }
+                );
+              }}
             />
-          </div>
-          {!isTemplate ? (
-            <div className="mt-3">
-              <MoveField
-                kind="select"
-                label="Athlete"
-                value={
-                  plan.athleteId
-                    ? athletes.find((a) => a.id === plan.athleteId)?.name ?? ""
-                    : ""
-                }
-                options={athletes.map((a) => a.name)}
-                allowFreeText={false}
-                placeholder="Choose an athlete"
-                saving={savingField === "athleteId"}
-                onCommit={(v) => {
-                  const match = athletes.find((a) => a.name === v);
-                  return commit("athleteId", () =>
-                    planUpdate.mutateAsync({
-                      data: { id: plan.id, athleteId: match?.id ?? null },
-                    }),
-                  );
-                }}
-              />
-            </div>
-          ) : null}
+          ) : (
+            <>
+              <div className="flex items-center justify-between gap-3">
+                <label className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
+                  Save as template
+                </label>
+                <Switch
+                  checked={isTemplate}
+                  onCheckedChange={(v) =>
+                    commit("kind", () =>
+                      planUpdate.mutateAsync({
+                        data: { id: plan.id, kind: v ? "template" : "plan" },
+                      }),
+                    )
+                  }
+                />
+              </div>
+              <div className="mt-3">
+                <MoveField
+                  kind="select"
+                  label="Athlete"
+                  value={
+                    plan.athleteId
+                      ? athletes.find((a) => a.id === plan.athleteId)?.name ?? ""
+                      : ""
+                  }
+                  options={athletes.map((a) => a.name)}
+                  allowFreeText={false}
+                  placeholder="Choose an athlete"
+                  saving={savingField === "athleteId"}
+                  onCommit={(v) => {
+                    const match = athletes.find((a) => a.name === v);
+                    return commit("athleteId", () =>
+                      planUpdate.mutateAsync({
+                        data: { id: plan.id, athleteId: match?.id ?? null },
+                      }),
+                    );
+                  }}
+                />
+              </div>
+            </>
+          )}
         </div>
+
 
         <div className="rounded-lg border border-divider border-l-[3px] border-l-accent bg-card p-4">
           <MoveField
