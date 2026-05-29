@@ -207,7 +207,8 @@ function SelectOrCombo({
   options: string[];
   allowFreeText: boolean;
   onChange: (v: string) => void;
-  onCommit: () => void;
+  onCommit: (override?: string) => void;
+
   onCancel: () => void;
   placeholder?: string;
   inputClassName?: string;
