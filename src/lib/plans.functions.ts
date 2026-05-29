@@ -75,13 +75,31 @@ export const listCoachAthletes = createServerFn({ method: "GET" })
     return { athletes };
   });
 
+/* ---------------- coach sports ---------------- */
+
+export const listCoachSports = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const supabase = context.supabase as Client;
+    const coachId = await getCoachId(supabase, context.userId);
+    const { data, error } = await supabase
+      .from("coach_levels")
+      .select("sport")
+      .eq("coach_id", coachId);
+    if (error) throw new Error(error.message);
+    const sports = Array.from(new Set((data ?? []).map((r) => r.sport))).sort();
+    return { sports };
+  });
+
 /* ---------------- list plans ---------------- */
 
 const listInput = z.object({
   status: z.enum(["active", "benched", "draft"]).optional(),
   athleteId: z.string().uuid().optional(),
   kind: z.enum(["plan", "template"]).optional(),
+  sport: z.string().optional(),
 });
+
 
 export const listPlans = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
