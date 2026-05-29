@@ -17,6 +17,16 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import {
   getPlan,
@@ -90,6 +100,7 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
 
   const [pickerOpen, setPickerOpen] = useState(false);
   const [savingField, setSavingField] = useState<string | null>(null);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["plan", planId] });
@@ -433,9 +444,7 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
         <div className="flex items-center justify-between gap-3 border-t border-divider pt-4">
           <button
             type="button"
-            onClick={() => {
-              if (confirm("Delete this plan?")) deleteMutation.mutate({ data: { id: plan.id } });
-            }}
+            onClick={() => setConfirmDeleteOpen(true)}
             className="text-xs font-bold uppercase tracking-widest text-text-tertiary hover:text-destructive"
           >
             Delete
@@ -485,6 +494,29 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
           );
         }}
       />
+
+      <AlertDialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete "{plan.title || "this plan"}"?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This can't be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setConfirmDeleteOpen(false);
+                deleteMutation.mutate({ data: { id: plan.id } });
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
