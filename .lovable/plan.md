@@ -1,17 +1,22 @@
-## Apply Highlighter Swipe field style
+## Add ruled paper lines to cards + tighten field padding
 
-Update `src/components/coach/move-field.tsx` so inline-editable fields visually separate from the card surface using the selected "Highlighter swipe" prototype, with slightly tighter horizontal padding per user direction.
+### 1. Ruled paper lines on card surfaces
+In `src/routes/_authenticated/coach.plans.$planId.tsx`, the assignment card (line 221) and each move card (line 286) currently use `rounded-lg border border-divider bg-card p-3` — flat. Replace `bg-card` with a layered background that paints 32px horizontal ruled lines (matching the page's body lines) over the card color:
 
-### Rest state (display button)
-- Container: `rounded-xl border border-divider px-3 py-2` (was transparent border, `px-2 py-1.5`)
-- Hover: `border-accent/40` (replace current `hover:border-divider hover:bg-elevated/60`)
-- Label spacing bumped from `space-y-1` to `space-y-1.5` for breathing room above the bordered field
+```
+bg-card
+bg-[linear-gradient(to_bottom,transparent_31px,color-mix(in_oklab,var(--foreground)_7%,transparent)_31px,color-mix(in_oklab,var(--foreground)_7%,transparent)_32px,transparent_32px)]
+bg-[length:100%_32px]
+```
 
-### Editing state (text input, textarea, select, combo)
-- `sharedInputCls` becomes: `rounded-xl border-2 border-accent bg-[var(--pen-tennis-wash)] px-3 py-2 text-text-primary` plus a soft `shadow-[0_0_15px_color-mix(in_oklab,var(--accent)_10%,transparent)]` glow
-- Drop the focus ring since the 2px accent border + wash already signals focus
+This uses the exact same line color/spacing as `body` in `src/styles.css`, so card lines align with the page rhythm.
 
-### Notes
-- Pen-aware wash: `var(--pen-tennis-wash)` is the Tennis pen wash; since `--accent` switches per user pen, follow up later by introducing a generic `--accent-wash` token if/when other pens are wired in. For now Tennis is the only active pen and this matches the prototype exactly.
-- No changes outside `move-field.tsx`. All fields (title, athlete, notes, description, cue, why) inherit the new chrome automatically.
-- Tokens used (`divider`, `accent`, `pen-tennis-wash`, `text-primary`, `text-tertiary`) are all already defined in `src/styles.css`.
+### 2. Tighter vertical padding on fields
+In `src/components/coach/move-field.tsx`, change `py-2` → `py-1.5` in two places:
+- Rest-state button (line 103)
+- `sharedInputCls` editing state (line 120)
+
+Horizontal padding (`px-3`), border, radius, and hover/edit chrome stay the same. Label spacing stays at `space-y-1.5`.
+
+### Out of scope
+No other styling changes. Sheet background, typography, accent color all unchanged.

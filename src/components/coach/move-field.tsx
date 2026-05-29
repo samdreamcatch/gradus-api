@@ -100,7 +100,8 @@ export function MoveField(props: MoveFieldProps) {
           disabled={disabled}
           onClick={() => setEditing(true)}
           className={cn(
-            "block w-full rounded-xl border border-divider px-3 py-2 text-left transition-colors",
+            "block w-full rounded-xl border border-divider px-3 py-1.5 text-left transition-colors",
+
             "hover:border-accent/40",
             "text-text-primary",
             displayClassName,
@@ -115,13 +116,13 @@ export function MoveField(props: MoveFieldProps) {
       </div>
     );
   }
-
   const sharedInputCls = cn(
-    "block w-full rounded-xl border-2 border-accent bg-[var(--pen-tennis-wash)] px-3 py-2 text-text-primary",
+    "block w-full rounded-xl border-2 border-accent bg-[var(--pen-tennis-wash)] px-3 py-1.5 text-text-primary",
     "shadow-[0_0_15px_color-mix(in_oklab,var(--accent)_10%,transparent)]",
     "focus:outline-none",
     inputClassName,
   );
+
 
 
   return (

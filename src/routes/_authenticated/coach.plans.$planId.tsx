@@ -218,7 +218,8 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
         />
 
         {/* Assignment */}
-        <div className="rounded-lg border border-divider bg-card p-3">
+        <div className="rounded-lg border border-divider bg-card bg-[linear-gradient(to_bottom,transparent_31px,color-mix(in_oklab,var(--foreground)_7%,transparent)_31px,color-mix(in_oklab,var(--foreground)_7%,transparent)_32px,transparent_32px)] bg-[length:100%_32px] p-3">
+
           <div className="flex items-center justify-between gap-3">
             <label className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
               Save as template
@@ -283,7 +284,8 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
 
         <ul className="space-y-3">
           {plan.moves.map((m, idx) => (
-            <li key={m.id} className="rounded-lg border border-divider bg-card p-3">
+            <li key={m.id} className="rounded-lg border border-divider bg-card bg-[linear-gradient(to_bottom,transparent_31px,color-mix(in_oklab,var(--foreground)_7%,transparent)_31px,color-mix(in_oklab,var(--foreground)_7%,transparent)_32px,transparent_32px)] bg-[length:100%_32px] p-3">
+
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1 space-y-3">
                   <MoveField
