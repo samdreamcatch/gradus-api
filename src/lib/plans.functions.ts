@@ -75,13 +75,31 @@ export const listCoachAthletes = createServerFn({ method: "GET" })
     return { athletes };
   });
 
+/* ---------------- coach sports ---------------- */
+
+export const listCoachSports = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const supabase = context.supabase as Client;
+    const coachId = await getCoachId(supabase, context.userId);
+    const { data, error } = await supabase
+      .from("coach_levels")
+      .select("sport")
+      .eq("coach_id", coachId);
+    if (error) throw new Error(error.message);
+    const sports = Array.from(new Set((data ?? []).map((r) => r.sport))).sort();
+    return { sports };
+  });
+
 /* ---------------- list plans ---------------- */
 
 const listInput = z.object({
   status: z.enum(["active", "benched", "draft"]).optional(),
   athleteId: z.string().uuid().optional(),
   kind: z.enum(["plan", "template"]).optional(),
+  sport: z.string().optional(),
 });
+
 
 export const listPlans = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -108,11 +126,11 @@ export const listPlans = createServerFn({ method: "POST" })
       new Set((plans ?? []).map((p) => p.athlete_id).filter((x): x is string => !!x)),
     );
 
-    const [movesRes, athletesRes] = await Promise.all([
+    const [movesRes, athletesRes, goalsRes] = await Promise.all([
       planIds.length
         ? supabase
             .from("plan_moves")
-            .select("plan_id, target_kind, target_value")
+            .select("plan_id, target_kind, target_value, move_id")
             .in("plan_id", planIds)
         : Promise.resolve({ data: [], error: null }),
       athleteIds.length
@@ -121,16 +139,51 @@ export const listPlans = createServerFn({ method: "POST" })
             .select("id, first_name, last_name")
             .in("id", athleteIds)
         : Promise.resolve({ data: [], error: null }),
+      data.sport && athleteIds.length
+        ? supabase
+            .from("athlete_goals")
+            .select("athlete_id, sport")
+            .eq("coach_id", coachId)
+            .in("athlete_id", athleteIds)
+        : Promise.resolve({ data: [], error: null }),
     ]);
     if (movesRes.error) throw new Error(movesRes.error.message);
     if (athletesRes.error) throw new Error(athletesRes.error.message);
+    if (goalsRes.error) throw new Error(goalsRes.error.message);
 
-    const byPlan = new Map<string, { count: number; minutes: number }>();
+    // When filtering by sport, look up each referenced move's sport in a second query.
+    const moveSportMap = new Map<string, string>();
+    if (data.sport) {
+      const moveIds = Array.from(
+        new Set(
+          (movesRes.data ?? [])
+            .map((m) => m.move_id)
+            .filter((x): x is string => !!x),
+        ),
+      );
+      if (moveIds.length) {
+        const { data: moveRows, error: moveErr } = await supabase
+          .from("moves")
+          .select("id, sport")
+          .in("id", moveIds);
+        if (moveErr) throw new Error(moveErr.message);
+        for (const m of moveRows ?? []) moveSportMap.set(m.id, m.sport);
+      }
+    }
+
+    const byPlan = new Map<string, { count: number; minutes: number; sports: Set<string> }>();
     for (const m of movesRes.data ?? []) {
-      const cur = byPlan.get(m.plan_id) ?? { count: 0, minutes: 0 };
+      const cur = byPlan.get(m.plan_id) ?? { count: 0, minutes: 0, sports: new Set<string>() };
       cur.count += 1;
       if (m.target_kind === "mins") cur.minutes += Number(m.target_value);
+      const sp = m.move_id ? moveSportMap.get(m.move_id) : undefined;
+      if (sp) cur.sports.add(sp);
       byPlan.set(m.plan_id, cur);
+    }
+
+    const athleteSport = new Map<string, string>();
+    for (const g of goalsRes.data ?? []) {
+      athleteSport.set(g.athlete_id, g.sport);
     }
 
     const nameOf = new Map<string, string>();
@@ -138,7 +191,19 @@ export const listPlans = createServerFn({ method: "POST" })
       nameOf.set(a.id, `${a.first_name} ${a.last_name}`.trim());
     }
 
-    const result: PlanSummaryDTO[] = (plans ?? []).map((p) => {
+    let filteredPlans = plans ?? [];
+    if (data.sport) {
+      const wanted = data.sport;
+      filteredPlans = filteredPlans.filter((p) => {
+        const fromMoves = byPlan.get(p.id)?.sports.has(wanted) ?? false;
+        const fromAthlete = p.athlete_id
+          ? athleteSport.get(p.athlete_id) === wanted
+          : false;
+        return fromMoves || fromAthlete;
+      });
+    }
+
+    const result: PlanSummaryDTO[] = filteredPlans.map((p) => {
       const agg = byPlan.get(p.id) ?? { count: 0, minutes: 0 };
       return {
         id: p.id,
