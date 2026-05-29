@@ -416,7 +416,6 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
           ))}
         </ul>
 
-        </ul>
 
         <Button
           type="button"
