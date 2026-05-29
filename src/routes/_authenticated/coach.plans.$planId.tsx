@@ -11,6 +11,7 @@ import {
   Loader2,
   Send,
   ArrowRight,
+  ChevronDown,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
@@ -101,6 +102,8 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
   const [pickerOpen, setPickerOpen] = useState(false);
   const [savingField, setSavingField] = useState<string | null>(null);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [expandedMoves, setExpandedMoves] = useState<Record<string, boolean>>({});
+  const [didInitExpansion, setDidInitExpansion] = useState(false);
 
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["plan", planId] });
@@ -156,9 +159,22 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
 
   const plan = data.plan;
   const isTemplate = plan.kind === "template";
+  const isNewFlow = plan.status === "draft";
   const totalMinutes = plan.moves
     .filter((m) => m.targetKind === "mins")
     .reduce((s, m) => s + m.targetValue, 0);
+
+  // On first load, expand all when authoring a new draft; collapse all otherwise.
+  useEffect(() => {
+    if (didInitExpansion) return;
+    const init: Record<string, boolean> = {};
+    for (const m of plan.moves) init[m.id] = isNewFlow;
+    setExpandedMoves(init);
+    setDidInitExpansion(true);
+  }, [didInitExpansion, isNewFlow, plan.moves]);
+
+  const toggleMove = (id: string) =>
+    setExpandedMoves((prev) => ({ ...prev, [id]: !prev[id] }));
 
   const commit = async <K extends string>(field: K, fn: () => Promise<unknown>) => {
     setSavingField(field);
@@ -211,28 +227,30 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
 
   return (
     <>
-      <SheetHeader className="-mx-6 -mt-6 border-b border-divider px-6 py-3">
-        <SheetTitle className="font-display text-2xl">
-          {isTemplate ? "Template" : plan.status === "draft" ? "New plan" : "Plan"}
+      <SheetHeader className="-mx-6 -mt-6 border-b border-divider px-6 pt-5 pb-3">
+        <SheetTitle asChild>
+          <div>
+            <MoveField
+              kind="text"
+              label="Plan title"
+              hideLabel
+              value={plan.title}
+              placeholder={isNewFlow ? "Name this plan" : "Untitled plan"}
+              required
+              autoEdit={isNewFlow && !plan.title}
+              saving={savingField === "title"}
+              onCommit={(v) =>
+                commit("title", () => planUpdate.mutateAsync({ data: { id: plan.id, title: v } }))
+              }
+              displayClassName="font-display text-2xl font-black leading-tight tracking-tight"
+              inputClassName="font-display text-2xl font-black leading-tight tracking-tight"
+            />
+          </div>
         </SheetTitle>
       </SheetHeader>
 
 
       <div className="mt-5 space-y-5">
-        <MoveField
-          kind="text"
-          label="Title"
-          value={plan.title}
-          placeholder="Name this plan"
-          required
-          autoEdit={!plan.title}
-          saving={savingField === "title"}
-          onCommit={(v) =>
-            commit("title", () => planUpdate.mutateAsync({ data: { id: plan.id, title: v } }))
-          }
-          displayClassName="font-display text-h3 font-black leading-tight tracking-tight"
-          inputClassName="font-display text-h3 font-black leading-tight tracking-tight"
-        />
 
 
         {/* Assignment */}
@@ -306,129 +324,158 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
         </div>
 
         <ul className="space-y-4">
-          {plan.moves.map((m, idx) => (
-            <li
-              key={m.id}
-              className="relative rounded-lg border border-divider border-l-[3px] border-l-accent bg-card p-4"
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex min-w-0 flex-1 items-start gap-3">
-                  <span className="select-none pt-1 font-hand text-3xl leading-none text-text-secondary">
-                    {idx + 1}
-                  </span>
-                  <div className="min-w-0 flex-1 divide-y divide-divider/60">
-                    <div className="pb-3">
-                      <MoveField
-                        kind="text"
-                        label={`Move ${idx + 1}`}
-                        hideLabel
-                        value={m.name}
-                        required
-                        saving={savingField === `m-name-${m.id}`}
-                        onCommit={(v) =>
-                          commit(`m-name-${m.id}`, () =>
-                            moveUpdate.mutateAsync({ data: { id: m.id, patch: { name: v } } }),
-                          )
-                        }
-                        displayClassName="font-display text-xl font-black leading-tight tracking-tight"
-                        inputClassName="font-display text-xl font-black leading-tight tracking-tight"
-                      />
-                    </div>
-                    <div className="py-3">
-                      <PlanMoveTarget
-                        kind={m.targetKind}
-                        value={m.targetValue}
-                        saving={savingField === `m-target-${m.id}`}
-                        onCommit={(k, v) =>
-                          commit(`m-target-${m.id}`, () =>
-                            moveUpdate.mutateAsync({
-                              data: { id: m.id, patch: { targetKind: k, targetValue: v } },
-                            }),
-                          )
-                        }
-                      />
-                    </div>
-                    <div className="py-3">
-                      <MoveField
-                        kind="textarea"
-                        label="Description"
-                        value={m.description}
-                        placeholder="How to perform the move"
-                        rows={3}
-                        saving={savingField === `m-desc-${m.id}`}
-                        onCommit={(v) =>
-                          commit(`m-desc-${m.id}`, () =>
-                            moveUpdate.mutateAsync({
-                              data: { id: m.id, patch: { description: v } },
-                            }),
-                          )
-                        }
-                      />
-                    </div>
-                    <div className="py-3">
-                      <MoveField
-                        kind="textarea"
-                        label="Cue"
-                        value={m.cue}
-                        placeholder="One line the athlete can repeat"
-                        rows={2}
-                        saving={savingField === `m-cue-${m.id}`}
-                        onCommit={(v) =>
-                          commit(`m-cue-${m.id}`, () =>
-                            moveUpdate.mutateAsync({ data: { id: m.id, patch: { cue: v } } }),
-                          )
-                        }
-                      />
-                    </div>
-                    <div className="pt-3">
-                      <MoveField
-                        kind="textarea"
-                        label="Why this matters for this athlete"
-                        value={m.why}
-                        placeholder="Tailor it to this plan"
-                        rows={2}
-                        saving={savingField === `m-why-${m.id}`}
-                        onCommit={(v) =>
-                          commit(`m-why-${m.id}`, () =>
-                            moveUpdate.mutateAsync({ data: { id: m.id, patch: { why: v } } }),
-                          )
-                        }
-                      />
+          {plan.moves.map((m, idx) => {
+            const expanded = expandedMoves[m.id] ?? isNewFlow;
+            return (
+              <li
+                key={m.id}
+                className="relative rounded-lg border border-divider border-l-[3px] border-l-accent bg-card p-4"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex min-w-0 flex-1 items-start gap-3">
+                    <span className="select-none pt-1 font-hand text-3xl leading-none text-text-secondary">
+                      {idx + 1}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      {expanded ? (
+                        <div className="divide-y divide-divider/60">
+                          <div className="flex items-start justify-between gap-2 pb-3">
+                            <div className="min-w-0 flex-1">
+                              <MoveField
+                                kind="text"
+                                label={`Move ${idx + 1}`}
+                                hideLabel
+                                value={m.name}
+                                required
+                                saving={savingField === `m-name-${m.id}`}
+                                onCommit={(v) =>
+                                  commit(`m-name-${m.id}`, () =>
+                                    moveUpdate.mutateAsync({ data: { id: m.id, patch: { name: v } } }),
+                                  )
+                                }
+                                displayClassName="font-display text-xl font-black leading-tight tracking-tight"
+                                inputClassName="font-display text-xl font-black leading-tight tracking-tight"
+                              />
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => toggleMove(m.id)}
+                              aria-label="Collapse move"
+                              className="mt-1 shrink-0 text-text-tertiary hover:text-text-primary"
+                            >
+                              <ChevronDown className="h-4 w-4" />
+                            </button>
+                          </div>
+                          <div className="py-3">
+                            <PlanMoveTarget
+                              kind={m.targetKind}
+                              value={m.targetValue}
+                              saving={savingField === `m-target-${m.id}`}
+                              onCommit={(k, v) =>
+                                commit(`m-target-${m.id}`, () =>
+                                  moveUpdate.mutateAsync({
+                                    data: { id: m.id, patch: { targetKind: k, targetValue: v } },
+                                  }),
+                                )
+                              }
+                            />
+                          </div>
+                          <div className="py-3">
+                            <MoveField
+                              kind="textarea"
+                              label="Description"
+                              value={m.description}
+                              placeholder="How to perform the move"
+                              rows={3}
+                              saving={savingField === `m-desc-${m.id}`}
+                              onCommit={(v) =>
+                                commit(`m-desc-${m.id}`, () =>
+                                  moveUpdate.mutateAsync({
+                                    data: { id: m.id, patch: { description: v } },
+                                  }),
+                                )
+                              }
+                            />
+                          </div>
+                          <div className="py-3">
+                            <MoveField
+                              kind="textarea"
+                              label="Cue"
+                              value={m.cue}
+                              placeholder="One line the athlete can repeat"
+                              rows={2}
+                              saving={savingField === `m-cue-${m.id}`}
+                              onCommit={(v) =>
+                                commit(`m-cue-${m.id}`, () =>
+                                  moveUpdate.mutateAsync({ data: { id: m.id, patch: { cue: v } } }),
+                                )
+                              }
+                            />
+                          </div>
+                          <div className="pt-3">
+                            <MoveField
+                              kind="textarea"
+                              label="Why this matters for this athlete"
+                              value={m.why}
+                              placeholder="Tailor it to this plan"
+                              rows={2}
+                              saving={savingField === `m-why-${m.id}`}
+                              onCommit={(v) =>
+                                commit(`m-why-${m.id}`, () =>
+                                  moveUpdate.mutateAsync({ data: { id: m.id, patch: { why: v } } }),
+                                )
+                              }
+                            />
+                          </div>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => toggleMove(m.id)}
+                          aria-expanded={false}
+                          className="block w-full text-left font-display text-xl font-black leading-tight tracking-tight text-text-primary"
+                        >
+                          {m.name || (
+                            <span className="italic text-text-tertiary">Untitled move</span>
+                          )}
+                        </button>
+                      )}
                     </div>
                   </div>
+                  <div className="flex flex-col items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => reorder(idx, idx - 1)}
+                      disabled={idx === 0}
+                      className="text-text-tertiary disabled:opacity-30"
+                      aria-label="Move up"
+                    >
+                      <ArrowUp className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => reorder(idx, idx + 1)}
+                      disabled={idx === plan.moves.length - 1}
+                      className="text-text-tertiary disabled:opacity-30"
+                      aria-label="Move down"
+                    >
+                      <ArrowDown className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => moveRemove.mutate({ data: { id: m.id } })}
+                      className="mt-1 text-text-tertiary hover:text-destructive"
+                      aria-label="Remove"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
-                <div className="flex flex-col items-center gap-1">
-                  <button
-                    type="button"
-                    onClick={() => reorder(idx, idx - 1)}
-                    disabled={idx === 0}
-                    className="text-text-tertiary disabled:opacity-30"
-                    aria-label="Move up"
-                  >
-                    <ArrowUp className="h-4 w-4" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => reorder(idx, idx + 1)}
-                    disabled={idx === plan.moves.length - 1}
-                    className="text-text-tertiary disabled:opacity-30"
-                    aria-label="Move down"
-                  >
-                    <ArrowDown className="h-4 w-4" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => moveRemove.mutate({ data: { id: m.id } })}
-                    className="mt-1 text-text-tertiary hover:text-destructive"
-                    aria-label="Remove"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-            </li>
-          ))}
+              </li>
+            );
+          })}
         </ul>
+
 
 
         <Button
