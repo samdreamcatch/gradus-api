@@ -112,6 +112,9 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
   const [expandedMoves, setExpandedMoves] = useState<Record<string, boolean>>({});
   const [didInitExpansion, setDidInitExpansion] = useState(false);
   const [useTemplateOpen, setUseTemplateOpen] = useState(false);
+  const [activeConflicts, setActiveConflicts] = useState<{ id: string; title: string }[] | null>(null);
+  const [chosenReplaceId, setChosenReplaceId] = useState<string | null>(null);
+
 
   const useTemplate = useMutation({
     mutationFn: createPlanFn,
