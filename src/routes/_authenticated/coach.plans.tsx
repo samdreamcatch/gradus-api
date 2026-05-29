@@ -413,19 +413,6 @@ function PlanRow({ plan }: { plan: PlanSummaryDTO }) {
   );
 }
 
-          {plan.moveCount} {plan.moveCount === 1 ? "move" : "moves"}
-        </span>
-        {plan.totalMinutes > 0 ? (
-          <span className="flex items-center gap-1">
-            <Clock className="h-3 w-3 text-text-tertiary" />
-            {plan.totalMinutes} mins
-          </span>
-        ) : null}
-      </div>
-    </Link>
-  );
-}
-
 function StatusPill({ plan }: { plan: PlanSummaryDTO }) {
   if (plan.kind === "template") {
     return (
