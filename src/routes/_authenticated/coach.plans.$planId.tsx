@@ -739,23 +739,42 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
             </div>
           ) : activeConflicts && activeConflicts.length === 1 ? (
             <p className="text-sm text-text-secondary">
-              "{activeConflicts[0].title || "Untitled plan"}" will be benched.
+              Replacing will bench "{activeConflicts[0].title || "Untitled plan"}". Or keep both active.
             </p>
           ) : null}
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              disabled={!chosenReplaceId}
-              onClick={() => {
-                if (!chosenReplaceId) return;
-                performActivate(chosenReplaceId);
-              }}
-            >
-              {activeConflicts && activeConflicts.length >= MAX_ACTIVE_PLANS_PER_ATHLETE
-                ? "Bench & activate"
-                : "Replace & activate"}
-            </AlertDialogAction>
+          <AlertDialogFooter className="flex-col gap-2 sm:flex-col sm:space-x-0">
+            {activeConflicts && activeConflicts.length >= MAX_ACTIVE_PLANS_PER_ATHLETE ? (
+              <AlertDialogAction
+                disabled={!chosenReplaceId}
+                onClick={() => {
+                  if (!chosenReplaceId) return;
+                  performActivate(chosenReplaceId);
+                }}
+              >
+                Bench & activate
+              </AlertDialogAction>
+            ) : (
+              <>
+                <AlertDialogAction
+                  onClick={() => {
+                    if (activeConflicts && activeConflicts[0]) {
+                      performActivate(activeConflicts[0].id);
+                    }
+                  }}
+                >
+                  Replace & activate
+                </AlertDialogAction>
+                <AlertDialogAction
+                  className="bg-card text-text-primary border border-divider hover:bg-elevated"
+                  onClick={() => performActivate()}
+                >
+                  Keep both active
+                </AlertDialogAction>
+              </>
+            )}
+            <AlertDialogCancel className="mt-0">Cancel</AlertDialogCancel>
           </AlertDialogFooter>
+
         </AlertDialogContent>
       </AlertDialog>
     </>
