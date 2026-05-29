@@ -159,9 +159,22 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
 
   const plan = data.plan;
   const isTemplate = plan.kind === "template";
+  const isNewFlow = plan.status === "draft";
   const totalMinutes = plan.moves
     .filter((m) => m.targetKind === "mins")
     .reduce((s, m) => s + m.targetValue, 0);
+
+  // On first load, expand all when authoring a new draft; collapse all otherwise.
+  useEffect(() => {
+    if (didInitExpansion) return;
+    const init: Record<string, boolean> = {};
+    for (const m of plan.moves) init[m.id] = isNewFlow;
+    setExpandedMoves(init);
+    setDidInitExpansion(true);
+  }, [didInitExpansion, isNewFlow, plan.moves]);
+
+  const toggleMove = (id: string) =>
+    setExpandedMoves((prev) => ({ ...prev, [id]: !prev[id] }));
 
   const commit = async <K extends string>(field: K, fn: () => Promise<unknown>) => {
     setSavingField(field);
