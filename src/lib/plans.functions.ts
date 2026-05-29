@@ -125,10 +125,7 @@ export const listPlans = createServerFn({ method: "POST" })
     const athleteIds = Array.from(
       new Set((plans ?? []).map((p) => p.athlete_id).filter((x): x is string => !!x)),
     );
-    const planIds = (plans ?? []).map((p) => p.id);
-    const athleteIds = Array.from(
-      new Set((plans ?? []).map((p) => p.athlete_id).filter((x): x is string => !!x)),
-    );
+
 
     const [movesRes, athletesRes, goalsRes] = await Promise.all([
       planIds.length
