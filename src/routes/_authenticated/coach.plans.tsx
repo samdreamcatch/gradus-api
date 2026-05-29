@@ -407,15 +407,19 @@ function SwipeableDeleteRow({
     </div>
   );
 }
-
 function PlanRow({ plan }: { plan: PlanSummaryDTO }) {
+  const isActive = plan.kind === "plan" && plan.status === "active";
   return (
     <Link
       to="/coach/plans/$planId"
       params={{ planId: plan.id }}
       className={cn(
-        "block py-3 transition active:bg-elevated",
+        "block rounded-lg border border-divider border-l-[3px] bg-elevated p-4 transition active:bg-card",
+        isActive ? "border-l-accent" : "border-l-divider",
         plan.status === "benched" && plan.kind === "plan" && "opacity-70",
+      )}
+    >
+
       )}
     >
       <div className="mb-1 flex items-start justify-between gap-3">
