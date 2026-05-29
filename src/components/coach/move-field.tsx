@@ -95,7 +95,7 @@ export function MoveField(props: MoveFieldProps) {
     </div>
   );
 
-  );
+
   if (!editing) {
     return (
       <div className={cn("group space-y-1.5", className)}>
