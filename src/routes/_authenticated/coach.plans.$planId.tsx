@@ -38,9 +38,11 @@ import {
   addLibraryMovesToPlan,
   setPlanStatus,
   deletePlan,
+  createPlan,
   listCoachAthletes,
   type TargetKind,
 } from "@/lib/plans.functions";
+
 import { listMoves, upsertMove, type MoveDTO } from "@/lib/moves.functions";
 import { MoveField } from "@/components/coach/move-field";
 
@@ -76,9 +78,9 @@ function PlanEditorSheet() {
     </Sheet>
   );
 }
-
 function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => void }) {
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const fetchPlan = useServerFn(getPlan);
   const fetchAthletes = useServerFn(listCoachAthletes);
   const updatePlanFn = useServerFn(updatePlan);
@@ -88,6 +90,7 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
   const addMovesFn = useServerFn(addLibraryMovesToPlan);
   const statusFn = useServerFn(setPlanStatus);
   const deleteFn = useServerFn(deletePlan);
+  const createPlanFn = useServerFn(createPlan);
 
   const { data, isLoading } = useQuery({
     queryKey: ["plan", planId],
@@ -104,6 +107,17 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [expandedMoves, setExpandedMoves] = useState<Record<string, boolean>>({});
   const [didInitExpansion, setDidInitExpansion] = useState(false);
+  const [useTemplateOpen, setUseTemplateOpen] = useState(false);
+
+  const useTemplate = useMutation({
+    mutationFn: createPlanFn,
+    onSuccess: ({ id }) => {
+      qc.invalidateQueries({ queryKey: ["plans"] });
+      navigate({ to: "/coach/plans/$planId", params: { planId: id } });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
 
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["plan", planId] });
@@ -257,25 +271,48 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
         {/* Assignment */}
         <div className="rounded-lg border border-divider bg-card p-3">
           {isTemplate ? (
-            <MoveField
-              kind="select"
-              label="Assign template to athlete"
-              value=""
-              options={athletes.map((a) => a.name)}
-              allowFreeText={false}
-              placeholder="Choose an athlete"
-              saving={savingField === "athleteId"}
-              onCommit={(v) => {
-                const match = athletes.find((a) => a.name === v);
-                if (!match) return Promise.resolve();
-                return commit("athleteId", () =>
-                  planUpdate.mutateAsync({
-                    data: { id: plan.id, kind: "plan", athleteId: match.id },
-                  }),
-                );
-              }}
-            />
+            <>
+              <div className="flex items-center justify-between gap-3">
+                <label className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
+                  Use this template
+                </label>
+                <Switch
+                  checked={useTemplateOpen}
+                  disabled={useTemplate.isPending}
+                  onCheckedChange={setUseTemplateOpen}
+                />
+              </div>
+              {useTemplateOpen ? (
+                <div className="mt-3">
+                  <MoveField
+                    kind="select"
+                    label="Assign to athlete"
+                    value=""
+                    options={athletes.map((a) => a.name)}
+                    allowFreeText={false}
+                    placeholder="Choose an athlete"
+                    saving={useTemplate.isPending}
+                    onCommit={async (v) => {
+                      const match = athletes.find((a) => a.name === v);
+                      if (!match) return;
+                      await useTemplate.mutateAsync({
+                        data: {
+                          kind: "plan",
+                          athleteId: match.id,
+                          fromTemplateId: plan.id,
+                        },
+                      });
+                    }}
+
+                  />
+                  <p className="mt-2 text-[11px] text-text-tertiary">
+                    Creates a new draft from this template. The template stays unchanged.
+                  </p>
+                </div>
+              ) : null}
+            </>
           ) : (
+
             <>
               <div className="flex items-center justify-between gap-3">
                 <label className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
