@@ -1,8 +1,13 @@
 import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import * as React from "react";
 import { useMemo, useRef, useState } from "react";
-import { Plus, ListChecks, Clock, ChevronRight, Search, Loader2, Trash2 } from "lucide-react";
+
+import { Plus, ListChecks, Clock, ChevronRight, Search, Loader2, Trash2, SlidersHorizontal, Check } from "lucide-react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { getCoachProfile } from "@/lib/coach-profile.functions";
+
 import { toast } from "sonner";
 import { CoachBottomNav } from "@/components/coach/bottom-nav";
 import { Input } from "@/components/ui/input";
@@ -39,8 +44,10 @@ function PlansPage() {
   const [tab, setTab] = useState<Tab>("plans");
   const [planFilter, setPlanFilter] = useState<PlanFilter>("active");
   const [athleteId, setAthleteId] = useState<string>("");
+  const [sport, setSport] = useState<string>("");
   const [moveSelection, setMoveSelection] = useState<string | null>(null);
   const navigate = useNavigate();
+
 
   const createFn = useServerFn(createPlan);
   const createDraft = useMutation({
@@ -58,13 +65,14 @@ function PlansPage() {
     <>
       <div className="mx-auto flex min-h-dvh max-w-3xl flex-col px-4 pt-6 pb-32">
         <header className="sticky top-0 z-20 -mx-4 bg-background/90 px-4 pb-3 pt-2 backdrop-blur supports-[backdrop-filter]:bg-background/70">
-          <SegmentedToggle tab={tab} onChange={setTab} />
           {tab === "plans" ? (
             <PlansFilterStrip
               filter={planFilter}
               onFilter={setPlanFilter}
               athleteId={athleteId}
               onAthlete={setAthleteId}
+              sport={sport}
+              onSport={setSport}
             />
           ) : (
             <LibrarySearchStrip />
@@ -151,18 +159,30 @@ function PlansFilterStrip({
   onFilter,
   athleteId,
   onAthlete,
+  sport,
+  onSport,
 }: {
   filter: PlanFilter;
   onFilter: (f: PlanFilter) => void;
   athleteId: string;
   onAthlete: (id: string) => void;
+  sport: string;
+  onSport: (s: string) => void;
 }) {
+  const [open, setOpen] = useState(false);
   const fetchAthletes = useServerFn(listCoachAthletes);
-  const { data } = useQuery({
+  const { data: athletesData } = useQuery({
     queryKey: ["coach-athletes"],
     queryFn: () => fetchAthletes(),
   });
-  const athletes = data?.athletes ?? [];
+  const fetchProfile = useServerFn(getCoachProfile);
+  const { data: profileData } = useQuery({
+    queryKey: ["coach-profile"],
+    queryFn: () => fetchProfile(),
+  });
+  const athletes = athletesData?.athletes ?? [];
+  const sports = profileData?.levels.map((l) => l.sport) ?? [];
+  const showSport = sports.length > 1;
 
   const chip = (key: PlanFilter, label: string) => (
     <button
@@ -180,35 +200,160 @@ function PlansFilterStrip({
     </button>
   );
 
+  const selectedAthlete = athletes.find((a) => a.id === athleteId);
+  const activeCount =
+    (athleteId ? 1 : 0) + (showSport && sport ? 1 : 0);
+
   return (
-    <div className="mt-3 flex items-center gap-2 overflow-x-auto pb-1">
-      {chip("active", "Active")}
-      {chip("drafts", "Drafts")}
-      {chip("benched", "Benched")}
-      {chip("templates", "Templates")}
-      <div className="h-4 w-px shrink-0 bg-divider" />
-      <select
-        value={athleteId}
-        onChange={(e) => onAthlete(e.target.value)}
-        className="appearance-none border-none bg-transparent pr-5 text-xs font-medium text-text-secondary focus:ring-0"
-        style={{
-          backgroundImage:
-            "url(\"data:image/svg+xml;charset=US-ASCII,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E\")",
-          backgroundRepeat: "no-repeat",
-          backgroundPosition: "right center",
-          backgroundSize: "12px",
-        }}
-      >
-        <option value="">All athletes</option>
-        {athletes.map((a) => (
-          <option key={a.id} value={a.id}>
-            {a.name}
-          </option>
-        ))}
-      </select>
+    <>
+      <div className="mt-3 flex items-center gap-2">
+        <div className="flex flex-1 items-center gap-2 overflow-x-auto pb-1">
+          {chip("active", "Active")}
+          {chip("drafts", "Drafts")}
+          {chip("benched", "Benched")}
+          {chip("templates", "Templates")}
+        </div>
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className={cn(
+            "flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-bold transition",
+            activeCount > 0
+              ? "border-accent/70 bg-accent/15 text-accent-ink"
+              : "border-divider bg-card text-text-secondary hover:text-text-primary",
+          )}
+          aria-label="Open filters"
+        >
+          <SlidersHorizontal className="h-3.5 w-3.5" />
+          <span>
+            {activeCount > 0
+              ? selectedAthlete?.name.split(" ")[0] ?? "Filters"
+              : "Filters"}
+          </span>
+          {activeCount > 0 ? (
+            <span className="ml-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[10px] font-black text-accent-foreground">
+              {activeCount}
+            </span>
+          ) : null}
+        </button>
+      </div>
+
+      <Sheet open={open} onOpenChange={setOpen}>
+        <SheetContent
+          side="bottom"
+          className="rounded-t-2xl border-divider bg-card p-0"
+        >
+          <SheetHeader className="border-b border-divider px-5 py-4 text-left">
+            <SheetTitle className="font-hand text-2xl font-normal text-text-primary">
+              Filters
+            </SheetTitle>
+          </SheetHeader>
+
+          <div className="max-h-[60vh] overflow-y-auto px-5 py-4">
+            <FilterGroup label="Athlete">
+              <FilterPill
+                selected={!athleteId}
+                onClick={() => onAthlete("")}
+              >
+                All athletes
+              </FilterPill>
+              {athletes.map((a) => (
+                <FilterPill
+                  key={a.id}
+                  selected={athleteId === a.id}
+                  onClick={() => onAthlete(a.id)}
+                >
+                  {a.name}
+                </FilterPill>
+              ))}
+            </FilterGroup>
+
+            {showSport ? (
+              <FilterGroup label="Sport">
+                <FilterPill selected={!sport} onClick={() => onSport("")}>
+                  All sports
+                </FilterPill>
+                {sports.map((s) => (
+                  <FilterPill
+                    key={s}
+                    selected={sport === s}
+                    onClick={() => onSport(s)}
+                  >
+                    {s.replace(/_/g, " ")}
+                  </FilterPill>
+                ))}
+              </FilterGroup>
+            ) : null}
+          </div>
+
+          <div className="flex items-center justify-between gap-3 border-t border-divider px-5 py-3">
+            <button
+              type="button"
+              onClick={() => {
+                onAthlete("");
+                onSport("");
+              }}
+              className="text-xs font-bold uppercase tracking-widest text-text-tertiary hover:text-text-primary"
+            >
+              Clear all
+            </button>
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="rounded-full bg-accent px-5 py-2 text-sm font-black text-accent-foreground"
+            >
+              Done
+            </button>
+          </div>
+        </SheetContent>
+      </Sheet>
+    </>
+  );
+}
+
+function FilterGroup({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="mb-5 last:mb-0">
+      <div className="mb-2 text-[10px] font-black uppercase tracking-widest text-text-tertiary">
+        {label}
+      </div>
+      <div className="flex flex-wrap gap-2">{children}</div>
     </div>
   );
 }
+
+function FilterPill({
+  selected,
+  onClick,
+  children,
+}: {
+  selected: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-bold transition",
+        selected
+          ? "border-accent bg-accent text-accent-foreground"
+          : "border-divider bg-elevated text-text-secondary hover:text-text-primary",
+      )}
+    >
+      {selected ? <Check className="h-3.5 w-3.5" /> : null}
+      <span>{children}</span>
+    </button>
+  );
+}
+
 
 /* ---------------- Plans list ---------------- */
 
