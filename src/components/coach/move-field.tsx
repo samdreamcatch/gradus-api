@@ -59,8 +59,9 @@ export function MoveField(props: MoveFieldProps) {
     }
   }, [editing]);
 
-  const commit = async () => {
-    const next = draft.trim();
+  const commit = async (override?: string) => {
+    const source = override !== undefined ? override : draft;
+    const next = source.trim();
     if (required && !next) {
       setDraft(value);
       setEditing(false);
@@ -73,6 +74,7 @@ export function MoveField(props: MoveFieldProps) {
     await onCommit(next);
     setEditing(false);
   };
+
 
   const cancel = () => {
     setDraft(value);
