@@ -63,13 +63,19 @@ function PlansPage() {
     <>
       <div className="mx-auto flex min-h-dvh max-w-3xl flex-col px-4 pt-6 pb-32">
         <header className="sticky top-0 z-20 -mx-4 bg-background/90 px-4 pb-3 pt-2 backdrop-blur supports-[backdrop-filter]:bg-background/70">
-          <SegmentedToggle tab={tab} onChange={setTab} />
           {tab === "plans" ? (
             <PlansFilterStrip
               filter={planFilter}
               onFilter={setPlanFilter}
               athleteId={athleteId}
               onAthlete={setAthleteId}
+              sport={sport}
+              onSport={setSport}
+            />
+          ) : (
+            <LibrarySearchStrip />
+          )}
+
             />
           ) : (
             <LibrarySearchStrip />
