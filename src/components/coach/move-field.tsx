@@ -45,7 +45,9 @@ export function MoveField(props: MoveFieldProps) {
     displayClassName,
     autoEdit,
     required,
+    hideLabel,
   } = props;
+
   const [editing, setEditing] = useState(!!autoEdit);
   const [draft, setDraft] = useState(value);
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | null>(null);
