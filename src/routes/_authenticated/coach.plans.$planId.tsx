@@ -227,28 +227,30 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
 
   return (
     <>
-      <SheetHeader className="-mx-6 -mt-6 border-b border-divider px-6 py-3">
-        <SheetTitle className="font-display text-2xl">
-          {isTemplate ? "Template" : plan.status === "draft" ? "New plan" : "Plan"}
+      <SheetHeader className="-mx-6 -mt-6 border-b border-divider px-6 pt-5 pb-3">
+        <SheetTitle asChild>
+          <div>
+            <MoveField
+              kind="text"
+              label="Plan title"
+              hideLabel
+              value={plan.title}
+              placeholder={isNewFlow ? "Name this plan" : "Untitled plan"}
+              required
+              autoEdit={isNewFlow && !plan.title}
+              saving={savingField === "title"}
+              onCommit={(v) =>
+                commit("title", () => planUpdate.mutateAsync({ data: { id: plan.id, title: v } }))
+              }
+              displayClassName="font-display text-2xl font-black leading-tight tracking-tight"
+              inputClassName="font-display text-2xl font-black leading-tight tracking-tight"
+            />
+          </div>
         </SheetTitle>
       </SheetHeader>
 
 
       <div className="mt-5 space-y-5">
-        <MoveField
-          kind="text"
-          label="Title"
-          value={plan.title}
-          placeholder="Name this plan"
-          required
-          autoEdit={!plan.title}
-          saving={savingField === "title"}
-          onCommit={(v) =>
-            commit("title", () => planUpdate.mutateAsync({ data: { id: plan.id, title: v } }))
-          }
-          displayClassName="font-display text-h3 font-black leading-tight tracking-tight"
-          inputClassName="font-display text-h3 font-black leading-tight tracking-tight"
-        />
 
 
         {/* Assignment */}
