@@ -494,6 +494,29 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
           );
         }}
       />
+
+      <AlertDialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete "{plan.title || "this plan"}"?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This can't be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setConfirmDeleteOpen(false);
+                deleteMutation.mutate({ data: { id: plan.id } });
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
