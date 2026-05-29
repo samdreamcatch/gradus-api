@@ -255,8 +255,8 @@ function SelectOrCombo({
           return;
         }
         onChange(v);
-        // Commit on next tick so state has updated
-        setTimeout(onCommit, 0);
+        onCommit(v);
+
       }}
       onKeyDown={(e) => {
         if (e.key === "Escape") {
