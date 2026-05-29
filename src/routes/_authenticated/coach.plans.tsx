@@ -252,7 +252,7 @@ function PlansList({ filter, athleteId }: { filter: PlanFilter; athleteId: strin
   );
 }
 
-}
+
 
 function SwipeableDeleteRow({
   plan,
