@@ -41,8 +41,10 @@ import {
   createPlan,
   listCoachAthletes,
   getAthleteActivePlans,
+  MAX_ACTIVE_PLANS_PER_ATHLETE,
   type TargetKind,
 } from "@/lib/plans.functions";
+
 
 
 import { listMoves, upsertMove, type MoveDTO } from "@/lib/moves.functions";
