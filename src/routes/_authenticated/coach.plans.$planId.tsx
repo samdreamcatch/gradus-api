@@ -211,7 +211,7 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
 
   return (
     <>
-      <SheetHeader className="sticky top-0 z-10 -mx-6 -mt-6 border-b border-divider bg-[var(--background)]/95 px-6 py-3 backdrop-blur supports-[backdrop-filter]:bg-[var(--background)]/80">
+      <SheetHeader className="-mx-6 -mt-6 border-b border-divider px-6 py-3">
         <SheetTitle className="font-display text-2xl">
           {isTemplate ? "Template" : plan.status === "draft" ? "New plan" : "Plan"}
         </SheetTitle>
