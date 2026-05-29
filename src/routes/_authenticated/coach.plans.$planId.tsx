@@ -675,7 +675,7 @@ function MovePicker({
                         </p>
                         <p className="text-[11px] font-bold uppercase tracking-widest text-text-tertiary">
                           {m.category} ·{" "}
-                          {m.defaultTargetKind === "minutes"
+                          {m.defaultTargetKind === "mins"
                             ? `${m.defaultTargetValue} mins`
                             : `${m.defaultTargetValue} reps`}
                         </p>
