@@ -211,19 +211,6 @@ function PlansFilterStrip({
 }
 
 /* ---------------- Plans list ---------------- */
-
-function PlansList({ filter, athleteId }: { filter: PlanFilter; athleteId: string }) {
-  const fetchPlans = useServerFn(listPlans);
-  const args = useMemo(() => {
-    if (filter === "templates") return { kind: "template" as const };
-    const statusMap = { active: "active", drafts: "draft", benched: "benched" } as const;
-    return {
-      kind: "plan" as const,
-      status: statusMap[filter as "active" | "drafts" | "benched"],
-      athleteId: athleteId || undefined,
-    };
-  }, [filter, athleteId]);
-
   const { data, isLoading } = useQuery({
     queryKey: ["plans", args],
     queryFn: () => fetchPlans({ data: args }),
@@ -233,14 +220,151 @@ function PlansList({ filter, athleteId }: { filter: PlanFilter; athleteId: strin
   const plans = data?.plans ?? [];
   if (!plans.length) return <EmptyState message="No plans here yet." />;
 
+  const deletable = filter === "drafts" || filter === "templates";
+
   return (
     <ul className="divide-y divide-divider">
       {plans.map((p) => (
         <li key={p.id}>
-          <PlanRow plan={p} />
+          {deletable ? (
+            <SwipeableDeleteRow plan={p}>
+              <PlanRow plan={p} />
+            </SwipeableDeleteRow>
+          ) : (
+            <PlanRow plan={p} />
+          )}
         </li>
       ))}
     </ul>
+  );
+}
+
+function SwipeableDeleteRow({
+  plan,
+  children,
+}: {
+  plan: PlanSummaryDTO;
+  children: React.ReactNode;
+}) {
+  const qc = useQueryClient();
+  const deleteFn = useServerFn(deletePlan);
+  const [offset, setOffset] = useState(0);
+  const [dragging, setDragging] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const startX = useRef(0);
+  const startY = useRef(0);
+  const lockedAxis = useRef<"x" | "y" | null>(null);
+
+  const REVEAL = 88;
+  const TRIGGER = 160;
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteFn,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["plans"] });
+      toast.success("Plan deleted");
+    },
+    onError: (e: Error) => {
+      toast.error(e.message);
+      setOffset(0);
+    },
+  });
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    const t = e.touches[0];
+    startX.current = t.clientX;
+    startY.current = t.clientY;
+    lockedAxis.current = null;
+    setDragging(true);
+  };
+  const onTouchMove = (e: React.TouchEvent) => {
+    const t = e.touches[0];
+    const dx = t.clientX - startX.current;
+    const dy = t.clientY - startY.current;
+    if (lockedAxis.current === null) {
+      if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
+      lockedAxis.current = Math.abs(dx) > Math.abs(dy) ? "x" : "y";
+    }
+    if (lockedAxis.current !== "x") return;
+    const next = Math.min(0, dx);
+    setOffset(Math.max(next, -TRIGGER - 40));
+  };
+  const onTouchEnd = () => {
+    setDragging(false);
+    if (lockedAxis.current !== "x") {
+      setOffset(0);
+      return;
+    }
+    if (offset <= -TRIGGER) {
+      setOffset(-REVEAL);
+      setConfirmOpen(true);
+    } else if (offset <= -REVEAL / 2) {
+      setOffset(-REVEAL);
+    } else {
+      setOffset(0);
+    }
+  };
+
+  const swiped = offset < -8;
+
+  return (
+    <div className="relative overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setConfirmOpen(true)}
+        aria-label="Delete plan"
+        className="absolute inset-y-0 right-0 flex w-[88px] items-center justify-center gap-1 bg-destructive text-destructive-foreground text-xs font-bold uppercase tracking-widest"
+      >
+        <Trash2 className="h-4 w-4" />
+        Delete
+      </button>
+      <div
+        style={{ transform: `translateX(${offset}px)` }}
+        className={cn(
+          "relative bg-background",
+          !dragging && "transition-transform duration-200 ease-out",
+        )}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+        onClickCapture={(e) => {
+          if (swiped) {
+            e.preventDefault();
+            e.stopPropagation();
+            setOffset(0);
+          }
+        }}
+      >
+        {children}
+      </div>
+
+      <AlertDialog
+        open={confirmOpen}
+        onOpenChange={(v) => {
+          setConfirmOpen(v);
+          if (!v) setOffset(0);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete "{plan.title || "this plan"}"?</AlertDialogTitle>
+            <AlertDialogDescription>This can't be undone.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setConfirmOpen(false);
+                deleteMutation.mutate({ data: { id: plan.id } });
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
   );
 }
 
@@ -276,6 +400,19 @@ function PlanRow({ plan }: { plan: PlanSummaryDTO }) {
       <div className="flex items-center gap-4 text-xs font-bold text-text-secondary">
         <span className="flex items-center gap-1">
           <ListChecks className="h-3 w-3 text-text-tertiary" />
+          {plan.moveCount} {plan.moveCount === 1 ? "move" : "moves"}
+        </span>
+        {plan.totalMinutes > 0 ? (
+          <span className="flex items-center gap-1">
+            <Clock className="h-3 w-3 text-text-tertiary" />
+            {plan.totalMinutes} mins
+          </span>
+        ) : null}
+      </div>
+    </Link>
+  );
+}
+
           {plan.moveCount} {plan.moveCount === 1 ? "move" : "moves"}
         </span>
         {plan.totalMinutes > 0 ? (
