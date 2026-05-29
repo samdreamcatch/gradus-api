@@ -320,8 +320,9 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
             <span className="pen-highlight">Moves</span>
           </h2>
           <span className="text-[11px] font-bold uppercase tracking-widest text-text-tertiary">
-            {plan.moves.length} · {totalMinutes} mins
+            {plan.moves.length} {plan.moves.length === 1 ? "move" : "moves"}
           </span>
+
         </div>
 
         <ul className="space-y-4">
