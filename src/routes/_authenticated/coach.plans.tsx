@@ -165,78 +165,111 @@ function PlansFilterStrip({
   onFilter,
   athleteId,
   onAthlete,
+  sport,
+  onSport,
 }: {
   filter: PlanFilter;
   onFilter: (f: PlanFilter) => void;
   athleteId: string;
   onAthlete: (id: string) => void;
+  sport: string;
+  onSport: (s: string) => void;
 }) {
   const fetchAthletes = useServerFn(listCoachAthletes);
-  const { data } = useQuery({
+  const fetchSports = useServerFn(listCoachSports);
+  const { data: athletesData } = useQuery({
     queryKey: ["coach-athletes"],
     queryFn: () => fetchAthletes(),
   });
-  const athletes = data?.athletes ?? [];
+  const { data: sportsData } = useQuery({
+    queryKey: ["coach-sports"],
+    queryFn: () => fetchSports(),
+  });
+  const athletes = athletesData?.athletes ?? [];
+  const sports = sportsData?.sports ?? [];
+  const isTemplate = filter === "templates";
 
-  const chip = (key: PlanFilter, label: string) => (
-    <button
-      key={key}
-      type="button"
-      onClick={() => onFilter(key)}
-      className={cn(
-        "whitespace-nowrap rounded-full border px-3 py-1 text-xs font-bold transition",
-        filter === key
-          ? "border-accent/70 bg-accent text-accent-foreground"
-          : "border-divider bg-card text-text-secondary hover:text-text-primary",
-      )}
-    >
-      {label}
-    </button>
-  );
+  const triggerClass =
+    "h-8 w-full rounded-full border-divider bg-card px-3 text-xs font-bold text-text-primary shadow-none";
 
   return (
-    <div className="mt-3 flex items-center gap-2 overflow-x-auto pb-1">
-      {chip("active", "Active")}
-      {chip("drafts", "Drafts")}
-      {chip("benched", "Benched")}
-      {chip("templates", "Templates")}
-      <div className="h-4 w-px shrink-0 bg-divider" />
-      <select
-        value={athleteId}
-        onChange={(e) => onAthlete(e.target.value)}
-        className="appearance-none border-none bg-transparent pr-5 text-xs font-medium text-text-secondary focus:ring-0"
-        style={{
-          backgroundImage:
-            "url(\"data:image/svg+xml;charset=US-ASCII,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E\")",
-          backgroundRepeat: "no-repeat",
-          backgroundPosition: "right center",
-          backgroundSize: "12px",
-        }}
+    <div className="mt-3 grid grid-cols-3 gap-2">
+      <Select value={filter} onValueChange={(v) => onFilter(v as PlanFilter)}>
+        <SelectTrigger className={triggerClass} aria-label="Plan type">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="active">Active</SelectItem>
+          <SelectItem value="drafts">Drafts</SelectItem>
+          <SelectItem value="benched">Benched</SelectItem>
+          <SelectItem value="templates">Templates</SelectItem>
+        </SelectContent>
+      </Select>
+
+      <Select
+        value={athleteId || "__all"}
+        onValueChange={(v) => onAthlete(v === "__all" ? "" : v)}
+        disabled={isTemplate}
       >
-        <option value="">All athletes</option>
-        {athletes.map((a) => (
-          <option key={a.id} value={a.id}>
-            {a.name}
-          </option>
-        ))}
-      </select>
+        <SelectTrigger className={triggerClass} aria-label="Athlete">
+          <SelectValue placeholder="All athletes" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="__all">All athletes</SelectItem>
+          {athletes.map((a) => (
+            <SelectItem key={a.id} value={a.id}>
+              {a.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      <Select
+        value={sport || "__all"}
+        onValueChange={(v) => onSport(v === "__all" ? "" : v)}
+        disabled={sports.length === 0}
+      >
+        <SelectTrigger className={triggerClass} aria-label="Sport">
+          <SelectValue placeholder="All sports" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="__all">All sports</SelectItem>
+          {sports.map((s) => (
+            <SelectItem key={s} value={s}>
+              {getSport(s)?.label ?? s}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     </div>
   );
 }
 
 /* ---------------- Plans list ---------------- */
 
-function PlansList({ filter, athleteId }: { filter: PlanFilter; athleteId: string }) {
+function PlansList({
+  filter,
+  athleteId,
+  sport,
+}: {
+  filter: PlanFilter;
+  athleteId: string;
+  sport: string;
+}) {
   const fetchPlans = useServerFn(listPlans);
   const args = useMemo(() => {
-    if (filter === "templates") return { kind: "template" as const };
+    if (filter === "templates") {
+      return { kind: "template" as const, sport: sport || undefined };
+    }
     const statusMap = { active: "active", drafts: "draft", benched: "benched" } as const;
     return {
       kind: "plan" as const,
       status: statusMap[filter as "active" | "drafts" | "benched"],
       athleteId: athleteId || undefined,
+      sport: sport || undefined,
     };
-  }, [filter, athleteId]);
+  }, [filter, athleteId, sport]);
+
 
   const { data, isLoading } = useQuery({
     queryKey: ["plans", args],
