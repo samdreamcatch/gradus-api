@@ -224,7 +224,8 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
 
 
         {/* Assignment */}
-        <div className="rounded-lg border border-divider bg-card bg-[linear-gradient(to_bottom,transparent_31px,color-mix(in_oklab,var(--foreground)_7%,transparent)_31px,color-mix(in_oklab,var(--foreground)_7%,transparent)_32px,transparent_32px)] bg-[length:100%_32px] p-3">
+        <div className="rounded-lg border border-divider bg-[var(--pen-tennis-wash)] p-3">
+
 
           <div className="flex items-center justify-between gap-3">
             <label className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
