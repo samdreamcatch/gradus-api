@@ -130,8 +130,11 @@ export const listPlans = createServerFn({ method: "POST" })
     const [movesRes, athletesRes, goalsRes] = await Promise.all([
       planIds.length
         ? supabase
+    const [movesRes, athletesRes, goalsRes] = await Promise.all([
+      planIds.length
+        ? supabase
             .from("plan_moves")
-            .select("plan_id, target_kind, target_value, move_id, moves(sport)")
+            .select("plan_id, target_kind, target_value, move_id")
             .in("plan_id", planIds)
         : Promise.resolve({ data: [], error: null }),
       athleteIds.length
@@ -152,22 +155,36 @@ export const listPlans = createServerFn({ method: "POST" })
     if (athletesRes.error) throw new Error(athletesRes.error.message);
     if (goalsRes.error) throw new Error(goalsRes.error.message);
 
+    // When filtering by sport, look up each referenced move's sport in a second query.
+    const moveSportMap = new Map<string, string>();
+    if (data.sport) {
+      const moveIds = Array.from(
+        new Set(
+          (movesRes.data ?? [])
+            .map((m) => m.move_id)
+            .filter((x): x is string => !!x),
+        ),
+      );
+      if (moveIds.length) {
+        const { data: moveRows, error: moveErr } = await supabase
+          .from("moves")
+          .select("id, sport")
+          .in("id", moveIds);
+        if (moveErr) throw new Error(moveErr.message);
+        for (const m of moveRows ?? []) moveSportMap.set(m.id, m.sport);
+      }
+    }
+
     const byPlan = new Map<string, { count: number; minutes: number; sports: Set<string> }>();
     for (const m of movesRes.data ?? []) {
       const cur = byPlan.get(m.plan_id) ?? { count: 0, minutes: 0, sports: new Set<string>() };
       cur.count += 1;
       if (m.target_kind === "mins") cur.minutes += Number(m.target_value);
-      const sp = (m as unknown as { moves: { sport: string } | null }).moves?.sport;
+      const sp = m.move_id ? moveSportMap.get(m.move_id) : undefined;
       if (sp) cur.sports.add(sp);
       byPlan.set(m.plan_id, cur);
     }
 
-    const athleteSport = new Map<string, string>();
-    for (const g of goalsRes.data ?? []) {
-      athleteSport.set(g.athlete_id, g.sport);
-    }
-
-    const nameOf = new Map<string, string>();
     for (const a of athletesRes.data ?? []) {
       nameOf.set(a.id, `${a.first_name} ${a.last_name}`.trim());
     }
