@@ -312,7 +312,6 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
             </>
           ) : (
 
-          ) : (
             <>
               <div className="flex items-center justify-between gap-3">
                 <label className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
