@@ -59,8 +59,9 @@ export function MoveField(props: MoveFieldProps) {
     }
   }, [editing]);
 
-  const commit = async () => {
-    const next = draft.trim();
+  const commit = async (override?: string) => {
+    const source = override !== undefined ? override : draft;
+    const next = source.trim();
     if (required && !next) {
       setDraft(value);
       setEditing(false);
@@ -73,6 +74,7 @@ export function MoveField(props: MoveFieldProps) {
     await onCommit(next);
     setEditing(false);
   };
+
 
   const cancel = () => {
     setDraft(value);
@@ -132,7 +134,8 @@ export function MoveField(props: MoveFieldProps) {
           type="text"
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
-          onBlur={commit}
+          onBlur={() => commit()}
+
           onKeyDown={(e) => {
             if (e.key === "Enter") {
               e.preventDefault();
@@ -154,7 +157,8 @@ export function MoveField(props: MoveFieldProps) {
           value={draft}
           rows={props.rows ?? 3}
           onChange={(e) => setDraft(e.target.value)}
-          onBlur={commit}
+          onBlur={() => commit()}
+
           onKeyDown={(e) => {
             if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
               e.preventDefault();
@@ -174,7 +178,7 @@ export function MoveField(props: MoveFieldProps) {
           options={props.options}
           allowFreeText={props.allowFreeText !== false}
           onChange={setDraft}
-          onCommit={commit}
+          onCommit={(override) => commit(override)}
           onCancel={cancel}
           placeholder={placeholder}
           inputClassName={sharedInputCls}
@@ -182,6 +186,7 @@ export function MoveField(props: MoveFieldProps) {
             inputRef.current = el;
           }}
         />
+
       )}
     </div>
   );
@@ -202,7 +207,8 @@ function SelectOrCombo({
   options: string[];
   allowFreeText: boolean;
   onChange: (v: string) => void;
-  onCommit: () => void;
+  onCommit: (override?: string) => void;
+
   onCancel: () => void;
   placeholder?: string;
   inputClassName?: string;
@@ -219,7 +225,8 @@ function SelectOrCombo({
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        onBlur={onCommit}
+        onBlur={() => onCommit()}
+
         onKeyDown={(e) => {
           if (e.key === "Enter") {
             e.preventDefault();
@@ -248,8 +255,8 @@ function SelectOrCombo({
           return;
         }
         onChange(v);
-        // Commit on next tick so state has updated
-        setTimeout(onCommit, 0);
+        onCommit(v);
+
       }}
       onKeyDown={(e) => {
         if (e.key === "Escape") {
