@@ -292,10 +292,10 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
                     allowFreeText={false}
                     placeholder="Choose an athlete"
                     saving={useTemplate.isPending}
-                    onCommit={(v) => {
+                    onCommit={async (v) => {
                       const match = athletes.find((a) => a.name === v);
-                      if (!match) return Promise.resolve();
-                      return useTemplate.mutateAsync({
+                      if (!match) return;
+                      await useTemplate.mutateAsync({
                         data: {
                           kind: "plan",
                           athleteId: match.id,
@@ -303,6 +303,7 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
                         },
                       });
                     }}
+
                   />
                   <p className="mt-2 text-[11px] text-text-tertiary">
                     Creates a new draft from this template. The template stays unchanged.
