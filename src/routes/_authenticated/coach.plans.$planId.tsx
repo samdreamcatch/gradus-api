@@ -477,14 +477,6 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
                     >
                       <ArrowDown className="h-4 w-4" />
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => moveRemove.mutate({ data: { id: m.id } })}
-                      className="mt-1 text-text-tertiary hover:text-destructive"
-                      aria-label="Remove"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
                   </div>
                 </div>
               </li>
