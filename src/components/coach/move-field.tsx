@@ -134,7 +134,8 @@ export function MoveField(props: MoveFieldProps) {
           type="text"
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
-          onBlur={commit}
+          onBlur={() => commit()}
+
           onKeyDown={(e) => {
             if (e.key === "Enter") {
               e.preventDefault();
