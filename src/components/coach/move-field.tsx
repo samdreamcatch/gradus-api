@@ -175,7 +175,8 @@ export function MoveField(props: MoveFieldProps) {
       {props.kind === "select" && (
         <SelectOrCombo
           value={draft}
-          options={props.options}
+          onCommit={(override) => commit(override)}
+
           allowFreeText={props.allowFreeText !== false}
           onChange={setDraft}
           onCommit={commit}
