@@ -53,7 +53,12 @@ function PlanEditorSheet() {
       <SheetContent
         side="bottom"
         className="max-h-[92vh] overflow-y-auto border-t border-divider shadow-page"
-        style={{ backgroundColor: "var(--popover)", backgroundImage: "none" }}
+        style={{
+          backgroundColor: "var(--background)",
+          backgroundImage:
+            "repeating-linear-gradient(to bottom, transparent 0px, transparent 31px, color-mix(in oklab, var(--foreground) 7%, transparent) 31px, color-mix(in oklab, var(--foreground) 7%, transparent) 32px)",
+        }}
+
       >
         <PlanEditorBody planId={planId} onClose={close} />
       </SheetContent>
