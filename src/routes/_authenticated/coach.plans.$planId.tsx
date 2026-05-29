@@ -118,7 +118,6 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const [didInitExpansion, setDidInitExpansion] = useState(false);
 
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["plan", planId] });
