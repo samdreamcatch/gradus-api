@@ -11,6 +11,7 @@ import {
   Loader2,
   Send,
   ArrowRight,
+  ChevronDown,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
@@ -101,6 +102,8 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
   const [pickerOpen, setPickerOpen] = useState(false);
   const [savingField, setSavingField] = useState<string | null>(null);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [expandedMoves, setExpandedMoves] = useState<Record<string, boolean>>({});
+  const [didInitExpansion, setDidInitExpansion] = useState(false);
 
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["plan", planId] });
