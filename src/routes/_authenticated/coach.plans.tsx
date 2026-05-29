@@ -283,27 +283,37 @@ function SwipeableDeleteRow({
     },
   });
 
-  const onTouchStart = (e: React.TouchEvent) => {
-    const t = e.touches[0];
-    startX.current = t.clientX;
-    startY.current = t.clientY;
+  const onPointerDown = (e: React.PointerEvent) => {
+    // Ignore right-click; allow mouse, touch, and pen
+    if (e.button !== 0 && e.pointerType === "mouse") return;
+    startX.current = e.clientX;
+    startY.current = e.clientY;
     lockedAxis.current = null;
     setDragging(true);
   };
-  const onTouchMove = (e: React.TouchEvent) => {
-    const t = e.touches[0];
-    const dx = t.clientX - startX.current;
-    const dy = t.clientY - startY.current;
+  const onPointerMove = (e: React.PointerEvent) => {
+    if (!dragging) return;
+    const dx = e.clientX - startX.current;
+    const dy = e.clientY - startY.current;
     if (lockedAxis.current === null) {
       if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
       lockedAxis.current = Math.abs(dx) > Math.abs(dy) ? "x" : "y";
+      if (lockedAxis.current === "x") {
+        (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
+      }
     }
     if (lockedAxis.current !== "x") return;
     const next = Math.min(0, dx);
     setOffset(Math.max(next, -TRIGGER - 40));
   };
-  const onTouchEnd = () => {
+  const onPointerEnd = (e: React.PointerEvent) => {
+    if (!dragging) return;
     setDragging(false);
+    try {
+      (e.currentTarget as Element).releasePointerCapture?.(e.pointerId);
+    } catch {
+      /* noop */
+    }
     if (lockedAxis.current !== "x") {
       setOffset(0);
       return;
@@ -321,7 +331,7 @@ function SwipeableDeleteRow({
   const swiped = offset < -8;
 
   return (
-    <div className="relative overflow-hidden">
+    <div className="group/swipe relative overflow-hidden">
       <button
         type="button"
         onClick={() => setConfirmOpen(true)}
@@ -332,14 +342,15 @@ function SwipeableDeleteRow({
         Delete
       </button>
       <div
-        style={{ transform: `translateX(${offset}px)` }}
+        style={{ transform: `translateX(${offset}px)`, touchAction: "pan-y" }}
         className={cn(
           "relative bg-background",
           !dragging && "transition-transform duration-200 ease-out",
         )}
-        onTouchStart={onTouchStart}
-        onTouchMove={onTouchMove}
-        onTouchEnd={onTouchEnd}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerEnd}
+        onPointerCancel={onPointerEnd}
         onClickCapture={(e) => {
           if (swiped) {
             e.preventDefault();
@@ -349,7 +360,21 @@ function SwipeableDeleteRow({
         }}
       >
         {children}
+        {/* Hover affordance for pointer devices */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setConfirmOpen(true);
+          }}
+          aria-label="Delete plan"
+          className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-card p-2 text-text-tertiary opacity-0 shadow-sm ring-1 ring-divider transition hover:text-destructive group-hover/swipe:opacity-100 focus:opacity-100"
+        >
+          <Trash2 className="h-4 w-4" />
+        </button>
       </div>
+
 
       <AlertDialog
         open={confirmOpen}
