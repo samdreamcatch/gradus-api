@@ -123,7 +123,6 @@ export function MoveField(props: MoveFieldProps) {
     inputClassName,
   );
 
-  );
 
   return (
     <div className={cn("space-y-1", className)}>
