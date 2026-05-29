@@ -37,7 +37,6 @@ import {
 } from "@/components/ui/select";
 import { getSport } from "@/lib/coach-sports";
 
-import { MoveSheet } from "@/components/coach/move-sheet";
 export const Route = createFileRoute("/_authenticated/coach/plans")({
   codeSplitGroupings: [["component"]],
   component: PlansPage,
