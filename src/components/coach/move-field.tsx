@@ -100,7 +100,8 @@ export function MoveField(props: MoveFieldProps) {
           disabled={disabled}
           onClick={() => setEditing(true)}
           className={cn(
-            "block w-full rounded-xl border border-divider px-3 py-2 text-left transition-colors",
+            "block w-full rounded-xl border border-divider px-3 py-1.5 text-left transition-colors",
+
             "hover:border-accent/40",
             "text-text-primary",
             displayClassName,
