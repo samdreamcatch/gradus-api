@@ -526,9 +526,6 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
             </Button>
           )}
         </div>
-        <p className="pb-2 text-center text-[11px] text-text-tertiary">
-          Every change is saved automatically. Drafts live in the Drafts tab until you activate.
-        </p>
       </div>
 
       <MovePicker
