@@ -75,11 +75,6 @@ function PlansPage() {
           ) : (
             <LibrarySearchStrip />
           )}
-
-            />
-          ) : (
-            <LibrarySearchStrip />
-          )}
         </header>
 
         <main className="flex-1 pt-2">
