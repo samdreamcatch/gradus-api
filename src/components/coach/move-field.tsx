@@ -100,11 +100,8 @@ export function MoveField(props: MoveFieldProps) {
           disabled={disabled}
           onClick={() => setEditing(true)}
           className={cn(
-            "block w-full rounded-xl border border-divider bg-[var(--cream)] px-4 py-1.5 text-left transition-colors",
-
-
-
-            "hover:border-accent/40",
+            "block w-full border-b border-divider bg-transparent px-1 py-1 text-left transition-colors",
+            "hover:border-accent/50",
             "text-text-primary",
             displayClassName,
           )}
@@ -115,13 +112,13 @@ export function MoveField(props: MoveFieldProps) {
             <span className="text-text-tertiary italic">{placeholder ?? "Tap to add"}</span>
           )}
         </button>
+
       </div>
     );
   }
 
   const sharedInputCls = cn(
-    "block w-full rounded-xl border-2 border-accent bg-[var(--cream)] px-4 py-1.5 text-text-primary",
-    "shadow-[0_0_15px_color-mix(in_oklab,var(--accent)_10%,transparent)]",
+    "block w-full border-b-2 border-accent bg-transparent px-1 py-1 text-text-primary",
     "focus:outline-none",
     inputClassName,
   );
