@@ -118,13 +118,11 @@ export function MoveField(props: MoveFieldProps) {
   }
 
   const sharedInputCls = cn(
-    "block w-full rounded-xl border-2 border-accent bg-[var(--cream)] px-4 py-1.5 text-text-primary",
-  const sharedInputCls = cn(
-    "block w-full rounded-md border-b-2 border-accent bg-transparent px-1 py-1 text-text-primary",
-    "shadow-[0_2px_0_-1px_color-mix(in_oklab,var(--accent)_15%,transparent)]",
+    "block w-full border-b-2 border-accent bg-transparent px-1 py-1 text-text-primary",
     "focus:outline-none",
     inputClassName,
   );
+
 
 
 
