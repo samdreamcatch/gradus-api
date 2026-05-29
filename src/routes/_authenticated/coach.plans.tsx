@@ -1,16 +1,27 @@
 import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
-import { Plus, ListChecks, Clock, ChevronRight, Search, Loader2 } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMemo, useRef, useState } from "react";
+import { Plus, ListChecks, Clock, ChevronRight, Search, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { CoachBottomNav } from "@/components/coach/bottom-nav";
 import { Input } from "@/components/ui/input";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import {
   listPlans,
   listCoachAthletes,
   createPlan,
+  deletePlan,
   type PlanSummaryDTO,
   type PlanStatus,
 } from "@/lib/plans.functions";
@@ -20,6 +31,7 @@ export const Route = createFileRoute("/_authenticated/coach/plans")({
   codeSplitGroupings: [["component"]],
   component: PlansPage,
 });
+
 
 type Tab = "plans" | "library";
 type PlanFilter = "active" | "drafts" | "benched" | "templates";
