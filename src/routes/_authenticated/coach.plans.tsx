@@ -236,7 +236,7 @@ function PlansList({ filter, athleteId }: { filter: PlanFilter; athleteId: strin
   const deletable = filter === "drafts" || filter === "templates";
 
   return (
-    <ul className="divide-y divide-divider">
+    <ul className="space-y-2">
       {plans.map((p) => (
         <li key={p.id}>
           {deletable ? (
@@ -250,6 +250,8 @@ function PlansList({ filter, athleteId }: { filter: PlanFilter; athleteId: strin
       ))}
     </ul>
   );
+}
+
 }
 
 function SwipeableDeleteRow({
