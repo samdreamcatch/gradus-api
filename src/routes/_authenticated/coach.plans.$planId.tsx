@@ -772,7 +772,7 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
                 </AlertDialogAction>
               </>
             )}
-            <AlertDialogCancel className="mt-0">Cancel</AlertDialogCancel>
+            
           </AlertDialogFooter>
 
         </AlertDialogContent>
