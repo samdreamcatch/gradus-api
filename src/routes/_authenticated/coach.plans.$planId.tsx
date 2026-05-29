@@ -218,10 +218,10 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
           onCommit={(v) =>
             commit("title", () => planUpdate.mutateAsync({ data: { id: plan.id, title: v } }))
           }
-        <div className="rounded-lg border border-divider bg-[var(--pen-tennis-wash)] p-3">
-
+          displayClassName="font-display text-h3 font-black leading-tight tracking-tight"
           inputClassName="font-display text-h3 font-black leading-tight tracking-tight"
         />
+
 
         {/* Assignment */}
         <div className="rounded-lg border border-divider bg-card bg-[linear-gradient(to_bottom,transparent_31px,color-mix(in_oklab,var(--foreground)_7%,transparent)_31px,color-mix(in_oklab,var(--foreground)_7%,transparent)_32px,transparent_32px)] bg-[length:100%_32px] p-3">
