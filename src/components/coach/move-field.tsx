@@ -84,8 +84,7 @@ export function MoveField(props: MoveFieldProps) {
     setDraft(value);
     setEditing(false);
   };
-
-  const labelEl = (
+  const labelEl = hideLabel ? null : (
     <div className="flex items-center gap-2">
       <span className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
         {label}
@@ -94,6 +93,8 @@ export function MoveField(props: MoveFieldProps) {
         <span className="text-[10px] font-medium text-text-tertiary">Saving…</span>
       ) : null}
     </div>
+  );
+
   );
   if (!editing) {
     return (
