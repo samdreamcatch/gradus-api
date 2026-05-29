@@ -269,7 +269,7 @@ function PlanRow({ plan }: { plan: PlanSummaryDTO }) {
         {plan.totalMinutes > 0 ? (
           <span className="flex items-center gap-1">
             <Clock className="h-3 w-3 text-text-tertiary" />
-            {plan.totalMinutes} min
+            {plan.totalMinutes} mins
           </span>
         ) : null}
       </div>
@@ -481,8 +481,8 @@ function ListSkeleton() {
   );
 }
 
-function targetLabel(kind: "reps" | "minutes", value: number) {
-  return kind === "minutes" ? `${value} min` : `${value} reps`;
+function targetLabel(kind: "reps" | "mins", value: number) {
+  return kind === "mins" ? `${value} mins` : `${value} reps`;
 }
 
 function shortName(full: string) {
