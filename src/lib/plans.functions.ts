@@ -189,7 +189,20 @@ export const listPlans = createServerFn({ method: "POST" })
 
     const result: PlanSummaryDTO[] = filteredPlans.map((p) => {
       const agg = byPlan.get(p.id) ?? { count: 0, minutes: 0 };
+      return {
+        id: p.id,
+        title: p.title,
+        kind: p.kind as PlanKind,
+        status: p.status as PlanStatus,
+        athleteId: p.athlete_id,
+        athleteName: p.athlete_id ? (nameOf.get(p.athlete_id) ?? null) : null,
+        moveCount: agg.count,
+        totalMinutes: agg.minutes,
+        updatedAt: p.updated_at,
+      };
+    });
 
+    return { plans: result };
   });
 
 /* ---------------- get plan ---------------- */
