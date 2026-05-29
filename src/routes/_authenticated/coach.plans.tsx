@@ -20,12 +20,23 @@ import { cn } from "@/lib/utils";
 import {
   listPlans,
   listCoachAthletes,
+  listCoachSports,
   createPlan,
   deletePlan,
   type PlanSummaryDTO,
   type PlanStatus,
 } from "@/lib/plans.functions";
 import { listMoves, type MoveDTO } from "@/lib/moves.functions";
+import { MoveSheet } from "@/components/coach/move-sheet";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { getSport } from "@/lib/coach-sports";
+
 import { MoveSheet } from "@/components/coach/move-sheet";
 export const Route = createFileRoute("/_authenticated/coach/plans")({
   codeSplitGroupings: [["component"]],
