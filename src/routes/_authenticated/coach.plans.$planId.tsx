@@ -271,24 +271,47 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
         {/* Assignment */}
         <div className="rounded-lg border border-divider bg-card p-3">
           {isTemplate ? (
-            <MoveField
-              kind="select"
-              label="Assign template to athlete"
-              value=""
-              options={athletes.map((a) => a.name)}
-              allowFreeText={false}
-              placeholder="Choose an athlete"
-              saving={savingField === "athleteId"}
-              onCommit={(v) => {
-                const match = athletes.find((a) => a.name === v);
-                if (!match) return Promise.resolve();
-                return commit("athleteId", () =>
-                  planUpdate.mutateAsync({
-                    data: { id: plan.id, kind: "plan", athleteId: match.id },
-                  }),
-                );
-              }}
-            />
+            <>
+              <div className="flex items-center justify-between gap-3">
+                <label className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
+                  Use this template
+                </label>
+                <Switch
+                  checked={useTemplateOpen}
+                  disabled={useTemplate.isPending}
+                  onCheckedChange={setUseTemplateOpen}
+                />
+              </div>
+              {useTemplateOpen ? (
+                <div className="mt-3">
+                  <MoveField
+                    kind="select"
+                    label="Assign to athlete"
+                    value=""
+                    options={athletes.map((a) => a.name)}
+                    allowFreeText={false}
+                    placeholder="Choose an athlete"
+                    saving={useTemplate.isPending}
+                    onCommit={(v) => {
+                      const match = athletes.find((a) => a.name === v);
+                      if (!match) return Promise.resolve();
+                      return useTemplate.mutateAsync({
+                        data: {
+                          kind: "plan",
+                          athleteId: match.id,
+                          fromTemplateId: plan.id,
+                        },
+                      });
+                    }}
+                  />
+                  <p className="mt-2 text-[11px] text-text-tertiary">
+                    Creates a new draft from this template. The template stays unchanged.
+                  </p>
+                </div>
+              ) : null}
+            </>
+          ) : (
+
           ) : (
             <>
               <div className="flex items-center justify-between gap-3">
