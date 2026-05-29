@@ -229,10 +229,6 @@ function PlansList({ filter, athleteId }: { filter: PlanFilter; athleteId: strin
     queryFn: () => fetchPlans({ data: args }),
   });
 
-    queryKey: ["plans", args],
-    queryFn: () => fetchPlans({ data: args }),
-  });
-
   if (isLoading) return <ListSkeleton />;
   const plans = data?.plans ?? [];
   if (!plans.length) return <EmptyState message="No plans here yet." />;
