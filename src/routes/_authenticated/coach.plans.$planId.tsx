@@ -433,13 +433,17 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
                           type="button"
                           onClick={() => toggleMove(m.id)}
                           aria-expanded={false}
-                          className="block w-full text-left font-display text-xl font-black leading-tight tracking-tight text-text-primary"
+                          className="flex w-full items-center justify-between gap-3 text-left font-display text-xl font-black leading-tight tracking-tight text-text-primary"
                         >
-                          {m.name || (
-                            <span className="italic text-text-tertiary">Untitled move</span>
-                          )}
+                          <span>
+                            {m.name || (
+                              <span className="italic text-text-tertiary">Untitled move</span>
+                            )}
+                          </span>
+                          <ChevronDown className="h-4 w-4 shrink-0 text-text-tertiary" />
                         </button>
                       )}
+
                     </div>
                   </div>
                   <div className="flex flex-col items-center gap-1">
