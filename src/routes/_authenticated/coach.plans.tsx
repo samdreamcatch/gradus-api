@@ -42,8 +42,10 @@ function PlansPage() {
   const [tab, setTab] = useState<Tab>("plans");
   const [planFilter, setPlanFilter] = useState<PlanFilter>("active");
   const [athleteId, setAthleteId] = useState<string>("");
+  const [sport, setSport] = useState<string>("");
   const [moveSelection, setMoveSelection] = useState<string | null>(null);
   const navigate = useNavigate();
+
 
   const createFn = useServerFn(createPlan);
   const createDraft = useMutation({
