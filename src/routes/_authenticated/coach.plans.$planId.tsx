@@ -692,7 +692,72 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog
+        open={!!activeConflicts}
+        onOpenChange={(v) => { if (!v) { setActiveConflicts(null); setChosenReplaceId(null); } }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            {activeConflicts && activeConflicts.length >= MAX_ACTIVE_PLANS_PER_ATHLETE ? (
+              <>
+                <AlertDialogTitle>Athlete already has two active plans</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Athlete already has two active plans to work on before they next see you. Choose a plan to bench.
+                </AlertDialogDescription>
+              </>
+            ) : (
+              <>
+                <AlertDialogTitle>Replace existing active plan?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Athlete already has an active plan from you. Do you want to replace it with this one?
+                </AlertDialogDescription>
+              </>
+            )}
+          </AlertDialogHeader>
+          {activeConflicts && activeConflicts.length >= MAX_ACTIVE_PLANS_PER_ATHLETE ? (
+            <div className="space-y-2 py-1">
+              {activeConflicts.map((p) => (
+                <label
+                  key={p.id}
+                  className={cn(
+                    "flex cursor-pointer items-center gap-3 rounded-md border border-divider px-3 py-2 text-sm",
+                    chosenReplaceId === p.id && "border-accent bg-accent/10",
+                  )}
+                >
+                  <input
+                    type="radio"
+                    name="bench-choice"
+                    checked={chosenReplaceId === p.id}
+                    onChange={() => setChosenReplaceId(p.id)}
+                  />
+                  <span className="text-text-primary">{p.title || "Untitled plan"}</span>
+                </label>
+              ))}
+            </div>
+          ) : activeConflicts && activeConflicts.length === 1 ? (
+            <p className="text-sm text-text-secondary">
+              "{activeConflicts[0].title || "Untitled plan"}" will be benched.
+            </p>
+          ) : null}
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={!chosenReplaceId}
+              onClick={() => {
+                if (!chosenReplaceId) return;
+                performActivate(chosenReplaceId);
+              }}
+            >
+              {activeConflicts && activeConflicts.length >= MAX_ACTIVE_PLANS_PER_ATHLETE
+                ? "Bench & activate"
+                : "Replace & activate"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
+
   );
 }
 
