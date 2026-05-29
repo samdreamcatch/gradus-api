@@ -419,9 +419,6 @@ function PlanRow({ plan }: { plan: PlanSummaryDTO }) {
         plan.status === "benched" && plan.kind === "plan" && "opacity-70",
       )}
     >
-
-      )}
-    >
       <div className="mb-1 flex items-start justify-between gap-3">
         <h3 className="font-display text-lg font-black leading-tight tracking-tight text-text-primary">
           {plan.title || "Untitled plan"}
