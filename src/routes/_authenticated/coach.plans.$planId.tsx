@@ -151,27 +151,28 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
     onError: (e: Error) => toast.error(e.message),
   });
 
-  if (isLoading || !data?.plan) {
-    return (
-      <div className="py-12 text-center text-sm text-text-secondary">Loading…</div>
-    );
-  }
-
-  const plan = data.plan;
-  const isTemplate = plan.kind === "template";
-  const isNewFlow = plan.status === "draft";
-  const totalMinutes = plan.moves
+  const plan = data?.plan;
+  const isTemplate = plan?.kind === "template";
+  const isNewFlow = plan?.status === "draft";
+  const totalMinutes = (plan?.moves ?? [])
     .filter((m) => m.targetKind === "mins")
     .reduce((s, m) => s + m.targetValue, 0);
 
   // On first load, expand all when authoring a new draft; collapse all otherwise.
   useEffect(() => {
-    if (didInitExpansion) return;
+    if (didInitExpansion || !plan) return;
     const init: Record<string, boolean> = {};
     for (const m of plan.moves) init[m.id] = isNewFlow;
     setExpandedMoves(init);
     setDidInitExpansion(true);
-  }, [didInitExpansion, isNewFlow, plan.moves]);
+  }, [didInitExpansion, isNewFlow, plan]);
+
+  if (isLoading || !plan) {
+    return (
+      <div className="py-12 text-center text-sm text-text-secondary">Loading…</div>
+    );
+  }
+
 
   const toggleMove = (id: string) =>
     setExpandedMoves((prev) => ({ ...prev, [id]: !prev[id] }));
