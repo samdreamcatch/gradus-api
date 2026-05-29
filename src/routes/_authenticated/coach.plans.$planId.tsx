@@ -200,11 +200,12 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
 
   return (
     <>
-      <SheetHeader>
+      <SheetHeader className="sticky top-0 z-10 -mx-6 -mt-6 border-b border-divider bg-[var(--background)]/95 px-6 py-3 backdrop-blur supports-[backdrop-filter]:bg-[var(--background)]/80">
         <SheetTitle className="font-display text-2xl">
           {isTemplate ? "Template" : plan.status === "draft" ? "New plan" : "Plan"}
         </SheetTitle>
       </SheetHeader>
+
 
       <div className="mt-5 space-y-5">
         <MoveField
@@ -280,89 +281,107 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
             commit("notes", () => planUpdate.mutateAsync({ data: { id: plan.id, notes: v } }))
           }
         />
-
         {/* Moves */}
-        <div className="mb-2 mt-2 flex items-end justify-between">
-          <h2 className="font-display text-xl font-bold text-text-primary">Moves</h2>
-          <span className="text-xs font-bold text-text-tertiary">
+        <div className="mb-3 mt-2 flex items-end justify-between">
+          <h2 className="font-display text-xl font-bold text-text-primary">
+            <span className="pen-highlight">Moves</span>
+          </h2>
+          <span className="text-[11px] font-bold uppercase tracking-widest text-text-tertiary">
             {plan.moves.length} · {totalMinutes} min
           </span>
         </div>
 
-        <ul className="space-y-3">
+        <ul className="space-y-4">
           {plan.moves.map((m, idx) => (
-            <li key={m.id} className="rounded-lg border border-divider bg-card p-3">
-
-
+            <li
+              key={m.id}
+              className="relative rounded-lg border border-divider border-l-[3px] border-l-accent bg-card p-4"
+            >
               <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0 flex-1 space-y-3">
-                  <MoveField
-                    kind="text"
-                    label={`Move ${idx + 1}`}
-                    value={m.name}
-                    required
-                    saving={savingField === `m-name-${m.id}`}
-                    onCommit={(v) =>
-                      commit(`m-name-${m.id}`, () =>
-                        moveUpdate.mutateAsync({ data: { id: m.id, patch: { name: v } } }),
-                      )
-                    }
-                    displayClassName="text-base font-bold"
-                    inputClassName="text-base font-bold"
-                  />
-                  <PlanMoveTarget
-                    kind={m.targetKind}
-                    value={m.targetValue}
-                    saving={savingField === `m-target-${m.id}`}
-                    onCommit={(k, v) =>
-                      commit(`m-target-${m.id}`, () =>
-                        moveUpdate.mutateAsync({
-                          data: { id: m.id, patch: { targetKind: k, targetValue: v } },
-                        }),
-                      )
-                    }
-                  />
-                  <MoveField
-                    kind="textarea"
-                    label="Description"
-                    value={m.description}
-                    placeholder="How to perform the move"
-                    rows={3}
-                    saving={savingField === `m-desc-${m.id}`}
-                    onCommit={(v) =>
-                      commit(`m-desc-${m.id}`, () =>
-                        moveUpdate.mutateAsync({
-                          data: { id: m.id, patch: { description: v } },
-                        }),
-                      )
-                    }
-                  />
-                  <MoveField
-                    kind="textarea"
-                    label="Cue"
-                    value={m.cue}
-                    placeholder="One line the athlete can repeat"
-                    rows={2}
-                    saving={savingField === `m-cue-${m.id}`}
-                    onCommit={(v) =>
-                      commit(`m-cue-${m.id}`, () =>
-                        moveUpdate.mutateAsync({ data: { id: m.id, patch: { cue: v } } }),
-                      )
-                    }
-                  />
-                  <MoveField
-                    kind="textarea"
-                    label="Why this matters for this athlete"
-                    value={m.why}
-                    placeholder="Tailor it to this plan"
-                    rows={2}
-                    saving={savingField === `m-why-${m.id}`}
-                    onCommit={(v) =>
-                      commit(`m-why-${m.id}`, () =>
-                        moveUpdate.mutateAsync({ data: { id: m.id, patch: { why: v } } }),
-                      )
-                    }
-                  />
+                <div className="flex min-w-0 flex-1 items-start gap-3">
+                  <span className="select-none pt-1 font-hand text-3xl leading-none text-text-secondary">
+                    {idx + 1}
+                  </span>
+                  <div className="min-w-0 flex-1 divide-y divide-divider/60">
+                    <div className="pb-3">
+                      <MoveField
+                        kind="text"
+                        label={`Move ${idx + 1}`}
+                        hideLabel
+                        value={m.name}
+                        required
+                        saving={savingField === `m-name-${m.id}`}
+                        onCommit={(v) =>
+                          commit(`m-name-${m.id}`, () =>
+                            moveUpdate.mutateAsync({ data: { id: m.id, patch: { name: v } } }),
+                          )
+                        }
+                        displayClassName="font-display text-xl font-black leading-tight tracking-tight"
+                        inputClassName="font-display text-xl font-black leading-tight tracking-tight"
+                      />
+                    </div>
+                    <div className="py-3">
+                      <PlanMoveTarget
+                        kind={m.targetKind}
+                        value={m.targetValue}
+                        saving={savingField === `m-target-${m.id}`}
+                        onCommit={(k, v) =>
+                          commit(`m-target-${m.id}`, () =>
+                            moveUpdate.mutateAsync({
+                              data: { id: m.id, patch: { targetKind: k, targetValue: v } },
+                            }),
+                          )
+                        }
+                      />
+                    </div>
+                    <div className="py-3">
+                      <MoveField
+                        kind="textarea"
+                        label="Description"
+                        value={m.description}
+                        placeholder="How to perform the move"
+                        rows={3}
+                        saving={savingField === `m-desc-${m.id}`}
+                        onCommit={(v) =>
+                          commit(`m-desc-${m.id}`, () =>
+                            moveUpdate.mutateAsync({
+                              data: { id: m.id, patch: { description: v } },
+                            }),
+                          )
+                        }
+                      />
+                    </div>
+                    <div className="py-3">
+                      <MoveField
+                        kind="textarea"
+                        label="Cue"
+                        value={m.cue}
+                        placeholder="One line the athlete can repeat"
+                        rows={2}
+                        saving={savingField === `m-cue-${m.id}`}
+                        onCommit={(v) =>
+                          commit(`m-cue-${m.id}`, () =>
+                            moveUpdate.mutateAsync({ data: { id: m.id, patch: { cue: v } } }),
+                          )
+                        }
+                      />
+                    </div>
+                    <div className="pt-3">
+                      <MoveField
+                        kind="textarea"
+                        label="Why this matters for this athlete"
+                        value={m.why}
+                        placeholder="Tailor it to this plan"
+                        rows={2}
+                        saving={savingField === `m-why-${m.id}`}
+                        onCommit={(v) =>
+                          commit(`m-why-${m.id}`, () =>
+                            moveUpdate.mutateAsync({ data: { id: m.id, patch: { why: v } } }),
+                          )
+                        }
+                      />
+                    </div>
+                  </div>
                 </div>
                 <div className="flex flex-col items-center gap-1">
                   <button
@@ -396,6 +415,7 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
             </li>
           ))}
         </ul>
+
 
         <Button
           type="button"

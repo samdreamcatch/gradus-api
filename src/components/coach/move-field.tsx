@@ -13,7 +13,9 @@ interface BaseProps {
   displayClassName?: string;
   autoEdit?: boolean;
   required?: boolean;
+  hideLabel?: boolean;
 }
+
 
 interface TextFieldProps extends BaseProps {
   kind: "text";
@@ -43,7 +45,9 @@ export function MoveField(props: MoveFieldProps) {
     displayClassName,
     autoEdit,
     required,
+    hideLabel,
   } = props;
+
   const [editing, setEditing] = useState(!!autoEdit);
   const [draft, setDraft] = useState(value);
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | null>(null);
@@ -80,8 +84,7 @@ export function MoveField(props: MoveFieldProps) {
     setDraft(value);
     setEditing(false);
   };
-
-  const labelEl = (
+  const labelEl = hideLabel ? null : (
     <div className="flex items-center gap-2">
       <span className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
         {label}
@@ -91,6 +94,8 @@ export function MoveField(props: MoveFieldProps) {
       ) : null}
     </div>
   );
+
+
   if (!editing) {
     return (
       <div className={cn("group space-y-1.5", className)}>
