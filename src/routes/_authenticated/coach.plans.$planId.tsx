@@ -146,7 +146,7 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
   const plan = data.plan;
   const isTemplate = plan.kind === "template";
   const totalMinutes = plan.moves
-    .filter((m) => m.targetKind === "minutes")
+    .filter((m) => m.targetKind === "mins")
     .reduce((s, m) => s + m.targetValue, 0);
 
   const commit = async <K extends string>(field: K, fn: () => Promise<unknown>) => {

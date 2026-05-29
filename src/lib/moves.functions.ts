@@ -4,7 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
 
-export type TargetKind = "reps" | "minutes";
+export type TargetKind = "reps" | "mins";
 
 export interface MoveDTO {
   id: string;
@@ -96,7 +96,7 @@ const moveInput = z.object({
   description: z.string().max(2000).default(""),
   cue: z.string().max(1000).default(""),
   why: z.string().max(1000).default(""),
-  defaultTargetKind: z.enum(["reps", "minutes"]),
+  defaultTargetKind: z.enum(["reps", "mins"]),
   defaultTargetValue: z.number().min(0).max(10000),
 });
 
