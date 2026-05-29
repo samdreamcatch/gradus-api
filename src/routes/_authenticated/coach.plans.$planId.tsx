@@ -427,7 +427,19 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
                               }
                             />
                           </div>
+                          <div className="flex justify-end pt-3">
+                            <button
+                              type="button"
+                              onClick={() => moveRemove.mutate({ data: { id: m.id } })}
+                              className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-wide text-text-tertiary hover:text-destructive"
+                              aria-label="Delete move"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                              Delete move
+                            </button>
+                          </div>
                         </div>
+
                       ) : (
                         <button
                           type="button"
