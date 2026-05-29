@@ -224,7 +224,7 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
 
 
         {/* Assignment */}
-        <div className="rounded-lg border border-divider bg-[var(--cream)] p-3">
+        <div className="rounded-lg border border-divider bg-card p-3">
 
 
           <div className="flex items-center justify-between gap-3">
@@ -291,7 +291,7 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
 
         <ul className="space-y-3">
           {plan.moves.map((m, idx) => (
-            <li key={m.id} className="rounded-lg border border-divider bg-[var(--cream)] p-3">
+            <li key={m.id} className="rounded-lg border border-divider bg-card p-3">
 
 
               <div className="flex items-start justify-between gap-2">
