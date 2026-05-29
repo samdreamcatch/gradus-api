@@ -49,6 +49,7 @@ function PlansPage() {
   const [tab, setTab] = useState<Tab>("plans");
   const [planFilter, setPlanFilter] = useState<PlanFilter>("active");
   const [athleteId, setAthleteId] = useState<string>("");
+  const [sport, setSport] = useState<string>("");
   const [moveSelection, setMoveSelection] = useState<string | null>(null);
   const navigate = useNavigate();
 
@@ -75,6 +76,8 @@ function PlansPage() {
               onFilter={setPlanFilter}
               athleteId={athleteId}
               onAthlete={setAthleteId}
+              sport={sport}
+              onSport={setSport}
             />
           ) : (
             <LibrarySearchStrip />
@@ -83,11 +86,12 @@ function PlansPage() {
 
         <main className="flex-1 pt-2">
           {tab === "plans" ? (
-            <PlansList filter={planFilter} athleteId={athleteId} />
+            <PlansList filter={planFilter} athleteId={athleteId} sport={sport} />
           ) : (
             <LibraryView onSelectMove={(id) => setMoveSelection(id)} />
           )}
         </main>
+
 
         <button
           type="button"
