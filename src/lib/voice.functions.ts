@@ -459,26 +459,40 @@ async function buildDraft(ctx: ParseContext): Promise<VoicePlanDraft> {
     athleteFirstName,
   });
 
-  // Build moves, dropping empty.
+  // Build moves, dropping empty. For new moves, try to resolve to a library move
+  // so we can link via move_id and merge library defaults with voice notes.
   const moves = (slotted.moves ?? [])
     .filter((m) => m && (m.name?.trim() || m.matchExistingMoveId))
-    .map((m) => ({
-      matchExistingMoveId: m.matchExistingMoveId ?? undefined,
-      name: (m.name ?? "").trim(),
-      description: (m.description ?? "").trim(),
-      cue: (m.cue ?? "").trim(),
-      why: (m.why ?? "").trim(),
-      targetKind: (m.targetKind ?? "reps") as "reps" | "mins",
-      targetValue:
-        typeof m.targetValue === "number" && m.targetValue >= 0 ? m.targetValue : 10,
-      sources: {
-        name: m.nameQuote ?? undefined,
-        description: m.descriptionQuote ?? undefined,
-        cue: m.cueQuote ?? undefined,
-        why: m.whyQuote ?? undefined,
-        target: m.targetQuote ?? undefined,
-      },
-    }));
+    .map((m) => {
+      const targetFromVoice =
+        typeof m.targetValue === "number" || Boolean(m.targetQuote?.trim());
+      const lib = m.matchExistingMoveId
+        ? null
+        : resolveLibraryMove(m.name, ctx.library);
+
+      return {
+        matchExistingMoveId: m.matchExistingMoveId ?? undefined,
+        libraryMoveId: lib?.id,
+        // Prefer the library's canonical name when matched.
+        name: (lib?.name ?? m.name ?? "").trim(),
+        description: (m.description ?? "").trim(),
+        cue: (m.cue ?? "").trim(),
+        why: (m.why ?? "").trim(),
+        targetKind: (m.targetKind ?? lib?.defaultTargetKind ?? "reps") as "reps" | "mins",
+        targetValue:
+          typeof m.targetValue === "number" && m.targetValue >= 0
+            ? m.targetValue
+            : lib?.defaultTargetValue ?? 10,
+        targetFromVoice,
+        sources: {
+          name: m.nameQuote ?? undefined,
+          description: m.descriptionQuote ?? undefined,
+          cue: m.cueQuote ?? undefined,
+          why: m.whyQuote ?? undefined,
+          target: m.targetQuote ?? undefined,
+        },
+      };
+    });
 
   // Notes existed before? Only mark "notes" as touched if cleanup actually changed it.
   const notesChanged = cleanedNotes !== (ctx.currentPlan?.notes ?? "");
