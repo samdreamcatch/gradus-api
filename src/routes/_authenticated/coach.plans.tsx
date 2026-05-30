@@ -543,13 +543,18 @@ function LibrarySearchStrip({
   );
 }
 
-function LibraryView({ onSelectMove }: { onSelectMove: (id: string) => void }) {
+function LibraryView({
+  query,
+  onSelectMove,
+}: {
+  query: string;
+  onSelectMove: (id: string) => void;
+}) {
   const fetchMoves = useServerFn(listMoves);
   const { data, isLoading } = useQuery({
     queryKey: ["moves"],
     queryFn: () => fetchMoves(),
   });
-  const [query, setQuery] = useState("");
   const [sport, setSport] = useState<string>("");
 
   const moves = data?.moves ?? [];
