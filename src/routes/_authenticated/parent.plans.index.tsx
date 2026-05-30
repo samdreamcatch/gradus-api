@@ -10,7 +10,7 @@ import {
   type ParentPlanSummaryDTO,
 } from "@/lib/parent-plans.functions";
 
-export const Route = createFileRoute("/_authenticated/parent/plans")({
+export const Route = createFileRoute("/_authenticated/parent/plans/")({
   component: ParentPlansPage,
   errorComponent: ({ error }) => (
     <div className="mx-auto max-w-2xl px-4 py-12">
