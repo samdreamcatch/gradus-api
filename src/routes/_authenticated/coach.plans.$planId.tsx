@@ -12,6 +12,10 @@ import {
   Send,
   ArrowRight,
   ChevronDown,
+  BarChart3,
+  Sparkles,
+  TrendingUp,
+  MessageSquare,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
