@@ -43,6 +43,14 @@
   --color-secondary-accent: var(--secondary-accent);
   --color-secondary-accent-wash: var(--secondary-accent-wash);
   --color-secondary-accent-ink: var(--secondary-accent-ink);
+
+  /* Attention — reserved for LIVE / ACTION-REQUIRED affordances only.
+     Approved uses: active session timer, unread coach messages.
+     Never use as a general accent, button color, or decoration. */
+  --color-attention: var(--attention);
+  --color-attention-wash: var(--attention-wash);
+  --color-attention-ink: var(--attention-ink);
+  --color-attention-foreground: var(--attention-foreground);
 }
 
 :root {
@@ -76,6 +84,16 @@
   --secondary-accent: var(--pen-pool);
   --secondary-accent-wash: var(--pen-pool-wash);
   --secondary-accent-ink: var(--pen-pool-ink);
+
+  /* Pink pen — attention/live token */
+  --pen-pink: oklch(0.72 0.18 8);
+  --pen-pink-wash: oklch(0.97 0.025 8);
+  --pen-pink-ink: oklch(0.40 0.14 8);
+
+  --attention: var(--pen-pink);
+  --attention-wash: var(--pen-pink-wash);
+  --attention-ink: var(--pen-pink-ink);
+  --attention-foreground: oklch(0.99 0 0); /* near-white for contrast on pink fills */
 
   --cream: oklch(0.975 0.022 85);            /* warm parchment wash */
 
@@ -111,6 +129,16 @@
   --secondary-accent: var(--pen-pool);
   --secondary-accent-wash: var(--pen-pool-wash);
   --secondary-accent-ink: var(--pen-pool-ink);
+
+  /* Pink pen — attention/live token (dark) */
+  --pen-pink: oklch(0.78 0.17 8);
+  --pen-pink-wash: oklch(0.34 0.08 8 / 0.55);
+  --pen-pink-ink: oklch(0.94 0.05 8);
+
+  --attention: var(--pen-pink);
+  --attention-wash: var(--pen-pink-wash);
+  --attention-ink: var(--pen-pink-ink);
+  --attention-foreground: oklch(0.18 0.04 8); /* dark ink for contrast on bright pink in dark mode */
 
   --cream: oklch(0.32 0.015 85);             /* dim parchment for dark mode */
 }
