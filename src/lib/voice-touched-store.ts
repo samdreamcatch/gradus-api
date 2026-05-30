@@ -3,17 +3,20 @@
 // route that mounts immediately afterward. Lives only for ~1 navigation,
 // then is consumed.
 
+import type { VoiceSources } from "./voice.functions";
+
 export interface VoiceTouchedSnapshot {
   plan: { title?: boolean; athleteId?: boolean; notes?: boolean };
   moves: Record<string, string[]>;
   newMoveIds: string[];
+  transcript?: string;
+  sources?: VoiceSources;
 }
 
 const pending = new Map<string, VoiceTouchedSnapshot>();
 
 export function stashVoiceTouched(planId: string, snap: VoiceTouchedSnapshot) {
   pending.set(planId, snap);
-  // Auto-clear if not consumed within a reasonable window
   setTimeout(() => pending.delete(planId), 30_000);
 }
 
