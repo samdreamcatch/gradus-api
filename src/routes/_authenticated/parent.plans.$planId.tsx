@@ -84,7 +84,7 @@ function ParentPlanDetail() {
         </h1>
       </div>
 
-      <SessionTimer onSlide={() => soon("Slide mode")} />
+      <SessionTimer />
 
 
       <p className="mt-8 text-[11px] font-black uppercase tracking-widest text-text-secondary">
