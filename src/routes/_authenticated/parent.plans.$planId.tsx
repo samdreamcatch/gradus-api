@@ -252,18 +252,18 @@ function CoachNote({
   );
 }
 
-function SessionTimer() {
+function SessionTimer({
+  coachFirstName,
+  planTitle,
+}: {
+  coachFirstName: string;
+  planTitle: string;
+}) {
   const [running, setRunning] = useState(false);
   const [elapsed, setElapsed] = useState(0); // seconds
+  const [showFeedback, setShowFeedback] = useState(false);
   const startRef = useRef<number | null>(null);
   const baseRef = useRef(0);
-
-  // Slide-to-start gesture
-  const trackRef = useRef<HTMLDivElement | null>(null);
-  const knobRef = useRef<HTMLDivElement | null>(null);
-  const controls = useAnimationControls();
-  const [dragging, setDragging] = useState(false);
-  const [armed, setArmed] = useState(false); // crossed threshold this gesture
 
   useEffect(() => {
     if (!running) return;
@@ -279,30 +279,78 @@ function SessionTimer() {
     };
   }, [running]);
 
-  const reset = () => {
-    setRunning(false);
-    baseRef.current = 0;
-    setElapsed(0);
-  };
-
-  const getDragMax = () => {
-    const track = trackRef.current?.getBoundingClientRect().width ?? 0;
-    const knob = knobRef.current?.getBoundingClientRect().width ?? 0;
-    // leave 12px breathing room on the right
-    return Math.max(0, track - knob - 12);
-  };
-
   const mm = String(Math.floor(elapsed / 60)).padStart(2, "0");
   const ss = String(elapsed % 60).padStart(2, "0");
   const started = running || elapsed > 0;
 
+  const handleStart = () => setRunning(true);
+  const handleTogglePause = () => setRunning((r) => !r);
+  const handleEnd = () => {
+    setRunning(false);
+    setShowFeedback(true);
+  };
+  const handleDiscard = () => {
+    setRunning(false);
+    baseRef.current = 0;
+    setElapsed(0);
+  };
+  const closeFeedback = () => {
+    setShowFeedback(false);
+    // Closing without an explicit submit also resets so the parent can re-start fresh.
+    baseRef.current = 0;
+    setElapsed(0);
+  };
+
+  return (
+    <>
+      <div className="mt-6">
+        {started ? (
+          <RunningPill
+            mm={mm}
+            ss={ss}
+            running={running}
+            coachFirstName={coachFirstName}
+            onTogglePause={handleTogglePause}
+            onEnd={handleEnd}
+            onDiscard={handleDiscard}
+          />
+        ) : (
+          <IdleSlide onStart={handleStart} />
+        )}
+      </div>
+
+      <SessionFeedbackModal
+        open={showFeedback}
+        onOpenChange={(open) => (open ? setShowFeedback(true) : closeFeedback())}
+        elapsed={`${mm}:${ss}`}
+        planTitle={planTitle}
+        coachFirstName={coachFirstName}
+      />
+    </>
+  );
+}
+
+/** Idle state — slide right to start logging session time. */
+function IdleSlide({ onStart }: { onStart: () => void }) {
+  const trackRef = useRef<HTMLDivElement | null>(null);
+  const knobRef = useRef<HTMLDivElement | null>(null);
+  const controls = useAnimationControls();
+  const [dragging, setDragging] = useState(false);
+  const [armed, setArmed] = useState(false);
+
+  const getMax = () => {
+    const t = trackRef.current?.getBoundingClientRect().width ?? 0;
+    const k = knobRef.current?.getBoundingClientRect().width ?? 0;
+    return Math.max(0, t - k - 12);
+  };
+
   return (
     <div
       ref={trackRef}
-      className="relative mt-6 overflow-hidden rounded-full border border-accent/40 bg-accent/15 p-1.5"
+      className="relative overflow-hidden rounded-full border border-accent/40 bg-accent/15 p-1.5"
     >
       <span className="pointer-events-none absolute inset-y-0 right-5 flex items-center text-[11px] font-black uppercase tracking-widest text-accent-ink/60">
-        Slide {running ? "to pause" : started ? "to resume" : "to start"}
+        Slide to start
         <ArrowRight className="ml-1 size-3.5" />
       </span>
 
@@ -318,18 +366,16 @@ function SessionTimer() {
           setArmed(false);
         }}
         onDrag={(_, info) => {
-          const max = getDragMax();
-          if (!armed && info.offset.x >= max * 0.7) setArmed(true);
+          if (!armed && info.offset.x >= getMax() * 0.7) setArmed(true);
         }}
         onDragEnd={async (_, info) => {
           setDragging(false);
-          const max = getDragMax();
-          const triggered = info.offset.x >= max * 0.55;
+          const triggered = info.offset.x >= getMax() * 0.55;
           await controls.start({
             x: 0,
             transition: { type: "spring", stiffness: 520, damping: 22, mass: 0.7 },
           });
-          if (triggered) setRunning((r) => !r);
+          if (triggered) onStart();
           setArmed(false);
         }}
         style={{ touchAction: "pan-y" }}
@@ -339,38 +385,160 @@ function SessionTimer() {
           dragging && "shadow-card",
           armed && "ring-2 ring-accent-foreground/50",
         )}
-        aria-label={
-          started
-            ? running
-              ? "Slide to pause session timer"
-              : "Slide to resume session timer"
-            : "Slide to start session timer"
-        }
+        aria-label="Slide to start session timer"
       >
-        {started ? (
-          <>
-            {running ? <Pause className="size-4" /> : <Play className="size-4" />}
-            <span className="flex-1 tabular-nums">{mm}:{ss}</span>
-            <button
-              type="button"
-              onPointerDown={(e) => e.stopPropagation()}
-              onClick={(e) => {
-                e.stopPropagation();
-                reset();
-              }}
-              aria-label="Reset session timer"
-              className="-mr-2 inline-flex size-7 items-center justify-center rounded-full text-accent-foreground/80 hover:bg-accent-foreground/15"
-            >
-              <RotateCcw className="size-4" />
-            </button>
-          </>
-        ) : (
-          <>
-            <Play className="size-4" />
-            <span className="flex-1">Start session timer</span>
-          </>
-        )}
+        <Play className="size-4" />
+        <span className="flex-1">Start session timer</span>
       </motion.div>
     </div>
+  );
+}
+
+/** Running / paused state — pink attention pill with End-session slide. */
+function RunningPill({
+  mm,
+  ss,
+  running,
+  coachFirstName,
+  onTogglePause,
+  onEnd,
+  onDiscard,
+}: {
+  mm: string;
+  ss: string;
+  running: boolean;
+  coachFirstName: string;
+  onTogglePause: () => void;
+  onEnd: () => void;
+  onDiscard: () => void;
+}) {
+  const trackRef = useRef<HTMLDivElement | null>(null);
+  const knobRef = useRef<HTMLDivElement | null>(null);
+  const controls = useAnimationControls();
+  const [dragging, setDragging] = useState(false);
+  const [armed, setArmed] = useState(false);
+
+  const getMax = () => {
+    const t = trackRef.current?.getBoundingClientRect().width ?? 0;
+    const k = knobRef.current?.getBoundingClientRect().width ?? 0;
+    return Math.max(0, t - k - 12);
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between gap-3">
+        {/* Clock + pause/resume — tap only, no drag */}
+        <button
+          type="button"
+          onClick={onTogglePause}
+          aria-label={running ? "Pause session timer" : "Resume session timer"}
+          className="inline-flex h-10 items-center gap-2 rounded-full bg-attention/15 px-4 text-sm font-bold text-attention-ink ring-1 ring-attention/40"
+        >
+          {running ? (
+            <span className="relative inline-flex size-2">
+              <span className="absolute inset-0 animate-ping rounded-full bg-attention opacity-75" />
+              <span className="relative inline-flex size-2 rounded-full bg-attention" />
+            </span>
+          ) : (
+            <Pause className="size-3.5" />
+          )}
+          <span className="tabular-nums">
+            {running ? "" : "Paused · "}
+            {mm}:{ss}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={onDiscard}
+          aria-label="Discard session"
+          className="inline-flex size-8 shrink-0 items-center justify-center rounded-full text-text-tertiary hover:bg-divider hover:text-text-primary"
+        >
+          <X className="size-4" />
+        </button>
+      </div>
+
+      {/* End-session slide track — pink to signal action required */}
+      <div
+        ref={trackRef}
+        className="relative overflow-hidden rounded-full border border-attention/50 bg-attention/15 p-1.5"
+      >
+        <span className="pointer-events-none absolute inset-y-0 right-5 flex items-center text-[11px] font-black uppercase tracking-widest text-attention-ink/70">
+          Slide to end
+          <ArrowRight className="ml-1 size-3.5" />
+        </span>
+
+        <motion.div
+          ref={knobRef}
+          drag="x"
+          dragConstraints={{ left: 0, right: 0 }}
+          dragElastic={{ left: 0, right: 0.9 }}
+          dragMomentum={false}
+          animate={controls}
+          onDragStart={() => {
+            setDragging(true);
+            setArmed(false);
+          }}
+          onDrag={(_, info) => {
+            if (!armed && info.offset.x >= getMax() * 0.7) setArmed(true);
+          }}
+          onDragEnd={async (_, info) => {
+            setDragging(false);
+            const triggered = info.offset.x >= getMax() * 0.55;
+            await controls.start({
+              x: 0,
+              transition: { type: "spring", stiffness: 520, damping: 22, mass: 0.7 },
+            });
+            if (triggered) onEnd();
+            setArmed(false);
+          }}
+          style={{ touchAction: "pan-y" }}
+          className={cn(
+            "relative z-10 flex h-10 w-[72%] select-none items-center gap-2 rounded-full bg-attention px-5 text-sm font-bold text-white shadow-sm",
+            "cursor-grab active:cursor-grabbing",
+            dragging && "shadow-card",
+            armed && "ring-2 ring-white/60",
+          )}
+          aria-label={`End session and report back to ${coachFirstName}`}
+        >
+          <span className="flex-1 truncate">
+            End → report back to {coachFirstName}
+          </span>
+        </motion.div>
+      </div>
+    </div>
+  );
+}
+
+/** Feedback modal — intentionally blank shell; contents come later. */
+function SessionFeedbackModal({
+  open,
+  onOpenChange,
+  elapsed,
+  planTitle,
+  coachFirstName,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  elapsed: string;
+  planTitle: string;
+  coachFirstName: string;
+}) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <p className="text-[11px] font-black uppercase tracking-widest text-text-secondary">
+            Session complete · {elapsed}
+          </p>
+          <DialogTitle className="font-display text-2xl font-black leading-tight text-text-primary">
+            {planTitle}
+          </DialogTitle>
+          <DialogDescription>
+            Feedback for {coachFirstName} — coming soon.
+          </DialogDescription>
+        </DialogHeader>
+      </DialogContent>
+    </Dialog>
   );
 }
