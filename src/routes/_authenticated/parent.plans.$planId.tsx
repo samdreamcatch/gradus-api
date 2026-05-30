@@ -2,7 +2,7 @@ import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, ArrowRight, ChevronDown, MessageCircle, Settings } from "lucide-react";
+import { ArrowLeft, ArrowRight, ChevronDown, MessageCircle, Settings, X } from "lucide-react";
 import { toast } from "sonner";
 import { ParentBottomNav } from "@/components/parent/bottom-nav";
 import { cn } from "@/lib/utils";
