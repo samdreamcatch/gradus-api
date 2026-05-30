@@ -85,15 +85,16 @@
   --secondary-accent-wash: var(--pen-pool-wash);
   --secondary-accent-ink: var(--pen-pool-ink);
 
-  /* Pink pen — attention/live token */
-  --pen-pink: oklch(0.72 0.18 8);
-  --pen-pink-wash: oklch(0.97 0.025 8);
-  --pen-pink-ink: oklch(0.40 0.14 8);
+  /* Orange pen — attention/live token */
+  --pen-orange: oklch(0.78 0.16 55);
+  --pen-orange-wash: oklch(0.97 0.03 55);
+  --pen-orange-ink: oklch(0.42 0.13 55);
 
-  --attention: var(--pen-pink);
-  --attention-wash: var(--pen-pink-wash);
-  --attention-ink: var(--pen-pink-ink);
-  --attention-foreground: oklch(0.99 0 0); /* near-white for contrast on pink fills */
+  --attention: var(--pen-orange);
+  --attention-wash: var(--pen-orange-wash);
+  --attention-ink: var(--pen-orange-ink);
+  --attention-foreground: oklch(0.22 0.06 55); /* dark ink for contrast on bright orange */
+
 
   --cream: oklch(0.975 0.022 85);            /* warm parchment wash */
 
@@ -130,15 +131,16 @@
   --secondary-accent-wash: var(--pen-pool-wash);
   --secondary-accent-ink: var(--pen-pool-ink);
 
-  /* Pink pen — attention/live token (dark) */
-  --pen-pink: oklch(0.78 0.17 8);
-  --pen-pink-wash: oklch(0.34 0.08 8 / 0.55);
-  --pen-pink-ink: oklch(0.94 0.05 8);
+  /* Orange pen — attention/live token (dark) */
+  --pen-orange: oklch(0.82 0.16 55);
+  --pen-orange-wash: oklch(0.34 0.08 55 / 0.55);
+  --pen-orange-ink: oklch(0.94 0.06 55);
 
-  --attention: var(--pen-pink);
-  --attention-wash: var(--pen-pink-wash);
-  --attention-ink: var(--pen-pink-ink);
-  --attention-foreground: oklch(0.18 0.04 8); /* dark ink for contrast on bright pink in dark mode */
+  --attention: var(--pen-orange);
+  --attention-wash: var(--pen-orange-wash);
+  --attention-ink: var(--pen-orange-ink);
+  --attention-foreground: oklch(0.20 0.05 55); /* dark ink for contrast on bright orange in dark mode */
+
 
   --cream: oklch(0.32 0.015 85);             /* dim parchment for dark mode */
 }
