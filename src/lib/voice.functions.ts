@@ -288,6 +288,70 @@ function resolveAthlete(
   return { id: null, unresolved: spoken.trim() };
 }
 
+/** Stop-words ignored when fuzzy-matching move names. */
+const MOVE_STOPWORDS = new Set([
+  "the", "a", "an", "and", "or", "to", "of", "for", "with", "drill", "drills", "practice",
+]);
+
+function moveTokens(s: string): string[] {
+  return normalize(s)
+    .split(" ")
+    .filter((w) => w && !MOVE_STOPWORDS.has(w));
+}
+
+/**
+ * Resolve a spoken move name against the coach's library.
+ * Returns the best library match if confidence is high enough, else null.
+ */
+function resolveLibraryMove(
+  spoken: string | null | undefined,
+  library: LibraryMove[],
+): LibraryMove | null {
+  if (!spoken || !spoken.trim() || library.length === 0) return null;
+  const q = normalize(spoken);
+  if (!q) return null;
+
+  // Exact name match
+  for (const m of library) {
+    if (normalize(m.name) === q) return m;
+  }
+  // Containment either direction (e.g. "two-foot glide" ⊂ "two-foot glide forward")
+  for (const m of library) {
+    const n = normalize(m.name);
+    if (n === q) return m;
+    if (n.includes(q) || q.includes(n)) return m;
+  }
+  // Token-overlap with Jaccard similarity ≥ 0.6 on content words
+  const qTokens = new Set(moveTokens(spoken));
+  if (qTokens.size === 0) return null;
+  let best: { move: LibraryMove; score: number } | null = null;
+  for (const m of library) {
+    const nTokens = new Set(moveTokens(m.name));
+    if (nTokens.size === 0) continue;
+    let overlap = 0;
+    for (const t of qTokens) if (nTokens.has(t)) overlap++;
+    const union = qTokens.size + nTokens.size - overlap;
+    const score = union === 0 ? 0 : overlap / union;
+    if (score >= 0.6 && (!best || score > best.score)) {
+      best = { move: m, score };
+    }
+  }
+  return best?.move ?? null;
+}
+
+/** Append voice content to a library default without overwriting. */
+function mergeAppend(libraryValue: string, voiceValue: string): string {
+  const lib = (libraryValue ?? "").trim();
+  const voice = (voiceValue ?? "").trim();
+  if (!voice) return lib;
+  if (!lib) return voice;
+  // Skip append if voice is already substantively contained in library text.
+  if (lib.toLowerCase().includes(voice.toLowerCase())) return lib;
+  // Ensure terminal punctuation on library segment.
+  const libClean = /[.!?]$/.test(lib) ? lib : `${lib}.`;
+  return `${libClean} ${voice}`;
+}
+
 /* ---------------- Quote location ---------------- */
 
 function locateQuote(transcript: string, quote: string | null | undefined): FieldSource | null {
