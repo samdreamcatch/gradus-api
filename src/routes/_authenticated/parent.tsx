@@ -59,7 +59,6 @@ function ParentHome() {
   const origin = typeof window !== "undefined" ? window.location.origin : "";
 
   return (
-    <>
     <div className="mx-auto max-w-2xl px-4 py-12 pb-32">
       <div className="flex items-center justify-between">
         <Logo className="text-4xl" />
@@ -93,9 +92,8 @@ function ParentHome() {
           ))}
         </div>
       </section>
+      <ParentBottomNav />
     </div>
-    <ParentBottomNav />
-    </>
   );
 }
 
