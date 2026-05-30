@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import type { Database } from "@/integrations/supabase/types";
 import { dbError } from "./db-error";
 
@@ -113,7 +114,7 @@ export const listParentPlans = createServerFn({ method: "GET" })
         .from("plan_moves")
         .select("plan_id, target_kind, target_value")
         .in("plan_id", planIds),
-      supabase
+      supabaseAdmin
         .from("coach_profiles")
         .select("id, first_name, last_name")
         .in("id", coachIds),
@@ -187,7 +188,7 @@ export const getParentPlan = createServerFn({ method: "POST" })
         .select("first_name")
         .eq("id", plan.athlete_id)
         .maybeSingle(),
-      supabase
+      supabaseAdmin
         .from("coach_profiles")
         .select("first_name, last_name")
         .eq("id", plan.coach_id)
