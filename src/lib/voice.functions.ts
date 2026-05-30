@@ -132,11 +132,22 @@ const slotSchema = z.object({
     ),
 });
 
+interface LibraryMove {
+  id: string;
+  name: string;
+  category: string;
+  description: string;
+  cue: string;
+  why: string;
+  defaultTargetKind: "reps" | "mins";
+  defaultTargetValue: number;
+}
+
 interface ParseContext {
   mode: "create" | "edit";
   transcript: string;
   athletes: { id: string; name: string }[];
-  library: { id: string; name: string; category: string }[];
+  library: LibraryMove[];
   currentPlan?: {
     title: string;
     athleteId: string | null;
