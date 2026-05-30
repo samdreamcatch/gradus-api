@@ -364,25 +364,27 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
                 inputClassName="font-display text-2xl font-black leading-tight tracking-tight"
               />
             </div>
-            <VoiceFab
-              mode="edit"
-              planId={plan.id}
-              variant="inline"
-              className="mt-1 shrink-0"
-              onVoiceApplied={(r) =>
-                setTouched((prev) => ({
-                  plan: { ...prev.plan, ...r.touched.plan },
-                  moves: { ...prev.moves, ...r.touched.moves },
-                  newMoveIds: [...prev.newMoveIds, ...r.touched.newMoveIds],
-                  transcript: r.touched.transcript ?? prev.transcript,
-                  sources: {
-                    plan: { ...(prev.sources?.plan ?? {}), ...(r.touched.sources?.plan ?? {}) },
-                    moves: { ...(prev.sources?.moves ?? {}), ...(r.touched.sources?.moves ?? {}) },
-                  },
-                }))
-              }
+            {from === "plus" ? null : (
+              <VoiceFab
+                mode="edit"
+                planId={plan.id}
+                variant="inline"
+                className="mt-1 shrink-0"
+                onVoiceApplied={(r) =>
+                  setTouched((prev) => ({
+                    plan: { ...prev.plan, ...r.touched.plan },
+                    moves: { ...prev.moves, ...r.touched.moves },
+                    newMoveIds: [...prev.newMoveIds, ...r.touched.newMoveIds],
+                    transcript: r.touched.transcript ?? prev.transcript,
+                    sources: {
+                      plan: { ...(prev.sources?.plan ?? {}), ...(r.touched.sources?.plan ?? {}) },
+                      moves: { ...(prev.sources?.moves ?? {}), ...(r.touched.sources?.moves ?? {}) },
+                    },
+                  }))
+                }
+              />
+            )}
 
-            />
           </div>
         </SheetTitle>
       </SheetHeader>
