@@ -488,9 +488,9 @@ function PlanRow({ plan }: { plan: PlanSummaryDTO }) {
           </>
         ) : null}
       </div>
-      <div className="flex items-center gap-4 text-xs font-bold text-secondary-accent-ink">
+      <div className="flex items-center gap-4 text-xs font-medium text-text-secondary">
         <span className="flex items-center gap-1">
-          <ListChecks className="h-3 w-3 text-secondary-accent-ink/70" />
+          <ListChecks className="h-3 w-3 text-text-tertiary" />
           {plan.moveCount} {plan.moveCount === 1 ? "move" : "moves"}
         </span>
       </div>
