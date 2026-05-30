@@ -52,10 +52,13 @@ export function MoveField(props: MoveFieldProps) {
     required,
     hideLabel,
     highlighted,
+    sourceQuote,
   } = props;
 
   const [editing, setEditing] = useState(!!autoEdit);
+  const [showSource, setShowSource] = useState(false);
   const [draft, setDraft] = useState(value);
+
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | null>(null);
 
   useEffect(() => {
