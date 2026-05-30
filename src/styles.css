@@ -128,6 +128,15 @@
   --secondary-accent-wash: var(--pen-pool-wash);
   --secondary-accent-ink: var(--pen-pool-ink);
 
+  /* Pink pen — attention/live token (dark) */
+  --pen-pink: oklch(0.78 0.17 8);
+  --pen-pink-wash: oklch(0.34 0.08 8 / 0.55);
+  --pen-pink-ink: oklch(0.94 0.05 8);
+
+  --attention: var(--pen-pink);
+  --attention-wash: var(--pen-pink-wash);
+  --attention-ink: var(--pen-pink-ink);
+
   --cream: oklch(0.32 0.015 85);             /* dim parchment for dark mode */
 }
 
