@@ -150,6 +150,13 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
     if (touched.newMoveIds.includes(moveId)) return true;
     return touched.moves[moveId]?.includes(field) ?? false;
   };
+  const planSource = (key: "title" | "athleteId" | "notes") =>
+    touched.sources?.plan?.[key]?.quote;
+  const moveSource = (
+    moveId: string,
+    field: "name" | "description" | "cue" | "why" | "target",
+  ) => touched.sources?.moves?.[moveId]?.[field]?.quote;
+
 
   const clearAllTouched = () =>
     setTouched({ plan: {}, moves: {}, newMoveIds: [] });
@@ -340,6 +347,8 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
                 autoEdit={isNewFlow && !plan.title}
                 saving={savingField === "title"}
                 highlighted={!!touched.plan.title}
+                sourceQuote={planSource("title")}
+
                 onCommit={(v) => {
                   clearPlanTouch("title");
                   return commit("title", () =>
@@ -360,8 +369,14 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
                   plan: { ...prev.plan, ...r.touched.plan },
                   moves: { ...prev.moves, ...r.touched.moves },
                   newMoveIds: [...prev.newMoveIds, ...r.touched.newMoveIds],
+                  transcript: r.touched.transcript ?? prev.transcript,
+                  sources: {
+                    plan: { ...(prev.sources?.plan ?? {}), ...(r.touched.sources?.plan ?? {}) },
+                    moves: { ...(prev.sources?.moves ?? {}), ...(r.touched.sources?.moves ?? {}) },
+                  },
                 }))
               }
+
             />
           </div>
         </SheetTitle>
@@ -414,6 +429,8 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
                   placeholder="Choose an athlete"
                   saving={savingField === "athleteId"}
                   highlighted={!!touched.plan.athleteId}
+                  sourceQuote={planSource("athleteId")}
+
                   onCommit={(v) => {
                     const match = athletes.find((a) => a.name === v);
                     clearPlanTouch("athleteId");
@@ -583,6 +600,8 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
                                 required
                                 saving={savingField === `m-name-${m.id}`}
                                 highlighted={isMoveFieldTouched(m.id, "name")}
+                                sourceQuote={moveSource(m.id, "name")}
+
                                 onCommit={(v) => {
                                   clearMoveTouch(m.id, "name");
                                   return commit(`m-name-${m.id}`, () =>
@@ -634,6 +653,8 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
                               rows={3}
                               saving={savingField === `m-desc-${m.id}`}
                               highlighted={isMoveFieldTouched(m.id, "description")}
+                              sourceQuote={moveSource(m.id, "description")}
+
                               onCommit={(v) => {
                                 clearMoveTouch(m.id, "description");
                                 return commit(`m-desc-${m.id}`, () =>
@@ -653,6 +674,8 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
                               rows={2}
                               saving={savingField === `m-cue-${m.id}`}
                               highlighted={isMoveFieldTouched(m.id, "cue")}
+                              sourceQuote={moveSource(m.id, "cue")}
+
                               onCommit={(v) => {
                                 clearMoveTouch(m.id, "cue");
                                 return commit(`m-cue-${m.id}`, () =>
@@ -670,6 +693,8 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
                               rows={2}
                               saving={savingField === `m-why-${m.id}`}
                               highlighted={isMoveFieldTouched(m.id, "why")}
+                              sourceQuote={moveSource(m.id, "why")}
+
                               onCommit={(v) => {
                                 clearMoveTouch(m.id, "why");
                                 return commit(`m-why-${m.id}`, () =>
@@ -761,6 +786,8 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
             rows={3}
             saving={savingField === "notes"}
             highlighted={!!touched.plan.notes}
+            sourceQuote={planSource("notes")}
+
             onCommit={(v) => {
               clearPlanTouch("notes");
               return commit("notes", () =>
