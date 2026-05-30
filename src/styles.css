@@ -50,6 +50,7 @@
   --color-attention: var(--attention);
   --color-attention-wash: var(--attention-wash);
   --color-attention-ink: var(--attention-ink);
+  --color-attention-foreground: var(--attention-foreground);
 }
 
 :root {
