@@ -46,21 +46,20 @@ export const getAthleteInviteSummary = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const ip = clientIp();
 
-    // Count recent attempts from this IP.
-    const since = new Date(Date.now() - RATE_WINDOW_SECONDS * 1000).toISOString();
-    const recent = await supabaseAdmin
-      .from("invite_lookup_attempts")
-      .select("id", { count: "exact", head: true })
-      .eq("ip", ip)
-      .gte("attempted_at", since);
-    if ((recent.count ?? 0) >= RATE_MAX_PER_WINDOW) {
+    // Atomic check-and-insert via a SECURITY DEFINER function that holds a
+    // transaction-scoped advisory lock keyed by IP. This serializes
+    // concurrent requests from the same IP and closes the TOCTOU window
+    // that a parallel check-then-insert pattern would leave open.
+    const limit = await supabaseAdmin.rpc("record_invite_lookup_attempt", {
+      _ip: ip,
+      _code: data.code,
+      _max_per_window: RATE_MAX_PER_WINDOW,
+      _window_seconds: RATE_WINDOW_SECONDS,
+    });
+    if (limit.error) dbError(limit.error);
+    if ((limit.data ?? 0) > RATE_MAX_PER_WINDOW) {
       throw new Error("Too many attempts. Please wait a minute and try again.");
     }
-
-    // Log this attempt (fire-and-forget on failure — never block the user).
-    await supabaseAdmin
-      .from("invite_lookup_attempts")
-      .insert({ ip, code: data.code, found: false });
 
     const codeRow = await supabaseAdmin
       .from("athlete_invite_codes")
