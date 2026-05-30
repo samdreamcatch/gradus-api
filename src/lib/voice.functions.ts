@@ -707,24 +707,65 @@ async function applyDraft(
       touched.moves[pm.id] = fieldsTouched;
       appliedMoveCount++;
     } else {
+      // For library-matched moves, fetch the canonical defaults and append voice content.
+      let libRow: {
+        description: string;
+        cue: string;
+        why: string;
+        default_target_kind: "reps" | "mins";
+        default_target_value: number;
+      } | null = null;
+      if (m.libraryMoveId) {
+        const { data: lib } = await supabase
+          .from("moves")
+          .select("description, cue, why, default_target_kind, default_target_value")
+          .eq("id", m.libraryMoveId)
+          .eq("coach_id", coachId)
+          .maybeSingle();
+        if (lib) {
+          libRow = {
+            description: (lib.description as string) ?? "",
+            cue: (lib.cue as string) ?? "",
+            why: (lib.why as string) ?? "",
+            default_target_kind: (lib.default_target_kind as "reps" | "mins") ?? "reps",
+            default_target_value: Number(lib.default_target_value ?? 10),
+          };
+        }
+      }
+
+      const finalDescription = libRow
+        ? mergeAppend(libRow.description, m.description)
+        : m.description;
+      const finalCue = libRow ? mergeAppend(libRow.cue, m.cue) : m.cue;
+      const finalWhy = libRow ? mergeAppend(libRow.why, m.why) : m.why;
+      const finalTargetKind = libRow && !m.targetFromVoice ? libRow.default_target_kind : m.targetKind;
+      const finalTargetValue =
+        libRow && !m.targetFromVoice ? libRow.default_target_value : m.targetValue;
+
       const { data: ins, error } = await supabase
         .from("plan_moves")
         .insert({
           plan_id: workingPlanId,
-          move_id: null,
+          move_id: m.libraryMoveId ?? null,
           position: nextPos++,
           name: m.name,
-          description: m.description,
-          cue: m.cue,
-          why: m.why,
-          target_kind: m.targetKind,
-          target_value: m.targetValue,
+          description: finalDescription,
+          cue: finalCue,
+          why: finalWhy,
+          target_kind: finalTargetKind,
+          target_value: finalTargetValue,
         })
         .select("id")
         .single();
       if (error) dbError(error);
       touched.newMoveIds.push(ins.id);
-      touched.moves[ins.id] = ["name", "description", "cue", "why", "target"];
+      // Only flag voice-touched fields as highlighted — library defaults shouldn't glow.
+      const touchedFields: string[] = ["name"];
+      if (m.description) touchedFields.push("description");
+      if (m.cue) touchedFields.push("cue");
+      if (m.why) touchedFields.push("why");
+      if (m.targetFromVoice || !libRow) touchedFields.push("target");
+      touched.moves[ins.id] = touchedFields;
       setMoveSource(ins.id, "name", m.sources?.name);
       setMoveSource(ins.id, "description", m.sources?.description);
       setMoveSource(ins.id, "cue", m.sources?.cue);
