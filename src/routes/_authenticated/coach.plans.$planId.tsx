@@ -347,6 +347,8 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
                 autoEdit={isNewFlow && !plan.title}
                 saving={savingField === "title"}
                 highlighted={!!touched.plan.title}
+                sourceQuote={planSource("title")}
+
                 onCommit={(v) => {
                   clearPlanTouch("title");
                   return commit("title", () =>
