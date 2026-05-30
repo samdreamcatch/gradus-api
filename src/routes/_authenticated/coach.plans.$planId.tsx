@@ -786,6 +786,8 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
             rows={3}
             saving={savingField === "notes"}
             highlighted={!!touched.plan.notes}
+            sourceQuote={planSource("notes")}
+
             onCommit={(v) => {
               clearPlanTouch("notes");
               return commit("notes", () =>
