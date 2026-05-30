@@ -13,7 +13,7 @@ import {
   getParentSignupStatus,
 } from "@/lib/parent-signup.functions";
 
-export const Route = createFileRoute("/_authenticated/parent")({
+export const Route = createFileRoute("/_authenticated/parent/")({
   component: ParentHome,
 });
 
