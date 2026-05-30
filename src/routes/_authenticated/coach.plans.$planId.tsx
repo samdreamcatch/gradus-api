@@ -744,15 +744,36 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
           ) : null}
           <AlertDialogFooter className="flex-col gap-2 sm:flex-col sm:space-x-0">
             {activeConflicts && activeConflicts.length >= MAX_ACTIVE_PLANS_PER_ATHLETE ? (
-              <AlertDialogAction
-                disabled={!chosenReplaceId}
-                onClick={() => {
-                  if (!chosenReplaceId) return;
-                  performActivate(chosenReplaceId);
-                }}
-              >
-                Bench & activate
-              </AlertDialogAction>
+              <>
+                <AlertDialogAction
+                  disabled={!chosenReplaceId}
+                  onClick={() => {
+                    if (!chosenReplaceId) return;
+                    performActivate(chosenReplaceId);
+                  }}
+                >
+                  Bench & activate
+                </AlertDialogAction>
+                <AlertDialogAction
+                  className="bg-card text-text-primary border border-divider hover:bg-elevated"
+                  onClick={() => {
+                    statusMutation.mutate(
+                      { data: { id: plan.id, status: "draft" } },
+                      {
+                        onSuccess: () => {
+                          toast.success("Saved as draft");
+                          setActiveConflicts(null);
+                          setChosenReplaceId(null);
+                          onClose();
+                        },
+                        onError: (e: Error) => toast.error(e.message),
+                      },
+                    );
+                  }}
+                >
+                  Save as draft
+                </AlertDialogAction>
+              </>
             ) : (
               <>
                 <AlertDialogAction
