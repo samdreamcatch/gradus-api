@@ -6,6 +6,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { Copy, Check } from "lucide-react";
 import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
+import { ParentBottomNav } from "@/components/parent/bottom-nav";
 import { supabase } from "@/integrations/supabase/client";
 import {
   listAthletesWithInviteCodes,
@@ -58,7 +59,8 @@ function ParentHome() {
   const origin = typeof window !== "undefined" ? window.location.origin : "";
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-12">
+    <>
+    <div className="mx-auto max-w-2xl px-4 py-12 pb-32">
       <div className="flex items-center justify-between">
         <Logo className="text-4xl" />
         <Button variant="outline" size="sm" onClick={handleSignOut}>
@@ -92,6 +94,8 @@ function ParentHome() {
         </div>
       </section>
     </div>
+    <ParentBottomNav />
+    </>
   );
 }
 
