@@ -4,6 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
 import { SPORT_KEYS } from "./coach-sports";
+import { dbError } from "./db-error";
 
 export interface CoachProfileDTO {
   id: string;
@@ -92,7 +93,7 @@ export const saveCoachProfile = createServerFn({ method: "POST" })
       .from("coach_profiles")
       .update({ first_name: data.firstName, last_name: data.lastName })
       .eq("id", profile.id);
-    if (error) throw new Error(error.message);
+    if (error) dbError(error);
     return { ok: true };
   });
 
@@ -146,6 +147,6 @@ export const completeOnboarding = createServerFn({ method: "POST" })
       .from("coach_profiles")
       .update({ onboarded_at: new Date().toISOString() })
       .eq("id", profile.id);
-    if (error) throw new Error(error.message);
+    if (error) dbError(error);
     return { ok: true };
   });

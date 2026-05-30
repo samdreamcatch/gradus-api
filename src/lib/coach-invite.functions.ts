@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
+import { dbError } from "./db-error";
 
 type Client = SupabaseClient<Database>;
 
@@ -50,7 +51,7 @@ async function insertUniqueCode(
     if (!error) return code;
     // 23505 = unique_violation — collision on either coach_id or code.
     // If it's the coach_id, fall through; the caller re-reads.
-    if (error.code !== "23505") throw new Error(error.message);
+    if (error.code !== "23505") dbError(error);
     const existing = await supabase
       .from("coach_invite_codes")
       .select("code")
@@ -73,7 +74,7 @@ async function updateUniqueCode(
       .update({ code })
       .eq("coach_id", coachId);
     if (!error) return code;
-    if (error.code !== "23505") throw new Error(error.message);
+    if (error.code !== "23505") dbError(error);
     // code collision — retry
   }
   throw new Error("Could not generate a unique invite code");
