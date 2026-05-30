@@ -57,7 +57,7 @@ export const getAthleteInviteSummary = createServerFn({ method: "POST" })
       _window_seconds: RATE_WINDOW_SECONDS,
     });
     if (limit.error) dbError(limit.error);
-    if ((limit.data ?? 0) > RATE_MAX_PER_WINDOW) {
+    if (limit.data === -1) {
       throw new Error("Too many attempts. Please wait a minute and try again.");
     }
 
