@@ -425,43 +425,21 @@ function RunningPill({
   };
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between gap-3">
-        {/* Clock + pause/resume — tap only, no drag */}
-        <button
-          type="button"
-          onClick={onTogglePause}
-          aria-label={running ? "Pause session timer" : "Resume session timer"}
-          className="inline-flex h-10 items-center gap-2 rounded-full bg-attention/15 px-4 text-sm font-bold text-attention-ink ring-1 ring-attention/40"
-        >
-          {running ? (
-            <span className="relative inline-flex size-2">
-              <span className="absolute inset-0 animate-ping rounded-full bg-attention opacity-75" />
-              <span className="relative inline-flex size-2 rounded-full bg-attention" />
-            </span>
-          ) : (
-            <Pause className="size-3.5" />
-          )}
-          <span className="tabular-nums">
-            {running ? "" : "Paused · "}
-            {mm}:{ss}
-          </span>
-        </button>
-
-        <button
-          type="button"
-          onClick={onDiscard}
-          aria-label="Discard session"
-          className="inline-flex size-8 shrink-0 items-center justify-center rounded-full text-text-tertiary hover:bg-divider hover:text-text-primary"
-        >
-          <X className="size-4" />
-        </button>
-      </div>
+    <div className="flex items-center gap-2">
+      {/* Pause / resume — tap only, no drag */}
+      <button
+        type="button"
+        onClick={onTogglePause}
+        aria-label={running ? "Pause session timer" : "Resume session timer"}
+        className="inline-flex size-11 shrink-0 items-center justify-center rounded-full bg-attention/15 text-attention-ink ring-1 ring-attention/40"
+      >
+        {running ? <Pause className="size-4" /> : <Play className="size-4" />}
+      </button>
 
       {/* End-session slide track — pink to signal action required */}
       <div
         ref={trackRef}
-        className="relative overflow-hidden rounded-full border border-attention/50 bg-attention/15 p-1.5"
+        className="relative flex-1 overflow-hidden rounded-full border border-attention/50 bg-attention/15 p-1.5"
       >
         <span className="pointer-events-none absolute inset-y-0 right-5 flex items-center text-[11px] font-black uppercase tracking-widest text-attention-ink/70">
           Slide to end
@@ -494,21 +472,40 @@ function RunningPill({
           }}
           style={{ touchAction: "pan-y" }}
           className={cn(
-            "relative z-10 flex h-10 w-[72%] select-none items-center gap-2 rounded-full bg-attention px-5 text-sm font-bold text-attention-foreground shadow-sm",
+            "relative z-10 flex h-10 w-[72%] select-none items-center gap-2 rounded-full bg-attention px-4 text-sm font-bold text-attention-foreground shadow-sm",
             "cursor-grab active:cursor-grabbing",
             dragging && "shadow-card",
             armed && "ring-2 ring-attention-foreground/60",
           )}
           aria-label={`End session and report back to ${coachFirstName}`}
         >
-          <span className="flex-1 truncate">
-            End → report back to {coachFirstName}
+          {running ? (
+            <span className="relative inline-flex size-2">
+              <span className="absolute inset-0 animate-ping rounded-full bg-attention-foreground opacity-60" />
+              <span className="relative inline-flex size-2 rounded-full bg-attention-foreground" />
+            </span>
+          ) : null}
+          <span className="tabular-nums">
+            {running ? "" : "Paused · "}
+            {mm}:{ss}
           </span>
+          <span className="mx-1 h-4 w-px bg-attention-foreground/30" />
+          <span className="flex-1 truncate">End → report back</span>
         </motion.div>
       </div>
+
+      <button
+        type="button"
+        onClick={onDiscard}
+        aria-label="Discard session"
+        className="inline-flex size-8 shrink-0 items-center justify-center rounded-full text-text-tertiary hover:bg-divider hover:text-text-primary"
+      >
+        <X className="size-4" />
+      </button>
     </div>
   );
 }
+
 
 /** Feedback modal — intentionally blank shell; contents come later. */
 function SessionFeedbackModal({
