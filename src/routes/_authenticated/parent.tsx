@@ -94,6 +94,8 @@ function ParentHome() {
         </div>
       </section>
     </div>
+    <ParentBottomNav />
+    </>
   );
 }
 
