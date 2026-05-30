@@ -175,34 +175,47 @@ export function VoiceFab({
     <>
       {button}
       {showOverlay ? (
-        <div className="fixed inset-x-0 bottom-0 z-40 pointer-events-none">
-          <div className="mx-auto mb-4 max-w-sm rounded-2xl border border-divider bg-card/95 px-4 py-3 shadow-page backdrop-blur pointer-events-auto">
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-background/60 backdrop-blur-sm sm:items-center">
+          <div
+            role="dialog"
+            aria-live="polite"
+            className="relative mx-4 mb-24 w-full max-w-md rounded-3xl border border-divider bg-card px-6 py-6 shadow-page sm:mb-0"
+          >
             <div className="flex items-center gap-3">
               <div
                 className={cn(
-                  "flex h-9 w-9 shrink-0 items-center justify-center rounded-full",
-                  state === "processing" ? "bg-elevated" : "bg-accent text-accent-foreground",
+                  "flex h-12 w-12 shrink-0 items-center justify-center rounded-full",
+                  state === "processing"
+                    ? "bg-elevated"
+                    : "bg-accent text-accent-foreground",
                 )}
+                style={
+                  state === "recording"
+                    ? {
+                        boxShadow: `0 0 0 ${Math.round(level * 14)}px color-mix(in oklab, var(--accent) 25%, transparent)`,
+                      }
+                    : undefined
+                }
               >
                 {state === "processing" ? (
-                  <Loader2 className="h-4 w-4 animate-spin text-text-secondary" />
+                  <Loader2 className="h-5 w-5 animate-spin text-text-secondary" />
                 ) : (
-                  <Mic className="h-4 w-4" />
+                  <Mic className="h-5 w-5" />
                 )}
               </div>
               <div className="min-w-0 flex-1">
-                <div className="font-hand text-lg leading-none text-text-primary">
+                <div className="font-hand text-2xl leading-none text-text-primary">
                   {state === "recording" ? "Listening…" : "Organizing your plan…"}
                 </div>
                 {state === "recording" ? (
-                  <div className="mt-1 flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-text-tertiary">
+                  <div className="mt-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-text-tertiary">
                     <Waveform level={level} />
                     <span className="font-mono normal-case tracking-normal text-text-secondary">
                       {formatElapsed(elapsedMs)}
                     </span>
                   </div>
                 ) : (
-                  <div className="mt-1 text-[11px] font-medium text-text-tertiary">
+                  <div className="mt-2 text-[11px] font-bold uppercase tracking-widest text-text-tertiary">
                     Transcribing & parsing with AI
                   </div>
                 )}
@@ -211,15 +224,35 @@ export function VoiceFab({
                 <button
                   type="button"
                   onClick={cancel}
-                  className="rounded-full p-1.5 text-text-tertiary hover:bg-elevated hover:text-text-primary"
+                  className="rounded-full p-2 text-text-tertiary hover:bg-elevated hover:text-text-primary"
                   aria-label="Cancel"
                 >
                   <X className="h-4 w-4" />
                 </button>
               ) : null}
             </div>
+
+            {state === "recording" ? (
+              <div className="mt-5 rounded-2xl bg-elevated/60 p-4">
+                <div className="text-[10px] font-bold uppercase tracking-widest text-text-tertiary">
+                  Try saying
+                </div>
+                <ul className="mt-2 space-y-1.5 font-hand text-lg leading-snug text-text-primary">
+                  {(mode === "create" ? CREATE_PROMPTS : EDIT_PROMPTS).map((p) => (
+                    <li key={p} className="flex gap-2">
+                      <span className="text-accent-ink">›</span>
+                      <span>{p}</span>
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-3 text-[11px] font-medium text-text-tertiary">
+                  Keep holding the mic. Release when you're done.
+                </div>
+              </div>
+            ) : null}
+
             {elapsedMs > 75_000 && state === "recording" ? (
-              <div className="mt-2 flex items-center gap-1.5 text-[11px] font-bold text-destructive">
+              <div className="mt-3 flex items-center gap-1.5 text-[11px] font-bold text-destructive">
                 <AlertCircle className="h-3 w-3" />
                 <span>Wrapping up at 90 s</span>
               </div>
@@ -230,6 +263,18 @@ export function VoiceFab({
     </>
   );
 }
+
+const CREATE_PROMPTS = [
+  "Plan for Sarah — forehand topspin, 20 reps",
+  "Then split-step footwork, 5 minutes",
+  "Notes: focus on low-to-high swing path",
+];
+
+const EDIT_PROMPTS = [
+  "Add serve toss drill, 15 reps",
+  "Change footwork to 8 minutes",
+  "Remove the volley drill",
+];
 
 function Waveform({ level }: { level: number }) {
   // 7 bars whose heights are a smoothed function of `level`
