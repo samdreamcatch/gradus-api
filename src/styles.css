@@ -104,6 +104,14 @@
   --accent-foreground: oklch(0.2 0.04 130);
   --accent-ink: var(--pen-tennis);
 
+  --pen-pool: oklch(0.78 0.13 235);
+  --pen-pool-wash: oklch(0.32 0.07 235 / 0.55);
+  --pen-pool-ink: oklch(0.92 0.06 235);
+
+  --secondary-accent: var(--pen-pool);
+  --secondary-accent-wash: var(--pen-pool-wash);
+  --secondary-accent-ink: var(--pen-pool-ink);
+
   --cream: oklch(0.32 0.015 85);             /* dim parchment for dark mode */
 }
 
