@@ -488,9 +488,9 @@ function PlanRow({ plan }: { plan: PlanSummaryDTO }) {
           </>
         ) : null}
       </div>
-      <div className="flex items-center gap-4 text-xs font-bold text-secondary-accent-ink">
+      <div className="flex items-center gap-4 text-xs font-medium text-text-secondary">
         <span className="flex items-center gap-1">
-          <ListChecks className="h-3 w-3 text-secondary-accent-ink/70" />
+          <ListChecks className="h-3 w-3 text-text-tertiary" />
           {plan.moveCount} {plan.moveCount === 1 ? "move" : "moves"}
         </span>
       </div>
@@ -501,7 +501,7 @@ function PlanRow({ plan }: { plan: PlanSummaryDTO }) {
 function StatusPill({ plan }: { plan: PlanSummaryDTO }) {
   if (plan.kind === "template") {
     return (
-      <span className="rounded-sm bg-secondary-accent-wash px-2 py-0.5 text-[10px] font-black uppercase tracking-tight text-secondary-accent-ink">
+      <span className="rounded-sm bg-elevated px-2 py-0.5 text-[10px] font-black uppercase tracking-tight text-text-secondary">
         Template
       </span>
     );
@@ -514,7 +514,7 @@ function StatusPill({ plan }: { plan: PlanSummaryDTO }) {
     );
   }
   return (
-    <span className="rounded-sm bg-secondary-accent-wash px-2 py-0.5 text-[10px] font-black uppercase tracking-tight text-secondary-accent-ink">
+    <span className="rounded-sm bg-elevated px-2 py-0.5 text-[10px] font-black uppercase tracking-tight text-text-tertiary">
       {shortName(plan.athleteName)}
     </span>
   );
