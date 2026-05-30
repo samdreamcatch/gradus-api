@@ -488,9 +488,9 @@ function PlanRow({ plan }: { plan: PlanSummaryDTO }) {
           </>
         ) : null}
       </div>
-      <div className="flex items-center gap-4 text-xs font-bold text-text-secondary">
+      <div className="flex items-center gap-4 text-xs font-bold text-secondary-accent-ink">
         <span className="flex items-center gap-1">
-          <ListChecks className="h-3 w-3 text-text-tertiary" />
+          <ListChecks className="h-3 w-3 text-secondary-accent-ink/70" />
           {plan.moveCount} {plan.moveCount === 1 ? "move" : "moves"}
         </span>
       </div>
@@ -501,7 +501,7 @@ function PlanRow({ plan }: { plan: PlanSummaryDTO }) {
 function StatusPill({ plan }: { plan: PlanSummaryDTO }) {
   if (plan.kind === "template") {
     return (
-      <span className="rounded-sm border border-divider bg-card px-2 py-0.5 text-[10px] font-black uppercase tracking-tight text-text-tertiary">
+      <span className="rounded-sm bg-secondary-accent-wash px-2 py-0.5 text-[10px] font-black uppercase tracking-tight text-secondary-accent-ink">
         Template
       </span>
     );
@@ -513,12 +513,8 @@ function StatusPill({ plan }: { plan: PlanSummaryDTO }) {
       </span>
     );
   }
-  const tone =
-    plan.status === "active"
-      ? "bg-accent text-accent-foreground"
-      : "bg-elevated text-text-secondary";
   return (
-    <span className={cn("rounded-sm px-2 py-0.5 text-[10px] font-black uppercase tracking-tight", tone)}>
+    <span className="rounded-sm bg-secondary-accent-wash px-2 py-0.5 text-[10px] font-black uppercase tracking-tight text-secondary-accent-ink">
       {shortName(plan.athleteName)}
     </span>
   );

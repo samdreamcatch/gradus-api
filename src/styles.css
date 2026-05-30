@@ -39,6 +39,10 @@
   --color-border: var(--divider);
   --color-input: var(--divider);
   --color-ring: var(--accent);
+
+  --color-secondary-accent: var(--secondary-accent);
+  --color-secondary-accent-wash: var(--secondary-accent-wash);
+  --color-secondary-accent-ink: var(--secondary-accent-ink);
 }
 
 :root {
@@ -63,6 +67,15 @@
   --accent: var(--pen-tennis);
   --accent-foreground: var(--pen-tennis-ink);
   --accent-ink: var(--pen-tennis-ink);
+
+  /* Pool pen — secondary accent (athlete identity + data/metadata) */
+  --pen-pool: oklch(0.72 0.14 235);
+  --pen-pool-wash: oklch(0.965 0.028 235);
+  --pen-pool-ink: oklch(0.38 0.10 235);
+
+  --secondary-accent: var(--pen-pool);
+  --secondary-accent-wash: var(--pen-pool-wash);
+  --secondary-accent-ink: var(--pen-pool-ink);
 
   --cream: oklch(0.975 0.022 85);            /* warm parchment wash */
 
@@ -90,6 +103,14 @@
   --accent: var(--pen-tennis);
   --accent-foreground: oklch(0.2 0.04 130);
   --accent-ink: var(--pen-tennis);
+
+  --pen-pool: oklch(0.78 0.13 235);
+  --pen-pool-wash: oklch(0.32 0.07 235 / 0.55);
+  --pen-pool-ink: oklch(0.92 0.06 235);
+
+  --secondary-accent: var(--pen-pool);
+  --secondary-accent-wash: var(--pen-pool-wash);
+  --secondary-accent-ink: var(--pen-pool-ink);
 
   --cream: oklch(0.32 0.015 85);             /* dim parchment for dark mode */
 }
