@@ -60,8 +60,11 @@ function ParentPlansPage() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 pt-10 pb-32">
+      <p className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
+        Plans
+      </p>
       {subtitleNames ? (
-        <p className="font-hand text-xl text-text-secondary">
+        <p className="mt-2 font-hand text-xl text-text-secondary">
           What {subtitleNames} is working on
         </p>
       ) : null}
