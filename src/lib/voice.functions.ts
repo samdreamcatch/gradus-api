@@ -53,38 +53,54 @@ async function transcribeWithElevenLabs(audio: Blob): Promise<string> {
 
 /* ---------------- LLM parsing (Lovable AI / Gemini) ---------------- */
 
+// Schema kept intentionally loose — Gemini's JSON-schema converter is finicky
+// about `.default()`, `.nullable().optional()` combos, and unusual unions.
+// We accept missing/empty fields here and normalize downstream.
 const moveDraftSchema = z.object({
   matchExistingMoveId: z
     .string()
-    .nullable()
-    .optional()
+    .nullish()
     .describe(
       "If the coach is modifying an existing plan_move in the current plan, set to that plan_move id. Otherwise null/omit.",
     ),
-  name: z.string().min(1).max(120),
-  description: z.string().max(2000).default(""),
-  cue: z.string().max(1000).default(""),
-  why: z.string().max(1000).default(""),
-  targetKind: z.enum(["reps", "mins"]),
-  targetValue: z.number().min(0).max(10000),
+  name: z.string().min(1).max(200),
+  description: z.string().max(2000).nullish(),
+  cue: z.string().max(1000).nullish(),
+  why: z.string().max(1000).nullish(),
+  targetKind: z.enum(["reps", "mins"]).nullish(),
+  targetValue: z.number().min(0).max(10000).nullish(),
 });
 
 const planDraftSchema = z.object({
-  title: z.string().max(160).optional().describe("Plan title if the coach named one."),
+  title: z.string().max(200).nullish().describe("Plan title if the coach named one."),
   athleteId: z
     .string()
-    .nullable()
-    .optional()
+    .nullish()
     .describe("UUID of athlete from the provided roster. Null/omit if none mentioned."),
   unresolvedAthleteName: z
     .string()
-    .optional()
+    .nullish()
     .describe("Set ONLY if the coach said a name that is not in the roster."),
-  notes: z.string().max(2000).optional(),
-  moves: z.array(moveDraftSchema).max(30),
+  notes: z.string().max(2000).nullish(),
+  moves: z.array(moveDraftSchema).max(30).nullish(),
 });
 
-export type VoicePlanDraft = z.infer<typeof planDraftSchema>;
+export type VoicePlanDraft = {
+  title?: string | null;
+  athleteId?: string | null;
+  unresolvedAthleteName?: string | null;
+  notes?: string | null;
+  moves: {
+    matchExistingMoveId?: string | null;
+    name: string;
+    description: string;
+    cue: string;
+    why: string;
+    targetKind: "reps" | "mins";
+    targetValue: number;
+  }[];
+};
+
 
 interface ParseContext {
   mode: "create" | "edit";
@@ -154,7 +170,24 @@ async function parseVoicePlanDraft(ctx: ParseContext): Promise<VoicePlanDraft> {
       prompt: promptParts.join("\n\n"),
       experimental_output: Output.object({ schema: planDraftSchema }),
     });
-    return experimental_output;
+    const raw = experimental_output;
+    return {
+      title: raw.title ?? undefined,
+      athleteId: raw.athleteId ?? undefined,
+      unresolvedAthleteName: raw.unresolvedAthleteName ?? undefined,
+      notes: raw.notes ?? undefined,
+      moves: (raw.moves ?? [])
+        .filter((m) => m && typeof m.name === "string" && m.name.trim().length > 0)
+        .map((m) => ({
+          matchExistingMoveId: m.matchExistingMoveId ?? undefined,
+          name: m.name.trim(),
+          description: m.description ?? "",
+          cue: m.cue ?? "",
+          why: m.why ?? "",
+          targetKind: m.targetKind ?? "reps",
+          targetValue: typeof m.targetValue === "number" ? m.targetValue : 10,
+        })),
+    };
   } catch (e) {
     const err = e as { statusCode?: number; message?: string };
     console.error("voice parse failed", err);
@@ -162,9 +195,15 @@ async function parseVoicePlanDraft(ctx: ParseContext): Promise<VoicePlanDraft> {
       throw new Error("AI is busy — try again in a moment");
     if (err.statusCode === 402)
       throw new Error("AI credits exhausted — add credits in workspace settings");
-    throw new Error("Couldn't organize that — please try again");
+    // Fallback: don't block the coach. Stash the transcript as notes so they
+    // can keep working; the editor opens with the raw words in the notes field.
+    return {
+      notes: ctx.transcript,
+      moves: [],
+    };
   }
 }
+
 
 /* ---------------- Apply draft to DB ---------------- */
 
