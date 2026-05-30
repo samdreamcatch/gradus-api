@@ -3,6 +3,7 @@ import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
+import { dbError } from "./db-error";
 
 export type TargetKind = "reps" | "mins";
 
@@ -26,7 +27,7 @@ async function getCoachId(supabase: Client, userId: string): Promise<string> {
     .select("id")
     .eq("user_id", userId)
     .maybeSingle();
-  if (error) throw new Error(error.message);
+  if (error) dbError(error);
   if (!data) throw new Error("Coach profile not found");
   return data.id;
 }
@@ -73,7 +74,7 @@ export const listMoves = createServerFn({ method: "GET" })
       .is("archived_at", null)
       .order("category", { ascending: true })
       .order("name", { ascending: true });
-    if (error) throw new Error(error.message);
+    if (error) dbError(error);
 
     // Curriculum categories from seed_moves (all sports — small table)
     const { data: seeds } = await supabase
@@ -129,7 +130,7 @@ export const upsertMove = createServerFn({ method: "POST" })
           "id, sport, category, name, description, cue, why, default_target_kind, default_target_value",
         )
         .single();
-      if (error) throw new Error(error.message);
+      if (error) dbError(error);
       return { move: toDTO(updated) };
     }
 
@@ -140,7 +141,7 @@ export const upsertMove = createServerFn({ method: "POST" })
         "id, sport, category, name, description, cue, why, default_target_kind, default_target_value",
       )
       .single();
-    if (error) throw new Error(error.message);
+    if (error) dbError(error);
     return { move: toDTO(inserted) };
   });
 
@@ -155,6 +156,6 @@ export const archiveMove = createServerFn({ method: "POST" })
       .update({ archived_at: new Date().toISOString() })
       .eq("id", data.id)
       .eq("coach_id", coachId);
-    if (error) throw new Error(error.message);
+    if (error) dbError(error);
     return { ok: true };
   });

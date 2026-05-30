@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
+import { dbError } from "./db-error";
 
 type Client = SupabaseClient<Database>;
 
@@ -26,7 +27,7 @@ async function ensureCoachId(supabase: Client, userId: string): Promise<string> 
     .select("id")
     .eq("user_id", userId)
     .maybeSingle();
-  if (existing.error) throw new Error(existing.error.message);
+  if (existing.error) dbError(existing.error);
   if (existing.data) return existing.data.id;
 
   const created = await supabase
@@ -34,7 +35,7 @@ async function ensureCoachId(supabase: Client, userId: string): Promise<string> 
     .insert({ user_id: userId })
     .select("id")
     .single();
-  if (created.error) throw new Error(created.error.message);
+  if (created.error) dbError(created.error);
   return created.data.id;
 }
 
@@ -50,7 +51,7 @@ async function insertUniqueCode(
     if (!error) return code;
     // 23505 = unique_violation — collision on either coach_id or code.
     // If it's the coach_id, fall through; the caller re-reads.
-    if (error.code !== "23505") throw new Error(error.message);
+    if (error.code !== "23505") dbError(error);
     const existing = await supabase
       .from("coach_invite_codes")
       .select("code")
@@ -73,7 +74,7 @@ async function updateUniqueCode(
       .update({ code })
       .eq("coach_id", coachId);
     if (!error) return code;
-    if (error.code !== "23505") throw new Error(error.message);
+    if (error.code !== "23505") dbError(error);
     // code collision — retry
   }
   throw new Error("Could not generate a unique invite code");
@@ -90,7 +91,7 @@ export const getCoachInviteCode = createServerFn({ method: "GET" })
       .select("code")
       .eq("coach_id", coachId)
       .maybeSingle();
-    if (existing.error) throw new Error(existing.error.message);
+    if (existing.error) dbError(existing.error);
     if (existing.data) return { code: existing.data.code };
 
     const code = await insertUniqueCode(supabase, coachId);
@@ -109,7 +110,7 @@ export const rotateCoachInviteCode = createServerFn({ method: "POST" })
       .select("id")
       .eq("coach_id", coachId)
       .maybeSingle();
-    if (existing.error) throw new Error(existing.error.message);
+    if (existing.error) dbError(existing.error);
     if (!existing.data) {
       const code = await insertUniqueCode(supabase, coachId);
       return { code };

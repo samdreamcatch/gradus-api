@@ -3,6 +3,7 @@ import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
+import { dbError } from "./db-error";
 
 export type PlanKind = "plan" | "template";
 export type PlanStatus = "active" | "benched" | "draft";
@@ -16,7 +17,7 @@ async function getCoachId(supabase: Client, userId: string): Promise<string> {
     .select("id")
     .eq("user_id", userId)
     .maybeSingle();
-  if (error) throw new Error(error.message);
+  if (error) dbError(error);
   if (!data) throw new Error("Coach profile not found");
   return data.id;
 }
@@ -66,7 +67,7 @@ export const listCoachAthletes = createServerFn({ method: "GET" })
       .from("coach_athletes")
       .select("athlete_id, athletes!inner(id, first_name, last_name)")
       .eq("coach_id", coachId);
-    if (error) throw new Error(error.message);
+    if (error) dbError(error);
     const athletes: AthleteOptionDTO[] = (data ?? []).map((row) => {
       const a = (row as unknown as { athletes: { id: string; first_name: string; last_name: string } }).athletes;
       return { id: a.id, name: `${a.first_name} ${a.last_name}`.trim() };
@@ -86,7 +87,7 @@ export const listCoachSports = createServerFn({ method: "GET" })
       .from("coach_levels")
       .select("sport")
       .eq("coach_id", coachId);
-    if (error) throw new Error(error.message);
+    if (error) dbError(error);
     const sports = Array.from(new Set((data ?? []).map((r) => r.sport))).sort();
     return { sports };
   });
@@ -119,7 +120,7 @@ export const listPlans = createServerFn({ method: "POST" })
     if (data.athleteId) q = q.eq("athlete_id", data.athleteId);
 
     const { data: plans, error } = await q;
-    if (error) throw new Error(error.message);
+    if (error) dbError(error);
 
     const planIds = (plans ?? []).map((p) => p.id);
     const athleteIds = Array.from(
@@ -147,9 +148,9 @@ export const listPlans = createServerFn({ method: "POST" })
             .in("athlete_id", athleteIds)
         : Promise.resolve({ data: [], error: null }),
     ]);
-    if (movesRes.error) throw new Error(movesRes.error.message);
-    if (athletesRes.error) throw new Error(athletesRes.error.message);
-    if (goalsRes.error) throw new Error(goalsRes.error.message);
+    if (movesRes.error) dbError(movesRes.error);
+    if (athletesRes.error) dbError(athletesRes.error);
+    if (goalsRes.error) dbError(goalsRes.error);
 
     // When filtering by sport, look up each referenced move's sport in a second query.
     const moveSportMap = new Map<string, string>();
@@ -166,7 +167,7 @@ export const listPlans = createServerFn({ method: "POST" })
           .from("moves")
           .select("id, sport")
           .in("id", moveIds);
-        if (moveErr) throw new Error(moveErr.message);
+        if (moveErr) dbError(moveErr);
         for (const m of moveRows ?? []) moveSportMap.set(m.id, m.sport);
       }
     }
@@ -236,7 +237,7 @@ export const getPlan = createServerFn({ method: "POST" })
       .eq("id", data.id)
       .eq("coach_id", coachId)
       .maybeSingle();
-    if (error) throw new Error(error.message);
+    if (error) dbError(error);
     if (!plan) throw new Error("Plan not found");
 
     const { data: moves, error: movesErr } = await supabase
@@ -244,7 +245,7 @@ export const getPlan = createServerFn({ method: "POST" })
       .select("id, position, move_id, name, description, cue, why, target_kind, target_value")
       .eq("plan_id", plan.id)
       .order("position", { ascending: true });
-    if (movesErr) throw new Error(movesErr.message);
+    if (movesErr) dbError(movesErr);
 
     let athleteName: string | null = null;
     if (plan.athlete_id) {
@@ -337,14 +338,14 @@ export const savePlan = createServerFn({ method: "POST" })
         .update(planRow)
         .eq("id", planId)
         .eq("coach_id", coachId);
-      if (error) throw new Error(error.message);
+      if (error) dbError(error);
     } else {
       const { data: inserted, error } = await supabase
         .from("plans")
         .insert({ ...planRow, status: "benched" })
         .select("id")
         .single();
-      if (error) throw new Error(error.message);
+      if (error) dbError(error);
       planId = inserted.id;
     }
 
@@ -353,7 +354,7 @@ export const savePlan = createServerFn({ method: "POST" })
       .from("plan_moves")
       .delete()
       .eq("plan_id", planId);
-    if (delErr) throw new Error(delErr.message);
+    if (delErr) dbError(delErr);
 
     if (data.moves.length) {
       const rows = data.moves.map((m, i) => ({
@@ -368,7 +369,7 @@ export const savePlan = createServerFn({ method: "POST" })
         target_value: m.targetValue,
       }));
       const { error: insErr } = await supabase.from("plan_moves").insert(rows);
-      if (insErr) throw new Error(insErr.message);
+      if (insErr) dbError(insErr);
     }
 
     return { id: planId! };
@@ -403,7 +404,7 @@ export const getAthleteActivePlans = createServerFn({ method: "POST" })
       .eq("status", "active");
     if (data.excludePlanId) q = q.neq("id", data.excludePlanId);
     const { data: rows, error } = await q;
-    if (error) throw new Error(error.message);
+    if (error) dbError(error);
     return { plans: (rows ?? []) as { id: string; title: string }[] };
   });
 
@@ -427,7 +428,7 @@ export const setPlanStatus = createServerFn({ method: "POST" })
         .eq("id", data.id)
         .eq("coach_id", coachId)
         .maybeSingle();
-      if (ownErr) throw new Error(ownErr.message);
+      if (ownErr) dbError(ownErr);
       if (!owned) throw new Error("Plan not found");
       if (!owned.athlete_id) throw new Error("Assign an athlete before activating.");
 
@@ -440,7 +441,7 @@ export const setPlanStatus = createServerFn({ method: "POST" })
         .eq("kind", "plan")
         .eq("status", "active")
         .neq("id", data.id);
-      if (othersErr) throw new Error(othersErr.message);
+      if (othersErr) dbError(othersErr);
       const activeOthers = (others ?? []) as { id: string }[];
 
       if (activeOthers.length >= MAX_ACTIVE_PLANS_PER_ATHLETE) {
@@ -459,7 +460,7 @@ export const setPlanStatus = createServerFn({ method: "POST" })
           .update({ status: "benched" })
           .eq("id", data.replaceId)
           .eq("coach_id", coachId);
-        if (bErr) throw new Error(bErr.message);
+        if (bErr) dbError(bErr);
       }
 
       const { error } = await supabase
@@ -467,14 +468,14 @@ export const setPlanStatus = createServerFn({ method: "POST" })
         .update({ status: "active" })
         .eq("id", data.id)
         .eq("coach_id", coachId);
-      if (error) throw new Error(error.message);
+      if (error) dbError(error);
     } else {
       const { error } = await supabase
         .from("plans")
         .update({ status: data.status })
         .eq("id", data.id)
         .eq("coach_id", coachId);
-      if (error) throw new Error(error.message);
+      if (error) dbError(error);
     }
     return { ok: true };
   });
@@ -492,7 +493,7 @@ export const deletePlan = createServerFn({ method: "POST" })
       .delete()
       .eq("id", data.id)
       .eq("coach_id", coachId);
-    if (error) throw new Error(error.message);
+    if (error) dbError(error);
     return { ok: true };
   });
 
@@ -532,7 +533,7 @@ export const createPlan = createServerFn({ method: "POST" })
         .eq("id", sourceId)
         .eq("coach_id", coachId)
         .single();
-      if (error) throw new Error(error.message);
+      if (error) dbError(error);
       title = data.title ?? (src.title ? `${src.title} (copy)` : title);
       notes = src.notes;
       const { data: srcMoves, error: mErr } = await supabase
@@ -540,7 +541,7 @@ export const createPlan = createServerFn({ method: "POST" })
         .select("position, move_id, name, description, cue, why, target_kind, target_value")
         .eq("plan_id", sourceId)
         .order("position", { ascending: true });
-      if (mErr) throw new Error(mErr.message);
+      if (mErr) dbError(mErr);
       sourceMoves = srcMoves ?? [];
     }
 
@@ -556,7 +557,7 @@ export const createPlan = createServerFn({ method: "POST" })
       })
       .select("id")
       .single();
-    if (insErr) throw new Error(insErr.message);
+    if (insErr) dbError(insErr);
 
     if (sourceMoves.length) {
       const rows = sourceMoves.map((m, i) => ({
@@ -571,7 +572,7 @@ export const createPlan = createServerFn({ method: "POST" })
         target_value: m.target_value,
       }));
       const { error: pmErr } = await supabase.from("plan_moves").insert(rows);
-      if (pmErr) throw new Error(pmErr.message);
+      if (pmErr) dbError(pmErr);
     }
 
     return { id: inserted.id };
@@ -593,7 +594,7 @@ export const addMoveToPlan = createServerFn({ method: "POST" })
       .select("id, title, coach_id")
       .eq("id", data.planId)
       .maybeSingle();
-    if (planErr) throw new Error(planErr.message);
+    if (planErr) dbError(planErr);
     if (!plan || plan.coach_id !== coachId) throw new Error("Plan not found");
 
     const { data: move, error: moveErr } = await supabase
@@ -601,7 +602,7 @@ export const addMoveToPlan = createServerFn({ method: "POST" })
       .select("id, name, description, cue, why, default_target_kind, default_target_value")
       .eq("id", data.moveId)
       .maybeSingle();
-    if (moveErr) throw new Error(moveErr.message);
+    if (moveErr) dbError(moveErr);
     if (!move) throw new Error("Move not found");
 
     const { data: last, error: posErr } = await supabase
@@ -611,7 +612,7 @@ export const addMoveToPlan = createServerFn({ method: "POST" })
       .order("position", { ascending: false })
       .limit(1)
       .maybeSingle();
-    if (posErr) throw new Error(posErr.message);
+    if (posErr) dbError(posErr);
     const nextPos = (last?.position ?? -1) + 1;
 
     const { error: insErr } = await supabase.from("plan_moves").insert({
@@ -625,7 +626,7 @@ export const addMoveToPlan = createServerFn({ method: "POST" })
       target_kind: move.default_target_kind,
       target_value: move.default_target_value,
     });
-    if (insErr) throw new Error(insErr.message);
+    if (insErr) dbError(insErr);
 
     await supabase
       .from("plans")
@@ -644,7 +645,7 @@ async function assertPlanOwned(supabase: Client, planId: string, coachId: string
     .eq("id", planId)
     .eq("coach_id", coachId)
     .maybeSingle();
-  if (error) throw new Error(error.message);
+  if (error) dbError(error);
   if (!data) throw new Error("Plan not found");
   return data;
 }
@@ -673,7 +674,7 @@ export const updatePlan = createServerFn({ method: "POST" })
       .eq("id", data.id)
       .eq("coach_id", coachId)
       .single();
-    if (loadErr || !current) throw new Error(loadErr?.message ?? "Plan not found");
+    if (loadErr || !current) dbError(loadErr, "Plan not found");
 
     const patch: {
       updated_at: string;
@@ -715,7 +716,7 @@ export const updatePlan = createServerFn({ method: "POST" })
       .update(patch)
       .eq("id", data.id)
       .eq("coach_id", coachId);
-    if (error) throw new Error(error.message);
+    if (error) dbError(error);
 
     return { ok: true };
   });
@@ -746,7 +747,7 @@ export const updatePlanMove = createServerFn({ method: "POST" })
       .select("plan_id")
       .eq("id", data.id)
       .maybeSingle();
-    if (pmErr) throw new Error(pmErr.message);
+    if (pmErr) dbError(pmErr);
     if (!pm) throw new Error("Plan move not found");
     await assertPlanOwned(supabase, pm.plan_id, coachId);
 
@@ -765,11 +766,14 @@ export const updatePlanMove = createServerFn({ method: "POST" })
     if (data.patch.targetKind !== undefined) row.target_kind = data.patch.targetKind;
     if (data.patch.targetValue !== undefined) row.target_value = data.patch.targetValue;
 
+    // Echo the verified plan_id into the WHERE clause so the SQL matches
+    // the ownership check above — defense-in-depth against RLS misconfig.
     const { error } = await supabase
       .from("plan_moves")
       .update(row)
-      .eq("id", data.id);
-    if (error) throw new Error(error.message);
+      .eq("id", data.id)
+      .eq("plan_id", pm.plan_id);
+    if (error) dbError(error);
 
     await supabase
       .from("plans")
@@ -791,15 +795,16 @@ export const removePlanMove = createServerFn({ method: "POST" })
       .select("plan_id")
       .eq("id", data.id)
       .maybeSingle();
-    if (pmErr) throw new Error(pmErr.message);
+    if (pmErr) dbError(pmErr);
     if (!pm) return { ok: true };
     await assertPlanOwned(supabase, pm.plan_id, coachId);
 
     const { error } = await supabase
       .from("plan_moves")
       .delete()
-      .eq("id", data.id);
-    if (error) throw new Error(error.message);
+      .eq("id", data.id)
+      .eq("plan_id", pm.plan_id);
+    if (error) dbError(error);
 
     await supabase
       .from("plans")
@@ -829,7 +834,7 @@ export const reorderPlanMoves = createServerFn({ method: "POST" })
         .update({ position: i })
         .eq("id", id)
         .eq("plan_id", data.planId);
-      if (error) throw new Error(error.message);
+      if (error) dbError(error);
     }
     return { ok: true };
   });
@@ -851,7 +856,7 @@ export const addLibraryMovesToPlan = createServerFn({ method: "POST" })
       .from("moves")
       .select("id, name, description, cue, why, default_target_kind, default_target_value")
       .in("id", data.moveIds);
-    if (mErr) throw new Error(mErr.message);
+    if (mErr) dbError(mErr);
     if (!moves?.length) return { inserted: 0 };
 
     const { data: last, error: posErr } = await supabase
@@ -861,7 +866,7 @@ export const addLibraryMovesToPlan = createServerFn({ method: "POST" })
       .order("position", { ascending: false })
       .limit(1)
       .maybeSingle();
-    if (posErr) throw new Error(posErr.message);
+    if (posErr) dbError(posErr);
     let nextPos = (last?.position ?? -1) + 1;
 
     // Preserve the order the caller asked for
@@ -882,7 +887,7 @@ export const addLibraryMovesToPlan = createServerFn({ method: "POST" })
       }));
 
     const { error: insErr } = await supabase.from("plan_moves").insert(rows);
-    if (insErr) throw new Error(insErr.message);
+    if (insErr) dbError(insErr);
 
     await supabase
       .from("plans")
