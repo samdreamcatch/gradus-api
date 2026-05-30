@@ -43,6 +43,13 @@
   --color-secondary-accent: var(--secondary-accent);
   --color-secondary-accent-wash: var(--secondary-accent-wash);
   --color-secondary-accent-ink: var(--secondary-accent-ink);
+
+  /* Attention — reserved for LIVE / ACTION-REQUIRED affordances only.
+     Approved uses: active session timer, unread coach messages.
+     Never use as a general accent, button color, or decoration. */
+  --color-attention: var(--attention);
+  --color-attention-wash: var(--attention-wash);
+  --color-attention-ink: var(--attention-ink);
 }
 
 :root {
