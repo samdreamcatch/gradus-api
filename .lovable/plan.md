@@ -1,30 +1,45 @@
-## Plan
+# Plan: lock down plan deletion + move-lookup defence-in-depth
 
-No code or database changes. Just close out the security scan findings we discussed and document the reasoning so future scans don't keep re-flagging them.
+## 1. Harden `deletePlan` server-side
 
-### 1. Mark the 4 `SECURITY DEFINER` findings as accepted
+File: `src/lib/plans.functions.ts` (the `deletePlan` server fn, lines ~484–498).
 
-The scanner flagged 4 instances of `SUPA_authenticated_security_definer_function_executable` — one each for:
+Change behaviour to:
 
-- `activate_plan` — mutation; self-authorizes via `auth.uid()` check against `coach_profiles.user_id`. Definer is required to bypass RLS on the cross-row UPDATE that benches other active plans. Safe.
-- `seed_coach_library` — mutation; self-authorizes via `auth.uid()` check against `coach_profiles.user_id`. Definer is required to insert into `moves` from `seed_moves`. Safe.
-- `coach_has_rostered_athlete_of_parent` — read helper used inside RLS policies; uses `auth.uid()`. Definer is required so the policy itself can query across `athletes` / `coach_athletes` / `coach_profiles` without recursive RLS. Safe.
-- `is_parent_of_athlete` — read helper used inside RLS policies; uses `auth.uid()`. Same pattern as above. Safe.
+1. Run `assertPlanOwned(supabase, data.id, coachId)` first (which already returns `{ id, kind, status, athlete_id }`).
+2. Allow deletion only when `kind === "template"` OR `status === "draft"`. Otherwise throw `"Active or benched plans can't be deleted — bench the plan instead."`.
+3. Only after the guard passes, delete `plan_moves` rows for the plan, then delete the `plans` row (still scoped by `coach_id`).
 
-Each will be marked **ignored** with an explanation that names the authorization check and why definer is required.
+This makes the server enforce what the UI already does (the swipe-to-delete row in `coach.plans.tsx` is only rendered for the `drafts` and `templates` filters). The `moves` library table is **not** touched — only the plan's own `plan_moves` snapshot rows are removed.
 
-`record_invite_lookup_attempt` is not in this scan's findings list (it doesn't trip the linter the same way), but it's covered in the memory update below as intentionally callable by `anon` and `authenticated` so a parent who already has an account can connect to a second coach via invite code.
+## 2. Defence-in-depth on move lookups
 
-### 2. Update `@security-memory`
+Same file. Add an explicit `coach_id` filter to the `moves` lookups so a coach can never reference another coach's move (RLS already blocks it, but belt + suspenders):
 
-Refresh the memory document so future scans and future agent sessions have the project's security posture in writing:
+- `addMoveToPlan` (line ~600): `.from("moves").select(...).eq("id", data.moveId).eq("coach_id", coachId)`.
+- `addLibraryMovesToPlan` (line ~855): `.from("moves").select(...).in("id", data.moveIds).eq("coach_id", coachId)`.
 
-- App model: coach / parent / athlete roles. Coaches and parents are authenticated app users; athletes are profiles owned by parents.
-- A parent can be connected to multiple coaches and can add new coach relationships **while already authenticated**, using an invite code. This is why `record_invite_lookup_attempt` is intentionally executable by both `anon` and `authenticated`.
-- All 5 `SECURITY DEFINER` functions follow the "definer + self-authorize via `auth.uid()`" pattern (or, for `record_invite_lookup_attempt`, the "rate-limit primitive intentionally reachable by any caller" pattern). Future scans should not re-flag them unless the authorization check inside the function body is removed.
-- Leaked-password protection is intentionally **off** per product decision.
-- The two TanStack findings from this scan (`CLIENT_SIDE_AUTH_ONLY` on `_authenticated.tsx`, `BEARER_TOKEN_FROM_GETSESSION` on `auth-attacher.ts`) are **not** being closed out here — they're informational notes about defense-in-depth and we'll revisit them separately if you want.
+No other behavioural change; the error paths ("Move not found" / `inserted: 0`) already handle the empty result.
 
-### 3. Verification
+## 3. Update `@security-memory`
 
-After applying, I'll confirm the 4 definer findings are gone from the scan results and that the security memory reflects the new posture. No app behavior changes.
+Add a rule documenting the new invariant so future scans and future edits don't loosen it:
+
+> **Plan deletion rule.** `deletePlan` may only hard-delete plans where `kind = 'template'` OR `status = 'draft'`. Plans with `status` of `active` or `benched` must never be deletable — they transition to `benched` via the bench flow / `activate_plan` instead. The UI also restricts the delete affordance to the drafts and templates filters; the server enforces the same rule independently.
+>
+> Deleting a plan removes its `plan_moves` rows (the plan-scoped snapshot) only. The coach's `moves` library is never touched by plan deletion.
+>
+> Coach-scoped move lookups in `addMoveToPlan` and `addLibraryMovesToPlan` filter by both `id` and `coach_id` as defence-in-depth on top of RLS.
+
+Leave the existing memory content (app model, intentional `SECURITY DEFINER` functions, leaked-password-protection-off note, etc.) intact.
+
+## Out of scope (per your decision)
+
+- No `TODO`/guard for a future practice-log table. We'll revisit when that table lands.
+- No database migration, no RLS changes, no auth changes.
+
+## Verification
+
+1. Re-read the diff in `plans.functions.ts` to confirm the chain shape stays `.middleware().inputValidator().handler()` and no other call sites are touched.
+2. Run the security scan and confirm no new findings; the existing accepted `SECURITY DEFINER` posture is unchanged.
+3. Manual smoke: from the Plans screen, deleting a draft and a template still works; the active/benched filters don't show a delete affordance (unchanged); a direct call to `deletePlan` with an active plan id now throws the new error.
