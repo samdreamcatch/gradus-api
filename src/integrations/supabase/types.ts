@@ -584,6 +584,7 @@ export type Database = {
         Returns: boolean
       }
       is_parent_of_athlete: { Args: { _athlete_id: string }; Returns: boolean }
+      is_parent_of_plan: { Args: { _plan_id: string }; Returns: boolean }
       record_invite_lookup_attempt: {
         Args: {
           _code: string

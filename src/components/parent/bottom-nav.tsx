@@ -7,11 +7,13 @@ type Item = {
   label: string;
   icon: LucideIcon;
   to?: string;
+  /** Match when pathname starts with this prefix (in addition to exact `to`). */
+  matchPrefix?: string;
 };
 
 const ITEMS: Item[] = [
   { label: "Dashboard", icon: LayoutDashboard, to: "/parent" },
-  { label: "Plans", icon: ClipboardList },
+  { label: "Plans", icon: ClipboardList, to: "/parent/plans", matchPrefix: "/parent/plans" },
   { label: "Messages", icon: MessageSquare },
   { label: "Resources", icon: BookOpen },
 ];
@@ -27,7 +29,11 @@ export function ParentBottomNav() {
       <ul className="mx-auto flex max-w-3xl items-stretch justify-around px-2">
         {ITEMS.map((item) => {
           const Icon = item.icon;
-          const isActive = item.to ? pathname === item.to : false;
+          const isActive = item.to
+            ? item.matchPrefix
+              ? pathname === item.to || pathname.startsWith(item.matchPrefix + "/")
+              : pathname === item.to
+            : false;
 
           const inner = (
             <span
