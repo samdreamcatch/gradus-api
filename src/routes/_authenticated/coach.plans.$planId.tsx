@@ -760,11 +760,16 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
             placeholder="Overall context, focus areas, encouragement…"
             rows={3}
             saving={savingField === "notes"}
-            onCommit={(v) =>
-              commit("notes", () => planUpdate.mutateAsync({ data: { id: plan.id, notes: v } }))
-            }
+            highlighted={!!touched.plan.notes}
+            onCommit={(v) => {
+              clearPlanTouch("notes");
+              return commit("notes", () =>
+                planUpdate.mutateAsync({ data: { id: plan.id, notes: v } }),
+              );
+            }}
           />
         </div>
+
 
         <div className="flex items-center justify-between gap-3 border-t border-divider pt-4">
           {plan.status === "active" ? (
