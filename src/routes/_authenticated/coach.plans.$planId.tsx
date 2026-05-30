@@ -58,12 +58,17 @@ import { consumeVoiceTouched, type VoiceTouchedSnapshot } from "@/lib/voice-touc
 
 export const Route = createFileRoute("/_authenticated/coach/plans/$planId")({
   component: PlanEditorSheet,
+  validateSearch: (search: Record<string, unknown>) => ({
+    from: search.from === "plus" ? ("plus" as const) : undefined,
+  }),
 });
 
 function PlanEditorSheet() {
   const { planId } = Route.useParams();
+  const { from } = Route.useSearch();
   const navigate = useNavigate();
   const close = () => navigate({ to: "/coach/plans" });
+
 
   // Defensive: if someone hits /coach/plans/new directly, bounce back.
   if (planId === "new") {
@@ -83,12 +88,13 @@ function PlanEditorSheet() {
         }}
 
       >
-        <PlanEditorBody planId={planId} onClose={close} />
+        <PlanEditorBody planId={planId} onClose={close} from={from} />
       </SheetContent>
     </Sheet>
   );
 }
-function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => void }) {
+function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: () => void; from?: "plus" }) {
+
   const qc = useQueryClient();
   const navigate = useNavigate();
   const fetchPlan = useServerFn(getPlan);
@@ -359,25 +365,27 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
                 inputClassName="font-display text-2xl font-black leading-tight tracking-tight"
               />
             </div>
-            <VoiceFab
-              mode="edit"
-              planId={plan.id}
-              variant="inline"
-              className="mt-1 shrink-0"
-              onVoiceApplied={(r) =>
-                setTouched((prev) => ({
-                  plan: { ...prev.plan, ...r.touched.plan },
-                  moves: { ...prev.moves, ...r.touched.moves },
-                  newMoveIds: [...prev.newMoveIds, ...r.touched.newMoveIds],
-                  transcript: r.touched.transcript ?? prev.transcript,
-                  sources: {
-                    plan: { ...(prev.sources?.plan ?? {}), ...(r.touched.sources?.plan ?? {}) },
-                    moves: { ...(prev.sources?.moves ?? {}), ...(r.touched.sources?.moves ?? {}) },
-                  },
-                }))
-              }
+            {from === "plus" ? null : (
+              <VoiceFab
+                mode="edit"
+                planId={plan.id}
+                variant="inline"
+                className="mt-1 shrink-0"
+                onVoiceApplied={(r) =>
+                  setTouched((prev) => ({
+                    plan: { ...prev.plan, ...r.touched.plan },
+                    moves: { ...prev.moves, ...r.touched.moves },
+                    newMoveIds: [...prev.newMoveIds, ...r.touched.newMoveIds],
+                    transcript: r.touched.transcript ?? prev.transcript,
+                    sources: {
+                      plan: { ...(prev.sources?.plan ?? {}), ...(r.touched.sources?.plan ?? {}) },
+                      moves: { ...(prev.sources?.moves ?? {}), ...(r.touched.sources?.moves ?? {}) },
+                    },
+                  }))
+                }
+              />
+            )}
 
-            />
           </div>
         </SheetTitle>
       </SheetHeader>

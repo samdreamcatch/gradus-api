@@ -61,6 +61,7 @@ function PlansPage() {
       navigate({
         to: "/coach/plans/$planId",
         params: { planId: id },
+        search: { from: "plus" },
       });
     },
     onError: (e: Error) => toast.error(e.message),
