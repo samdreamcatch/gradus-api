@@ -523,9 +523,24 @@ function StatusPill({ plan }: { plan: PlanSummaryDTO }) {
 
 /* ---------------- Library ---------------- */
 
-function LibrarySearchStrip() {
-  // Search lives on the LibraryView; this strip just holds a placeholder spacer
-  return <div className="mt-3 h-1" aria-hidden />;
+function LibrarySearchStrip({
+  query,
+  onQuery,
+}: {
+  query: string;
+  onQuery: (q: string) => void;
+}) {
+  return (
+    <div className="mt-3 relative">
+      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-tertiary" />
+      <Input
+        value={query}
+        onChange={(e) => onQuery(e.target.value)}
+        placeholder="Search moves"
+        className="h-8 rounded-full border-divider bg-card pl-9 text-xs font-bold text-text-primary shadow-none"
+      />
+    </div>
+  );
 }
 
 function LibraryView({ onSelectMove }: { onSelectMove: (id: string) => void }) {
