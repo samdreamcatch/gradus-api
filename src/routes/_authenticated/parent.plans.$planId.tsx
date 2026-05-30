@@ -249,7 +249,7 @@ function CoachNote({
       <p className="text-[10px] font-black uppercase tracking-widest text-accent-ink">
         {label}
       </p>
-      <p className="mt-1 font-hand text-lg leading-snug text-text-primary">
+      <p className="mt-1 text-[15px] leading-relaxed text-text-primary">
         {body}
       </p>
       <button
