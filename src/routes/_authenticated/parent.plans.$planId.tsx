@@ -298,18 +298,16 @@ function SessionTimer() {
   return (
     <div
       ref={trackRef}
-      className="relative mt-6 flex items-center justify-between gap-3 overflow-hidden rounded-full border border-accent/40 bg-accent/15 py-1.5 pl-1.5 pr-3"
+      className="relative mt-6 overflow-hidden rounded-full border border-accent/40 bg-accent/15 p-1.5"
     >
-      {/* Hint label visible only before the timer starts */}
-      {!started ? (
-        <span className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-xs font-bold uppercase tracking-widest text-accent-ink/60">
-          Slide <ArrowRight className="ml-1 size-3.5" />
-        </span>
-      ) : null}
+      <span className="pointer-events-none absolute inset-y-0 right-5 flex items-center text-[11px] font-black uppercase tracking-widest text-accent-ink/60">
+        Slide {running ? "to pause" : started ? "to resume" : "to start"}
+        <ArrowRight className="ml-1 size-3.5" />
+      </span>
 
       <motion.div
         ref={knobRef}
-        drag={started ? false : "x"}
+        drag="x"
         dragConstraints={{ left: 0, right: 0 }}
         dragElastic={{ left: 0, right: 0.9 }}
         dragMomentum={false}
@@ -326,55 +324,52 @@ function SessionTimer() {
           setDragging(false);
           const max = getDragMax();
           const triggered = info.offset.x >= max * 0.55;
-          // Always snap back to origin with a springy bounce
           await controls.start({
             x: 0,
             transition: { type: "spring", stiffness: 520, damping: 22, mass: 0.7 },
           });
-          if (triggered) setRunning(true);
+          if (triggered) setRunning((r) => !r);
           setArmed(false);
-        }}
-        onClick={() => {
-          if (started) setRunning((r) => !r);
         }}
         style={{ touchAction: "pan-y" }}
         className={cn(
-          "relative z-10 inline-flex select-none items-center gap-2 rounded-full bg-accent px-5 py-2 text-sm font-bold text-accent-foreground shadow-sm",
-          started ? "cursor-pointer" : "cursor-grab active:cursor-grabbing",
+          "relative z-10 flex w-[72%] select-none items-center gap-2 rounded-full bg-accent px-5 py-2 text-sm font-bold text-accent-foreground shadow-sm",
+          "cursor-grab active:cursor-grabbing",
           dragging && "shadow-card",
-          armed && !started && "ring-2 ring-accent-foreground/50",
+          armed && "ring-2 ring-accent-foreground/50",
         )}
         aria-label={
           started
             ? running
-              ? "Pause session timer"
-              : "Resume session timer"
+              ? "Slide to pause session timer"
+              : "Slide to resume session timer"
             : "Slide to start session timer"
         }
       >
         {started ? (
           <>
             {running ? <Pause className="size-4" /> : <Play className="size-4" />}
-            <span className="tabular-nums">{mm}:{ss}</span>
+            <span className="flex-1 tabular-nums">{mm}:{ss}</span>
+            <button
+              type="button"
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+                reset();
+              }}
+              aria-label="Reset session timer"
+              className="-mr-2 inline-flex size-7 items-center justify-center rounded-full text-accent-foreground/80 hover:bg-accent-foreground/15"
+            >
+              <RotateCcw className="size-4" />
+            </button>
           </>
         ) : (
           <>
             <Play className="size-4" />
-            Start session timer
+            <span className="flex-1">Start session timer</span>
           </>
         )}
       </motion.div>
-
-      {started ? (
-        <button
-          type="button"
-          onClick={reset}
-          aria-label="Reset session timer"
-          className="relative z-10 inline-flex size-7 items-center justify-center rounded-full text-accent-ink hover:bg-accent/20"
-        >
-          <RotateCcw className="size-4" />
-        </button>
-      ) : null}
     </div>
   );
 }
