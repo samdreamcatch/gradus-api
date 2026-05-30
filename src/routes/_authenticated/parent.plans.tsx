@@ -165,16 +165,28 @@ function PlanCard({
       to="/parent/plans/$planId"
       params={{ planId: plan.id }}
       className={cn(
-        "group block rounded-2xl border bg-card p-5 shadow-card transition-all hover:-translate-y-0.5 hover:shadow-page",
+        "group block rounded-2xl border border-l-[4px] bg-card p-5 shadow-card transition-all hover:-translate-y-0.5 hover:shadow-page",
         muted
-          ? "border-divider opacity-80"
-          : "border-accent/40 hover:border-accent",
+          ? "border-divider border-l-divider opacity-80"
+          : "border-divider border-l-pen-tennis hover:border-l-pen-tennis",
       )}
     >
-      <p className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
-        {showAthlete ? `${plan.athleteName} · ` : ""}
-        Coach {plan.coachName}
-      </p>
+      <div className="flex items-center gap-2">
+        <span
+          className={cn(
+            "inline-flex items-center rounded-sm px-1.5 py-0.5 text-[9px] font-black uppercase tracking-widest",
+            muted
+              ? "bg-elevated text-text-tertiary"
+              : "bg-pen-tennis-wash text-pen-tennis-ink",
+          )}
+        >
+          {muted ? "Benched" : "Active"}
+        </span>
+        <p className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
+          {showAthlete ? `${plan.athleteName} · ` : ""}
+          Coach {plan.coachName}
+        </p>
+      </div>
       <h3 className="mt-1 font-display text-2xl font-black leading-tight tracking-tight text-text-primary">
         {plan.title}
       </h3>
