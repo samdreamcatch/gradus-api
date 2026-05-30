@@ -783,7 +783,9 @@ export const voiceBuildPlan = createServerFn({ method: "POST" })
         .eq("coach_id", coachId),
       supabase
         .from("moves")
-        .select("id, name, category")
+        .select(
+          "id, name, category, description, cue, why, default_target_kind, default_target_value",
+        )
         .eq("coach_id", coachId)
         .is("archived_at", null),
     ]);
@@ -794,10 +796,15 @@ export const voiceBuildPlan = createServerFn({ method: "POST" })
       }).athletes;
       return { id: a.id, name: `${a.first_name} ${a.last_name}`.trim() };
     });
-    const library = (libRows ?? []).map((r) => ({
+    const library: LibraryMove[] = (libRows ?? []).map((r) => ({
       id: r.id as string,
       name: r.name as string,
       category: r.category as string,
+      description: (r.description as string) ?? "",
+      cue: (r.cue as string) ?? "",
+      why: (r.why as string) ?? "",
+      defaultTargetKind: (r.default_target_kind as "reps" | "mins") ?? "reps",
+      defaultTargetValue: Number(r.default_target_value ?? 10),
     }));
 
     let currentPlan: ParseContext["currentPlan"];
