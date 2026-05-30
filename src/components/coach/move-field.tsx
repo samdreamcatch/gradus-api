@@ -111,8 +111,16 @@ export function MoveField(props: MoveFieldProps) {
             "block w-full border-b border-divider bg-transparent px-1 py-1 text-left transition-colors",
             "hover:border-accent/50",
             "text-text-primary",
+            highlighted && "border-accent rounded-sm",
             displayClassName,
           )}
+          style={
+            highlighted
+              ? {
+                  backgroundColor: "color-mix(in oklab, var(--accent) 14%, transparent)",
+                }
+              : undefined
+          }
         >
           {value ? (
             <span className="whitespace-pre-wrap break-words">{value}</span>
