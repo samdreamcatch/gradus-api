@@ -142,12 +142,12 @@ export function MoveField(props: MoveFieldProps) {
                 e.stopPropagation();
                 setShowSource((s) => !s);
               }}
-              className="font-hand text-sm leading-tight text-secondary-accent-ink/80 hover:text-secondary-accent-ink underline-offset-2 hover:underline"
+              className="font-hand text-sm leading-tight text-accent-ink/70 hover:text-accent-ink underline-offset-2 hover:underline"
             >
               {showSource ? "Hide source" : "From your voice"}
             </button>
             {showSource ? (
-              <div className="mt-1 rounded-md bg-secondary-accent-wash px-2 py-1.5 font-hand text-base leading-snug text-secondary-accent-ink">
+              <div className="mt-1 rounded-md bg-elevated/70 px-2 py-1.5 font-hand text-base leading-snug text-text-secondary">
                 “{sourceQuote}”
               </div>
             ) : null}
