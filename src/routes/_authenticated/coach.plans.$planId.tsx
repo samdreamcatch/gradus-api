@@ -441,26 +441,24 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
               </div>
             </div>
 
-            {/* Placeholder: Changes over time + Messages */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-lg border border-dashed border-divider bg-card p-3">
-                <div className="flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4 text-text-tertiary" />
-                  <span className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
-                    Changes
-                  </span>
-                </div>
-                <p className="mt-2 text-xs text-text-tertiary">View history</p>
-              </div>
-              <div className="rounded-lg border border-dashed border-divider bg-card p-3">
-                <div className="flex items-center gap-2">
-                  <MessageSquare className="h-4 w-4 text-text-tertiary" />
-                  <span className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
-                    Messages
-                  </span>
-                </div>
-                <p className="mt-2 text-xs text-text-tertiary">Plan thread</p>
-              </div>
+            {/* Low-profile actions: changes history + plan messages */}
+            <div className="flex items-center justify-end gap-1">
+              <button
+                type="button"
+                aria-label="View changes"
+                title="View changes"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-md text-text-tertiary hover:bg-elevated hover:text-text-primary"
+              >
+                <TrendingUp className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                aria-label="Plan messages"
+                title="Plan messages"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-md text-text-tertiary hover:bg-elevated hover:text-text-primary"
+              >
+                <MessageSquare className="h-4 w-4" />
+              </button>
             </div>
           </div>
         ) : null}
