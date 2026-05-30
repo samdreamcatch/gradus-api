@@ -74,12 +74,16 @@ export type VoicePlanDraft = {
   notes?: string | null;
   moves: {
     matchExistingMoveId?: string | null;
+    /** Resolved library move id (moves.id). When set, plan_move.move_id is linked and library defaults merge with voice. */
+    libraryMoveId?: string | null;
     name: string;
     description: string;
     cue: string;
     why: string;
     targetKind: "reps" | "mins";
     targetValue: number;
+    /** True when targetKind/targetValue came from the coach's voice (not a default). */
+    targetFromVoice?: boolean;
     /** Per-field source quotes from transcript (by tmp index). */
     sources?: Partial<Record<"name" | "description" | "cue" | "why" | "target", string>>;
   }[];
