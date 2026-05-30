@@ -53,38 +53,54 @@ async function transcribeWithElevenLabs(audio: Blob): Promise<string> {
 
 /* ---------------- LLM parsing (Lovable AI / Gemini) ---------------- */
 
+// Schema kept intentionally loose — Gemini's JSON-schema converter is finicky
+// about `.default()`, `.nullable().optional()` combos, and unusual unions.
+// We accept missing/empty fields here and normalize downstream.
 const moveDraftSchema = z.object({
   matchExistingMoveId: z
     .string()
-    .nullable()
-    .optional()
+    .nullish()
     .describe(
       "If the coach is modifying an existing plan_move in the current plan, set to that plan_move id. Otherwise null/omit.",
     ),
-  name: z.string().min(1).max(120),
-  description: z.string().max(2000).default(""),
-  cue: z.string().max(1000).default(""),
-  why: z.string().max(1000).default(""),
-  targetKind: z.enum(["reps", "mins"]),
-  targetValue: z.number().min(0).max(10000),
+  name: z.string().min(1).max(200),
+  description: z.string().max(2000).nullish(),
+  cue: z.string().max(1000).nullish(),
+  why: z.string().max(1000).nullish(),
+  targetKind: z.enum(["reps", "mins"]).nullish(),
+  targetValue: z.number().min(0).max(10000).nullish(),
 });
 
 const planDraftSchema = z.object({
-  title: z.string().max(160).optional().describe("Plan title if the coach named one."),
+  title: z.string().max(200).nullish().describe("Plan title if the coach named one."),
   athleteId: z
     .string()
-    .nullable()
-    .optional()
+    .nullish()
     .describe("UUID of athlete from the provided roster. Null/omit if none mentioned."),
   unresolvedAthleteName: z
     .string()
-    .optional()
+    .nullish()
     .describe("Set ONLY if the coach said a name that is not in the roster."),
-  notes: z.string().max(2000).optional(),
-  moves: z.array(moveDraftSchema).max(30),
+  notes: z.string().max(2000).nullish(),
+  moves: z.array(moveDraftSchema).max(30).nullish(),
 });
 
-export type VoicePlanDraft = z.infer<typeof planDraftSchema>;
+export type VoicePlanDraft = {
+  title?: string | null;
+  athleteId?: string | null;
+  unresolvedAthleteName?: string | null;
+  notes?: string | null;
+  moves: {
+    matchExistingMoveId?: string | null;
+    name: string;
+    description: string;
+    cue: string;
+    why: string;
+    targetKind: "reps" | "mins";
+    targetValue: number;
+  }[];
+};
+
 
 interface ParseContext {
   mode: "create" | "edit";
