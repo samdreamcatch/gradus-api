@@ -188,7 +188,7 @@ export const getParentPlan = createServerFn({ method: "POST" })
         .select("first_name")
         .eq("id", plan.athlete_id)
         .maybeSingle(),
-      supabase
+      supabaseAdmin
         .from("coach_profiles")
         .select("first_name, last_name")
         .eq("id", plan.coach_id)
