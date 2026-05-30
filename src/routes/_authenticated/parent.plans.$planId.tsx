@@ -494,10 +494,10 @@ function RunningPill({
           }}
           style={{ touchAction: "pan-y" }}
           className={cn(
-            "relative z-10 flex h-10 w-[72%] select-none items-center gap-2 rounded-full bg-attention px-5 text-sm font-bold text-white shadow-sm",
+            "relative z-10 flex h-10 w-[72%] select-none items-center gap-2 rounded-full bg-attention px-5 text-sm font-bold text-attention-foreground shadow-sm",
             "cursor-grab active:cursor-grabbing",
             dragging && "shadow-card",
-            armed && "ring-2 ring-white/60",
+            armed && "ring-2 ring-attention-foreground/60",
           )}
           aria-label={`End session and report back to ${coachFirstName}`}
         >
