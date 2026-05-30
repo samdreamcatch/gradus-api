@@ -466,19 +466,6 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
 
 
 
-        <div className="rounded-lg border border-divider border-l-[3px] border-l-accent bg-card p-4">
-          <MoveField
-            kind="textarea"
-            label="Notes for the athlete"
-            value={plan.notes}
-            placeholder="Overall context, focus areas, encouragement…"
-            rows={3}
-            saving={savingField === "notes"}
-            onCommit={(v) =>
-              commit("notes", () => planUpdate.mutateAsync({ data: { id: plan.id, notes: v } }))
-            }
-          />
-        </div>
 
         {/* Moves */}
         <div className="mb-3 mt-2 flex items-end justify-between">
