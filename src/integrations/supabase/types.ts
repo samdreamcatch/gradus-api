@@ -584,6 +584,15 @@ export type Database = {
         Returns: boolean
       }
       is_parent_of_athlete: { Args: { _athlete_id: string }; Returns: boolean }
+      record_invite_lookup_attempt: {
+        Args: {
+          _code: string
+          _ip: string
+          _max_per_window: number
+          _window_seconds: number
+        }
+        Returns: number
+      }
       seed_coach_library: { Args: { _coach_id: string }; Returns: number }
     }
     Enums: {
