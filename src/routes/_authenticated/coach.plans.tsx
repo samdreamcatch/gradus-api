@@ -52,6 +52,7 @@ function PlansPage() {
   const [athleteId, setAthleteId] = useState<string>("");
   const [sport, setSport] = useState<string>("");
   const [moveSelection, setMoveSelection] = useState<string | null>(null);
+  const [libraryQuery, setLibraryQuery] = useState("");
   const navigate = useNavigate();
 
   const createFn = useServerFn(createPlan);
