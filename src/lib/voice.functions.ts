@@ -74,12 +74,16 @@ export type VoicePlanDraft = {
   notes?: string | null;
   moves: {
     matchExistingMoveId?: string | null;
+    /** Resolved library move id (moves.id). When set, plan_move.move_id is linked and library defaults merge with voice. */
+    libraryMoveId?: string | null;
     name: string;
     description: string;
     cue: string;
     why: string;
     targetKind: "reps" | "mins";
     targetValue: number;
+    /** True when targetKind/targetValue came from the coach's voice (not a default). */
+    targetFromVoice?: boolean;
     /** Per-field source quotes from transcript (by tmp index). */
     sources?: Partial<Record<"name" | "description" | "cue" | "why" | "target", string>>;
   }[];
@@ -128,11 +132,22 @@ const slotSchema = z.object({
     ),
 });
 
+interface LibraryMove {
+  id: string;
+  name: string;
+  category: string;
+  description: string;
+  cue: string;
+  why: string;
+  defaultTargetKind: "reps" | "mins";
+  defaultTargetValue: number;
+}
+
 interface ParseContext {
   mode: "create" | "edit";
   transcript: string;
   athletes: { id: string; name: string }[];
-  library: { id: string; name: string; category: string }[];
+  library: LibraryMove[];
   currentPlan?: {
     title: string;
     athleteId: string | null;
@@ -273,6 +288,70 @@ function resolveAthlete(
   return { id: null, unresolved: spoken.trim() };
 }
 
+/** Stop-words ignored when fuzzy-matching move names. */
+const MOVE_STOPWORDS = new Set([
+  "the", "a", "an", "and", "or", "to", "of", "for", "with", "drill", "drills", "practice",
+]);
+
+function moveTokens(s: string): string[] {
+  return normalize(s)
+    .split(" ")
+    .filter((w) => w && !MOVE_STOPWORDS.has(w));
+}
+
+/**
+ * Resolve a spoken move name against the coach's library.
+ * Returns the best library match if confidence is high enough, else null.
+ */
+function resolveLibraryMove(
+  spoken: string | null | undefined,
+  library: LibraryMove[],
+): LibraryMove | null {
+  if (!spoken || !spoken.trim() || library.length === 0) return null;
+  const q = normalize(spoken);
+  if (!q) return null;
+
+  // Exact name match
+  for (const m of library) {
+    if (normalize(m.name) === q) return m;
+  }
+  // Containment either direction (e.g. "two-foot glide" ⊂ "two-foot glide forward")
+  for (const m of library) {
+    const n = normalize(m.name);
+    if (n === q) return m;
+    if (n.includes(q) || q.includes(n)) return m;
+  }
+  // Token-overlap with Jaccard similarity ≥ 0.6 on content words
+  const qTokens = new Set(moveTokens(spoken));
+  if (qTokens.size === 0) return null;
+  let best: { move: LibraryMove; score: number } | null = null;
+  for (const m of library) {
+    const nTokens = new Set(moveTokens(m.name));
+    if (nTokens.size === 0) continue;
+    let overlap = 0;
+    for (const t of qTokens) if (nTokens.has(t)) overlap++;
+    const union = qTokens.size + nTokens.size - overlap;
+    const score = union === 0 ? 0 : overlap / union;
+    if (score >= 0.6 && (!best || score > best.score)) {
+      best = { move: m, score };
+    }
+  }
+  return best?.move ?? null;
+}
+
+/** Append voice content to a library default without overwriting. */
+function mergeAppend(libraryValue: string, voiceValue: string): string {
+  const lib = (libraryValue ?? "").trim();
+  const voice = (voiceValue ?? "").trim();
+  if (!voice) return lib;
+  if (!lib) return voice;
+  // Skip append if voice is already substantively contained in library text.
+  if (lib.toLowerCase().includes(voice.toLowerCase())) return lib;
+  // Ensure terminal punctuation on library segment.
+  const libClean = /[.!?]$/.test(lib) ? lib : `${lib}.`;
+  return `${libClean} ${voice}`;
+}
+
 /* ---------------- Quote location ---------------- */
 
 function locateQuote(transcript: string, quote: string | null | undefined): FieldSource | null {
@@ -380,26 +459,40 @@ async function buildDraft(ctx: ParseContext): Promise<VoicePlanDraft> {
     athleteFirstName,
   });
 
-  // Build moves, dropping empty.
+  // Build moves, dropping empty. For new moves, try to resolve to a library move
+  // so we can link via move_id and merge library defaults with voice notes.
   const moves = (slotted.moves ?? [])
     .filter((m) => m && (m.name?.trim() || m.matchExistingMoveId))
-    .map((m) => ({
-      matchExistingMoveId: m.matchExistingMoveId ?? undefined,
-      name: (m.name ?? "").trim(),
-      description: (m.description ?? "").trim(),
-      cue: (m.cue ?? "").trim(),
-      why: (m.why ?? "").trim(),
-      targetKind: (m.targetKind ?? "reps") as "reps" | "mins",
-      targetValue:
-        typeof m.targetValue === "number" && m.targetValue >= 0 ? m.targetValue : 10,
-      sources: {
-        name: m.nameQuote ?? undefined,
-        description: m.descriptionQuote ?? undefined,
-        cue: m.cueQuote ?? undefined,
-        why: m.whyQuote ?? undefined,
-        target: m.targetQuote ?? undefined,
-      },
-    }));
+    .map((m) => {
+      const targetFromVoice =
+        typeof m.targetValue === "number" || Boolean(m.targetQuote?.trim());
+      const lib = m.matchExistingMoveId
+        ? null
+        : resolveLibraryMove(m.name, ctx.library);
+
+      return {
+        matchExistingMoveId: m.matchExistingMoveId ?? undefined,
+        libraryMoveId: lib?.id,
+        // Prefer the library's canonical name when matched.
+        name: (lib?.name ?? m.name ?? "").trim(),
+        description: (m.description ?? "").trim(),
+        cue: (m.cue ?? "").trim(),
+        why: (m.why ?? "").trim(),
+        targetKind: (m.targetKind ?? lib?.defaultTargetKind ?? "reps") as "reps" | "mins",
+        targetValue:
+          typeof m.targetValue === "number" && m.targetValue >= 0
+            ? m.targetValue
+            : lib?.defaultTargetValue ?? 10,
+        targetFromVoice,
+        sources: {
+          name: m.nameQuote ?? undefined,
+          description: m.descriptionQuote ?? undefined,
+          cue: m.cueQuote ?? undefined,
+          why: m.whyQuote ?? undefined,
+          target: m.targetQuote ?? undefined,
+        },
+      };
+    });
 
   // Notes existed before? Only mark "notes" as touched if cleanup actually changed it.
   const notesChanged = cleanedNotes !== (ctx.currentPlan?.notes ?? "");
@@ -614,24 +707,65 @@ async function applyDraft(
       touched.moves[pm.id] = fieldsTouched;
       appliedMoveCount++;
     } else {
+      // For library-matched moves, fetch the canonical defaults and append voice content.
+      let libRow: {
+        description: string;
+        cue: string;
+        why: string;
+        default_target_kind: "reps" | "mins";
+        default_target_value: number;
+      } | null = null;
+      if (m.libraryMoveId) {
+        const { data: lib } = await supabase
+          .from("moves")
+          .select("description, cue, why, default_target_kind, default_target_value")
+          .eq("id", m.libraryMoveId)
+          .eq("coach_id", coachId)
+          .maybeSingle();
+        if (lib) {
+          libRow = {
+            description: (lib.description as string) ?? "",
+            cue: (lib.cue as string) ?? "",
+            why: (lib.why as string) ?? "",
+            default_target_kind: (lib.default_target_kind as "reps" | "mins") ?? "reps",
+            default_target_value: Number(lib.default_target_value ?? 10),
+          };
+        }
+      }
+
+      const finalDescription = libRow
+        ? mergeAppend(libRow.description, m.description)
+        : m.description;
+      const finalCue = libRow ? mergeAppend(libRow.cue, m.cue) : m.cue;
+      const finalWhy = libRow ? mergeAppend(libRow.why, m.why) : m.why;
+      const finalTargetKind = libRow && !m.targetFromVoice ? libRow.default_target_kind : m.targetKind;
+      const finalTargetValue =
+        libRow && !m.targetFromVoice ? libRow.default_target_value : m.targetValue;
+
       const { data: ins, error } = await supabase
         .from("plan_moves")
         .insert({
           plan_id: workingPlanId,
-          move_id: null,
+          move_id: m.libraryMoveId ?? null,
           position: nextPos++,
           name: m.name,
-          description: m.description,
-          cue: m.cue,
-          why: m.why,
-          target_kind: m.targetKind,
-          target_value: m.targetValue,
+          description: finalDescription,
+          cue: finalCue,
+          why: finalWhy,
+          target_kind: finalTargetKind,
+          target_value: finalTargetValue,
         })
         .select("id")
         .single();
       if (error) dbError(error);
       touched.newMoveIds.push(ins.id);
-      touched.moves[ins.id] = ["name", "description", "cue", "why", "target"];
+      // Only flag voice-touched fields as highlighted — library defaults shouldn't glow.
+      const touchedFields: string[] = ["name"];
+      if (m.description) touchedFields.push("description");
+      if (m.cue) touchedFields.push("cue");
+      if (m.why) touchedFields.push("why");
+      if (m.targetFromVoice || !libRow) touchedFields.push("target");
+      touched.moves[ins.id] = touchedFields;
       setMoveSource(ins.id, "name", m.sources?.name);
       setMoveSource(ins.id, "description", m.sources?.description);
       setMoveSource(ins.id, "cue", m.sources?.cue);
@@ -690,7 +824,9 @@ export const voiceBuildPlan = createServerFn({ method: "POST" })
         .eq("coach_id", coachId),
       supabase
         .from("moves")
-        .select("id, name, category")
+        .select(
+          "id, name, category, description, cue, why, default_target_kind, default_target_value",
+        )
         .eq("coach_id", coachId)
         .is("archived_at", null),
     ]);
@@ -701,10 +837,15 @@ export const voiceBuildPlan = createServerFn({ method: "POST" })
       }).athletes;
       return { id: a.id, name: `${a.first_name} ${a.last_name}`.trim() };
     });
-    const library = (libRows ?? []).map((r) => ({
+    const library: LibraryMove[] = (libRows ?? []).map((r) => ({
       id: r.id as string,
       name: r.name as string,
       category: r.category as string,
+      description: (r.description as string) ?? "",
+      cue: (r.cue as string) ?? "",
+      why: (r.why as string) ?? "",
+      defaultTargetKind: (r.default_target_kind as "reps" | "mins") ?? "reps",
+      defaultTargetValue: Number(r.default_target_value ?? 10),
     }));
 
     let currentPlan: ParseContext["currentPlan"];
