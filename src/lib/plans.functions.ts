@@ -148,9 +148,9 @@ export const listPlans = createServerFn({ method: "POST" })
             .in("athlete_id", athleteIds)
         : Promise.resolve({ data: [], error: null }),
     ]);
-    if (movesRes.error) throw new Error(movesRes.error.message);
-    if (athletesRes.error) throw new Error(athletesRes.error.message);
-    if (goalsRes.error) throw new Error(goalsRes.error.message);
+    if (movesRes.error) dbError(movesRes.error);
+    if (athletesRes.error) dbError(athletesRes.error);
+    if (goalsRes.error) dbError(goalsRes.error);
 
     // When filtering by sport, look up each referenced move's sport in a second query.
     const moveSportMap = new Map<string, string>();

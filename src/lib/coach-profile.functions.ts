@@ -27,7 +27,7 @@ async function ensureProfile(supabase: Client, userId: string) {
     .select("id, first_name, last_name, onboarded_at")
     .eq("user_id", userId)
     .maybeSingle();
-  if (existing.error) throw new Error(existing.error.message);
+  if (existing.error) dbError(existing.error);
   if (existing.data) return existing.data;
 
   // Guard: don't silently turn a parent into a coach. A coach_profiles row
@@ -37,7 +37,7 @@ async function ensureProfile(supabase: Client, userId: string) {
     .select("id")
     .eq("user_id", userId)
     .maybeSingle();
-  if (parent.error) throw new Error(parent.error.message);
+  if (parent.error) dbError(parent.error);
   if (parent.data) {
     throw new Error("This account is registered as a parent, not a coach.");
   }
@@ -47,7 +47,7 @@ async function ensureProfile(supabase: Client, userId: string) {
     .insert({ user_id: userId })
     .select("id, first_name, last_name, onboarded_at")
     .single();
-  if (created.error) throw new Error(created.error.message);
+  if (created.error) dbError(created.error);
   return created.data;
 }
 
@@ -61,7 +61,7 @@ export const getCoachProfile = createServerFn({ method: "GET" })
       .from("coach_levels")
       .select("sport, level_key, practice_hours_per_week")
       .eq("coach_id", profile.id);
-    if (levels.error) throw new Error(levels.error.message);
+    if (levels.error) dbError(levels.error);
 
     return {
       profile: {
@@ -122,7 +122,7 @@ export const saveCoachLevels = createServerFn({ method: "POST" })
 
     // Replace strategy: delete all then insert. RLS scopes both to this coach.
     const del = await supabase.from("coach_levels").delete().eq("coach_id", profile.id);
-    if (del.error) throw new Error(del.error.message);
+    if (del.error) dbError(del.error);
 
     if (data.entries.length > 0) {
       const rows = data.entries.map((e) => ({
@@ -132,7 +132,7 @@ export const saveCoachLevels = createServerFn({ method: "POST" })
         practice_hours_per_week: e.hoursPerWeek,
       }));
       const ins = await supabase.from("coach_levels").insert(rows);
-      if (ins.error) throw new Error(ins.error.message);
+      if (ins.error) dbError(ins.error);
     }
 
     return { ok: true };

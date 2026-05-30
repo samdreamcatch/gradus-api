@@ -27,7 +27,7 @@ async function ensureCoachId(supabase: Client, userId: string): Promise<string> 
     .select("id")
     .eq("user_id", userId)
     .maybeSingle();
-  if (existing.error) throw new Error(existing.error.message);
+  if (existing.error) dbError(existing.error);
   if (existing.data) return existing.data.id;
 
   const created = await supabase
@@ -35,7 +35,7 @@ async function ensureCoachId(supabase: Client, userId: string): Promise<string> 
     .insert({ user_id: userId })
     .select("id")
     .single();
-  if (created.error) throw new Error(created.error.message);
+  if (created.error) dbError(created.error);
   return created.data.id;
 }
 
@@ -91,7 +91,7 @@ export const getCoachInviteCode = createServerFn({ method: "GET" })
       .select("code")
       .eq("coach_id", coachId)
       .maybeSingle();
-    if (existing.error) throw new Error(existing.error.message);
+    if (existing.error) dbError(existing.error);
     if (existing.data) return { code: existing.data.code };
 
     const code = await insertUniqueCode(supabase, coachId);
@@ -110,7 +110,7 @@ export const rotateCoachInviteCode = createServerFn({ method: "POST" })
       .select("id")
       .eq("coach_id", coachId)
       .maybeSingle();
-    if (existing.error) throw new Error(existing.error.message);
+    if (existing.error) dbError(existing.error);
     if (!existing.data) {
       const code = await insertUniqueCode(supabase, coachId);
       return { code };
