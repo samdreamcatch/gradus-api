@@ -17,6 +17,7 @@ import { Route as SignupCoachRouteImport } from './routes/signup.coach'
 import { Route as SignupAthleteRouteImport } from './routes/signup.athlete'
 import { Route as AuthenticatedParentRouteImport } from './routes/_authenticated/parent'
 import { Route as AuthenticatedAthleteRouteImport } from './routes/_authenticated/athlete'
+import { Route as AuthenticatedParentIndexRouteImport } from './routes/_authenticated/parent.index'
 import { Route as AuthenticatedCoachIndexRouteImport } from './routes/_authenticated/coach.index'
 import { Route as SignupParentScheduleRouteImport } from './routes/signup.parent.schedule'
 import { Route as SignupParentGoalsRouteImport } from './routes/signup.parent.goals'
@@ -70,6 +71,12 @@ const AuthenticatedAthleteRoute = AuthenticatedAthleteRouteImport.update({
   path: '/athlete',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedParentIndexRoute =
+  AuthenticatedParentIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedParentRoute,
+  } as any)
 const AuthenticatedCoachIndexRoute = AuthenticatedCoachIndexRouteImport.update({
   id: '/coach/',
   path: '/coach/',
@@ -160,6 +167,7 @@ export interface FileRoutesByFullPath {
   '/signup/parent/goals': typeof SignupParentGoalsRoute
   '/signup/parent/schedule': typeof SignupParentScheduleRoute
   '/coach/': typeof AuthenticatedCoachIndexRoute
+  '/parent/': typeof AuthenticatedParentIndexRoute
   '/coach/plans/$planId': typeof AuthenticatedCoachPlansPlanIdRoute
   '/parent/plans/$planId': typeof AuthenticatedParentPlansPlanIdRoute
   '/coach/plans/': typeof AuthenticatedCoachPlansIndexRoute
@@ -168,7 +176,6 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/athlete': typeof AuthenticatedAthleteRoute
-  '/parent': typeof AuthenticatedParentRouteWithChildren
   '/signup/athlete': typeof SignupAthleteRouteWithChildren
   '/signup/coach': typeof SignupCoachRoute
   '/signup/parent': typeof SignupParentRouteWithChildren
@@ -181,6 +188,7 @@ export interface FileRoutesByTo {
   '/signup/parent/goals': typeof SignupParentGoalsRoute
   '/signup/parent/schedule': typeof SignupParentScheduleRoute
   '/coach': typeof AuthenticatedCoachIndexRoute
+  '/parent': typeof AuthenticatedParentIndexRoute
   '/coach/plans/$planId': typeof AuthenticatedCoachPlansPlanIdRoute
   '/parent/plans/$planId': typeof AuthenticatedParentPlansPlanIdRoute
   '/coach/plans': typeof AuthenticatedCoachPlansIndexRoute
@@ -205,6 +213,7 @@ export interface FileRoutesById {
   '/signup/parent/goals': typeof SignupParentGoalsRoute
   '/signup/parent/schedule': typeof SignupParentScheduleRoute
   '/_authenticated/coach/': typeof AuthenticatedCoachIndexRoute
+  '/_authenticated/parent/': typeof AuthenticatedParentIndexRoute
   '/_authenticated/coach/plans/$planId': typeof AuthenticatedCoachPlansPlanIdRoute
   '/_authenticated/parent/plans/$planId': typeof AuthenticatedParentPlansPlanIdRoute
   '/_authenticated/coach/plans/': typeof AuthenticatedCoachPlansIndexRoute
@@ -229,6 +238,7 @@ export interface FileRouteTypes {
     | '/signup/parent/goals'
     | '/signup/parent/schedule'
     | '/coach/'
+    | '/parent/'
     | '/coach/plans/$planId'
     | '/parent/plans/$planId'
     | '/coach/plans/'
@@ -237,7 +247,6 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/athlete'
-    | '/parent'
     | '/signup/athlete'
     | '/signup/coach'
     | '/signup/parent'
@@ -250,6 +259,7 @@ export interface FileRouteTypes {
     | '/signup/parent/goals'
     | '/signup/parent/schedule'
     | '/coach'
+    | '/parent'
     | '/coach/plans/$planId'
     | '/parent/plans/$planId'
     | '/coach/plans'
@@ -273,6 +283,7 @@ export interface FileRouteTypes {
     | '/signup/parent/goals'
     | '/signup/parent/schedule'
     | '/_authenticated/coach/'
+    | '/_authenticated/parent/'
     | '/_authenticated/coach/plans/$planId'
     | '/_authenticated/parent/plans/$planId'
     | '/_authenticated/coach/plans/'
@@ -344,6 +355,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/athlete'
       preLoaderRoute: typeof AuthenticatedAthleteRouteImport
       parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/parent/': {
+      id: '/_authenticated/parent/'
+      path: '/'
+      fullPath: '/parent/'
+      preLoaderRoute: typeof AuthenticatedParentIndexRouteImport
+      parentRoute: typeof AuthenticatedParentRoute
     }
     '/_authenticated/coach/': {
       id: '/_authenticated/coach/'
@@ -455,10 +473,12 @@ const AuthenticatedParentPlansRouteWithChildren =
 
 interface AuthenticatedParentRouteChildren {
   AuthenticatedParentPlansRoute: typeof AuthenticatedParentPlansRouteWithChildren
+  AuthenticatedParentIndexRoute: typeof AuthenticatedParentIndexRoute
 }
 
 const AuthenticatedParentRouteChildren: AuthenticatedParentRouteChildren = {
   AuthenticatedParentPlansRoute: AuthenticatedParentPlansRouteWithChildren,
+  AuthenticatedParentIndexRoute: AuthenticatedParentIndexRoute,
 }
 
 const AuthenticatedParentRouteWithChildren =
