@@ -399,8 +399,10 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
                   allowFreeText={false}
                   placeholder="Choose an athlete"
                   saving={savingField === "athleteId"}
+                  highlighted={!!touched.plan.athleteId}
                   onCommit={(v) => {
                     const match = athletes.find((a) => a.name === v);
+                    clearPlanTouch("athleteId");
                     return commit("athleteId", () =>
                       planUpdate.mutateAsync({
                         data: { id: plan.id, athleteId: match?.id ?? null },
@@ -408,6 +410,7 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
                     );
                   }}
                 />
+
               </div>
               <div className="flex shrink-0 items-center gap-2 border-l border-divider pl-3">
                 <label className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
