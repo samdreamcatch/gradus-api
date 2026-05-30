@@ -39,6 +39,10 @@
   --color-border: var(--divider);
   --color-input: var(--divider);
   --color-ring: var(--accent);
+
+  --color-secondary-accent: var(--secondary-accent);
+  --color-secondary-accent-wash: var(--secondary-accent-wash);
+  --color-secondary-accent-ink: var(--secondary-accent-ink);
 }
 
 :root {
