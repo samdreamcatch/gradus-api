@@ -165,10 +165,10 @@ function PlanCard({
       to="/parent/plans/$planId"
       params={{ planId: plan.id }}
       className={cn(
-        "group block rounded-2xl border border-l-[4px] bg-card p-5 shadow-card transition-all hover:-translate-y-0.5 hover:shadow-page",
+        "group block rounded-2xl border border-divider border-l-[4px] bg-card p-5 shadow-card transition-all hover:-translate-y-0.5 hover:shadow-page",
         muted
-          ? "border-divider border-l-divider opacity-80"
-          : "border-divider border-l-pen-tennis hover:border-l-pen-tennis",
+          ? "border-l-divider opacity-80"
+          : "border-l-[var(--pen-tennis)]",
       )}
     >
       <div className="flex items-center gap-2">
@@ -177,7 +177,7 @@ function PlanCard({
             "inline-flex items-center rounded-sm px-1.5 py-0.5 text-[9px] font-black uppercase tracking-widest",
             muted
               ? "bg-elevated text-text-tertiary"
-              : "bg-pen-tennis-wash text-pen-tennis-ink",
+              : "bg-[var(--pen-tennis-wash)] text-[var(--pen-tennis-ink)]",
           )}
         >
           {muted ? "Benched" : "Active"}
