@@ -154,7 +154,9 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
   const clearAllTouched = () =>
     setTouched({ plan: {}, moves: {}, newMoveIds: [] });
   const touchedCount =
-    Object.keys(touched.plan).length + Object.keys(touched.moves).length;
+    Object.keys(touched.plan).length +
+    Object.keys(touched.moves).length +
+    touched.newMoveIds.length;
 
 
 
