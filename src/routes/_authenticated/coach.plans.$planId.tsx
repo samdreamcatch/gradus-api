@@ -150,6 +150,13 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
     if (touched.newMoveIds.includes(moveId)) return true;
     return touched.moves[moveId]?.includes(field) ?? false;
   };
+  const planSource = (key: "title" | "athleteId" | "notes") =>
+    touched.sources?.plan?.[key]?.quote;
+  const moveSource = (
+    moveId: string,
+    field: "name" | "description" | "cue" | "why" | "target",
+  ) => touched.sources?.moves?.[moveId]?.[field]?.quote;
+
 
   const clearAllTouched = () =>
     setTouched({ plan: {}, moves: {}, newMoveIds: [] });
