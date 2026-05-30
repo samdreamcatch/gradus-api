@@ -501,7 +501,7 @@ function PlanRow({ plan }: { plan: PlanSummaryDTO }) {
 function StatusPill({ plan }: { plan: PlanSummaryDTO }) {
   if (plan.kind === "template") {
     return (
-      <span className="rounded-sm bg-secondary-accent-wash px-2 py-0.5 text-[10px] font-black uppercase tracking-tight text-secondary-accent-ink">
+      <span className="rounded-sm bg-elevated px-2 py-0.5 text-[10px] font-black uppercase tracking-tight text-text-secondary">
         Template
       </span>
     );
@@ -514,7 +514,7 @@ function StatusPill({ plan }: { plan: PlanSummaryDTO }) {
     );
   }
   return (
-    <span className="rounded-sm bg-secondary-accent-wash px-2 py-0.5 text-[10px] font-black uppercase tracking-tight text-secondary-accent-ink">
+    <span className="rounded-sm bg-elevated px-2 py-0.5 text-[10px] font-black uppercase tracking-tight text-text-tertiary">
       {shortName(plan.athleteName)}
     </span>
   );
