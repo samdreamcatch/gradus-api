@@ -249,3 +249,72 @@ function CoachNote({
     </div>
   );
 }
+
+function SessionTimer({ onSlide }: { onSlide: () => void }) {
+  const [running, setRunning] = useState(false);
+  const [elapsed, setElapsed] = useState(0); // seconds
+  const startRef = useRef<number | null>(null);
+  const baseRef = useRef(0);
+
+  useEffect(() => {
+    if (!running) return;
+    startRef.current = Date.now();
+    const tick = () => {
+      setElapsed(baseRef.current + Math.floor((Date.now() - (startRef.current ?? Date.now())) / 1000));
+    };
+    tick();
+    const id = window.setInterval(tick, 250);
+    return () => {
+      window.clearInterval(id);
+      baseRef.current = baseRef.current + Math.floor((Date.now() - (startRef.current ?? Date.now())) / 1000);
+    };
+  }, [running]);
+
+  const reset = () => {
+    setRunning(false);
+    baseRef.current = 0;
+    setElapsed(0);
+  };
+
+  const mm = String(Math.floor(elapsed / 60)).padStart(2, "0");
+  const ss = String(elapsed % 60).padStart(2, "0");
+  const started = running || elapsed > 0;
+
+  return (
+    <div className="mt-6 flex items-center justify-between gap-3 rounded-full border border-accent/40 bg-accent/15 py-1.5 pl-1.5 pr-3">
+      <button
+        type="button"
+        onClick={() => setRunning((r) => !r)}
+        className="inline-flex items-center gap-2 rounded-full bg-accent px-5 py-2 text-sm font-bold text-accent-foreground shadow-sm"
+        aria-label={running ? "Pause session timer" : "Start session timer"}
+      >
+        {running ? <Pause className="size-4" /> : <Play className="size-4" />}
+        {started ? (
+          <span className="tabular-nums">{mm}:{ss}</span>
+        ) : (
+          <>Start session timer <ArrowRight className="size-4" /></>
+        )}
+      </button>
+
+      <div className="flex items-center gap-2">
+        {started ? (
+          <button
+            type="button"
+            onClick={reset}
+            aria-label="Reset session timer"
+            className="inline-flex size-7 items-center justify-center rounded-full text-accent-ink hover:bg-accent/20"
+          >
+            <RotateCcw className="size-4" />
+          </button>
+        ) : null}
+        <button
+          type="button"
+          onClick={onSlide}
+          className="inline-flex items-center gap-1 text-sm font-bold text-accent-ink"
+        >
+          Slide <ArrowRight className="size-4" />
+        </button>
+      </div>
+    </div>
+  );
+}
