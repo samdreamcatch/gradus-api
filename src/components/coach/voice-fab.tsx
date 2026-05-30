@@ -7,6 +7,7 @@ import { useCallback, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { useVoiceCapture } from "@/hooks/use-voice-capture";
 import { voiceBuildPlan } from "@/lib/voice.functions";
+import { stashVoiceTouched } from "@/lib/voice-touched-store";
 
 export interface VoiceFabProps {
   mode: "create" | "edit";
@@ -77,10 +78,10 @@ export function VoiceFab({
       onVoiceApplied?.(result);
 
       if (mode === "create") {
+        stashVoiceTouched(result.planId, result.touched);
         navigate({
           to: "/coach/plans/$planId",
           params: { planId: result.planId },
-          state: { fromVoice: { touched: result.touched } } as never,
         });
       }
     },
