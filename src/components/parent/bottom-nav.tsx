@@ -9,12 +9,14 @@ type Item = {
   to?: string;
   /** Match when pathname starts with this prefix (in addition to exact `to`). */
   matchPrefix?: string;
+  /** Stubbed unread count — when > 0, renders an attention dot on the icon. */
+  unreadCount?: number;
 };
 
 const ITEMS: Item[] = [
   { label: "Dashboard", icon: LayoutDashboard, to: "/parent" },
   { label: "Plans", icon: ClipboardList, to: "/parent/plans", matchPrefix: "/parent/plans" },
-  { label: "Messages", icon: MessageSquare },
+  { label: "Messages", icon: MessageSquare, unreadCount: 0 },
   { label: "Resources", icon: BookOpen },
 ];
 
