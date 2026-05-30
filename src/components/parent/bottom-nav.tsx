@@ -37,6 +37,8 @@ export function ParentBottomNav() {
               : pathname === item.to
             : false;
 
+          const hasUnread = (item.unreadCount ?? 0) > 0;
+
           const inner = (
             <span
               className={cn(
@@ -48,7 +50,15 @@ export function ParentBottomNav() {
                     : "text-text-tertiary",
               )}
             >
-              <Icon className={cn("h-5 w-5", isActive && "text-accent-ink")} aria-hidden />
+              <span className="relative">
+                <Icon className={cn("h-5 w-5", isActive && "text-accent-ink")} aria-hidden />
+                {hasUnread ? (
+                  <span
+                    aria-label={`${item.unreadCount} unread`}
+                    className="absolute -right-1 -top-0.5 inline-flex h-2 w-2 rounded-full bg-attention ring-2 ring-card"
+                  />
+                ) : null}
+              </span>
               <span className={cn("leading-none", isActive && "pen-highlight")}>{item.label}</span>
             </span>
           );
