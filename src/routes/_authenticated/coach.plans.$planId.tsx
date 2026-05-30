@@ -360,8 +360,14 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
                   plan: { ...prev.plan, ...r.touched.plan },
                   moves: { ...prev.moves, ...r.touched.moves },
                   newMoveIds: [...prev.newMoveIds, ...r.touched.newMoveIds],
+                  transcript: r.touched.transcript ?? prev.transcript,
+                  sources: {
+                    plan: { ...(prev.sources?.plan ?? {}), ...(r.touched.sources?.plan ?? {}) },
+                    moves: { ...(prev.sources?.moves ?? {}), ...(r.touched.sources?.moves ?? {}) },
+                  },
                 }))
               }
+
             />
           </div>
         </SheetTitle>
