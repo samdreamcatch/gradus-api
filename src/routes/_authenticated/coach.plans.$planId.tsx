@@ -429,6 +429,8 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
                   placeholder="Choose an athlete"
                   saving={savingField === "athleteId"}
                   highlighted={!!touched.plan.athleteId}
+                  sourceQuote={planSource("athleteId")}
+
                   onCommit={(v) => {
                     const match = athletes.find((a) => a.name === v);
                     clearPlanTouch("athleteId");
