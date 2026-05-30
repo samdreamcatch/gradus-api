@@ -600,6 +600,8 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
                                 required
                                 saving={savingField === `m-name-${m.id}`}
                                 highlighted={isMoveFieldTouched(m.id, "name")}
+                                sourceQuote={moveSource(m.id, "name")}
+
                                 onCommit={(v) => {
                                   clearMoveTouch(m.id, "name");
                                   return commit(`m-name-${m.id}`, () =>
@@ -651,6 +653,8 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
                               rows={3}
                               saving={savingField === `m-desc-${m.id}`}
                               highlighted={isMoveFieldTouched(m.id, "description")}
+                              sourceQuote={moveSource(m.id, "description")}
+
                               onCommit={(v) => {
                                 clearMoveTouch(m.id, "description");
                                 return commit(`m-desc-${m.id}`, () =>
@@ -670,6 +674,8 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
                               rows={2}
                               saving={savingField === `m-cue-${m.id}`}
                               highlighted={isMoveFieldTouched(m.id, "cue")}
+                              sourceQuote={moveSource(m.id, "cue")}
+
                               onCommit={(v) => {
                                 clearMoveTouch(m.id, "cue");
                                 return commit(`m-cue-${m.id}`, () =>
@@ -687,6 +693,8 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
                               rows={2}
                               saving={savingField === `m-why-${m.id}`}
                               highlighted={isMoveFieldTouched(m.id, "why")}
+                              sourceQuote={moveSource(m.id, "why")}
+
                               onCommit={(v) => {
                                 clearMoveTouch(m.id, "why");
                                 return commit(`m-why-${m.id}`, () =>
