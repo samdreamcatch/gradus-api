@@ -271,9 +271,9 @@ const CREATE_PROMPTS = [
 ];
 
 const EDIT_PROMPTS = [
-  "Add serve toss drill, 15 reps",
-  "Change footwork to 8 minutes",
-  "Remove the volley drill",
+  "Edits to a specific move",
+  "Add or remove a move",
+  "Update notes and cues ",
 ];
 
 function Waveform({ level }: { level: number }) {
