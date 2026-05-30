@@ -556,10 +556,14 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
         <ul className="space-y-4">
           {plan.moves.map((m, idx) => {
             const expanded = expandedMoves[m.id] ?? isNewFlow;
+            const isNewMove = touched.newMoveIds.includes(m.id);
             return (
               <li
                 key={m.id}
-                className="relative rounded-lg border border-divider border-l-[3px] border-l-accent bg-card p-4"
+                className={cn(
+                  "relative rounded-lg border border-divider border-l-[3px] border-l-accent bg-card p-4",
+                  isNewMove && "ring-2 ring-accent/40 ring-offset-2 ring-offset-background",
+                )}
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex min-w-0 flex-1 items-start gap-3">
@@ -578,11 +582,13 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
                                 value={m.name}
                                 required
                                 saving={savingField === `m-name-${m.id}`}
-                                onCommit={(v) =>
-                                  commit(`m-name-${m.id}`, () =>
+                                highlighted={isMoveFieldTouched(m.id, "name")}
+                                onCommit={(v) => {
+                                  clearMoveTouch(m.id, "name");
+                                  return commit(`m-name-${m.id}`, () =>
                                     moveUpdate.mutateAsync({ data: { id: m.id, patch: { name: v } } }),
-                                  )
-                                }
+                                  );
+                                }}
                                 displayClassName="font-display text-xl font-black leading-tight tracking-tight"
                                 inputClassName="font-display text-xl font-black leading-tight tracking-tight"
                               />
@@ -596,18 +602,27 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
                               <ChevronDown className="h-4 w-4" />
                             </button>
                           </div>
-                          <div className="py-3">
+                          <div
+                            className={cn(
+                              "py-3",
+                              (isMoveFieldTouched(m.id, "targetKind") ||
+                                isMoveFieldTouched(m.id, "targetValue")) &&
+                                "rounded-md bg-accent/10 px-2 ring-1 ring-accent/40",
+                            )}
+                          >
                             <PlanMoveTarget
                               kind={m.targetKind}
                               value={m.targetValue}
                               saving={savingField === `m-target-${m.id}`}
-                              onCommit={(k, v) =>
-                                commit(`m-target-${m.id}`, () =>
+                              onCommit={(k, v) => {
+                                clearMoveTouch(m.id, "targetKind");
+                                clearMoveTouch(m.id, "targetValue");
+                                return commit(`m-target-${m.id}`, () =>
                                   moveUpdate.mutateAsync({
                                     data: { id: m.id, patch: { targetKind: k, targetValue: v } },
                                   }),
-                                )
-                              }
+                                );
+                              }}
                             />
                           </div>
                           <div className="py-3">
@@ -618,13 +633,15 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
                               placeholder="How to perform the move"
                               rows={3}
                               saving={savingField === `m-desc-${m.id}`}
-                              onCommit={(v) =>
-                                commit(`m-desc-${m.id}`, () =>
+                              highlighted={isMoveFieldTouched(m.id, "description")}
+                              onCommit={(v) => {
+                                clearMoveTouch(m.id, "description");
+                                return commit(`m-desc-${m.id}`, () =>
                                   moveUpdate.mutateAsync({
                                     data: { id: m.id, patch: { description: v } },
                                   }),
-                                )
-                              }
+                                );
+                              }}
                             />
                           </div>
                           <div className="py-3">
@@ -635,11 +652,13 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
                               placeholder="One line the athlete can repeat"
                               rows={2}
                               saving={savingField === `m-cue-${m.id}`}
-                              onCommit={(v) =>
-                                commit(`m-cue-${m.id}`, () =>
+                              highlighted={isMoveFieldTouched(m.id, "cue")}
+                              onCommit={(v) => {
+                                clearMoveTouch(m.id, "cue");
+                                return commit(`m-cue-${m.id}`, () =>
                                   moveUpdate.mutateAsync({ data: { id: m.id, patch: { cue: v } } }),
-                                )
-                              }
+                                );
+                              }}
                             />
                           </div>
                           <div className="pt-3">
@@ -650,11 +669,13 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
                               placeholder="Tailor it to this plan"
                               rows={2}
                               saving={savingField === `m-why-${m.id}`}
-                              onCommit={(v) =>
-                                commit(`m-why-${m.id}`, () =>
+                              highlighted={isMoveFieldTouched(m.id, "why")}
+                              onCommit={(v) => {
+                                clearMoveTouch(m.id, "why");
+                                return commit(`m-why-${m.id}`, () =>
                                   moveUpdate.mutateAsync({ data: { id: m.id, patch: { why: v } } }),
-                                )
-                              }
+                                );
+                              }}
                             />
                           </div>
                           <div className="flex justify-end pt-3">
@@ -675,7 +696,11 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
                           type="button"
                           onClick={() => toggleMove(m.id)}
                           aria-expanded={false}
-                          className="flex w-full items-center justify-between gap-3 text-left font-display text-xl font-black leading-tight tracking-tight text-text-primary"
+                          className={cn(
+                            "flex w-full items-center justify-between gap-3 text-left font-display text-xl font-black leading-tight tracking-tight text-text-primary",
+                            (isNewMove || touched.moves[m.id]?.length) &&
+                              "pen-highlight",
+                          )}
                         >
                           <span>
                             {m.name || (
@@ -713,6 +738,7 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
             );
           })}
         </ul>
+
 
 
 
