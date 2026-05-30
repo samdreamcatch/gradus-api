@@ -83,7 +83,7 @@ function PlansPage() {
               onSport={setSport}
             />
           ) : (
-            <LibrarySearchStrip />
+            <LibrarySearchStrip query={libraryQuery} onQuery={setLibraryQuery} />
           )}
         </header>
 
@@ -91,7 +91,7 @@ function PlansPage() {
           {tab === "plans" ? (
             <PlansList filter={planFilter} athleteId={athleteId} sport={sport} />
           ) : (
-            <LibraryView onSelectMove={(id) => setMoveSelection(id)} />
+            <LibraryView query={libraryQuery} onSelectMove={(id) => setMoveSelection(id)} />
           )}
         </main>
 
