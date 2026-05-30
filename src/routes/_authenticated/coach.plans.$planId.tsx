@@ -58,12 +58,17 @@ import { consumeVoiceTouched, type VoiceTouchedSnapshot } from "@/lib/voice-touc
 
 export const Route = createFileRoute("/_authenticated/coach/plans/$planId")({
   component: PlanEditorSheet,
+  validateSearch: (search: Record<string, unknown>) => ({
+    from: search.from === "plus" ? ("plus" as const) : undefined,
+  }),
 });
 
 function PlanEditorSheet() {
   const { planId } = Route.useParams();
+  const { from } = Route.useSearch();
   const navigate = useNavigate();
   const close = () => navigate({ to: "/coach/plans" });
+
 
   // Defensive: if someone hits /coach/plans/new directly, bounce back.
   if (planId === "new") {
