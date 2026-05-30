@@ -134,10 +134,30 @@ export function MoveField(props: MoveFieldProps) {
             <span className="text-text-tertiary italic">{placeholder ?? "Tap to add"}</span>
           )}
         </button>
+        {highlighted && sourceQuote ? (
+          <div className="px-1">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowSource((s) => !s);
+              }}
+              className="font-hand text-sm leading-tight text-accent-ink/70 hover:text-accent-ink underline-offset-2 hover:underline"
+            >
+              {showSource ? "Hide source" : "From your voice"}
+            </button>
+            {showSource ? (
+              <div className="mt-1 rounded-md bg-elevated/70 px-2 py-1.5 font-hand text-base leading-snug text-text-secondary">
+                “{sourceQuote}”
+              </div>
+            ) : null}
+          </div>
+        ) : null}
 
       </div>
     );
   }
+
 
   const sharedInputCls = cn(
     "block w-full border-b-2 border-accent bg-transparent px-1 py-1 text-text-primary",
