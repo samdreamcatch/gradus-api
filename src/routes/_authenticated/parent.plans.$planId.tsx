@@ -2,7 +2,7 @@ import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, ArrowRight, ChevronDown, MessageCircle, Settings } from "lucide-react";
+import { ArrowLeft, ArrowRight, ChevronDown, MessageCircle, Settings, X } from "lucide-react";
 import { toast } from "sonner";
 import { ParentBottomNav } from "@/components/parent/bottom-nav";
 import { cn } from "@/lib/utils";
@@ -118,13 +118,6 @@ function ParentPlanDetail() {
               move={m}
               expanded={!!expanded[m.id]}
               onToggle={() => toggle(m.id)}
-              onChip={(kind) =>
-                soon(
-                  kind === "cue"
-                    ? "Cue tips from your coach"
-                    : "Why your coach assigned this",
-                )
-              }
             />
           ))
         )}
@@ -150,14 +143,19 @@ function MoveCard({
   move,
   expanded,
   onToggle,
-  onChip,
 }: {
   move: ParentPlanMoveDTO;
   expanded: boolean;
   onToggle: () => void;
-  onChip: (kind: "cue" | "why") => void;
 }) {
   const unit = move.targetKind === "mins" ? "min" : "reps";
+  const [shown, setShown] = useState<{ cue: boolean; why: boolean }>({
+    cue: false,
+    why: false,
+  });
+  const show = (kind: "cue" | "why") => setShown((s) => ({ ...s, [kind]: true }));
+  const hide = (kind: "cue" | "why") => setShown((s) => ({ ...s, [kind]: false }));
+
   return (
     <div
       className={cn(
@@ -195,24 +193,73 @@ function MoveCard({
               {move.description}
             </p>
           ) : null}
+
+          {shown.cue && move.cue ? (
+            <CoachNote
+              label="How to cue this"
+              body={move.cue}
+              onClose={() => hide("cue")}
+            />
+          ) : null}
+          {shown.why && move.why ? (
+            <CoachNote
+              label="Why it's assigned"
+              body={move.why}
+              onClose={() => hide("why")}
+            />
+          ) : null}
+
           <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => onChip("cue")}
-              className="rounded-full border border-accent/60 bg-card px-3 py-1.5 text-xs font-bold text-accent-ink hover:bg-accent/10"
-            >
-              How do I cue this?
-            </button>
-            <button
-              type="button"
-              onClick={() => onChip("why")}
-              className="rounded-full border border-accent/60 bg-card px-3 py-1.5 text-xs font-bold text-accent-ink hover:bg-accent/10"
-            >
-              Why is this assigned?
-            </button>
+            {!shown.cue && move.cue ? (
+              <button
+                type="button"
+                onClick={() => show("cue")}
+                className="rounded-full border border-accent/60 bg-card px-3 py-1.5 text-xs font-bold text-accent-ink hover:bg-accent/10"
+              >
+                How do I cue this?
+              </button>
+            ) : null}
+            {!shown.why && move.why ? (
+              <button
+                type="button"
+                onClick={() => show("why")}
+                className="rounded-full border border-accent/60 bg-card px-3 py-1.5 text-xs font-bold text-accent-ink hover:bg-accent/10"
+              >
+                Why is this assigned?
+              </button>
+            ) : null}
           </div>
         </div>
       ) : null}
+    </div>
+  );
+}
+
+function CoachNote({
+  label,
+  body,
+  onClose,
+}: {
+  label: string;
+  body: string;
+  onClose: () => void;
+}) {
+  return (
+    <div className="relative rounded-xl border border-accent/40 bg-accent/10 px-4 py-3 pr-9">
+      <p className="text-[10px] font-black uppercase tracking-widest text-accent-ink">
+        {label}
+      </p>
+      <p className="mt-1 font-hand text-lg leading-snug text-text-primary">
+        {body}
+      </p>
+      <button
+        type="button"
+        onClick={onClose}
+        aria-label={`Hide ${label}`}
+        className="absolute right-2 top-2 inline-flex size-6 items-center justify-center rounded-full text-text-tertiary hover:bg-card hover:text-text-primary"
+      >
+        <X className="size-3.5" />
+      </button>
     </div>
   );
 }
