@@ -1,104 +1,75 @@
-# Granola-style Voice-to-Plan Parsing
+# Add Pool Blue as Secondary Accent
 
-## Goal
-Replace the current single-pass voice parser with a Granola-style pipeline that:
-1. Slots each piece of what the coach said into the right structured field (title, athlete, move name/cue/why/target, etc.) instead of dumping into notes.
-2. Records the verbatim transcript phrase behind every filled field, so the coach can verify what the AI heard.
-3. Rewrites leftover spoken content into clean athlete/parent-facing notes — no filler, no AI prefix.
+Right now everything inherits from `--accent` (Tennis), which is why the app reads monochromatic. We'll introduce **Pool Blue** as a second semantic token and apply it surgically to two domains: **athlete identity** and **data/metadata**. Tennis stays the coach action color (FAB, primary buttons, voice mic, "create"-style affordances).
 
-## What Granola actually does (in plain terms)
-- **Segment, then slot.** Instead of asking the model to fill a whole template at once, the transcript is broken into intent chunks and each chunk is routed to the field it belongs to.
-- **Template-aware prompting with examples.** The model sees each field's *purpose* and example inputs, not just a JSON schema — so rambling notes land in clean buckets instead of all in "Summary."
-- **Source anchoring.** Every structured field links back to the transcript span it came from, so the user can see *why* the model placed something where it did and trust/edit it.
+## What "secondary" means
 
-## New pipeline
+A second pen token that lives alongside `--accent`, used *only* in the places we name below. Same paper-stock feel, same pen system — just a second jelly color so the page has two voices instead of one.
 
-```text
-audio → ElevenLabs Scribe → transcript
-                              │
-                              ▼
-           ┌─────────────────────────────┐
-       1.  │  Slot pass (Gemini Flash)   │  one LLM call, structured output
-           │  → fields + sourceQuote per │  few-shot prompt teaches the field
-           │    field + leftover[]       │  mapping
-           └─────────────────────────────┘
-                              │
-                              ▼
-           ┌─────────────────────────────┐
-       2.  │  Deterministic resolution   │  no LLM
-           │  athlete name → roster id   │  normalize + Levenshtein on first name
-           │  span offsets from quotes   │  case-insensitive substring search
-           └─────────────────────────────┘
-                              │
-                              ▼
-           ┌─────────────────────────────┐
-       3.  │  Notes cleanup (Gemini)     │  second LLM call, only if leftover
-           │  leftover (+ existing       │  produces athlete/parent-facing
-           │  notes in edit mode) →      │  prose — no "Notes:" prefix, no
-           │  clean prose                │  "um/uh/like" filler, no labels
-           └─────────────────────────────┘
-                              │
-                              ▼
-                       apply to DB
+## Where Pool Blue shows up
+
+**1. Athlete identity** — anywhere we name or scope to an athlete:
+- Athlete avatar tints (background wash + ink)
+- Athlete name in plan cards (`coach.plans.tsx`) and the plan editor header (`coach.plans.$planId.tsx`)
+- The athlete chip / "for {athlete}" label
+- Athlete-scoped filter chips in the plans list when an athlete is selected
+- The voice "matched athlete" highlight in the plan editor (currently a tennis glow → pool glow)
+
+**2. Data & metadata** — non-action, informational surfaces:
+- Move counts, durations, "X moves" subtitles on plan cards
+- Timestamps ("Updated 2h ago", "Created…")
+- Status/state badges that aren't actions: `Draft`, `Template`, sport tags
+- Library move tags / category pills in the move sheet
+- The "From your voice" source-quote pill in `move-field.tsx`
+
+**Tennis stays for:** the `+` FAB, the mic FAB, primary CTAs (Save, Send to athlete), tab active states, the body background wash, the pen-highlight utility (since coach voice notes are a coach action).
+
+## Technical plan
+
+### 1. Add Pool tokens to `src/styles.css`
+
+In `:root`, alongside the tennis pen block:
+```css
+--pen-pool: oklch(0.72 0.14 235);
+--pen-pool-wash: oklch(0.97 0.025 235);
+--pen-pool-ink: oklch(0.36 0.10 235);
+
+--secondary-accent: var(--pen-pool);
+--secondary-accent-wash: var(--pen-pool-wash);
+--secondary-accent-ink: var(--pen-pool-ink);
 ```
 
-Per voice take: ~2 Gemini Flash calls (~$0.001-0.003). At 10-20 plans/week per coach that's ~$0.10-0.25/coach/month — negligible.
+Dark-mode overrides in `.dark` with brightened pool + low-chroma dark wash, matching the tennis pattern already there.
 
-## Why this fixes today's failure mode
-The current pipeline (`src/lib/voice.functions.ts:198-204`) catches any parse error and dumps the **raw transcript** into `notes`. That's how a 20-second voice take with five drills ends up as one wall of "um okay so for Sarah let's do twenty…" in the notes field. The new pipeline:
-- Lowers the chance of parse failure (looser schema, few-shot examples, smaller per-field decisions).
-- On the rare hard failure, returns `{ moves: [], notes: null }` instead of dumping raw text — better to surface "nothing landed" than ship ugly text to the athlete.
-- Always runs leftover through the cleanup pass, so anything that *does* land in notes reads clean.
+In `@theme inline`, expose them as Tailwind utilities:
+```css
+--color-secondary-accent: var(--secondary-accent);
+--color-secondary-accent-wash: var(--secondary-accent-wash);
+--color-secondary-accent-ink: var(--secondary-accent-ink);
+```
 
-## Source-quote UI ("hover to see source")
-Every field that voice filled gets a small **"From your voice"** affordance under it (Caveat font, accent-ink color). Tap it (mobile) or hover it (desktop) to reveal the exact phrase from the transcript that produced it:
+This gives us `bg-secondary-accent`, `text-secondary-accent-ink`, `bg-secondary-accent-wash`, etc.
 
-> **Cue:** Keep racquet face closed
-> *From your voice:* "...keep the racquet face closed, this is to fix that wristy contact..."
+> Note: the existing `--color-secondary` is already mapped to `--elevated` for shadcn — we'll use the distinct `--color-secondary-accent` name to avoid collision.
 
-Implementation: inline reveal under the field — no popover/overlay machinery. Works the same on touch and mouse. Disappears when the coach clears the highlight (already wired via `clearMoveTouch` / `clearPlanTouch`).
+### 2. Apply to athlete identity surfaces
+- `coach.plans.tsx` plan cards: athlete name → `text-secondary-accent-ink`; athlete-scoped filter chip active state → pool wash + pool ink
+- `coach.plans.$planId.tsx`: athlete header label → pool ink; the matched-athlete voice glow ring → pool
+- Wherever a plain text-secondary athlete name appears, swap to pool ink
 
-## Notes cleanup behavior (coach's spec)
-- **No prefix.** No "Notes:", no "AI noted:", no quotes. Reads as if the coach wrote it.
-- **No filler.** Strip "um", "uh", "like", "you know", "okay so", "I mean", self-corrections.
-- **Athlete/parent-facing voice.** Convert "I want her to focus on…" → "Focus on…" where natural.
-- **Tight.** One short paragraph OR up to 3 short bullets.
-- **Merge, don't append.** In edit mode, the cleanup pass receives the existing notes and produces a single combined result (no duplication, no contradiction).
-- **Empty is fine.** If leftover is just filler, return empty string — better than ugly notes.
+### 3. Apply to data/metadata surfaces
+- Plan card meta row ("3 moves · Updated 2h") → `text-secondary-accent-ink` (or pool at reduced opacity for the meta dot row)
+- `Draft` / `Template` / sport tag badges → pool wash background + pool ink text
+- Move library tag pills in `move-sheet.tsx` → pool wash
+- "From your voice" pill in `move-field.tsx` → pool wash + pool ink (currently tennis-tinted)
 
-## Concrete changes
+### 4. Leave untouched
+- Body background gradient (stays tennis — gives the page its overall warmth)
+- `pen-highlight` utility (stays tennis — it's the coach's voice mark)
+- FABs, primary buttons, focus rings (stay tennis — they're actions)
+- The per-user pen system in `data/theme.ts` is unaffected; `--secondary-accent` is a fixed second color, not pen-swappable
 
-### `src/lib/voice.functions.ts` — full rewrite of the parse stage
-- New `slotTranscript()` — one structured-output Gemini call with rich system prompt + 2 few-shot examples. Returns schema with `*Quote` fields per slot and a top-level `leftover` string.
-- New `cleanupNotes()` — second Gemini call: leftover (+ existing notes in edit mode) → clean prose.
-- New `resolveAthlete()` — deterministic TS: exact match → first-name match → starts-with → Levenshtein ≤ 2 on first name.
-- New `locateQuote()` — finds quote char offsets in the transcript (case-insensitive, whitespace-collapsing); stores `{ start, end, quote }` per field.
-- Non-destructive merge in edit mode: only overwrite a field when the slot pass returned a non-empty value.
-- Hard fallback returns `{ moves: [], notes: null }` instead of dumping raw transcript.
+## Risk / things to verify
 
-### `src/lib/voice-touched-store.ts` — extend snapshot shape
-Add (optional, back-compat):
-- `transcript?: string`
-- `sources?: { plan?: {...}, moves?: Record<string, {...}> }` with `{ start, end, quote }` spans.
-Existing `plan` booleans and `moves` string-array shapes are unchanged.
-
-### `src/components/coach/voice-fab.tsx`
-- Update `onVoiceApplied` callback type to include the new `transcript` + `sources` fields.
-
-### `src/components/coach/move-field.tsx`
-- New optional prop: `sourceQuote?: string`.
-- When `highlighted && sourceQuote`, render a small "From your voice" link under the display button. Click toggles inline reveal of the quote.
-
-### `src/routes/_authenticated/coach.plans.$planId.tsx`
-- Read `touched.sources` and pass the right quote to each `MoveField` and plan-level field's `sourceQuote` prop.
-- Merge `sources` in the in-place `onVoiceApplied` handler the same way `touched.moves` is merged today.
-
-## Out of scope (deferring deliberately)
-- Embeddings-based move/library resolution. Levenshtein is enough for current roster sizes; revisit if it misses.
-- Streaming/partial transcription.
-- Multi-turn voice ("undo that last move").
-
-## Open items resolved with the coach
-- **Cost at scale:** ~$0.001-0.003 per take, ~$0.25/coach/month max at 20 plans/week — fine.
-- **Source UI:** inline reveal under each highlighted field (not a hover popover), works on touch and mouse.
-- **Notes cleanup:** no prefix, no filler, athlete/parent-facing — implemented in `cleanupNotes()`.
+- Contrast: pool-ink on white card surfaces and on pool-wash needs to hit AA. We'll tune `--pen-pool-ink` lightness if needed.
+- Two-color balance: after wiring, scan `/coach/plans`, the plan editor, and the move sheet to confirm pool reads as the "info" color and tennis as the "action" color — not 50/50 noise. If pool feels too loud, dial back to wash-only on metadata and keep ink only for athlete names.
