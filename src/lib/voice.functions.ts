@@ -567,7 +567,15 @@ async function applyDraft(
       if (!pm) continue;
 
       // Non-destructive: only overwrite fields the slot pass actually filled.
-      const patch: Record<string, unknown> = {};
+      const patch: {
+        name?: string;
+        description?: string;
+        cue?: string;
+        why?: string;
+        target_kind?: "reps" | "mins";
+        target_value?: number;
+      } = {};
+
       const fieldsTouched: string[] = [];
       if (m.name) {
         patch.name = m.name;
