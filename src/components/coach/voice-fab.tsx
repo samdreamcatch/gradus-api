@@ -265,9 +265,9 @@ export function VoiceFab({
 }
 
 const CREATE_PROMPTS = [
-  "Plan for Sarah — forehand topspin, 20 reps",
-  "Then split-step footwork, 5 minutes",
-  "Notes: focus on low-to-high swing path",
+  "Your athlete's name",
+  "The moves you want them to work on",
+  "Why you're assigning this now",
 ];
 
 const EDIT_PROMPTS = [
