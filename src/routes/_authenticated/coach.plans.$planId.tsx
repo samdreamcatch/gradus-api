@@ -314,25 +314,59 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
     <>
       <SheetHeader className="-mx-6 -mt-6 border-b border-divider px-6 pt-5 pb-3">
         <SheetTitle asChild>
-          <div>
-            <MoveField
-              kind="text"
-              label="Plan title"
-              hideLabel
-              value={plan.title}
-              placeholder={isNewFlow ? "Name this plan" : "Untitled plan"}
-              required
-              autoEdit={isNewFlow && !plan.title}
-              saving={savingField === "title"}
-              onCommit={(v) =>
-                commit("title", () => planUpdate.mutateAsync({ data: { id: plan.id, title: v } }))
+          <div className="flex items-start gap-3">
+            <div className="min-w-0 flex-1">
+              <MoveField
+                kind="text"
+                label="Plan title"
+                hideLabel
+                value={plan.title}
+                placeholder={isNewFlow ? "Name this plan" : "Untitled plan"}
+                required
+                autoEdit={isNewFlow && !plan.title}
+                saving={savingField === "title"}
+                highlighted={!!touched.plan.title}
+                onCommit={(v) => {
+                  clearPlanTouch("title");
+                  return commit("title", () =>
+                    planUpdate.mutateAsync({ data: { id: plan.id, title: v } }),
+                  );
+                }}
+                displayClassName="font-display text-2xl font-black leading-tight tracking-tight"
+                inputClassName="font-display text-2xl font-black leading-tight tracking-tight"
+              />
+            </div>
+            <VoiceFab
+              mode="edit"
+              planId={plan.id}
+              variant="inline"
+              className="mt-1 shrink-0"
+              onVoiceApplied={(r) =>
+                setTouched((prev) => ({
+                  plan: { ...prev.plan, ...r.touched.plan },
+                  moves: { ...prev.moves, ...r.touched.moves },
+                  newMoveIds: [...prev.newMoveIds, ...r.touched.newMoveIds],
+                }))
               }
-              displayClassName="font-display text-2xl font-black leading-tight tracking-tight"
-              inputClassName="font-display text-2xl font-black leading-tight tracking-tight"
             />
           </div>
         </SheetTitle>
       </SheetHeader>
+
+      {touchedCount > 0 ? (
+        <div className="-mx-6 mt-3 flex items-center justify-between gap-3 border-b border-divider bg-elevated px-6 py-2">
+          <span className="font-hand text-base text-text-primary">
+            From your voice — tweak anything, then approve.
+          </span>
+          <button
+            type="button"
+            onClick={clearAllTouched}
+            className="rounded-full bg-accent px-3 py-1 text-[11px] font-black uppercase tracking-widest text-accent-foreground"
+          >
+            Looks good
+          </button>
+        </div>
+      ) : null}
 
 
       <div className="mt-5 space-y-5">
