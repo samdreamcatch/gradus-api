@@ -333,7 +333,7 @@ function SessionTimer() {
         }}
         style={{ touchAction: "pan-y" }}
         className={cn(
-          "relative z-10 flex w-[72%] select-none items-center gap-2 rounded-full bg-accent px-5 py-2 text-sm font-bold text-accent-foreground shadow-sm",
+          "relative z-10 flex h-10 w-[72%] select-none items-center gap-2 rounded-full bg-accent px-5 text-sm font-bold text-accent-foreground shadow-sm",
           "cursor-grab active:cursor-grabbing",
           dragging && "shadow-card",
           armed && "ring-2 ring-accent-foreground/50",
