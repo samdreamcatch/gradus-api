@@ -442,9 +442,9 @@ function RunningPill({
         ref={trackRef}
         className="relative flex-1 overflow-hidden rounded-full border border-attention/50 bg-attention/15 p-1.5"
       >
-        <span className="pointer-events-none absolute inset-y-0 right-5 flex items-center text-[11px] font-black uppercase tracking-widest text-attention-ink/70">
-          Slide to end
-          <ArrowRight className="ml-1 size-3.5" />
+        <span className="pointer-events-none absolute inset-y-0 right-4 flex items-center gap-1 text-[11px] font-black uppercase tracking-widest text-attention-ink/70">
+          End
+          <ArrowRight className="size-3.5" />
         </span>
 
         <motion.div
@@ -473,7 +473,7 @@ function RunningPill({
           }}
           style={{ touchAction: "pan-y" }}
           className={cn(
-            "relative z-10 flex h-10 w-[72%] select-none items-center gap-2 rounded-full bg-attention px-4 text-sm font-bold text-attention-foreground shadow-sm",
+            "relative z-10 inline-flex h-10 select-none items-center gap-2 rounded-full bg-attention pl-3 pr-4 text-sm font-bold text-attention-foreground shadow-sm",
             "cursor-grab active:cursor-grabbing",
             dragging && "shadow-card",
             armed && "ring-2 ring-attention-foreground/60",
@@ -490,9 +490,8 @@ function RunningPill({
             {running ? "" : "Paused · "}
             {mm}:{ss}
           </span>
-          <span className="mx-1 h-4 w-px bg-attention-foreground/30" />
-          <span className="flex-1 truncate">End → report back</span>
         </motion.div>
+
       </div>
 
       <button
