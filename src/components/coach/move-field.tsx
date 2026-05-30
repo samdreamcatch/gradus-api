@@ -14,6 +14,8 @@ interface BaseProps {
   autoEdit?: boolean;
   required?: boolean;
   hideLabel?: boolean;
+  /** When true, applies a pen-highlight underline + accent wash to flag voice-touched fields. */
+  highlighted?: boolean;
 }
 
 
@@ -46,6 +48,7 @@ export function MoveField(props: MoveFieldProps) {
     autoEdit,
     required,
     hideLabel,
+    highlighted,
   } = props;
 
   const [editing, setEditing] = useState(!!autoEdit);
