@@ -53,6 +53,8 @@ import {
 
 import { listMoves, upsertMove, type MoveDTO } from "@/lib/moves.functions";
 import { MoveField } from "@/components/coach/move-field";
+import { VoiceFab } from "@/components/coach/voice-fab";
+import { consumeVoiceTouched, type VoiceTouchedSnapshot } from "@/lib/voice-touched-store";
 
 export const Route = createFileRoute("/_authenticated/coach/plans/$planId")({
   component: PlanEditorSheet,
@@ -120,6 +122,28 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
   const [useTemplateOpen, setUseTemplateOpen] = useState(false);
   const [activeConflicts, setActiveConflicts] = useState<{ id: string; title: string }[] | null>(null);
   const [chosenReplaceId, setChosenReplaceId] = useState<string | null>(null);
+  const [touched, setTouched] = useState<VoiceTouchedSnapshot>(
+    () => consumeVoiceTouched(planId) ?? { plan: {}, moves: {}, newMoveIds: [] },
+  );
+  const clearPlanTouch = (key: "title" | "athleteId" | "notes") =>
+    setTouched((t) => {
+      if (!t.plan[key]) return t;
+      const next = { ...t, plan: { ...t.plan } };
+      delete next.plan[key];
+      return next;
+    });
+  const clearMoveTouch = (moveId: string) =>
+    setTouched((t) => {
+      if (!t.moves[moveId]) return t;
+      const next = { ...t, moves: { ...t.moves } };
+      delete next.moves[moveId];
+      return next;
+    });
+  const clearAllTouched = () =>
+    setTouched({ plan: {}, moves: {}, newMoveIds: [] });
+  const touchedCount =
+    Object.keys(touched.plan).length + Object.keys(touched.moves).length;
+
 
 
   const useTemplate = useMutation({
@@ -290,25 +314,59 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
     <>
       <SheetHeader className="-mx-6 -mt-6 border-b border-divider px-6 pt-5 pb-3">
         <SheetTitle asChild>
-          <div>
-            <MoveField
-              kind="text"
-              label="Plan title"
-              hideLabel
-              value={plan.title}
-              placeholder={isNewFlow ? "Name this plan" : "Untitled plan"}
-              required
-              autoEdit={isNewFlow && !plan.title}
-              saving={savingField === "title"}
-              onCommit={(v) =>
-                commit("title", () => planUpdate.mutateAsync({ data: { id: plan.id, title: v } }))
+          <div className="flex items-start gap-3">
+            <div className="min-w-0 flex-1">
+              <MoveField
+                kind="text"
+                label="Plan title"
+                hideLabel
+                value={plan.title}
+                placeholder={isNewFlow ? "Name this plan" : "Untitled plan"}
+                required
+                autoEdit={isNewFlow && !plan.title}
+                saving={savingField === "title"}
+                highlighted={!!touched.plan.title}
+                onCommit={(v) => {
+                  clearPlanTouch("title");
+                  return commit("title", () =>
+                    planUpdate.mutateAsync({ data: { id: plan.id, title: v } }),
+                  );
+                }}
+                displayClassName="font-display text-2xl font-black leading-tight tracking-tight"
+                inputClassName="font-display text-2xl font-black leading-tight tracking-tight"
+              />
+            </div>
+            <VoiceFab
+              mode="edit"
+              planId={plan.id}
+              variant="inline"
+              className="mt-1 shrink-0"
+              onVoiceApplied={(r) =>
+                setTouched((prev) => ({
+                  plan: { ...prev.plan, ...r.touched.plan },
+                  moves: { ...prev.moves, ...r.touched.moves },
+                  newMoveIds: [...prev.newMoveIds, ...r.touched.newMoveIds],
+                }))
               }
-              displayClassName="font-display text-2xl font-black leading-tight tracking-tight"
-              inputClassName="font-display text-2xl font-black leading-tight tracking-tight"
             />
           </div>
         </SheetTitle>
       </SheetHeader>
+
+      {touchedCount > 0 ? (
+        <div className="-mx-6 mt-3 flex items-center justify-between gap-3 border-b border-divider bg-elevated px-6 py-2">
+          <span className="font-hand text-base text-text-primary">
+            From your voice — tweak anything, then approve.
+          </span>
+          <button
+            type="button"
+            onClick={clearAllTouched}
+            className="rounded-full bg-accent px-3 py-1 text-[11px] font-black uppercase tracking-widest text-accent-foreground"
+          >
+            Looks good
+          </button>
+        </div>
+      ) : null}
 
 
       <div className="mt-5 space-y-5">

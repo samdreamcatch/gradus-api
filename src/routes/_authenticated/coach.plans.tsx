@@ -5,6 +5,7 @@ import { useMemo, useRef, useState } from "react";
 import { Plus, ListChecks, Clock, ChevronRight, Search, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { CoachBottomNav } from "@/components/coach/bottom-nav";
+import { VoiceFab } from "@/components/coach/voice-fab";
 import { Input } from "@/components/ui/input";
 import {
   AlertDialog,
@@ -118,6 +119,7 @@ function PlansPage() {
         </button>
       </div>
 
+      {tab === "plans" ? <VoiceFab mode="create" /> : null}
 
       <CoachBottomNav />
 
