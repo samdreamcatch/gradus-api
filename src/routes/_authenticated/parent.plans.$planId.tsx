@@ -83,22 +83,8 @@ function ParentPlanDetail() {
         </h1>
       </div>
 
-      <div className="mt-6 flex items-center justify-between gap-3 rounded-full border border-accent/40 bg-accent/15 pr-4">
-        <button
-          type="button"
-          onClick={() => soon("Session timer")}
-          className="inline-flex items-center gap-2 rounded-full bg-accent px-5 py-2.5 text-sm font-bold text-accent-foreground shadow-sm"
-        >
-          Start session timer <ArrowRight className="size-4" />
-        </button>
-        <button
-          type="button"
-          onClick={() => soon("Slide mode")}
-          className="inline-flex items-center gap-1 text-sm font-bold text-accent-ink"
-        >
-          Slide <ArrowRight className="size-4" />
-        </button>
-      </div>
+      <SessionTimer onSlide={() => soon("Slide mode")} />
+
 
       <p className="mt-8 text-[11px] font-black uppercase tracking-widest text-text-secondary">
         From the Coach
