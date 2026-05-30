@@ -170,7 +170,24 @@ async function parseVoicePlanDraft(ctx: ParseContext): Promise<VoicePlanDraft> {
       prompt: promptParts.join("\n\n"),
       experimental_output: Output.object({ schema: planDraftSchema }),
     });
-    return experimental_output;
+    const raw = experimental_output;
+    return {
+      title: raw.title ?? undefined,
+      athleteId: raw.athleteId ?? undefined,
+      unresolvedAthleteName: raw.unresolvedAthleteName ?? undefined,
+      notes: raw.notes ?? undefined,
+      moves: (raw.moves ?? [])
+        .filter((m) => m && typeof m.name === "string" && m.name.trim().length > 0)
+        .map((m) => ({
+          matchExistingMoveId: m.matchExistingMoveId ?? undefined,
+          name: m.name.trim(),
+          description: m.description ?? "",
+          cue: m.cue ?? "",
+          why: m.why ?? "",
+          targetKind: m.targetKind ?? "reps",
+          targetValue: typeof m.targetValue === "number" ? m.targetValue : 10,
+        })),
+    };
   } catch (e) {
     const err = e as { statusCode?: number; message?: string };
     console.error("voice parse failed", err);
@@ -178,9 +195,15 @@ async function parseVoicePlanDraft(ctx: ParseContext): Promise<VoicePlanDraft> {
       throw new Error("AI is busy — try again in a moment");
     if (err.statusCode === 402)
       throw new Error("AI credits exhausted — add credits in workspace settings");
-    throw new Error("Couldn't organize that — please try again");
+    // Fallback: don't block the coach. Stash the transcript as notes so they
+    // can keep working; the editor opens with the raw words in the notes field.
+    return {
+      notes: ctx.transcript,
+      moves: [],
+    };
   }
 }
+
 
 /* ---------------- Apply draft to DB ---------------- */
 
