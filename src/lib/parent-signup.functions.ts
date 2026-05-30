@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { dbError } from "./db-error";
 
 const codeSchema = z
   .string()
@@ -33,7 +34,7 @@ export const startParentSignup = createServerFn({ method: "POST" })
       .select("coach_id")
       .eq("code", data.code)
       .maybeSingle();
-    if (codeLookup.error) throw new Error(codeLookup.error.message);
+    if (codeLookup.error) dbError(codeLookup.error);
     if (!codeLookup.data) {
       throw new Error("That invite code isn't valid. Double-check with your coach.");
     }
@@ -43,7 +44,7 @@ export const startParentSignup = createServerFn({ method: "POST" })
       .select("id")
       .eq("user_id", userId)
       .maybeSingle();
-    if (existing.error) throw new Error(existing.error.message);
+    if (existing.error) dbError(existing.error);
 
     const coachId = codeLookup.data.coach_id;
 
@@ -52,7 +53,7 @@ export const startParentSignup = createServerFn({ method: "POST" })
         .from("parent_profiles")
         .update({ first_name: data.firstName, last_name: data.lastName, coach_id: coachId })
         .eq("id", existing.data.id);
-      if (upd.error) throw new Error(upd.error.message);
+      if (upd.error) dbError(upd.error);
     } else {
       const ins = await supabaseAdmin.from("parent_profiles").insert({
         user_id: userId,
@@ -60,7 +61,7 @@ export const startParentSignup = createServerFn({ method: "POST" })
         last_name: data.lastName,
         coach_id: coachId,
       });
-      if (ins.error) throw new Error(ins.error.message);
+      if (ins.error) dbError(ins.error);
     }
 
     return { code: data.code };
@@ -79,7 +80,7 @@ export const getParentSignupStatus = createServerFn({ method: "GET" })
       .select("id, coach_id")
       .eq("user_id", userId)
       .maybeSingle();
-    if (parent.error) throw new Error(parent.error.message);
+    if (parent.error) dbError(parent.error);
     if (!parent.data) return { hasParentProfile: false, hasAthletes: false, inviteCode: null };
 
     const athletes = await supabaseAdmin
@@ -87,7 +88,7 @@ export const getParentSignupStatus = createServerFn({ method: "GET" })
       .select("id")
       .eq("parent_id", parent.data.id)
       .limit(1);
-    if (athletes.error) throw new Error(athletes.error.message);
+    if (athletes.error) dbError(athletes.error);
 
     let inviteCode: string | null = null;
     if (parent.data.coach_id) {
@@ -119,7 +120,7 @@ export const getCoachByInviteCode = createServerFn({ method: "POST" })
       .select("coach_id")
       .eq("code", data.code)
       .maybeSingle();
-    if (codeLookup.error) throw new Error(codeLookup.error.message);
+    if (codeLookup.error) dbError(codeLookup.error);
     if (!codeLookup.data) throw new Error("Invalid invite code.");
 
     const coachId = codeLookup.data.coach_id;
@@ -132,7 +133,7 @@ export const getCoachByInviteCode = createServerFn({ method: "POST" })
         .single(),
       supabaseAdmin.from("coach_levels").select("sport").eq("coach_id", coachId),
     ]);
-    if (profile.error) throw new Error(profile.error.message);
+    if (profile.error) dbError(profile.error);
 
     const sports = Array.from(new Set((levels.data ?? []).map((l) => l.sport)));
     return {
@@ -177,7 +178,7 @@ export const linkAthletesToCoach = createServerFn({ method: "POST" })
       .select("coach_id")
       .eq("code", data.code)
       .maybeSingle();
-    if (codeLookup.error) throw new Error(codeLookup.error.message);
+    if (codeLookup.error) dbError(codeLookup.error);
     if (!codeLookup.data) throw new Error("Invalid invite code.");
     const coachId = codeLookup.data.coach_id;
 
@@ -186,7 +187,7 @@ export const linkAthletesToCoach = createServerFn({ method: "POST" })
       .select("id")
       .eq("user_id", userId)
       .maybeSingle();
-    if (parent.error) throw new Error(parent.error.message);
+    if (parent.error) dbError(parent.error);
     if (!parent.data) {
       throw new Error("Parent profile not found. Please complete signup first.");
     }
@@ -203,14 +204,14 @@ export const linkAthletesToCoach = createServerFn({ method: "POST" })
       .from("athletes")
       .insert(athleteRows)
       .select("id");
-    if (athletesIns.error) throw new Error(athletesIns.error.message);
+    if (athletesIns.error) dbError(athletesIns.error);
 
     const linkRows = (athletesIns.data ?? []).map((a) => ({
       coach_id: coachId,
       athlete_id: a.id,
     }));
     const linksIns = await supabaseAdmin.from("coach_athletes").insert(linkRows);
-    if (linksIns.error) throw new Error(linksIns.error.message);
+    if (linksIns.error) dbError(linksIns.error);
 
     return { ok: true };
   });
@@ -266,7 +267,7 @@ export const listAthletesForCode = createServerFn({ method: "POST" })
       .select("coach_id")
       .eq("code", data.code)
       .maybeSingle();
-    if (codeLookup.error) throw new Error(codeLookup.error.message);
+    if (codeLookup.error) dbError(codeLookup.error);
     if (!codeLookup.data) throw new Error("Invalid invite code.");
     const coachId = codeLookup.data.coach_id;
 
@@ -275,14 +276,14 @@ export const listAthletesForCode = createServerFn({ method: "POST" })
       .select("id")
       .eq("user_id", userId)
       .maybeSingle();
-    if (parent.error) throw new Error(parent.error.message);
+    if (parent.error) dbError(parent.error);
     if (!parent.data) throw new Error("Parent profile not found.");
 
     const links = await supabaseAdmin
       .from("coach_athletes")
       .select("athlete_id, athletes!inner(id, first_name, last_name, parent_id)")
       .eq("coach_id", coachId);
-    if (links.error) throw new Error(links.error.message);
+    if (links.error) dbError(links.error);
 
     const athletes = (links.data ?? [])
       .map((l) => l.athletes as unknown as {
@@ -298,7 +299,7 @@ export const listAthletesForCode = createServerFn({ method: "POST" })
       .from("coach_levels")
       .select("sport")
       .eq("coach_id", coachId);
-    if (levels.error) throw new Error(levels.error.message);
+    if (levels.error) dbError(levels.error);
     const sports = Array.from(new Set((levels.data ?? []).map((l) => l.sport)));
 
     return { coachId, athletes, sports };
@@ -326,7 +327,7 @@ export const saveAthleteGoals = createServerFn({ method: "POST" })
       .select("coach_id")
       .eq("code", data.code)
       .maybeSingle();
-    if (codeLookup.error) throw new Error(codeLookup.error.message);
+    if (codeLookup.error) dbError(codeLookup.error);
     if (!codeLookup.data) throw new Error("Invalid invite code.");
     const coachId = codeLookup.data.coach_id;
 
@@ -336,7 +337,7 @@ export const saveAthleteGoals = createServerFn({ method: "POST" })
       .select("id, parent_id, parent_profiles!inner(user_id)")
       .eq("id", data.athleteId)
       .maybeSingle();
-    if (athlete.error) throw new Error(athlete.error.message);
+    if (athlete.error) dbError(athlete.error);
     const parentRow = athlete.data?.parent_profiles as unknown as { user_id: string } | undefined;
     if (!athlete.data || parentRow?.user_id !== userId) {
       throw new Error("Athlete not found.");
@@ -355,7 +356,7 @@ export const saveAthleteGoals = createServerFn({ method: "POST" })
         },
         { onConflict: "athlete_id,coach_id,sport" },
       );
-    if (up.error) throw new Error(up.error.message);
+    if (up.error) dbError(up.error);
     return { ok: true };
   });
 
@@ -392,7 +393,7 @@ export const saveAthleteSchedule = createServerFn({ method: "POST" })
       .select("coach_id")
       .eq("code", data.code)
       .maybeSingle();
-    if (codeLookup.error) throw new Error(codeLookup.error.message);
+    if (codeLookup.error) dbError(codeLookup.error);
     if (!codeLookup.data) throw new Error("Invalid invite code.");
     const coachId = codeLookup.data.coach_id;
 
@@ -401,7 +402,7 @@ export const saveAthleteSchedule = createServerFn({ method: "POST" })
       .select("id, parent_profiles!inner(user_id)")
       .eq("id", data.athleteId)
       .maybeSingle();
-    if (athlete.error) throw new Error(athlete.error.message);
+    if (athlete.error) dbError(athlete.error);
     const parentRow = athlete.data?.parent_profiles as unknown as { user_id: string } | undefined;
     if (!athlete.data || parentRow?.user_id !== userId) {
       throw new Error("Athlete not found.");
@@ -412,7 +413,7 @@ export const saveAthleteSchedule = createServerFn({ method: "POST" })
       .delete()
       .eq("athlete_id", data.athleteId)
       .eq("coach_id", coachId);
-    if (del.error) throw new Error(del.error.message);
+    if (del.error) dbError(del.error);
 
     if (data.slots.length > 0) {
       const ins = await supabaseAdmin.from("athlete_lesson_slots").insert(
@@ -427,7 +428,7 @@ export const saveAthleteSchedule = createServerFn({ method: "POST" })
           starts_on: s.frequency === "biweekly" ? s.startsOn : null,
         })),
       );
-      if (ins.error) throw new Error(ins.error.message);
+      if (ins.error) dbError(ins.error);
     }
     return { ok: true };
   });
@@ -445,7 +446,7 @@ export const listAthletesWithInviteCodes = createServerFn({ method: "GET" })
       .select("id")
       .eq("user_id", userId)
       .maybeSingle();
-    if (parent.error) throw new Error(parent.error.message);
+    if (parent.error) dbError(parent.error);
     if (!parent.data) return { athletes: [] };
     const parentId = parent.data.id;
 
@@ -454,13 +455,13 @@ export const listAthletesWithInviteCodes = createServerFn({ method: "GET" })
       .select("id, first_name, last_name")
       .eq("parent_id", parentId)
       .order("created_at", { ascending: true });
-    if (athletes.error) throw new Error(athletes.error.message);
+    if (athletes.error) dbError(athletes.error);
 
     const existing = await supabaseAdmin
       .from("athlete_invite_codes")
       .select("athlete_id, code")
       .eq("parent_id", parentId);
-    if (existing.error) throw new Error(existing.error.message);
+    if (existing.error) dbError(existing.error);
     const byAthlete = new Map((existing.data ?? []).map((r) => [r.athlete_id, r.code]));
 
     for (const a of athletes.data ?? []) {
