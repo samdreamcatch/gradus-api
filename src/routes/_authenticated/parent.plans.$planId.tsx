@@ -251,11 +251,18 @@ function CoachNote({
   );
 }
 
-function SessionTimer({ onSlide }: { onSlide: () => void }) {
+function SessionTimer() {
   const [running, setRunning] = useState(false);
   const [elapsed, setElapsed] = useState(0); // seconds
   const startRef = useRef<number | null>(null);
   const baseRef = useRef(0);
+
+  // Slide-to-start gesture
+  const trackRef = useRef<HTMLDivElement | null>(null);
+  const knobRef = useRef<HTMLDivElement | null>(null);
+  const controls = useAnimationControls();
+  const [dragging, setDragging] = useState(false);
+  const [armed, setArmed] = useState(false); // crossed threshold this gesture
 
   useEffect(() => {
     if (!running) return;
@@ -277,45 +284,97 @@ function SessionTimer({ onSlide }: { onSlide: () => void }) {
     setElapsed(0);
   };
 
+  const getDragMax = () => {
+    const track = trackRef.current?.getBoundingClientRect().width ?? 0;
+    const knob = knobRef.current?.getBoundingClientRect().width ?? 0;
+    // leave 12px breathing room on the right
+    return Math.max(0, track - knob - 12);
+  };
+
   const mm = String(Math.floor(elapsed / 60)).padStart(2, "0");
   const ss = String(elapsed % 60).padStart(2, "0");
   const started = running || elapsed > 0;
 
   return (
-    <div className="mt-6 flex items-center justify-between gap-3 rounded-full border border-accent/40 bg-accent/15 py-1.5 pl-1.5 pr-3">
-      <button
-        type="button"
-        onClick={() => setRunning((r) => !r)}
-        className="inline-flex items-center gap-2 rounded-full bg-accent px-5 py-2 text-sm font-bold text-accent-foreground shadow-sm"
-        aria-label={running ? "Pause session timer" : "Start session timer"}
-      >
-        {running ? <Pause className="size-4" /> : <Play className="size-4" />}
-        {started ? (
-          <span className="tabular-nums">{mm}:{ss}</span>
-        ) : (
-          <>Start session timer <ArrowRight className="size-4" /></>
-        )}
-      </button>
+    <div
+      ref={trackRef}
+      className="relative mt-6 flex items-center justify-between gap-3 overflow-hidden rounded-full border border-accent/40 bg-accent/15 py-1.5 pl-1.5 pr-3"
+    >
+      {/* Hint label visible only before the timer starts */}
+      {!started ? (
+        <span className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-xs font-bold uppercase tracking-widest text-accent-ink/60">
+          Slide <ArrowRight className="ml-1 size-3.5" />
+        </span>
+      ) : null}
 
-      <div className="flex items-center gap-2">
+      <motion.div
+        ref={knobRef}
+        drag={started ? false : "x"}
+        dragConstraints={{ left: 0, right: 0 }}
+        dragElastic={{ left: 0, right: 0.9 }}
+        dragMomentum={false}
+        animate={controls}
+        onDragStart={() => {
+          setDragging(true);
+          setArmed(false);
+        }}
+        onDrag={(_, info) => {
+          const max = getDragMax();
+          if (!armed && info.offset.x >= max * 0.7) setArmed(true);
+        }}
+        onDragEnd={async (_, info) => {
+          setDragging(false);
+          const max = getDragMax();
+          const triggered = info.offset.x >= max * 0.55;
+          // Always snap back to origin with a springy bounce
+          await controls.start({
+            x: 0,
+            transition: { type: "spring", stiffness: 520, damping: 22, mass: 0.7 },
+          });
+          if (triggered) setRunning(true);
+          setArmed(false);
+        }}
+        onClick={() => {
+          if (started) setRunning((r) => !r);
+        }}
+        style={{ touchAction: "pan-y" }}
+        className={cn(
+          "relative z-10 inline-flex select-none items-center gap-2 rounded-full bg-accent px-5 py-2 text-sm font-bold text-accent-foreground shadow-sm",
+          started ? "cursor-pointer" : "cursor-grab active:cursor-grabbing",
+          dragging && "shadow-card",
+          armed && !started && "ring-2 ring-accent-foreground/50",
+        )}
+        aria-label={
+          started
+            ? running
+              ? "Pause session timer"
+              : "Resume session timer"
+            : "Slide to start session timer"
+        }
+      >
         {started ? (
-          <button
-            type="button"
-            onClick={reset}
-            aria-label="Reset session timer"
-            className="inline-flex size-7 items-center justify-center rounded-full text-accent-ink hover:bg-accent/20"
-          >
-            <RotateCcw className="size-4" />
-          </button>
-        ) : null}
+          <>
+            {running ? <Pause className="size-4" /> : <Play className="size-4" />}
+            <span className="tabular-nums">{mm}:{ss}</span>
+          </>
+        ) : (
+          <>
+            <Play className="size-4" />
+            Start session timer
+          </>
+        )}
+      </motion.div>
+
+      {started ? (
         <button
           type="button"
-          onClick={onSlide}
-          className="inline-flex items-center gap-1 text-sm font-bold text-accent-ink"
+          onClick={reset}
+          aria-label="Reset session timer"
+          className="relative z-10 inline-flex size-7 items-center justify-center rounded-full text-accent-ink hover:bg-accent/20"
         >
-          Slide <ArrowRight className="size-4" />
+          <RotateCcw className="size-4" />
         </button>
-      </div>
+      ) : null}
     </div>
   );
 }
