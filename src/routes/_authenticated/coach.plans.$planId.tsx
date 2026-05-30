@@ -177,6 +177,7 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
     mutationFn: createPlanFn,
     onSuccess: ({ id }) => {
       qc.invalidateQueries({ queryKey: ["plans"] });
+      toast.success("Copy created");
       navigate({ to: "/coach/plans/$planId", params: { planId: id } });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -453,17 +454,17 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
               </div>
               <div className="flex shrink-0 items-center gap-2 border-l border-divider pl-3">
                 <label className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
-                  Template
+                  Save as template
                 </label>
                 <Switch
                   checked={isTemplate}
-                  onCheckedChange={(v) =>
-                    commit("kind", () =>
-                      planUpdate.mutateAsync({
-                        data: { id: plan.id, kind: v ? "template" : "plan" },
-                      }),
-                    )
-                  }
+                  disabled={useTemplate.isPending}
+                  onCheckedChange={(v) => {
+                    if (!v) return;
+                    void useTemplate.mutateAsync({
+                      data: { kind: "template", fromPlanId: plan.id },
+                    });
+                  }}
                 />
               </div>
             </div>
