@@ -177,6 +177,7 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
     mutationFn: createPlanFn,
     onSuccess: ({ id }) => {
       qc.invalidateQueries({ queryKey: ["plans"] });
+      toast.success("Copy created");
       navigate({ to: "/coach/plans/$planId", params: { planId: id } });
     },
     onError: (e: Error) => toast.error(e.message),
