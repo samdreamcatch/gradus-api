@@ -118,13 +118,6 @@ function ParentPlanDetail() {
               move={m}
               expanded={!!expanded[m.id]}
               onToggle={() => toggle(m.id)}
-              onChip={(kind) =>
-                soon(
-                  kind === "cue"
-                    ? "Cue tips from your coach"
-                    : "Why your coach assigned this",
-                )
-              }
             />
           ))
         )}
