@@ -525,11 +525,12 @@ async function applyDraft(
       touched.plan.title = true;
       setPlanSource("title", draft.sources?.title);
     }
-    if (draft.notes !== undefined) {
+    if (draft.notes != null) {
       patch.notes = draft.notes;
       touched.plan.notes = true;
       setPlanSource("notes", draft.sources?.notes);
     }
+
     if (draft.athleteId && plan.kind === "plan") {
       patch.athlete_id = draft.athleteId;
       touched.plan.athleteId = true;
