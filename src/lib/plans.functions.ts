@@ -487,6 +487,19 @@ export const deletePlan = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const supabase = context.supabase as Client;
     const coachId = await getCoachId(supabase, context.userId);
+
+    // Verify ownership AND deletability before touching plan_moves.
+    // Rule: only templates and draft plans may be hard-deleted.
+    // Active and benched plans must be benched instead (never deleted),
+    // because they may be assigned to an athlete with logged practice.
+    const plan = await assertPlanOwned(supabase, data.id, coachId);
+    const deletable = plan.kind === "template" || plan.status === "draft";
+    if (!deletable) {
+      throw new Error(
+        "Active or benched plans can't be deleted — bench the plan instead.",
+      );
+    }
+
     await supabase.from("plan_moves").delete().eq("plan_id", data.id);
     const { error } = await supabase
       .from("plans")
@@ -601,6 +614,7 @@ export const addMoveToPlan = createServerFn({ method: "POST" })
       .from("moves")
       .select("id, name, description, cue, why, default_target_kind, default_target_value")
       .eq("id", data.moveId)
+      .eq("coach_id", coachId)
       .maybeSingle();
     if (moveErr) dbError(moveErr);
     if (!move) throw new Error("Move not found");
@@ -855,7 +869,8 @@ export const addLibraryMovesToPlan = createServerFn({ method: "POST" })
     const { data: moves, error: mErr } = await supabase
       .from("moves")
       .select("id, name, description, cue, why, default_target_kind, default_target_value")
-      .in("id", data.moveIds);
+      .in("id", data.moveIds)
+      .eq("coach_id", coachId);
     if (mErr) dbError(mErr);
     if (!moves?.length) return { inserted: 0 };
 
