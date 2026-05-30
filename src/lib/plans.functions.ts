@@ -802,7 +802,8 @@ export const removePlanMove = createServerFn({ method: "POST" })
     const { error } = await supabase
       .from("plan_moves")
       .delete()
-      .eq("id", data.id);
+      .eq("id", data.id)
+      .eq("plan_id", pm.plan_id);
     if (error) dbError(error);
 
     await supabase
