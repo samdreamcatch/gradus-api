@@ -52,6 +52,7 @@ function PlansPage() {
   const [athleteId, setAthleteId] = useState<string>("");
   const [sport, setSport] = useState<string>("");
   const [moveSelection, setMoveSelection] = useState<string | null>(null);
+  const [libraryQuery, setLibraryQuery] = useState("");
   const navigate = useNavigate();
 
   const createFn = useServerFn(createPlan);
@@ -82,7 +83,7 @@ function PlansPage() {
               onSport={setSport}
             />
           ) : (
-            <LibrarySearchStrip />
+            <LibrarySearchStrip query={libraryQuery} onQuery={setLibraryQuery} />
           )}
         </header>
 
@@ -90,7 +91,7 @@ function PlansPage() {
           {tab === "plans" ? (
             <PlansList filter={planFilter} athleteId={athleteId} sport={sport} />
           ) : (
-            <LibraryView onSelectMove={(id) => setMoveSelection(id)} />
+            <LibraryView query={libraryQuery} onSelectMove={(id) => setMoveSelection(id)} />
           )}
         </main>
 
@@ -522,18 +523,38 @@ function StatusPill({ plan }: { plan: PlanSummaryDTO }) {
 
 /* ---------------- Library ---------------- */
 
-function LibrarySearchStrip() {
-  // Search lives on the LibraryView; this strip just holds a placeholder spacer
-  return <div className="mt-3 h-1" aria-hidden />;
+function LibrarySearchStrip({
+  query,
+  onQuery,
+}: {
+  query: string;
+  onQuery: (q: string) => void;
+}) {
+  return (
+    <div className="mt-3 relative">
+      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-tertiary" />
+      <Input
+        value={query}
+        onChange={(e) => onQuery(e.target.value)}
+        placeholder="Search moves"
+        className="h-8 rounded-full border-divider bg-card pl-9 text-xs font-bold text-text-primary shadow-none"
+      />
+    </div>
+  );
 }
 
-function LibraryView({ onSelectMove }: { onSelectMove: (id: string) => void }) {
+function LibraryView({
+  query,
+  onSelectMove,
+}: {
+  query: string;
+  onSelectMove: (id: string) => void;
+}) {
   const fetchMoves = useServerFn(listMoves);
   const { data, isLoading } = useQuery({
     queryKey: ["moves"],
     queryFn: () => fetchMoves(),
   });
-  const [query, setQuery] = useState("");
   const [sport, setSport] = useState<string>("");
 
   const moves = data?.moves ?? [];
@@ -569,17 +590,6 @@ function LibraryView({ onSelectMove }: { onSelectMove: (id: string) => void }) {
 
   return (
     <div>
-      <div className="mb-3 flex items-center gap-2">
-        <div className="relative flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-tertiary" />
-          <Input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search moves"
-            className="h-9 pl-9"
-          />
-        </div>
-      </div>
       {sports.length > 1 ? (
         <div className="mb-3 flex items-center gap-2 overflow-x-auto pb-1">
           <FilterChip active={sport === ""} onClick={() => setSport("")}>
