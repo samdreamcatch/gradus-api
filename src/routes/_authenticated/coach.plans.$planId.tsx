@@ -53,6 +53,8 @@ import {
 
 import { listMoves, upsertMove, type MoveDTO } from "@/lib/moves.functions";
 import { MoveField } from "@/components/coach/move-field";
+import { VoiceFab } from "@/components/coach/voice-fab";
+import { consumeVoiceTouched, type VoiceTouchedSnapshot } from "@/lib/voice-touched-store";
 
 export const Route = createFileRoute("/_authenticated/coach/plans/$planId")({
   component: PlanEditorSheet,
@@ -120,6 +122,28 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
   const [useTemplateOpen, setUseTemplateOpen] = useState(false);
   const [activeConflicts, setActiveConflicts] = useState<{ id: string; title: string }[] | null>(null);
   const [chosenReplaceId, setChosenReplaceId] = useState<string | null>(null);
+  const [touched, setTouched] = useState<VoiceTouchedSnapshot>(
+    () => consumeVoiceTouched(planId) ?? { plan: {}, moves: {}, newMoveIds: [] },
+  );
+  const clearPlanTouch = (key: "title" | "athleteId" | "notes") =>
+    setTouched((t) => {
+      if (!t.plan[key]) return t;
+      const next = { ...t, plan: { ...t.plan } };
+      delete next.plan[key];
+      return next;
+    });
+  const clearMoveTouch = (moveId: string) =>
+    setTouched((t) => {
+      if (!t.moves[moveId]) return t;
+      const next = { ...t, moves: { ...t.moves } };
+      delete next.moves[moveId];
+      return next;
+    });
+  const clearAllTouched = () =>
+    setTouched({ plan: {}, moves: {}, newMoveIds: [] });
+  const touchedCount =
+    Object.keys(touched.plan).length + Object.keys(touched.moves).length;
+
 
 
   const useTemplate = useMutation({
