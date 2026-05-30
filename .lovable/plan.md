@@ -1,41 +1,30 @@
-# Pool Blue: new role
+## Plan
 
-Pool Blue stops appearing on athlete metadata. Instead it lives in two narrow, principled places — exactly as standard secondary-accent practice prescribes: ambient atmosphere + reserved data role.
+No code or database changes. Just close out the security scan findings we discussed and document the reasoning so future scans don't keep re-flagging them.
 
-## 1. Revert the metadata changes (back to neutral ink)
+### 1. Mark the 4 `SECURITY DEFINER` findings as accepted
 
-Three spots currently colored pool go back to neutral text tokens:
+The scanner flagged 4 instances of `SUPA_authenticated_security_definer_function_executable` — one each for:
 
-- **`src/routes/_authenticated/coach.plans.tsx`** — PlanRow move count returns to `text-text-secondary`; StatusPill "Template" tag and "Active athlete" badge return to their previous neutral styles (`bg-elevated text-text-tertiary` / muted wash).
-- **`src/components/coach/move-field.tsx`** — "From your voice" reveal button returns to `text-accent-ink/70`, and the quote display returns to `bg-elevated/70 text-text-secondary`.
+- `activate_plan` — mutation; self-authorizes via `auth.uid()` check against `coach_profiles.user_id`. Definer is required to bypass RLS on the cross-row UPDATE that benches other active plans. Safe.
+- `seed_coach_library` — mutation; self-authorizes via `auth.uid()` check against `coach_profiles.user_id`. Definer is required to insert into `moves` from `seed_moves`. Safe.
+- `coach_has_rostered_athlete_of_parent` — read helper used inside RLS policies; uses `auth.uid()`. Definer is required so the policy itself can query across `athletes` / `coach_athletes` / `coach_profiles` without recursive RLS. Safe.
+- `is_parent_of_athlete` — read helper used inside RLS policies; uses `auth.uid()`. Same pattern as above. Safe.
 
-Net effect: identity & metadata read as quiet ink-on-paper again. Tennis stays the only saturated color in content.
+Each will be marked **ignored** with an explanation that names the authorization check and why definer is required.
 
-## 2. Pool Blue takes the top half of the page wash
+`record_invite_lookup_attempt` is not in this scan's findings list (it doesn't trip the linter the same way), but it's covered in the memory update below as intentionally callable by `anon` and `authenticated` so a parent who already has an account can connect to a second coach via invite code.
 
-In `src/styles.css`, the body background currently uses two radial gradients, both tinted with `--accent` (tennis). Change the **top-right** gradient to use `--pen-pool` instead, while the bottom-left stays tennis. Result: a subtle two-tone atmosphere — cool blue light pouring in from the top, warm tennis glow rising from below. Always present, never demanding attention, never on a content element.
+### 2. Update `@security-memory`
 
-Saturation strategy: keep the gradient at the same low percentages (34% / 28% color-mix) so pool reads as ambient atmosphere, not as a branded panel. This matches your "mostly washes, rare ink" directive — at the page level, it's literally just a wash.
+Refresh the memory document so future scans and future agent sessions have the project's security posture in writing:
 
-Both modes get the same swap; the dark-mode pool variant is already brightened in tokens so it'll render correctly.
+- App model: coach / parent / athlete roles. Coaches and parents are authenticated app users; athletes are profiles owned by parents.
+- A parent can be connected to multiple coaches and can add new coach relationships **while already authenticated**, using an invite code. This is why `record_invite_lookup_attempt` is intentionally executable by both `anon` and `authenticated`.
+- All 5 `SECURITY DEFINER` functions follow the "definer + self-authorize via `auth.uid()`" pattern (or, for `record_invite_lookup_attempt`, the "rate-limit primitive intentionally reachable by any caller" pattern). Future scans should not re-flag them unless the authorization check inside the function body is removed.
+- Leaked-password protection is intentionally **off** per product decision.
+- The two TanStack findings from this scan (`CLIENT_SIDE_AUTH_ONLY` on `_authenticated.tsx`, `BEARER_TOKEN_FROM_GETSESSION` on `auth-attacher.ts`) are **not** being closed out here — they're informational notes about defense-in-depth and we'll revisit them separately if you want.
 
-## 3. Reserve Pool Blue as the data-viz secondary (token only, no UI yet)
+### 3. Verification
 
-There are no real charts in the app yet (only a placeholder bar-chart slot on the plan detail page). So this step is **token plumbing only**:
-
-- Keep the `--pen-pool` / `--pen-pool-wash` / `--pen-pool-ink` tokens already defined.
-- Keep the semantic `--color-secondary-accent` / `-wash` / `-ink` aliases pointing at pool, so when charts arrive they have a ready home: tennis = primary metric, pool = secondary/comparison metric, with washes for fills and ink for axis labels & lines.
-- No component changes here — this is forward-compatible scaffolding.
-
-## What you'll see in the preview
-
-- The page background gets a faint cool tint in the upper right and a warm tennis glow in the lower left.
-- Athlete metadata, move counts, template badges, and the voice reveal all return to neutral.
-- Tennis is the only saturated color on any content element.
-
-## Technical notes
-
-- Only `src/styles.css`, `src/routes/_authenticated/coach.plans.tsx`, and `src/components/coach/move-field.tsx` are touched.
-- Background change is a one-line swap of `var(--accent)` → `var(--pen-pool)` on the first radial gradient in the `body` rule.
-- Semantic tokens stay in place for future chart work — no removal.
-- AAA contrast is unaffected because pool ink is no longer applied to text surfaces.
+After applying, I'll confirm the 4 definer findings are gone from the scan results and that the security memory reflects the new posture. No app behavior changes.
