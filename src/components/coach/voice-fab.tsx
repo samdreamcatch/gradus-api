@@ -158,7 +158,7 @@ export function VoiceFab({
       aria-label={mode === "create" ? "Hold to dictate a new plan" : "Hold to add to plan by voice"}
       className={cn(
         variant === "fab"
-          ? "fixed bottom-44 right-5 z-30 flex h-16 w-16 items-center justify-center rounded-full bg-accent text-accent-foreground shadow-page ring-1 ring-black/10 transition active:scale-95 disabled:opacity-60 touch-none select-none"
+          ? "fixed bottom-44 right-5 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-accent text-accent-foreground shadow-page ring-1 ring-black/10 transition active:scale-95 disabled:opacity-60 touch-none select-none"
           : "inline-flex h-9 w-9 items-center justify-center rounded-full bg-accent text-accent-foreground shadow-sm ring-1 ring-black/10 transition active:scale-95 disabled:opacity-60 touch-none select-none",
         state === "recording" && "animate-pulse",
         className,
