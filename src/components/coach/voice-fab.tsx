@@ -245,10 +245,20 @@ export function VoiceFab({
                     </li>
                   ))}
                 </ul>
-                <div className="mt-3 text-[11px] font-medium text-text-tertiary">
-                  Keep holding the mic. Release when you're done.
+                <div className="mt-4 flex items-center justify-between gap-3">
+                  <div className="text-[11px] font-medium text-text-tertiary">
+                    Hold the mic, or tap stop when done.
+                  </div>
+                  <button
+                    type="button"
+                    onClick={stop}
+                    className="rounded-full bg-accent px-4 py-1.5 text-[11px] font-black uppercase tracking-widest text-accent-foreground shadow-sm active:scale-95"
+                  >
+                    Stop & organize
+                  </button>
                 </div>
               </div>
+
             ) : null}
 
             {elapsedMs > 75_000 && state === "recording" ? (
