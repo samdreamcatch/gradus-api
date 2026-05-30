@@ -1,75 +1,41 @@
-# Add Pool Blue as Secondary Accent
+# Pool Blue: new role
 
-Right now everything inherits from `--accent` (Tennis), which is why the app reads monochromatic. We'll introduce **Pool Blue** as a second semantic token and apply it surgically to two domains: **athlete identity** and **data/metadata**. Tennis stays the coach action color (FAB, primary buttons, voice mic, "create"-style affordances).
+Pool Blue stops appearing on athlete metadata. Instead it lives in two narrow, principled places — exactly as standard secondary-accent practice prescribes: ambient atmosphere + reserved data role.
 
-## What "secondary" means
+## 1. Revert the metadata changes (back to neutral ink)
 
-A second pen token that lives alongside `--accent`, used *only* in the places we name below. Same paper-stock feel, same pen system — just a second jelly color so the page has two voices instead of one.
+Three spots currently colored pool go back to neutral text tokens:
 
-## Where Pool Blue shows up
+- **`src/routes/_authenticated/coach.plans.tsx`** — PlanRow move count returns to `text-text-secondary`; StatusPill "Template" tag and "Active athlete" badge return to their previous neutral styles (`bg-elevated text-text-tertiary` / muted wash).
+- **`src/components/coach/move-field.tsx`** — "From your voice" reveal button returns to `text-accent-ink/70`, and the quote display returns to `bg-elevated/70 text-text-secondary`.
 
-**1. Athlete identity** — anywhere we name or scope to an athlete:
-- Athlete avatar tints (background wash + ink)
-- Athlete name in plan cards (`coach.plans.tsx`) and the plan editor header (`coach.plans.$planId.tsx`)
-- The athlete chip / "for {athlete}" label
-- Athlete-scoped filter chips in the plans list when an athlete is selected
-- The voice "matched athlete" highlight in the plan editor (currently a tennis glow → pool glow)
+Net effect: identity & metadata read as quiet ink-on-paper again. Tennis stays the only saturated color in content.
 
-**2. Data & metadata** — non-action, informational surfaces:
-- Move counts, durations, "X moves" subtitles on plan cards
-- Timestamps ("Updated 2h ago", "Created…")
-- Status/state badges that aren't actions: `Draft`, `Template`, sport tags
-- Library move tags / category pills in the move sheet
-- The "From your voice" source-quote pill in `move-field.tsx`
+## 2. Pool Blue takes the top half of the page wash
 
-**Tennis stays for:** the `+` FAB, the mic FAB, primary CTAs (Save, Send to athlete), tab active states, the body background wash, the pen-highlight utility (since coach voice notes are a coach action).
+In `src/styles.css`, the body background currently uses two radial gradients, both tinted with `--accent` (tennis). Change the **top-right** gradient to use `--pen-pool` instead, while the bottom-left stays tennis. Result: a subtle two-tone atmosphere — cool blue light pouring in from the top, warm tennis glow rising from below. Always present, never demanding attention, never on a content element.
 
-## Technical plan
+Saturation strategy: keep the gradient at the same low percentages (34% / 28% color-mix) so pool reads as ambient atmosphere, not as a branded panel. This matches your "mostly washes, rare ink" directive — at the page level, it's literally just a wash.
 
-### 1. Add Pool tokens to `src/styles.css`
+Both modes get the same swap; the dark-mode pool variant is already brightened in tokens so it'll render correctly.
 
-In `:root`, alongside the tennis pen block:
-```css
---pen-pool: oklch(0.72 0.14 235);
---pen-pool-wash: oklch(0.97 0.025 235);
---pen-pool-ink: oklch(0.36 0.10 235);
+## 3. Reserve Pool Blue as the data-viz secondary (token only, no UI yet)
 
---secondary-accent: var(--pen-pool);
---secondary-accent-wash: var(--pen-pool-wash);
---secondary-accent-ink: var(--pen-pool-ink);
-```
+There are no real charts in the app yet (only a placeholder bar-chart slot on the plan detail page). So this step is **token plumbing only**:
 
-Dark-mode overrides in `.dark` with brightened pool + low-chroma dark wash, matching the tennis pattern already there.
+- Keep the `--pen-pool` / `--pen-pool-wash` / `--pen-pool-ink` tokens already defined.
+- Keep the semantic `--color-secondary-accent` / `-wash` / `-ink` aliases pointing at pool, so when charts arrive they have a ready home: tennis = primary metric, pool = secondary/comparison metric, with washes for fills and ink for axis labels & lines.
+- No component changes here — this is forward-compatible scaffolding.
 
-In `@theme inline`, expose them as Tailwind utilities:
-```css
---color-secondary-accent: var(--secondary-accent);
---color-secondary-accent-wash: var(--secondary-accent-wash);
---color-secondary-accent-ink: var(--secondary-accent-ink);
-```
+## What you'll see in the preview
 
-This gives us `bg-secondary-accent`, `text-secondary-accent-ink`, `bg-secondary-accent-wash`, etc.
+- The page background gets a faint cool tint in the upper right and a warm tennis glow in the lower left.
+- Athlete metadata, move counts, template badges, and the voice reveal all return to neutral.
+- Tennis is the only saturated color on any content element.
 
-> Note: the existing `--color-secondary` is already mapped to `--elevated` for shadcn — we'll use the distinct `--color-secondary-accent` name to avoid collision.
+## Technical notes
 
-### 2. Apply to athlete identity surfaces
-- `coach.plans.tsx` plan cards: athlete name → `text-secondary-accent-ink`; athlete-scoped filter chip active state → pool wash + pool ink
-- `coach.plans.$planId.tsx`: athlete header label → pool ink; the matched-athlete voice glow ring → pool
-- Wherever a plain text-secondary athlete name appears, swap to pool ink
-
-### 3. Apply to data/metadata surfaces
-- Plan card meta row ("3 moves · Updated 2h") → `text-secondary-accent-ink` (or pool at reduced opacity for the meta dot row)
-- `Draft` / `Template` / sport tag badges → pool wash background + pool ink text
-- Move library tag pills in `move-sheet.tsx` → pool wash
-- "From your voice" pill in `move-field.tsx` → pool wash + pool ink (currently tennis-tinted)
-
-### 4. Leave untouched
-- Body background gradient (stays tennis — gives the page its overall warmth)
-- `pen-highlight` utility (stays tennis — it's the coach's voice mark)
-- FABs, primary buttons, focus rings (stay tennis — they're actions)
-- The per-user pen system in `data/theme.ts` is unaffected; `--secondary-accent` is a fixed second color, not pen-swappable
-
-## Risk / things to verify
-
-- Contrast: pool-ink on white card surfaces and on pool-wash needs to hit AA. We'll tune `--pen-pool-ink` lightness if needed.
-- Two-color balance: after wiring, scan `/coach/plans`, the plan editor, and the move sheet to confirm pool reads as the "info" color and tennis as the "action" color — not 50/50 noise. If pool feels too loud, dial back to wash-only on metadata and keep ink only for athlete names.
+- Only `src/styles.css`, `src/routes/_authenticated/coach.plans.tsx`, and `src/components/coach/move-field.tsx` are touched.
+- Background change is a one-line swap of `var(--accent)` → `var(--pen-pool)` on the first radial gradient in the `body` rule.
+- Semantic tokens stay in place for future chart work — no removal.
+- AAA contrast is unaffected because pool ink is no longer applied to text surfaces.
