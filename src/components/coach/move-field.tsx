@@ -16,7 +16,10 @@ interface BaseProps {
   hideLabel?: boolean;
   /** When true, applies a pen-highlight underline + accent wash to flag voice-touched fields. */
   highlighted?: boolean;
+  /** Verbatim transcript snippet this value came from. Renders a "From your voice" reveal when highlighted. */
+  sourceQuote?: string;
 }
+
 
 
 interface TextFieldProps extends BaseProps {
