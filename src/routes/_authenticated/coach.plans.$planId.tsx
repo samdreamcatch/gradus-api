@@ -88,12 +88,13 @@ function PlanEditorSheet() {
         }}
 
       >
-        <PlanEditorBody planId={planId} onClose={close} />
+        <PlanEditorBody planId={planId} onClose={close} from={from} />
       </SheetContent>
     </Sheet>
   );
 }
-function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => void }) {
+function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: () => void; from?: "plus" }) {
+
   const qc = useQueryClient();
   const navigate = useNavigate();
   const fetchPlan = useServerFn(getPlan);
