@@ -766,10 +766,13 @@ export const updatePlanMove = createServerFn({ method: "POST" })
     if (data.patch.targetKind !== undefined) row.target_kind = data.patch.targetKind;
     if (data.patch.targetValue !== undefined) row.target_value = data.patch.targetValue;
 
+    // Echo the verified plan_id into the WHERE clause so the SQL matches
+    // the ownership check above — defense-in-depth against RLS misconfig.
     const { error } = await supabase
       .from("plan_moves")
       .update(row)
-      .eq("id", data.id);
+      .eq("id", data.id)
+      .eq("plan_id", pm.plan_id);
     if (error) dbError(error);
 
     await supabase
