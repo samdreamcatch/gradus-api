@@ -132,13 +132,25 @@ function PlanEditorBody({ planId, onClose }: { planId: string; onClose: () => vo
       delete next.plan[key];
       return next;
     });
-  const clearMoveTouch = (moveId: string) =>
+  const clearMoveTouch = (moveId: string, field?: string) =>
     setTouched((t) => {
-      if (!t.moves[moveId]) return t;
-      const next = { ...t, moves: { ...t.moves } };
-      delete next.moves[moveId];
-      return next;
+      const existing = t.moves[moveId];
+      if (!existing) return t;
+      const nextMoves = { ...t.moves };
+      if (!field) {
+        delete nextMoves[moveId];
+      } else {
+        const remaining = existing.filter((f) => f !== field);
+        if (remaining.length === 0) delete nextMoves[moveId];
+        else nextMoves[moveId] = remaining;
+      }
+      return { ...t, moves: nextMoves, newMoveIds: t.newMoveIds.filter((id) => id !== moveId) };
     });
+  const isMoveFieldTouched = (moveId: string, field: string) => {
+    if (touched.newMoveIds.includes(moveId)) return true;
+    return touched.moves[moveId]?.includes(field) ?? false;
+  };
+
   const clearAllTouched = () =>
     setTouched({ plan: {}, moves: {}, newMoveIds: [] });
   const touchedCount =
