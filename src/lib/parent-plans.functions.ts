@@ -114,7 +114,7 @@ export const listParentPlans = createServerFn({ method: "GET" })
         .from("plan_moves")
         .select("plan_id, target_kind, target_value")
         .in("plan_id", planIds),
-      supabase
+      supabaseAdmin
         .from("coach_profiles")
         .select("id, first_name, last_name")
         .in("id", coachIds),
