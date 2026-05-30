@@ -7,6 +7,7 @@ import { useCallback, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { useVoiceCapture } from "@/hooks/use-voice-capture";
 import { voiceBuildPlan } from "@/lib/voice.functions";
+import type { VoiceSources } from "@/lib/voice.functions";
 import { stashVoiceTouched } from "@/lib/voice-touched-store";
 
 export interface VoiceFabProps {
@@ -24,6 +25,8 @@ export interface VoiceFabProps {
       plan: { title?: boolean; athleteId?: boolean; notes?: boolean };
       moves: Record<string, string[]>;
       newMoveIds: string[];
+      transcript?: string;
+      sources?: VoiceSources;
     };
     unresolvedAthleteName: string | null;
     appliedMoveCount: number;
@@ -32,6 +35,7 @@ export interface VoiceFabProps {
   variant?: "fab" | "inline";
   className?: string;
 }
+
 
 const formatElapsed = (ms: number) => {
   const s = Math.floor(ms / 1000);
