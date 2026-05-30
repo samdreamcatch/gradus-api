@@ -614,6 +614,7 @@ export const addMoveToPlan = createServerFn({ method: "POST" })
       .from("moves")
       .select("id, name, description, cue, why, default_target_kind, default_target_value")
       .eq("id", data.moveId)
+      .eq("coach_id", coachId)
       .maybeSingle();
     if (moveErr) dbError(moveErr);
     if (!move) throw new Error("Move not found");
