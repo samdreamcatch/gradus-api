@@ -869,7 +869,8 @@ export const addLibraryMovesToPlan = createServerFn({ method: "POST" })
     const { data: moves, error: mErr } = await supabase
       .from("moves")
       .select("id, name, description, cue, why, default_target_kind, default_target_value")
-      .in("id", data.moveIds);
+      .in("id", data.moveIds)
+      .eq("coach_id", coachId);
     if (mErr) dbError(mErr);
     if (!moves?.length) return { inserted: 0 };
 
