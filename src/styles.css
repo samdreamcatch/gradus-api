@@ -93,6 +93,7 @@
   --attention: var(--pen-pink);
   --attention-wash: var(--pen-pink-wash);
   --attention-ink: var(--pen-pink-ink);
+  --attention-foreground: oklch(0.99 0 0); /* near-white for contrast on pink fills */
 
   --cream: oklch(0.975 0.022 85);            /* warm parchment wash */
 
