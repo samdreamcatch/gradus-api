@@ -86,7 +86,7 @@ function PlanEditorSheet() {
         style={{
           backgroundColor: "var(--background)",
           backgroundImage:
-            "repeating-linear-gradient(to bottom, transparent 0px, transparent 31px, color-mix(in oklab, var(--foreground) 7%, transparent) 31px, color-mix(in oklab, var(--foreground) 7%, transparent) 32px)",
+            "radial-gradient(1200px 800px at 100% 0%, color-mix(in oklab, var(--pen-pool) 18%, transparent), transparent 60%), radial-gradient(1000px 700px at 0% 100%, color-mix(in oklab, var(--pen-tennis) 16%, transparent), transparent 60%), repeating-linear-gradient(to bottom, transparent 0px, transparent 31px, color-mix(in oklab, var(--foreground) 7%, transparent) 31px, color-mix(in oklab, var(--foreground) 7%, transparent) 32px)",
         }}
 
       >
