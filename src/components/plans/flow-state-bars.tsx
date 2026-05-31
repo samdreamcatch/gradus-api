@@ -74,12 +74,12 @@ export function FlowStateBars({ counts }: { counts: SessionsByState }) {
           return (
             <div
               key={seg.key}
-              className="relative flex h-full flex-1 items-end overflow-hidden rounded-sm"
+              className="relative flex h-full flex-1 items-end overflow-hidden"
               style={{ background: "color-mix(in oklab, var(--text-tertiary) 18%, transparent)" }}
               title={`${seg.label}: ${value}%`}
             >
               <div
-                className="w-full rounded-sm transition-[height]"
+                className="w-full transition-[height]"
                 style={{
                   height: `${value}%`,
                   background: seg.fill,
