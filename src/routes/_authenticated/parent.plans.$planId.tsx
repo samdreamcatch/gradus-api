@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion, useAnimationControls } from "framer-motion";
 import { ArrowLeft, ArrowRight, ChevronDown, MessageCircle, Pause, Play, Settings, X } from "lucide-react";
 import { toast } from "sonner";
@@ -12,6 +12,7 @@ import {
   getParentPlan,
   type ParentPlanMoveDTO,
 } from "@/lib/parent-plans.functions";
+import { submitPlanSession } from "@/lib/plan-sessions.functions";
 
 export const Route = createFileRoute("/_authenticated/parent/plans/$planId")({
   component: ParentPlanDetail,
