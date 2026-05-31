@@ -1,61 +1,50 @@
-## Goal
+Apply the aggressive density direction (you picked) across the design system. Roughly ~30–35% less vertical space, no color/font/component changes.
 
-Make it obvious that ending the timer is the moment the parent reports back to the coach (a feedback modal opens), and introduce **Pen Pink** as a reserved "live / action-required" color used on the active timer pill and unread coach messages.
+## Scope: vertical only
 
-## 1. Timer UX — slide-to-start, big "End session" finish
+Touch padding, gaps, row heights, and section margins. Do not change colors, fonts, radii, shadows, or component structure.
 
-Today the gesture is symmetric (slide to start / slide to pause / slide to resume) which hides the fact that finishing triggers a feedback step. Redesign the running state so "End session" is the prominent action and clearly implies "wrap up & report back".
+## 1. UI primitives (`src/components/ui/*`)
 
-**Idle state** (no time logged yet)
-- Single full-width pill: `Slide to start session →` — unchanged from today.
-- Tennis accent. Hint label "to start".
+Tighten the defaults so every screen inherits the change for free.
 
-**Running state** (timer counting)
-- Pill turns **Pen Pink** (the new attention color) with a live dot pulsing next to the running clock.
-- Two distinct controls inside the pill:
-  - Left zone: tappable `MM:SS` with a small pause icon — quick pause/resume, no drag.
-  - Right zone: prominent `End session →` slide knob (the only draggable thing). Slide it to the right to end. Label explicitly says **"End → report back to {coach}"** so the modal is signaled before it appears.
-- Reset (discard session) demoted to a small `×` icon at the far edge with a confirm step.
+- **button.tsx** — default `h-9 py-2` → `h-8 py-1.5`; `sm` `h-8` → `h-7`; `lg` `h-10` → `h-9`; icon `h-9 w-9` → `h-8 w-8`.
+- **card.tsx** — `CardHeader` / `CardContent` / `CardFooter` `p-6` → `p-4`; header `space-y-1.5` → `space-y-1`.
+- **input.tsx** — `h-9 py-1` → `h-8 py-1`.
+- **accordion.tsx** — trigger `py-4` → `py-2.5`; content padding trimmed one step.
+- **dialog.tsx / sheet.tsx** — content `p-6` → `p-4`, internal `gap-4` → `gap-3`.
+- **badge.tsx** — `py-0.5` stays (already tight); leave.
+- **separator** — no change.
 
-**Paused state**
-- Same pink pill, dot stops pulsing, label changes to `Paused · MM:SS`. Same "End session" slide on the right. Tapping the clock resumes.
+## 2. Plan detail screen (`parent.plans.$planId.tsx`)
 
-**End → Feedback modal**
-- Releasing the End slide past the threshold opens a centered modal.
-- **Modal body is intentionally left blank for this iteration** — placeholder content only (eyebrow with `MM:SS` and plan title, plus a "Coming soon" note). The user will share screenshots before we design what goes inside.
-- Submitting (whenever it's built) will clear the timer back to idle. For now, closing the modal also resets state so the flow can be tested end-to-end.
+Match the chosen mockup precisely on this representative page so we can eyeball the result:
 
-Frontend-only this iteration — no DB writes, no server function.
+- Header meta `text-sm mb-1` → `text-[12px] mb-0.5`.
+- H1: `leading-[1.05] mb-8` → `leading-[0.95] mb-3`.
+- Start session slider: container `h-14 p-1 mb-8` → `h-10 p-1 mb-4`; inner pill `py-2.5` → `py-1.5`.
+- "From the coach" label `mb-3` → `mb-2`.
+- Exercise list: `space-y-2.5` → `gap-1`; each row `py-4 px-5 rounded-3xl` → `py-2 px-3.5 rounded-2xl`; rep number `text-xl` → `text-[18px]`; name `text-lg` → `text-[15px]`.
+- "Message Tami" CTA: `py-3.5 mt-7 mb-24` → `py-2.5 mt-4 mb-6`.
+- Bottom tab bar: `py-3` → `py-2.5 pb-4`, label gap `gap-1` → `gap-0.5`.
 
-## 2. Pen Pink as the "attention" token
+## 3. Other authenticated routes (sweep)
 
-This is a standard UI pattern (notification dots, recording indicators, "you have a live thing" pills). Adding it deliberately and narrowly:
+Apply the same density rules consistently — one Tailwind step tighter — across:
 
-- Add tokens in `src/styles.css` (light + dark):
-  - `--pen-pink`, `--pen-pink-wash`, `--pen-pink-ink`
-  - Aliases: `--attention`, `--attention-wash`, `--attention-ink`
-- Register Tailwind color names: `attention`, `attention-wash`, `attention-ink` (so we get `bg-attention`, `text-attention-ink`, etc.).
-- **Usage rules** (documented in a short comment block in styles.css and respected in code):
-  - Only for live or action-required affordances.
-  - Approved uses today: (a) active/paused session timer pill, (b) unread coach-message indicator (badge dot + row accent in the messages list / bottom-nav).
-  - Never used as a general accent, button, or decoration — Tennis/Pool keep that job.
+- `parent.index.tsx`, `parent.plans.index.tsx`
+- `coach.index.tsx`, `coach.plans.tsx`, `coach.plans.$planId.tsx`, `coach.settings.tsx`, `coach.onboarding.tsx`
+- `athlete.tsx`
+- `components/coach/move-sheet.tsx`, `components/coach/voice-fab.tsx`
 
-## 3. Unread coach messages
+Pattern rewrites: `space-y-6` → `space-y-3`; `space-y-4` → `space-y-2`; `gap-6` → `gap-3`; `gap-4` → `gap-2`; `py-8` → `py-5`; `py-6` → `py-4`; `mb-8` → `mb-4`; `mt-10` → `mt-6`. Skip cases where reducing breaks legibility (heading line-height, focus targets <32px).
 
-Out of scope for actual messaging logic, but wire the visual token so it's ready:
-- Add an `unreadCount` prop path on the parent bottom nav's Messages item. When `> 0`, render a small `bg-attention` dot. Stubbed to `0` until messaging ships.
+## 4. Reversibility
 
-## Technical notes
-
-- File to change: `src/routes/_authenticated/parent.plans.$planId.tsx` — split `SessionTimer` into clearer sub-pieces (`IdleSlide`, `RunningPill`, `EndSessionSlide`) and add an empty `SessionFeedbackModal` shell using the existing shadcn `Dialog` from `@/components/ui/dialog`.
-- Tokens: edit `src/styles.css` (`:root`, `.dark`, and the `@theme inline` block).
-- Bottom nav: light touch in `src/components/parent/bottom-nav.tsx` to support an unread dot.
-- Keep `framer-motion` for the End slide spring; remove drag from the running-state clock to avoid two competing gestures.
-- No DB migration, no server functions, no new packages.
+All edits are local Tailwind class swaps in known files — no token migration, no behavior change. Easy to revert by undoing the commit if the density doesn't feel right in practice.
 
 ## Out of scope
 
-- Feedback modal contents (deferred — user will provide screenshots).
-- Persisting sessions or messages.
-- Coach-side inbox / feedback viewer.
-- Push or email notifications.
+- Onboarding flows / login / public marketing pages (different density needs — keep generous).
+- Sidebar/drawer chrome geometry beyond padding.
+- Typography scale changes.

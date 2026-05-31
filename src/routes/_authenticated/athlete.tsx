@@ -27,7 +27,7 @@ function AthleteHome() {
   const displayName = data?.firstName?.trim() || "Athlete";
 
   return (
-    <div className="mx-auto min-h-dvh max-w-2xl px-4 py-12">
+    <div className="mx-auto min-h-dvh max-w-2xl px-4 py-8">
       <div className="rounded-2xl bg-card p-8 shadow-card sm:p-10">
         <p className="text-xs font-bold uppercase tracking-widest text-accent-ink">
           Welcome
@@ -43,7 +43,7 @@ function AthleteHome() {
           experience is ready.
         </p>
 
-        <div className="mt-10">
+        <div className="mt-6">
           <Button variant="outline" onClick={handleSignOut}>
             Sign out
           </Button>

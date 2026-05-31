@@ -519,7 +519,7 @@ function AddToPlanAction({ moveId }: { moveId: string }) {
         </div>
         <div className="max-h-72 overflow-y-auto">
           {isLoading ? (
-            <div className="flex items-center justify-center py-6 text-text-tertiary">
+            <div className="flex items-center justify-center py-4 text-text-tertiary">
               <Loader2 className="h-4 w-4 animate-spin" />
             </div>
           ) : plans.length === 0 ? (

@@ -58,7 +58,7 @@ function ParentPlanDetail() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-4 pt-6 pb-32">
+    <div className="mx-auto max-w-2xl px-4 pt-4 pb-24">
       <div className="flex items-center justify-between">
         <Link
           to="/parent/plans"
@@ -76,11 +76,11 @@ function ParentPlanDetail() {
         </button>
       </div>
 
-      <div className="mt-8">
-        <p className="text-sm font-medium text-text-secondary">
+      <div className="mt-4">
+        <p className="text-[12px] font-medium text-text-secondary">
           {plan.athleteFirstName} · Coach {plan.coachName}
         </p>
-        <h1 className="mt-1 font-display text-4xl font-black leading-[1.05] tracking-tight text-text-primary">
+        <h1 className="mt-0.5 font-display text-4xl font-black leading-[0.95] tracking-tight text-text-primary">
           {plan.title}
         </h1>
       </div>
@@ -92,13 +92,13 @@ function ParentPlanDetail() {
       />
 
 
-      <p className="mt-8 text-[11px] font-black uppercase tracking-widest text-text-secondary">
+      <p className="mt-5 text-[11px] font-black uppercase tracking-widest text-text-secondary">
         From the Coach
       </p>
 
-      <div className="mt-3 space-y-3">
+      <div className="mt-2 space-y-1.5">
         {plan.moves.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-divider bg-card p-6 text-center">
+          <div className="rounded-2xl border border-dashed border-divider bg-card p-4 text-center">
             <p className="font-hand text-xl text-text-secondary">
               No moves in this plan yet.
             </p>
@@ -115,11 +115,11 @@ function ParentPlanDetail() {
         )}
       </div>
 
-      <div className="mt-10 flex justify-center">
+      <div className="mt-5 flex justify-center">
         <button
           type="button"
           onClick={() => soon(`Message ${plan.coachFirstName}`)}
-          className="inline-flex items-center gap-2 rounded-full bg-accent px-6 py-3 text-sm font-bold text-accent-foreground shadow-card"
+          className="inline-flex items-center gap-2 rounded-full bg-accent px-5 py-2 text-sm font-bold text-accent-foreground shadow-card"
         >
           <MessageCircle className="size-4" />
           Message {plan.coachFirstName} about this plan
@@ -158,28 +158,28 @@ function MoveCard({
       <button
         type="button"
         onClick={onToggle}
-        className="flex w-full items-center gap-3 px-4 py-3 text-left"
+        className="flex w-full items-center gap-3 px-3.5 py-2 text-left"
         aria-expanded={expanded}
       >
         <span className="flex shrink-0 items-baseline gap-1 tabular-nums">
-          <span className="font-display text-lg font-black text-text-primary">
+          <span className="font-display text-[18px] font-black text-text-primary">
             {move.targetValue}
           </span>
-          <span className="text-xs text-text-tertiary">{unit}</span>
+          <span className="text-[11px] text-text-tertiary">{unit}</span>
         </span>
-        <span className="flex-1 font-display text-lg text-text-primary">
+        <span className="flex-1 font-display text-[15px] text-text-primary">
           {move.name}
         </span>
         <ChevronDown
           className={cn(
-            "size-5 shrink-0 text-text-tertiary transition-transform",
+            "size-4 shrink-0 text-text-tertiary transition-transform",
             expanded && "rotate-180",
           )}
         />
       </button>
 
       {expanded ? (
-        <div className="space-y-3 px-4 pb-4">
+        <div className="space-y-2 px-3.5 pb-3">
           {move.description ? (
             <p className="text-[15px] leading-relaxed text-text-primary">
               {move.description}
@@ -309,7 +309,7 @@ function SessionTimer({
 
   return (
     <>
-      <div className="mt-6">
+      <div className="mt-4">
         {started ? (
           <RunningPill
             mm={mm}

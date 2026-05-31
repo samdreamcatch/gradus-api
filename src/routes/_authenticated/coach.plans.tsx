@@ -70,7 +70,7 @@ function PlansPage() {
 
   return (
     <>
-      <div className="mx-auto flex min-h-dvh max-w-3xl flex-col px-4 pt-6 pb-32">
+      <div className="mx-auto flex min-h-dvh max-w-3xl flex-col px-4 pt-6 pb-24">
         <header className="sticky top-0 z-20 -mx-4 bg-background/90 px-4 pb-3 pt-2 backdrop-blur supports-[backdrop-filter]:bg-background/70">
           <SegmentedToggle tab={tab} onChange={setTab} />
           {tab === "plans" ? (
@@ -489,7 +489,7 @@ function PlanRow({ plan }: { plan: PlanSummaryDTO }) {
           </>
         ) : null}
       </div>
-      <div className="flex items-center gap-4 text-xs font-medium text-text-secondary">
+      <div className="flex items-center gap-2 text-xs font-medium text-text-secondary">
         <span className="flex items-center gap-1">
           <ListChecks className="h-3 w-3 text-text-tertiary" />
           {plan.moveCount} {plan.moveCount === 1 ? "move" : "moves"}
@@ -689,7 +689,7 @@ function FilterChip({
 
 function EmptyState({ message }: { message: string }) {
   return (
-    <div className="py-12 text-center">
+    <div className="py-8 text-center">
       <p className="text-sm text-text-secondary">{message}</p>
     </div>
   );

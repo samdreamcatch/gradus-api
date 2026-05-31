@@ -59,7 +59,7 @@ function ParentHome() {
   const origin = typeof window !== "undefined" ? window.location.origin : "";
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-12 pb-32">
+    <div className="mx-auto max-w-2xl px-4 py-8 pb-24">
       <div className="flex items-center justify-between">
         <Logo className="text-4xl" />
         <Button variant="outline" size="sm" onClick={handleSignOut}>
@@ -74,14 +74,14 @@ function ParentHome() {
         screen in the next slice.
       </p>
 
-      <section className="mt-10">
+      <section className="mt-6">
         <h2 className="font-display text-2xl text-text-primary">Invite your athletes</h2>
         <p className="mt-1 text-sm text-text-secondary">
           Optional — only needed if your athlete will sign in to their own
           account. They can scan this code to join.
         </p>
 
-        <div className="mt-6 grid gap-4 sm:grid-cols-2">
+        <div className="mt-6 grid gap-2 sm:grid-cols-2">
           {(data?.athletes ?? []).map((a) => (
             <AthleteInviteCard
               key={a.id}

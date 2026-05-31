@@ -36,10 +36,10 @@ function CoachHome() {
 
   return (
     <>
-    <div className="mx-auto min-h-dvh max-w-3xl px-4 pt-12 pb-32">
+    <div className="mx-auto min-h-dvh max-w-3xl px-4 pt-8 pb-24">
 
       <div className="rounded-2xl bg-card p-8 shadow-[0_10px_40px_-12px_rgba(0,0,0,0.15)] sm:p-10">
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex items-start justify-between gap-2">
           <div>
             <p className="text-xs font-bold uppercase tracking-widest text-accent-ink">
               Coach
@@ -58,7 +58,7 @@ function CoachHome() {
           </div>
         </div>
 
-        <div className="mt-8 rounded-xl border border-divider bg-elevated p-5">
+        <div className="mt-5 rounded-xl border border-divider bg-elevated p-5">
           <p className="text-xs font-bold uppercase tracking-widest text-accent-ink">
             Invite Parents
           </p>
@@ -67,7 +67,7 @@ function CoachHome() {
           </div>
         </div>
 
-        <div className="mt-10 space-y-8">
+        <div className="mt-6 space-y-8">
           {sports.map((sportKey) => {
             const sport = getSport(sportKey)!;
             const entries = data.levels.filter((l) => l.sport === sportKey);
@@ -99,7 +99,7 @@ function CoachHome() {
           })}
         </div>
 
-        <p className="mt-10 text-sm text-text-secondary">More coming in the next slice.</p>
+        <p className="mt-6 text-sm text-text-secondary">More coming in the next slice.</p>
       </div>
     </div>
     <CoachBottomNav />

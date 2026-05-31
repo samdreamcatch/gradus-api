@@ -31,8 +31,8 @@ function SettingsPage() {
   const { data } = useSuspenseQuery(coachProfileQueryOptions);
   return (
     <>
-    <div className="mx-auto min-h-dvh max-w-3xl px-4 pt-12 pb-32">
-      <div className="mb-8 flex items-center justify-between">
+    <div className="mx-auto min-h-dvh max-w-3xl px-4 pt-8 pb-24">
+      <div className="mb-4 flex items-center justify-between">
         <div>
           <p className="text-xs font-bold uppercase tracking-widest text-accent-ink">
             Settings
@@ -44,7 +44,7 @@ function SettingsPage() {
         </Button>
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-3">
         <NameSection firstName={data.profile.firstName} lastName={data.profile.lastName} />
         <LevelsSection levels={data.levels} />
         <PracticeSection levels={data.levels} />
@@ -92,7 +92,7 @@ function NameSection({ firstName: f0, lastName: l0 }: { firstName: string; lastN
 
   return (
     <SectionCard title="Name">
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-2 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="firstName">First name</Label>
           <Input
@@ -187,7 +187,7 @@ function LevelsSection({ levels }: { levels: LevelEntry[] }) {
       </div>
 
       {sports.length > 0 && (
-        <div className="mt-8 space-y-8">
+        <div className="mt-5 space-y-8">
           {sports.map((sportKey) => {
             const sport = getSport(sportKey)!;
             return (
@@ -270,7 +270,7 @@ function PracticeSection({ levels }: { levels: LevelEntry[] }) {
           Add sports and levels above first.
         </p>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-3">
           {groupedSports.map((sportKey) => {
             const sport = getSport(sportKey)!;
             const sportEntries = entries.filter((e) => e.sport === sportKey);
@@ -283,7 +283,7 @@ function PracticeSection({ levels }: { levels: LevelEntry[] }) {
                     return (
                       <div
                         key={entry.levelKey}
-                        className="flex items-center justify-between gap-4 rounded-md border border-divider bg-elevated px-4 py-3"
+                        className="flex items-center justify-between gap-2 rounded-md border border-divider bg-elevated px-4 py-3"
                       >
                         <div className="leading-tight">
                           <div className="text-sm font-semibold text-text-primary">

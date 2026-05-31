@@ -13,7 +13,7 @@ import {
 export const Route = createFileRoute("/_authenticated/parent/plans/")({
   component: ParentPlansPage,
   errorComponent: ({ error }) => (
-    <div className="mx-auto max-w-2xl px-4 py-12">
+    <div className="mx-auto max-w-2xl px-4 py-8">
       <div className="rounded-2xl border border-divider bg-card p-6 text-sm text-text-secondary">
         Couldn&apos;t load plans: {error.message}
       </div>
@@ -59,7 +59,7 @@ function ParentPlansPage() {
       : athletes.find((a) => a.id === effectiveSelected)?.name.split(" ")[0] ?? "";
 
   return (
-    <div className="mx-auto max-w-2xl px-4 pt-10 pb-32">
+    <div className="mx-auto max-w-2xl px-4 pt-10 pb-24">
       <p className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
         Plans
       </p>
@@ -87,9 +87,9 @@ function ParentPlansPage() {
         </div>
       ) : null}
 
-      <div className="mt-8 space-y-3">
+      <div className="mt-5 space-y-3">
         {isLoading ? (
-          <p className="py-8 text-center text-sm text-text-secondary">Loading…</p>
+          <p className="py-5 text-center text-sm text-text-secondary">Loading…</p>
         ) : active.length === 0 ? (
           <EmptyCard />
         ) : (
@@ -98,7 +98,7 @@ function ParentPlansPage() {
       </div>
 
       {benched.length > 0 ? (
-        <div className="mt-10">
+        <div className="mt-6">
           <button
             type="button"
             onClick={() => setShowHistory((s) => !s)}
