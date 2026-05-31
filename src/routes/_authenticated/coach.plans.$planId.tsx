@@ -248,6 +248,11 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
     setDidInitExpansion(true);
   }, [didInitExpansion, isNewFlow, plan]);
 
+  const { sessionsByState: loggedSessions, sessionsTotal: loggedSessionsTotal } = useMemo(
+    () => (plan ? stubSessionsForPlan(plan.id) : { sessionsByState: { frustrated: 0, pushing: 0, steady: 0, lockedIn: 0, flowing: 0 }, sessionsTotal: 0 }),
+    [plan],
+  );
+
   if (isLoading || !plan) {
     return (
       <div className="py-8 text-center text-sm text-text-secondary">Loading…</div>
