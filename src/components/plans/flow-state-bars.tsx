@@ -47,7 +47,7 @@ export function FlowStateBars({ counts }: { counts: SessionsByState }) {
     },
     {
       key: "control" as const,
-      label: "Pushing",
+      label: "In Control",
       pct: pct.control,
       fill: "color-mix(in oklab, var(--text-secondary) 55%, transparent)",
       labelColor: "var(--text-secondary)",
