@@ -11,8 +11,9 @@ interface PlanCardProps {
   sessionsTotal: number;
   muted?: boolean;
   caption?: string;
-  edgeTone?: "active" | "muted";
+  edgeTone?: "active" | "template" | "muted";
 }
+
 
 export function PlanCard({
   to,
@@ -38,9 +39,14 @@ export function PlanCard({
         aria-hidden
         className={cn(
           "absolute inset-y-0 left-0 w-1.5",
-          edgeTone === "active" ? "bg-[var(--pen-tennis)]" : "bg-divider",
+          edgeTone === "active"
+            ? "bg-[var(--pen-tennis)]"
+            : edgeTone === "template"
+              ? "bg-[var(--pen-pool)]"
+              : "bg-divider",
         )}
       />
+
 
       <div className="mb-3 flex items-baseline justify-between gap-3">
         <div className="min-w-0">

@@ -385,7 +385,7 @@ function SwipeableDeleteRow({
   const swiped = offset < -8;
 
   return (
-    <div className="group/swipe relative overflow-hidden">
+    <div className="group/swipe relative overflow-hidden rounded-2xl">
       <button
         type="button"
         onClick={() => setConfirmOpen(true)}
@@ -470,7 +470,12 @@ function PlanRow({ plan }: { plan: PlanSummaryDTO }) {
           : plan.status === "benched"
             ? "Benched"
             : undefined;
-  const isActive = plan.kind === "plan" && plan.status === "active" && !!plan.athleteName;
+  const edgeTone: "active" | "template" | "muted" =
+    plan.kind === "template"
+      ? "template"
+      : plan.status === "active" && !!plan.athleteName
+        ? "active"
+        : "muted";
   return (
     <PlanCard
       to="/coach/plans/$planId"
@@ -481,8 +486,9 @@ function PlanRow({ plan }: { plan: PlanSummaryDTO }) {
       sessionsByState={plan.sessionsByState}
       sessionsTotal={plan.sessionsTotal}
       muted={plan.kind === "plan" && plan.status === "benched"}
-      edgeTone={isActive ? "active" : "muted"}
+      edgeTone={edgeTone}
     />
+
   );
 }
 
