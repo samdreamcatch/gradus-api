@@ -470,6 +470,7 @@ function PlanRow({ plan }: { plan: PlanSummaryDTO }) {
           : plan.status === "benched"
             ? "Benched"
             : undefined;
+  const isActive = plan.kind === "plan" && plan.status === "active" && !!plan.athleteName;
   return (
     <PlanCard
       to="/coach/plans/$planId"
@@ -480,6 +481,7 @@ function PlanRow({ plan }: { plan: PlanSummaryDTO }) {
       sessionsByState={plan.sessionsByState}
       sessionsTotal={plan.sessionsTotal}
       muted={plan.kind === "plan" && plan.status === "benched"}
+      edgeTone={isActive ? "active" : "muted"}
     />
   );
 }
