@@ -65,11 +65,7 @@ export function PlanCard({
       </div>
 
       <FlowStateBars counts={sessionsByState} />
-      {sessionsTotal === 0 ? (
-        <p className="mt-2 font-hand text-base text-text-tertiary">
-          No sessions logged yet
-        </p>
-      ) : null}
+
     </Link>
   );
 }
