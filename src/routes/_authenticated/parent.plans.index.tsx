@@ -119,7 +119,7 @@ function ParentPlansPage() {
           </button>
           {showHistory ? (
             <div className="mt-4 space-y-3">
-              {benched.map((p) => (
+                {benched.map((p) => (
                 <PlanCard
                   key={p.id}
                   to="/parent/plans/$planId"
@@ -133,6 +133,7 @@ function ParentPlansPage() {
                   sessionsByState={p.sessionsByState}
                   sessionsTotal={p.sessionsTotal}
                   muted
+                  edgeTone="muted"
                 />
               ))}
             </div>
