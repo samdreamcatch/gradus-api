@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion, useAnimationControls } from "framer-motion";
 import { ArrowLeft, ArrowRight, ChevronDown, MessageCircle, Pause, Play, Settings, X } from "lucide-react";
 import { toast } from "sonner";
@@ -12,6 +12,7 @@ import {
   getParentPlan,
   type ParentPlanMoveDTO,
 } from "@/lib/parent-plans.functions";
+import { submitPlanSession } from "@/lib/plan-sessions.functions";
 
 export const Route = createFileRoute("/_authenticated/parent/plans/$planId")({
   component: ParentPlanDetail,
@@ -86,6 +87,7 @@ function ParentPlanDetail() {
       </div>
 
       <SessionTimer
+        planId={plan.id}
         coachFirstName={plan.coachFirstName}
         athleteFirstName={plan.athleteFirstName}
         planTitle={plan.title}
@@ -257,10 +259,12 @@ function CoachNote({
 }
 
 function SessionTimer({
+  planId,
   coachFirstName,
   athleteFirstName,
   planTitle,
 }: {
+  planId: string;
   coachFirstName: string;
   athleteFirstName: string;
   planTitle: string;
@@ -270,6 +274,19 @@ function SessionTimer({
   const [showFeedback, setShowFeedback] = useState(false);
   const startRef = useRef<number | null>(null);
   const baseRef = useRef(0);
+
+  const queryClient = useQueryClient();
+  const submitFn = useServerFn(submitPlanSession);
+  const submitMutation = useMutation({
+    mutationFn: submitFn,
+    onSuccess: () => {
+      // Refresh the chart for both parent list and coach detail.
+      queryClient.invalidateQueries({ queryKey: ["plan-sessions", planId] });
+      queryClient.invalidateQueries({ queryKey: ["parent-plan", planId] });
+      queryClient.invalidateQueries({ queryKey: ["parent-plans"] });
+      queryClient.invalidateQueries({ queryKey: ["coach-plans"] });
+    },
+  });
 
   useEffect(() => {
     if (!running) return;
@@ -332,11 +349,25 @@ function SessionTimer({
         planTitle={planTitle}
         coachFirstName={coachFirstName}
         athleteFirstName={athleteFirstName}
-        onSubmit={(payload) => {
-          toast(`Sent to Coach ${coachFirstName}`, {
-            description: `${athleteFirstName} · ${payload.stateLabel}`,
-          });
-          closeFeedback();
+        onSubmit={async (payload) => {
+          try {
+            await submitMutation.mutateAsync({
+              data: {
+                planId,
+                stateIndex: payload.stateIndex,
+                note: payload.note,
+                durationSeconds: elapsed,
+              },
+            });
+            toast(`Sent to Coach ${coachFirstName}`, {
+              description: `${athleteFirstName} · ${payload.stateLabel}`,
+            });
+            closeFeedback();
+          } catch (e) {
+            toast.error("Couldn't submit feedback", {
+              description: e instanceof Error ? e.message : "Please try again.",
+            });
+          }
         }}
       />
     </>

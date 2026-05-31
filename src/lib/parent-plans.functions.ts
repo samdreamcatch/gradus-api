@@ -5,7 +5,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import type { Database } from "@/integrations/supabase/types";
 import { dbError } from "./db-error";
-import { stubSessionsForPlan } from "./plan-sessions-stub";
+import { emptySessionsByState, loadSessionsByPlanIds } from "./plan-sessions.functions";
 import type { SessionsByState } from "@/components/plans/flow-state-bars";
 
 type Client = SupabaseClient<Database>;
@@ -141,11 +141,19 @@ export const listParentPlans = createServerFn({ method: "GET" })
       coachName.set(c.id, `${c.first_name} ${c.last_name}`.trim());
     }
 
+    const sessionsByPlan = await loadSessionsByPlanIds(
+      supabase,
+      plans.filter((p) => p.athlete_id).map((p) => p.id),
+    );
+
     const result: ParentPlanSummaryDTO[] = plans
       .filter((p) => p.athlete_id)
       .map((p) => {
         const a = agg.get(p.id) ?? { count: 0, minutes: 0 };
-        const sessions = stubSessionsForPlan(p.id);
+        const sessions = sessionsByPlan.get(p.id) ?? {
+          sessionsByState: emptySessionsByState(),
+          sessionsTotal: 0,
+        };
         return {
           id: p.id,
           title: p.title || "Untitled plan",

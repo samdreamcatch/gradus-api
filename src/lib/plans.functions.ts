@@ -4,7 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
 import { dbError } from "./db-error";
-import { stubSessionsForPlan } from "./plan-sessions-stub";
+import { emptySessionsByState, loadSessionsByPlanIds } from "./plan-sessions.functions";
 import type { SessionsByState } from "@/components/plans/flow-state-bars";
 
 export type PlanKind = "plan" | "template";
@@ -209,9 +209,17 @@ export const listPlans = createServerFn({ method: "POST" })
       });
     }
 
+    const sessionsByPlan = await loadSessionsByPlanIds(
+      supabase,
+      filteredPlans.map((p) => p.id),
+    );
+
     const result: PlanSummaryDTO[] = filteredPlans.map((p) => {
       const agg = byPlan.get(p.id) ?? { count: 0, minutes: 0 };
-      const sessions = stubSessionsForPlan(p.id);
+      const sessions = sessionsByPlan.get(p.id) ?? {
+        sessionsByState: emptySessionsByState(),
+        sessionsTotal: 0,
+      };
       return {
         id: p.id,
         title: p.title,
@@ -281,7 +289,11 @@ export const getPlan = createServerFn({ method: "POST" })
       .filter((m) => m.targetKind === "mins")
       .reduce((s, m) => s + m.targetValue, 0);
 
-    const sessions = stubSessionsForPlan(plan.id);
+    const sessionsMap = await loadSessionsByPlanIds(supabase, [plan.id]);
+    const sessions = sessionsMap.get(plan.id) ?? {
+      sessionsByState: emptySessionsByState(),
+      sessionsTotal: 0,
+    };
     const dto: PlanDetailDTO = {
       id: plan.id,
       title: plan.title,
