@@ -281,6 +281,7 @@ export const getPlan = createServerFn({ method: "POST" })
       .filter((m) => m.targetKind === "mins")
       .reduce((s, m) => s + m.targetValue, 0);
 
+    const sessions = stubSessionsForPlan(plan.id);
     const dto: PlanDetailDTO = {
       id: plan.id,
       title: plan.title,
@@ -293,6 +294,8 @@ export const getPlan = createServerFn({ method: "POST" })
       totalMinutes,
       updatedAt: plan.updated_at,
       moves: planMoves,
+      sessionsByState: sessions.sessionsByState,
+      sessionsTotal: sessions.sessionsTotal,
     };
 
     return { plan: dto };
