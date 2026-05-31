@@ -366,14 +366,14 @@ function IdleSlide({ onStart }: { onStart: () => void }) {
           setArmed(false);
         }}
         onDrag={(_, info) => {
-          if (!armed && info.offset.x >= getMax() * 0.5) setArmed(true);
+          if (!armed && info.offset.x >= getMax() * 0.3) setArmed(true);
         }}
         onDragEnd={async (_, info) => {
           setDragging(false);
           const max = getMax();
           const triggered =
-            info.offset.x >= max * 0.35 ||
-            (info.offset.x >= max * 0.2 && info.velocity.x > 250);
+            info.offset.x >= max * 0.2 ||
+            (info.offset.x >= max * 0.1 && info.velocity.x > 150);
           await controls.start({
             x: 0,
             transition: { type: "spring", stiffness: 520, damping: 22, mass: 0.7 },
