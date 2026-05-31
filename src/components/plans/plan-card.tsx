@@ -43,7 +43,7 @@ export function PlanCard({
             ? "bg-[var(--pen-tennis)]"
             : edgeTone === "template"
               ? "bg-[var(--pen-pool)]"
-              : "bg-divider",
+              : "bg-[var(--divider)]",
         )}
       />
 
