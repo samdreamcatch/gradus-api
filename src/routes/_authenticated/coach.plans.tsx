@@ -29,6 +29,7 @@ import {
 } from "@/lib/plans.functions";
 import { listMoves, type MoveDTO } from "@/lib/moves.functions";
 import { MoveSheet } from "@/components/coach/move-sheet";
+import { PlanCard } from "@/components/plans/plan-card";
 import {
   Select,
   SelectContent,
