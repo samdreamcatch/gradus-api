@@ -62,28 +62,23 @@ const PILL_SHADOW = "inset 0 -3px 0 rgba(0,0,0,0.18)";
 
 export function FlowStateBars({ counts }: { counts: SessionsByState }) {
   const pct = bucketPercents(counts);
-
-  if (pct.total === 0) {
-    return (
-      <div className="h-5 w-full rounded-full bg-divider/60" style={{ boxShadow: PILL_SHADOW }} />
-    );
-  }
-
+  const empty = pct.total === 0;
   const order: BucketKey[] = ["frustrated", "control", "flow"];
-  const visible = order.filter((k) => pct[k] > 0);
-  const cols = visible.map((k) => `${pct[k]}fr`).join(" ");
 
   return (
-    <div className="grid gap-2" style={{ gridTemplateColumns: cols }}>
-      {visible.map((k) => {
+    <div className="grid grid-cols-3 gap-2">
+      {order.map((k) => {
         const meta = bucketMeta[k];
-        const value = pct[k];
+        const value = empty ? 0 : pct[k];
         return (
           <div key={k} className="flex min-w-0 flex-col gap-1.5">
-            <div
-              className={cn("h-5 w-full rounded-full", meta.fill)}
-              style={{ boxShadow: PILL_SHADOW }}
-            />
+            {/* Cup: equal-width track, fill grows left→right by % */}
+            <div className="relative h-5 w-full overflow-hidden rounded-full bg-divider/60">
+              <div
+                className={cn("h-full rounded-full transition-[width]", meta.fill)}
+                style={{ width: `${value}%`, boxShadow: value > 0 ? PILL_SHADOW : undefined }}
+              />
+            </div>
             <div className="flex items-baseline justify-between gap-2 px-0.5">
               <span
                 className={cn(
@@ -94,7 +89,7 @@ export function FlowStateBars({ counts }: { counts: SessionsByState }) {
                 {meta.label}
               </span>
               <span className={cn("text-xs font-bold tabular-nums", meta.ink)}>
-                {value}%
+                {empty ? "—" : `${value}%`}
               </span>
             </div>
           </div>
