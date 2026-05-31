@@ -537,7 +537,7 @@ const FLOW_STATES: { label: string; blurb: string }[] = [
     blurb: "Working hard against friction. Effort is there but it isn't clicking yet.",
   },
   {
-    label: "In Steady",
+    label: "Steady",
     blurb: "Focused and engaged. Working through the plan at a sustainable pace.",
   },
   {
