@@ -4,6 +4,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
 import { dbError } from "./db-error";
+import { stubSessionsForPlan } from "./plan-sessions-stub";
+import type { SessionsByState } from "@/components/plans/flow-state-bars";
 
 export type PlanKind = "plan" | "template";
 export type PlanStatus = "active" | "benched" | "draft";
@@ -44,6 +46,9 @@ export interface PlanSummaryDTO {
   moveCount: number;
   totalMinutes: number;
   updatedAt: string;
+  // TODO(sessions): populate from a real sessions table once persisted.
+  sessionsByState: SessionsByState;
+  sessionsTotal: number;
 }
 
 export interface PlanDetailDTO extends PlanSummaryDTO {
@@ -206,6 +211,7 @@ export const listPlans = createServerFn({ method: "POST" })
 
     const result: PlanSummaryDTO[] = filteredPlans.map((p) => {
       const agg = byPlan.get(p.id) ?? { count: 0, minutes: 0 };
+      const sessions = stubSessionsForPlan(p.id);
       return {
         id: p.id,
         title: p.title,
@@ -216,6 +222,8 @@ export const listPlans = createServerFn({ method: "POST" })
         moveCount: agg.count,
         totalMinutes: agg.minutes,
         updatedAt: p.updated_at,
+        sessionsByState: sessions.sessionsByState,
+        sessionsTotal: sessions.sessionsTotal,
       };
     });
 
