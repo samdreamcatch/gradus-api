@@ -582,10 +582,9 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
 
         {/* Moves */}
         <div className="mb-3 mt-2 flex items-end justify-between">
-          <h2 className="font-display text-xl font-bold text-text-primary">
-            <span className="pen-highlight">Moves</span>
-          </h2>
-
+          <p className="text-[11px] font-black uppercase tracking-widest text-text-secondary">
+            What does {plan.athleteName?.split(" ")[0] ?? "your athlete"} need to work on?
+          </p>
         </div>
 
         <ul className="space-y-1.5">
