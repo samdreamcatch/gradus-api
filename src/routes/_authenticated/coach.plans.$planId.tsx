@@ -500,8 +500,8 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
 
         {plan.status === "active" ? (
           <div className="space-y-3">
-            {/* Placeholder: Logged instances bar chart */}
-            <div className="rounded-lg border border-dashed border-divider bg-card p-4">
+            {/* Logged instances bar chart */}
+            <div className="rounded-lg border border-divider bg-card p-4">
               <div className="mb-3 flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <BarChart3 className="h-4 w-4 text-text-tertiary" />
@@ -509,19 +509,13 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
                     Logged instances
                   </span>
                 </div>
-                <span className="text-[10px] font-bold uppercase tracking-widest text-text-tertiary">
-                  Coming soon
+                <span className="text-xs text-text-tertiary tabular-nums">
+                  {loggedSessionsTotal === 0
+                    ? "0 sessions"
+                    : `${loggedSessionsTotal} session${loggedSessionsTotal === 1 ? "" : "s"}`}
                 </span>
               </div>
-              <div className="flex h-24 items-end gap-1.5">
-                {[35, 60, 25, 80, 45, 70, 55].map((h, i) => (
-                  <div
-                    key={i}
-                    className="flex-1 rounded-sm bg-elevated"
-                    style={{ height: `${h}%` }}
-                  />
-                ))}
-              </div>
+              <FlowStateBars counts={loggedSessions} />
             </div>
 
             {/* Placeholder: Narrative summary */}
