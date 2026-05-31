@@ -682,7 +682,7 @@ function FlowStateScale({
     <div className="mt-4 px-1">
       <div className="relative h-10">
         {/* Literal ink line spanning dot centers */}
-        <div className="pointer-events-none absolute left-5 right-5 top-1/2 h-[2px] -translate-y-1/2 rounded-full bg-text-primary" />
+        <div className="pointer-events-none absolute left-5 right-5 top-1/2 h-[3px] -translate-y-[1.5px] rounded-full bg-text-primary opacity-90" />
         {/* Dots sitting on the line */}
         <div className="relative flex h-full items-center justify-between">
           {FLOW_STATES.map((s, i) => {
