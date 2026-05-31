@@ -49,7 +49,7 @@ export function FlowStateBars({ counts }: { counts: SessionsByState }) {
       key: "control" as const,
       label: "In Control",
       pct: pct.control,
-      fill: "color-mix(in oklab, var(--text-secondary) 55%, transparent)",
+      fill: "linear-gradient(to right, color-mix(in oklab, var(--text-tertiary) 70%, transparent), var(--pen-tennis))",
       labelColor: "var(--text-secondary)",
     },
     {
