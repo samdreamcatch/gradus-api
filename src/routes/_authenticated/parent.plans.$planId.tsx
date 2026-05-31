@@ -615,18 +615,18 @@ function SessionFeedbackModal({
               endLabels={["Frustrated", "Steady", "Flowing"]}
             />
 
-            <div className="mt-3 min-h-[3.25rem] rounded-xl border border-divider bg-card px-3 py-2">
+            <div className="mt-3 min-h-[3.25rem] px-1">
               {selected ? (
                 <>
                   <p className="text-[11px] font-black uppercase tracking-widest text-accent-ink">
                     {selected.label}
                   </p>
-                  <p className="mt-0.5 text-[13px] leading-snug text-text-primary">
+                  <p className="font-hand text-xl leading-snug text-text-primary">
                     {selected.blurb}
                   </p>
                 </>
               ) : (
-                <p className="text-[13px] italic leading-snug text-text-tertiary">
+                <p className="font-hand text-xl leading-snug text-text-tertiary">
                   Tap a dot to describe today's energy.
                 </p>
               )}
@@ -682,7 +682,7 @@ function FlowStateScale({
     <div className="mt-4 px-1">
       <div className="relative h-10">
         {/* Literal ink line spanning dot centers */}
-        <div className="pointer-events-none absolute left-5 right-5 top-1/2 h-[2px] -translate-y-1/2 rounded-full bg-text-primary" />
+        <div className="pointer-events-none absolute left-5 right-5 top-1/2 h-[3px] -translate-y-[1.5px] rounded-full bg-text-primary opacity-90" />
         {/* Dots sitting on the line */}
         <div className="relative flex h-full items-center justify-between">
           {FLOW_STATES.map((s, i) => {
