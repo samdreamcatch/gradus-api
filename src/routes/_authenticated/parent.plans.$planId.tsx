@@ -537,7 +537,7 @@ const FLOW_STATES: { label: string; blurb: string }[] = [
     blurb: "Working hard against friction. Effort is there but it isn't clicking yet.",
   },
   {
-    label: "In Steady",
+    label: "Steady",
     blurb: "Focused and engaged. Working through the plan at a sustainable pace.",
   },
   {
@@ -612,7 +612,7 @@ function SessionFeedbackModal({
             <FlowStateScale
               value={stateIndex}
               onChange={setStateIndex}
-              endLabels={["Frustrated", "In Steady", "Flowing"]}
+              endLabels={["Frustrated", "Steady", "Flowing"]}
             />
 
             <div className="mt-3 min-h-[3.25rem] rounded-xl border border-divider bg-card px-3 py-2">
@@ -681,9 +681,9 @@ function FlowStateScale({
   return (
     <div className="mt-4 px-1">
       <div className="relative h-10">
-        {/* Track */}
-        <div className="absolute left-2 right-2 top-1/2 h-[2px] -translate-y-1/2 rounded-full bg-divider" />
-        {/* Dots */}
+        {/* Literal ink line spanning dot centers */}
+        <div className="pointer-events-none absolute left-5 right-5 top-1/2 h-[2px] -translate-y-1/2 rounded-full bg-text-primary" />
+        {/* Dots sitting on the line */}
         <div className="relative flex h-full items-center justify-between">
           {FLOW_STATES.map((s, i) => {
             const active = value === i;
@@ -694,14 +694,14 @@ function FlowStateScale({
                 onClick={() => onChange(i)}
                 aria-label={s.label}
                 aria-pressed={active}
-                className="group inline-flex size-10 items-center justify-center"
+                className="group relative inline-flex size-10 items-center justify-center"
               >
                 <span
                   className={cn(
-                    "block rounded-full transition-all",
+                    "block rounded-full border-2 border-text-primary bg-background transition-all",
                     active
-                      ? "size-5 bg-accent ring-4 ring-accent/25"
-                      : "size-3 bg-text-tertiary/40 group-hover:bg-text-tertiary/70",
+                      ? "size-5 bg-accent"
+                      : "size-3 group-hover:bg-text-primary/20",
                   )}
                 />
               </button>
