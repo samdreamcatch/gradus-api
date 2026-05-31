@@ -209,9 +209,17 @@ export const listPlans = createServerFn({ method: "POST" })
       });
     }
 
+    const sessionsByPlan = await loadSessionsByPlanIds(
+      supabase,
+      filteredPlans.map((p) => p.id),
+    );
+
     const result: PlanSummaryDTO[] = filteredPlans.map((p) => {
       const agg = byPlan.get(p.id) ?? { count: 0, minutes: 0 };
-      const sessions = stubSessionsForPlan(p.id);
+      const sessions = sessionsByPlan.get(p.id) ?? {
+        sessionsByState: emptySessionsByState(),
+        sessionsTotal: 0,
+      };
       return {
         id: p.id,
         title: p.title,
