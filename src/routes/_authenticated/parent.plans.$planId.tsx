@@ -612,7 +612,7 @@ function SessionFeedbackModal({
             <FlowStateScale
               value={stateIndex}
               onChange={setStateIndex}
-              endLabels={["Frustrated", "In Steady", "Flowing"]}
+              endLabels={["Frustrated", "Steady", "Flowing"]}
             />
 
             <div className="mt-3 min-h-[3.25rem] rounded-xl border border-divider bg-card px-3 py-2">
