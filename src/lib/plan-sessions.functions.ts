@@ -82,6 +82,13 @@ export const submitPlanSession = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const supabase = context.supabase as Client;
 
+    console.info("[submitPlanSession] start", {
+      userId: context.userId,
+      planId: data.planId,
+      stateIndex: data.stateIndex,
+      durationSeconds: data.durationSeconds,
+    });
+
     // Look up plan → athlete; parent_id comes from the caller's parent_profile.
     const [{ data: plan, error: pErr }, { data: parent, error: ppErr }] = await Promise.all([
       supabase
@@ -95,10 +102,28 @@ export const submitPlanSession = createServerFn({ method: "POST" })
         .eq("user_id", context.userId)
         .maybeSingle(),
     ]);
-    if (pErr) dbError(pErr);
-    if (ppErr) dbError(ppErr);
-    if (!plan?.athlete_id) throw new Error("Plan not found");
-    if (!parent) throw new Error("Parent profile not found");
+    if (pErr) {
+      console.error("[submitPlanSession] plan lookup failed", pErr);
+      dbError(pErr);
+    }
+    if (ppErr) {
+      console.error("[submitPlanSession] parent lookup failed", ppErr);
+      dbError(ppErr);
+    }
+    if (!plan?.athlete_id) {
+      console.error("[submitPlanSession] plan not found or has no athlete", { planId: data.planId, plan });
+      throw new Error("Plan not found");
+    }
+    if (!parent) {
+      console.error("[submitPlanSession] parent_profiles row not found for user", { userId: context.userId });
+      throw new Error("Parent profile not found");
+    }
+
+    console.info("[submitPlanSession] resolved", {
+      parentId: parent.id,
+      athleteId: plan.athlete_id,
+      planId: plan.id,
+    });
 
     const { error } = await supabase.from("plan_sessions").insert({
       plan_id: data.planId,
@@ -108,6 +133,10 @@ export const submitPlanSession = createServerFn({ method: "POST" })
       note: data.note,
       duration_seconds: data.durationSeconds,
     });
-    if (error) dbError(error);
+    if (error) {
+      console.error("[submitPlanSession] insert failed", error);
+      dbError(error);
+    }
+    console.info("[submitPlanSession] inserted ok", { planId: data.planId });
     return { ok: true as const };
   });
