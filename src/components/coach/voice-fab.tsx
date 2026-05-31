@@ -183,7 +183,7 @@ export function VoiceFab({
           <div
             role="dialog"
             aria-live="polite"
-            className="relative mx-4 mb-24 w-full max-w-md rounded-3xl border border-divider bg-card px-6 py-6 shadow-page sm:mb-0"
+            className="relative mx-4 mb-24 w-full max-w-md rounded-3xl border border-divider bg-card px-6 py-4 shadow-page sm:mb-0"
           >
             <div className="flex items-center gap-3">
               <div

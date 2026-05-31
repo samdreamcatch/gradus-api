@@ -122,9 +122,9 @@ function OnboardingPage() {
 
   return (
     <>
-    <div className="flex min-h-dvh items-start justify-center px-4 pt-12 pb-32 sm:items-center">
+    <div className="flex min-h-dvh items-start justify-center px-4 pt-8 pb-24 sm:items-center">
       <div className="w-full max-w-2xl rounded-2xl bg-card p-8 shadow-[0_10px_40px_-12px_rgba(0,0,0,0.15)] sm:p-10">
-        <div className="mb-8 flex items-center justify-between">
+        <div className="mb-4 flex items-center justify-between">
           <p className="text-xs font-bold uppercase tracking-widest text-accent-ink">
             Step {step} of 6
           </p>
@@ -145,7 +145,7 @@ function OnboardingPage() {
             title="What's your name?"
             subtitle="Your athletes will see this on their lessons."
           >
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-2 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="firstName">First name</Label>
                 <Input
@@ -238,7 +238,7 @@ function OnboardingPage() {
             title="Practice expectations"
             subtitle="How many hours per week should athletes at each level practice on their own?"
           >
-            <div className="space-y-6">
+            <div className="space-y-3">
               {sports.map((sportKey) => {
                 const sport = getSport(sportKey)!;
                 const sportEntries = entries.filter((e) => e.sport === sportKey);
@@ -252,7 +252,7 @@ function OnboardingPage() {
                         return (
                           <div
                             key={entry.levelKey}
-                            className="flex items-center justify-between gap-4 rounded-md border border-divider bg-elevated px-4 py-3"
+                            className="flex items-center justify-between gap-2 rounded-md border border-divider bg-elevated px-4 py-3"
                           >
                             <div className="leading-tight">
                               <div className="text-sm font-semibold text-text-primary">
@@ -308,7 +308,7 @@ function OnboardingPage() {
           </Step>
         )}
 
-        <div className="mt-10 flex items-center justify-between">
+        <div className="mt-6 flex items-center justify-between">
           <Button
             variant="ghost"
             onClick={() => setStep((s) => Math.max(1, s - 1))}
@@ -346,7 +346,7 @@ function Step({
     <div>
       <h1 className="text-3xl sm:text-4xl">{title}</h1>
       {subtitle && <p className="mt-2 text-sm text-text-secondary">{subtitle}</p>}
-      <div className="mt-8">{children}</div>
+      <div className="mt-5">{children}</div>
     </div>
   );
 }
@@ -363,7 +363,7 @@ function ReviewSummary({
   entries: LevelEntry[];
 }) {
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <div>
         <p className="text-xs uppercase tracking-wider text-text-secondary">Coach</p>
         <p className="mt-1 text-lg font-semibold text-text-primary">

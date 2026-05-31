@@ -248,7 +248,7 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
 
   if (isLoading || !plan) {
     return (
-      <div className="py-12 text-center text-sm text-text-secondary">Loading…</div>
+      <div className="py-8 text-center text-sm text-text-secondary">Loading…</div>
     );
   }
 
@@ -579,7 +579,7 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
 
         </div>
 
-        <ul className="space-y-4">
+        <ul className="space-y-2">
           {plan.moves.map((m, idx) => {
             const expanded = expandedMoves[m.id] ?? isNewFlow;
             const isNewMove = touched.newMoveIds.includes(m.id);
