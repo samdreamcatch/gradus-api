@@ -782,7 +782,7 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
         <div className="rounded-lg border border-divider bg-card p-4">
           <MoveField
             kind="textarea"
-            label="Notes for the athlete"
+            label="Other notes on this plan"
             value={plan.notes}
             placeholder="Overall context, focus areas, encouragement…"
             rows={3}
