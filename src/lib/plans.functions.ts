@@ -4,7 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
 import { dbError } from "./db-error";
-import { stubSessionsForPlan } from "./plan-sessions-stub";
+import { emptySessionsByState, loadSessionsByPlanIds } from "./plan-sessions.functions";
 import type { SessionsByState } from "@/components/plans/flow-state-bars";
 
 export type PlanKind = "plan" | "template";
