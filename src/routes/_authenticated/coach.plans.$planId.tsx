@@ -534,23 +534,23 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
                 </span>
               </div>
               <FlowStateBars counts={loggedSessions} />
-            </div>
 
-            {/* Placeholder: Narrative summary */}
-            <div className="rounded-lg border border-dashed border-divider bg-card p-4">
-              <div className="mb-2 flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-text-tertiary" />
-                <span className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
-                  Summary
-                </span>
-                <span className="ml-auto text-[10px] font-bold uppercase tracking-widest text-text-tertiary">
-                  Coming soon
-                </span>
-              </div>
-              <div className="space-y-1.5">
-                <div className="h-2 w-full rounded bg-elevated" />
-                <div className="h-2 w-11/12 rounded bg-elevated" />
-                <div className="h-2 w-4/5 rounded bg-elevated" />
+              {/* Placeholder: Narrative summary */}
+              <div className="mt-4 border-t border-dashed border-divider pt-3">
+                <div className="mb-2 flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-text-tertiary" />
+                  <span className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
+                    Summary
+                  </span>
+                  <span className="ml-auto text-[10px] font-bold uppercase tracking-widest text-text-tertiary">
+                    Coming soon
+                  </span>
+                </div>
+                <div className="space-y-1.5">
+                  <div className="h-2 w-full rounded bg-elevated" />
+                  <div className="h-2 w-11/12 rounded bg-elevated" />
+                  <div className="h-2 w-4/5 rounded bg-elevated" />
+                </div>
               </div>
             </div>
 
