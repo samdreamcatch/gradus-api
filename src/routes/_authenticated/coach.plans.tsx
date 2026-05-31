@@ -459,43 +459,27 @@ function SwipeableDeleteRow({
   );
 }
 function PlanRow({ plan }: { plan: PlanSummaryDTO }) {
-  const isActive = plan.kind === "plan" && plan.status === "active";
+  const caption =
+    plan.kind === "template"
+      ? "Template"
+      : !plan.athleteName
+        ? "Unassigned"
+        : plan.status === "draft"
+          ? "Draft"
+          : plan.status === "benched"
+            ? "Benched"
+            : undefined;
   return (
-    <Link
+    <PlanCard
       to="/coach/plans/$planId"
-      params={{ planId: plan.id }}
-      className={cn(
-        "block rounded-lg border border-divider border-l-[3px] bg-elevated p-4 transition active:bg-card",
-        isActive ? "border-l-accent" : "border-l-divider",
-        plan.status === "benched" && plan.kind === "plan" && "opacity-70",
-      )}
-    >
-      <div className="mb-1 flex items-start justify-between gap-3">
-        <h3 className="font-display text-lg font-black leading-tight tracking-tight text-text-primary">
-          {plan.title || "Untitled plan"}
-        </h3>
-        <span className="shrink-0 pt-1 text-[10px] font-bold uppercase tracking-widest text-text-tertiary">
-          {formatRelative(plan.updatedAt)}
-        </span>
-      </div>
-      <div className="mb-2 flex items-center gap-2">
-        <StatusPill plan={plan} />
-        {plan.kind === "plan" ? (
-          <>
-            <span className="h-1 w-1 rounded-full bg-text-tertiary" />
-            <span className="text-xs font-medium text-text-secondary capitalize">
-              {plan.status}
-            </span>
-          </>
-        ) : null}
-      </div>
-      <div className="flex items-center gap-2 text-xs font-medium text-text-secondary">
-        <span className="flex items-center gap-1">
-          <ListChecks className="h-3 w-3 text-text-tertiary" />
-          {plan.moveCount} {plan.moveCount === 1 ? "move" : "moves"}
-        </span>
-      </div>
-    </Link>
+      planId={plan.id}
+      title={plan.title || "Untitled plan"}
+      athleteName={plan.athleteName ?? undefined}
+      caption={caption}
+      sessionsByState={plan.sessionsByState}
+      sessionsTotal={plan.sessionsTotal}
+      muted={plan.kind === "plan" && plan.status === "benched"}
+    />
   );
 }
 
