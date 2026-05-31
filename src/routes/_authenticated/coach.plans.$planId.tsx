@@ -736,16 +736,20 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
                               "pen-highlight",
                           )}
                         >
-                          <span>
-                            {m.name || (
-                              <span className="italic text-text-tertiary">Untitled move</span>
-                            )}
+                          <span className="flex min-w-0 items-center gap-3">
+                            <span className="select-none font-hand text-3xl leading-none text-text-secondary">
+                              {idx + 1}
+                            </span>
+                            <span className="truncate">
+                              {m.name || (
+                                <span className="italic text-text-tertiary">Untitled move</span>
+                              )}
+                            </span>
                           </span>
                           <ChevronDown className="h-4 w-4 shrink-0 text-text-tertiary" />
                         </button>
                       )}
 
-                    </div>
                   </div>
                   <div className="flex flex-col items-center gap-1">
                     <button
