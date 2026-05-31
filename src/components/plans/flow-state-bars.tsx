@@ -42,7 +42,7 @@ export function FlowStateBars({ counts }: { counts: SessionsByState }) {
       key: "frustrated" as const,
       label: "Frustrated",
       pct: pct.frustrated,
-      fill: "var(--text-tertiary)",
+      fill: "var(--pen-pool-ink)",
       labelColor: "var(--text-tertiary)",
     },
     {
