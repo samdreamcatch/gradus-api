@@ -779,7 +779,7 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
           Add moves from move library
         </Button>
 
-        <div className="rounded-lg border border-divider border-l-[3px] border-l-accent bg-card p-4">
+        <div className="rounded-lg border border-divider bg-card p-4">
           <MoveField
             kind="textarea"
             label="Notes for the athlete"
