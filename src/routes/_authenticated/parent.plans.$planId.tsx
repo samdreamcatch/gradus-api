@@ -85,7 +85,11 @@ function ParentPlanDetail() {
         </h1>
       </div>
 
-      <SessionTimer coachFirstName={plan.coachFirstName} planTitle={plan.title} />
+      <SessionTimer
+        coachFirstName={plan.coachFirstName}
+        athleteFirstName={plan.athleteFirstName}
+        planTitle={plan.title}
+      />
 
 
       <p className="mt-8 text-[11px] font-black uppercase tracking-widest text-text-secondary">
