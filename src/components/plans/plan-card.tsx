@@ -54,16 +54,12 @@ export function PlanCard({
         </span>
       </div>
 
+      <FlowStateBars counts={sessionsByState} />
       {sessionsTotal === 0 ? (
-        <>
-          <FlowStateBars counts={sessionsByState} />
-          <p className="mt-2 font-hand text-base text-text-tertiary">
-            No sessions logged yet
-          </p>
-        </>
-      ) : (
-        <FlowStateBars counts={sessionsByState} />
-      )}
+        <p className="mt-2 font-hand text-base text-text-tertiary">
+          No sessions logged yet
+        </p>
+      ) : null}
     </Link>
   );
 }
