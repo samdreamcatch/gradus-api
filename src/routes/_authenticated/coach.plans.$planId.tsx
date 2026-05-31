@@ -585,9 +585,6 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
           <h2 className="font-display text-xl font-bold text-text-primary">
             <span className="pen-highlight">Moves</span>
           </h2>
-          <span className="text-[11px] font-bold uppercase tracking-widest text-text-tertiary">
-            {plan.moves.length} {plan.moves.length === 1 ? "move" : "moves"}
-          </span>
 
         </div>
 
