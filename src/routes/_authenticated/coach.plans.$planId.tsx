@@ -593,14 +593,13 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
                 )}
               >
                 <div className="flex items-start justify-between gap-2">
-                  <div className="flex min-w-0 flex-1 items-start gap-3">
-                    <span className="select-none pt-1 font-hand text-3xl leading-none text-text-secondary">
-                      {idx + 1}
-                    </span>
-                    <div className="min-w-0 flex-1">
+                  <div className="min-w-0 flex-1">
                       {expanded ? (
                         <div className="divide-y divide-divider/60">
-                          <div className="flex items-start justify-between gap-2 pb-3">
+                          <div className="flex items-center justify-between gap-2 pb-3">
+                            <span className="select-none font-hand text-3xl leading-none text-text-secondary">
+                              {idx + 1}
+                            </span>
                             <div className="min-w-0 flex-1">
                               <MoveField
                                 kind="text"
@@ -626,7 +625,7 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
                               type="button"
                               onClick={() => toggleMove(m.id)}
                               aria-label="Collapse move"
-                              className="mt-1 shrink-0 text-text-tertiary hover:text-text-primary"
+                              className="shrink-0 text-text-tertiary hover:text-text-primary"
                             >
                               <ChevronDown className="h-4 w-4" />
                             </button>
@@ -737,16 +736,20 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
                               "pen-highlight",
                           )}
                         >
-                          <span>
-                            {m.name || (
-                              <span className="italic text-text-tertiary">Untitled move</span>
-                            )}
+                          <span className="flex min-w-0 items-center gap-3">
+                            <span className="select-none font-hand text-3xl leading-none text-text-secondary">
+                              {idx + 1}
+                            </span>
+                            <span className="truncate">
+                              {m.name || (
+                                <span className="italic text-text-tertiary">Untitled move</span>
+                              )}
+                            </span>
                           </span>
                           <ChevronDown className="h-4 w-4 shrink-0 text-text-tertiary" />
                         </button>
                       )}
 
-                    </div>
                   </div>
                   <div className="flex flex-col items-center gap-1">
                     <button
