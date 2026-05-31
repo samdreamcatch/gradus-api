@@ -289,7 +289,11 @@ export const getPlan = createServerFn({ method: "POST" })
       .filter((m) => m.targetKind === "mins")
       .reduce((s, m) => s + m.targetValue, 0);
 
-    const sessions = stubSessionsForPlan(plan.id);
+    const sessionsMap = await loadSessionsByPlanIds(supabase, [plan.id]);
+    const sessions = sessionsMap.get(plan.id) ?? {
+      sessionsByState: emptySessionsByState(),
+      sessionsTotal: 0,
+    };
     const dto: PlanDetailDTO = {
       id: plan.id,
       title: plan.title,
