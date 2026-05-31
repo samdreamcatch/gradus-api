@@ -483,6 +483,42 @@ export type Database = {
           },
         ]
       }
+      plan_sessions: {
+        Row: {
+          athlete_id: string
+          created_at: string
+          duration_seconds: number
+          id: string
+          logged_at: string
+          note: string
+          parent_id: string
+          plan_id: string
+          state_index: number
+        }
+        Insert: {
+          athlete_id: string
+          created_at?: string
+          duration_seconds?: number
+          id?: string
+          logged_at?: string
+          note?: string
+          parent_id: string
+          plan_id: string
+          state_index: number
+        }
+        Update: {
+          athlete_id?: string
+          created_at?: string
+          duration_seconds?: number
+          id?: string
+          logged_at?: string
+          note?: string
+          parent_id?: string
+          plan_id?: string
+          state_index?: number
+        }
+        Relationships: []
+      }
       plans: {
         Row: {
           athlete_id: string | null
