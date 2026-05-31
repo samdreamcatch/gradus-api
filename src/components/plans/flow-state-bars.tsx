@@ -72,11 +72,14 @@ export function FlowStateBars({ counts }: { counts: SessionsByState }) {
         const value = empty ? 0 : pct[k];
         return (
           <div key={k} className="flex min-w-0 flex-col gap-1.5">
-            {/* Cup: equal-width track, fill grows left→right by % */}
-            <div className="relative h-5 w-full overflow-hidden rounded-full bg-divider/60">
+            {/* Cup: equal-width track, fill grows bottom→top by % */}
+            <div className="relative h-16 w-full overflow-hidden rounded-full bg-divider/60">
               <div
-                className={cn("h-full rounded-full transition-[width]", meta.fill)}
-                style={{ width: `${value}%`, boxShadow: value > 0 ? PILL_SHADOW : undefined }}
+                className={cn(
+                  "absolute inset-x-0 bottom-0 rounded-full transition-[height]",
+                  meta.fill,
+                )}
+                style={{ height: `${value}%`, boxShadow: value > 0 ? PILL_SHADOW : undefined }}
               />
             </div>
             <div className="flex items-baseline justify-between gap-2 px-0.5">
