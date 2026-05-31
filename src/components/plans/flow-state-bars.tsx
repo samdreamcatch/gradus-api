@@ -94,7 +94,7 @@ export function FlowStateBars({ counts }: { counts: SessionsByState }) {
       </div>
       <div className="mt-1 flex w-full gap-1.5 text-[10px] uppercase tracking-wider">
         {segments.map((seg) => (
-          <div key={seg.key} className="flex flex-1 items-baseline justify-between gap-1">
+          <div key={seg.key} className="flex flex-1 items-baseline justify-start gap-1">
             <span style={{ color: seg.labelColor }}>{seg.label}</span>
             <span className="tabular-nums" style={{ color: seg.labelColor }}>
               {total > 0 ? `${seg.pct}%` : "—"}
