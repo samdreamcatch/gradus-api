@@ -258,9 +258,11 @@ function CoachNote({
 
 function SessionTimer({
   coachFirstName,
+  athleteFirstName,
   planTitle,
 }: {
   coachFirstName: string;
+  athleteFirstName: string;
   planTitle: string;
 }) {
   const [running, setRunning] = useState(false);
