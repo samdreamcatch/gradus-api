@@ -11,6 +11,7 @@ interface PlanCardProps {
   sessionsTotal: number;
   muted?: boolean;
   caption?: string;
+  edgeTone?: "active" | "muted";
 }
 
 export function PlanCard({
@@ -22,16 +23,24 @@ export function PlanCard({
   sessionsTotal,
   muted,
   caption,
+  edgeTone = "active",
 }: PlanCardProps) {
   return (
     <Link
       to={to}
       params={{ planId }}
       className={cn(
-        "group block rounded-2xl border border-divider bg-card p-4 shadow-card transition-all hover:-translate-y-0.5 hover:shadow-page",
+        "group relative block overflow-hidden rounded-2xl border border-divider bg-card p-4 pl-5 shadow-card transition-all hover:-translate-y-0.5 hover:shadow-page",
         muted && "opacity-70",
       )}
     >
+      <span
+        aria-hidden
+        className={cn(
+          "absolute inset-y-0 left-0 w-1.5",
+          edgeTone === "active" ? "bg-pen-tennis" : "bg-divider",
+        )}
+      />
       <div className="mb-3 flex items-baseline justify-between gap-3">
         <div className="min-w-0">
           {athleteName ? (
@@ -63,3 +72,4 @@ export function PlanCard({
     </Link>
   );
 }
+
