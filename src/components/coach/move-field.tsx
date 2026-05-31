@@ -190,7 +190,7 @@ export function MoveField(props: MoveFieldProps) {
               cancel();
             }
           }}
-          placeholder={placeholder}
+          placeholder=""
           className={sharedInputCls}
         />
       )}
@@ -213,7 +213,7 @@ export function MoveField(props: MoveFieldProps) {
               cancel();
             }
           }}
-          placeholder={placeholder}
+          placeholder=""
           className={cn(sharedInputCls, "resize-y")}
         />
       )}
