@@ -385,7 +385,7 @@ function SwipeableDeleteRow({
   const swiped = offset < -8;
 
   return (
-    <div className="group/swipe relative overflow-hidden">
+    <div className="group/swipe relative overflow-hidden rounded-2xl">
       <button
         type="button"
         onClick={() => setConfirmOpen(true)}
