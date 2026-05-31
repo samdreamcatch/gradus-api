@@ -1,14 +1,11 @@
 import { useMemo, useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronRight } from "lucide-react";
 import { ParentBottomNav } from "@/components/parent/bottom-nav";
+import { PlanCard } from "@/components/plans/plan-card";
 import { cn } from "@/lib/utils";
-import {
-  listParentPlans,
-  type ParentPlanSummaryDTO,
-} from "@/lib/parent-plans.functions";
+import { listParentPlans } from "@/lib/parent-plans.functions";
 
 export const Route = createFileRoute("/_authenticated/parent/plans/")({
   component: ParentPlansPage,
@@ -93,7 +90,21 @@ function ParentPlansPage() {
         ) : active.length === 0 ? (
           <EmptyCard />
         ) : (
-          active.map((p) => <PlanCard key={p.id} plan={p} showAthlete={effectiveSelected === "all" && athletes.length > 1} />)
+          active.map((p) => (
+            <PlanCard
+              key={p.id}
+              to="/parent/plans/$planId"
+              planId={p.id}
+              title={p.title}
+              athleteName={
+                effectiveSelected === "all" && athletes.length > 1
+                  ? `${p.athleteName} · Coach ${p.coachName}`
+                  : `Coach ${p.coachName}`
+              }
+              sessionsByState={p.sessionsByState}
+              sessionsTotal={p.sessionsTotal}
+            />
+          ))
         )}
       </div>
 
@@ -111,8 +122,16 @@ function ParentPlansPage() {
               {benched.map((p) => (
                 <PlanCard
                   key={p.id}
-                  plan={p}
-                  showAthlete={effectiveSelected === "all" && athletes.length > 1}
+                  to="/parent/plans/$planId"
+                  planId={p.id}
+                  title={p.title}
+                  athleteName={
+                    effectiveSelected === "all" && athletes.length > 1
+                      ? `${p.athleteName} · Coach ${p.coachName}`
+                      : `Coach ${p.coachName}`
+                  }
+                  sessionsByState={p.sessionsByState}
+                  sessionsTotal={p.sessionsTotal}
                   muted
                 />
               ))}
@@ -148,56 +167,6 @@ function AthleteChip({
     >
       {label}
     </button>
-  );
-}
-
-function PlanCard({
-  plan,
-  showAthlete,
-  muted,
-}: {
-  plan: ParentPlanSummaryDTO;
-  showAthlete: boolean;
-  muted?: boolean;
-}) {
-  return (
-    <Link
-      to="/parent/plans/$planId"
-      params={{ planId: plan.id }}
-      className={cn(
-        "group block rounded-2xl border border-divider border-l-[4px] bg-card p-5 shadow-card transition-all hover:-translate-y-0.5 hover:shadow-page",
-        muted
-          ? "border-l-divider opacity-80"
-          : "border-l-[var(--pen-tennis)]",
-      )}
-    >
-      <div className="flex items-center gap-2">
-        <span
-          className={cn(
-            "inline-flex items-center rounded-sm px-1.5 py-0.5 text-[9px] font-black uppercase tracking-widest",
-            muted
-              ? "bg-elevated text-text-tertiary"
-              : "bg-[var(--pen-tennis-wash)] text-[var(--pen-tennis-ink)]",
-          )}
-        >
-          {muted ? "Benched" : "Active"}
-        </span>
-        <p className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
-          {showAthlete ? `${plan.athleteName} · ` : ""}
-          Coach {plan.coachName}
-        </p>
-      </div>
-      <h3 className="mt-1 font-display text-2xl font-black leading-tight tracking-tight text-text-primary">
-        {plan.title}
-      </h3>
-      <div className="mt-3 flex items-center justify-between text-xs text-text-secondary">
-        <span>
-          {plan.moveCount} {plan.moveCount === 1 ? "move" : "moves"}
-          {plan.totalMinutes > 0 ? ` · ~${plan.totalMinutes} min` : ""}
-        </span>
-        <ChevronRight className="size-4 text-text-tertiary transition-transform group-hover:translate-x-0.5" />
-      </div>
-    </Link>
   );
 }
 

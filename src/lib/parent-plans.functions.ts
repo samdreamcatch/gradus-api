@@ -5,6 +5,8 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import type { Database } from "@/integrations/supabase/types";
 import { dbError } from "./db-error";
+import { stubSessionsForPlan } from "./plan-sessions-stub";
+import type { SessionsByState } from "@/components/plans/flow-state-bars";
 
 type Client = SupabaseClient<Database>;
 
@@ -26,6 +28,9 @@ export interface ParentPlanSummaryDTO {
   moveCount: number;
   totalMinutes: number;
   updatedAt: string;
+  // TODO(sessions): populate from a real sessions table once persisted.
+  sessionsByState: SessionsByState;
+  sessionsTotal: number;
 }
 
 export interface ParentPlanMoveDTO {
@@ -140,6 +145,7 @@ export const listParentPlans = createServerFn({ method: "GET" })
       .filter((p) => p.athlete_id)
       .map((p) => {
         const a = agg.get(p.id) ?? { count: 0, minutes: 0 };
+        const sessions = stubSessionsForPlan(p.id);
         return {
           id: p.id,
           title: p.title || "Untitled plan",
@@ -150,6 +156,8 @@ export const listParentPlans = createServerFn({ method: "GET" })
           moveCount: a.count,
           totalMinutes: a.minutes,
           updatedAt: p.updated_at,
+          sessionsByState: sessions.sessionsByState,
+          sessionsTotal: sessions.sessionsTotal,
         };
       });
 
