@@ -331,6 +331,13 @@ function SessionTimer({
         elapsed={`${mm}:${ss}`}
         planTitle={planTitle}
         coachFirstName={coachFirstName}
+        athleteFirstName={athleteFirstName}
+        onSubmit={(payload) => {
+          toast(`Sent to Coach ${coachFirstName}`, {
+            description: `${athleteFirstName} · ${payload.stateLabel}`,
+          });
+          closeFeedback();
+        }}
       />
     </>
   );
