@@ -64,7 +64,7 @@ export function FlowStateBars({ counts }: { counts: SessionsByState }) {
   return (
     <div>
       <div
-        className="flex h-16 w-full items-end gap-1.5"
+        className="flex h-8 w-full items-end gap-1.5"
         role="img"
         aria-label="Share of sessions by emotional state"
       >
