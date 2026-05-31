@@ -11,8 +11,9 @@ interface PlanCardProps {
   sessionsTotal: number;
   muted?: boolean;
   caption?: string;
-  edgeTone?: "active" | "muted";
+  edgeTone?: "active" | "template" | "muted";
 }
+
 
 export function PlanCard({
   to,
