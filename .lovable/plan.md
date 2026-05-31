@@ -1,50 +1,61 @@
-Apply the aggressive density direction (you picked) across the design system. Roughly ~30–35% less vertical space, no color/font/component changes.
+Redesign the plan card on `/parent/plans` and `/coach/plans` to lead with a 3-bucket flow-state bar chart of the athlete's logged sessions, with the plan title secondary.
 
-## Scope: vertical only
+## Card anatomy (within design system)
 
-Touch padding, gaps, row heights, and section margins. Do not change colors, fonts, radii, shadows, or component structure.
+Built from `Card` primitive + design tokens — no new colors, no new fonts.
 
-## 1. UI primitives (`src/components/ui/*`)
+```
+┌─────────────────────────────────────────────┐
+│  Maya · Freestyle practice      12 sessions │
+│                                             │
+│  ▓▓▓▓     ▓▓▓▓▓▓▓▓▓▓▓     ▓▓▓               │
+│  FRUSTRATED 17%  CONTROL 67%  FLOW 17%      │
+└─────────────────────────────────────────────┘
+```
 
-Tighten the defaults so every screen inherits the change for free.
+- Athlete first name in `text-text-secondary`, separator dot, plan title in `font-display font-bold text-text-primary`.
+- Right side: `N sessions` in `text-text-tertiary text-xs`.
+- Three equal-width pill bars (`rounded-full`, ~8px tall), small gaps between:
+  - **Frustrated** → pen-orange fill on pen-orange-wash track
+  - **Control** → pen-pool fill on pen-pool-wash track
+  - **Flow** → pen-tennis fill on pen-tennis-wash track
+- Fill width = bucket %. 0% → empty track.
+- Below each bar: label (`text-[10px] font-black uppercase tracking-widest`) and % (`text-xs font-bold tabular-nums`) using the matching `-ink` ink color.
+- Whole card is a `Link` to plan detail; subtle hover lift retained.
 
-- **button.tsx** — default `h-9 py-2` → `h-8 py-1.5`; `sm` `h-8` → `h-7`; `lg` `h-10` → `h-9`; icon `h-9 w-9` → `h-8 w-8`.
-- **card.tsx** — `CardHeader` / `CardContent` / `CardFooter` `p-6` → `p-4`; header `space-y-1.5` → `space-y-1`.
-- **input.tsx** — `h-9 py-1` → `h-8 py-1`.
-- **accordion.tsx** — trigger `py-4` → `py-2.5`; content padding trimmed one step.
-- **dialog.tsx / sheet.tsx** — content `p-6` → `p-4`, internal `gap-4` → `gap-3`.
-- **badge.tsx** — `py-0.5` stays (already tight); leave.
-- **separator** — no change.
+## Bucket math (5-point → 3 buckets)
 
-## 2. Plan detail screen (`parent.plans.$planId.tsx`)
+The plan detail uses `Frustrated · Pushing · Steady · Locked In · Flowing`. Collapse to:
+- **Frustrated** = Frustrated
+- **Control** = Pushing + Steady + Locked In
+- **Flow** = Flowing
 
-Match the chosen mockup precisely on this representative page so we can eyeball the result:
+Percentages are integer-rounded with largest-remainder so they sum to 100.
 
-- Header meta `text-sm mb-1` → `text-[12px] mb-0.5`.
-- H1: `leading-[1.05] mb-8` → `leading-[0.95] mb-3`.
-- Start session slider: container `h-14 p-1 mb-8` → `h-10 p-1 mb-4`; inner pill `py-2.5` → `py-1.5`.
-- "From the coach" label `mb-3` → `mb-2`.
-- Exercise list: `space-y-2.5` → `gap-1`; each row `py-4 px-5 rounded-3xl` → `py-2 px-3.5 rounded-2xl`; rep number `text-xl` → `text-[18px]`; name `text-lg` → `text-[15px]`.
-- "Message Tami" CTA: `py-3.5 mt-7 mb-24` → `py-2.5 mt-4 mb-6`.
-- Bottom tab bar: `py-3` → `py-2.5 pb-4`, label gap `gap-1` → `gap-0.5`.
+## Data
 
-## 3. Other authenticated routes (sweep)
+Session feedback isn't persisted yet (the modal only toasts). For this experiment:
 
-Apply the same density rules consistently — one Tailwind step tighter — across:
+- Add `sessionsByState: { frustrated; pushing; steady; lockedIn; flowing }` and `sessionsTotal` to both `ParentPlanSummaryDTO` (`parent-plans.functions.ts`) and `PlanSummaryDTO` (`plans.functions.ts`).
+- Populate from a deterministic stub derived from `plan.id` (hash → counts in [0,30]) so every plan renders a stable, non-empty chart. Marked `// TODO(sessions)` for easy swap once the table exists.
+- Empty state (0 sessions): show empty tracks + `No sessions logged yet` in `font-hand text-text-tertiary`.
 
-- `parent.index.tsx`, `parent.plans.index.tsx`
-- `coach.index.tsx`, `coach.plans.tsx`, `coach.plans.$planId.tsx`, `coach.settings.tsx`, `coach.onboarding.tsx`
-- `athlete.tsx`
-- `components/coach/move-sheet.tsx`, `components/coach/voice-fab.tsx`
+## Components
 
-Pattern rewrites: `space-y-6` → `space-y-3`; `space-y-4` → `space-y-2`; `gap-6` → `gap-3`; `gap-4` → `gap-2`; `py-8` → `py-5`; `py-6` → `py-4`; `mb-8` → `mb-4`; `mt-10` → `mt-6`. Skip cases where reducing breaks legibility (heading line-height, focus targets <32px).
+- New `src/components/plans/flow-state-bars.tsx` exporting `<FlowStateBars counts={…} />`. Used by both parent + coach cards.
+- New `src/components/plans/plan-card.tsx` with the card markup. Parent/coach route files use this shared card with their own `to` route.
 
-## 4. Reversibility
+## Files touched
 
-All edits are local Tailwind class swaps in known files — no token migration, no behavior change. Easy to revert by undoing the commit if the density doesn't feel right in practice.
+- `src/components/plans/flow-state-bars.tsx` (new)
+- `src/components/plans/plan-card.tsx` (new)
+- `src/lib/parent-plans.functions.ts` (DTO + stub counts)
+- `src/lib/plans.functions.ts` (DTO + stub counts)
+- `src/routes/_authenticated/parent.plans.index.tsx` (swap local `PlanCard` for shared; drop the move-count/min row — chart carries the meaning; keep muted opacity for benched)
+- `src/routes/_authenticated/coach.plans.tsx` (swap `PlanRow` markup for shared `PlanCard`; keep swipe-to-delete wrapper)
 
 ## Out of scope
 
-- Onboarding flows / login / public marketing pages (different density needs — keep generous).
-- Sidebar/drawer chrome geometry beyond padding.
-- Typography scale changes.
+- Persisting session feedback (separate task; flagged with TODOs).
+- Filter chips, status pills, athlete switcher — unchanged.
+- Plan detail screen — unchanged.
