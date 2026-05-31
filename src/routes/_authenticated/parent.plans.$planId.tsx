@@ -279,12 +279,16 @@ function SessionTimer({
   const submitFn = useServerFn(submitPlanSession);
   const submitMutation = useMutation({
     mutationFn: submitFn,
-    onSuccess: () => {
+    onSuccess: (result, variables) => {
+      console.info("[plan-session] submit success", { planId, result, variables });
       // Refresh the chart for both parent list and coach detail.
       queryClient.invalidateQueries({ queryKey: ["plan-sessions", planId] });
       queryClient.invalidateQueries({ queryKey: ["parent-plan", planId] });
       queryClient.invalidateQueries({ queryKey: ["parent-plans"] });
       queryClient.invalidateQueries({ queryKey: ["coach-plans"] });
+    },
+    onError: (err) => {
+      console.error("[plan-session] submit failed", err);
     },
   });
 
