@@ -248,10 +248,21 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
     setDidInitExpansion(true);
   }, [didInitExpansion, isNewFlow, plan]);
 
-  const { sessionsByState: loggedSessions, sessionsTotal: loggedSessionsTotal } = useMemo(
-    () => (plan ? stubSessionsForPlan(plan.id) : { sessionsByState: { frustrated: 0, pushing: 0, steady: 0, lockedIn: 0, flowing: 0 }, sessionsTotal: 0 }),
-    [plan],
-  );
+  const fetchPlanSessions = useServerFn(getPlanSessions);
+  const sessionsQuery = useQuery({
+    queryKey: ["plan-sessions", plan?.id],
+    queryFn: () => fetchPlanSessions({ data: { planId: plan!.id } }),
+    enabled: !!plan?.id,
+  });
+  const loggedSessions =
+    sessionsQuery.data?.sessionsByState ?? {
+      frustrated: 0,
+      pushing: 0,
+      steady: 0,
+      lockedIn: 0,
+      flowing: 0,
+    };
+  const loggedSessionsTotal = sessionsQuery.data?.sessionsTotal ?? 0;
 
   if (isLoading || !plan) {
     return (
