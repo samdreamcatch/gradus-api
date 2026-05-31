@@ -1,5 +1,3 @@
-import { cn } from "@/lib/utils";
-
 export interface SessionsByState {
   frustrated: number;
   pushing: number;
@@ -35,69 +33,75 @@ export function bucketPercents(counts: SessionsByState) {
   return { frustrated: map.frustrated, control: map.control, flow: map.flow, total };
 }
 
-type BucketKey = "frustrated" | "control" | "flow";
-
-const bucketMeta: Record<BucketKey, { label: string; fill: string; ink: string }> = {
-  frustrated: {
-    label: "Frustrated",
-    // Neutral muted — friction, not alarm.
-    fill: "bg-text-tertiary",
-    ink: "text-text-secondary",
-  },
-  control: {
-    // Pen accent — the user's selected pen color.
-    label: "Control",
-    fill: "bg-accent",
-    ink: "text-accent-ink",
-  },
-  flow: {
-    // Pen wash — same hue, lighter.
-    label: "Flow",
-    fill: "bg-accent/30",
-    ink: "text-accent-ink",
-  },
-};
-
-const PILL_SHADOW = "inset 0 -3px 0 rgba(0,0,0,0.18)";
-
 export function FlowStateBars({ counts }: { counts: SessionsByState }) {
   const pct = bucketPercents(counts);
-  const empty = pct.total === 0;
-  const order: BucketKey[] = ["frustrated", "control", "flow"];
+  const total = pct.total;
+
+  const segments = [
+    {
+      key: "frustrated" as const,
+      label: "Frustrated",
+      pct: pct.frustrated,
+      fill: "var(--text-tertiary)",
+      labelColor: "var(--text-tertiary)",
+    },
+    {
+      key: "control" as const,
+      label: "Pushing",
+      pct: pct.control,
+      fill: "color-mix(in oklab, var(--text-secondary) 55%, transparent)",
+      labelColor: "var(--text-secondary)",
+    },
+    {
+      key: "flow" as const,
+      label: "Flowing",
+      pct: pct.flow,
+      fill: "linear-gradient(to top, color-mix(in oklab, var(--accent) 25%, transparent) 0%, color-mix(in oklab, var(--accent) 65%, transparent) 50%, var(--accent) 100%)",
+      labelColor: "var(--accent-ink)",
+    },
+  ];
 
   return (
-    <div className="grid grid-cols-3 gap-2">
-      {order.map((k) => {
-        const meta = bucketMeta[k];
-        const value = empty ? 0 : pct[k];
-        return (
-          <div key={k} className="flex min-w-0 flex-col gap-1.5">
-            {/* Cup: equal-width track, fill grows bottom→top by % */}
-            <div className="relative h-16 w-full overflow-hidden rounded-full bg-divider/60">
+    <div>
+      <div
+        className="flex h-16 w-full items-end gap-1.5"
+        role="img"
+        aria-label="Share of sessions by emotional state"
+      >
+        {segments.map((seg) => {
+          const value = total > 0 ? seg.pct : 0;
+          const glow = seg.key === "flow";
+          return (
+            <div
+              key={seg.key}
+              className="relative flex h-full flex-1 items-end overflow-hidden rounded-md"
+              style={{ background: "color-mix(in oklab, var(--text-tertiary) 18%, transparent)" }}
+              title={`${seg.label}: ${value}%`}
+            >
               <div
-                className={cn(
-                  "absolute inset-x-0 bottom-0 rounded-full transition-[height]",
-                  meta.fill,
-                )}
-                style={{ height: `${value}%`, boxShadow: value > 0 ? PILL_SHADOW : undefined }}
+                className="w-full rounded-md transition-[height]"
+                style={{
+                  height: `${value}%`,
+                  background: seg.fill,
+                  boxShadow: glow && value > 0
+                    ? "0 0 8px color-mix(in oklab, var(--accent) 40%, transparent)"
+                    : undefined,
+                }}
               />
             </div>
-            <div className="flex items-baseline justify-between gap-2 px-0.5">
-              <span
-                className={cn(
-                  "truncate text-[10px] font-black uppercase tracking-widest",
-                  meta.ink,
-                )}
-              >
-                {meta.label}
-              </span>
-              <span className={cn("text-xs font-bold tabular-nums", meta.ink)}>
-                {empty ? "—" : `${value}%`}
-              </span>
-            </div>
+          );
+        })}
+      </div>
+      <div className="mt-1 flex w-full gap-1.5 text-[10px] uppercase tracking-wider">
+        {segments.map((seg) => (
+          <div key={seg.key} className="flex flex-1 items-baseline justify-between gap-1">
+            <span style={{ color: seg.labelColor }}>{seg.label}</span>
+            <span className="tabular-nums" style={{ color: seg.labelColor }}>
+              {total > 0 ? `${seg.pct}%` : "—"}
+            </span>
           </div>
-        );
-      })}
+        ))}
+      </div>
     </div>
   );
 }
