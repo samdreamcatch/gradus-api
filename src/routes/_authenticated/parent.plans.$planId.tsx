@@ -680,11 +680,9 @@ function FlowStateScale({
 }) {
   return (
     <div className="mt-4 px-1">
-      <div className="relative h-10">
-        {/* Literal ink line spanning dot centers */}
-        <div className="pointer-events-none absolute left-5 right-5 top-1/2 h-[3px] -translate-y-[1.5px] rounded-full bg-text-primary opacity-90" />
-        {/* Dots sitting on the line */}
-        <div className="relative flex h-full items-center justify-between">
+      <div className="relative">
+        <div className="pointer-events-none absolute left-5 right-5 top-1/2 z-0 border-t-2 border-text-primary" />
+        <div className="relative z-10 flex h-10 items-center justify-between">
           {FLOW_STATES.map((s, i) => {
             const active = value === i;
             return (
@@ -698,7 +696,7 @@ function FlowStateScale({
               >
                 <span
                   className={cn(
-                    "block rounded-full border-2 border-text-primary bg-background transition-all",
+                    "block rounded-full border-2 border-text-primary bg-card transition-all",
                     active
                       ? "size-5 bg-accent"
                       : "size-3 group-hover:bg-text-primary/20",
