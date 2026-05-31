@@ -131,7 +131,7 @@ export function MoveField(props: MoveFieldProps) {
           {value ? (
             <span className="whitespace-pre-wrap break-words">{value}</span>
           ) : (
-            <span className="text-text-tertiary italic">{placeholder ?? "Tap to add"}</span>
+            <span className="text-text-disabled italic">{placeholder ?? "Tap to add"}</span>
           )}
         </button>
         {highlighted && sourceQuote ? (
