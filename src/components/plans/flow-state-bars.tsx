@@ -18,9 +18,9 @@ export function bucketPercents(counts: SessionsByState) {
     return { frustrated: 0, control: 0, flow: 0, total: 0 };
   }
   const raw = [
-    { key: "frustrated", v: (frustrated / total) * 100 },
-    { key: "control", v: (control / total) * 100 },
-    { key: "flow", v: (flow / total) * 100 },
+    { key: "frustrated" as const, v: (frustrated / total) * 100 },
+    { key: "control" as const, v: (control / total) * 100 },
+    { key: "flow" as const, v: (flow / total) * 100 },
   ];
   const floored = raw.map((r) => ({ ...r, f: Math.floor(r.v), rem: r.v - Math.floor(r.v) }));
   let remainder = 100 - floored.reduce((s, r) => s + r.f, 0);
@@ -35,52 +35,66 @@ export function bucketPercents(counts: SessionsByState) {
   return { frustrated: map.frustrated, control: map.control, flow: map.flow, total };
 }
 
-const buckets = [
-  {
-    key: "frustrated" as const,
+type BucketKey = "frustrated" | "control" | "flow";
+
+const bucketMeta: Record<BucketKey, { label: string; fill: string; ink: string }> = {
+  frustrated: {
     label: "Frustrated",
-    track: "bg-[var(--pen-orange-wash)]",
-    fill: "bg-[var(--pen-orange)]",
-    ink: "text-[var(--pen-orange-ink)]",
+    // Neutral muted — friction, not alarm.
+    fill: "bg-text-tertiary",
+    ink: "text-text-secondary",
   },
-  {
-    key: "control" as const,
+  control: {
+    // Pen accent — the user's selected pen color.
     label: "Control",
-    track: "bg-[var(--pen-pool-wash)]",
-    fill: "bg-[var(--pen-pool)]",
-    ink: "text-[var(--pen-pool-ink)]",
+    fill: "bg-accent",
+    ink: "text-accent-ink",
   },
-  {
-    key: "flow" as const,
+  flow: {
+    // Pen wash — same hue, lighter.
     label: "Flow",
-    track: "bg-[var(--pen-tennis-wash)]",
-    fill: "bg-[var(--pen-tennis)]",
-    ink: "text-[var(--pen-tennis-ink)]",
+    fill: "bg-accent/30",
+    ink: "text-accent-ink",
   },
-];
+};
+
+const PILL_SHADOW = "inset 0 -3px 0 rgba(0,0,0,0.18)";
 
 export function FlowStateBars({ counts }: { counts: SessionsByState }) {
   const pct = bucketPercents(counts);
-  const empty = pct.total === 0;
+
+  if (pct.total === 0) {
+    return (
+      <div className="h-5 w-full rounded-full bg-divider/60" style={{ boxShadow: PILL_SHADOW }} />
+    );
+  }
+
+  const order: BucketKey[] = ["frustrated", "control", "flow"];
+  const visible = order.filter((k) => pct[k] > 0);
+  const cols = visible.map((k) => `${pct[k]}fr`).join(" ");
 
   return (
-    <div className="grid grid-cols-3 gap-2">
-      {buckets.map((b) => {
-        const value = empty ? 0 : pct[b.key];
+    <div className="grid gap-2" style={{ gridTemplateColumns: cols }}>
+      {visible.map((k) => {
+        const meta = bucketMeta[k];
+        const value = pct[k];
         return (
-          <div key={b.key} className="flex flex-col gap-1">
-            <div className={cn("h-2 w-full overflow-hidden rounded-full", b.track)}>
-              <div
-                className={cn("h-full rounded-full transition-[width]", b.fill)}
-                style={{ width: `${value}%` }}
-              />
-            </div>
-            <div className="flex items-baseline justify-between gap-1">
-              <span className={cn("text-[10px] font-black uppercase tracking-widest", b.ink)}>
-                {b.label}
+          <div key={k} className="flex min-w-0 flex-col gap-1.5">
+            <div
+              className={cn("h-5 w-full rounded-full", meta.fill)}
+              style={{ boxShadow: PILL_SHADOW }}
+            />
+            <div className="flex items-baseline justify-between gap-2 px-0.5">
+              <span
+                className={cn(
+                  "truncate text-[10px] font-black uppercase tracking-widest",
+                  meta.ink,
+                )}
+              >
+                {meta.label}
               </span>
-              <span className={cn("text-xs font-bold tabular-nums", b.ink)}>
-                {empty ? "—" : `${value}%`}
+              <span className={cn("text-xs font-bold tabular-nums", meta.ink)}>
+                {value}%
               </span>
             </div>
           </div>
