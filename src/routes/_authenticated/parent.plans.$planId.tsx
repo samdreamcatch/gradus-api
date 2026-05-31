@@ -87,6 +87,7 @@ function ParentPlanDetail() {
       </div>
 
       <SessionTimer
+        planId={plan.id}
         coachFirstName={plan.coachFirstName}
         athleteFirstName={plan.athleteFirstName}
         planTitle={plan.title}
