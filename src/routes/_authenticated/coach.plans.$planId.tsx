@@ -55,6 +55,8 @@ import { listMoves, upsertMove, type MoveDTO } from "@/lib/moves.functions";
 import { MoveField } from "@/components/coach/move-field";
 import { VoiceFab } from "@/components/coach/voice-fab";
 import { consumeVoiceTouched, type VoiceTouchedSnapshot } from "@/lib/voice-touched-store";
+import { FlowStateBars } from "@/components/plans/flow-state-bars";
+import { stubSessionsForPlan } from "@/lib/plan-sessions-stub";
 
 export const Route = createFileRoute("/_authenticated/coach/plans/$planId")({
   component: PlanEditorSheet,
