@@ -46,12 +46,12 @@ function pickPens(seed: string): [Pen, Pen] {
   return [PENS[a], PENS[b]];
 }
 
-const PEN_CLASSES: Record<Pen, string> = {
-  tennis: "bg-pen-tennis-wash text-pen-tennis-ink",
-  pool: "bg-pen-pool-wash text-pen-pool-ink",
-  iris: "bg-pen-iris-wash text-pen-iris-ink",
-  pink: "bg-pen-pink-wash text-pen-pink-ink",
-  orange: "bg-pen-orange-wash text-pen-orange-ink",
+const PEN_STYLES: Record<Pen, { backgroundColor: string; color: string }> = {
+  tennis: { backgroundColor: "var(--pen-tennis-wash)", color: "var(--pen-tennis-ink)" },
+  pool: { backgroundColor: "var(--pen-pool-wash)", color: "var(--pen-pool-ink)" },
+  iris: { backgroundColor: "var(--pen-iris-wash)", color: "var(--pen-iris-ink)" },
+  pink: { backgroundColor: "var(--pen-pink-wash)", color: "var(--pen-pink-ink)" },
+  orange: { backgroundColor: "var(--pen-orange-wash)", color: "var(--pen-orange-ink)" },
 };
 
 /**
