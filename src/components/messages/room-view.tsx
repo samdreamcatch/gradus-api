@@ -266,38 +266,35 @@ export function RoomView({ roomId }: { roomId: string }) {
   );
 }
 
-function blobToBase64(blob: Blob): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onloadend = () => resolve(String(reader.result ?? ""));
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(blob);
-  });
-}
-
 function Composer({
   disabled,
   onSendText,
-  onSendVoice,
 }: {
   disabled: boolean;
   onSendText: (body: string) => void;
-  onSendVoice: (input: { audioBase64: string; mimeType: string; durationSeconds: number }) => void;
 }) {
   const [text, setText] = useState("");
+  const [transcribing, setTranscribing] = useState(false);
+  const transcribeFn = useServerFn(voiceTranscribe);
 
   const voice = useVoiceCapture({
     maxMs: 90_000,
     onCapture: async (blob) => {
-      const dataUrl = await blobToBase64(blob);
-      const mimeType = blob.type || "audio/webm";
-      const durationSeconds = Math.max(1, Math.round(elapsedAtStopRef.current / 1000));
-      onSendVoice({ audioBase64: dataUrl, mimeType, durationSeconds });
+      setTranscribing(true);
+      try {
+        const fd = new FormData();
+        fd.append("audio", blob, `voice.${blob.type.includes("mp4") ? "mp4" : "webm"}`);
+        const { text: transcript } = await transcribeFn({ data: fd });
+        setText((prev) => (prev.trim().length > 0 ? `${prev.trim()} ${transcript}` : transcript));
+      } catch (e) {
+        toast.error("Couldn't transcribe", {
+          description: e instanceof Error ? e.message : "Please try again.",
+        });
+      } finally {
+        setTranscribing(false);
+      }
     },
   });
-
-  // Capture the elapsed time *at the moment of stop* (state may have reset by the time onCapture fires).
-  const elapsedAtStopRef = useRef(0);
 
   const submit = () => {
     const body = text.trim();
@@ -307,7 +304,7 @@ function Composer({
   };
 
   const recording = voice.state === "recording";
-  const processing = voice.state === "processing";
+  const processing = voice.state === "processing" || transcribing;
 
   return (
     <div className="mt-3 border-t border-divider pt-3 pb-[max(env(safe-area-inset-bottom),0.5rem)]">
@@ -318,7 +315,7 @@ function Composer({
             <span className="relative inline-flex size-2.5 rounded-full bg-attention" />
           </span>
           <span className="flex-1 text-sm font-bold text-attention-ink tabular-nums">
-            Recording · {(voice.elapsedMs / 1000).toFixed(1)}s
+            Listening · {(voice.elapsedMs / 1000).toFixed(1)}s
           </span>
           <button
             type="button"
@@ -330,11 +327,8 @@ function Composer({
           </button>
           <button
             type="button"
-            onClick={() => {
-              elapsedAtStopRef.current = voice.elapsedMs;
-              voice.stop();
-            }}
-            aria-label="Send voice note"
+            onClick={() => voice.stop()}
+            aria-label="Stop and transcribe"
             className="inline-flex size-9 items-center justify-center rounded-full bg-attention text-attention-foreground"
           >
             <Square className="size-4" />
@@ -351,8 +345,8 @@ function Composer({
                 submit();
               }
             }}
-            disabled={disabled || processing}
-            placeholder="Message…"
+            disabled={disabled}
+            placeholder={transcribing ? "Transcribing…" : "Message…"}
             rows={1}
             className="min-h-10 max-h-32 flex-1 resize-none rounded-2xl border border-divider bg-card px-3.5 py-2 text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-accent/40"
           />
@@ -371,7 +365,7 @@ function Composer({
               type="button"
               onClick={() => void voice.start()}
               disabled={disabled || processing}
-              aria-label="Record voice note"
+              aria-label="Dictate message"
               className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-elevated text-text-primary ring-1 ring-divider hover:bg-divider disabled:opacity-50"
             >
               <Mic className="size-4" />
@@ -385,3 +379,4 @@ function Composer({
     </div>
   );
 }
+
