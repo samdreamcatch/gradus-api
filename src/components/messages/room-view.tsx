@@ -258,6 +258,10 @@ export function RoomView({ roomId }: { roomId: string }) {
 
   return (
     <div className="flex h-[calc(100dvh-180px)] flex-col">
+      <ConversationHeader
+        roomId={roomId}
+        others={room.participants.filter((p) => p.role !== room.myRole)}
+      />
       <div ref={scrollerRef} className="flex-1 overflow-y-auto">
         <div className="space-y-5">
           {groups.length === 0 ? (
