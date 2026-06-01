@@ -92,62 +92,59 @@ export function RoomList({
 
         const unread = room.unreadCount > 0;
 
-        return (
-          <li key={room.id}>
-            <Link
-              to={toRoomLink(room.id)}
-              className="flex items-start gap-3 px-4 py-3.5 transition-colors hover:bg-elevated focus-visible:bg-elevated focus-visible:outline-none"
-            >
-              <div className="relative">
-                <div className="grid size-11 shrink-0 place-items-center rounded-full bg-elevated text-sm font-black uppercase text-text-secondary ring-1 ring-divider">
-                  {initials || "·"}
-                </div>
+        const inner = (
+          <div className="flex items-start gap-3 px-4 py-3.5 transition-colors hover:bg-elevated focus-visible:bg-elevated focus-visible:outline-none">
+            <div className="relative">
+              <div className="grid size-11 shrink-0 place-items-center rounded-full bg-elevated text-sm font-black uppercase text-text-secondary ring-1 ring-divider">
+                {initials || "·"}
+              </div>
+              {unread ? (
+                <span
+                  aria-hidden
+                  className="absolute -right-0.5 -top-0.5 inline-flex h-3 w-3 rounded-full bg-attention ring-2 ring-card"
+                />
+              ) : null}
+            </div>
+
+            <div className="min-w-0 flex-1">
+              <div className="flex items-baseline justify-between gap-2">
+                <p
+                  className={cn(
+                    "truncate text-sm font-bold text-text-primary",
+                    unread && "text-text-primary",
+                  )}
+                >
+                  {display}
+                </p>
+                <span className="shrink-0 text-[11px] font-bold uppercase tracking-widest text-text-tertiary">
+                  {relativeTime(room.updatedAt)}
+                </span>
+              </div>
+
+              <div className="mt-0.5 flex items-center justify-between gap-2">
+                <p
+                  className={cn(
+                    "flex min-w-0 items-center gap-1.5 truncate text-sm",
+                    unread ? "text-text-primary font-semibold" : "text-text-secondary",
+                  )}
+                >
+                  {last?.kind === "voice" ? <Mic className="size-3.5 shrink-0" aria-hidden /> : null}
+                  <span className="truncate">
+                    {previewSenderPrefix}
+                    {previewBody}
+                  </span>
+                </p>
                 {unread ? (
-                  <span
-                    aria-hidden
-                    className="absolute -right-0.5 -top-0.5 inline-flex h-3 w-3 rounded-full bg-attention ring-2 ring-card"
-                  />
+                  <span className="inline-flex h-5 min-w-[20px] shrink-0 items-center justify-center rounded-full bg-attention px-1.5 text-[11px] font-black text-attention-foreground">
+                    {room.unreadCount}
+                  </span>
                 ) : null}
               </div>
-
-              <div className="min-w-0 flex-1">
-                <div className="flex items-baseline justify-between gap-2">
-                  <p
-                    className={cn(
-                      "truncate text-sm font-bold text-text-primary",
-                      unread && "text-text-primary",
-                    )}
-                  >
-                    {display}
-                  </p>
-                  <span className="shrink-0 text-[11px] font-bold uppercase tracking-widest text-text-tertiary">
-                    {relativeTime(room.updatedAt)}
-                  </span>
-                </div>
-
-                <div className="mt-0.5 flex items-center justify-between gap-2">
-                  <p
-                    className={cn(
-                      "flex min-w-0 items-center gap-1.5 truncate text-sm",
-                      unread ? "text-text-primary font-semibold" : "text-text-secondary",
-                    )}
-                  >
-                    {last?.kind === "voice" ? <Mic className="size-3.5 shrink-0" aria-hidden /> : null}
-                    <span className="truncate">
-                      {previewSenderPrefix}
-                      {previewBody}
-                    </span>
-                  </p>
-                  {unread ? (
-                    <span className="inline-flex h-5 min-w-[20px] shrink-0 items-center justify-center rounded-full bg-attention px-1.5 text-[11px] font-black text-attention-foreground">
-                      {room.unreadCount}
-                    </span>
-                  ) : null}
-                </div>
-              </div>
-            </Link>
-          </li>
+            </div>
+          </div>
         );
+
+        return <li key={room.id}>{renderRoomLink(room.id, inner)}</li>;
       })}
     </ul>
   );
