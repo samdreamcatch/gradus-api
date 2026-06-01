@@ -491,7 +491,7 @@ export type Database = {
           id: string
           logged_at: string
           note: string
-          parent_id: string
+          parent_id: string | null
           plan_id: string
           state_index: number
         }
@@ -502,7 +502,7 @@ export type Database = {
           id?: string
           logged_at?: string
           note?: string
-          parent_id: string
+          parent_id?: string | null
           plan_id: string
           state_index: number
         }
@@ -513,7 +513,7 @@ export type Database = {
           id?: string
           logged_at?: string
           note?: string
-          parent_id?: string
+          parent_id?: string | null
           plan_id?: string
           state_index?: number
         }
