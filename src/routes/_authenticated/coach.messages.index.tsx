@@ -23,7 +23,7 @@ function CoachMessages() {
     <div className="mx-auto max-w-2xl px-4 pt-10 pb-24">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <MessagesHeader subtitle="Your athletes" />
+          <MessagesHeader />
         </div>
         <div className="pt-3">
           <NewConversationButton />
