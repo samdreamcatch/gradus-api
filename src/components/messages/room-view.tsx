@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Mic, Send, Square, Trash2, Play, Pause } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { Mic, Send, Square, Trash2, Play, Pause, Paperclip, X, ClipboardList } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import {
   getRoom,
+  getRoomActivePlan,
   markRoomRead,
   sendMessage,
   type MessageDTO,
@@ -19,8 +21,11 @@ function roleWord(role: RoleInRoom): string {
   return role === "coach" ? "Coach" : role === "parent" ? "Parent" : "Athlete";
 }
 
-
-
+function planHrefForRole(role: RoleInRoom, planId: string): string {
+  if (role === "coach") return `/coach/plans/${planId}`;
+  if (role === "parent") return `/parent/plans/${planId}`;
+  return `/athlete/plans/${planId}`;
+}
 
 function ConversationHeader({
   others,
@@ -28,7 +33,6 @@ function ConversationHeader({
   roomId: string;
   others: { role: RoleInRoom; firstName: string }[];
 }) {
-  // Athlete first, then parent, then coach.
   const ordered = [...others].sort((a, b) => {
     const rank = (r: RoleInRoom) => (r === "athlete" ? 0 : r === "parent" ? 1 : 2);
     return rank(a.role) - rank(b.role);
@@ -44,8 +48,6 @@ function ConversationHeader({
     </div>
   );
 }
-
-
 
 function fmtTime(iso: string): string {
   return new Date(iso).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
@@ -126,14 +128,12 @@ export function RoomView({ roomId }: { roomId: string }) {
   const messages: MessageDTO[] = useMemo(() => data?.messages ?? [], [data]);
   const room = data?.room;
 
-  // Auto-scroll to bottom on new messages.
   const scrollerRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     const el = scrollerRef.current;
     if (el) el.scrollTop = el.scrollHeight;
   }, [messages.length]);
 
-  // Mark room read on open + whenever new messages arrive.
   useEffect(() => {
     if (!room) return;
     void markRead({ data: { roomId } }).then((r) => {
@@ -144,7 +144,6 @@ export function RoomView({ roomId }: { roomId: string }) {
     });
   }, [room, messages.length, roomId, markRead, queryClient]);
 
-  // Realtime: refresh on new messages / reads for this room.
   useEffect(() => {
     const channel = supabase
       .channel(`room:${roomId}`)
@@ -171,7 +170,8 @@ export function RoomView({ roomId }: { roomId: string }) {
   }, [roomId, queryClient]);
 
   const sendTextMutation = useMutation({
-    mutationFn: (body: string) => sendFn({ data: { roomId, kind: "text", body } }),
+    mutationFn: (vars: { body: string; planId: string | null }) =>
+      sendFn({ data: { roomId, kind: "text", body: vars.body, planId: vars.planId } }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["message-room", roomId] });
       queryClient.invalidateQueries({ queryKey: ["message-rooms"] });
@@ -182,12 +182,10 @@ export function RoomView({ roomId }: { roomId: string }) {
       }),
   });
 
-
   if (isLoading || !room) {
     return <p className="py-10 text-center text-sm text-text-secondary">Loading…</p>;
   }
 
-  // Group messages by calendar day.
   const groups: { day: string; items: MessageDTO[] }[] = [];
   for (const m of messages) {
     const day = fmtDayHeader(m.createdAt);
@@ -225,6 +223,19 @@ export function RoomView({ roomId }: { roomId: string }) {
                         {roleWord(m.senderRole)} {m.senderFirstName}
                       </p>
                     ) : null}
+                    {m.plan ? (
+                      <Link
+                        to={planHrefForRole(room.myRole, m.plan.id)}
+                        className={cn(
+                          "mb-1 inline-flex max-w-[78%] items-center gap-1.5 rounded-full bg-accent/15 px-2.5 py-1 text-[11px] font-black uppercase tracking-widest text-accent-ink ring-1 ring-accent/30 hover:bg-accent/25",
+                        )}
+                      >
+                        <ClipboardList className="size-3" />
+                        <span className="truncate normal-case tracking-normal text-xs font-bold">
+                          {m.plan.title}
+                        </span>
+                      </Link>
+                    ) : null}
                     <div
                       className={cn(
                         "max-w-[78%] rounded-2xl px-3.5 py-2 text-sm leading-snug",
@@ -259,23 +270,34 @@ export function RoomView({ roomId }: { roomId: string }) {
       </div>
 
       <Composer
+        roomId={roomId}
         disabled={sendTextMutation.isPending}
-        onSendText={(body) => sendTextMutation.mutate(body)}
+        onSendText={(body, planId) => sendTextMutation.mutate({ body, planId })}
       />
     </div>
   );
 }
 
 function Composer({
+  roomId,
   disabled,
   onSendText,
 }: {
+  roomId: string;
   disabled: boolean;
-  onSendText: (body: string) => void;
+  onSendText: (body: string, planId: string | null) => void;
 }) {
   const [text, setText] = useState("");
   const [transcribing, setTranscribing] = useState(false);
+  const [attachedPlan, setAttachedPlan] = useState<{ id: string; title: string } | null>(null);
   const transcribeFn = useServerFn(voiceTranscribe);
+  const fetchActivePlan = useServerFn(getRoomActivePlan);
+
+  const { data: activePlanData } = useQuery({
+    queryKey: ["room-active-plan", roomId],
+    queryFn: () => fetchActivePlan({ data: { roomId } }),
+  });
+  const activePlan = activePlanData?.plan ?? null;
 
   const voice = useVoiceCapture({
     maxMs: 90_000,
@@ -299,15 +321,47 @@ function Composer({
   const submit = () => {
     const body = text.trim();
     if (!body) return;
-    onSendText(body);
+    onSendText(body, attachedPlan?.id ?? null);
     setText("");
+    setAttachedPlan(null);
   };
 
   const recording = voice.state === "recording";
   const processing = voice.state === "processing" || transcribing;
 
+  const toggleAttachPlan = () => {
+    if (attachedPlan) {
+      setAttachedPlan(null);
+      return;
+    }
+    if (!activePlan) {
+      toast("No active plan", {
+        description: "This athlete has no active plan to tag.",
+      });
+      return;
+    }
+    setAttachedPlan(activePlan);
+  };
+
   return (
     <div className="mt-3 border-t border-divider pt-3 pb-[max(env(safe-area-inset-bottom),0.5rem)]">
+      {attachedPlan ? (
+        <div className="mb-2 flex items-center gap-2 rounded-full bg-accent/15 px-3 py-1.5 ring-1 ring-accent/30">
+          <ClipboardList className="size-3.5 text-accent-ink" />
+          <span className="flex-1 truncate text-xs font-bold text-accent-ink">
+            Tagged to <span className="font-black">{attachedPlan.title}</span>
+          </span>
+          <button
+            type="button"
+            onClick={() => setAttachedPlan(null)}
+            aria-label="Remove plan tag"
+            className="inline-flex size-5 items-center justify-center rounded-full text-accent-ink hover:bg-accent/25"
+          >
+            <X className="size-3.5" />
+          </button>
+        </div>
+      ) : null}
+
       {recording ? (
         <div className="flex items-center gap-2 rounded-full bg-attention/15 px-3 py-2 ring-1 ring-attention/40">
           <span className="relative inline-flex size-2.5">
@@ -336,6 +390,21 @@ function Composer({
         </div>
       ) : (
         <div className="flex items-end gap-2">
+          <button
+            type="button"
+            onClick={toggleAttachPlan}
+            disabled={disabled || processing}
+            aria-label={attachedPlan ? "Remove plan tag" : "Tag a plan"}
+            aria-pressed={!!attachedPlan}
+            className={cn(
+              "inline-flex size-10 shrink-0 items-center justify-center rounded-full ring-1 transition-colors disabled:opacity-50",
+              attachedPlan
+                ? "bg-accent/20 text-accent-ink ring-accent/40"
+                : "bg-elevated text-text-primary ring-divider hover:bg-divider",
+            )}
+          >
+            <Paperclip className="size-4" />
+          </button>
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
@@ -379,4 +448,3 @@ function Composer({
     </div>
   );
 }
-
