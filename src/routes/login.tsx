@@ -31,12 +31,13 @@ function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [hasInteracted, setHasInteracted] = useState(false);
 
   // If the session resolves and the user is already signed in, route them
   // away from /login. Done in an effect (not beforeLoad) so we don't
   // redirect during the brief hydration window.
   useEffect(() => {
-    if (!isReady || !user) return;
+    if (!isReady || !user || hasInteracted || loading) return;
     if (search.redirect) {
       navigate({ to: search.redirect });
       return;
@@ -50,7 +51,7 @@ function LoginPage() {
       })
       .catch(() => navigate({ to: "/" }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isReady, user]);
+  }, [hasInteracted, isReady, loading, search.redirect, navigate, fetchRole, user]);
 
   const routeByRole = async () => {
     if (search.redirect) {
@@ -124,11 +125,31 @@ function LoginPage() {
         <form onSubmit={handleEmail} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            <Input
+              id="email"
+              type="email"
+              autoComplete="email"
+              value={email}
+              onChange={(e) => {
+                setHasInteracted(true);
+                setEmail(e.target.value);
+              }}
+              required
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
-            <Input id="password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+            <Input
+              id="password"
+              type="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => {
+                setHasInteracted(true);
+                setPassword(e.target.value);
+              }}
+              required
+            />
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
           <Button type="submit" className="w-full" disabled={loading}>
