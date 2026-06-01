@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import type { ReactNode } from "react";
 import { Mic } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { RoomSummary, RoleInRoom } from "@/lib/messages.functions";
@@ -57,12 +57,12 @@ function others(room: RoomSummary): { display: string; initials: string } {
 
 export function RoomList({
   rooms,
-  toRoomLink,
+  renderRoomLink,
   emptyMessage,
 }: {
   rooms: RoomSummary[];
-  /** Build the link target for a given room id. */
-  toRoomLink: (roomId: string) => string;
+  /** Wrap the row in a router-aware link for the given room id. */
+  renderRoomLink: (roomId: string, children: ReactNode) => ReactNode;
   emptyMessage: string;
 }) {
   if (rooms.length === 0) {
