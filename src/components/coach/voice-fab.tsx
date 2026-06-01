@@ -7,7 +7,7 @@ import { useCallback, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { useVoiceCapture } from "@/hooks/use-voice-capture";
 import { voiceBuildPlan } from "@/lib/voice.functions";
-import type { VoiceSources } from "@/lib/voice.functions";
+import type { VoiceSources } from "@/lib/voice-types";
 import { stashVoiceTouched } from "@/lib/voice-touched-store";
 
 export interface VoiceFabProps {
