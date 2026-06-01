@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { AthleteBottomNav } from "@/components/athlete/bottom-nav";
 import { getMyAthlete } from "@/lib/athlete-signup.functions";
 
-export const Route = createFileRoute("/_authenticated/athlete")({
+export const Route = createFileRoute("/_authenticated/athlete/")({
   component: AthleteHome,
 });
 
