@@ -422,3 +422,26 @@ export const ensureRoomForAthlete = createServerFn({ method: "POST" })
     if (error) dbError(error, "Couldn't open conversation");
     return { id: created!.id };
   });
+
+/* ---------------- getRoomActivePlan ---------------- */
+
+export const getRoomActivePlan = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ roomId: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { userId } = context as unknown as ContextEnvelope;
+    const { rooms } = await listMyRoomIds(userId);
+    const room = rooms.find((r) => r.id === data.roomId);
+    if (!room) throw new Error("Conversation not found");
+
+    const { data: plan } = await supabaseAdmin
+      .from("plans")
+      .select("id, title")
+      .eq("coach_id", room.coach_id)
+      .eq("athlete_id", room.athlete_id)
+      .eq("kind", "plan")
+      .eq("status", "active")
+      .maybeSingle();
+
+    return { plan: plan ? { id: plan.id, title: plan.title || "Untitled plan" } : null };
+  });
