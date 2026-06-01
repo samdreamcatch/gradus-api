@@ -48,8 +48,7 @@ function AthletePlanDetail() {
   const plan = data?.plan;
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const toggle = (id: string) => setExpanded((s) => ({ ...s, [id]: !s[id] }));
-
-  const soon = (label: string) => toast(`${label} — coming soon`);
+  const [messageOpen, setMessageOpen] = useState(false);
 
   if (isLoading || !plan) {
     return (
