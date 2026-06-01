@@ -18,28 +18,8 @@ function roleWord(role: RoleInRoom): string {
   return role === "coach" ? "Coach" : role === "parent" ? "Parent" : "Athlete";
 }
 
-const PENS = ["tennis", "pool", "iris", "pink", "orange"] as const;
-type Pen = (typeof PENS)[number];
-const PEN_STYLES: Record<Pen, { backgroundColor: string; color: string }> = {
-  tennis: { backgroundColor: "var(--pen-tennis-wash)", color: "var(--pen-tennis-ink)" },
-  pool: { backgroundColor: "var(--pen-pool-wash)", color: "var(--pen-pool-ink)" },
-  iris: { backgroundColor: "var(--pen-iris-wash)", color: "var(--pen-iris-ink)" },
-  pink: { backgroundColor: "var(--pen-pink-wash)", color: "var(--pen-pink-ink)" },
-  orange: { backgroundColor: "var(--pen-orange-wash)", color: "var(--pen-orange-ink)" },
-};
-function hashStr(s: string): number {
-  let h = 0;
-  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
-  return Math.abs(h);
-}
-function pickPens(seed: string, n: number): Pen[] {
-  const h = hashStr(seed);
-  const start = h % PENS.length;
-  const stride = 1 + (Math.floor(h / PENS.length) % (PENS.length - 1));
-  const out: Pen[] = [];
-  for (let i = 0; i < n; i++) out.push(PENS[(start + i * stride) % PENS.length]);
-  return out;
-}
+
+
 
 function ConversationHeader({
   others,
