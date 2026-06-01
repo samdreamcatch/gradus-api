@@ -13,6 +13,7 @@ import {
   type AthletePlanMoveDTO,
 } from "@/lib/athlete-plans.functions";
 import { submitAthletePlanSession } from "@/lib/plan-sessions.functions";
+import { MessageCoachAboutPlanDialog } from "@/components/plans/message-coach-about-plan-dialog";
 
 export const Route = createFileRoute("/_authenticated/athlete/plans/$planId")({
   component: AthletePlanDetail,
