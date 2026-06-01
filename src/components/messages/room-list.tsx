@@ -124,19 +124,7 @@ export function RoomList({
               ) : null}
             </div>
 
-        const inner = (
-          <div className="flex items-start gap-3 px-4 py-3.5 transition-colors hover:bg-elevated focus-visible:bg-elevated focus-visible:outline-none">
-            <div className="relative">
-              <div className="grid size-11 shrink-0 place-items-center rounded-full bg-elevated text-sm font-black uppercase text-text-secondary ring-1 ring-divider">
-                {initials || "·"}
-              </div>
-              {unread ? (
-                <span
-                  aria-hidden
-                  className="absolute -right-0.5 -top-0.5 inline-flex h-3 w-3 rounded-full bg-attention ring-2 ring-card"
-                />
-              ) : null}
-            </div>
+
 
             <div className="min-w-0 flex-1">
               <div className="flex items-baseline justify-between gap-2">
