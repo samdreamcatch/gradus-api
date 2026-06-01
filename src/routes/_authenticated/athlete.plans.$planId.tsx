@@ -385,7 +385,7 @@ function IdleSlide({ onStart }: { onStart: () => void }) {
   return (
     <div
       ref={trackRef}
-      className="relative overflow-hidden rounded-full border border-accent/40 bg-accent/15 p-1.5"
+      className="relative overflow-hidden rounded-full border border-accent/40 bg-accent/15 p-1"
     >
       <span className="pointer-events-none absolute inset-y-0 right-4 flex items-center gap-1 text-[11px] font-black uppercase tracking-widest text-accent-ink/60">
         Slide
@@ -421,7 +421,7 @@ function IdleSlide({ onStart }: { onStart: () => void }) {
         }}
         style={{ touchAction: "pan-y" }}
         className={cn(
-          "relative z-10 inline-flex h-10 select-none items-center gap-2 rounded-full bg-accent pl-4 pr-5 text-sm font-bold text-accent-foreground shadow-sm",
+          "relative z-10 inline-flex h-8 select-none items-center gap-2 rounded-full bg-accent pl-3 pr-4 text-sm font-bold text-accent-foreground shadow-sm",
           "cursor-grab active:cursor-grabbing",
           dragging && "shadow-card",
           armed && "ring-2 ring-accent-foreground/50",
@@ -473,7 +473,7 @@ function RunningPill({
         type="button"
         onClick={onTogglePause}
         aria-label={running ? "Pause session timer" : "Resume session timer"}
-        className="inline-flex size-11 shrink-0 items-center justify-center rounded-full bg-attention/15 text-attention-ink ring-1 ring-attention/40"
+        className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-attention/15 text-attention-ink ring-1 ring-attention/40"
       >
         {running ? <Pause className="size-4" /> : <Play className="size-4" />}
       </button>
@@ -481,7 +481,7 @@ function RunningPill({
       {/* End-session slide track — pink to signal action required */}
       <div
         ref={trackRef}
-        className="relative flex-1 overflow-hidden rounded-full border border-attention/50 bg-attention/15 p-1.5"
+        className="relative flex-1 overflow-hidden rounded-full border border-attention/50 bg-attention/15 p-1"
       >
         <span className="pointer-events-none absolute inset-y-0 right-4 flex items-center gap-1 text-[11px] font-black uppercase tracking-widest text-attention-ink/70">
           End
@@ -517,7 +517,7 @@ function RunningPill({
           }}
           style={{ touchAction: "pan-y" }}
           className={cn(
-            "relative z-10 inline-flex h-10 select-none items-center gap-2 rounded-full bg-attention pl-3 pr-4 text-sm font-bold text-attention-foreground shadow-sm",
+            "relative z-10 inline-flex h-8 select-none items-center gap-2 rounded-full bg-attention pl-3 pr-4 text-sm font-bold text-attention-foreground shadow-sm",
             "cursor-grab active:cursor-grabbing",
             dragging && "shadow-card",
             armed && "ring-2 ring-attention-foreground/60",
