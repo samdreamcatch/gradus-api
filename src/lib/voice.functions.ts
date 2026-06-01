@@ -1,3 +1,8 @@
+// Server-only module — must never be imported into client bundles.
+if (typeof window !== "undefined") {
+  throw new Error("voice.functions.ts is server-only and must not be imported in the browser");
+}
+
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { generateText, Output } from "ai";
@@ -6,6 +11,8 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
 import { dbError } from "./db-error";
 import { createLovableAiGatewayProvider } from "./ai-gateway.server";
+
+const MAX_AUDIO_BYTES = 8 * 1024 * 1024; // 8 MB hard cap
 
 type Client = SupabaseClient<Database>;
 
