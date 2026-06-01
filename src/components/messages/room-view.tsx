@@ -42,49 +42,28 @@ function pickPens(seed: string, n: number): Pen[] {
 }
 
 function ConversationHeader({
-  roomId,
   others,
 }: {
   roomId: string;
   others: { role: RoleInRoom; firstName: string }[];
 }) {
-  // Athlete first, then parent, then coach — keeps the athlete visually centered.
+  // Athlete first, then parent, then coach.
   const ordered = [...others].sort((a, b) => {
     const rank = (r: RoleInRoom) => (r === "athlete" ? 0 : r === "parent" ? 1 : 2);
     return rank(a.role) - rank(b.role);
   });
-  const pens = pickPens(roomId, ordered.length);
   return (
-    <div className="flex flex-col items-center gap-2 pb-4">
-      <div
-        className="relative h-14"
-        style={{ width: ordered.length === 1 ? 56 : 56 + (ordered.length - 1) * 36 }}
-      >
-        {ordered.map((p, i) => (
-          <div
-            key={`${p.role}-${i}`}
-            style={{
-              ...PEN_STYLES[pens[i]],
-              left: i * 36,
-              zIndex: ordered.length - i,
-            }}
-            className="absolute top-0 grid size-14 place-items-center rounded-full text-lg font-black uppercase ring-[3px] ring-card"
-          >
-            {p.firstName.trim().charAt(0).toUpperCase() || "·"}
-          </div>
-        ))}
-      </div>
-      <div className="flex flex-col items-center gap-0.5">
-        <p className="text-base font-bold text-text-primary">
-          {ordered.map((p) => p.firstName).join(" & ")}
-        </p>
-        <p className="text-[11px] font-black uppercase tracking-widest text-text-tertiary">
-          {ordered.map((p) => roleWord(p.role)).join(" · ")}
-        </p>
-      </div>
+    <div className="flex flex-col items-center gap-1 pb-4">
+      <p className="text-base font-bold text-text-primary">
+        {ordered.map((p) => p.firstName).join(" & ")}
+      </p>
+      <p className="text-[11px] font-black uppercase tracking-widest text-text-tertiary">
+        {ordered.map((p) => roleWord(p.role)).join(" · ")}
+      </p>
     </div>
   );
 }
+
 
 
 function fmtTime(iso: string): string {
