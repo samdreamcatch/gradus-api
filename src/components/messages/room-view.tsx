@@ -259,9 +259,8 @@ export function RoomView({ roomId }: { roomId: string }) {
       </div>
 
       <Composer
-        disabled={sendTextMutation.isPending || sendVoiceMutation.isPending}
+        disabled={sendTextMutation.isPending}
         onSendText={(body) => sendTextMutation.mutate(body)}
-        onSendVoice={(input) => sendVoiceMutation.mutate(input)}
       />
     </div>
   );
