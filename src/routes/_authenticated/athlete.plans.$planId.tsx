@@ -79,7 +79,7 @@ function AthletePlanDetail() {
 
       <div className="mt-4">
         <p className="text-[12px] font-medium text-text-secondary">
-          {plan.athleteFirstName} · Coach {plan.coachName}
+          Coach {plan.coachName}
         </p>
         <h1 className="mt-0.5 font-display text-4xl font-black leading-[0.95] tracking-tight text-text-primary">
           {plan.title}
@@ -280,10 +280,12 @@ function SessionTimer({
   const submitMutation = useMutation({
     mutationFn: submitFn,
     onSuccess: () => {
-      // Refresh the chart for both parent list and coach detail.
+      // Refresh charts wherever this plan appears (athlete, parent, coach).
       queryClient.invalidateQueries({ queryKey: ["plan-sessions", planId] });
       queryClient.invalidateQueries({ queryKey: ["athlete-plan", planId] });
       queryClient.invalidateQueries({ queryKey: ["athlete-plans"] });
+      queryClient.invalidateQueries({ queryKey: ["parent-plan", planId] });
+      queryClient.invalidateQueries({ queryKey: ["parent-plans"] });
       queryClient.invalidateQueries({ queryKey: ["coach-plans"] });
     },
   });
@@ -360,7 +362,7 @@ function SessionTimer({
               },
             });
             toast(`Sent to Coach ${coachFirstName}`, {
-              description: `${athleteFirstName} · ${payload.stateLabel}`,
+              description: `Your session · ${payload.stateLabel}`,
             });
             closeFeedback();
           } catch (e) {
@@ -637,7 +639,7 @@ function SessionFeedbackModal({
         <div className="mt-2 space-y-5">
           <div>
             <p className="font-display text-lg font-bold leading-snug text-text-primary">
-              How did {athleteFirstName} show up today?
+              How did today feel?
             </p>
 
             <FlowStateScale
