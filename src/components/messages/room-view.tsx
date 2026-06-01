@@ -18,6 +18,75 @@ function roleWord(role: RoleInRoom): string {
   return role === "coach" ? "Coach" : role === "parent" ? "Parent" : "Athlete";
 }
 
+const PENS = ["tennis", "pool", "iris", "pink", "orange"] as const;
+type Pen = (typeof PENS)[number];
+const PEN_STYLES: Record<Pen, { backgroundColor: string; color: string }> = {
+  tennis: { backgroundColor: "var(--pen-tennis-wash)", color: "var(--pen-tennis-ink)" },
+  pool: { backgroundColor: "var(--pen-pool-wash)", color: "var(--pen-pool-ink)" },
+  iris: { backgroundColor: "var(--pen-iris-wash)", color: "var(--pen-iris-ink)" },
+  pink: { backgroundColor: "var(--pen-pink-wash)", color: "var(--pen-pink-ink)" },
+  orange: { backgroundColor: "var(--pen-orange-wash)", color: "var(--pen-orange-ink)" },
+};
+function hashStr(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+function pickPens(seed: string, n: number): Pen[] {
+  const h = hashStr(seed);
+  const start = h % PENS.length;
+  const stride = 1 + (Math.floor(h / PENS.length) % (PENS.length - 1));
+  const out: Pen[] = [];
+  for (let i = 0; i < n; i++) out.push(PENS[(start + i * stride) % PENS.length]);
+  return out;
+}
+
+function ConversationHeader({
+  roomId,
+  others,
+}: {
+  roomId: string;
+  others: { role: RoleInRoom; firstName: string }[];
+}) {
+  // Athlete first, then parent, then coach — keeps the athlete visually centered.
+  const ordered = [...others].sort((a, b) => {
+    const rank = (r: RoleInRoom) => (r === "athlete" ? 0 : r === "parent" ? 1 : 2);
+    return rank(a.role) - rank(b.role);
+  });
+  const pens = pickPens(roomId, ordered.length);
+  return (
+    <div className="flex flex-col items-center gap-2 pb-4">
+      <div
+        className="relative h-14"
+        style={{ width: ordered.length === 1 ? 56 : 56 + (ordered.length - 1) * 36 }}
+      >
+        {ordered.map((p, i) => (
+          <div
+            key={`${p.role}-${i}`}
+            style={{
+              ...PEN_STYLES[pens[i]],
+              left: i * 36,
+              zIndex: ordered.length - i,
+            }}
+            className="absolute top-0 grid size-14 place-items-center rounded-full text-lg font-black uppercase ring-[3px] ring-card"
+          >
+            {p.firstName.trim().charAt(0).toUpperCase() || "·"}
+          </div>
+        ))}
+      </div>
+      <div className="flex flex-col items-center gap-0.5">
+        <p className="text-base font-bold text-text-primary">
+          {ordered.map((p) => p.firstName).join(" & ")}
+        </p>
+        <p className="text-[11px] font-black uppercase tracking-widest text-text-tertiary">
+          {ordered.map((p) => roleWord(p.role)).join(" · ")}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+
 function fmtTime(iso: string): string {
   return new Date(iso).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
 }
