@@ -86,7 +86,7 @@ export function RoomList({
   return (
     <ul className="divide-y divide-divider rounded-2xl border border-divider bg-card overflow-hidden">
       {rooms.map((room) => {
-        const { display, initials } = others(room);
+        const { display, people } = others(room);
         const last = room.lastMessage;
         const previewSenderPrefix =
           last && last.senderRole !== room.myRole
@@ -101,6 +101,28 @@ export function RoomList({
           : "No messages yet — say hello.";
 
         const unread = room.unreadCount > 0;
+
+        const front = people[0];
+        const back = people[1];
+
+        const inner = (
+          <div className="flex items-start gap-3 px-4 py-3.5 transition-colors hover:bg-elevated focus-visible:bg-elevated focus-visible:outline-none">
+            <div className="relative size-11 shrink-0">
+              {back ? (
+                <div className="absolute right-0 top-0 grid size-8 place-items-center rounded-full bg-elevated text-[11px] font-black uppercase text-text-secondary ring-2 ring-card">
+                  {back.initial}
+                </div>
+              ) : null}
+              <div className="absolute bottom-0 left-0 grid size-8 place-items-center rounded-full bg-elevated text-[11px] font-black uppercase text-text-secondary ring-2 ring-card">
+                {front?.initial ?? "·"}
+              </div>
+              {unread ? (
+                <span
+                  aria-hidden
+                  className="absolute -right-0.5 -top-0.5 inline-flex h-3 w-3 rounded-full bg-attention ring-2 ring-card"
+                />
+              ) : null}
+            </div>
 
         const inner = (
           <div className="flex items-start gap-3 px-4 py-3.5 transition-colors hover:bg-elevated focus-visible:bg-elevated focus-visible:outline-none">
