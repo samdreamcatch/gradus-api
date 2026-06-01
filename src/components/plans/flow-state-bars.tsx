@@ -42,14 +42,14 @@ export function FlowStateBars({ counts }: { counts: SessionsByState }) {
       key: "frustrated" as const,
       label: "Frustrated",
       pct: pct.frustrated,
-      fill: "var(--text-tertiary)",
+      fill: "var(--divider)",
       labelColor: "var(--text-tertiary)",
     },
     {
       key: "control" as const,
       label: "In Control",
       pct: pct.control,
-      fill: "linear-gradient(to right, var(--text-tertiary), var(--pen-tennis))",
+      fill: "linear-gradient(to right, var(--divider), var(--pen-tennis))",
       labelColor: "var(--text-secondary)",
     },
     {
