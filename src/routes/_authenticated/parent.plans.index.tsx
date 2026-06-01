@@ -71,8 +71,16 @@ function ParentPlansPage() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 pt-10 pb-24">
-      <p className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
-        Plans
+      <p className="font-display text-[40px] font-black leading-[1.08] tracking-tight text-text-primary">
+        <span
+          className="px-[0.15em]"
+          style={{
+            backgroundImage:
+              "linear-gradient(to bottom, transparent 55%, color-mix(in oklab, var(--pen-tennis) 70%, transparent) 55%, color-mix(in oklab, var(--pen-tennis) 70%, transparent) 92%, transparent 92%)",
+          }}
+        >
+          Plans
+        </span>
       </p>
       {subtitleNames ? (
         <p className="mt-2 font-hand text-xl text-text-secondary">
