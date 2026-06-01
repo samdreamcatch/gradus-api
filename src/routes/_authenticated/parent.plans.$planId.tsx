@@ -13,6 +13,7 @@ import {
   type ParentPlanMoveDTO,
 } from "@/lib/parent-plans.functions";
 import { submitPlanSession } from "@/lib/plan-sessions.functions";
+import { MessageCoachAboutPlanDialog } from "@/components/plans/message-coach-about-plan-dialog";
 
 export const Route = createFileRoute("/_authenticated/parent/plans/$planId")({
   component: ParentPlanDetail,
