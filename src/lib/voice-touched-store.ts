@@ -3,7 +3,7 @@
 // route that mounts immediately afterward. Lives only for ~1 navigation,
 // then is consumed.
 
-import type { VoiceSources } from "./voice.functions";
+import type { VoiceSources } from "./voice-types";
 
 export interface VoiceTouchedSnapshot {
   plan: { title?: boolean; athleteId?: boolean; notes?: boolean };
