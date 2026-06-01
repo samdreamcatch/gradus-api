@@ -4,7 +4,13 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { ParentBottomNav } from "@/components/parent/bottom-nav";
 import { PlanCard } from "@/components/plans/plan-card";
-import { cn } from "@/lib/utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { listParentPlans } from "@/lib/parent-plans.functions";
 
 export const Route = createFileRoute("/_authenticated/parent/plans/")({
@@ -18,6 +24,8 @@ export const Route = createFileRoute("/_authenticated/parent/plans/")({
   ),
 });
 
+type StatusFilter = "active" | "benched";
+
 function ParentPlansPage() {
   const fetchPlans = useServerFn(listParentPlans);
   const { data, isLoading } = useQuery({
@@ -28,32 +36,26 @@ function ParentPlansPage() {
   const athletes = data?.athletes ?? [];
   const plans = data?.plans ?? [];
 
-  const [selectedAthlete, setSelectedAthlete] = useState<string | "all">(() =>
-    athletes.length > 0 ? athletes[0].id : "all",
-  );
-  // If athletes finish loading after first render, default to first.
-  const effectiveSelected =
-    selectedAthlete === "all" || athletes.some((a) => a.id === selectedAthlete)
-      ? selectedAthlete
-      : athletes[0]?.id ?? "all";
-
-  const [showHistory, setShowHistory] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("active");
+  const [athleteId, setAthleteId] = useState<string>("");
 
   const filtered = useMemo(
     () =>
-      effectiveSelected === "all"
-        ? plans
-        : plans.filter((p) => p.athleteId === effectiveSelected),
-    [plans, effectiveSelected],
+      plans.filter(
+        (p) =>
+          p.status === statusFilter &&
+          (athleteId === "" || p.athleteId === athleteId),
+      ),
+    [plans, statusFilter, athleteId],
   );
 
-  const active = filtered.filter((p) => p.status === "active");
-  const benched = filtered.filter((p) => p.status === "benched");
-
   const subtitleNames =
-    effectiveSelected === "all"
+    athleteId === ""
       ? athletes.map((a) => a.name.split(" ")[0]).join(" & ")
-      : athletes.find((a) => a.id === effectiveSelected)?.name.split(" ")[0] ?? "";
+      : athletes.find((a) => a.id === athleteId)?.name.split(" ")[0] ?? "";
+
+  const triggerClass =
+    "h-8 w-full rounded-full border-divider bg-card px-3 text-xs font-bold text-text-primary shadow-none";
 
   return (
     <div className="mx-auto max-w-2xl px-4 pt-10 pb-24">
@@ -66,116 +68,74 @@ function ParentPlansPage() {
         </p>
       ) : null}
 
-      {athletes.length > 1 ? (
-        <div className="mt-6 -mx-1 flex flex-wrap gap-2">
-          <AthleteChip
-            label="All"
-            active={effectiveSelected === "all"}
-            onClick={() => setSelectedAthlete("all")}
-          />
-          {athletes.map((a) => (
-            <AthleteChip
-              key={a.id}
-              label={a.name.split(" ")[0]}
-              active={effectiveSelected === a.id}
-              onClick={() => setSelectedAthlete(a.id)}
-            />
-          ))}
-        </div>
-      ) : null}
+      <div className="mt-5 grid grid-cols-2 gap-2">
+        <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
+          <SelectTrigger className={triggerClass} aria-label="Plan status">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="active">Active</SelectItem>
+            <SelectItem value="benched">Benched</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select
+          value={athleteId || "__all"}
+          onValueChange={(v) => setAthleteId(v === "__all" ? "" : v)}
+          disabled={athletes.length <= 1}
+        >
+          <SelectTrigger className={triggerClass} aria-label="Athlete">
+            <SelectValue placeholder="All athletes" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__all">All athletes</SelectItem>
+            {athletes.map((a) => (
+              <SelectItem key={a.id} value={a.id}>
+                {a.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
       <div className="mt-5 space-y-3">
         {isLoading ? (
           <p className="py-5 text-center text-sm text-text-secondary">Loading…</p>
-        ) : active.length === 0 ? (
-          <EmptyCard />
+        ) : filtered.length === 0 ? (
+          <EmptyCard status={statusFilter} />
         ) : (
-          active.map((p) => (
+          filtered.map((p) => (
             <PlanCard
               key={p.id}
               to="/parent/plans/$planId"
               planId={p.id}
               title={p.title}
               athleteName={
-                effectiveSelected === "all" && athletes.length > 1
+                athleteId === "" && athletes.length > 1
                   ? `${p.athleteName} · Coach ${p.coachName}`
                   : `Coach ${p.coachName}`
               }
               sessionsByState={p.sessionsByState}
               sessionsTotal={p.sessionsTotal}
+              muted={statusFilter === "benched"}
+              edgeTone={statusFilter === "benched" ? "muted" : "active"}
             />
           ))
         )}
       </div>
-
-      {benched.length > 0 ? (
-        <div className="mt-6">
-          <button
-            type="button"
-            onClick={() => setShowHistory((s) => !s)}
-            className="text-[11px] font-black uppercase tracking-widest text-text-secondary hover:text-text-primary"
-          >
-            {showHistory ? "Hide" : "Show"} past plans ({benched.length})
-          </button>
-          {showHistory ? (
-            <div className="mt-4 space-y-3">
-                {benched.map((p) => (
-                <PlanCard
-                  key={p.id}
-                  to="/parent/plans/$planId"
-                  planId={p.id}
-                  title={p.title}
-                  athleteName={
-                    effectiveSelected === "all" && athletes.length > 1
-                      ? `${p.athleteName} · Coach ${p.coachName}`
-                      : `Coach ${p.coachName}`
-                  }
-                  sessionsByState={p.sessionsByState}
-                  sessionsTotal={p.sessionsTotal}
-                  muted
-                  edgeTone="muted"
-                />
-              ))}
-            </div>
-          ) : null}
-        </div>
-      ) : null}
 
       <ParentBottomNav />
     </div>
   );
 }
 
-function AthleteChip({
-  label,
-  active,
-  onClick,
-}: {
-  label: string;
-  active: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "rounded-full border px-4 py-1.5 text-sm font-bold transition-colors",
-        active
-          ? "border-accent bg-accent text-accent-foreground"
-          : "border-divider bg-card text-text-secondary hover:text-text-primary",
-      )}
-    >
-      {label}
-    </button>
-  );
-}
-
-function EmptyCard() {
+function EmptyCard({ status }: { status: StatusFilter }) {
   return (
     <div className="rounded-2xl border border-dashed border-divider bg-card p-8 text-center">
       <p className="font-hand text-2xl text-text-secondary">
-        No plans yet — your coach will share one here.
+        {status === "active"
+          ? "No active plans — your coach will share one here."
+          : "No benched plans."}
       </p>
     </div>
   );
