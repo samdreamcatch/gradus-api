@@ -78,7 +78,7 @@ export function FlowStateBars({ counts }: { counts: SessionsByState }) {
               className="relative flex h-full flex-1 items-end overflow-hidden rounded-sm"
               style={{
                 background:
-                  "linear-gradient(to top, color-mix(in oklab, var(--text-tertiary) 28%, transparent), color-mix(in oklab, var(--text-tertiary) 4%, transparent))",
+                  "linear-gradient(to top, color-mix(in oklab, var(--text-tertiary) 6%, transparent), color-mix(in oklab, var(--text-tertiary) 1%, transparent))",
               }}
               title={`${seg.label}: ${value}%`}
             >
