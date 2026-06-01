@@ -2,6 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { LayoutDashboard, ClipboardList, MessageSquare, BookOpen, type LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useMessagesUnread } from "@/hooks/use-messages-unread";
 
 type Item = {
   label: string;
@@ -10,13 +11,6 @@ type Item = {
   matchPrefix?: string;
   unreadCount?: number;
 };
-
-const ITEMS: Item[] = [
-  { label: "Dashboard", icon: LayoutDashboard, to: "/athlete" },
-  { label: "Plans", icon: ClipboardList, to: "/athlete/plans", matchPrefix: "/athlete/plans" },
-  { label: "Messages", icon: MessageSquare, unreadCount: 0 },
-  { label: "Resources", icon: BookOpen },
-];
 
 export function AthleteBottomNav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
