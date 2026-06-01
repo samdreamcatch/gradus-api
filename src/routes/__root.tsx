@@ -119,8 +119,10 @@ function AuthSync() {
   const queryClient = useQueryClient();
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "SIGNED_OUT") {
-        // Drop cached user-scoped queries so nothing refetches without a token.
+      // Drop ALL cached queries on any auth change so one user's cached data
+      // (e.g. a previously-fetched coach-profile) cannot briefly render for
+      // the next user before the refetch resolves.
+      if (event === "SIGNED_OUT" || event === "SIGNED_IN" || event === "USER_UPDATED") {
         queryClient.clear();
       } else {
         queryClient.invalidateQueries();
