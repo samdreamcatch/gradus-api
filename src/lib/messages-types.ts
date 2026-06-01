@@ -38,6 +38,7 @@ export type MessageDTO = {
   durationSeconds: number | null;
   createdAt: string;
   readBy: { userId: string; readAt: string }[];
+  plan: { id: string; title: string } | null;
 };
 
 export type RoomDetail = {

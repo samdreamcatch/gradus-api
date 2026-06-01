@@ -114,7 +114,7 @@ export const getRoom = createServerFn({ method: "GET" })
 
     const { data: msgs, error } = await supabaseAdmin
       .from("messages")
-      .select("id, room_id, sender_user_id, sender_role, kind, body, audio_url, duration_seconds, created_at")
+      .select("id, room_id, sender_user_id, sender_role, kind, body, audio_url, duration_seconds, created_at, plan_id")
       .eq("room_id", room.id)
       .order("created_at", { ascending: true })
       .limit(500);
@@ -129,6 +129,20 @@ export const getRoom = createServerFn({ method: "GET" })
       const arr = readsByMessage.get(r.message_id) ?? [];
       arr.push({ userId: r.user_id, readAt: r.read_at });
       readsByMessage.set(r.message_id, arr);
+    }
+
+    const planIds = Array.from(
+      new Set((msgs ?? []).map((m) => m.plan_id).filter(Boolean) as string[]),
+    );
+    const plansById = new Map<string, { id: string; title: string }>();
+    if (planIds.length > 0) {
+      const { data: planRows } = await supabaseAdmin
+        .from("plans")
+        .select("id, title")
+        .in("id", planIds);
+      for (const p of planRows ?? []) {
+        plansById.set(p.id, { id: p.id, title: p.title || "Untitled plan" });
+      }
     }
 
     const messages: MessageDTO[] = await Promise.all(
@@ -147,6 +161,7 @@ export const getRoom = createServerFn({ method: "GET" })
           durationSeconds: m.duration_seconds,
           createdAt: m.created_at,
           readBy: readsByMessage.get(m.id) ?? [],
+          plan: m.plan_id ? plansById.get(m.plan_id) ?? null : null,
         };
       }),
     );
@@ -173,6 +188,7 @@ const sendMessageInput = z.discriminatedUnion("kind", [
     roomId: z.string().uuid(),
     kind: z.literal("text"),
     body: z.string().min(1).max(4000),
+    planId: z.string().uuid().nullish(),
   }),
   z.object({
     roomId: z.string().uuid(),
@@ -180,6 +196,7 @@ const sendMessageInput = z.discriminatedUnion("kind", [
     audioBase64: z.string().min(1),
     mimeType: z.string().min(1).max(100),
     durationSeconds: z.number().int().min(1).max(180),
+    planId: z.string().uuid().nullish(),
   }),
 ]);
 
@@ -229,6 +246,7 @@ export const sendMessage = createServerFn({ method: "POST" })
         body: data.kind === "text" ? data.body : "",
         audio_url: audioPath,
         duration_seconds: duration,
+        plan_id: data.planId ?? null,
       })
       .select("id")
       .single();
@@ -403,4 +421,27 @@ export const ensureRoomForAthlete = createServerFn({ method: "POST" })
       .single();
     if (error) dbError(error, "Couldn't open conversation");
     return { id: created!.id };
+  });
+
+/* ---------------- getRoomActivePlan ---------------- */
+
+export const getRoomActivePlan = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ roomId: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { userId } = context as unknown as ContextEnvelope;
+    const { rooms } = await listMyRoomIds(userId);
+    const room = rooms.find((r) => r.id === data.roomId);
+    if (!room) throw new Error("Conversation not found");
+
+    const { data: plan } = await supabaseAdmin
+      .from("plans")
+      .select("id, title")
+      .eq("coach_id", room.coach_id)
+      .eq("athlete_id", room.athlete_id)
+      .eq("kind", "plan")
+      .eq("status", "active")
+      .maybeSingle();
+
+    return { plan: plan ? { id: plan.id, title: plan.title || "Untitled plan" } : null };
   });
