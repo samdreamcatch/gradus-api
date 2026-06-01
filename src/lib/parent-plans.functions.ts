@@ -52,6 +52,7 @@ export interface ParentPlanDetailDTO {
   status: ParentPlanStatus;
   athleteId: string;
   athleteFirstName: string;
+  coachId: string;
   coachName: string;
   coachFirstName: string;
   moveCount: number;
