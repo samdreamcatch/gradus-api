@@ -49,15 +49,15 @@ export function FlowStateBars({ counts }: { counts: SessionsByState }) {
       key: "control" as const,
       label: "In Control",
       pct: pct.control,
-      fill: "linear-gradient(to right, var(--text-tertiary), var(--pen-pool))",
+      fill: "linear-gradient(to right, var(--text-tertiary), var(--pen-tennis))",
       labelColor: "var(--text-secondary)",
     },
     {
       key: "flow" as const,
       label: "Flowing",
       pct: pct.flow,
-      fill: "var(--pen-pool)",
-      labelColor: "var(--pen-pool-ink)",
+      fill: "var(--pen-tennis)",
+      labelColor: "var(--pen-tennis-ink)",
     },
   ];
 
@@ -88,7 +88,7 @@ export function FlowStateBars({ counts }: { counts: SessionsByState }) {
                   height: `${value}%`,
                   background: seg.fill,
                   boxShadow: glow && value > 0
-                    ? "0 0 8px color-mix(in oklab, var(--pen-pool) 40%, transparent)"
+                    ? "0 0 8px color-mix(in oklab, var(--pen-tennis) 40%, transparent)"
                     : undefined,
                 }}
               />
