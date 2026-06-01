@@ -38,15 +38,27 @@ function ParentPlansPage() {
 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("active");
   const [athleteId, setAthleteId] = useState<string>("");
+  const [coachId, setCoachId] = useState<string>("");
+
+  const coaches = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const p of plans) {
+      if (!map.has(p.coachId)) map.set(p.coachId, p.coachName);
+    }
+    return Array.from(map, ([id, name]) => ({ id, name })).sort((a, b) =>
+      a.name.localeCompare(b.name),
+    );
+  }, [plans]);
 
   const filtered = useMemo(
     () =>
       plans.filter(
         (p) =>
           p.status === statusFilter &&
-          (athleteId === "" || p.athleteId === athleteId),
+          (athleteId === "" || p.athleteId === athleteId) &&
+          (coachId === "" || p.coachId === coachId),
       ),
-    [plans, statusFilter, athleteId],
+    [plans, statusFilter, athleteId, coachId],
   );
 
   const subtitleNames =
@@ -68,7 +80,7 @@ function ParentPlansPage() {
         </p>
       ) : null}
 
-      <div className="mt-5 grid grid-cols-2 gap-2">
+      <div className="mt-5 grid grid-cols-3 gap-2">
         <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
           <SelectTrigger className={triggerClass} aria-label="Plan status">
             <SelectValue />
@@ -92,6 +104,24 @@ function ParentPlansPage() {
             {athletes.map((a) => (
               <SelectItem key={a.id} value={a.id}>
                 {a.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select
+          value={coachId || "__all"}
+          onValueChange={(v) => setCoachId(v === "__all" ? "" : v)}
+          disabled={coaches.length <= 1}
+        >
+          <SelectTrigger className={triggerClass} aria-label="Coach">
+            <SelectValue placeholder="All coaches" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__all">All coaches</SelectItem>
+            {coaches.map((c) => (
+              <SelectItem key={c.id} value={c.id}>
+                {c.name}
               </SelectItem>
             ))}
           </SelectContent>
