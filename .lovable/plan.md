@@ -1,88 +1,77 @@
-## Goal
+# Security Hardening — 5 findings
 
-Give the signed-in athlete a Plans list and plan-detail experience that mirrors `/parent/plans`, including starting a session, ending it, and submitting flow-state feedback to the coach — attributed to the athlete (not the parent).
+## 1. `athlete_goals` — Coaches view goals for rostered athletes only
 
-## 1. Database migration
+**Current policy** joins only `coach_profiles` (coach owns the row), so a coach can still read goals after the athlete is removed from their roster.
 
-Loosen `plan_sessions` so athletes can insert their own sessions.
+**Fix:** add an `EXISTS` on `coach_athletes (coach_id, athlete_id)` to the SELECT policy.
+
+**Functional change:** Coaches lose visibility into goals for ex-roster athletes. If a parent removes the coach link, the coach immediately stops seeing that athlete's goals. (Matches the existing pattern for other coach reads.)
+
+## 2. `athlete_lesson_slots` — same fix as #1
+
+Same shape (`coach_profiles`-only check today). Add the `coach_athletes` join.
+
+**Functional change:** Same as #1 — coaches stop seeing lesson slots for athletes no longer on their roster.
+
+## 3. `is_parent_of_plan` / parent `plan_moves` access
+
+`plan_moves` parent SELECT policy uses `is_parent_of_plan(plan_id)`, which returns true for any plan owned by their athlete — including drafts and templates (`kind <> 'plan'` or `status` not in `active/benched`).
+
+**Fix:** drop/replace the parent `plan_moves` SELECT policy with one that mirrors the parent `plans` filter:
 
 ```sql
-ALTER TABLE public.plan_sessions ALTER COLUMN parent_id DROP NOT NULL;
-
-CREATE POLICY "Athletes insert sessions for own plans"
-ON public.plan_sessions FOR INSERT TO authenticated
-WITH CHECK (
-  parent_id IS NULL
-  AND EXISTS (SELECT 1 FROM athletes a WHERE a.id = plan_sessions.athlete_id AND a.user_id = auth.uid())
-  AND EXISTS (SELECT 1 FROM plans p WHERE p.id = plan_sessions.plan_id AND p.athlete_id = plan_sessions.athlete_id)
-);
-
-CREATE POLICY "Athletes view sessions for own plans"
-ON public.plan_sessions FOR SELECT TO authenticated
-USING (EXISTS (SELECT 1 FROM athletes a WHERE a.id = plan_sessions.athlete_id AND a.user_id = auth.uid()));
+USING (
+  EXISTS (
+    SELECT 1
+    FROM plans p
+    JOIN athletes a ON a.id = p.athlete_id
+    JOIN parent_profiles pp ON pp.id = a.parent_id
+    WHERE p.id = plan_moves.plan_id
+      AND pp.user_id = auth.uid()
+      AND p.kind = 'plan'
+      AND p.status IN ('active','benched')
+  )
+)
 ```
 
-Existing parent policies remain. Athlete-logged rows are distinguishable by `parent_id IS NULL` (useful later for a "logged by" badge — not surfaced yet).
+(Leaving `is_parent_of_plan` itself unchanged — it's used in INSERT WITH CHECK on `plan_sessions` where the broader semantic is correct.)
 
-## 2. New server fns — `src/lib/athlete-plans.functions.ts`
+**Functional change:** None expected — the `plans` SELECT policy already hides drafts/templates from parents, so they currently can't reach those `plan_moves` rows through the app anyway. This just closes the direct-API hole.
 
-Mirror `parent-plans.functions.ts`, scoped to the signed-in athlete via `athletes.user_id = auth.uid()`. Returns the same DTO shape plus a derived `sport` per plan.
+## 4. `voiceBuildPlan` — cap audio size
 
-- `listAthletePlans` → `{ athlete: { id, firstName }, plans: AthletePlanSummaryDTO[] }`
-  - Looks up the athlete row by `user_id`.
-  - Loads plans where `athlete_id = athlete.id`, `kind = 'plan'`, status in (`active`,`benched`).
-  - Computes `sport` per plan from `athlete_goals` matched by `(athlete_id, coach_id)`. Fallback: first `plan_moves.move_id → moves.sport`. Final fallback: `""`.
-  - Reuses `loadSessionsByPlanIds` (RLS-safe under new athlete SELECT policy).
-- `getAthletePlan({ id })` → same shape as `getParentPlan` (plan detail + moves), with an ownership check on `athlete.user_id = auth.uid()`.
+Add a hard cap in the input validator before the Blob is forwarded to ElevenLabs.
 
-## 3. New server fn — `submitAthletePlanSession` (add to `src/lib/plan-sessions.functions.ts`)
+- Limit: **8 MB** (≈ 90s of opus/webm at typical voice bitrates; current UI auto-stops at 90s).
+- Reject with a clear error before any external API call.
 
-- Input: `{ planId, stateIndex, note, durationSeconds }`.
-- Resolves the athlete via `athletes.user_id = auth.uid()`, verifies the plan belongs to that athlete, inserts with `parent_id = null` and `athlete_id = athlete.id`.
-- Invalidations in callers: `["athlete-plans"]`, `["athlete-plan", planId]`, `["plan-sessions", planId]`, plus parent/coach keys so the coach's view updates live.
+**Functional change:** Recordings larger than 8 MB are rejected with "Recording too long — please try again." In practice the existing 90s recording cap keeps real users well under this.
 
-## 4. New component — `src/components/athlete/bottom-nav.tsx`
+## 5. `src/lib/voice.functions.ts` server-only marker
 
-`AthleteBottomNav` mirroring `ParentBottomNav`:
-- Dashboard → `/athlete`
-- Plans → `/athlete/plans` (matchPrefix `/athlete/plans`)
-- Messages / Resources stubbed via `toast`, same icons.
+The file already only exports `createServerFn` handlers and reads `process.env` inside handlers (not at module scope). To make the server-only intent explicit and prevent accidental client imports, add a top-of-file guard:
 
-## 5. New route — `src/routes/_authenticated/athlete.plans.index.tsx`
+```ts
+if (typeof window !== "undefined") {
+  throw new Error("voice.functions.ts is server-only");
+}
+```
 
-Visual clone of `parent.plans.index.tsx`:
-- Fraunces "Plans" eyebrow with Tennis pen highlight.
-- Subtitle: `Your plans` (handwritten, only when plans exist).
-- Three pill filters: **Status / Coach / Sport** (Status defaults to Active; Coach and Sport default to "All", disabled when only one option).
-- Sport options derived from `plans.map(p => p.sport)` (de-duped, sorted; rows with empty sport are bucketed under "Other" only if any exist).
-- `PlanCard` reused — subtitle is `Coach {coachName}` (no athlete name; athlete only has themselves). Links to `/athlete/plans/$planId`.
-- Empty state copy: "No active plans yet — your coach will share one here." / "No benched plans."
-- `AthleteBottomNav` at the bottom.
+**Functional change:** None at runtime; build-time/dev-time safety only.
 
-## 6. New route — `src/routes/_authenticated/athlete.plans.$planId.tsx`
+---
 
-Clone of `parent.plans.$planId.tsx` with these substitutions:
-- Imports `getAthletePlan` and `submitAthletePlanSession`.
-- Back link → `/athlete/plans`.
-- Header subtitle drops the athlete name: just `Coach {coachName}`.
-- `SessionTimer` calls the athlete submit fn; toast becomes `Sent to Coach {coachFirstName}` with description `Your session · {stateLabel}`.
-- `SessionFeedbackModal` heading: `How did today feel?` (second person), button: `Submit to Coach {coachFirstName}`.
-- `AthleteBottomNav` at the bottom.
-- Same `errorComponent` / `notFoundComponent` shape, scoped to `/athlete/plans`.
+## Implementation
 
-## 7. Wire up the existing `/athlete` page
+- **One migration** containing:
+  - Drop + recreate `athlete_goals` "Coaches view goals for rostered athletes" with `coach_athletes` join.
+  - Drop + recreate `athlete_lesson_slots` "Coaches view slots for rostered athletes" with `coach_athletes` join.
+  - Drop + recreate the parent SELECT policy on `plan_moves` with the inlined `kind='plan' AND status IN (...)` filter.
+- **`src/lib/voice.functions.ts`** edits:
+  - Add top-of-file `window` guard.
+  - In `voiceBuildPlan` input validator, reject `audio.size > 8 * 1024 * 1024`.
 
-`src/routes/_authenticated/athlete.tsx` currently has no nav. Add a CTA button "View my plans" → `/athlete/plans` and mount `AthleteBottomNav`. No other content changes.
+## Confirm before I build
 
-## Technical notes
-
-- All new code reads via the authenticated middleware client; uses `supabaseAdmin` only where the parent equivalents already do (cross-table coach lookups not visible to the athlete via RLS).
-- The two existing query keys (`["parent-plans"]`, `["coach-plans"]`) are invalidated on athlete submit so cross-role views stay in sync without a refresh.
-- No changes to `PlanCard`, `flow-state-bars`, the parent routes, or coach routes.
-- Reuses `FLOW_STATES`, `SessionFeedbackModal`, `FlowStateScale`, `IdleSlide`, `RunningPill` by either importing from the parent file or duplicating into the athlete route file (will pick duplication to keep the two flows independently editable, matching the existing parent/coach split).
-
-## Files
-
-New: `supabase/migrations/<ts>_athlete_plan_sessions.sql`, `src/lib/athlete-plans.functions.ts`, `src/components/athlete/bottom-nav.tsx`, `src/routes/_authenticated/athlete.plans.index.tsx`, `src/routes/_authenticated/athlete.plans.$planId.tsx`.
-
-Edited: `src/lib/plan-sessions.functions.ts` (new `submitAthletePlanSession`), `src/routes/_authenticated/athlete.tsx` (nav + CTA).
+The only user-visible behavior change is #1/#2: **coaches will lose read access to goals and lesson slots for athletes removed from their roster.** Everything else is a no-op for normal users. OK to proceed?
