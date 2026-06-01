@@ -2,6 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { LayoutDashboard, ClipboardList, MessageSquare, BookOpen, type LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useMessagesUnread } from "@/hooks/use-messages-unread";
 
 type Item = {
   label: string;
@@ -11,15 +12,16 @@ type Item = {
   unreadCount?: number;
 };
 
-const ITEMS: Item[] = [
-  { label: "Dashboard", icon: LayoutDashboard, to: "/athlete" },
-  { label: "Plans", icon: ClipboardList, to: "/athlete/plans", matchPrefix: "/athlete/plans" },
-  { label: "Messages", icon: MessageSquare, unreadCount: 0 },
-  { label: "Resources", icon: BookOpen },
-];
-
 export function AthleteBottomNav() {
+  const unread = useMessagesUnread();
+  const items: Item[] = [
+    { label: "Dashboard", icon: LayoutDashboard, to: "/athlete" },
+    { label: "Plans", icon: ClipboardList, to: "/athlete/plans", matchPrefix: "/athlete/plans" },
+    { label: "Messages", icon: MessageSquare, to: "/athlete/messages", matchPrefix: "/athlete/messages", unreadCount: unread },
+    { label: "Resources", icon: BookOpen },
+  ];
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const ITEMS = items;
 
   return (
     <nav

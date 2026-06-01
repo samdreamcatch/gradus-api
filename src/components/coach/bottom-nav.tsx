@@ -2,21 +2,24 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { LayoutDashboard, ClipboardList, Users, MessageSquare, type LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useMessagesUnread } from "@/hooks/use-messages-unread";
 
 type Item = {
   label: string;
   icon: LucideIcon;
   to?: string;
+  matchPrefix?: string;
+  unreadCount?: number;
 };
 
-const ITEMS: Item[] = [
-  { label: "Dashboard", icon: LayoutDashboard, to: "/coach" },
-  { label: "Plans", icon: ClipboardList, to: "/coach/plans" },
-  { label: "Roster", icon: Users },
-  { label: "Messages", icon: MessageSquare },
-];
-
 export function CoachBottomNav() {
+  const unread = useMessagesUnread();
+  const ITEMS: Item[] = [
+    { label: "Dashboard", icon: LayoutDashboard, to: "/coach" },
+    { label: "Plans", icon: ClipboardList, to: "/coach/plans" },
+    { label: "Roster", icon: Users },
+    { label: "Messages", icon: MessageSquare, to: "/coach/messages", matchPrefix: "/coach/messages", unreadCount: unread },
+  ];
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   return (
@@ -27,7 +30,12 @@ export function CoachBottomNav() {
       <ul className="mx-auto flex max-w-3xl items-stretch justify-around px-2">
         {ITEMS.map((item) => {
           const Icon = item.icon;
-          const isActive = item.to ? pathname === item.to : false;
+          const isActive = item.to
+            ? item.matchPrefix
+              ? pathname === item.to || pathname.startsWith(item.matchPrefix + "/")
+              : pathname === item.to
+            : false;
+          const hasUnread = (item.unreadCount ?? 0) > 0;
 
           const inner = (
             <span
@@ -40,7 +48,15 @@ export function CoachBottomNav() {
                     : "text-text-tertiary",
               )}
             >
-              <Icon className={cn("h-5 w-5", isActive && "text-accent-ink")} aria-hidden />
+              <span className="relative">
+                <Icon className={cn("h-5 w-5", isActive && "text-accent-ink")} aria-hidden />
+                {hasUnread ? (
+                  <span
+                    aria-label={`${item.unreadCount} unread`}
+                    className="absolute -right-1 -top-0.5 inline-flex h-2 w-2 rounded-full bg-attention ring-2 ring-card"
+                  />
+                ) : null}
+              </span>
               <span
                 className={cn(
                   "leading-none",
