@@ -3,13 +3,6 @@ import { Mic } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { RoomSummary, RoleInRoom } from "@/lib/messages.functions";
 
-function initialsFor(names: string[]): string {
-  return names
-    .map((n) => n.trim().charAt(0).toUpperCase())
-    .filter(Boolean)
-    .slice(0, 2)
-    .join("");
-}
 
 function relativeTime(iso: string): string {
   const then = new Date(iso).getTime();
