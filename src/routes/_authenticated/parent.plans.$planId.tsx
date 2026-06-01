@@ -122,13 +122,24 @@ function ParentPlanDetail() {
       <div className="mt-5 flex justify-center">
         <button
           type="button"
-          onClick={() => soon(`Message ${plan.coachFirstName}`)}
+          onClick={() => setMessageOpen(true)}
           className="inline-flex items-center gap-2 rounded-full bg-accent px-5 py-2 text-sm font-bold text-accent-foreground shadow-card"
         >
           <MessageCircle className="size-4" />
           Message {plan.coachFirstName} about this plan
         </button>
       </div>
+
+      <MessageCoachAboutPlanDialog
+        open={messageOpen}
+        onOpenChange={setMessageOpen}
+        coachId={plan.coachId}
+        athleteId={plan.athleteId}
+        coachFirstName={plan.coachFirstName}
+        planId={plan.id}
+        planTitle={plan.title}
+        messagesBasePath="/parent/messages"
+      />
 
       <ParentBottomNav />
     </div>
