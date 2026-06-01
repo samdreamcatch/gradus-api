@@ -182,26 +182,6 @@ export function RoomView({ roomId }: { roomId: string }) {
       }),
   });
 
-  const sendVoiceMutation = useMutation({
-    mutationFn: async (input: { audioBase64: string; mimeType: string; durationSeconds: number }) =>
-      sendFn({
-        data: {
-          roomId,
-          kind: "voice",
-          audioBase64: input.audioBase64,
-          mimeType: input.mimeType,
-          durationSeconds: input.durationSeconds,
-        },
-      }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["message-room", roomId] });
-      queryClient.invalidateQueries({ queryKey: ["message-rooms"] });
-    },
-    onError: (e) =>
-      toast.error("Couldn't send voice note", {
-        description: e instanceof Error ? e.message : "Please try again.",
-      }),
-  });
 
   if (isLoading || !room) {
     return <p className="py-10 text-center text-sm text-text-secondary">Loading…</p>;
