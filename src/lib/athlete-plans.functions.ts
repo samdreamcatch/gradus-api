@@ -45,6 +45,7 @@ export interface AthletePlanDetailDTO {
   status: AthletePlanStatus;
   athleteId: string;
   athleteFirstName: string;
+  coachId: string;
   coachName: string;
   coachFirstName: string;
   moveCount: number;
