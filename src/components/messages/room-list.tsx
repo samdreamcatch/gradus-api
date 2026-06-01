@@ -127,11 +127,11 @@ export function RoomList({
           <div className="flex items-start gap-3 px-4 py-3.5 transition-colors hover:bg-elevated focus-visible:bg-elevated focus-visible:outline-none">
             <div className="relative size-11 shrink-0">
               {back ? (
-                <div className={cn("absolute right-0 top-0 grid size-8 place-items-center rounded-full text-[11px] font-black uppercase ring-2 ring-card", null, PEN_STYLES[backPen])}>
+                <div style={PEN_STYLES[backPen]} className="absolute right-0 top-0 grid size-8 place-items-center rounded-full text-[11px] font-black uppercase ring-2 ring-card">
                   {back.initial}
                 </div>
               ) : null}
-              <div className={cn("absolute bottom-0 left-0 grid size-8 place-items-center rounded-full text-[11px] font-black uppercase ring-2 ring-card", null, PEN_STYLES[frontPen])}>
+              <div style={PEN_STYLES[frontPen]} className="absolute bottom-0 left-0 grid size-8 place-items-center rounded-full text-[11px] font-black uppercase ring-2 ring-card">
                 {front?.initial ?? "·"}
               </div>
               {unread ? (
