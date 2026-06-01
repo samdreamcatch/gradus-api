@@ -1,8 +1,10 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
+import { ClipboardList } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { AthleteBottomNav } from "@/components/athlete/bottom-nav";
 import { getMyAthlete } from "@/lib/athlete-signup.functions";
 
 export const Route = createFileRoute("/_authenticated/athlete")({
@@ -27,7 +29,7 @@ function AthleteHome() {
   const displayName = data?.firstName?.trim() || "Athlete";
 
   return (
-    <div className="mx-auto min-h-dvh max-w-2xl px-4 py-8">
+    <div className="mx-auto min-h-dvh max-w-2xl px-4 py-8 pb-24">
       <div className="rounded-2xl bg-card p-8 shadow-card sm:p-10">
         <p className="text-xs font-bold uppercase tracking-widest text-accent-ink">
           Welcome
@@ -43,12 +45,21 @@ function AthleteHome() {
           experience is ready.
         </p>
 
-        <div className="mt-6">
+        <div className="mt-6 flex flex-wrap gap-2">
+          <Link
+            to="/athlete/plans"
+            className="inline-flex items-center gap-2 rounded-full bg-accent px-5 py-2.5 text-sm font-bold text-accent-foreground shadow-card"
+          >
+            <ClipboardList className="size-4" />
+            View my plans
+          </Link>
           <Button variant="outline" onClick={handleSignOut}>
             Sign out
           </Button>
         </div>
       </div>
+
+      <AthleteBottomNav />
     </div>
   );
 }
