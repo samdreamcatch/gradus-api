@@ -289,8 +289,8 @@ export function RoomView({ roomId }: { roomId: string }) {
                       className={cn(
                         "max-w-[78%] rounded-2xl px-3.5 py-2 text-sm leading-snug",
                         mine
-                          ? "bg-accent text-accent-foreground rounded-br-md"
-                          : "bg-elevated text-text-primary ring-1 ring-divider rounded-bl-md",
+                          ? "bg-accent text-accent-foreground rounded-br-md shadow-card"
+                          : "bg-card text-text-primary rounded-bl-md shadow-card",
                       )}
                     >
                       {m.kind === "voice" ? (
