@@ -229,15 +229,14 @@ export const getMyRole = createServerFn({ method: "GET" })
       supabase.from("parent_profiles").select("id, created_at").maybeSingle(),
       supabase.from("athletes").select("id").limit(1).maybeSingle(),
     ]);
-    // When both exist (e.g. a parent who briefly hit the coach wizard and left a stub),
-    // prefer the coach role only if onboarding was actually completed.
-    if (coach.data && parent.data) {
-      if (coach.data.onboarded_at) return { role: "coach" as const };
-      return { role: "parent" as const };
-    }
-    if (coach.data) return { role: "coach" as const };
+    // A coach_profiles row with no onboarded_at is a stub (user briefly hit
+    // the coach wizard and bailed). Never treat that as the user's real role
+    // if they have a meaningful parent or athlete record.
+    const coachOnboarded = !!coach.data?.onboarded_at;
+    if (coachOnboarded) return { role: "coach" as const };
     if (parent.data) return { role: "parent" as const };
     if (athlete.data) return { role: "athlete" as const };
+    if (coach.data) return { role: "coach" as const };
     return { role: null };
   });
 
