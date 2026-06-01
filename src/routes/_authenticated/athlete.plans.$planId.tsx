@@ -517,7 +517,7 @@ function RunningPill({
           }}
           style={{ touchAction: "pan-y" }}
           className={cn(
-            "relative z-10 inline-flex h-10 select-none items-center gap-2 rounded-full bg-attention pl-3 pr-4 text-sm font-bold text-attention-foreground shadow-sm",
+            "relative z-10 inline-flex h-8 select-none items-center gap-2 rounded-full bg-attention pl-3 pr-4 text-sm font-bold text-attention-foreground shadow-sm",
             "cursor-grab active:cursor-grabbing",
             dragging && "shadow-card",
             armed && "ring-2 ring-attention-foreground/60",
