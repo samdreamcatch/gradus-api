@@ -368,3 +368,39 @@ export const ensureRoom = createServerFn({ method: "POST" })
     if (error) dbError(error, "Couldn't open conversation");
     return { id: created!.id };
   });
+
+/* ---------------- ensureRoomForAthlete (coach side, infers coachId) ---------------- */
+
+export const ensureRoomForAthlete = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ athleteId: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { userId } = context as unknown as ContextEnvelope;
+    const me = await resolveMyIdentity(userId);
+    if (!me.coach) throw new Error("Only coaches can start conversations from here");
+
+    // Verify roster link.
+    const { data: link } = await supabaseAdmin
+      .from("coach_athletes")
+      .select("id")
+      .eq("coach_id", me.coach.id)
+      .eq("athlete_id", data.athleteId)
+      .maybeSingle();
+    if (!link) throw new Error("Athlete is not on your roster");
+
+    const { data: existing } = await supabaseAdmin
+      .from("message_rooms")
+      .select("id")
+      .eq("coach_id", me.coach.id)
+      .eq("athlete_id", data.athleteId)
+      .maybeSingle();
+    if (existing) return { id: existing.id };
+
+    const { data: created, error } = await supabaseAdmin
+      .from("message_rooms")
+      .insert({ coach_id: me.coach.id, athlete_id: data.athleteId })
+      .select("id")
+      .single();
+    if (error) dbError(error, "Couldn't open conversation");
+    return { id: created!.id };
+  });
