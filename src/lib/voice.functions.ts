@@ -21,6 +21,25 @@ export type {
   VoiceTouched,
 } from "./voice-types";
 
+export const voiceTranscribe = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => {
+    if (!(input instanceof FormData)) throw new Error("Expected FormData");
+    const audio = input.get("audio");
+    if (!(audio instanceof Blob)) throw new Error("Missing audio");
+    if (audio.size > MAX_AUDIO_BYTES) {
+      throw new Error("Recording too long — please keep voice notes under 90 seconds");
+    }
+    return { audio };
+  })
+  .handler(async ({ data }): Promise<{ text: string }> => {
+    const transcript = await transcribeWithElevenLabs(data.audio);
+    if (!transcript || transcript.length < 1) {
+      throw new Error("Didn't catch that — try again");
+    }
+    return { text: transcript };
+  });
+
 export const voiceBuildPlan = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => {
