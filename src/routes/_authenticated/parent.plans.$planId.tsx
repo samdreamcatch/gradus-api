@@ -487,7 +487,7 @@ function RunningPill({
       {/* End-session slide track — pink to signal action required */}
       <div
         ref={trackRef}
-        className="relative flex-1 overflow-hidden rounded-full border border-attention/50 bg-attention/15 p-1.5"
+        className="relative flex-1 overflow-hidden rounded-full border border-attention/50 bg-attention/15 p-1"
       >
         <span className="pointer-events-none absolute inset-y-0 right-4 flex items-center gap-1 text-[11px] font-black uppercase tracking-widest text-attention-ink/70">
           End
