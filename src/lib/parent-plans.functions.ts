@@ -52,6 +52,7 @@ export interface ParentPlanDetailDTO {
   status: ParentPlanStatus;
   athleteId: string;
   athleteFirstName: string;
+  coachId: string;
   coachName: string;
   coachFirstName: string;
   moveCount: number;
@@ -241,6 +242,7 @@ export const getParentPlan = createServerFn({ method: "POST" })
       status: plan.status as ParentPlanStatus,
       athleteId: plan.athlete_id,
       athleteFirstName: athleteRes.data?.first_name ?? "",
+      coachId: plan.coach_id,
       coachName: `${coachFirst} ${coachLast}`.trim(),
       coachFirstName: coachFirst,
       moveCount: moves.length,

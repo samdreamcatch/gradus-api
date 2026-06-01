@@ -13,6 +13,7 @@ import {
   type AthletePlanMoveDTO,
 } from "@/lib/athlete-plans.functions";
 import { submitAthletePlanSession } from "@/lib/plan-sessions.functions";
+import { MessageCoachAboutPlanDialog } from "@/components/plans/message-coach-about-plan-dialog";
 
 export const Route = createFileRoute("/_authenticated/athlete/plans/$planId")({
   component: AthletePlanDetail,
@@ -47,8 +48,7 @@ function AthletePlanDetail() {
   const plan = data?.plan;
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const toggle = (id: string) => setExpanded((s) => ({ ...s, [id]: !s[id] }));
-
-  const soon = (label: string) => toast(`${label} — coming soon`);
+  const [messageOpen, setMessageOpen] = useState(false);
 
   if (isLoading || !plan) {
     return (
@@ -112,13 +112,24 @@ function AthletePlanDetail() {
       <div className="mt-5 flex justify-center">
         <button
           type="button"
-          onClick={() => soon(`Message ${plan.coachFirstName}`)}
+          onClick={() => setMessageOpen(true)}
           className="inline-flex items-center gap-2 rounded-full bg-accent px-5 py-2 text-sm font-bold text-accent-foreground shadow-card"
         >
           <MessageCircle className="size-4" />
           Message {plan.coachFirstName} about this plan
         </button>
       </div>
+
+      <MessageCoachAboutPlanDialog
+        open={messageOpen}
+        onOpenChange={setMessageOpen}
+        coachId={plan.coachId}
+        athleteId={plan.athleteId}
+        coachFirstName={plan.coachFirstName}
+        planId={plan.id}
+        planTitle={plan.title}
+        messagesBasePath="/athlete/messages"
+      />
 
       <AthleteBottomNav />
     </div>
