@@ -385,7 +385,7 @@ function IdleSlide({ onStart }: { onStart: () => void }) {
   return (
     <div
       ref={trackRef}
-      className="relative overflow-hidden rounded-full border border-accent/40 bg-accent/15 p-1.5"
+      className="relative overflow-hidden rounded-full border border-accent/40 bg-accent/15 p-1"
     >
       <span className="pointer-events-none absolute inset-y-0 right-4 flex items-center gap-1 text-[11px] font-black uppercase tracking-widest text-accent-ink/60">
         Slide
