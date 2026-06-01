@@ -48,7 +48,15 @@ export function CoachBottomNav() {
                     : "text-text-tertiary",
               )}
             >
-              <Icon className={cn("h-5 w-5", isActive && "text-accent-ink")} aria-hidden />
+              <span className="relative">
+                <Icon className={cn("h-5 w-5", isActive && "text-accent-ink")} aria-hidden />
+                {hasUnread ? (
+                  <span
+                    aria-label={`${item.unreadCount} unread`}
+                    className="absolute -right-1 -top-0.5 inline-flex h-2 w-2 rounded-full bg-attention ring-2 ring-card"
+                  />
+                ) : null}
+              </span>
               <span
                 className={cn(
                   "leading-none",
