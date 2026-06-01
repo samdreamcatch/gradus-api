@@ -59,7 +59,7 @@ function AthletePlansPage() {
 
   const sports = useMemo(() => {
     const set = new Set<string>();
-    for (const p of plans) set.add(p.sport || "");
+    for (const p of plans) if (p.sport) set.add(p.sport);
     return Array.from(set).sort((a, b) => prettySport(a).localeCompare(prettySport(b)));
   }, [plans]);
 
@@ -69,7 +69,7 @@ function AthletePlansPage() {
         (p) =>
           p.status === statusFilter &&
           (coachId === "" || p.coachId === coachId) &&
-          (sport === "" || (p.sport || "") === sport),
+          (sport === "" || p.sport === sport),
       ),
     [plans, statusFilter, coachId, sport],
   );
@@ -134,7 +134,7 @@ function AthletePlansPage() {
           <SelectContent>
             <SelectItem value="__all">All sports</SelectItem>
             {sports.map((s) => (
-              <SelectItem key={s || "__other"} value={s || "__other_sport"}>
+              <SelectItem key={s} value={s}>
                 {prettySport(s)}
               </SelectItem>
             ))}
