@@ -161,6 +161,7 @@ export const listParentPlans = createServerFn({ method: "GET" })
           status: p.status as ParentPlanStatus,
           athleteId: p.athlete_id as string,
           athleteName: athleteName.get(p.athlete_id as string) ?? "",
+          coachId: p.coach_id,
           coachName: coachName.get(p.coach_id) ?? "Coach",
           moveCount: a.count,
           totalMinutes: a.minutes,
