@@ -88,7 +88,7 @@ export function FlowStateBars({ counts }: { counts: SessionsByState }) {
                   height: `${value}%`,
                   background: seg.fill,
                   boxShadow: glow && value > 0
-                    ? "0 0 8px color-mix(in oklab, var(--accent) 40%, transparent)"
+                    ? "0 0 8px color-mix(in oklab, var(--pen-pool) 40%, transparent)"
                     : undefined,
                 }}
               />
