@@ -1,0 +1,1 @@
+DELETE FROM public.coach_profiles WHERE first_name = '' AND onboarded_at IS NULL;
