@@ -5,21 +5,21 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion, useAnimationControls } from "framer-motion";
 import { ArrowLeft, ArrowRight, ChevronDown, MessageCircle, Pause, Play, Settings, X } from "lucide-react";
 import { toast } from "sonner";
-import { ParentBottomNav } from "@/components/parent/bottom-nav";
+import { AthleteBottomNav } from "@/components/athlete/bottom-nav";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import {
-  getParentPlan,
-  type ParentPlanMoveDTO,
-} from "@/lib/parent-plans.functions";
-import { submitPlanSession } from "@/lib/plan-sessions.functions";
+  getAthletePlan,
+  type AthletePlanMoveDTO,
+} from "@/lib/athlete-plans.functions";
+import { submitAthletePlanSession } from "@/lib/plan-sessions.functions";
 
 export const Route = createFileRoute("/_authenticated/athlete/plans/$planId")({
-  component: ParentPlanDetail,
+  component: AthletePlanDetail,
   errorComponent: ({ error }) => (
     <div className="mx-auto max-w-2xl px-4 py-12">
       <Link
-        to="/parent/plans"
+        to="/athlete/plans"
         className="inline-flex items-center gap-1 text-sm text-text-secondary hover:text-text-primary"
       >
         <ArrowLeft className="size-4" /> Back
@@ -36,11 +36,11 @@ export const Route = createFileRoute("/_authenticated/athlete/plans/$planId")({
   ),
 });
 
-function ParentPlanDetail() {
+function AthletePlanDetail() {
   const { planId } = Route.useParams();
-  const fetchPlan = useServerFn(getParentPlan);
+  const fetchPlan = useServerFn(getAthletePlan);
   const { data, isLoading } = useQuery({
-    queryKey: ["parent-plan", planId],
+    queryKey: ["athlete-plan", planId],
     queryFn: () => fetchPlan({ data: { id: planId } }),
   });
 
@@ -62,7 +62,7 @@ function ParentPlanDetail() {
     <div className="mx-auto max-w-2xl px-4 pt-4 pb-24">
       <div className="flex items-center justify-between">
         <Link
-          to="/parent/plans"
+          to="/athlete/plans"
           className="inline-flex items-center gap-1 text-sm text-text-secondary hover:text-text-primary"
         >
           <ArrowLeft className="size-4" /> Back
@@ -128,7 +128,7 @@ function ParentPlanDetail() {
         </button>
       </div>
 
-      <ParentBottomNav />
+      <AthleteBottomNav />
     </div>
   );
 }
@@ -138,7 +138,7 @@ function MoveCard({
   expanded,
   onToggle,
 }: {
-  move: ParentPlanMoveDTO;
+  move: AthletePlanMoveDTO;
   expanded: boolean;
   onToggle: () => void;
 }) {
@@ -276,14 +276,14 @@ function SessionTimer({
   const baseRef = useRef(0);
 
   const queryClient = useQueryClient();
-  const submitFn = useServerFn(submitPlanSession);
+  const submitFn = useServerFn(submitAthletePlanSession);
   const submitMutation = useMutation({
     mutationFn: submitFn,
     onSuccess: () => {
       // Refresh the chart for both parent list and coach detail.
       queryClient.invalidateQueries({ queryKey: ["plan-sessions", planId] });
-      queryClient.invalidateQueries({ queryKey: ["parent-plan", planId] });
-      queryClient.invalidateQueries({ queryKey: ["parent-plans"] });
+      queryClient.invalidateQueries({ queryKey: ["athlete-plan", planId] });
+      queryClient.invalidateQueries({ queryKey: ["athlete-plans"] });
       queryClient.invalidateQueries({ queryKey: ["coach-plans"] });
     },
   });
