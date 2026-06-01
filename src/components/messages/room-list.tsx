@@ -3,13 +3,6 @@ import { Mic } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { RoomSummary, RoleInRoom } from "@/lib/messages.functions";
 
-function initialsFor(names: string[]): string {
-  return names
-    .map((n) => n.trim().charAt(0).toUpperCase())
-    .filter(Boolean)
-    .slice(0, 2)
-    .join("");
-}
 
 function relativeTime(iso: string): string {
   const then = new Date(iso).getTime();
@@ -41,17 +34,27 @@ function roleLabel(role: RoleInRoom): string {
  * Render the headline name(s) for a room from the current user's POV.
  * Shows everyone except "me".
  */
-function others(room: RoomSummary): { display: string; initials: string } {
+function others(
+  room: RoomSummary,
+): { display: string; people: { initial: string; role: RoleInRoom }[] } {
   const them = room.participants.filter((p) => p.role !== room.myRole);
-  if (them.length === 0) return { display: "Conversation", initials: "·" };
-  const parts = them.map((p) => {
+  if (them.length === 0) return { display: "Conversation", people: [] };
+  // Sort so athlete renders first (front), then parent/coach behind.
+  const ordered = [...them].sort((a, b) => {
+    const rank = (r: RoleInRoom) => (r === "athlete" ? 0 : r === "parent" ? 1 : 2);
+    return rank(a.role) - rank(b.role);
+  });
+  const parts = ordered.map((p) => {
     const prefix =
       p.role === "coach" ? "Coach " : p.role === "parent" ? "Parent " : "";
     return `${prefix}${p.firstName}`.trim();
   });
   return {
     display: parts.join(" & "),
-    initials: initialsFor(them.map((p) => p.firstName)),
+    people: ordered.map((p) => ({
+      initial: p.firstName.trim().charAt(0).toUpperCase() || "·",
+      role: p.role,
+    })),
   };
 }
 
@@ -76,7 +79,7 @@ export function RoomList({
   return (
     <ul className="divide-y divide-divider rounded-2xl border border-divider bg-card overflow-hidden">
       {rooms.map((room) => {
-        const { display, initials } = others(room);
+        const { display, people } = others(room);
         const last = room.lastMessage;
         const previewSenderPrefix =
           last && last.senderRole !== room.myRole
@@ -92,11 +95,19 @@ export function RoomList({
 
         const unread = room.unreadCount > 0;
 
+        const front = people[0];
+        const back = people[1];
+
         const inner = (
           <div className="flex items-start gap-3 px-4 py-3.5 transition-colors hover:bg-elevated focus-visible:bg-elevated focus-visible:outline-none">
-            <div className="relative">
-              <div className="grid size-11 shrink-0 place-items-center rounded-full bg-elevated text-sm font-black uppercase text-text-secondary ring-1 ring-divider">
-                {initials || "·"}
+            <div className="relative size-11 shrink-0">
+              {back ? (
+                <div className="absolute right-0 top-0 grid size-8 place-items-center rounded-full bg-elevated text-[11px] font-black uppercase text-text-secondary ring-2 ring-card">
+                  {back.initial}
+                </div>
+              ) : null}
+              <div className="absolute bottom-0 left-0 grid size-8 place-items-center rounded-full bg-elevated text-[11px] font-black uppercase text-text-secondary ring-2 ring-card">
+                {front?.initial ?? "·"}
               </div>
               {unread ? (
                 <span
@@ -105,6 +116,8 @@ export function RoomList({
                 />
               ) : null}
             </div>
+
+
 
             <div className="min-w-0 flex-1">
               <div className="flex items-baseline justify-between gap-2">
