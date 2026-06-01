@@ -11,13 +11,21 @@ import {
   supabaseAdmin,
 } from "./messages.server";
 
-export type {
+import type {
   RoleInRoom,
   RoomParticipant,
   RoomSummary,
   MessageDTO,
   RoomDetail,
 } from "./messages-types";
+
+export type {
+  RoleInRoom,
+  RoomParticipant,
+  RoomSummary,
+  MessageDTO,
+  RoomDetail,
+};
 
 
 
