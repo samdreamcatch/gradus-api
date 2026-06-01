@@ -42,24 +42,25 @@ export function FlowStateBars({ counts }: { counts: SessionsByState }) {
       key: "frustrated" as const,
       label: "Frustrated",
       pct: pct.frustrated,
-      fill: "var(--pen-pool-ink)",
+      fill: "var(--text-tertiary)",
       labelColor: "var(--text-tertiary)",
     },
     {
       key: "control" as const,
       label: "In Control",
       pct: pct.control,
-      fill: "linear-gradient(to right, var(--pen-pool-ink), var(--pen-tennis))",
+      fill: "linear-gradient(to right, var(--text-tertiary), var(--pen-pool))",
       labelColor: "var(--text-secondary)",
     },
     {
       key: "flow" as const,
       label: "Flowing",
       pct: pct.flow,
-      fill: "linear-gradient(to top, color-mix(in oklab, var(--accent) 25%, transparent) 0%, color-mix(in oklab, var(--accent) 65%, transparent) 50%, var(--accent) 100%)",
-      labelColor: "var(--accent-ink)",
+      fill: "var(--pen-pool)",
+      labelColor: "var(--pen-pool-ink)",
     },
   ];
+
 
   return (
     <div>
