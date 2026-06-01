@@ -239,6 +239,7 @@ export const getAthletePlan = createServerFn({ method: "POST" })
       status: plan.status as AthletePlanStatus,
       athleteId: plan.athlete_id,
       athleteFirstName: athlete.first_name,
+      coachId: plan.coach_id,
       coachName: `${coachFirst} ${coachLast}`.trim(),
       coachFirstName: coachFirst,
       moveCount: moves.length,
