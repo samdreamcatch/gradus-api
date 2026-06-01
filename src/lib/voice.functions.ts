@@ -1,8 +1,3 @@
-// Server-only module — must never be imported into client bundles.
-if (typeof window !== "undefined") {
-  throw new Error("voice.functions.ts is server-only and must not be imported in the browser");
-}
-
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { dbError } from "./db-error";
