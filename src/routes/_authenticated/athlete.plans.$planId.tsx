@@ -3,7 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion, useAnimationControls } from "framer-motion";
-import { ArrowLeft, ArrowRight, ChevronDown, MessageCircle, Pause, Play, Settings, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, ChevronDown, MessageCircle, Pause, Play, X } from "lucide-react";
 import { toast } from "sonner";
 import { AthleteBottomNav } from "@/components/athlete/bottom-nav";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
