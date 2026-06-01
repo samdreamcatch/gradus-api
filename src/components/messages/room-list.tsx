@@ -30,6 +30,30 @@ function roleLabel(role: RoleInRoom): string {
   }
 }
 
+const PENS = ["tennis", "pool", "iris", "pink", "orange"] as const;
+type Pen = (typeof PENS)[number];
+
+function hash(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+
+function pickPens(seed: string): [Pen, Pen] {
+  const h = hash(seed);
+  const a = h % PENS.length;
+  const b = (a + 1 + (Math.floor(h / PENS.length) % (PENS.length - 1))) % PENS.length;
+  return [PENS[a], PENS[b]];
+}
+
+const PEN_CLASSES: Record<Pen, string> = {
+  tennis: "bg-pen-tennis-wash text-pen-tennis-ink",
+  pool: "bg-pen-pool-wash text-pen-pool-ink",
+  iris: "bg-pen-iris-wash text-pen-iris-ink",
+  pink: "bg-pen-pink-wash text-pen-pink-ink",
+  orange: "bg-pen-orange-wash text-pen-orange-ink",
+};
+
 /**
  * Render the headline name(s) for a room from the current user's POV.
  * Shows everyone except "me".
