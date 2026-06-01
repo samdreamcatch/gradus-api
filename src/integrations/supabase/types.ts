@@ -332,6 +332,100 @@ export type Database = {
         }
         Relationships: []
       }
+      message_reads: {
+        Row: {
+          message_id: string
+          read_at: string
+          user_id: string
+        }
+        Insert: {
+          message_id: string
+          read_at?: string
+          user_id: string
+        }
+        Update: {
+          message_id?: string
+          read_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_reads_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      message_rooms: {
+        Row: {
+          athlete_id: string
+          coach_id: string
+          created_at: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          athlete_id: string
+          coach_id: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          athlete_id?: string
+          coach_id?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      messages: {
+        Row: {
+          audio_url: string | null
+          body: string
+          created_at: string
+          duration_seconds: number | null
+          id: string
+          kind: string
+          room_id: string
+          sender_role: string
+          sender_user_id: string
+        }
+        Insert: {
+          audio_url?: string | null
+          body?: string
+          created_at?: string
+          duration_seconds?: number | null
+          id?: string
+          kind: string
+          room_id: string
+          sender_role: string
+          sender_user_id: string
+        }
+        Update: {
+          audio_url?: string | null
+          body?: string
+          created_at?: string
+          duration_seconds?: number | null
+          id?: string
+          kind?: string
+          room_id?: string
+          sender_role?: string
+          sender_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "message_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       moves: {
         Row: {
           archived_at: string | null
@@ -621,6 +715,10 @@ export type Database = {
       }
       is_parent_of_athlete: { Args: { _athlete_id: string }; Returns: boolean }
       is_parent_of_plan: { Args: { _plan_id: string }; Returns: boolean }
+      is_room_participant: {
+        Args: { _room_id: string; _user_id: string }
+        Returns: boolean
+      }
       record_invite_lookup_attempt: {
         Args: {
           _code: string
