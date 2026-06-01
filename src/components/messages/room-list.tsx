@@ -30,6 +30,30 @@ function roleLabel(role: RoleInRoom): string {
   }
 }
 
+const PENS = ["tennis", "pool", "iris", "pink", "orange"] as const;
+type Pen = (typeof PENS)[number];
+
+function hash(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+
+function pickPens(seed: string): [Pen, Pen] {
+  const h = hash(seed);
+  const a = h % PENS.length;
+  const b = (a + 1 + (Math.floor(h / PENS.length) % (PENS.length - 1))) % PENS.length;
+  return [PENS[a], PENS[b]];
+}
+
+const PEN_CLASSES: Record<Pen, string> = {
+  tennis: "bg-pen-tennis-wash text-pen-tennis-ink",
+  pool: "bg-pen-pool-wash text-pen-pool-ink",
+  iris: "bg-pen-iris-wash text-pen-iris-ink",
+  pink: "bg-pen-pink-wash text-pen-pink-ink",
+  orange: "bg-pen-orange-wash text-pen-orange-ink",
+};
+
 /**
  * Render the headline name(s) for a room from the current user's POV.
  * Shows everyone except "me".
@@ -97,16 +121,17 @@ export function RoomList({
 
         const front = people[0];
         const back = people[1];
+        const [frontPen, backPen] = pickPens(room.id);
 
         const inner = (
           <div className="flex items-start gap-3 px-4 py-3.5 transition-colors hover:bg-elevated focus-visible:bg-elevated focus-visible:outline-none">
             <div className="relative size-11 shrink-0">
               {back ? (
-                <div className="absolute right-0 top-0 grid size-8 place-items-center rounded-full bg-elevated text-[11px] font-black uppercase text-text-secondary ring-2 ring-card">
+                <div className={cn("absolute right-0 top-0 grid size-8 place-items-center rounded-full text-[11px] font-black uppercase ring-2 ring-card", PEN_CLASSES[backPen])}>
                   {back.initial}
                 </div>
               ) : null}
-              <div className="absolute bottom-0 left-0 grid size-8 place-items-center rounded-full bg-elevated text-[11px] font-black uppercase text-text-secondary ring-2 ring-card">
+              <div className={cn("absolute bottom-0 left-0 grid size-8 place-items-center rounded-full text-[11px] font-black uppercase ring-2 ring-card", PEN_CLASSES[frontPen])}>
                 {front?.initial ?? "·"}
               </div>
               {unread ? (
