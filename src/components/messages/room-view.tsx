@@ -12,6 +12,7 @@ import {
   type MessageDTO,
   type RoleInRoom,
 } from "@/lib/messages.functions";
+import { voiceTranscribe } from "@/lib/voice.functions";
 import { useVoiceCapture } from "@/hooks/use-voice-capture";
 
 function roleWord(role: RoleInRoom): string {
