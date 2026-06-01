@@ -13,7 +13,15 @@ type Item = {
 };
 
 export function AthleteBottomNav() {
+  const unread = useMessagesUnread();
+  const items: Item[] = [
+    { label: "Dashboard", icon: LayoutDashboard, to: "/athlete" },
+    { label: "Plans", icon: ClipboardList, to: "/athlete/plans", matchPrefix: "/athlete/plans" },
+    { label: "Messages", icon: MessageSquare, to: "/athlete/messages", matchPrefix: "/athlete/messages", unreadCount: unread },
+    { label: "Resources", icon: BookOpen },
+  ];
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const ITEMS = items;
 
   return (
     <nav
