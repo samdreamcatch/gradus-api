@@ -91,7 +91,7 @@ function AthletePlansPage() {
         </span>
       </p>
       {plans.length > 0 ? (
-        <p className="mt-2 font-hand text-xl text-text-secondary">Your plans</p>
+        <p className="mt-2 font-hand text-xl text-text-secondary">From your coach</p>
       ) : null}
 
       <div className="mt-5 grid grid-cols-3 gap-2">
