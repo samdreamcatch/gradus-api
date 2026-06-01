@@ -111,3 +111,48 @@ export const submitPlanSession = createServerFn({ method: "POST" })
     if (error) dbError(error);
     return { ok: true as const };
   });
+
+/** Athlete-only: submit a session for one of the signed-in athlete's plans. */
+export const submitAthletePlanSession = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        planId: z.string().uuid(),
+        stateIndex: z.number().int().min(0).max(4),
+        note: z.string().max(2000).default(""),
+        durationSeconds: z.number().int().min(0).max(86_400).default(0),
+      })
+      .parse(input),
+  )
+  .handler(async ({ context, data }) => {
+    const supabase = context.supabase as Client;
+
+    const [{ data: athlete, error: aErr }, { data: plan, error: pErr }] = await Promise.all([
+      supabase
+        .from("athletes")
+        .select("id")
+        .eq("user_id", context.userId)
+        .maybeSingle(),
+      supabase
+        .from("plans")
+        .select("id, athlete_id")
+        .eq("id", data.planId)
+        .maybeSingle(),
+    ]);
+    if (aErr) dbError(aErr);
+    if (pErr) dbError(pErr);
+    if (!athlete) throw new Error("Athlete profile not found");
+    if (!plan || plan.athlete_id !== athlete.id) throw new Error("Plan not found");
+
+    const { error } = await supabase.from("plan_sessions").insert({
+      plan_id: data.planId,
+      athlete_id: athlete.id,
+      parent_id: null,
+      state_index: data.stateIndex,
+      note: data.note,
+      duration_seconds: data.durationSeconds,
+    });
+    if (error) dbError(error);
+    return { ok: true as const };
+  });
