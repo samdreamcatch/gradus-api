@@ -14,17 +14,15 @@ import {
   useSaveCoachLevels,
   useSaveCoachProfile,
 } from "@/hooks/use-coach-profile";
-import { coachInviteQueryOptions } from "@/hooks/use-coach-invite";
+
 import { InviteCard } from "@/components/onboarding/invite-card";
 import { CoachBottomNav } from "@/components/coach/bottom-nav";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 
 export const Route = createFileRoute("/_authenticated/coach/onboarding")({
-  loader: ({ context }) => {
-    // Prime both queries — invite is shown on step 5.
-    context.queryClient.prefetchQuery(coachInviteQueryOptions);
-    return context.queryClient.ensureQueryData(coachProfileQueryOptions);
-  },
+  // No loader: this route is fully behind client-side auth. Running a loader
+  // here would fire the protected server fn during SSR with no bearer token
+  // and 401, crashing SSR into a blank screen.
   component: OnboardingPage,
 });
 
@@ -32,13 +30,15 @@ export const Route = createFileRoute("/_authenticated/coach/onboarding")({
 type LevelEntry = { sport: string; levelKey: string; hoursPerWeek: number };
 
 function OnboardingPage() {
-  const { data } = useSuspenseQuery(coachProfileQueryOptions);
+  const { data } = useQuery(coachProfileQueryOptions);
   const navigate = useNavigate();
 
   // If already onboarded, bounce to /coach
   useEffect(() => {
-    if (data.profile.onboardedAt) navigate({ to: "/coach" });
-  }, [data.profile.onboardedAt, navigate]);
+    if (data?.profile.onboardedAt) navigate({ to: "/coach" });
+  }, [data?.profile.onboardedAt, navigate]);
+
+  if (!data) return null;
 
   const [step, setStep] = useState(1);
   const [firstName, setFirstName] = useState(data.profile.firstName);
