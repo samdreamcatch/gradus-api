@@ -41,17 +41,27 @@ function roleLabel(role: RoleInRoom): string {
  * Render the headline name(s) for a room from the current user's POV.
  * Shows everyone except "me".
  */
-function others(room: RoomSummary): { display: string; initials: string } {
+function others(
+  room: RoomSummary,
+): { display: string; people: { initial: string; role: RoleInRoom }[] } {
   const them = room.participants.filter((p) => p.role !== room.myRole);
-  if (them.length === 0) return { display: "Conversation", initials: "·" };
-  const parts = them.map((p) => {
+  if (them.length === 0) return { display: "Conversation", people: [] };
+  // Sort so athlete renders first (front), then parent/coach behind.
+  const ordered = [...them].sort((a, b) => {
+    const rank = (r: RoleInRoom) => (r === "athlete" ? 0 : r === "parent" ? 1 : 2);
+    return rank(a.role) - rank(b.role);
+  });
+  const parts = ordered.map((p) => {
     const prefix =
       p.role === "coach" ? "Coach " : p.role === "parent" ? "Parent " : "";
     return `${prefix}${p.firstName}`.trim();
   });
   return {
     display: parts.join(" & "),
-    initials: initialsFor(them.map((p) => p.firstName)),
+    people: ordered.map((p) => ({
+      initial: p.firstName.trim().charAt(0).toUpperCase() || "·",
+      role: p.role,
+    })),
   };
 }
 
