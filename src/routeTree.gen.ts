@@ -29,6 +29,7 @@ import { Route as AuthenticatedCoachPlansRouteImport } from './routes/_authentic
 import { Route as AuthenticatedCoachOnboardingRouteImport } from './routes/_authenticated/coach.onboarding'
 import { Route as AuthenticatedParentPlansIndexRouteImport } from './routes/_authenticated/parent.plans.index'
 import { Route as AuthenticatedCoachPlansIndexRouteImport } from './routes/_authenticated/coach.plans.index'
+import { Route as AuthenticatedAthletePlansIndexRouteImport } from './routes/_authenticated/athlete.plans.index'
 import { Route as AuthenticatedParentPlansPlanIdRouteImport } from './routes/_authenticated/parent.plans.$planId'
 import { Route as AuthenticatedCoachPlansPlanIdRouteImport } from './routes/_authenticated/coach.plans.$planId'
 
@@ -136,6 +137,12 @@ const AuthenticatedCoachPlansIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedCoachPlansRoute,
   } as any)
+const AuthenticatedAthletePlansIndexRoute =
+  AuthenticatedAthletePlansIndexRouteImport.update({
+    id: '/plans/',
+    path: '/plans/',
+    getParentRoute: () => AuthenticatedAthleteRoute,
+  } as any)
 const AuthenticatedParentPlansPlanIdRoute =
   AuthenticatedParentPlansPlanIdRouteImport.update({
     id: '/plans/$planId',
@@ -152,7 +159,7 @@ const AuthenticatedCoachPlansPlanIdRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
-  '/athlete': typeof AuthenticatedAthleteRoute
+  '/athlete': typeof AuthenticatedAthleteRouteWithChildren
   '/parent': typeof AuthenticatedParentRouteWithChildren
   '/signup/athlete': typeof SignupAthleteRouteWithChildren
   '/signup/coach': typeof SignupCoachRoute
@@ -169,13 +176,14 @@ export interface FileRoutesByFullPath {
   '/parent/': typeof AuthenticatedParentIndexRoute
   '/coach/plans/$planId': typeof AuthenticatedCoachPlansPlanIdRoute
   '/parent/plans/$planId': typeof AuthenticatedParentPlansPlanIdRoute
+  '/athlete/plans/': typeof AuthenticatedAthletePlansIndexRoute
   '/coach/plans/': typeof AuthenticatedCoachPlansIndexRoute
   '/parent/plans/': typeof AuthenticatedParentPlansIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
-  '/athlete': typeof AuthenticatedAthleteRoute
+  '/athlete': typeof AuthenticatedAthleteRouteWithChildren
   '/signup/athlete': typeof SignupAthleteRouteWithChildren
   '/signup/coach': typeof SignupCoachRoute
   '/signup/parent': typeof SignupParentRouteWithChildren
@@ -190,6 +198,7 @@ export interface FileRoutesByTo {
   '/parent': typeof AuthenticatedParentIndexRoute
   '/coach/plans/$planId': typeof AuthenticatedCoachPlansPlanIdRoute
   '/parent/plans/$planId': typeof AuthenticatedParentPlansPlanIdRoute
+  '/athlete/plans': typeof AuthenticatedAthletePlansIndexRoute
   '/coach/plans': typeof AuthenticatedCoachPlansIndexRoute
   '/parent/plans': typeof AuthenticatedParentPlansIndexRoute
 }
@@ -198,7 +207,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/login': typeof LoginRoute
-  '/_authenticated/athlete': typeof AuthenticatedAthleteRoute
+  '/_authenticated/athlete': typeof AuthenticatedAthleteRouteWithChildren
   '/_authenticated/parent': typeof AuthenticatedParentRouteWithChildren
   '/signup/athlete': typeof SignupAthleteRouteWithChildren
   '/signup/coach': typeof SignupCoachRoute
@@ -215,6 +224,7 @@ export interface FileRoutesById {
   '/_authenticated/parent/': typeof AuthenticatedParentIndexRoute
   '/_authenticated/coach/plans/$planId': typeof AuthenticatedCoachPlansPlanIdRoute
   '/_authenticated/parent/plans/$planId': typeof AuthenticatedParentPlansPlanIdRoute
+  '/_authenticated/athlete/plans/': typeof AuthenticatedAthletePlansIndexRoute
   '/_authenticated/coach/plans/': typeof AuthenticatedCoachPlansIndexRoute
   '/_authenticated/parent/plans/': typeof AuthenticatedParentPlansIndexRoute
 }
@@ -240,6 +250,7 @@ export interface FileRouteTypes {
     | '/parent/'
     | '/coach/plans/$planId'
     | '/parent/plans/$planId'
+    | '/athlete/plans/'
     | '/coach/plans/'
     | '/parent/plans/'
   fileRoutesByTo: FileRoutesByTo
@@ -261,6 +272,7 @@ export interface FileRouteTypes {
     | '/parent'
     | '/coach/plans/$planId'
     | '/parent/plans/$planId'
+    | '/athlete/plans'
     | '/coach/plans'
     | '/parent/plans'
   id:
@@ -285,6 +297,7 @@ export interface FileRouteTypes {
     | '/_authenticated/parent/'
     | '/_authenticated/coach/plans/$planId'
     | '/_authenticated/parent/plans/$planId'
+    | '/_authenticated/athlete/plans/'
     | '/_authenticated/coach/plans/'
     | '/_authenticated/parent/plans/'
   fileRoutesById: FileRoutesById
@@ -440,6 +453,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCoachPlansIndexRouteImport
       parentRoute: typeof AuthenticatedCoachPlansRoute
     }
+    '/_authenticated/athlete/plans/': {
+      id: '/_authenticated/athlete/plans/'
+      path: '/plans'
+      fullPath: '/athlete/plans/'
+      preLoaderRoute: typeof AuthenticatedAthletePlansIndexRouteImport
+      parentRoute: typeof AuthenticatedAthleteRoute
+    }
     '/_authenticated/parent/plans/$planId': {
       id: '/_authenticated/parent/plans/$planId'
       path: '/plans/$planId'
@@ -456,6 +476,17 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface AuthenticatedAthleteRouteChildren {
+  AuthenticatedAthletePlansIndexRoute: typeof AuthenticatedAthletePlansIndexRoute
+}
+
+const AuthenticatedAthleteRouteChildren: AuthenticatedAthleteRouteChildren = {
+  AuthenticatedAthletePlansIndexRoute: AuthenticatedAthletePlansIndexRoute,
+}
+
+const AuthenticatedAthleteRouteWithChildren =
+  AuthenticatedAthleteRoute._addFileChildren(AuthenticatedAthleteRouteChildren)
 
 interface AuthenticatedParentRouteChildren {
   AuthenticatedParentIndexRoute: typeof AuthenticatedParentIndexRoute
@@ -489,7 +520,7 @@ const AuthenticatedCoachPlansRouteWithChildren =
   )
 
 interface AuthenticatedRouteChildren {
-  AuthenticatedAthleteRoute: typeof AuthenticatedAthleteRoute
+  AuthenticatedAthleteRoute: typeof AuthenticatedAthleteRouteWithChildren
   AuthenticatedParentRoute: typeof AuthenticatedParentRouteWithChildren
   AuthenticatedCoachOnboardingRoute: typeof AuthenticatedCoachOnboardingRoute
   AuthenticatedCoachPlansRoute: typeof AuthenticatedCoachPlansRouteWithChildren
@@ -498,7 +529,7 @@ interface AuthenticatedRouteChildren {
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
-  AuthenticatedAthleteRoute: AuthenticatedAthleteRoute,
+  AuthenticatedAthleteRoute: AuthenticatedAthleteRouteWithChildren,
   AuthenticatedParentRoute: AuthenticatedParentRouteWithChildren,
   AuthenticatedCoachOnboardingRoute: AuthenticatedCoachOnboardingRoute,
   AuthenticatedCoachPlansRoute: AuthenticatedCoachPlansRouteWithChildren,
@@ -551,3 +582,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
