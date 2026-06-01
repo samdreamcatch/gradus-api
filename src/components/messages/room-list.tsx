@@ -30,40 +30,13 @@ function roleLabel(role: RoleInRoom): string {
   }
 }
 
-const PENS = ["tennis", "pool", "iris", "pink", "orange"] as const;
-type Pen = (typeof PENS)[number];
-
-function hash(s: string): number {
-  let h = 0;
-  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
-  return Math.abs(h);
-}
-
-function pickPens(seed: string): [Pen, Pen] {
-  const h = hash(seed);
-  const a = h % PENS.length;
-  const b = (a + 1 + (Math.floor(h / PENS.length) % (PENS.length - 1))) % PENS.length;
-  return [PENS[a], PENS[b]];
-}
-
-const PEN_STYLES: Record<Pen, { backgroundColor: string; color: string }> = {
-  tennis: { backgroundColor: "var(--pen-tennis-wash)", color: "var(--pen-tennis-ink)" },
-  pool: { backgroundColor: "var(--pen-pool-wash)", color: "var(--pen-pool-ink)" },
-  iris: { backgroundColor: "var(--pen-iris-wash)", color: "var(--pen-iris-ink)" },
-  pink: { backgroundColor: "var(--pen-pink-wash)", color: "var(--pen-pink-ink)" },
-  orange: { backgroundColor: "var(--pen-orange-wash)", color: "var(--pen-orange-ink)" },
-};
-
 /**
  * Render the headline name(s) for a room from the current user's POV.
  * Shows everyone except "me".
  */
-function others(
-  room: RoomSummary,
-): { display: string; people: { initial: string; role: RoleInRoom }[] } {
+function others(room: RoomSummary): { display: string } {
   const them = room.participants.filter((p) => p.role !== room.myRole);
-  if (them.length === 0) return { display: "Conversation", people: [] };
-  // Sort so athlete renders first (front), then parent/coach behind.
+  if (them.length === 0) return { display: "Conversation" };
   const ordered = [...them].sort((a, b) => {
     const rank = (r: RoleInRoom) => (r === "athlete" ? 0 : r === "parent" ? 1 : 2);
     return rank(a.role) - rank(b.role);
@@ -73,14 +46,9 @@ function others(
       p.role === "coach" ? "Coach " : p.role === "parent" ? "Parent " : "";
     return `${prefix}${p.firstName}`.trim();
   });
-  return {
-    display: parts.join(" & "),
-    people: ordered.map((p) => ({
-      initial: p.firstName.trim().charAt(0).toUpperCase() || "·",
-      role: p.role,
-    })),
-  };
+  return { display: parts.join(" & ") };
 }
+
 
 export function RoomList({
   rooms,
@@ -103,7 +71,7 @@ export function RoomList({
   return (
     <ul className="divide-y divide-divider rounded-2xl border border-divider bg-card overflow-hidden">
       {rooms.map((room) => {
-        const { display, people } = others(room);
+        const { display } = others(room);
         const last = room.lastMessage;
         const previewSenderPrefix =
           last && last.senderRole !== room.myRole
@@ -119,28 +87,17 @@ export function RoomList({
 
         const unread = room.unreadCount > 0;
 
-        const front = people[0];
-        const back = people[1];
-        const [frontPen, backPen] = pickPens(room.id);
 
         const inner = (
           <div className="flex items-start gap-3 px-4 py-3.5 transition-colors hover:bg-elevated focus-visible:bg-elevated focus-visible:outline-none">
-            <div className="relative size-11 shrink-0">
-              {back ? (
-                <div style={PEN_STYLES[backPen]} className="absolute right-0 top-0 grid size-8 place-items-center rounded-full text-[11px] font-black uppercase ring-2 ring-card">
-                  {back.initial}
-                </div>
-              ) : null}
-              <div style={PEN_STYLES[frontPen]} className="absolute bottom-0 left-0 grid size-8 place-items-center rounded-full text-[11px] font-black uppercase ring-2 ring-card">
-                {front?.initial ?? "·"}
-              </div>
-              {unread ? (
-                <span
-                  aria-hidden
-                  className="absolute -right-0.5 -top-0.5 inline-flex h-3 w-3 rounded-full bg-attention ring-2 ring-card"
-                />
-              ) : null}
-            </div>
+            {unread ? (
+              <span
+                aria-hidden
+                className="mt-2 inline-flex h-2.5 w-2.5 shrink-0 rounded-full bg-attention"
+              />
+            ) : null}
+
+
 
 
 
