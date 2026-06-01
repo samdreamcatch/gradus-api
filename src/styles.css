@@ -152,6 +152,17 @@
   --attention-ink: var(--pen-orange-ink);
   --attention-foreground: oklch(0.20 0.05 55); /* dark ink for contrast on bright orange in dark mode */
 
+  /* Iris pen (dark) */
+  --pen-iris: oklch(0.75 0.17 310);
+  --pen-iris-wash: oklch(0.32 0.08 310 / 0.55);
+  --pen-iris-ink: oklch(0.94 0.06 310);
+
+  /* Pink pen (dark) */
+  --pen-pink: oklch(0.80 0.14 8);
+  --pen-pink-wash: oklch(0.32 0.07 8 / 0.55);
+  --pen-pink-ink: oklch(0.95 0.05 8);
+
+
 
   --cream: oklch(0.32 0.015 85);             /* dim parchment for dark mode */
 }
