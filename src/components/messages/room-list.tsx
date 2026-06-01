@@ -125,22 +125,14 @@ export function RoomList({
 
         const inner = (
           <div className="flex items-start gap-3 px-4 py-3.5 transition-colors hover:bg-elevated focus-visible:bg-elevated focus-visible:outline-none">
-            <div className="relative size-11 shrink-0">
-              {back ? (
-                <div style={PEN_STYLES[backPen]} className="absolute right-0 top-0 grid size-8 place-items-center rounded-full text-[11px] font-black uppercase ring-2 ring-card">
-                  {back.initial}
-                </div>
-              ) : null}
-              <div style={PEN_STYLES[frontPen]} className="absolute bottom-0 left-0 grid size-8 place-items-center rounded-full text-[11px] font-black uppercase ring-2 ring-card">
-                {front?.initial ?? "·"}
-              </div>
-              {unread ? (
-                <span
-                  aria-hidden
-                  className="absolute -right-0.5 -top-0.5 inline-flex h-3 w-3 rounded-full bg-attention ring-2 ring-card"
-                />
-              ) : null}
-            </div>
+            {unread ? (
+              <span
+                aria-hidden
+                className="mt-2 inline-flex h-2.5 w-2.5 shrink-0 rounded-full bg-attention"
+              />
+            ) : null}
+
+
 
 
 
