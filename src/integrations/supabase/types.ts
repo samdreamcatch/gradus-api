@@ -390,6 +390,7 @@ export type Database = {
           duration_seconds: number | null
           id: string
           kind: string
+          plan_id: string | null
           room_id: string
           sender_role: string
           sender_user_id: string
@@ -401,6 +402,7 @@ export type Database = {
           duration_seconds?: number | null
           id?: string
           kind: string
+          plan_id?: string | null
           room_id: string
           sender_role: string
           sender_user_id: string
@@ -412,6 +414,7 @@ export type Database = {
           duration_seconds?: number | null
           id?: string
           kind?: string
+          plan_id?: string | null
           room_id?: string
           sender_role?: string
           sender_user_id?: string
