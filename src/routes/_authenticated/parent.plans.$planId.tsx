@@ -479,7 +479,7 @@ function RunningPill({
         type="button"
         onClick={onTogglePause}
         aria-label={running ? "Pause session timer" : "Resume session timer"}
-        className="inline-flex size-11 shrink-0 items-center justify-center rounded-full bg-attention/15 text-attention-ink ring-1 ring-attention/40"
+        className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-attention/15 text-attention-ink ring-1 ring-attention/40"
       >
         {running ? <Pause className="size-4" /> : <Play className="size-4" />}
       </button>
