@@ -71,7 +71,7 @@ export function RoomList({
   return (
     <ul className="divide-y divide-divider rounded-2xl border border-divider bg-card overflow-hidden">
       {rooms.map((room) => {
-        const { display, people } = others(room);
+        const { display } = others(room);
         const last = room.lastMessage;
         const previewSenderPrefix =
           last && last.senderRole !== room.myRole
@@ -87,9 +87,6 @@ export function RoomList({
 
         const unread = room.unreadCount > 0;
 
-        const front = people[0];
-        const back = people[1];
-        const [frontPen, backPen] = pickPens(room.id);
 
         const inner = (
           <div className="flex items-start gap-3 px-4 py-3.5 transition-colors hover:bg-elevated focus-visible:bg-elevated focus-visible:outline-none">
