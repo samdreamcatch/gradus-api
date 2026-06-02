@@ -445,3 +445,126 @@ export const getRoomActivePlan = createServerFn({ method: "GET" })
 
     return { plan: plan ? { id: plan.id, title: plan.title || "Untitled plan" } : null };
   });
+
+/* ---------------- listMyMessageTargets (role-aware picker list) ---------------- */
+
+export type MessageTargetDTO = {
+  athleteId: string;
+  primaryLabel: string;
+  secondaryLabel: string | null;
+};
+
+export const listMyMessageTargets = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { userId } = context as unknown as ContextEnvelope;
+    const me = await resolveMyIdentity(userId);
+
+    if (me.coach) {
+      const { data, error } = await supabaseAdmin
+        .from("coach_athletes")
+        .select("athlete_id, athletes!inner(id, first_name, last_name)")
+        .eq("coach_id", me.coach.id);
+      if (error) dbError(error, "Couldn't load roster");
+      const targets: MessageTargetDTO[] = (data ?? [])
+        .map((r) => {
+          const a = r.athletes as unknown as { id: string; first_name: string; last_name: string };
+          const name = `${a.first_name ?? ""} ${a.last_name ?? ""}`.trim() || "Athlete";
+          return { athleteId: a.id, primaryLabel: name, secondaryLabel: null };
+        })
+        .sort((a, b) => a.primaryLabel.localeCompare(b.primaryLabel));
+      return { targets };
+    }
+
+    if (me.parent) {
+      const { data, error } = await supabaseAdmin
+        .from("athletes")
+        .select("id, first_name, last_name, coach_athletes!inner(coach_id, coach_profiles!inner(id, first_name, last_name))")
+        .eq("parent_id", me.parent.id);
+      if (error) dbError(error, "Couldn't load coaches");
+
+      const targets: MessageTargetDTO[] = [];
+      for (const row of data ?? []) {
+        const athlete = row as unknown as {
+          id: string;
+          first_name: string;
+          last_name: string;
+          coach_athletes: Array<{
+            coach_profiles: { id: string; first_name: string; last_name: string };
+          }>;
+        };
+        const athleteFirst = athlete.first_name || "your athlete";
+        for (const link of athlete.coach_athletes ?? []) {
+          const cp = link.coach_profiles;
+          const coachName = `${cp.first_name ?? ""} ${cp.last_name ?? ""}`.trim() || "your coach";
+          targets.push({
+            athleteId: athlete.id,
+            primaryLabel: `Coach ${coachName}`,
+            secondaryLabel: `about ${athleteFirst}`,
+          });
+        }
+      }
+      targets.sort((a, b) => a.primaryLabel.localeCompare(b.primaryLabel));
+      return { targets };
+    }
+
+    return { targets: [] as MessageTargetDTO[] };
+  });
+
+/* ---------------- ensureRoomForTarget (role-aware room upsert) ---------------- */
+
+export const ensureRoomForTarget = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ athleteId: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { userId } = context as unknown as ContextEnvelope;
+    const me = await resolveMyIdentity(userId);
+
+    let coachId: string | null = null;
+
+    if (me.coach) {
+      const { data: link } = await supabaseAdmin
+        .from("coach_athletes")
+        .select("id")
+        .eq("coach_id", me.coach.id)
+        .eq("athlete_id", data.athleteId)
+        .maybeSingle();
+      if (!link) throw new Error("Athlete is not on your roster");
+      coachId = me.coach.id;
+    } else if (me.parent) {
+      const { data: athlete } = await supabaseAdmin
+        .from("athletes")
+        .select("id, parent_id")
+        .eq("id", data.athleteId)
+        .maybeSingle();
+      if (!athlete || athlete.parent_id !== me.parent.id) {
+        throw new Error("Athlete is not on your account");
+      }
+      const { data: link } = await supabaseAdmin
+        .from("coach_athletes")
+        .select("coach_id")
+        .eq("athlete_id", data.athleteId)
+        .limit(1)
+        .maybeSingle();
+      if (!link) throw new Error("No coach linked to this athlete yet");
+      coachId = link.coach_id;
+    } else {
+      throw new Error("You don't have a profile that can start conversations");
+    }
+
+    const { data: existing } = await supabaseAdmin
+      .from("message_rooms")
+      .select("id")
+      .eq("coach_id", coachId!)
+      .eq("athlete_id", data.athleteId)
+      .maybeSingle();
+    if (existing) return { id: existing.id };
+
+    const { data: created, error } = await supabaseAdmin
+      .from("message_rooms")
+      .insert({ coach_id: coachId!, athlete_id: data.athleteId })
+      .select("id")
+      .single();
+    if (error) dbError(error, "Couldn't open conversation");
+    return { id: created!.id };
+  });
