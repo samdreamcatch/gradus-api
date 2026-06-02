@@ -26,7 +26,12 @@ function CoachMessages() {
           <MessagesHeader />
         </div>
         <div className="pt-3">
-          <NewConversationButton />
+          <NewConversationButton
+            basePath="/coach/messages"
+            roomsQueryKey={["message-rooms", "coach"]}
+            targetsQueryKey={["message-targets", "coach"]}
+            emptyMessage="No athletes on your roster yet."
+          />
         </div>
       </div>
       <div className="mt-5">
