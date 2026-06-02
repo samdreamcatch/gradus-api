@@ -19,7 +19,7 @@ import {
 } from "@/lib/messages.functions";
 
 type Props = {
-  basePath: "/coach/messages" | "/parent/messages";
+  basePath: "/coach/messages" | "/parent/messages" | "/athlete/messages";
   roomsQueryKey: readonly unknown[];
   targetsQueryKey: readonly unknown[];
   emptyMessage: ReactNode;
