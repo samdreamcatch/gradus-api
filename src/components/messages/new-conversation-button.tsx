@@ -19,7 +19,7 @@ import {
 } from "@/lib/messages.functions";
 
 type Props = {
-  basePath: "/coach/messages" | "/parent/messages";
+  basePath: "/coach/messages" | "/parent/messages" | "/athlete/messages";
   roomsQueryKey: readonly unknown[];
   targetsQueryKey: readonly unknown[];
   emptyMessage: ReactNode;
@@ -44,7 +44,8 @@ export function NewConversationButton({
   });
 
   const startMut = useMutation({
-    mutationFn: (athleteId: string) => openRoom({ data: { athleteId } }),
+    mutationFn: (t: MessageTargetDTO) =>
+      openRoom({ data: { coachId: t.coachId, athleteId: t.athleteId } }),
     onSuccess: ({ id }) => {
       queryClient.invalidateQueries({ queryKey: roomsQueryKey });
       setOpen(false);
@@ -77,11 +78,11 @@ export function NewConversationButton({
         ) : (
           <ul className="divide-y divide-divider overflow-hidden rounded-2xl border border-divider bg-card">
             {targets.map((t, idx) => (
-              <li key={`${t.athleteId}-${idx}`}>
+              <li key={`${t.coachId}-${t.athleteId}-${idx}`}>
                 <button
                   type="button"
                   disabled={startMut.isPending}
-                  onClick={() => startMut.mutate(t.athleteId)}
+                  onClick={() => startMut.mutate(t)}
                   className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-elevated disabled:opacity-60"
                 >
                   <span className="min-w-0 flex-1">
