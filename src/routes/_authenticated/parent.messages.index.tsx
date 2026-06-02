@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ParentBottomNav } from "@/components/parent/bottom-nav";
 import { MessagesHeader } from "@/components/messages/messages-header";
 import { RoomList } from "@/components/messages/room-list";
+import { NewConversationButton } from "@/components/messages/new-conversation-button";
 import { listMyRooms } from "@/lib/messages.functions";
 
 export const Route = createFileRoute("/_authenticated/parent/messages/")({
@@ -20,14 +21,26 @@ function ParentMessages() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 pt-10 pb-24">
-      <MessagesHeader subtitle="Your athlete's coaches" />
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <MessagesHeader subtitle="Your athlete's coaches" />
+        </div>
+        <div className="pt-3">
+          <NewConversationButton
+            basePath="/parent/messages"
+            roomsQueryKey={["message-rooms", "parent"]}
+            targetsQueryKey={["message-targets", "parent"]}
+            emptyMessage="No coaches linked to your athletes yet."
+          />
+        </div>
+      </div>
       <div className="mt-5">
         {isLoading ? (
           <p className="py-5 text-center text-sm text-text-secondary">Loading…</p>
         ) : (
           <RoomList
             rooms={rooms}
-            emptyMessage="No conversations yet — they'll appear once a coach reaches out."
+            emptyMessage="No conversations yet — tap New to start one."
             renderRoomLink={(roomId, children) => (
               <Link to="/parent/messages/$roomId" params={{ roomId }}>
                 {children}
