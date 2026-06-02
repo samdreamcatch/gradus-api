@@ -449,6 +449,7 @@ export const getRoomActivePlan = createServerFn({ method: "GET" })
 /* ---------------- listMyMessageTargets (role-aware picker list) ---------------- */
 
 export type MessageTargetDTO = {
+  coachId: string;
   athleteId: string;
   primaryLabel: string;
   secondaryLabel: string | null;
@@ -466,11 +467,12 @@ export const listMyMessageTargets = createServerFn({ method: "GET" })
         .select("athlete_id, athletes!inner(id, first_name, last_name)")
         .eq("coach_id", me.coach.id);
       if (error) dbError(error, "Couldn't load roster");
+      const coachId = me.coach.id;
       const targets: MessageTargetDTO[] = (data ?? [])
         .map((r) => {
           const a = r.athletes as unknown as { id: string; first_name: string; last_name: string };
           const name = `${a.first_name ?? ""} ${a.last_name ?? ""}`.trim() || "Athlete";
-          return { athleteId: a.id, primaryLabel: name, secondaryLabel: null };
+          return { coachId, athleteId: a.id, primaryLabel: name, secondaryLabel: null };
         })
         .sort((a, b) => a.primaryLabel.localeCompare(b.primaryLabel));
       return { targets };
@@ -490,6 +492,7 @@ export const listMyMessageTargets = createServerFn({ method: "GET" })
           first_name: string;
           last_name: string;
           coach_athletes: Array<{
+            coach_id: string;
             coach_profiles: { id: string; first_name: string; last_name: string };
           }>;
         };
@@ -498,6 +501,7 @@ export const listMyMessageTargets = createServerFn({ method: "GET" })
           const cp = link.coach_profiles;
           const coachName = `${cp.first_name ?? ""} ${cp.last_name ?? ""}`.trim() || "your coach";
           targets.push({
+            coachId: link.coach_id,
             athleteId: athlete.id,
             primaryLabel: `Coach ${coachName}`,
             secondaryLabel: `about ${athleteFirst}`,
@@ -508,6 +512,31 @@ export const listMyMessageTargets = createServerFn({ method: "GET" })
       return { targets };
     }
 
+    if (me.athlete) {
+      const { data, error } = await supabaseAdmin
+        .from("coach_athletes")
+        .select("coach_id, coach_profiles!inner(id, first_name, last_name)")
+        .eq("athlete_id", me.athlete.id);
+      if (error) dbError(error, "Couldn't load coaches");
+      const athleteId = me.athlete.id;
+      const targets: MessageTargetDTO[] = (data ?? [])
+        .map((r) => {
+          const row = r as unknown as {
+            coach_id: string;
+            coach_profiles: { id: string; first_name: string; last_name: string };
+          };
+          const coachName = `${row.coach_profiles.first_name ?? ""} ${row.coach_profiles.last_name ?? ""}`.trim() || "your coach";
+          return {
+            coachId: row.coach_id,
+            athleteId,
+            primaryLabel: `Coach ${coachName}`,
+            secondaryLabel: null,
+          };
+        })
+        .sort((a, b) => a.primaryLabel.localeCompare(b.primaryLabel));
+      return { targets };
+    }
+
     return { targets: [] as MessageTargetDTO[] };
   });
 
@@ -515,22 +544,15 @@ export const listMyMessageTargets = createServerFn({ method: "GET" })
 
 export const ensureRoomForTarget = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) => z.object({ athleteId: z.string().uuid() }).parse(input))
+  .inputValidator((input) =>
+    z.object({ coachId: z.string().uuid(), athleteId: z.string().uuid() }).parse(input),
+  )
   .handler(async ({ data, context }) => {
     const { userId } = context as unknown as ContextEnvelope;
     const me = await resolveMyIdentity(userId);
 
-    let coachId: string | null = null;
-
     if (me.coach) {
-      const { data: link } = await supabaseAdmin
-        .from("coach_athletes")
-        .select("id")
-        .eq("coach_id", me.coach.id)
-        .eq("athlete_id", data.athleteId)
-        .maybeSingle();
-      if (!link) throw new Error("Athlete is not on your roster");
-      coachId = me.coach.id;
+      if (me.coach.id !== data.coachId) throw new Error("Not authorized to open this conversation");
     } else if (me.parent) {
       const { data: athlete } = await supabaseAdmin
         .from("athletes")
@@ -540,29 +562,31 @@ export const ensureRoomForTarget = createServerFn({ method: "POST" })
       if (!athlete || athlete.parent_id !== me.parent.id) {
         throw new Error("Athlete is not on your account");
       }
-      const { data: link } = await supabaseAdmin
-        .from("coach_athletes")
-        .select("coach_id")
-        .eq("athlete_id", data.athleteId)
-        .limit(1)
-        .maybeSingle();
-      if (!link) throw new Error("No coach linked to this athlete yet");
-      coachId = link.coach_id;
+    } else if (me.athlete) {
+      if (me.athlete.id !== data.athleteId) throw new Error("Not authorized to open this conversation");
     } else {
       throw new Error("You don't have a profile that can start conversations");
     }
 
+    const { data: link } = await supabaseAdmin
+      .from("coach_athletes")
+      .select("id")
+      .eq("coach_id", data.coachId)
+      .eq("athlete_id", data.athleteId)
+      .maybeSingle();
+    if (!link) throw new Error("That coach and athlete aren't linked");
+
     const { data: existing } = await supabaseAdmin
       .from("message_rooms")
       .select("id")
-      .eq("coach_id", coachId!)
+      .eq("coach_id", data.coachId)
       .eq("athlete_id", data.athleteId)
       .maybeSingle();
     if (existing) return { id: existing.id };
 
     const { data: created, error } = await supabaseAdmin
       .from("message_rooms")
-      .insert({ coach_id: coachId!, athlete_id: data.athleteId })
+      .insert({ coach_id: data.coachId, athlete_id: data.athleteId })
       .select("id")
       .single();
     if (error) dbError(error, "Couldn't open conversation");
