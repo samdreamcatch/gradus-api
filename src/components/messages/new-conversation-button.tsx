@@ -44,7 +44,8 @@ export function NewConversationButton({
   });
 
   const startMut = useMutation({
-    mutationFn: (athleteId: string) => openRoom({ data: { athleteId } }),
+    mutationFn: (t: MessageTargetDTO) =>
+      openRoom({ data: { coachId: t.coachId, athleteId: t.athleteId } }),
     onSuccess: ({ id }) => {
       queryClient.invalidateQueries({ queryKey: roomsQueryKey });
       setOpen(false);
