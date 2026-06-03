@@ -12,7 +12,7 @@ type PageTitleProps = {
 export function PageTitle({ children, subtitle }: PageTitleProps) {
   return (
     <>
-      <p
+      <h1
         className="font-display text-[28px] font-medium leading-[1.08] tracking-tight text-text-primary"
         style={{ letterSpacing: "-0.015em" }}
       >
@@ -43,7 +43,7 @@ export function PageTitle({ children, subtitle }: PageTitleProps) {
           />
           <span style={{ position: "relative", zIndex: 1 }}>{children}</span>
         </span>
-      </p>
+      </h1>
       {subtitle ? (
         <p className="mt-2 font-hand text-xl text-text-secondary">{subtitle}</p>
       ) : null}
