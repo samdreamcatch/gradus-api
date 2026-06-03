@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, ClipboardList, Users, MessageSquare, type LucideIcon } from "lucide-react";
+import { ClipboardList, Users, MessageSquare, Settings, type LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useMessagesUnread } from "@/hooks/use-messages-unread";
@@ -15,10 +15,10 @@ type Item = {
 export function CoachBottomNav() {
   const unread = useMessagesUnread();
   const ITEMS: Item[] = [
-    { label: "Dashboard", icon: LayoutDashboard, to: "/coach" },
     { label: "Plans", icon: ClipboardList, to: "/coach/plans" },
     { label: "Roster", icon: Users },
     { label: "Messages", icon: MessageSquare, to: "/coach/messages", matchPrefix: "/coach/messages", unreadCount: unread },
+    { label: "Settings", icon: Settings, to: "/coach/settings", matchPrefix: "/coach/settings" },
   ];
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
