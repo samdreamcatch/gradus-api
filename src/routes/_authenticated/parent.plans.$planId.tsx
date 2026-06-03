@@ -83,7 +83,7 @@ function ParentPlanDetail() {
         <p className="text-[12px] font-medium text-text-secondary">
           {plan.athleteFirstName} · Coach {plan.coachName}
         </p>
-        <h1 className="mt-0.5 font-display leading-[0.95] tracking-tight text-text-primary text-xl font-medium">
+        <h1 className="mt-0.5 font-display leading-[0.95] tracking-tight text-text-primary font-medium text-2xl text-center">
           {plan.title}
         </h1>
       </div>
