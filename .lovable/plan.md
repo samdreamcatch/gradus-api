@@ -1,46 +1,86 @@
-# High-leverage audit fixes
 
-Three targeted changes addressing the most impactful findings: a missing h1 on every page that uses `PageTitle`, a needless loading flash on the plan detail pages, and focus-hijacking on mount.
+## Goal
 
-## 1. Fix `PageTitle` and adopt it on hand-rolled titles
+Give every role a real Settings page reachable from a gear icon at the right edge of the bottom nav. Dashboards collapse to a text-only welcome; everything interactive moves into Settings, alongside fully editable versions of every field captured during onboarding.
 
-**Why:** `src/components/page-title.tsx` currently renders the title in a `<p>`. Every page using it ships with no `<h1>` — bad for SEO and for screen-reader landmarks. Separately, ~8 routes hand-roll their own heading at five different sizes for the same semantic role, so the design system isn't actually being used.
+## Navigation changes
 
-**Changes:**
-- In `page-title.tsx`, change the outer `<p>` to `<h1>`. Keep all current classes, the stripe span, and the subtitle `<p>` untouched (visual output stays identical).
-- Migrate hand-rolled top-of-page titles to `<PageTitle>` where the visual intent matches the editorial 28px style. Routes to audit and convert:
-  - `athlete.index.tsx`, `athlete.plans.index.tsx`, `athlete.messages.index.tsx`
-  - `coach.index.tsx`, `coach.plans.index.tsx`, `coach.messages.index.tsx`, `coach.settings.tsx`
-  - `parent.index.tsx`, `parent.plans.index.tsx`, `parent.messages.index.tsx`
-- **Do NOT touch** the recently-customized centered `text-2xl` titles in `athlete.plans.$planId.tsx` and `parent.plans.$planId.tsx` — those were deliberately styled away from the editorial default. They'll get a plain semantic `<h1>` swap only (no `PageTitle` wrap), so they still contribute an h1 to the page.
-- Fix the `coach.onboarding.tsx:198` h1 → h3 skip by demoting the h1 to h2 OR promoting the h3 to h2, depending on which reads as the page's main title.
+Per your call: remove "Dashboard" from the bottom nav for all three roles and add a Settings gear (lucide `Settings`) as the rightmost item. Dashboard pages remain at `/parent`, `/athlete`, `/coach` but are no longer linked from the nav (they're just the welcome on first load / logo tap).
 
-## 2. Add TanStack route `loader`s to the three plan detail pages
+New nav order:
 
-**Why:** `athlete/parent/coach.plans.$planId.tsx` all fetch via `useQuery` on mount, so every navigation shows a "Loading…" flash before the title (the LCP element) paints. A route `loader` priming the query cache lets the title render on the first frame.
+- **Parent**: Plans · Messages · Resources · Settings
+- **Athlete**: Plans · Messages · Resources · Settings
+- **Coach**: Plans · Roster · Messages · Settings
 
-**Changes (per route file):**
-- Add `loader: ({ params, context }) => context.queryClient.ensureQueryData(planQueryOptions(params.planId))`.
-- Extract the existing inline `useQuery({ queryKey, queryFn })` into a shared `queryOptions(...)` factory so the loader and component reference the same key.
-- Switch the component from `useQuery` to `useSuspenseQuery` — removes the `isLoading || !plan` branch.
-- Add the required `errorComponent` (most already have one) and `notFoundComponent` per TanStack rules.
-- Verify `src/router.tsx` already passes `queryClient` through router context (it should — the codebase already uses `useServerFn` + `useQuery` extensively). If missing, wire it.
+## Dashboard cleanup (becomes text-only)
 
-## 3. Remove stray `autoFocus` outside dialogs
+- `parent.index.tsx`: keep welcome copy + logo. Remove athlete QR/invite cards and Sign out button (both move to Settings).
+- `athlete.index.tsx`: keep welcome copy. Remove "View my plans" CTA and Sign out button.
+- `coach.index.tsx`: keep welcome heading + sports/levels readout text. Remove the `InviteCard` panel, the "Settings" link button, and Sign out (all move to Settings). Sports/levels stays as a read-only summary since it's purely informational text.
 
-**Why:** `autoFocus` on mount hijacks keyboard and VoiceOver focus on page load — disorienting on mobile and an accessibility regression.
+## Settings pages
 
-**Changes:**
-- `src/routes/signup.athlete.tsx:78` — remove `autoFocus`.
-- `src/routes/_authenticated/coach.onboarding.tsx:155` — remove `autoFocus`.
-- `src/components/coach/move-field.tsx:286` and `:294` — remove `autoFocus`. (These are inside the inline editor, not a modal Dialog — if the editor opens via a user click and focus management is desired, replace with a `useEffect` + `ref.focus()` gated on the open transition, not mount.)
+### `/parent/settings` (new — `parent.settings.tsx`)
 
-## Out of scope (deferred)
+Sections, each in the existing `SectionCard` style (rounded-2xl, shadow-card):
 
-Items 6–10 from the audit (code-splitting the 1.4k-line coach plan editor, shadow tokens, `dvh` migration, font preconnect, `background-attachment` jank) are lower-leverage and untouched here — happy to follow up in a second pass.
+1. **Your name** — edit `firstName` / `lastName` on `parent_profiles`.
+2. **Athletes** — list each athlete with edit + remove, and an "Add athlete" button. Per athlete (collapsible card):
+   - Identity: first/last name, birthdate
+   - Goals (current sport, current level, season goal, long-term goal text)
+   - Schedule slots (day, start/end time, frequency, weeks-of-month, starts-on) — same control set as `signup.parent.schedule.tsx` extracted into a reusable component.
+   - Invite QR / code (the QRCode + copy widget moved from the dashboard).
+3. **Account** — Sign out.
 
-## Verification
+### `/athlete/settings` (new — `athlete.settings.tsx`)
 
-- After edits: load each migrated route in the preview, view source / inspect DOM, confirm exactly one `<h1>` per page.
-- Navigate to a plan detail page from the list — title should paint with no spinner.
-- Tab through the signup/onboarding flows — focus should land on the first natural target (skip link / nav), not jump into a text input.
+1. **Your name** — edit first/last name on `athletes` row tied to `user_id`.
+2. **About you** — birthdate (if captured) and any other athlete profile fields available.
+3. **Account** — Sign out.
+
+(Athlete onboarding today only captures account + name confirmation, so this page is small by design. Plans access stays in the bottom nav under Plans.)
+
+### `/coach/settings` (already exists)
+
+Add to the existing page:
+- **Account** section with Sign out.
+Everything else (Name, Sports & levels, Practice expectations, Invite Parents) already lives here — no changes.
+
+## Bottom-nav component changes
+
+Edit `src/components/{parent,athlete,coach}/bottom-nav.tsx`:
+- Remove the Dashboard item.
+- Append `{ label: "Settings", icon: Settings, to: "/<role>/settings", matchPrefix: "/<role>/settings" }` as the last item.
+
+## Server-fn surface
+
+New `createServerFn` handlers in `src/lib/parent-settings.functions.ts`:
+- `getParentSettings` → parent profile + all athletes (with goals + schedule slots + invite codes).
+- `updateParentProfile({ firstName, lastName })`.
+- `updateAthlete({ athleteId, firstName, lastName, birthdate })`.
+- `updateAthleteGoals({ athleteId, sport, currentLevelKey, seasonGoalKey, longTermGoal })`.
+- `replaceAthleteSchedule({ athleteId, slots[] })` (delete + insert in a transaction-ish pattern, mirroring onboarding save).
+- `addAthlete({ firstName, lastName, birthdate })` → also generates an invite code via the existing path.
+- `removeAthlete({ athleteId })` — soft-guard against removing the only athlete? See open question.
+
+New in `src/lib/athlete-settings.functions.ts`:
+- `getAthleteSettings`, `updateAthleteSelf({ firstName, lastName, birthdate })`.
+
+All gated by `requireSupabaseAuth` and constrained to rows owned by the current user via existing RLS + explicit `user_id` / `parent_id` checks.
+
+## Reusable extractions
+
+- Extract the schedule-slot editor from `signup.parent.schedule.tsx` into `src/components/parent/schedule-editor.tsx` so onboarding and Settings share it.
+- Extract the athlete invite QR card from `parent.index.tsx` into `src/components/parent/athlete-invite-card.tsx`.
+- Extract the parent goals form fields into `src/components/parent/athlete-goals-form.tsx`.
+
+## Design system
+
+All new UI uses existing tokens (`bg-card`, `border-divider`, `text-text-primary/secondary`, `accent-ink`, `pen-highlight`, `font-display`, `font-hand`, `shadow-card`) and shadcn primitives already in use. Section cards reuse the rounded-2xl pattern from `coach.settings.tsx`. Settings gear active state matches the rest of the nav (`text-accent-ink` + `pen-highlight` on label).
+
+## Open questions (will default as noted if you don't reply)
+
+1. **Removing the last athlete** — block with a toast ("at least one athlete required") or allow? Default: **block**.
+2. **Athlete birthdate editing** — onboarding collects it for parent-added athletes; for self-signup athletes it isn't captured. Show the field always (empty if missing) so it can be filled later? Default: **yes**.
+3. **Schedule editing scope** — should editing a slot's `startsOn` retroactively change historical sessions, or only future ones? Default: **only future**, matching onboarding semantics.
