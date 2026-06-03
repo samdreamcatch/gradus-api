@@ -33,9 +33,15 @@ export type {
 
 export const listMyRooms = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .inputValidator((input) =>
+    z
+      .object({ viewerRole: z.enum(["coach", "athlete", "parent"]).optional() })
+      .optional()
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
     const { userId } = context as unknown as ContextEnvelope;
-    const { rooms, myRoleByRoom } = await listMyRoomIds(userId);
+    const { rooms, myRoleByRoom } = await listMyRoomIds(userId, data?.viewerRole);
     if (rooms.length === 0) return { rooms: [] as RoomSummary[] };
 
     const participantsByRoom = await loadParticipants(rooms);
@@ -102,11 +108,18 @@ export const listMyRooms = createServerFn({ method: "GET" })
 
 export const getRoom = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) => z.object({ roomId: z.string().uuid() }).parse(input))
+  .inputValidator((input) =>
+    z
+      .object({
+        roomId: z.string().uuid(),
+        viewerRole: z.enum(["coach", "athlete", "parent"]).optional(),
+      })
+      .parse(input),
+  )
   .handler(async ({ data, context }): Promise<RoomDetail> => {
     const { userId } = context as unknown as ContextEnvelope;
 
-    const { rooms, myRoleByRoom } = await listMyRoomIds(userId);
+    const { rooms, myRoleByRoom } = await listMyRoomIds(userId, data.viewerRole);
     const room = rooms.find((r) => r.id === data.roomId);
     if (!room) throw new Error("Conversation not found");
 
@@ -203,11 +216,17 @@ const sendMessageInput = z.discriminatedUnion("kind", [
 
 export const sendMessage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) => sendMessageInput.parse(input))
+  .inputValidator((input) =>
+    sendMessageInput
+      .and(
+        z.object({ viewerRole: z.enum(["coach", "athlete", "parent"]).optional() }),
+      )
+      .parse(input),
+  )
   .handler(async ({ data, context }) => {
     const { userId } = context as unknown as ContextEnvelope;
 
-    const { rooms, myRoleByRoom } = await listMyRoomIds(userId);
+    const { rooms, myRoleByRoom } = await listMyRoomIds(userId, data.viewerRole);
     const room = rooms.find((r) => r.id === data.roomId);
     if (!room) throw new Error("You can't post into this conversation");
     const role = myRoleByRoom.get(room.id)!;
@@ -266,11 +285,18 @@ export const sendMessage = createServerFn({ method: "POST" })
 
 export const markRoomRead = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) => z.object({ roomId: z.string().uuid() }).parse(input))
+  .inputValidator((input) =>
+    z
+      .object({
+        roomId: z.string().uuid(),
+        viewerRole: z.enum(["coach", "athlete", "parent"]).optional(),
+      })
+      .parse(input),
+  )
   .handler(async ({ data, context }) => {
     const { userId } = context as unknown as ContextEnvelope;
 
-    const { rooms } = await listMyRoomIds(userId);
+    const { rooms } = await listMyRoomIds(userId, data.viewerRole);
     const room = rooms.find((r) => r.id === data.roomId);
     if (!room) return { marked: 0 };
 
@@ -305,9 +331,15 @@ export const markRoomRead = createServerFn({ method: "POST" })
 
 export const getUnreadTotal = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .inputValidator((input) =>
+    z
+      .object({ viewerRole: z.enum(["coach", "athlete", "parent"]).optional() })
+      .optional()
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
     const { userId } = context as unknown as ContextEnvelope;
-    const { rooms } = await listMyRoomIds(userId);
+    const { rooms } = await listMyRoomIds(userId, data?.viewerRole);
     if (rooms.length === 0) return { total: 0 };
 
     const ids = rooms.map((r) => r.id);
@@ -428,10 +460,17 @@ export const ensureRoomForAthlete = createServerFn({ method: "POST" })
 
 export const getRoomActivePlan = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) => z.object({ roomId: z.string().uuid() }).parse(input))
+  .inputValidator((input) =>
+    z
+      .object({
+        roomId: z.string().uuid(),
+        viewerRole: z.enum(["coach", "athlete", "parent"]).optional(),
+      })
+      .parse(input),
+  )
   .handler(async ({ data, context }) => {
     const { userId } = context as unknown as ContextEnvelope;
-    const { rooms } = await listMyRoomIds(userId);
+    const { rooms } = await listMyRoomIds(userId, data.viewerRole);
     const room = rooms.find((r) => r.id === data.roomId);
     if (!room) throw new Error("Conversation not found");
 

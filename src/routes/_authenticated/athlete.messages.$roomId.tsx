@@ -18,7 +18,7 @@ function AthleteRoom() {
         <ArrowLeft className="size-4" /> Messages
       </Link>
       <div className="mt-4">
-        <RoomView roomId={roomId} />
+        <RoomView roomId={roomId} viewerRole="athlete" />
       </div>
       <AthleteBottomNav />
     </div>

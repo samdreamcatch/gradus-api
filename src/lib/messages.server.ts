@@ -13,15 +13,16 @@ export async function resolveMyIdentity(userId: string) {
   return { coach: coach.data, athlete: athlete.data, parent: parent.data };
 }
 
-export async function listMyRoomIds(userId: string): Promise<{
+export async function listMyRoomIds(userId: string, viewerRole?: RoleInRoom): Promise<{
   rooms: { id: string; coach_id: string; athlete_id: string; updated_at: string }[];
   myRoleByRoom: Map<string, RoleInRoom>;
 }> {
   const me = await resolveMyIdentity(userId);
   const rows: { id: string; coach_id: string; athlete_id: string; updated_at: string }[] = [];
   const myRoleByRoom = new Map<string, RoleInRoom>();
+  const shouldInclude = (role: RoleInRoom) => !viewerRole || viewerRole === role;
 
-  if (me.coach) {
+  if (me.coach && shouldInclude("coach")) {
     const { data, error } = await supabaseAdmin
       .from("message_rooms")
       .select("id, coach_id, athlete_id, updated_at")
@@ -32,7 +33,7 @@ export async function listMyRoomIds(userId: string): Promise<{
       myRoleByRoom.set(r.id, "coach");
     }
   }
-  if (me.athlete) {
+  if (me.athlete && shouldInclude("athlete")) {
     const { data, error } = await supabaseAdmin
       .from("message_rooms")
       .select("id, coach_id, athlete_id, updated_at")
@@ -43,7 +44,7 @@ export async function listMyRoomIds(userId: string): Promise<{
       myRoleByRoom.set(r.id, "athlete");
     }
   }
-  if (me.parent) {
+  if (me.parent && shouldInclude("parent")) {
     const { data: kids, error: kidsErr } = await supabaseAdmin
       .from("athletes")
       .select("id")
