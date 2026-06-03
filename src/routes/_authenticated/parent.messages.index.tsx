@@ -23,7 +23,7 @@ function ParentMessages() {
     <div className="mx-auto max-w-2xl px-4 pt-10 pb-24">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <MessagesHeader subtitle="Your athlete's coaches" />
+          <MessagesHeader />
         </div>
         <div className="pt-3">
           <NewConversationButton
