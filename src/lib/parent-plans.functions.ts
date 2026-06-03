@@ -61,15 +61,14 @@ export interface ParentPlanDetailDTO {
   moves: ParentPlanMoveDTO[];
 }
 
-async function getParentId(supabase: Client, userId: string): Promise<string> {
+async function getParentId(supabase: Client, userId: string): Promise<string | null> {
   const { data, error } = await supabase
     .from("parent_profiles")
     .select("id")
     .eq("user_id", userId)
     .maybeSingle();
   if (error) dbError(error);
-  if (!data) throw new Error("Parent profile not found");
-  return data.id;
+  return data?.id ?? null;
 }
 
 /* ---------------- list ---------------- */
@@ -79,6 +78,9 @@ export const listParentPlans = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const supabase = context.supabase as Client;
     const parentId = await getParentId(supabase, context.userId);
+    if (!parentId) {
+      return { athletes: [] as ParentAthleteOptionDTO[], plans: [] as ParentPlanSummaryDTO[] };
+    }
 
     const { data: athleteRows, error: aErr } = await supabase
       .from("athletes")
