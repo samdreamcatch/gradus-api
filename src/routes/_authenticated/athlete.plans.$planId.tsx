@@ -73,7 +73,7 @@ function AthletePlanDetail() {
         <p className="text-[12px] font-medium text-text-secondary">
           Coach {plan.coachName}
         </p>
-        <h1 className="mt-0.5 font-display text-4xl font-black leading-[0.95] tracking-tight text-text-primary">
+        <h1 className="mt-0.5 font-display leading-[0.95] tracking-tight text-text-primary text-xl font-medium">
           {plan.title}
         </h1>
       </div>
