@@ -1,39 +1,57 @@
-## Goal
-Give parents on `/parent/messages` the same "New" affordance coaches have, reusing one component. Each row in the picker reads as a coach name with the athlete it's about as a subline.
+## Global design-system pass
 
-## Backend (new server fns in `src/lib/messages.functions.ts`)
+Three coordinated edits. All visual — no business logic touched.
 
-1. **`listMyMessageTargets`** (auth'd, GET) — role-aware list for the picker.
-   - **Coach caller**: returns rostered athletes as `{ athleteId, primaryLabel: athlete name, secondaryLabel: null }`.
-   - **Parent caller**: joins `athletes` (where `parent_id = me.parent.id`) → `coach_athletes` → `coach_profiles`, returns one row per (athlete × coach) as `{ athleteId, primaryLabel: "Coach {first} {last}", secondaryLabel: "about {athlete first name}" }`. If an athlete has no linked coach yet, omit it.
-   - Sorted by primary label.
+### 1. Tighter editorial padding (level 3 / 5, truly global)
 
-2. **`ensureRoomForTarget`** (auth'd, POST, `{ athleteId }`) — role-aware room upsert.
-   - Coach branch: existing `ensureRoomForAthlete` logic (verify roster, upsert room).
-   - Parent branch: verify `is_parent_of_athlete(athleteId)` via `athletes.parent_id = me.parent.id`, find that athlete's `coach_id` from `coach_athletes`, then upsert `message_rooms (coach_id, athlete_id)` the same way.
-   - Returns `{ id }`.
-   - The existing `ensureRoomForAthlete` stays for now (used by `NewConversationButton`'s current import) but the refactored button will switch to `ensureRoomForTarget`. We can delete the old one after the switch.
+Goal: noticeably denser, but not so flush it breaks tap targets on mobile.
 
-No DB migration needed — `message_rooms`, `coach_athletes`, `athletes`, `parent_profiles`, and `is_room_participant` already cover this case.
+**Page shells** (every route file with `px-4 pt-10 pb-24` etc.):
+- Horizontal page padding: `px-4` → `px-3`
+- Top page padding: `pt-10` → `pt-6`
+- Bottom safe-area padding (above bottom nav): keep `pb-24` unchanged — required clearance for the fixed bottom nav.
+- Section gaps: `mt-5` → `mt-4`, `mt-6` → `mt-5`. Leave `space-y-*` between list items as-is to preserve scannability.
 
-## Frontend
+**shadcn primitives** (the "truly global" part):
+- `Card` `CardHeader` / `CardContent` / `CardFooter`: `p-4` → `p-3`
+- `Dialog` / `Sheet` / `Popover` content padding: trim one step (e.g. `p-6` → `p-4`).
+- `Input` / `Textarea` / `Button`: leave alone — these set tap-target height; tightening here regresses mobile usability.
+- `Alert`, `Tabs` triggers: trim where padding > `p-3`.
 
-3. **Refactor `src/components/messages/new-conversation-button.tsx`** to a shared component:
-   - Props: `fetchTargets` (serverFn ref), `openRoom` (serverFn ref), `basePath: "/coach/messages" | "/parent/messages"`, `roomsQueryKey: unknown[]`, `targetsQueryKey: unknown[]`, `emptyState: { icon?, message }`.
-   - Renders each row with `primaryLabel` bold + optional `secondaryLabel` as a small caption underneath.
-   - On success: invalidate `roomsQueryKey`, close dialog, navigate to `${basePath}/${id}`.
+**Out of scope (intentionally left):** auth screens (login/signup) keep current breathing room; bottom-nav internal padding stays; form inputs stay. I'll flag any specific component where the tighter spacing looks broken during implementation rather than force it.
 
-4. **`src/routes/_authenticated/coach.messages.index.tsx`** — pass coach wiring (`listMyMessageTargets`, `ensureRoomForTarget`, `/coach/messages`, key `["message-rooms","coach"]`, empty "No athletes on your roster yet.").
+### 2. Page title weight: black → medium
 
-5. **`src/routes/_authenticated/parent.messages.index.tsx`** — add the same button in a `flex justify-between` header (mirroring the coach page), pass parent wiring (same fns, `/parent/messages`, key `["message-rooms","parent"]`, empty "No coaches linked to your athletes yet.").
+`MessagesHeader` and the matching Plans-page titles use `font-display ... font-black`. Drop to `font-medium` (500) globally on these big editorial titles.
 
-## Out of scope
-- No changes to `room-view`, compose bar, plan-tagging, or RLS.
-- No new tables / migrations.
-- Existing "Message coach about this plan" dialog on `/parent/plans/$planId` is untouched — it already routes here.
+Logo (`src/components/logo.tsx`) is explicitly untouched — it stays at its current 600 / wonk-axis settings.
 
-## Files touched
-- `src/lib/messages.functions.ts` — add two server fns
-- `src/components/messages/new-conversation-button.tsx` — generalized + row renders 2-line label
-- `src/routes/_authenticated/coach.messages.index.tsx` — pass props
-- `src/routes/_authenticated/parent.messages.index.tsx` — add header layout + button
+Smaller `font-display` headings already in use (`text-2xl`, `text-3xl`, `text-4xl` without `font-black`) are not changed — they already inherit the base h1-h5 weight of 600 from `styles.css`. The fix is targeted to the oversized display titles only.
+
+### 3. Unified highlighter — restyle titles to match the Logo
+
+Today the Logo uses an absolutely-positioned rotated gradient stripe (`-2.5deg`, fades out to the right, extends past the glyphs). `MessagesHeader` and the Plans headers use a flat `background-image` band with no rotation and no fade.
+
+Update `MessagesHeader` and the two Plans titles to use the **same stripe treatment as the Logo**:
+- absolute-positioned `<span aria-hidden>` behind the text
+- same `linear-gradient(to right, …pen-tennis 90% → 60% → 25% → transparent)` fade
+- same `rotate(-2.5deg)` and `top: 44%; height: 42%`
+- stripe extends slightly past the right edge of the word, like the Logo
+
+The Logo file itself is not modified — we're copying its stripe pattern into the title components. Two title components get the new treatment: `src/components/messages/messages-header.tsx` and the inline title blocks in `athlete.plans.index.tsx` / `parent.plans.index.tsx` / `coach.plans.tsx` (the existing `pen-highlight` utility in `styles.css` stays as-is for other uses).
+
+### Files touched
+
+- `src/styles.css` — no token changes; possibly add a `.pen-stripe` helper class mirroring the Logo's stripe so titles stay DRY.
+- `src/components/messages/messages-header.tsx` — weight + stripe.
+- `src/routes/_authenticated/athlete.plans.index.tsx`, `parent.plans.index.tsx`, `coach.plans.tsx` — weight + stripe on inline page titles.
+- `src/components/ui/card.tsx`, `dialog.tsx`, `sheet.tsx`, `popover.tsx`, `alert.tsx`, `tabs.tsx` — padding trims.
+- All route files under `src/routes/_authenticated/*` and `src/routes/signup.*` — `px-4 pt-10` → `px-3 pt-6` on the page shell wrappers. (Auth screens reviewed individually.)
+
+### Risks / things to flag, not break
+
+- **Tap targets**: I'm explicitly leaving `Button`, `Input`, `Textarea`, and bottom-nav padding alone. Tightening those would regress mobile usability.
+- **Dialog/Sheet density**: dropping content padding from `p-6` to `p-4` can make form dialogs feel cramped. If one looks bad, I'll restore on that specific surface rather than fight the global rule.
+- **Plans titles**: these are inline (not using `MessagesHeader`). I'll convert the three Plans pages to use a shared title component or copy the stripe-pattern inline — either way the visual is identical to MessagesHeader.
+
+Nothing here is a breaking change in the API or routing sense — it's all styling and one shared visual primitive. Ready to implement on approval.
