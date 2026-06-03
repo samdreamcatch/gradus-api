@@ -1,9 +1,6 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { ClipboardList } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
 import { AthleteBottomNav } from "@/components/athlete/bottom-nav";
 import { getMyAthlete } from "@/lib/athlete-signup.functions";
 
@@ -12,17 +9,13 @@ export const Route = createFileRoute("/_authenticated/athlete/")({
 });
 
 function AthleteHome() {
-  const navigate = useNavigate();
+  // navigate kept available for future routing hooks
+  void useNavigate;
   const fetchMe = useServerFn(getMyAthlete);
   const { data, isLoading } = useQuery({
     queryKey: ["my-athlete"],
     queryFn: () => fetchMe(),
   });
-
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    navigate({ to: "/login" });
-  };
 
   if (isLoading) return null;
 
@@ -41,22 +34,11 @@ function AthleteHome() {
           Your training home is on its way.
         </p>
         <p className="mt-4 text-sm text-text-secondary">
-          You&apos;re all set up. We&apos;ll let you know as soon as the athlete
-          experience is ready.
+          Head to <span className="pen-highlight">Plans</span> to see what your
+          coach has put together, or open{" "}
+          <span className="pen-highlight">Settings</span> to manage your
+          account.
         </p>
-
-        <div className="mt-6 flex flex-wrap gap-2">
-          <Link
-            to="/athlete/plans"
-            className="inline-flex items-center gap-2 rounded-full bg-accent px-5 py-2.5 text-sm font-bold text-accent-foreground shadow-card"
-          >
-            <ClipboardList className="size-4" />
-            View my plans
-          </Link>
-          <Button variant="outline" onClick={handleSignOut}>
-            Sign out
-          </Button>
-        </div>
       </div>
 
       <AthleteBottomNav />
