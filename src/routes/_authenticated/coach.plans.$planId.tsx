@@ -365,7 +365,7 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
 
   return (
     <>
-      <SheetHeader className="-mx-6 -mt-6 border-b border-divider px-6 pt-5 pb-3">
+      <SheetHeader className="-mx-6 -mt-6 border-b border-divider px-6 pt-5 pb-3 pr-14">
         <SheetTitle asChild>
           <div className="flex items-start gap-3">
             <div className="min-w-0 flex-1">
