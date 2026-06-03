@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { AthleteBottomNav } from "@/components/athlete/bottom-nav";
 import { PlanCard } from "@/components/plans/plan-card";
+import { PageTitle } from "@/components/page-title";
 import {
   Select,
   SelectContent,
