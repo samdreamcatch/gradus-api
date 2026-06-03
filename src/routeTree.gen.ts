@@ -24,6 +24,7 @@ import { Route as SignupParentGoalsRouteImport } from './routes/signup.parent.go
 import { Route as SignupParentAthletesRouteImport } from './routes/signup.parent.athletes'
 import { Route as SignupAthleteConfirmRouteImport } from './routes/signup.athlete.confirm'
 import { Route as SignupAthleteAccountRouteImport } from './routes/signup.athlete.account'
+import { Route as AuthenticatedParentSettingsRouteImport } from './routes/_authenticated/parent.settings'
 import { Route as AuthenticatedCoachSettingsRouteImport } from './routes/_authenticated/coach.settings'
 import { Route as AuthenticatedCoachPlansRouteImport } from './routes/_authenticated/coach.plans'
 import { Route as AuthenticatedCoachOnboardingRouteImport } from './routes/_authenticated/coach.onboarding'
@@ -116,6 +117,12 @@ const SignupAthleteAccountRoute = SignupAthleteAccountRouteImport.update({
   path: '/account',
   getParentRoute: () => SignupAthleteRoute,
 } as any)
+const AuthenticatedParentSettingsRoute =
+  AuthenticatedParentSettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => AuthenticatedParentRoute,
+  } as any)
 const AuthenticatedCoachSettingsRoute =
   AuthenticatedCoachSettingsRouteImport.update({
     id: '/coach/settings',
@@ -216,6 +223,7 @@ export interface FileRoutesByFullPath {
   '/coach/onboarding': typeof AuthenticatedCoachOnboardingRoute
   '/coach/plans': typeof AuthenticatedCoachPlansRouteWithChildren
   '/coach/settings': typeof AuthenticatedCoachSettingsRoute
+  '/parent/settings': typeof AuthenticatedParentSettingsRoute
   '/signup/athlete/account': typeof SignupAthleteAccountRoute
   '/signup/athlete/confirm': typeof SignupAthleteConfirmRoute
   '/signup/parent/athletes': typeof SignupParentAthletesRoute
@@ -245,6 +253,7 @@ export interface FileRoutesByTo {
   '/signup/parent': typeof SignupParentRouteWithChildren
   '/coach/onboarding': typeof AuthenticatedCoachOnboardingRoute
   '/coach/settings': typeof AuthenticatedCoachSettingsRoute
+  '/parent/settings': typeof AuthenticatedParentSettingsRoute
   '/signup/athlete/account': typeof SignupAthleteAccountRoute
   '/signup/athlete/confirm': typeof SignupAthleteConfirmRoute
   '/signup/parent/athletes': typeof SignupParentAthletesRoute
@@ -278,6 +287,7 @@ export interface FileRoutesById {
   '/_authenticated/coach/onboarding': typeof AuthenticatedCoachOnboardingRoute
   '/_authenticated/coach/plans': typeof AuthenticatedCoachPlansRouteWithChildren
   '/_authenticated/coach/settings': typeof AuthenticatedCoachSettingsRoute
+  '/_authenticated/parent/settings': typeof AuthenticatedParentSettingsRoute
   '/signup/athlete/account': typeof SignupAthleteAccountRoute
   '/signup/athlete/confirm': typeof SignupAthleteConfirmRoute
   '/signup/parent/athletes': typeof SignupParentAthletesRoute
@@ -311,6 +321,7 @@ export interface FileRouteTypes {
     | '/coach/onboarding'
     | '/coach/plans'
     | '/coach/settings'
+    | '/parent/settings'
     | '/signup/athlete/account'
     | '/signup/athlete/confirm'
     | '/signup/parent/athletes'
@@ -340,6 +351,7 @@ export interface FileRouteTypes {
     | '/signup/parent'
     | '/coach/onboarding'
     | '/coach/settings'
+    | '/parent/settings'
     | '/signup/athlete/account'
     | '/signup/athlete/confirm'
     | '/signup/parent/athletes'
@@ -372,6 +384,7 @@ export interface FileRouteTypes {
     | '/_authenticated/coach/onboarding'
     | '/_authenticated/coach/plans'
     | '/_authenticated/coach/settings'
+    | '/_authenticated/parent/settings'
     | '/signup/athlete/account'
     | '/signup/athlete/confirm'
     | '/signup/parent/athletes'
@@ -510,6 +523,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SignupAthleteAccountRouteImport
       parentRoute: typeof SignupAthleteRoute
     }
+    '/_authenticated/parent/settings': {
+      id: '/_authenticated/parent/settings'
+      path: '/settings'
+      fullPath: '/parent/settings'
+      preLoaderRoute: typeof AuthenticatedParentSettingsRouteImport
+      parentRoute: typeof AuthenticatedParentRoute
+    }
     '/_authenticated/coach/settings': {
       id: '/_authenticated/coach/settings'
       path: '/coach/settings'
@@ -619,6 +639,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedParentRouteChildren {
+  AuthenticatedParentSettingsRoute: typeof AuthenticatedParentSettingsRoute
   AuthenticatedParentIndexRoute: typeof AuthenticatedParentIndexRoute
   AuthenticatedParentMessagesRoomIdRoute: typeof AuthenticatedParentMessagesRoomIdRoute
   AuthenticatedParentPlansPlanIdRoute: typeof AuthenticatedParentPlansPlanIdRoute
@@ -627,6 +648,7 @@ interface AuthenticatedParentRouteChildren {
 }
 
 const AuthenticatedParentRouteChildren: AuthenticatedParentRouteChildren = {
+  AuthenticatedParentSettingsRoute: AuthenticatedParentSettingsRoute,
   AuthenticatedParentIndexRoute: AuthenticatedParentIndexRoute,
   AuthenticatedParentMessagesRoomIdRoute:
     AuthenticatedParentMessagesRoomIdRoute,
