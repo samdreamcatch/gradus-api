@@ -573,5 +573,3 @@ function AccountSection() {
     </SectionCard>
   );
 }
-// suppress unused warning for useEffect — kept for future expansion
-void useEffect;
