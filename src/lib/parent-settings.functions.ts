@@ -84,6 +84,11 @@ export const getParentSettings = createServerFn({ method: "GET" })
     if (goals.error) dbError(goals.error);
     if (slots.error) dbError(slots.error);
     if (codes.error) dbError(codes.error);
+    if (coachLevels.error) dbError(coachLevels.error);
+
+    const coachSports = Array.from(
+      new Set((coachLevels.data ?? []).map((l) => l.sport)),
+    );
 
     const codeMap = new Map((codes.data ?? []).map((r) => [r.athlete_id, r.code]));
     // Lazily generate invite codes for any athletes missing one
@@ -109,6 +114,7 @@ export const getParentSettings = createServerFn({ method: "GET" })
         lastName: parent.last_name,
       },
       coachId: parent.coach_id,
+      coachSports,
       athletes: (athletes.data ?? []).map((a) => {
         const ag = (goals.data ?? []).find((g) => g.athlete_id === a.id);
         const aSlots = (slots.data ?? []).filter((s) => s.athlete_id === a.id);
