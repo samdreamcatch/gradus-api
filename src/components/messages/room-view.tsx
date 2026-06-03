@@ -114,15 +114,15 @@ function VoiceBubble({ url, duration }: { url: string | null; duration: number |
   );
 }
 
-export function RoomView({ roomId }: { roomId: string }) {
+export function RoomView({ roomId, viewerRole }: { roomId: string; viewerRole?: RoleInRoom }) {
   const fetchRoom = useServerFn(getRoom);
   const sendFn = useServerFn(sendMessage);
   const markRead = useServerFn(markRoomRead);
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
-    queryKey: ["message-room", roomId],
-    queryFn: () => fetchRoom({ data: { roomId } }),
+    queryKey: ["message-room", viewerRole ?? "default", roomId],
+    queryFn: () => fetchRoom({ data: { roomId, viewerRole } }),
   });
 
   const messages: MessageDTO[] = useMemo(() => data?.messages ?? [], [data]);
@@ -136,13 +136,13 @@ export function RoomView({ roomId }: { roomId: string }) {
 
   useEffect(() => {
     if (!room) return;
-    void markRead({ data: { roomId } }).then((r) => {
+    void markRead({ data: { roomId, viewerRole } }).then((r) => {
       if (r.marked > 0) {
         queryClient.invalidateQueries({ queryKey: ["messages-unread-total"] });
         queryClient.invalidateQueries({ queryKey: ["message-rooms"] });
       }
     });
-  }, [room, messages.length, roomId, markRead, queryClient]);
+  }, [room, messages.length, roomId, viewerRole, markRead, queryClient]);
 
   useEffect(() => {
     const channel = supabase
@@ -152,6 +152,7 @@ export function RoomView({ roomId }: { roomId: string }) {
         { event: "*", schema: "public", table: "messages", filter: `room_id=eq.${roomId}` },
         () => {
           queryClient.invalidateQueries({ queryKey: ["message-room", roomId] });
+          queryClient.invalidateQueries({ queryKey: ["message-room", viewerRole ?? "default", roomId] });
           queryClient.invalidateQueries({ queryKey: ["message-rooms"] });
           queryClient.invalidateQueries({ queryKey: ["messages-unread-total"] });
         },
@@ -161,19 +162,20 @@ export function RoomView({ roomId }: { roomId: string }) {
         { event: "*", schema: "public", table: "message_reads" },
         () => {
           queryClient.invalidateQueries({ queryKey: ["message-room", roomId] });
+          queryClient.invalidateQueries({ queryKey: ["message-room", viewerRole ?? "default", roomId] });
         },
       )
       .subscribe();
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [roomId, queryClient]);
+  }, [roomId, viewerRole, queryClient]);
 
   const sendTextMutation = useMutation({
     mutationFn: (vars: { body: string; planId: string | null }) =>
-      sendFn({ data: { roomId, kind: "text", body: vars.body, planId: vars.planId } }),
+      sendFn({ data: { roomId, kind: "text", body: vars.body, planId: vars.planId, viewerRole } }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["message-room", roomId] });
+      queryClient.invalidateQueries({ queryKey: ["message-room", viewerRole ?? "default", roomId] });
       queryClient.invalidateQueries({ queryKey: ["message-rooms"] });
     },
     onError: (e) =>
@@ -294,8 +296,8 @@ function Composer({
   const fetchActivePlan = useServerFn(getRoomActivePlan);
 
   const { data: activePlanData } = useQuery({
-    queryKey: ["room-active-plan", roomId],
-    queryFn: () => fetchActivePlan({ data: { roomId } }),
+    queryKey: ["room-active-plan", viewerRole ?? "default", roomId],
+    queryFn: () => fetchActivePlan({ data: { roomId, viewerRole } }),
   });
   const activePlan = activePlanData?.plan ?? null;
 
