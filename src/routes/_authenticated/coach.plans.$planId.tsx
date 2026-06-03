@@ -63,6 +63,13 @@ export const Route = createFileRoute("/_authenticated/coach/plans/$planId")({
   validateSearch: (search: Record<string, unknown>) => ({
     from: search.from === "plus" ? ("plus" as const) : undefined,
   }),
+  loader: ({ params, context }) => {
+    if (params.planId === "new") return;
+    return context.queryClient.ensureQueryData({
+      queryKey: ["plan", params.planId],
+      queryFn: () => getPlan({ data: { id: params.planId } }),
+    });
+  },
 });
 
 function PlanEditorSheet() {

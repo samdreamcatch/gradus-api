@@ -17,6 +17,11 @@ import { MessageCoachAboutPlanDialog } from "@/components/plans/message-coach-ab
 
 export const Route = createFileRoute("/_authenticated/parent/plans/$planId")({
   component: ParentPlanDetail,
+  loader: ({ params, context }) =>
+    context.queryClient.ensureQueryData({
+      queryKey: ["parent-plan", params.planId],
+      queryFn: () => getParentPlan({ data: { id: params.planId } }),
+    }),
   errorComponent: ({ error }) => (
     <div className="mx-auto max-w-2xl px-3 py-8">
       <Link

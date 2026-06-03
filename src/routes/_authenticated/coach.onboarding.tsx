@@ -152,7 +152,7 @@ function OnboardingPage() {
                   id="firstName"
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
-                  autoFocus
+                  
                   maxLength={80}
                 />
               </div>
@@ -195,7 +195,7 @@ function OnboardingPage() {
                 const sport = getSport(sportKey)!;
                 return (
                   <div key={sportKey}>
-                    <h3 className="text-xl">{sport.label}</h3>
+                    <h2 className="text-xl">{sport.label}</h2>
                     <p className="mt-1 text-xs uppercase tracking-wider text-text-secondary">
                       {sport.standard}
                     </p>
@@ -245,7 +245,7 @@ function OnboardingPage() {
                 if (sportEntries.length === 0) return null;
                 return (
                   <div key={sportKey}>
-                    <h3 className="text-xl">{sport.label}</h3>
+                    <h2 className="text-xl">{sport.label}</h2>
                     <div className="mt-4 space-y-3">
                       {sportEntries.map((entry) => {
                         const lvl = getSportLevel(sportKey, entry.levelKey)!;

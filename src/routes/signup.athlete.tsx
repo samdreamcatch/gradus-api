@@ -75,7 +75,7 @@ function AthleteCodePage() {
               placeholder="––––––––"
               className="text-center font-mono text-2xl tracking-[0.4em] uppercase h-14"
               autoComplete="off"
-              autoFocus
+              
             />
           </div>
 
