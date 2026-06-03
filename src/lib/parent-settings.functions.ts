@@ -13,7 +13,12 @@ function genCode(len = 8): string {
   return out;
 }
 
-async function getParentAndCoach(userId: string) {
+async function getParentAndCoach(userId: string): Promise<{
+  id: string;
+  first_name: string;
+  last_name: string;
+  coach_id: string;
+}> {
   const parent = await supabaseAdmin
     .from("parent_profiles")
     .select("id, first_name, last_name, coach_id")
@@ -22,7 +27,12 @@ async function getParentAndCoach(userId: string) {
   if (parent.error) dbError(parent.error);
   if (!parent.data) throw new Error("Parent profile not found.");
   if (!parent.data.coach_id) throw new Error("No coach linked yet.");
-  return parent.data;
+  return {
+    id: parent.data.id,
+    first_name: parent.data.first_name,
+    last_name: parent.data.last_name,
+    coach_id: parent.data.coach_id,
+  };
 }
 
 async function assertOwnsAthlete(userId: string, athleteId: string) {
