@@ -13,7 +13,7 @@ export function PageTitle({ children, subtitle }: PageTitleProps) {
   return (
     <>
       <p
-        className="font-display text-[40px] font-medium leading-[1.08] tracking-tight text-text-primary"
+        className="font-display text-[28px] font-medium leading-[1.08] tracking-tight text-text-primary"
         style={{ letterSpacing: "-0.015em" }}
       >
         <span
