@@ -70,7 +70,12 @@ export const listMoves = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const supabase = context.supabase as Client;
-    const coachId = await getCoachId(supabase, context.userId);
+    const coachId = await findCoachId(supabase, context.userId);
+    if (!coachId) {
+      // Non-coach user (or coach onboarding not complete) — degrade gracefully
+      // instead of blank-screening the route.
+      return { moves: [], seedCategories: [] };
+    }
 
     // Idempotent seed if first visit
     await supabase.rpc("seed_coach_library", { _coach_id: coachId });
