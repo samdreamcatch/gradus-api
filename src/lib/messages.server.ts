@@ -21,7 +21,10 @@ export async function listMyRoomIds(userId: string): Promise<{
   const rows: { id: string; coach_id: string; athlete_id: string; updated_at: string }[] = [];
   const myRoleByRoom = new Map<string, RoleInRoom>();
 
-  if (me.coach) {
+  const viewerRole = arguments[1] as RoleInRoom | undefined;
+  const shouldInclude = (role: RoleInRoom) => !viewerRole || viewerRole === role;
+
+  if (me.coach && shouldInclude("coach")) {
     const { data, error } = await supabaseAdmin
       .from("message_rooms")
       .select("id, coach_id, athlete_id, updated_at")
@@ -32,7 +35,7 @@ export async function listMyRoomIds(userId: string): Promise<{
       myRoleByRoom.set(r.id, "coach");
     }
   }
-  if (me.athlete) {
+  if (me.athlete && shouldInclude("athlete")) {
     const { data, error } = await supabaseAdmin
       .from("message_rooms")
       .select("id, coach_id, athlete_id, updated_at")
@@ -43,7 +46,7 @@ export async function listMyRoomIds(userId: string): Promise<{
       myRoleByRoom.set(r.id, "athlete");
     }
   }
-  if (me.parent) {
+  if (me.parent && shouldInclude("parent")) {
     const { data: kids, error: kidsErr } = await supabaseAdmin
       .from("athletes")
       .select("id")
