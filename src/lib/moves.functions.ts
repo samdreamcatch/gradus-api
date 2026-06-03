@@ -32,6 +32,16 @@ async function getCoachId(supabase: Client, userId: string): Promise<string> {
   return data.id;
 }
 
+async function findCoachId(supabase: Client, userId: string): Promise<string | null> {
+  const { data, error } = await supabase
+    .from("coach_profiles")
+    .select("id")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (error) dbError(error);
+  return data?.id ?? null;
+}
+
 function toDTO(row: {
   id: string;
   sport: string;
@@ -60,7 +70,12 @@ export const listMoves = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const supabase = context.supabase as Client;
-    const coachId = await getCoachId(supabase, context.userId);
+    const coachId = await findCoachId(supabase, context.userId);
+    if (!coachId) {
+      // Non-coach user (or coach onboarding not complete) — degrade gracefully
+      // instead of blank-screening the route.
+      return { moves: [], seedCategories: [] };
+    }
 
     // Idempotent seed if first visit
     await supabase.rpc("seed_coach_library", { _coach_id: coachId });
