@@ -71,7 +71,7 @@ export function RoomList({
   }
 
   return (
-    <ul className="divide-y divide-divider rounded-2xl border border-divider bg-card overflow-hidden">
+    <ul className="space-y-2">
       {rooms.map((room) => {
         const { display } = others(room);
         const last = room.lastMessage;
@@ -91,17 +91,18 @@ export function RoomList({
 
 
         const inner = (
-          <div className="flex items-start gap-3 px-4 py-3.5 transition-colors hover:bg-elevated focus-visible:bg-elevated focus-visible:outline-none">
+          <div
+            className={cn(
+              "flex items-start gap-3 rounded-2xl border bg-card px-4 py-3.5 shadow-card transition-colors hover:bg-elevated focus-visible:bg-elevated focus-visible:outline-none",
+              unread ? "border-accent" : "border-divider",
+            )}
+          >
             {unread ? (
               <span
                 aria-hidden
                 className="mt-2 inline-flex h-2.5 w-2.5 shrink-0 rounded-full bg-attention"
               />
             ) : null}
-
-
-
-
 
             <div className="min-w-0 flex-1">
               <div className="flex items-baseline justify-between gap-2">
