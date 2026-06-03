@@ -13,6 +13,7 @@ export type RoomSummary = {
   athleteId: string;
   participants: RoomParticipant[];
   myRole: RoleInRoom;
+  myUserId: string;
   lastMessage: {
     id: string;
     kind: "text" | "voice";

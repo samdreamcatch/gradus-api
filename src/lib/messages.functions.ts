@@ -86,6 +86,7 @@ export const listMyRooms = createServerFn({ method: "GET" })
         athleteId: r.athlete_id,
         participants,
         myRole: myRoleByRoom.get(r.id)!,
+        myUserId: userId,
         lastMessage: lastByRoom.get(r.id) ?? null,
         unreadCount: unreadByRoom.get(r.id) ?? 0,
         updatedAt: lastByRoom.get(r.id)?.createdAt ?? r.updated_at,
