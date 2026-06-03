@@ -273,6 +273,7 @@ export function RoomView({ roomId, viewerRole }: { roomId: string; viewerRole?: 
 
       <Composer
         roomId={roomId}
+        viewerRole={viewerRole}
         disabled={sendTextMutation.isPending}
         onSendText={(body, planId) => sendTextMutation.mutate({ body, planId })}
       />
@@ -282,10 +283,12 @@ export function RoomView({ roomId, viewerRole }: { roomId: string; viewerRole?: 
 
 function Composer({
   roomId,
+  viewerRole,
   disabled,
   onSendText,
 }: {
   roomId: string;
+  viewerRole?: RoleInRoom;
   disabled: boolean;
   onSendText: (body: string, planId: string | null) => void;
 }) {
