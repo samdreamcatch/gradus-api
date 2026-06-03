@@ -64,7 +64,7 @@ export const getParentSettings = createServerFn({ method: "GET" })
     if (athletes.error) dbError(athletes.error);
     const athleteIds = (athletes.data ?? []).map((a) => a.id);
 
-    const [goals, slots, codes] = await Promise.all([
+    const [goals, slots, codes, coachLevels] = await Promise.all([
       supabaseAdmin
         .from("athlete_goals")
         .select("athlete_id, sport, current_level_key, season_goal_key, long_term_goal")
@@ -79,6 +79,7 @@ export const getParentSettings = createServerFn({ method: "GET" })
         .from("athlete_invite_codes")
         .select("athlete_id, code")
         .eq("parent_id", parent.id),
+      supabaseAdmin.from("coach_levels").select("sport").eq("coach_id", parent.coach_id),
     ]);
     if (goals.error) dbError(goals.error);
     if (slots.error) dbError(slots.error);
