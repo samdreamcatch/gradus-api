@@ -10,7 +10,7 @@ export const Route = createFileRoute("/_authenticated/athlete/messages/$roomId")
 function AthleteRoom() {
   const { roomId } = Route.useParams();
   return (
-    <div className="mx-auto max-w-2xl px-4 pt-6 pb-24">
+    <div className="mx-auto max-w-2xl px-3 pt-4 pb-24">
       <Link
         to="/athlete/messages"
         className="inline-flex items-center gap-1 text-sm text-text-secondary hover:text-text-primary"

@@ -17,7 +17,7 @@ import { listAthletePlans } from "@/lib/athlete-plans.functions";
 export const Route = createFileRoute("/_authenticated/athlete/plans/")({
   component: AthletePlansPage,
   errorComponent: ({ error }) => (
-    <div className="mx-auto max-w-2xl px-4 py-8">
+    <div className="mx-auto max-w-2xl px-3 py-6">
       <div className="rounded-2xl border border-divider bg-card p-6 text-sm text-text-secondary">
         Couldn&apos;t load plans: {error.message}
       </div>

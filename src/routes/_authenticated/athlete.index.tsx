@@ -29,7 +29,7 @@ function AthleteHome() {
   const displayName = data?.firstName?.trim() || "Athlete";
 
   return (
-    <div className="mx-auto min-h-dvh max-w-2xl px-4 py-8 pb-24">
+    <div className="mx-auto min-h-dvh max-w-2xl px-3 py-6 pb-24">
       <div className="rounded-2xl bg-card p-8 shadow-card sm:p-10">
         <p className="text-xs font-bold uppercase tracking-widest text-accent-ink">
           Welcome

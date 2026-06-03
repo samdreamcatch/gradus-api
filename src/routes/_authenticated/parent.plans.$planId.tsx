@@ -18,7 +18,7 @@ import { MessageCoachAboutPlanDialog } from "@/components/plans/message-coach-ab
 export const Route = createFileRoute("/_authenticated/parent/plans/$planId")({
   component: ParentPlanDetail,
   errorComponent: ({ error }) => (
-    <div className="mx-auto max-w-2xl px-4 py-12">
+    <div className="mx-auto max-w-2xl px-3 py-8">
       <Link
         to="/parent/plans"
         className="inline-flex items-center gap-1 text-sm text-text-secondary hover:text-text-primary"
@@ -31,7 +31,7 @@ export const Route = createFileRoute("/_authenticated/parent/plans/$planId")({
     </div>
   ),
   notFoundComponent: () => (
-    <div className="mx-auto max-w-2xl px-4 py-12 text-sm text-text-secondary">
+    <div className="mx-auto max-w-2xl px-3 py-8 text-sm text-text-secondary">
       Plan not found.
     </div>
   ),
@@ -54,14 +54,14 @@ function ParentPlanDetail() {
 
   if (isLoading || !plan) {
     return (
-      <div className="mx-auto max-w-2xl px-4 py-12 text-center text-sm text-text-secondary">
+      <div className="mx-auto max-w-2xl px-3 py-8 text-center text-sm text-text-secondary">
         Loading…
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-4 pt-4 pb-24">
+    <div className="mx-auto max-w-2xl px-3 pt-3 pb-24">
       <div className="flex items-center justify-between">
         <Link
           to="/parent/plans"

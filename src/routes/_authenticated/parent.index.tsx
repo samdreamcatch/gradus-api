@@ -59,7 +59,7 @@ function ParentHome() {
   const origin = typeof window !== "undefined" ? window.location.origin : "";
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-8 pb-24">
+    <div className="mx-auto max-w-2xl px-3 py-6 pb-24">
       <div className="flex items-center justify-between">
         <Logo className="text-4xl" />
         <Button variant="outline" size="sm" onClick={handleSignOut}>
