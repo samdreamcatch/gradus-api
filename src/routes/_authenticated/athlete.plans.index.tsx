@@ -78,23 +78,10 @@ function AthletePlansPage() {
     "h-8 w-full rounded-full border-divider bg-card px-3 text-xs font-bold text-text-primary shadow-none";
 
   return (
-    <div className="mx-auto max-w-2xl px-4 pt-10 pb-24">
-      <p className="font-display text-[40px] font-black leading-[1.08] tracking-tight text-text-primary">
-        <span
-          className="px-[0.15em]"
-          style={{
-            backgroundImage:
-              "linear-gradient(to bottom, transparent 55%, color-mix(in oklab, var(--pen-tennis) 70%, transparent) 55%, color-mix(in oklab, var(--pen-tennis) 70%, transparent) 92%, transparent 92%)",
-          }}
-        >
-          Plans
-        </span>
-      </p>
-      {plans.length > 0 ? (
-        <p className="mt-2 font-hand text-xl text-text-secondary">From your coach</p>
-      ) : null}
+    <div className="mx-auto max-w-2xl px-3 pt-6 pb-24">
+      <PageTitle subtitle={plans.length > 0 ? "From your coach" : undefined}>Plans</PageTitle>
 
-      <div className="mt-5 grid grid-cols-3 gap-2">
+      <div className="mt-4 grid grid-cols-3 gap-2">
         <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
           <SelectTrigger className={triggerClass} aria-label="Plan status">
             <SelectValue />
