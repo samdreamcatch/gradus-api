@@ -13,15 +13,13 @@ export async function resolveMyIdentity(userId: string) {
   return { coach: coach.data, athlete: athlete.data, parent: parent.data };
 }
 
-export async function listMyRoomIds(userId: string): Promise<{
+export async function listMyRoomIds(userId: string, viewerRole?: RoleInRoom): Promise<{
   rooms: { id: string; coach_id: string; athlete_id: string; updated_at: string }[];
   myRoleByRoom: Map<string, RoleInRoom>;
 }> {
   const me = await resolveMyIdentity(userId);
   const rows: { id: string; coach_id: string; athlete_id: string; updated_at: string }[] = [];
   const myRoleByRoom = new Map<string, RoleInRoom>();
-
-  const viewerRole = arguments[1] as RoleInRoom | undefined;
   const shouldInclude = (role: RoleInRoom) => !viewerRole || viewerRole === role;
 
   if (me.coach && shouldInclude("coach")) {
