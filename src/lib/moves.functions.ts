@@ -32,6 +32,16 @@ async function getCoachId(supabase: Client, userId: string): Promise<string> {
   return data.id;
 }
 
+async function findCoachId(supabase: Client, userId: string): Promise<string | null> {
+  const { data, error } = await supabase
+    .from("coach_profiles")
+    .select("id")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (error) dbError(error);
+  return data?.id ?? null;
+}
+
 function toDTO(row: {
   id: string;
   sport: string;
