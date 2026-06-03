@@ -78,6 +78,9 @@ export const listParentPlans = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const supabase = context.supabase as Client;
     const parentId = await getParentId(supabase, context.userId);
+    if (!parentId) {
+      return { athletes: [] as ParentAthleteOptionDTO[], plans: [] as ParentPlanSummaryDTO[] };
+    }
 
     const { data: athleteRows, error: aErr } = await supabase
       .from("athletes")
