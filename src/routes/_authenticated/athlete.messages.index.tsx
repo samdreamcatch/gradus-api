@@ -15,7 +15,7 @@ function AthleteMessages() {
   const fetchRooms = useServerFn(listMyRooms);
   const { data, isLoading } = useQuery({
     queryKey: ["message-rooms", "athlete"],
-    queryFn: () => fetchRooms(),
+    queryFn: () => fetchRooms({ data: { viewerRole: "athlete" } }),
   });
   const rooms = data?.rooms ?? [];
 
