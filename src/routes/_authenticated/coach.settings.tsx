@@ -330,3 +330,18 @@ function PracticeSection({ levels }: { levels: LevelEntry[] }) {
     </SectionCard>
   );
 }
+
+function AccountSection() {
+  const navigate = useNavigate();
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    navigate({ to: "/login" });
+  };
+  return (
+    <SectionCard title="Account">
+      <Button variant="outline" onClick={handleSignOut}>
+        Sign out
+      </Button>
+    </SectionCard>
+  );
+}
