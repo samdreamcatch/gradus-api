@@ -15,7 +15,7 @@ function ParentMessages() {
   const fetchRooms = useServerFn(listMyRooms);
   const { data, isLoading } = useQuery({
     queryKey: ["message-rooms", "parent"],
-    queryFn: () => fetchRooms(),
+    queryFn: () => fetchRooms({ data: { viewerRole: "parent" } }),
   });
   const rooms = data?.rooms ?? [];
 
