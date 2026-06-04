@@ -34,7 +34,7 @@ export function Logo({ className }: LogoProps) {
           top: "44%",
           height: "42%",
           background:
-            "linear-gradient(to right, color-mix(in oklab, var(--pen-tennis) 90%, transparent) 0%, color-mix(in oklab, var(--pen-tennis) 60%, transparent) 50%, color-mix(in oklab, var(--pen-tennis) 25%, transparent) 80%, transparent 100%)",
+            "linear-gradient(to right, color-mix(in oklab, var(--page-title-stripe) 90%, transparent) 0%, color-mix(in oklab, var(--page-title-stripe) 60%, transparent) 50%, color-mix(in oklab, var(--page-title-stripe) 25%, transparent) 80%, transparent 100%)",
           transform: "rotate(-2.5deg)",
           transformOrigin: "left center",
           zIndex: 0,
