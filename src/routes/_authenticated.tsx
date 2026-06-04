@@ -2,6 +2,7 @@ import { createFileRoute, Navigate, Outlet, useLocation } from "@tanstack/react-
 import { useAuthReady } from "@/hooks/use-auth-ready";
 
 export const Route = createFileRoute("/_authenticated")({
+  ssr: false,
   component: AuthGate,
 });
 
