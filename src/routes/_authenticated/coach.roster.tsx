@@ -65,21 +65,25 @@ export const Route = createFileRoute("/_authenticated/coach/roster")({
 });
 
 function RosterPage() {
-  const { data: athletes } = useSuspenseQuery(rosterQueryOptions);
+  const { data: roster } = useSuspenseQuery(rosterQueryOptions);
+  const { athletes, coachSports } = roster;
   const router = useRouter();
   const [tab, setTab] = useState<RosterTab>("athletes");
   const [selectedSport, setSelectedSport] = useState<string | null>(null);
 
   const sports = useMemo(() => {
-    const set = new Set<string>();
+    const set = new Set<string>(coachSports);
     for (const a of athletes) if (a.sport) set.add(a.sport);
     return [...set].sort();
-  }, [athletes]);
+  }, [athletes, coachSports]);
 
   const visibleAthletes = useMemo(() => {
     if (!selectedSport) return athletes;
     return athletes.filter((a) => a.sport === selectedSport);
   }, [athletes, selectedSport]);
+
+
+
 
   return (
     <>

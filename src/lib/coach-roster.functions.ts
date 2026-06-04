@@ -19,17 +19,31 @@ export type RosterAthlete = {
   slots: RosterSlot[];
 };
 
+export type CoachRoster = {
+  coachSports: string[];
+  athletes: RosterAthlete[];
+};
+
 export const getCoachRoster = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<RosterAthlete[]> => {
+  .handler(async ({ context }): Promise<CoachRoster> => {
     const coach = await supabaseAdmin
       .from("coach_profiles")
       .select("id")
       .eq("user_id", context.userId)
       .maybeSingle();
     if (coach.error) dbError(coach.error);
-    if (!coach.data) return [];
+    if (!coach.data) return { coachSports: [], athletes: [] };
     const coachId = coach.data.id;
+
+    const levelsRes = await supabaseAdmin
+      .from("coach_levels")
+      .select("sport")
+      .eq("coach_id", coachId);
+    if (levelsRes.error) dbError(levelsRes.error);
+    const coachSports = Array.from(
+      new Set((levelsRes.data ?? []).map((r) => r.sport as string)),
+    ).sort();
 
     const links = await supabaseAdmin
       .from("coach_athletes")
@@ -39,7 +53,7 @@ export const getCoachRoster = createServerFn({ method: "GET" })
       .eq("coach_id", coachId);
     if (links.error) dbError(links.error);
     const rows = links.data ?? [];
-    if (rows.length === 0) return [];
+    if (rows.length === 0) return { coachSports, athletes: [] };
 
     const athleteIds = rows.map((r) => r.athlete_id as string);
 
@@ -105,5 +119,5 @@ export const getCoachRoster = createServerFn({ method: "GET" })
         a.firstName.localeCompare(b.firstName) || a.lastName.localeCompare(b.lastName),
     );
 
-    return result;
+    return { coachSports, athletes: result };
   });
