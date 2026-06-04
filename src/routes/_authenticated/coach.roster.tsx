@@ -37,6 +37,18 @@ export const Route = createFileRoute("/_authenticated/coach/roster")({
 function RosterPage() {
   const { data: athletes } = useSuspenseQuery(rosterQueryOptions);
   const router = useRouter();
+  const [selectedSport, setSelectedSport] = useState<string | null>(null);
+
+  const sports = useMemo(() => {
+    const set = new Set<string>();
+    for (const a of athletes) if (a.sport) set.add(a.sport);
+    return [...set].sort();
+  }, [athletes]);
+
+  const visibleAthletes = useMemo(() => {
+    if (!selectedSport) return athletes;
+    return athletes.filter((a) => a.sport === selectedSport);
+  }, [athletes, selectedSport]);
 
   return (
     <>
@@ -68,13 +80,20 @@ function RosterPage() {
             </div>
           </div>
         ) : (
-          <ul className="mt-6 space-y-4">
-            {athletes.map((a) => (
-              <li key={a.athleteId}>
-                <RosterCard athlete={a} />
-              </li>
-            ))}
-          </ul>
+          <>
+            <SportFilterChips
+              sports={sports}
+              selected={selectedSport}
+              onSelect={setSelectedSport}
+            />
+            <ul className="mt-5 space-y-3">
+              {visibleAthletes.map((a) => (
+                <li key={a.athleteId}>
+                  <RosterCard athlete={a} />
+                </li>
+              ))}
+            </ul>
+          </>
         )}
       </div>
       <CoachBottomNav />
