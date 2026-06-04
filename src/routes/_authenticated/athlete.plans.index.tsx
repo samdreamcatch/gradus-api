@@ -80,7 +80,7 @@ function AthletePlansPage() {
 
   return (
     <div className="mx-auto max-w-2xl px-3 pt-6 pb-24">
-      <PageTitle subtitle={plans.length > 0 ? "From your coach" : undefined}>Plans</PageTitle>
+      <PageTitle>Plans</PageTitle>
 
       <div className="mt-4 grid grid-cols-3 gap-2">
         <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
