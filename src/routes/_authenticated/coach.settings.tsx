@@ -22,10 +22,10 @@ import {
   SettingsGroup,
   SettingsList,
   SettingsRow,
-  SettingsHeader,
   SettingsButtonRow,
   SettingsDisclosure,
 } from "@/components/settings/primitives";
+import { PageTitle } from "@/components/page-title";
 import { ThemeSelect } from "@/components/settings/theme-select";
 import { useCurrentUserEmail } from "@/hooks/use-current-user-email";
 
