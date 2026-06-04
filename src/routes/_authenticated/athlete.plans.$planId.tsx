@@ -452,7 +452,7 @@ function SessionFeedbackModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <p className="text-[11px] font-black uppercase tracking-widest text-text-secondary">
+          <p className="text-[11px] font-black uppercase tracking-widest text-accent-ink">
             Session complete · {elapsed}
           </p>
           <DialogTitle className="font-display text-2xl font-black leading-tight text-text-primary">
