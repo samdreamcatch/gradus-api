@@ -53,9 +53,7 @@ function RosterPage() {
   return (
     <>
       <div className="mx-auto min-h-dvh max-w-3xl px-4 pt-8 pb-24">
-        <PageTitle subtitle={athletes.length > 0 ? `${athletes.length} athlete${athletes.length === 1 ? "" : "s"}` : undefined}>
-          Roster
-        </PageTitle>
+        <PageTitle>Roster</PageTitle>
 
         {athletes.length === 0 ? (
           <div className="mt-8 rounded-2xl bg-card p-6 shadow-[0_10px_40px_-12px_rgba(0,0,0,0.15)] sm:p-8">
