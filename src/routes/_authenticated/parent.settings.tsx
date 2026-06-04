@@ -56,6 +56,8 @@ import {
   replaceAthleteSchedule,
   addAthlete,
   removeAthlete,
+  linkAthleteToCoach,
+  unlinkAthleteFromCoach,
 } from "@/lib/parent-settings.functions";
 import { getSport } from "@/lib/coach-sports";
 
