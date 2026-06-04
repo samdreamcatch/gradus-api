@@ -87,6 +87,9 @@
   --secondary-accent-wash: var(--pen-pool-wash);
   --secondary-accent-ink: var(--pen-pool-ink);
 
+  /* Stripe behind page titles. Tennis in light; remapped per theme. */
+  --page-title-stripe: var(--pen-tennis);
+
   /* Orange pen — attention/live token */
   --pen-orange: oklch(0.78 0.16 55);
   --pen-orange-wash: oklch(0.97 0.03 55);
