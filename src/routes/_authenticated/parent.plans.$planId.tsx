@@ -481,7 +481,7 @@ function SessionFeedbackModal({
                   <p className="text-[11px] font-black uppercase tracking-widest text-accent-ink">
                     {selected.label}
                   </p>
-                  <p className="font-hand text-xl leading-snug text-text-primary">
+                  <p className="font-sans text-base leading-snug text-text-primary">
                     {selected.blurb}
                   </p>
                 </>
