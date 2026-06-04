@@ -376,7 +376,7 @@ function GoalsSection({ athlete }: { athlete: AthleteData }) {
     >
       {athlete.coaches.length === 0 ? (
         <p className="text-sm text-text-tertiary">
-          Share {athlete.firstName}'s invite code with a coach so they can link
+          Request an invite code from {athlete.firstName}'s coach so they can link
           up. Then you'll be able to set goals here.
         </p>
       ) : athlete.sports.length === 0 ? (
