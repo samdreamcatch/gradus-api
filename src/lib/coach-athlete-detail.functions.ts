@@ -144,10 +144,23 @@ export const getCoachAthleteDetail = createServerFn({ method: "GET" })
       const planSessions = (sessionsRes.data ?? []).filter(
         (s) => s.plan_id === planRes.data!.id,
       );
-      const sessionsByState: SessionsByState = [0, 0, 0, 0, 0];
+      const stateKeys: (keyof SessionsByState)[] = [
+        "frustrated",
+        "pushing",
+        "steady",
+        "lockedIn",
+        "flowing",
+      ];
+      const sessionsByState: SessionsByState = {
+        frustrated: 0,
+        pushing: 0,
+        steady: 0,
+        lockedIn: 0,
+        flowing: 0,
+      };
       for (const s of planSessions) {
         const idx = Math.max(0, Math.min(4, s.state_index ?? 0));
-        sessionsByState[idx] = (sessionsByState[idx] ?? 0) + 1;
+        sessionsByState[stateKeys[idx]] += 1;
       }
       activePlan = {
         planId: planRes.data.id,
