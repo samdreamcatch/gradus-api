@@ -5,6 +5,7 @@ import { CoachBottomNav } from "@/components/coach/bottom-nav";
 import { PageTitle } from "@/components/page-title";
 import { RosterCard } from "@/components/coach/roster-card";
 import { SportFilterChips } from "@/components/coach/sport-filter-chips";
+import { WeekScheduleView } from "@/components/coach/week-schedule-view";
 import { InviteCard } from "@/components/onboarding/invite-card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -130,12 +131,7 @@ function RosterPage() {
             </ul>
           )
         ) : (
-          <div className="mt-5 rounded-2xl bg-card p-6 text-center shadow-[0_10px_40px_-12px_rgba(0,0,0,0.15)] sm:p-8">
-            <h2 className="font-display text-xl text-text-primary">Schedule</h2>
-            <p className="mt-2 text-sm text-text-secondary">
-              A weekly view of every athlete's sessions is coming soon.
-            </p>
-          </div>
+          <WeekScheduleView athletes={visibleAthletes} />
         )}
       </div>
       <CoachBottomNav />
