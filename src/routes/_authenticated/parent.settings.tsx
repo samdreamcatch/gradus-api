@@ -270,6 +270,7 @@ function AthleteDisclosure({ athlete }: { athlete: AthleteData }) {
       <div className="space-y-3">
         <NestedList>
           <IdentitySubrow athlete={athlete} />
+          <CoachesSection athlete={athlete} />
           <GoalsSection athlete={athlete} />
           <ScheduleSection athlete={athlete} />
           <InviteSubrow athlete={athlete} />
