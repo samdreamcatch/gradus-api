@@ -1,34 +1,23 @@
-Recolor the page-title highlighter stripe in dark mode to use the existing `--pen-pool-wash` token (calm navy) so the cream text reads cleanly. Light mode keeps the current tennis-green stripe.
+Lift the dark-mode page-title stripe from the deep tennis-wash to a mid-tone olive that matches the Gradus website reference — readable behind cream text without going muddy or neon.
 
-## Approach
+## Change
 
-Introduce one new semantic token, `--page-title-stripe`, that maps per theme. This keeps `PageTitle` agnostic of which pen it's pointing at — easy to retune later without touching the component.
+**`src/styles.css` — `.dark` block, `--page-title-stripe`**
 
-## Changes
+Replace `var(--pen-tennis-wash)` (oklch 0.30 0.095 119, too dark) with a direct mid-tone value sampled from the reference:
 
-**1. `src/styles.css` — add token in both themes**
-
-In `:root` (light):
 ```css
---page-title-stripe: var(--pen-tennis);   /* unchanged look */
+--page-title-stripe: oklch(0.62 0.13 119);
 ```
 
-In `.dark`:
-```css
---page-title-stripe: var(--pen-pool-wash); /* dark navy blue */
-```
+That's the same hue family as `--pen-tennis` (119), but at L 0.62 / C 0.13 — sits between the bright accent green and the dark wash. Matches the muted olive in the screenshot.
 
-**2. `src/components/page-title.tsx` — swap the stripe color reference**
+## Why a direct value, not a token
 
-Replace the three `var(--pen-tennis)` references inside the gradient with `var(--page-title-stripe)`. Keep the gradient stops (90% → 60% → 25% → transparent), the −2.5° tilt, and all positioning identical.
+The existing pen-tennis scale has two stops in dark mode: bright (0.90) and deep wash (0.30). The reference color sits between them. Rather than retune the whole pen-tennis scale (which is also used as `--accent` everywhere), we keep `--page-title-stripe` as the single semantic seam and give it its own value. Future tweaks remain one line.
 
-## Why this scales
+Light mode is untouched — still `var(--pen-tennis)`.
 
-- One token, used in one component. Future title-stripe tweaks are a single CSS edit.
-- Reuses existing pen-wash system — no off-palette colors introduced.
-- Logo wordmark stripe is intentionally left on `--pen-tennis` (it's the brand mark, not a page title). If you later want the logo to follow suit, the same token swap applies there.
+## Verification
 
-## Out of scope
-
-- `pen-highlight` utility (used by bottom-nav active labels) — different visual role, not changed.
-- Light mode — untouched.
+Cream text `text-primary` (L 0.945) over olive stripe (L 0.62) plus the existing gradient fade (90% → 25% → transparent) keeps contrast well above 4.5:1 across the stripe.
