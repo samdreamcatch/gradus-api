@@ -35,13 +35,25 @@ export async function loadSessionsByPlanIds(
   }
   if (planIds.length === 0) return map;
 
+  // Fetch each plan's current athlete_id so we can exclude sessions left over
+  // from a previous athlete after the plan was reassigned.
+  const { data: plans, error: pErr } = await supabase
+    .from("plans")
+    .select("id, athlete_id")
+    .in("id", planIds);
+  if (pErr) dbError(pErr);
+  const planAthlete = new Map<string, string | null>(
+    (plans ?? []).map((p) => [p.id, p.athlete_id]),
+  );
+
   const { data, error } = await supabase
     .from("plan_sessions")
-    .select("plan_id, state_index")
+    .select("plan_id, athlete_id, state_index")
     .in("plan_id", planIds);
   if (error) dbError(error);
 
   for (const row of data ?? []) {
+    if (planAthlete.get(row.plan_id) !== row.athlete_id) continue;
     const entry = map.get(row.plan_id);
     if (!entry) continue;
     const key = STATE_KEYS[row.state_index];
