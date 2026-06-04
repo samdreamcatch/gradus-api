@@ -149,7 +149,6 @@ export const listPlans = createServerFn({ method: "POST" })
         ? supabase
             .from("athlete_goals")
             .select("athlete_id, sport")
-            .eq("coach_id", coachId)
             .in("athlete_id", athleteIds)
         : Promise.resolve({ data: [], error: null }),
     ]);
@@ -187,9 +186,10 @@ export const listPlans = createServerFn({ method: "POST" })
       byPlan.set(m.plan_id, cur);
     }
 
-    const athleteSport = new Map<string, string>();
+    const athleteSport = new Map<string, Set<string>>();
     for (const g of goalsRes.data ?? []) {
-      athleteSport.set(g.athlete_id, g.sport);
+      if (!athleteSport.has(g.athlete_id)) athleteSport.set(g.athlete_id, new Set());
+      athleteSport.get(g.athlete_id)!.add(g.sport);
     }
 
     const nameOf = new Map<string, string>();
@@ -203,7 +203,7 @@ export const listPlans = createServerFn({ method: "POST" })
       filteredPlans = filteredPlans.filter((p) => {
         const fromMoves = byPlan.get(p.id)?.sports.has(wanted) ?? false;
         const fromAthlete = p.athlete_id
-          ? athleteSport.get(p.athlete_id) === wanted
+          ? (athleteSport.get(p.athlete_id)?.has(wanted) ?? false)
           : false;
         return fromMoves || fromAthlete;
       });

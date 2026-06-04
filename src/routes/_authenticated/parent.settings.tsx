@@ -19,12 +19,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ParentBottomNav } from "@/components/parent/bottom-nav";
 import { AthleteInviteCard } from "@/components/parent/athlete-invite-card";
-import {
-  AthleteGoalsForm,
-  type GoalsState,
-} from "@/components/parent/athlete-goals-form";
+
 import {
   ScheduleEditor,
   emptySlot,
@@ -47,6 +51,7 @@ import {
   updateParentProfile,
   updateAthlete,
   updateAthleteGoals,
+  setPrimaryCoach,
   replaceAthleteSchedule,
   addAthlete,
   removeAthlete,
@@ -56,6 +61,42 @@ import { getSport } from "@/lib/coach-sports";
 export const Route = createFileRoute("/_authenticated/parent/settings")({
   component: ParentSettingsPage,
 });
+
+type SportEntry = {
+  sport: string;
+  primaryCoachId: string | null;
+  primaryCoachName: string | null;
+  eligibleCoaches: { coachId: string; coachName: string }[];
+  goals: {
+    currentLevelKey: string;
+    seasonGoalKey: string;
+    longTermGoal: string;
+  } | null;
+};
+
+type CoachSchedule = {
+  coachId: string;
+  coachName: string;
+  slots: {
+    dayOfWeek: number;
+    startMinute: number;
+    endMinute: number;
+    frequency: "weekly" | "biweekly" | "twice_monthly" | "monthly";
+    weeksOfMonth: number[];
+    startsOn: string | null;
+  }[];
+};
+
+type AthleteData = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  birthdate: string | null;
+  inviteCode: string | null;
+  coaches: { coachId: string; coachName: string; sports: string[] }[];
+  sports: SportEntry[];
+  schedulesByCoach: CoachSchedule[];
+};
 
 function ParentSettingsPage() {
   const fetchSettings = useServerFn(getParentSettings);
@@ -92,10 +133,7 @@ function ParentSettingsPage() {
             </SettingsGroup>
 
             <SettingsGroup label="My athletes">
-              <AthletesList
-                athletes={data.athletes}
-                coachSports={data.coachSports}
-              />
+              <AthletesList athletes={data.athletes as AthleteData[]} />
             </SettingsGroup>
 
             <SettingsGroup label="Preferences">
@@ -184,36 +222,13 @@ function NameDisclosure({
   );
 }
 
-type AthleteData = {
-  id: string;
-  firstName: string;
-  lastName: string;
-  birthdate: string | null;
-  inviteCode: string | null;
-  goals: GoalsState | null;
-  slots: {
-    dayOfWeek: number;
-    startMinute: number;
-    endMinute: number;
-    frequency: "weekly" | "biweekly" | "twice_monthly" | "monthly";
-    weeksOfMonth: number[];
-    startsOn: string | null;
-  }[];
-};
-
-function AthletesList({
-  athletes,
-  coachSports,
-}: {
-  athletes: AthleteData[];
-  coachSports: string[];
-}) {
+function AthletesList({ athletes }: { athletes: AthleteData[] }) {
   const [adding, setAdding] = useState(false);
 
   return (
     <SettingsList>
       {athletes.map((a) => (
-        <AthleteDisclosure key={a.id} athlete={a} coachSports={coachSports} />
+        <AthleteDisclosure key={a.id} athlete={a} />
       ))}
       {adding ? (
         <div className="border-t border-divider bg-elevated/30 px-4 py-4">
@@ -231,21 +246,17 @@ function AthletesList({
   );
 }
 
-function AthleteDisclosure({
-  athlete,
-  coachSports,
-}: {
-  athlete: AthleteData;
-  coachSports: string[];
-}) {
-  const sportLabel = athlete.goals?.sport
-    ? (getSport(athlete.goals.sport)?.label ?? athlete.goals.sport)
-    : null;
-  const summary = sportLabel
-    ? sportLabel
-    : athlete.birthdate
-      ? "Set up goals"
-      : "Set up profile";
+function AthleteDisclosure({ athlete }: { athlete: AthleteData }) {
+  const summary =
+    athlete.sports.length > 0
+      ? athlete.sports
+          .map((s) => getSport(s.sport)?.label ?? s.sport)
+          .join(", ")
+      : athlete.coaches.length === 0
+        ? "No coach linked"
+        : athlete.birthdate
+          ? "Set up goals"
+          : "Set up profile";
 
   return (
     <SettingsDisclosure
@@ -256,8 +267,8 @@ function AthleteDisclosure({
       <div className="space-y-3">
         <NestedList>
           <IdentitySubrow athlete={athlete} />
-          <GoalsSubrow athlete={athlete} coachSports={coachSports} />
-          <ScheduleSubrow athlete={athlete} />
+          <GoalsSection athlete={athlete} />
+          <ScheduleSection athlete={athlete} />
           <InviteSubrow athlete={athlete} />
         </NestedList>
         <RemoveBlock athlete={athlete} />
@@ -349,27 +360,65 @@ function IdentitySubrow({ athlete }: { athlete: AthleteData }) {
   );
 }
 
-function GoalsSubrow({
+function GoalsSection({ athlete }: { athlete: AthleteData }) {
+  const summary =
+    athlete.sports.length === 0
+      ? athlete.coaches.length === 0
+        ? "Link a coach first"
+        : "Not set"
+      : `${athlete.sports.filter((s) => s.goals).length} of ${athlete.sports.length} set`;
+
+  return (
+    <SettingsDisclosure
+      icon={<Target className="size-4" />}
+      label="Goals"
+      value={summary}
+    >
+      {athlete.coaches.length === 0 ? (
+        <p className="text-sm text-text-tertiary">
+          Share {athlete.firstName}'s invite code with a coach so they can link
+          up. Then you'll be able to set goals here.
+        </p>
+      ) : athlete.sports.length === 0 ? (
+        <p className="text-sm text-text-tertiary">
+          {athlete.firstName}'s coaches haven't set up their sports yet.
+        </p>
+      ) : (
+        <div className="space-y-5">
+          {athlete.sports.map((s) => (
+            <GoalsRow key={s.sport} athlete={athlete} sportEntry={s} />
+          ))}
+        </div>
+      )}
+    </SettingsDisclosure>
+  );
+}
+
+function GoalsRow({
   athlete,
-  coachSports,
+  sportEntry,
 }: {
   athlete: AthleteData;
-  coachSports: string[];
+  sportEntry: SportEntry;
 }) {
-  const defaultSport =
-    athlete.goals?.sport || (coachSports.length === 1 ? coachSports[0] : "");
-  const [state, setState] = useState<GoalsState>({
-    sport: defaultSport,
-    currentLevelKey: athlete.goals?.currentLevelKey ?? "",
-    seasonGoalKey: athlete.goals?.seasonGoalKey ?? "",
-    longTermGoal: athlete.goals?.longTermGoal ?? "",
-  });
+  const sportMeta = getSport(sportEntry.sport);
+  const [currentLevelKey, setCurrentLevelKey] = useState(
+    sportEntry.goals?.currentLevelKey ?? "",
+  );
+  const [seasonGoalKey, setSeasonGoalKey] = useState(
+    sportEntry.goals?.seasonGoalKey ?? "",
+  );
+  const [longTermGoal, setLongTermGoal] = useState(
+    sportEntry.goals?.longTermGoal ?? "",
+  );
   const qc = useQueryClient();
   const save = useServerFn(updateAthleteGoals);
+  const changePrimary = useServerFn(setPrimaryCoach);
   const [saving, setSaving] = useState(false);
+  const [changingPrimary, setChangingPrimary] = useState(false);
 
   const canSave =
-    !!state.sport && !!state.currentLevelKey && !!state.seasonGoalKey && !saving;
+    !!currentLevelKey && !!seasonGoalKey && !saving;
 
   const handleSave = async () => {
     setSaving(true);
@@ -377,10 +426,10 @@ function GoalsSubrow({
       await save({
         data: {
           athleteId: athlete.id,
-          sport: state.sport,
-          currentLevelKey: state.currentLevelKey,
-          seasonGoalKey: state.seasonGoalKey,
-          longTermGoal: state.longTermGoal.trim(),
+          sport: sportEntry.sport,
+          currentLevelKey,
+          seasonGoalKey,
+          longTermGoal: longTermGoal.trim(),
         },
       });
       toast.success("Goals saved");
@@ -392,34 +441,206 @@ function GoalsSubrow({
     }
   };
 
-  const summary = athlete.goals?.sport
-    ? (getSport(athlete.goals.sport)?.label ?? athlete.goals.sport)
-    : "Not set";
+  const handlePrimaryChange = async (coachId: string) => {
+    setChangingPrimary(true);
+    try {
+      await changePrimary({
+        data: { athleteId: athlete.id, sport: sportEntry.sport, coachId },
+      });
+      toast.success("Primary coach updated");
+      qc.invalidateQueries({ queryKey: ["parent-settings"] });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Couldn't update");
+    } finally {
+      setChangingPrimary(false);
+    }
+  };
 
   return (
-    <SettingsDisclosure
-      icon={<Target className="size-4" />}
-      label="Goals"
-      value={summary}
-    >
-      <AthleteGoalsForm
-        athleteName={athlete.firstName}
-        availableSports={coachSports}
-        value={state}
-        onChange={setState}
-      />
+    <div className="rounded-lg border border-divider bg-elevated/30 p-3">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <div className="font-medium text-sm">
+          {sportMeta?.label ?? sportEntry.sport}
+        </div>
+        <div className="flex items-center gap-2 text-xs text-text-tertiary">
+          <span>Primary coach:</span>
+          {sportEntry.eligibleCoaches.length > 1 ? (
+            <Select
+              value={sportEntry.primaryCoachId ?? undefined}
+              onValueChange={handlePrimaryChange}
+              disabled={changingPrimary}
+            >
+              <SelectTrigger className="h-7 w-auto min-w-[8rem] text-xs">
+                <SelectValue placeholder="Pick" />
+              </SelectTrigger>
+              <SelectContent>
+                {sportEntry.eligibleCoaches.map((c) => (
+                  <SelectItem key={c.coachId} value={c.coachId}>
+                    {c.coachName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <span className="text-text-secondary">
+              {sportEntry.primaryCoachName ?? "—"}
+            </span>
+          )}
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <Label className="text-xs">Current level</Label>
+          {sportMeta && (
+            <p className="text-xs uppercase tracking-wider text-text-tertiary">
+              {sportMeta.standard}
+            </p>
+          )}
+          <Select
+            value={currentLevelKey}
+            onValueChange={setCurrentLevelKey}
+            disabled={!sportMeta}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Pick a level" />
+            </SelectTrigger>
+            <SelectContent>
+              {(sportMeta?.levels ?? []).map((lvl) => (
+                <SelectItem key={lvl.key} value={lvl.key}>
+                  {lvl.label}
+                  {lvl.hint ? ` — ${lvl.hint}` : ""}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label className="text-xs">Season goal</Label>
+          <p className="text-xs text-text-tertiary">
+            Where you&apos;d like {athlete.firstName} to be by the end of the season.
+          </p>
+          <Select
+            value={seasonGoalKey}
+            onValueChange={setSeasonGoalKey}
+            disabled={!sportMeta}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Pick a target level" />
+            </SelectTrigger>
+            <SelectContent>
+              {(sportMeta?.levels ?? []).map((lvl) => (
+                <SelectItem key={lvl.key} value={lvl.key}>
+                  {lvl.label}
+                  {lvl.hint ? ` — ${lvl.hint}` : ""}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label className="text-xs">Long-term goal</Label>
+          <p className="text-xs text-text-tertiary">
+            The bigger picture — college team, junior tour, lifelong skill. Optional.
+          </p>
+          <textarea
+            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+            value={longTermGoal}
+            onChange={(e) => setLongTermGoal(e.target.value)}
+            maxLength={2000}
+            rows={3}
+            placeholder="e.g. Play D1 college tennis"
+          />
+        </div>
+      </div>
+
       <div className="mt-3 flex justify-end">
         <Button size="sm" onClick={handleSave} disabled={!canSave}>
           {saving ? "Saving…" : "Save goals"}
         </Button>
       </div>
+    </div>
+  );
+}
+
+function ScheduleSection({ athlete }: { athlete: AthleteData }) {
+  const totalSlots = athlete.schedulesByCoach.reduce(
+    (n, c) => n + c.slots.length,
+    0,
+  );
+  const summary =
+    athlete.coaches.length === 0
+      ? "Link a coach first"
+      : totalSlots === 0
+        ? "Not set"
+        : `${totalSlots} slot${totalSlots === 1 ? "" : "s"}`;
+
+  const [selectedCoachId, setSelectedCoachId] = useState<string>(
+    athlete.coaches[0]?.coachId ?? "",
+  );
+
+  return (
+    <SettingsDisclosure
+      icon={<CalendarClock className="size-4" />}
+      label="Schedule"
+      value={summary}
+    >
+      {athlete.coaches.length === 0 ? (
+        <p className="text-sm text-text-tertiary">
+          Share {athlete.firstName}'s invite code with a coach so they can link
+          up. Then you'll be able to set a schedule here.
+        </p>
+      ) : (
+        <div className="space-y-3">
+          {athlete.coaches.length > 1 && (
+            <div className="space-y-1.5">
+              <Label className="text-xs">Coach</Label>
+              <Select value={selectedCoachId} onValueChange={setSelectedCoachId}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {athlete.coaches.map((c) => (
+                    <SelectItem key={c.coachId} value={c.coachId}>
+                      {c.coachName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          {athlete.coaches.map((c) =>
+            c.coachId === selectedCoachId ? (
+              <CoachScheduleEditor
+                key={c.coachId}
+                athleteId={athlete.id}
+                coachId={c.coachId}
+                slots={
+                  athlete.schedulesByCoach.find((s) => s.coachId === c.coachId)
+                    ?.slots ?? []
+                }
+              />
+            ) : null,
+          )}
+        </div>
+      )}
     </SettingsDisclosure>
   );
 }
 
-function ScheduleSubrow({ athlete }: { athlete: AthleteData }) {
-  const initial: Slot[] = athlete.slots.length
-    ? athlete.slots.map((s) => ({
+function CoachScheduleEditor({
+  athleteId,
+  coachId,
+  slots: initialSlots,
+}: {
+  athleteId: string;
+  coachId: string;
+  slots: CoachSchedule["slots"];
+}) {
+  const initial: Slot[] = initialSlots.length
+    ? initialSlots.map((s) => ({
         dayOfWeek: s.dayOfWeek,
         startMinute: s.startMinute,
         endMinute: s.endMinute,
@@ -457,7 +678,7 @@ function ScheduleSubrow({ athlete }: { athlete: AthleteData }) {
     }));
     setSaving(true);
     try {
-      await save({ data: { athleteId: athlete.id, slots: cleaned } });
+      await save({ data: { athleteId, coachId, slots: cleaned } });
       toast.success("Schedule saved");
       qc.invalidateQueries({ queryKey: ["parent-settings"] });
     } catch (e) {
@@ -467,23 +688,15 @@ function ScheduleSubrow({ athlete }: { athlete: AthleteData }) {
     }
   };
 
-  const summary = athlete.slots.length
-    ? `${athlete.slots.length} slot${athlete.slots.length === 1 ? "" : "s"}`
-    : "Not set";
-
   return (
-    <SettingsDisclosure
-      icon={<CalendarClock className="size-4" />}
-      label="Schedule"
-      value={summary}
-    >
+    <div>
       <ScheduleEditor slots={slots} onChange={setSlots} />
       <div className="mt-3 flex justify-end">
         <Button size="sm" onClick={handleSave} disabled={saving}>
           {saving ? "Saving…" : "Save schedule"}
         </Button>
       </div>
-    </SettingsDisclosure>
+    </div>
   );
 }
 

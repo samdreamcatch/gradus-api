@@ -100,8 +100,7 @@ export const getAthleteInviteSummary = createServerFn({ method: "POST" })
       supabaseAdmin
         .from("athlete_goals")
         .select("sport")
-        .eq("athlete_id", athlete.data.id)
-        .eq("coach_id", coachId),
+        .eq("athlete_id", athlete.data.id),
       supabaseAdmin.from("coach_levels").select("sport").eq("coach_id", coachId),
     ]);
     if (coach.error) dbError(coach.error);

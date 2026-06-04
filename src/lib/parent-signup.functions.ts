@@ -342,18 +342,37 @@ export const saveAthleteGoals = createServerFn({ method: "POST" })
       throw new Error("Athlete not found.");
     }
 
+    // Ensure a primary coach exists for this (athlete, sport); the signup
+    // coach is the natural default since they invited the parent.
+    const primary = await supabaseAdmin
+      .from("athlete_primary_coaches")
+      .upsert(
+        { athlete_id: data.athleteId, sport: data.sport, coach_id: coachId },
+        { onConflict: "athlete_id,sport", ignoreDuplicates: true },
+      );
+    if (primary.error) dbError(primary.error);
+
+    const resolvedPrimary = await supabaseAdmin
+      .from("athlete_primary_coaches")
+      .select("coach_id")
+      .eq("athlete_id", data.athleteId)
+      .eq("sport", data.sport)
+      .maybeSingle();
+    if (resolvedPrimary.error) dbError(resolvedPrimary.error);
+    const stampCoachId = resolvedPrimary.data?.coach_id ?? coachId;
+
     const up = await supabaseAdmin
       .from("athlete_goals")
       .upsert(
         {
           athlete_id: data.athleteId,
-          coach_id: coachId,
+          coach_id: stampCoachId,
           sport: data.sport,
           current_level_key: data.currentLevelKey,
           season_goal_key: data.seasonGoalKey,
           long_term_goal: data.longTermGoal,
         },
-        { onConflict: "athlete_id,coach_id,sport" },
+        { onConflict: "athlete_id,sport" },
       );
     if (up.error) dbError(up.error);
     return { ok: true };
