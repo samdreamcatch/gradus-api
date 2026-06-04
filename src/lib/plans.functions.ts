@@ -186,9 +186,10 @@ export const listPlans = createServerFn({ method: "POST" })
       byPlan.set(m.plan_id, cur);
     }
 
-    const athleteSport = new Map<string, string>();
+    const athleteSport = new Map<string, Set<string>>();
     for (const g of goalsRes.data ?? []) {
-      athleteSport.set(g.athlete_id, g.sport);
+      if (!athleteSport.has(g.athlete_id)) athleteSport.set(g.athlete_id, new Set());
+      athleteSport.get(g.athlete_id)!.add(g.sport);
     }
 
     const nameOf = new Map<string, string>();
