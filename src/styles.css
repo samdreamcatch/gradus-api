@@ -34,7 +34,9 @@
   --color-primary-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
+  /* `text-destructive` uses the readable ink token; `bg-destructive` uses the fill. */
+  --color-destructive: var(--destructive-ink);
+  --color-destructive-fill: var(--destructive);
   --color-destructive-foreground: oklch(0.98 0 0);
   --color-border: var(--divider);
   --color-input: var(--divider);
