@@ -108,8 +108,8 @@ export const getCoachAthleteDetail = createServerFn({ method: "GET" })
         .maybeSingle(),
       supabaseAdmin
         .from("plan_sessions")
-        .select("plan_id, state_index, duration_seconds, logged_at, parent_id")
-        .eq("athlete_id", data.athleteId)
+        .select("plan_id, state_index, duration_seconds, logged_at, parent_id, plans!inner(athlete_id)")
+        .eq("plans.athlete_id", data.athleteId)
         .gte("logged_at", since),
       supabaseAdmin
         .from("message_rooms")
