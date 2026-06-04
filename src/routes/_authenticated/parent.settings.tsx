@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/select";
 import { ParentBottomNav } from "@/components/parent/bottom-nav";
 import { AthleteInviteCard } from "@/components/parent/athlete-invite-card";
-import { AthleteGoalsForm } from "@/components/parent/athlete-goals-form";
+
 import {
   ScheduleEditor,
   emptySlot,
