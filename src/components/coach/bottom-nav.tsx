@@ -16,7 +16,7 @@ export function CoachBottomNav() {
   const unread = useMessagesUnread();
   const ITEMS: Item[] = [
     { label: "Plans", icon: ClipboardList, to: "/coach/plans" },
-    { label: "Roster", icon: Users },
+    { label: "Roster", icon: Users, to: "/coach/roster", matchPrefix: "/coach/roster" },
     { label: "Messages", icon: MessageSquare, to: "/coach/messages", matchPrefix: "/coach/messages", unreadCount: unread },
     { label: "Settings", icon: Settings, to: "/coach/settings", matchPrefix: "/coach/settings" },
   ];
