@@ -174,7 +174,7 @@ export const getParentSettings = createServerFn({ method: "GET" })
           return {
             coachId: l.coach_id as string,
             coachName: `${cp.first_name} ${cp.last_name}`.trim(),
-            sports: Array.from(coachSports.get(l.coach_id) ?? []),
+            sports: Array.from(scopedSports.get(scopeKey(a.id, l.coach_id)) ?? []) as string[],
           };
         });
 
