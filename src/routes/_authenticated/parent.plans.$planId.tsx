@@ -506,7 +506,7 @@ function SessionFeedbackModal({
               onChange={(e) => setNote(e.target.value)}
               rows={3}
               placeholder="What stood out, what to watch for, questions for coach…"
-              className="mt-1.5 w-full resize-none rounded-xl border border-divider bg-card px-3 py-2 text-[15px] leading-relaxed text-text-primary placeholder:text-text-tertiary focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
+              className="mt-1.5 w-full resize-none rounded-xl border border-divider bg-elevated px-3 py-2 text-[15px] leading-relaxed text-text-primary placeholder:text-text-tertiary focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
             />
           </div>
 
