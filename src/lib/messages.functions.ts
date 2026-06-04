@@ -240,8 +240,13 @@ export const sendMessage = createServerFn({ method: "POST" })
       .maybeSingle();
     if (linkErr) dbError(linkErr, "Couldn't send message");
     if (!link) {
-      throw new Error("This coach is no longer connected to this athlete. New messages can't be sent.");
+      return {
+        ok: false as const,
+        reason: "coach_unlinked" as const,
+        message: "This coach is no longer connected to this athlete. New messages can't be sent.",
+      };
     }
+
 
 
     let audioPath: string | null = null;
@@ -291,7 +296,7 @@ export const sendMessage = createServerFn({ method: "POST" })
       .update({ updated_at: new Date().toISOString() })
       .eq("id", room.id);
 
-    return { id: inserted!.id };
+    return { ok: true as const, id: inserted!.id };
   });
 
 /* ---------------- markRoomRead ---------------- */

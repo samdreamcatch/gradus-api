@@ -174,7 +174,11 @@ export function RoomView({ roomId, viewerRole }: { roomId: string; viewerRole?: 
   const sendTextMutation = useMutation({
     mutationFn: (vars: { body: string; planId: string | null }) =>
       sendFn({ data: { roomId, kind: "text", body: vars.body, planId: vars.planId, viewerRole } }),
-    onSuccess: () => {
+    onSuccess: (result) => {
+      if (result && "ok" in result && result.ok === false) {
+        toast.error("Couldn't send", { description: result.message });
+        return;
+      }
       queryClient.invalidateQueries({ queryKey: ["message-room", viewerRole ?? "default", roomId] });
       queryClient.invalidateQueries({ queryKey: ["message-rooms"] });
     },
@@ -183,6 +187,7 @@ export function RoomView({ roomId, viewerRole }: { roomId: string; viewerRole?: 
         description: e instanceof Error ? e.message : "Please try again.",
       }),
   });
+
 
   if (isLoading || !room) {
     return <p className="py-10 text-center text-sm text-text-secondary">Loading…</p>;

@@ -43,11 +43,15 @@ export function MessageCoachAboutPlanDialog({
   const mutation = useMutation({
     mutationFn: async (text: string) => {
       const { id: roomId } = await ensureRoomFn({ data: { coachId, athleteId } });
-      await sendMessageFn({
+      const result = await sendMessageFn({
         data: { roomId, kind: "text", body: text, planId },
       });
+      if (result && "ok" in result && result.ok === false) {
+        throw new Error(result.message);
+      }
       return roomId;
     },
+
     onSuccess: (roomId) => {
       setBody("");
       onOpenChange(false);
