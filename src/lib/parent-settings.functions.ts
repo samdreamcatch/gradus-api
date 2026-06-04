@@ -53,15 +53,24 @@ async function ensurePrimaryCoach(
   if (existing.error) dbError(existing.error);
   if (existing.data?.coach_id) return existing.data.coach_id;
 
-  // Find earliest eligible coach who is linked to this athlete and teaches this sport
+  // Find earliest eligible coach who is linked to this athlete and teaches this sport.
+  // Done as two queries since there is no direct FK between coach_athletes and coach_levels.
   const linked = await supabaseAdmin
     .from("coach_athletes")
-    .select("coach_id, created_at, coach_levels!inner(sport)")
+    .select("coach_id, created_at")
     .eq("athlete_id", athleteId)
-    .eq("coach_levels.sport", sport)
     .order("created_at", { ascending: true });
   if (linked.error) dbError(linked.error);
-  const coachId = linked.data?.[0]?.coach_id as string | undefined;
+  const linkedCoachIds = (linked.data ?? []).map((r) => r.coach_id as string);
+  if (linkedCoachIds.length === 0) return null;
+  const teaching = await supabaseAdmin
+    .from("coach_levels")
+    .select("coach_id")
+    .eq("sport", sport)
+    .in("coach_id", linkedCoachIds);
+  if (teaching.error) dbError(teaching.error);
+  const teachingSet = new Set((teaching.data ?? []).map((r) => r.coach_id as string));
+  const coachId = linkedCoachIds.find((id) => teachingSet.has(id));
   if (!coachId) return null;
 
   const ins = await supabaseAdmin
