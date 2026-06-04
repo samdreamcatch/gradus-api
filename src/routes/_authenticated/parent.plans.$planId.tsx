@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, ChevronDown, MessageCircle, Settings, X } from "lucide-react";
+import { ArrowLeft, ChevronDown, MessageCircle, X } from "lucide-react";
 import { IdleSlide, RunningPill } from "@/components/plans/session-timer-controls";
 import { toast } from "sonner";
 import { ParentBottomNav } from "@/components/parent/bottom-nav";
@@ -55,7 +55,7 @@ function ParentPlanDetail() {
   const toggle = (id: string) => setExpanded((s) => ({ ...s, [id]: !s[id] }));
   const [messageOpen, setMessageOpen] = useState(false);
 
-  const soon = (label: string) => toast(`${label} — coming soon`);
+  
 
   if (isLoading || !plan) {
     return (
@@ -74,14 +74,6 @@ function ParentPlanDetail() {
         >
           <ArrowLeft className="size-4" /> Back
         </Link>
-        <button
-          type="button"
-          onClick={() => soon("Settings")}
-          className="text-text-tertiary hover:text-text-primary"
-          aria-label="Settings"
-        >
-          <Settings className="size-5" />
-        </button>
       </div>
 
       <div className="mt-4">
