@@ -62,10 +62,6 @@ function ParentPlansPage() {
     [plans, statusFilter, athleteId, coachId],
   );
 
-  const subtitleNames =
-    athleteId === ""
-      ? athletes.map((a) => a.name.split(" ")[0]).join(" & ")
-      : athletes.find((a) => a.id === athleteId)?.name.split(" ")[0] ?? "";
 
   const triggerClass =
     "h-8 w-full rounded-full border-divider bg-card px-3 text-xs font-bold text-text-primary shadow-none";
