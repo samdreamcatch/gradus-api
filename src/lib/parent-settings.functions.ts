@@ -333,6 +333,43 @@ const inviteCodeSchema = z
   .length(8, "Invite code must be 8 characters")
   .regex(/^[A-Z2-9]+$/, "Invalid characters in code");
 
+/**
+ * Look up a coach by invite code so the parent can pick which sports apply
+ * to their athlete before linking. Does not mutate anything.
+ */
+export const previewCoachByInviteCode = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ code: inviteCodeSchema }).parse(input),
+  )
+  .handler(async ({ data }) => {
+    const codeLookup = await supabaseAdmin
+      .from("coach_invite_codes")
+      .select("coach_id")
+      .eq("code", data.code)
+      .maybeSingle();
+    if (codeLookup.error) dbError(codeLookup.error);
+    if (!codeLookup.data) {
+      throw new Error("That invite code isn't valid. Double-check with the coach.");
+    }
+    const coachId = codeLookup.data.coach_id;
+    const [profile, levels] = await Promise.all([
+      supabaseAdmin
+        .from("coach_profiles")
+        .select("first_name, last_name")
+        .eq("id", coachId)
+        .single(),
+      supabaseAdmin.from("coach_levels").select("sport").eq("coach_id", coachId),
+    ]);
+    if (profile.error) dbError(profile.error);
+    const sports = Array.from(new Set((levels.data ?? []).map((l) => l.sport)));
+    return {
+      coachId,
+      coachName: `${profile.data.first_name} ${profile.data.last_name}`.trim(),
+      sports,
+    };
+  });
+
 export const linkAthleteToCoach = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
@@ -340,6 +377,7 @@ export const linkAthleteToCoach = createServerFn({ method: "POST" })
       .object({
         athleteId: z.string().uuid(),
         code: inviteCodeSchema,
+        sports: z.array(z.string().min(1).max(64)).min(1, "Pick at least one sport").max(20),
       })
       .parse(input),
   )
@@ -357,6 +395,18 @@ export const linkAthleteToCoach = createServerFn({ method: "POST" })
     }
     const coachId = codeLookup.data.coach_id;
 
+    // Validate selected sports are actually offered by this coach
+    const offered = await supabaseAdmin
+      .from("coach_levels")
+      .select("sport")
+      .eq("coach_id", coachId);
+    if (offered.error) dbError(offered.error);
+    const offeredSet = new Set((offered.data ?? []).map((r) => r.sport));
+    const chosen = Array.from(new Set(data.sports));
+    for (const s of chosen) {
+      if (!offeredSet.has(s)) throw new Error(`Coach doesn't offer ${s}.`);
+    }
+
     const existing = await supabaseAdmin
       .from("coach_athletes")
       .select("id")
@@ -372,6 +422,98 @@ export const linkAthleteToCoach = createServerFn({ method: "POST" })
       .from("coach_athletes")
       .insert({ athlete_id: data.athleteId, coach_id: coachId });
     if (ins.error) dbError(ins.error);
+
+    const scopeRows = chosen.map((sport) => ({
+      athlete_id: data.athleteId,
+      coach_id: coachId,
+      sport,
+    }));
+    const scopeIns = await supabaseAdmin
+      .from("coach_athlete_sports")
+      .insert(scopeRows);
+    if (scopeIns.error) dbError(scopeIns.error);
+
+    return { ok: true };
+  });
+
+/**
+ * Replace the set of sports an athlete does with a coach. If a sport is
+ * removed and that coach was the primary for it, clear the primary row.
+ */
+export const updateCoachAthleteSports = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        athleteId: z.string().uuid(),
+        coachId: z.string().uuid(),
+        sports: z.array(z.string().min(1).max(64)).min(1, "Pick at least one sport").max(20),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await assertOwnsAthlete(context.userId, data.athleteId);
+
+    const link = await supabaseAdmin
+      .from("coach_athletes")
+      .select("id")
+      .eq("athlete_id", data.athleteId)
+      .eq("coach_id", data.coachId)
+      .maybeSingle();
+    if (link.error) dbError(link.error);
+    if (!link.data) throw new Error("That coach isn't linked to this athlete.");
+
+    const offered = await supabaseAdmin
+      .from("coach_levels")
+      .select("sport")
+      .eq("coach_id", data.coachId);
+    if (offered.error) dbError(offered.error);
+    const offeredSet = new Set((offered.data ?? []).map((r) => r.sport));
+    const chosen = Array.from(new Set(data.sports));
+    for (const s of chosen) {
+      if (!offeredSet.has(s)) throw new Error(`Coach doesn't offer ${s}.`);
+    }
+
+    const existing = await supabaseAdmin
+      .from("coach_athlete_sports")
+      .select("sport")
+      .eq("athlete_id", data.athleteId)
+      .eq("coach_id", data.coachId);
+    if (existing.error) dbError(existing.error);
+    const currentSet = new Set((existing.data ?? []).map((r) => r.sport));
+    const chosenSet = new Set(chosen);
+
+    const toAdd = chosen.filter((s) => !currentSet.has(s));
+    const toRemove = Array.from(currentSet).filter((s) => !chosenSet.has(s));
+
+    if (toAdd.length > 0) {
+      const ins = await supabaseAdmin.from("coach_athlete_sports").insert(
+        toAdd.map((sport) => ({
+          athlete_id: data.athleteId,
+          coach_id: data.coachId,
+          sport,
+        })),
+      );
+      if (ins.error) dbError(ins.error);
+    }
+    if (toRemove.length > 0) {
+      const del = await supabaseAdmin
+        .from("coach_athlete_sports")
+        .delete()
+        .eq("athlete_id", data.athleteId)
+        .eq("coach_id", data.coachId)
+        .in("sport", toRemove);
+      if (del.error) dbError(del.error);
+
+      // If this coach was primary for any removed sport, clear it so it can
+      // re-resolve (or vanish if no other eligible coaches remain).
+      await supabaseAdmin
+        .from("athlete_primary_coaches")
+        .delete()
+        .eq("athlete_id", data.athleteId)
+        .eq("coach_id", data.coachId)
+        .in("sport", toRemove);
+    }
 
     return { ok: true };
   });
