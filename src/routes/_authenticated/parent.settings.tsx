@@ -369,24 +369,64 @@ function IdentitySubrow({ athlete }: { athlete: AthleteData }) {
 function CoachesSection({ athlete }: { athlete: AthleteData }) {
   const [adding, setAdding] = useState(false);
   const [code, setCode] = useState("");
+  const [preview, setPreview] = useState<{
+    coachId: string;
+    coachName: string;
+    sports: string[];
+  } | null>(null);
+  const [selectedSports, setSelectedSports] = useState<string[]>([]);
+  const [lookingUp, setLookingUp] = useState(false);
   const qc = useQueryClient();
+  const previewFn = useServerFn(previewCoachByInviteCode);
   const link = useServerFn(linkAthleteToCoach);
   const unlink = useServerFn(unlinkAthleteFromCoach);
+  const updateSports = useServerFn(updateCoachAthleteSports);
   const [saving, setSaving] = useState(false);
   const [removingId, setRemovingId] = useState<string | null>(null);
+  const [editingCoachId, setEditingCoachId] = useState<string | null>(null);
+  const [editSports, setEditSports] = useState<string[]>([]);
+  const [editOptions, setEditOptions] = useState<string[]>([]);
+  const [editSaving, setEditSaving] = useState(false);
 
   const summary =
     athlete.coaches.length === 0
       ? "None linked"
       : `${athlete.coaches.length} linked`;
 
+  const resetLinkForm = () => {
+    setAdding(false);
+    setCode("");
+    setPreview(null);
+    setSelectedSports([]);
+  };
+
+  const handleLookup = async () => {
+    setLookingUp(true);
+    try {
+      const result = await previewFn({ data: { code: code.trim() } });
+      setPreview(result);
+      // Default: pre-select if there's only one sport
+      setSelectedSports(result.sports.length === 1 ? [result.sports[0]] : []);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Couldn't find coach");
+    } finally {
+      setLookingUp(false);
+    }
+  };
+
   const handleLink = async () => {
+    if (!preview) return;
     setSaving(true);
     try {
-      await link({ data: { athleteId: athlete.id, code: code.trim() } });
+      await link({
+        data: {
+          athleteId: athlete.id,
+          code: code.trim(),
+          sports: selectedSports,
+        },
+      });
       toast.success("Coach linked");
-      setCode("");
-      setAdding(false);
+      resetLinkForm();
       qc.invalidateQueries({ queryKey: ["parent-settings"] });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Couldn't link coach");
@@ -408,6 +448,44 @@ function CoachesSection({ athlete }: { athlete: AthleteData }) {
     }
   };
 
+  const startEditSports = async (coachId: string, currentSports: string[]) => {
+    setEditingCoachId(coachId);
+    setEditSports(currentSports);
+    // Fetch full set of sports the coach offers (may include ones currently
+    // unselected). Reuse the preview function via the coach's own coachId is
+    // not possible without an invite code — instead, the union of currently
+    // selected sports plus the coach's offerings would be ideal, but the
+    // coach's full catalog isn't returned in settings. As a simple solution,
+    // start with what's already selected; the parent can remove. Adding a
+    // sport later would require re-linking.
+    setEditOptions(currentSports);
+  };
+
+  const handleSaveSports = async () => {
+    if (!editingCoachId) return;
+    setEditSaving(true);
+    try {
+      await updateSports({
+        data: {
+          athleteId: athlete.id,
+          coachId: editingCoachId,
+          sports: editSports,
+        },
+      });
+      toast.success("Sports updated");
+      setEditingCoachId(null);
+      qc.invalidateQueries({ queryKey: ["parent-settings"] });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Couldn't update sports");
+    } finally {
+      setEditSaving(false);
+    }
+  };
+
+  const toggleSport = (sport: string, list: string[], setList: (l: string[]) => void) => {
+    setList(list.includes(sport) ? list.filter((s) => s !== sport) : [...list, sport]);
+  };
+
   return (
     <SettingsDisclosure
       icon={<UserPlus className="size-4" />}
@@ -421,68 +499,183 @@ function CoachesSection({ athlete }: { athlete: AthleteData }) {
         </p>
       ) : (
         <div className="mb-3 space-y-2">
-          {athlete.coaches.map((c) => (
-            <div
-              key={c.coachId}
-              className="flex items-center justify-between gap-2 rounded-lg border border-divider bg-elevated/30 px-3 py-2"
-            >
-              <div className="min-w-0">
-                <div className="truncate text-sm font-medium">{c.coachName}</div>
-                <div className="truncate text-xs text-text-tertiary">
-                  {c.sports.length === 0
-                    ? "No sports set"
-                    : c.sports
-                        .map((s) => getSport(s)?.label ?? s)
-                        .join(", ")}
-                </div>
-              </div>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => handleUnlink(c.coachId)}
-                disabled={removingId === c.coachId}
-                className="text-destructive hover:text-destructive"
+          {athlete.coaches.map((c) => {
+            const isEditing = editingCoachId === c.coachId;
+            return (
+              <div
+                key={c.coachId}
+                className="rounded-lg border border-divider bg-elevated/30 px-3 py-2"
               >
-                {removingId === c.coachId ? "Removing…" : "Unlink"}
-              </Button>
-            </div>
-          ))}
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="truncate text-sm font-medium">{c.coachName}</div>
+                    <div className="truncate text-xs text-text-tertiary">
+                      {c.sports.length === 0
+                        ? "No sports set"
+                        : c.sports
+                            .map((s) => getSport(s)?.label ?? s)
+                            .join(", ")}
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 gap-1">
+                    {!isEditing && c.sports.length > 0 && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => startEditSports(c.coachId, c.sports)}
+                      >
+                        Edit sports
+                      </Button>
+                    )}
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleUnlink(c.coachId)}
+                      disabled={removingId === c.coachId}
+                      className="text-destructive hover:text-destructive"
+                    >
+                      {removingId === c.coachId ? "Removing…" : "Unlink"}
+                    </Button>
+                  </div>
+                </div>
+                {isEditing && (
+                  <div className="mt-3 space-y-2 border-t border-divider pt-3">
+                    <Label className="text-xs">
+                      Sports {athlete.firstName} does with {c.coachName}
+                    </Label>
+                    <div className="flex flex-wrap gap-2">
+                      {editOptions.map((s) => {
+                        const selected = editSports.includes(s);
+                        return (
+                          <button
+                            key={s}
+                            type="button"
+                            onClick={() => toggleSport(s, editSports, setEditSports)}
+                            className={
+                              "rounded-pill border-2 px-3 py-1 text-xs font-semibold transition " +
+                              (selected
+                                ? "border-accent bg-accent text-accent-foreground"
+                                : "border-divider bg-card text-text-primary")
+                            }
+                          >
+                            {getSport(s)?.label ?? s}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <p className="text-xs text-text-tertiary">
+                      Removing a sport here keeps the coach linked but stops
+                      tracking that sport with them. To add a sport this coach
+                      teaches that isn't shown, unlink and re-link with the
+                      invite code.
+                    </p>
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setEditingCoachId(null)}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={handleSaveSports}
+                        disabled={editSaving || editSports.length === 0}
+                      >
+                        {editSaving ? "Saving…" : "Save"}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 
       {adding ? (
         <div className="space-y-2 rounded-lg border border-divider bg-elevated/30 p-3">
-          <Label className="text-xs">Coach's invite code</Label>
-          <Input
-            value={code}
-            maxLength={8}
-            placeholder="8-character code"
-            onChange={(e) => setCode(e.target.value.toUpperCase())}
-            className="font-mono uppercase tracking-widest"
-          />
-          <p className="text-xs text-text-tertiary">
-            Once linked, the sports they coach become available to set goals
-            and schedules for.
-          </p>
-          <div className="flex justify-end gap-2">
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => {
-                setAdding(false);
-                setCode("");
-              }}
-            >
-              Cancel
-            </Button>
-            <Button
-              size="sm"
-              onClick={handleLink}
-              disabled={saving || code.trim().length !== 8}
-            >
-              {saving ? "Linking…" : "Link coach"}
-            </Button>
-          </div>
+          {!preview ? (
+            <>
+              <Label className="text-xs">Coach's invite code</Label>
+              <Input
+                value={code}
+                maxLength={8}
+                placeholder="8-character code"
+                onChange={(e) => setCode(e.target.value.toUpperCase())}
+                className="font-mono uppercase tracking-widest"
+              />
+              <div className="flex justify-end gap-2">
+                <Button size="sm" variant="ghost" onClick={resetLinkForm}>
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={handleLookup}
+                  disabled={lookingUp || code.trim().length !== 8}
+                >
+                  {lookingUp ? "Looking up…" : "Continue"}
+                </Button>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="text-sm">
+                Linking to <span className="font-medium">{preview.coachName}</span>
+              </p>
+              {preview.sports.length === 0 ? (
+                <p className="text-xs text-destructive">
+                  This coach hasn't set up any sports yet. Ask them to finish
+                  onboarding before linking.
+                </p>
+              ) : (
+                <>
+                  <Label className="text-xs">
+                    Which sport(s) does {athlete.firstName} do with{" "}
+                    {preview.coachName}?
+                  </Label>
+                  <div className="flex flex-wrap gap-2">
+                    {preview.sports.map((s) => {
+                      const selected = selectedSports.includes(s);
+                      return (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() =>
+                            toggleSport(s, selectedSports, setSelectedSports)
+                          }
+                          className={
+                            "rounded-pill border-2 px-3 py-1 text-xs font-semibold transition " +
+                            (selected
+                              ? "border-accent bg-accent text-accent-foreground"
+                              : "border-divider bg-card text-text-primary")
+                          }
+                        >
+                          {getSport(s)?.label ?? s}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+              <div className="flex justify-end gap-2">
+                <Button size="sm" variant="ghost" onClick={resetLinkForm}>
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={handleLink}
+                  disabled={
+                    saving ||
+                    preview.sports.length === 0 ||
+                    selectedSports.length === 0
+                  }
+                >
+                  {saving ? "Linking…" : "Link coach"}
+                </Button>
+              </div>
+            </>
+          )}
         </div>
       ) : (
         <Button
