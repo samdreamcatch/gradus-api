@@ -244,7 +244,7 @@ export const sendMessage = createServerFn({ method: "POST" })
         throw new Error("Voice note is too long (max ~8MB).");
       }
       const ext = data.mimeType.includes("mp4") ? "mp4" : data.mimeType.includes("ogg") ? "ogg" : "webm";
-      const path = `${room.id}/${crypto.randomUUID()}.${ext}`;
+      const path = `${room.id}/${userId}/${crypto.randomUUID()}.${ext}`;
       const { error: upErr } = await supabaseAdmin.storage
         .from("voice-notes")
         .upload(path, bytes, { contentType: data.mimeType, upsert: false });
