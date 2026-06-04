@@ -1,5 +1,5 @@
 import { toast } from "sonner";
-import { getSport, type SportKey } from "@/lib/coach-sports";
+import { cn } from "@/lib/utils";
 import type { RosterAthlete } from "@/lib/coach-roster.functions";
 
 const DAY_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -12,45 +12,36 @@ function formatTime(minute: number): string {
   return m === 0 ? `${h12}${ampm}` : `${h12}:${String(m).padStart(2, "0")}${ampm}`;
 }
 
-function sportLabel(sport: string | null): string | null {
-  if (!sport) return null;
-  return getSport(sport as SportKey)?.label ?? sport;
-}
-
 export function RosterCard({ athlete }: { athlete: RosterAthlete }) {
   const name = `${athlete.firstName} ${athlete.lastName}`.trim();
-  const parentName = `${athlete.parentFirstName} ${athlete.parentLastName}`.trim();
-  const sport = sportLabel(athlete.sport);
 
   return (
     <button
       type="button"
       onClick={() => toast("Athlete detail coming soon")}
-      className="block w-full rounded-2xl bg-card p-5 text-left shadow-[0_10px_40px_-12px_rgba(0,0,0,0.15)] transition hover:shadow-[0_14px_44px_-12px_rgba(0,0,0,0.22)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:p-6"
+      className={cn(
+        "group relative block w-full overflow-hidden rounded-2xl border border-divider bg-card p-4 pl-5 text-left shadow-card transition-all",
+        "hover:-translate-y-0.5 hover:shadow-page focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
+      )}
     >
-      {sport ? (
-        <p className="text-[10px] font-bold uppercase tracking-widest text-accent-ink">
-          {sport}
-        </p>
-      ) : null}
-      <h2 className="mt-1 font-display text-2xl font-medium leading-tight text-text-primary">
-        {name}
-      </h2>
-      {parentName ? (
-        <p className="mt-1 font-hand text-lg text-text-secondary">
-          with {parentName}
-        </p>
-      ) : null}
+      <span
+        aria-hidden
+        className="absolute inset-y-0 left-0 w-1.5 bg-[var(--pen-tennis)]"
+      />
 
-      <div className="mt-4">
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="min-w-0 truncate font-display text-lg font-black leading-tight tracking-tight text-text-primary">
+          {name}
+        </h2>
+
         {athlete.slots.length === 0 ? (
-          <p className="text-sm text-text-tertiary">No schedule set</p>
+          <span className="shrink-0 text-xs text-text-tertiary">No schedule</span>
         ) : (
-          <ul className="flex flex-wrap gap-1.5">
+          <ul className="flex shrink-0 flex-wrap justify-end gap-1">
             {athlete.slots.map((s, i) => (
               <li
                 key={i}
-                className="rounded-pill border border-divider bg-elevated px-2.5 py-1 text-xs font-medium text-text-primary"
+                className="rounded-pill border border-divider bg-elevated px-2 py-0.5 text-[11px] font-medium text-text-primary tabular-nums"
               >
                 <span className="text-text-secondary">{DAY_SHORT[s.dayOfWeek]}</span>{" "}
                 <span>{formatTime(s.startMinute)}</span>
