@@ -912,6 +912,9 @@ function ScheduleSection({ athlete }: { athlete: AthleteData }) {
   const [selectedCoachId, setSelectedCoachId] = useState<string>(
     athlete.coaches[0]?.coachId ?? "",
   );
+  const activeCoachId = athlete.coaches.some((c) => c.coachId === selectedCoachId)
+    ? selectedCoachId
+    : (athlete.coaches[0]?.coachId ?? "");
 
   return (
     <SettingsDisclosure
