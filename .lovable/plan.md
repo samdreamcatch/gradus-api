@@ -1,29 +1,34 @@
-Bring the session-complete dialog (and all dialogs) in line with the rest of dark mode by raising the dialog surface from background to card, adding a proper border, and stepping the textarea up to elevated so it stays visible inside the lifted dialog.
+Recolor the page-title highlighter stripe in dark mode to use the existing `--pen-pool-wash` token (calm navy) so the cream text reads cleanly. Light mode keeps the current tennis-green stripe.
+
+## Approach
+
+Introduce one new semantic token, `--page-title-stripe`, that maps per theme. This keeps `PageTitle` agnostic of which pen it's pointing at — easy to retune later without touching the component.
 
 ## Changes
 
-**1. `src/components/ui/dialog.tsx` — `DialogContent` (global fix, all dialogs benefit)**
+**1. `src/styles.css` — add token in both themes**
 
-- Surface: `bg-background` → `bg-card` (matches plan cards, settings, message rooms).
-- Border: add `border-divider` so the framing reads like other surfaces.
-- Polish: `sm:rounded-lg` → `rounded-2xl` and add `shadow-card` to match the rest of the dark-mode surface system. Bump padding `p-3` → `p-5` so content doesn't sit flush against the edge.
+In `:root` (light):
+```css
+--page-title-stripe: var(--pen-tennis);   /* unchanged look */
+```
 
-**2. `src/routes/_authenticated/parent.plans.$planId.tsx` — feedback textarea (line 509)**
+In `.dark`:
+```css
+--page-title-stripe: var(--pen-pool-wash); /* dark navy blue */
+```
 
-- Textarea: `bg-card` → `bg-elevated` so it stays visually distinct from the now-lifted dialog body. Same edit in `src/routes/_authenticated/athlete.plans.$planId.tsx` if the equivalent textarea exists there.
+**2. `src/components/page-title.tsx` — swap the stripe color reference**
 
-**3. Eyebrow color (small consistency nudge, optional but recommended)**
+Replace the three `var(--pen-tennis)` references inside the gradient with `var(--page-title-stripe)`. Keep the gradient stops (90% → 60% → 25% → transparent), the −2.5° tilt, and all positioning identical.
 
-- "Session complete · 00:02" currently uses `text-text-secondary`. Switch to `text-accent-ink` to match the eyebrow style used elsewhere (e.g. settings header) so the dialog's typographic system feels native to the app.
+## Why this scales
 
-## Why this is the right scope
+- One token, used in one component. Future title-stripe tweaks are a single CSS edit.
+- Reuses existing pen-wash system — no off-palette colors introduced.
+- Logo wordmark stripe is intentionally left on `--pen-tennis` (it's the brand mark, not a page title). If you later want the logo to follow suit, the same token swap applies there.
 
-- The cream text token is already correct everywhere in this dialog — no text-color changes needed.
-- Fixing `DialogContent` once propagates the improvement to every modal (message-coach dialog, plan move dialogs, etc.) instead of patching one popup.
-- Light mode is unaffected: `--card` in light mode is a translucent white that sits cleanly on the page wash, so a dialog on `bg-card` in light mode still reads as a floating sheet.
+## Out of scope
 
-## Verification after edits
-
-- `text-text-primary` (L 0.945) on new dialog surface `--card` (L 0.255) → ~13.5:1, AAA.
-- `text-text-secondary` (L 0.88) on card → ~11:1, AAA.
-- Textarea on `--elevated` (L 0.285) inside dialog on `--card` (L 0.255) → ~0.03 L delta, plus the `border-divider` keeps the input visibly bounded.
+- `pen-highlight` utility (used by bottom-nav active labels) — different visual role, not changed.
+- Light mode — untouched.
