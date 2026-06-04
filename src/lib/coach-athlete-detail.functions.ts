@@ -246,8 +246,8 @@ export const getCoachAthleteAiSummary = createServerFn({ method: "GET" })
         .eq("coach_id", coachId),
       supabaseAdmin
         .from("plan_sessions")
-        .select("state_index, duration_seconds, note, logged_at, parent_id, plans!inner(athlete_id)")
-        .eq("plans.athlete_id", data.athleteId)
+        .select("state_index, duration_seconds, note, logged_at, parent_id")
+        .eq("athlete_id", data.athleteId)
         .gte("logged_at", since)
         .order("logged_at", { ascending: false })
         .limit(60),
