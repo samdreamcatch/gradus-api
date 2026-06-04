@@ -219,10 +219,12 @@ export function ScheduleEditor({ slots, onChange }: ScheduleEditorProps) {
                     mode="single"
                     selected={slot.startsOn ?? undefined}
                     onSelect={(d) => updateSlot(i, { startsOn: d ?? null })}
-                    disabled={(date) =>
-                      slot.dayOfWeek !== null && date.getDay() !== slot.dayOfWeek
+                    disabled={
+                      slot.dayOfWeek !== null
+                        ? (date) => date.getDay() !== slot.dayOfWeek
+                        : undefined
                     }
-                    initialFocus
+                    autoFocus
                     className={cn("p-3 pointer-events-auto")}
                   />
                 </PopoverContent>
