@@ -67,8 +67,8 @@ function ParentSettingsPage() {
 
   return (
     <>
-      <div className="mx-auto min-h-dvh max-w-2xl px-3 pt-4 pb-24">
-        <SettingsHeader title="Your account" />
+      <div className="mx-auto min-h-dvh max-w-2xl px-3 pt-6 pb-24">
+        <PageTitle>Settings</PageTitle>
 
         {isLoading ? (
           <p className="px-3 text-text-tertiary">Loading…</p>
