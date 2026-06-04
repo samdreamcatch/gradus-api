@@ -55,7 +55,7 @@ function ParentPlanDetail() {
   const toggle = (id: string) => setExpanded((s) => ({ ...s, [id]: !s[id] }));
   const [messageOpen, setMessageOpen] = useState(false);
 
-  const soon = (label: string) => toast(`${label} — coming soon`);
+  
 
   if (isLoading || !plan) {
     return (
