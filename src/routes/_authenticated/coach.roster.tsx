@@ -82,10 +82,8 @@ function RosterPage() {
     return athletes.filter((a) => a.sport === selectedSport);
   }, [athletes, selectedSport]);
 
-  const visibleAthletes = useMemo(() => {
-    if (!selectedSport) return athletes;
-    return athletes.filter((a) => a.sport === selectedSport);
-  }, [athletes, selectedSport]);
+
+
 
   return (
     <>
