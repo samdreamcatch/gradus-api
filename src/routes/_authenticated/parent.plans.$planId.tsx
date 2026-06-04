@@ -74,14 +74,6 @@ function ParentPlanDetail() {
         >
           <ArrowLeft className="size-4" /> Back
         </Link>
-        <button
-          type="button"
-          onClick={() => soon("Settings")}
-          className="text-text-tertiary hover:text-text-primary"
-          aria-label="Settings"
-        >
-          <Settings className="size-5" />
-        </button>
       </div>
 
       <div className="mt-4">
