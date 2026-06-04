@@ -19,6 +19,22 @@ async function getParentAndCoach(userId: string): Promise<{
   last_name: string;
   coach_id: string;
 }> {
+  const p = await getParentMaybeCoach(userId);
+  if (!p.coach_id) throw new Error("No coach linked yet.");
+  return {
+    id: p.id,
+    first_name: p.first_name,
+    last_name: p.last_name,
+    coach_id: p.coach_id,
+  };
+}
+
+async function getParentMaybeCoach(userId: string): Promise<{
+  id: string;
+  first_name: string;
+  last_name: string;
+  coach_id: string | null;
+}> {
   const parent = await supabaseAdmin
     .from("parent_profiles")
     .select("id, first_name, last_name, coach_id")
@@ -26,7 +42,6 @@ async function getParentAndCoach(userId: string): Promise<{
     .maybeSingle();
   if (parent.error) dbError(parent.error);
   if (!parent.data) throw new Error("Parent profile not found.");
-  if (!parent.data.coach_id) throw new Error("No coach linked yet.");
   return {
     id: parent.data.id,
     first_name: parent.data.first_name,
@@ -54,7 +69,8 @@ export const getParentSettings = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const userId = context.userId;
-    const parent = await getParentAndCoach(userId);
+    const parent = await getParentMaybeCoach(userId);
+    const coachId = parent.coach_id;
 
     const athletes = await supabaseAdmin
       .from("athletes")
@@ -63,23 +79,30 @@ export const getParentSettings = createServerFn({ method: "GET" })
       .order("created_at", { ascending: true });
     if (athletes.error) dbError(athletes.error);
     const athleteIds = (athletes.data ?? []).map((a) => a.id);
+    const safeIds = athleteIds.length ? athleteIds : ["00000000-0000-0000-0000-000000000000"];
 
     const [goals, slots, codes, coachLevels] = await Promise.all([
-      supabaseAdmin
-        .from("athlete_goals")
-        .select("athlete_id, sport, current_level_key, season_goal_key, long_term_goal")
-        .in("athlete_id", athleteIds.length ? athleteIds : ["00000000-0000-0000-0000-000000000000"])
-        .eq("coach_id", parent.coach_id),
-      supabaseAdmin
-        .from("athlete_lesson_slots")
-        .select("id, athlete_id, day_of_week, start_minute, end_minute, frequency, weeks_of_month, starts_on")
-        .in("athlete_id", athleteIds.length ? athleteIds : ["00000000-0000-0000-0000-000000000000"])
-        .eq("coach_id", parent.coach_id),
+      coachId
+        ? supabaseAdmin
+            .from("athlete_goals")
+            .select("athlete_id, sport, current_level_key, season_goal_key, long_term_goal")
+            .in("athlete_id", safeIds)
+            .eq("coach_id", coachId)
+        : Promise.resolve({ data: [] as any[], error: null }),
+      coachId
+        ? supabaseAdmin
+            .from("athlete_lesson_slots")
+            .select("id, athlete_id, day_of_week, start_minute, end_minute, frequency, weeks_of_month, starts_on")
+            .in("athlete_id", safeIds)
+            .eq("coach_id", coachId)
+        : Promise.resolve({ data: [] as any[], error: null }),
       supabaseAdmin
         .from("athlete_invite_codes")
         .select("athlete_id, code")
         .eq("parent_id", parent.id),
-      supabaseAdmin.from("coach_levels").select("sport").eq("coach_id", parent.coach_id),
+      coachId
+        ? supabaseAdmin.from("coach_levels").select("sport").eq("coach_id", coachId)
+        : Promise.resolve({ data: [] as any[], error: null }),
     ]);
     if (goals.error) dbError(goals.error);
     if (slots.error) dbError(slots.error);

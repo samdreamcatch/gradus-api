@@ -34,7 +34,7 @@ export const Route = createFileRoute("/_authenticated/parent/settings")({
 
 function ParentSettingsPage() {
   const fetchSettings = useServerFn(getParentSettings);
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ["parent-settings"],
     queryFn: () => fetchSettings(),
   });
@@ -49,8 +49,14 @@ function ParentSettingsPage() {
           <h1 className="mt-1 text-3xl sm:text-4xl">Your account</h1>
         </header>
 
-        {isLoading || !data ? (
+        {isLoading ? (
           <p className="text-text-tertiary">Loading…</p>
+        ) : error ? (
+          <p className="text-text-tertiary">
+            {error instanceof Error ? error.message : "Couldn't load settings."}
+          </p>
+        ) : !data ? (
+          <p className="text-text-tertiary">No settings found.</p>
         ) : (
           <div className="space-y-3">
             <NameSection profile={data.profile} />
