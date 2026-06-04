@@ -17,12 +17,16 @@ export async function listMyRoomIds(userId: string, viewerRole?: RoleInRoom): Pr
   rooms: { id: string; coach_id: string; athlete_id: string; updated_at: string }[];
   myRoleByRoom: Map<string, RoleInRoom>;
 }> {
+  // Access control is derived ONLY from DB membership (coach_profiles / athletes /
+  // parent_profiles for the verified userId). The caller-supplied viewerRole is
+  // never used to gate which rooms the server fetches; it only filters the
+  // already-authorized result set for display purposes (e.g. a multi-role user
+  // viewing their parent inbox separately from their coach inbox).
   const me = await resolveMyIdentity(userId);
   const rows: { id: string; coach_id: string; athlete_id: string; updated_at: string }[] = [];
   const myRoleByRoom = new Map<string, RoleInRoom>();
-  const shouldInclude = (role: RoleInRoom) => !viewerRole || viewerRole === role;
 
-  if (me.coach && shouldInclude("coach")) {
+  if (me.coach) {
     const { data, error } = await supabaseAdmin
       .from("message_rooms")
       .select("id, coach_id, athlete_id, updated_at")
@@ -33,18 +37,20 @@ export async function listMyRoomIds(userId: string, viewerRole?: RoleInRoom): Pr
       myRoleByRoom.set(r.id, "coach");
     }
   }
-  if (me.athlete && shouldInclude("athlete")) {
+  if (me.athlete) {
     const { data, error } = await supabaseAdmin
       .from("message_rooms")
       .select("id, coach_id, athlete_id, updated_at")
       .eq("athlete_id", me.athlete.id);
     if (error) dbError(error, "Couldn't load conversations");
     for (const r of data ?? []) {
-      rows.push(r);
-      myRoleByRoom.set(r.id, "athlete");
+      if (!myRoleByRoom.has(r.id)) {
+        rows.push(r);
+        myRoleByRoom.set(r.id, "athlete");
+      }
     }
   }
-  if (me.parent && shouldInclude("parent")) {
+  if (me.parent) {
     const { data: kids, error: kidsErr } = await supabaseAdmin
       .from("athletes")
       .select("id")
@@ -64,6 +70,15 @@ export async function listMyRoomIds(userId: string, viewerRole?: RoleInRoom): Pr
         }
       }
     }
+  }
+
+  // Display-only filter: narrow the authorized rooms to those where the caller
+  // wants to participate in the requested role. Never used to expand access.
+  if (viewerRole) {
+    const filtered = rows.filter((r) => myRoleByRoom.get(r.id) === viewerRole);
+    const filteredRoles = new Map<string, RoleInRoom>();
+    for (const r of filtered) filteredRoles.set(r.id, viewerRole);
+    return { rooms: filtered, myRoleByRoom: filteredRoles };
   }
 
   return { rooms: rows, myRoleByRoom };
