@@ -100,7 +100,7 @@ export const getParentSettings = createServerFn({ method: "GET" })
     const athleteIds = athletes.map((a) => a.id);
     const safeIds = athleteIds.length ? athleteIds : ["00000000-0000-0000-0000-000000000000"];
 
-    const [linksRes, levelsAllRes, goalsRes, slotsRes, primaryRes, codesRes] =
+    const [linksRes, sportsScopeRes, goalsRes, slotsRes, primaryRes, codesRes] =
       await Promise.all([
         supabaseAdmin
           .from("coach_athletes")
@@ -108,8 +108,9 @@ export const getParentSettings = createServerFn({ method: "GET" })
           .in("athlete_id", safeIds)
           .order("created_at", { ascending: true }),
         supabaseAdmin
-          .from("coach_levels")
-          .select("coach_id, sport"),
+          .from("coach_athlete_sports")
+          .select("athlete_id, coach_id, sport")
+          .in("athlete_id", safeIds),
         supabaseAdmin
           .from("athlete_goals")
           .select("athlete_id, sport, current_level_key, season_goal_key, long_term_goal, coach_id")
@@ -128,17 +129,19 @@ export const getParentSettings = createServerFn({ method: "GET" })
           .eq("parent_id", parent.id),
       ]);
     if (linksRes.error) dbError(linksRes.error);
-    if (levelsAllRes.error) dbError(levelsAllRes.error);
+    if (sportsScopeRes.error) dbError(sportsScopeRes.error);
     if (goalsRes.error) dbError(goalsRes.error);
     if (slotsRes.error) dbError(slotsRes.error);
     if (primaryRes.error) dbError(primaryRes.error);
     if (codesRes.error) dbError(codesRes.error);
 
-    // Build coach -> sports map from coach_levels
-    const coachSports = new Map<string, Set<string>>();
-    for (const lvl of levelsAllRes.data ?? []) {
-      if (!coachSports.has(lvl.coach_id)) coachSports.set(lvl.coach_id, new Set());
-      coachSports.get(lvl.coach_id)!.add(lvl.sport);
+    // Build (athlete,coach) -> scoped sports map
+    const scopeKey = (a: string, c: string) => `${a}|${c}`;
+    const scopedSports = new Map<string, Set<string>>();
+    for (const r of sportsScopeRes.data ?? []) {
+      const k = scopeKey(r.athlete_id, r.coach_id);
+      if (!scopedSports.has(k)) scopedSports.set(k, new Set());
+      scopedSports.get(k)!.add(r.sport);
     }
 
     // Lazily generate invite codes for athletes missing one
