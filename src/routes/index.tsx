@@ -88,7 +88,7 @@ function RoleButton({ role }: { role: Role }) {
   return (
     <Link
       to={role.to}
-      className="flex items-center justify-between rounded-md bg-accent px-6 py-5 text-accent-foreground shadow-card transition hover:brightness-95 dark:bg-[color-mix(in_oklab,var(--accent)_72%,var(--background))]"
+      className="flex items-center justify-between rounded-md bg-accent px-6 py-5 text-accent-foreground shadow-card transition hover:brightness-95"
     >
       <span className="font-semibold">{role.label}</span>
       <ArrowRight className="size-5" aria-hidden />
