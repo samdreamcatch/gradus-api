@@ -932,7 +932,7 @@ function ScheduleSection({ athlete }: { athlete: AthleteData }) {
           {athlete.coaches.length > 1 && (
             <div className="space-y-1.5">
               <Label className="text-xs">Coach</Label>
-              <Select value={selectedCoachId} onValueChange={setSelectedCoachId}>
+              <Select value={activeCoachId} onValueChange={setSelectedCoachId}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -947,7 +947,7 @@ function ScheduleSection({ athlete }: { athlete: AthleteData }) {
             </div>
           )}
           {athlete.coaches.map((c) =>
-            c.coachId === selectedCoachId ? (
+            c.coachId === activeCoachId ? (
               <CoachScheduleEditor
                 key={c.coachId}
                 athleteId={athlete.id}
