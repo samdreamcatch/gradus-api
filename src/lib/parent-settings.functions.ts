@@ -19,6 +19,22 @@ async function getParentAndCoach(userId: string): Promise<{
   last_name: string;
   coach_id: string;
 }> {
+  const p = await getParentMaybeCoach(userId);
+  if (!p.coach_id) throw new Error("No coach linked yet.");
+  return {
+    id: p.id,
+    first_name: p.first_name,
+    last_name: p.last_name,
+    coach_id: p.coach_id,
+  };
+}
+
+async function getParentMaybeCoach(userId: string): Promise<{
+  id: string;
+  first_name: string;
+  last_name: string;
+  coach_id: string | null;
+}> {
   const parent = await supabaseAdmin
     .from("parent_profiles")
     .select("id, first_name, last_name, coach_id")
@@ -26,7 +42,6 @@ async function getParentAndCoach(userId: string): Promise<{
     .maybeSingle();
   if (parent.error) dbError(parent.error);
   if (!parent.data) throw new Error("Parent profile not found.");
-  if (!parent.data.coach_id) throw new Error("No coach linked yet.");
   return {
     id: parent.data.id,
     first_name: parent.data.first_name,
