@@ -1,14 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { LogOut, Mail, Palette, User, Dumbbell, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { SportChip } from "@/components/onboarding/sport-chip";
-import { SPORTS, getSport, getSportLevel, type SportKey } from "@/lib/coach-sports";
+import { SPORTS, getSport, type SportKey } from "@/lib/coach-sports";
 import {
   coachProfileQueryOptions,
   useSaveCoachLevels,
@@ -17,6 +18,16 @@ import {
 import { coachInviteQueryOptions } from "@/hooks/use-coach-invite";
 import { InviteCard } from "@/components/onboarding/invite-card";
 import { CoachBottomNav } from "@/components/coach/bottom-nav";
+import {
+  SettingsGroup,
+  SettingsList,
+  SettingsRow,
+  SettingsHeader,
+  SettingsButtonRow,
+  SettingsDisclosure,
+} from "@/components/settings/primitives";
+import { ThemeSelect } from "@/components/settings/theme-select";
+import { useCurrentUserEmail } from "@/hooks/use-current-user-email";
 
 export const Route = createFileRoute("/_authenticated/coach/settings")({
   loader: ({ context }) => {
@@ -30,52 +41,65 @@ type LevelEntry = { sport: string; levelKey: string; hoursPerWeek: number };
 
 function SettingsPage() {
   const { data } = useSuspenseQuery(coachProfileQueryOptions);
+  const email = useCurrentUserEmail();
+  const sportsSummary =
+    Array.from(new Set(data.levels.map((l) => getSport(l.sport)?.label ?? l.sport)))
+      .join(", ") || "None yet";
+
   return (
     <>
-    <div className="mx-auto min-h-dvh max-w-3xl px-4 pt-8 pb-24">
-      <div className="mb-4 flex items-center justify-between">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-widest text-accent-ink">
-            Settings
-          </p>
-          <h1 className="mt-1 text-3xl sm:text-4xl">Your coach profile</h1>
-        </div>
-        <Button asChild variant="ghost">
-          <Link to="/coach">Back</Link>
-        </Button>
-      </div>
+      <div className="mx-auto min-h-dvh max-w-2xl px-3 pt-4 pb-24">
+        <SettingsHeader title="Your coach profile" />
 
-      <div className="space-y-3">
-        <NameSection firstName={data.profile.firstName} lastName={data.profile.lastName} />
-        <LevelsSection levels={data.levels} />
-        <PracticeSection levels={data.levels} />
-        <SectionCard title="Invite Parents">
-          <InviteCard />
-        </SectionCard>
-        <AccountSection />
+        <SettingsGroup label="My profile">
+          <SettingsList>
+            <NameDisclosure
+              firstName={data.profile.firstName}
+              lastName={data.profile.lastName}
+            />
+            <SettingsRow
+              icon={<Mail className="size-4" />}
+              label="Email"
+              value={email ?? "—"}
+            />
+          </SettingsList>
+        </SettingsGroup>
+
+        <SettingsGroup label="Coaching">
+          <SettingsList>
+            <SportsDisclosure levels={data.levels} summary={sportsSummary} />
+            <InviteDisclosure />
+          </SettingsList>
+        </SettingsGroup>
+
+        <SettingsGroup label="Preferences">
+          <SettingsList>
+            <SettingsRow
+              icon={<Palette className="size-4" />}
+              label="Appearance"
+              trailing={<ThemeSelect />}
+            />
+          </SettingsList>
+        </SettingsGroup>
+
+        <SettingsGroup>
+          <SettingsList>
+            <SignOutRow />
+          </SettingsList>
+        </SettingsGroup>
       </div>
-    </div>
-    <CoachBottomNav />
+      <CoachBottomNav />
     </>
   );
 }
 
-function SectionCard({
-  title,
-  children,
+function NameDisclosure({
+  firstName: f0,
+  lastName: l0,
 }: {
-  title: string;
-  children: React.ReactNode;
+  firstName: string;
+  lastName: string;
 }) {
-  return (
-    <section className="rounded-2xl bg-card p-6 shadow-[0_6px_24px_-16px_rgba(0,0,0,0.2)] sm:p-8">
-      <h2 className="text-xl">{title}</h2>
-      <div className="mt-6">{children}</div>
-    </section>
-  );
-}
-
-function NameSection({ firstName: f0, lastName: l0 }: { firstName: string; lastName: string }) {
   const [firstName, setFirstName] = useState(f0);
   const [lastName, setLastName] = useState(l0);
   const save = useSaveCoachProfile();
@@ -93,29 +117,32 @@ function NameSection({ firstName: f0, lastName: l0 }: { firstName: string; lastN
   };
 
   return (
-    <SectionCard title="Name">
-      <div className="grid gap-2 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="firstName">First name</Label>
+    <SettingsDisclosure
+      icon={<User className="size-4" />}
+      label="Name"
+      value={`${f0} ${l0}`.trim() || "—"}
+    >
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="space-y-1.5">
+          <Label className="text-xs">First name</Label>
           <Input
-            id="firstName"
             value={firstName}
             onChange={(e) => setFirstName(e.target.value)}
             maxLength={80}
           />
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="lastName">Last name</Label>
+        <div className="space-y-1.5">
+          <Label className="text-xs">Last name</Label>
           <Input
-            id="lastName"
             value={lastName}
             onChange={(e) => setLastName(e.target.value)}
             maxLength={80}
           />
         </div>
       </div>
-      <div className="mt-4 flex justify-end">
+      <div className="mt-3 flex justify-end">
         <Button
+          size="sm"
           onClick={handleSave}
           disabled={
             save.isPending ||
@@ -126,11 +153,17 @@ function NameSection({ firstName: f0, lastName: l0 }: { firstName: string; lastN
           {save.isPending ? "Saving…" : "Save"}
         </Button>
       </div>
-    </SectionCard>
+    </SettingsDisclosure>
   );
 }
 
-function LevelsSection({ levels }: { levels: LevelEntry[] }) {
+function SportsDisclosure({
+  levels,
+  summary,
+}: {
+  levels: LevelEntry[];
+  summary: string;
+}) {
   const initialSports = useMemo(
     () => Array.from(new Set(levels.map((l) => l.sport))) as SportKey[],
     [levels],
@@ -156,16 +189,31 @@ function LevelsSection({ levels }: { levels: LevelEntry[] }) {
 
   const toggleLevel = (sport: SportKey, levelKey: string) => {
     setEntries((prev) => {
-      const exists = prev.some((e) => e.sport === sport && e.levelKey === levelKey);
-      if (exists) return prev.filter((e) => !(e.sport === sport && e.levelKey === levelKey));
+      const exists = prev.some(
+        (e) => e.sport === sport && e.levelKey === levelKey,
+      );
+      if (exists)
+        return prev.filter(
+          (e) => !(e.sport === sport && e.levelKey === levelKey),
+        );
       return [...prev, { sport, levelKey, hoursPerWeek: 0 }];
     });
+  };
+
+  const updateHours = (sport: string, levelKey: string, hours: number) => {
+    setEntries((prev) =>
+      prev.map((e) =>
+        e.sport === sport && e.levelKey === levelKey
+          ? { ...e, hoursPerWeek: hours }
+          : e,
+      ),
+    );
   };
 
   const handleSave = async () => {
     try {
       await save.mutateAsync({ entries });
-      toast.success("Sports & levels saved");
+      toast.success("Sports saved");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Couldn't save");
     }
@@ -175,173 +223,131 @@ function LevelsSection({ levels }: { levels: LevelEntry[] }) {
     sports.length > 0 && sports.every((s) => entries.some((e) => e.sport === s));
 
   return (
-    <SectionCard title="Sports & levels">
-      <div className="flex flex-wrap gap-3">
-        {SPORTS.map((s) => (
-          <SportChip
-            key={s.key}
-            selected={sports.includes(s.key)}
-            onClick={() => toggleSport(s.key)}
-          >
-            {s.label}
-          </SportChip>
-        ))}
-      </div>
+    <SettingsDisclosure
+      icon={<Dumbbell className="size-4" />}
+      label="Sports & levels"
+      description="Levels you coach and weekly practice expectations"
+      value={summary}
+    >
+      <div className="space-y-5">
+        <div>
+          <Label className="mb-2 block text-xs">Sports you coach</Label>
+          <div className="flex flex-wrap gap-2">
+            {SPORTS.map((s) => (
+              <SportChip
+                key={s.key}
+                selected={sports.includes(s.key)}
+                onClick={() => toggleSport(s.key)}
+              >
+                {s.label}
+              </SportChip>
+            ))}
+          </div>
+        </div>
 
-      {sports.length > 0 && (
-        <div className="mt-5 space-y-8">
-          {sports.map((sportKey) => {
-            const sport = getSport(sportKey)!;
-            return (
-              <div key={sportKey}>
-                <h3 className="text-lg">{sport.label}</h3>
-                <p className="mt-1 text-xs uppercase tracking-wider text-text-secondary">
+        {sports.map((sportKey) => {
+          const sport = getSport(sportKey)!;
+          const sportEntries = entries.filter((e) => e.sport === sportKey);
+          return (
+            <div key={sportKey} className="rounded-xl border border-divider bg-card/60 p-3">
+              <div className="flex items-baseline justify-between gap-3">
+                <h3 className="font-display text-base text-text-primary">
+                  {sport.label}
+                </h3>
+                <span className="text-[10px] uppercase tracking-wider text-text-tertiary">
                   {sport.standard}
-                </p>
-                <div className="mt-4 grid gap-2 sm:grid-cols-2">
-                  {sport.levels.map((lvl) => {
-                    const checked = entries.some(
-                      (e) => e.sport === sportKey && e.levelKey === lvl.key,
-                    );
-                    return (
-                      <label
-                        key={lvl.key}
-                        className="flex cursor-pointer items-start gap-3 rounded-md border border-divider bg-elevated p-3 hover:border-accent/40"
-                      >
-                        <Checkbox
-                          checked={checked}
-                          onCheckedChange={() => toggleLevel(sportKey, lvl.key)}
-                          className="mt-0.5"
-                        />
-                        <div className="leading-tight">
-                          <div className="text-sm font-semibold text-text-primary">
-                            {lvl.label}
-                          </div>
-                          {lvl.hint && (
-                            <div className="text-xs text-text-secondary">{lvl.hint}</div>
-                          )}
-                        </div>
-                      </label>
-                    );
-                  })}
-                </div>
+                </span>
               </div>
-            );
-          })}
-        </div>
-      )}
-
-      <div className="mt-6 flex justify-end">
-        <Button onClick={handleSave} disabled={save.isPending || !valid}>
-          {save.isPending ? "Saving…" : "Save"}
-        </Button>
-      </div>
-    </SectionCard>
-  );
-}
-
-function PracticeSection({ levels }: { levels: LevelEntry[] }) {
-  const [entries, setEntries] = useState<LevelEntry[]>(levels);
-  const save = useSaveCoachLevels();
-
-  useEffect(() => setEntries(levels), [levels]);
-
-  const updateHours = (sport: string, levelKey: string, hours: number) => {
-    setEntries((prev) =>
-      prev.map((e) =>
-        e.sport === sport && e.levelKey === levelKey ? { ...e, hoursPerWeek: hours } : e,
-      ),
-    );
-  };
-
-  const handleSave = async () => {
-    try {
-      await save.mutateAsync({ entries });
-      toast.success("Practice expectations saved");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't save");
-    }
-  };
-
-  const groupedSports = Array.from(new Set(entries.map((e) => e.sport))) as SportKey[];
-
-  return (
-    <SectionCard title="Practice expectations">
-      {groupedSports.length === 0 ? (
-        <p className="text-sm text-text-secondary">
-          Add sports and levels above first.
-        </p>
-      ) : (
-        <div className="space-y-3">
-          {groupedSports.map((sportKey) => {
-            const sport = getSport(sportKey)!;
-            const sportEntries = entries.filter((e) => e.sport === sportKey);
-            return (
-              <div key={sportKey}>
-                <h3 className="text-lg">{sport.label}</h3>
-                <div className="mt-4 space-y-3">
-                  {sportEntries.map((entry) => {
-                    const lvl = getSportLevel(sportKey, entry.levelKey)!;
-                    return (
-                      <div
-                        key={entry.levelKey}
-                        className="flex items-center justify-between gap-2 rounded-md border border-divider bg-elevated px-4 py-3"
-                      >
-                        <div className="leading-tight">
-                          <div className="text-sm font-semibold text-text-primary">
-                            {lvl.label}
-                          </div>
-                          <div className="font-hand text-lg text-accent-ink">
-                            hrs / week
-                          </div>
+              <div className="mt-3 grid gap-1.5">
+                {sport.levels.map((lvl) => {
+                  const entry = sportEntries.find((e) => e.levelKey === lvl.key);
+                  const checked = !!entry;
+                  return (
+                    <label
+                      key={lvl.key}
+                      className="flex items-center gap-3 rounded-md px-2 py-1.5 hover:bg-elevated/60"
+                    >
+                      <Checkbox
+                        checked={checked}
+                        onCheckedChange={() => toggleLevel(sportKey, lvl.key)}
+                      />
+                      <div className="min-w-0 flex-1 leading-tight">
+                        <div className="text-sm text-text-primary">
+                          {lvl.label}
                         </div>
-                        <Input
-                          type="number"
-                          inputMode="decimal"
-                          min={0}
-                          max={40}
-                          step={0.5}
-                          value={entry.hoursPerWeek}
-                          onChange={(e) =>
-                            updateHours(
-                              sportKey,
-                              entry.levelKey,
-                              Math.max(0, Math.min(40, Number(e.target.value) || 0)),
-                            )
-                          }
-                          className="w-24 text-right"
-                        />
+                        {lvl.hint && (
+                          <div className="text-[11px] text-text-tertiary">
+                            {lvl.hint}
+                          </div>
+                        )}
                       </div>
-                    );
-                  })}
-                </div>
+                      {checked && (
+                        <div className="flex items-center gap-1.5">
+                          <Input
+                            type="number"
+                            inputMode="decimal"
+                            min={0}
+                            max={40}
+                            step={0.5}
+                            value={entry!.hoursPerWeek}
+                            onChange={(e) =>
+                              updateHours(
+                                sportKey,
+                                lvl.key,
+                                Math.max(
+                                  0,
+                                  Math.min(40, Number(e.target.value) || 0),
+                                ),
+                              )
+                            }
+                            className="h-8 w-16 text-right text-sm"
+                          />
+                          <span className="text-[11px] text-text-tertiary">
+                            hr/wk
+                          </span>
+                        </div>
+                      )}
+                    </label>
+                  );
+                })}
               </div>
-            );
-          })}
-        </div>
-      )}
-      {groupedSports.length > 0 && (
-        <div className="mt-6 flex justify-end">
-          <Button onClick={handleSave} disabled={save.isPending}>
-            {save.isPending ? "Saving…" : "Save"}
+            </div>
+          );
+        })}
+
+        <div className="flex justify-end">
+          <Button size="sm" onClick={handleSave} disabled={save.isPending || !valid}>
+            {save.isPending ? "Saving…" : "Save sports"}
           </Button>
         </div>
-      )}
-    </SectionCard>
+      </div>
+    </SettingsDisclosure>
   );
 }
 
-function AccountSection() {
-  const navigate = useNavigate();
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    navigate({ to: "/login" });
-  };
+function InviteDisclosure() {
   return (
-    <SectionCard title="Account">
-      <Button variant="outline" onClick={handleSignOut}>
-        Sign out
-      </Button>
-    </SectionCard>
+    <SettingsDisclosure
+      icon={<Send className="size-4" />}
+      label="Invite parents"
+      description="Share your code so parents can connect"
+    >
+      <InviteCard compact />
+    </SettingsDisclosure>
+  );
+}
+
+function SignOutRow() {
+  const navigate = useNavigate();
+  return (
+    <SettingsButtonRow
+      icon={<LogOut className="size-4" />}
+      label="Sign out"
+      tone="destructive"
+      onClick={async () => {
+        await supabase.auth.signOut();
+        navigate({ to: "/login" });
+      }}
+    />
   );
 }
