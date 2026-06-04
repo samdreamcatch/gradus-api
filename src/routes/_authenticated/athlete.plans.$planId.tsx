@@ -486,7 +486,7 @@ function SessionFeedbackModal({
                   </p>
                 </>
               ) : (
-                <p className="font-hand text-xl leading-snug text-text-tertiary">
+                <p className="font-sans text-base leading-snug text-text-tertiary">
                   Tap a dot to describe today's energy.
                 </p>
               )}
