@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { SportChip } from "@/components/onboarding/sport-chip";
-import { SPORTS, getSport, getSportLevel, type SportKey } from "@/lib/coach-sports";
+import { SPORTS, getSport, type SportKey } from "@/lib/coach-sports";
 import {
   coachProfileQueryOptions,
   useSaveCoachLevels,
@@ -351,5 +351,3 @@ function SignOutRow() {
     />
   );
 }
-// Unused helpers kept out — getSportLevel still imported for completeness check
-void getSportLevel;
