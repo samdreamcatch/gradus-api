@@ -131,16 +131,23 @@ function RosterPage() {
             <ul className="mt-5 space-y-3">
               {visibleAthletes.map((a) => (
                 <li key={a.athleteId}>
-                  <RosterCard athlete={a} />
+                  <RosterCard athlete={a} onSelect={setSelectedAthleteId} />
                 </li>
               ))}
             </ul>
           )
         ) : (
-          <WeekScheduleView athletes={visibleAthletes} />
+          <WeekScheduleView
+            athletes={visibleAthletes}
+            onSelectAthlete={setSelectedAthleteId}
+          />
         )}
       </div>
       <CoachBottomNav />
+      <AthleteDetailSheet
+        athleteId={selectedAthleteId}
+        onOpenChange={setSelectedAthleteId}
+      />
     </>
   );
 }
