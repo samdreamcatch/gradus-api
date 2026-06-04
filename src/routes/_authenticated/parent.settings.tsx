@@ -58,6 +58,8 @@ import {
   removeAthlete,
   linkAthleteToCoach,
   unlinkAthleteFromCoach,
+  previewCoachByInviteCode,
+  updateCoachAthleteSports,
 } from "@/lib/parent-settings.functions";
 import { getSport } from "@/lib/coach-sports";
 
