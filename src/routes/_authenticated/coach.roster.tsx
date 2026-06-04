@@ -6,6 +6,7 @@ import { PageTitle } from "@/components/page-title";
 import { RosterCard } from "@/components/coach/roster-card";
 import { SportFilterChips } from "@/components/coach/sport-filter-chips";
 import { WeekScheduleView } from "@/components/coach/week-schedule-view";
+import { AthleteDetailSheet } from "@/components/coach/athlete-detail-sheet";
 import { InviteCard } from "@/components/onboarding/invite-card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
