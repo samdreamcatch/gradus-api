@@ -323,6 +323,96 @@ export const updateAthleteGoals = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+const inviteCodeSchema = z
+  .string()
+  .trim()
+  .toUpperCase()
+  .length(8, "Invite code must be 8 characters")
+  .regex(/^[A-Z2-9]+$/, "Invalid characters in code");
+
+export const linkAthleteToCoach = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        athleteId: z.string().uuid(),
+        code: inviteCodeSchema,
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await assertOwnsAthlete(context.userId, data.athleteId);
+
+    const codeLookup = await supabaseAdmin
+      .from("coach_invite_codes")
+      .select("coach_id")
+      .eq("code", data.code)
+      .maybeSingle();
+    if (codeLookup.error) dbError(codeLookup.error);
+    if (!codeLookup.data) {
+      throw new Error("That invite code isn't valid. Double-check with the coach.");
+    }
+    const coachId = codeLookup.data.coach_id;
+
+    const existing = await supabaseAdmin
+      .from("coach_athletes")
+      .select("id")
+      .eq("athlete_id", data.athleteId)
+      .eq("coach_id", coachId)
+      .maybeSingle();
+    if (existing.error) dbError(existing.error);
+    if (existing.data) {
+      throw new Error("That coach is already linked to this athlete.");
+    }
+
+    const ins = await supabaseAdmin
+      .from("coach_athletes")
+      .insert({ athlete_id: data.athleteId, coach_id: coachId });
+    if (ins.error) dbError(ins.error);
+
+    return { ok: true };
+  });
+
+export const unlinkAthleteFromCoach = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        athleteId: z.string().uuid(),
+        coachId: z.string().uuid(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await assertOwnsAthlete(context.userId, data.athleteId);
+
+    // Clean up coach-scoped data so a relink starts fresh
+    await supabaseAdmin
+      .from("athlete_lesson_slots")
+      .delete()
+      .eq("athlete_id", data.athleteId)
+      .eq("coach_id", data.coachId);
+    await supabaseAdmin
+      .from("athlete_primary_coaches")
+      .delete()
+      .eq("athlete_id", data.athleteId)
+      .eq("coach_id", data.coachId);
+    await supabaseAdmin
+      .from("athlete_goals")
+      .delete()
+      .eq("athlete_id", data.athleteId)
+      .eq("coach_id", data.coachId);
+
+    const del = await supabaseAdmin
+      .from("coach_athletes")
+      .delete()
+      .eq("athlete_id", data.athleteId)
+      .eq("coach_id", data.coachId);
+    if (del.error) dbError(del.error);
+    return { ok: true };
+  });
+
+
 export const setPrimaryCoach = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>

@@ -14,6 +14,7 @@ import {
   Target,
   CalendarClock,
   QrCode,
+  UserPlus,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -55,6 +56,8 @@ import {
   replaceAthleteSchedule,
   addAthlete,
   removeAthlete,
+  linkAthleteToCoach,
+  unlinkAthleteFromCoach,
 } from "@/lib/parent-settings.functions";
 import { getSport } from "@/lib/coach-sports";
 
@@ -267,6 +270,7 @@ function AthleteDisclosure({ athlete }: { athlete: AthleteData }) {
       <div className="space-y-3">
         <NestedList>
           <IdentitySubrow athlete={athlete} />
+          <CoachesSection athlete={athlete} />
           <GoalsSection athlete={athlete} />
           <ScheduleSection athlete={athlete} />
           <InviteSubrow athlete={athlete} />
@@ -359,6 +363,139 @@ function IdentitySubrow({ athlete }: { athlete: AthleteData }) {
     </SettingsDisclosure>
   );
 }
+
+function CoachesSection({ athlete }: { athlete: AthleteData }) {
+  const [adding, setAdding] = useState(false);
+  const [code, setCode] = useState("");
+  const qc = useQueryClient();
+  const link = useServerFn(linkAthleteToCoach);
+  const unlink = useServerFn(unlinkAthleteFromCoach);
+  const [saving, setSaving] = useState(false);
+  const [removingId, setRemovingId] = useState<string | null>(null);
+
+  const summary =
+    athlete.coaches.length === 0
+      ? "None linked"
+      : `${athlete.coaches.length} linked`;
+
+  const handleLink = async () => {
+    setSaving(true);
+    try {
+      await link({ data: { athleteId: athlete.id, code: code.trim() } });
+      toast.success("Coach linked");
+      setCode("");
+      setAdding(false);
+      qc.invalidateQueries({ queryKey: ["parent-settings"] });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Couldn't link coach");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleUnlink = async (coachId: string) => {
+    setRemovingId(coachId);
+    try {
+      await unlink({ data: { athleteId: athlete.id, coachId } });
+      toast.success("Coach unlinked");
+      qc.invalidateQueries({ queryKey: ["parent-settings"] });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Couldn't unlink");
+    } finally {
+      setRemovingId(null);
+    }
+  };
+
+  return (
+    <SettingsDisclosure
+      icon={<UserPlus className="size-4" />}
+      label="Coaches"
+      value={summary}
+    >
+      {athlete.coaches.length === 0 ? (
+        <p className="mb-3 text-sm text-text-tertiary">
+          No coaches linked yet. Ask {athlete.firstName}'s coach for their
+          invite code, then enter it below.
+        </p>
+      ) : (
+        <div className="mb-3 space-y-2">
+          {athlete.coaches.map((c) => (
+            <div
+              key={c.coachId}
+              className="flex items-center justify-between gap-2 rounded-lg border border-divider bg-elevated/30 px-3 py-2"
+            >
+              <div className="min-w-0">
+                <div className="truncate text-sm font-medium">{c.coachName}</div>
+                <div className="truncate text-xs text-text-tertiary">
+                  {c.sports.length === 0
+                    ? "No sports set"
+                    : c.sports
+                        .map((s) => getSport(s)?.label ?? s)
+                        .join(", ")}
+                </div>
+              </div>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => handleUnlink(c.coachId)}
+                disabled={removingId === c.coachId}
+                className="text-destructive hover:text-destructive"
+              >
+                {removingId === c.coachId ? "Removing…" : "Unlink"}
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {adding ? (
+        <div className="space-y-2 rounded-lg border border-divider bg-elevated/30 p-3">
+          <Label className="text-xs">Coach's invite code</Label>
+          <Input
+            value={code}
+            maxLength={8}
+            placeholder="8-character code"
+            onChange={(e) => setCode(e.target.value.toUpperCase())}
+            className="font-mono uppercase tracking-widest"
+          />
+          <p className="text-xs text-text-tertiary">
+            Once linked, the sports they coach become available to set goals
+            and schedules for.
+          </p>
+          <div className="flex justify-end gap-2">
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                setAdding(false);
+                setCode("");
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleLink}
+              disabled={saving || code.trim().length !== 8}
+            >
+              {saving ? "Linking…" : "Link coach"}
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => setAdding(true)}
+          className="gap-1.5"
+        >
+          <Plus className="size-3.5" /> Add a coach
+        </Button>
+      )}
+    </SettingsDisclosure>
+  );
+}
+
 
 function GoalsSection({ athlete }: { athlete: AthleteData }) {
   const summary =
