@@ -1,19 +1,32 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { RosterAthlete } from "@/lib/coach-roster.functions";
 
-const DAY_LABELS = ["M", "T", "W", "T", "F", "S", "S"];
-// Render Mon..Sun (treat Sunday=0 as last)
-const DAY_ORDER = [1, 2, 3, 4, 5, 6, 0];
+const DAY_LONG = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const DAY_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const MONTH_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-const HOUR_PX = 44;
+function startOfWeekMonday(d: Date): Date {
+  const out = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const dow = out.getDay(); // 0=Sun..6=Sat
+  const diff = (dow + 6) % 7; // Mon=0
+  out.setDate(out.getDate() - diff);
+  return out;
+}
 
-interface ScheduleBlock {
-  athleteId: string;
-  name: string;
-  dayIndex: number; // 0..6 (Mon..Sun)
-  startMinute: number;
-  endMinute: number;
+function addDays(d: Date, n: number): Date {
+  const out = new Date(d);
+  out.setDate(out.getDate() + n);
+  return out;
+}
+
+function sameDay(a: Date, b: Date): boolean {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
 }
 
 function formatTime(minute: number): string {
@@ -24,127 +37,170 @@ function formatTime(minute: number): string {
   return m === 0 ? `${h12}${ampm}` : `${h12}:${String(m).padStart(2, "0")}${ampm}`;
 }
 
+function formatRange(start: Date, end: Date): string {
+  const sameMonth = start.getMonth() === end.getMonth();
+  return sameMonth
+    ? `${MONTH_SHORT[start.getMonth()]} ${start.getDate()}–${end.getDate()}`
+    : `${MONTH_SHORT[start.getMonth()]} ${start.getDate()} – ${MONTH_SHORT[end.getMonth()]} ${end.getDate()}`;
+}
+
+interface DaySession {
+  athleteId: string;
+  name: string;
+  startMinute: number;
+  endMinute: number;
+}
+
 export function WeekScheduleView({ athletes }: { athletes: RosterAthlete[] }) {
-  const { blocks, startHour, endHour } = useMemo(() => {
-    const blocks: ScheduleBlock[] = [];
-    let minStart = 24 * 60;
-    let maxEnd = 0;
+  const today = useMemo(() => new Date(), []);
+  const currentWeekStart = useMemo(() => startOfWeekMonday(today), [today]);
+  const [weekStart, setWeekStart] = useState<Date>(currentWeekStart);
+
+  const weekEnd = addDays(weekStart, 6);
+  const isCurrentWeek = sameDay(weekStart, currentWeekStart);
+
+  const sessionsByDay = useMemo(() => {
+    // map day index 0..6 where 0=Mon..6=Sun -> DaySession[]
+    const map = new Map<number, DaySession[]>();
+    for (let i = 0; i < 7; i++) map.set(i, []);
     for (const a of athletes) {
       const name = `${a.firstName} ${a.lastName}`.trim();
       for (const s of a.slots) {
-        const dayIndex = DAY_ORDER.indexOf(s.dayOfWeek);
-        if (dayIndex === -1) continue;
-        blocks.push({
+        const dowIndex = (s.dayOfWeek + 6) % 7; // Mon=0..Sun=6
+        map.get(dowIndex)!.push({
           athleteId: a.athleteId,
           name,
-          dayIndex,
           startMinute: s.startMinute,
           endMinute: s.endMinute,
         });
-        if (s.startMinute < minStart) minStart = s.startMinute;
-        if (s.endMinute > maxEnd) maxEnd = s.endMinute;
       }
     }
-    if (blocks.length === 0) {
-      return { blocks, startHour: 8, endHour: 20 };
-    }
-    const startHour = Math.max(0, Math.floor(minStart / 60) - 1);
-    const endHour = Math.min(24, Math.ceil(maxEnd / 60) + 1);
-    return { blocks, startHour, endHour };
+    for (const arr of map.values()) arr.sort((a, b) => a.startMinute - b.startMinute);
+    return map;
   }, [athletes]);
 
-  if (blocks.length === 0) {
-    return (
-      <div className="mt-5 rounded-2xl bg-card p-6 text-center shadow-[0_10px_40px_-12px_rgba(0,0,0,0.15)] sm:p-8">
-        <h2 className="font-display text-xl text-text-primary">No sessions scheduled</h2>
-        <p className="mt-2 text-sm text-text-secondary">
-          When athletes have lesson times set, they'll appear on the calendar here.
-        </p>
-      </div>
-    );
-  }
-
-  const hours = endHour - startHour;
-  const gridHeight = hours * HOUR_PX;
+  const totalSessions = useMemo(
+    () => Array.from(sessionsByDay.values()).reduce((n, arr) => n + arr.length, 0),
+    [sessionsByDay],
+  );
 
   return (
-    <div className="mt-5 overflow-hidden rounded-2xl border border-divider bg-card shadow-card">
-      <div className="grid" style={{ gridTemplateColumns: "2.25rem repeat(7, minmax(0, 1fr))" }}>
-        <div />
-        {DAY_LABELS.map((label, i) => (
-          <div
-            key={i}
-            className="border-b border-divider py-2 text-center text-[10px] font-bold uppercase tracking-widest text-text-secondary"
-          >
-            {label}
-          </div>
-        ))}
+    <div className="mt-5">
+      {/* Week nav */}
+      <div className="flex items-center justify-between gap-2 rounded-2xl border border-divider bg-card p-2 shadow-card">
+        <button
+          type="button"
+          onClick={() => setWeekStart((w) => addDays(w, -7))}
+          aria-label="Previous week"
+          className="flex h-9 w-9 items-center justify-center rounded-full text-text-secondary hover:bg-elevated hover:text-text-primary"
+        >
+          <ChevronLeft className="h-5 w-5" />
+        </button>
+        <div className="flex flex-col items-center">
+          <span className="font-display text-sm font-black text-text-primary">
+            {formatRange(weekStart, weekEnd)}
+          </span>
+          {!isCurrentWeek ? (
+            <button
+              type="button"
+              onClick={() => setWeekStart(currentWeekStart)}
+              className="mt-0.5 text-[10px] font-bold uppercase tracking-widest text-accent-ink hover:underline"
+            >
+              Jump to this week
+            </button>
+          ) : (
+            <span className="mt-0.5 text-[10px] font-bold uppercase tracking-widest text-text-tertiary">
+              This week
+            </span>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={() => setWeekStart((w) => addDays(w, 7))}
+          aria-label="Next week"
+          className="flex h-9 w-9 items-center justify-center rounded-full text-text-secondary hover:bg-elevated hover:text-text-primary"
+        >
+          <ChevronRight className="h-5 w-5" />
+        </button>
+      </div>
 
-        {/* Time axis */}
-        <div className="relative border-r border-divider" style={{ height: gridHeight }}>
-          {Array.from({ length: hours }, (_, i) => {
-            const hour = startHour + i;
-            const ampm = hour >= 12 ? "p" : "a";
-            const h12 = hour % 12 === 0 ? 12 : hour % 12;
+      {totalSessions === 0 ? (
+        <div className="mt-4 rounded-2xl bg-card p-6 text-center shadow-card">
+          <p className="text-sm text-text-secondary">No sessions scheduled this week.</p>
+        </div>
+      ) : (
+        <ul className="mt-4 space-y-3">
+          {Array.from({ length: 7 }, (_, i) => {
+            const date = addDays(weekStart, i);
+            const sessions = sessionsByDay.get(i) ?? [];
+            const isToday = sameDay(date, today);
             return (
-              <div
+              <li
                 key={i}
-                className="absolute right-1 text-[9px] tabular-nums text-text-tertiary"
-                style={{ top: i * HOUR_PX - 4 }}
+                className={cn(
+                  "overflow-hidden rounded-2xl border border-divider bg-card shadow-card",
+                  isToday && "ring-1 ring-accent",
+                )}
               >
-                {h12}
-                {ampm}
-              </div>
+                <div className="flex items-baseline justify-between gap-3 border-b border-divider/60 px-4 py-2">
+                  <div className="flex items-baseline gap-2">
+                    <span
+                      className={cn(
+                        "font-display text-base font-black text-text-primary",
+                        isToday && "text-accent-ink",
+                      )}
+                    >
+                      {DAY_LONG[date.getDay()]}
+                    </span>
+                    <span className="text-xs text-text-tertiary tabular-nums">
+                      {MONTH_SHORT[date.getMonth()]} {date.getDate()}
+                    </span>
+                    {isToday ? (
+                      <span className="rounded-pill bg-accent px-1.5 py-0.5 text-[9px] font-black uppercase tracking-widest text-accent-foreground">
+                        Today
+                      </span>
+                    ) : null}
+                  </div>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-text-tertiary">
+                    {sessions.length === 0
+                      ? "Rest"
+                      : `${sessions.length} session${sessions.length === 1 ? "" : "s"}`}
+                  </span>
+                </div>
+                {sessions.length === 0 ? (
+                  <div className="px-4 py-3 text-xs text-text-tertiary">No sessions</div>
+                ) : (
+                  <ul className="divide-y divide-divider/50">
+                    {sessions.map((s, j) => (
+                      <li
+                        key={j}
+                        className="flex items-center gap-3 px-4 py-2.5"
+                      >
+                        <div className="w-16 shrink-0 font-display text-sm font-black tabular-nums text-text-primary">
+                          {formatTime(s.startMinute)}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate text-sm font-bold text-text-primary">
+                            {s.name}
+                          </div>
+                          <div className="text-[11px] text-text-secondary tabular-nums">
+                            {formatTime(s.startMinute)} – {formatTime(s.endMinute)}
+                          </div>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </li>
             );
           })}
-        </div>
+        </ul>
+      )}
 
-        {/* Day columns */}
-        {DAY_ORDER.map((_, dayIndex) => {
-          const dayBlocks = blocks.filter((b) => b.dayIndex === dayIndex);
-          return (
-            <div
-              key={dayIndex}
-              className={cn(
-                "relative",
-                dayIndex < 6 && "border-r border-divider",
-              )}
-              style={{ height: gridHeight }}
-            >
-              {/* Hour grid lines */}
-              {Array.from({ length: hours }, (_, i) => (
-                <div
-                  key={i}
-                  className="absolute inset-x-0 border-t border-divider/40"
-                  style={{ top: i * HOUR_PX }}
-                />
-              ))}
-
-              {dayBlocks.map((b, i) => {
-                const topMin = b.startMinute - startHour * 60;
-                const heightMin = Math.max(20, b.endMinute - b.startMinute);
-                const firstName = b.name.split(" ")[0] ?? b.name;
-                return (
-                  <div
-                    key={i}
-                    title={`${b.name} · ${formatTime(b.startMinute)}–${formatTime(b.endMinute)}`}
-                    className="absolute inset-x-0.5 overflow-hidden rounded-md border border-[color:var(--pen-tennis)]/40 bg-[color:var(--pen-tennis)]/15 px-1 py-0.5 text-[10px] font-bold leading-tight text-text-primary"
-                    style={{
-                      top: (topMin / 60) * HOUR_PX,
-                      height: (heightMin / 60) * HOUR_PX - 2,
-                    }}
-                  >
-                    <div className="truncate">{firstName}</div>
-                    <div className="truncate text-[9px] font-medium text-text-secondary tabular-nums">
-                      {formatTime(b.startMinute)}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          );
-        })}
-      </div>
+      {/* Footnote: this is a recurring weekly view */}
+      <p className="mt-4 px-1 text-[10px] uppercase tracking-widest text-text-tertiary">
+        Showing recurring weekly lessons · {DAY_SHORT[weekStart.getDay()]} {MONTH_SHORT[weekStart.getMonth()]} {weekStart.getDate()}
+      </p>
     </div>
   );
 }
