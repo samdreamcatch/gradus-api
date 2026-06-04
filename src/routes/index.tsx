@@ -78,7 +78,7 @@ function RoleButton({ role }: { role: Role }) {
     return (
       <div
         aria-disabled
-        className="flex items-center justify-between rounded-pill border border-divider bg-elevated px-6 py-5 text-text-tertiary"
+        className="flex items-center justify-between rounded-md border border-divider bg-elevated px-6 py-5 text-text-tertiary"
       >
         <span className="font-semibold">{role.label}</span>
         <span className="font-hand text-base">coming soon</span>
@@ -88,7 +88,7 @@ function RoleButton({ role }: { role: Role }) {
   return (
     <Link
       to={role.to}
-      className="flex items-center justify-between rounded-pill bg-accent px-6 py-5 text-accent-foreground shadow-card transition hover:brightness-95"
+      className="flex items-center justify-between rounded-md bg-accent px-6 py-5 text-accent-foreground shadow-card transition hover:brightness-95"
     >
       <span className="font-semibold">{role.label}</span>
       <ArrowRight className="size-5" aria-hidden />
