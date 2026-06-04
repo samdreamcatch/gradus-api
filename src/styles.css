@@ -151,8 +151,8 @@
   --secondary-accent-wash: var(--pen-pool-wash);
   --secondary-accent-ink: var(--pen-pool-ink);
 
-  /* Dark mode: navy stripe behind page titles for readable cream text. */
-  --page-title-stripe: var(--pen-pool-wash);
+  /* Dark mode: darker tennis-green wash behind page titles. */
+  --page-title-stripe: var(--pen-tennis-wash);
 
   /* Orange pen — attention/live token (dark) */
   --pen-orange: oklch(0.87 0.170 55);
