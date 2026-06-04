@@ -48,8 +48,8 @@ function SettingsPage() {
 
   return (
     <>
-      <div className="mx-auto min-h-dvh max-w-2xl px-3 pt-4 pb-24">
-        <SettingsHeader title="Your coach profile" />
+      <div className="mx-auto min-h-dvh max-w-2xl px-3 pt-6 pb-24">
+        <PageTitle>Settings</PageTitle>
 
         <SettingsGroup label="My profile">
           <SettingsList>
