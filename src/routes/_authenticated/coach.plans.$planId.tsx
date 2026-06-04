@@ -14,8 +14,6 @@ import {
   ChevronDown,
   BarChart3,
   Sparkles,
-  TrendingUp,
-  MessageSquare,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
@@ -561,25 +559,8 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
               </div>
             </div>
 
-            {/* Low-profile actions: changes history + plan messages */}
-            <div className="flex items-center justify-end gap-1">
-              <button
-                type="button"
-                aria-label="View changes"
-                title="View changes"
-                className="inline-flex h-8 w-8 items-center justify-center rounded-md text-text-tertiary hover:bg-elevated hover:text-text-primary"
-              >
-                <TrendingUp className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                aria-label="Plan messages"
-                title="Plan messages"
-                className="inline-flex h-8 w-8 items-center justify-center rounded-md text-text-tertiary hover:bg-elevated hover:text-text-primary"
-              >
-                <MessageSquare className="h-4 w-4" />
-              </button>
-            </div>
+
+
           </div>
         ) : null}
 
