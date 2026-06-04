@@ -203,7 +203,7 @@ export const listPlans = createServerFn({ method: "POST" })
       filteredPlans = filteredPlans.filter((p) => {
         const fromMoves = byPlan.get(p.id)?.sports.has(wanted) ?? false;
         const fromAthlete = p.athlete_id
-          ? athleteSport.get(p.athlete_id) === wanted
+          ? (athleteSport.get(p.athlete_id)?.has(wanted) ?? false)
           : false;
         return fromMoves || fromAthlete;
       });
