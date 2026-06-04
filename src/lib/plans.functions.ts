@@ -149,7 +149,6 @@ export const listPlans = createServerFn({ method: "POST" })
         ? supabase
             .from("athlete_goals")
             .select("athlete_id, sport")
-            .eq("coach_id", coachId)
             .in("athlete_id", athleteIds)
         : Promise.resolve({ data: [], error: null }),
     ]);
