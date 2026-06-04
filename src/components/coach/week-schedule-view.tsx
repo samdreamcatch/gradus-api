@@ -51,7 +51,13 @@ interface DaySession {
   endMinute: number;
 }
 
-export function WeekScheduleView({ athletes }: { athletes: RosterAthlete[] }) {
+export function WeekScheduleView({
+  athletes,
+  onSelectAthlete,
+}: {
+  athletes: RosterAthlete[];
+  onSelectAthlete?: (athleteId: string) => void;
+}) {
   const today = useMemo(() => new Date(), []);
   const currentWeekStart = useMemo(() => startOfWeekMonday(today), [today]);
   const [weekStart, setWeekStart] = useState<Date>(currentWeekStart);
@@ -210,16 +216,22 @@ export function WeekScheduleView({ athletes }: { athletes: RosterAthlete[] }) {
         ) : (
           <ul className="divide-y divide-divider/50">
             {selectedSessions.map((s, i) => (
-              <li key={i} className="flex items-center gap-4 px-4 py-3">
-                <div className="w-16 shrink-0 font-display text-base font-black tabular-nums text-text-primary">
-                  {formatTime(s.startMinute)}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="text-base font-bold text-text-primary">{s.name}</div>
-                  <div className="text-xs text-text-secondary tabular-nums">
-                    {formatTime(s.startMinute)} – {formatTime(s.endMinute)}
+              <li key={i}>
+                <button
+                  type="button"
+                  onClick={() => onSelectAthlete?.(s.athleteId)}
+                  className="flex w-full items-center gap-4 px-4 py-3 text-left transition hover:bg-elevated focus-visible:outline-none focus-visible:bg-elevated"
+                >
+                  <div className="w-16 shrink-0 font-display text-base font-black tabular-nums text-text-primary">
+                    {formatTime(s.startMinute)}
                   </div>
-                </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-base font-bold text-text-primary">{s.name}</div>
+                    <div className="text-xs text-text-secondary tabular-nums">
+                      {formatTime(s.startMinute)} – {formatTime(s.endMinute)}
+                    </div>
+                  </div>
+                </button>
               </li>
             ))}
           </ul>

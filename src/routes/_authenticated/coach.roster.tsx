@@ -6,6 +6,7 @@ import { PageTitle } from "@/components/page-title";
 import { RosterCard } from "@/components/coach/roster-card";
 import { SportFilterChips } from "@/components/coach/sport-filter-chips";
 import { WeekScheduleView } from "@/components/coach/week-schedule-view";
+import { AthleteDetailSheet } from "@/components/coach/athlete-detail-sheet";
 import { InviteCard } from "@/components/onboarding/invite-card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -70,6 +71,7 @@ function RosterPage() {
   const router = useRouter();
   const [tab, setTab] = useState<RosterTab>("athletes");
   const [selectedSport, setSelectedSport] = useState<string | null>(null);
+  const [selectedAthleteId, setSelectedAthleteId] = useState<string | null>(null);
 
   const sports = useMemo(() => {
     const set = new Set<string>(coachSports);
@@ -129,16 +131,23 @@ function RosterPage() {
             <ul className="mt-5 space-y-3">
               {visibleAthletes.map((a) => (
                 <li key={a.athleteId}>
-                  <RosterCard athlete={a} />
+                  <RosterCard athlete={a} onSelect={setSelectedAthleteId} />
                 </li>
               ))}
             </ul>
           )
         ) : (
-          <WeekScheduleView athletes={visibleAthletes} />
+          <WeekScheduleView
+            athletes={visibleAthletes}
+            onSelectAthlete={setSelectedAthleteId}
+          />
         )}
       </div>
       <CoachBottomNav />
+      <AthleteDetailSheet
+        athleteId={selectedAthleteId}
+        onOpenChange={setSelectedAthleteId}
+      />
     </>
   );
 }

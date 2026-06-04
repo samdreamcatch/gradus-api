@@ -1,4 +1,3 @@
-import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import type { RosterAthlete } from "@/lib/coach-roster.functions";
 
@@ -12,13 +11,19 @@ function formatTime(minute: number): string {
   return m === 0 ? `${h12}${ampm}` : `${h12}:${String(m).padStart(2, "0")}${ampm}`;
 }
 
-export function RosterCard({ athlete }: { athlete: RosterAthlete }) {
+export function RosterCard({
+  athlete,
+  onSelect,
+}: {
+  athlete: RosterAthlete;
+  onSelect?: (athleteId: string) => void;
+}) {
   const name = `${athlete.firstName} ${athlete.lastName}`.trim();
 
   return (
     <button
       type="button"
-      onClick={() => toast("Athlete detail coming soon")}
+      onClick={() => onSelect?.(athlete.athleteId)}
       className={cn(
         "group relative block w-full overflow-hidden rounded-2xl border border-divider bg-card p-4 pl-5 text-left shadow-card transition-all",
         "hover:-translate-y-0.5 hover:shadow-page focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
