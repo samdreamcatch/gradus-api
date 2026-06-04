@@ -195,7 +195,7 @@ function PlansFilterStrip({
   const isTemplate = filter === "templates";
 
   const triggerClass =
-    "h-8 w-full rounded-full border-divider bg-card px-3 text-xs font-bold text-text-primary shadow-none";
+    "h-8 w-full rounded-full border border-foreground/15 bg-popover px-3 text-xs font-bold text-text-primary shadow-sm";
 
   return (
     <div className="mt-3 grid grid-cols-3 gap-2">
