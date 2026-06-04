@@ -66,6 +66,7 @@ export const Route = createFileRoute("/_authenticated/coach/roster")({
 function RosterPage() {
   const { data: athletes } = useSuspenseQuery(rosterQueryOptions);
   const router = useRouter();
+  const [tab, setTab] = useState<RosterTab>("athletes");
   const [selectedSport, setSelectedSport] = useState<string | null>(null);
 
   const sports = useMemo(() => {
@@ -84,43 +85,56 @@ function RosterPage() {
       <div className="mx-auto min-h-dvh max-w-3xl px-4 pt-8 pb-24">
         <PageTitle>Roster</PageTitle>
 
-        {athletes.length === 0 ? (
-          <div className="mt-8 rounded-2xl bg-card p-6 shadow-[0_10px_40px_-12px_rgba(0,0,0,0.15)] sm:p-8">
-            <h2 className="font-display text-xl text-text-primary">
-              No athletes yet
-            </h2>
-            <p className="mt-2 text-sm text-text-secondary">
-              Share your invite code with parents — once they link their athlete to you, they'll show up here.
-            </p>
-            <div className="mt-5">
-              <InviteCard />
+        <div className="mt-4">
+          <SegmentedToggle tab={tab} onChange={setTab} />
+        </div>
+
+        {tab === "athletes" ? (
+          athletes.length === 0 ? (
+            <div className="mt-8 rounded-2xl bg-card p-6 shadow-[0_10px_40px_-12px_rgba(0,0,0,0.15)] sm:p-8">
+              <h2 className="font-display text-xl text-text-primary">
+                No athletes yet
+              </h2>
+              <p className="mt-2 text-sm text-text-secondary">
+                Share your invite code with parents — once they link their athlete to you, they'll show up here.
+              </p>
+              <div className="mt-5">
+                <InviteCard />
+              </div>
+              <div className="mt-5">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => router.invalidate()}
+                >
+                  Refresh
+                </Button>
+              </div>
             </div>
-            <div className="mt-5">
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => router.invalidate()}
-              >
-                Refresh
-              </Button>
-            </div>
-          </div>
+          ) : (
+            <>
+              <SportFilterChips
+                sports={sports}
+                selected={selectedSport}
+                onSelect={setSelectedSport}
+              />
+              <ul className="mt-5 space-y-3">
+                {visibleAthletes.map((a) => (
+                  <li key={a.athleteId}>
+                    <RosterCard athlete={a} />
+                  </li>
+                ))}
+              </ul>
+            </>
+          )
         ) : (
-          <>
-            <SportFilterChips
-              sports={sports}
-              selected={selectedSport}
-              onSelect={setSelectedSport}
-            />
-            <ul className="mt-5 space-y-3">
-              {visibleAthletes.map((a) => (
-                <li key={a.athleteId}>
-                  <RosterCard athlete={a} />
-                </li>
-              ))}
-            </ul>
-          </>
+          <div className="mt-8 rounded-2xl bg-card p-6 text-center shadow-[0_10px_40px_-12px_rgba(0,0,0,0.15)] sm:p-8">
+            <h2 className="font-display text-xl text-text-primary">Schedule</h2>
+            <p className="mt-2 text-sm text-text-secondary">
+              A weekly view of every athlete's sessions is coming soon.
+            </p>
+          </div>
         )}
       </div>
       <CoachBottomNav />
