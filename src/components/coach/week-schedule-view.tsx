@@ -51,7 +51,13 @@ interface DaySession {
   endMinute: number;
 }
 
-export function WeekScheduleView({ athletes }: { athletes: RosterAthlete[] }) {
+export function WeekScheduleView({
+  athletes,
+  onSelectAthlete,
+}: {
+  athletes: RosterAthlete[];
+  onSelectAthlete?: (athleteId: string) => void;
+}) {
   const today = useMemo(() => new Date(), []);
   const currentWeekStart = useMemo(() => startOfWeekMonday(today), [today]);
   const [weekStart, setWeekStart] = useState<Date>(currentWeekStart);
