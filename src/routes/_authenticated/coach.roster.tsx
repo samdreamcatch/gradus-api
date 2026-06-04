@@ -71,6 +71,7 @@ function RosterPage() {
   const router = useRouter();
   const [tab, setTab] = useState<RosterTab>("athletes");
   const [selectedSport, setSelectedSport] = useState<string | null>(null);
+  const [selectedAthleteId, setSelectedAthleteId] = useState<string | null>(null);
 
   const sports = useMemo(() => {
     const set = new Set<string>(coachSports);
