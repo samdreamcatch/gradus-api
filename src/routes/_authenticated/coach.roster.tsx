@@ -1,8 +1,10 @@
+import { useMemo, useState } from "react";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { CoachBottomNav } from "@/components/coach/bottom-nav";
 import { PageTitle } from "@/components/page-title";
 import { RosterCard } from "@/components/coach/roster-card";
+import { SportFilterChips } from "@/components/coach/sport-filter-chips";
 import { InviteCard } from "@/components/onboarding/invite-card";
 import { Button } from "@/components/ui/button";
 import { getCoachRoster } from "@/lib/coach-roster.functions";
