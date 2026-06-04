@@ -296,7 +296,7 @@ export const sendMessage = createServerFn({ method: "POST" })
       .update({ updated_at: new Date().toISOString() })
       .eq("id", room.id);
 
-    return { id: inserted!.id };
+    return { ok: true as const, id: inserted!.id };
   });
 
 /* ---------------- markRoomRead ---------------- */
