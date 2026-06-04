@@ -89,6 +89,14 @@ function RosterPage() {
           <SegmentedToggle tab={tab} onChange={setTab} />
         </div>
 
+        {athletes.length > 0 && (
+          <SportFilterChips
+            sports={sports}
+            selected={selectedSport}
+            onSelect={setSelectedSport}
+          />
+        )}
+
         {tab === "athletes" ? (
           athletes.length === 0 ? (
             <div className="mt-8 rounded-2xl bg-card p-6 shadow-[0_10px_40px_-12px_rgba(0,0,0,0.15)] sm:p-8">
@@ -113,23 +121,16 @@ function RosterPage() {
               </div>
             </div>
           ) : (
-            <>
-              <SportFilterChips
-                sports={sports}
-                selected={selectedSport}
-                onSelect={setSelectedSport}
-              />
-              <ul className="mt-5 space-y-3">
-                {visibleAthletes.map((a) => (
-                  <li key={a.athleteId}>
-                    <RosterCard athlete={a} />
-                  </li>
-                ))}
-              </ul>
-            </>
+            <ul className="mt-5 space-y-3">
+              {visibleAthletes.map((a) => (
+                <li key={a.athleteId}>
+                  <RosterCard athlete={a} />
+                </li>
+              ))}
+            </ul>
           )
         ) : (
-          <div className="mt-8 rounded-2xl bg-card p-6 text-center shadow-[0_10px_40px_-12px_rgba(0,0,0,0.15)] sm:p-8">
+          <div className="mt-5 rounded-2xl bg-card p-6 text-center shadow-[0_10px_40px_-12px_rgba(0,0,0,0.15)] sm:p-8">
             <h2 className="font-display text-xl text-text-primary">Schedule</h2>
             <p className="mt-2 text-sm text-text-secondary">
               A weekly view of every athlete's sessions is coming soon.
