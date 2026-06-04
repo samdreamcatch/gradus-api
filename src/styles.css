@@ -120,9 +120,10 @@
   /* Surfaces — ported from Gradus Website */
   --background: oklch(0.18 0.012 245);
   --foreground: var(--text-primary);
-  --card: oklch(0.215 0.012 245);
-  --popover: oklch(0.255 0.012 245);
-  --elevated: oklch(0.255 0.012 245);
+  /* Card sits just slightly above background so move/plan cards feel embedded, not stacked. */
+  --card: oklch(0.195 0.012 245);
+  --popover: oklch(0.245 0.012 245);
+  --elevated: oklch(0.235 0.012 245);
   --divider: oklch(0.34 0.012 245);
 
   /* Body text is intentionally cream (not white) for dyslexia-friendly readability. */
