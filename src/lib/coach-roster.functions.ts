@@ -119,5 +119,5 @@ export const getCoachRoster = createServerFn({ method: "GET" })
         a.firstName.localeCompare(b.firstName) || a.lastName.localeCompare(b.lastName),
     );
 
-    return result;
+    return { coachSports, athletes: result };
   });
