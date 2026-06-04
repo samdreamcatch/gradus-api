@@ -1,4 +1,3 @@
-import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import type { RosterAthlete } from "@/lib/coach-roster.functions";
 
@@ -12,7 +11,13 @@ function formatTime(minute: number): string {
   return m === 0 ? `${h12}${ampm}` : `${h12}:${String(m).padStart(2, "0")}${ampm}`;
 }
 
-export function RosterCard({ athlete }: { athlete: RosterAthlete }) {
+export function RosterCard({
+  athlete,
+  onSelect,
+}: {
+  athlete: RosterAthlete;
+  onSelect?: (athleteId: string) => void;
+}) {
   const name = `${athlete.firstName} ${athlete.lastName}`.trim();
 
   return (
