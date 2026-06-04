@@ -7,6 +7,7 @@ import {
   useRouter,
   HeadContent,
   Scripts,
+  ScriptOnce,
 } from "@tanstack/react-router";
 
 import appCss from "../styles.css?url";
@@ -91,12 +92,15 @@ const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem('gradus-th
 
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
-        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
-      <body>{children}<Scripts /></body>
+      <body>
+        <ScriptOnce>{THEME_INIT_SCRIPT}</ScriptOnce>
+        {children}
+        <Scripts />
+      </body>
     </html>
   );
 }
