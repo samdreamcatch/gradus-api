@@ -231,6 +231,19 @@ export const sendMessage = createServerFn({ method: "POST" })
     if (!room) throw new Error("You can't post into this conversation");
     const role = myRoleByRoom.get(room.id)!;
 
+    // Block sending if the coach↔athlete link has been removed (e.g. parent disconnected the coach).
+    const { data: link, error: linkErr } = await supabaseAdmin
+      .from("coach_athletes")
+      .select("coach_id")
+      .eq("coach_id", room.coach_id)
+      .eq("athlete_id", room.athlete_id)
+      .maybeSingle();
+    if (linkErr) dbError(linkErr, "Couldn't send message");
+    if (!link) {
+      throw new Error("This coach is no longer connected to this athlete. New messages can't be sent.");
+    }
+
+
     let audioPath: string | null = null;
     let duration: number | null = null;
 
