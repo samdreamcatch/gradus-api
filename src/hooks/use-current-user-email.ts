@@ -1,0 +1,17 @@
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+
+/** Returns the signed-in user's email (or null while loading / unauthed). */
+export function useCurrentUserEmail() {
+  const [email, setEmail] = useState<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    supabase.auth.getUser().then(({ data }) => {
+      if (!cancelled) setEmail(data.user?.email ?? null);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  return email;
+}
