@@ -42,7 +42,7 @@ export async function loadSessionsByPlanIds(
     .select("id, athlete_id")
     .in("id", planIds);
   if (pErr) dbError(pErr);
-  const planAthlete = new Map<string, string>(
+  const planAthlete = new Map<string, string | null>(
     (plans ?? []).map((p) => [p.id, p.athlete_id]),
   );
 
