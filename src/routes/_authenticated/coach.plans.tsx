@@ -143,7 +143,7 @@ function SegmentedToggle({ tab, onChange }: { tab: Tab; onChange: (t: Tab) => vo
   ];
 
   return (
-    <div className="flex rounded-lg bg-divider/40 p-1">
+    <div className="flex rounded-lg border border-foreground/15 bg-popover p-1 shadow-sm">
       {tabs.map((t) => (
         <button
           key={t.key}
@@ -152,7 +152,7 @@ function SegmentedToggle({ tab, onChange }: { tab: Tab; onChange: (t: Tab) => vo
           className={cn(
             "flex-1 rounded-md py-1.5 text-sm font-bold transition",
             tab === t.key
-              ? "bg-card text-text-primary shadow-sm"
+              ? "bg-accent text-accent-foreground shadow-sm"
               : "text-text-secondary hover:text-text-primary",
           )}
         >
