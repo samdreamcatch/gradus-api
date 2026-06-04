@@ -213,6 +213,23 @@ export const linkAthletesToCoach = createServerFn({ method: "POST" })
     const linksIns = await supabaseAdmin.from("coach_athletes").insert(linkRows);
     if (linksIns.error) dbError(linksIns.error);
 
+    // Enable every sport this coach offers for each newly linked athlete.
+    const levels = await supabaseAdmin
+      .from("coach_levels")
+      .select("sport")
+      .eq("coach_id", coachId);
+    if (levels.error) dbError(levels.error);
+    const sports = Array.from(new Set((levels.data ?? []).map((l) => l.sport)));
+    if (sports.length > 0 && (athletesIns.data ?? []).length > 0) {
+      const scopeRows = (athletesIns.data ?? []).flatMap((a) =>
+        sports.map((sport) => ({ athlete_id: a.id, coach_id: coachId, sport })),
+      );
+      const scopeIns = await supabaseAdmin
+        .from("coach_athlete_sports")
+        .insert(scopeRows);
+      if (scopeIns.error) dbError(scopeIns.error);
+    }
+
     return { ok: true };
   });
 
