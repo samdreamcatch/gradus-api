@@ -114,57 +114,59 @@
 }
 
 .dark {
-  --background: oklch(0.22 0.02 260);
-  --foreground: oklch(0.95 0.005 250);
-  --card: oklch(0.27 0.02 260 / 0.55);
-  --popover: oklch(0.27 0.02 260);
-  --elevated: oklch(0.3 0.02 260 / 0.62);
-  --divider: oklch(0.35 0.02 260);
+  /* Surfaces — ported from Gradus Website */
+  --background: oklch(0.18 0.012 245);
+  --foreground: oklch(0.97 0.018 85);
+  --card: oklch(0.215 0.012 245);
+  --popover: oklch(0.255 0.012 245);
+  --elevated: oklch(0.255 0.012 245);
+  --divider: oklch(0.34 0.012 245);
 
-  --text-primary: oklch(0.95 0.005 250);
-  --text-secondary: oklch(0.72 0.01 260);
-  --text-tertiary: oklch(0.55 0.015 260);
-  --text-disabled: oklch(0.4 0.015 260);
+  --text-primary: oklch(0.97 0.018 85);
+  --text-secondary: oklch(0.88 0.016 82);
+  --text-tertiary: oklch(0.74 0.014 80);
+  --text-disabled: oklch(0.54 0.012 78);
 
-  --pen-tennis: oklch(0.847 0.19 119);
-  --pen-tennis-wash: oklch(0.32 0.06 119);
-  --pen-tennis-ink: oklch(0.96 0.04 119);
+  --pen-tennis: oklch(0.90 0.220 119);
+  --pen-tennis-wash: oklch(0.30 0.095 119);
+  --pen-tennis-ink: oklch(0.90 0.220 119);
 
   --accent: var(--pen-tennis);
-  --accent-foreground: oklch(0.2 0.04 130);
+  --accent-foreground: oklch(0.18 0.012 245);
   --accent-ink: var(--pen-tennis);
 
-  --pen-pool: oklch(0.78 0.13 235);
-  --pen-pool-wash: oklch(0.32 0.07 235 / 0.55);
-  --pen-pool-ink: oklch(0.92 0.06 235);
+  --pen-pool: oklch(0.84 0.110 210);
+  --pen-pool-wash: oklch(0.28 0.090 210);
+  --pen-pool-ink: oklch(0.84 0.110 210);
 
   --secondary-accent: var(--pen-pool);
   --secondary-accent-wash: var(--pen-pool-wash);
   --secondary-accent-ink: var(--pen-pool-ink);
 
   /* Orange pen — attention/live token (dark) */
-  --pen-orange: oklch(0.82 0.16 55);
-  --pen-orange-wash: oklch(0.34 0.08 55 / 0.55);
-  --pen-orange-ink: oklch(0.94 0.06 55);
+  --pen-orange: oklch(0.85 0.180 55);
+  --pen-orange-wash: oklch(0.30 0.105 55);
+  --pen-orange-ink: oklch(0.85 0.180 55);
 
   --attention: var(--pen-orange);
   --attention-wash: var(--pen-orange-wash);
   --attention-ink: var(--pen-orange-ink);
-  --attention-foreground: oklch(0.20 0.05 55); /* dark ink for contrast on bright orange in dark mode */
+  --attention-foreground: oklch(0.18 0.012 245);
 
   /* Iris pen (dark) */
-  --pen-iris: oklch(0.75 0.17 310);
-  --pen-iris-wash: oklch(0.32 0.08 310 / 0.55);
-  --pen-iris-ink: oklch(0.94 0.06 310);
+  --pen-iris: oklch(0.86 0.175 310);
+  --pen-iris-wash: oklch(0.28 0.075 310);
+  --pen-iris-ink: oklch(0.86 0.175 310);
 
   /* Pink pen (dark) */
-  --pen-pink: oklch(0.80 0.14 8);
-  --pen-pink-wash: oklch(0.32 0.07 8 / 0.55);
-  --pen-pink-ink: oklch(0.95 0.05 8);
+  --pen-pink: oklch(0.82 0.170 8);
+  --pen-pink-wash: oklch(0.28 0.080 8);
+  --pen-pink-ink: oklch(0.82 0.170 8);
 
+  --cream: oklch(0.32 0.015 85);
 
-
-  --cream: oklch(0.32 0.015 85);             /* dim parchment for dark mode */
+  /* Destructive — toned down so it's not blinding on dark surfaces */
+  --destructive: oklch(0.55 0.135 28);
 }
 
 
