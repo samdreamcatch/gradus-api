@@ -7,7 +7,36 @@ import { RosterCard } from "@/components/coach/roster-card";
 import { SportFilterChips } from "@/components/coach/sport-filter-chips";
 import { InviteCard } from "@/components/onboarding/invite-card";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { getCoachRoster } from "@/lib/coach-roster.functions";
+
+type RosterTab = "athletes" | "schedule";
+
+function SegmentedToggle({ tab, onChange }: { tab: RosterTab; onChange: (t: RosterTab) => void }) {
+  const tabs: { key: RosterTab; label: string }[] = [
+    { key: "athletes", label: "Athletes" },
+    { key: "schedule", label: "Schedule" },
+  ];
+  return (
+    <div className="flex rounded-lg border border-foreground/15 bg-popover p-1 shadow-sm">
+      {tabs.map((t) => (
+        <button
+          key={t.key}
+          type="button"
+          onClick={() => onChange(t.key)}
+          className={cn(
+            "flex-1 rounded-md py-1.5 text-sm font-bold transition",
+            tab === t.key
+              ? "bg-accent text-accent-foreground shadow-sm"
+              : "text-text-secondary hover:text-text-primary",
+          )}
+        >
+          {t.label}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 const rosterQueryOptions = queryOptions({
   queryKey: ["coach", "roster"],
