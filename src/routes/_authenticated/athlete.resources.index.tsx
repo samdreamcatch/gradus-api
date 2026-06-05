@@ -223,10 +223,8 @@ function SafeSportPanel({ sport }: { sport: string }) {
           Something feel off?
         </h2>
         <p className="mt-3 text-sm text-text-secondary">
-          If practice in{" "}
-          <span className="pen-highlight">{sportLabel(sport)}</span> is making
-          you feel unsafe, weird, or just not right — you don't have to figure
-          it out alone.
+          If practice is making you feel unsafe, weird, or just not right —
+          you don't have to figure it out alone.
         </p>
       </div>
 
