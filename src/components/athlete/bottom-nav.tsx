@@ -17,7 +17,7 @@ export function AthleteBottomNav() {
   const items: Item[] = [
     { label: "Plans", icon: ClipboardList, to: "/athlete/plans", matchPrefix: "/athlete/plans" },
     { label: "Messages", icon: MessageSquare, to: "/athlete/messages", matchPrefix: "/athlete/messages", unreadCount: unread },
-    { label: "Resources", icon: BookOpen },
+    { label: "Resources", icon: BookOpen, to: "/athlete/resources", matchPrefix: "/athlete/resources" },
     { label: "Settings", icon: Settings, to: "/athlete/settings", matchPrefix: "/athlete/settings" },
   ];
   const pathname = useRouterState({ select: (s) => s.location.pathname });
