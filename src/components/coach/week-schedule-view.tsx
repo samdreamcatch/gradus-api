@@ -274,7 +274,11 @@ function PracticeSinceLast({ summary }: { summary?: AthletePracticeSummary }) {
   let chipClass = "";
   if (expectedHoursPerWeek && expectedHoursPerWeek > 0) {
     const ratio = hoursLogged / expectedHoursPerWeek;
-    if (ratio >= 0.9) {
+    if (ratio > 1.5) {
+      chipLabel = "Burnout risk";
+      chipClass =
+        "bg-[color-mix(in_oklab,var(--pen-pink)_22%,transparent)] text-[color:var(--pen-pink-ink)]";
+    } else if (ratio >= 0.9) {
       chipLabel = "On track";
       chipClass =
         "bg-[color-mix(in_oklab,var(--pen-tennis)_18%,transparent)] text-accent-ink";
