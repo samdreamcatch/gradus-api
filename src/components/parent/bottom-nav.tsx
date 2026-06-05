@@ -19,7 +19,7 @@ export function ParentBottomNav() {
   const ITEMS: Item[] = [
     { label: "Plans", icon: ClipboardList, to: "/parent/plans", matchPrefix: "/parent/plans" },
     { label: "Messages", icon: MessageSquare, to: "/parent/messages", matchPrefix: "/parent/messages", unreadCount: unread },
-    { label: "Resources", icon: BookOpen },
+    { label: "Resources", icon: BookOpen, to: "/parent/resources", matchPrefix: "/parent/resources" },
     { label: "Settings", icon: Settings, to: "/parent/settings", matchPrefix: "/parent/settings" },
   ];
   const pathname = useRouterState({ select: (s) => s.location.pathname });

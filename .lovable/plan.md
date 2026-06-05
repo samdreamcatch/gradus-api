@@ -1,22 +1,50 @@
-## Plan
+## Plan — `/parent/resources`
 
-1. Add athlete-facing read access rules for the existing goal tables so a signed-in athlete can read their own:
-   - goal rows in `athlete_goals`
-   - primary coach mappings in `athlete_primary_coaches`
+Build a Resources tab for parents matching the design system, with sport-filtered PDF library + Ask Gradus AI.
 
-2. Keep the `/athlete/plans` UI as-is, since it is already calling the correct athlete goals server function and the goal record for Beverly is present in the backend.
+### Note on PDF source
+I checked the **Mobile Document Creator** project — it's a PDF *generator* app and its repo only contains fonts (Atkinson, Caveat, JetBrainsMono), no committed PDFs. Generated PDFs there would be ephemeral artifacts. So "copy what's there now" isn't actionable as-is. I'll build the storage + admin upload path now and **you upload PDFs through the app** (or hand me a batch and I'll upload them via the storage tool). Generated PDFs from the Doc Creator can be re-run and dropped in.
 
-3. Validate the data path end-to-end on `/athlete/plans` → Goals and confirm Beverly’s seeded goal now renders instead of the empty state.
+---
 
-## What I found
+### 1. Backend — storage + table
 
-- Beverly already has a goal row in the backend.
-- Beverly also has session data and a primary coach mapping.
-- The athlete page is querying the right server function.
-- The current backend access rules allow parents and coaches to read those goal tables, but not the athlete themself, so the athlete query resolves to an empty goals list.
+**Storage bucket** `resource-pdfs` (private, signed URLs for inline viewing).
 
-## Technical details
+**Table `resources`** with columns: `sport` (text), `title`, `description`, `storage_path`, `display_order`, `published` (bool), timestamps. RLS:
+- Read: any authenticated parent whose athlete's sport matches `resources.sport`.
+- Write: service role only (uploads done via admin path / migration / storage tool for now).
 
-- This should be a backend policy change only; no new route or frontend architecture change is needed.
-- I’ll add narrowly scoped read rules based on the signed-in athlete’s own `athletes.user_id` mapping, so athletes can only read rows tied to their own athlete record.
-- After that, I’ll re-check the page to make sure the goal card appears and the placeholder disappears.
+Helper SQL function `parent_has_athlete_in_sport(_sport text)` (security definer) joins `parent_profiles → athletes → coach_athlete_sports` (or `athlete_primary_coaches.sport`) to gate reads.
+
+### 2. Server functions (`src/lib/parent-resources.functions.ts`)
+- `getParentResources()` — returns `{ sports: string[], resources: ResourceDTO[] }` filtered to the parent's child sports.
+- `getResourceSignedUrl({ resourceId })` — returns a short-lived signed URL after re-checking sport eligibility.
+
+### 3. Route `/parent/resources` (`src/routes/_authenticated/parent.resources.index.tsx`)
+Layout, top-to-bottom:
+- **Page title** `Resources` (display serif, matches `Plans` / `Messages` headers).
+- **Sport filter chips** — reuse `SportFilterChips` from coach side; only shows if parent has >1 sport. Single-sport parents see a static chip.
+- **Ask Gradus** section: gradient-bordered card containing `<textarea>` + mic stub + **Ask** button. Streams Gemini answers via `/api/parent-resources/ask` server route using Lovable AI Gateway (`google/gemini-3-flash-preview`), system prompt scoped to the selected sport ("You are Gradus, a coach for {sport}…"). Renders streaming markdown response below the card with a "New question" reset.
+- **Sport Library** collapsible section:
+  - Search input (filters titles/descriptions client-side).
+  - List of `ResourceCard`s (title + 1-line description, rounded-2xl, divider border, paper-card surface).
+  - Tap → opens a `Sheet` with embedded `<iframe src={signedUrl}>` for inline PDF view, plus open-in-new-tab fallback.
+- Empty states for: parent has no athletes yet, sport has no resources yet.
+
+### 4. Bottom nav wiring
+Update `src/components/parent/bottom-nav.tsx` — point the existing Resources item to `/parent/resources` (remove the "coming soon" toast).
+
+### 5. Design system adherence
+All surfaces use `bg-card`, sheets use `bg-popover`, dividers `border-divider`, accents via `text-accent`/`bg-accent`. Display serif for the page title, `pen-highlight` for the active state, gradient border on the Ask card built with `bg-gradient-to-br from-secondary-accent via-accent to-attention` wrapping a `bg-popover` inner.
+
+### 6. Out of scope (this pass)
+- "Something feel off?" support card (skipped per your answer).
+- In-app PDF uploader UI (will add an admin route later; for now I can bulk-upload PDFs you send me).
+
+---
+
+### Technical notes
+- Streaming chat uses TanStack server route `src/routes/api/parent-resources.ask.ts` with `streamText` + `toUIMessageStreamResponse`, client uses `useChat` scoped per sport, history kept in component state only (not persisted) for this pass.
+- Signed URL TTL: 5 minutes; re-fetched per open.
+- Resources table seeded empty; you provide PDFs to upload.

@@ -850,6 +850,42 @@ export type Database = {
           },
         ]
       }
+      resources: {
+        Row: {
+          created_at: string
+          description: string
+          display_order: number
+          id: string
+          published: boolean
+          sport: string
+          storage_path: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string
+          display_order?: number
+          id?: string
+          published?: boolean
+          sport: string
+          storage_path: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          display_order?: number
+          id?: string
+          published?: boolean
+          sport?: string
+          storage_path?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       seed_moves: {
         Row: {
           category: string
@@ -903,6 +939,10 @@ export type Database = {
       is_parent_of_plan: { Args: { _plan_id: string }; Returns: boolean }
       is_room_participant: {
         Args: { _room_id: string; _user_id: string }
+        Returns: boolean
+      }
+      parent_has_athlete_in_sport: {
+        Args: { _sport: string }
         Returns: boolean
       }
       record_invite_lookup_attempt: {
