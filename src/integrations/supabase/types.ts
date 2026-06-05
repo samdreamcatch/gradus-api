@@ -655,6 +655,33 @@ export type Database = {
           },
         ]
       }
+      parent_saved_answers: {
+        Row: {
+          answer: string
+          created_at: string
+          id: string
+          question: string
+          sport: string
+          user_id: string
+        }
+        Insert: {
+          answer: string
+          created_at?: string
+          id?: string
+          question: string
+          sport: string
+          user_id: string
+        }
+        Update: {
+          answer?: string
+          created_at?: string
+          id?: string
+          question?: string
+          sport?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       plan_moves: {
         Row: {
           created_at: string
