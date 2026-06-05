@@ -90,6 +90,7 @@ function ParentResourcesPage() {
           <SegmentedToggle
             value={view}
             onChange={setView}
+            tone="muted"
             options={[
               { key: "library", label: "Library" },
               { key: "ask", label: "Ask Gradus" },
