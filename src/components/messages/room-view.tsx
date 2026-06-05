@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import {
   getRoom,
-  getRoomActivePlan,
+  getRoomActivePlans,
   markRoomRead,
   sendMessage,
   type MessageDTO,
@@ -16,6 +16,7 @@ import {
 } from "@/lib/messages.functions";
 import { voiceTranscribe } from "@/lib/voice.functions";
 import { useVoiceCapture } from "@/hooks/use-voice-capture";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 function roleWord(role: RoleInRoom): string {
   return role === "coach" ? "Coach" : role === "parent" ? "Parent" : "Athlete";
