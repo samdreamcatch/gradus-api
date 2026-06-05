@@ -295,6 +295,9 @@ function PracticeSinceLast({ summary }: { summary?: AthletePracticeSummary }) {
 
   return (
     <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1">
+      <span className="text-[9px] font-bold uppercase tracking-widest text-text-tertiary">
+        Since last
+      </span>
       <span className="text-xs font-bold tabular-nums text-text-primary">
         {hoursStr}
       </span>
