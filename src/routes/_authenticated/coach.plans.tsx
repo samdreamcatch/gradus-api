@@ -142,34 +142,7 @@ function PlansPage() {
   );
 }
 
-/* ---------------- Toggle ---------------- */
-
-function SegmentedToggle({ tab, onChange }: { tab: Tab; onChange: (t: Tab) => void }) {
-  const tabs: { key: Tab; label: string }[] = [
-    { key: "plans", label: "Plans" },
-    { key: "library", label: "Move library" },
-  ];
-
-  return (
-    <div className="flex rounded-lg border border-foreground/15 bg-popover p-1 shadow-sm">
-      {tabs.map((t) => (
-        <button
-          key={t.key}
-          type="button"
-          onClick={() => onChange(t.key)}
-          className={cn(
-            "flex-1 rounded-md py-1.5 text-sm font-bold transition",
-            tab === t.key
-              ? "bg-accent text-accent-foreground shadow-sm"
-              : "text-text-secondary hover:text-text-primary",
-          )}
-        >
-          {t.label}
-        </button>
-      ))}
-    </div>
-  );
-}
+/* ---------------- Toggle moved to src/components/plans/segmented-toggle.tsx ---------------- */
 
 /* ---------------- Plans filter ---------------- */
 
