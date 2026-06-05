@@ -258,7 +258,7 @@ function SafeSportPanel() {
 
       {/* More from SafeSport */}
       <a
-        href="https://uscenterforsafesport.org/audience/athletes/"
+        href="https://uscenterforsafesport.org/about/faqs/"
         target="_blank"
         rel="noopener noreferrer"
         className="block rounded-2xl border border-divider bg-card p-4 transition-colors hover:bg-card/60"
