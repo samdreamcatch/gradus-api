@@ -35,6 +35,7 @@ import { Route as AuthenticatedParentPlansIndexRouteImport } from './routes/_aut
 import { Route as AuthenticatedParentMessagesIndexRouteImport } from './routes/_authenticated/parent.messages.index'
 import { Route as AuthenticatedCoachPlansIndexRouteImport } from './routes/_authenticated/coach.plans.index'
 import { Route as AuthenticatedCoachMessagesIndexRouteImport } from './routes/_authenticated/coach.messages.index'
+import { Route as AuthenticatedAthleteResourcesIndexRouteImport } from './routes/_authenticated/athlete.resources.index'
 import { Route as AuthenticatedAthletePlansIndexRouteImport } from './routes/_authenticated/athlete.plans.index'
 import { Route as AuthenticatedAthleteMessagesIndexRouteImport } from './routes/_authenticated/athlete.messages.index'
 import { Route as AuthenticatedParentPlansPlanIdRouteImport } from './routes/_authenticated/parent.plans.$planId'
@@ -185,6 +186,12 @@ const AuthenticatedCoachMessagesIndexRoute =
     path: '/coach/messages/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAthleteResourcesIndexRoute =
+  AuthenticatedAthleteResourcesIndexRouteImport.update({
+    id: '/athlete/resources/',
+    path: '/athlete/resources/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedAthletePlansIndexRoute =
   AuthenticatedAthletePlansIndexRouteImport.update({
     id: '/athlete/plans/',
@@ -263,6 +270,7 @@ export interface FileRoutesByFullPath {
   '/parent/plans/$planId': typeof AuthenticatedParentPlansPlanIdRoute
   '/athlete/messages/': typeof AuthenticatedAthleteMessagesIndexRoute
   '/athlete/plans/': typeof AuthenticatedAthletePlansIndexRoute
+  '/athlete/resources/': typeof AuthenticatedAthleteResourcesIndexRoute
   '/coach/messages/': typeof AuthenticatedCoachMessagesIndexRoute
   '/coach/plans/': typeof AuthenticatedCoachPlansIndexRoute
   '/parent/messages/': typeof AuthenticatedParentMessagesIndexRoute
@@ -296,6 +304,7 @@ export interface FileRoutesByTo {
   '/parent/plans/$planId': typeof AuthenticatedParentPlansPlanIdRoute
   '/athlete/messages': typeof AuthenticatedAthleteMessagesIndexRoute
   '/athlete/plans': typeof AuthenticatedAthletePlansIndexRoute
+  '/athlete/resources': typeof AuthenticatedAthleteResourcesIndexRoute
   '/coach/messages': typeof AuthenticatedCoachMessagesIndexRoute
   '/coach/plans': typeof AuthenticatedCoachPlansIndexRoute
   '/parent/messages': typeof AuthenticatedParentMessagesIndexRoute
@@ -333,6 +342,7 @@ export interface FileRoutesById {
   '/_authenticated/parent/plans/$planId': typeof AuthenticatedParentPlansPlanIdRoute
   '/_authenticated/athlete/messages/': typeof AuthenticatedAthleteMessagesIndexRoute
   '/_authenticated/athlete/plans/': typeof AuthenticatedAthletePlansIndexRoute
+  '/_authenticated/athlete/resources/': typeof AuthenticatedAthleteResourcesIndexRoute
   '/_authenticated/coach/messages/': typeof AuthenticatedCoachMessagesIndexRoute
   '/_authenticated/coach/plans/': typeof AuthenticatedCoachPlansIndexRoute
   '/_authenticated/parent/messages/': typeof AuthenticatedParentMessagesIndexRoute
@@ -370,6 +380,7 @@ export interface FileRouteTypes {
     | '/parent/plans/$planId'
     | '/athlete/messages/'
     | '/athlete/plans/'
+    | '/athlete/resources/'
     | '/coach/messages/'
     | '/coach/plans/'
     | '/parent/messages/'
@@ -403,6 +414,7 @@ export interface FileRouteTypes {
     | '/parent/plans/$planId'
     | '/athlete/messages'
     | '/athlete/plans'
+    | '/athlete/resources'
     | '/coach/messages'
     | '/coach/plans'
     | '/parent/messages'
@@ -439,6 +451,7 @@ export interface FileRouteTypes {
     | '/_authenticated/parent/plans/$planId'
     | '/_authenticated/athlete/messages/'
     | '/_authenticated/athlete/plans/'
+    | '/_authenticated/athlete/resources/'
     | '/_authenticated/coach/messages/'
     | '/_authenticated/coach/plans/'
     | '/_authenticated/parent/messages/'
@@ -639,6 +652,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCoachMessagesIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/athlete/resources/': {
+      id: '/_authenticated/athlete/resources/'
+      path: '/athlete/resources'
+      fullPath: '/athlete/resources/'
+      preLoaderRoute: typeof AuthenticatedAthleteResourcesIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/athlete/plans/': {
       id: '/_authenticated/athlete/plans/'
       path: '/athlete/plans'
@@ -753,6 +773,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedCoachMessagesRoomIdRoute: typeof AuthenticatedCoachMessagesRoomIdRoute
   AuthenticatedAthleteMessagesIndexRoute: typeof AuthenticatedAthleteMessagesIndexRoute
   AuthenticatedAthletePlansIndexRoute: typeof AuthenticatedAthletePlansIndexRoute
+  AuthenticatedAthleteResourcesIndexRoute: typeof AuthenticatedAthleteResourcesIndexRoute
   AuthenticatedCoachMessagesIndexRoute: typeof AuthenticatedCoachMessagesIndexRoute
 }
 
@@ -772,6 +793,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAthleteMessagesIndexRoute:
     AuthenticatedAthleteMessagesIndexRoute,
   AuthenticatedAthletePlansIndexRoute: AuthenticatedAthletePlansIndexRoute,
+  AuthenticatedAthleteResourcesIndexRoute:
+    AuthenticatedAthleteResourcesIndexRoute,
   AuthenticatedCoachMessagesIndexRoute: AuthenticatedCoachMessagesIndexRoute,
 }
 
