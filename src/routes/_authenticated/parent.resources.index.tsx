@@ -67,7 +67,7 @@ function ParentResourcesPage() {
   }, [resources, activeSport, search]);
 
   return (
-    <div className="mx-auto max-w-2xl px-3 pt-6 pb-24">
+    <div className="mx-auto max-w-2xl px-4 pt-6 pb-24">
       <PageTitle>Resources</PageTitle>
 
       {sports.length > 0 ? (
@@ -97,9 +97,9 @@ function ParentResourcesPage() {
               className="flex w-full items-center justify-between px-1 py-2 text-left"
               aria-expanded={libraryOpen}
             >
-              <span className="text-xs font-bold uppercase tracking-widest text-text-secondary">
+              <p className="font-sans text-xs font-bold uppercase tracking-widest text-text-secondary">
                 Sport Library
-              </span>
+              </p>
               <ChevronDown
                 className={cn(
                   "h-4 w-4 text-text-secondary transition-transform",
