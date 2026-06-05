@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import type { Database } from "@/integrations/supabase/types";
@@ -7,6 +8,33 @@ import { dbError } from "./db-error";
 import type { ParentGoalSportDTO } from "./parent-goals.functions";
 
 type Client = SupabaseClient<Database>;
+
+const updateLongTermGoalSchema = z.object({
+  sport: z.string().min(1).max(64),
+  longTermGoal: z.string().trim().max(280),
+});
+
+export const updateAthleteLongTermGoal = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => updateLongTermGoalSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    const supabase = context.supabase as Client;
+    const { data: athlete, error: aErr } = await supabase
+      .from("athletes")
+      .select("id")
+      .eq("user_id", context.userId)
+      .maybeSingle();
+    if (aErr) dbError(aErr);
+    if (!athlete) throw new Error("Athlete not found");
+
+    const { error } = await supabase
+      .from("athlete_goals")
+      .update({ long_term_goal: data.longTermGoal })
+      .eq("athlete_id", athlete.id)
+      .eq("sport", data.sport);
+    if (error) dbError(error);
+    return { ok: true };
+  });
 
 export interface AthleteGoalsDashboardDTO {
   athleteId: string;
