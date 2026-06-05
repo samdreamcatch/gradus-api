@@ -10,7 +10,7 @@ export const Route = createFileRoute("/")({
     if (!data.session) return;
     try {
       const { role } = await getMyRole();
-      if (role === "parent") throw redirect({ to: "/parent" });
+      if (role === "parent") throw redirect({ to: "/parent/plans" });
       if (role === "coach") throw redirect({ to: "/coach" });
       if (role === "athlete") throw redirect({ to: "/athlete" });
     } catch (e) {
