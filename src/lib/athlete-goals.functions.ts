@@ -39,8 +39,26 @@ export const updateAthleteLongTermGoal = createServerFn({ method: "POST" })
 export interface AthleteGoalsDashboardDTO {
   athleteId: string;
   athleteName: string;
+  motivation: string;
   sports: ParentGoalSportDTO[];
 }
+
+const updateMotivationSchema = z.object({
+  motivation: z.string().trim().max(500),
+});
+
+export const updateAthleteMotivation = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => updateMotivationSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    const supabase = context.supabase as Client;
+    const { error } = await supabase
+      .from("athletes")
+      .update({ motivation: data.motivation })
+      .eq("user_id", context.userId);
+    if (error) dbError(error);
+    return { ok: true };
+  });
 
 export const getAthleteGoalsDashboard = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
