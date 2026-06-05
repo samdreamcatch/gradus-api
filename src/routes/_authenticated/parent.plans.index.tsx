@@ -139,10 +139,28 @@ function ParentPlansPage() {
               </SelectContent>
             </Select>
           </div>
+        ) : goalsAthletes.length > 1 ? (
+          <div className="mt-2.5">
+            <Select
+              value={activeGoalsAthleteId}
+              onValueChange={setGoalsAthleteId}
+            >
+              <SelectTrigger className={triggerClass} aria-label="Athlete">
+                <SelectValue placeholder="Select athlete" />
+              </SelectTrigger>
+              <SelectContent>
+                {goalsAthletes.map((a) => (
+                  <SelectItem key={a.athleteId} value={a.athleteId}>
+                    {a.athleteName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         ) : null}
       </FilterBar>
       {tab === "goals" ? (
-        <GoalsDashboard />
+        <GoalsDashboard athleteId={activeGoalsAthleteId} />
       ) : (
         <div className="mt-5 space-y-3">
           {isLoading ? (
