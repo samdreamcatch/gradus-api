@@ -240,17 +240,36 @@ export const linkAthletesToCoach = createServerFn({ method: "POST" })
 export const getMyRole = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { supabase } = context;
+    const userId = context.userId;
+    // Use the admin client + explicit user_id filters so RLS edge cases or a
+    // future grant change can never make a profile lookup silently return
+    // null and mis-route the user.
     const [coach, parent, athlete] = await Promise.all([
-      supabase.from("coach_profiles").select("id, created_at, onboarded_at").maybeSingle(),
-      supabase.from("parent_profiles").select("id, created_at").maybeSingle(),
-      supabase.from("athletes").select("id").limit(1).maybeSingle(),
+      supabaseAdmin
+        .from("coach_profiles")
+        .select("id, onboarded_at")
+        .eq("user_id", userId)
+        .maybeSingle(),
+      supabaseAdmin
+        .from("parent_profiles")
+        .select("id")
+        .eq("user_id", userId)
+        .maybeSingle(),
+      supabaseAdmin
+        .from("athletes")
+        .select("id")
+        .eq("user_id", userId)
+        .limit(1)
+        .maybeSingle(),
     ]);
+    if (coach.error) dbError(coach.error);
+    if (parent.error) dbError(parent.error);
+    if (athlete.error) dbError(athlete.error);
+
     // A coach_profiles row with no onboarded_at is a stub (user briefly hit
     // the coach wizard and bailed). Never treat that as the user's real role
     // if they have a meaningful parent or athlete record.
-    const coachOnboarded = !!coach.data?.onboarded_at;
-    if (coachOnboarded) return { role: "coach" as const };
+    if (coach.data?.onboarded_at) return { role: "coach" as const };
     if (parent.data) return { role: "parent" as const };
     if (athlete.data) return { role: "athlete" as const };
     if (coach.data) return { role: "coach" as const };
