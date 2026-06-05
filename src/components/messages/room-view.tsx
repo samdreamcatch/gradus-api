@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import {
   getRoom,
-  getRoomActivePlan,
+  getRoomActivePlans,
   markRoomRead,
   sendMessage,
   type MessageDTO,
@@ -16,6 +16,7 @@ import {
 } from "@/lib/messages.functions";
 import { voiceTranscribe } from "@/lib/voice.functions";
 import { useVoiceCapture } from "@/hooks/use-voice-capture";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 function roleWord(role: RoleInRoom): string {
   return role === "coach" ? "Coach" : role === "parent" ? "Parent" : "Athlete";
@@ -301,13 +302,14 @@ function Composer({
   const [transcribing, setTranscribing] = useState(false);
   const [attachedPlan, setAttachedPlan] = useState<{ id: string; title: string } | null>(null);
   const transcribeFn = useServerFn(voiceTranscribe);
-  const fetchActivePlan = useServerFn(getRoomActivePlan);
+  const fetchActivePlans = useServerFn(getRoomActivePlans);
 
-  const { data: activePlanData } = useQuery({
-    queryKey: ["room-active-plan", viewerRole ?? "default", roomId],
-    queryFn: () => fetchActivePlan({ data: { roomId, viewerRole } }),
+  const { data: activePlansData } = useQuery({
+    queryKey: ["room-active-plans", viewerRole ?? "default", roomId],
+    queryFn: () => fetchActivePlans({ data: { roomId, viewerRole } }),
   });
-  const activePlan = activePlanData?.plan ?? null;
+  const activePlans = activePlansData?.plans ?? [];
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   const voice = useVoiceCapture({
     maxMs: 90_000,
@@ -339,18 +341,22 @@ function Composer({
   const recording = voice.state === "recording";
   const processing = voice.state === "processing" || transcribing;
 
-  const toggleAttachPlan = () => {
+  const handleAttachClick = () => {
     if (attachedPlan) {
       setAttachedPlan(null);
       return;
     }
-    if (!activePlan) {
+    if (activePlans.length === 0) {
       toast("No active plan", {
         description: "This athlete has no active plan to tag.",
       });
       return;
     }
-    setAttachedPlan(activePlan);
+    if (activePlans.length === 1) {
+      setAttachedPlan(activePlans[0]);
+      return;
+    }
+    setPickerOpen(true);
   };
 
   return (
@@ -400,21 +406,46 @@ function Composer({
         </div>
       ) : (
         <div className="flex items-end gap-2">
-          <button
-            type="button"
-            onClick={toggleAttachPlan}
-            disabled={disabled || processing}
-            aria-label={attachedPlan ? "Remove plan tag" : "Tag a plan"}
-            aria-pressed={!!attachedPlan}
-            className={cn(
-              "inline-flex size-10 shrink-0 items-center justify-center rounded-full ring-1 transition-colors disabled:opacity-50",
-              attachedPlan
-                ? "bg-accent/20 text-accent-ink ring-accent/40"
-                : "bg-elevated text-text-primary ring-divider hover:bg-divider",
-            )}
-          >
-            <Paperclip className="size-4" />
-          </button>
+          <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                onClick={handleAttachClick}
+                disabled={disabled || processing}
+                aria-label={attachedPlan ? "Remove plan tag" : "Tag a plan"}
+                aria-pressed={!!attachedPlan}
+                className={cn(
+                  "inline-flex size-10 shrink-0 items-center justify-center rounded-full ring-1 transition-colors disabled:opacity-50",
+                  attachedPlan
+                    ? "bg-accent/20 text-accent-ink ring-accent/40"
+                    : "bg-elevated text-text-primary ring-divider hover:bg-divider",
+                )}
+              >
+                <Paperclip className="size-4" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent align="start" side="top" className="w-64 p-1">
+              <p className="px-2 py-1.5 text-[11px] font-black uppercase tracking-widest text-text-tertiary">
+                Tag a plan
+              </p>
+              <div className="flex flex-col">
+                {activePlans.map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => {
+                      setAttachedPlan(p);
+                      setPickerOpen(false);
+                    }}
+                    className="flex items-center gap-2 rounded-md px-2 py-2 text-left text-sm text-text-primary hover:bg-elevated"
+                  >
+                    <ClipboardList className="size-3.5 text-accent-ink" />
+                    <span className="truncate">{p.title}</span>
+                  </button>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}

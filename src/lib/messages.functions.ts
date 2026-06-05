@@ -474,9 +474,9 @@ export const ensureRoomForAthlete = createServerFn({ method: "POST" })
     return { id: created!.id };
   });
 
-/* ---------------- getRoomActivePlan ---------------- */
+/* ---------------- getRoomActivePlans ---------------- */
 
-export const getRoomActivePlan = createServerFn({ method: "GET" })
+export const getRoomActivePlans = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
     z
@@ -492,16 +492,22 @@ export const getRoomActivePlan = createServerFn({ method: "GET" })
     const room = rooms.find((r) => r.id === data.roomId);
     if (!room) throw new Error("Conversation not found");
 
-    const { data: plan } = await supabaseAdmin
+    const { data: rows, error } = await supabaseAdmin
       .from("plans")
-      .select("id, title")
+      .select("id, title, updated_at")
       .eq("coach_id", room.coach_id)
       .eq("athlete_id", room.athlete_id)
       .eq("kind", "plan")
       .eq("status", "active")
-      .maybeSingle();
+      .order("updated_at", { ascending: false });
+    if (error) dbError(error);
 
-    return { plan: plan ? { id: plan.id, title: plan.title || "Untitled plan" } : null };
+    return {
+      plans: (rows ?? []).map((p) => ({
+        id: p.id,
+        title: p.title || "Untitled plan",
+      })),
+    };
   });
 
 /* ---------------- listMyMessageTargets (role-aware picker list) ---------------- */
