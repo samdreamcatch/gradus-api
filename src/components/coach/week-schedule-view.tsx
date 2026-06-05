@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { RosterAthlete } from "@/lib/coach-roster.functions";
 import type { AthletePracticeSummary } from "@/lib/coach-schedule.functions";
+import { PreLessonBriefing } from "./pre-lesson-briefing";
 
 const DAY_LONG = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const WEEKDAY_LETTERS = ["M", "T", "W", "T", "F", "S", "S"]; // Mon..Sun
@@ -99,6 +100,21 @@ export function WeekScheduleView({
   const selectedSessions = sessionsByDay.get(selectedDayIndex) ?? [];
   const isSelectedToday = sameDay(selectedDate, today);
 
+  // Find the next upcoming lesson today within ~2 hours
+  const upNext = useMemo(() => {
+    if (!isSelectedToday) return null;
+    const nowMin = today.getHours() * 60 + today.getMinutes();
+    const WINDOW = 120; // minutes
+    const candidate = selectedSessions
+      .filter((s) => s.endMinute > nowMin && s.startMinute - nowMin <= WINDOW)
+      .sort((a, b) => a.startMinute - b.startMinute)[0];
+    if (!candidate) return null;
+    const yyyy = selectedDate.getFullYear();
+    const mm = String(selectedDate.getMonth() + 1).padStart(2, "0");
+    const dd = String(selectedDate.getDate()).padStart(2, "0");
+    return { session: candidate, lessonDate: `${yyyy}-${mm}-${dd}` };
+  }, [isSelectedToday, selectedSessions, today, selectedDate]);
+
   return (
     <div className="mt-5">
       {/* Week nav + weekday strip */}
@@ -188,6 +204,15 @@ export function WeekScheduleView({
           })}
         </div>
       </div>
+
+      {upNext ? (
+        <PreLessonBriefing
+          athleteId={upNext.session.athleteId}
+          athleteName={upNext.session.name}
+          lessonDate={upNext.lessonDate}
+          startMinute={upNext.session.startMinute}
+        />
+      ) : null}
 
       {/* Selected day */}
       <div className="mt-4 overflow-hidden rounded-2xl border border-divider bg-card shadow-card">

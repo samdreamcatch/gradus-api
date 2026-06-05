@@ -796,6 +796,57 @@ export type Database = {
           },
         ]
       }
+      pre_lesson_briefings: {
+        Row: {
+          athlete_id: string
+          coach_id: string
+          created_at: string
+          generated_at: string
+          id: string
+          lesson_date: string
+          narrative: string
+          source_hash: string
+          updated_at: string
+        }
+        Insert: {
+          athlete_id: string
+          coach_id: string
+          created_at?: string
+          generated_at?: string
+          id?: string
+          lesson_date: string
+          narrative: string
+          source_hash: string
+          updated_at?: string
+        }
+        Update: {
+          athlete_id?: string
+          coach_id?: string
+          created_at?: string
+          generated_at?: string
+          id?: string
+          lesson_date?: string
+          narrative?: string
+          source_hash?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pre_lesson_briefings_athlete_id_fkey"
+            columns: ["athlete_id"]
+            isOneToOne: false
+            referencedRelation: "athletes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pre_lesson_briefings_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "coach_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       seed_moves: {
         Row: {
           category: string

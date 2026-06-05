@@ -1,51 +1,70 @@
+## Pre-lesson briefing for the "up next" athlete
 
-## What changes
+A new card pinned above the schedule on the Schedule tab of `/coach/roster`. It only appears when there is an upcoming lesson today within the next ~2 hours. It surfaces the same practice metadata that already appears on the schedule row plus a short AI-written paragraph about what the athlete has been up to since the last lesson.
 
-In `src/routes/_authenticated/parent.plans.$planId.tsx` and `src/routes/_authenticated/athlete.plans.$planId.tsx`, inside `MoveCard`'s expanded body:
+### When it appears
+- Schedule tab only, when there is at least one of the coach's lessons happening today whose end time has not yet passed and whose start is within the next 2 hours.
+- Targets exactly one athlete — the next chronologically.
+- If no lesson qualifies, the card is hidden entirely (no placeholder).
 
-- Replace the standalone description block + "How do I cue this?" chip with a **segmented "How / What" toggle** that shares one body slot.
-- **Default = How (cue).** Tapping **What** swaps the body to the description.
-- The segmented control only renders when both `move.cue` and `move.description` exist. Fallbacks:
-  - Cue only → render cue body, no toggle.
-  - Description only → render description body, no toggle.
-  - Neither → render nothing.
-- "Why is this assigned?" stays exactly as today: an accent chip that reveals the filled `CoachNote` panel with a close button.
-- Remove the `cue` half of the `shown` / `show` / `hide` state. Keep the `why` half.
+### What it shows
+A single rounded `bg-card` card above the date strip with:
 
-## UI shape
+1. **Header row:** athlete name + start time ("Beverly Cleaver · 11:00 AM").
+2. **Metadata strip** (re-uses existing data, no recomputation):
+   - "Since last" hours + weekly goal + status chip (Behind / Light / On track / Over target).
+   - Flow-state dots (same up-to-7 reversed series the schedule row already shows).
+3. **AI narrative paragraph (2–4 sentences):**
+   - What this athlete has worked on in *this coach's* active/recent plans since the last lesson.
+   - Parallel work in other coaches' active plans for the same athlete.
+   - Practice-log activity across all coaches: cadence, dominant moves, last logged date.
+   - Notable signals from recent messages in this coach's room with the athlete/parent (e.g. "Mom mentioned a sore ankle Tuesday").
+4. **Subtle "Refresh briefing" affordance** (icon button) to force-regenerate if the coach wants a new take.
 
-```text
-3 reps   Bench press                              ⌄
-─────────────────────────────────────────────────
-[ How ] [ What ]              ← segmented, How active by default
+### AI narrative generation
+- Model: `google/gemini-3-flash-preview`.
+- Generated via a `createServerFn` (`getPreLessonBriefing`).
+- **Cached** in a new `pre_lesson_briefings` table keyed by `(coach_id, athlete_id, lesson_date)`. Each row stores: the narrative text, a `source_hash` of the inputs, and `generated_at`.
+- On call:
+  1. Gather inputs (see below) and compute `source_hash` (stable JSON of plan IDs+updated_at, latest practice-log IDs+created_at, last N message IDs+created_at).
+  2. If a cached row exists with matching hash → return it.
+  3. Otherwise call Lovable AI, upsert the row, return the new narrative.
+- "Refresh briefing" bypasses the hash check.
 
-Brace your core before unracking. Eyes forward,
-drive through the heels…
+### Data inputs the server fn gathers
+For the chosen athlete:
+- **This coach's plans:** active plan + any plan_moves updated since the previous lesson_date.
+- **Other coaches' plans** (read via `supabaseAdmin` inside the handler, scoped only to coaches who are linked to this athlete in `coach_athletes`): active plan name, sport, status, last `updated_at`. No move-level detail.
+- **Practice logs** for this athlete across all coaches: rows since the previous lesson, with their per-session `flow_state` if present and the moves practiced.
+- **Messages**: last ~10 messages in this coach's `message_rooms` row with this athlete/parent since the previous lesson.
+- **Last lesson date** for this coach + athlete: most recent past slot from `athlete_lesson_slots`.
 
-[ Why is this assigned? ]
-```
+### Technical details (for reference)
 
-## Design system usage
+**New table** (`pre_lesson_briefings`):
+- `id uuid pk`
+- `coach_id uuid` → `coach_profiles.id`
+- `athlete_id uuid` → `athletes.id`
+- `lesson_date date`
+- `narrative text`
+- `source_hash text`
+- `generated_at timestamptz default now()`
+- Unique on `(coach_id, athlete_id, lesson_date)`.
+- RLS: coach can select rows where `coach_id` belongs to their `coach_profile`. Writes via `supabaseAdmin` only.
+- Grants: `SELECT` to `authenticated`; `ALL` to `service_role`.
 
-Segmented control built from existing tokens — no new primitives:
+**New server fn** `src/lib/pre-lesson-briefing.functions.ts`:
+- `getPreLessonBriefing({ athleteId, lessonDate })` with `requireSupabaseAuth`.
+- Verifies the caller is the coach linked to the athlete.
+- Returns `{ narrative, generatedAt, fromCache }`.
+- Calls Lovable AI Gateway via the existing `src/lib/ai-gateway.server.ts` helper.
 
-- Container: `inline-flex rounded-full border border-divider bg-card p-0.5`
-- Segment (inactive): `rounded-full px-3 py-1 text-xs font-bold text-text-tertiary`
-- Segment (active): `rounded-full px-3 py-1 text-xs font-bold bg-accent/10 text-accent-ink border border-accent/60`
-- Body: unchanged from today's description styling (`text-[15px] leading-relaxed text-text-primary`), so swapping content doesn't reflow weight.
+**Schedule integration** (`src/routes/_authenticated/coach.roster.tsx` + `week-schedule-view.tsx`):
+- Compute "next upcoming session today within 2h" from existing `selectedSessions`.
+- Render a new `<PreLessonBriefing athleteId lessonDate startMinute />` component above the day's session list when Schedule tab is active and a match exists.
 
-Labels stay short: **How** and **What** (not "How to cue" / "Description") — terser, matches the segmented-control idiom.
-
-Local state: `const [view, setView] = useState<"how" | "what">("how")` inside `MoveCard`. Resets naturally when the card unmounts; no persistence.
-
-## Accessibility
-
-- Use `role="tablist"` on the container, `role="tab"` + `aria-selected` on each segment, `role="tabpanel"` on the body.
-- Keyboard: native button focus is enough; left/right arrow handling can be added later if needed.
-
-## Files touched
-
-- `src/routes/_authenticated/parent.plans.$planId.tsx` — update `MoveCard` body, remove cue chip + cue state, add segmented toggle.
-- `src/routes/_authenticated/athlete.plans.$planId.tsx` — same change so the two views stay in sync.
-
-No backend, schema, or data-shape changes. `move.cue` / `move.description` / `move.why` fields are already on `ParentPlanMoveDTO`.
+### Out of scope
+- Messages from other coaches' rooms (kept private).
+- Push/email notifications.
+- Editing the generated narrative.
+- A briefing for sessions further out than 2 hours, or for past sessions.
