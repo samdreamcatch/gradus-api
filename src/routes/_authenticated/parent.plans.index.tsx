@@ -15,7 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { listParentPlans } from "@/lib/parent-plans.functions";
-import { GoalsDashboard } from "@/components/parent/goals/goals-dashboard";
+import { GoalsDashboard, useGoalsDashboard } from "@/components/parent/goals/goals-dashboard";
 
 export const Route = createFileRoute("/_authenticated/parent/plans/")({
   component: ParentPlansPage,
@@ -45,6 +45,12 @@ function ParentPlansPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("active");
   const [athleteId, setAthleteId] = useState<string>("");
   const [coachId, setCoachId] = useState<string>("");
+  const [goalsAthleteId, setGoalsAthleteId] = useState<string>("");
+
+  const { data: goalsData } = useGoalsDashboard();
+  const goalsAthletes = goalsData ?? [];
+  const activeGoalsAthleteId =
+    goalsAthleteId || goalsAthletes[0]?.athleteId || "";
 
   const coaches = useMemo(() => {
     const map = new Map<string, string>();
@@ -133,10 +139,28 @@ function ParentPlansPage() {
               </SelectContent>
             </Select>
           </div>
+        ) : goalsAthletes.length > 1 ? (
+          <div className="mt-2.5">
+            <Select
+              value={activeGoalsAthleteId}
+              onValueChange={setGoalsAthleteId}
+            >
+              <SelectTrigger className={triggerClass} aria-label="Athlete">
+                <SelectValue placeholder="Select athlete" />
+              </SelectTrigger>
+              <SelectContent>
+                {goalsAthletes.map((a) => (
+                  <SelectItem key={a.athleteId} value={a.athleteId}>
+                    {a.athleteName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         ) : null}
       </FilterBar>
       {tab === "goals" ? (
-        <GoalsDashboard />
+        <GoalsDashboard athleteId={activeGoalsAthleteId} />
       ) : (
         <div className="mt-5 space-y-3">
           {isLoading ? (
