@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { ChevronDown, Loader2, Mic, Search, Sparkles } from "lucide-react";
+import { ChevronDown, Loader2, Search, Sparkles } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 
 import { ParentBottomNav } from "@/components/parent/bottom-nav";
@@ -238,14 +238,6 @@ function AskGradusCard({ sport }: { sport: string }) {
             }}
           />
           <div className="mt-3 flex items-center justify-end gap-2">
-            <button
-              type="button"
-              aria-label="Voice input coming soon"
-              disabled
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-divider bg-card text-text-secondary opacity-60"
-            >
-              <Mic className="h-4 w-4" aria-hidden />
-            </button>
             <Button
               type="button"
               onClick={onSubmit}
