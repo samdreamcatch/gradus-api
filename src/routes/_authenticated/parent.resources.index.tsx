@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -205,12 +205,11 @@ function AskGradusCard({ sport }: { sport: string }) {
   });
 
   // Reset answer when the sport changes
-  const sportKey = sport;
-  const lastSportRef = useState(sportKey);
-  if (lastSportRef[0] !== sportKey) {
-    lastSportRef[1](sportKey);
-    if (mutation.data || mutation.error) mutation.reset();
-  }
+  useEffect(() => {
+    mutation.reset();
+    setQuestion("");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sport]);
 
   const onSubmit = () => {
     const q = question.trim();
