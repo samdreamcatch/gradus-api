@@ -100,6 +100,21 @@ export function WeekScheduleView({
   const selectedSessions = sessionsByDay.get(selectedDayIndex) ?? [];
   const isSelectedToday = sameDay(selectedDate, today);
 
+  // Find the next upcoming lesson today within ~2 hours
+  const upNext = useMemo(() => {
+    if (!isSelectedToday) return null;
+    const nowMin = today.getHours() * 60 + today.getMinutes();
+    const WINDOW = 120; // minutes
+    const candidate = selectedSessions
+      .filter((s) => s.endMinute > nowMin && s.startMinute - nowMin <= WINDOW)
+      .sort((a, b) => a.startMinute - b.startMinute)[0];
+    if (!candidate) return null;
+    const yyyy = selectedDate.getFullYear();
+    const mm = String(selectedDate.getMonth() + 1).padStart(2, "0");
+    const dd = String(selectedDate.getDate()).padStart(2, "0");
+    return { session: candidate, lessonDate: `${yyyy}-${mm}-${dd}` };
+  }, [isSelectedToday, selectedSessions, today, selectedDate]);
+
   return (
     <div className="mt-5">
       {/* Week nav + weekday strip */}
