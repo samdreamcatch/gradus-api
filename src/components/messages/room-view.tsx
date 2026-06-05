@@ -158,14 +158,6 @@ export function RoomView({ roomId, viewerRole }: { roomId: string; viewerRole?: 
           queryClient.invalidateQueries({ queryKey: ["messages-unread-total"] });
         },
       )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "message_reads" },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ["message-room", roomId] });
-          queryClient.invalidateQueries({ queryKey: ["message-room", viewerRole ?? "default", roomId] });
-        },
-      )
       .subscribe();
     return () => {
       void supabase.removeChannel(channel);

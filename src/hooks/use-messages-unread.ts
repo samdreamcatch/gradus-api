@@ -33,13 +33,6 @@ export function useMessagesUnread(): number {
           queryClient.invalidateQueries({ queryKey: ["message-rooms"] });
         },
       )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "message_reads" },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ["messages-unread-total"] });
-        },
-      )
       .subscribe();
     return () => {
       void supabase.removeChannel(channel);
