@@ -38,6 +38,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { getSport } from "@/lib/coach-sports";
+import { SegmentedToggle } from "@/components/plans/segmented-toggle";
 
 export const Route = createFileRoute("/_authenticated/coach/plans")({
   codeSplitGroupings: [["component"]],
