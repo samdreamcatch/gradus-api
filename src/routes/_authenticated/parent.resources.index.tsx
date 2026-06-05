@@ -237,7 +237,7 @@ function AskGradusCard({ sport }: { sport: string }) {
 
   return (
     <section className="mt-5">
-      <div className="rounded-2xl border border-divider bg-card p-4">
+      <div className="ask-glow rounded-2xl border border-divider bg-card p-4">
         <Textarea
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
