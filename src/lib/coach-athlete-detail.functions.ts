@@ -18,9 +18,12 @@ export interface AthleteGoalDTO {
   longTermGoal: string;
 }
 
-export interface AthleteActivePlanDTO {
+export type PlanStatus = "active" | "benched";
+
+export interface AthletePlanSummaryDTO {
   planId: string;
   title: string;
+  status: PlanStatus;
   sessionsByState: SessionsByState;
   sessionsTotal: number;
 }
@@ -38,7 +41,7 @@ export interface CoachAthleteDetailDTO {
   parentFirstName: string;
   parentLastName: string;
   goals: AthleteGoalDTO[];
-  activePlan: AthleteActivePlanDTO | null;
+  plans: AthletePlanSummaryDTO[];
   activity: AthleteActivityCountsDTO;
   hasAnySignal: boolean;
   windowDays: number;
