@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { AthleteBottomNav } from "@/components/athlete/bottom-nav";
 import { PlanCard } from "@/components/plans/plan-card";
 import { PageTitle } from "@/components/page-title";
@@ -15,7 +15,7 @@ import {
 import { SegmentedToggle } from "@/components/plans/segmented-toggle";
 import { FilterBar } from "@/components/plans/filter-bar";
 import { listAthletePlans } from "@/lib/athlete-plans.functions";
-import { getAthleteGoalsDashboard } from "@/lib/athlete-goals.functions";
+import { getAthleteGoalsDashboard, updateAthleteLongTermGoal } from "@/lib/athlete-goals.functions";
 import { SportGoalCard } from "@/components/parent/goals/sport-goal-card";
 
 export const Route = createFileRoute("/_authenticated/athlete/plans/")({
