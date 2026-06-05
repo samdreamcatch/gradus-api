@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { AthleteBottomNav } from "@/components/athlete/bottom-nav";
 import { PlanCard } from "@/components/plans/plan-card";
 import { PageTitle } from "@/components/page-title";
@@ -15,7 +15,7 @@ import {
 import { SegmentedToggle } from "@/components/plans/segmented-toggle";
 import { FilterBar } from "@/components/plans/filter-bar";
 import { listAthletePlans } from "@/lib/athlete-plans.functions";
-import { getAthleteGoalsDashboard } from "@/lib/athlete-goals.functions";
+import { getAthleteGoalsDashboard, updateAthleteLongTermGoal } from "@/lib/athlete-goals.functions";
 import { SportGoalCard } from "@/components/parent/goals/sport-goal-card";
 
 export const Route = createFileRoute("/_authenticated/athlete/plans/")({
@@ -194,9 +194,20 @@ function EmptyCard({ status }: { status: StatusFilter }) {
 
 function AthleteGoalsView() {
   const fetchDashboard = useServerFn(getAthleteGoalsDashboard);
+  const updateGoal = useServerFn(updateAthleteLongTermGoal);
+  const queryClient = useQueryClient();
   const { data, isLoading } = useQuery({
     queryKey: ["athlete-goals-dashboard"],
     queryFn: () => fetchDashboard(),
+  });
+
+  const mutation = useMutation({
+    mutationFn: (vars: { sport: string; longTermGoal: string }) =>
+      updateGoal({ data: vars }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["athlete-goals-dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["parent-goals-dashboard"] });
+    },
   });
 
   if (isLoading) {
@@ -218,7 +229,13 @@ function AthleteGoalsView() {
   return (
     <div className="mt-5 space-y-4">
       {data.sports.map((g) => (
-        <SportGoalCard key={g.sport} goal={g} />
+        <SportGoalCard
+          key={g.sport}
+          goal={g}
+          onSaveLongTermGoal={async (value) => {
+            await mutation.mutateAsync({ sport: g.sport, longTermGoal: value });
+          }}
+        />
       ))}
     </div>
   );
