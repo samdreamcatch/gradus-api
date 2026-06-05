@@ -387,28 +387,40 @@ function SavedAnswersList({ sport }: { sport: string }) {
       {items.map((a) => (
         <li
           key={a.id}
-          className="rounded-2xl border border-divider bg-card p-4"
+          className="rounded-2xl border border-divider bg-card"
         >
-          <p className="mb-3 border-l-2 border-accent/40 pl-3 text-sm font-medium text-text-secondary">
-            {a.question}
-          </p>
-          <AnswerMarkdown>{a.answer}</AnswerMarkdown>
-          <div className="mt-4 flex items-center justify-between gap-2 border-t border-divider pt-3">
-            <span className="text-[11px] uppercase tracking-widest text-text-tertiary">
-              Saved {new Date(a.createdAt).toLocaleDateString()}
-            </span>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => remove.mutate(a.id)}
-              disabled={remove.isPending && remove.variables === a.id}
-              className="rounded-full text-text-secondary hover:text-destructive"
-            >
-              <Trash2 className="h-4 w-4" aria-hidden />
-              Remove
-            </Button>
-          </div>
+          <Collapsible>
+            <CollapsibleTrigger className="group flex w-full items-center gap-3 rounded-2xl p-4 text-left transition-colors hover:bg-card/60">
+              <p className="flex-1 border-l-2 border-accent/40 pl-3 text-sm font-medium text-text-primary">
+                {a.question}
+              </p>
+              <span className="shrink-0 text-[11px] uppercase tracking-widest text-text-tertiary">
+                {new Date(a.createdAt).toLocaleDateString()}
+              </span>
+              <ChevronDown
+                className="h-4 w-4 shrink-0 text-text-tertiary transition-transform group-data-[state=open]:rotate-180"
+                aria-hidden
+              />
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="border-t border-divider px-4 pb-4 pt-4">
+                <AnswerMarkdown>{a.answer}</AnswerMarkdown>
+                <div className="mt-4 flex items-center justify-end gap-2 border-t border-divider pt-3">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => remove.mutate(a.id)}
+                    disabled={remove.isPending && remove.variables === a.id}
+                    className="rounded-full text-text-secondary hover:text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4" aria-hidden />
+                    Remove
+                  </Button>
+                </div>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
         </li>
       ))}
     </ul>
