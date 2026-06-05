@@ -241,3 +241,44 @@
     letter-spacing: 0.005em;
   }
 }
+
+@utility ask-glow {
+  position: relative;
+  isolation: isolate;
+}
+@utility ask-glow {
+  &::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(
+      135deg,
+      color-mix(in oklab, var(--accent) 55%, transparent),
+      color-mix(in oklab, var(--accent) 10%, transparent) 45%,
+      color-mix(in oklab, var(--secondary-accent, var(--accent)) 55%, transparent)
+    );
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+    pointer-events: none;
+    opacity: 0.7;
+    animation: ask-glow-pulse 6s ease-in-out infinite;
+  }
+}
+
+@keyframes ask-glow-pulse {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 0.85; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ask-glow::before {
+    animation: none;
+    opacity: 0.6;
+  }
+}
+
