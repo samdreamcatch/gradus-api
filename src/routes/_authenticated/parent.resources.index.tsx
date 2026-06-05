@@ -227,12 +227,8 @@ function AskGradusCard({ sport }: { sport: string }) {
   };
 
   return (
-    <section className="mt-6">
-      <p className="px-1 font-sans text-xs font-bold uppercase tracking-widest text-text-secondary">
-        Ask Gradus
-      </p>
-
-      <div className="mt-2 rounded-xl bg-linear-to-br from-secondary-accent via-accent to-secondary-accent p-[2px] shadow-sm">
+    <section className="mt-5">
+      <div className="rounded-xl bg-linear-to-br from-secondary-accent via-accent to-secondary-accent p-[2px] shadow-sm">
         <div className="rounded-[26px] bg-card p-4">
           <Textarea
             value={question}
