@@ -406,21 +406,46 @@ function Composer({
         </div>
       ) : (
         <div className="flex items-end gap-2">
-          <button
-            type="button"
-            onClick={toggleAttachPlan}
-            disabled={disabled || processing}
-            aria-label={attachedPlan ? "Remove plan tag" : "Tag a plan"}
-            aria-pressed={!!attachedPlan}
-            className={cn(
-              "inline-flex size-10 shrink-0 items-center justify-center rounded-full ring-1 transition-colors disabled:opacity-50",
-              attachedPlan
-                ? "bg-accent/20 text-accent-ink ring-accent/40"
-                : "bg-elevated text-text-primary ring-divider hover:bg-divider",
-            )}
-          >
-            <Paperclip className="size-4" />
-          </button>
+          <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                onClick={handleAttachClick}
+                disabled={disabled || processing}
+                aria-label={attachedPlan ? "Remove plan tag" : "Tag a plan"}
+                aria-pressed={!!attachedPlan}
+                className={cn(
+                  "inline-flex size-10 shrink-0 items-center justify-center rounded-full ring-1 transition-colors disabled:opacity-50",
+                  attachedPlan
+                    ? "bg-accent/20 text-accent-ink ring-accent/40"
+                    : "bg-elevated text-text-primary ring-divider hover:bg-divider",
+                )}
+              >
+                <Paperclip className="size-4" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent align="start" side="top" className="w-64 p-1">
+              <p className="px-2 py-1.5 text-[11px] font-black uppercase tracking-widest text-text-tertiary">
+                Tag a plan
+              </p>
+              <div className="flex flex-col">
+                {activePlans.map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => {
+                      setAttachedPlan(p);
+                      setPickerOpen(false);
+                    }}
+                    className="flex items-center gap-2 rounded-md px-2 py-2 text-left text-sm text-text-primary hover:bg-elevated"
+                  >
+                    <ClipboardList className="size-3.5 text-accent-ink" />
+                    <span className="truncate">{p.title}</span>
+                  </button>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
