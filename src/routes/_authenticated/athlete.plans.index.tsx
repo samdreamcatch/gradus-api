@@ -191,3 +191,35 @@ function EmptyCard({ status }: { status: StatusFilter }) {
     </div>
   );
 }
+
+function AthleteGoalsView() {
+  const fetchDashboard = useServerFn(getAthleteGoalsDashboard);
+  const { data, isLoading } = useQuery({
+    queryKey: ["athlete-goals-dashboard"],
+    queryFn: () => fetchDashboard(),
+  });
+
+  if (isLoading) {
+    return (
+      <p className="mt-5 py-5 text-center text-sm text-text-secondary">
+        Loading goals…
+      </p>
+    );
+  }
+  if (!data || data.sports.length === 0) {
+    return (
+      <div className="mt-5 rounded-2xl border border-dashed border-divider bg-card p-8 text-center">
+        <p className="font-hand text-2xl text-text-secondary">
+          No goals set yet.
+        </p>
+      </div>
+    );
+  }
+  return (
+    <div className="mt-5 space-y-4">
+      {data.sports.map((g) => (
+        <SportGoalCard key={g.sport} goal={g} />
+      ))}
+    </div>
+  );
+}
