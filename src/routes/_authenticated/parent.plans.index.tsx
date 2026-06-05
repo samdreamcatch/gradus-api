@@ -133,36 +133,38 @@ function ParentPlansPage() {
           </div>
         ) : null}
       </div>
-
-
-
-      <div className="mt-5 space-y-3">
-        {isLoading ? (
-          <p className="py-5 text-center text-sm text-text-secondary">Loading…</p>
-        ) : filtered.length === 0 ? (
-          <EmptyCard status={statusFilter} />
-        ) : (
-          filtered.map((p) => (
-            <PlanCard
-              key={p.id}
-              to="/parent/plans/$planId"
-              planId={p.id}
-              title={p.title}
-              athleteName={
-                athleteId === "" && athletes.length > 1
-                  ? `${p.athleteName} · Coach ${p.coachName}`
-                  : `Coach ${p.coachName}`
-              }
-              sessionsByState={p.sessionsByState}
-              sessionsTotal={p.sessionsTotal}
-              muted={statusFilter === "benched"}
-              edgeTone={statusFilter === "benched" ? "muted" : "active"}
-            />
-          ))
-        )}
-      </div>
-        </>
+      {tab === "goals" ? (
+        <div className="mt-5 rounded-2xl border border-dashed border-divider bg-card p-8 text-center">
+          <p className="font-hand text-2xl text-text-secondary">Goals coming soon.</p>
+        </div>
+      ) : (
+        <div className="mt-5 space-y-3">
+          {isLoading ? (
+            <p className="py-5 text-center text-sm text-text-secondary">Loading…</p>
+          ) : filtered.length === 0 ? (
+            <EmptyCard status={statusFilter} />
+          ) : (
+            filtered.map((p) => (
+              <PlanCard
+                key={p.id}
+                to="/parent/plans/$planId"
+                planId={p.id}
+                title={p.title}
+                athleteName={
+                  athleteId === "" && athletes.length > 1
+                    ? `${p.athleteName} · Coach ${p.coachName}`
+                    : `Coach ${p.coachName}`
+                }
+                sessionsByState={p.sessionsByState}
+                sessionsTotal={p.sessionsTotal}
+                muted={statusFilter === "benched"}
+                edgeTone={statusFilter === "benched" ? "muted" : "active"}
+              />
+            ))
+          )}
+        </div>
       )}
+
 
       <ParentBottomNav />
     </div>
