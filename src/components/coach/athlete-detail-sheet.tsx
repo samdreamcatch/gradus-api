@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
-import { ChevronDown } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, RefreshCw, Sparkles, TrendingUp, Minus, TrendingDown } from "lucide-react";
+import { ChevronDown, Loader2, RefreshCw, Sparkles, TrendingUp, Minus, TrendingDown } from "lucide-react";
 import {
   Sheet,
   SheetContent,
