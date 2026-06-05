@@ -200,18 +200,26 @@ function EmptyCard({ status }: { status: StatusFilter }) {
 function AthleteGoalsView() {
   const fetchDashboard = useServerFn(getAthleteGoalsDashboard);
   const updateGoal = useServerFn(updateAthleteLongTermGoal);
+  const updateMotivation = useServerFn(updateAthleteMotivation);
   const queryClient = useQueryClient();
   const { data, isLoading } = useQuery({
     queryKey: ["athlete-goals-dashboard"],
     queryFn: () => fetchDashboard(),
   });
 
-  const mutation = useMutation({
+  const goalMutation = useMutation({
     mutationFn: (vars: { sport: string; longTermGoal: string }) =>
       updateGoal({ data: vars }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["athlete-goals-dashboard"] });
       queryClient.invalidateQueries({ queryKey: ["parent-goals-dashboard"] });
+    },
+  });
+
+  const motivationMutation = useMutation({
+    mutationFn: (motivation: string) => updateMotivation({ data: { motivation } }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["athlete-goals-dashboard"] });
     },
   });
 
@@ -222,7 +230,7 @@ function AthleteGoalsView() {
       </p>
     );
   }
-  if (!data || data.sports.length === 0) {
+  if (!data) {
     return (
       <div className="mt-5 rounded-2xl border border-dashed border-divider bg-card p-8 text-center">
         <p className="font-hand text-2xl text-text-secondary">
@@ -233,15 +241,29 @@ function AthleteGoalsView() {
   }
   return (
     <div className="mt-5 space-y-4">
-      {data.sports.map((g) => (
-        <SportGoalCard
-          key={g.sport}
-          goal={g}
-          onSaveLongTermGoal={async (value) => {
-            await mutation.mutateAsync({ sport: g.sport, longTermGoal: value });
-          }}
-        />
-      ))}
+      {data.sports.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-divider bg-card p-8 text-center">
+          <p className="font-hand text-2xl text-text-secondary">
+            No goals set yet.
+          </p>
+        </div>
+      ) : (
+        data.sports.map((g) => (
+          <SportGoalCard
+            key={g.sport}
+            goal={g}
+            onSaveLongTermGoal={async (value) => {
+              await goalMutation.mutateAsync({ sport: g.sport, longTermGoal: value });
+            }}
+          />
+        ))
+      )}
+      <MotivationCard
+        value={data.motivation}
+        onSave={async (value) => {
+          await motivationMutation.mutateAsync(value);
+        }}
+      />
     </div>
   );
 }
