@@ -185,6 +185,9 @@ export const getParentPlan = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const supabase = context.supabase as Client;
 
+    const parentId = await getParentId(supabase, context.userId);
+    if (!parentId) throw new Error("Plan not found");
+
     const { data: plan, error } = await supabase
       .from("plans")
       .select("id, title, notes, status, athlete_id, coach_id, updated_at, kind")
@@ -197,6 +200,18 @@ export const getParentPlan = createServerFn({ method: "POST" })
     if (plan.status !== "active" && plan.status !== "benched") {
       throw new Error("Plan not found");
     }
+
+    // Explicit defense-in-depth: ensure the plan's athlete belongs to this parent,
+    // independent of any RLS policy state on `plans`.
+    const ownership = await supabase
+      .from("athletes")
+      .select("id")
+      .eq("id", plan.athlete_id)
+      .eq("parent_id", parentId)
+      .maybeSingle();
+    if (ownership.error) dbError(ownership.error);
+    if (!ownership.data) throw new Error("Plan not found");
+
 
     const [movesRes, athleteRes, coachRes] = await Promise.all([
       supabase
