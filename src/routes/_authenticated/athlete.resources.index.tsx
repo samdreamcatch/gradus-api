@@ -7,7 +7,6 @@ import {
   Check,
   ChevronDown,
   Globe,
-  Heart,
   Loader2,
   MessageSquare,
   Phone,
