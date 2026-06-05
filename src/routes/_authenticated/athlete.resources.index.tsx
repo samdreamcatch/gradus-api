@@ -211,7 +211,7 @@ function formatTel(digits: string): string {
   return digits;
 }
 
-function SafeSportPanel({ sport }: { sport: string }) {
+function SafeSportPanel() {
   return (
     <section className="mt-5 space-y-6">
       {/* Header */}
