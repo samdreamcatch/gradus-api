@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { RosterAthlete } from "@/lib/coach-roster.functions";
+import type { AthletePracticeSummary } from "@/lib/coach-schedule.functions";
 
 const DAY_LONG = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const WEEKDAY_LETTERS = ["M", "T", "W", "T", "F", "S", "S"]; // Mon..Sun
@@ -53,9 +54,11 @@ interface DaySession {
 
 export function WeekScheduleView({
   athletes,
+  summariesByAthlete,
   onSelectAthlete,
 }: {
   athletes: RosterAthlete[];
+  summariesByAthlete?: Map<string, AthletePracticeSummary>;
   onSelectAthlete?: (athleteId: string) => void;
 }) {
   const today = useMemo(() => new Date(), []);
@@ -215,25 +218,29 @@ export function WeekScheduleView({
           </div>
         ) : (
           <ul className="divide-y divide-divider/50">
-            {selectedSessions.map((s, i) => (
-              <li key={i}>
-                <button
-                  type="button"
-                  onClick={() => onSelectAthlete?.(s.athleteId)}
-                  className="flex w-full items-center gap-4 px-4 py-3 text-left transition hover:bg-elevated focus-visible:outline-none focus-visible:bg-elevated"
-                >
-                  <div className="w-16 shrink-0 font-display text-base font-black tabular-nums text-text-primary">
-                    {formatTime(s.startMinute)}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-base font-bold text-text-primary">{s.name}</div>
-                    <div className="text-xs text-text-secondary tabular-nums">
-                      {formatTime(s.startMinute)} – {formatTime(s.endMinute)}
+            {selectedSessions.map((s, i) => {
+              const summary = summariesByAthlete?.get(s.athleteId);
+              return (
+                <li key={i}>
+                  <button
+                    type="button"
+                    onClick={() => onSelectAthlete?.(s.athleteId)}
+                    className="flex w-full items-start gap-4 px-4 py-3 text-left transition hover:bg-elevated focus-visible:outline-none focus-visible:bg-elevated"
+                  >
+                    <div className="w-16 shrink-0 font-display text-base font-black tabular-nums text-text-primary">
+                      {formatTime(s.startMinute)}
                     </div>
-                  </div>
-                </button>
-              </li>
-            ))}
+                    <div className="min-w-0 flex-1">
+                      <div className="text-base font-bold text-text-primary">{s.name}</div>
+                      <div className="text-xs text-text-secondary tabular-nums">
+                        {formatTime(s.startMinute)} – {formatTime(s.endMinute)}
+                      </div>
+                      <PracticeSinceLast summary={summary} />
+                    </div>
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>
@@ -241,6 +248,97 @@ export function WeekScheduleView({
       <p className="mt-3 px-1 text-[10px] uppercase tracking-widest text-text-tertiary">
         Showing recurring weekly lessons
       </p>
+    </div>
+  );
+}
+
+const STATE_COLORS = [
+  "var(--pen-pink, var(--text-tertiary))", // 0 frustrated
+  "color-mix(in oklab, var(--pen-tennis) 25%, var(--divider))", // 1 pushing
+  "color-mix(in oklab, var(--pen-tennis) 50%, var(--divider))", // 2 steady
+  "color-mix(in oklab, var(--pen-tennis) 75%, var(--divider))", // 3 locked in
+  "var(--pen-tennis)", // 4 flowing
+];
+
+function PracticeSinceLast({ summary }: { summary?: AthletePracticeSummary }) {
+  if (!summary) {
+    return (
+      <div className="mt-2 h-4 w-32 animate-pulse rounded bg-divider/60" aria-hidden />
+    );
+  }
+
+  const { hoursLogged, expectedHoursPerWeek, sessionStates, sessionCount } = summary;
+  const hoursStr = hoursLogged > 0 ? `${hoursLogged.toFixed(1)}h` : "0h";
+
+  let chipLabel: string | null = null;
+  let chipClass = "";
+  if (expectedHoursPerWeek && expectedHoursPerWeek > 0) {
+    const ratio = hoursLogged / expectedHoursPerWeek;
+    if (ratio >= 0.9) {
+      chipLabel = "On track";
+      chipClass =
+        "bg-[color-mix(in_oklab,var(--pen-tennis)_18%,transparent)] text-accent-ink";
+    } else if (ratio >= 0.5) {
+      chipLabel = "Light";
+      chipClass =
+        "bg-[color-mix(in_oklab,var(--pen-orange)_18%,transparent)] text-attention-ink";
+    } else {
+      chipLabel = "Behind";
+      chipClass =
+        "bg-[color-mix(in_oklab,var(--pen-pink)_18%,transparent)] text-[color:var(--pen-pink-ink)]";
+    }
+  }
+
+  return (
+    <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1">
+      <span className="text-xs font-bold tabular-nums text-text-primary">
+        {hoursStr}
+      </span>
+      {expectedHoursPerWeek != null && expectedHoursPerWeek > 0 ? (
+        <span className="text-[11px] text-text-tertiary tabular-nums">
+          / {expectedHoursPerWeek}h goal
+        </span>
+      ) : (
+        <span className="text-[11px] text-text-tertiary">since last lesson</span>
+      )}
+      {chipLabel ? (
+        <span
+          className={cn(
+            "rounded-pill px-1.5 py-0.5 text-[9px] font-black uppercase tracking-widest",
+            chipClass,
+          )}
+        >
+          {chipLabel}
+        </span>
+      ) : null}
+
+      {sessionCount > 0 ? (
+        <span
+          className="ml-auto flex items-center gap-[3px]"
+          aria-label={`${sessionCount} sessions logged`}
+        >
+          {sessionStates
+            .slice()
+            .reverse()
+            .map((st, idx) => (
+              <span
+                key={idx}
+                className="h-2 w-2 rounded-full"
+                style={{
+                  background: STATE_COLORS[Math.max(0, Math.min(4, st))],
+                  boxShadow:
+                    st === 4
+                      ? "0 0 4px color-mix(in oklab, var(--pen-tennis) 50%, transparent)"
+                      : undefined,
+                }}
+              />
+            ))}
+        </span>
+      ) : (
+        <span className="ml-auto text-[10px] uppercase tracking-widest text-text-tertiary">
+          No sessions
+        </span>
+      )}
     </div>
   );
 }

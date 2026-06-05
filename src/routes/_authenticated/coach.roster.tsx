@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
+import { queryOptions, useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { CoachBottomNav } from "@/components/coach/bottom-nav";
 import { PageTitle } from "@/components/page-title";
@@ -11,6 +11,10 @@ import { InviteCard } from "@/components/onboarding/invite-card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { getCoachRoster } from "@/lib/coach-roster.functions";
+import {
+  getRosterPracticeSummaries,
+  type AthletePracticeSummary,
+} from "@/lib/coach-schedule.functions";
 
 type RosterTab = "athletes" | "schedule";
 
@@ -84,7 +88,18 @@ function RosterPage() {
     return athletes.filter((a) => a.sport === selectedSport);
   }, [athletes, selectedSport]);
 
+  const practiceQuery = useQuery({
+    queryKey: ["coach", "roster", "practice-summaries"],
+    queryFn: () => getRosterPracticeSummaries(),
+    enabled: tab === "schedule" && athletes.length > 0,
+    staleTime: 60_000,
+  });
 
+  const summariesByAthlete = useMemo(() => {
+    const m = new Map<string, AthletePracticeSummary>();
+    for (const s of practiceQuery.data ?? []) m.set(s.athleteId, s);
+    return m;
+  }, [practiceQuery.data]);
 
 
   return (
@@ -139,8 +154,10 @@ function RosterPage() {
         ) : (
           <WeekScheduleView
             athletes={visibleAthletes}
+            summariesByAthlete={summariesByAthlete}
             onSelectAthlete={setSelectedAthleteId}
           />
+
         )}
       </div>
       <CoachBottomNav />
