@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ParentBottomNav } from "@/components/parent/bottom-nav";
 import { PlanCard } from "@/components/plans/plan-card";
 import { PageTitle } from "@/components/page-title";
+import { SegmentedToggle } from "@/components/plans/segmented-toggle";
 import {
   Select,
   SelectContent,
