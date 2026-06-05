@@ -90,8 +90,9 @@ function ParentResourcesPage() {
             value={view}
             onChange={setView}
             options={[
-              { key: "library", label: "Sport library" },
+              { key: "library", label: "Library" },
               { key: "ask", label: "Ask Gradus" },
+              { key: "saved", label: "Saved" },
             ]}
           />
           {sports.length > 1 ? (
