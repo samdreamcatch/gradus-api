@@ -1,0 +1,1 @@
+ALTER TABLE public.athletes ADD COLUMN motivation text NOT NULL DEFAULT '';
