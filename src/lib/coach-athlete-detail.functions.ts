@@ -234,7 +234,7 @@ export const getCoachAthleteAiSummary = createServerFn({ method: "GET" })
 
     const since = new Date(Date.now() - WINDOW_DAYS * 86400_000).toISOString();
 
-    const [athleteRes, goalsRes, sessionsRes, roomRes] = await Promise.all([
+    const [athleteRes, goalsRes, plansRes, sessionsRes, roomRes] = await Promise.all([
       supabaseAdmin
         .from("athletes")
         .select("first_name")
@@ -246,8 +246,15 @@ export const getCoachAthleteAiSummary = createServerFn({ method: "GET" })
         .eq("athlete_id", data.athleteId)
         .eq("coach_id", coachId),
       supabaseAdmin
+        .from("plans")
+        .select("id, title, status")
+        .eq("coach_id", coachId)
+        .eq("athlete_id", data.athleteId)
+        .eq("kind", "plan")
+        .in("status", ["active", "benched"]),
+      supabaseAdmin
         .from("plan_sessions")
-        .select("state_index, duration_seconds, note, logged_at, parent_id")
+        .select("plan_id, state_index, duration_seconds, note, logged_at, parent_id")
         .eq("athlete_id", data.athleteId)
         .gte("logged_at", since)
         .order("logged_at", { ascending: false })
@@ -261,11 +268,16 @@ export const getCoachAthleteAiSummary = createServerFn({ method: "GET" })
     ]);
     if (athleteRes.error) dbError(athleteRes.error);
     if (goalsRes.error) dbError(goalsRes.error);
+    if (plansRes.error) dbError(plansRes.error);
     if (sessionsRes.error) dbError(sessionsRes.error);
     if (roomRes.error) dbError(roomRes.error);
 
     const firstName = athleteRes.data?.first_name ?? "the athlete";
     const sessions = sessionsRes.data ?? [];
+    const planById = new Map<string, { title: string; status: string }>();
+    for (const p of plansRes.data ?? []) {
+      planById.set(p.id, { title: p.title || "Untitled plan", status: p.status });
+    }
 
     type MsgRow = { sender_role: string; kind: string; body: string; duration_seconds: number | null; created_at: string };
     let messages: MsgRow[] = [];
@@ -302,6 +314,10 @@ export const getCoachAthleteAiSummary = createServerFn({ method: "GET" })
       })
       .join("\n");
 
+    const planLines = (plansRes.data ?? [])
+      .map((p) => `- "${p.title || "Untitled plan"}" (${p.status})`)
+      .join("\n");
+
     const sessionLines = sessions
       .map((s) => {
         const date = new Date(s.logged_at).toISOString().slice(0, 10);
@@ -309,7 +325,9 @@ export const getCoachAthleteAiSummary = createServerFn({ method: "GET" })
         const state = STATE_LABELS[Math.max(0, Math.min(4, s.state_index ?? 0))];
         const who = s.parent_id ? "parent-logged" : "athlete-logged";
         const note = (s.note ?? "").trim();
-        return `- ${date} (${who}, ${mins}m, "${state}")${note ? `: ${note}` : ""}`;
+        const planMeta = s.plan_id ? planById.get(s.plan_id) : null;
+        const planTag = planMeta ? ` plan="${planMeta.title}" (${planMeta.status})` : "";
+        return `- ${date} (${who}, ${mins}m, "${state}"${planTag})${note ? `: ${note}` : ""}`;
       })
       .join("\n");
 
