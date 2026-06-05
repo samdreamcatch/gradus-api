@@ -29,49 +29,37 @@ interface Props {
   status: GoalStatus;
 }
 
-export function PracticeRing({ hours, targetLower, targetUpper, status }: Props) {
+export function PracticeRing({ hours, targetUpper, status }: Props) {
   const size = 96;
   const stroke = 10;
   const r = (size - stroke) / 2;
   const cx = size / 2;
   const cy = size / 2;
   const c = 2 * Math.PI * r;
-  const total = WAKING_HOURS_PER_WEEK;
 
+  // Full ring = high end of target band. Fall back to waking hours if unset.
+  const total = targetUpper && targetUpper > 0 ? targetUpper : WAKING_HOURS_PER_WEEK;
   const fillPct = Math.max(0, Math.min(1, hours / total));
   const dash = c * fillPct;
-
-  // Compute tick angles. Ring starts at 12 o'clock and goes clockwise.
-  const toAngleDeg = (hrs: number) => -90 + (hrs / total) * 360;
-  const tickPoint = (hrs: number, len: number) => {
-    const a = (toAngleDeg(hrs) * Math.PI) / 180;
-    const inner = r - stroke / 2 - 1;
-    const outer = r + stroke / 2 + len;
-    return {
-      x1: cx + Math.cos(a) * inner,
-      y1: cy + Math.sin(a) * inner,
-      x2: cx + Math.cos(a) * outer,
-      y2: cy + Math.sin(a) * outer,
-    };
-  };
+  const strokeColor = STROKE_COLOR[status];
 
   return (
     <svg
       width={size}
       height={size}
       className="shrink-0 overflow-visible"
-      aria-label={`${hours.toFixed(1)} hours logged this week of ${total} waking hours`}
+      aria-label={`${hours.toFixed(1)} hours logged per week of ${total} target`}
     >
-      {/* Background ring */}
+      {/* Background ring — light wash representing the high end of the target */}
       <circle
         cx={cx}
         cy={cy}
         r={r}
         fill="none"
         strokeWidth={stroke}
-        stroke="color-mix(in oklab, var(--text-secondary) 34%, transparent)"
+        stroke={`color-mix(in oklab, ${strokeColor} 22%, transparent)`}
       />
-      {/* Filled arc — logged hours */}
+      {/* Filled arc — actual hours logged */}
       {fillPct > 0 && (
         <circle
           cx={cx}
@@ -79,42 +67,13 @@ export function PracticeRing({ hours, targetLower, targetUpper, status }: Props)
           r={r}
           fill="none"
           className={TONE[status]}
-          stroke={STROKE_COLOR[status]}
+          stroke={strokeColor}
           strokeWidth={stroke}
           strokeLinecap="round"
           strokeDasharray={`${dash} ${c}`}
           transform={`rotate(-90 ${cx} ${cy})`}
         />
       )}
-      {/* Target band ticks */}
-      {targetLower != null && (() => {
-        const p = tickPoint(targetLower, 3);
-        return (
-          <line
-            x1={p.x1}
-            y1={p.y1}
-            x2={p.x2}
-            y2={p.y2}
-            strokeWidth={2.5}
-            strokeLinecap="round"
-            stroke="var(--text-primary)"
-          />
-        );
-      })()}
-      {targetUpper != null && targetUpper !== targetLower && (() => {
-        const p = tickPoint(targetUpper, 3);
-        return (
-          <line
-            x1={p.x1}
-            y1={p.y1}
-            x2={p.x2}
-            y2={p.y2}
-            strokeWidth={2.5}
-            strokeLinecap="round"
-            stroke="var(--text-primary)"
-          />
-        );
-      })()}
       <text
         x="50%"
         y="46%"
