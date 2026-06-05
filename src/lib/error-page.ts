@@ -106,9 +106,9 @@ export function renderErrorPage(): string {
         height: 46%;
         background: linear-gradient(
           to right,
-          rgba(141,225,96,0.85) 0%,
-          rgba(141,225,96,0.55) 60%,
-          rgba(141,225,96,0.2) 90%,
+          rgba(156,163,175,0.85) 0%,
+          rgba(156,163,175,0.55) 60%,
+          rgba(156,163,175,0.2) 90%,
           transparent 100%
         );
         transform: rotate(-2.5deg);
@@ -134,10 +134,10 @@ export function renderErrorPage(): string {
         transition: filter 0.15s ease, transform 0.15s ease;
       }
       .primary {
-        background: #8DE160;
-        color: #1F4D00;
+        background: #6B7280;
+        color: #FFFFFF;
         font-weight: 700;
-        box-shadow: 0 1px 0 rgba(255,255,255,0.6) inset, 0 4px 12px -4px rgba(31,77,0,0.35);
+        box-shadow: 0 1px 0 rgba(255,255,255,0.2) inset, 0 4px 12px -4px rgba(31,41,55,0.35);
       }
       .primary:hover { filter: brightness(0.96); }
       .primary:active { transform: translateY(1px); }
@@ -147,7 +147,7 @@ export function renderErrorPage(): string {
         border-color: #E6E7EB;
       }
       .secondary:hover { background: #F8F9FC; }
-      :focus-visible { outline: 2px solid #8DE160; outline-offset: 3px; }
+      :focus-visible { outline: 2px solid #6B7280; outline-offset: 3px; }
     </style>
   </head>
   <body>
@@ -157,12 +157,12 @@ export function renderErrorPage(): string {
         <svg class="ball" viewBox="0 0 56 56" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <radialGradient id="bg" cx="35%" cy="32%" r="70%">
-              <stop offset="0%" stop-color="#B9F08A"/>
-              <stop offset="60%" stop-color="#8DE160"/>
-              <stop offset="100%" stop-color="#5FB23A"/>
+              <stop offset="0%" stop-color="#D1D5DB"/>
+              <stop offset="60%" stop-color="#9CA3AF"/>
+              <stop offset="100%" stop-color="#6B7280"/>
             </radialGradient>
           </defs>
-          <circle cx="28" cy="28" r="26" fill="url(#bg)" stroke="#1F4D00" stroke-opacity="0.15" stroke-width="1"/>
+          <circle cx="28" cy="28" r="26" fill="url(#bg)" stroke="#1F2937" stroke-opacity="0.15" stroke-width="1"/>
           <path d="M6 18 Q28 30 50 18" fill="none" stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round" opacity="0.9"/>
           <path d="M6 38 Q28 26 50 38" fill="none" stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round" opacity="0.9"/>
         </svg>
