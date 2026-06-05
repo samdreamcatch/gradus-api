@@ -11,7 +11,7 @@ export function FilterBar({
   return (
     <div
       className={cn(
-        "rounded-[28px] bg-[#DCEAF5] p-2.5 shadow-sm dark:bg-[#1c2a3a]",
+        "rounded-[28px] bg-[#DCEAF5] p-2.5 shadow-sm dark:bg-elevated",
         className,
       )}
     >
