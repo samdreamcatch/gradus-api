@@ -67,7 +67,7 @@ export const getAthleteGoalsDashboard = createServerFn({ method: "GET" })
 
     const { data: athlete, error: aErr } = await supabase
       .from("athletes")
-      .select("id, first_name, last_name")
+      .select("id, first_name, last_name, motivation")
       .eq("user_id", context.userId)
       .maybeSingle();
     if (aErr) dbError(aErr);
