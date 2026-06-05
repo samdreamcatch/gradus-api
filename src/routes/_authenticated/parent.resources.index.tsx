@@ -132,6 +132,8 @@ function ParentResourcesPage() {
         <>
           {view === "ask" ? (
             <AskGradusCard sport={activeSport!} />
+          ) : view === "saved" ? (
+            <SavedAnswersList sport={activeSport!} />
           ) : (
             <section className="mt-5 space-y-3">
               <div className="relative">
