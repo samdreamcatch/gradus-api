@@ -105,7 +105,8 @@ export function SportGoalCard({ goal }: { goal: ParentGoalSportDTO }) {
         <div className="mt-2 flex items-center gap-4">
           <PracticeRing
             hours={goal.loggedHoursPerWeek}
-            scaleMax={scaleMax}
+            targetLower={lower}
+            targetUpper={upper}
             status={status}
           />
           <div className="min-w-0 flex-1">
