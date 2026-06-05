@@ -180,6 +180,7 @@ export type Database = {
           first_name: string
           id: string
           last_name: string
+          motivation: string
           parent_id: string
           updated_at: string
           user_id: string | null
@@ -190,6 +191,7 @@ export type Database = {
           first_name: string
           id?: string
           last_name?: string
+          motivation?: string
           parent_id: string
           updated_at?: string
           user_id?: string | null
@@ -200,6 +202,7 @@ export type Database = {
           first_name?: string
           id?: string
           last_name?: string
+          motivation?: string
           parent_id?: string
           updated_at?: string
           user_id?: string | null
