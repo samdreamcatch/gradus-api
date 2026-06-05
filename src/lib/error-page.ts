@@ -157,12 +157,12 @@ export function renderErrorPage(): string {
         <svg class="ball" viewBox="0 0 56 56" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <radialGradient id="bg" cx="35%" cy="32%" r="70%">
-              <stop offset="0%" stop-color="#B9F08A"/>
-              <stop offset="60%" stop-color="#8DE160"/>
-              <stop offset="100%" stop-color="#5FB23A"/>
+              <stop offset="0%" stop-color="#D1D5DB"/>
+              <stop offset="60%" stop-color="#9CA3AF"/>
+              <stop offset="100%" stop-color="#6B7280"/>
             </radialGradient>
           </defs>
-          <circle cx="28" cy="28" r="26" fill="url(#bg)" stroke="#1F4D00" stroke-opacity="0.15" stroke-width="1"/>
+          <circle cx="28" cy="28" r="26" fill="url(#bg)" stroke="#1F2937" stroke-opacity="0.15" stroke-width="1"/>
           <path d="M6 18 Q28 30 50 18" fill="none" stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round" opacity="0.9"/>
           <path d="M6 38 Q28 26 50 38" fill="none" stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round" opacity="0.9"/>
         </svg>
