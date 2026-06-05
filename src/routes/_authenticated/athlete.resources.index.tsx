@@ -216,10 +216,7 @@ function SafeSportPanel() {
     <section className="mt-5 space-y-6">
       {/* Header */}
       <div className="rounded-2xl border border-divider bg-card p-6">
-        <p className="text-xs font-bold uppercase tracking-widest text-accent-ink">
-          Safe Sport
-        </p>
-        <h2 className="mt-1 font-display text-2xl text-text-primary">
+        <h2 className="font-display text-2xl text-text-primary">
           Something feel off?
         </h2>
         <p className="mt-3 text-sm text-text-secondary">
