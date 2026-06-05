@@ -194,9 +194,20 @@ function EmptyCard({ status }: { status: StatusFilter }) {
 
 function AthleteGoalsView() {
   const fetchDashboard = useServerFn(getAthleteGoalsDashboard);
+  const updateGoal = useServerFn(updateAthleteLongTermGoal);
+  const queryClient = useQueryClient();
   const { data, isLoading } = useQuery({
     queryKey: ["athlete-goals-dashboard"],
     queryFn: () => fetchDashboard(),
+  });
+
+  const mutation = useMutation({
+    mutationFn: (vars: { sport: string; longTermGoal: string }) =>
+      updateGoal({ data: vars }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["athlete-goals-dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["parent-goals-dashboard"] });
+    },
   });
 
   if (isLoading) {
@@ -218,7 +229,13 @@ function AthleteGoalsView() {
   return (
     <div className="mt-5 space-y-4">
       {data.sports.map((g) => (
-        <SportGoalCard key={g.sport} goal={g} />
+        <SportGoalCard
+          key={g.sport}
+          goal={g}
+          onSaveLongTermGoal={(value) =>
+            mutation.mutateAsync({ sport: g.sport, longTermGoal: value })
+          }
+        />
       ))}
     </div>
   );
