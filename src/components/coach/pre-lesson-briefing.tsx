@@ -55,15 +55,6 @@ export function PreLessonBriefing({
             </div>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={handleRefresh}
-          disabled={refreshing || isLoading}
-          aria-label="Refresh briefing"
-          className="flex h-8 w-8 items-center justify-center rounded-full text-text-tertiary hover:bg-elevated hover:text-text-primary disabled:opacity-50"
-        >
-          <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
-        </button>
       </div>
 
       <div className="mt-3 text-sm leading-relaxed text-text-primary">
