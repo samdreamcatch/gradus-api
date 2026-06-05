@@ -217,25 +217,18 @@ function SafeSportPanel({ sport }: { sport: string }) {
     <section className="mt-5 space-y-6">
       {/* Header */}
       <div className="rounded-2xl border border-divider bg-card p-6">
-        <div className="flex items-start gap-3">
-          <span className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent/10 text-accent-ink">
-            <ShieldCheck className="h-5 w-5" aria-hidden />
-          </span>
-          <div className="min-w-0">
-            <p className="text-xs font-bold uppercase tracking-widest text-accent-ink">
-              Safe Sport
-            </p>
-            <h2 className="mt-1 font-display text-2xl text-text-primary">
-              Something feel off?
-            </h2>
-            <p className="mt-3 text-sm text-text-secondary">
-              If practice in{" "}
-              <span className="pen-highlight">{sportLabel(sport)}</span> is
-              making you feel unsafe, weird, or just not right — you don't have
-              to figure it out alone.
-            </p>
-          </div>
-        </div>
+        <p className="text-xs font-bold uppercase tracking-widest text-accent-ink">
+          Safe Sport
+        </p>
+        <h2 className="mt-1 font-display text-2xl text-text-primary">
+          Something feel off?
+        </h2>
+        <p className="mt-3 text-sm text-text-secondary">
+          If practice in{" "}
+          <span className="pen-highlight">{sportLabel(sport)}</span> is making
+          you feel unsafe, weird, or just not right — you don't have to figure
+          it out alone.
+        </p>
       </div>
 
       {/* Reassurance */}
