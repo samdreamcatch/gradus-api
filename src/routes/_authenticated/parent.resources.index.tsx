@@ -196,28 +196,50 @@ function ParentResourcesPage() {
 
 function AskGradusCard({ sport }: { sport: string }) {
   const [question, setQuestion] = useState("");
+  const [lastQuestion, setLastQuestion] = useState("");
+  const [saved, setSaved] = useState(false);
+
   const ask = useServerFn(askGradus);
-  const mutation = useMutation({
+  const save = useServerFn(saveAnswer);
+  const qc = useQueryClient();
+
+  const askMutation = useMutation({
     mutationFn: (q: string) => ask({ data: { sport, question: q } }),
+    onSuccess: (_, q) => {
+      setLastQuestion(q);
+      setSaved(false);
+    },
+  });
+
+  const saveMutation = useMutation({
+    mutationFn: (vars: { question: string; answer: string }) =>
+      save({ data: { sport, ...vars } }),
+    onSuccess: () => {
+      setSaved(true);
+      qc.invalidateQueries({ queryKey: ["saved-answers"] });
+    },
   });
 
   // Reset answer when the sport changes
   useEffect(() => {
-    mutation.reset();
+    askMutation.reset();
+    saveMutation.reset();
     setQuestion("");
+    setLastQuestion("");
+    setSaved(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sport]);
 
   const onSubmit = () => {
     const q = question.trim();
-    if (!q || mutation.isPending) return;
-    mutation.mutate(q);
+    if (!q || askMutation.isPending) return;
+    askMutation.mutate(q);
   };
 
   return (
     <section className="mt-5">
       <div className="rounded-xl bg-linear-to-br from-secondary-accent via-accent to-secondary-accent p-[2px] shadow-sm">
-        <div className="rounded-[26px] bg-card p-4">
+        <div className="rounded-lg bg-card p-4">
           <Textarea
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
@@ -234,10 +256,10 @@ function AskGradusCard({ sport }: { sport: string }) {
             <Button
               type="button"
               onClick={onSubmit}
-              disabled={!question.trim() || mutation.isPending}
+              disabled={!question.trim() || askMutation.isPending}
               className="rounded-full"
             >
-              {mutation.isPending ? (
+              {askMutation.isPending ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
                   Thinking
@@ -253,32 +275,142 @@ function AskGradusCard({ sport }: { sport: string }) {
         </div>
       </div>
 
-      {mutation.error ? (
+      {askMutation.error ? (
         <div className="mt-3 rounded-2xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
-          {(mutation.error as Error).message || "Something went wrong asking Gradus."}
+          {(askMutation.error as Error).message || "Something went wrong asking Gradus."}
         </div>
       ) : null}
 
-      {mutation.data ? (
+      {askMutation.data ? (
         <article className="mt-3 rounded-2xl border border-divider bg-card p-4">
-          <div className="prose prose-sm max-w-none text-text-primary">
-            <ReactMarkdown>{mutation.data.answer}</ReactMarkdown>
-          </div>
-          <div className="mt-3 flex justify-end">
+          {lastQuestion ? (
+            <p className="mb-3 border-l-2 border-accent/40 pl-3 text-sm font-medium text-text-secondary">
+              {lastQuestion}
+            </p>
+          ) : null}
+          <AnswerMarkdown>{askMutation.data.answer}</AnswerMarkdown>
+          <div className="mt-4 flex items-center justify-between gap-2 border-t border-divider pt-3">
             <button
               type="button"
               onClick={() => {
-                mutation.reset();
+                askMutation.reset();
+                saveMutation.reset();
                 setQuestion("");
+                setLastQuestion("");
+                setSaved(false);
               }}
               className="font-sans text-[11px] font-bold uppercase tracking-widest text-text-secondary hover:text-text-primary"
             >
               New question
             </button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={saved || saveMutation.isPending}
+              onClick={() =>
+                saveMutation.mutate({
+                  question: lastQuestion,
+                  answer: askMutation.data!.answer,
+                })
+              }
+              className="rounded-full"
+            >
+              {saveMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                  Saving
+                </>
+              ) : saved ? (
+                <>
+                  <Check className="h-4 w-4" aria-hidden />
+                  Saved
+                </>
+              ) : (
+                <>
+                  <BookmarkPlus className="h-4 w-4" aria-hidden />
+                  Save
+                </>
+              )}
+            </Button>
           </div>
+          {saveMutation.error ? (
+            <p className="mt-2 text-xs text-destructive">
+              {(saveMutation.error as Error).message || "Couldn't save answer."}
+            </p>
+          ) : null}
         </article>
       ) : null}
     </section>
+  );
+}
+
+function SavedAnswersList({ sport }: { sport: string }) {
+  const fetchSaved = useServerFn(listSavedAnswers);
+  const removeSaved = useServerFn(deleteSavedAnswer);
+  const qc = useQueryClient();
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["saved-answers"],
+    queryFn: () => fetchSaved(),
+  });
+
+  const remove = useMutation({
+    mutationFn: (id: string) => removeSaved({ data: { id } }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["saved-answers"] }),
+  });
+
+  const items = useMemo(
+    () => (data ?? []).filter((a: SavedAnswerDTO) => a.sport === sport),
+    [data, sport],
+  );
+
+  if (isLoading) {
+    return (
+      <p className="mt-5 py-5 text-center text-sm text-text-secondary">Loading…</p>
+    );
+  }
+
+  if (items.length === 0) {
+    return (
+      <div className="mt-5 rounded-2xl border border-dashed border-divider bg-card p-8 text-center">
+        <p className="font-hand text-2xl text-text-secondary">
+          No saved answers yet. Tap Save on any Ask Gradus reply.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <ul className="mt-5 space-y-3">
+      {items.map((a) => (
+        <li
+          key={a.id}
+          className="rounded-2xl border border-divider bg-card p-4"
+        >
+          <p className="mb-3 border-l-2 border-accent/40 pl-3 text-sm font-medium text-text-secondary">
+            {a.question}
+          </p>
+          <AnswerMarkdown>{a.answer}</AnswerMarkdown>
+          <div className="mt-4 flex items-center justify-between gap-2 border-t border-divider pt-3">
+            <span className="text-[11px] uppercase tracking-widest text-text-tertiary">
+              Saved {new Date(a.createdAt).toLocaleDateString()}
+            </span>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => remove.mutate(a.id)}
+              disabled={remove.isPending && remove.variables === a.id}
+              className="rounded-full text-text-secondary hover:text-destructive"
+            >
+              <Trash2 className="h-4 w-4" aria-hidden />
+              Remove
+            </Button>
+          </div>
+        </li>
+      ))}
+    </ul>
   );
 }
 
