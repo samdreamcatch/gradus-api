@@ -136,7 +136,7 @@ function AthleteResourcesPage() {
           ) : view === "saved" ? (
             <SavedAnswersList sport={activeSport!} />
           ) : (
-            <SafeSportPanel sport={activeSport!} />
+            <SafeSportPanel />
           )}
         </>
       )}
@@ -211,7 +211,7 @@ function formatTel(digits: string): string {
   return digits;
 }
 
-function SafeSportPanel({ sport }: { sport: string }) {
+function SafeSportPanel() {
   return (
     <section className="mt-5 space-y-6">
       {/* Header */}
@@ -223,10 +223,8 @@ function SafeSportPanel({ sport }: { sport: string }) {
           Something feel off?
         </h2>
         <p className="mt-3 text-sm text-text-secondary">
-          If practice in{" "}
-          <span className="pen-highlight">{sportLabel(sport)}</span> is making
-          you feel unsafe, weird, or just not right — you don't have to figure
-          it out alone.
+          If practice is making you feel unsafe, weird, or just not right —
+          you don't have to figure it out alone.
         </p>
       </div>
 
