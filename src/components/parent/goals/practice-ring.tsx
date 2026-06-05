@@ -8,43 +8,105 @@ const TONE: Record<GoalStatus, string> = {
   unset: "text-muted-foreground",
 };
 
+/** Waking hours per week, assuming 8 hours of sleep per night. */
+export const WAKING_HOURS_PER_WEEK = 16 * 7;
+
 interface Props {
+  /** Hours logged this week (fill). */
   hours: number;
-  /** Upper bound used to scale the arc (defaults to 1 if unknown). */
-  scaleMax: number;
+  /** Lower bound of expected target band (hr/wk). */
+  targetLower: number | null;
+  /** Upper bound of expected target band (hr/wk). */
+  targetUpper: number | null;
   status: GoalStatus;
 }
 
-export function PracticeRing({ hours, scaleMax, status }: Props) {
-  const size = 88;
+export function PracticeRing({ hours, targetLower, targetUpper, status }: Props) {
+  const size = 96;
   const stroke = 8;
   const r = (size - stroke) / 2;
+  const cx = size / 2;
+  const cy = size / 2;
   const c = 2 * Math.PI * r;
-  const pct = scaleMax > 0 ? Math.min(1, hours / scaleMax) : 0;
-  const dash = c * pct;
+  const total = WAKING_HOURS_PER_WEEK;
+
+  const fillPct = Math.max(0, Math.min(1, hours / total));
+  const dash = c * fillPct;
+
+  // Compute tick angles. Ring starts at 12 o'clock and goes clockwise.
+  const toAngleDeg = (hrs: number) => -90 + (hrs / total) * 360;
+  const tickPoint = (hrs: number, len: number) => {
+    const a = (toAngleDeg(hrs) * Math.PI) / 180;
+    const inner = r - stroke / 2 - 1;
+    const outer = r + stroke / 2 + len;
+    return {
+      x1: cx + Math.cos(a) * inner,
+      y1: cy + Math.sin(a) * inner,
+      x2: cx + Math.cos(a) * outer,
+      y2: cy + Math.sin(a) * outer,
+    };
+  };
 
   return (
-    <svg width={size} height={size} className="shrink-0" aria-hidden>
+    <svg
+      width={size}
+      height={size}
+      className="shrink-0 overflow-visible"
+      aria-label={`${hours.toFixed(1)} hours logged this week of ${total} waking hours`}
+    >
+      {/* Background ring */}
       <circle
-        cx={size / 2}
-        cy={size / 2}
+        cx={cx}
+        cy={cy}
         r={r}
         fill="none"
         className="stroke-divider"
         strokeWidth={stroke}
       />
-      <circle
-        cx={size / 2}
-        cy={size / 2}
-        r={r}
-        fill="none"
-        className={TONE[status]}
-        stroke="currentColor"
-        strokeWidth={stroke}
-        strokeLinecap="round"
-        strokeDasharray={`${dash} ${c}`}
-        transform={`rotate(-90 ${size / 2} ${size / 2})`}
-      />
+      {/* Filled arc — logged hours */}
+      {fillPct > 0 && (
+        <circle
+          cx={cx}
+          cy={cy}
+          r={r}
+          fill="none"
+          className={TONE[status]}
+          stroke="currentColor"
+          strokeWidth={stroke}
+          strokeLinecap="round"
+          strokeDasharray={`${dash} ${c}`}
+          transform={`rotate(-90 ${cx} ${cy})`}
+        />
+      )}
+      {/* Target band ticks */}
+      {targetLower != null && (() => {
+        const p = tickPoint(targetLower, 3);
+        return (
+          <line
+            x1={p.x1}
+            y1={p.y1}
+            x2={p.x2}
+            y2={p.y2}
+            className="stroke-text-primary"
+            strokeWidth={2}
+            strokeLinecap="round"
+          />
+        );
+      })()}
+      {targetUpper != null && targetUpper !== targetLower && (() => {
+        const p = tickPoint(targetUpper, 3);
+        return (
+          <line
+            x1={p.x1}
+            y1={p.y1}
+            x2={p.x2}
+            y2={p.y2}
+            className="stroke-text-primary"
+            strokeWidth={2}
+            strokeLinecap="round"
+          />
+        );
+      })()}
       <text
         x="50%"
         y="46%"
