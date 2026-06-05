@@ -46,7 +46,7 @@ function LoginPage() {
       .then(({ role }) => {
         if (role === "parent") navigate({ to: "/parent/plans" });
         else if (role === "coach") navigate({ to: "/coach" });
-        else if (role === "athlete") navigate({ to: "/athlete" });
+        else if (role === "athlete") navigate({ to: "/athlete/plans" });
         else navigate({ to: "/" });
       })
       .catch(() => navigate({ to: "/" }));
@@ -62,7 +62,7 @@ function LoginPage() {
       const { role } = await fetchRole();
       if (role === "parent") navigate({ to: "/parent/plans" });
       else if (role === "coach") navigate({ to: "/coach" });
-      else if (role === "athlete") navigate({ to: "/athlete" });
+      else if (role === "athlete") navigate({ to: "/athlete/plans" });
       else navigate({ to: "/" });
     } catch {
       navigate({ to: "/" });
