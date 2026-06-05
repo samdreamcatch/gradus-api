@@ -8,6 +8,14 @@ import ReactMarkdown from "react-markdown";
 import { ParentBottomNav } from "@/components/parent/bottom-nav";
 import { PageTitle } from "@/components/page-title";
 import { SegmentedToggle } from "@/components/plans/segmented-toggle";
+import { FilterBar } from "@/components/plans/filter-bar";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,7 +28,6 @@ import {
   type ResourceDTO,
 } from "@/lib/parent-resources.functions";
 import { askGradus } from "@/lib/ask-gradus.functions";
-import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/parent/resources/")({
   component: ParentResourcesPage,
