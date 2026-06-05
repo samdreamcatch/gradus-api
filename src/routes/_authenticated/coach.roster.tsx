@@ -16,8 +16,8 @@ type RosterTab = "athletes" | "schedule";
 
 function SegmentedToggle({ tab, onChange }: { tab: RosterTab; onChange: (t: RosterTab) => void }) {
   const tabs: { key: RosterTab; label: string }[] = [
-    { key: "athletes", label: "Athletes" },
     { key: "schedule", label: "Schedule" },
+    { key: "athletes", label: "Athletes" },
   ];
   return (
     <div className="flex rounded-lg border border-foreground/15 bg-popover p-1 shadow-sm">
