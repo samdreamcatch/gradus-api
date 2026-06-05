@@ -154,8 +154,10 @@ function RosterPage() {
         ) : (
           <WeekScheduleView
             athletes={visibleAthletes}
+            summariesByAthlete={summariesByAthlete}
             onSelectAthlete={setSelectedAthleteId}
           />
+
         )}
       </div>
       <CoachBottomNav />
