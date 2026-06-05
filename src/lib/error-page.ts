@@ -106,9 +106,9 @@ export function renderErrorPage(): string {
         height: 46%;
         background: linear-gradient(
           to right,
-          rgba(141,225,96,0.85) 0%,
-          rgba(141,225,96,0.55) 60%,
-          rgba(141,225,96,0.2) 90%,
+          rgba(156,163,175,0.85) 0%,
+          rgba(156,163,175,0.55) 60%,
+          rgba(156,163,175,0.2) 90%,
           transparent 100%
         );
         transform: rotate(-2.5deg);
