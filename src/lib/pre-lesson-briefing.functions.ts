@@ -264,7 +264,7 @@ export const getPreLessonBriefing = createServerFn({ method: "POST" })
         : "No recent messages.",
     ];
 
-    const prompt = `You are writing a short pre-lesson briefing for a coach who is about to teach an upcoming lesson. Use the data below to write 2–4 plain-language sentences for the coach. Be specific: name moves, plans, or notable signals from messages or practice logs. Reference what other coaches are working on if it's relevant. Do not invent facts. If a section is empty, simply omit it instead of saying "nothing happened". Address the coach in second person ("you", "your athlete"). Keep it under 80 words.
+    const prompt = `You are writing a short pre-lesson briefing for a coach who is about to teach an upcoming lesson. Use the data below to write 2–4 plain-language sentences for the coach about what has happened with this athlete since the coach last had a lesson with this athlete. Be specific: name moves, plans, or notable signals from messages or practice logs. Reference what other coaches are working on if it's relevant. Do not invent facts. Do not tell the coach what to do, or how to plan their lesson. Do not give suggestions. Simply fill the coach in on what has happened in the time since they last saw this athlete. If a section is empty, simply omit it instead of saying "nothing happened". Address the coach in second person ("you", "your athlete"). Keep it under 80 words.
 
 ${context_lines.filter(Boolean).join("\n")}`;
 
