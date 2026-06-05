@@ -46,7 +46,7 @@ export const getPendingLessonWrapUps = createServerFn({ method: "POST" })
     // Today's slots that have already ended.
     const slotsRes = await supabase
       .from("athlete_lesson_slots")
-      .select("athlete_id, end_minute, athletes!inner(id, first_name, last_name)")
+      .select("athlete_id, end_minute")
       .eq("coach_id", coachId)
       .eq("day_of_week", data.dayOfWeek)
       .lte("end_minute", data.currentMinute);
@@ -56,30 +56,42 @@ export const getPendingLessonWrapUps = createServerFn({ method: "POST" })
 
     const athleteIds = Array.from(new Set(slots.map((s) => s.athlete_id as string)));
 
-    // Already-handled rows for today.
-    const handledRes = await supabase
-      .from("lesson_wrap_ups")
-      .select("athlete_id")
-      .eq("coach_id", coachId)
-      .eq("lesson_date", data.lessonDate)
-      .in("athlete_id", athleteIds);
+    const [handledRes, plansRes, athletesRes] = await Promise.all([
+      supabase
+        .from("lesson_wrap_ups")
+        .select("athlete_id")
+        .eq("coach_id", coachId)
+        .eq("lesson_date", data.lessonDate)
+        .in("athlete_id", athleteIds),
+      supabase
+        .from("plans")
+        .select("id, athlete_id")
+        .eq("coach_id", coachId)
+        .eq("kind", "plan")
+        .eq("status", "active")
+        .in("athlete_id", athleteIds),
+      supabase
+        .from("athletes")
+        .select("id, first_name, last_name")
+        .in("id", athleteIds),
+    ]);
     if (handledRes.error) dbError(handledRes.error);
-    const handled = new Set((handledRes.data ?? []).map((r) => r.athlete_id as string));
-
-    // Active plans for these athletes.
-    const plansRes = await supabase
-      .from("plans")
-      .select("id, athlete_id")
-      .eq("coach_id", coachId)
-      .eq("kind", "plan")
-      .eq("status", "active")
-      .in("athlete_id", athleteIds);
     if (plansRes.error) dbError(plansRes.error);
+    if (athletesRes.error) dbError(athletesRes.error);
+
+    const handled = new Set((handledRes.data ?? []).map((r) => r.athlete_id as string));
     const activePlanByAthlete = new Map<string, string>();
     for (const p of plansRes.data ?? []) {
       if (!activePlanByAthlete.has(p.athlete_id as string)) {
         activePlanByAthlete.set(p.athlete_id as string, p.id as string);
       }
+    }
+    const athleteById = new Map<string, { first_name: string; last_name: string }>();
+    for (const a of athletesRes.data ?? []) {
+      athleteById.set(a.id as string, {
+        first_name: a.first_name as string,
+        last_name: a.last_name as string,
+      });
     }
 
     // Keep only the latest-ending slot per athlete that isn't handled yet.
@@ -87,7 +99,8 @@ export const getPendingLessonWrapUps = createServerFn({ method: "POST" })
     for (const s of slots) {
       const athleteId = s.athlete_id as string;
       if (handled.has(athleteId)) continue;
-      const a = s.athletes as unknown as { id: string; first_name: string; last_name: string };
+      const a = athleteById.get(athleteId);
+      if (!a) continue;
       const existing = byAthlete.get(athleteId);
       const endMinute = s.end_minute as number;
       if (!existing || endMinute > existing.lessonEndMinute) {
