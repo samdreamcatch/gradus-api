@@ -225,15 +225,6 @@ function SafeSportPanel() {
         </p>
       </div>
 
-      {/* Reassurance */}
-      <div className="rounded-2xl border border-divider bg-card p-5">
-        <div className="space-y-2">
-          <p className="text-sm text-text-primary">
-            You don't have to be sure. You don't have to have proof. You
-            don't have to name anyone.
-          </p>
-        </div>
-      </div>
 
       {/* Hotlines */}
       <div>
