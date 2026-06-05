@@ -27,8 +27,10 @@ export const Route = createFileRoute("/_authenticated/parent/plans/")({
 });
 
 type StatusFilter = "active" | "benched";
+type Tab = "plans" | "goals";
 
 function ParentPlansPage() {
+  const [tab, setTab] = useState<Tab>("plans");
   const fetchPlans = useServerFn(listParentPlans);
   const { data, isLoading } = useQuery({
     queryKey: ["parent-plans"],
