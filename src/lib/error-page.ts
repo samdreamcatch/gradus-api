@@ -171,34 +171,46 @@ export function renderErrorPage(): string {
   <body>
     <div class="wrap">
       <div class="skater-stage" aria-hidden="true">
-        <svg class="skater" viewBox="0 0 180 140" xmlns="http://www.w3.org/2000/svg">
+        <svg class="skater" viewBox="0 0 280 220" xmlns="http://www.w3.org/2000/svg">
           <!-- ice surface -->
-          <line class="ice" x1="10" y1="124" x2="170" y2="124"/>
-          <line class="ice" x1="20" y1="130" x2="80" y2="130" opacity="0.4"/>
-          <line class="ice" x1="100" y1="130" x2="160" y2="130" opacity="0.4"/>
+          <line class="ice" x1="0" y1="200" x2="280" y2="200"/>
+          <path class="ice" d="M30 196 q40 -6 80 0 M150 196 q40 -6 80 0" opacity="0.45"/>
 
-          <!-- stars / impact lines (above head when fallen) -->
-          <g class="stars" stroke="#6B7280" stroke-width="1.5" stroke-linecap="round" fill="none">
-            <path d="M40 70 l4 -4"/>
-            <path d="M48 64 l-3 -4"/>
-            <path d="M34 60 l5 -2"/>
-          </g>
+          <g transform="translate(140 200)">
+            <g class="scene">
+              <g class="figure">
+                <!-- skating leg -->
+                <line class="stroke" x1="0" y1="0" x2="0" y2="-50"/>
+                <!-- skating blade -->
+                <line class="blade" x1="-8" y1="0" x2="10" y2="0"/>
 
-          <!-- the figure: head, body, arms, leg, skate -->
-          <g class="figure" fill="none" stroke="#374151" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-            <!-- head -->
-            <circle cx="90" cy="62" r="10" fill="#F5F6FA"/>
-            <!-- torso -->
-            <line x1="90" y1="72" x2="90" y2="100"/>
-            <!-- arms (separate groups so they can windmill) -->
-            <g class="arm-l"><line x1="90" y1="78" x2="72" y2="92"/></g>
-            <g class="arm-r"><line x1="90" y1="78" x2="108" y2="92"/></g>
-            <!-- standing leg -->
-            <line x1="90" y1="100" x2="86" y2="118"/>
-            <!-- trailing skating leg, extended back -->
-            <line x1="90" y1="100" x2="108" y2="114"/>
-            <!-- skate blade under standing leg -->
-            <line x1="78" y1="120" x2="98" y2="120" stroke="#6B7280" stroke-width="2"/>
+                <!-- free leg -->
+                <g transform="translate(0 -50)">
+                  <g class="leg-free">
+                    <line class="stroke" x1="0" y1="0" x2="14" y2="36"/>
+                    <line class="blade" x1="9" y1="36" x2="22" y2="38"/>
+                  </g>
+                </g>
+
+                <!-- torso -->
+                <line class="stroke" x1="0" y1="-50" x2="0" y2="-95"/>
+
+                <!-- arms -->
+                <g transform="translate(0 -92)">
+                  <g class="arm-l">
+                    <line class="stroke" x1="0" y1="0" x2="-22" y2="22"/>
+                  </g>
+                </g>
+                <g transform="translate(0 -92)">
+                  <g class="arm-r">
+                    <line class="stroke" x1="0" y1="0" x2="22" y2="22"/>
+                  </g>
+                </g>
+
+                <!-- head -->
+                <circle class="head" cx="0" cy="-106" r="11"/>
+              </g>
+            </g>
           </g>
         </svg>
       </div>
@@ -214,3 +226,4 @@ export function renderErrorPage(): string {
   </body>
 </html>`;
 }
+
