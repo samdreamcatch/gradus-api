@@ -185,50 +185,6 @@ function ParentResourcesPage() {
   );
 }
 
-function SportFilterChipsParent({
-  sports,
-  selected,
-  onSelect,
-}: {
-  sports: string[];
-  selected: string | null;
-  onSelect: (sport: string | null) => void;
-}) {
-  if (sports.length === 1) {
-    return (
-      <div className="mt-4">
-        <span className="inline-block rounded-pill border border-divider bg-card px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-accent-ink">
-          {sportLabel(sports[0])}
-        </span>
-      </div>
-    );
-  }
-  // Library is sport-scoped by definition — no "All" option here.
-  const active = selected ?? sports[0];
-  return (
-    <div className="mt-4 flex flex-wrap gap-2">
-      {sports.map((s) => {
-        const isActive = active === s;
-        return (
-          <button
-            key={s}
-            type="button"
-            onClick={() => onSelect(s)}
-            className={cn(
-              "rounded-pill border px-3 py-1 text-[11px] font-bold uppercase tracking-widest transition",
-              isActive
-                ? "border-accent bg-accent text-accent-foreground"
-                : "border-divider bg-card text-text-secondary hover:text-text-primary",
-            )}
-          >
-            {sportLabel(s)}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
 function AskGradusCard({ sport }: { sport: string }) {
   const [question, setQuestion] = useState("");
   const ask = useServerFn(askGradus);
