@@ -88,7 +88,18 @@ function RosterPage() {
     return athletes.filter((a) => a.sport === selectedSport);
   }, [athletes, selectedSport]);
 
+  const practiceQuery = useQuery({
+    queryKey: ["coach", "roster", "practice-summaries"],
+    queryFn: () => getRosterPracticeSummaries(),
+    enabled: tab === "schedule" && athletes.length > 0,
+    staleTime: 60_000,
+  });
 
+  const summariesByAthlete = useMemo(() => {
+    const m = new Map<string, AthletePracticeSummary>();
+    for (const s of practiceQuery.data ?? []) m.set(s.athleteId, s);
+    return m;
+  }, [practiceQuery.data]);
 
 
   return (
