@@ -12,6 +12,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { SegmentedToggle } from "@/components/plans/segmented-toggle";
+import { FilterBar } from "@/components/plans/filter-bar";
 import { listAthletePlans } from "@/lib/athlete-plans.functions";
 
 export const Route = createFileRoute("/_authenticated/athlete/plans/")({
@@ -26,6 +28,7 @@ export const Route = createFileRoute("/_authenticated/athlete/plans/")({
 });
 
 type StatusFilter = "active" | "benched";
+type Tab = "plans" | "goals";
 
 function prettySport(s: string): string {
   if (!s) return "Other";
@@ -44,6 +47,7 @@ function AthletePlansPage() {
 
   const plans = data?.plans ?? [];
 
+  const [tab, setTab] = useState<Tab>("plans");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("active");
   const [coachId, setCoachId] = useState<string>("");
   const [sport, setSport] = useState<string>("");
@@ -82,75 +86,94 @@ function AthletePlansPage() {
     <div className="mx-auto max-w-2xl px-3 pt-6 pb-24">
       <PageTitle>Plans</PageTitle>
 
-      <div className="mt-4 grid grid-cols-3 gap-2">
-        <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
-          <SelectTrigger className={triggerClass} aria-label="Plan status">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="active">Active</SelectItem>
-            <SelectItem value="benched">Benched</SelectItem>
-          </SelectContent>
-        </Select>
+      <FilterBar className="mt-4">
+        <SegmentedToggle
+          value={tab}
+          onChange={setTab}
+          options={[
+            { key: "plans", label: "Plans" },
+            { key: "goals", label: "Goals" },
+          ]}
+        />
+        {tab === "plans" ? (
+          <div className="mt-2.5 grid grid-cols-3 gap-2">
+            <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
+              <SelectTrigger className={triggerClass} aria-label="Plan status">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="benched">Benched</SelectItem>
+              </SelectContent>
+            </Select>
 
-        <Select
-          value={coachId || "__all"}
-          onValueChange={(v) => setCoachId(v === "__all" ? "" : v)}
-          disabled={coaches.length <= 1}
-        >
-          <SelectTrigger className={triggerClass} aria-label="Coach">
-            <SelectValue placeholder="All coaches" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="__all">All coaches</SelectItem>
-            {coaches.map((c) => (
-              <SelectItem key={c.id} value={c.id}>
-                {c.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+            <Select
+              value={coachId || "__all"}
+              onValueChange={(v) => setCoachId(v === "__all" ? "" : v)}
+              disabled={coaches.length <= 1}
+            >
+              <SelectTrigger className={triggerClass} aria-label="Coach">
+                <SelectValue placeholder="All coaches" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all">All coaches</SelectItem>
+                {coaches.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-        <Select
-          value={sport || "__all"}
-          onValueChange={(v) => setSport(v === "__all" ? "" : v)}
-          disabled={sports.length <= 1}
-        >
-          <SelectTrigger className={triggerClass} aria-label="Sport">
-            <SelectValue placeholder="All sports" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="__all">All sports</SelectItem>
-            {sports.map((s) => (
-              <SelectItem key={s} value={s}>
-                {prettySport(s)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+            <Select
+              value={sport || "__all"}
+              onValueChange={(v) => setSport(v === "__all" ? "" : v)}
+              disabled={sports.length <= 1}
+            >
+              <SelectTrigger className={triggerClass} aria-label="Sport">
+                <SelectValue placeholder="All sports" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all">All sports</SelectItem>
+                {sports.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {prettySport(s)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        ) : null}
+      </FilterBar>
 
-      <div className="mt-5 space-y-3">
-        {isLoading ? (
-          <p className="py-5 text-center text-sm text-text-secondary">Loading…</p>
-        ) : filtered.length === 0 ? (
-          <EmptyCard status={statusFilter} />
-        ) : (
-          filtered.map((p) => (
-            <PlanCard
-              key={p.id}
-              to="/athlete/plans/$planId"
-              planId={p.id}
-              title={p.title}
-              athleteName={`Coach ${p.coachName}`}
-              sessionsByState={p.sessionsByState}
-              sessionsTotal={p.sessionsTotal}
-              muted={statusFilter === "benched"}
-              edgeTone={statusFilter === "benched" ? "muted" : "active"}
-            />
-          ))
-        )}
-      </div>
+      {tab === "goals" ? (
+        <div className="mt-5 rounded-2xl border border-dashed border-divider bg-card p-8 text-center">
+          <p className="font-hand text-2xl text-text-secondary">Goals coming soon.</p>
+        </div>
+      ) : (
+        <div className="mt-5 space-y-3">
+          {isLoading ? (
+            <p className="py-5 text-center text-sm text-text-secondary">Loading…</p>
+          ) : filtered.length === 0 ? (
+            <EmptyCard status={statusFilter} />
+          ) : (
+            filtered.map((p) => (
+              <PlanCard
+                key={p.id}
+                to="/athlete/plans/$planId"
+                planId={p.id}
+                title={p.title}
+                athleteName={`Coach ${p.coachName}`}
+                sessionsByState={p.sessionsByState}
+                sessionsTotal={p.sessionsTotal}
+                muted={statusFilter === "benched"}
+                edgeTone={statusFilter === "benched" ? "muted" : "active"}
+              />
+            ))
+          )}
+        </div>
+      )}
+
 
       <AthleteBottomNav />
     </div>
