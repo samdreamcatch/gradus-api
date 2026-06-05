@@ -389,7 +389,7 @@ Provide a single-sentence rationale tied to specific evidence above.`;
         empty: false,
       };
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      throw new Error(`AI summary failed: ${msg}`);
+      console.error("[AI summary]", err);
+      throw new Error("Could not generate summary. Please try again later.");
     }
   });
