@@ -2,7 +2,6 @@ import { useEffect } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { Logo } from "@/components/logo";
 import { ParentBottomNav } from "@/components/parent/bottom-nav";
 import { getParentSignupStatus } from "@/lib/parent-signup.functions";
 
@@ -35,17 +34,6 @@ function ParentHome() {
 
   return (
     <div className="mx-auto max-w-2xl px-3 py-6 pb-24">
-      <Logo className="text-4xl" />
-      <h1 className="mt-6 font-display text-3xl text-text-primary">
-        Welcome back.
-      </h1>
-      <p className="mt-3 text-text-secondary">
-        Jump into <span className="pen-highlight">Plans</span> to check in on
-        your athletes, head to <span className="pen-highlight">Messages</span>{" "}
-        to talk with your coach, or open{" "}
-        <span className="pen-highlight">Settings</span> to manage your account
-        and athletes.
-      </p>
       <ParentBottomNav />
     </div>
   );
