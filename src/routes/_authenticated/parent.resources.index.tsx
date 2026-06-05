@@ -79,11 +79,38 @@ function ParentResourcesPage() {
       <PageTitle>Resources</PageTitle>
 
       {sports.length > 0 ? (
-        <SportFilterChipsParent
-          sports={sports}
-          selected={activeSport}
-          onSelect={setSelectedSport}
-        />
+        <FilterBar className="mt-4">
+          <SegmentedToggle
+            value={view}
+            onChange={setView}
+            options={[
+              { key: "library", label: "Sport library" },
+              { key: "ask", label: "Ask Gradus" },
+            ]}
+          />
+          {sports.length > 1 ? (
+            <div className="mt-2.5">
+              <Select
+                value={activeSport ?? undefined}
+                onValueChange={(v) => setSelectedSport(v)}
+              >
+                <SelectTrigger
+                  className="h-8 w-full rounded-full border-divider bg-card px-3 text-xs font-bold text-text-primary shadow-none"
+                  aria-label="Sport"
+                >
+                  <SelectValue placeholder="Select sport" />
+                </SelectTrigger>
+                <SelectContent>
+                  {sports.map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {sportLabel(s)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ) : null}
+        </FilterBar>
       ) : null}
 
       {isLoading ? (
@@ -96,17 +123,6 @@ function ParentResourcesPage() {
         </div>
       ) : (
         <>
-          <div className="mt-6">
-            <SegmentedToggle
-              value={view}
-              onChange={setView}
-              options={[
-                { key: "library", label: "Sport library" },
-                { key: "ask", label: "Ask Gradus" },
-              ]}
-            />
-          </div>
-
           {view === "ask" ? (
             <AskGradusCard sport={activeSport!} />
           ) : (
