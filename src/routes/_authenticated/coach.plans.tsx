@@ -74,7 +74,14 @@ function PlansPage() {
     <>
       <div className="mx-auto flex min-h-dvh max-w-3xl flex-col px-3 pt-4 pb-24">
         <header className="sticky top-0 z-20 -mx-3 bg-background/90 px-3 pb-2 pt-1 backdrop-blur supports-[backdrop-filter]:bg-background/70">
-          <SegmentedToggle tab={tab} onChange={setTab} />
+          <SegmentedToggle
+            value={tab}
+            onChange={setTab}
+            options={[
+              { key: "plans", label: "Plans" },
+              { key: "library", label: "Move library" },
+            ]}
+          />
           {tab === "plans" ? (
             <PlansFilterStrip
               filter={planFilter}
