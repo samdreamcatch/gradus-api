@@ -265,7 +265,7 @@ function HowWhatToggle({
                 : "border border-transparent text-text-tertiary",
             )}
           >
-            {v === "how" ? "How" : "What"}
+            {v === "how" ? "Cue" : "Description"}
           </button>
         );
       })}
