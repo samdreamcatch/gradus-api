@@ -44,7 +44,13 @@ function buildLadder(sport: string, currentKey: string, goalKey: string): Ladder
   return s.levels.slice(lo, hi + 1).map((l) => ({ key: l.key, label: l.label }));
 }
 
-export function SportGoalCard({ goal }: { goal: ParentGoalSportDTO }) {
+export function SportGoalCard({
+  goal,
+  onSaveLongTermGoal,
+}: {
+  goal: ParentGoalSportDTO;
+  onSaveLongTermGoal?: (value: string) => Promise<void> | void;
+}) {
   const sport = getSport(goal.sport);
   const current = getSportLevel(goal.sport, goal.currentLevelKey);
   const seasonGoal = getSportLevel(goal.sport, goal.seasonGoalKey);
