@@ -1,8 +1,7 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { RefreshCw, Sparkles } from "lucide-react";
-import { useState } from "react";
-import { cn } from "@/lib/utils";
+import { useQuery } from "@tanstack/react-query";
+import { Sparkles } from "lucide-react";
 import { getPreLessonBriefing } from "@/lib/pre-lesson-briefing.functions";
+
 
 export function PreLessonBriefing({
   athleteId,
