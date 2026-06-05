@@ -235,10 +235,6 @@ function SafeSportPanel() {
             You don't have to be sure. You don't have to have proof. You
             don't have to name anyone.
           </p>
-          <p className="text-xs text-text-tertiary">
-            Talking to someone trained is a normal thing to do — not a big
-            deal, not a last resort.
-          </p>
         </div>
       </div>
 
