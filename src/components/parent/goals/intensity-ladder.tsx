@@ -20,7 +20,15 @@ export function IntensityLadder({ stops, currentKey, goalKey }: Props) {
   return (
     <div className="mt-3">
       <div className="relative flex items-center">
-        <div className="absolute inset-x-2 top-1/2 h-0.5 -translate-y-1/2 rounded-full bg-text-secondary/30" aria-hidden />
+        <div
+          className="absolute top-1/2 h-0.5 -translate-y-1/2 rounded-full"
+          style={{
+            left: "0.375rem",
+            right: "0.375rem",
+            backgroundColor: "color-mix(in oklab, var(--text-secondary) 78%, transparent)",
+          }}
+          aria-hidden
+        />
         <div className="relative z-10 flex w-full items-center justify-between">
           {stops.map((s) => {
             const isCurrent = s.key === currentKey;
