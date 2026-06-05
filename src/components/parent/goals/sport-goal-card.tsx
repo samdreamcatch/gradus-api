@@ -130,14 +130,12 @@ export function SportGoalCard({
         </div>
       </div>
 
-      {goal.longTermGoal.trim().length > 0 && (
+      {(goal.longTermGoal.trim().length > 0 || onSaveLongTermGoal) && (
         <div className="mt-5 border-t border-divider pt-4">
-          <p className="text-[11px] font-bold uppercase tracking-wide text-text-secondary">
-            Long-term goal
-          </p>
-          <p className="mt-1 font-hand text-lg leading-snug text-text-primary">
-            “{goal.longTermGoal}”
-          </p>
+          <LongTermGoalSection
+            value={goal.longTermGoal}
+            onSave={onSaveLongTermGoal}
+          />
         </div>
       )}
     </article>
