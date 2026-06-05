@@ -54,9 +54,11 @@ interface DaySession {
 
 export function WeekScheduleView({
   athletes,
+  summariesByAthlete,
   onSelectAthlete,
 }: {
   athletes: RosterAthlete[];
+  summariesByAthlete?: Map<string, AthletePracticeSummary>;
   onSelectAthlete?: (athleteId: string) => void;
 }) {
   const today = useMemo(() => new Date(), []);
