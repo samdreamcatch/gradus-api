@@ -1,13 +1,22 @@
-### Problem
+## Tighten RLS roles: `{public}` → `{authenticated}`
 
-The Ask Gradus textarea sits inside a bright gradient border (`from-secondary-accent via-accent to-secondary-accent`) that doesn't match the muted, paper-like surfaces used elsewhere on `/parent/resources` (library list, saved answers, answer card).
+Migrate all existing RLS policies on 6 tables from the `public` role grant to `authenticated`. Pure defense-in-depth; audit confirmed zero functional impact.
 
-### Change
+### Tables
+- `coach_athletes`
+- `coach_levels`
+- `athletes`
+- `parent_profiles`
+- `coach_profiles`
+- `plan_moves`
 
-In `src/routes/_authenticated/parent.resources.index.tsx` (the `AskGradusCard` component), replace the gradient wrapper with the same surface treatment used for the answer + saved cards:
+### Approach
+For each policy on the above tables: `DROP POLICY` then `CREATE POLICY ... TO authenticated` with the identical `USING` / `WITH CHECK` clause. No changes to policy logic, table grants, or helper functions.
 
-- Drop the `p-[2px]` gradient `<div>` wrapper.
-- Render the input area as a single `rounded-2xl border border-divider bg-card p-4` container, matching the answer/saved-answer cards.
-- Keep the textarea transparent so the card surface shows through; keep the Ask button styling unchanged.
+### Verification
+After migration, re-run the security scan to confirm the `{public}` warnings clear and no new findings appear.
 
-No behavior, copy, or layout changes — purely a visual alignment with the design system.
+### Out of scope
+- Leaked Password Protection (declined)
+- `lesson_wrap_ups` parent visibility (confirmed coach-only)
+- `SECURITY DEFINER` function warnings (accepted)
