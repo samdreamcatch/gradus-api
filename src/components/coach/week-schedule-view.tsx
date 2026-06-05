@@ -320,27 +320,37 @@ function PracticeSinceLast({ summary }: { summary?: AthletePracticeSummary }) {
       ) : null}
 
       {sessionCount > 0 ? (
-        <span
-          className="ml-auto flex items-center gap-[3px]"
-          aria-label={`${sessionCount} sessions logged`}
-        >
-          {sessionStates
-            .slice()
-            .reverse()
-            .map((st, idx) => (
-              <span
-                key={idx}
-                className="h-2 w-2 rounded-full"
-                style={{
-                  background: STATE_COLORS[Math.max(0, Math.min(4, st))],
-                  boxShadow:
-                    st === 4
-                      ? "0 0 4px color-mix(in oklab, var(--pen-tennis) 50%, transparent)"
-                      : undefined,
-                }}
-              />
-            ))}
-        </span>
+        (() => {
+          const MAX_DOTS = 7;
+          const ordered = sessionStates.slice().reverse(); // newest → oldest
+          const shown = ordered.slice(0, MAX_DOTS);
+          const overflow = sessionCount - shown.length;
+          return (
+            <span
+              className="ml-auto flex items-center gap-[3px]"
+              aria-label={`${sessionCount} sessions logged`}
+            >
+              {shown.map((st, idx) => (
+                <span
+                  key={idx}
+                  className="h-2 w-2 rounded-full"
+                  style={{
+                    background: STATE_COLORS[Math.max(0, Math.min(4, st))],
+                    boxShadow:
+                      st === 4
+                        ? "0 0 4px color-mix(in oklab, var(--pen-tennis) 50%, transparent)"
+                        : undefined,
+                  }}
+                />
+              ))}
+              {overflow > 0 ? (
+                <span className="ml-0.5 text-[10px] font-bold tabular-nums text-text-tertiary">
+                  +{overflow}
+                </span>
+              ) : null}
+            </span>
+          );
+        })()
       ) : (
         <span className="ml-auto text-[10px] uppercase tracking-widest text-text-tertiary">
           No sessions
