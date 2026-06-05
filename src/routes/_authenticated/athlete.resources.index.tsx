@@ -233,20 +233,15 @@ function SafeSportPanel({ sport }: { sport: string }) {
 
       {/* Reassurance */}
       <div className="rounded-2xl border border-divider bg-card p-5">
-        <div className="flex items-start gap-3">
-          <span className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent/10 text-accent-ink">
-            <Heart className="h-4 w-4" aria-hidden />
-          </span>
-          <div className="space-y-2">
-            <p className="text-sm text-text-primary">
-              You don't have to be sure. You don't have to have proof. You
-              don't have to name anyone.
-            </p>
-            <p className="text-xs text-text-tertiary">
-              Talking to someone trained is a normal thing to do — not a big
-              deal, not a last resort.
-            </p>
-          </div>
+        <div className="space-y-2">
+          <p className="text-sm text-text-primary">
+            You don't have to be sure. You don't have to have proof. You
+            don't have to name anyone.
+          </p>
+          <p className="text-xs text-text-tertiary">
+            Talking to someone trained is a normal thing to do — not a big
+            deal, not a last resort.
+          </p>
         </div>
       </div>
 
