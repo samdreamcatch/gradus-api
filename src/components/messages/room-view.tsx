@@ -302,13 +302,14 @@ function Composer({
   const [transcribing, setTranscribing] = useState(false);
   const [attachedPlan, setAttachedPlan] = useState<{ id: string; title: string } | null>(null);
   const transcribeFn = useServerFn(voiceTranscribe);
-  const fetchActivePlan = useServerFn(getRoomActivePlan);
+  const fetchActivePlans = useServerFn(getRoomActivePlans);
 
-  const { data: activePlanData } = useQuery({
-    queryKey: ["room-active-plan", viewerRole ?? "default", roomId],
-    queryFn: () => fetchActivePlan({ data: { roomId, viewerRole } }),
+  const { data: activePlansData } = useQuery({
+    queryKey: ["room-active-plans", viewerRole ?? "default", roomId],
+    queryFn: () => fetchActivePlans({ data: { roomId, viewerRole } }),
   });
-  const activePlan = activePlanData?.plan ?? null;
+  const activePlans = activePlansData?.plans ?? [];
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   const voice = useVoiceCapture({
     maxMs: 90_000,
@@ -340,18 +341,22 @@ function Composer({
   const recording = voice.state === "recording";
   const processing = voice.state === "processing" || transcribing;
 
-  const toggleAttachPlan = () => {
+  const handleAttachClick = () => {
     if (attachedPlan) {
       setAttachedPlan(null);
       return;
     }
-    if (!activePlan) {
+    if (activePlans.length === 0) {
       toast("No active plan", {
         description: "This athlete has no active plan to tag.",
       });
       return;
     }
-    setAttachedPlan(activePlan);
+    if (activePlans.length === 1) {
+      setAttachedPlan(activePlans[0]);
+      return;
+    }
+    setPickerOpen(true);
   };
 
   return (
