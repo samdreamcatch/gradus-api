@@ -210,22 +210,29 @@ function AthleteDetailBody({ athleteId }: { athleteId: string }) {
         </div>
       </section>
 
-      {/* Active plan */}
+      {/* Plans */}
       <section className="pb-2">
-        <SectionHeading>Active plan</SectionHeading>
-        {d.activePlan ? (
-          <div className="mt-2">
-            <PlanCard
-              to="/coach/plans/$planId"
-              planId={d.activePlan.planId}
-              title={d.activePlan.title}
-              sessionsByState={d.activePlan.sessionsByState}
-              sessionsTotal={d.activePlan.sessionsTotal}
-              edgeTone="active"
-            />
-          </div>
+        <SectionHeading>Plans</SectionHeading>
+        {d.plans.length === 0 ? (
+          <EmptyLine>No active or benched plans for {d.firstName} yet.</EmptyLine>
         ) : (
-          <EmptyLine>No active plan for {d.firstName} yet.</EmptyLine>
+          <div className="mt-2 space-y-3">
+            {d.plans.map((p) => (
+              <div key={p.planId}>
+                <div className="mb-1 text-[10px] font-black uppercase tracking-widest text-text-tertiary">
+                  {p.status === "active" ? "Active" : "Benched"}
+                </div>
+                <PlanCard
+                  to="/coach/plans/$planId"
+                  planId={p.planId}
+                  title={p.title}
+                  sessionsByState={p.sessionsByState}
+                  sessionsTotal={p.sessionsTotal}
+                  edgeTone={p.status === "active" ? "active" : "muted"}
+                />
+              </div>
+            ))}
+          </div>
         )}
       </section>
     </div>

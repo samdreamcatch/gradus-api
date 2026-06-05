@@ -18,9 +18,12 @@ export interface AthleteGoalDTO {
   longTermGoal: string;
 }
 
-export interface AthleteActivePlanDTO {
+export type PlanStatus = "active" | "benched";
+
+export interface AthletePlanSummaryDTO {
   planId: string;
   title: string;
+  status: PlanStatus;
   sessionsByState: SessionsByState;
   sessionsTotal: number;
 }
@@ -38,7 +41,7 @@ export interface CoachAthleteDetailDTO {
   parentFirstName: string;
   parentLastName: string;
   goals: AthleteGoalDTO[];
-  activePlan: AthleteActivePlanDTO | null;
+  plans: AthletePlanSummaryDTO[];
   activity: AthleteActivityCountsDTO;
   hasAnySignal: boolean;
   windowDays: number;
@@ -100,12 +103,13 @@ export const getCoachAthleteDetail = createServerFn({ method: "GET" })
         .eq("coach_id", coachId),
       supabaseAdmin
         .from("plans")
-        .select("id, title")
+        .select("id, title, status, updated_at")
         .eq("coach_id", coachId)
         .eq("athlete_id", data.athleteId)
         .eq("kind", "plan")
-        .eq("status", "active")
-        .maybeSingle(),
+        .in("status", ["active", "benched"])
+        .order("status", { ascending: true }) // active < benched alphabetically
+        .order("updated_at", { ascending: false }),
       supabaseAdmin
         .from("plan_sessions")
         .select("plan_id, state_index, duration_seconds, logged_at, parent_id")
@@ -138,19 +142,17 @@ export const getCoachAthleteDetail = createServerFn({ method: "GET" })
       longTermGoal: g.long_term_goal ?? "",
     }));
 
-    // Build active plan summary
-    let activePlan: AthleteActivePlanDTO | null = null;
-    if (planRes.data) {
-      const planSessions = (sessionsRes.data ?? []).filter(
-        (s) => s.plan_id === planRes.data!.id,
-      );
-      const stateKeys: (keyof SessionsByState)[] = [
-        "frustrated",
-        "pushing",
-        "steady",
-        "lockedIn",
-        "flowing",
-      ];
+    // Build per-plan summaries for every active OR benched plan.
+    const stateKeys: (keyof SessionsByState)[] = [
+      "frustrated",
+      "pushing",
+      "steady",
+      "lockedIn",
+      "flowing",
+    ];
+    const sessions30d = sessionsRes.data ?? [];
+    const plans: AthletePlanSummaryDTO[] = (planRes.data ?? []).map((p) => {
+      const planSessions = sessions30d.filter((s) => s.plan_id === p.id);
       const sessionsByState: SessionsByState = {
         frustrated: 0,
         pushing: 0,
@@ -162,15 +164,14 @@ export const getCoachAthleteDetail = createServerFn({ method: "GET" })
         const idx = Math.max(0, Math.min(4, s.state_index ?? 0));
         sessionsByState[stateKeys[idx]] += 1;
       }
-      activePlan = {
-        planId: planRes.data.id,
-        title: planRes.data.title || "Untitled plan",
+      return {
+        planId: p.id,
+        title: p.title || "Untitled plan",
+        status: p.status as PlanStatus,
         sessionsByState,
         sessionsTotal: planSessions.length,
       };
-    }
-
-    const sessions30d = sessionsRes.data ?? [];
+    });
     const practiceMinutes = Math.round(
       sessions30d.reduce((sum, s) => sum + (s.duration_seconds ?? 0), 0) / 60,
     );
@@ -196,7 +197,7 @@ export const getCoachAthleteDetail = createServerFn({ method: "GET" })
       parentFirstName: athlete.parent_profiles.first_name,
       parentLastName: athlete.parent_profiles.last_name,
       goals,
-      activePlan,
+      plans,
       activity: {
         sessions: sessions30d.length,
         practiceMinutes,
@@ -233,7 +234,7 @@ export const getCoachAthleteAiSummary = createServerFn({ method: "GET" })
 
     const since = new Date(Date.now() - WINDOW_DAYS * 86400_000).toISOString();
 
-    const [athleteRes, goalsRes, sessionsRes, roomRes] = await Promise.all([
+    const [athleteRes, goalsRes, plansRes, sessionsRes, roomRes] = await Promise.all([
       supabaseAdmin
         .from("athletes")
         .select("first_name")
@@ -245,8 +246,15 @@ export const getCoachAthleteAiSummary = createServerFn({ method: "GET" })
         .eq("athlete_id", data.athleteId)
         .eq("coach_id", coachId),
       supabaseAdmin
+        .from("plans")
+        .select("id, title, status")
+        .eq("coach_id", coachId)
+        .eq("athlete_id", data.athleteId)
+        .eq("kind", "plan")
+        .in("status", ["active", "benched"]),
+      supabaseAdmin
         .from("plan_sessions")
-        .select("state_index, duration_seconds, note, logged_at, parent_id")
+        .select("plan_id, state_index, duration_seconds, note, logged_at, parent_id")
         .eq("athlete_id", data.athleteId)
         .gte("logged_at", since)
         .order("logged_at", { ascending: false })
@@ -260,11 +268,16 @@ export const getCoachAthleteAiSummary = createServerFn({ method: "GET" })
     ]);
     if (athleteRes.error) dbError(athleteRes.error);
     if (goalsRes.error) dbError(goalsRes.error);
+    if (plansRes.error) dbError(plansRes.error);
     if (sessionsRes.error) dbError(sessionsRes.error);
     if (roomRes.error) dbError(roomRes.error);
 
     const firstName = athleteRes.data?.first_name ?? "the athlete";
     const sessions = sessionsRes.data ?? [];
+    const planById = new Map<string, { title: string; status: string }>();
+    for (const p of plansRes.data ?? []) {
+      planById.set(p.id, { title: p.title || "Untitled plan", status: p.status });
+    }
 
     type MsgRow = { sender_role: string; kind: string; body: string; duration_seconds: number | null; created_at: string };
     let messages: MsgRow[] = [];
@@ -301,6 +314,10 @@ export const getCoachAthleteAiSummary = createServerFn({ method: "GET" })
       })
       .join("\n");
 
+    const planLines = (plansRes.data ?? [])
+      .map((p) => `- "${p.title || "Untitled plan"}" (${p.status})`)
+      .join("\n");
+
     const sessionLines = sessions
       .map((s) => {
         const date = new Date(s.logged_at).toISOString().slice(0, 10);
@@ -308,7 +325,9 @@ export const getCoachAthleteAiSummary = createServerFn({ method: "GET" })
         const state = STATE_LABELS[Math.max(0, Math.min(4, s.state_index ?? 0))];
         const who = s.parent_id ? "parent-logged" : "athlete-logged";
         const note = (s.note ?? "").trim();
-        return `- ${date} (${who}, ${mins}m, "${state}")${note ? `: ${note}` : ""}`;
+        const planMeta = s.plan_id ? planById.get(s.plan_id) : null;
+        const planTag = planMeta ? ` plan="${planMeta.title}" (${planMeta.status})` : "";
+        return `- ${date} (${who}, ${mins}m, "${state}"${planTag})${note ? `: ${note}` : ""}`;
       })
       .join("\n");
 
@@ -328,13 +347,16 @@ export const getCoachAthleteAiSummary = createServerFn({ method: "GET" })
 GOALS:
 ${goalLines || "- (no goals on file)"}
 
-PRACTICE LOGS (most recent first):
+PLANS (active and benched):
+${planLines || "- (no plans on file)"}
+
+PRACTICE LOGS (most recent first; each tagged with the plan it was logged against):
 ${sessionLines || "- (none)"}
 
 MESSAGES FROM ATHLETE OR PARENT (most recent first):
 ${messageLines || "- (none)"}
 
-Write a 2-3 sentence summary that captures what ${firstName} has been working on, how it's going, and any signal from messages. Be specific — name moves, themes, or moods you actually see. Don't invent details.
+Write a 2-3 sentence summary that captures what ${firstName} has been working on across all of their plans (active and benched), how it's going, and any signal from messages. Call out specific plans by name when a pattern is clearly tied to one. Be specific — name moves, themes, or moods you actually see. Don't invent details.
 
 Then decide a verdict:
 - "increase": athlete is showing mastery, asking for more, or breezing through
