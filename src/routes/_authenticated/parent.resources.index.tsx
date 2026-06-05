@@ -171,11 +171,7 @@ function ParentResourcesPage() {
                           <p className="truncate text-sm font-bold text-text-primary">
                             {r.title}
                           </p>
-                          {r.description ? (
-                            <p className="mt-0.5 text-[11px] font-bold uppercase tracking-widest text-text-tertiary line-clamp-1">
-                              {r.description}
-                            </p>
-                          ) : null}
+
                         </div>
                       </button>
                     </li>
