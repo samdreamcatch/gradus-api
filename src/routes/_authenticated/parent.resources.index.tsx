@@ -28,6 +28,12 @@ import {
   type ResourceDTO,
 } from "@/lib/parent-resources.functions";
 import { askGradus } from "@/lib/ask-gradus.functions";
+import {
+  listSavedAnswers,
+  saveAnswer,
+  deleteSavedAnswer,
+  type SavedAnswerDTO,
+} from "@/lib/saved-answers.functions";
 
 export const Route = createFileRoute("/_authenticated/parent/resources/")({
   component: ParentResourcesPage,
