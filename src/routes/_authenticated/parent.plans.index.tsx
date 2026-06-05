@@ -73,6 +73,25 @@ function ParentPlansPage() {
     <div className="mx-auto max-w-2xl px-3 pt-6 pb-24">
       <PageTitle>Plans</PageTitle>
 
+      <div className="mt-4">
+        <SegmentedToggle
+          value={tab}
+          onChange={setTab}
+          options={[
+            { key: "plans", label: "Plans" },
+            { key: "goals", label: "Goals" },
+          ]}
+        />
+      </div>
+
+      {tab === "goals" ? (
+        <div className="mt-5 rounded-2xl border border-dashed border-divider bg-card p-8 text-center">
+          <p className="font-hand text-2xl text-text-secondary">
+            Goals coming soon.
+          </p>
+        </div>
+      ) : (
+        <>
       <div className="mt-4 grid grid-cols-3 gap-2">
         <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
           <SelectTrigger className={triggerClass} aria-label="Plan status">
