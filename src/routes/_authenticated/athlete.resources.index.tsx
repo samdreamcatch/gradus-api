@@ -380,15 +380,9 @@ function TrustedAdultDisclosure() {
           like:
         </p>
         <div className="rounded-2xl border border-divider bg-card p-4">
-          <p className="flex items-start gap-2 text-sm italic text-text-secondary">
-            <ShieldCheck
-              className="mt-0.5 h-4 w-4 shrink-0 text-accent-ink"
-              aria-hidden
-            />
-            <span>
-              "Something's been bugging me about practice and I don't really
-              know how to explain it. Can we talk for a few minutes?"
-            </span>
+          <p className="text-sm italic text-text-secondary">
+            "Something's been bugging me about practice and I don't really
+            know how to explain it. Can we talk for a few minutes?"
           </p>
         </div>
         <p className="text-xs text-text-tertiary">
