@@ -1,3 +1,5 @@
+import { useEffect, useRef, useState } from "react";
+import { Pencil } from "lucide-react";
 import { getSport, getSportLevel } from "@/lib/coach-sports";
 import type { ParentGoalSportDTO } from "@/lib/parent-goals.functions";
 import { IntensityLadder, type LadderStop } from "./intensity-ladder";
