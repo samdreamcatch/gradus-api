@@ -149,9 +149,7 @@ function AthletePlansPage() {
       </FilterBar>
 
       {tab === "goals" ? (
-        <div className="mt-5 rounded-2xl border border-dashed border-divider bg-card p-8 text-center">
-          <p className="font-hand text-2xl text-text-secondary">Goals coming soon.</p>
-        </div>
+        <AthleteGoalsView />
       ) : (
         <div className="mt-5 space-y-3">
           {isLoading ? (
