@@ -192,12 +192,12 @@ const HOTLINES: Hotline[] = [
 ];
 
 const COUNTS_ITEMS = [
-  "A coach yells, mocks, or names-calls — at you or someone else.",
+  "Someone yells, mocks, or names-calls — at you or someone else.",
   "Comments about your body, weight, or what you eat that feel off.",
   "Pressure to train hurt, hide an injury, or push through pain.",
-  "Texts, DMs, or photos from an adult in your sport that feel too personal.",
+  "Texts, DMs, or photos from an adult or another athlete in your sport that feel too personal.",
   "Touching that wasn't needed for the move, or that you didn't want.",
-  "Being alone with an adult in ways that feel uncomfortable.",
+  "Being alone with an adult or another athlete in ways that feel uncomfortable.",
   "Anything that makes you feel scared, small, or like you can't say no.",
 ];
 
