@@ -8,6 +8,14 @@ import ReactMarkdown from "react-markdown";
 import { ParentBottomNav } from "@/components/parent/bottom-nav";
 import { PageTitle } from "@/components/page-title";
 import { SegmentedToggle } from "@/components/plans/segmented-toggle";
+import { FilterBar } from "@/components/plans/filter-bar";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,7 +28,6 @@ import {
   type ResourceDTO,
 } from "@/lib/parent-resources.functions";
 import { askGradus } from "@/lib/ask-gradus.functions";
-import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/parent/resources/")({
   component: ParentResourcesPage,
@@ -72,11 +79,38 @@ function ParentResourcesPage() {
       <PageTitle>Resources</PageTitle>
 
       {sports.length > 0 ? (
-        <SportFilterChipsParent
-          sports={sports}
-          selected={activeSport}
-          onSelect={setSelectedSport}
-        />
+        <FilterBar className="mt-4">
+          <SegmentedToggle
+            value={view}
+            onChange={setView}
+            options={[
+              { key: "library", label: "Sport library" },
+              { key: "ask", label: "Ask Gradus" },
+            ]}
+          />
+          {sports.length > 1 ? (
+            <div className="mt-2.5">
+              <Select
+                value={activeSport ?? undefined}
+                onValueChange={(v) => setSelectedSport(v)}
+              >
+                <SelectTrigger
+                  className="h-8 w-full rounded-full border-divider bg-card px-3 text-xs font-bold text-text-primary shadow-none"
+                  aria-label="Sport"
+                >
+                  <SelectValue placeholder="Select sport" />
+                </SelectTrigger>
+                <SelectContent>
+                  {sports.map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {sportLabel(s)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ) : null}
+        </FilterBar>
       ) : null}
 
       {isLoading ? (
@@ -89,17 +123,6 @@ function ParentResourcesPage() {
         </div>
       ) : (
         <>
-          <div className="mt-6">
-            <SegmentedToggle
-              value={view}
-              onChange={setView}
-              options={[
-                { key: "library", label: "Sport library" },
-                { key: "ask", label: "Ask Gradus" },
-              ]}
-            />
-          </div>
-
           {view === "ask" ? (
             <AskGradusCard sport={activeSport!} />
           ) : (
@@ -158,50 +181,6 @@ function ParentResourcesPage() {
       />
 
       <ParentBottomNav />
-    </div>
-  );
-}
-
-function SportFilterChipsParent({
-  sports,
-  selected,
-  onSelect,
-}: {
-  sports: string[];
-  selected: string | null;
-  onSelect: (sport: string | null) => void;
-}) {
-  if (sports.length === 1) {
-    return (
-      <div className="mt-4">
-        <span className="inline-block rounded-pill border border-divider bg-card px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-accent-ink">
-          {sportLabel(sports[0])}
-        </span>
-      </div>
-    );
-  }
-  // Library is sport-scoped by definition — no "All" option here.
-  const active = selected ?? sports[0];
-  return (
-    <div className="mt-4 flex flex-wrap gap-2">
-      {sports.map((s) => {
-        const isActive = active === s;
-        return (
-          <button
-            key={s}
-            type="button"
-            onClick={() => onSelect(s)}
-            className={cn(
-              "rounded-pill border px-3 py-1 text-[11px] font-bold uppercase tracking-widest transition",
-              isActive
-                ? "border-accent bg-accent text-accent-foreground"
-                : "border-divider bg-card text-text-secondary hover:text-text-primary",
-            )}
-          >
-            {sportLabel(s)}
-          </button>
-        );
-      })}
     </div>
   );
 }
