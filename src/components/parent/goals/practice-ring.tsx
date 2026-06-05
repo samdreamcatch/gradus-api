@@ -8,6 +8,14 @@ const TONE: Record<GoalStatus, string> = {
   unset: "text-muted-foreground",
 };
 
+const STROKE_COLOR: Record<GoalStatus, string> = {
+  building: "var(--secondary-accent)",
+  onTrack: "var(--accent)",
+  behind: "var(--attention)",
+  over: "var(--destructive-ink)",
+  unset: "var(--text-disabled)",
+};
+
 /** Waking hours per week, assuming 8 hours of sleep per night. */
 export const WAKING_HOURS_PER_WEEK = 16 * 7;
 
@@ -60,8 +68,8 @@ export function PracticeRing({ hours, targetLower, targetUpper, status }: Props)
         cy={cy}
         r={r}
         fill="none"
-        className="stroke-divider"
         strokeWidth={stroke}
+        stroke="var(--divider)"
       />
       {/* Filled arc — logged hours */}
       {fillPct > 0 && (
@@ -71,7 +79,7 @@ export function PracticeRing({ hours, targetLower, targetUpper, status }: Props)
           r={r}
           fill="none"
           className={TONE[status]}
-          stroke="currentColor"
+          stroke={STROKE_COLOR[status]}
           strokeWidth={stroke}
           strokeLinecap="round"
           strokeDasharray={`${dash} ${c}`}
@@ -87,9 +95,9 @@ export function PracticeRing({ hours, targetLower, targetUpper, status }: Props)
             y1={p.y1}
             x2={p.x2}
             y2={p.y2}
-            className="stroke-text-primary"
             strokeWidth={2}
             strokeLinecap="round"
+            stroke="var(--text-primary)"
           />
         );
       })()}
@@ -101,9 +109,9 @@ export function PracticeRing({ hours, targetLower, targetUpper, status }: Props)
             y1={p.y1}
             x2={p.x2}
             y2={p.y2}
-            className="stroke-text-primary"
             strokeWidth={2}
             strokeLinecap="round"
+            stroke="var(--text-primary)"
           />
         );
       })()}
@@ -112,7 +120,8 @@ export function PracticeRing({ hours, targetLower, targetUpper, status }: Props)
         y="46%"
         textAnchor="middle"
         dominantBaseline="middle"
-        className="fill-text-primary text-[18px] font-bold"
+        className="text-[18px] font-bold"
+        fill="var(--text-primary)"
       >
         {hours.toFixed(1)}
       </text>
@@ -121,7 +130,8 @@ export function PracticeRing({ hours, targetLower, targetUpper, status }: Props)
         y="64%"
         textAnchor="middle"
         dominantBaseline="middle"
-        className="fill-text-secondary text-[9px] font-semibold uppercase tracking-wide"
+        className="text-[9px] font-semibold uppercase tracking-wide"
+        fill="var(--text-secondary)"
       >
         hr / wk
       </text>
