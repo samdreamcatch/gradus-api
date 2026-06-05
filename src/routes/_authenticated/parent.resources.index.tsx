@@ -89,75 +89,66 @@ function ParentResourcesPage() {
         </div>
       ) : (
         <>
-          <AskGradusCard sport={activeSport!} />
+          <div className="mt-6">
+            <SegmentedToggle
+              value={view}
+              onChange={setView}
+              options={[
+                { key: "library", label: "Sport library" },
+                { key: "ask", label: "Ask Gradus" },
+              ]}
+            />
+          </div>
 
-          <section className="mt-6">
-            <button
-              type="button"
-              onClick={() => setLibraryOpen((v) => !v)}
-              className="flex w-full items-center justify-between px-1 py-2 text-left"
-              aria-expanded={libraryOpen}
-            >
-              <p className="font-sans text-xs font-bold uppercase tracking-widest text-text-secondary">
-                Sport Library
-              </p>
-              <ChevronDown
-                className={cn(
-                  "h-4 w-4 text-text-secondary transition-transform",
-                  libraryOpen ? "" : "-rotate-90",
-                )}
-                aria-hidden
-              />
-            </button>
-
-            {libraryOpen ? (
-              <div className="mt-2 space-y-3">
-                <div className="relative">
-                  <Search
-                    className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-tertiary"
-                    aria-hidden
-                  />
-                  <Input
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder={`Search ${sportLabel(activeSport!).toLowerCase()} library`}
-                    className="h-11 rounded-2xl border-divider bg-card pl-9 text-sm"
-                  />
-                </div>
-
-                {filtered.length === 0 ? (
-                  <div className="rounded-2xl border border-dashed border-divider bg-card p-8 text-center">
-                    <p className="font-hand text-2xl text-text-secondary">
-                      {search
-                        ? "No resources match that search."
-                        : `No ${sportLabel(activeSport!).toLowerCase()} resources yet.`}
-                    </p>
-                  </div>
-                ) : (
-                  <ul className="space-y-3">
-                    {filtered.map((r) => (
-                      <li key={r.id}>
-                        <button
-                          type="button"
-                          onClick={() => setOpenResource(r)}
-                          className="w-full rounded-2xl border border-divider bg-card p-4 text-left transition hover:border-accent/40 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-                        >
-                          <h3 className="text-base font-semibold text-text-primary">
-                            {r.title}
-                          </h3>
-                          {r.description ? (
-                            <p className="mt-1 text-sm text-text-secondary">
-                              {r.description}
-                            </p>
-                          ) : null}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
+          {view === "ask" ? (
+            <AskGradusCard sport={activeSport!} />
+          ) : (
+            <section className="mt-5 space-y-3">
+              <div className="relative">
+                <Search
+                  className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-tertiary"
+                  aria-hidden
+                />
+                <Input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder={`Search ${sportLabel(activeSport!).toLowerCase()} library`}
+                  className="h-11 rounded-2xl border-divider bg-card pl-9 text-sm"
+                />
               </div>
-            ) : null}
-          </section>
+
+              {filtered.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-divider bg-card p-8 text-center">
+                  <p className="font-hand text-2xl text-text-secondary">
+                    {search
+                      ? "No resources match that search."
+                      : `No ${sportLabel(activeSport!).toLowerCase()} resources yet.`}
+                  </p>
+                </div>
+              ) : (
+                <ul className="space-y-3">
+                  {filtered.map((r) => (
+                    <li key={r.id}>
+                      <button
+                        type="button"
+                        onClick={() => setOpenResource(r)}
+                        className="w-full rounded-2xl border border-divider bg-card p-4 text-left transition hover:border-accent/40 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                      >
+                        <h3 className="text-base font-semibold text-text-primary">
+                          {r.title}
+                        </h3>
+                        {r.description ? (
+                          <p className="mt-1 text-sm text-text-secondary">
+                            {r.description}
+                          </p>
+                        ) : null}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          )}
         </>
       )}
 
