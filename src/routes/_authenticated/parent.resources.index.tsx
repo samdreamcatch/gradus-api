@@ -7,7 +7,7 @@ import ReactMarkdown from "react-markdown";
 
 import { ParentBottomNav } from "@/components/parent/bottom-nav";
 import { PageTitle } from "@/components/page-title";
-import { SportFilterChips } from "@/components/coach/sport-filter-chips";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
