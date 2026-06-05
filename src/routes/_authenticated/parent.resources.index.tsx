@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { Loader2, Search, Sparkles } from "lucide-react";
-import ReactMarkdown from "react-markdown";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { BookmarkPlus, Check, Loader2, Search, Sparkles, Trash2 } from "lucide-react";
+import { AnswerMarkdown } from "@/components/parent/answer-markdown";
 
 import { ParentBottomNav } from "@/components/parent/bottom-nav";
 import { PageTitle } from "@/components/page-title";
