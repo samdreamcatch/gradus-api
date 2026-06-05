@@ -15,7 +15,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+
 import {
   getPendingLessonWrapUps,
   recordLessonWrapUp,
@@ -23,6 +23,8 @@ import {
   type WrapUpAction,
 } from "@/lib/lesson-wrap-ups.functions";
 import { createPlan } from "@/lib/plans.functions";
+import type { WrapUpAction as _WrapUpAction } from "@/lib/lesson-wrap-ups.functions";
+void (null as unknown as _WrapUpAction);
 
 function nowParts() {
   const d = new Date();
