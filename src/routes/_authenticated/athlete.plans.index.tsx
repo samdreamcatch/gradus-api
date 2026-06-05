@@ -15,6 +15,8 @@ import {
 import { SegmentedToggle } from "@/components/plans/segmented-toggle";
 import { FilterBar } from "@/components/plans/filter-bar";
 import { listAthletePlans } from "@/lib/athlete-plans.functions";
+import { getAthleteGoalsDashboard } from "@/lib/athlete-goals.functions";
+import { SportGoalCard } from "@/components/parent/goals/sport-goal-card";
 
 export const Route = createFileRoute("/_authenticated/athlete/plans/")({
   component: AthletePlansPage,
