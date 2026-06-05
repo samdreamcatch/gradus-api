@@ -15,6 +15,8 @@ import {
 import { SegmentedToggle } from "@/components/plans/segmented-toggle";
 import { FilterBar } from "@/components/plans/filter-bar";
 import { listAthletePlans } from "@/lib/athlete-plans.functions";
+import { getAthleteGoalsDashboard } from "@/lib/athlete-goals.functions";
+import { SportGoalCard } from "@/components/parent/goals/sport-goal-card";
 
 export const Route = createFileRoute("/_authenticated/athlete/plans/")({
   component: AthletePlansPage,
@@ -147,9 +149,7 @@ function AthletePlansPage() {
       </FilterBar>
 
       {tab === "goals" ? (
-        <div className="mt-5 rounded-2xl border border-dashed border-divider bg-card p-8 text-center">
-          <p className="font-hand text-2xl text-text-secondary">Goals coming soon.</p>
-        </div>
+        <AthleteGoalsView />
       ) : (
         <div className="mt-5 space-y-3">
           {isLoading ? (
@@ -188,6 +188,38 @@ function EmptyCard({ status }: { status: StatusFilter }) {
           ? "No active plans yet — your coach will share one here."
           : "No benched plans."}
       </p>
+    </div>
+  );
+}
+
+function AthleteGoalsView() {
+  const fetchDashboard = useServerFn(getAthleteGoalsDashboard);
+  const { data, isLoading } = useQuery({
+    queryKey: ["athlete-goals-dashboard"],
+    queryFn: () => fetchDashboard(),
+  });
+
+  if (isLoading) {
+    return (
+      <p className="mt-5 py-5 text-center text-sm text-text-secondary">
+        Loading goals…
+      </p>
+    );
+  }
+  if (!data || data.sports.length === 0) {
+    return (
+      <div className="mt-5 rounded-2xl border border-dashed border-divider bg-card p-8 text-center">
+        <p className="font-hand text-2xl text-text-secondary">
+          No goals set yet.
+        </p>
+      </div>
+    );
+  }
+  return (
+    <div className="mt-5 space-y-4">
+      {data.sports.map((g) => (
+        <SportGoalCard key={g.sport} goal={g} />
+      ))}
     </div>
   );
 }
