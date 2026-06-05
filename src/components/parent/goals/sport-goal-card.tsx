@@ -56,7 +56,7 @@ export function SportGoalCard({ goal }: { goal: ParentGoalSportDTO }) {
   const gi = levels.findIndex((l) => l.key === goal.seasonGoalKey);
   const distance = ci >= 0 && gi >= 0 ? Math.abs(gi - ci) : null;
 
-  const scaleMax = upper != null ? Math.max(upper * 1.25, goal.loggedHoursPerWeek) : 1;
+  
 
   const bandText =
     lower != null && upper != null
