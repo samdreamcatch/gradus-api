@@ -14,8 +14,6 @@ export function PreLessonBriefing({
   lessonDate: string; // YYYY-MM-DD
   startMinute: number;
 }) {
-  const qc = useQueryClient();
-  const [refreshing, setRefreshing] = useState(false);
   const queryKey = ["pre-lesson-briefing", athleteId, lessonDate];
 
   const { data, isLoading, isError, error } = useQuery({
@@ -24,17 +22,6 @@ export function PreLessonBriefing({
     staleTime: 5 * 60_000,
   });
 
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    try {
-      const fresh = await getPreLessonBriefing({
-        data: { athleteId, lessonDate, refresh: true },
-      });
-      qc.setQueryData(queryKey, fresh);
-    } finally {
-      setRefreshing(false);
-    }
-  };
 
   const time = formatTime(startMinute);
 
