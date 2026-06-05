@@ -136,7 +136,7 @@ function AthleteResourcesPage() {
           ) : view === "saved" ? (
             <SavedAnswersList sport={activeSport!} />
           ) : (
-            <SafeSportPanel />)
+            <SafeSportPanel />
           )}
         </>
       )}
