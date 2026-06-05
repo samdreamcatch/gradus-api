@@ -1,4 +1,6 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { ChevronDown } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2, RefreshCw, Sparkles, TrendingUp, Minus, TrendingDown } from "lucide-react";
@@ -216,23 +218,7 @@ function AthleteDetailBody({ athleteId }: { athleteId: string }) {
         {d.plans.length === 0 ? (
           <EmptyLine>No active or benched plans for {d.firstName} yet.</EmptyLine>
         ) : (
-          <div className="mt-2 space-y-3">
-            {d.plans.map((p) => (
-              <div key={p.planId}>
-                <div className="mb-1 text-[10px] font-black uppercase tracking-widest text-text-tertiary">
-                  {p.status === "active" ? "Active" : "Benched"}
-                </div>
-                <PlanCard
-                  to="/coach/plans/$planId"
-                  planId={p.planId}
-                  title={p.title}
-                  sessionsByState={p.sessionsByState}
-                  sessionsTotal={p.sessionsTotal}
-                  edgeTone={p.status === "active" ? "active" : "muted"}
-                />
-              </div>
-            ))}
-          </div>
+          <PlansList plans={d.plans} />
         )}
       </section>
     </div>
@@ -244,6 +230,71 @@ function SectionHeading({ children }: { children: React.ReactNode }) {
     <h3 className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
       {children}
     </h3>
+  );
+}
+
+type PlanRow = {
+  planId: string;
+  title: string;
+  status: string;
+  sessionsByState: React.ComponentProps<typeof PlanCard>["sessionsByState"];
+  sessionsTotal: number;
+};
+
+function PlanRowCard({ p }: { p: PlanRow }) {
+  return (
+    <PlanCard
+      to="/coach/plans/$planId"
+      planId={p.planId}
+      title={p.title}
+      sessionsByState={p.sessionsByState}
+      sessionsTotal={p.sessionsTotal}
+      edgeTone={p.status === "active" ? "active" : "muted"}
+    />
+  );
+}
+
+function PlansList({ plans }: { plans: PlanRow[] }) {
+  const active = plans.filter((p) => p.status === "active");
+  const benched = plans.filter((p) => p.status !== "active");
+  const [benchedOpen, setBenchedOpen] = useState(false);
+
+  return (
+    <div className="mt-2 space-y-4">
+      {active.length > 0 ? (
+        <div className="space-y-2">
+          <div className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
+            Active
+          </div>
+          <div className="space-y-3">
+            {active.map((p) => (
+              <PlanRowCard key={p.planId} p={p} />
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {benched.length > 0 ? (
+        <Collapsible open={benchedOpen} onOpenChange={setBenchedOpen}>
+          <CollapsibleTrigger className="flex w-full items-center justify-between text-left">
+            <span className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
+              Benched ({benched.length})
+            </span>
+            <ChevronDown
+              className={cn(
+                "h-3.5 w-3.5 text-text-tertiary transition-transform",
+                benchedOpen && "rotate-180",
+              )}
+            />
+          </CollapsibleTrigger>
+          <CollapsibleContent className="mt-2 space-y-3">
+            {benched.map((p) => (
+              <PlanRowCard key={p.planId} p={p} />
+            ))}
+          </CollapsibleContent>
+        </Collapsible>
+      ) : null}
+    </div>
   );
 }
 
