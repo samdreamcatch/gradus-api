@@ -232,9 +232,9 @@ function AthleteGoalsView() {
         <SportGoalCard
           key={g.sport}
           goal={g}
-          onSaveLongTermGoal={(value) =>
-            mutation.mutateAsync({ sport: g.sport, longTermGoal: value })
-          }
+          onSaveLongTermGoal={async (value) => {
+            await mutation.mutateAsync({ sport: g.sport, longTermGoal: value });
+          }}
         />
       ))}
     </div>
