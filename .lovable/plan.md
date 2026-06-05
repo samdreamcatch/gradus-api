@@ -1,17 +1,24 @@
-## Changes
+## Option A — drop tables from Realtime, remove unused read-receipt wiring
 
-### 1. Sanitize AI gateway error in `src/lib/coach-athlete-detail.functions.ts`
-In `getCoachAthleteAiSummary`, the `catch` block currently re-throws the raw AI provider error message to the browser. Replace with:
-- `console.error("[AI summary]", err)` — keeps full detail in server logs
-- `throw new Error("Could not generate summary. Please try again later.")` — generic message to the client
+### 1. Migration: remove tables from the Realtime publication
+```sql
+ALTER PUBLICATION supabase_realtime DROP TABLE public.message_rooms;
+ALTER PUBLICATION supabase_realtime DROP TABLE public.message_reads;
+```
+Closes both error-level findings. The `messages` table stays in the publication (room-scoped channel still works).
 
-### 2. Mark the `message_rooms` scanner finding as ignored
-Using `security--manage_security_finding` with operation `ignore`, justification: "All writes to `message_rooms` go through `createServerFn` handlers using `supabaseAdmin` (service role) and are gated by `requireSupabaseAuth`. No client code touches the table directly; verified all 14 references live in `*.server.ts` / `*.functions.ts`. Missing client INSERT/UPDATE/DELETE policies are intentional — the Data API correctly denies any direct client write."
+### 2. Remove the now-dead `message_reads` Realtime subscriptions
+You don't want read receipts at all, so the listeners are wasted websocket traffic. Strip them out:
 
-### 3. Update security memory
-Add a short note via `security--update_memory` documenting:
-- App access model: coach/athlete/parent roles with RLS on user-facing tables
-- `message_rooms` is intentionally server-managed only (no client-side INSERT/UPDATE/DELETE policies needed)
-- Server functions return generic error messages; raw provider errors stay in server logs
+- `src/hooks/use-messages-unread.ts` — drop the second `.on("postgres_changes", { ... table: "message_reads" }, ...)` handler.
+- `src/components/messages/room-view.tsx` — drop the second `.on("postgres_changes", { ... table: "message_reads" }, ...)` handler.
 
-No new files, no migrations.
+The `messages` listener stays in both files (that's how the inbox badge and the open conversation refresh in real time).
+
+### 3. Leave `markRead` / `message_reads` table alone
+The table is still useful for the unread-count query itself (server-side counts of "messages I haven't read yet"). Only the Realtime broadcast goes away. Nothing about how reads are written or counted changes.
+
+### Files changed
+- new migration
+- `src/hooks/use-messages-unread.ts`
+- `src/components/messages/room-view.tsx`
