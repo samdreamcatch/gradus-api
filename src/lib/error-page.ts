@@ -33,46 +33,52 @@ export function renderErrorPage(): string {
         -webkit-font-smoothing: antialiased;
       }
       .wrap { width: 100%; max-width: 28rem; text-align: center; }
-      .ball-stage {
+      .skater-stage {
         position: relative;
-        height: 96px;
+        height: 140px;
+        width: 180px;
         margin: 0 auto 1.25rem;
-        width: 80px;
       }
-      .ball {
-        position: absolute;
-        left: 50%;
-        bottom: 14px;
-        width: 56px;
-        height: 56px;
-        margin-left: -28px;
-        animation: bounce 1.1s cubic-bezier(.5,0,.5,1) infinite;
+      .skater { width: 180px; height: 140px; display: block; }
+      .ice { stroke: #9CA3AF; stroke-width: 1.5; stroke-linecap: round; }
+      .figure {
+        transform-origin: 90px 118px;
+        transform-box: fill-box;
+        animation: skater-fall 3.4s cubic-bezier(.6,.05,.3,1) infinite;
       }
-      .shadow {
-        position: absolute;
-        left: 50%;
-        bottom: 6px;
-        width: 56px;
-        height: 10px;
-        margin-left: -28px;
-        background: radial-gradient(ellipse at center, rgba(31,41,55,0.28) 0%, rgba(31,41,55,0) 70%);
-        border-radius: 50%;
-        animation: shadow 1.1s cubic-bezier(.5,0,.5,1) infinite;
-        transform-origin: center;
+      .arm-l { transform-origin: 90px 78px; transform-box: fill-box; animation: arm-l 3.4s ease-in-out infinite; }
+      .arm-r { transform-origin: 90px 78px; transform-box: fill-box; animation: arm-r 3.4s ease-in-out infinite; }
+      .stars { opacity: 0; animation: stars 3.4s ease-out infinite; }
+
+      @keyframes skater-fall {
+        0%   { transform: rotate(0deg)   translateY(0); }
+        35%  { transform: rotate(-4deg)  translateY(0); }
+        45%  { transform: rotate(10deg)  translateY(0); }
+        58%  { transform: rotate(82deg)  translateY(6px); }
+        78%  { transform: rotate(82deg)  translateY(6px); }
+        92%  { transform: rotate(0deg)   translateY(0); }
+        100% { transform: rotate(0deg)   translateY(0); }
       }
-      @keyframes bounce {
-        0%   { transform: translateY(-60px); }
-        50%  { transform: translateY(0); }
-        100% { transform: translateY(-60px); }
+      @keyframes arm-l {
+        0%, 30% { transform: rotate(0deg); }
+        40%     { transform: rotate(-55deg); }
+        50%     { transform: rotate(30deg); }
+        58%, 100% { transform: rotate(0deg); }
       }
-      @keyframes shadow {
-        0%   { transform: scale(0.55); opacity: 0.4; }
-        50%  { transform: scale(1);    opacity: 0.9; }
-        100% { transform: scale(0.55); opacity: 0.4; }
+      @keyframes arm-r {
+        0%, 30% { transform: rotate(0deg); }
+        40%     { transform: rotate(55deg); }
+        50%     { transform: rotate(-30deg); }
+        58%, 100% { transform: rotate(0deg); }
+      }
+      @keyframes stars {
+        0%, 56%   { opacity: 0; transform: translateY(0); }
+        60%       { opacity: 1; transform: translateY(-2px); }
+        75%       { opacity: 0.6; transform: translateY(-6px); }
+        85%, 100% { opacity: 0; transform: translateY(-10px); }
       }
       @media (prefers-reduced-motion: reduce) {
-        .ball, .shadow { animation: none; }
-        .ball { transform: translateY(0); }
+        .figure, .arm-l, .arm-r, .stars { animation: none; }
       }
       .card {
         background: #FFFFFF;
