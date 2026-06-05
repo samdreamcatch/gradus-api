@@ -9,12 +9,10 @@ export function SegmentedToggle<T extends string>({
   value,
   onChange,
   options,
-  tone = "accent",
 }: {
   value: T;
   onChange: (v: T) => void;
   options: SegmentedToggleOption<T>[];
-  tone?: "accent" | "muted";
 }) {
   return (
     <div className="flex rounded-lg border border-foreground/15 bg-popover p-1 shadow-sm">
@@ -26,9 +24,7 @@ export function SegmentedToggle<T extends string>({
           className={cn(
             "flex-1 rounded-md py-1.5 text-sm font-bold transition",
             value === t.key
-              ? tone === "muted"
-                ? "bg-card text-text-primary shadow-sm"
-                : "bg-accent text-accent-foreground shadow-sm"
+              ? "bg-accent text-accent-foreground shadow-sm"
               : "text-text-secondary hover:text-text-primary",
           )}
         >
