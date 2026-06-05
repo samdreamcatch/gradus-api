@@ -165,6 +165,8 @@ function ParentPlansPage() {
           ))
         )}
       </div>
+        </>
+      )}
 
       <ParentBottomNav />
     </div>
