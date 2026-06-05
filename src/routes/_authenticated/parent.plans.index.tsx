@@ -15,7 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { listParentPlans } from "@/lib/parent-plans.functions";
-import { GoalsDashboard } from "@/components/parent/goals/goals-dashboard";
+import { GoalsDashboard, useGoalsDashboard } from "@/components/parent/goals/goals-dashboard";
 
 export const Route = createFileRoute("/_authenticated/parent/plans/")({
   component: ParentPlansPage,
