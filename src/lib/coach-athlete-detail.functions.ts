@@ -347,13 +347,16 @@ export const getCoachAthleteAiSummary = createServerFn({ method: "GET" })
 GOALS:
 ${goalLines || "- (no goals on file)"}
 
-PRACTICE LOGS (most recent first):
+PLANS (active and benched):
+${planLines || "- (no plans on file)"}
+
+PRACTICE LOGS (most recent first; each tagged with the plan it was logged against):
 ${sessionLines || "- (none)"}
 
 MESSAGES FROM ATHLETE OR PARENT (most recent first):
 ${messageLines || "- (none)"}
 
-Write a 2-3 sentence summary that captures what ${firstName} has been working on, how it's going, and any signal from messages. Be specific — name moves, themes, or moods you actually see. Don't invent details.
+Write a 2-3 sentence summary that captures what ${firstName} has been working on across all of their plans (active and benched), how it's going, and any signal from messages. Call out specific plans by name when a pattern is clearly tied to one. Be specific — name moves, themes, or moods you actually see. Don't invent details.
 
 Then decide a verdict:
 - "increase": athlete is showing mastery, asking for more, or breezing through
