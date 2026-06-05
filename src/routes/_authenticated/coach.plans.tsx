@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/select";
 import { getSport } from "@/lib/coach-sports";
 import { SegmentedToggle } from "@/components/plans/segmented-toggle";
+import { FilterBar } from "@/components/plans/filter-bar";
 
 export const Route = createFileRoute("/_authenticated/coach/plans")({
   codeSplitGroupings: [["component"]],
@@ -74,26 +75,28 @@ function PlansPage() {
     <>
       <div className="mx-auto flex min-h-dvh max-w-3xl flex-col px-3 pt-4 pb-24">
         <header className="sticky top-0 z-20 -mx-3 bg-background/90 px-3 pb-2 pt-1 backdrop-blur supports-[backdrop-filter]:bg-background/70">
-          <SegmentedToggle
-            value={tab}
-            onChange={setTab}
-            options={[
-              { key: "plans", label: "Plans" },
-              { key: "library", label: "Move library" },
-            ]}
-          />
-          {tab === "plans" ? (
-            <PlansFilterStrip
-              filter={planFilter}
-              onFilter={setPlanFilter}
-              athleteId={athleteId}
-              onAthlete={setAthleteId}
-              sport={sport}
-              onSport={setSport}
+          <FilterBar>
+            <SegmentedToggle
+              value={tab}
+              onChange={setTab}
+              options={[
+                { key: "plans", label: "Plans" },
+                { key: "library", label: "Move library" },
+              ]}
             />
-          ) : (
-            <LibrarySearchStrip query={libraryQuery} onQuery={setLibraryQuery} />
-          )}
+            {tab === "plans" ? (
+              <PlansFilterStrip
+                filter={planFilter}
+                onFilter={setPlanFilter}
+                athleteId={athleteId}
+                onAthlete={setAthleteId}
+                sport={sport}
+                onSport={setSport}
+              />
+            ) : (
+              <LibrarySearchStrip query={libraryQuery} onQuery={setLibraryQuery} />
+            )}
+          </FilterBar>
         </header>
 
         <main className="flex-1 pt-2">
@@ -179,7 +182,7 @@ function PlansFilterStrip({
     "h-8 w-full rounded-full border border-foreground/15 bg-popover px-3 text-xs font-bold text-text-primary shadow-sm";
 
   return (
-    <div className="mt-3 grid grid-cols-3 gap-2">
+    <div className="mt-2.5 grid grid-cols-3 gap-2">
       <Select value={filter} onValueChange={(v) => onFilter(v as PlanFilter)}>
         <SelectTrigger className={triggerClass} aria-label="Plan type">
           <SelectValue />

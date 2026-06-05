@@ -6,6 +6,7 @@ import { ParentBottomNav } from "@/components/parent/bottom-nav";
 import { PlanCard } from "@/components/plans/plan-card";
 import { PageTitle } from "@/components/page-title";
 import { SegmentedToggle } from "@/components/plans/segmented-toggle";
+import { FilterBar } from "@/components/plans/filter-bar";
 import {
   Select,
   SelectContent,
@@ -73,7 +74,7 @@ function ParentPlansPage() {
     <div className="mx-auto max-w-2xl px-3 pt-6 pb-24">
       <PageTitle>Plans</PageTitle>
 
-      <div className="mt-4 rounded-[28px] bg-[#DCEAF5] p-2.5 shadow-sm dark:bg-[#1c2a3a]">
+      <FilterBar className="mt-4">
         <SegmentedToggle
           value={tab}
           onChange={setTab}
@@ -132,7 +133,7 @@ function ParentPlansPage() {
             </Select>
           </div>
         ) : null}
-      </div>
+      </FilterBar>
       {tab === "goals" ? (
         <div className="mt-5 rounded-2xl border border-dashed border-divider bg-card p-8 text-center">
           <p className="font-hand text-2xl text-text-secondary">Goals coming soon.</p>
