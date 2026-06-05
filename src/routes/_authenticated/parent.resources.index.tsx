@@ -188,12 +188,29 @@ function SportFilterChipsParent({
       </div>
     );
   }
+  // Library is sport-scoped by definition — no "All" option here.
+  const active = selected ?? sports[0];
   return (
-    <SportFilterChips
-      sports={sports}
-      selected={selected}
-      onSelect={onSelect}
-    />
+    <div className="mt-4 flex flex-wrap gap-2">
+      {sports.map((s) => {
+        const isActive = active === s;
+        return (
+          <button
+            key={s}
+            type="button"
+            onClick={() => onSelect(s)}
+            className={cn(
+              "rounded-pill border px-3 py-1 text-[11px] font-bold uppercase tracking-widest transition",
+              isActive
+                ? "border-accent bg-accent text-accent-foreground"
+                : "border-divider bg-card text-text-secondary hover:text-text-primary",
+            )}
+          >
+            {sportLabel(s)}
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
@@ -219,17 +236,17 @@ function AskGradusCard({ sport }: { sport: string }) {
 
   return (
     <section className="mt-6">
-      <h2 className="px-1 text-xs font-bold uppercase tracking-widest text-text-secondary">
+      <p className="px-1 font-sans text-xs font-bold uppercase tracking-widest text-text-secondary">
         Ask Gradus
-      </h2>
+      </p>
 
-      <div className="mt-2 rounded-[26px] bg-gradient-to-br from-secondary-accent via-accent to-attention p-[2px] shadow-sm">
-        <div className="rounded-[24px] bg-popover p-4">
+      <div className="mt-2 rounded-xl bg-linear-to-br from-secondary-accent via-accent to-secondary-accent p-[2px] shadow-sm">
+        <div className="rounded-[26px] bg-card p-4">
           <Textarea
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
             placeholder={`Ask about a move, drill, or competition in ${sportLabel(sport).toLowerCase()}`}
-            className="min-h-[88px] resize-none border-divider bg-card text-sm"
+            className="min-h-[88px] resize-none border-divider bg-transparent text-sm"
             onKeyDown={(e) => {
               if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
                 e.preventDefault();
@@ -242,7 +259,7 @@ function AskGradusCard({ sport }: { sport: string }) {
               type="button"
               onClick={onSubmit}
               disabled={!question.trim() || mutation.isPending}
-              className="rounded-full bg-accent text-accent-foreground hover:bg-accent/90"
+              className="rounded-full"
             >
               {mutation.isPending ? (
                 <>
@@ -278,7 +295,7 @@ function AskGradusCard({ sport }: { sport: string }) {
                 mutation.reset();
                 setQuestion("");
               }}
-              className="text-[11px] font-bold uppercase tracking-widest text-text-secondary hover:text-text-primary"
+              className="font-sans text-[11px] font-bold uppercase tracking-widest text-text-secondary hover:text-text-primary"
             >
               New question
             </button>
