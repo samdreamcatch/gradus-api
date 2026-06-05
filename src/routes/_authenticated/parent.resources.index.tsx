@@ -63,7 +63,7 @@ function ParentResourcesPage() {
   const [selectedSport, setSelectedSport] = useState<string | null>(null);
   const activeSport = selectedSport ?? sports[0] ?? null;
 
-  const [view, setView] = useState<"ask" | "library">("library");
+  const [view, setView] = useState<"ask" | "library" | "saved">("library");
   const [search, setSearch] = useState("");
   const [openResource, setOpenResource] = useState<ResourceDTO | null>(null);
 
