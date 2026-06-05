@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { listParentPlans } from "@/lib/parent-plans.functions";
+import { GoalsDashboard } from "@/components/parent/goals/goals-dashboard";
 
 export const Route = createFileRoute("/_authenticated/parent/plans/")({
   component: ParentPlansPage,
@@ -135,9 +136,7 @@ function ParentPlansPage() {
         ) : null}
       </FilterBar>
       {tab === "goals" ? (
-        <div className="mt-5 rounded-2xl border border-dashed border-divider bg-card p-8 text-center">
-          <p className="font-hand text-2xl text-text-secondary">Goals coming soon.</p>
-        </div>
+        <GoalsDashboard />
       ) : (
         <div className="mt-5 space-y-3">
           {isLoading ? (
