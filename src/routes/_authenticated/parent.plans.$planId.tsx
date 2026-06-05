@@ -153,12 +153,18 @@ function MoveCard({
   onToggle: () => void;
 }) {
   const unit = move.targetKind === "mins" ? "min" : "reps";
-  const [shown, setShown] = useState<{ cue: boolean; why: boolean }>({
-    cue: false,
-    why: false,
-  });
-  const show = (kind: "cue" | "why") => setShown((s) => ({ ...s, [kind]: true }));
-  const hide = (kind: "cue" | "why") => setShown((s) => ({ ...s, [kind]: false }));
+  const hasCue = Boolean(move.cue);
+  const hasDescription = Boolean(move.description);
+  const hasBoth = hasCue && hasDescription;
+  const [view, setView] = useState<"how" | "what">(hasCue ? "how" : "what");
+  const [whyShown, setWhyShown] = useState(false);
+
+  const bodyText =
+    view === "how" && hasCue
+      ? move.cue
+      : hasDescription
+        ? move.description
+        : move.cue;
 
   return (
     <div
@@ -192,49 +198,77 @@ function MoveCard({
 
       {expanded ? (
         <div className="space-y-2 px-3.5 pb-3">
-          {move.description ? (
-            <p className="text-[15px] leading-relaxed text-text-primary">
-              {move.description}
+          {hasBoth ? (
+            <HowWhatToggle value={view} onChange={setView} />
+          ) : null}
+
+          {bodyText ? (
+            <p
+              role={hasBoth ? "tabpanel" : undefined}
+              className="text-[15px] leading-relaxed text-text-primary"
+            >
+              {bodyText}
             </p>
           ) : null}
 
-          {shown.cue && move.cue ? (
-            <CoachNote
-              label="How to cue this"
-              body={move.cue}
-              onClose={() => hide("cue")}
-            />
-          ) : null}
-          {shown.why && move.why ? (
+          {whyShown && move.why ? (
             <CoachNote
               label="Why it's assigned"
               body={move.why}
-              onClose={() => hide("why")}
+              onClose={() => setWhyShown(false)}
             />
           ) : null}
 
-          <div className="flex flex-wrap gap-2">
-            {!shown.cue && move.cue ? (
+          {!whyShown && move.why ? (
+            <div className="flex flex-wrap gap-2">
               <button
                 type="button"
-                onClick={() => show("cue")}
-                className="rounded-full border border-accent/60 bg-card px-3 py-1.5 text-xs font-bold text-accent-ink hover:bg-accent/10"
-              >
-                How do I cue this?
-              </button>
-            ) : null}
-            {!shown.why && move.why ? (
-              <button
-                type="button"
-                onClick={() => show("why")}
+                onClick={() => setWhyShown(true)}
                 className="rounded-full border border-accent/60 bg-card px-3 py-1.5 text-xs font-bold text-accent-ink hover:bg-accent/10"
               >
                 Why is this assigned?
               </button>
-            ) : null}
-          </div>
+            </div>
+          ) : null}
         </div>
       ) : null}
+    </div>
+  );
+}
+
+function HowWhatToggle({
+  value,
+  onChange,
+}: {
+  value: "how" | "what";
+  onChange: (v: "how" | "what") => void;
+}) {
+  return (
+    <div
+      role="tablist"
+      aria-label="Move detail view"
+      className="inline-flex rounded-full border border-divider bg-card p-0.5"
+    >
+      {(["how", "what"] as const).map((v) => {
+        const active = value === v;
+        return (
+          <button
+            key={v}
+            type="button"
+            role="tab"
+            aria-selected={active}
+            onClick={() => onChange(v)}
+            className={cn(
+              "rounded-full px-3 py-1 text-xs font-bold transition-colors",
+              active
+                ? "border border-accent/60 bg-accent/10 text-accent-ink"
+                : "border border-transparent text-text-tertiary",
+            )}
+          >
+            {v === "how" ? "How" : "What"}
+          </button>
+        );
+      })}
     </div>
   );
 }
