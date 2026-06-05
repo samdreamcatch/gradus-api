@@ -269,6 +269,14 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
     };
   const loggedSessionsTotal = sessionsQuery.data?.sessionsTotal ?? 0;
 
+  const fetchPlanSessionsSummary = useServerFn(getPlanSessionsSummary);
+  const summaryQuery = useQuery({
+    queryKey: ["plan-sessions-summary", plan?.id, loggedSessionsTotal],
+    queryFn: () => fetchPlanSessionsSummary({ data: { planId: plan!.id } }),
+    enabled: !!plan?.id && plan?.status === "active" && loggedSessionsTotal > 0,
+    staleTime: 5 * 60 * 1000,
+  });
+
   if (isLoading || !plan) {
     return (
       <div className="py-8 text-center text-sm text-text-secondary">Loading…</div>
