@@ -155,6 +155,7 @@ export const getAthleteGoalsDashboard = createServerFn({ method: "GET" })
     return {
       athleteId: athlete.id,
       athleteName: `${athlete.first_name} ${athlete.last_name}`.trim(),
+      motivation: athlete.motivation ?? "",
       sports,
     };
   });
