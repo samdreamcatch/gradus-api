@@ -20,11 +20,8 @@ import {
   getPendingLessonWrapUps,
   recordLessonWrapUp,
   type PendingWrapUp,
-  type WrapUpAction,
 } from "@/lib/lesson-wrap-ups.functions";
 import { createPlan } from "@/lib/plans.functions";
-import type { WrapUpAction as _WrapUpAction } from "@/lib/lesson-wrap-ups.functions";
-void (null as unknown as _WrapUpAction);
 
 function nowParts() {
   const d = new Date();
@@ -275,6 +272,3 @@ export function LessonWrapUpProvider() {
     </>
   );
 }
-
-// Keep the cn import used (helps with unused-import linting); referenced for future styling tweaks.
-void cn;
