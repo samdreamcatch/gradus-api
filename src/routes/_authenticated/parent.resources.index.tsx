@@ -159,22 +159,24 @@ function ParentResourcesPage() {
                   </p>
                 </div>
               ) : (
-                <ul className="space-y-3">
+                <ul className="divide-y divide-divider rounded-2xl border border-divider bg-card">
                   {filtered.map((r) => (
                     <li key={r.id}>
                       <button
                         type="button"
                         onClick={() => setOpenResource(r)}
-                        className="w-full rounded-2xl border border-divider bg-card p-4 text-left transition hover:border-accent/40 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                        className="flex w-full items-start gap-3 px-4 py-3 text-left transition hover:bg-accent/5 focus-visible:outline-none focus-visible:bg-accent/10"
                       >
-                        <h3 className="text-base font-semibold text-text-primary">
-                          {r.title}
-                        </h3>
-                        {r.description ? (
-                          <p className="mt-1 text-sm text-text-secondary">
-                            {r.description}
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-bold text-text-primary">
+                            {r.title}
                           </p>
-                        ) : null}
+                          {r.description ? (
+                            <p className="mt-0.5 text-[11px] font-bold uppercase tracking-widest text-text-tertiary line-clamp-1">
+                              {r.description}
+                            </p>
+                          ) : null}
+                        </div>
                       </button>
                     </li>
                   ))}
