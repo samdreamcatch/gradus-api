@@ -205,6 +205,15 @@ export function WeekScheduleView({
         </div>
       </div>
 
+      {upNext ? (
+        <PreLessonBriefing
+          athleteId={upNext.session.athleteId}
+          athleteName={upNext.session.name}
+          lessonDate={upNext.lessonDate}
+          startMinute={upNext.session.startMinute}
+        />
+      ) : null}
+
       {/* Selected day */}
       <div className="mt-4 overflow-hidden rounded-2xl border border-divider bg-card shadow-card">
         <div className="flex items-baseline justify-between gap-3 border-b border-divider/60 px-4 py-3">
