@@ -145,13 +145,26 @@ export const claimAthleteInvite = createServerFn({ method: "POST" })
       throw new Error("This code has already been used.");
     }
 
-    // Bind athlete to this user
-    const upd = await supabaseAdmin
+    // Read current ownership first, then update with a structured guard.
+    // Avoids interpolating userId into a raw PostgREST filter string.
+    const existing = await supabaseAdmin
       .from("athletes")
-      .update({ user_id: userId })
+      .select("user_id")
       .eq("id", codeRow.data.athlete_id)
-      .or(`user_id.is.null,user_id.eq.${userId}`);
-    if (upd.error) dbError(upd.error);
+      .single();
+    if (existing.error) dbError(existing.error);
+    if (existing.data.user_id && existing.data.user_id !== userId) {
+      throw new Error("This athlete is already linked to another account.");
+    }
+    if (!existing.data.user_id) {
+      const upd = await supabaseAdmin
+        .from("athletes")
+        .update({ user_id: userId })
+        .eq("id", codeRow.data.athlete_id)
+        .is("user_id", null); // race guard
+      if (upd.error) dbError(upd.error);
+    }
+
 
     if (!codeRow.data.used_at) {
       const stamp = await supabaseAdmin
