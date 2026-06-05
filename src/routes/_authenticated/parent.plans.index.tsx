@@ -45,6 +45,12 @@ function ParentPlansPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("active");
   const [athleteId, setAthleteId] = useState<string>("");
   const [coachId, setCoachId] = useState<string>("");
+  const [goalsAthleteId, setGoalsAthleteId] = useState<string>("");
+
+  const { data: goalsData } = useGoalsDashboard();
+  const goalsAthletes = goalsData ?? [];
+  const activeGoalsAthleteId =
+    goalsAthleteId || goalsAthletes[0]?.athleteId || "";
 
   const coaches = useMemo(() => {
     const map = new Map<string, string>();
