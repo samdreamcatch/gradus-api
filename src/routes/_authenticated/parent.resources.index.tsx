@@ -2,11 +2,12 @@ import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { ChevronDown, Loader2, Search, Sparkles } from "lucide-react";
+import { Loader2, Search, Sparkles } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 
 import { ParentBottomNav } from "@/components/parent/bottom-nav";
 import { PageTitle } from "@/components/page-title";
+import { SegmentedToggle } from "@/components/plans/segmented-toggle";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
