@@ -35,51 +35,63 @@ export function renderErrorPage(): string {
       .wrap { width: 100%; max-width: 28rem; text-align: center; }
       .skater-stage {
         position: relative;
-        height: 140px;
-        width: 180px;
+        height: 180px;
+        width: 240px;
         margin: 0 auto 1.25rem;
       }
-      .skater { width: 180px; height: 140px; display: block; }
-      .ice { stroke: #9CA3AF; stroke-width: 1.5; stroke-linecap: round; }
-      .figure {
-        transform-origin: 90px 118px;
-        transform-box: fill-box;
-        animation: skater-fall 3.4s cubic-bezier(.6,.05,.3,1) infinite;
-      }
-      .arm-l { transform-origin: 90px 78px; transform-box: fill-box; animation: arm-l 3.4s ease-in-out infinite; }
-      .arm-r { transform-origin: 90px 78px; transform-box: fill-box; animation: arm-r 3.4s ease-in-out infinite; }
-      .stars { opacity: 0; animation: stars 3.4s ease-out infinite; }
+      .skater { width: 240px; height: 180px; display: block; }
+      .ice { stroke: #9CA3AF; stroke-width: 1.5; stroke-linecap: round; fill: none; }
+      .stroke { stroke: #374151; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+      .head { fill: none; stroke: #374151; stroke-width: 3; }
+      .blade { stroke: #6B7280; stroke-width: 2.5; stroke-linecap: round; }
 
-      @keyframes skater-fall {
-        0%   { transform: rotate(0deg)   translateY(0); }
-        35%  { transform: rotate(-4deg)  translateY(0); }
-        45%  { transform: rotate(10deg)  translateY(0); }
-        58%  { transform: rotate(82deg)  translateY(6px); }
-        78%  { transform: rotate(82deg)  translateY(6px); }
-        92%  { transform: rotate(0deg)   translateY(0); }
-        100% { transform: rotate(0deg)   translateY(0); }
+      /* Glide in from the left */
+      .scene { animation: scene 6s cubic-bezier(.5,.05,.45,1) infinite; }
+      @keyframes scene {
+        0%   { transform: translateX(-100px); }
+        20%  { transform: translateX(0); }
+        100% { transform: translateX(0); }
       }
+      /* Tip over from the skate */
+      .figure {
+        transform-box: fill-box;
+        transform-origin: 50% 100%;
+        animation: figure 6s cubic-bezier(.6,.02,.35,1) infinite;
+      }
+      @keyframes figure {
+        0%, 40%  { transform: rotate(0deg); }
+        55%, 90% { transform: rotate(-82deg); }
+        100%     { transform: rotate(0deg); }
+      }
+      .arm-l { transform-box: fill-box; transform-origin: 100% 0%; animation: arm-l 6s linear infinite; }
+      .arm-r { transform-box: fill-box; transform-origin: 0% 0%;   animation: arm-r 6s linear infinite; }
       @keyframes arm-l {
-        0%, 30% { transform: rotate(0deg); }
-        40%     { transform: rotate(-55deg); }
-        50%     { transform: rotate(30deg); }
-        58%, 100% { transform: rotate(0deg); }
+        0%, 20%   { transform: rotate(20deg); }
+        25%       { transform: rotate(-40deg); }
+        30%       { transform: rotate(-120deg); }
+        35%       { transform: rotate(-40deg); }
+        40%       { transform: rotate(30deg); }
+        55%, 100% { transform: rotate(70deg); }
       }
       @keyframes arm-r {
-        0%, 30% { transform: rotate(0deg); }
-        40%     { transform: rotate(55deg); }
-        50%     { transform: rotate(-30deg); }
-        58%, 100% { transform: rotate(0deg); }
+        0%, 20%   { transform: rotate(-20deg); }
+        25%       { transform: rotate(40deg); }
+        30%       { transform: rotate(120deg); }
+        35%       { transform: rotate(40deg); }
+        40%       { transform: rotate(-30deg); }
+        55%, 100% { transform: rotate(-70deg); }
       }
-      @keyframes stars {
-        0%, 56%   { opacity: 0; transform: translateY(0); }
-        60%       { opacity: 1; transform: translateY(-2px); }
-        75%       { opacity: 0.6; transform: translateY(-6px); }
-        85%, 100% { opacity: 0; transform: translateY(-10px); }
+      .leg-free { transform-box: fill-box; transform-origin: 0% 0%; animation: legf 6s ease-in-out infinite; }
+      @keyframes legf {
+        0%, 20%   { transform: rotate(0deg); }
+        30%       { transform: rotate(-25deg); }
+        40%       { transform: rotate(-10deg); }
+        55%, 100% { transform: rotate(35deg); }
       }
       @media (prefers-reduced-motion: reduce) {
-        .figure, .arm-l, .arm-r, .stars { animation: none; }
+        .scene, .figure, .arm-l, .arm-r, .leg-free { animation: none; }
       }
+
       .card {
         background: #FFFFFF;
         border-radius: 20px;
