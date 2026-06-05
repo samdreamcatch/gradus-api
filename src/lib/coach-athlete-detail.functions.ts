@@ -197,7 +197,7 @@ export const getCoachAthleteDetail = createServerFn({ method: "GET" })
       parentFirstName: athlete.parent_profiles.first_name,
       parentLastName: athlete.parent_profiles.last_name,
       goals,
-      activePlan,
+      plans,
       activity: {
         sessions: sessions30d.length,
         practiceMinutes,
