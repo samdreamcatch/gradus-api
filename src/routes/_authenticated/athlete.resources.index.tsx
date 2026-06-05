@@ -441,7 +441,7 @@ function AskGradusCard({ sport }: { sport: string }) {
   const qc = useQueryClient();
 
   const askMutation = useMutation({
-    mutationFn: (q: string) => ask({ data: { sport, question: q } }),
+    mutationFn: (q: string) => ask({ data: { sport, question: q, audience: "athlete" } }),
     onSuccess: (_, q) => {
       setLastQuestion(q);
       setSaved(false);
