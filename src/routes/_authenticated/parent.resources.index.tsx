@@ -237,40 +237,38 @@ function AskGradusCard({ sport }: { sport: string }) {
 
   return (
     <section className="mt-5">
-      <div className="rounded-xl bg-linear-to-br from-secondary-accent via-accent to-secondary-accent p-[2px] shadow-sm">
-        <div className="rounded-lg bg-card p-4">
-          <Textarea
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-            placeholder={`Ask about a move, drill, or competition in ${sportLabel(sport).toLowerCase()}`}
-            className="min-h-[88px] resize-none border-divider bg-transparent text-sm"
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-                e.preventDefault();
-                onSubmit();
-              }
-            }}
-          />
-          <div className="mt-3 flex items-center justify-end gap-2">
-            <Button
-              type="button"
-              onClick={onSubmit}
-              disabled={!question.trim() || askMutation.isPending}
-              className="rounded-full"
-            >
-              {askMutation.isPending ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-                  Thinking
-                </>
-              ) : (
-                <>
-                  <Sparkles className="h-4 w-4" aria-hidden />
-                  Ask
-                </>
-              )}
-            </Button>
-          </div>
+      <div className="rounded-2xl border border-divider bg-card p-4">
+        <Textarea
+          value={question}
+          onChange={(e) => setQuestion(e.target.value)}
+          placeholder={`Ask about a move, drill, or competition in ${sportLabel(sport).toLowerCase()}`}
+          className="min-h-[88px] resize-none border-divider bg-transparent text-sm"
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+              e.preventDefault();
+              onSubmit();
+            }
+          }}
+        />
+        <div className="mt-3 flex items-center justify-end gap-2">
+          <Button
+            type="button"
+            onClick={onSubmit}
+            disabled={!question.trim() || askMutation.isPending}
+            className="rounded-full"
+          >
+            {askMutation.isPending ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                Thinking
+              </>
+            ) : (
+              <>
+                <Sparkles className="h-4 w-4" aria-hidden />
+                Ask
+              </>
+            )}
+          </Button>
         </div>
       </div>
 
