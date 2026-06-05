@@ -238,14 +238,6 @@ function AskGradusCard({ sport }: { sport: string }) {
             }}
           />
           <div className="mt-3 flex items-center justify-end gap-2">
-            <button
-              type="button"
-              aria-label="Voice input coming soon"
-              disabled
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-divider bg-card text-text-secondary opacity-60"
-            >
-              <Mic className="h-4 w-4" aria-hidden />
-            </button>
             <Button
               type="button"
               onClick={onSubmit}
