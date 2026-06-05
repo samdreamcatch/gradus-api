@@ -30,6 +30,7 @@ import { Route as AuthenticatedCoachRosterRouteImport } from './routes/_authenti
 import { Route as AuthenticatedCoachPlansRouteImport } from './routes/_authenticated/coach.plans'
 import { Route as AuthenticatedCoachOnboardingRouteImport } from './routes/_authenticated/coach.onboarding'
 import { Route as AuthenticatedAthleteSettingsRouteImport } from './routes/_authenticated/athlete.settings'
+import { Route as AuthenticatedParentResourcesIndexRouteImport } from './routes/_authenticated/parent.resources.index'
 import { Route as AuthenticatedParentPlansIndexRouteImport } from './routes/_authenticated/parent.plans.index'
 import { Route as AuthenticatedParentMessagesIndexRouteImport } from './routes/_authenticated/parent.messages.index'
 import { Route as AuthenticatedCoachPlansIndexRouteImport } from './routes/_authenticated/coach.plans.index'
@@ -154,6 +155,12 @@ const AuthenticatedAthleteSettingsRoute =
     path: '/athlete/settings',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedParentResourcesIndexRoute =
+  AuthenticatedParentResourcesIndexRouteImport.update({
+    id: '/resources/',
+    path: '/resources/',
+    getParentRoute: () => AuthenticatedParentRoute,
+  } as any)
 const AuthenticatedParentPlansIndexRoute =
   AuthenticatedParentPlansIndexRouteImport.update({
     id: '/plans/',
@@ -260,6 +267,7 @@ export interface FileRoutesByFullPath {
   '/coach/plans/': typeof AuthenticatedCoachPlansIndexRoute
   '/parent/messages/': typeof AuthenticatedParentMessagesIndexRoute
   '/parent/plans/': typeof AuthenticatedParentPlansIndexRoute
+  '/parent/resources/': typeof AuthenticatedParentResourcesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -292,6 +300,7 @@ export interface FileRoutesByTo {
   '/coach/plans': typeof AuthenticatedCoachPlansIndexRoute
   '/parent/messages': typeof AuthenticatedParentMessagesIndexRoute
   '/parent/plans': typeof AuthenticatedParentPlansIndexRoute
+  '/parent/resources': typeof AuthenticatedParentResourcesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -328,6 +337,7 @@ export interface FileRoutesById {
   '/_authenticated/coach/plans/': typeof AuthenticatedCoachPlansIndexRoute
   '/_authenticated/parent/messages/': typeof AuthenticatedParentMessagesIndexRoute
   '/_authenticated/parent/plans/': typeof AuthenticatedParentPlansIndexRoute
+  '/_authenticated/parent/resources/': typeof AuthenticatedParentResourcesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -364,6 +374,7 @@ export interface FileRouteTypes {
     | '/coach/plans/'
     | '/parent/messages/'
     | '/parent/plans/'
+    | '/parent/resources/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -396,6 +407,7 @@ export interface FileRouteTypes {
     | '/coach/plans'
     | '/parent/messages'
     | '/parent/plans'
+    | '/parent/resources'
   id:
     | '__root__'
     | '/'
@@ -431,6 +443,7 @@ export interface FileRouteTypes {
     | '/_authenticated/coach/plans/'
     | '/_authenticated/parent/messages/'
     | '/_authenticated/parent/plans/'
+    | '/_authenticated/parent/resources/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -591,6 +604,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAthleteSettingsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/parent/resources/': {
+      id: '/_authenticated/parent/resources/'
+      path: '/resources'
+      fullPath: '/parent/resources/'
+      preLoaderRoute: typeof AuthenticatedParentResourcesIndexRouteImport
+      parentRoute: typeof AuthenticatedParentRoute
+    }
     '/_authenticated/parent/plans/': {
       id: '/_authenticated/parent/plans/'
       path: '/plans'
@@ -685,6 +705,7 @@ interface AuthenticatedParentRouteChildren {
   AuthenticatedParentPlansPlanIdRoute: typeof AuthenticatedParentPlansPlanIdRoute
   AuthenticatedParentMessagesIndexRoute: typeof AuthenticatedParentMessagesIndexRoute
   AuthenticatedParentPlansIndexRoute: typeof AuthenticatedParentPlansIndexRoute
+  AuthenticatedParentResourcesIndexRoute: typeof AuthenticatedParentResourcesIndexRoute
 }
 
 const AuthenticatedParentRouteChildren: AuthenticatedParentRouteChildren = {
@@ -695,6 +716,8 @@ const AuthenticatedParentRouteChildren: AuthenticatedParentRouteChildren = {
   AuthenticatedParentPlansPlanIdRoute: AuthenticatedParentPlansPlanIdRoute,
   AuthenticatedParentMessagesIndexRoute: AuthenticatedParentMessagesIndexRoute,
   AuthenticatedParentPlansIndexRoute: AuthenticatedParentPlansIndexRoute,
+  AuthenticatedParentResourcesIndexRoute:
+    AuthenticatedParentResourcesIndexRoute,
 }
 
 const AuthenticatedParentRouteWithChildren =
@@ -797,3 +820,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
