@@ -226,6 +226,9 @@ function SafeSportPanel() {
       </div>
 
 
+      <CountsDisclosure />
+      <TrustedAdultDisclosure />
+
       {/* Hotlines */}
       <div>
         <h3 className="mb-3 px-1 text-[11px] font-bold uppercase tracking-widest text-text-tertiary">
@@ -244,8 +247,6 @@ function SafeSportPanel() {
         </p>
       </div>
 
-      <CountsDisclosure />
-      <TrustedAdultDisclosure />
 
       {/* More from SafeSport */}
       <a
