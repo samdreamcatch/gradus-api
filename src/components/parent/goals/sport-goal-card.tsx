@@ -100,7 +100,7 @@ export function SportGoalCard({ goal }: { goal: ParentGoalSportDTO }) {
 
       <div className="mt-5 border-t border-divider pt-4">
         <p className="text-[11px] font-bold uppercase tracking-wide text-text-secondary">
-          This month&apos;s practice
+          THIS MONTH&apos;S AVERAGE PRACTICE
         </p>
         <div className="mt-2 flex items-center gap-4">
           <PracticeRing
