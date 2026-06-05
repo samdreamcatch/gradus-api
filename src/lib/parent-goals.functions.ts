@@ -119,7 +119,8 @@ export const getParentGoalsDashboard = createServerFn({ method: "GET" })
     }
 
     // Build DTO per athlete
-    const goalsByAthlete = new Map<string, typeof goalsRes.data>();
+    type GoalRow = NonNullable<typeof goalsRes.data>[number];
+    const goalsByAthlete = new Map<string, GoalRow[]>();
     for (const g of goalsRes.data ?? []) {
       const arr = goalsByAthlete.get(g.athlete_id) ?? [];
       arr.push(g);
