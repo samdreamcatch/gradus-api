@@ -31,7 +31,7 @@ interface Props {
 
 export function PracticeRing({ hours, targetLower, targetUpper, status }: Props) {
   const size = 96;
-  const stroke = 8;
+  const stroke = 10;
   const r = (size - stroke) / 2;
   const cx = size / 2;
   const cy = size / 2;
@@ -69,7 +69,7 @@ export function PracticeRing({ hours, targetLower, targetUpper, status }: Props)
         r={r}
         fill="none"
         strokeWidth={stroke}
-        stroke="var(--divider)"
+        stroke="color-mix(in oklab, var(--text-secondary) 34%, transparent)"
       />
       {/* Filled arc — logged hours */}
       {fillPct > 0 && (
@@ -95,7 +95,7 @@ export function PracticeRing({ hours, targetLower, targetUpper, status }: Props)
             y1={p.y1}
             x2={p.x2}
             y2={p.y2}
-            strokeWidth={2}
+            strokeWidth={2.5}
             strokeLinecap="round"
             stroke="var(--text-primary)"
           />
@@ -109,7 +109,7 @@ export function PracticeRing({ hours, targetLower, targetUpper, status }: Props)
             y1={p.y1}
             x2={p.x2}
             y2={p.y2}
-            strokeWidth={2}
+            strokeWidth={2.5}
             strokeLinecap="round"
             stroke="var(--text-primary)"
           />

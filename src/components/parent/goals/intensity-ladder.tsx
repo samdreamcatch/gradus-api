@@ -21,11 +21,11 @@ export function IntensityLadder({ stops, currentKey, goalKey }: Props) {
     <div className="mt-3">
       <div className="relative flex items-center">
         <div
-          className="absolute top-1/2 h-px -translate-y-1/2 rounded-full"
+          className="absolute top-1/2 h-0.5 -translate-y-1/2 rounded-full"
           style={{
             left: "0.375rem",
             right: "0.375rem",
-            backgroundColor: "color-mix(in oklab, var(--text-secondary) 55%, transparent)",
+            backgroundColor: "color-mix(in oklab, var(--text-secondary) 78%, transparent)",
           }}
           aria-hidden
         />
