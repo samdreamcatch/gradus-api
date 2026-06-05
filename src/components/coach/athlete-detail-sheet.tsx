@@ -228,7 +228,7 @@ function AthleteDetailBody({ athleteId }: { athleteId: string }) {
                   title={p.title}
                   sessionsByState={p.sessionsByState}
                   sessionsTotal={p.sessionsTotal}
-                  edgeTone={p.status === "active" ? "active" : "benched"}
+                  edgeTone={p.status === "active" ? "active" : "muted"}
                 />
               </div>
             ))}
