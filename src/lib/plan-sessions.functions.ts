@@ -1,10 +1,13 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { generateObject } from "ai";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
 import { dbError } from "./db-error";
+import { createLovableAiGatewayProvider } from "./ai-gateway.server";
 import type { SessionsByState } from "@/components/plans/flow-state-bars";
+
 
 type Client = SupabaseClient<Database>;
 
@@ -167,4 +170,103 @@ export const submitAthletePlanSession = createServerFn({ method: "POST" })
     });
     if (error) dbError(error);
     return { ok: true as const };
+  });
+
+// --- AI summary of logged sessions for a single plan ---
+
+const STATE_LABELS = [
+  "Frustrated",
+  "Pushing",
+  "Steady",
+  "Locked in",
+  "Flowing",
+];
+
+export interface PlanSessionsSummaryDTO {
+  summary: string;
+  generatedAt: string;
+  empty: boolean;
+  sessionsTotal: number;
+}
+
+export const getPlanSessionsSummary = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ planId: z.string().uuid() }).parse(input))
+  .handler(async ({ context, data }): Promise<PlanSessionsSummaryDTO> => {
+    const supabase = context.supabase as Client;
+
+    // Load plan + athlete (RLS limits this to plans the caller can read).
+    const { data: plan, error: pErr } = await supabase
+      .from("plans")
+      .select("id, title, athlete_id, athletes:athlete_id(first_name)")
+      .eq("id", data.planId)
+      .maybeSingle();
+    if (pErr) dbError(pErr);
+    if (!plan) throw new Error("Plan not found");
+
+    const athleteFirstName =
+      (plan as unknown as { athletes: { first_name: string } | null }).athletes
+        ?.first_name ?? "the athlete";
+
+    const { data: rows, error } = await supabase
+      .from("plan_sessions")
+      .select("state_index, duration_seconds, note, logged_at, parent_id")
+      .eq("plan_id", data.planId)
+      .eq("athlete_id", plan.athlete_id!)
+      .order("logged_at", { ascending: false })
+      .limit(80);
+    if (error) dbError(error);
+
+    const sessions = rows ?? [];
+    if (sessions.length === 0) {
+      return {
+        summary: `No sessions logged for this plan yet.`,
+        generatedAt: new Date().toISOString(),
+        empty: true,
+        sessionsTotal: 0,
+      };
+    }
+
+    const sessionLines = sessions
+      .map((s) => {
+        const date = new Date(s.logged_at).toISOString().slice(0, 10);
+        const mins = Math.round((s.duration_seconds ?? 0) / 60);
+        const state = STATE_LABELS[Math.max(0, Math.min(4, s.state_index ?? 0))];
+        const who = s.parent_id ? "parent-logged" : "athlete-logged";
+        const note = (s.note ?? "").trim();
+        return `- ${date} (${who}, ${mins}m, "${state}")${note ? `: ${note}` : ""}`;
+      })
+      .join("\n");
+
+    const prompt = `You are summarizing the logged sessions for one practice plan titled "${plan.title || "Untitled plan"}" by ${athleteFirstName}.
+
+LOGGED SESSIONS (most recent first):
+${sessionLines}
+
+Write a concise 2-3 sentence summary that captures how it's been going on this plan: overall mood/flow trend, total volume, and any specific themes from the notes. Be specific — reference moods, moves, or notes you actually see. Don't invent details. Address ${athleteFirstName} in the third person.`;
+
+    const apiKey = process.env.LOVABLE_API_KEY;
+    if (!apiKey) throw new Error("Missing LOVABLE_API_KEY");
+    const gateway = createLovableAiGatewayProvider(apiKey);
+
+    const schema = z.object({
+      summary: z.string().min(1).max(600),
+    });
+
+    try {
+      const { object } = await generateObject({
+        model: gateway("google/gemini-2.5-flash"),
+        schema,
+        prompt,
+      });
+      return {
+        summary: object.summary,
+        generatedAt: new Date().toISOString(),
+        empty: false,
+        sessionsTotal: sessions.length,
+      };
+    } catch (err) {
+      console.error("[plan sessions summary]", err);
+      throw new Error("Could not generate summary. Please try again later.");
+    }
   });
