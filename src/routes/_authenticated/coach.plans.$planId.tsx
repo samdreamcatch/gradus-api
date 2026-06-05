@@ -548,23 +548,35 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
               </div>
               <FlowStateBars counts={loggedSessions} />
 
-              {/* Placeholder: Narrative summary */}
+              {/* AI summary of logged sessions */}
               <div className="mt-4 border-t border-dashed border-divider pt-3">
                 <div className="mb-2 flex items-center gap-2">
                   <Sparkles className="h-4 w-4 text-text-tertiary" />
                   <span className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
                     Summary
                   </span>
-                  <span className="ml-auto text-[10px] font-bold uppercase tracking-widest text-text-tertiary">
-                    Coming soon
-                  </span>
                 </div>
-                <div className="space-y-1.5">
-                  <div className="h-2 w-full rounded bg-elevated" />
-                  <div className="h-2 w-11/12 rounded bg-elevated" />
-                  <div className="h-2 w-4/5 rounded bg-elevated" />
-                </div>
+                {loggedSessionsTotal === 0 ? (
+                  <p className="text-xs text-text-tertiary">
+                    No sessions logged yet. A summary will appear once {plan.athleteName?.split(" ")[0] ?? "your athlete"} starts logging practice.
+                  </p>
+                ) : summaryQuery.isLoading ? (
+                  <div className="space-y-1.5" aria-hidden>
+                    <div className="h-2 w-full animate-pulse rounded bg-elevated" />
+                    <div className="h-2 w-11/12 animate-pulse rounded bg-elevated" />
+                    <div className="h-2 w-4/5 animate-pulse rounded bg-elevated" />
+                  </div>
+                ) : summaryQuery.isError ? (
+                  <p className="text-xs text-text-tertiary">
+                    Couldn't generate a summary right now.
+                  </p>
+                ) : (
+                  <p className="text-xs leading-relaxed text-text-secondary">
+                    {summaryQuery.data?.summary}
+                  </p>
+                )}
               </div>
+
             </div>
 
 
