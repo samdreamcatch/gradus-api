@@ -103,12 +103,13 @@ export const getCoachAthleteDetail = createServerFn({ method: "GET" })
         .eq("coach_id", coachId),
       supabaseAdmin
         .from("plans")
-        .select("id, title")
+        .select("id, title, status, updated_at")
         .eq("coach_id", coachId)
         .eq("athlete_id", data.athleteId)
         .eq("kind", "plan")
-        .eq("status", "active")
-        .maybeSingle(),
+        .in("status", ["active", "benched"])
+        .order("status", { ascending: true }) // active < benched alphabetically
+        .order("updated_at", { ascending: false }),
       supabaseAdmin
         .from("plan_sessions")
         .select("plan_id, state_index, duration_seconds, logged_at, parent_id")
@@ -141,19 +142,17 @@ export const getCoachAthleteDetail = createServerFn({ method: "GET" })
       longTermGoal: g.long_term_goal ?? "",
     }));
 
-    // Build active plan summary
-    let activePlan: AthleteActivePlanDTO | null = null;
-    if (planRes.data) {
-      const planSessions = (sessionsRes.data ?? []).filter(
-        (s) => s.plan_id === planRes.data!.id,
-      );
-      const stateKeys: (keyof SessionsByState)[] = [
-        "frustrated",
-        "pushing",
-        "steady",
-        "lockedIn",
-        "flowing",
-      ];
+    // Build per-plan summaries for every active OR benched plan.
+    const stateKeys: (keyof SessionsByState)[] = [
+      "frustrated",
+      "pushing",
+      "steady",
+      "lockedIn",
+      "flowing",
+    ];
+    const sessions30d = sessionsRes.data ?? [];
+    const plans: AthletePlanSummaryDTO[] = (planRes.data ?? []).map((p) => {
+      const planSessions = sessions30d.filter((s) => s.plan_id === p.id);
       const sessionsByState: SessionsByState = {
         frustrated: 0,
         pushing: 0,
@@ -165,15 +164,14 @@ export const getCoachAthleteDetail = createServerFn({ method: "GET" })
         const idx = Math.max(0, Math.min(4, s.state_index ?? 0));
         sessionsByState[stateKeys[idx]] += 1;
       }
-      activePlan = {
-        planId: planRes.data.id,
-        title: planRes.data.title || "Untitled plan",
+      return {
+        planId: p.id,
+        title: p.title || "Untitled plan",
+        status: p.status as PlanStatus,
         sessionsByState,
         sessionsTotal: planSessions.length,
       };
-    }
-
-    const sessions30d = sessionsRes.data ?? [];
+    });
     const practiceMinutes = Math.round(
       sessions30d.reduce((sum, s) => sum + (s.duration_seconds ?? 0), 0) / 60,
     );
