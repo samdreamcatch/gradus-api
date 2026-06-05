@@ -416,6 +416,51 @@ export type Database = {
         }
         Relationships: []
       }
+      lesson_wrap_ups: {
+        Row: {
+          action: string
+          athlete_id: string
+          coach_id: string
+          created_at: string
+          id: string
+          lesson_date: string
+          updated_at: string
+        }
+        Insert: {
+          action: string
+          athlete_id: string
+          coach_id: string
+          created_at?: string
+          id?: string
+          lesson_date: string
+          updated_at?: string
+        }
+        Update: {
+          action?: string
+          athlete_id?: string
+          coach_id?: string
+          created_at?: string
+          id?: string
+          lesson_date?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lesson_wrap_ups_athlete_id_fkey"
+            columns: ["athlete_id"]
+            isOneToOne: false
+            referencedRelation: "athletes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lesson_wrap_ups_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "coach_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       message_reads: {
         Row: {
           message_id: string
