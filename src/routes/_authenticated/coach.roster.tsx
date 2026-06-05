@@ -69,7 +69,7 @@ function RosterPage() {
   const { data: roster } = useSuspenseQuery(rosterQueryOptions);
   const { athletes, coachSports } = roster;
   const router = useRouter();
-  const [tab, setTab] = useState<RosterTab>("athletes");
+  const [tab, setTab] = useState<RosterTab>("schedule");
   const [selectedSport, setSelectedSport] = useState<string | null>(null);
   const [selectedAthleteId, setSelectedAthleteId] = useState<string | null>(null);
 
