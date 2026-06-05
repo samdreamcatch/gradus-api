@@ -33,46 +33,52 @@ export function renderErrorPage(): string {
         -webkit-font-smoothing: antialiased;
       }
       .wrap { width: 100%; max-width: 28rem; text-align: center; }
-      .ball-stage {
+      .skater-stage {
         position: relative;
-        height: 96px;
+        height: 140px;
+        width: 180px;
         margin: 0 auto 1.25rem;
-        width: 80px;
       }
-      .ball {
-        position: absolute;
-        left: 50%;
-        bottom: 14px;
-        width: 56px;
-        height: 56px;
-        margin-left: -28px;
-        animation: bounce 1.1s cubic-bezier(.5,0,.5,1) infinite;
+      .skater { width: 180px; height: 140px; display: block; }
+      .ice { stroke: #9CA3AF; stroke-width: 1.5; stroke-linecap: round; }
+      .figure {
+        transform-origin: 90px 118px;
+        transform-box: fill-box;
+        animation: skater-fall 3.4s cubic-bezier(.6,.05,.3,1) infinite;
       }
-      .shadow {
-        position: absolute;
-        left: 50%;
-        bottom: 6px;
-        width: 56px;
-        height: 10px;
-        margin-left: -28px;
-        background: radial-gradient(ellipse at center, rgba(31,41,55,0.28) 0%, rgba(31,41,55,0) 70%);
-        border-radius: 50%;
-        animation: shadow 1.1s cubic-bezier(.5,0,.5,1) infinite;
-        transform-origin: center;
+      .arm-l { transform-origin: 90px 78px; transform-box: fill-box; animation: arm-l 3.4s ease-in-out infinite; }
+      .arm-r { transform-origin: 90px 78px; transform-box: fill-box; animation: arm-r 3.4s ease-in-out infinite; }
+      .stars { opacity: 0; animation: stars 3.4s ease-out infinite; }
+
+      @keyframes skater-fall {
+        0%   { transform: rotate(0deg)   translateY(0); }
+        35%  { transform: rotate(-4deg)  translateY(0); }
+        45%  { transform: rotate(10deg)  translateY(0); }
+        58%  { transform: rotate(82deg)  translateY(6px); }
+        78%  { transform: rotate(82deg)  translateY(6px); }
+        92%  { transform: rotate(0deg)   translateY(0); }
+        100% { transform: rotate(0deg)   translateY(0); }
       }
-      @keyframes bounce {
-        0%   { transform: translateY(-60px); }
-        50%  { transform: translateY(0); }
-        100% { transform: translateY(-60px); }
+      @keyframes arm-l {
+        0%, 30% { transform: rotate(0deg); }
+        40%     { transform: rotate(-55deg); }
+        50%     { transform: rotate(30deg); }
+        58%, 100% { transform: rotate(0deg); }
       }
-      @keyframes shadow {
-        0%   { transform: scale(0.55); opacity: 0.4; }
-        50%  { transform: scale(1);    opacity: 0.9; }
-        100% { transform: scale(0.55); opacity: 0.4; }
+      @keyframes arm-r {
+        0%, 30% { transform: rotate(0deg); }
+        40%     { transform: rotate(55deg); }
+        50%     { transform: rotate(-30deg); }
+        58%, 100% { transform: rotate(0deg); }
+      }
+      @keyframes stars {
+        0%, 56%   { opacity: 0; transform: translateY(0); }
+        60%       { opacity: 1; transform: translateY(-2px); }
+        75%       { opacity: 0.6; transform: translateY(-6px); }
+        85%, 100% { opacity: 0; transform: translateY(-10px); }
       }
       @media (prefers-reduced-motion: reduce) {
-        .ball, .shadow { animation: none; }
-        .ball { transform: translateY(0); }
+        .figure, .arm-l, .arm-r, .stars { animation: none; }
       }
       .card {
         background: #FFFFFF;
@@ -152,19 +158,36 @@ export function renderErrorPage(): string {
   </head>
   <body>
     <div class="wrap">
-      <div class="ball-stage" aria-hidden="true">
-        <div class="shadow"></div>
-        <svg class="ball" viewBox="0 0 56 56" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <radialGradient id="bg" cx="35%" cy="32%" r="70%">
-              <stop offset="0%" stop-color="#D1D5DB"/>
-              <stop offset="60%" stop-color="#9CA3AF"/>
-              <stop offset="100%" stop-color="#6B7280"/>
-            </radialGradient>
-          </defs>
-          <circle cx="28" cy="28" r="26" fill="url(#bg)" stroke="#1F2937" stroke-opacity="0.15" stroke-width="1"/>
-          <path d="M6 18 Q28 30 50 18" fill="none" stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round" opacity="0.9"/>
-          <path d="M6 38 Q28 26 50 38" fill="none" stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round" opacity="0.9"/>
+      <div class="skater-stage" aria-hidden="true">
+        <svg class="skater" viewBox="0 0 180 140" xmlns="http://www.w3.org/2000/svg">
+          <!-- ice surface -->
+          <line class="ice" x1="10" y1="124" x2="170" y2="124"/>
+          <line class="ice" x1="20" y1="130" x2="80" y2="130" opacity="0.4"/>
+          <line class="ice" x1="100" y1="130" x2="160" y2="130" opacity="0.4"/>
+
+          <!-- stars / impact lines (above head when fallen) -->
+          <g class="stars" stroke="#6B7280" stroke-width="1.5" stroke-linecap="round" fill="none">
+            <path d="M40 70 l4 -4"/>
+            <path d="M48 64 l-3 -4"/>
+            <path d="M34 60 l5 -2"/>
+          </g>
+
+          <!-- the figure: head, body, arms, leg, skate -->
+          <g class="figure" fill="none" stroke="#374151" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <!-- head -->
+            <circle cx="90" cy="62" r="10" fill="#F5F6FA"/>
+            <!-- torso -->
+            <line x1="90" y1="72" x2="90" y2="100"/>
+            <!-- arms (separate groups so they can windmill) -->
+            <g class="arm-l"><line x1="90" y1="78" x2="72" y2="92"/></g>
+            <g class="arm-r"><line x1="90" y1="78" x2="108" y2="92"/></g>
+            <!-- standing leg -->
+            <line x1="90" y1="100" x2="86" y2="118"/>
+            <!-- trailing skating leg, extended back -->
+            <line x1="90" y1="100" x2="108" y2="114"/>
+            <!-- skate blade under standing leg -->
+            <line x1="78" y1="120" x2="98" y2="120" stroke="#6B7280" stroke-width="2"/>
+          </g>
         </svg>
       </div>
       <div class="card">
