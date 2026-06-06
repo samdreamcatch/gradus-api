@@ -1,6 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { dbError } from "./db-error";
 
 export type RosterSlot = {
@@ -27,6 +26,7 @@ export type CoachRoster = {
 export const getCoachRoster = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<CoachRoster> => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const coach = await supabaseAdmin
       .from("coach_profiles")
       .select("id")

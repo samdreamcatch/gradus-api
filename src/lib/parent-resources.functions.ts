@@ -2,7 +2,6 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import type { Database } from "@/integrations/supabase/types";
 import { dbError } from "./db-error";
 
@@ -76,6 +75,7 @@ export const getResourceSignedUrl = createServerFn({ method: "POST" })
     z.object({ resourceId: z.string().uuid() }).parse(input),
   )
   .handler(async ({ context, data }): Promise<{ url: string }> => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const supabase = context.supabase as Client;
     // RLS already restricts visibility to the parent's sports.
     const { data: row, error } = await supabase

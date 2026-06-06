@@ -1,7 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { dbError } from "./db-error";
 
 const INVITE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -96,6 +95,7 @@ async function ensurePrimaryCoach(
 export const getParentSettings = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const userId = context.userId;
     const parent = await getParentProfile(userId);
 
@@ -260,6 +260,7 @@ export const updateParentProfile = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const upd = await supabaseAdmin
       .from("parent_profiles")
       .update({ first_name: data.firstName, last_name: data.lastName })
@@ -284,6 +285,7 @@ export const updateAthlete = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     await assertOwnsAthlete(context.userId, data.athleteId);
     const upd = await supabaseAdmin
       .from("athletes")
@@ -311,6 +313,7 @@ export const updateAthleteGoals = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     await assertOwnsAthlete(context.userId, data.athleteId);
     const coachId = await ensurePrimaryCoach(data.athleteId, data.sport);
     if (!coachId) {
@@ -352,6 +355,7 @@ export const previewCoachByInviteCode = createServerFn({ method: "POST" })
     z.object({ code: inviteCodeSchema }).parse(input),
   )
   .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const codeLookup = await supabaseAdmin
       .from("coach_invite_codes")
       .select("coach_id")
@@ -391,6 +395,7 @@ export const linkAthleteToCoach = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     await assertOwnsAthlete(context.userId, data.athleteId);
 
     const codeLookup = await supabaseAdmin
@@ -461,6 +466,7 @@ export const updateCoachAthleteSports = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     await assertOwnsAthlete(context.userId, data.athleteId);
 
     const link = await supabaseAdmin
@@ -538,6 +544,7 @@ export const unlinkAthleteFromCoach = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     await assertOwnsAthlete(context.userId, data.athleteId);
 
     // Clean up coach-scoped data so a relink starts fresh
@@ -579,6 +586,7 @@ export const setPrimaryCoach = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     await assertOwnsAthlete(context.userId, data.athleteId);
     // The DB trigger enforces that coach is linked to athlete and offers sport.
     const up = await supabaseAdmin
@@ -627,6 +635,7 @@ export const replaceAthleteSchedule = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     await assertOwnsAthlete(context.userId, data.athleteId);
     // Validate the coach is actually linked to this athlete
     const link = await supabaseAdmin
@@ -680,6 +689,7 @@ export const addAthlete = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const parent = await getParentProfile(context.userId);
 
     const ins = await supabaseAdmin
@@ -712,6 +722,7 @@ export const removeAthlete = createServerFn({ method: "POST" })
     z.object({ athleteId: z.string().uuid() }).parse(input),
   )
   .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     await assertOwnsAthlete(context.userId, data.athleteId);
     const parent = await getParentProfile(context.userId);
 
