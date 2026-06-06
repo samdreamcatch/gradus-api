@@ -33,21 +33,21 @@ function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
 
-  const roleHome = (role: string) => {
+  const roleHome = (role: string | null) => {
     if (role === "parent") return "/parent/plans" as const;
     if (role === "coach") return "/coach/roster" as const;
     if (role === "athlete") return "/athlete/plans" as const;
     return "/" as const;
   };
 
-  const rolePrefix = (role: string) => {
+  const rolePrefix = (role: string | null) => {
     if (role === "parent") return "/parent";
     if (role === "coach") return "/coach";
     if (role === "athlete") return "/athlete";
     return null;
   };
 
-  const routeForRole = (role: string) => {
+  const routeForRole = (role: string | null) => {
     const prefix = rolePrefix(role);
     if (prefix && search.redirect.startsWith(prefix)) {
       navigate({ to: search.redirect });
@@ -55,6 +55,7 @@ function LoginPage() {
       navigate({ to: roleHome(role) });
     }
   };
+
 
   // If the session resolves and the user is already signed in, route them
   // away from /login. Done in an effect (not beforeLoad) so we don't
