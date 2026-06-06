@@ -1,24 +1,27 @@
-## Goal
+## Problem
 
-Replace the placeholder `SafeSportPanel` in `src/routes/_authenticated/athlete.resources.index.tsx` with real Safe Sport content, ported from Gradus V.3's `athlete.safety.tsx`, restyled to this project's design tokens.
+The primary-coach selector already exists end-to-end (data model, server fn `setPrimaryCoach`, RLS, UI) — but the picker only renders inside **Goals → \[sport row\]**, and only when 2+ coaches are linked for that sport. Looking at Jamie Gilmore in the Coaches section, there's no indication that a primary can be set, so it feels like the feature is missing.
 
-## Sections (all from V.3, plus one addition)
+## Change
 
-1. **Eyebrow + title** — keep current `Safe Sport` accent eyebrow and `font-display` title; intro line uses `pen-highlight` on the active sport so the panel stays sport-aware.
-2. **Reassurance card** — heart icon in `bg-accent/10` circle, `rounded-2xl border border-divider bg-card`: "You don't have to be sure. You don't have to have proof. You don't have to name anyone."
-3. **Talk to someone now** — 4 hotline cards (kept verbatim from V.3):
-   - U.S. Center for SafeSport — 866-367-6272
-   - Childhelp National Hotline — 1-800-422-4453
-   - Crisis Text Line — text HOME to 741741
-   - 988 Suicide & Crisis Lifeline
-   Each card: name, hours, blurb, then Call (primary `Button` rounded-full) / Text + Website (`variant="outline"` rounded-full) pills.
-4. **"Not sure if it counts?"** — `Collapsible` from `@/components/ui/collapsible` (same primitive as the Saved tab), chevron rotates on `data-[state=open]`. 7 warning-sign bullets from V.3.
-5. **"Want to tell an adult you trust?"** — `Collapsible` with guidance + the ready-to-use script card.
-6. **More from SafeSport** (new) — small outbound link card to `uscenterforsafesport.org` for training videos and the parent/athlete toolkit, styled like the hotline cards with a `Globe` icon.
-7. **911 footer** — small muted line: "If you or someone else is in immediate danger, call 911."
+Add a compact "Primary coach" row per sport inside the **Coaches** subsection of each athlete on `/parent/settings`. The Goals row stays as-is (so the choice is visible where it matters for goal-setting too), but the Coaches section becomes the natural place to manage it.
 
-## Files to change
+### Behavior
+- For each sport that has 2+ linked coaches (same `eligibleCoaches` derivation already used by Goals), render a row:
+  - Label: sport name (e.g. "Figure skating")
+  - Trailing: a Select with each eligible coach; current value = `primaryCoachId`
+  - Helper text under the section: "Pick a primary coach when more than one coach handles the same sport. Your goals follow the primary."
+- For sports with only one coach, show a read-only line: "Figure skating — Tami Taylor (only coach)" — so the parent understands there's nothing to choose.
+- Sports with zero linked coaches are omitted.
+- On change → call existing `setPrimaryCoach` server fn → toast + invalidate `["parent-settings"]`.
+- If the athlete has no sports at all (no `coach_athlete_sports` rows yet), skip the block silently.
 
-- `src/routes/_authenticated/athlete.resources.index.tsx` — rewrite `SafeSportPanel`; add local `HotlineCard` and two `Disclosure` sub-components in the same file. Extend the existing `lucide-react` import with `Phone`, `MessageSquare`, `Globe`, `Heart`.
+### Placement in the Coaches disclosure
+At the bottom of the Coaches list, after the linked-coach rows and before "Link another coach", add a thin grouped block titled "Primary coach per sport".
 
-No new files, no backend changes, no routing changes. Scope is the Safe Sport tab only.
+## Files to touch
+
+- `src/routes/_authenticated/parent.settings.tsx`
+  - Inside `CoachesSection`, render a new `PrimaryCoachPerSport` subblock driven by `athlete.sports` (already available in `AthleteData`).
+  - Extract the `handlePrimaryChange` logic that exists today in `GoalsRow` into a small shared helper (or duplicate the 10-line call — it's tiny).
+- No server, schema, or RLS changes. `getParentSettings` already returns `sports[].eligibleCoaches`, `primaryCoachId`, `primaryCoachName`.
