@@ -46,7 +46,13 @@ export interface CoachAthleteDetailDTO {
   windowDays: number;
 }
 
+async function getAdmin() {
+  const m = await import("@/integrations/supabase/client.server");
+  return m.supabaseAdmin;
+}
+
 async function getCoachId(userId: string): Promise<string | null> {
+  const supabaseAdmin = await getAdmin();
   const { data, error } = await supabaseAdmin
     .from("coach_profiles")
     .select("id")
@@ -57,6 +63,7 @@ async function getCoachId(userId: string): Promise<string | null> {
 }
 
 async function assertCoachOwnsAthlete(coachId: string, athleteId: string) {
+  const supabaseAdmin = await getAdmin();
   const { data, error } = await supabaseAdmin
     .from("coach_athletes")
     .select("athlete_id")
