@@ -33,41 +33,50 @@ function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
 
+  const roleHome = (role: string | null) => {
+    if (role === "parent") return "/parent/plans" as const;
+    if (role === "coach") return "/coach/roster" as const;
+    if (role === "athlete") return "/athlete/plans" as const;
+    return "/" as const;
+  };
+
+  const rolePrefix = (role: string | null) => {
+    if (role === "parent") return "/parent";
+    if (role === "coach") return "/coach";
+    if (role === "athlete") return "/athlete";
+    return null;
+  };
+
+  const routeForRole = (role: string | null) => {
+    const prefix = rolePrefix(role);
+    if (prefix && search.redirect.startsWith(prefix)) {
+      navigate({ to: search.redirect });
+    } else {
+      navigate({ to: roleHome(role) });
+    }
+  };
+
+
   // If the session resolves and the user is already signed in, route them
   // away from /login. Done in an effect (not beforeLoad) so we don't
   // redirect during the brief hydration window.
   useEffect(() => {
     if (!isReady || !user || hasInteracted || loading) return;
-    if (search.redirect) {
-      navigate({ to: search.redirect });
-      return;
-    }
     fetchRole()
-      .then(({ role }) => {
-        if (role === "parent") navigate({ to: "/parent/plans" });
-        else if (role === "coach") navigate({ to: "/coach" });
-        else if (role === "athlete") navigate({ to: "/athlete/plans" });
-        else navigate({ to: "/" });
-      })
+      .then(({ role }) => routeForRole(role))
       .catch(() => navigate({ to: "/" }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasInteracted, isReady, loading, search.redirect, navigate, fetchRole, user]);
 
   const routeByRole = async () => {
-    if (search.redirect) {
-      navigate({ to: search.redirect });
-      return;
-    }
     try {
       const { role } = await fetchRole();
-      if (role === "parent") navigate({ to: "/parent/plans" });
-      else if (role === "coach") navigate({ to: "/coach" });
-      else if (role === "athlete") navigate({ to: "/athlete/plans" });
-      else navigate({ to: "/" });
+      routeForRole(role);
     } catch {
       navigate({ to: "/" });
     }
   };
+
 
   const handleEmail = async (e: FormEvent) => {
     e.preventDefault();
