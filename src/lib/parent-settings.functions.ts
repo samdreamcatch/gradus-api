@@ -12,11 +12,17 @@ function genCode(len = 8): string {
   return out;
 }
 
+async function getAdmin() {
+  const m = await import("@/integrations/supabase/client.server");
+  return m.supabaseAdmin;
+}
+
 async function getParentProfile(userId: string): Promise<{
   id: string;
   first_name: string;
   last_name: string;
 }> {
+  const supabaseAdmin = await getAdmin();
   const parent = await supabaseAdmin
     .from("parent_profiles")
     .select("id, first_name, last_name")
@@ -28,6 +34,7 @@ async function getParentProfile(userId: string): Promise<{
 }
 
 async function assertOwnsAthlete(userId: string, athleteId: string) {
+  const supabaseAdmin = await getAdmin();
   const row = await supabaseAdmin
     .from("athletes")
     .select("id, parent_profiles!inner(user_id)")
@@ -43,6 +50,7 @@ async function ensurePrimaryCoach(
   athleteId: string,
   sport: string,
 ): Promise<string | null> {
+  const supabaseAdmin = await getAdmin();
   const existing = await supabaseAdmin
     .from("athlete_primary_coaches")
     .select("coach_id")
