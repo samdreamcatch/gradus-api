@@ -697,7 +697,80 @@ function CoachesSection({ athlete }: { athlete: AthleteData }) {
 }
 
 
+function PrimaryCoachPerSport({ athlete }: { athlete: AthleteData }) {
+  const qc = useQueryClient();
+  const changePrimary = useServerFn(setPrimaryCoach);
+  const [pendingSport, setPendingSport] = useState<string | null>(null);
+
+  const handleChange = async (sport: string, coachId: string) => {
+    setPendingSport(sport);
+    try {
+      await changePrimary({ data: { athleteId: athlete.id, sport, coachId } });
+      toast.success("Primary coach updated");
+      qc.invalidateQueries({ queryKey: ["parent-settings"] });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Couldn't update");
+    } finally {
+      setPendingSport(null);
+    }
+  };
+
+  return (
+    <div className="mt-4 rounded-lg border border-divider bg-elevated/30 p-3">
+      <div className="mb-1 text-sm font-medium">Primary coach per sport</div>
+      <p className="mb-3 text-xs text-text-tertiary">
+        When more than one coach handles the same sport, pick which one's
+        expectations drive {athlete.firstName}'s goals and practice plans.
+      </p>
+      <div className="space-y-2">
+        {athlete.sports.map((s) => {
+          const label = getSport(s.sport)?.label ?? s.sport;
+          if (s.eligibleCoaches.length > 1) {
+            return (
+              <div
+                key={s.sport}
+                className="flex flex-wrap items-center justify-between gap-2"
+              >
+                <span className="text-sm">{label}</span>
+                <Select
+                  value={s.primaryCoachId ?? undefined}
+                  onValueChange={(coachId) => handleChange(s.sport, coachId)}
+                  disabled={pendingSport === s.sport}
+                >
+                  <SelectTrigger className="h-8 w-auto min-w-[10rem] text-xs">
+                    <SelectValue placeholder="Pick a coach" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {s.eligibleCoaches.map((c) => (
+                      <SelectItem key={c.coachId} value={c.coachId}>
+                        {c.coachName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            );
+          }
+          return (
+            <div
+              key={s.sport}
+              className="flex flex-wrap items-center justify-between gap-2 text-sm"
+            >
+              <span>{label}</span>
+              <span className="text-xs text-text-tertiary">
+                {s.primaryCoachName ?? "—"}
+                <span className="ml-1 text-text-tertiary/70">(only coach)</span>
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function GoalsSection({ athlete }: { athlete: AthleteData }) {
+
   const summary =
     athlete.sports.length === 0
       ? athlete.coaches.length === 0
