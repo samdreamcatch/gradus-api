@@ -2,7 +2,6 @@ import { createServerFn } from "@tanstack/react-start";
 import { generateText } from "ai";
 import { createHash } from "crypto";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { createLovableAiGatewayProvider } from "./ai-gateway.server";
 import { dbError } from "./db-error";
 
@@ -35,6 +34,7 @@ export const getPreLessonBriefing = createServerFn({ method: "POST" })
     return { athleteId: data.athleteId, lessonDate: data.lessonDate, refresh: !!data.refresh };
   })
   .handler(async ({ data, context }): Promise<PreLessonBriefing> => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     // 1) Resolve coach
     const coachRes = await supabaseAdmin
       .from("coach_profiles")

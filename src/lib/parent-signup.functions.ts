@@ -1,7 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { dbError } from "./db-error";
 
 const codeSchema = z
@@ -27,6 +26,7 @@ export const startParentSignup = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const userId = context.userId;
 
     const codeLookup = await supabaseAdmin
@@ -74,6 +74,7 @@ export const startParentSignup = createServerFn({ method: "POST" })
 export const getParentSignupStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const userId = context.userId;
     const parent = await supabaseAdmin
       .from("parent_profiles")
@@ -115,6 +116,7 @@ export const getCoachByInviteCode = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ code: codeSchema }).parse(input))
   .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const codeLookup = await supabaseAdmin
       .from("coach_invite_codes")
       .select("coach_id")
@@ -171,6 +173,7 @@ export const linkAthletesToCoach = createServerFn({ method: "POST" })
 
   )
   .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const userId = context.userId;
 
     const codeLookup = await supabaseAdmin
@@ -240,6 +243,7 @@ export const linkAthletesToCoach = createServerFn({ method: "POST" })
 export const getMyRole = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const userId = context.userId;
     // Use the admin client + explicit user_id filters so RLS edge cases or a
     // future grant change can never make a profile lookup silently return
@@ -295,6 +299,7 @@ export const listAthletesForCode = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ code: codeSchema }).parse(input))
   .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const userId = context.userId;
 
     const codeLookup = await supabaseAdmin
@@ -355,6 +360,7 @@ export const saveAthleteGoals = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const userId = context.userId;
 
     const codeLookup = await supabaseAdmin
@@ -437,6 +443,7 @@ export const saveAthleteSchedule = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const userId = context.userId;
     for (const s of data.slots) {
       if (s.endMinute <= s.startMinute) throw new Error("End time must be after start time.");
@@ -494,6 +501,7 @@ export const saveAthleteSchedule = createServerFn({ method: "POST" })
 export const listAthletesWithInviteCodes = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const userId = context.userId;
     const parent = await supabaseAdmin
       .from("parent_profiles")

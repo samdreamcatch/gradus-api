@@ -2,7 +2,6 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { generateObject } from "ai";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { createLovableAiGatewayProvider } from "./ai-gateway.server";
 import { dbError } from "./db-error";
 import { getSportLevel, getSport } from "./coach-sports";
@@ -82,6 +81,7 @@ export const getCoachAthleteDetail = createServerFn({ method: "GET" })
     z.object({ athleteId: z.string().uuid() }).parse(input),
   )
   .handler(async ({ context, data }): Promise<CoachAthleteDetailDTO> => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const coachId = await getCoachId(context.userId);
     if (!coachId) throw new Error("Coach profile not found");
     await assertCoachOwnsAthlete(coachId, data.athleteId);
@@ -228,6 +228,7 @@ export const getCoachAthleteAiSummary = createServerFn({ method: "GET" })
     z.object({ athleteId: z.string().uuid() }).parse(input),
   )
   .handler(async ({ context, data }): Promise<CoachAthleteAiSummaryDTO> => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const coachId = await getCoachId(context.userId);
     if (!coachId) throw new Error("Coach profile not found");
     await assertCoachOwnsAthlete(coachId, data.athleteId);

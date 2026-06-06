@@ -2,7 +2,6 @@ import { createServerFn } from "@tanstack/react-start";
 import { getRequestIP, getRequestHeader } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { dbError } from "./db-error";
 
 const codeSchema = z
@@ -44,6 +43,7 @@ function clientIp(): string {
 export const getAthleteInviteSummary = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => z.object({ code: codeSchema }).parse(input))
   .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const ip = clientIp();
 
     // Atomic check-and-insert via a SECURITY DEFINER function that holds a
@@ -129,6 +129,7 @@ export const claimAthleteInvite = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ code: codeSchema }).parse(input))
   .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const userId = context.userId;
 
     const codeRow = await supabaseAdmin
@@ -183,6 +184,7 @@ export const claimAthleteInvite = createServerFn({ method: "POST" })
 export const getMyAthlete = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const userId = context.userId;
     const row = await supabaseAdmin
       .from("athletes")

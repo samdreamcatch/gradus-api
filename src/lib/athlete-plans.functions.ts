@@ -2,7 +2,6 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import type { Database } from "@/integrations/supabase/types";
 import { dbError } from "./db-error";
 import { emptySessionsByState, loadSessionsByPlanIds } from "./plan-sessions.functions";
@@ -70,6 +69,7 @@ async function getMyAthleteRow(supabase: Client, userId: string) {
 export const listAthletePlans = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const supabase = context.supabase as Client;
     const athlete = await getMyAthleteRow(supabase, context.userId);
 
@@ -183,6 +183,7 @@ export const getAthletePlan = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ context, data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const supabase = context.supabase as Client;
     const athlete = await getMyAthleteRow(supabase, context.userId);
 

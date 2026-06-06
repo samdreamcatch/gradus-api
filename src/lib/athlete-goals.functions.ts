@@ -2,7 +2,6 @@ import { createServerFn } from "@tanstack/react-start";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import type { Database } from "@/integrations/supabase/types";
 import { dbError } from "./db-error";
 import type { ParentGoalSportDTO } from "./parent-goals.functions";
@@ -63,6 +62,7 @@ export const updateAthleteMotivation = createServerFn({ method: "POST" })
 export const getAthleteGoalsDashboard = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<AthleteGoalsDashboardDTO | null> => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const supabase = context.supabase as Client;
 
     const { data: athlete, error: aErr } = await supabase

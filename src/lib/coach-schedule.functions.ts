@@ -1,6 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { dbError } from "./db-error";
 import { getSportLevel } from "./coach-sports";
 
@@ -20,6 +19,7 @@ const WINDOW_DAYS = 7;
 export const getRosterPracticeSummaries = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<AthletePracticeSummary[]> => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const coach = await supabaseAdmin
       .from("coach_profiles")
       .select("id")
