@@ -593,6 +593,11 @@ function CoachesSection({ athlete }: { athlete: AthleteData }) {
         </div>
       )}
 
+      {athlete.sports.length > 0 && (
+        <PrimaryCoachPerSport athlete={athlete} />
+      )}
+
+
       {adding ? (
         <div className="space-y-2 rounded-lg border border-divider bg-elevated/30 p-3">
           {!preview ? (
