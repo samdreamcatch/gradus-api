@@ -19,6 +19,7 @@ function CoachSignupPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -32,6 +33,7 @@ function CoachSignupPage() {
         password,
         options: {
           emailRedirectTo: window.location.origin + "/coach",
+          data: { full_name: name },
         },
       });
       if (error) throw error;
@@ -82,6 +84,10 @@ function CoachSignupPage() {
         </div>
 
         <form onSubmit={handleEmail} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="name">Name</Label>
+            <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required maxLength={160} />
+          </div>
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input id="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
