@@ -42,7 +42,7 @@ function ParentSignupPage() {
     try {
       const { data: sessionData } = await supabase.auth.getSession();
       if (!sessionData.session) {
-        const { error: signUpErr } = await supabase.auth.signUp({
+        const { data: signUp, error: signUpErr } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -51,6 +51,13 @@ function ParentSignupPage() {
           },
         });
         if (signUpErr) throw signUpErr;
+        if (!signUp.session) {
+          const { error: signInErr } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+          });
+          if (signInErr) throw signInErr;
+        }
       }
 
       const { code: normalized } = await start({

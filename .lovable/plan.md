@@ -1,48 +1,44 @@
-# Replace near-black text with navy in dark mode
+## Why you saw "No authorization header was provided"
 
-## What's actually black
+On `/signup/parent` the page does two things back‑to‑back:
 
-I audited the codebase. There is **no `text-black`, `text-[#000]`, or hard-coded black color** anywhere in components. Every `font-black` match is a font *weight*, not a color, and every `bg-black/80` / `ring-black/10` is a backdrop or hairline ring (not text).
+1. `supabase.auth.signUp({ email, password, … })`
+2. `startParentSignup({ data: { firstName, lastName, code } })` — a server function guarded by `requireSupabaseAuth`.
 
-The text that *looks* black in dark mode comes from exactly two design tokens in `src/styles.css` under `.dark`:
+When email confirmation is enabled (our current policy — and it should stay on), `signUp` does **not** return a session until the user clicks the confirmation link. So between steps 1 and 2 there is no Supabase session in the browser, `attachSupabaseAuth` has no bearer token to attach, and the server middleware rejects the call with *"No authorization header provided"*.
 
-```css
---accent-foreground:    oklch(0.18 0.012 245);  /* text on tennis-green buttons/pills */
---attention-foreground: oklch(0.18 0.012 245);  /* text on bright orange chips */
-```
+The athlete signup flow (`signup.athlete.account.tsx`) already handles this: if `signUp` returns no session, it immediately calls `signInWithPassword` to establish one before invoking the protected server function. The parent flow is missing that fallback.
 
-Lightness 0.18 + chroma 0.012 = effectively black with a sliver of blue. That's what you're seeing on:
-- Primary buttons (`bg-accent text-accent-foreground`)
-- Coach plan pills, "Tap to start" chips, voice-FAB
-- Unread message badges (`bg-attention text-attention-foreground`)
-- ✓ check glyphs inside accent selections
+## Fix
 
-Nothing else in `.dark` resolves to a near-black text color — `--foreground`, `--text-primary/secondary/tertiary` are all the cream/parchment family, and every `--pen-*-ink` in dark mode is a bright tint.
+Mirror the athlete pattern in `src/routes/signup.parent.tsx` — only this one file changes.
 
-## The change
+In `handleSubmit`, after the existing `supabase.auth.signUp(...)` call, capture its result and, if no session was returned, fall back to signing in with the same credentials before calling `startParentSignup`:
 
-Introduce one navy ink in the `.dark` block and point both foreground tokens at it. Navy has to keep enough contrast against the bright tennis green and bright orange backgrounds (WCAG ≥ 4.5:1 body / ≥ 3:1 for large UI text).
-
-```css
-.dark {
-  /* Navy ink — replaces the near-black used on bright accent/attention surfaces */
-  --ink-navy: oklch(0.22 0.09 255);
-
-  --accent-foreground:    var(--ink-navy);
-  --attention-foreground: var(--ink-navy);
+```ts
+const { data: signUp, error: signUpErr } = await supabase.auth.signUp({
+  email,
+  password,
+  options: {
+    emailRedirectTo: window.location.origin + "/parent",
+    data: { full_name: `${firstName} ${lastName}`.trim() },
+  },
+});
+if (signUpErr) throw signUpErr;
+if (!signUp.session) {
+  const { error: signInErr } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+  if (signInErr) throw signInErr;
 }
 ```
 
-Light mode is **not** touched — the analogous tokens there are warm tinted inks (`--pen-tennis-ink`, `oklch(0.22 0.06 55)`), not black.
+The branch only runs when the user is not already authed (the existing `if (!sessionData.session)` block). Everything else in the file — the `start({ data: … })` call, navigation to `/signup/parent/athletes`, error handling — stays the same.
 
-## Scope guard
+## Notes / non‑changes
 
-- File touched: `src/styles.css` only, inside the `.dark` block.
-- No component changes — all 65 `text-accent-foreground` / `text-attention-foreground` / `text-primary-foreground` usages pick up the new color automatically.
-- `ring-black/10` and `bg-black/80` overlays are intentionally left alone — the user asked about *text*, and these are non-text affordances that read fine in both themes.
-
-## Verification
-
-1. Toggle to dark mode and confirm: primary buttons, the message unread badge, plan pills, voice-FAB label, and the selected-checkmark all show navy text (still legible on bright tennis/orange).
-2. Quick contrast spot-check on `text-accent-foreground` over `bg-accent` (tennis green in dark) and `text-attention-foreground` over `bg-attention` (orange in dark).
-3. Light mode unchanged.
+- No server function changes. `startParentSignup` and `requireSupabaseAuth` are correct.
+- No change to `src/start.ts`; `attachSupabaseAuth` is already wired into `functionMiddleware`.
+- Email confirmation stays enabled. Sign‑in‑after‑signup with the same password is safe because the user just supplied it on this form.
+- If the email is already registered, `signUp` will error and we surface that to the user as today — no silent account takeover.
