@@ -114,7 +114,28 @@ function RosterPage() {
   return (
     <>
       <div className="mx-auto min-h-dvh max-w-3xl px-4 pt-8 pb-24">
-        <PageTitle>Roster</PageTitle>
+        <div className="flex items-start justify-between gap-3">
+          <PageTitle>Roster</PageTitle>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button type="button" variant="outline" size="sm" className="mt-1 shrink-0">
+                <UserPlus className="size-4" aria-hidden />
+                Invite code
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="bg-popover">
+              <DialogHeader>
+                <DialogTitle>Your invite code</DialogTitle>
+                <DialogDescription>
+                  Share this code with parents to add their athlete to your roster.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="mt-2">
+                <InviteCard compact />
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
 
         <div className="mt-4">
           <SegmentedToggle tab={tab} onChange={setTab} />
