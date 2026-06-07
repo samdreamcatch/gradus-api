@@ -165,7 +165,7 @@
   --attention: var(--pen-orange);
   --attention-wash: var(--pen-orange-wash);
   --attention-ink: var(--pen-orange-ink);
-  --attention-foreground: oklch(0.18 0.012 245);
+  --attention-foreground: var(--ink-navy);
 
   /* Iris pen (dark) */
   --pen-iris: oklch(0.86 0.175 310);
