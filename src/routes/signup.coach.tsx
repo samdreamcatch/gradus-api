@@ -34,7 +34,7 @@ function CoachSignupPage() {
         password,
         options: {
           emailRedirectTo: window.location.origin + "/coach",
-          data: { full_name: name },
+          data: { full_name: `${firstName} ${lastName}`.trim(), first_name: firstName, last_name: lastName },
         },
       });
       if (error) throw error;
