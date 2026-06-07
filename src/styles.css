@@ -58,13 +58,13 @@
 :root {
   /* Surfaces — cool slate paper */
   --background: oklch(0.972 0.005 250);   /* #F5F6FA */
-  --foreground: oklch(0.27 0.02 260);      /* #1F2937 ink */
+  --foreground: oklch(0.24 0.08 260);      /* dark navy ink */
   --card: oklch(1 0 0 / 0.55);             /* translucent so paper shows through */
   --popover: oklch(1 0 0);                 /* solid for floating menus */
   --elevated: oklch(0.982 0.004 250 / 0.62);
   --divider: oklch(0.92 0.005 260);        /* #E6E7EB */
 
-  --text-primary: oklch(0.27 0.02 260);
+  --text-primary: oklch(0.24 0.08 260);
   --text-secondary: oklch(0.42 0.02 260);   /* AAA: ~7.2:1 on background */
   --text-tertiary: oklch(0.52 0.015 260);   /* AAA large / AA normal */
   --text-disabled: oklch(0.72 0.01 260);
