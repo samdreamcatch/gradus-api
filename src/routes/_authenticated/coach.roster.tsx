@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { UserPlus } from "lucide-react";
 import { queryOptions, useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { CoachBottomNav } from "@/components/coach/bottom-nav";
@@ -9,6 +10,14 @@ import { WeekScheduleView } from "@/components/coach/week-schedule-view";
 import { AthleteDetailSheet } from "@/components/coach/athlete-detail-sheet";
 import { InviteCard } from "@/components/onboarding/invite-card";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { getCoachRoster } from "@/lib/coach-roster.functions";
 import {
