@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { UserPlus } from "lucide-react";
 import { queryOptions, useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { CoachBottomNav } from "@/components/coach/bottom-nav";
@@ -9,6 +10,14 @@ import { WeekScheduleView } from "@/components/coach/week-schedule-view";
 import { AthleteDetailSheet } from "@/components/coach/athlete-detail-sheet";
 import { InviteCard } from "@/components/onboarding/invite-card";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { getCoachRoster } from "@/lib/coach-roster.functions";
 import {
@@ -105,7 +114,28 @@ function RosterPage() {
   return (
     <>
       <div className="mx-auto min-h-dvh max-w-3xl px-4 pt-8 pb-24">
-        <PageTitle>Roster</PageTitle>
+        <div className="flex items-start justify-between gap-3">
+          <PageTitle>Roster</PageTitle>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button type="button" variant="outline" size="sm" className="mt-1 shrink-0">
+                <UserPlus className="size-4" aria-hidden />
+                Invite code
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="bg-popover">
+              <DialogHeader>
+                <DialogTitle>Your invite code</DialogTitle>
+                <DialogDescription>
+                  Share this code with parents to add their athlete to your roster.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="mt-2">
+                <InviteCard compact />
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
 
         <div className="mt-4">
           <SegmentedToggle tab={tab} onChange={setTab} />
