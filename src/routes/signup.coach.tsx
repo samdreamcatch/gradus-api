@@ -19,7 +19,8 @@ function CoachSignupPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -33,7 +34,7 @@ function CoachSignupPage() {
         password,
         options: {
           emailRedirectTo: window.location.origin + "/coach",
-          data: { full_name: name },
+          data: { full_name: `${firstName} ${lastName}`.trim(), first_name: firstName, last_name: lastName },
         },
       });
       if (error) throw error;
@@ -84,9 +85,15 @@ function CoachSignupPage() {
         </div>
 
         <form onSubmit={handleEmail} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Name</Label>
-            <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required maxLength={160} />
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label htmlFor="firstName">First name</Label>
+              <Input id="firstName" value={firstName} onChange={(e) => setFirstName(e.target.value)} required maxLength={80} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="lastName">Last name</Label>
+              <Input id="lastName" value={lastName} onChange={(e) => setLastName(e.target.value)} required maxLength={80} />
+            </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
