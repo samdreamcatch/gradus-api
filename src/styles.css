@@ -139,8 +139,11 @@
   --pen-tennis-wash: oklch(0.30 0.095 119);
   --pen-tennis-ink: oklch(0.78 0.165 119);
 
+  /* Navy ink — replaces the near-black used on bright accent/attention surfaces in dark mode */
+  --ink-navy: oklch(0.22 0.09 255);
+
   --accent: var(--pen-tennis);
-  --accent-foreground: oklch(0.18 0.012 245);
+  --accent-foreground: var(--ink-navy);
   --accent-ink: var(--pen-tennis);
 
   --pen-pool: oklch(0.84 0.110 210);
