@@ -1138,7 +1138,7 @@ function MovePicker({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="flex max-h-[85vh] flex-col">
+      <SheetContent side="bottom" className="flex max-h-[85dvh] flex-col">
         <SheetHeader>
           <SheetTitle className="font-display text-2xl">
             {mode === "pick" ? "Add moves" : "New move"}
