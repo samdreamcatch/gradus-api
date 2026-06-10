@@ -1137,6 +1137,8 @@ function MovePicker({
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const vv = useVisualViewport();
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
