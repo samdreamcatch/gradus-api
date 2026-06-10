@@ -6,6 +6,11 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
 import { dbError } from "./db-error";
 import { createLovableAiGatewayProvider } from "./ai-gateway.server";
+import {
+  PROMPT_INJECTION_GUARD,
+  sanitizeUserContent,
+  wrapUntrusted,
+} from "./ai-prompt-safety";
 import type { SessionsByState } from "@/components/plans/flow-state-bars";
 
 
@@ -233,12 +238,18 @@ export const getPlanSessionsSummary = createServerFn({ method: "POST" })
         const mins = Math.round((s.duration_seconds ?? 0) / 60);
         const state = STATE_LABELS[Math.max(0, Math.min(4, s.state_index ?? 0))];
         const who = s.parent_id ? "parent-logged" : "athlete-logged";
-        const note = (s.note ?? "").trim();
-        return `- ${date} (${who}, ${mins}m, "${state}")${note ? `: ${note}` : ""}`;
+        const note = sanitizeUserContent(s.note, 400);
+        const noteBlock = note ? `: ${wrapUntrusted("session_note", note)}` : "";
+        return `- ${date} (${who}, ${mins}m, "${state}")${noteBlock}`;
       })
       .join("\n");
 
-    const prompt = `You are summarizing the logged sessions for one practice plan titled "${plan.title || "Untitled plan"}" by ${athleteFirstName}.
+    const safeTitle = sanitizeUserContent(plan.title || "Untitled plan", 120);
+    const safeName = sanitizeUserContent(athleteFirstName, 80);
+
+    const prompt = `${PROMPT_INJECTION_GUARD}
+
+You are summarizing the logged sessions for one practice plan titled "${safeTitle}" by ${safeName}.
 
 LOGGED SESSIONS (most recent first):
 ${sessionLines}
