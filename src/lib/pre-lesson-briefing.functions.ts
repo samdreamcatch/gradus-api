@@ -227,18 +227,22 @@ export const getPreLessonBriefing = createServerFn({ method: "POST" })
     if (!apiKey) throw new Error("Missing LOVABLE_API_KEY");
 
     const sinceLabel = sinceDate.toISOString().slice(0, 10);
+    const recentNote = logs.find((l) => l.note)?.note ?? "";
+    const safeRecentNote = sanitizeUserContent(recentNote, 400);
     const context_lines: string[] = [
-      `Coach: ${coachName}`,
-      `Athlete: ${athleteFirstName}`,
+      `Coach: ${sanitizeUserContent(coachName, 80)}`,
+      `Athlete: ${sanitizeUserContent(athleteFirstName, 80)}`,
       `Last lesson: ${sinceLabel}`,
       `Upcoming lesson date: ${data.lessonDate}`,
       "",
       "## Your active plan with this athlete",
       myPlan.data
-        ? `Plan "${myPlan.data.title ?? "(untitled)"}", last updated ${(myPlan.data.updated_at as string).slice(0, 10)}.`
+        ? `Plan "${sanitizeUserContent(myPlan.data.title ?? "(untitled)", 120)}", last updated ${(myPlan.data.updated_at as string).slice(0, 10)}.`
         : "No active plan with this athlete yet.",
       myPlanMoves.length
-        ? `New/updated moves in your plan since last lesson: ${myPlanMoves.map((m) => m.name).join(", ")}.`
+        ? `New/updated moves in your plan since last lesson: ${myPlanMoves
+            .map((m) => sanitizeUserContent(m.name, 80))
+            .join(", ")}.`
         : "No new moves in your plan since last lesson.",
       "",
       "## Active plans from other coaches",
@@ -246,7 +250,7 @@ export const getPreLessonBriefing = createServerFn({ method: "POST" })
         ? otherPlans
             .map(
               (p) =>
-                `- ${p.coachName}: "${p.title}" (last updated ${p.updated_at.slice(0, 10)})`,
+                `- ${sanitizeUserContent(p.coachName, 80)}: "${sanitizeUserContent(p.title, 120)}" (last updated ${p.updated_at.slice(0, 10)})`,
             )
             .join("\n")
         : "None.",
@@ -256,20 +260,25 @@ export const getPreLessonBriefing = createServerFn({ method: "POST" })
         ? `${logs.length} session${logs.length === 1 ? "" : "s"} totaling ~${totalMinutes} minute${totalMinutes === 1 ? "" : "s"}. ` +
           `Most recent: ${lastLoggedAt?.slice(0, 10)}. Recent flow states (newest first): ${stateSummary.join(", ")}.`
         : "No practice logs in this window.",
-      logs.find((l) => l.note)?.note
-        ? `Recent practice note: "${logs.find((l) => l.note)!.note}"`
+      safeRecentNote
+        ? `Recent practice note: ${wrapUntrusted("practice_note", safeRecentNote)}`
         : "",
       "",
       "## Recent messages between you and this family",
       recentMessages.length
         ? recentMessages
             .slice(0, 6)
-            .map((m) => `- ${m.sender_role}: ${(m.body ?? "(voice note)").slice(0, 200)}`)
+            .map(
+              (m) =>
+                `- ${m.sender_role}: ${wrapUntrusted("message_body", sanitizeUserContent(m.body ?? "(voice note)", 200))}`,
+            )
             .join("\n")
         : "No recent messages.",
     ];
 
-    const prompt = `You are writing a short pre-lesson briefing for a coach who is about to teach an upcoming lesson. Use the data below to write 2–4 plain-language sentences for the coach about what has happened with this athlete since the coach last had a lesson with this athlete. Be specific: name moves, plans, or notable signals from messages or practice logs. Reference what other coaches are working on if it's relevant. Do not invent facts. Do not tell the coach what to do, or how to plan their lesson. Do not give suggestions. Simply fill the coach in on what has happened in the time since they last saw this athlete. If a section is empty, simply omit it instead of saying "nothing happened". Address the coach in second person ("you", "your athlete"). Keep it under 80 words.
+    const prompt = `${PROMPT_INJECTION_GUARD}
+
+You are writing a short pre-lesson briefing for a coach who is about to teach an upcoming lesson. Use the data below to write 2–4 plain-language sentences for the coach about what has happened with this athlete since the coach last had a lesson with this athlete. Be specific: name moves, plans, or notable signals from messages or practice logs. Reference what other coaches are working on if it's relevant. Do not invent facts. Do not tell the coach what to do, or how to plan their lesson. Do not give suggestions. Simply fill the coach in on what has happened in the time since they last saw this athlete. If a section is empty, simply omit it instead of saying "nothing happened". Address the coach in second person ("you", "your athlete"). Keep it under 80 words.
 
 ${context_lines.filter(Boolean).join("\n")}`;
 
