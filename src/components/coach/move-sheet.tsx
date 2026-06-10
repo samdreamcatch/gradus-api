@@ -42,6 +42,7 @@ export function MoveSheet({
   onOpenChange: (next: Mode | null) => void;
 }) {
   const open = selection !== null;
+  const vv = useVisualViewport();
   return (
     <Sheet
       open={open}
@@ -51,8 +52,13 @@ export function MoveSheet({
     >
       <SheetContent
         side="bottom"
-        className="max-h-[90vh] overflow-y-auto border-t border-divider shadow-page"
-        style={{ backgroundColor: "var(--popover)", backgroundImage: "none" }}
+        className="overflow-y-auto border-t border-divider shadow-page"
+        style={{
+          backgroundColor: "var(--popover)",
+          backgroundImage: "none",
+          bottom: vv.keyboardInset,
+          maxHeight: Math.round(vv.height * 0.9),
+        }}
       >
 
         {open ? (
