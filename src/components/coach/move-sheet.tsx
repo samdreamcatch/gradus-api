@@ -30,6 +30,7 @@ import {
   type TargetKind,
 } from "@/lib/moves.functions";
 import { listPlans, addMoveToPlan } from "@/lib/plans.functions";
+import { useVisualViewport } from "@/hooks/use-visual-viewport";
 import { MoveField } from "./move-field";
 
 type Mode = "new" | string; // moveId or "new"
@@ -42,6 +43,7 @@ export function MoveSheet({
   onOpenChange: (next: Mode | null) => void;
 }) {
   const open = selection !== null;
+  const vv = useVisualViewport();
   return (
     <Sheet
       open={open}
@@ -51,8 +53,13 @@ export function MoveSheet({
     >
       <SheetContent
         side="bottom"
-        className="max-h-[90vh] overflow-y-auto border-t border-divider shadow-page"
-        style={{ backgroundColor: "var(--popover)", backgroundImage: "none" }}
+        className="overflow-y-auto border-t border-divider shadow-page"
+        style={{
+          backgroundColor: "var(--popover)",
+          backgroundImage: "none",
+          bottom: vv.keyboardInset,
+          maxHeight: Math.round(vv.height * 0.9),
+        }}
       >
 
         {open ? (

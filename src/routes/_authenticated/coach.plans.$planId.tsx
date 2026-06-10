@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { useVisualViewport } from "@/hooks/use-visual-viewport";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -1136,9 +1137,18 @@ function MovePicker({
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const vv = useVisualViewport();
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="flex max-h-[85dvh] flex-col">
+      <SheetContent
+        side="bottom"
+        className="flex flex-col"
+        style={{
+          bottom: vv.keyboardInset,
+          maxHeight: Math.round(vv.height * 0.85),
+        }}
+      >
         <SheetHeader>
           <SheetTitle className="font-display text-2xl">
             {mode === "pick" ? "Add moves" : "New move"}
