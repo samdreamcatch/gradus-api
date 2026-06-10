@@ -6,6 +6,11 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
 import { dbError } from "./db-error";
 import { createLovableAiGatewayProvider } from "./ai-gateway.server";
+import {
+  PROMPT_INJECTION_GUARD,
+  sanitizeUserContent,
+  wrapUntrusted,
+} from "./ai-prompt-safety";
 import type { SessionsByState } from "@/components/plans/flow-state-bars";
 
 
