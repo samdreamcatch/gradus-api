@@ -337,10 +337,13 @@ export const getCoachAthleteAiSummary = createServerFn({ method: "GET" })
         const mins = Math.round((s.duration_seconds ?? 0) / 60);
         const state = STATE_LABELS[Math.max(0, Math.min(4, s.state_index ?? 0))];
         const who = s.parent_id ? "parent-logged" : "athlete-logged";
-        const note = (s.note ?? "").trim();
+        const note = sanitizeUserContent(s.note, 400);
         const planMeta = s.plan_id ? planById.get(s.plan_id) : null;
-        const planTag = planMeta ? ` plan="${planMeta.title}" (${planMeta.status})` : "";
-        return `- ${date} (${who}, ${mins}m, "${state}"${planTag})${note ? `: ${note}` : ""}`;
+        const planTag = planMeta
+          ? ` plan="${sanitizeUserContent(planMeta.title, 120)}" (${planMeta.status})`
+          : "";
+        const noteBlock = note ? `: ${wrapUntrusted("session_note", note)}` : "";
+        return `- ${date} (${who}, ${mins}m, "${state}"${planTag})${noteBlock}`;
       })
       .join("\n");
 
@@ -350,12 +353,16 @@ export const getCoachAthleteAiSummary = createServerFn({ method: "GET" })
         const body =
           m.kind === "voice"
             ? `[voice note, ${m.duration_seconds ?? 0}s]`
-            : (m.body ?? "").slice(0, 280);
+            : wrapUntrusted("message_body", sanitizeUserContent(m.body, 280));
         return `- ${date} (${m.sender_role}): ${body}`;
       })
       .join("\n");
 
-    const prompt = `You are summarizing the last ${WINDOW_DAYS} days for a coach about their athlete ${firstName}.
+    const safeName = sanitizeUserContent(firstName, 80);
+
+    const prompt = `${PROMPT_INJECTION_GUARD}
+
+You are summarizing the last ${WINDOW_DAYS} days for a coach about their athlete ${safeName}.
 
 GOALS:
 ${goalLines || "- (no goals on file)"}
@@ -369,7 +376,7 @@ ${sessionLines || "- (none)"}
 MESSAGES FROM ATHLETE OR PARENT (most recent first):
 ${messageLines || "- (none)"}
 
-Write a 2-3 sentence summary that captures what ${firstName} has been working on across all of their plans (active and benched), how it's going, and any signal from messages. Call out specific plans by name when a pattern is clearly tied to one. Be specific — name moves, themes, or moods you actually see. Don't invent details.
+Write a 2-3 sentence summary that captures what ${safeName} has been working on across all of their plans (active and benched), how it's going, and any signal from messages. Call out specific plans by name when a pattern is clearly tied to one. Be specific — name moves, themes, or moods you actually see. Don't invent details.
 
 Then decide a verdict:
 - "increase": athlete is showing mastery, asking for more, or breezing through
