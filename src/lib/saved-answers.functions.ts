@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { dbError } from "./db-error";
 
 export type SavedAnswerDTO = {
   id: string;
@@ -17,7 +18,7 @@ export const listSavedAnswers = createServerFn({ method: "GET" })
       .from("parent_saved_answers")
       .select("id, sport, question, answer, created_at")
       .order("created_at", { ascending: false });
-    if (error) throw new Error(error.message);
+    if (error) dbError(error);
     return (data ?? []).map((r) => ({
       id: r.id,
       sport: r.sport,
@@ -49,8 +50,8 @@ export const saveAnswer = createServerFn({ method: "POST" })
       })
       .select("id")
       .single();
-    if (error) throw new Error(error.message);
-    return { id: row.id };
+    if (error) dbError(error);
+    return { id: row!.id };
   });
 
 export const deleteSavedAnswer = createServerFn({ method: "POST" })
@@ -61,6 +62,6 @@ export const deleteSavedAnswer = createServerFn({ method: "POST" })
       .from("parent_saved_answers")
       .delete()
       .eq("id", data.id);
-    if (error) throw new Error(error.message);
+    if (error) dbError(error);
     return { ok: true };
   });
