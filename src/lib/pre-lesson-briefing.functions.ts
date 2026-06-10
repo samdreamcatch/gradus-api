@@ -3,6 +3,11 @@ import { generateText } from "ai";
 import { createHash } from "crypto";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { createLovableAiGatewayProvider } from "./ai-gateway.server";
+import {
+  PROMPT_INJECTION_GUARD,
+  sanitizeUserContent,
+  wrapUntrusted,
+} from "./ai-prompt-safety";
 import { dbError } from "./db-error";
 
 export type PreLessonBriefing = {
