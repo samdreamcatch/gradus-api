@@ -1,44 +1,39 @@
-## Why you saw "No authorization header was provided"
+## Problems
 
-On `/signup/parent` the page does two things back‑to‑back:
+1. **iOS auto-zooms when focusing an input.** Safari zooms the viewport whenever a focused input/textarea/select has a computed font-size under 16px. Several of our fields (inline `MoveField` text inputs that inherit `text-sm`, the move-picker search `Input` which is `text-base` on mobile but `md:text-sm`, number/target inputs in `move-sheet.tsx`, etc.) trigger this on phones. The page itself doesn't move — the browser zooms.
 
-1. `supabase.auth.signUp({ email, password, … })`
-2. `startParentSignup({ data: { firstName, lastName, code } })` — a server function guarded by `requireSupabaseAuth`.
+2. **Move search list hides behind the keyboard.** The "Add moves" sheet (`SheetContent side="bottom"` with `max-h-[85vh]`) is sized against the full visual viewport. When the iOS keyboard opens, the sheet doesn't shrink, so the filtered list scrolls underneath the keyboard and items can't be tapped.
 
-When email confirmation is enabled (our current policy — and it should stay on), `signUp` does **not** return a session until the user clicks the confirmation link. So between steps 1 and 2 there is no Supabase session in the browser, `attachSupabaseAuth` has no bearer token to attach, and the server middleware rejects the call with *"No authorization header provided"*.
+## Plan
 
-The athlete signup flow (`signup.athlete.account.tsx`) already handles this: if `signUp` returns no session, it immediately calls `signInWithPassword` to establish one before invoking the protected server function. The parent flow is missing that fallback.
+### 1. Prevent input zoom globally
 
-## Fix
-
-Mirror the athlete pattern in `src/routes/signup.parent.tsx` — only this one file changes.
-
-In `handleSubmit`, after the existing `supabase.auth.signUp(...)` call, capture its result and, if no session was returned, fall back to signing in with the same credentials before calling `startParentSignup`:
-
-```ts
-const { data: signUp, error: signUpErr } = await supabase.auth.signUp({
-  email,
-  password,
-  options: {
-    emailRedirectTo: window.location.origin + "/parent",
-    data: { full_name: `${firstName} ${lastName}`.trim() },
-  },
-});
-if (signUpErr) throw signUpErr;
-if (!signUp.session) {
-  const { error: signInErr } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
-  if (signInErr) throw signInErr;
-}
+Edit `src/routes/__root.tsx` viewport meta from:
+```
+width=device-width, initial-scale=1
+```
+to:
+```
+width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, interactive-widget=resizes-content
 ```
 
-The branch only runs when the user is not already authed (the existing `if (!sessionData.session)` block). Everything else in the file — the `start({ data: … })` call, navigation to `/signup/parent/athletes`, error handling — stays the same.
+- `maximum-scale=1` stops Safari's focus-zoom without us having to audit every input's font-size.
+- `interactive-widget=resizes-content` (iOS 16+/Chrome) makes the layout viewport shrink when the soft keyboard opens, so `vh`/`dvh`-based layouts adapt automatically.
+- `viewport-fit=cover` is a no-op for this issue but is the standard partner setting and keeps safe-area insets working.
 
-## Notes / non‑changes
+This is the lightest-touch fix that addresses every input across the app in one place and matches what the user described ("the display should not move").
 
-- No server function changes. `startParentSignup` and `requireSupabaseAuth` are correct.
-- No change to `src/start.ts`; `attachSupabaseAuth` is already wired into `functionMiddleware`.
-- Email confirmation stays enabled. Sign‑in‑after‑signup with the same password is safe because the user just supplied it on this form.
-- If the email is already registered, `signUp` will error and we surface that to the user as today — no silent account takeover.
+### 2. Make the move-picker sheet keyboard-aware
+
+In `src/routes/_authenticated/coach.plans.$planId.tsx`, the move-picker `SheetContent` (around line 1141):
+
+- Swap `max-h-[85vh]` for `max-h-[85dvh]` so the sheet honors the dynamic viewport once the keyboard is open (combined with `interactive-widget=resizes-content` above, the sheet shrinks instead of letting the list slide under the keyboard).
+- Keep the existing flex layout: header + sticky search row on top, `flex-1 overflow-y-auto` results list in the middle, footer actions pinned at the bottom. Confirm the `<ul>` keeps `flex-1 overflow-y-auto` (it does today) so the list — not the page — is what scrolls.
+
+No other UI restructuring; the search input stays at the top of the sheet where it already is, and the list below it remains scrollable within the shrunken sheet.
+
+### Out of scope
+
+- No font-size changes on individual inputs (the viewport meta covers it).
+- No changes to server functions, data, or styling tokens.
+- Other bottom sheets aren't reported as broken; leaving them alone unless the same pattern shows up later.
