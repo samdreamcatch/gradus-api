@@ -5,6 +5,11 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { createLovableAiGatewayProvider } from "./ai-gateway.server";
 import { dbError } from "./db-error";
 import { getSportLevel, getSport } from "./coach-sports";
+import {
+  PROMPT_INJECTION_GUARD,
+  sanitizeUserContent,
+  wrapUntrusted,
+} from "./ai-prompt-safety";
 import type { SessionsByState } from "@/components/plans/flow-state-bars";
 
 const WINDOW_DAYS = 30;
