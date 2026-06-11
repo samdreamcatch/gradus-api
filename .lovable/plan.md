@@ -1,21 +1,21 @@
-## Goal
-The fixed bottom navigation on mobile sits too low (icons hug the safe-area edge). Make the bar slightly taller so icons read as vertically centered above the home indicator, across all three roles.
+## Problem
+In the plan editor sheet (`src/routes/_authenticated/coach.plans.$planId.tsx`), the bottom action row containing **Bench / Delete** + **Activate & share / Update & share / Save template** is rendered as an inline element at the end of the scrollable sheet content (line 812). On mobile, this row sits flush with the bottom of the sheet with no `env(safe-area-inset-bottom)` accommodation, so on iPhones the buttons sit behind the home-indicator gesture area and are hard to tap. It also scrolls off-screen, requiring users to scroll all the way down to reach primary actions.
 
 ## Change
-In all three nav components:
-- `src/components/athlete/bottom-nav.tsx`
-- `src/components/coach/bottom-nav.tsx`
-- `src/components/parent/bottom-nav.tsx`
+In `src/routes/_authenticated/coach.plans.$planId.tsx`:
 
-Add extra vertical breathing room above the safe-area inset so the icon/label block is centered in a taller bar:
+1. **Action row (line 812)** — promote the inline action row into a sticky footer pinned to the bottom of the sheet:
+   - Wrap classes: `sticky bottom-0 -mx-6 mt-4 flex items-center justify-between gap-3 border-t border-divider bg-popover px-6 pt-3 pb-[max(env(safe-area-inset-bottom),0.75rem)]`
+   - `-mx-6` + `px-6` makes the divider/background span the full sheet width matching the sheet's horizontal padding.
+   - `bg-popover` keeps the bar opaque over the scrolling content (consistent with the existing sticky footer used in the "Save to library" sub-form at line 1435).
+   - `pb-[max(env(safe-area-inset-bottom),0.75rem)]` clears the iOS home indicator so the buttons are always tappable.
 
-- On the `<ul>`: add `min-h-16` (was implicitly ~56px from `py-2.5`) so the bar has a guaranteed taller content area, with `items-center` already present.
-- On each item's inner `<span>`: bump padding from `py-2.5` to `py-3.5` so the icon+label group has more vertical space and reads centered.
-- Keep `pb-[env(safe-area-inset-bottom)]` on the `<nav>` so the home indicator still gets its inset (the taller content sits above it, not overlapping it).
+2. **Scrollable content bottom padding** — add `pb-2` to the content's outer wrapper (`<div className="mt-5 space-y-5">` at line 442) so the last content block doesn't visually touch the new sticky footer's top border.
 
-No structural, color, or layout-token changes; icons remain centered via the existing `items-center justify-center` flex.
+3. No other structural changes. Sheet sizing (`max-h-[92vh]`), the visual-viewport keyboard handling already in place, and the inner "Save to library & add" sub-form's own sticky footer (line 1435) are unchanged.
 
 ## Out of scope
-- Desktop layout (bar is mobile-first; change is purely vertical sizing).
-- Icon size, label typography, active-state styling.
-- Page bottom padding (`pb-24` on routes) — still clears the slightly taller bar.
+- The athlete and parent plan views (read-only — no action row at risk).
+- The move-creation sub-form (line 1435) already has a sticky bottom row and works correctly.
+- Desktop layout (sheet is centered with comfortable bottom margin; sticky behavior is harmless there).
+- Bottom navigation bar (already adjusted in the previous turn).
