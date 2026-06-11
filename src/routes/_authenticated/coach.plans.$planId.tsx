@@ -439,7 +439,7 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
       ) : null}
 
 
-      <div className="mt-5 space-y-5">
+      <div className="mt-5 space-y-5 pb-2">
 
         {/* Assignment — compact */}
         <div className="rounded-lg border border-divider bg-card px-3 py-2">
@@ -809,7 +809,7 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
         </div>
 
 
-        <div className="flex items-center justify-between gap-3 border-t border-divider pt-4">
+        <div className="sticky bottom-0 -mx-6 mt-4 flex items-center justify-between gap-3 border-t border-divider bg-popover px-6 pt-3 pb-[max(env(safe-area-inset-bottom),0.75rem)]">
           {plan.status === "active" ? (
             <button
               type="button"
