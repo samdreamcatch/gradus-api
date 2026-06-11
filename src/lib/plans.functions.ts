@@ -14,14 +14,32 @@ export type TargetKind = "reps" | "mins";
 type Client = SupabaseClient<Database>;
 
 async function getCoachId(supabase: Client, userId: string): Promise<string> {
-  const { data, error } = await supabase
+  const existing = await supabase
     .from("coach_profiles")
     .select("id")
     .eq("user_id", userId)
     .maybeSingle();
-  if (error) dbError(error);
-  if (!data) throw new Error("Coach profile not found");
-  return data.id;
+  if (existing.error) dbError(existing.error);
+  if (existing.data) return existing.data.id;
+
+  // Don't silently convert a parent into a coach.
+  const parent = await supabase
+    .from("parent_profiles")
+    .select("id")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (parent.error) dbError(parent.error);
+  if (parent.data) {
+    throw new Error("This account is registered as a parent, not a coach.");
+  }
+
+  const created = await supabase
+    .from("coach_profiles")
+    .insert({ user_id: userId })
+    .select("id")
+    .single();
+  if (created.error) dbError(created.error);
+  return created.data.id;
 }
 
 export interface PlanMoveDTO {
