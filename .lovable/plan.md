@@ -1,21 +1,47 @@
-## Problem
-In the plan editor sheet (`src/routes/_authenticated/coach.plans.$planId.tsx`), the bottom action row containing **Bench / Delete** + **Activate & share / Update & share / Save template** is rendered as an inline element at the end of the scrollable sheet content (line 812). On mobile, this row sits flush with the bottom of the sheet with no `env(safe-area-inset-bottom)` accommodation, so on iPhones the buttons sit behind the home-indicator gesture area and are hard to tap. It also scrolls off-screen, requiring users to scroll all the way down to reach primary actions.
+## What's causing it
 
-## Change
-In `src/routes/_authenticated/coach.plans.$planId.tsx`:
+On mobile (especially iOS Safari), the whole page can be dragged/rubber-banded because:
 
-1. **Action row (line 812)** — promote the inline action row into a sticky footer pinned to the bottom of the sheet:
-   - Wrap classes: `sticky bottom-0 -mx-6 mt-4 flex items-center justify-between gap-3 border-t border-divider bg-popover px-6 pt-3 pb-[max(env(safe-area-inset-bottom),0.75rem)]`
-   - `-mx-6` + `px-6` makes the divider/background span the full sheet width matching the sheet's horizontal padding.
-   - `bg-popover` keeps the bar opaque over the scrolling content (consistent with the existing sticky footer used in the "Save to library" sub-form at line 1435).
-   - `pb-[max(env(safe-area-inset-bottom),0.75rem)]` clears the iOS home indicator so the buttons are always tappable.
+1. **No `overscroll-behavior` on `html`/`body`** in `src/styles.css`. Browsers default to letting the document bounce when you drag past the top/bottom, and that bounce drags the entire app (gradient background, fixed bottom nav, sticky footers) with it.
+2. **`background-attachment: fixed` on `body`** (line 206) combined with the bouncing document makes the gradient/paper texture visibly slide independently of content, which exaggerates the "the screen is moving everywhere" feeling.
+3. **Every page wraps content in `min-h-dvh`** and the `<body>` itself scrolls. The fixed `CoachBottomNav` / `AthleteBottomNav` / `ParentBottomNav` stay put, but the sheet overlays and pull-to-refresh gesture on the body let the user drag the page around behind them.
+4. **iOS pull-to-refresh / swipe-back** are also enabled by default on the document scroller, which contributes to horizontal/vertical drift.
 
-2. **Scrollable content bottom padding** — add `pb-2` to the content's outer wrapper (`<div className="mt-5 space-y-5">` at line 442) so the last content block doesn't visually touch the new sticky footer's top border.
+Nothing in `src/styles.css` currently sets `overscroll-behavior`, `touch-action`, or otherwise tames the document scroller — so the browser defaults win.
 
-3. No other structural changes. Sheet sizing (`max-h-[92vh]`), the visual-viewport keyboard handling already in place, and the inner "Save to library & add" sub-form's own sticky footer (line 1435) are unchanged.
+## Plan
 
-## Out of scope
-- The athlete and parent plan views (read-only — no action row at risk).
-- The move-creation sub-form (line 1435) already has a sticky bottom row and works correctly.
-- Desktop layout (sheet is centered with comfortable bottom margin; sticky behavior is harmless there).
-- Bottom navigation bar (already adjusted in the previous turn).
+Single, small CSS-only change in `src/styles.css` (inside the existing `@layer base` block). No component or layout changes.
+
+1. Add to `html`:
+   - `overscroll-behavior: none;` — disables rubber-band + pull-to-refresh on the root scroller.
+   - `height: 100%;` — keeps the document constrained so the body is the only scroller.
+
+2. Add to `body`:
+   - `overscroll-behavior-y: none;` — belt-and-braces for iOS, which sometimes only honors the rule on the body.
+   - `overscroll-behavior-x: none;` — kills sideways drift from horizontal swipes.
+   - Keep `min-height: 100vh` and the existing gradient/paper texture, but the bounce will stop so `background-attachment: fixed` no longer visually slides.
+
+3. Leave sheets, dialogs, and the bottom nav alone — they already render correctly once the document stops bouncing.
+
+### Technical details
+
+```css
+@layer base {
+  html {
+    height: 100%;
+    overscroll-behavior: none;
+  }
+  body {
+    overscroll-behavior-x: none;
+    overscroll-behavior-y: none;
+    /* existing rules unchanged */
+  }
+}
+```
+
+### Out of scope
+
+- No changes to bottom nav, sheets, or route layouts.
+- Not switching to a fixed-body / inner-scroller architecture (heavier refactor; only needed if the simple `overscroll-behavior` fix doesn't fully resolve it on iOS).
+- No changes to `background-attachment: fixed` unless the bounce fix alone doesn't make the gradient feel anchored — we'll revisit only if you still see drift after the fix.
