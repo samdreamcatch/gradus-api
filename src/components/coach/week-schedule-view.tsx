@@ -86,6 +86,9 @@ export function WeekScheduleView({
   const [selectedDayIndex, setSelectedDayIndex] = useState<number>(
     todayIndex >= 0 && todayIndex < 7 ? todayIndex : 0,
   );
+  const [sheetMode, setSheetMode] = useState<LessonSlotSheetMode | null>(null);
+  const sheetOpen = sheetMode != null;
+
 
   const weekEnd = addDays(weekStart, 6);
   const isCurrentWeek = sameDay(weekStart, currentWeekStart);
