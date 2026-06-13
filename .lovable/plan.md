@@ -1,37 +1,27 @@
-# RosterCard — Option A (name on its own row)
+## Why the name is asked twice
 
-Edit `src/components/coach/roster-card.tsx` only. No new components, no token changes.
+1. `/signup/coach` collects `firstName` / `lastName` and passes them as Supabase auth `user_metadata` (`first_name`, `last_name`, `full_name`) on `supabase.auth.signUp`. They are **not** written to `coach_profiles`.
+2. `coach.onboarding.tsx` Step 1 ("What's your name?") then asks again, and that's where the names actually land in `coach_profiles` via `saveCoachProfile`.
 
-## Change
+So the signup name is captured but never persisted, and onboarding re-collects it.
 
-Split the current single flex row into two stacked rows inside the card body:
+## Fix
 
-1. **Top row** — name (full width, `font-display`, current size) + kebab `DropdownMenu`. Uses `grid-cols-[minmax(0,1fr)_auto]` so the name always owns the leftover width and truncates only if a single word is genuinely too long.
-2. **Bottom row** — the slot pills `<ul>` wraps freely beneath the name. Pill styling unchanged. `justify-start` instead of `justify-end` (reads left-to-right under the name). `mt-2` spacing.
+Persist the signup name into `coach_profiles` on first load, and drop the redundant step.
 
-Empty-schedule state ("No schedule") moves to the bottom row too, same `text-text-tertiary text-xs`.
+1. **`src/lib/coach-profile.functions.ts` — `ensureProfile`**
+   On the INSERT path (first time the coach loads anything), read `auth.users.raw_user_meta_data` for `first_name` / `last_name` (fallback: split `full_name` on the first space; Google OAuth only provides `full_name`). Insert those values alongside `user_id` so `coach_profiles.first_name` / `last_name` are populated immediately after signup. Existing rows are untouched.
 
-## Diff sketch
+2. **`src/routes/_authenticated/coach.onboarding.tsx`**
+   - Remove Step 1 (the name inputs) and the `saveProfile` mutation call from `handleContinue`.
+   - Renumber: steps become 1 Sports → 2 Levels → 3 Practice hours → 4 Invite parents → 5 Review. Update the "Step X of 5" header, the 5 progress pips, the `canContinue` switch, and the `handleContinue` / `handleFinish` gating (`step < 5` instead of `< 6`).
+   - Keep `firstName` / `lastName` state (sourced from `data.profile`) so `ReviewSummary` still shows the coach's name.
+   - **Safety net:** if `data.profile.firstName` is empty (edge case — older accounts, or a Google user whose metadata split failed), fall back to showing the name step as step 1 so the coach can't end up with a blank profile. Implemented as a computed `needsName` flag that conditionally prepends the name step.
 
-```text
-<div class="card …">
-  <span class="accent stripe" />
+3. No changes to `/signup/coach` — it already collects and forwards the name.
 
-  <div class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
-    <button class="… truncate font-display …">{name}</button>
-    <DropdownMenu>…kebab…</DropdownMenu>
-  </div>
+## Technical notes
 
-  <div class="mt-2">
-    {slots.length === 0
-      ? <span class="text-xs text-text-tertiary">No schedule</span>
-      : <ul class="flex flex-wrap gap-1">{pills}</ul>}
-  </div>
-</div>
-```
-
-## Notes
-
-- No data/behavior changes — same `onSelect`, same remove mutation, same alert dialog.
-- Card grows ~24px taller per athlete. Roster list spacing (`space-y-3`) stays.
-- Truncation on the name becomes a true edge case (only triggers for names longer than the full card width), not a side-effect of slot count.
+- `ensureProfile` already uses the authenticated `supabase` client; reading `auth.users` from it requires `supabase.auth.getUser()` (which returns metadata) rather than a direct table query — RLS blocks reads on `auth.users`. Use `context.claims` if it already carries `user_metadata`; otherwise call `supabase.auth.getUser()` inside `ensureProfile`.
+- No DB migration needed; the columns already exist and are nullable/empty-string defaulted.
+- No change to `saveCoachProfile` — it stays available for the future "edit profile" screen and the `needsName` fallback path.
