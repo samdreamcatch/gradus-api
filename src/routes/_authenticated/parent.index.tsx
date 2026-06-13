@@ -34,7 +34,7 @@ function ParentHome() {
   }, [status, navigate]);
 
   // Show invite-coach card when the parent has athletes but no linked coach.
-  const showInviteCard = !!status?.hasParentProfile && status.hasAthletes && !status.inviteCode;
+  const showInviteCard = !!status?.hasParentProfile && status.hasAthletes && !status.hasAnyCoach;
 
   return (
     <div className="mx-auto max-w-2xl px-3 py-6 pb-24">
