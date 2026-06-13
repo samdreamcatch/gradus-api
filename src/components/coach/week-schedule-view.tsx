@@ -216,7 +216,7 @@ export function WeekScheduleView({
 
       {/* Selected day */}
       <div className="mt-4 overflow-hidden rounded-2xl border border-divider bg-card shadow-card">
-        <div className="flex items-baseline justify-between gap-3 border-b border-divider/60 px-4 py-3">
+        <div className="flex items-baseline justify-between gap-3 border-b border-divider px-4 py-4">
           <div className="flex items-baseline gap-2">
             <span className="font-display text-xl font-black text-text-primary">
               {DAY_LONG[selectedDate.getDay()]}
@@ -242,24 +242,32 @@ export function WeekScheduleView({
             Rest day — no lessons scheduled
           </div>
         ) : (
-          <ul className="divide-y divide-divider/50">
-            {selectedSessions.map((s, i) => (
-              <li key={i}>
-                <LessonRow
-                  session={s}
-                  summary={summariesByAthlete?.get(s.athleteId)}
-                  onSelect={onSelectAthlete}
-                />
-              </li>
-            ))}
-          </ul>
+          <div className="relative px-4 py-5">
+            <div
+              aria-hidden
+              className="pointer-events-none absolute left-[2.25rem] top-4 bottom-4 w-px bg-divider"
+            />
+            <ul className="relative space-y-4">
+              {selectedSessions.map((s, i) => (
+                <li key={i}>
+                  <LessonRow
+                    session={s}
+                    summary={summariesByAthlete?.get(s.athleteId)}
+                    onSelect={onSelectAthlete}
+                  />
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
 
       </div>
 
-      <p className="mt-3 px-1 text-[10px] uppercase tracking-widest text-text-tertiary">
+      <p className="mt-3 flex items-center gap-2 px-1 text-[10px] uppercase tracking-widest text-text-tertiary">
+        <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-accent" />
         Showing recurring weekly lessons
       </p>
+
     </div>
   );
 }
