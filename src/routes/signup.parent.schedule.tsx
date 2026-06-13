@@ -317,7 +317,7 @@ function ParentSchedulePage() {
                     </Button>
                   )}
                   {slot.frequency === "biweekly" && (
-                    <div className="basis-full space-y-1.5">
+                    <div className="col-span-2 space-y-1.5 sm:basis-full">
                       <Label className="text-xs text-text-tertiary">
                         Starting from — the lesson repeats every 2 weeks from this date.
                       </Label>
@@ -356,7 +356,7 @@ function ParentSchedulePage() {
                     </div>
                   )}
                   {(slot.frequency === "twice_monthly" || slot.frequency === "monthly") && (
-                    <div className="basis-full space-y-1.5">
+                    <div className="col-span-2 space-y-1.5 sm:basis-full">
                       <Label className="text-xs text-text-tertiary">
                         {weeksHelpText(slot.frequency)}
                       </Label>
