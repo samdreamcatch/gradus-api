@@ -233,7 +233,7 @@ export function WeekScheduleView({
           <span className="text-[10px] font-bold uppercase tracking-widest text-text-tertiary">
             {selectedSessions.length === 0
               ? "Rest"
-              : `${selectedSessions.length} session${selectedSessions.length === 1 ? "" : "s"}`}
+              : `${selectedSessions.length} LESSON${selectedSessions.length === 1 ? "" : "S"}`}
           </span>
         </div>
 
