@@ -107,9 +107,9 @@ export function ScheduleEditor({ slots, onChange }: ScheduleEditorProps) {
       {slots.map((slot, i) => (
         <div
           key={i}
-          className="flex flex-wrap items-end gap-3 rounded-xl border border-divider bg-elevated p-4"
+          className="grid grid-cols-2 gap-3 rounded-xl border border-divider bg-elevated p-4 sm:flex sm:flex-wrap sm:items-end"
         >
-          <div className="min-w-[140px] flex-1 space-y-1">
+          <div className="col-span-2 space-y-1 sm:min-w-[140px] sm:flex-1">
             <Label className="text-xs text-text-tertiary">Day</Label>
             <Select
               value={slot.dayOfWeek === null ? "" : String(slot.dayOfWeek)}
@@ -127,7 +127,7 @@ export function ScheduleEditor({ slots, onChange }: ScheduleEditorProps) {
               </SelectContent>
             </Select>
           </div>
-          <div className="min-w-[110px] flex-1 space-y-1">
+          <div className="space-y-1 sm:min-w-[110px] sm:flex-1">
             <Label className="text-xs text-text-tertiary">Start</Label>
             <Select
               value={slot.startMinute === null ? "" : String(slot.startMinute)}
@@ -145,7 +145,7 @@ export function ScheduleEditor({ slots, onChange }: ScheduleEditorProps) {
               </SelectContent>
             </Select>
           </div>
-          <div className="min-w-[110px] flex-1 space-y-1">
+          <div className="space-y-1 sm:min-w-[110px] sm:flex-1">
             <Label className="text-xs text-text-tertiary">End</Label>
             <Select
               value={slot.endMinute === null ? "" : String(slot.endMinute)}
@@ -163,7 +163,7 @@ export function ScheduleEditor({ slots, onChange }: ScheduleEditorProps) {
               </SelectContent>
             </Select>
           </div>
-          <div className="min-w-[150px] flex-1 space-y-1">
+          <div className="col-span-2 space-y-1 sm:min-w-[150px] sm:flex-1">
             <Label className="text-xs text-text-tertiary">Frequency</Label>
             <Select
               value={slot.frequency}
@@ -196,7 +196,7 @@ export function ScheduleEditor({ slots, onChange }: ScheduleEditorProps) {
             </Button>
           )}
           {slot.frequency === "biweekly" && (
-            <div className="basis-full space-y-1.5">
+            <div className="col-span-2 space-y-1.5 sm:basis-full">
               <Label className="text-xs text-text-tertiary">
                 Starting from — the lesson repeats every 2 weeks from this date.
               </Label>
@@ -232,7 +232,7 @@ export function ScheduleEditor({ slots, onChange }: ScheduleEditorProps) {
             </div>
           )}
           {(slot.frequency === "twice_monthly" || slot.frequency === "monthly") && (
-            <div className="basis-full space-y-1.5">
+            <div className="col-span-2 space-y-1.5 sm:basis-full">
               <Label className="text-xs text-text-tertiary">{weeksHelpText(slot.frequency)}</Label>
               <div className="flex flex-wrap gap-1.5">
                 {WEEK_OPTIONS.map((w) => {
