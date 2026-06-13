@@ -97,17 +97,33 @@ export function WeekScheduleView({
       const name = `${a.firstName} ${a.lastName}`.trim();
       for (const s of a.slots) {
         const dowIndex = (s.dayOfWeek + 6) % 7; // Mon=0..Sun=6
+        const date = addDays(weekStart, dowIndex);
+        const iso = toIsoDate(date);
+        const override = s.overrides.find((o) => o.date === iso);
+        if (override?.status === "canceled") continue;
+        const startMinute =
+          override?.status === "rescheduled" && override.startMinute != null
+            ? override.startMinute
+            : s.startMinute;
+        const endMinute =
+          override?.status === "rescheduled" && override.endMinute != null
+            ? override.endMinute
+            : s.endMinute;
         map.get(dowIndex)!.push({
+          slotId: s.id,
           athleteId: a.athleteId,
           name,
-          startMinute: s.startMinute,
-          endMinute: s.endMinute,
+          dayOfWeek: s.dayOfWeek,
+          startMinute,
+          endMinute,
+          overrideStatus: override?.status ?? null,
         });
       }
     }
     for (const arr of map.values()) arr.sort((a, b) => a.startMinute - b.startMinute);
     return map;
-  }, [athletes]);
+  }, [athletes, weekStart]);
+
 
   const selectedDate = addDays(weekStart, selectedDayIndex);
   const selectedSessions = sessionsByDay.get(selectedDayIndex) ?? [];
