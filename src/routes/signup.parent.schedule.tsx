@@ -228,9 +228,9 @@ function ParentSchedulePage() {
               {slots.map((slot, i) => (
                 <div
                   key={i}
-                  className="flex flex-wrap items-end gap-2 rounded-md border border-divider bg-elevated p-3"
+                  className="grid grid-cols-2 gap-2 rounded-md border border-divider bg-elevated p-3 sm:flex sm:flex-wrap sm:items-end"
                 >
-                  <div className="min-w-[140px] flex-1 space-y-1">
+                  <div className="col-span-2 space-y-1 sm:min-w-[140px] sm:flex-1">
                     <Label className="text-xs text-text-tertiary">Day</Label>
                     <Select
                       value={slot.dayOfWeek === null ? "" : String(slot.dayOfWeek)}
@@ -248,7 +248,7 @@ function ParentSchedulePage() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="min-w-[110px] flex-1 space-y-1">
+                  <div className="space-y-1 sm:min-w-[110px] sm:flex-1">
                     <Label className="text-xs text-text-tertiary">Start</Label>
                     <Select
                       value={slot.startMinute === null ? "" : String(slot.startMinute)}
@@ -266,7 +266,7 @@ function ParentSchedulePage() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="min-w-[110px] flex-1 space-y-1">
+                  <div className="space-y-1 sm:min-w-[110px] sm:flex-1">
                     <Label className="text-xs text-text-tertiary">End</Label>
                     <Select
                       value={slot.endMinute === null ? "" : String(slot.endMinute)}
@@ -284,7 +284,7 @@ function ParentSchedulePage() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="min-w-[150px] flex-1 space-y-1">
+                  <div className="col-span-2 space-y-1 sm:min-w-[150px] sm:flex-1">
                     <Label className="text-xs text-text-tertiary">Frequency</Label>
                     <Select
                       value={slot.frequency}
