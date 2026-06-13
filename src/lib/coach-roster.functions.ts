@@ -75,12 +75,39 @@ export const getCoachRoster = createServerFn({ method: "GET" })
         .in("athlete_id", athleteIds),
       supabaseAdmin
         .from("athlete_lesson_slots")
-        .select("athlete_id, day_of_week, start_minute, end_minute")
+        .select("id, athlete_id, day_of_week, start_minute, end_minute")
         .eq("coach_id", coachId)
         .in("athlete_id", athleteIds),
     ]);
     if (sportsRes.error) dbError(sportsRes.error);
     if (slotsRes.error) dbError(slotsRes.error);
+
+    const slotIds = (slotsRes.data ?? []).map((s) => s.id as string);
+    const overridesRes = slotIds.length
+      ? await supabaseAdmin
+          .from("lesson_slot_overrides")
+          .select("slot_id, occurrence_date, status, start_minute, end_minute")
+          .in("slot_id", slotIds)
+      : { data: [] as Array<{
+          slot_id: string;
+          occurrence_date: string;
+          status: string;
+          start_minute: number | null;
+          end_minute: number | null;
+        }>, error: null };
+    if (overridesRes.error) dbError(overridesRes.error);
+
+    const overridesBySlot = new Map<string, SlotOverride[]>();
+    for (const o of overridesRes.data ?? []) {
+      const arr = overridesBySlot.get(o.slot_id) ?? [];
+      arr.push({
+        date: o.occurrence_date,
+        status: o.status as "canceled" | "rescheduled",
+        startMinute: o.start_minute,
+        endMinute: o.end_minute,
+      });
+      overridesBySlot.set(o.slot_id, arr);
+    }
 
     const sportByAthlete = new Map<string, string>();
     for (const r of sportsRes.data ?? []) {
@@ -91,12 +118,15 @@ export const getCoachRoster = createServerFn({ method: "GET" })
     for (const s of slotsRes.data ?? []) {
       const arr = slotsByAthlete.get(s.athlete_id) ?? [];
       arr.push({
+        id: s.id,
         dayOfWeek: s.day_of_week,
         startMinute: s.start_minute,
         endMinute: s.end_minute,
+        overrides: overridesBySlot.get(s.id) ?? [],
       });
       slotsByAthlete.set(s.athlete_id, arr);
     }
+
     // Sort slots Mon→Sun (treat Sunday=0 as last)
     const dayOrder = (d: number) => (d === 0 ? 7 : d);
     for (const arr of slotsByAthlete.values()) {
