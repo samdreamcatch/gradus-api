@@ -91,35 +91,52 @@ function ParentAthletesPage() {
     <div className="flex min-h-dvh items-center justify-center px-4 py-12">
       <div className="w-full max-w-md rounded-2xl bg-card p-8 shadow-card">
         <div className="mb-6 text-center">
-          <p className="text-xs font-bold uppercase tracking-widest text-accent-ink">
-            You&apos;re connecting to
-          </p>
-          {isLoading ? (
-            <p className="mt-2 text-text-tertiary">Loading coach…</p>
-          ) : coachError ? (
-            <p className="mt-2 text-sm text-destructive">
-              {(coachError as Error).message}
-            </p>
+          {code ? (
+            <>
+              <p className="text-xs font-bold uppercase tracking-widest text-accent-ink">
+                You&apos;re connecting to
+              </p>
+              {isLoading ? (
+                <p className="mt-2 text-text-tertiary">Loading coach…</p>
+              ) : coachError ? (
+                <p className="mt-2 text-sm text-destructive">
+                  {(coachError as Error).message}
+                </p>
+              ) : (
+                <>
+                  <h1 className="mt-2 font-display text-3xl text-text-primary">
+                    Coach {coachName}
+                  </h1>
+                  {coach && coach.sports.length > 0 && (
+                    <div className="mt-3 flex flex-wrap justify-center gap-2">
+                      {coach.sports.map((s) => (
+                        <span
+                          key={s}
+                          className="rounded-pill border border-divider bg-elevated px-3 py-1 text-xs font-semibold uppercase tracking-wide text-text-secondary"
+                        >
+                          {s}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+            </>
           ) : (
             <>
+              <p className="text-xs font-bold uppercase tracking-widest text-accent-ink">
+                Add your athletes
+              </p>
               <h1 className="mt-2 font-display text-3xl text-text-primary">
-                Coach {coachName}
+                Who are we tracking?
               </h1>
-              {coach && coach.sports.length > 0 && (
-                <div className="mt-3 flex flex-wrap justify-center gap-2">
-                  {coach.sports.map((s) => (
-                    <span
-                      key={s}
-                      className="rounded-pill border border-divider bg-elevated px-3 py-1 text-xs font-semibold uppercase tracking-wide text-text-secondary"
-                    >
-                      {s}
-                    </span>
-                  ))}
-                </div>
-              )}
+              <p className="mt-2 text-sm text-text-secondary">
+                Add each athlete in your family. You can invite a coach to join them after signup.
+              </p>
             </>
           )}
         </div>
+
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-2">
