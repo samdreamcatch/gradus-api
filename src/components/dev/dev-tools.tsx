@@ -50,6 +50,7 @@ async function detectRole(userId: string): Promise<DevRole | null> {
 export function DevTools() {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
   const [session, setSession] = useState<ActiveSession>({
     email: null,
     userId: null,
