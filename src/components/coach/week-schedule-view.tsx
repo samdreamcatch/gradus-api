@@ -366,10 +366,14 @@ function LessonRow({
   session,
   summary,
   onSelect,
+  onEditRecurring,
+  onEditOccurrence,
 }: {
   session: DaySession;
   summary?: AthletePracticeSummary;
   onSelect?: (athleteId: string) => void;
+  onEditRecurring?: () => void;
+  onEditOccurrence?: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
   return (
@@ -396,14 +400,21 @@ function LessonRow({
           aria-expanded={expanded}
           className="flex w-full items-center justify-between gap-3 p-4 text-left transition active:scale-[0.99] focus-visible:outline-none"
         >
-          <h3
-            className={cn(
-              "min-w-0 truncate font-display text-xl font-black leading-tight",
-              expanded ? "text-text-primary" : "text-text-primary/85",
-            )}
-          >
-            {session.name}
-          </h3>
+          <div className="flex min-w-0 flex-col gap-1">
+            <h3
+              className={cn(
+                "min-w-0 truncate font-display text-xl font-black leading-tight",
+                expanded ? "text-text-primary" : "text-text-primary/85",
+              )}
+            >
+              {session.name}
+            </h3>
+            {session.overrideStatus === "rescheduled" ? (
+              <span className="w-fit rounded-pill border border-[color:var(--pen-orange)]/40 px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-[color:var(--pen-orange-ink)]">
+                Rescheduled
+              </span>
+            ) : null}
+          </div>
           <StatusChip summary={summary} />
         </button>
 
@@ -411,6 +422,27 @@ function LessonRow({
           <div className="px-4 pb-4">
             <PracticeMetric summary={summary} />
             <PracticeFooter summary={summary} />
+            <div className="mt-3 flex flex-wrap gap-2">
+              {onEditRecurring ? (
+                <button
+                  type="button"
+                  onClick={onEditRecurring}
+                  className="inline-flex items-center gap-1 rounded-pill border border-divider/70 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-text-secondary transition hover:border-accent/50 hover:text-accent-ink"
+                >
+                  <Pencil className="h-3 w-3" />
+                  Edit recurring
+                </button>
+              ) : null}
+              {onEditOccurrence ? (
+                <button
+                  type="button"
+                  onClick={onEditOccurrence}
+                  className="inline-flex items-center gap-1 rounded-pill border border-divider/70 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-text-secondary transition hover:border-accent/50 hover:text-accent-ink"
+                >
+                  Just this date
+                </button>
+              ) : null}
+            </div>
             {onSelect ? (
               <button
                 type="button"
@@ -426,6 +458,7 @@ function LessonRow({
     </div>
   );
 }
+
 
 
 
