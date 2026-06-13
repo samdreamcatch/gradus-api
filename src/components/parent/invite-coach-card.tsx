@@ -46,9 +46,6 @@ export function InviteCoachCard() {
 
   return (
     <div className="rounded-2xl bg-card p-6 shadow-card">
-      <p className="text-xs font-bold uppercase tracking-widest text-accent-ink">
-        Bring your coach in
-      </p>
       <h2 className="mt-2 font-display text-2xl text-text-primary">
         Invite your coach
       </h2>
