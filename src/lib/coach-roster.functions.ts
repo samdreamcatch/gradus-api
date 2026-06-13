@@ -2,10 +2,19 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { dbError } from "./db-error";
 
+export type SlotOverride = {
+  date: string; // YYYY-MM-DD
+  status: "canceled" | "rescheduled";
+  startMinute: number | null;
+  endMinute: number | null;
+};
+
 export type RosterSlot = {
+  id: string;
   dayOfWeek: number;
   startMinute: number;
   endMinute: number;
+  overrides: SlotOverride[];
 };
 
 export type RosterAthlete = {
@@ -22,6 +31,7 @@ export type CoachRoster = {
   coachSports: string[];
   athletes: RosterAthlete[];
 };
+
 
 export const getCoachRoster = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
