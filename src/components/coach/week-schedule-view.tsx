@@ -341,9 +341,18 @@ export function WeekScheduleView({
         Showing recurring weekly lessons
       </p>
 
+      <LessonSlotSheet
+        open={sheetOpen}
+        onOpenChange={(o) => {
+          if (!o) setSheetMode(null);
+        }}
+        mode={sheetMode}
+        athletes={athletes}
+      />
     </div>
   );
 }
+
 
 const STATE_COLORS = [
   "var(--pen-pink, var(--text-tertiary))", // 0 frustrated
