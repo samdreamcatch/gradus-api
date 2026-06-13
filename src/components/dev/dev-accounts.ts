@@ -64,8 +64,9 @@ export const ONBOARDING_STEPS: Record<DevRole, { label: string; to: string }[]> 
     { label: "2. Coach onboarding", to: "/coach/onboarding" },
   ],
   athlete: [
-    { label: "1. Athlete invite", to: "/signup/athlete" },
-    { label: "2. Account", to: "/signup/athlete/account" },
-    { label: "3. Confirm", to: "/signup/athlete/confirm" },
+    // /signup/athlete/confirm and /signup/athlete/account require a valid
+    // invite `?code=` search param (Zod-validated). Without one they crash
+    // with VALIDATE_SEARCH, so the dev stepper only links to code entry.
+    { label: "1. Athlete invite (enter code)", to: "/signup/athlete" },
   ],
 };
