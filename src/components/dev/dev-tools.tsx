@@ -88,10 +88,13 @@ export function DevTools() {
     setBusy(true);
     setPendingEmail(acct.email);
     try {
-      // Sign out first so onAuthStateChange clears caches cleanly.
-      await supabase.auth.signOut();
+      // Note: do NOT call signOut() first — back-to-back auth calls
+      // deadlock the GoTrue navigator lock. signInWithPassword replaces
+      // the existing session on success.
       const { error } = await supabase.auth.signInWithPassword({
         email: acct.email,
+        password: DEV_PASSWORD,
+      });
         password: DEV_PASSWORD,
       });
       if (error) throw error;
