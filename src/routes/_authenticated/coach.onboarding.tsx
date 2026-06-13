@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,10 +15,14 @@ import {
   useSaveCoachLevels,
   useSaveCoachProfile,
 } from "@/hooks/use-coach-profile";
+import { claimParentInvite } from "@/lib/parent-signup.functions";
 
 import { InviteCard } from "@/components/onboarding/invite-card";
 import { CoachBottomNav } from "@/components/coach/bottom-nav";
 import { useQuery } from "@tanstack/react-query";
+
+const PENDING_INVITE_KEY = "gradus.pendingParentInvite";
+
 
 export const Route = createFileRoute("/_authenticated/coach/onboarding")({
   // No loader: this route is fully behind client-side auth. Running a loader
