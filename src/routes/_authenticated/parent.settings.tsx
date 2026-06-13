@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/select";
 import { ParentBottomNav } from "@/components/parent/bottom-nav";
 import { AthleteInviteCard } from "@/components/parent/athlete-invite-card";
+import { InviteCoachCard } from "@/components/parent/invite-coach-card";
 
 import {
   ScheduleEditor,
@@ -140,6 +141,11 @@ function ParentSettingsPage() {
             <SettingsGroup label="My athletes">
               <AthletesList athletes={data.athletes as AthleteData[]} />
             </SettingsGroup>
+
+            <SettingsGroup label="Coaches">
+              <InviteCoachCard />
+            </SettingsGroup>
+
 
             <SettingsGroup label="Preferences">
               <SettingsList>
