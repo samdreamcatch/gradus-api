@@ -243,31 +243,18 @@ export function WeekScheduleView({
           </div>
         ) : (
           <ul className="divide-y divide-divider/50">
-            {selectedSessions.map((s, i) => {
-              const summary = summariesByAthlete?.get(s.athleteId);
-              return (
-                <li key={i}>
-                  <button
-                    type="button"
-                    onClick={() => onSelectAthlete?.(s.athleteId)}
-                    className="flex w-full items-start gap-4 px-4 py-3 text-left transition hover:bg-elevated focus-visible:outline-none focus-visible:bg-elevated"
-                  >
-                    <div className="w-16 shrink-0 font-display text-base font-black tabular-nums text-text-primary">
-                      {formatTime(s.startMinute)}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="text-base font-bold text-text-primary">{s.name}</div>
-                      <div className="text-xs text-text-secondary tabular-nums">
-                        {formatTime(s.startMinute)} – {formatTime(s.endMinute)}
-                      </div>
-                      <PracticeSinceLast summary={summary} />
-                    </div>
-                  </button>
-                </li>
-              );
-            })}
+            {selectedSessions.map((s, i) => (
+              <li key={i}>
+                <LessonRow
+                  session={s}
+                  summary={summariesByAthlete?.get(s.athleteId)}
+                  onSelect={onSelectAthlete}
+                />
+              </li>
+            ))}
           </ul>
         )}
+
       </div>
 
       <p className="mt-3 px-1 text-[10px] uppercase tracking-widest text-text-tertiary">
