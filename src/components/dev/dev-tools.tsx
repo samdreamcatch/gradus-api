@@ -160,8 +160,8 @@ export function DevTools() {
       <SheetContent side="right" className="w-full overflow-hidden p-0 sm:max-w-md [&>button]:z-20">
         <ScrollArea className="h-full">
           <div className="space-y-6 p-6">
-            <SheetHeader className="text-left">
-              <SheetTitle className="text-left">
+            <SheetHeader className="text-center">
+              <SheetTitle className="text-center">
                 DEV MODE
               </SheetTitle>
               <SheetDescription>
