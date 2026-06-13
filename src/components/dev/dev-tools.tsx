@@ -199,6 +199,7 @@ export function DevTools() {
               <ul className="space-y-2">
                 {DEV_ACCOUNTS.map((acct) => {
                   const active = session.email === acct.email;
+                  const pending = pendingEmail === acct.email;
                   return (
                     <li
                       key={acct.email}
@@ -223,7 +224,7 @@ export function DevTools() {
                         onClick={() => signInAs(acct)}
                       >
                         <LogIn className="size-3.5" />
-                        {active ? "Active" : "Sign in"}
+                        {active ? "Active" : pending ? "Signing in…" : "Sign in"}
                       </Button>
                     </li>
                   );
