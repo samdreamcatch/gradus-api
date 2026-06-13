@@ -353,22 +353,12 @@ export const listAthletesForCode = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const userId = context.userId;
 
-    const parent = await supabaseAdmin
-      .from("parent_profiles")
-      .select("id")
-      .eq("user_id", userId)
-      .maybeSingle();
-    if (parent.error) dbError(parent.error);
-    if (!parent.data) throw new Error("Parent profile not found.");
-    const parentId = parent.data.id;
-
     if (!data.code) {
-      // Coach-less path: list all athletes for the parent, and offer the
-      // full sport catalog so the parent can pick whichever sport applies.
+      // Coach-less path: single query joining athletes to parent_profiles.
       const athletesRes = await supabaseAdmin
         .from("athletes")
-        .select("id, first_name, last_name")
-        .eq("parent_id", parentId)
+        .select("id, first_name, last_name, parent_profiles!inner(user_id)")
+        .eq("parent_profiles.user_id", userId)
         .order("created_at", { ascending: true });
       if (athletesRes.error) dbError(athletesRes.error);
 
@@ -383,20 +373,28 @@ export const listAthletesForCode = createServerFn({ method: "POST" })
       };
     }
 
-    const codeLookup = await supabaseAdmin
-      .from("coach_invite_codes")
-      .select("coach_id")
-      .eq("code", data.code)
-      .maybeSingle();
+    // Coached path: parent lookup + code lookup in parallel.
+    const [parent, codeLookup] = await Promise.all([
+      supabaseAdmin.from("parent_profiles").select("id").eq("user_id", userId).maybeSingle(),
+      supabaseAdmin.from("coach_invite_codes").select("coach_id").eq("code", data.code).maybeSingle(),
+    ]);
+    if (parent.error) dbError(parent.error);
+    if (!parent.data) throw new Error("Parent profile not found.");
     if (codeLookup.error) dbError(codeLookup.error);
     if (!codeLookup.data) throw new Error("Invalid invite code.");
+    const parentId = parent.data.id;
     const coachId = codeLookup.data.coach_id;
 
-    const links = await supabaseAdmin
-      .from("coach_athletes")
-      .select("athlete_id, athletes!inner(id, first_name, last_name, parent_id)")
-      .eq("coach_id", coachId);
+    // Athletes link + coach sports in parallel.
+    const [links, levels] = await Promise.all([
+      supabaseAdmin
+        .from("coach_athletes")
+        .select("athlete_id, athletes!inner(id, first_name, last_name, parent_id)")
+        .eq("coach_id", coachId),
+      supabaseAdmin.from("coach_levels").select("sport").eq("coach_id", coachId),
+    ]);
     if (links.error) dbError(links.error);
+    if (levels.error) dbError(levels.error);
 
     const athletes = (links.data ?? [])
       .map((l) => l.athletes as unknown as {
@@ -408,11 +406,6 @@ export const listAthletesForCode = createServerFn({ method: "POST" })
       .filter((a) => a.parent_id === parentId)
       .map((a) => ({ id: a.id, firstName: a.first_name, lastName: a.last_name }));
 
-    const levels = await supabaseAdmin
-      .from("coach_levels")
-      .select("sport")
-      .eq("coach_id", coachId);
-    if (levels.error) dbError(levels.error);
     const sports = Array.from(new Set((levels.data ?? []).map((l) => l.sport)));
 
     return { coachId: coachId as string | null, athletes, sports };
