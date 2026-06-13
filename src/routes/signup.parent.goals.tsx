@@ -17,7 +17,7 @@ import { getSport, SPORTS } from "@/lib/coach-sports";
 import { listAthletesForCode, saveAthleteGoals } from "@/lib/parent-signup.functions";
 
 const searchSchema = z.object({
-  code: z.string().trim().toUpperCase().length(8).regex(/^[A-Z2-9]+$/),
+  code: z.string().trim().toUpperCase().length(8).regex(/^[A-Z2-9]+$/).optional(),
 });
 
 export const Route = createFileRoute("/signup/parent/goals")({
@@ -39,8 +39,8 @@ function ParentGoalsPage() {
   const saveGoals = useServerFn(saveAthleteGoals);
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ["athletes-for-code", code],
-    queryFn: () => fetchAthletes({ data: { code } }),
+    queryKey: ["athletes-for-code", code ?? null],
+    queryFn: () => fetchAthletes({ data: { code: code ?? null } }),
   });
 
   const [index, setIndex] = useState(0);
@@ -80,7 +80,7 @@ function ParentGoalsPage() {
     try {
       await saveGoals({
         data: {
-          code,
+          code: code ?? null,
           athleteId: current.id,
           sport: state.sport,
           currentLevelKey: state.currentLevelKey,
@@ -91,7 +91,7 @@ function ParentGoalsPage() {
       if (index + 1 < athletes.length) {
         setIndex(index + 1);
       } else {
-        navigate({ to: "/signup/parent/schedule", search: { code } });
+        navigate({ to: "/signup/parent/schedule", search: code ? { code } : {} });
       }
     } catch (e) {
       setFormError(e instanceof Error ? e.message : "Couldn't save");
@@ -135,7 +135,7 @@ function ParentGoalsPage() {
             <div className="mt-8 space-y-5">
               {sports.length > 1 && (
                 <div className="space-y-2">
-                  <Label>Sport with this coach</Label>
+                  <Label>{code ? "Sport with this coach" : "Sport"}</Label>
                   <Select
                     value={state.sport}
                     onValueChange={(v) =>

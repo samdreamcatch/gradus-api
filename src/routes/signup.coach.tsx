@@ -1,28 +1,107 @@
-import { useState, type FormEvent } from "react";
-import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState, type FormEvent } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
+import { z } from "zod";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/logo";
+import {
+  claimParentInvite,
+  getParentByInviteCode,
+} from "@/lib/parent-signup.functions";
+
+const PENDING_INVITE_KEY = "gradus.pendingParentInvite";
+
+const searchSchema = z.object({
+  invite: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .length(8)
+    .regex(/^[A-Z2-9]+$/)
+    .optional(),
+});
 
 export const Route = createFileRoute("/signup/coach")({
-  beforeLoad: async () => {
+  validateSearch: (s) => searchSchema.parse(s),
+  beforeLoad: async ({ search }) => {
+    // If already signed in: do NOT redirect away when there's a pending
+    // invite — let the component claim it first.
     const { data } = await supabase.auth.getSession();
-    if (data.session) throw redirect({ to: "/coach" });
+    if (data.session && !search.invite) {
+      // Standard redirect — no claim work to do here.
+      // (Using throw redirect would require the import; navigate in component instead.)
+    }
   },
   component: CoachSignupPage,
 });
 
 function CoachSignupPage() {
+  const { invite } = Route.useSearch();
   const navigate = useNavigate();
+  const lookupParent = useServerFn(getParentByInviteCode);
+  const claim = useServerFn(claimParentInvite);
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // Persist the invite across the email-confirmation redirect.
+  useEffect(() => {
+    if (invite) {
+      try {
+        localStorage.setItem(PENDING_INVITE_KEY, invite);
+      } catch {
+        // ignore
+      }
+    }
+  }, [invite]);
+
+  // If already authed and an invite is in the URL: claim immediately, then
+  // bounce to /coach.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) return;
+      if (!invite) {
+        navigate({ to: "/coach" });
+        return;
+      }
+      try {
+        await claim({ data: { code: invite } });
+        try {
+          localStorage.removeItem(PENDING_INVITE_KEY);
+        } catch {
+          /* ignore */
+        }
+        if (!cancelled) toast.success("Linked to the parent's account");
+      } catch (e) {
+        if (!cancelled) toast.error(e instanceof Error ? e.message : "Couldn't claim invite");
+      } finally {
+        if (!cancelled) navigate({ to: "/coach" });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [invite, claim, navigate]);
+
+  // Preview of the parent the coach is joining.
+  const { data: parent } = useQuery({
+    queryKey: ["parent-by-invite-code", invite ?? null],
+    queryFn: () => lookupParent({ data: { code: invite! } }),
+    enabled: !!invite,
+    retry: false,
+  });
 
   const handleEmail = async (e: FormEvent) => {
     e.preventDefault();
@@ -61,6 +140,10 @@ function CoachSignupPage() {
     }
   };
 
+  const parentName = parent
+    ? `${parent.firstName} ${parent.lastName}`.trim()
+    : null;
+
   return (
     <div className="flex min-h-dvh items-center justify-center px-4 py-12">
       <div className="w-full max-w-md rounded-2xl bg-card p-8 shadow-card">
@@ -73,6 +156,19 @@ function CoachSignupPage() {
           </h1>
           <p className="mt-4 text-sm text-text-secondary">Create your coach account</p>
         </div>
+
+        {invite && parentName && (
+          <div className="mb-6 rounded-xl border border-accent/40 bg-accent/10 px-4 py-3 text-sm">
+            <p className="font-semibold text-text-primary">
+              You&apos;re joining {parentName}&apos;s account
+            </p>
+            <p className="mt-1 text-text-secondary">
+              {parent?.athleteCount === 1
+                ? "1 athlete will be added to your roster after signup."
+                : `${parent?.athleteCount ?? 0} athletes will be added to your roster after signup.`}
+            </p>
+          </div>
+        )}
 
         <Button type="button" variant="outline" className="w-full" onClick={handleGoogle} disabled={loading}>
           Continue with Google

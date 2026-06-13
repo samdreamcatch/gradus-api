@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,10 +15,14 @@ import {
   useSaveCoachLevels,
   useSaveCoachProfile,
 } from "@/hooks/use-coach-profile";
+import { claimParentInvite } from "@/lib/parent-signup.functions";
 
 import { InviteCard } from "@/components/onboarding/invite-card";
 import { CoachBottomNav } from "@/components/coach/bottom-nav";
 import { useQuery } from "@tanstack/react-query";
+
+const PENDING_INVITE_KEY = "gradus.pendingParentInvite";
+
 
 export const Route = createFileRoute("/_authenticated/coach/onboarding")({
   // No loader: this route is fully behind client-side auth. Running a loader
@@ -108,15 +113,43 @@ function OnboardingPage() {
     }
   };
 
+  const claim = useServerFn(claimParentInvite);
+
   const handleFinish = async () => {
     try {
       await saveLevels.mutateAsync({ entries });
       await complete.mutateAsync();
+      // Claim a pending parent invite, if the coach signed up via /signup/coach?invite=...
+      let pendingInvite: string | null = null;
+      try {
+        pendingInvite = localStorage.getItem(PENDING_INVITE_KEY);
+      } catch {
+        /* ignore */
+      }
+      if (pendingInvite) {
+        try {
+          await claim({ data: { code: pendingInvite } });
+          toast.success("Linked to the parent's account");
+        } catch (err) {
+          toast.error(
+            err instanceof Error
+              ? `Couldn't link parent: ${err.message}`
+              : "Couldn't link parent",
+          );
+        } finally {
+          try {
+            localStorage.removeItem(PENDING_INVITE_KEY);
+          } catch {
+            /* ignore */
+          }
+        }
+      }
       navigate({ to: "/coach" });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Couldn't finish");
     }
   };
+
 
   const busy = saveProfile.isPending || saveLevels.isPending || complete.isPending;
 

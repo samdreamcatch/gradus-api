@@ -75,9 +75,8 @@ function ParentAthletesPage() {
 
     setSubmitting(true);
     try {
-      if (!code) throw new Error("Missing invite code");
-      await linkAthletes({ data: { code, athletes: cleaned } });
-      navigate({ to: "/signup/parent/goals", search: { code } });
+      await linkAthletes({ data: { code: code ?? null, athletes: cleaned } });
+      navigate({ to: "/signup/parent/goals", search: code ? { code } : {} });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");
     } finally {
@@ -92,45 +91,64 @@ function ParentAthletesPage() {
     <div className="flex min-h-dvh items-center justify-center px-4 py-12">
       <div className="w-full max-w-md rounded-2xl bg-card p-8 shadow-card">
         <div className="mb-6 text-center">
-          <p className="text-xs font-bold uppercase tracking-widest text-accent-ink">
-            You&apos;re connecting to
-          </p>
-          {isLoading ? (
-            <p className="mt-2 text-text-tertiary">Loading coach…</p>
-          ) : coachError ? (
-            <p className="mt-2 text-sm text-destructive">
-              {(coachError as Error).message}
-            </p>
+          {code ? (
+            <>
+              <p className="text-xs font-bold uppercase tracking-widest text-accent-ink">
+                You&apos;re connecting to
+              </p>
+              {isLoading ? (
+                <p className="mt-2 text-text-tertiary">Loading coach…</p>
+              ) : coachError ? (
+                <p className="mt-2 text-sm text-destructive">
+                  {(coachError as Error).message}
+                </p>
+              ) : (
+                <>
+                  <h1 className="mt-2 font-display text-3xl text-text-primary">
+                    Coach {coachName}
+                  </h1>
+                  {coach && coach.sports.length > 0 && (
+                    <div className="mt-3 flex flex-wrap justify-center gap-2">
+                      {coach.sports.map((s) => (
+                        <span
+                          key={s}
+                          className="rounded-pill border border-divider bg-elevated px-3 py-1 text-xs font-semibold uppercase tracking-wide text-text-secondary"
+                        >
+                          {s}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+            </>
           ) : (
             <>
+              <p className="text-xs font-bold uppercase tracking-widest text-accent-ink">
+                Add your athletes
+              </p>
               <h1 className="mt-2 font-display text-3xl text-text-primary">
-                Coach {coachName}
+                Who are we tracking?
               </h1>
-              {coach && coach.sports.length > 0 && (
-                <div className="mt-3 flex flex-wrap justify-center gap-2">
-                  {coach.sports.map((s) => (
-                    <span
-                      key={s}
-                      className="rounded-pill border border-divider bg-elevated px-3 py-1 text-xs font-semibold uppercase tracking-wide text-text-secondary"
-                    >
-                      {s}
-                    </span>
-                  ))}
-                </div>
-              )}
+              <p className="mt-2 text-sm text-text-secondary">
+                Add each athlete in your family. You can invite a coach to join them after signup.
+              </p>
             </>
           )}
         </div>
 
+
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-2">
             <Label>
-              Which of your athletes train{athletes.length > 1 ? "" : "s"} with
-              {coachName ? ` Coach ${coachName}` : " this coach"}?
+              {code
+                ? `Which of your athletes train${athletes.length > 1 ? "" : "s"} with${coachName ? ` Coach ${coachName}` : " this coach"}?`
+                : `Your athlete${athletes.length > 1 ? "s" : ""}`}
             </Label>
             <p className="text-xs text-text-tertiary">
-              Add only the athletes connected to this coach. You can link other
-              coaches later.
+              {code
+                ? "Add only the athletes connected to this coach. You can link other coaches later."
+                : "Add each athlete you want to track. You can invite their coach to join after signup."}
             </p>
             <div className="space-y-3 pt-1">
               {athletes.map((a, i) => (
@@ -192,10 +210,11 @@ function ParentAthletesPage() {
 
           {error && <p className="text-sm text-destructive">{error}</p>}
 
-          <Button type="submit" className="w-full" disabled={submitting || !coach}>
+          <Button type="submit" className="w-full" disabled={submitting || (!!code && !coach)}>
             {submitting ? "Saving..." : "Continue"}
           </Button>
         </form>
+
       </div>
     </div>
   );

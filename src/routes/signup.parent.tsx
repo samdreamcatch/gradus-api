@@ -34,42 +34,67 @@ function ParentSignupPage() {
     return <Outlet />;
   }
 
+  const ensureAuthed = async () => {
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (sessionData.session) return;
+    const { data: signUp, error: signUpErr } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: window.location.origin + "/parent",
+        data: { full_name: `${firstName} ${lastName}`.trim() },
+      },
+    });
+    if (signUpErr) throw signUpErr;
+    if (!signUp.session) {
+      const { error: signInErr } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      if (signInErr) throw signInErr;
+    }
+  };
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
+  const submit = async (withCode: boolean) => {
     setError(null);
     setLoading(true);
     try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (!sessionData.session) {
-        const { data: signUp, error: signUpErr } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: window.location.origin + "/parent",
-            data: { full_name: `${firstName} ${lastName}`.trim() },
-          },
-        });
-        if (signUpErr) throw signUpErr;
-        if (!signUp.session) {
-          const { error: signInErr } = await supabase.auth.signInWithPassword({
-            email,
-            password,
-          });
-          if (signInErr) throw signInErr;
-        }
-      }
-
+      await ensureAuthed();
+      const trimmed = code.trim().toUpperCase();
       const { code: normalized } = await start({
-        data: { firstName, lastName, code: code.trim().toUpperCase() },
+        data: {
+          firstName,
+          lastName,
+          code: withCode ? trimmed : null,
+        },
       });
-
-      navigate({ to: "/signup/parent/athletes", search: { code: normalized } });
+      if (normalized) {
+        navigate({ to: "/signup/parent/athletes", search: { code: normalized } });
+      } else {
+        navigate({ to: "/signup/parent/athletes", search: {} });
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    void submit(true);
+  };
+
+  const handleSkip = () => {
+    if (!firstName.trim() || !lastName.trim()) {
+      setError("Please enter your first and last name first.");
+      return;
+    }
+    if (!isAuthed && (!email.trim() || !password)) {
+      setError("Please enter your email and password to create your account.");
+      return;
+    }
+    void submit(false);
   };
 
   return (
@@ -112,25 +137,41 @@ function ParentSignupPage() {
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="code">Coach&apos;s invite code</Label>
+            <Label htmlFor="code">Coach&apos;s invite code <span className="font-normal text-text-tertiary">(optional)</span></Label>
             <Input
               id="code"
               value={code}
               onChange={(e) => setCode(e.target.value.toUpperCase())}
-              required
               maxLength={8}
-              minLength={8}
               placeholder="––––––––"
               className="font-mono tracking-[0.25em] uppercase"
               autoComplete="off"
             />
-            <p className="text-xs text-text-tertiary">Ask your coach for their 8-character code.</p>
+            <p className="text-xs text-text-tertiary">
+              Have an 8-character code from your coach? Enter it here. No code? Skip below — you can invite your coach later.
+            </p>
           </div>
 
           {error && <p className="text-sm text-destructive">{error}</p>}
 
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "Creating account..." : "Continue"}
+          <Button type="submit" className="w-full" disabled={loading || code.trim().length !== 8}>
+            {loading ? "Creating account..." : "Continue with coach code"}
+          </Button>
+
+          <div className="flex items-center gap-3 py-1 text-xs uppercase tracking-wider text-text-tertiary">
+            <div className="h-px flex-1 bg-divider" />
+            or
+            <div className="h-px flex-1 bg-divider" />
+          </div>
+
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full"
+            disabled={loading}
+            onClick={handleSkip}
+          >
+            I don&apos;t have a coach code — set up on my own
           </Button>
         </form>
 

@@ -17,7 +17,7 @@ export type Database = {
       athlete_goals: {
         Row: {
           athlete_id: string
-          coach_id: string
+          coach_id: string | null
           created_at: string
           current_level_key: string
           id: string
@@ -28,7 +28,7 @@ export type Database = {
         }
         Insert: {
           athlete_id: string
-          coach_id: string
+          coach_id?: string | null
           created_at?: string
           current_level_key: string
           id?: string
@@ -39,7 +39,7 @@ export type Database = {
         }
         Update: {
           athlete_id?: string
-          coach_id?: string
+          coach_id?: string | null
           created_at?: string
           current_level_key?: string
           id?: string
@@ -92,7 +92,7 @@ export type Database = {
       athlete_lesson_slots: {
         Row: {
           athlete_id: string
-          coach_id: string
+          coach_id: string | null
           created_at: string
           day_of_week: number
           end_minute: number
@@ -105,7 +105,7 @@ export type Database = {
         }
         Insert: {
           athlete_id: string
-          coach_id: string
+          coach_id?: string | null
           created_at?: string
           day_of_week: number
           end_minute: number
@@ -118,7 +118,7 @@ export type Database = {
         }
         Update: {
           athlete_id?: string
-          coach_id?: string
+          coach_id?: string | null
           created_at?: string
           day_of_week?: number
           end_minute?: number
@@ -617,6 +617,35 @@ export type Database = {
           },
         ]
       }
+      parent_invite_codes: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          parent_id: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          parent_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          parent_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parent_invite_codes_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: true
+            referencedRelation: "parent_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       parent_profiles: {
         Row: {
           coach_id: string | null
@@ -961,6 +990,15 @@ export type Database = {
       coach_has_rostered_athlete_of_parent: {
         Args: { _parent_id: string }
         Returns: boolean
+      }
+      get_parent_by_invite_code: {
+        Args: { _code: string }
+        Returns: {
+          athlete_count: number
+          first_name: string
+          last_name: string
+          parent_id: string
+        }[]
       }
       is_parent_of_athlete: { Args: { _athlete_id: string }; Returns: boolean }
       is_parent_of_plan: { Args: { _plan_id: string }; Returns: boolean }

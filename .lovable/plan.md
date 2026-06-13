@@ -1,46 +1,70 @@
-## Problem
+## Goal
 
-In `src/routes/__root.tsx` the mount looks like:
+Parents can sign up without a coach code, complete the full wizard (athletes → sport + goals → schedule) coach-agnostic, then invite their coach(es) via a shareable link + 8-char code. When the coach signs up through that link, they're automatically linked to the parent's athletes, sports, goals, and schedule slots.
 
-```tsx
-import { DevTools } from "@/components/dev/dev-tools";
-...
-{import.meta.env.DEV && <DevTools />}
+## User flow
+
+### Parent (no coach yet)
+1. `/signup/parent` — coach code field becomes optional. New secondary action: **"I don't have a coach code — set up on my own"**.
+2. Goes through the existing wizard, but coach-agnostic:
+   - `/signup/parent/athletes` — name + birthdate (unchanged).
+   - `/signup/parent/goals` — pick sport, current level, season goal, long-term goal (currently keyed by coach; we'll store with `coach_id = NULL`).
+   - `/signup/parent/schedule` — weekly slots (also stored with `coach_id = NULL`).
+3. Lands on `/parent` dashboard with a prominent **"Invite your coach"** card:
+   - Shareable URL: `https://gradus.training/signup/coach?invite=ABC23XYZ`
+   - Visible 8-char code with copy buttons (one for the link, one for the code)
+   - Short copy explaining what the coach will see when they accept.
+
+### Coach (joining via parent invite)
+1. Opens the link → `/signup/coach?invite=ABC23XYZ`. We show "You're joining {Parent Name}'s account" above the existing form.
+2. Coach creates their account normally. On success, the existing coach onboarding kicks in (sports they coach), but on completion we **claim** the parent's pending records:
+   - Insert `coach_athletes` rows for every athlete under the parent.
+   - For each athlete + sport the coach offers: insert `coach_athlete_sports`, fill `athlete_goals.coach_id`, fill `athlete_lesson_slots.coach_id`, set `athlete_primary_coaches`.
+3. Parent dashboard surfaces the new coach the next time it loads.
+
+A coach who already has an account can also paste the parent code from their roster screen ("Add an athlete → I was invited by a parent") — same claim logic.
+
+## Schema changes (one migration)
+
+```text
+parent_profiles.coach_id          -> NULL allowed
+athlete_goals.coach_id            -> NULL allowed
+athlete_lesson_slots.coach_id     -> NULL allowed
+coach_athlete_sports.coach_id     -> NULL allowed  (compound PKs adjusted)
 ```
 
-TanStack Start splits route files (component vs. loader vs. config) into separate chunks. The `DevTools` reference only appears inside a conditional JSX expression, and the splitter ends up emitting the SSR chunk without the `DevTools` import binding — so at render time `DevTools is not defined` and SSR throws. The user sees a Vite error overlay, and the floating "DEV" button never renders.
+- New table `parent_invite_codes (id, parent_id unique, code unique, created_at)` with the same Crockford alphabet used for coach codes. RLS: parent reads their own row; coach reads via a security-definer RPC `get_parent_by_invite_code(_code)` returning `{ parent_id, first_name, last_name, athlete_count }`.
+- Rate-limit reuse of `invite_lookup_attempts` for `/signup/coach?invite=…` lookups.
+- Adjust `validate_athlete_primary_coach` and `validate_coach_athlete_sport` triggers so the `coach_id IS NULL` rows skip the coach-link check.
+- RLS on goals/slots already keys off `is_parent_of_athlete`, so coach-less rows remain accessible to the parent.
 
-## Fix
+## Server functions
 
-Introduce a tiny wrapper that resolves the gating at **module load** instead of inside JSX. `import.meta.env.DEV` is statically replaced by Vite at build time, so the ternary constant-folds and Rollup tree-shakes the `DevTools` import in production builds.
+New / changed in `src/lib/parent-signup.functions.ts` + `src/lib/coach-invite.functions.ts`:
 
-**New file** `src/components/dev/dev-tools-mount.tsx`:
+- `startParentSignup` — `code` becomes optional; when absent, write `parent_profiles` with `coach_id = NULL`.
+- `getCoachByInviteCode`, `linkAthletesToCoach`, `listAthletesForCode`, `saveAthleteGoals`, `saveAthleteSchedule` — accept `code: string | null`; when null, resolve coach as null and skip coach-link inserts.
+- New `getOrCreateParentInviteCode()` — like `getCoachInviteCode` but for parents.
+- New `getParentByInviteCode(code)` (public, rate-limited) for the coach signup landing.
+- New `claimParentInvite({ code })` — coach-authenticated, called at the end of coach onboarding (or immediately if the coach was already onboarded). Does the bulk link/claim transaction described above.
 
-```tsx
-import { DevTools } from "./dev-tools";
+## Frontend changes
 
-// import.meta.env.DEV is statically replaced. In prod it becomes
-// `false ? DevTools : () => null` → folds to `() => null` and the
-// DevTools import is dropped by Rollup's tree-shaker.
-export const DevToolsMount = import.meta.env.DEV ? DevTools : () => null;
-```
+- `src/routes/signup.parent.tsx`: code field optional, secondary "Skip — I'll invite my coach later" button that routes straight to `/signup/parent/athletes` with no `code` search param.
+- Wizard pages (`athletes`, `goals`, `schedule`): treat missing `code` search param as the coach-agnostic path; sport selector on `goals` falls back to a static list (current sport options) instead of the coach's `coach_levels`.
+- `src/routes/_authenticated/parent.index.tsx`: new "Invite your coach" card (hidden once the parent has at least one linked coach) showing the link, the code, copy buttons, and a "How this works" sub-line.
+- `src/routes/signup.coach.tsx`: read `?invite=…`, fetch parent name, show pre-account banner, persist invite to localStorage through the email-verification redirect.
+- `src/routes/_authenticated/coach.onboarding.tsx` (or completion handler): after onboarding finishes, if an invite is pending → call `claimParentInvite`.
+- Coach roster: add an "Add by parent invite code" entry point for already-onboarded coaches.
 
-**Edit** `src/routes/__root.tsx`:
-- Replace the `DevTools` import with `import { DevToolsMount } from "@/components/dev/dev-tools-mount"`.
-- Replace `{import.meta.env.DEV && <DevTools />}` with `<DevToolsMount />`.
+## Out of scope
 
-The JSX reference is now unconditional, so the route code-splitter keeps the import; the env gating happens at the module level above the splitter's concerns.
+- No email/SMS send. Sharing is copy-link/copy-code only (per your choice).
+- No coach directory / search.
+- No re-issuing / rotating of parent codes in this pass (we can add it later, same shape as coach code rotation).
 
-## Guarantees preserved
+## Risks / things to watch
 
-- **Tree-shaking in prod**: `DevToolsMount` resolves to `() => null` at build time; the `DevTools` import inside the wrapper has no live reference and is dropped. The entire `src/components/dev/` tree (panel, account list, supabase calls) stays out of the production bundle.
-- **No other components modified**: only `__root.tsx` and one new file under `src/components/dev/` change.
-- **No auth or RLS changes**: untouched.
-
-## Verification
-
-After the edit, reload the preview. Expect:
-- No Vite error overlay.
-- The orange "DEV" button visible in the bottom-right corner.
-- Clicking it opens the Sheet with the three sections.
-- Dev-server log no longer shows the `ReferenceError: DevTools is not defined` stack.
+- Existing data: any rows in goals/slots/sports today are coach-scoped; the migration only widens nullability, so nothing breaks. Validation triggers need updating in the same migration or inserts will still fail.
+- Sport choices on the coach-less goals step: today they come from `coach_levels`. We'll source from a shared sport constants list (it should already exist for coach onboarding — we'll reuse it) so parents can pick any sport the platform supports.
+- Claim race: if two coaches accept the same parent invite simultaneously, both should succeed for distinct sports they offer; we'll use `ON CONFLICT DO NOTHING` on `coach_athletes` / `coach_athlete_sports` / `athlete_primary_coaches`, and only fill `athlete_goals.coach_id` / `athlete_lesson_slots.coach_id` when currently NULL.

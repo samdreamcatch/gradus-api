@@ -23,7 +23,7 @@ import {
 } from "@/lib/parent-signup.functions";
 
 const searchSchema = z.object({
-  code: z.string().trim().toUpperCase().length(8).regex(/^[A-Z2-9]+$/),
+  code: z.string().trim().toUpperCase().length(8).regex(/^[A-Z2-9]+$/).optional(),
 });
 
 export const Route = createFileRoute("/signup/parent/schedule")({
@@ -104,8 +104,8 @@ function ParentSchedulePage() {
   const save = useServerFn(saveAthleteSchedule);
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ["athletes-for-code", code],
-    queryFn: () => fetchAthletes({ data: { code } }),
+    queryKey: ["athletes-for-code", code ?? null],
+    queryFn: () => fetchAthletes({ data: { code: code ?? null } }),
   });
 
   const [index, setIndex] = useState(0);
@@ -178,7 +178,7 @@ function ParentSchedulePage() {
 
     setSaving(true);
     try {
-      await save({ data: { code, athleteId: current.id, slots: cleaned } });
+      await save({ data: { code: code ?? null, athleteId: current.id, slots: cleaned } });
       if (index + 1 < athletes.length) {
         setIndex(index + 1);
       } else {
