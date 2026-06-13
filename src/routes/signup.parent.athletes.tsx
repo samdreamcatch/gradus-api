@@ -172,15 +172,18 @@ function ParentAthletesPage() {
                         placeholder="Last name"
                       />
                     </div>
-                    <Input
-                      type="date"
-                      value={a.birthdate}
-                      onChange={(e) => updateAthlete(i, "birthdate", e.target.value)}
-                      required={i === 0}
-                      max={new Date().toISOString().slice(0, 10)}
-                      aria-label={`Athlete ${i + 1} birthdate`}
-                      placeholder="Birthdate"
-                    />
+                    <div className="space-y-1">
+                      <Label className="text-xs text-text-secondary">Birthday</Label>
+                      <Input
+                        type="date"
+                        value={a.birthdate}
+                        onChange={(e) => updateAthlete(i, "birthdate", e.target.value)}
+                        required={i === 0}
+                        max={new Date().toISOString().slice(0, 10)}
+                        aria-label={`Athlete ${i + 1} birthday`}
+                        placeholder="Birthday"
+                      />
+                    </div>
                   </div>
                   {athletes.length > 1 && (
                     <Button
