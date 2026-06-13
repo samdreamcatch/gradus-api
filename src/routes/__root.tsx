@@ -14,6 +14,7 @@ import appCss from "../styles.css?url";
 import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider";
+import { DevTools } from "@/components/dev/dev-tools";
 
 function NotFoundComponent() {
   return (
@@ -129,6 +130,7 @@ function RootComponent() {
           <Outlet />
         </main>
         <Toaster />
+        {import.meta.env.DEV && <DevTools />}
       </ThemeProvider>
     </QueryClientProvider>
   );
