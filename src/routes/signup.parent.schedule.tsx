@@ -23,7 +23,7 @@ import {
 } from "@/lib/parent-signup.functions";
 
 const searchSchema = z.object({
-  code: z.string().trim().toUpperCase().length(8).regex(/^[A-Z2-9]+$/),
+  code: z.string().trim().toUpperCase().length(8).regex(/^[A-Z2-9]+$/).optional(),
 });
 
 export const Route = createFileRoute("/signup/parent/schedule")({
