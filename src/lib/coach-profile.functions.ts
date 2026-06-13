@@ -71,7 +71,7 @@ export const getCoachProfile = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const supabase = context.supabase as Client;
-    const profile = await ensureProfile(supabase, context.userId);
+    const profile = await ensureProfile(supabase, context.userId, (context.claims as { user_metadata?: Record<string, unknown> }).user_metadata);
 
     const levels = await supabase
       .from("coach_levels")
@@ -104,7 +104,7 @@ export const saveCoachProfile = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => nameSchema.parse(input))
   .handler(async ({ data, context }) => {
     const supabase = context.supabase as Client;
-    const profile = await ensureProfile(supabase, context.userId);
+    const profile = await ensureProfile(supabase, context.userId, (context.claims as { user_metadata?: Record<string, unknown> }).user_metadata);
     const { error } = await supabase
       .from("coach_profiles")
       .update({ first_name: data.firstName, last_name: data.lastName })
@@ -134,7 +134,7 @@ export const saveCoachLevels = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => levelsSchema.parse(input))
   .handler(async ({ data, context }) => {
     const supabase = context.supabase as Client;
-    const profile = await ensureProfile(supabase, context.userId);
+    const profile = await ensureProfile(supabase, context.userId, (context.claims as { user_metadata?: Record<string, unknown> }).user_metadata);
 
     // Replace strategy: delete all then insert. RLS scopes both to this coach.
     const del = await supabase.from("coach_levels").delete().eq("coach_id", profile.id);
@@ -158,7 +158,7 @@ export const completeOnboarding = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const supabase = context.supabase as Client;
-    const profile = await ensureProfile(supabase, context.userId);
+    const profile = await ensureProfile(supabase, context.userId, (context.claims as { user_metadata?: Record<string, unknown> }).user_metadata);
     const { error } = await supabase
       .from("coach_profiles")
       .update({ onboarded_at: new Date().toISOString() })
