@@ -216,7 +216,7 @@ export function WeekScheduleView({
 
       {/* Selected day */}
       <div className="mt-4 overflow-hidden rounded-2xl border border-divider bg-card shadow-card">
-        <div className="flex items-baseline justify-between gap-3 border-b border-divider/60 px-4 py-3">
+        <div className="flex items-baseline justify-between gap-3 border-b border-divider px-4 py-4">
           <div className="flex items-baseline gap-2">
             <span className="font-display text-xl font-black text-text-primary">
               {DAY_LONG[selectedDate.getDay()]}
@@ -242,24 +242,32 @@ export function WeekScheduleView({
             Rest day — no lessons scheduled
           </div>
         ) : (
-          <ul className="divide-y divide-divider/50">
-            {selectedSessions.map((s, i) => (
-              <li key={i}>
-                <LessonRow
-                  session={s}
-                  summary={summariesByAthlete?.get(s.athleteId)}
-                  onSelect={onSelectAthlete}
-                />
-              </li>
-            ))}
-          </ul>
+          <div className="relative px-4 py-5">
+            <div
+              aria-hidden
+              className="pointer-events-none absolute left-[2.25rem] top-4 bottom-4 w-px bg-divider"
+            />
+            <ul className="relative space-y-4">
+              {selectedSessions.map((s, i) => (
+                <li key={i}>
+                  <LessonRow
+                    session={s}
+                    summary={summariesByAthlete?.get(s.athleteId)}
+                    onSelect={onSelectAthlete}
+                  />
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
 
       </div>
 
-      <p className="mt-3 px-1 text-[10px] uppercase tracking-widest text-text-tertiary">
+      <p className="mt-3 flex items-center gap-2 px-1 text-[10px] uppercase tracking-widest text-text-tertiary">
+        <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-accent" />
         Showing recurring weekly lessons
       </p>
+
     </div>
   );
 }
@@ -292,22 +300,37 @@ function LessonRow({
 }) {
   const [expanded, setExpanded] = useState(false);
   return (
-    <div className="px-3 py-2">
-      <div className="rounded-2xl border border-divider/70 bg-elevated/40 shadow-card transition hover:border-accent/40 hover:bg-elevated">
+    <div className="flex gap-4">
+      <div className="w-10 shrink-0 pt-3 text-right">
+        <div className="text-[10px] font-bold uppercase tracking-widest tabular-nums text-text-primary leading-none">
+          {formatTime(session.startMinute)}
+        </div>
+        <div className="mt-1 text-[10px] font-bold uppercase tracking-widest tabular-nums text-text-tertiary leading-none">
+          {formatTime(session.endMinute)}
+        </div>
+      </div>
+      <div
+        className={cn(
+          "flex-1 rounded-xl bg-card transition",
+          expanded
+            ? "border-2 border-text-primary/80 shadow-card"
+            : "border border-divider hover:border-accent/40",
+        )}
+      >
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
           aria-expanded={expanded}
-          className="flex w-full items-start justify-between gap-3 p-4 text-left transition active:scale-[0.99] focus-visible:outline-none"
+          className="flex w-full items-center justify-between gap-3 p-4 text-left transition active:scale-[0.99] focus-visible:outline-none"
         >
-          <div className="min-w-0 space-y-1">
-            <span className="block text-[10px] font-bold uppercase tracking-widest text-accent-ink tabular-nums">
-              {formatTime(session.startMinute)} — {formatTime(session.endMinute)}
-            </span>
-            <h3 className="truncate font-display text-xl font-black leading-tight text-text-primary">
-              {session.name}
-            </h3>
-          </div>
+          <h3
+            className={cn(
+              "min-w-0 truncate font-display text-xl font-black leading-tight",
+              expanded ? "text-text-primary" : "text-text-primary/85",
+            )}
+          >
+            {session.name}
+          </h3>
           <StatusChip summary={summary} />
         </button>
 
@@ -330,6 +353,7 @@ function LessonRow({
     </div>
   );
 }
+
 
 
 function StatusChip({ summary }: { summary?: AthletePracticeSummary }) {
