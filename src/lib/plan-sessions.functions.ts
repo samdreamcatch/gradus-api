@@ -257,7 +257,10 @@ ${sessionLines}
 Write a concise 2-3 sentence summary that captures how it's been going on this plan: overall mood/flow trend, total volume, and any specific themes from the notes. Be specific — reference moods, moves, or notes you actually see. Don't invent details. Address ${athleteFirstName} in the third person.`;
 
     const apiKey = process.env.LOVABLE_API_KEY;
-    if (!apiKey) throw new Error("Missing LOVABLE_API_KEY");
+    if (!apiKey) {
+      console.error("[plan-sessions] LOVABLE_API_KEY not set");
+      throw new Error("AI service is unavailable. Please try again later.");
+    }
     const gateway = createLovableAiGatewayProvider(apiKey);
 
     const schema = z.object({
