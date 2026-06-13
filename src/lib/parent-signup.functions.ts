@@ -191,7 +191,7 @@ export const linkAthletesToCoach = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) =>
     z
       .object({
-        code: codeSchema,
+        code: optionalCodeSchema,
         athletes: z
           .array(
             z.object({
@@ -212,14 +212,17 @@ export const linkAthletesToCoach = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const userId = context.userId;
 
-    const codeLookup = await supabaseAdmin
-      .from("coach_invite_codes")
-      .select("coach_id")
-      .eq("code", data.code)
-      .maybeSingle();
-    if (codeLookup.error) dbError(codeLookup.error);
-    if (!codeLookup.data) throw new Error("Invalid invite code.");
-    const coachId = codeLookup.data.coach_id;
+    let coachId: string | null = null;
+    if (data.code) {
+      const codeLookup = await supabaseAdmin
+        .from("coach_invite_codes")
+        .select("coach_id")
+        .eq("code", data.code)
+        .maybeSingle();
+      if (codeLookup.error) dbError(codeLookup.error);
+      if (!codeLookup.data) throw new Error("Invalid invite code.");
+      coachId = codeLookup.data.coach_id;
+    }
 
     const parent = await supabaseAdmin
       .from("parent_profiles")
@@ -245,24 +248,26 @@ export const linkAthletesToCoach = createServerFn({ method: "POST" })
       .select("id");
     if (athletesIns.error) dbError(athletesIns.error);
 
-    const linkRows = (athletesIns.data ?? []).map((a) => ({
-      coach_id: coachId,
-      athlete_id: a.id,
-    }));
-    const linksIns = await supabaseAdmin.from("coach_athletes").insert(linkRows);
-    if (linksIns.error) dbError(linksIns.error);
+    if (coachId) {
+      const linkRows = (athletesIns.data ?? []).map((a) => ({
+        coach_id: coachId!,
+        athlete_id: a.id,
+      }));
+      const linksIns = await supabaseAdmin.from("coach_athletes").insert(linkRows);
+      if (linksIns.error) dbError(linksIns.error);
 
-    // Enable every sport this coach offers for each newly linked athlete.
-    const levels = await supabaseAdmin
-      .from("coach_levels")
-      .select("sport")
-      .eq("coach_id", coachId);
-    if (levels.error) dbError(levels.error);
-    const sports = Array.from(new Set((levels.data ?? []).map((l) => l.sport)));
-    if (sports.length > 0 && (athletesIns.data ?? []).length > 0) {
-      const scopeRows = (athletesIns.data ?? []).flatMap((a) =>
-        sports.map((sport) => ({ athlete_id: a.id, coach_id: coachId, sport })),
-      );
+      // Enable every sport this coach offers for each newly linked athlete.
+      const levels = await supabaseAdmin
+        .from("coach_levels")
+        .select("sport")
+        .eq("coach_id", coachId);
+      if (levels.error) dbError(levels.error);
+      const sports = Array.from(new Set((levels.data ?? []).map((l) => l.sport)));
+      if (sports.length > 0 && (athletesIns.data ?? []).length > 0) {
+        const scopeRows = (athletesIns.data ?? []).flatMap((a) =>
+          sports.map((sport) => ({ athlete_id: a.id, coach_id: coachId!, sport })),
+        );
+
       const scopeIns = await supabaseAdmin
         .from("coach_athlete_sports")
         .insert(scopeRows);
