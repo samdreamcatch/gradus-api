@@ -45,6 +45,11 @@ function OnboardingPage() {
 
   if (!data) return null;
 
+  // If signup already captured the coach's name (set on coach_profiles via
+  // ensureProfile from auth user_metadata), skip the redundant name step.
+  const needsName =
+    !data.profile.firstName.trim() || !data.profile.lastName.trim();
+
   const [step, setStep] = useState(1);
   const [firstName, setFirstName] = useState(data.profile.firstName);
   const [lastName, setLastName] = useState(data.profile.lastName);
@@ -64,7 +69,6 @@ function OnboardingPage() {
   const toggleSport = (key: SportKey) => {
     setSports((prev) => {
       if (prev.includes(key)) {
-        // Also drop entries for that sport
         setEntries((es) => es.filter((e) => e.sport !== key));
         return prev.filter((k) => k !== key);
       }
@@ -88,23 +92,37 @@ function OnboardingPage() {
     );
   };
 
+  // Step layout: optional Name → Sports → Levels → Hours → Invite → Review.
+  // When needsName is false (the common case after signup), the Name step is
+  // dropped and total steps = 5.
+  const totalSteps = needsName ? 6 : 5;
+  // Logical step kinds, mapped per-render based on `needsName`.
+  type StepKind = "name" | "sports" | "levels" | "hours" | "invite" | "review";
+  const stepOrder: StepKind[] = needsName
+    ? ["name", "sports", "levels", "hours", "invite", "review"]
+    : ["sports", "levels", "hours", "invite", "review"];
+  const currentKind = stepOrder[step - 1];
+
   const canContinue = (() => {
-    if (step === 1) return firstName.trim().length > 0 && lastName.trim().length > 0;
-    if (step === 2) return sports.length > 0;
-    if (step === 3) return sports.every((s) => entries.some((e) => e.sport === s));
-    if (step === 4) return entries.every((e) => e.hoursPerWeek >= 0 && e.hoursPerWeek <= 40);
+    if (currentKind === "name")
+      return firstName.trim().length > 0 && lastName.trim().length > 0;
+    if (currentKind === "sports") return sports.length > 0;
+    if (currentKind === "levels")
+      return sports.every((s) => entries.some((e) => e.sport === s));
+    if (currentKind === "hours")
+      return entries.every((e) => e.hoursPerWeek >= 0 && e.hoursPerWeek <= 40);
     return true;
   })();
 
   const handleContinue = async () => {
     try {
-      if (step === 1) {
+      if (currentKind === "name") {
         await saveProfile.mutateAsync({
           firstName: firstName.trim(),
           lastName: lastName.trim(),
         });
       }
-      if (step === 3 || step === 4) {
+      if (currentKind === "levels" || currentKind === "hours") {
         await saveLevels.mutateAsync({ entries });
       }
       setStep((s) => s + 1);
@@ -119,7 +137,6 @@ function OnboardingPage() {
     try {
       await saveLevels.mutateAsync({ entries });
       await complete.mutateAsync();
-      // Claim a pending parent invite, if the coach signed up via /signup/coach?invite=...
       let pendingInvite: string | null = null;
       try {
         pendingInvite = localStorage.getItem(PENDING_INVITE_KEY);
@@ -150,8 +167,8 @@ function OnboardingPage() {
     }
   };
 
-
   const busy = saveProfile.isPending || saveLevels.isPending || complete.isPending;
+  const isLastStep = step === totalSteps;
 
   return (
     <>
@@ -159,10 +176,10 @@ function OnboardingPage() {
       <div className="w-full max-w-2xl rounded-2xl bg-card p-8 shadow-[0_10px_40px_-12px_rgba(0,0,0,0.15)] sm:p-10">
         <div className="mb-4 flex items-center justify-between">
           <p className="text-xs font-bold uppercase tracking-widest text-accent-ink">
-            Step {step} of 6
+            Step {step} of {totalSteps}
           </p>
           <div className="flex gap-1.5">
-            {[1, 2, 3, 4, 5, 6].map((n) => (
+            {Array.from({ length: totalSteps }, (_, i) => i + 1).map((n) => (
               <span
                 key={n}
                 className={`h-1.5 w-6 rounded-full ${
@@ -173,7 +190,7 @@ function OnboardingPage() {
           </div>
         </div>
 
-        {step === 1 && (
+        {currentKind === "name" && (
           <Step
             title="What's your name?"
             subtitle="Your athletes will see this on their lessons."
@@ -185,7 +202,6 @@ function OnboardingPage() {
                   id="firstName"
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
-                  
                   maxLength={80}
                 />
               </div>
@@ -202,7 +218,7 @@ function OnboardingPage() {
           </Step>
         )}
 
-        {step === 2 && (
+        {currentKind === "sports" && (
           <Step title="Which sports do you coach?" subtitle="Pick one or more.">
             <div className="flex flex-wrap gap-3">
               {SPORTS.map((s) => (
@@ -218,7 +234,7 @@ function OnboardingPage() {
           </Step>
         )}
 
-        {step === 3 && (
+        {currentKind === "levels" && (
           <Step
             title="Which levels do you coach?"
             subtitle="Select every level you actively teach. You can change this later."
@@ -266,7 +282,7 @@ function OnboardingPage() {
           </Step>
         )}
 
-        {step === 4 && (
+        {currentKind === "hours" && (
           <Step
             title="Practice expectations"
             subtitle="How many hours per week should athletes at each level practice on their own?"
@@ -322,15 +338,13 @@ function OnboardingPage() {
           </Step>
         )}
 
-        {step === 5 && (
-          <Step
-            title="Invite Parents"
-          >
+        {currentKind === "invite" && (
+          <Step title="Invite Parents">
             <InviteCard />
           </Step>
         )}
 
-        {step === 6 && (
+        {currentKind === "review" && (
           <Step title="Looks good?" subtitle="Review and finish.">
             <ReviewSummary
               firstName={firstName}
@@ -349,7 +363,7 @@ function OnboardingPage() {
           >
             Back
           </Button>
-          {step < 6 ? (
+          {!isLastStep ? (
             <Button onClick={handleContinue} disabled={!canContinue || busy}>
               {busy ? "Saving…" : "Continue"}
             </Button>
