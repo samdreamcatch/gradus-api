@@ -68,9 +68,11 @@ function SettingsPage() {
         <SettingsGroup label="Coaching">
           <SettingsList>
             <SportsDisclosure levels={data.levels} summary={sportsSummary} />
+            <RosterSettingsSection />
             <InviteDisclosure />
           </SettingsList>
         </SettingsGroup>
+
 
         <SettingsGroup label="Preferences">
           <SettingsList>
