@@ -135,7 +135,7 @@ function ParentGoalsPage() {
             <div className="mt-8 space-y-5">
               {sports.length > 1 && (
                 <div className="space-y-2">
-                  <Label>Sport with this coach</Label>
+                  <Label>{code ? "Sport with this coach" : "Sport"}</Label>
                   <Select
                     value={state.sport}
                     onValueChange={(v) =>
