@@ -268,14 +268,16 @@ export const linkAthletesToCoach = createServerFn({ method: "POST" })
           sports.map((sport) => ({ athlete_id: a.id, coach_id: coachId!, sport })),
         );
 
-      const scopeIns = await supabaseAdmin
-        .from("coach_athlete_sports")
-        .insert(scopeRows);
-      if (scopeIns.error) dbError(scopeIns.error);
+        const scopeIns = await supabaseAdmin
+          .from("coach_athlete_sports")
+          .insert(scopeRows);
+        if (scopeIns.error) dbError(scopeIns.error);
+      }
     }
 
     return { ok: true };
   });
+
 
 /**
  * Returns the caller's role based on which profile row exists.
