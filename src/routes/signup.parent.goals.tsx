@@ -80,7 +80,7 @@ function ParentGoalsPage() {
     try {
       await saveGoals({
         data: {
-          code,
+          code: code ?? null,
           athleteId: current.id,
           sport: state.sport,
           currentLevelKey: state.currentLevelKey,
@@ -91,7 +91,7 @@ function ParentGoalsPage() {
       if (index + 1 < athletes.length) {
         setIndex(index + 1);
       } else {
-        navigate({ to: "/signup/parent/schedule", search: { code } });
+        navigate({ to: "/signup/parent/schedule", search: code ? { code } : {} });
       }
     } catch (e) {
       setFormError(e instanceof Error ? e.message : "Couldn't save");
