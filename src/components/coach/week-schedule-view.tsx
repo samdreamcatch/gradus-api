@@ -430,7 +430,7 @@ function LessonRow({
         {expanded ? (
           <div className="px-4 pb-4">
             <PracticeMetric summary={summary} />
-            <PracticeFooter summary={summary} />
+            
             <div className="mt-3 flex flex-wrap gap-2">
               {onEditRecurring ? (
                 <button
