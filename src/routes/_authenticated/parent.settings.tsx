@@ -142,6 +142,11 @@ function ParentSettingsPage() {
               <AthletesList athletes={data.athletes as AthleteData[]} />
             </SettingsGroup>
 
+            <SettingsGroup label="Coaches">
+              <InviteCoachCard />
+            </SettingsGroup>
+
+
             <SettingsGroup label="Preferences">
               <SettingsList>
                 <SettingsRow
