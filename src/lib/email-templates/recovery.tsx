@@ -6,10 +6,25 @@ import {
   Container,
   Head,
   Heading,
+  Hr,
   Html,
+  Link,
   Preview,
   Text,
 } from '@react-email/components'
+
+import {
+  button,
+  container,
+  divider,
+  eyebrow,
+  footer,
+  h1,
+  link,
+  main,
+  text,
+  wordmark,
+} from './_styles'
 
 interface RecoveryEmailProps {
   siteName: string
@@ -22,20 +37,35 @@ export const RecoveryEmail = ({
 }: RecoveryEmailProps) => (
   <Html lang="en" dir="ltr">
     <Head />
-    <Preview>Reset your password for {siteName}</Preview>
+    <Preview>Reset your {siteName} password</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Heading style={h1}>Reset your password</Heading>
+        <Text style={wordmark}>Gradus</Text>
+        <Text style={eyebrow}>Password reset</Text>
+
+        <Heading style={h1}>Let's get you back in.</Heading>
+
         <Text style={text}>
-          We received a request to reset your password for {siteName}. Click
-          the button below to choose a new password.
+          We received a request to reset your password for{' '}
+          <strong>{siteName}</strong>. Choose a new one with the button below.
         </Text>
+
         <Button style={button} href={confirmationUrl}>
-          Reset Password
+          Choose a new password
         </Button>
+
+        <Text style={{ ...text, marginTop: '28px', fontSize: '14px' }}>
+          Or paste this URL into your browser:
+          <br />
+          <Link href={confirmationUrl} style={link}>
+            {confirmationUrl}
+          </Link>
+        </Text>
+
+        <Hr style={divider} />
         <Text style={footer}>
           If you didn't request a password reset, you can safely ignore this
-          email. Your password will not be changed.
+          email — your password will stay the same.
         </Text>
       </Container>
     </Body>
@@ -43,27 +73,3 @@ export const RecoveryEmail = ({
 )
 
 export default RecoveryEmail
-
-const main = { backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif' }
-const container = { padding: '20px 25px' }
-const h1 = {
-  fontSize: '22px',
-  fontWeight: 'bold' as const,
-  color: '#000000',
-  margin: '0 0 20px',
-}
-const text = {
-  fontSize: '14px',
-  color: '#55575d',
-  lineHeight: '1.5',
-  margin: '0 0 25px',
-}
-const button = {
-  backgroundColor: '#000000',
-  color: '#ffffff',
-  fontSize: '14px',
-  borderRadius: '8px',
-  padding: '12px 20px',
-  textDecoration: 'none',
-}
-const footer = { fontSize: '12px', color: '#999999', margin: '30px 0 0' }
