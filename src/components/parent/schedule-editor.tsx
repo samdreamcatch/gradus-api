@@ -196,7 +196,7 @@ export function ScheduleEditor({ slots, onChange }: ScheduleEditorProps) {
             </Button>
           )}
           {slot.frequency === "biweekly" && (
-            <div className="basis-full space-y-1.5">
+            <div className="col-span-2 space-y-1.5 sm:basis-full">
               <Label className="text-xs text-text-tertiary">
                 Starting from — the lesson repeats every 2 weeks from this date.
               </Label>
@@ -232,7 +232,7 @@ export function ScheduleEditor({ slots, onChange }: ScheduleEditorProps) {
             </div>
           )}
           {(slot.frequency === "twice_monthly" || slot.frequency === "monthly") && (
-            <div className="basis-full space-y-1.5">
+            <div className="col-span-2 space-y-1.5 sm:basis-full">
               <Label className="text-xs text-text-tertiary">{weeksHelpText(slot.frequency)}</Label>
               <div className="flex flex-wrap gap-1.5">
                 {WEEK_OPTIONS.map((w) => {
