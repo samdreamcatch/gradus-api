@@ -17,7 +17,7 @@ import { getSport, SPORTS } from "@/lib/coach-sports";
 import { listAthletesForCode, saveAthleteGoals } from "@/lib/parent-signup.functions";
 
 const searchSchema = z.object({
-  code: z.string().trim().toUpperCase().length(8).regex(/^[A-Z2-9]+$/),
+  code: z.string().trim().toUpperCase().length(8).regex(/^[A-Z2-9]+$/).optional(),
 });
 
 export const Route = createFileRoute("/signup/parent/goals")({
@@ -39,8 +39,8 @@ function ParentGoalsPage() {
   const saveGoals = useServerFn(saveAthleteGoals);
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ["athletes-for-code", code],
-    queryFn: () => fetchAthletes({ data: { code } }),
+    queryKey: ["athletes-for-code", code ?? null],
+    queryFn: () => fetchAthletes({ data: { code: code ?? null } }),
   });
 
   const [index, setIndex] = useState(0);
