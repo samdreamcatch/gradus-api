@@ -21,7 +21,11 @@ export interface CoachLevelDTO {
 
 type Client = SupabaseClient<Database>;
 
-async function ensureProfile(supabase: Client, userId: string) {
+async function ensureProfile(
+  supabase: Client,
+  userId: string,
+  meta?: Record<string, unknown> | null,
+) {
   const existing = await supabase
     .from("coach_profiles")
     .select("id, first_name, last_name, onboarded_at")
@@ -42,9 +46,21 @@ async function ensureProfile(supabase: Client, userId: string) {
     throw new Error("This account is registered as a parent, not a coach.");
   }
 
+  // Seed first/last name from auth user_metadata (set during signup, or by
+  // Google OAuth which only provides full_name). Avoids asking again in
+  // onboarding.
+  const m = (meta ?? {}) as Record<string, unknown>;
+  let firstName = typeof m.first_name === "string" ? m.first_name.trim() : "";
+  let lastName = typeof m.last_name === "string" ? m.last_name.trim() : "";
+  if (!firstName && !lastName && typeof m.full_name === "string") {
+    const parts = m.full_name.trim().split(/\s+/);
+    firstName = parts[0] ?? "";
+    lastName = parts.slice(1).join(" ");
+  }
+
   const created = await supabase
     .from("coach_profiles")
-    .insert({ user_id: userId })
+    .insert({ user_id: userId, first_name: firstName, last_name: lastName })
     .select("id, first_name, last_name, onboarded_at")
     .single();
   if (created.error) dbError(created.error);
