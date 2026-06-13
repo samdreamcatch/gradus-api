@@ -14,7 +14,7 @@ import appCss from "../styles.css?url";
 import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider";
-import { DevTools } from "@/components/dev/dev-tools";
+import { DevToolsMount } from "@/components/dev/dev-tools-mount";
 
 function NotFoundComponent() {
   return (
