@@ -50,6 +50,7 @@ async function detectRole(userId: string): Promise<DevRole | null> {
 export function DevTools() {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
   const [session, setSession] = useState<ActiveSession>({
     email: null,
     userId: null,
@@ -85,6 +86,7 @@ export function DevTools() {
       return;
     }
     setBusy(true);
+    setPendingEmail(acct.email);
     try {
       // Sign out first so onAuthStateChange clears caches cleanly.
       await supabase.auth.signOut();
@@ -100,6 +102,7 @@ export function DevTools() {
       toast.error(`Sign-in failed: ${(e as Error).message}`);
     } finally {
       setBusy(false);
+      setPendingEmail(null);
     }
   };
 
@@ -196,6 +199,7 @@ export function DevTools() {
               <ul className="space-y-2">
                 {DEV_ACCOUNTS.map((acct) => {
                   const active = session.email === acct.email;
+                  const pending = pendingEmail === acct.email;
                   return (
                     <li
                       key={acct.email}
@@ -220,7 +224,7 @@ export function DevTools() {
                         onClick={() => signInAs(acct)}
                       >
                         <LogIn className="size-3.5" />
-                        {active ? "Active" : "Sign in"}
+                        {active ? "Active" : pending ? "Signing in…" : "Sign in"}
                       </Button>
                     </li>
                   );
