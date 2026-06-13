@@ -290,15 +290,16 @@ function LessonRow({
   summary?: AthletePracticeSummary;
   onSelect?: (athleteId: string) => void;
 }) {
+  const [expanded, setExpanded] = useState(false);
   return (
-    <button
-      type="button"
-      onClick={() => onSelect?.(session.athleteId)}
-      className="block w-full px-3 py-4 text-left transition active:scale-[0.99] focus-visible:outline-none"
-    >
-      <div className="rounded-2xl border border-divider/70 bg-elevated/40 p-4 shadow-card transition hover:border-accent/40 hover:bg-elevated">
-        {/* Header: time range + athlete name */}
-        <div className="mb-4 flex items-start justify-between gap-3">
+    <div className="px-3 py-2">
+      <div className="rounded-2xl border border-divider/70 bg-elevated/40 shadow-card transition hover:border-accent/40 hover:bg-elevated">
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          aria-expanded={expanded}
+          className="flex w-full items-start justify-between gap-3 p-4 text-left transition active:scale-[0.99] focus-visible:outline-none"
+        >
           <div className="min-w-0 space-y-1">
             <span className="block text-[10px] font-bold uppercase tracking-widest text-accent-ink tabular-nums">
               {formatTime(session.startMinute)} — {formatTime(session.endMinute)}
@@ -308,17 +309,28 @@ function LessonRow({
             </h3>
           </div>
           <StatusChip summary={summary} />
-        </div>
+        </button>
 
-        {/* Primary metric: deliberate practice hours */}
-        <PracticeMetric summary={summary} />
-
-        {/* Footer: recent flow + session count */}
-        <PracticeFooter summary={summary} />
+        {expanded ? (
+          <div className="px-4 pb-4">
+            <PracticeMetric summary={summary} />
+            <PracticeFooter summary={summary} />
+            {onSelect ? (
+              <button
+                type="button"
+                onClick={() => onSelect(session.athleteId)}
+                className="mt-3 w-full rounded-pill border border-divider/70 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-text-secondary transition hover:border-accent/50 hover:text-accent-ink"
+              >
+                View athlete
+              </button>
+            ) : null}
+          </div>
+        ) : null}
       </div>
-    </button>
+    </div>
   );
 }
+
 
 function StatusChip({ summary }: { summary?: AthletePracticeSummary }) {
   if (!summary) return null;
