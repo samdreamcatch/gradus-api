@@ -1,13 +1,11 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/logo";
-import { getMyRole } from "@/lib/parent-signup.functions";
 import { useAuthReady } from "@/hooks/use-auth-ready";
 
 export const Route = createFileRoute("/login")({
@@ -25,13 +23,34 @@ export const Route = createFileRoute("/login")({
 function LoginPage() {
   const search = Route.useSearch();
   const navigate = useNavigate();
-  const fetchRole = useServerFn(getMyRole);
   const { user, isReady } = useAuthReady();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
+
+  const detectRole = async (userId: string) => {
+    const [coach, parent, athlete] = await Promise.all([
+      supabase
+        .from("coach_profiles")
+        .select("id, onboarded_at")
+        .eq("user_id", userId)
+        .maybeSingle(),
+      supabase.from("parent_profiles").select("id").eq("user_id", userId).maybeSingle(),
+      supabase.from("athletes").select("id").eq("user_id", userId).limit(1).maybeSingle(),
+    ]);
+
+    if (coach.error) throw coach.error;
+    if (parent.error) throw parent.error;
+    if (athlete.error) throw athlete.error;
+
+    if (coach.data?.onboarded_at) return "coach" as const;
+    if (parent.data) return "parent" as const;
+    if (athlete.data) return "athlete" as const;
+    if (coach.data) return "coach" as const;
+    return null;
+  };
 
   const roleHome = (role: string | null) => {
     if (role === "parent") return "/parent/plans" as const;
@@ -62,15 +81,15 @@ function LoginPage() {
   // redirect during the brief hydration window.
   useEffect(() => {
     if (!isReady || !user || hasInteracted || loading) return;
-    fetchRole()
-      .then(({ role }) => routeForRole(role))
+    detectRole(user.id)
+      .then((role) => routeForRole(role))
       .catch(() => navigate({ to: "/" }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasInteracted, isReady, loading, search.redirect, navigate, fetchRole, user]);
+  }, [hasInteracted, isReady, loading, search.redirect, navigate, user]);
 
-  const routeByRole = async () => {
+  const routeByRole = async (userId: string) => {
     try {
-      const { role } = await fetchRole();
+      const role = await detectRole(userId);
       routeForRole(role);
     } catch {
       navigate({ to: "/" });
@@ -83,9 +102,10 @@ function LoginPage() {
     setError(null);
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
-      await routeByRole();
+      if (!data.user?.id) throw new Error("Sign-in succeeded but no user was returned.");
+      await routeByRole(data.user.id);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");
     } finally {
@@ -101,7 +121,10 @@ function LoginPage() {
         redirect_uri: window.location.origin + (search.redirect || "/"),
       });
       if (result.error) throw result.error;
-      if (!result.redirected) await routeByRole();
+      if (!result.redirected) {
+        const { data } = await supabase.auth.getUser();
+        if (data.user?.id) await routeByRole(data.user.id);
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Google sign-in failed");
       setLoading(false);

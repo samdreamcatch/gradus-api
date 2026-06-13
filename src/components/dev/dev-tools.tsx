@@ -62,9 +62,7 @@ export function DevTools() {
 
   useEffect(() => {
     let cancelled = false;
-    async function load() {
-      const { data } = await supabase.auth.getUser();
-      const user = data.user;
+    async function load(user: { id: string; email?: string | null } | null) {
       if (!user) {
         if (!cancelled) setSession({ email: null, userId: null, role: null });
         return;
@@ -72,8 +70,14 @@ export function DevTools() {
       const role = await detectRole(user.id);
       if (!cancelled) setSession({ email: user.email ?? null, userId: user.id, role });
     }
-    load();
-    const { data: sub } = supabase.auth.onAuthStateChange(() => load());
+
+    supabase.auth.getSession().then(({ data }) => {
+      void load(data.session?.user ?? null);
+    });
+
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      void load(session?.user ?? null);
+    });
     return () => {
       cancelled = true;
       sub.subscription.unsubscribe();
