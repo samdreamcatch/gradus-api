@@ -1,6 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
+import { getRequestIP, getRequestHeader } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { SPORT_KEYS } from "@/lib/coach-sports";
 import { dbError } from "./db-error";
 
 const codeSchema = z
@@ -9,6 +11,31 @@ const codeSchema = z
   .toUpperCase()
   .length(8, "Invite code must be 8 characters")
   .regex(/^[A-Z2-9]+$/, "Invalid characters in code");
+
+const optionalCodeSchema = z
+  .union([codeSchema, z.literal(""), z.null(), z.undefined()])
+  .transform((v) => (v ? v : null));
+
+const RATE_WINDOW_SECONDS = 60;
+const RATE_MAX_PER_WINDOW = 10;
+
+function clientIp(): string {
+  try {
+    const ip = getRequestIP({ xForwardedFor: true });
+    if (ip) return ip;
+  } catch {
+    // ignore
+  }
+  const ua = (() => {
+    try {
+      return getRequestHeader("user-agent") ?? "";
+    } catch {
+      return "";
+    }
+  })();
+  return `ua:${ua.slice(0, 64)}`;
+}
+
 
 /**
  * Step 1: validate the coach's invite code and create/update the parent profile.
