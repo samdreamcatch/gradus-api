@@ -149,7 +149,7 @@ export function DevTools() {
           DEV
         </button>
       </SheetTrigger>
-      <SheetContent side="right" className="w-full overflow-hidden p-0 sm:max-w-md">
+      <SheetContent side="right" className="w-full overflow-hidden p-0 sm:max-w-md [&>button]:z-20">
         <ScrollArea className="h-full">
           <div className="space-y-6 p-6">
             <SheetHeader>
