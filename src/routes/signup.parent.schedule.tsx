@@ -178,7 +178,7 @@ function ParentSchedulePage() {
 
     setSaving(true);
     try {
-      await save({ data: { code, athleteId: current.id, slots: cleaned } });
+      await save({ data: { code: code ?? null, athleteId: current.id, slots: cleaned } });
       if (index + 1 < athletes.length) {
         setIndex(index + 1);
       } else {
