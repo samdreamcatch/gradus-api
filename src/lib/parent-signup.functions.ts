@@ -48,7 +48,7 @@ export const startParentSignup = createServerFn({ method: "POST" })
       .object({
         firstName: z.string().trim().min(1, "First name required").max(80),
         lastName: z.string().trim().min(1, "Last name required").max(80),
-        code: codeSchema,
+        code: optionalCodeSchema,
       })
       .parse(input),
   )
@@ -56,29 +56,37 @@ export const startParentSignup = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const userId = context.userId;
 
-    const codeLookup = await supabaseAdmin
-      .from("coach_invite_codes")
-      .select("coach_id")
-      .eq("code", data.code)
-      .maybeSingle();
-    if (codeLookup.error) dbError(codeLookup.error);
-    if (!codeLookup.data) {
-      throw new Error("That invite code isn't valid. Double-check with your coach.");
+    let coachId: string | null = null;
+    if (data.code) {
+      const codeLookup = await supabaseAdmin
+        .from("coach_invite_codes")
+        .select("coach_id")
+        .eq("code", data.code)
+        .maybeSingle();
+      if (codeLookup.error) dbError(codeLookup.error);
+      if (!codeLookup.data) {
+        throw new Error("That invite code isn't valid. Double-check with your coach.");
+      }
+      coachId = codeLookup.data.coach_id;
     }
 
     const existing = await supabaseAdmin
       .from("parent_profiles")
-      .select("id")
+      .select("id, coach_id")
       .eq("user_id", userId)
       .maybeSingle();
     if (existing.error) dbError(existing.error);
 
-    const coachId = codeLookup.data.coach_id;
-
     if (existing.data) {
       const upd = await supabaseAdmin
         .from("parent_profiles")
-        .update({ first_name: data.firstName, last_name: data.lastName, coach_id: coachId })
+        .update({
+          first_name: data.firstName,
+          last_name: data.lastName,
+          // Only set coach_id if a new code was provided; never clobber an
+          // existing link with NULL when the parent re-runs the form.
+          ...(coachId ? { coach_id: coachId } : {}),
+        })
         .eq("id", existing.data.id);
       if (upd.error) dbError(upd.error);
     } else {
@@ -93,6 +101,7 @@ export const startParentSignup = createServerFn({ method: "POST" })
 
     return { code: data.code };
   });
+
 
 /**
  * Returns whether the signed-in parent has finished signup (has at least one
