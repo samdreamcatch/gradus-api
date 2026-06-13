@@ -13,9 +13,9 @@ export const colors = {
   meta: '#6B7280',
   hair: '#E6E7EB',
   paper: '#F8F9FC',
-  penFill: '#8DE160',
-  penInk: '#1F4D00',
-  penWash: '#F0FDE8',
+  penFill: '#C0DD27',
+  penInk: '#333E00',
+  penWash: '#F7FCE6',
 }
 
 export const main: React.CSSProperties = {
