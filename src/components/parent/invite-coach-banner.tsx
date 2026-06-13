@@ -117,8 +117,8 @@ export function InviteCoachBanner() {
               </Button>
             </div>
             <p className="text-xs text-text-secondary">
-              Already a Gradus coach? They can paste this code on their roster
-              page to claim your account.
+              Is your coach already on Gradus? They can paste this code on their roster
+              page to link up to you and your athlete.
             </p>
           </div>
         )}
