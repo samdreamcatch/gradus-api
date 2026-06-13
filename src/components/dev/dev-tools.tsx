@@ -157,11 +157,8 @@ export function DevTools() {
         <ScrollArea className="h-full">
           <div className="space-y-6 p-6">
             <SheetHeader>
-              <SheetTitle className="flex items-center gap-2">
-                <span className="rounded-sm bg-pen-orange px-2 py-0.5 text-xs font-bold uppercase tracking-widest text-pen-orange-ink">
-                  Dev Mode
-                </span>
-                DevTools
+              <SheetTitle>
+                DEV MODE
               </SheetTitle>
               <SheetDescription>
                 Local development utilities. Not visible in production.
