@@ -431,36 +431,41 @@ function LessonRow({
           <div className="px-4 pb-4">
             <PracticeMetric summary={summary} />
             
-            <div className="mt-3 flex flex-wrap gap-2">
-              {onEditRecurring ? (
+            <div className="mt-3 flex flex-col gap-2">
+              {onSelect ? (
                 <button
                   type="button"
-                  onClick={onEditRecurring}
-                  className="inline-flex items-center gap-1 rounded-pill border border-divider/70 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-text-secondary transition hover:border-accent/50 hover:text-accent-ink"
+                  onClick={() => onSelect(session.athleteId)}
+                  className="w-full rounded-pill border border-text-primary px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-text-primary transition active:scale-[0.98] hover:border-accent hover:text-accent-ink"
                 >
-                  <Pencil className="h-3 w-3" />
-                  Edit recurring
+                  View athlete
                 </button>
               ) : null}
-              {onEditOccurrence ? (
-                <button
-                  type="button"
-                  onClick={onEditOccurrence}
-                  className="inline-flex items-center gap-1 rounded-pill border border-divider/70 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-text-secondary transition hover:border-accent/50 hover:text-accent-ink"
-                >
-                  Just this date
-                </button>
+              {(onEditRecurring || onEditOccurrence) ? (
+                <div className="grid grid-cols-2 gap-2">
+                  {onEditRecurring ? (
+                    <button
+                      type="button"
+                      onClick={onEditRecurring}
+                      className="inline-flex items-center justify-center gap-1.5 rounded-pill border border-divider/70 px-3 py-2.5 text-[9px] font-black uppercase tracking-[0.15em] text-text-secondary transition hover:border-accent/50 hover:text-accent-ink"
+                    >
+                      <Pencil className="h-2.5 w-2.5" />
+                      Edit recurring
+                    </button>
+                  ) : null}
+                  {onEditOccurrence ? (
+                    <button
+                      type="button"
+                      onClick={onEditOccurrence}
+                      className="inline-flex items-center justify-center rounded-pill border border-divider/70 px-3 py-2.5 text-center text-[9px] font-black uppercase tracking-[0.15em] text-text-secondary transition hover:border-accent/50 hover:text-accent-ink"
+                    >
+                      Just this date
+                    </button>
+                  ) : null}
+                </div>
               ) : null}
             </div>
-            {onSelect ? (
-              <button
-                type="button"
-                onClick={() => onSelect(session.athleteId)}
-                className="mt-3 w-full rounded-pill border border-divider/70 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-text-secondary transition hover:border-accent/50 hover:text-accent-ink"
-              >
-                View athlete
-              </button>
-            ) : null}
+
           </div>
         ) : null}
       </div>
