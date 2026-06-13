@@ -1,0 +1,1 @@
+DELETE FROM public.coach_profiles WHERE user_id='c1f5500e-d04b-4961-aaa6-8455f7f3c6bd' AND first_name='' AND last_name='';
