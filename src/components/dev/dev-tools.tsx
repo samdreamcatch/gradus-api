@@ -95,8 +95,6 @@ export function DevTools() {
         email: acct.email,
         password: DEV_PASSWORD,
       });
-        password: DEV_PASSWORD,
-      });
       if (error) throw error;
       toast.success(`Signed in as ${acct.label}`);
       setOpen(false);
