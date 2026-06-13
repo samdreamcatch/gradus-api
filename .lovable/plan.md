@@ -1,27 +1,26 @@
-## Why the name is asked twice
+## What's actually happening
 
-1. `/signup/coach` collects `firstName` / `lastName` and passes them as Supabase auth `user_metadata` (`first_name`, `last_name`, `full_name`) on `supabase.auth.signUp`. They are **not** written to `coach_profiles`.
-2. `coach.onboarding.tsx` Step 1 ("What's your name?") then asks again, and that's where the names actually land in `coach_profiles` via `saveCoachProfile`.
+You're not doing anything wrong on the app side. I checked:
 
-So the signup name is captured but never persisted, and onboarding re-collects it.
+- Backend (Lovable Cloud): healthy.
+- Sender domain `support.gradussports.com`: **verified** at the DNS layer (NS delegation to Lovable nameservers is in place, SPF/DKIM/MX are good).
+- Project is attached to the `gradussports.com` workspace domain and using the `support.` subdomain as the sender — that's the correct, expected setup.
 
-## Fix
+The red banner "Send path not ready — Timed out waiting for email delivery path verification" is a **provisioning step inside Lovable Emails**, not a DNS problem. After DNS verifies, Lovable still has to finish wiring the send path (queue → provider credentials → from-address handshake). That last step timed out for your project. It's almost always transient and clears on retry; if it doesn't, the fix is to recycle the domain attachment.
 
-Persist the signup name into `coach_profiles` on first load, and drop the redundant step.
+## What to do (in order)
 
-1. **`src/lib/coach-profile.functions.ts` — `ensureProfile`**
-   On the INSERT path (first time the coach loads anything), read `auth.users.raw_user_meta_data` for `first_name` / `last_name` (fallback: split `full_name` on the first space; Google OAuth only provides `full_name`). Insert those values alongside `user_id` so `coach_profiles.first_name` / `last_name` are populated immediately after signup. Existing rows are untouched.
+1. **Click "Retry setup"** in the orange banner — once, then wait ~60 seconds. Most timeouts clear here because DNS is already verified, so the retry only re-runs the send-path handshake.
+2. If it times out again, **open the `⋯` menu next to `@support.gradussports.com` → Manage Domains → Rerun Setup**. Same effect, slightly deeper retry.
+3. If step 2 still fails, **remove `support.gradussports.com` from the project's email config and re-add it** via the email setup dialog. NS records stay in place at your registrar, so re-adding is fast and doesn't require any DNS work on your end.
+4. If step 3 still fails after a few minutes, it's a platform-side provisioning issue — contact Lovable support with a screenshot of the banner and the domain name. There's nothing to change in your app code.
 
-2. **`src/routes/_authenticated/coach.onboarding.tsx`**
-   - Remove Step 1 (the name inputs) and the `saveProfile` mutation call from `handleContinue`.
-   - Renumber: steps become 1 Sports → 2 Levels → 3 Practice hours → 4 Invite parents → 5 Review. Update the "Step X of 5" header, the 5 progress pips, the `canContinue` switch, and the `handleContinue` / `handleFinish` gating (`step < 5` instead of `< 6`).
-   - Keep `firstName` / `lastName` state (sourced from `data.profile`) so `ReviewSummary` still shows the coach's name.
-   - **Safety net:** if `data.profile.firstName` is empty (edge case — older accounts, or a Google user whose metadata split failed), fall back to showing the name step as step 1 so the coach can't end up with a blank profile. Implemented as a computed `needsName` flag that conditionally prepends the name step.
+## What I will NOT do
 
-3. No changes to `/signup/coach` — it already collects and forwards the name.
+- I won't touch any DNS records — yours are correct.
+- I won't switch you to a different sender domain (Resend/SendGrid/root domain) — your verified subdomain is the right choice and the chat history shows you've already settled on it.
+- I won't re-scaffold auth email templates — they're already in place and that doesn't fix a send-path timeout.
 
-## Technical notes
+## Heads-up
 
-- `ensureProfile` already uses the authenticated `supabase` client; reading `auth.users` from it requires `supabase.auth.getUser()` (which returns metadata) rather than a direct table query — RLS blocks reads on `auth.users`. Use `context.claims` if it already carries `user_metadata`; otherwise call `supabase.auth.getUser()` inside `ensureProfile`.
-- No DB migration needed; the columns already exist and are nullable/empty-string defaulted.
-- No change to `saveCoachProfile` — it stays available for the future "edit profile" screen and the `needsName` fallback path.
+Until the banner clears, Lovable auth emails (signup confirm, password reset, magic link) will fall back to default templates or fail to send branded. Your app code doesn't need changes; once the banner goes green, branded emails resume automatically.
