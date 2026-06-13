@@ -38,6 +38,7 @@ import { Route as AuthenticatedCoachMessagesIndexRouteImport } from './routes/_a
 import { Route as AuthenticatedAthleteResourcesIndexRouteImport } from './routes/_authenticated/athlete.resources.index'
 import { Route as AuthenticatedAthletePlansIndexRouteImport } from './routes/_authenticated/athlete.plans.index'
 import { Route as AuthenticatedAthleteMessagesIndexRouteImport } from './routes/_authenticated/athlete.messages.index'
+import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as AuthenticatedParentPlansPlanIdRouteImport } from './routes/_authenticated/parent.plans.$planId'
 import { Route as AuthenticatedParentMessagesRoomIdRouteImport } from './routes/_authenticated/parent.messages.$roomId'
 import { Route as AuthenticatedCoachPlansPlanIdRouteImport } from './routes/_authenticated/coach.plans.$planId'
@@ -204,6 +205,12 @@ const AuthenticatedAthleteMessagesIndexRoute =
     path: '/athlete/messages/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const LovableEmailQueueProcessRoute =
+  LovableEmailQueueProcessRouteImport.update({
+    id: '/lovable/email/queue/process',
+    path: '/lovable/email/queue/process',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedParentPlansPlanIdRoute =
   AuthenticatedParentPlansPlanIdRouteImport.update({
     id: '/plans/$planId',
@@ -268,6 +275,7 @@ export interface FileRoutesByFullPath {
   '/coach/plans/$planId': typeof AuthenticatedCoachPlansPlanIdRoute
   '/parent/messages/$roomId': typeof AuthenticatedParentMessagesRoomIdRoute
   '/parent/plans/$planId': typeof AuthenticatedParentPlansPlanIdRoute
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/athlete/messages/': typeof AuthenticatedAthleteMessagesIndexRoute
   '/athlete/plans/': typeof AuthenticatedAthletePlansIndexRoute
   '/athlete/resources/': typeof AuthenticatedAthleteResourcesIndexRoute
@@ -302,6 +310,7 @@ export interface FileRoutesByTo {
   '/coach/plans/$planId': typeof AuthenticatedCoachPlansPlanIdRoute
   '/parent/messages/$roomId': typeof AuthenticatedParentMessagesRoomIdRoute
   '/parent/plans/$planId': typeof AuthenticatedParentPlansPlanIdRoute
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/athlete/messages': typeof AuthenticatedAthleteMessagesIndexRoute
   '/athlete/plans': typeof AuthenticatedAthletePlansIndexRoute
   '/athlete/resources': typeof AuthenticatedAthleteResourcesIndexRoute
@@ -340,6 +349,7 @@ export interface FileRoutesById {
   '/_authenticated/coach/plans/$planId': typeof AuthenticatedCoachPlansPlanIdRoute
   '/_authenticated/parent/messages/$roomId': typeof AuthenticatedParentMessagesRoomIdRoute
   '/_authenticated/parent/plans/$planId': typeof AuthenticatedParentPlansPlanIdRoute
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/_authenticated/athlete/messages/': typeof AuthenticatedAthleteMessagesIndexRoute
   '/_authenticated/athlete/plans/': typeof AuthenticatedAthletePlansIndexRoute
   '/_authenticated/athlete/resources/': typeof AuthenticatedAthleteResourcesIndexRoute
@@ -378,6 +388,7 @@ export interface FileRouteTypes {
     | '/coach/plans/$planId'
     | '/parent/messages/$roomId'
     | '/parent/plans/$planId'
+    | '/lovable/email/queue/process'
     | '/athlete/messages/'
     | '/athlete/plans/'
     | '/athlete/resources/'
@@ -412,6 +423,7 @@ export interface FileRouteTypes {
     | '/coach/plans/$planId'
     | '/parent/messages/$roomId'
     | '/parent/plans/$planId'
+    | '/lovable/email/queue/process'
     | '/athlete/messages'
     | '/athlete/plans'
     | '/athlete/resources'
@@ -449,6 +461,7 @@ export interface FileRouteTypes {
     | '/_authenticated/coach/plans/$planId'
     | '/_authenticated/parent/messages/$roomId'
     | '/_authenticated/parent/plans/$planId'
+    | '/lovable/email/queue/process'
     | '/_authenticated/athlete/messages/'
     | '/_authenticated/athlete/plans/'
     | '/_authenticated/athlete/resources/'
@@ -466,6 +479,7 @@ export interface RootRouteChildren {
   SignupAthleteRoute: typeof SignupAthleteRouteWithChildren
   SignupCoachRoute: typeof SignupCoachRoute
   SignupParentRoute: typeof SignupParentRouteWithChildren
+  LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -673,6 +687,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAthleteMessagesIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/lovable/email/queue/process': {
+      id: '/lovable/email/queue/process'
+      path: '/lovable/email/queue/process'
+      fullPath: '/lovable/email/queue/process'
+      preLoaderRoute: typeof LovableEmailQueueProcessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/parent/plans/$planId': {
       id: '/_authenticated/parent/plans/$planId'
       path: '/plans/$planId'
@@ -839,17 +860,8 @@ const rootRouteChildren: RootRouteChildren = {
   SignupAthleteRoute: SignupAthleteRouteWithChildren,
   SignupCoachRoute: SignupCoachRoute,
   SignupParentRoute: SignupParentRouteWithChildren,
+  LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
