@@ -340,10 +340,40 @@ function genCode(len = 8): string {
  */
 export const listAthletesForCode = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ code: codeSchema }).parse(input))
+  .inputValidator((input: unknown) => z.object({ code: optionalCodeSchema }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const userId = context.userId;
+
+    const parent = await supabaseAdmin
+      .from("parent_profiles")
+      .select("id")
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (parent.error) dbError(parent.error);
+    if (!parent.data) throw new Error("Parent profile not found.");
+    const parentId = parent.data.id;
+
+    if (!data.code) {
+      // Coach-less path: list all athletes for the parent, and offer the
+      // full sport catalog so the parent can pick whichever sport applies.
+      const athletesRes = await supabaseAdmin
+        .from("athletes")
+        .select("id, first_name, last_name")
+        .eq("parent_id", parentId)
+        .order("created_at", { ascending: true });
+      if (athletesRes.error) dbError(athletesRes.error);
+
+      return {
+        coachId: null as string | null,
+        athletes: (athletesRes.data ?? []).map((a) => ({
+          id: a.id,
+          firstName: a.first_name,
+          lastName: a.last_name,
+        })),
+        sports: [...SPORT_KEYS] as string[],
+      };
+    }
 
     const codeLookup = await supabaseAdmin
       .from("coach_invite_codes")
@@ -353,14 +383,6 @@ export const listAthletesForCode = createServerFn({ method: "POST" })
     if (codeLookup.error) dbError(codeLookup.error);
     if (!codeLookup.data) throw new Error("Invalid invite code.");
     const coachId = codeLookup.data.coach_id;
-
-    const parent = await supabaseAdmin
-      .from("parent_profiles")
-      .select("id")
-      .eq("user_id", userId)
-      .maybeSingle();
-    if (parent.error) dbError(parent.error);
-    if (!parent.data) throw new Error("Parent profile not found.");
 
     const links = await supabaseAdmin
       .from("coach_athletes")
@@ -375,7 +397,7 @@ export const listAthletesForCode = createServerFn({ method: "POST" })
         last_name: string;
         parent_id: string;
       })
-      .filter((a) => a.parent_id === parent.data!.id)
+      .filter((a) => a.parent_id === parentId)
       .map((a) => ({ id: a.id, firstName: a.first_name, lastName: a.last_name }));
 
     const levels = await supabaseAdmin
@@ -385,7 +407,7 @@ export const listAthletesForCode = createServerFn({ method: "POST" })
     if (levels.error) dbError(levels.error);
     const sports = Array.from(new Set((levels.data ?? []).map((l) => l.sport)));
 
-    return { coachId, athletes, sports };
+    return { coachId: coachId as string | null, athletes, sports };
   });
 
 export const saveAthleteGoals = createServerFn({ method: "POST" })
@@ -393,7 +415,7 @@ export const saveAthleteGoals = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) =>
     z
       .object({
-        code: codeSchema,
+        code: optionalCodeSchema,
         athleteId: z.string().uuid(),
         sport: z.string().min(1).max(64),
         currentLevelKey: z.string().min(1).max(64),
@@ -406,14 +428,17 @@ export const saveAthleteGoals = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const userId = context.userId;
 
-    const codeLookup = await supabaseAdmin
-      .from("coach_invite_codes")
-      .select("coach_id")
-      .eq("code", data.code)
-      .maybeSingle();
-    if (codeLookup.error) dbError(codeLookup.error);
-    if (!codeLookup.data) throw new Error("Invalid invite code.");
-    const coachId = codeLookup.data.coach_id;
+    let coachId: string | null = null;
+    if (data.code) {
+      const codeLookup = await supabaseAdmin
+        .from("coach_invite_codes")
+        .select("coach_id")
+        .eq("code", data.code)
+        .maybeSingle();
+      if (codeLookup.error) dbError(codeLookup.error);
+      if (!codeLookup.data) throw new Error("Invalid invite code.");
+      coachId = codeLookup.data.coach_id;
+    }
 
     // Ownership check
     const athlete = await supabaseAdmin
@@ -427,24 +452,26 @@ export const saveAthleteGoals = createServerFn({ method: "POST" })
       throw new Error("Athlete not found.");
     }
 
-    // Ensure a primary coach exists for this (athlete, sport); the signup
-    // coach is the natural default since they invited the parent.
-    const primary = await supabaseAdmin
-      .from("athlete_primary_coaches")
-      .upsert(
-        { athlete_id: data.athleteId, sport: data.sport, coach_id: coachId },
-        { onConflict: "athlete_id,sport", ignoreDuplicates: true },
-      );
-    if (primary.error) dbError(primary.error);
+    let stampCoachId: string | null = coachId;
+    if (coachId) {
+      // Ensure a primary coach exists for this (athlete, sport).
+      const primary = await supabaseAdmin
+        .from("athlete_primary_coaches")
+        .upsert(
+          { athlete_id: data.athleteId, sport: data.sport, coach_id: coachId },
+          { onConflict: "athlete_id,sport", ignoreDuplicates: true },
+        );
+      if (primary.error) dbError(primary.error);
 
-    const resolvedPrimary = await supabaseAdmin
-      .from("athlete_primary_coaches")
-      .select("coach_id")
-      .eq("athlete_id", data.athleteId)
-      .eq("sport", data.sport)
-      .maybeSingle();
-    if (resolvedPrimary.error) dbError(resolvedPrimary.error);
-    const stampCoachId = resolvedPrimary.data?.coach_id ?? coachId;
+      const resolvedPrimary = await supabaseAdmin
+        .from("athlete_primary_coaches")
+        .select("coach_id")
+        .eq("athlete_id", data.athleteId)
+        .eq("sport", data.sport)
+        .maybeSingle();
+      if (resolvedPrimary.error) dbError(resolvedPrimary.error);
+      stampCoachId = resolvedPrimary.data?.coach_id ?? coachId;
+    }
 
     const up = await supabaseAdmin
       .from("athlete_goals")
@@ -468,7 +495,7 @@ export const saveAthleteSchedule = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) =>
     z
       .object({
-        code: codeSchema,
+        code: optionalCodeSchema,
         athleteId: z.string().uuid(),
         slots: z
           .array(
@@ -492,14 +519,17 @@ export const saveAthleteSchedule = createServerFn({ method: "POST" })
       if (s.endMinute <= s.startMinute) throw new Error("End time must be after start time.");
     }
 
-    const codeLookup = await supabaseAdmin
-      .from("coach_invite_codes")
-      .select("coach_id")
-      .eq("code", data.code)
-      .maybeSingle();
-    if (codeLookup.error) dbError(codeLookup.error);
-    if (!codeLookup.data) throw new Error("Invalid invite code.");
-    const coachId = codeLookup.data.coach_id;
+    let coachId: string | null = null;
+    if (data.code) {
+      const codeLookup = await supabaseAdmin
+        .from("coach_invite_codes")
+        .select("coach_id")
+        .eq("code", data.code)
+        .maybeSingle();
+      if (codeLookup.error) dbError(codeLookup.error);
+      if (!codeLookup.data) throw new Error("Invalid invite code.");
+      coachId = codeLookup.data.coach_id;
+    }
 
     const athlete = await supabaseAdmin
       .from("athletes")
@@ -512,11 +542,13 @@ export const saveAthleteSchedule = createServerFn({ method: "POST" })
       throw new Error("Athlete not found.");
     }
 
-    const del = await supabaseAdmin
+    // Replace only the rows scoped to this coach (or coach-less rows when
+    // no code) so each coach owns their own schedule blocks.
+    const delQuery = supabaseAdmin
       .from("athlete_lesson_slots")
       .delete()
-      .eq("athlete_id", data.athleteId)
-      .eq("coach_id", coachId);
+      .eq("athlete_id", data.athleteId);
+    const del = await (coachId ? delQuery.eq("coach_id", coachId) : delQuery.is("coach_id", null));
     if (del.error) dbError(del.error);
 
     if (data.slots.length > 0) {
@@ -536,6 +568,7 @@ export const saveAthleteSchedule = createServerFn({ method: "POST" })
     }
     return { ok: true };
   });
+
 
 /**
  * Returns the parent's athletes with their invite codes, generating codes
