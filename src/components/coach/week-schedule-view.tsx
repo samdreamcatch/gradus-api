@@ -359,7 +359,7 @@ function PracticeMetric({ summary }: { summary?: AthletePracticeSummary }) {
     <div className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-divider/60 bg-card/60 p-3">
       <div className="min-w-0">
         <div className="mb-1 text-[10px] font-bold uppercase tracking-widest text-text-tertiary">
-          Deliberate practice since last lesson
+          PRACTICE SINCE LAST LESSON
         </div>
         <div className="flex items-baseline gap-1.5">
           <span className="font-display text-3xl font-black leading-none text-text-primary tabular-nums">
@@ -413,10 +413,10 @@ function PracticeFooter({ summary }: { summary?: AthletePracticeSummary }) {
     return (
       <div className="flex items-center justify-between border-t border-divider/60 pt-3">
         <span className="text-[10px] font-bold uppercase tracking-widest text-text-tertiary">
-          Recent flow
+          PRACTICE QUALITY
         </span>
         <span className="text-[10px] font-bold uppercase tracking-widest text-text-tertiary">
-          No sessions logged
+          NO PRACTICE LOGGED
         </span>
       </div>
     );
@@ -430,7 +430,7 @@ function PracticeFooter({ summary }: { summary?: AthletePracticeSummary }) {
     <div className="flex items-end justify-between border-t border-divider/60 pt-3">
       <div className="flex min-w-0 flex-col gap-1.5">
         <span className="text-[10px] font-bold uppercase tracking-widest text-text-tertiary">
-          Recent flow
+          PRACTICE QUALITY
         </span>
         <div className="flex items-center gap-1.5" aria-label={`${sessionCount} sessions logged`}>
           {shown.map((st, idx) => (
