@@ -104,8 +104,8 @@ function ParentSchedulePage() {
   const save = useServerFn(saveAthleteSchedule);
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ["athletes-for-code", code],
-    queryFn: () => fetchAthletes({ data: { code } }),
+    queryKey: ["athletes-for-code", code ?? null],
+    queryFn: () => fetchAthletes({ data: { code: code ?? null } }),
   });
 
   const [index, setIndex] = useState(0);
