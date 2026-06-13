@@ -59,7 +59,7 @@ export function InviteCoachBanner() {
           </span>
           <span className="min-w-0 flex-1 truncate text-sm text-text-primary">
             <span className="font-medium">Invite your coach</span>
-            <span className="ml-1 text-text-secondary">to see your athletes</span>
+            <span className="ml-1 text-text-secondary">to receive practice plans</span>
           </span>
           <ChevronDown
             className={`size-4 shrink-0 text-text-secondary transition-transform ${open ? "rotate-180" : ""}`}
