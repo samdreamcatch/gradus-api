@@ -144,6 +144,7 @@ export const listAthletePlans = createServerFn({ method: "GET" })
 
     const coachSport = new Map<string, string>();
     for (const g of goalsRes.data ?? []) {
+      if (!g.coach_id) continue;
       if (!coachSport.has(g.coach_id)) coachSport.set(g.coach_id, g.sport);
     }
 
