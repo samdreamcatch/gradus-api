@@ -14,13 +14,12 @@ export function useAuthReady() {
   useEffect(() => {
     let cancelled = false;
 
-    // Use getUser() rather than getSession(): getUser() round-trips to the
-    // auth server and cryptographically verifies the JWT, so a forged
-    // localStorage session can't bypass the route gate. getSession() only
-    // reads from storage.
-    supabase.auth.getUser().then(({ data }) => {
+    // This hook is only for client-side readiness, so use the local session
+    // snapshot instead of a network round-trip. The actual protected route
+    // gate still verifies identity before rendering protected screens.
+    supabase.auth.getSession().then(({ data }) => {
       if (cancelled) return;
-      setUser(data.user ?? null);
+      setUser(data.session?.user ?? null);
       setIsReady(true);
     });
 

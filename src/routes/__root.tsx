@@ -141,13 +141,16 @@ function AuthSync() {
   const queryClient = useQueryClient();
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      // Drop ALL cached queries on any auth change so one user's cached data
-      // (e.g. a previously-fetched coach-profile) cannot briefly render for
-      // the next user before the refetch resolves.
+      // Only react to identity transitions. Refresh events are frequent and
+      // should not churn the whole app during or after sign-in.
+      if (event !== "SIGNED_OUT" && event !== "SIGNED_IN" && event !== "USER_UPDATED") {
+        return;
+      }
+
+      // Drop ALL cached queries when identity changes so one user's cached
+      // data cannot briefly render for the next user before refetch resolves.
       if (event === "SIGNED_OUT" || event === "SIGNED_IN" || event === "USER_UPDATED") {
         queryClient.clear();
-      } else {
-        queryClient.invalidateQueries();
       }
       router.invalidate();
     });
