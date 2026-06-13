@@ -141,12 +141,14 @@ function ParentAthletesPage() {
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-2">
             <Label>
-              Which of your athletes train{athletes.length > 1 ? "" : "s"} with
-              {coachName ? ` Coach ${coachName}` : " this coach"}?
+              {code
+                ? `Which of your athletes train${athletes.length > 1 ? "" : "s"} with${coachName ? ` Coach ${coachName}` : " this coach"}?`
+                : `Your athlete${athletes.length > 1 ? "s" : ""}`}
             </Label>
             <p className="text-xs text-text-tertiary">
-              Add only the athletes connected to this coach. You can link other
-              coaches later.
+              {code
+                ? "Add only the athletes connected to this coach. You can link other coaches later."
+                : "Add each athlete you want to track. You can invite their coach to join after signup."}
             </p>
             <div className="space-y-3 pt-1">
               {athletes.map((a, i) => (
@@ -208,10 +210,11 @@ function ParentAthletesPage() {
 
           {error && <p className="text-sm text-destructive">{error}</p>}
 
-          <Button type="submit" className="w-full" disabled={submitting || !coach}>
+          <Button type="submit" className="w-full" disabled={submitting || (!!code && !coach)}>
             {submitting ? "Saving..." : "Continue"}
           </Button>
         </form>
+
       </div>
     </div>
   );
