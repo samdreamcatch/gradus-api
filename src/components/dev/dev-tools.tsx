@@ -86,6 +86,7 @@ export function DevTools() {
       return;
     }
     setBusy(true);
+    setPendingEmail(acct.email);
     try {
       // Sign out first so onAuthStateChange clears caches cleanly.
       await supabase.auth.signOut();
@@ -101,6 +102,7 @@ export function DevTools() {
       toast.error(`Sign-in failed: ${(e as Error).message}`);
     } finally {
       setBusy(false);
+      setPendingEmail(null);
     }
   };
 
