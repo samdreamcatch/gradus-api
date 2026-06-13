@@ -124,12 +124,10 @@ function ParentAthletesPage() {
             </>
           ) : (
             <>
-              <p className="text-xs font-bold uppercase tracking-widest text-accent-ink">
-                Add your athletes
-              </p>
               <h1 className="mt-2 font-display text-3xl text-text-primary">
-                Who are we tracking?
+                Add your athletes
               </h1>
+
               <p className="mt-2 text-sm text-text-secondary">
                 Add each athlete in your family. You can invite a coach to join them after signup.
               </p>
