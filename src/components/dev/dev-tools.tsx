@@ -147,7 +147,7 @@ export function DevTools() {
         <button
           type="button"
           aria-label="Open DevTools"
-          className="fixed left-1/2 top-2 z-[100] flex h-7 -translate-x-1/2 items-center gap-1.5 rounded-full bg-divider px-3 text-[10px] font-bold uppercase tracking-widest text-text-tertiary shadow-card transition hover:text-text-secondary"
+          className="fixed left-1/2 top-2 z-[100] flex h-7 -translate-x-1/2 items-center gap-1.5 rounded-full bg-text-tertiary px-3 text-[10px] font-bold uppercase tracking-widest text-card shadow-card transition hover:bg-text-secondary"
         >
           <Wrench className="size-3" />
           DEV
