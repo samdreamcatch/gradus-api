@@ -419,6 +419,47 @@ export type Database = {
         }
         Relationships: []
       }
+      lesson_slot_overrides: {
+        Row: {
+          created_at: string
+          end_minute: number | null
+          id: string
+          occurrence_date: string
+          slot_id: string
+          start_minute: number | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          end_minute?: number | null
+          id?: string
+          occurrence_date: string
+          slot_id: string
+          start_minute?: number | null
+          status: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          end_minute?: number | null
+          id?: string
+          occurrence_date?: string
+          slot_id?: string
+          start_minute?: number | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lesson_slot_overrides_slot_id_fkey"
+            columns: ["slot_id"]
+            isOneToOne: false
+            referencedRelation: "athlete_lesson_slots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lesson_wrap_ups: {
         Row: {
           action: string

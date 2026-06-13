@@ -1,9 +1,11 @@
 import { useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { RosterAthlete } from "@/lib/coach-roster.functions";
 import type { AthletePracticeSummary } from "@/lib/coach-schedule.functions";
 import { PreLessonBriefing } from "./pre-lesson-briefing";
+import { LessonSlotSheet, type LessonSlotSheetMode } from "./lesson-slot-sheet";
+
 
 const DAY_LONG = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const WEEKDAY_LETTERS = ["M", "T", "W", "T", "F", "S", "S"]; // Mon..Sun
@@ -47,11 +49,22 @@ function formatRange(start: Date, end: Date): string {
 }
 
 interface DaySession {
+  slotId: string;
   athleteId: string;
   name: string;
+  dayOfWeek: number; // db format: Sun=0..Sat=6
   startMinute: number;
   endMinute: number;
+  overrideStatus: "canceled" | "rescheduled" | null;
 }
+
+function toIsoDate(d: Date): string {
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
 
 export function WeekScheduleView({
   athletes,
@@ -73,6 +86,9 @@ export function WeekScheduleView({
   const [selectedDayIndex, setSelectedDayIndex] = useState<number>(
     todayIndex >= 0 && todayIndex < 7 ? todayIndex : 0,
   );
+  const [sheetMode, setSheetMode] = useState<LessonSlotSheetMode | null>(null);
+  const sheetOpen = sheetMode != null;
+
 
   const weekEnd = addDays(weekStart, 6);
   const isCurrentWeek = sameDay(weekStart, currentWeekStart);
@@ -84,17 +100,33 @@ export function WeekScheduleView({
       const name = `${a.firstName} ${a.lastName}`.trim();
       for (const s of a.slots) {
         const dowIndex = (s.dayOfWeek + 6) % 7; // Mon=0..Sun=6
+        const date = addDays(weekStart, dowIndex);
+        const iso = toIsoDate(date);
+        const override = s.overrides.find((o) => o.date === iso);
+        if (override?.status === "canceled") continue;
+        const startMinute =
+          override?.status === "rescheduled" && override.startMinute != null
+            ? override.startMinute
+            : s.startMinute;
+        const endMinute =
+          override?.status === "rescheduled" && override.endMinute != null
+            ? override.endMinute
+            : s.endMinute;
         map.get(dowIndex)!.push({
+          slotId: s.id,
           athleteId: a.athleteId,
           name,
-          startMinute: s.startMinute,
-          endMinute: s.endMinute,
+          dayOfWeek: s.dayOfWeek,
+          startMinute,
+          endMinute,
+          overrideStatus: override?.status ?? null,
         });
       }
     }
     for (const arr of map.values()) arr.sort((a, b) => a.startMinute - b.startMinute);
     return map;
-  }, [athletes]);
+  }, [athletes, weekStart]);
+
 
   const selectedDate = addDays(weekStart, selectedDayIndex);
   const selectedSessions = sessionsByDay.get(selectedDayIndex) ?? [];
@@ -216,8 +248,8 @@ export function WeekScheduleView({
 
       {/* Selected day */}
       <div className="mt-4 overflow-hidden rounded-2xl border border-divider bg-card shadow-card">
-        <div className="flex items-baseline justify-between gap-3 border-b border-divider px-4 py-4">
-          <div className="flex items-baseline gap-2">
+        <div className="flex items-center justify-between gap-3 border-b border-divider px-4 py-4">
+          <div className="flex min-w-0 items-baseline gap-2">
             <span className="font-display text-xl font-black text-text-primary">
               {DAY_LONG[selectedDate.getDay()]}
             </span>
@@ -230,11 +262,28 @@ export function WeekScheduleView({
               </span>
             ) : null}
           </div>
-          <span className="text-[10px] font-bold uppercase tracking-widest text-text-tertiary">
-            {selectedSessions.length === 0
-              ? "Rest"
-              : `${selectedSessions.length} LESSON${selectedSessions.length === 1 ? "" : "S"}`}
-          </span>
+          <div className="flex shrink-0 items-center gap-2">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-text-tertiary">
+              {selectedSessions.length === 0
+                ? "Rest"
+                : `${selectedSessions.length} LESSON${selectedSessions.length === 1 ? "" : "S"}`}
+            </span>
+            {athletes.length > 0 ? (
+              <button
+                type="button"
+                onClick={() =>
+                  setSheetMode({
+                    kind: "create",
+                    defaultDayOfWeek: selectedDate.getDay(),
+                  })
+                }
+                aria-label="Add lesson"
+                className="flex h-7 w-7 items-center justify-center rounded-full border border-divider text-text-secondary transition hover:border-accent hover:text-accent-ink"
+              >
+                <Plus className="h-3.5 w-3.5" />
+              </button>
+            ) : null}
+          </div>
         </div>
 
         {selectedSessions.length === 0 ? (
@@ -249,17 +298,41 @@ export function WeekScheduleView({
             />
             <ul className="relative space-y-4">
               {selectedSessions.map((s, i) => (
-                <li key={i}>
+                <li key={`${s.slotId}-${i}`}>
                   <LessonRow
                     session={s}
                     summary={summariesByAthlete?.get(s.athleteId)}
                     onSelect={onSelectAthlete}
+                    onEditRecurring={() =>
+                      setSheetMode({
+                        kind: "edit",
+                        slotId: s.slotId,
+                        athleteId: s.athleteId,
+                        dayOfWeek: s.dayOfWeek,
+                        startMinute: s.startMinute,
+                        endMinute: s.endMinute,
+                      })
+                    }
+                    onEditOccurrence={() =>
+                      setSheetMode({
+                        kind: "occurrence",
+                        slotId: s.slotId,
+                        athleteId: s.athleteId,
+                        date: toIsoDate(selectedDate),
+                        dayOfWeek: s.dayOfWeek,
+                        startMinute: s.startMinute,
+                        endMinute: s.endMinute,
+                        hasOverride: s.overrideStatus != null,
+                      })
+                    }
                   />
                 </li>
               ))}
             </ul>
           </div>
         )}
+
+
 
       </div>
 
@@ -268,9 +341,18 @@ export function WeekScheduleView({
         Showing recurring weekly lessons
       </p>
 
+      <LessonSlotSheet
+        open={sheetOpen}
+        onOpenChange={(o) => {
+          if (!o) setSheetMode(null);
+        }}
+        mode={sheetMode}
+        athletes={athletes}
+      />
     </div>
   );
 }
+
 
 const STATE_COLORS = [
   "var(--pen-pink, var(--text-tertiary))", // 0 frustrated
@@ -293,10 +375,14 @@ function LessonRow({
   session,
   summary,
   onSelect,
+  onEditRecurring,
+  onEditOccurrence,
 }: {
   session: DaySession;
   summary?: AthletePracticeSummary;
   onSelect?: (athleteId: string) => void;
+  onEditRecurring?: () => void;
+  onEditOccurrence?: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
   return (
@@ -323,14 +409,21 @@ function LessonRow({
           aria-expanded={expanded}
           className="flex w-full items-center justify-between gap-3 p-4 text-left transition active:scale-[0.99] focus-visible:outline-none"
         >
-          <h3
-            className={cn(
-              "min-w-0 truncate font-display text-xl font-black leading-tight",
-              expanded ? "text-text-primary" : "text-text-primary/85",
-            )}
-          >
-            {session.name}
-          </h3>
+          <div className="flex min-w-0 flex-col gap-1">
+            <h3
+              className={cn(
+                "min-w-0 truncate font-display text-xl font-black leading-tight",
+                expanded ? "text-text-primary" : "text-text-primary/85",
+              )}
+            >
+              {session.name}
+            </h3>
+            {session.overrideStatus === "rescheduled" ? (
+              <span className="w-fit rounded-pill border border-[color:var(--pen-orange)]/40 px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-[color:var(--pen-orange-ink)]">
+                Rescheduled
+              </span>
+            ) : null}
+          </div>
           <StatusChip summary={summary} />
         </button>
 
@@ -338,6 +431,27 @@ function LessonRow({
           <div className="px-4 pb-4">
             <PracticeMetric summary={summary} />
             <PracticeFooter summary={summary} />
+            <div className="mt-3 flex flex-wrap gap-2">
+              {onEditRecurring ? (
+                <button
+                  type="button"
+                  onClick={onEditRecurring}
+                  className="inline-flex items-center gap-1 rounded-pill border border-divider/70 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-text-secondary transition hover:border-accent/50 hover:text-accent-ink"
+                >
+                  <Pencil className="h-3 w-3" />
+                  Edit recurring
+                </button>
+              ) : null}
+              {onEditOccurrence ? (
+                <button
+                  type="button"
+                  onClick={onEditOccurrence}
+                  className="inline-flex items-center gap-1 rounded-pill border border-divider/70 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-text-secondary transition hover:border-accent/50 hover:text-accent-ink"
+                >
+                  Just this date
+                </button>
+              ) : null}
+            </div>
             {onSelect ? (
               <button
                 type="button"
@@ -353,6 +467,7 @@ function LessonRow({
     </div>
   );
 }
+
 
 
 
