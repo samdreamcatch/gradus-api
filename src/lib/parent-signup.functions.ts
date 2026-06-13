@@ -118,14 +118,21 @@ export const getParentSignupStatus = createServerFn({ method: "GET" })
       .eq("user_id", userId)
       .maybeSingle();
     if (parent.error) dbError(parent.error);
-    if (!parent.data) return { hasParentProfile: false, hasAthletes: false, inviteCode: null };
+    if (!parent.data) return { hasParentProfile: false, hasAthletes: false, hasAnyCoach: false, inviteCode: null };
 
-    const athletes = await supabaseAdmin
-      .from("athletes")
-      .select("id")
-      .eq("parent_id", parent.data.id)
-      .limit(1);
+    const parentId = parent.data.id;
+
+    const [athletes, coachLinks] = await Promise.all([
+      supabaseAdmin.from("athletes").select("id").eq("parent_id", parentId).limit(1),
+      // Any coach already linked to any of this parent's athletes?
+      supabaseAdmin
+        .from("coach_athletes")
+        .select("coach_id, athletes!inner(parent_id)")
+        .eq("athletes.parent_id", parentId)
+        .limit(1),
+    ]);
     if (athletes.error) dbError(athletes.error);
+    if (coachLinks.error) dbError(coachLinks.error);
 
     let inviteCode: string | null = null;
     if (parent.data.coach_id) {
@@ -140,6 +147,7 @@ export const getParentSignupStatus = createServerFn({ method: "GET" })
     return {
       hasParentProfile: true,
       hasAthletes: (athletes.data ?? []).length > 0,
+      hasAnyCoach: (coachLinks.data ?? []).length > 0 || !!parent.data.coach_id,
       inviteCode,
     };
   });
