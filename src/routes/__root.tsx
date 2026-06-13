@@ -129,6 +129,7 @@ function RootComponent() {
           <Outlet />
         </main>
         <Toaster />
+        {import.meta.env.DEV && <DevTools />}
       </ThemeProvider>
     </QueryClientProvider>
   );
