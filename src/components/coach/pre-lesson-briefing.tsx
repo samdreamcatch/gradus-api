@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Sparkles } from "lucide-react";
+import { ChevronDown, Sparkles } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { getPreLessonBriefing } from "@/lib/pre-lesson-briefing.functions";
 
 
@@ -14,6 +16,7 @@ export function PreLessonBriefing({
   lessonDate: string; // YYYY-MM-DD
   startMinute: number;
 }) {
+  const [expanded, setExpanded] = useState(false);
   const queryKey = ["pre-lesson-briefing", athleteId, lessonDate];
 
   const { data, isLoading, isError, error } = useQuery({
@@ -27,7 +30,12 @@ export function PreLessonBriefing({
 
   return (
     <div className="mt-5 rounded-2xl border border-accent/40 bg-card p-4 shadow-card">
-      <div className="flex items-start justify-between gap-3">
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        aria-expanded={expanded}
+        className="flex w-full items-center justify-between gap-3 text-left focus-visible:outline-none"
+      >
         <div className="flex items-center gap-2">
           <span className="flex h-7 w-7 items-center justify-center rounded-full bg-accent/15 text-accent-ink">
             <Sparkles className="h-4 w-4" />
@@ -41,23 +49,31 @@ export function PreLessonBriefing({
             </div>
           </div>
         </div>
-      </div>
+        <ChevronDown
+          className={cn(
+            "h-4 w-4 shrink-0 text-text-tertiary transition-transform",
+            expanded && "rotate-180",
+          )}
+        />
+      </button>
 
-      <div className="mt-3 text-sm leading-relaxed text-text-primary">
-        {isLoading ? (
-          <div className="space-y-2">
-            <div className="h-3 w-full animate-pulse rounded bg-divider/60" />
-            <div className="h-3 w-11/12 animate-pulse rounded bg-divider/60" />
-            <div className="h-3 w-2/3 animate-pulse rounded bg-divider/60" />
-          </div>
-        ) : isError ? (
-          <p className="text-text-secondary">
-            Couldn't load the briefing{error instanceof Error ? `: ${error.message}` : "."}
-          </p>
-        ) : (
-          <p>{data?.narrative}</p>
-        )}
-      </div>
+      {expanded ? (
+        <div className="mt-3 text-sm leading-relaxed text-text-primary">
+          {isLoading ? (
+            <div className="space-y-2">
+              <div className="h-3 w-full animate-pulse rounded bg-divider/60" />
+              <div className="h-3 w-11/12 animate-pulse rounded bg-divider/60" />
+              <div className="h-3 w-2/3 animate-pulse rounded bg-divider/60" />
+            </div>
+          ) : isError ? (
+            <p className="text-text-secondary">
+              Couldn't load the briefing{error instanceof Error ? `: ${error.message}` : "."}
+            </p>
+          ) : (
+            <p>{data?.narrative}</p>
+          )}
+        </div>
+      ) : null}
     </div>
   );
 }
