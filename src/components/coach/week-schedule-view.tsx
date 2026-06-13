@@ -243,31 +243,18 @@ export function WeekScheduleView({
           </div>
         ) : (
           <ul className="divide-y divide-divider/50">
-            {selectedSessions.map((s, i) => {
-              const summary = summariesByAthlete?.get(s.athleteId);
-              return (
-                <li key={i}>
-                  <button
-                    type="button"
-                    onClick={() => onSelectAthlete?.(s.athleteId)}
-                    className="flex w-full items-start gap-4 px-4 py-3 text-left transition hover:bg-elevated focus-visible:outline-none focus-visible:bg-elevated"
-                  >
-                    <div className="w-16 shrink-0 font-display text-base font-black tabular-nums text-text-primary">
-                      {formatTime(s.startMinute)}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="text-base font-bold text-text-primary">{s.name}</div>
-                      <div className="text-xs text-text-secondary tabular-nums">
-                        {formatTime(s.startMinute)} – {formatTime(s.endMinute)}
-                      </div>
-                      <PracticeSinceLast summary={summary} />
-                    </div>
-                  </button>
-                </li>
-              );
-            })}
+            {selectedSessions.map((s, i) => (
+              <li key={i}>
+                <LessonRow
+                  session={s}
+                  summary={summariesByAthlete?.get(s.athleteId)}
+                  onSelect={onSelectAthlete}
+                />
+              </li>
+            ))}
           </ul>
         )}
+
       </div>
 
       <p className="mt-3 px-1 text-[10px] uppercase tracking-widest text-text-tertiary">
@@ -285,102 +272,191 @@ const STATE_COLORS = [
   "var(--pen-tennis)", // 4 flowing
 ];
 
-function PracticeSinceLast({ summary }: { summary?: AthletePracticeSummary }) {
+function getStatus(hoursLogged: number, expectedHoursPerWeek?: number | null) {
+  if (!expectedHoursPerWeek || expectedHoursPerWeek <= 0) return null;
+  const ratio = hoursLogged / expectedHoursPerWeek;
+  if (ratio > 1.5) return { label: "Over target", tone: "pink" as const };
+  if (ratio >= 0.9) return { label: "On track", tone: "tennis" as const };
+  if (ratio >= 0.5) return { label: "Light", tone: "orange" as const };
+  return { label: "Behind", tone: "pink" as const };
+}
+
+function LessonRow({
+  session,
+  summary,
+  onSelect,
+}: {
+  session: DaySession;
+  summary?: AthletePracticeSummary;
+  onSelect?: (athleteId: string) => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect?.(session.athleteId)}
+      className="block w-full px-3 py-4 text-left transition active:scale-[0.99] focus-visible:outline-none"
+    >
+      <div className="rounded-2xl border border-divider/70 bg-elevated/40 p-4 shadow-card transition hover:border-accent/40 hover:bg-elevated">
+        {/* Header: time range + athlete name */}
+        <div className="mb-4 flex items-start justify-between gap-3">
+          <div className="min-w-0 space-y-1">
+            <span className="block text-[10px] font-bold uppercase tracking-widest text-accent-ink tabular-nums">
+              {formatTime(session.startMinute)} — {formatTime(session.endMinute)}
+            </span>
+            <h3 className="truncate font-display text-xl font-black leading-tight text-text-primary">
+              {session.name}
+            </h3>
+          </div>
+          <StatusChip summary={summary} />
+        </div>
+
+        {/* Primary metric: deliberate practice hours */}
+        <PracticeMetric summary={summary} />
+
+        {/* Footer: recent flow + session count */}
+        <PracticeFooter summary={summary} />
+      </div>
+    </button>
+  );
+}
+
+function StatusChip({ summary }: { summary?: AthletePracticeSummary }) {
+  if (!summary) return null;
+  const status = getStatus(summary.hoursLogged, summary.expectedHoursPerWeek);
+  if (!status) return null;
+  const toneClass =
+    status.tone === "tennis"
+      ? "border-accent/40 text-accent-ink"
+      : status.tone === "orange"
+        ? "border-[color:var(--pen-orange)]/40 text-[color:var(--pen-orange-ink)]"
+        : "border-[color:var(--pen-pink)]/40 text-[color:var(--pen-pink-ink)]";
+  return (
+    <span
+      className={cn(
+        "shrink-0 rounded-pill border px-2 py-0.5 text-[10px] font-black uppercase tracking-widest",
+        toneClass,
+      )}
+    >
+      {status.label}
+    </span>
+  );
+}
+
+function PracticeMetric({ summary }: { summary?: AthletePracticeSummary }) {
   if (!summary) {
     return (
-      <div className="mt-2 h-4 w-32 animate-pulse rounded bg-divider/60" aria-hidden />
+      <div className="mb-4 h-[68px] animate-pulse rounded-xl bg-divider/40" aria-hidden />
     );
   }
-
-  const { hoursLogged, expectedHoursPerWeek, sessionStates, sessionCount } = summary;
-  const hoursStr = hoursLogged > 0 ? `${hoursLogged.toFixed(1)}h` : "0h";
-
-  let chipLabel: string | null = null;
-  let chipClass = "";
-  if (expectedHoursPerWeek && expectedHoursPerWeek > 0) {
-    const ratio = hoursLogged / expectedHoursPerWeek;
-    if (ratio > 1.5) {
-      chipLabel = "Over target";
-      chipClass =
-        "bg-[color-mix(in_oklab,var(--pen-pink)_22%,transparent)] text-[color:var(--pen-pink-ink)]";
-    } else if (ratio >= 0.9) {
-      chipLabel = "On track";
-      chipClass =
-        "bg-[color-mix(in_oklab,var(--pen-tennis)_18%,transparent)] text-accent-ink";
-    } else if (ratio >= 0.5) {
-      chipLabel = "Light";
-      chipClass =
-        "bg-[color-mix(in_oklab,var(--pen-orange)_18%,transparent)] text-attention-ink";
-    } else {
-      chipLabel = "Behind";
-      chipClass =
-        "bg-[color-mix(in_oklab,var(--pen-pink)_18%,transparent)] text-[color:var(--pen-pink-ink)]";
-    }
-  }
+  const { hoursLogged, expectedHoursPerWeek } = summary;
+  const hoursStr = hoursLogged > 0 ? hoursLogged.toFixed(1) : "0";
+  const hasGoal = !!(expectedHoursPerWeek && expectedHoursPerWeek > 0);
+  const ratio = hasGoal ? Math.min(1, hoursLogged / (expectedHoursPerWeek as number)) : 0;
+  const pct = Math.round(ratio * 100);
+  const dash = Math.max(0, Math.min(100, ratio * 100));
 
   return (
-    <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1">
-      <span className="text-[9px] font-bold uppercase tracking-widest text-text-tertiary">
-        Since last
-      </span>
-      <span className="text-xs font-bold tabular-nums text-text-primary">
-        {hoursStr}
-      </span>
-      {expectedHoursPerWeek != null && expectedHoursPerWeek > 0 ? (
-        <span className="text-[11px] text-text-tertiary tabular-nums">
-          / {expectedHoursPerWeek}h goal
-        </span>
-      ) : (
-        <span className="text-[11px] text-text-tertiary">since last lesson</span>
-      )}
-      {chipLabel ? (
-        <span
-          className={cn(
-            "rounded-pill px-1.5 py-0.5 text-[9px] font-black uppercase tracking-widest",
-            chipClass,
-          )}
-        >
-          {chipLabel}
-        </span>
-      ) : null}
-
-      {sessionCount > 0 ? (
-        (() => {
-          const MAX_DOTS = 7;
-          const ordered = sessionStates.slice().reverse(); // newest → oldest
-          const shown = ordered.slice(0, MAX_DOTS);
-          const overflow = sessionCount - shown.length;
-          return (
-            <span
-              className="ml-auto flex items-center gap-[3px]"
-              aria-label={`${sessionCount} sessions logged`}
-            >
-              {shown.map((st, idx) => (
-                <span
-                  key={idx}
-                  className="h-2 w-2 rounded-full"
-                  style={{
-                    background: STATE_COLORS[Math.max(0, Math.min(4, st))],
-                    boxShadow:
-                      st === 4
-                        ? "0 0 4px color-mix(in oklab, var(--pen-tennis) 50%, transparent)"
-                        : undefined,
-                  }}
-                />
-              ))}
-              {overflow > 0 ? (
-                <span className="ml-0.5 text-[10px] font-bold tabular-nums text-text-tertiary">
-                  +{overflow}
-                </span>
-              ) : null}
+    <div className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-divider/60 bg-card/60 p-3">
+      <div className="min-w-0">
+        <div className="mb-1 text-[10px] font-bold uppercase tracking-widest text-text-tertiary">
+          Deliberate practice since last lesson
+        </div>
+        <div className="flex items-baseline gap-1.5">
+          <span className="font-display text-3xl font-black leading-none text-text-primary tabular-nums">
+            {hoursStr}h
+          </span>
+          {hasGoal ? (
+            <span className="font-display text-base text-text-tertiary tabular-nums">
+              / {expectedHoursPerWeek}h goal
             </span>
-          );
-        })()
-      ) : (
-        <span className="ml-auto text-[10px] uppercase tracking-widest text-text-tertiary">
-          No sessions
-        </span>
-      )}
+          ) : (
+            <span className="text-xs text-text-tertiary">no weekly goal set</span>
+          )}
+        </div>
+      </div>
+
+      {hasGoal ? (
+        <div
+          className="relative h-12 w-12 shrink-0"
+          aria-label={`${pct}% of weekly goal`}
+        >
+          <svg className="h-full w-full -rotate-90" viewBox="0 0 36 36">
+            <path
+              d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+              fill="none"
+              stroke="var(--divider)"
+              strokeWidth="3"
+            />
+            <path
+              d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+              fill="none"
+              stroke="var(--accent)"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeDasharray={`${dash}, 100`}
+            />
+          </svg>
+          <div className="absolute inset-0 flex items-center justify-center text-[10px] font-black tabular-nums text-text-primary">
+            {pct}%
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
+
+function PracticeFooter({ summary }: { summary?: AthletePracticeSummary }) {
+  if (!summary) return null;
+  const { sessionStates, sessionCount } = summary;
+
+  if (sessionCount === 0) {
+    return (
+      <div className="flex items-center justify-between border-t border-divider/60 pt-3">
+        <span className="text-[10px] font-bold uppercase tracking-widest text-text-tertiary">
+          Recent flow
+        </span>
+        <span className="text-[10px] font-bold uppercase tracking-widest text-text-tertiary">
+          No sessions logged
+        </span>
+      </div>
+    );
+  }
+
+  const MAX_DOTS = 7;
+  const ordered = sessionStates.slice().reverse(); // newest → oldest
+  const shown = ordered.slice(0, MAX_DOTS);
+
+  return (
+    <div className="flex items-end justify-between border-t border-divider/60 pt-3">
+      <div className="flex min-w-0 flex-col gap-1.5">
+        <span className="text-[10px] font-bold uppercase tracking-widest text-text-tertiary">
+          Recent flow
+        </span>
+        <div className="flex items-center gap-1.5" aria-label={`${sessionCount} sessions logged`}>
+          {shown.map((st, idx) => (
+            <span
+              key={idx}
+              className="h-2.5 w-2.5 rounded-full"
+              style={{
+                background: STATE_COLORS[Math.max(0, Math.min(4, st))],
+                boxShadow:
+                  st === 4
+                    ? "0 0 6px color-mix(in oklab, var(--pen-tennis) 50%, transparent)"
+                    : undefined,
+              }}
+            />
+          ))}
+        </div>
+      </div>
+      <div className="text-right leading-tight">
+        <div className="font-display text-lg font-black tabular-nums text-text-primary">
+          {sessionCount}
+        </div>
+        <div className="text-[9px] font-bold uppercase tracking-widest text-text-tertiary">
+          {sessionCount === 1 ? "Session" : "Sessions"}
+        </div>
+      </div>
+    </div>
+  );
+}
+
