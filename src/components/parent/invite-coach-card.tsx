@@ -117,8 +117,8 @@ export function InviteCoachCard() {
       </div>
 
       <p className="mt-4 font-hand text-lg text-accent-ink">
-        Already have a coach on Gradus? They can paste this code on their
-        roster page to claim your account.
+        Is your coach already on Gradus? They can paste this code on their
+        roster page to link up to you and your athlete.
       </p>
 
       {error && (
