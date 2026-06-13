@@ -1,47 +1,46 @@
-## What's causing it
+## Problem
 
-On mobile (especially iOS Safari), the whole page can be dragged/rubber-banded because:
+In `src/routes/__root.tsx` the mount looks like:
 
-1. **No `overscroll-behavior` on `html`/`body`** in `src/styles.css`. Browsers default to letting the document bounce when you drag past the top/bottom, and that bounce drags the entire app (gradient background, fixed bottom nav, sticky footers) with it.
-2. **`background-attachment: fixed` on `body`** (line 206) combined with the bouncing document makes the gradient/paper texture visibly slide independently of content, which exaggerates the "the screen is moving everywhere" feeling.
-3. **Every page wraps content in `min-h-dvh`** and the `<body>` itself scrolls. The fixed `CoachBottomNav` / `AthleteBottomNav` / `ParentBottomNav` stay put, but the sheet overlays and pull-to-refresh gesture on the body let the user drag the page around behind them.
-4. **iOS pull-to-refresh / swipe-back** are also enabled by default on the document scroller, which contributes to horizontal/vertical drift.
-
-Nothing in `src/styles.css` currently sets `overscroll-behavior`, `touch-action`, or otherwise tames the document scroller — so the browser defaults win.
-
-## Plan
-
-Single, small CSS-only change in `src/styles.css` (inside the existing `@layer base` block). No component or layout changes.
-
-1. Add to `html`:
-   - `overscroll-behavior: none;` — disables rubber-band + pull-to-refresh on the root scroller.
-   - `height: 100%;` — keeps the document constrained so the body is the only scroller.
-
-2. Add to `body`:
-   - `overscroll-behavior-y: none;` — belt-and-braces for iOS, which sometimes only honors the rule on the body.
-   - `overscroll-behavior-x: none;` — kills sideways drift from horizontal swipes.
-   - Keep `min-height: 100vh` and the existing gradient/paper texture, but the bounce will stop so `background-attachment: fixed` no longer visually slides.
-
-3. Leave sheets, dialogs, and the bottom nav alone — they already render correctly once the document stops bouncing.
-
-### Technical details
-
-```css
-@layer base {
-  html {
-    height: 100%;
-    overscroll-behavior: none;
-  }
-  body {
-    overscroll-behavior-x: none;
-    overscroll-behavior-y: none;
-    /* existing rules unchanged */
-  }
-}
+```tsx
+import { DevTools } from "@/components/dev/dev-tools";
+...
+{import.meta.env.DEV && <DevTools />}
 ```
 
-### Out of scope
+TanStack Start splits route files (component vs. loader vs. config) into separate chunks. The `DevTools` reference only appears inside a conditional JSX expression, and the splitter ends up emitting the SSR chunk without the `DevTools` import binding — so at render time `DevTools is not defined` and SSR throws. The user sees a Vite error overlay, and the floating "DEV" button never renders.
 
-- No changes to bottom nav, sheets, or route layouts.
-- Not switching to a fixed-body / inner-scroller architecture (heavier refactor; only needed if the simple `overscroll-behavior` fix doesn't fully resolve it on iOS).
-- No changes to `background-attachment: fixed` unless the bounce fix alone doesn't make the gradient feel anchored — we'll revisit only if you still see drift after the fix.
+## Fix
+
+Introduce a tiny wrapper that resolves the gating at **module load** instead of inside JSX. `import.meta.env.DEV` is statically replaced by Vite at build time, so the ternary constant-folds and Rollup tree-shakes the `DevTools` import in production builds.
+
+**New file** `src/components/dev/dev-tools-mount.tsx`:
+
+```tsx
+import { DevTools } from "./dev-tools";
+
+// import.meta.env.DEV is statically replaced. In prod it becomes
+// `false ? DevTools : () => null` → folds to `() => null` and the
+// DevTools import is dropped by Rollup's tree-shaker.
+export const DevToolsMount = import.meta.env.DEV ? DevTools : () => null;
+```
+
+**Edit** `src/routes/__root.tsx`:
+- Replace the `DevTools` import with `import { DevToolsMount } from "@/components/dev/dev-tools-mount"`.
+- Replace `{import.meta.env.DEV && <DevTools />}` with `<DevToolsMount />`.
+
+The JSX reference is now unconditional, so the route code-splitter keeps the import; the env gating happens at the module level above the splitter's concerns.
+
+## Guarantees preserved
+
+- **Tree-shaking in prod**: `DevToolsMount` resolves to `() => null` at build time; the `DevTools` import inside the wrapper has no live reference and is dropped. The entire `src/components/dev/` tree (panel, account list, supabase calls) stays out of the production bundle.
+- **No other components modified**: only `__root.tsx` and one new file under `src/components/dev/` change.
+- **No auth or RLS changes**: untouched.
+
+## Verification
+
+After the edit, reload the preview. Expect:
+- No Vite error overlay.
+- The orange "DEV" button visible in the bottom-right corner.
+- Clicking it opens the Sheet with the three sections.
+- Dev-server log no longer shows the `ReferenceError: DevTools is not defined` stack.
