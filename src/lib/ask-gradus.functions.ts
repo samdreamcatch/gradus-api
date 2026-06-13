@@ -16,7 +16,10 @@ export const askGradus = createServerFn({ method: "POST" })
   .inputValidator((data) => input.parse(data))
   .handler(async ({ data }): Promise<{ answer: string }> => {
     const key = process.env.LOVABLE_API_KEY;
-    if (!key) throw new Error("Missing LOVABLE_API_KEY");
+    if (!key) {
+      console.error("[ask-gradus] LOVABLE_API_KEY not set");
+      throw new Error("AI service is unavailable. Please try again later.");
+    }
 
     const sportLabel = getSport(data.sport)?.label ?? data.sport;
     const gateway = createLovableAiGatewayProvider(key);
