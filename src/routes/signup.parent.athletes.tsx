@@ -143,11 +143,12 @@ function ParentAthletesPage() {
                 ? `Which of your athletes train${athletes.length > 1 ? "" : "s"} with${coachName ? ` Coach ${coachName}` : " this coach"}?`
                 : `Your athlete${athletes.length > 1 ? "s" : ""}`}
             </Label>
-            <p className="text-xs text-text-tertiary">
-              {code
-                ? "Add only the athletes connected to this coach. You can link other coaches later."
-                : "Add each athlete you want to track. You can invite their coach to join after signup."}
-            </p>
+            {code && (
+              <p className="text-xs text-text-tertiary">
+                Add only the athletes connected to this coach. You can link other coaches later.
+              </p>
+            )}
+
             <div className="space-y-3 pt-1">
               {athletes.map((a, i) => (
                 <div key={i} className="flex items-start gap-2">
