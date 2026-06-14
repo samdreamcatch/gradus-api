@@ -142,6 +142,9 @@ function RosterPage() {
           <SegmentedToggle tab={tab} onChange={setTab} />
         </div>
 
+        <FirstPlanBanner />
+
+
         {athletes.length > 0 && (
           <SportFilterChips
             sports={sports}
