@@ -209,7 +209,7 @@ function FirstPlanBanner() {
     queryFn: () => listPlans({ data: {} }),
     staleTime: 60_000,
   });
-  if (!plans || plans.length > 0) return null;
+  if (!plans || plans.plans.length > 0) return null;
   return (
     <Link
       to="/coach/plans"
