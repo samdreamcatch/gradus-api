@@ -160,12 +160,7 @@ function CoachSignupPage() {
         {invite && parentName && (
           <div className="mb-6 rounded-xl border border-accent/40 bg-accent/10 px-4 py-3 text-sm">
             <p className="font-semibold text-text-primary">
-              You&apos;re joining {parentName}&apos;s account
-            </p>
-            <p className="mt-1 text-text-secondary">
-              {parent?.athleteCount === 1
-                ? "1 athlete will be added to your roster after signup."
-                : `${parent?.athleteCount ?? 0} athletes will be added to your roster after signup.`}
+              You&apos;re connecting with {parentName} and their athlete
             </p>
           </div>
         )}
