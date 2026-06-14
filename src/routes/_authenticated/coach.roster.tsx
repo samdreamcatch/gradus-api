@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
-import { UserPlus } from "lucide-react";
+import { UserPlus, Sparkles } from "lucide-react";
 import { queryOptions, useQuery, useSuspenseQuery } from "@tanstack/react-query";
-import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { CoachBottomNav } from "@/components/coach/bottom-nav";
 import { PageTitle } from "@/components/page-title";
 import { RosterCard } from "@/components/coach/roster-card";
@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { getCoachRoster } from "@/lib/coach-roster.functions";
+import { listPlans } from "@/lib/plans.functions";
 import {
   getRosterPracticeSummaries,
   type AthletePracticeSummary,
@@ -141,6 +142,9 @@ function RosterPage() {
           <SegmentedToggle tab={tab} onChange={setTab} />
         </div>
 
+        <FirstPlanBanner />
+
+
         {athletes.length > 0 && (
           <SportFilterChips
             sports={sports}
@@ -196,5 +200,28 @@ function RosterPage() {
         onOpenChange={setSelectedAthleteId}
       />
     </>
+  );
+}
+
+function FirstPlanBanner() {
+  const { data: plans } = useQuery({
+    queryKey: ["coach", "plans", "any"],
+    queryFn: () => listPlans({ data: {} }),
+    staleTime: 60_000,
+  });
+  if (!plans || plans.plans.length > 0) return null;
+  return (
+    <Link
+      to="/coach/plans"
+      className="mt-4 flex items-center gap-3 rounded-xl border border-accent/40 bg-accent/10 px-4 py-3 text-sm transition hover:bg-accent/15"
+    >
+      <Sparkles className="size-5 shrink-0 text-accent-ink" aria-hidden />
+      <div>
+        <p className="font-semibold text-text-primary">Create your first plan</p>
+        <p className="mt-0.5 text-text-secondary">
+          Build a training plan to share with an athlete.
+        </p>
+      </div>
+    </Link>
   );
 }
