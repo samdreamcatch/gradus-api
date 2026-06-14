@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
-import { UserPlus } from "lucide-react";
+import { UserPlus, Sparkles } from "lucide-react";
 import { queryOptions, useQuery, useSuspenseQuery } from "@tanstack/react-query";
-import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { CoachBottomNav } from "@/components/coach/bottom-nav";
 import { PageTitle } from "@/components/page-title";
 import { RosterCard } from "@/components/coach/roster-card";
@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { getCoachRoster } from "@/lib/coach-roster.functions";
+import { listPlans } from "@/lib/plans.functions";
 import {
   getRosterPracticeSummaries,
   type AthletePracticeSummary,
