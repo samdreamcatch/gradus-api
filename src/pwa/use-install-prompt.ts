@@ -47,9 +47,11 @@ function isIos(): boolean {
 function isIosSafari(): boolean {
   if (!isIos()) return false;
   const ua = window.navigator.userAgent;
-  // Exclude Chrome (CriOS), Firefox (FxiOS), Edge (EdgiOS), in-app webviews (FBAN/FBAV/Instagram/Line)
-  if (/CriOS|FxiOS|EdgiOS|OPiOS|FBAN|FBAV|Instagram|Line|Snapchat/i.test(ua)) return false;
-  return /Safari/i.test(ua);
+  // Exclude only in-app webviews where Add to Home Screen isn't reachable.
+  // All real iOS browsers (Safari, Chrome/CriOS, Firefox/FxiOS, Edge/EdgiOS) use WebKit
+  // and expose Share → Add to Home Screen.
+  if (/FBAN|FBAV|Instagram|Line|Snapchat|MicroMessenger/i.test(ua)) return false;
+  return true;
 }
 
 function dismissedRecently(): boolean {
