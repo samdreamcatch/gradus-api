@@ -79,6 +79,23 @@ async function assertCoachOwnsAthlete(coachId: string, athleteId: string) {
   if (!data) throw new Error("Athlete is not on your roster");
 }
 
+// Sports this coach offers for this athlete — drives which goals/data the
+// coach is allowed to see. Goals are owned by the parent (one row per
+// athlete+sport); coach_id on athlete_goals is just bookkeeping for the
+// first coach who claimed the invite and MUST NOT be used to gate
+// visibility for other coaches who also offer that sport.
+async function getCoachAthleteSports(coachId: string, athleteId: string): Promise<string[]> {
+  const supabaseAdmin = await getAdmin();
+  const { data, error } = await supabaseAdmin
+    .from("coach_athlete_sports")
+    .select("sport")
+    .eq("coach_id", coachId)
+    .eq("athlete_id", athleteId);
+  if (error) dbError(error);
+  return Array.from(new Set((data ?? []).map((r) => r.sport)));
+}
+
+
 function labelLevel(sport: string, levelKey: string): string {
   return getSportLevel(sport, levelKey)?.label ?? levelKey;
 }
