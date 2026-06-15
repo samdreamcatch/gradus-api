@@ -16,6 +16,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider";
 import { DevToolsMount } from "@/components/dev/dev-tools-mount";
 import { registerServiceWorker } from "@/pwa/register-sw";
+import { InstallBanner } from "@/components/install-banner";
 
 function NotFoundComponent() {
   return (
@@ -140,6 +141,7 @@ function RootComponent() {
           <Outlet />
         </main>
         <Toaster />
+        <InstallBanner />
         <DevToolsMount />
       </ThemeProvider>
     </QueryClientProvider>

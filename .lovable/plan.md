@@ -1,62 +1,52 @@
-## Add PWA support to Gradus
+# Install-to-Home-Screen Banner
 
-### Heads-up on one requirement
+Add a bottom banner that prompts visitors to install Gradus as an app, with proper handling for each platform. Shown to everyone (logged in or not), dismissible for 7 days.
 
-This project is TanStack Start, which has **no `index.html`** — the document shell is rendered from `src/routes/__root.tsx` via `shellComponent`. The required meta tags (`theme-color`, `apple-touch-icon`, `apple-mobile-web-app-*`, viewport) will be added to the existing `head()` in `__root.tsx` instead of `index.html`. The existing viewport meta will be left as-is. Same outcome, just the correct location for this stack.
+## What the user will see
 
-### Icons — sourced from the Gradus Website project
+**Android / Chrome / Edge (desktop + mobile):**
+A bottom banner with the Gradus app icon, headline "Install Gradus", a short subtitle, an **Install** button, and a **Not now** dismiss. Tapping Install fires the native one-tap install prompt. Once installed, the banner never shows again on that device.
 
-I'll copy `public/app-icon.png` from the **Gradus Website** workspace project into this project, then derive the three required PWA sizes from it (resized with ImageMagick in the sandbox):
+**iOS Safari (iPhone / iPad):**
+Same banner styling, but instead of an Install button it shows step-by-step instructions: "Tap the Share icon, then Add to Home Screen", with the iOS share glyph rendered inline so it's unmistakable. Still dismissible.
 
-- `public/icons/icon-192.png` (192×192)
-- `public/icons/icon-512.png` (512×512)
-- `public/icons/icon-512-maskable.png` (512×512, padded into the maskable safe-zone — icon scaled to ~80% on a `--background` slate fill so Android adaptive masks don't crop the mark)
+**Already-installed / unsupported browsers (in-app webviews, Firefox iOS, etc.):**
+Banner stays hidden — no value showing it.
 
-No new icon art is generated.
+## When it appears
 
-### What I'll build
+- After a short delay (~3 seconds) on first visit, so it doesn't slam the user the moment the page loads.
+- Hidden inside the Lovable editor preview and inside iframes (matches the existing service-worker guard).
+- Hidden when running in standalone mode (`display-mode: standalone` or iOS `navigator.standalone`) — means the app is already installed.
+- Hidden for 7 days after the user taps **Not now** (`localStorage` timestamp).
+- Hidden forever once the user accepts the install (or the browser fires `appinstalled`).
 
-1. **Install** `vite-plugin-pwa` (dev dep).
+## Technical details
 
-2. **`vite.config.ts`** — add the plugin via `defineConfig({ vite: { plugins: [...] } })` so it composes with the existing Lovable TanStack config. Settings:
-   - `registerType: "autoUpdate"`
-   - `injectRegister: null` (our wrapper is the only registrar)
-   - `devOptions: { enabled: false }` (never emit a SW in dev)
-   - `filename: "sw.js"` → served at `/sw.js`
-   - `manifest`:
-     - `name: "Gradus"`, `short_name: "Gradus"`
-     - `description: "An operating system for athletic mastery — structure and accountability for the time between coaching sessions."`
-     - `display: "standalone"`, `orientation: "portrait"`, `start_url: "/"`, `scope: "/"`
-     - `theme_color: "#F5F6FA"` (matches `--background` light), `background_color: "#F5F6FA"`
-     - `icons`: the three PNGs above (the 512 maskable entry uses `purpose: "maskable"`)
-   - `workbox`:
-     - `globPatterns: ["**/*.{js,css,html,woff,woff2,ttf,svg,png,jpg,jpeg,webp,ico}"]` — precaches the static app shell only
-     - `navigateFallback: "/"`, `navigateFallbackDenylist: [/^\/api\//, /^\/_serverFn\//, /^\/~oauth/, /^\/sw\.js$/]`
-     - `runtimeCaching`:
-       - HTML navigations: `NetworkFirst` (never cache-first)
-       - same-origin hashed assets under `/assets/`: `CacheFirst`
-       - same-origin fonts: `CacheFirst`
-     - **Supabase exclusion** — `navigateFallbackDenylist` covers in-app navs, and no runtime cache rule matches `*.supabase.co` / the project's Supabase URL, so every auth + data request bypasses the SW and goes to the network. Belt-and-braces: a no-op handler that calls `fetch(event.request)` for `url.hostname.endsWith(".supabase.co")` to guarantee no precache or navigation-fallback ever intercepts those requests.
+**New files**
+- `src/pwa/use-install-prompt.ts` — hook that:
+  - Listens for `beforeinstallprompt`, stashes the event, exposes `promptInstall()`.
+  - Detects iOS Safari (`/iPad|iPhone|iPod/` + not in standalone + not in-app webview).
+  - Detects standalone mode and `appinstalled` to permanently hide.
+  - Reads/writes `gradus.installBannerDismissedAt` in `localStorage` (7-day TTL).
+  - Returns `{ status: "hidden" | "installable" | "ios-instructions", promptInstall, dismiss }`.
+- `src/components/install-banner.tsx` — the visual banner:
+  - Bottom-fixed, `bg-popover` (per memory rule for overlay surfaces), `shadow-page`, rounded `--radius-lg`, paper-texture friendly.
+  - Left: Gradus app icon (`/icons/icon-192.png`).
+  - Middle: Fraunces headline "Install Gradus", Atkinson body subtitle.
+  - Right: primary **Install** button (accent pen color) OR iOS instruction text with inline Share glyph.
+  - **Not now** ghost button. Close (×) also dismisses.
+  - Safe-area inset bottom padding so it clears the bottom nav on mobile.
+  - Framer-motion slide-up on mount.
 
-3. **Guarded registration wrapper** — `src/pwa/register-sw.ts`. Refuses registration (and unregisters any existing `/sw.js` registration) when any of these are true:
-   - `!import.meta.env.PROD`
-   - in an iframe (`window.top !== window.self`)
-   - hostname starts with `id-preview--` or `preview--`
-   - hostname is/ends with `.lovableproject.com`, `.lovableproject-dev.com`, `.beta.lovable.dev`
-   - URL has `?sw=off` (kill switch)
-   
-   Otherwise registers `/sw.js` with `{ type: "classic", scope: "/" }`. Invoked once from `RootShell`'s mount effect in `src/routes/__root.tsx` so it never runs during SSR.
+**Wiring**
+- Mount `<InstallBanner />` once inside `RootComponent` in `src/routes/__root.tsx`, alongside the existing `registerServiceWorker()` effect. Single instance — works on every route, logged in or out.
+- No changes to routing, auth, or service worker logic.
 
-4. **Head tags in `src/routes/__root.tsx`** — add to the existing `head()` return:
-   - `meta`: `{ name: "theme-color", content: "#F5F6FA" }`, `{ name: "apple-mobile-web-app-capable", content: "yes" }`, `{ name: "apple-mobile-web-app-status-bar-style", content: "default" }`, `{ name: "apple-mobile-web-app-title", content: "Gradus" }`
-   - `links`: `{ rel: "manifest", href: "/manifest.webmanifest" }`, `{ rel: "apple-touch-icon", href: "/icons/icon-192.png" }`
-   - Existing viewport meta unchanged.
+**Guards (reuse pattern from `register-sw.ts`)**
+- Don't render in dev (`!import.meta.env.PROD`), inside iframes, on `id-preview--*` / `preview--*` / `*.lovableproject.com` hosts.
 
-5. **Verify** — build (harness runs it automatically), confirm `dist/.../sw.js` and `manifest.webmanifest` are emitted, manifest validates (required fields present, icons resolvable), and no Supabase URL appears in the precache manifest.
-
-### Behavior summary
-
-- Lovable preview + dev: no SW ever registers; existing stale `/sw.js` is actively unregistered.
-- Published app: installs to home screen as "Gradus" using the Gradus Website icon, launches standalone portrait, auto-updates on next visit after deploy.
-- Offline: app shell loads (JS/CSS/HTML/fonts/icons). Supabase auth/data calls fail the same as a browser with no SW — nothing stale is ever served for live data.
-- Kill switch: visiting any URL with `?sw=off` unregisters the worker.
+## Out of scope
+- No changes to manifest, icons, or service worker — those already work.
+- No analytics events (can add later if you want install-rate tracking).
+- No "Why install?" expanded modal — banner stays one-line.
