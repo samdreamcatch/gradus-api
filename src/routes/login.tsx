@@ -45,10 +45,12 @@ function LoginPage() {
     if (parent.error) throw parent.error;
     if (athlete.error) throw athlete.error;
 
-    if (coach.data?.onboarded_at) return "coach" as const;
+    // Coach wins over parent/athlete — a coach signing in should always land
+    // in the coach area, even if their coach_profiles row is pre-onboarding
+    // (CoachHome routes them to /coach/onboarding if onboarded_at is null).
+    if (coach.data) return "coach" as const;
     if (parent.data) return "parent" as const;
     if (athlete.data) return "athlete" as const;
-    if (coach.data) return "coach" as const;
     return null;
   };
 
@@ -68,8 +70,17 @@ function LoginPage() {
 
   const routeForRole = (role: string | null) => {
     const prefix = rolePrefix(role);
+    // search.redirect may include a query string (e.g. lovable preview's
+    // __lovable_sha / __lovable_load_id). TanStack's navigate({ to }) treats
+    // the entire string as a path, so a redirect like "/parent/plans?x=1"
+    // won't match any route and renders blank. Fall back to a full-page
+    // navigation in that case.
     if (prefix && search.redirect.startsWith(prefix)) {
-      navigate({ to: search.redirect });
+      if (search.redirect.includes("?") || search.redirect.includes("#")) {
+        window.location.assign(search.redirect);
+      } else {
+        navigate({ to: search.redirect });
+      }
     } else {
       navigate({ to: roleHome(role) });
     }
