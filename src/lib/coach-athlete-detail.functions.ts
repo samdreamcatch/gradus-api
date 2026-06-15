@@ -117,6 +117,8 @@ export const getCoachAthleteDetail = createServerFn({ method: "GET" })
 
     const since = new Date(Date.now() - WINDOW_DAYS * 86400_000).toISOString();
 
+    const coachSports = await getCoachAthleteSports(coachId, data.athleteId);
+
     const [athleteRes, goalsRes, planRes, sessionsRes, roomRes] = await Promise.all([
       supabaseAdmin
         .from("athletes")
@@ -125,11 +127,13 @@ export const getCoachAthleteDetail = createServerFn({ method: "GET" })
         )
         .eq("id", data.athleteId)
         .single(),
-      supabaseAdmin
-        .from("athlete_goals")
-        .select("sport, current_level_key, season_goal_key, long_term_goal")
-        .eq("athlete_id", data.athleteId)
-        .eq("coach_id", coachId),
+      coachSports.length === 0
+        ? Promise.resolve({ data: [], error: null } as const)
+        : supabaseAdmin
+            .from("athlete_goals")
+            .select("sport, current_level_key, season_goal_key, long_term_goal")
+            .eq("athlete_id", data.athleteId)
+            .in("sport", coachSports),
       supabaseAdmin
         .from("plans")
         .select("id, title, status, updated_at")
