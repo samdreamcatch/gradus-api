@@ -1,52 +1,31 @@
-# Install-to-Home-Screen Banner
+## What changes
 
-Add a bottom banner that prompts visitors to install Gradus as an app, with proper handling for each platform. Shown to everyone (logged in or not), dismissible for 7 days.
+Coach roster `practice this week` currently only counts sessions logged against **this coach's own active plan** for the athlete. Switch it to count **all of the athlete's `plan_sessions` in the rolling 7-day window**, regardless of plan or coach.
 
-## What the user will see
+Denominators stay where they already are:
+- **Coach roster** → this coach's `coach_levels.practice_hours_per_week` for the athlete's season-goal sport (unchanged).
+- **Athlete dashboard** and **Parent goals dashboard** → primary coach's level setting per sport (already implemented this way in `athlete-goals.functions.ts` and `parent-goals.functions.ts`; no changes needed).
 
-**Android / Chrome / Edge (desktop + mobile):**
-A bottom banner with the Gradus app icon, headline "Install Gradus", a short subtitle, an **Install** button, and a **Not now** dismiss. Tapping Install fires the native one-tap install prompt. Once installed, the banner never shows again on that device.
+## File touched
 
-**iOS Safari (iPhone / iPad):**
-Same banner styling, but instead of an Install button it shows step-by-step instructions: "Tap the Share icon, then Add to Home Screen", with the iOS share glyph rendered inline so it's unmistakable. Still dismissible.
+`src/lib/coach-schedule.functions.ts` — `getRosterPracticeSummaries`
 
-**Already-installed / unsupported browsers (in-app webviews, Firefox iOS, etc.):**
-Banner stays hidden — no value showing it.
+### Specifics
 
-## When it appears
+1. Drop the `plans` lookup as the gate for which sessions to count. We still need this coach's active plan map only if it's used elsewhere — it isn't (it's only used to build `planIds`). Remove the `plansRes` query and `planByAthlete` map.
+2. Replace the `plan_sessions … .in("plan_id", planIds)` query with `plan_sessions … .in("athlete_id", athleteIds)` over the same 7-day window. Continue to select `athlete_id, duration_seconds, state_index, logged_at` and order newest-first.
+3. Keep `coach_levels` lookup, `coach_athlete_sports` scoping, and `athlete_goals → expectedByKey` exactly as they are so the `/ Xh goal` denominator continues to use this coach's setting for the athlete's season-goal sport.
+4. Result shape (`AthletePracticeSummary`) is unchanged. The `windowDays: 7` and label "practice this week" stay.
 
-- After a short delay (~3 seconds) on first visit, so it doesn't slam the user the moment the page loads.
-- Hidden inside the Lovable editor preview and inside iframes (matches the existing service-worker guard).
-- Hidden when running in standalone mode (`display-mode: standalone` or iOS `navigator.standalone`) — means the app is already installed.
-- Hidden for 7 days after the user taps **Not now** (`localStorage` timestamp).
-- Hidden forever once the user accepts the install (or the browser fires `appinstalled`).
+### Side effects
 
-## Technical details
-
-**New files**
-- `src/pwa/use-install-prompt.ts` — hook that:
-  - Listens for `beforeinstallprompt`, stashes the event, exposes `promptInstall()`.
-  - Detects iOS Safari (`/iPad|iPhone|iPod/` + not in standalone + not in-app webview).
-  - Detects standalone mode and `appinstalled` to permanently hide.
-  - Reads/writes `gradus.installBannerDismissedAt` in `localStorage` (7-day TTL).
-  - Returns `{ status: "hidden" | "installable" | "ios-instructions", promptInstall, dismiss }`.
-- `src/components/install-banner.tsx` — the visual banner:
-  - Bottom-fixed, `bg-popover` (per memory rule for overlay surfaces), `shadow-page`, rounded `--radius-lg`, paper-texture friendly.
-  - Left: Gradus app icon (`/icons/icon-192.png`).
-  - Middle: Fraunces headline "Install Gradus", Atkinson body subtitle.
-  - Right: primary **Install** button (accent pen color) OR iOS instruction text with inline Share glyph.
-  - **Not now** ghost button. Close (×) also dismisses.
-  - Safe-area inset bottom padding so it clears the bottom nav on mobile.
-  - Framer-motion slide-up on mount.
-
-**Wiring**
-- Mount `<InstallBanner />` once inside `RootComponent` in `src/routes/__root.tsx`, alongside the existing `registerServiceWorker()` effect. Single instance — works on every route, logged in or out.
-- No changes to routing, auth, or service worker logic.
-
-**Guards (reuse pattern from `register-sw.ts`)**
-- Don't render in dev (`!import.meta.env.PROD`), inside iframes, on `id-preview--*` / `preview--*` / `*.lovableproject.com` hosts.
+- Athletes who only log practice on another coach's plan will now show non-zero hours and recent state dots in this coach's roster — intended.
+- Mood-dot strip (`sessionStates`) will now reflect all recent practice, which matches the new "all practice" semantics.
+- No DB migration, no RLS change — `supabaseAdmin` already bypasses RLS for this server function.
+- Existing cache invalidations on `["coach", "roster", "practice-summaries"]` keep working.
 
 ## Out of scope
-- No changes to manifest, icons, or service worker — those already work.
-- No analytics events (can add later if you want install-rate tracking).
-- No "Why install?" expanded modal — banner stays one-line.
+
+- No change to athlete or parent dashboards.
+- No change to the 7-day window length or the "/ Xh goal" label.
+- No change to lesson-wrap-up flow or plan activation rules.
