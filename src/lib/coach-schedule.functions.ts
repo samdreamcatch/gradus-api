@@ -37,14 +37,7 @@ export const getRosterPracticeSummaries = createServerFn({ method: "GET" })
     const athleteIds = (links.data ?? []).map((r) => r.athlete_id as string);
     if (athleteIds.length === 0) return [];
 
-    const [plansRes, scopeRes, goalsRes, levelsRes] = await Promise.all([
-      supabaseAdmin
-        .from("plans")
-        .select("id, athlete_id")
-        .eq("coach_id", coachId)
-        .eq("kind", "plan")
-        .eq("status", "active")
-        .in("athlete_id", athleteIds),
+    const [scopeRes, goalsRes, levelsRes] = await Promise.all([
       supabaseAdmin
         .from("coach_athlete_sports")
         .select("athlete_id, sport")
@@ -59,7 +52,6 @@ export const getRosterPracticeSummaries = createServerFn({ method: "GET" })
         .select("sport, level_key, practice_hours_per_week")
         .eq("coach_id", coachId),
     ]);
-    if (plansRes.error) dbError(plansRes.error);
     if (scopeRes.error) dbError(scopeRes.error);
     if (goalsRes.error) dbError(goalsRes.error);
     if (levelsRes.error) dbError(levelsRes.error);
@@ -74,11 +66,6 @@ export const getRosterPracticeSummaries = createServerFn({ method: "GET" })
       allowedPairs.has(`${g.athlete_id}::${g.sport}`),
     );
 
-    const planByAthlete = new Map<string, string>();
-    for (const p of plansRes.data ?? []) {
-      planByAthlete.set(p.athlete_id as string, p.id as string);
-    }
-
     const expectedByKey = new Map<string, number>();
     for (const l of levelsRes.data ?? []) {
       expectedByKey.set(
@@ -88,24 +75,23 @@ export const getRosterPracticeSummaries = createServerFn({ method: "GET" })
     }
 
     const since = new Date(Date.now() - WINDOW_DAYS * 24 * 60 * 60 * 1000).toISOString();
-    const planIds = Array.from(planByAthlete.values());
 
-    let sessions: Array<{
+    // Count ALL practice the athlete has logged in the window, regardless of
+    // which plan or coach. The denominator stays scoped to this coach's level
+    // settings via expectedByKey above.
+    const sRes = await supabaseAdmin
+      .from("plan_sessions")
+      .select("athlete_id, duration_seconds, state_index, logged_at")
+      .in("athlete_id", athleteIds)
+      .gte("logged_at", since)
+      .order("logged_at", { ascending: false });
+    if (sRes.error) dbError(sRes.error);
+    const sessions = (sRes.data ?? []) as Array<{
       athlete_id: string;
       duration_seconds: number;
       state_index: number;
       logged_at: string;
-    }> = [];
-    if (planIds.length > 0) {
-      const sRes = await supabaseAdmin
-        .from("plan_sessions")
-        .select("athlete_id, duration_seconds, state_index, logged_at")
-        .in("plan_id", planIds)
-        .gte("logged_at", since)
-        .order("logged_at", { ascending: false });
-      if (sRes.error) dbError(sRes.error);
-      sessions = (sRes.data ?? []) as typeof sessions;
-    }
+    }>;
 
     const sessionsByAthlete = new Map<
       string,
