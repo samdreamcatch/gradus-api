@@ -79,6 +79,23 @@ async function assertCoachOwnsAthlete(coachId: string, athleteId: string) {
   if (!data) throw new Error("Athlete is not on your roster");
 }
 
+// Sports this coach offers for this athlete — drives which goals/data the
+// coach is allowed to see. Goals are owned by the parent (one row per
+// athlete+sport); coach_id on athlete_goals is just bookkeeping for the
+// first coach who claimed the invite and MUST NOT be used to gate
+// visibility for other coaches who also offer that sport.
+async function getCoachAthleteSports(coachId: string, athleteId: string): Promise<string[]> {
+  const supabaseAdmin = await getAdmin();
+  const { data, error } = await supabaseAdmin
+    .from("coach_athlete_sports")
+    .select("sport")
+    .eq("coach_id", coachId)
+    .eq("athlete_id", athleteId);
+  if (error) dbError(error);
+  return Array.from(new Set((data ?? []).map((r) => r.sport)));
+}
+
+
 function labelLevel(sport: string, levelKey: string): string {
   return getSportLevel(sport, levelKey)?.label ?? levelKey;
 }
@@ -100,6 +117,8 @@ export const getCoachAthleteDetail = createServerFn({ method: "GET" })
 
     const since = new Date(Date.now() - WINDOW_DAYS * 86400_000).toISOString();
 
+    const coachSports = await getCoachAthleteSports(coachId, data.athleteId);
+
     const [athleteRes, goalsRes, planRes, sessionsRes, roomRes] = await Promise.all([
       supabaseAdmin
         .from("athletes")
@@ -108,11 +127,13 @@ export const getCoachAthleteDetail = createServerFn({ method: "GET" })
         )
         .eq("id", data.athleteId)
         .single(),
-      supabaseAdmin
-        .from("athlete_goals")
-        .select("sport, current_level_key, season_goal_key, long_term_goal")
-        .eq("athlete_id", data.athleteId)
-        .eq("coach_id", coachId),
+      coachSports.length === 0
+        ? Promise.resolve({ data: [], error: null } as const)
+        : supabaseAdmin
+            .from("athlete_goals")
+            .select("sport, current_level_key, season_goal_key, long_term_goal")
+            .eq("athlete_id", data.athleteId)
+            .in("sport", coachSports),
       supabaseAdmin
         .from("plans")
         .select("id, title, status, updated_at")
@@ -247,17 +268,21 @@ export const getCoachAthleteAiSummary = createServerFn({ method: "GET" })
 
     const since = new Date(Date.now() - WINDOW_DAYS * 86400_000).toISOString();
 
+    const coachSports = await getCoachAthleteSports(coachId, data.athleteId);
+
     const [athleteRes, goalsRes, plansRes, sessionsRes, roomRes] = await Promise.all([
       supabaseAdmin
         .from("athletes")
         .select("first_name")
         .eq("id", data.athleteId)
         .single(),
-      supabaseAdmin
-        .from("athlete_goals")
-        .select("sport, current_level_key, season_goal_key, long_term_goal")
-        .eq("athlete_id", data.athleteId)
-        .eq("coach_id", coachId),
+      coachSports.length === 0
+        ? Promise.resolve({ data: [], error: null } as const)
+        : supabaseAdmin
+            .from("athlete_goals")
+            .select("sport, current_level_key, season_goal_key, long_term_goal")
+            .eq("athlete_id", data.athleteId)
+            .in("sport", coachSports),
       supabaseAdmin
         .from("plans")
         .select("id, title, status")

@@ -37,7 +37,7 @@ export const getRosterPracticeSummaries = createServerFn({ method: "GET" })
     const athleteIds = (links.data ?? []).map((r) => r.athlete_id as string);
     if (athleteIds.length === 0) return [];
 
-    const [plansRes, goalsRes, levelsRes] = await Promise.all([
+    const [plansRes, scopeRes, goalsRes, levelsRes] = await Promise.all([
       supabaseAdmin
         .from("plans")
         .select("id, athlete_id")
@@ -46,9 +46,13 @@ export const getRosterPracticeSummaries = createServerFn({ method: "GET" })
         .eq("status", "active")
         .in("athlete_id", athleteIds),
       supabaseAdmin
+        .from("coach_athlete_sports")
+        .select("athlete_id, sport")
+        .eq("coach_id", coachId)
+        .in("athlete_id", athleteIds),
+      supabaseAdmin
         .from("athlete_goals")
         .select("athlete_id, sport, season_goal_key")
-        .eq("coach_id", coachId)
         .in("athlete_id", athleteIds),
       supabaseAdmin
         .from("coach_levels")
@@ -56,8 +60,19 @@ export const getRosterPracticeSummaries = createServerFn({ method: "GET" })
         .eq("coach_id", coachId),
     ]);
     if (plansRes.error) dbError(plansRes.error);
+    if (scopeRes.error) dbError(scopeRes.error);
     if (goalsRes.error) dbError(goalsRes.error);
     if (levelsRes.error) dbError(levelsRes.error);
+
+    // Restrict goals to the (athlete, sport) pairs this coach actually
+    // coaches — goals are parent-owned per athlete+sport, not per coach.
+    const allowedPairs = new Set<string>();
+    for (const s of scopeRes.data ?? []) {
+      allowedPairs.add(`${s.athlete_id}::${s.sport}`);
+    }
+    const filteredGoals = (goalsRes.data ?? []).filter((g) =>
+      allowedPairs.has(`${g.athlete_id}::${g.sport}`),
+    );
 
     const planByAthlete = new Map<string, string>();
     for (const p of plansRes.data ?? []) {
@@ -105,7 +120,7 @@ export const getRosterPracticeSummaries = createServerFn({ method: "GET" })
 
     return athleteIds.map((athleteId) => {
       const agg = sessionsByAthlete.get(athleteId);
-      const goal = (goalsRes.data ?? []).find((g) => g.athlete_id === athleteId);
+      const goal = filteredGoals.find((g) => g.athlete_id === athleteId);
       const expected = goal
         ? (expectedByKey.get(`${goal.sport}::${goal.season_goal_key}`) ?? null)
         : null;
