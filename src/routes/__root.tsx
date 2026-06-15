@@ -140,6 +140,7 @@ function RootComponent() {
           <Outlet />
         </main>
         <Toaster />
+        <InstallBanner />
         <DevToolsMount />
       </ThemeProvider>
     </QueryClientProvider>
