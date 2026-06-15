@@ -120,7 +120,7 @@ export const getRosterPracticeSummaries = createServerFn({ method: "GET" })
 
     return athleteIds.map((athleteId) => {
       const agg = sessionsByAthlete.get(athleteId);
-      const goal = (goalsRes.data ?? []).find((g) => g.athlete_id === athleteId);
+      const goal = filteredGoals.find((g) => g.athlete_id === athleteId);
       const expected = goal
         ? (expectedByKey.get(`${goal.sport}::${goal.season_goal_key}`) ?? null)
         : null;
