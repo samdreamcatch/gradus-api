@@ -172,14 +172,14 @@ function OnboardingPage() {
     setEntries((prev) => {
       const exists = prev.some((e) => e.sport === sport && e.levelKey === levelKey);
       if (exists) return prev.filter((e) => !(e.sport === sport && e.levelKey === levelKey));
-      return [...prev, { sport, levelKey, hoursPerWeek: 0 }];
+      return [...prev, { sport, levelKey, hoursPerWeek: getSuggestedHours(sport, levelKey) }];
     });
   };
 
   const addCustomLevel = (sportKey: string) => {
     const key = `lvl_new_${randSuffix()}`;
     setCustomLevels((prev) => [...prev, { sportKey, key, label: "" }]);
-    setEntries((prev) => [...prev, { sport: sportKey, levelKey: key, hoursPerWeek: 0 }]);
+    setEntries((prev) => [...prev, { sport: sportKey, levelKey: key, hoursPerWeek: DEFAULT_SUGGESTED_HOURS }]);
   };
 
   const updateCustomLevelLabel = (sportKey: string, levelKey: string, label: string) => {
