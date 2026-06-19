@@ -1442,7 +1442,7 @@ function NewMoveForm({
           <Input
             value={cue}
             onChange={(e) => setCue(e.target.value)}
-            placeholder="One line the athlete can repeat"
+            placeholder="One line to help the athlete in the moment"
           />
         </div>
       </div>
