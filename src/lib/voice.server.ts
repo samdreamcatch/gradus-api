@@ -135,7 +135,7 @@ async function slotTranscript(ctx: ParseContext) {
   const model = gateway("google/gemini-3-flash-preview");
 
   const system = [
-    "You convert a tennis/sports coach's spoken instructions into structured slots.",
+    "You convert a sports coach's spoken instructions into structured slots.",
     "Map every meaningful piece of the transcript into exactly one slot: title, athleteName, or a move field (name/description/cue/why/target).",
     "For EVERY filled field, also fill its *Quote field with the verbatim transcript phrase that produced it (a clean substring of the transcript, not paraphrased).",
     "RULES:",
@@ -144,6 +144,7 @@ async function slotTranscript(ctx: ParseContext) {
     "- Cue = a SINGLE short repeatable phrase. Why = ONE sentence. Description = brief, what the athlete does.",
     "- targetKind: 'reps' for counted reps ('20 reps', 'ten swings'); 'mins' for time ('5 minutes').",
     "- Move target defaults: if unclear, 10 reps.",
+    "- Move name: if the spoken move name clearly matches a name in KNOWN MOVES, copy that KNOWN MOVES name exactly into the `name` field — do not paraphrase, pluralize, or reword it.",
     ctx.mode === "edit"
       ? "- EDIT MODE: if the coach clearly modifies an existing plan move (by name/order), set matchExistingMoveId. Otherwise leave null for new moves."
       : "- CREATE MODE: every move is new. Leave matchExistingMoveId null.",
