@@ -3,7 +3,7 @@ import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
-import { SPORT_KEYS } from "./coach-sports";
+
 import { dbError } from "./db-error";
 
 export interface CoachProfileDTO {
@@ -117,7 +117,11 @@ const levelsSchema = z.object({
   entries: z
     .array(
       z.object({
-        sport: z.enum(SPORT_KEYS as [string, ...string[]]),
+        sport: z
+          .string()
+          .min(1)
+          .max(64)
+          .regex(/^[a-z0-9_]+$/),
         levelKey: z
           .string()
           .min(1)
