@@ -203,7 +203,8 @@ export function useVoiceCapture({
 
     recorder.start();
     setState("recording");
-  }, [cleanup, maxMs, onCapture, state]);
+    void requestWakeLock();
+  }, [cleanup, maxMs, onCapture, requestWakeLock, state]);
 
   const stop = useCallback(() => {
     const r = recorderRef.current;
