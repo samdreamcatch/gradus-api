@@ -140,6 +140,18 @@ export const SPORTS: Sport[] = [
       { key: "aaaa", label: "AAAA", suggestedHours: 20 },
     ],
   },
+  {
+    key: "track_field",
+    label: "Track & Field",
+    standard: "",
+    levels: [
+      { key: "youth", label: "Youth", suggestedHours: 3 },
+      { key: "high_school", label: "High School", suggestedHours: 6 },
+      { key: "collegiate", label: "Collegiate", suggestedHours: 12 },
+      { key: "elite", label: "Elite", suggestedHours: 18 },
+      { key: "professional", label: "Professional", suggestedHours: 22 },
+    ],
+  },
 ];
 
 export const SPORT_KEYS: SportKey[] = SPORTS.map((s) => s.key);
