@@ -84,6 +84,24 @@ export const SPORTS: Sport[] = [
       { key: "pre_professional", label: "Pre-Professional", suggestedHours: 16 },
     ],
   },
+  {
+    key: "gymnastics",
+    label: "Gymnastics",
+    standard: "USA Gymnastics Development Program",
+    levels: [
+      { key: "level_1", label: "Level 1", suggestedHours: 2 },
+      { key: "level_2", label: "Level 2", suggestedHours: 3 },
+      { key: "level_3", label: "Level 3", suggestedHours: 4 },
+      { key: "level_4", label: "Level 4", suggestedHours: 8 },
+      { key: "level_5", label: "Level 5", suggestedHours: 12 },
+      { key: "level_6", label: "Level 6", suggestedHours: 16 },
+      { key: "level_7", label: "Level 7", suggestedHours: 20 },
+      { key: "level_8", label: "Level 8", suggestedHours: 22 },
+      { key: "level_9", label: "Level 9", suggestedHours: 24 },
+      { key: "level_10", label: "Level 10", suggestedHours: 28 },
+      { key: "elite", label: "Elite", suggestedHours: 32 },
+    ],
+  },
 ];
 
 export const SPORT_KEYS: SportKey[] = SPORTS.map((s) => s.key);
