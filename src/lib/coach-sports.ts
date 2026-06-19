@@ -152,6 +152,18 @@ export const SPORTS: Sport[] = [
       { key: "professional", label: "Professional", suggestedHours: 22 },
     ],
   },
+  {
+    key: "wrestling",
+    label: "Wrestling",
+    standard: "USA Wrestling",
+    levels: [
+      { key: "beginner", label: "Beginner", suggestedHours: 3 },
+      { key: "folkstyle_club", label: "Folkstyle Club", suggestedHours: 6 },
+      { key: "state_qualifier", label: "State Qualifier", suggestedHours: 12 },
+      { key: "national_qualifier", label: "National Qualifier", suggestedHours: 18 },
+      { key: "all_american", label: "All-American", suggestedHours: 22 },
+    ],
+  },
 ];
 
 export const SPORT_KEYS: SportKey[] = SPORTS.map((s) => s.key);
