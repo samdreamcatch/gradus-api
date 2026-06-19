@@ -1,56 +1,32 @@
-# Add Gymnastics Sport Library
+# Add Fencing sport
 
-Add **Gymnastics** as the 5th built-in sport with USAG Development Program levels and a deduplicated, category-normalized move library.
+## 1. `src/lib/coach-sports.ts`
+- Add `"fencing"` to `SportKey` union.
+- Append `fencing` entry to `SPORTS` with 6 USA Fencing rating levels: **U, E, D, C, B, A** (U = unrated/novice, A = highest). `suggestedHours` scales 2 → 20 across the tiers.
 
-## 1. Built-in sport catalog (`src/lib/coach-sports.ts`)
+## 2. Move library (25 rows → `public.seed_moves`, `sport='fencing'`)
 
-- Extend `SportKey` union to include `"gymnastics"`.
-- Append a `gymnastics` entry to `SPORTS`:
-  - **label**: "Gymnastics"
-  - **standard**: "USA Gymnastics Development Program"
-  - **levels** (11): `level_1` through `level_10`, plus `elite`
-  - **suggestedHours** (research-based, scales with USAG training norms):
-    - L1: 2, L2: 3, L3: 4, L4: 8, L5: 12, L6: 16, L7: 20, L8: 22, L9: 24, L10: 28, Elite: 32
+**Category normalization** (weapon-agnostic buckets):
+- Footwork
+- Blade Work (merges "Blade Actions" + "Blade Work")
+- Attacks (merges "Attack" + "Attacks" + "Sabre Attack" — sabre-specific noted in cue/why)
+- Defense
+- Tactics (replaces "Competition Strategy")
 
-## 2. Move data — deduplication & normalization
+**20 complete rows** inserted verbatim with the normalized category mapping.
 
-The user-provided list of 50 rows resolves to **42 unique moves** after merging duplicates:
+**5 gap rows filled** (standard fencing references):
 
-**Duplicates merged** (keeping the longer, more detailed version):
-- Kip / Kip (glide kip) → "Kip"
-- Cast to handstand (×2) → keep longer description
-- Back walkover (×2) → keep longer description
-- Round-off (×2) → keep longer description
-- Split leap (×2) → keep longer description
-- Front walkover (×2) → keep longer description
-- Back handspring (×2) → keep longer description
-- Giant swing (×2) → keep longer description
-
-**Categories normalized** to canonical event names:
-- "Floor" → **Floor Exercise**
-- "Bars" → **Uneven Bars**
-- "Beam" → **Balance Beam**
-- Keep as-is: **Vault**, **Pommel Horse**, **Parallel Bars**, **Rings**, **Artistry**, **Conditioning**
-
-Final category set: Floor Exercise, Uneven Bars, Balance Beam, Vault, Pommel Horse, Parallel Bars, Rings, Artistry, Conditioning.
+| Move | Reps | Description | Cue | Why | Category |
+|---|---|---|---|---|---|
+| Froissement | 12 | Strong grazing action down the opponent's blade that displaces it forcefully off-line, followed immediately by the attack. Maintain blade contact the whole length. | Sweep down the blade and go | More forceful than a beat; physically removes the opposing blade and clears the line in one motion. | Blade Work |
+| Remise | 15 | Immediate replacement of the point in the same line after the original attack misses or is parried, without withdrawing the arm. | Don't pull back — replace | Punishes a slow or absent riposte; in épée it scores outright when the opponent doesn't riposte in tempo. | Attacks |
+| Patinando | 15 | Advance combined with a sharp appel as the front foot lands. Used to provoke a reaction while closing distance. | Step in with a stamp | Closes distance and draws a parry simultaneously — sets up the real attack on the next tempo. | Footwork |
+| Sabre cut | 20 | Cutting action with the edge of the blade to head, flank, or chest. Movement comes from the fingers and wrist, not the whole arm. Edge arrives flat to the target. | Fingers and wrist, flat edge | The primary scoring action in sabre; cuts are faster than thrusts and cover the whole valid target. | Attacks |
+| Molinello | 12 | Sabre cut delivered with a full circular motion of the blade, typically to the head or flank after a parry. Wrist leads the circle. | Circle from the wrist | Generates power and disguises the line of the riposte in sabre; bread-and-butter follow-up to parry quinte. | Attacks |
 
 ## 3. Seed insert
-
-Insert ~42 rows into `public.seed_moves` with `sport = 'gymnastics'`. Each row maps:
-- `name`, `description`, `cue`, `why` ← provided text (longer variant when duplicated)
-- `category` ← normalized name
-- `default_target_kind` ← `reps` or `mins`
-- `default_target_value` ← provided number
-
-The existing `seed_coach_library` RPC picks these up for any coach who selects gymnastics.
+Single Python script with `NORM` map + dedup `seen` set (same shape as gymnastics). Inserts ~25 rows into `seed_moves` with: `name`, `description`, `cue`, `why`, `category`, `default_target_kind='reps'`, `default_target_value`.
 
 ## 4. No other code changes
-
-- Sport-key validator already accepts arbitrary slugs.
-- Onboarding multi-select renders Dance/Gymnastics automatically from `SPORTS`.
-- Hours step pre-populates from `suggestedHours`.
-
-## Technical notes
-
-- Data insert via the data-insert tool (no schema change).
-- Single `INSERT … VALUES` statement; single-quote escaping handled by Python codegen.
+Sport-key validator accepts arbitrary slugs; onboarding multi-select and hours step pre-populate automatically.
