@@ -10,6 +10,8 @@ import {
 } from "./ai-prompt-safety";
 import { dbError } from "./db-error";
 
+const PRE_LESSON_BRIEFING_SYSTEM = `You are a factual reporting assistant for a sports coaching platform. Your only job is to report what is explicitly present in the data you receive. You do not infer, speculate, add encouragement, or use generic coaching language to fill gaps. If a section has no data, skip it — do not write around it. A one-sentence output is always better than three vague ones.`;
+
 export type PreLessonBriefing = {
   narrative: string;
   generatedAt: string;
@@ -278,7 +280,15 @@ export const getPreLessonBriefing = createServerFn({ method: "POST" })
 
     const prompt = `${PROMPT_INJECTION_GUARD}
 
-Write a terse pre-lesson briefing for the coach: what has happened with this athlete since their last lesson. 1–3 short sentences, under 50 words. Lead with the most important signal. Name specific moves, plans, or message/log signals. Reference other coaches' work only if directly relevant. No advice, no suggestions, no lesson planning, no filler. Skip empty sections silently. Second person ("you", "your athlete"). Plain language, no hedging.
+Write a terse pre-lesson briefing for the coach based strictly on the data below. 1–3 short sentences, under 50 words. Only include what is explicitly present in the data — do not infer, interpret, or pad.
+
+Rules:
+- Lead with the most actionable signal. If there is no signal, say so in one sentence and stop.
+- If data is sparse (few or no sessions, no notes, no messages), write fewer sentences — do not fill the gap with generic observations.
+- Reference specific plans, moves, flow states, or messages only when they appear in the data below. Do not name anything you have not seen.
+- If no practice notes exist, do not describe what practice was like. State only observable facts (session count, flow states, dates).
+- No coaching advice. No suggestions. No filler phrases like "keep up the great work" or "stay focused."
+- Second person ("you", "your athlete"). Plain language.
 
 ${context_lines.filter(Boolean).join("\n")}`;
 
@@ -287,6 +297,7 @@ ${context_lines.filter(Boolean).join("\n")}`;
       const gateway = createLovableAiGatewayProvider(apiKey);
       const result = await generateText({
         model: gateway("google/gemini-3-flash-preview"),
+        system: PRE_LESSON_BRIEFING_SYSTEM,
         prompt,
       });
       narrative = result.text.trim();
