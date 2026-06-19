@@ -137,34 +137,39 @@ function OnboardingPage() {
     try {
       await saveLevels.mutateAsync({ entries });
       await complete.mutateAsync();
-      let pendingInvite: string | null = null;
+    } catch (err) {
+      console.error("[Onboarding] complete failed", err);
+      toast.error(err instanceof Error ? err.message : "Couldn't finish");
+      return;
+    }
+    // Best-effort claim of a pending parent invite — never block navigation on it.
+    let pendingInvite: string | null = null;
+    try {
+      pendingInvite = localStorage.getItem(PENDING_INVITE_KEY);
+    } catch {
+      /* ignore */
+    }
+    if (pendingInvite) {
       try {
-        pendingInvite = localStorage.getItem(PENDING_INVITE_KEY);
-      } catch {
-        /* ignore */
-      }
-      if (pendingInvite) {
+        await claim({ data: { code: pendingInvite } });
+        toast.success("Linked to the parent's account");
+      } catch (err) {
+        console.error("[Onboarding] claim invite failed", err);
+        toast.error(
+          err instanceof Error
+            ? `Couldn't link parent: ${err.message}`
+            : "Couldn't link parent",
+        );
+      } finally {
         try {
-          await claim({ data: { code: pendingInvite } });
-          toast.success("Linked to the parent's account");
-        } catch (err) {
-          toast.error(
-            err instanceof Error
-              ? `Couldn't link parent: ${err.message}`
-              : "Couldn't link parent",
-          );
-        } finally {
-          try {
-            localStorage.removeItem(PENDING_INVITE_KEY);
-          } catch {
-            /* ignore */
-          }
+          localStorage.removeItem(PENDING_INVITE_KEY);
+        } catch {
+          /* ignore */
         }
       }
-      navigate({ to: "/coach" });
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't finish");
     }
+    // Skip the /coach navigator hop — go straight to the post-onboarding home.
+    navigate({ to: "/coach/roster" });
   };
 
   const busy = saveProfile.isPending || saveLevels.isPending || complete.isPending;
