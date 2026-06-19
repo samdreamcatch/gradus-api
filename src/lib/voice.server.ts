@@ -319,7 +319,37 @@ function resolveLibraryMove(
       bestLev = { move: m, score };
     }
   }
-  return bestLev?.move ?? null;
+  if (bestLev) return bestLev.move;
+
+  // Pass 5: Phonetic matching via Double Metaphone.
+  const qWords = moveTokens(spoken);
+  if (qWords.length > 0) {
+    const qCodes = qWords.map((w) => doubleMetaphone(w));
+    let bestPhonetic: { move: LibraryMove; score: number } | null = null;
+    for (const m of library) {
+      const mWords = moveTokens(m.name);
+      if (mWords.length === 0) continue;
+      const mCodes = mWords.map((w) => doubleMetaphone(w));
+      let matched = 0;
+      for (const [qPrimary, qSecondary] of qCodes) {
+        for (const [mPrimary, mSecondary] of mCodes) {
+          const hit =
+            (qPrimary && mPrimary && qPrimary === mPrimary) ||
+            (qPrimary && mSecondary && qPrimary === mSecondary) ||
+            (qSecondary && mPrimary && qSecondary === mPrimary) ||
+            (qSecondary && mSecondary && qSecondary === mSecondary);
+          if (hit) { matched++; break; }
+        }
+      }
+      const total = Math.max(qCodes.length, mCodes.length);
+      const score = total === 0 ? 0 : matched / total;
+      if (score >= 0.6 && (!bestPhonetic || score > bestPhonetic.score)) {
+        bestPhonetic = { move: m, score };
+      }
+    }
+    if (bestPhonetic) return bestPhonetic.move;
+  }
+  return null;
 }
 
 function mergeAppend(libraryValue: string, voiceValue: string): string {
