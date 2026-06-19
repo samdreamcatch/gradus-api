@@ -1,25 +1,16 @@
-## Upload 10 more resources (7 wrestling + 3 track & field)
+## Upload 10 more track & field resources
 
-Continue the existing pattern: upload to `resource-pdfs` bucket, insert rows into `public.resources`.
-
-### Wrestling (continuing display_order from 80)
+Same pattern. Continuing display_order from 30.
 
 | # | Title | storage_path |
 |---|---|---|
-| 90 | Top and Bottom: Referee's Position and Why It Matters | wrestling/top-and-bottom.pdf |
-| 100 | How Wrestling Is Scored: Points, Advantages, and Criteria | wrestling/scoring.pdf |
-| 110 | The Tournament Format: How Wrestling Competitions Are Run | wrestling/tournament-format.pdf |
-| 120 | Conditioning: Why Wrestling Is One of the Most Demanding Sports | wrestling/conditioning.pdf |
-| 130 | Gear: Singlets, Headgear, Shoes, and Mat Safety | wrestling/gear.pdf |
-| 140 | The Mental Side: Toughness, Resilience, and Losing Well | wrestling/mental-side.pdf |
-| 150 | The Culture of Wrestling: What Makes the Sport Different | wrestling/culture.pdf |
-
-### Track & Field (new sport — first 3 resources)
-
-| # | Title | storage_path |
-|---|---|---|
-| 10 | Track & Field vs. Cross Country: Understanding the Difference | track_field/track-vs-cross-country.pdf |
-| 20 | The Running Events: Sprints, Middle Distance, and Distance | track_field/running-events.pdf |
-| 30 | Sprint Mechanics: What Good Form Actually Means | track_field/sprint-mechanics.pdf |
-
-Sport key `track_field` (matches existing snake_case convention like `figure_skating`). All rows `published=true`, description blank.
+| 40 | Starting Blocks: Why the Start Matters So Much in Sprints | track_field/starting-blocks.pdf |
+| 50 | Middle Distance Racing: The Tactical Sport Within Track | track_field/middle-distance.pdf |
+| 60 | Distance Running: Pacing, Patience, and Building an Engine | track_field/distance-running.pdf |
+| 70 | The Relay Events: 4x100 and 4x400 Explained | track_field/relays.pdf |
+| 80 | The Jumps: Long Jump, High Jump, Triple Jump, Pole Vault | track_field/jumps.pdf |
+| 90 | The Throws: Shot Put, Discus, Javelin, Hammer | track_field/throws.pdf |
+| 100 | Hurdles: Running and Jumping at the Same Time | track_field/hurdles.pdf |
+| 110 | The Decathlon and Heptathlon: The Complete-Athlete Events | track_field/decathlon-heptathlon.pdf |
+| 120 | How Track Meets Work: Heats, Finals, and Field Events | track_field/how-meets-work.pdf |
+| 130 | Personal Records: The Language of Individual Progress | track_field/personal-records.pdf |
