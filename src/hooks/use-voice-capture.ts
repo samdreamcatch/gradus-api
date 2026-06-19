@@ -49,6 +49,24 @@ export function useVoiceCapture({
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const maxTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cancelledRef = useRef(false);
+  const wakeLockRef = useRef<WakeLockSentinel | null>(null);
+
+  const releaseWakeLock = useCallback(() => {
+    const wl = wakeLockRef.current;
+    wakeLockRef.current = null;
+    if (wl) {
+      void wl.release().catch(() => {});
+    }
+  }, []);
+
+  const requestWakeLock = useCallback(async () => {
+    if (typeof navigator === "undefined" || !("wakeLock" in navigator)) return;
+    try {
+      wakeLockRef.current = await navigator.wakeLock.request("screen");
+    } catch {
+      /* noop — unsupported or denied */
+    }
+  }, []);
 
   const cleanup = useCallback(() => {
     if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
@@ -66,10 +84,22 @@ export function useVoiceCapture({
     }
     audioCtxRef.current = null;
     analyserRef.current = null;
+    releaseWakeLock();
     setLevel(0);
-  }, []);
+  }, [releaseWakeLock]);
 
   useEffect(() => () => cleanup(), [cleanup]);
+
+  // iOS auto-releases the wake lock when the tab is backgrounded; re-acquire on return.
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.visibilityState === "visible" && recorderRef.current?.state === "recording") {
+        void requestWakeLock();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, [requestWakeLock]);
 
   const start = useCallback(async () => {
     if (state === "recording" || state === "processing") return;
@@ -173,7 +203,8 @@ export function useVoiceCapture({
 
     recorder.start();
     setState("recording");
-  }, [cleanup, maxMs, onCapture, state]);
+    void requestWakeLock();
+  }, [cleanup, maxMs, onCapture, requestWakeLock, state]);
 
   const stop = useCallback(() => {
     const r = recorderRef.current;
