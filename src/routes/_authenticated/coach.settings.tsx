@@ -200,7 +200,11 @@ function SportsDisclosure({
         return prev.filter(
           (e) => !(e.sport === sport && e.levelKey === levelKey),
         );
-      return [...prev, { sport, levelKey, hoursPerWeek: 0 }];
+      const lvl = getSport(sport)?.levels.find((l) => l.key === levelKey);
+      return [
+        ...prev,
+        { sport, levelKey, hoursPerWeek: lvl?.suggestedHours ?? 0 },
+      ];
     });
   };
 
