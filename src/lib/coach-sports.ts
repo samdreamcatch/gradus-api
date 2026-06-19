@@ -102,6 +102,19 @@ export const SPORTS: Sport[] = [
       { key: "elite", label: "Elite", suggestedHours: 32 },
     ],
   },
+  {
+    key: "fencing",
+    label: "Fencing",
+    standard: "USA Fencing Ratings",
+    levels: [
+      { key: "u", label: "U (Unrated)", suggestedHours: 2 },
+      { key: "e", label: "E", suggestedHours: 4 },
+      { key: "d", label: "D", suggestedHours: 8 },
+      { key: "c", label: "C", suggestedHours: 12 },
+      { key: "b", label: "B", suggestedHours: 16 },
+      { key: "a", label: "A", suggestedHours: 20 },
+    ],
+  },
 ];
 
 export const SPORT_KEYS: SportKey[] = SPORTS.map((s) => s.key);
