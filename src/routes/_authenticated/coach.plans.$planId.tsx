@@ -616,10 +616,7 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
                   type="button"
                   onClick={() => toggleMove(m.id)}
                   aria-expanded={expanded}
-                  className={cn(
-                    "flex w-full items-center gap-3 px-3.5 py-2 text-left",
-                    (isNewMove || touched.moves[m.id]?.length) && "pen-highlight",
-                  )}
+                  className="flex w-full items-center gap-3 px-3.5 py-2 text-left"
                 >
                   <span className="flex shrink-0 items-baseline gap-1 tabular-nums">
                     <span className="font-display text-[18px] font-black text-text-primary">
@@ -628,7 +625,17 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
                     <span className="text-[11px] text-text-tertiary">{unit}</span>
                   </span>
                   <span className="flex-1 truncate font-display text-[15px] text-text-primary">
-                    {m.name || (
+                    {m.name ? (
+                      <span
+                        className={cn(
+                          !expanded &&
+                            (isNewMove || touched.moves[m.id]?.length) &&
+                            "pen-highlight",
+                        )}
+                      >
+                        {m.name}
+                      </span>
+                    ) : (
                       <span className="italic text-text-tertiary">Untitled move</span>
                     )}
                   </span>
