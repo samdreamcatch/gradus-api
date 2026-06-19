@@ -1467,3 +1467,131 @@ function NewMoveForm({
     </div>
   );
 }
+
+function AddToLibrarySection({
+  planMove,
+  onAdded,
+}: {
+  planMove: PlanMoveDTO;
+  onAdded: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [sport, setSport] = useState("");
+  const [category, setCategory] = useState("");
+  const addFn = useServerFn(addPlanMoveToLibrary);
+  const fetchSports = useServerFn(listCoachSports);
+  const sportsQuery = useQuery({
+    queryKey: ["coach-sports"],
+    queryFn: () => fetchSports(),
+    enabled: open,
+  });
+  const sports = sportsQuery.data?.sports ?? [];
+
+  useEffect(() => {
+    if (open && sports.length > 0 && !sport) setSport(sports[0]);
+  }, [open, sports, sport]);
+
+  const mutation = useMutation({
+    mutationFn: addFn,
+    onSuccess: () => {
+      toast.success("Saved to your move library");
+      setOpen(false);
+      setCategory("");
+      onAdded();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const cueOk = planMove.cue.trim().length > 0;
+  const whyOk = planMove.why.trim().length > 0;
+  const ready = cueOk && whyOk;
+  const missing: string[] = [];
+  if (!cueOk) missing.push("a cue");
+  if (!whyOk) missing.push("a why");
+
+  return (
+    <div className="rounded-lg border border-dashed border-accent/50 bg-accent/5 px-3 py-2.5">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex-1 text-xs">
+          <p className="font-bold uppercase tracking-wide text-text-secondary">
+            Not in your library
+          </p>
+          <p className="mt-0.5 text-text-tertiary">
+            {ready
+              ? "Save this move so you can reuse it in future plans."
+              : `Add ${missing.join(" and ")} to save this move to your library.`}
+          </p>
+        </div>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          disabled={!ready}
+          onClick={() => setOpen(true)}
+        >
+          Add to library
+        </Button>
+      </div>
+      <AlertDialog open={open} onOpenChange={(v) => !mutation.isPending && setOpen(v)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Save "{planMove.name}" to your library</AlertDialogTitle>
+            <AlertDialogDescription>
+              Pick a sport and category so you can find this move next time.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-3 py-1">
+            <label className="block">
+              <span className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
+                Sport
+              </span>
+              <select
+                value={sport}
+                onChange={(e) => setSport(e.target.value)}
+                className="mt-1 block w-full rounded-md border border-divider bg-card px-2 py-2 text-sm text-text-primary focus:border-accent focus:outline-none"
+              >
+                {sports.length === 0 ? (
+                  <option value="">No sports configured</option>
+                ) : null}
+                {sports.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="block">
+              <span className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
+                Category
+              </span>
+              <Input
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                placeholder="e.g. Forehand, Footwork, Strength"
+                className="mt-1"
+              />
+            </label>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={mutation.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={!sport.trim() || !category.trim() || mutation.isPending}
+              onClick={(e) => {
+                e.preventDefault();
+                mutation.mutate({
+                  data: {
+                    planMoveId: planMove.id,
+                    sport: sport.trim(),
+                    category: category.trim(),
+                  },
+                });
+              }}
+            >
+              {mutation.isPending ? "Saving…" : "Save to library"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}
