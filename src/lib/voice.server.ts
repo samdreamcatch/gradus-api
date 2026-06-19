@@ -135,7 +135,7 @@ async function slotTranscript(ctx: ParseContext) {
   const model = gateway("google/gemini-3-flash-preview");
 
   const system = [
-    "You convert a tennis/sports coach's spoken instructions into structured slots.",
+    "You convert a sports coach's spoken instructions into structured slots.",
     "Map every meaningful piece of the transcript into exactly one slot: title, athleteName, or a move field (name/description/cue/why/target).",
     "For EVERY filled field, also fill its *Quote field with the verbatim transcript phrase that produced it (a clean substring of the transcript, not paraphrased).",
     "RULES:",
@@ -144,6 +144,7 @@ async function slotTranscript(ctx: ParseContext) {
     "- Cue = a SINGLE short repeatable phrase. Why = ONE sentence. Description = brief, what the athlete does.",
     "- targetKind: 'reps' for counted reps ('20 reps', 'ten swings'); 'mins' for time ('5 minutes').",
     "- Move target defaults: if unclear, 10 reps.",
+    "- Move name: if the spoken move name clearly matches a name in KNOWN MOVES, copy that KNOWN MOVES name exactly into the `name` field — do not paraphrase, pluralize, or reword it.",
     ctx.mode === "edit"
       ? "- EDIT MODE: if the coach clearly modifies an existing plan move (by name/order), set matchExistingMoveId. Otherwise leave null for new moves."
       : "- CREATE MODE: every move is new. Leave matchExistingMoveId null.",
@@ -253,7 +254,8 @@ const MOVE_STOPWORDS = new Set([
 function moveTokens(s: string): string[] {
   return normalize(s)
     .split(" ")
-    .filter((w) => w && !MOVE_STOPWORDS.has(w));
+    .filter((w) => w && !MOVE_STOPWORDS.has(w))
+    .map((w) => (w.endsWith("s") && w.length > 3 ? w.slice(0, -1) : w));
 }
 
 function resolveLibraryMove(
@@ -264,29 +266,52 @@ function resolveLibraryMove(
   const q = normalize(spoken);
   if (!q) return null;
 
+  // Pass 1: exact normalized name.
   for (const m of library) {
     if (normalize(m.name) === q) return m;
   }
+
+  // Pass 2: substring containment either direction.
   for (const m of library) {
     const n = normalize(m.name);
-    if (n === q) return m;
     if (n.includes(q) || q.includes(n)) return m;
   }
+
+  // Pass 3: Jaccard token overlap on non-stopword tokens; threshold ≥ 0.6.
+  // Good for word-order variations: "crosscourt forehand" matches "forehand crosscourt".
   const qTokens = new Set(moveTokens(spoken));
-  if (qTokens.size === 0) return null;
-  let best: { move: LibraryMove; score: number } | null = null;
+  if (qTokens.size > 0) {
+    let best: { move: LibraryMove; score: number } | null = null;
+    for (const m of library) {
+      const nTokens = new Set(moveTokens(m.name));
+      if (nTokens.size === 0) continue;
+      let overlap = 0;
+      for (const t of qTokens) if (nTokens.has(t)) overlap++;
+      const union = qTokens.size + nTokens.size - overlap;
+      const score = union === 0 ? 0 : overlap / union;
+      if (score >= 0.6 && (!best || score > best.score)) {
+        best = { move: m, score };
+      }
+    }
+    if (best) return best.move;
+  }
+
+  // Pass 4: normalized Levenshtein distance on the full normalized name.
+  // Catches accent-driven mishearings and single-character transcription errors.
+  // e.g. "forhand" matches "forehand" (1 edit out of 8 chars = 0.875 score, above threshold).
+  // Threshold: score ≥ 0.75 means at most 25% of characters may differ.
+  let bestLev: { move: LibraryMove; score: number } | null = null;
   for (const m of library) {
-    const nTokens = new Set(moveTokens(m.name));
-    if (nTokens.size === 0) continue;
-    let overlap = 0;
-    for (const t of qTokens) if (nTokens.has(t)) overlap++;
-    const union = qTokens.size + nTokens.size - overlap;
-    const score = union === 0 ? 0 : overlap / union;
-    if (score >= 0.6 && (!best || score > best.score)) {
-      best = { move: m, score };
+    const n = normalize(m.name);
+    const maxLen = Math.max(q.length, n.length);
+    if (maxLen === 0) continue;
+    const dist = levenshtein(q, n);
+    const score = 1 - dist / maxLen;
+    if (score >= 0.75 && (!bestLev || score > bestLev.score)) {
+      bestLev = { move: m, score };
     }
   }
-  return best?.move ?? null;
+  return bestLev?.move ?? null;
 }
 
 function mergeAppend(libraryValue: string, voiceValue: string): string {
