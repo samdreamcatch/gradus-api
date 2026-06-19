@@ -1522,6 +1522,7 @@ function AddToLibrarySection({
       toast.success("Saved to your move library");
       setOpen(false);
       setCategory("");
+      setCustomCategory("");
       onAdded();
     },
     onError: (e: Error) => toast.error(e.message),
