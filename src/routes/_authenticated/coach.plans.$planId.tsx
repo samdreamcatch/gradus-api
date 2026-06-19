@@ -43,16 +43,16 @@ import {
   deletePlan,
   createPlan,
   listCoachAthletes,
+  listCoachSports,
   getAthleteActivePlans,
   MAX_ACTIVE_PLANS_PER_ATHLETE,
   type TargetKind,
+  type PlanMoveDTO,
 } from "@/lib/plans.functions";
 
 
 
 import { listMoves, upsertMove, addPlanMoveToLibrary, type MoveDTO } from "@/lib/moves.functions";
-import { listCoachSports } from "@/lib/plans.functions";
-import type { PlanMoveDTO } from "@/lib/plans.functions";
 import { MoveField } from "@/components/coach/move-field";
 import { VoiceFab } from "@/components/coach/voice-fab";
 import { consumeVoiceTouched, type VoiceTouchedSnapshot } from "@/lib/voice-touched-store";
