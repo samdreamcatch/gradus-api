@@ -1,54 +1,25 @@
-Generate a single markdown reference doc at `/mnt/documents/voice-and-move-matching-catalog.md` that surfaces the two code surfaces you want to review. No code changes.
+## What's happening today
 
-## Doc structure
+Each move card in the voice-built plan editor renders its header row as a `<button>` that gets the `pen-highlight` utility applied to the **entire row** whenever the move is newly extracted from voice or has unacknowledged voice changes (`src/routes/_authenticated/coach.plans.$planId.tsx`, lines ~615–641).
 
-### Part 1 — Voice-to-text (audio in → structured plan/session output)
+`pen-highlight` is a linear-gradient stripe that sits behind text (the 55–92% band). When applied to a full button row that also has horizontal padding and a chevron, the stripe becomes a chunky horizontal green bar pinned to the top edge of the card — especially loud when the card is expanded, because the bar visually disconnects from the content below it.
 
-Cover the full pipeline, file by file, with line ranges and verbatim excerpts for the important parts:
+Per the design system, the pen is meant to feel like a highlighter marking a **word or phrase**, not a full-bleed block. The current usage breaks that rule.
 
-- **`src/hooks/use-voice-capture.ts`** (211 lines) — browser `MediaRecorder` lifecycle, mime-type selection, blob assembly, upload trigger.
-- **`src/components/coach/voice-fab.tsx`** (311 lines) — the floating voice button: recording state, UI, calls `use-voice-capture`, dispatches results to the plan/session forms.
-- **`src/lib/voice-touched-store.ts`** (27 lines) — shared store tracking which fields the voice flow has filled (so manual edits aren't clobbered).
-- **`src/lib/voice-types.ts`** (45 lines) — DTOs returned by the voice server functions (verbatim).
-- **`src/lib/voice.functions.ts`** (137 lines) — `createServerFn` entrypoints called by the client: upload + transcription orchestration, loads the coach's move library, hands off to `voice.server.ts` extractor.
-- **`src/lib/voice.server.ts`** (709 lines) — the AI core:
-  - Zod schema for extracted moves (incl. `matchExistingMoveId`).
-  - System/user prompt construction (CREATE vs EDIT mode), library injection at line ~157.
-  - `generateObject` call against the Lovable AI Gateway.
-  - DB write path: upserts plan moves, reuses library move when matched (lines ~572–667).
-- **`src/components/dev/dev-tools.tsx`** — dev-only voice helpers (brief mention).
-- **Audio storage**: `voice-notes` Supabase bucket (referenced from voice.server / voice.functions).
+## Proposed fix (design-system aligned)
 
-For each file: purpose, where it's called from, key inputs/outputs, the AI model and Gateway endpoint used, and any caching/freshness behavior.
+1. **Scope `pen-highlight` to the move name only**, not the whole header row. The stripe will now sit behind the move title text (e.g. "Single salchow"), which is exactly the "jelly pen highlighter on text" usage the system calls for. The rep count and chevron stay clean.
+2. **Drop the row-level highlight when the card is expanded.** Once the coach opens the card, the existing `border-accent` already signals focus; the inner "From your voice" caveats inside each field already mark voice-derived content. Keeping the title highlight only when the card is collapsed gives the coach a glanceable "this came from voice / has unreviewed voice edits" cue in the list view without screaming inside the open editor.
+3. **Keep the `ring-2 ring-accent/40` halo on brand-new moves** — that's already a good system-aligned "just added" cue and lives on the card, not as a bar.
 
-### Part 2 — Matching custom moves against the library
+### Result
 
-This logic lives almost entirely inside the voice pipeline, not in the move CRUD UI. Cover:
+- Collapsed voice-derived card: title text wears a tidy pen-highlight underline-band; rest of the row is calm.
+- Expanded card: accent border + per-field "From your voice" annotations carry the meaning; no green bar across the top.
+- No new tokens, no new components — just correcting where an existing utility is applied.
 
-- **`src/lib/voice.server.ts`**:
-  - `levenshtein(a, b)` (line 200) — verbatim helper.
-  - `resolveLibraryMove(spoken, library)` (line ~261) — three-pass matcher: exact, prefix/substring, then bounded Levenshtein distance on the first word. Verbatim.
-  - Prompt instruction at lines 148–149 telling the model when to set `matchExistingMoveId` (EDIT vs CREATE mode).
-  - `KNOWN MOVES (library, name — category)` block injected into the prompt at lines 157–159 (capped at 150 entries).
-  - Post-extraction reconciliation at lines ~402–412: prefers the model's `matchExistingMoveId`; falls back to `resolveLibraryMove` on the spoken name.
-  - `mergeAppend` (line ~292) — how matched-library copy is merged with newly-spoken copy (description/cue/why).
-  - DB write path (lines ~572, ~636–667): when matched, updates the existing `moves` row and links `plan_moves.move_id` to the library move id.
-- **`src/lib/voice.functions.ts`** lines 89–132 — how the coach's library is loaded from `moves` and passed to the extractor as the `LibraryMove[]` context.
-- **`src/components/coach/move-field.tsx`** + **`src/components/coach/move-sheet.tsx`** — note explicitly that these are CRUD-only and do NOT do fuzzy matching; the "duplicate" action (move-sheet.tsx ~201) is a literal copy, not a similarity match.
-- **`src/lib/moves.functions.ts`** — note that library seeding (`seed_coach_library` RPC at line 81) populates the candidate set the matcher draws from; no client-side similarity logic here either.
+## Files touched
 
-### Format
+- `src/routes/_authenticated/coach.plans.$planId.tsx` — move the `pen-highlight` class from the header `<button>` onto the `<span>` wrapping `{m.name}`, and gate it on `!expanded` (still driven by `isNewMove || touched.moves[m.id]?.length`).
 
-- One section per part, with a short overview and a table of files.
-- Per-file subsections with: path, line count, role, callers, and verbatim code excerpts for the matching-critical functions (`levenshtein`, `resolveLibraryMove`, `mergeAppend`, the prompt block, the reconciliation loop, the DB write).
-- Cross-references between the two parts (the matcher only runs inside the voice flow).
-- A short closing "Gaps / notable risks" section flagging:
-  - 150-move library cap in the prompt (silent truncation).
-  - First-word Levenshtein on `resolveLibraryMove` — collapses "Forehand crosscourt" and "Forehand down the line" to the same first-word match.
-  - No matching surface in manual move creation — coaches typing a new move that already exists in their library get no suggestion.
-
-### Out of scope
-
-- No code changes.
-- No coverage of unrelated AI prompts (Ask Gradus, pre-lesson briefing, coach athlete summary) — those live in the existing `/mnt/documents/ai-prompts-catalog.md`.
-- No edits to that prior catalog.
+No other files need to change. No backend, no token, no schema work.
