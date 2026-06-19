@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { SportChip } from "@/components/onboarding/sport-chip";
+import { SportMultiselect, type SelectedSport } from "@/components/onboarding/sport-multiselect";
 import { SPORTS, getSport, type SportKey } from "@/lib/coach-sports";
 import {
   coachProfileQueryOptions,
