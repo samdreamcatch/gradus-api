@@ -169,7 +169,7 @@ function ParentResourcesPage() {
                       >
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-sm font-bold text-text-primary">
-                            {r.title}
+                            {r.title.split(":")[0]}
                           </p>
 
                         </div>
