@@ -1,47 +1,22 @@
-# Add Skiing sport
+## Upload 8 wrestling resources to the library
 
-## 1. `src/lib/coach-sports.ts`
-- Add `"skiing"` to `SportKey` union.
-- Append `skiing` entry. `label: "Skiing"`, `standard: ""`. 5 levels matching Dance/Equestrian:
-  - Beginner (2), Advanced Beginner (4), Intermediate (6), Advanced (10), Pre-Professional (16)
+The 10 uploads include two duplicates (the `(1).pdf` files are copies of the same titles). I'll upload one of each — 8 unique PDFs — under `sport='wrestling'`.
 
-## 2. Move library (28 rows → `public.seed_moves`, `sport='skiing'`)
+### Files & ordering
 
-**Category normalization** (5 buckets, Moguls merged into Terrain):
-- Alpine Fundamentals
-- Terrain (incl. moguls, powder, steep)
-- Race
-- Freestyle & Park
-- Backcountry / Touring
+| # | Title | storage_path |
+|---|---|---|
+| 10 | Folkstyle vs. Freestyle vs. Greco-Roman: The Three Styles Explained | wrestling/styles-explained.pdf |
+| 20 | The Stance and Motion: Why Posture Is Everything in Wrestling | wrestling/stance-and-motion.pdf |
+| 30 | Level Changes and Penetration Steps: The Foundation of Takedowns | wrestling/level-changes-penetration.pdf |
+| 40 | Takedowns: What They Are and Why They're Valued | wrestling/takedowns.pdf |
+| 50 | Pins, Technical Falls, and Decisions: How Matches End | wrestling/pins-tech-falls-decisions.pdf |
+| 60 | Weight Classes: How They Work and Why They Exist | wrestling/weight-classes.pdf |
+| 70 | Weight Management: What Parents Need to Know | wrestling/weight-management.pdf |
+| 80 | Drilling vs. Live Wrestling: The Two Modes of Practice | wrestling/drilling-vs-live.pdf |
 
-**Source → normalized mapping**:
-- "Alpine Fundamentals" → Alpine Fundamentals
-- "Technique" → Alpine Fundamentals (wedge christie, jump turn)
-- "Terrain" → Terrain
-- "Moguls" → Terrain (compression turn)
-- "Race Technique" / "Alpine Racing" → Race
-- "Freestyle / Air" / "Freestyle" / "Park" → Freestyle & Park
-- "Backcountry / Touring" → Backcountry / Touring
+### Steps
+1. Upload each PDF to the `resource-pdfs` Storage bucket at the path above (using `supabase--storage_upload`).
+2. Insert 8 rows into `public.resources` with `sport='wrestling'`, `published=true`, the title, storage_path, and `display_order` shown above. Description left blank (matches existing rows).
 
-**20 complete rows** inserted verbatim with mapping above.
-
-**8 gap rows filled** (standard ski references):
-
-| Move | Kind | Target | Category |
-|---|---|---|---|
-| Wedge christie | reps | 8 | Alpine Fundamentals |
-| Switch skiing | reps | 6 | Freestyle & Park |
-| Aerial jump | reps | 4 | Freestyle & Park |
-| Rail slide | reps | 6 | Freestyle & Park |
-| Downhill tuck | mins | 5 | Race |
-| Jump turn | reps | 6 | Alpine Fundamentals |
-| Compression turn | reps | 8 | Terrain |
-| Super-G turn shape | reps | 6 | Race |
-
-Each gets a 2–3 sentence description, short cue, and one-line why grounded in standard alpine coaching.
-
-## 3. Seed insert
-Single SQL INSERT via supabase--insert. `default_target_kind` per source (mins for sustained efforts like skinning/tuck, reps for everything else).
-
-## 4. No other code changes
-Sport-key validator accepts arbitrary slugs; onboarding pre-populates automatically.
+No code changes — wrestling is already in `coach-sports.ts` and the library page is sport-agnostic.
