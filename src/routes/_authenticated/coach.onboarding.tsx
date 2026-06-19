@@ -3,12 +3,16 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
+import { Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
-import { SportChip } from "@/components/onboarding/sport-chip";
-import { SPORTS, getSport, getSportLevel, type SportKey } from "@/lib/coach-sports";
+import {
+  SportMultiselect,
+  slugifySport,
+  type SelectedSport,
+} from "@/components/onboarding/sport-multiselect";
+import { SPORTS, getSport, getSportLevel } from "@/lib/coach-sports";
 import {
   coachProfileQueryOptions,
   useCompleteOnboarding,
@@ -25,28 +29,34 @@ const PENDING_INVITE_KEY = "gradus.pendingParentInvite";
 
 
 export const Route = createFileRoute("/_authenticated/coach/onboarding")({
-  // No loader: this route is fully behind client-side auth. Running a loader
-  // here would fire the protected server fn during SSR with no bearer token
-  // and 401, crashing SSR into a blank screen.
   component: OnboardingPage,
 });
 
 
 type LevelEntry = { sport: string; levelKey: string; hoursPerWeek: number };
+type CustomLevel = { sportKey: string; key: string; label: string };
+
+function randSuffix() {
+  return Math.random().toString(36).slice(2, 7);
+}
+
+function prettify(s: string) {
+  return s
+    .replace(/[_-]+/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase())
+    .trim();
+}
 
 function OnboardingPage() {
   const { data } = useQuery(coachProfileQueryOptions);
   const navigate = useNavigate();
 
-  // If already onboarded, bounce to /coach
   useEffect(() => {
     if (data?.profile.onboardedAt) navigate({ to: "/coach" });
   }, [data?.profile.onboardedAt, navigate]);
 
   if (!data) return null;
 
-  // If signup already captured the coach's name (set on coach_profiles via
-  // ensureProfile from auth user_metadata), skip the redundant name step.
   const needsName =
     !data.profile.firstName.trim() || !data.profile.lastName.trim();
 
@@ -54,34 +64,139 @@ function OnboardingPage() {
   const [firstName, setFirstName] = useState(data.profile.firstName);
   const [lastName, setLastName] = useState(data.profile.lastName);
 
-  const initialSports = useMemo(
-    () => Array.from(new Set(data.levels.map((l) => l.sport))) as SportKey[],
-    [data.levels],
-  );
-  const [sports, setSports] = useState<SportKey[]>(initialSports);
+  // Initial sport & custom-level reconstruction from saved data.
+  const { initialSports, initialCustomLevels } = useMemo(() => {
+    const uniqueSportKeys = Array.from(new Set(data.levels.map((l) => l.sport)));
+    const sports: SelectedSport[] = uniqueSportKeys.map((key) => {
+      const builtIn = getSport(key);
+      if (builtIn) return { key: builtIn.key, label: builtIn.label, custom: false };
+      return { key, label: prettify(key.replace(/^custom_/, "")), custom: true };
+    });
+    const customLevels: CustomLevel[] = [];
+    for (const lvl of data.levels) {
+      const builtInSport = getSport(lvl.sport);
+      if (builtInSport && builtInSport.levels.some((l) => l.key === lvl.levelKey)) {
+        continue;
+      }
+      // Custom sport, or unknown level on a built-in (treat as custom level).
+      if (!customLevels.some((c) => c.sportKey === lvl.sport && c.key === lvl.levelKey)) {
+        customLevels.push({
+          sportKey: lvl.sport,
+          key: lvl.levelKey,
+          label: prettify(lvl.levelKey.replace(/^lvl_/, "")),
+        });
+      }
+    }
+    return { initialSports: sports, initialCustomLevels: customLevels };
+  }, [data.levels]);
 
+  const [sports, setSports] = useState<SelectedSport[]>(initialSports);
+  const [customLevels, setCustomLevels] = useState<CustomLevel[]>(initialCustomLevels);
   const [entries, setEntries] = useState<LevelEntry[]>(data.levels);
+
+  const customSports = useMemo(
+    () => sports.filter((s) => s.custom),
+    [sports],
+  );
 
   const saveProfile = useSaveCoachProfile();
   const saveLevels = useSaveCoachLevels();
   const complete = useCompleteOnboarding();
 
-  const toggleSport = (key: SportKey) => {
+  // Resolve sport metadata regardless of built-in/custom.
+  const getSportMeta = (key: string): { label: string; standard?: string; custom: boolean } => {
+    const builtIn = getSport(key);
+    if (builtIn) return { label: builtIn.label, standard: builtIn.standard, custom: false };
+    const custom = sports.find((s) => s.key === key);
+    return { label: custom?.label ?? prettify(key), custom: true };
+  };
+
+  const getLevelLabel = (sportKey: string, levelKey: string): string => {
+    const lvl = getSportLevel(sportKey, levelKey);
+    if (lvl) return lvl.label;
+    const custom = customLevels.find((c) => c.sportKey === sportKey && c.key === levelKey);
+    return custom?.label ?? prettify(levelKey);
+  };
+
+  const toggleSport = (sport: SelectedSport) => {
     setSports((prev) => {
-      if (prev.includes(key)) {
-        setEntries((es) => es.filter((e) => e.sport !== key));
-        return prev.filter((k) => k !== key);
+      if (prev.some((s) => s.key === sport.key)) {
+        setEntries((es) => es.filter((e) => e.sport !== sport.key));
+        return prev.filter((s) => s.key !== sport.key);
       }
-      return [...prev, key];
+      return [...prev, sport];
     });
   };
 
-  const toggleLevel = (sport: SportKey, levelKey: string) => {
+  const addCustomSport = (rawLabel: string) => {
+    const label = rawLabel.trim();
+    const slug = slugifySport(label);
+
+    // Check built-ins by key or label slug.
+    const builtInMatch = SPORTS.find(
+      (s) => s.key === slug || slugifySport(s.label) === slug,
+    );
+    if (builtInMatch) {
+      const existing: SelectedSport = {
+        key: builtInMatch.key,
+        label: builtInMatch.label,
+        custom: false,
+      };
+      setSports((prev) =>
+        prev.some((s) => s.key === existing.key) ? prev : [...prev, existing],
+      );
+      return { status: "selected-existing" as const, label: builtInMatch.label };
+    }
+
+    // Check existing custom sports by label slug.
+    const customMatch = sports.find(
+      (s) => s.custom && slugifySport(s.label) === slug,
+    );
+    if (customMatch) {
+      // Already in selected list — nothing to add, but report.
+      return { status: "selected-existing" as const, label: customMatch.label };
+    }
+
+    const key = `custom_${slug}_${randSuffix()}`;
+    setSports((prev) => [...prev, { key, label, custom: true }]);
+    return { status: "added" as const, label };
+  };
+
+  const removeCustomSport = (key: string) => {
+    setSports((prev) => prev.filter((s) => s.key !== key));
+    setCustomLevels((prev) => prev.filter((c) => c.sportKey !== key));
+    setEntries((es) => es.filter((e) => e.sport !== key));
+  };
+
+  const toggleLevel = (sport: string, levelKey: string) => {
     setEntries((prev) => {
       const exists = prev.some((e) => e.sport === sport && e.levelKey === levelKey);
       if (exists) return prev.filter((e) => !(e.sport === sport && e.levelKey === levelKey));
       return [...prev, { sport, levelKey, hoursPerWeek: 0 }];
     });
+  };
+
+  const addCustomLevel = (sportKey: string) => {
+    const key = `lvl_new_${randSuffix()}`;
+    setCustomLevels((prev) => [...prev, { sportKey, key, label: "" }]);
+    setEntries((prev) => [...prev, { sport: sportKey, levelKey: key, hoursPerWeek: 0 }]);
+  };
+
+  const updateCustomLevelLabel = (sportKey: string, levelKey: string, label: string) => {
+    setCustomLevels((prev) =>
+      prev.map((c) =>
+        c.sportKey === sportKey && c.key === levelKey ? { ...c, label } : c,
+      ),
+    );
+  };
+
+  const removeCustomLevel = (sportKey: string, levelKey: string) => {
+    setCustomLevels((prev) =>
+      prev.filter((c) => !(c.sportKey === sportKey && c.key === levelKey)),
+    );
+    setEntries((prev) =>
+      prev.filter((e) => !(e.sport === sportKey && e.levelKey === levelKey)),
+    );
   };
 
   const updateHours = (sport: string, levelKey: string, hours: number) => {
@@ -92,11 +207,7 @@ function OnboardingPage() {
     );
   };
 
-  // Step layout: optional Name → Sports → Levels → Hours → Invite → Review.
-  // When needsName is false (the common case after signup), the Name step is
-  // dropped and total steps = 5.
   const totalSteps = needsName ? 6 : 5;
-  // Logical step kinds, mapped per-render based on `needsName`.
   type StepKind = "name" | "sports" | "levels" | "hours" | "invite" | "review";
   const stepOrder: StepKind[] = needsName
     ? ["name", "sports", "levels", "hours", "invite", "review"]
@@ -107,8 +218,14 @@ function OnboardingPage() {
     if (currentKind === "name")
       return firstName.trim().length > 0 && lastName.trim().length > 0;
     if (currentKind === "sports") return sports.length > 0;
-    if (currentKind === "levels")
-      return sports.every((s) => entries.some((e) => e.sport === s));
+    if (currentKind === "levels") {
+      // Every sport must have at least one entry; for custom sports every level must have a non-empty label.
+      const allHaveLevel = sports.every((s) =>
+        entries.some((e) => e.sport === s.key),
+      );
+      const customLabelsOk = customLevels.every((c) => c.label.trim().length > 0);
+      return allHaveLevel && customLabelsOk;
+    }
     if (currentKind === "hours")
       return entries.every((e) => e.hoursPerWeek >= 0 && e.hoursPerWeek <= 40);
     return true;
@@ -142,7 +259,6 @@ function OnboardingPage() {
       toast.error(err instanceof Error ? err.message : "Couldn't finish");
       return;
     }
-    // Best-effort claim of a pending parent invite — never block navigation on it.
     let pendingInvite: string | null = null;
     try {
       pendingInvite = localStorage.getItem(PENDING_INVITE_KEY);
@@ -168,7 +284,6 @@ function OnboardingPage() {
         }
       }
     }
-    // Skip the /coach navigator hop — go straight to the post-onboarding home.
     navigate({ to: "/coach/roster" });
   };
 
@@ -225,17 +340,13 @@ function OnboardingPage() {
 
         {currentKind === "sports" && (
           <Step title="Which sports do you coach?" subtitle="Pick one or more.">
-            <div className="flex flex-wrap gap-3">
-              {SPORTS.map((s) => (
-                <SportChip
-                  key={s.key}
-                  selected={sports.includes(s.key)}
-                  onClick={() => toggleSport(s.key)}
-                >
-                  {s.label}
-                </SportChip>
-              ))}
-            </div>
+            <SportMultiselect
+              selected={sports}
+              customSports={customSports}
+              onToggle={toggleSport}
+              onAddCustom={addCustomSport}
+              onRemoveCustom={removeCustomSport}
+            />
           </Step>
         )}
 
@@ -245,41 +356,87 @@ function OnboardingPage() {
             subtitle="Select every level you actively teach. You can change this later."
           >
             <div className="space-y-8">
-              {sports.map((sportKey) => {
-                const sport = getSport(sportKey)!;
+              {sports.map((selSport) => {
+                const sportKey = selSport.key;
+                const meta = getSportMeta(sportKey);
+                const builtIn = getSport(sportKey);
                 return (
                   <div key={sportKey}>
-                    <h2 className="text-xl">{sport.label}</h2>
-                    <p className="mt-1 text-xs uppercase tracking-wider text-text-secondary">
-                      {sport.standard}
-                    </p>
-                    <div className="mt-4 grid gap-2 sm:grid-cols-2">
-                      {sport.levels.map((lvl) => {
-                        const checked = entries.some(
-                          (e) => e.sport === sportKey && e.levelKey === lvl.key,
-                        );
-                        return (
-                          <label
-                            key={lvl.key}
-                            className="flex cursor-pointer items-start gap-3 rounded-md border border-divider bg-elevated p-3 hover:border-accent/40"
-                          >
-                            <Checkbox
-                              checked={checked}
-                              onCheckedChange={() => toggleLevel(sportKey, lvl.key)}
-                              className="mt-0.5"
-                            />
-                            <div className="leading-tight">
-                              <div className="text-sm font-semibold text-text-primary">
-                                {lvl.label}
+                    <h2 className="text-xl">{meta.label}</h2>
+                    {meta.standard && (
+                      <p className="mt-1 text-xs uppercase tracking-wider text-text-secondary">
+                        {meta.standard}
+                      </p>
+                    )}
+
+                    {builtIn ? (
+                      <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                        {builtIn.levels.map((lvl) => {
+                          const checked = entries.some(
+                            (e) => e.sport === sportKey && e.levelKey === lvl.key,
+                          );
+                          return (
+                            <label
+                              key={lvl.key}
+                              className="flex cursor-pointer items-start gap-3 rounded-md border border-divider bg-elevated p-3 hover:border-accent/40"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                onChange={() => toggleLevel(sportKey, lvl.key)}
+                                className="mt-1 h-4 w-4 accent-accent"
+                              />
+                              <div className="leading-tight">
+                                <div className="text-sm font-semibold text-text-primary">
+                                  {lvl.label}
+                                </div>
+                                {lvl.hint && (
+                                  <div className="text-xs text-text-secondary">{lvl.hint}</div>
+                                )}
                               </div>
-                              {lvl.hint && (
-                                <div className="text-xs text-text-secondary">{lvl.hint}</div>
-                              )}
+                            </label>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="mt-4 space-y-2">
+                        {customLevels
+                          .filter((c) => c.sportKey === sportKey)
+                          .map((c) => (
+                            <div
+                              key={c.key}
+                              className="flex items-center gap-2 rounded-md border border-divider bg-elevated p-2"
+                            >
+                              <Input
+                                value={c.label}
+                                onChange={(e) =>
+                                  updateCustomLevelLabel(sportKey, c.key, e.target.value)
+                                }
+                                placeholder="Level name (e.g. Beginner)"
+                                className="h-9 text-sm"
+                                maxLength={60}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => removeCustomLevel(sportKey, c.key)}
+                                className="rounded p-1.5 text-text-tertiary hover:bg-divider hover:text-text-primary"
+                                aria-label="Remove level"
+                              >
+                                <X className="h-4 w-4" />
+                              </button>
                             </div>
-                          </label>
-                        );
-                      })}
-                    </div>
+                          ))}
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => addCustomLevel(sportKey)}
+                        >
+                          <Plus className="h-4 w-4" />
+                          Add level
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -293,48 +450,46 @@ function OnboardingPage() {
             subtitle="How many hours per week should athletes at each level practice on their own?"
           >
             <div className="space-y-3">
-              {sports.map((sportKey) => {
-                const sport = getSport(sportKey)!;
+              {sports.map((selSport) => {
+                const sportKey = selSport.key;
+                const meta = getSportMeta(sportKey);
                 const sportEntries = entries.filter((e) => e.sport === sportKey);
                 if (sportEntries.length === 0) return null;
                 return (
                   <div key={sportKey}>
-                    <h2 className="text-xl">{sport.label}</h2>
+                    <h2 className="text-xl">{meta.label}</h2>
                     <div className="mt-4 space-y-3">
-                      {sportEntries.map((entry) => {
-                        const lvl = getSportLevel(sportKey, entry.levelKey)!;
-                        return (
-                          <div
-                            key={entry.levelKey}
-                            className="flex items-center justify-between gap-2 rounded-md border border-divider bg-elevated px-4 py-3"
-                          >
-                            <div className="leading-tight">
-                              <div className="text-sm font-semibold text-text-primary">
-                                {lvl.label}
-                              </div>
-                              <div className="font-hand text-lg text-accent-ink">
-                                hrs / week
-                              </div>
+                      {sportEntries.map((entry) => (
+                        <div
+                          key={entry.levelKey}
+                          className="flex items-center justify-between gap-2 rounded-md border border-divider bg-elevated px-4 py-3"
+                        >
+                          <div className="leading-tight">
+                            <div className="text-sm font-semibold text-text-primary">
+                              {getLevelLabel(sportKey, entry.levelKey)}
                             </div>
-                            <Input
-                              type="number"
-                              inputMode="decimal"
-                              min={0}
-                              max={40}
-                              step={0.5}
-                              value={entry.hoursPerWeek}
-                              onChange={(e) =>
-                                updateHours(
-                                  sportKey,
-                                  entry.levelKey,
-                                  Math.max(0, Math.min(40, Number(e.target.value) || 0)),
-                                )
-                              }
-                              className="w-24 text-right"
-                            />
+                            <div className="font-hand text-lg text-accent-ink">
+                              hrs / week
+                            </div>
                           </div>
-                        );
-                      })}
+                          <Input
+                            type="number"
+                            inputMode="decimal"
+                            min={0}
+                            max={40}
+                            step={0.5}
+                            value={entry.hoursPerWeek}
+                            onChange={(e) =>
+                              updateHours(
+                                sportKey,
+                                entry.levelKey,
+                                Math.max(0, Math.min(40, Number(e.target.value) || 0)),
+                              )
+                            }
+                            className="w-24 text-right"
+                          />
+                        </div>
+                      ))}
                     </div>
                   </div>
                 );
@@ -356,6 +511,8 @@ function OnboardingPage() {
               lastName={lastName}
               sports={sports}
               entries={entries}
+              getSportMeta={getSportMeta}
+              getLevelLabel={getLevelLabel}
             />
           </Step>
         )}
@@ -408,11 +565,15 @@ function ReviewSummary({
   lastName,
   sports,
   entries,
+  getSportMeta,
+  getLevelLabel,
 }: {
   firstName: string;
   lastName: string;
-  sports: SportKey[];
+  sports: SelectedSport[];
   entries: LevelEntry[];
+  getSportMeta: (key: string) => { label: string; standard?: string; custom: boolean };
+  getLevelLabel: (sportKey: string, levelKey: string) => string;
 }) {
   return (
     <div className="space-y-3">
@@ -422,30 +583,30 @@ function ReviewSummary({
           {firstName} {lastName}
         </p>
       </div>
-      {sports.map((sportKey) => {
-        const sport = getSport(sportKey)!;
+      {sports.map((selSport) => {
+        const sportKey = selSport.key;
+        const meta = getSportMeta(sportKey);
         const sportEntries = entries.filter((e) => e.sport === sportKey);
         return (
           <div key={sportKey}>
             <p className="text-xs uppercase tracking-wider text-text-secondary">
-              {sport.label}
+              {meta.label}
             </p>
             <ul className="mt-2 space-y-1">
-              {sportEntries.map((e) => {
-                const lvl = getSportLevel(sportKey, e.levelKey)!;
-                return (
-                  <li
-                    key={e.levelKey}
-                    className="flex justify-between border-b border-divider/60 py-1.5 text-sm"
-                  >
-                    <span className="text-text-primary">{lvl.label}</span>
-                    <span className="text-text-secondary">
-                      <span className="text-text-primary font-semibold">{e.hoursPerWeek}</span>{" "}
-                      <span className="font-hand text-lg text-accent-ink">hrs / week</span>
-                    </span>
-                  </li>
-                );
-              })}
+              {sportEntries.map((e) => (
+                <li
+                  key={e.levelKey}
+                  className="flex justify-between border-b border-divider/60 py-1.5 text-sm"
+                >
+                  <span className="text-text-primary">
+                    {getLevelLabel(sportKey, e.levelKey)}
+                  </span>
+                  <span className="text-text-secondary">
+                    <span className="text-text-primary font-semibold">{e.hoursPerWeek}</span>{" "}
+                    <span className="font-hand text-lg text-accent-ink">hrs / week</span>
+                  </span>
+                </li>
+              ))}
             </ul>
           </div>
         );
