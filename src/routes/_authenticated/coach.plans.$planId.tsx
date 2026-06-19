@@ -1590,25 +1590,51 @@ function AddToLibrarySection({
               <span className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
                 Category
               </span>
-              <Input
+              <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                placeholder="e.g. Forehand, Footwork, Strength"
-                className="mt-1"
-              />
+                className="mt-1 block w-full rounded-md border border-divider bg-card px-2 py-2 text-sm text-text-primary focus:border-accent focus:outline-none"
+                disabled={!sport || movesQuery.isLoading}
+              >
+                <option value="">
+                  {movesQuery.isLoading ? "Loading…" : "Select a category…"}
+                </option>
+                {categoryOptions.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+                <option value="__other__">Other…</option>
+              </select>
+              {category === "__other__" ? (
+                <Input
+                  value={customCategory}
+                  onChange={(e) => setCustomCategory(e.target.value)}
+                  placeholder="e.g. Forehand, Footwork, Strength"
+                  className="mt-2"
+                  autoFocus
+                />
+              ) : null}
             </label>
           </div>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={mutation.isPending}>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              disabled={!sport.trim() || !category.trim() || mutation.isPending}
+              disabled={
+                !sport.trim() ||
+                !category ||
+                (category === "__other__" && !customCategory.trim()) ||
+                mutation.isPending
+              }
               onClick={(e) => {
                 e.preventDefault();
+                const finalCategory =
+                  category === "__other__" ? customCategory.trim() : category;
                 mutation.mutate({
                   data: {
                     planMoveId: planMove.id,
                     sport: sport.trim(),
-                    category: category.trim(),
+                    category: finalCategory,
                   },
                 });
               }}
