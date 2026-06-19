@@ -12,7 +12,7 @@ import {
   slugifySport,
   type SelectedSport,
 } from "@/components/onboarding/sport-multiselect";
-import { SPORTS, getSport, getSportLevel } from "@/lib/coach-sports";
+import { SPORTS, getSport, getSportLevel, getSuggestedHours, DEFAULT_SUGGESTED_HOURS } from "@/lib/coach-sports";
 import {
   coachProfileQueryOptions,
   useCompleteOnboarding,
