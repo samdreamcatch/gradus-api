@@ -34,6 +34,7 @@ interface Props {
   onToggle: (sport: SelectedSport) => void;
   onAddCustom: (label: string) => { status: "added" | "selected-existing"; label: string };
   onRemoveCustom: (key: string) => void;
+  allowCustom?: boolean;
 }
 
 export function SportMultiselect({
@@ -42,6 +43,7 @@ export function SportMultiselect({
   onToggle,
   onAddCustom,
   onRemoveCustom,
+  allowCustom = true,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [customInput, setCustomInput] = useState("");
@@ -128,45 +130,50 @@ export function SportMultiselect({
                   );
                 })}
               </CommandGroup>
-              <CommandSeparator />
-              <div className="p-2">
-                <p className="px-2 pb-1.5 text-xs font-semibold uppercase tracking-wider text-text-secondary">
-                  Custom
-                </p>
-                <div className="flex gap-2">
-                  <Input
-                    value={customInput}
-                    onChange={(e) => {
-                      setCustomInput(e.target.value);
-                      if (hint) setHint(null);
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        handleAdd();
-                      }
-                    }}
-                    placeholder="Name your sport"
-                    className="h-9 text-sm"
-                  />
-                  <Button
-                    type="button"
-                    size="sm"
-                    onClick={handleAdd}
-                    disabled={!customInput.trim()}
-                  >
-                    <Plus className="h-4 w-4" />
-                    Add
-                  </Button>
-                </div>
-                {hint && (
-                  <p className="mt-2 px-1 text-xs text-text-secondary">{hint}</p>
-                )}
-              </div>
+              {allowCustom && (
+                <>
+                  <CommandSeparator />
+                  <div className="p-2">
+                    <p className="px-2 pb-1.5 text-xs font-semibold uppercase tracking-wider text-text-secondary">
+                      Custom
+                    </p>
+                    <div className="flex gap-2">
+                      <Input
+                        value={customInput}
+                        onChange={(e) => {
+                          setCustomInput(e.target.value);
+                          if (hint) setHint(null);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            handleAdd();
+                          }
+                        }}
+                        placeholder="Name your sport"
+                        className="h-9 text-sm"
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={handleAdd}
+                        disabled={!customInput.trim()}
+                      >
+                        <Plus className="h-4 w-4" />
+                        Add
+                      </Button>
+                    </div>
+                    {hint && (
+                      <p className="mt-2 px-1 text-xs text-text-secondary">{hint}</p>
+                    )}
+                  </div>
+                </>
+              )}
             </CommandList>
           </Command>
         </PopoverContent>
       </Popover>
+
 
       {selected.length > 0 && (
         <div className="flex flex-wrap gap-2">
