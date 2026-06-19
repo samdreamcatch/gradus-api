@@ -127,6 +127,19 @@ export const SPORTS: Sport[] = [
       { key: "pre_professional", label: "Pre-Professional", suggestedHours: 16 },
     ],
   },
+  {
+    key: "swimming",
+    label: "Swimming",
+    standard: "USA Swimming Motivational Time Standards",
+    levels: [
+      { key: "b", label: "B", suggestedHours: 3 },
+      { key: "bb", label: "BB", suggestedHours: 5 },
+      { key: "a", label: "A", suggestedHours: 8 },
+      { key: "aa", label: "AA", suggestedHours: 12 },
+      { key: "aaa", label: "AAA", suggestedHours: 16 },
+      { key: "aaaa", label: "AAAA", suggestedHours: 20 },
+    ],
+  },
 ];
 
 export const SPORT_KEYS: SportKey[] = SPORTS.map((s) => s.key);
