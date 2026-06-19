@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { doubleMetaphone } from "double-metaphone";
 import { generateText, Output } from "ai";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
@@ -28,7 +29,7 @@ export async function getCoachId(supabase: Client, userId: string): Promise<stri
 
 /* ---------------- Transcription (ElevenLabs Scribe) ---------------- */
 
-export async function transcribeWithElevenLabs(audio: Blob): Promise<string> {
+export async function transcribeWithElevenLabs(audio: Blob, vocabularyHints?: string[]): Promise<string> {
   const apiKey = process.env.ELEVENLABS_API_KEY;
   if (!apiKey) throw new Error("Voice service not configured");
 
@@ -38,6 +39,13 @@ export async function transcribeWithElevenLabs(audio: Blob): Promise<string> {
   form.append("language_code", "eng");
   form.append("tag_audio_events", "false");
   form.append("diarize", "false");
+
+  if (vocabularyHints && vocabularyHints.length > 0) {
+    form.append(
+      "custom_vocabulary",
+      JSON.stringify(vocabularyHints.map((content) => ({ content }))),
+    );
+  }
 
   const res = await fetch("https://api.elevenlabs.io/v1/speech-to-text", {
     method: "POST",
@@ -311,7 +319,37 @@ function resolveLibraryMove(
       bestLev = { move: m, score };
     }
   }
-  return bestLev?.move ?? null;
+  if (bestLev) return bestLev.move;
+
+  // Pass 5: Phonetic matching via Double Metaphone.
+  const qWords = moveTokens(spoken);
+  if (qWords.length > 0) {
+    const qCodes = qWords.map((w) => doubleMetaphone(w));
+    let bestPhonetic: { move: LibraryMove; score: number } | null = null;
+    for (const m of library) {
+      const mWords = moveTokens(m.name);
+      if (mWords.length === 0) continue;
+      const mCodes = mWords.map((w) => doubleMetaphone(w));
+      let matched = 0;
+      for (const [qPrimary, qSecondary] of qCodes) {
+        for (const [mPrimary, mSecondary] of mCodes) {
+          const hit =
+            (qPrimary && mPrimary && qPrimary === mPrimary) ||
+            (qPrimary && mSecondary && qPrimary === mSecondary) ||
+            (qSecondary && mPrimary && qSecondary === mPrimary) ||
+            (qSecondary && mSecondary && qSecondary === mSecondary);
+          if (hit) { matched++; break; }
+        }
+      }
+      const total = Math.max(qCodes.length, mCodes.length);
+      const score = total === 0 ? 0 : matched / total;
+      if (score >= 0.6 && (!bestPhonetic || score > bestPhonetic.score)) {
+        bestPhonetic = { move: m, score };
+      }
+    }
+    if (bestPhonetic) return bestPhonetic.move;
+  }
+  return null;
 }
 
 function mergeAppend(libraryValue: string, voiceValue: string): string {
