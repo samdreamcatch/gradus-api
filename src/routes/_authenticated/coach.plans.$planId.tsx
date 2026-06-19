@@ -1437,7 +1437,7 @@ function NewMoveForm({
 
         <div>
           <label className="mb-1 block text-[11px] font-black uppercase tracking-widest text-text-tertiary">
-            Cue (optional)
+            Cue
           </label>
           <Input
             value={cue}
