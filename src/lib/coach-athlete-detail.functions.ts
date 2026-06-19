@@ -12,6 +12,8 @@ import {
 } from "./ai-prompt-safety";
 import type { SessionsByState } from "@/components/plans/flow-state-bars";
 
+const ATHLETE_SUMMARY_SYSTEM = `You are a factual reporting assistant for a sports coaching platform. Your only job is to report what is explicitly present in the data you receive. Do not infer, speculate, or add encouraging language that isn't backed by a specific data point in the context. If evidence is thin, acknowledge it — do not pad the summary with generic observations. A shorter, accurate output is always better than a longer, embellished one.`;
+
 const WINDOW_DAYS = 30;
 
 export interface AthleteGoalDTO {
@@ -401,14 +403,14 @@ ${sessionLines || "- (none)"}
 MESSAGES FROM ATHLETE OR PARENT (most recent first):
 ${messageLines || "- (none)"}
 
-Write a 2-3 sentence summary that captures what ${safeName} has been working on across all of their plans (active and benched), how it's going, and any signal from messages. Call out specific plans by name when a pattern is clearly tied to one. Be specific — name moves, themes, or moods you actually see. Don't invent details.
+Write a 2–3 sentence summary of what ${safeName} has been doing based strictly on the data above. Reference only plans, flow states, session notes, and messages that appear explicitly in the context. Do not use hedging language ("appears to," "seems like") as cover for inference — if you cannot point to a specific data entry, do not include it. If data is sparse, write fewer sentences and say so plainly rather than filling in gaps.
 
 Then decide a verdict:
-- "increase": athlete is showing mastery, asking for more, or breezing through
-- "hold": progress is steady; keep current challenge level
-- "reduce": athlete is struggling, frustrated, missing sessions, or overwhelmed
+- "increase": athlete is clearly showing mastery, explicitly asking for more, or consistently breezing through sessions — you must be able to cite a specific session note or message that supports this
+- "hold": progress is steady, or evidence is insufficient to recommend a change — when in doubt, use hold
+- "reduce": athlete is clearly struggling, frustrated, missing sessions, or overwhelmed — you must be able to cite a specific session note, flow state, or message that supports this
 
-Provide a single-sentence rationale tied to specific evidence above.`;
+Provide a single-sentence rationale that cites a specific data point (a session note, flow state label, or message). If you cannot cite specific evidence, default to "hold" and state that the data is insufficient to make a stronger call.`;
 
     const apiKey = process.env.LOVABLE_API_KEY;
     if (!apiKey) throw new Error("Missing LOVABLE_API_KEY");
@@ -423,6 +425,7 @@ Provide a single-sentence rationale tied to specific evidence above.`;
     try {
       const { object } = await generateObject({
         model: gateway("google/gemini-2.5-flash"),
+        system: ATHLETE_SUMMARY_SYSTEM,
         schema,
         prompt,
       });
