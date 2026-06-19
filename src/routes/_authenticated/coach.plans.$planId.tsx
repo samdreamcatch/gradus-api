@@ -50,7 +50,9 @@ import {
 
 
 
-import { listMoves, upsertMove, type MoveDTO } from "@/lib/moves.functions";
+import { listMoves, upsertMove, addPlanMoveToLibrary, type MoveDTO } from "@/lib/moves.functions";
+import { listCoachSports } from "@/lib/plans.functions";
+import type { PlanMoveDTO } from "@/lib/plans.functions";
 import { MoveField } from "@/components/coach/move-field";
 import { VoiceFab } from "@/components/coach/voice-fab";
 import { consumeVoiceTouched, type VoiceTouchedSnapshot } from "@/lib/voice-touched-store";
