@@ -174,3 +174,63 @@ export const archiveMove = createServerFn({ method: "POST" })
     if (error) dbError(error);
     return { ok: true };
   });
+
+/* ---------------- Save a plan-only move into the coach library ---------------- */
+
+const addPlanMoveToLibraryInput = z.object({
+  planMoveId: z.string().uuid(),
+  sport: z.string().min(1).max(64),
+  category: z.string().min(1).max(64),
+});
+
+export const addPlanMoveToLibrary = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => addPlanMoveToLibraryInput.parse(input))
+  .handler(async ({ context, data }) => {
+    const supabase = context.supabase as Client;
+    const coachId = await getCoachId(supabase, context.userId);
+
+    const { data: pm, error: pmErr } = await supabase
+      .from("plan_moves")
+      .select(
+        "id, plan_id, move_id, name, description, cue, why, target_kind, target_value, plans!inner(coach_id)",
+      )
+      .eq("id", data.planMoveId)
+      .maybeSingle();
+    if (pmErr) dbError(pmErr);
+    if (!pm) throw new Error("Move not found");
+    const planCoachId = (pm as unknown as { plans: { coach_id: string } }).plans.coach_id;
+    if (planCoachId !== coachId) throw new Error("Not authorized");
+    if (pm.move_id) throw new Error("This move is already in your library");
+
+    const cue = (pm.cue ?? "").trim();
+    const why = (pm.why ?? "").trim();
+    if (!cue || !why) {
+      throw new Error("Add a cue and a why before saving this move to your library");
+    }
+
+    const { data: inserted, error } = await supabase
+      .from("moves")
+      .insert({
+        coach_id: coachId,
+        sport: data.sport,
+        category: data.category,
+        name: pm.name,
+        description: pm.description ?? "",
+        cue,
+        why,
+        default_target_kind: pm.target_kind,
+        default_target_value: pm.target_value,
+      })
+      .select("id")
+      .single();
+    if (error) dbError(error);
+
+    const { error: updErr } = await supabase
+      .from("plan_moves")
+      .update({ move_id: inserted.id })
+      .eq("id", pm.id);
+    if (updErr) dbError(updErr);
+
+    return { moveId: inserted.id as string };
+  });
