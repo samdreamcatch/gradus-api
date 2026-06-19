@@ -1,40 +1,56 @@
-# Add Dance Sport Library
+# Add Gymnastics Sport Library
 
-Add **Dance** as the 4th built-in sport, with a 5-tier generic level set and 50 seeded moves across Ballet, Jazz, Hip Hop, and Contemporary categories.
+Add **Gymnastics** as the 5th built-in sport with USAG Development Program levels and a deduplicated, category-normalized move library.
 
 ## 1. Built-in sport catalog (`src/lib/coach-sports.ts`)
 
-- Extend `SportKey` union: `"tennis" | "golf" | "figure_skating" | "dance"`.
-- Append a `dance` entry to `SPORTS`:
-  - **label**: "Dance"
-  - **standard**: "Generic skill tiers"
-  - **levels** (5):
-    1. `beginner` — "Beginner"
-    2. `advanced_beginner` — "Advanced Beginner"
-    3. `intermediate` — "Intermediate"
-    4. `advanced` — "Advanced"
-    5. `pre_professional` — "Pre-Professional"
+- Extend `SportKey` union to include `"gymnastics"`.
+- Append a `gymnastics` entry to `SPORTS`:
+  - **label**: "Gymnastics"
+  - **standard**: "USA Gymnastics Development Program"
+  - **levels** (11): `level_1` through `level_10`, plus `elite`
+  - **suggestedHours** (research-based, scales with USAG training norms):
+    - L1: 2, L2: 3, L3: 4, L4: 8, L5: 12, L6: 16, L7: 20, L8: 22, L9: 24, L10: 28, Elite: 32
 
-## 2. Seed move data (data insert, not schema change)
+## 2. Move data — deduplication & normalization
 
-Insert 50 rows into `public.seed_moves` with `sport = 'dance'`. Each row maps directly from the provided list:
+The user-provided list of 50 rows resolves to **42 unique moves** after merging duplicates:
 
-- `name` ← move name
-- `category` ← provided category (Barre Work, Center Work, Turns & Pirouettes, Jumps & Leaps, Artistry & Performance, Jazz, Hip Hop, Contemporary)
+**Duplicates merged** (keeping the longer, more detailed version):
+- Kip / Kip (glide kip) → "Kip"
+- Cast to handstand (×2) → keep longer description
+- Back walkover (×2) → keep longer description
+- Round-off (×2) → keep longer description
+- Split leap (×2) → keep longer description
+- Front walkover (×2) → keep longer description
+- Back handspring (×2) → keep longer description
+- Giant swing (×2) → keep longer description
+
+**Categories normalized** to canonical event names:
+- "Floor" → **Floor Exercise**
+- "Bars" → **Uneven Bars**
+- "Beam" → **Balance Beam**
+- Keep as-is: **Vault**, **Pommel Horse**, **Parallel Bars**, **Rings**, **Artistry**, **Conditioning**
+
+Final category set: Floor Exercise, Uneven Bars, Balance Beam, Vault, Pommel Horse, Parallel Bars, Rings, Artistry, Conditioning.
+
+## 3. Seed insert
+
+Insert ~42 rows into `public.seed_moves` with `sport = 'gymnastics'`. Each row maps:
+- `name`, `description`, `cue`, `why` ← provided text (longer variant when duplicated)
+- `category` ← normalized name
 - `default_target_kind` ← `reps` or `mins`
 - `default_target_value` ← provided number
-- `description`, `cue`, `why` ← provided text
 
-The existing `seed_coach_library` RPC will pick these up automatically for any coach whose `coach_levels` includes sport `dance` (it matches on normalized sport key).
+The existing `seed_coach_library` RPC picks these up for any coach who selects gymnastics.
 
-## 3. No other code changes required
+## 4. No other code changes
 
-- `coach-profile.functions.ts` already accepts arbitrary sport keys (recently relaxed from enum to regex), so `dance` validates without further edits.
-- The onboarding multi-select reads from `SPORTS`, so Dance will appear in the dropdown automatically once step 1 lands.
-- Levels step will render the 5-tier checklist from the catalog.
+- Sport-key validator already accepts arbitrary slugs.
+- Onboarding multi-select renders Dance/Gymnastics automatically from `SPORTS`.
+- Hours step pre-populates from `suggestedHours`.
 
 ## Technical notes
 
-- Data insert runs via the data-insert tool (not a migration), since `seed_moves` schema is unchanged.
-- All 50 rows inserted in a single `INSERT ... VALUES (...), (...), ...` statement.
-- Categories are free-form text in `seed_moves`, so no enum updates needed.
+- Data insert via the data-insert tool (no schema change).
+- Single `INSERT … VALUES` statement; single-quote escaping handled by Python codegen.
