@@ -200,7 +200,11 @@ function SportsDisclosure({
         return prev.filter(
           (e) => !(e.sport === sport && e.levelKey === levelKey),
         );
-      return [...prev, { sport, levelKey, hoursPerWeek: 0 }];
+      const lvl = getSport(sport)?.levels.find((l) => l.key === levelKey);
+      return [
+        ...prev,
+        { sport, levelKey, hoursPerWeek: lvl?.suggestedHours ?? 0 },
+      ];
     });
   };
 
@@ -294,17 +298,16 @@ function SportsDisclosure({
                             min={0}
                             max={40}
                             step={0.5}
-                            value={entry!.hoursPerWeek}
-                            onChange={(e) =>
+                            value={entry!.hoursPerWeek === 0 ? "" : entry!.hoursPerWeek}
+                            onChange={(e) => {
+                              const raw = e.target.value;
+                              const n = raw === "" ? 0 : Number(raw);
                               updateHours(
                                 sportKey,
                                 lvl.key,
-                                Math.max(
-                                  0,
-                                  Math.min(40, Number(e.target.value) || 0),
-                                ),
-                              )
-                            }
+                                Math.max(0, Math.min(40, Number.isFinite(n) ? n : 0)),
+                              );
+                            }}
                             className="h-8 w-16 text-right text-sm"
                           />
                           <span className="text-[11px] text-text-tertiary">
