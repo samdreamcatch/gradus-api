@@ -1,4 +1,5 @@
 import { z } from "zod";
+import doubleMetaphone from "double-metaphone";
 import { generateText, Output } from "ai";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
