@@ -12,7 +12,7 @@ import {
   slugifySport,
   type SelectedSport,
 } from "@/components/onboarding/sport-multiselect";
-import { SPORTS, getSport, getSportLevel } from "@/lib/coach-sports";
+import { SPORTS, getSport, getSportLevel, getSuggestedHours, DEFAULT_SUGGESTED_HOURS } from "@/lib/coach-sports";
 import {
   coachProfileQueryOptions,
   useCompleteOnboarding,
@@ -172,14 +172,14 @@ function OnboardingPage() {
     setEntries((prev) => {
       const exists = prev.some((e) => e.sport === sport && e.levelKey === levelKey);
       if (exists) return prev.filter((e) => !(e.sport === sport && e.levelKey === levelKey));
-      return [...prev, { sport, levelKey, hoursPerWeek: 0 }];
+      return [...prev, { sport, levelKey, hoursPerWeek: getSuggestedHours(sport, levelKey) }];
     });
   };
 
   const addCustomLevel = (sportKey: string) => {
     const key = `lvl_new_${randSuffix()}`;
     setCustomLevels((prev) => [...prev, { sportKey, key, label: "" }]);
-    setEntries((prev) => [...prev, { sport: sportKey, levelKey: key, hoursPerWeek: 0 }]);
+    setEntries((prev) => [...prev, { sport: sportKey, levelKey: key, hoursPerWeek: DEFAULT_SUGGESTED_HOURS }]);
   };
 
   const updateCustomLevelLabel = (sportKey: string, levelKey: string, label: string) => {
@@ -478,14 +478,16 @@ function OnboardingPage() {
                             min={0}
                             max={40}
                             step={0.5}
-                            value={entry.hoursPerWeek}
-                            onChange={(e) =>
+                            value={entry.hoursPerWeek === 0 ? "" : entry.hoursPerWeek}
+                            onChange={(e) => {
+                              const raw = e.target.value;
+                              const n = raw === "" ? 0 : Number(raw);
                               updateHours(
                                 sportKey,
                                 entry.levelKey,
-                                Math.max(0, Math.min(40, Number(e.target.value) || 0)),
-                              )
-                            }
+                                Math.max(0, Math.min(40, Number.isFinite(n) ? n : 0)),
+                              );
+                            }}
                             className="w-24 text-right"
                           />
                         </div>
