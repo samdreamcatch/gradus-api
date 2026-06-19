@@ -63,29 +63,14 @@ export const voiceBuildPlan = createServerFn({ method: "POST" })
     const supabase = context.supabase as Client;
     const coachId = await getCoachId(supabase, context.userId);
 
-    const transcript = await transcribeWithElevenLabs(data.audio);
-    if (!transcript || transcript.length < 2) throw new Error("Didn't catch that — try again");
+    const { data: libRows } = await supabase
+      .from("moves")
+      .select(
+        "id, name, category, description, cue, why, default_target_kind, default_target_value",
+      )
+      .eq("coach_id", coachId)
+      .is("archived_at", null);
 
-    const [{ data: rosterRows }, { data: libRows }] = await Promise.all([
-      supabase
-        .from("coach_athletes")
-        .select("athlete_id, athletes!inner(id, first_name, last_name)")
-        .eq("coach_id", coachId),
-      supabase
-        .from("moves")
-        .select(
-          "id, name, category, description, cue, why, default_target_kind, default_target_value",
-        )
-        .eq("coach_id", coachId)
-        .is("archived_at", null),
-    ]);
-
-    const athletes = (rosterRows ?? []).map((row) => {
-      const a = (row as unknown as {
-        athletes: { id: string; first_name: string; last_name: string };
-      }).athletes;
-      return { id: a.id, name: `${a.first_name} ${a.last_name}`.trim() };
-    });
     const library: LibraryMove[] = (libRows ?? []).map((r) => ({
       id: r.id as string,
       name: r.name as string,
@@ -96,6 +81,22 @@ export const voiceBuildPlan = createServerFn({ method: "POST" })
       defaultTargetKind: (r.default_target_kind as "reps" | "mins") ?? "reps",
       defaultTargetValue: Number(r.default_target_value ?? 10),
     }));
+
+    const [transcript, { data: rosterRows }] = await Promise.all([
+      transcribeWithElevenLabs(data.audio, library.map((m) => m.name)),
+      supabase
+        .from("coach_athletes")
+        .select("athlete_id, athletes!inner(id, first_name, last_name)")
+        .eq("coach_id", coachId),
+    ]);
+    if (!transcript || transcript.length < 2) throw new Error("Didn't catch that — try again");
+
+    const athletes = (rosterRows ?? []).map((row) => {
+      const a = (row as unknown as {
+        athletes: { id: string; first_name: string; last_name: string };
+      }).athletes;
+      return { id: a.id, name: `${a.first_name} ${a.last_name}`.trim() };
+    });
 
     let currentPlan: ParseContext["currentPlan"];
     if (data.mode === "edit" && data.planId) {
