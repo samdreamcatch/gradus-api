@@ -67,7 +67,7 @@ export const SPORTS: Sport[] = [
   {
     key: "dance",
     label: "Dance",
-    standard: "Generic skill tiers",
+    standard: "",
     levels: [
       { key: "beginner", label: "Beginner" },
       { key: "advanced_beginner", label: "Advanced Beginner" },
