@@ -117,7 +117,11 @@ const levelsSchema = z.object({
   entries: z
     .array(
       z.object({
-        sport: z.enum(SPORT_KEYS as [string, ...string[]]),
+        sport: z
+          .string()
+          .min(1)
+          .max(64)
+          .regex(/^[a-z0-9_]+$/),
         levelKey: z
           .string()
           .min(1)
