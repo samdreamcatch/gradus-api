@@ -34,6 +34,7 @@ interface Props {
   onToggle: (sport: SelectedSport) => void;
   onAddCustom: (label: string) => { status: "added" | "selected-existing"; label: string };
   onRemoveCustom: (key: string) => void;
+  allowCustom?: boolean;
 }
 
 export function SportMultiselect({
@@ -42,6 +43,7 @@ export function SportMultiselect({
   onToggle,
   onAddCustom,
   onRemoveCustom,
+  allowCustom = true,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [customInput, setCustomInput] = useState("");
