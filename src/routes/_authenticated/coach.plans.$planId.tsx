@@ -1478,18 +1478,43 @@ function AddToLibrarySection({
   const [open, setOpen] = useState(false);
   const [sport, setSport] = useState("");
   const [category, setCategory] = useState("");
+  const [customCategory, setCustomCategory] = useState("");
   const addFn = useServerFn(addPlanMoveToLibrary);
   const fetchSports = useServerFn(listCoachSports);
+  const fetchMoves = useServerFn(listMoves);
   const sportsQuery = useQuery({
     queryKey: ["coach-sports"],
     queryFn: () => fetchSports(),
     enabled: open,
   });
+  const movesQuery = useQuery({
+    queryKey: ["moves"],
+    queryFn: () => fetchMoves(),
+    enabled: open,
+  });
   const sports = sportsQuery.data?.sports ?? [];
+
+  const categoryOptions = useMemo(() => {
+    if (!sport) return [] as string[];
+    const set = new Set<string>();
+    for (const m of movesQuery.data?.moves ?? []) {
+      if (m.sport === sport && m.category) set.add(m.category);
+    }
+    for (const s of movesQuery.data?.seedCategories ?? []) {
+      if (s.sport === sport && s.category) set.add(s.category);
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [sport, movesQuery.data]);
 
   useEffect(() => {
     if (open && sports.length > 0 && !sport) setSport(sports[0]);
   }, [open, sports, sport]);
+
+  useEffect(() => {
+    // Reset category when sport changes
+    setCategory("");
+    setCustomCategory("");
+  }, [sport]);
 
   const mutation = useMutation({
     mutationFn: addFn,
@@ -1497,6 +1522,7 @@ function AddToLibrarySection({
       toast.success("Saved to your move library");
       setOpen(false);
       setCategory("");
+      setCustomCategory("");
       onAdded();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -1564,25 +1590,51 @@ function AddToLibrarySection({
               <span className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
                 Category
               </span>
-              <Input
+              <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                placeholder="e.g. Forehand, Footwork, Strength"
-                className="mt-1"
-              />
+                className="mt-1 block w-full rounded-md border border-divider bg-card px-2 py-2 text-sm text-text-primary focus:border-accent focus:outline-none"
+                disabled={!sport || movesQuery.isLoading}
+              >
+                <option value="">
+                  {movesQuery.isLoading ? "Loading…" : "Select a category…"}
+                </option>
+                {categoryOptions.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+                <option value="__other__">Other…</option>
+              </select>
+              {category === "__other__" ? (
+                <Input
+                  value={customCategory}
+                  onChange={(e) => setCustomCategory(e.target.value)}
+                  placeholder="e.g. Forehand, Footwork, Strength"
+                  className="mt-2"
+                  autoFocus
+                />
+              ) : null}
             </label>
           </div>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={mutation.isPending}>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              disabled={!sport.trim() || !category.trim() || mutation.isPending}
+              disabled={
+                !sport.trim() ||
+                !category ||
+                (category === "__other__" && !customCategory.trim()) ||
+                mutation.isPending
+              }
               onClick={(e) => {
                 e.preventDefault();
+                const finalCategory =
+                  category === "__other__" ? customCategory.trim() : category;
                 mutation.mutate({
                   data: {
                     planMoveId: planMove.id,
                     sport: sport.trim(),
-                    category: category.trim(),
+                    category: finalCategory,
                   },
                 });
               }}
