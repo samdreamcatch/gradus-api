@@ -29,7 +29,7 @@ export async function getCoachId(supabase: Client, userId: string): Promise<stri
 
 /* ---------------- Transcription (ElevenLabs Scribe) ---------------- */
 
-export async function transcribeWithElevenLabs(audio: Blob): Promise<string> {
+export async function transcribeWithElevenLabs(audio: Blob, vocabularyHints?: string[]): Promise<string> {
   const apiKey = process.env.ELEVENLABS_API_KEY;
   if (!apiKey) throw new Error("Voice service not configured");
 
@@ -39,6 +39,13 @@ export async function transcribeWithElevenLabs(audio: Blob): Promise<string> {
   form.append("language_code", "eng");
   form.append("tag_audio_events", "false");
   form.append("diarize", "false");
+
+  if (vocabularyHints && vocabularyHints.length > 0) {
+    form.append(
+      "custom_vocabulary",
+      JSON.stringify(vocabularyHints.map((content) => ({ content }))),
+    );
+  }
 
   const res = await fetch("https://api.elevenlabs.io/v1/speech-to-text", {
     method: "POST",
