@@ -1,34 +1,52 @@
-# Add Equestrian sport
+# Add Track & Field sport
 
 ## 1. `src/lib/coach-sports.ts`
-- Add `"equestrian"` to `SportKey` union.
-- Append `equestrian` entry to `SPORTS` with 5 levels (Beginner, Advanced Beginner, Intermediate, Advanced, Pre-Professional) matching the Dance shape. `suggestedHours`: 2, 4, 6, 10, 16. `standard: ""`.
+- Add `"track_field"` to `SportKey` union.
+- Append `track_field` entry to `SPORTS`. `label: "Track & Field"`, `standard: ""`. 5 levels: Youth, High School, Collegiate, Elite, Professional. `suggestedHours`: 3, 6, 12, 18, 22.
 
-## 2. Move library (26 rows → `public.seed_moves`, `sport='equestrian'`)
+## 2. Move library (41 rows → `public.seed_moves`, `sport='track_field'`)
 
-**Category normalization** (discipline-agnostic buckets):
-- Position & Seat
-- Flatwork
-- Transitions
-- Lateral Work
-- Dressage
-- Jumping
+**Category normalization** (6 buckets — merge Distance Running → Distance, merge Steeplechase → Hurdles):
+- Sprints
+- Distance
+- Jumps
+- Hurdles (includes steeplechase)
+- Throws
+- Race Walking
 
-**20 complete rows** inserted verbatim with the categories already in the source.
+**20 complete rows** inserted verbatim with the merged-category mapping.
 
-**6 gap rows filled** (standard dressage references):
+**21 gap rows filled** (standard references, in the same voice):
 
-| Move | Kind | Target | Description | Cue | Why | Category |
-|---|---|---|---|---|---|---|
-| Passage | mins | 3 | A highly cadenced, elevated trot with prolonged moments of suspension. The horse appears to trot in slow motion, lifting each diagonal pair high and holding it. | Up and slow, hold the suspension | Required at FEI levels (Intermediate II, Grand Prix); demonstrates ultimate collection and engagement of the hindquarters. | Dressage |
-| Canter pirouette | reps | 4 | A 360° turn at the canter on the haunches — the hind legs maintain the canter rhythm nearly in place while the forehand describes a small circle around them. Six to eight strides for a full turn. | Sit, collect, turn on the haunches | One of the most difficult Grand Prix movements; the ultimate test of collection, balance, and obedience under canter. | Dressage |
-| Piaffe | mins | 3 | A trot in place with the diagonal pairs lifting in measured cadence and clear suspension. The horse stays on the spot or steps barely forward, weight shifted onto the hindquarters. | Trot in place, weight behind | The signature Grand Prix movement; demonstrates maximum collection and the horse's ability to carry weight behind. | Dressage |
-| Renvers | reps | 4 | Haunches-out on three or four tracks. The horse bends in the direction of travel, with the forehand on the inner track and the haunches displaced toward the wall. | Bend to the wall, haunches out | The mirror of travers; deepens suppleness and engagement, required from Third Level dressage upward. | Lateral Work |
-| Extended trot | reps | 4 | Maximum reach and ground cover at the trot without quickening the tempo. The frame lengthens, the stride opens, but the rhythm stays the same as the working trot. | Open the frame, same tempo | Showcases the gaits; a scored movement at every dressage level from First upward and a hallmark of training. | Transitions |
-| Travers | reps | 4 | Haunches-in on three or four tracks. The horse bends in the direction of travel with the haunches displaced off the track toward the inside. | Bend to the inside, haunches in | Suppling exercise that prepares the horse for half-pass and canter pirouette; appears from Second Level dressage. | Lateral Work |
+| Move | Kind | Target | Category |
+|---|---|---|---|
+| 1500m / mile race strategy | reps | 4 | Distance |
+| B-skip | reps | 10 | Sprints |
+| Weight throw | reps | 12 | Throws |
+| Build-ups / strides | reps | 6 | Distance |
+| A-skip | reps | 10 | Sprints |
+| Butt kicks | reps | 10 | Sprints |
+| Hammer throw | reps | 12 | Throws |
+| Steeplechase water jump | reps | 6 | Hurdles |
+| Steeplechase barrier clearance | reps | 8 | Hurdles |
+| 5K / 10K race strategy | reps | 4 | Distance |
+| Stride rate drill | reps | 6 | Sprints |
+| Ankle paw-back drill | reps | 8 | Sprints |
+| Race walking technique | mins | 10 | Race Walking |
+| Fartlek run | mins | 30 | Distance |
+| Standing long jump | reps | 6 | Jumps |
+| High knees | reps | 10 | Sprints |
+| Bounding | reps | 8 | Jumps |
+| Sprint arm drive drill | reps | 8 | Sprints |
+| Standing triple jump | reps | 6 | Jumps |
+| Hill sprint | reps | 8 | Sprints |
+
+(Note: Bounding moved to Jumps, Hill sprint moved to Sprints — these are more accurate buckets than the source's "Distance" label for plyometric/power work. **Confirm or I'll keep as written.**)
+
+Each gap row gets a 2–3 sentence description, a short cue, and a one-line why grounded in standard track coaching (e.g. A-skip: "Drive knee up to parallel, foot dorsiflexed, strike under hip. Single bounce between reps." cue "Knee up, toe up" why "Reinforces the sprint cycle in slow motion — the foundation drill of every sprint warm-up.").
 
 ## 3. Seed insert
-Single Python script with `NORM` map + dedup `seen` set (same shape as gymnastics/fencing). Inserts 26 rows into `seed_moves` with: `name`, `description`, `cue`, `why`, `category`, `default_target_kind` (`reps` or `mins` per source), `default_target_value`.
+Single SQL INSERT via supabase--insert with all 41 rows. `default_target_kind` set per move (mins for sustained efforts, reps for everything else).
 
 ## 4. No other code changes
 Sport-key validator accepts arbitrary slugs; onboarding multi-select and hours step pre-populate automatically.
