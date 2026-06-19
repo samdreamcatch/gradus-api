@@ -1319,7 +1319,8 @@ function NewMoveForm({
       .map((x) => x.move);
   }, [existingMoves, name]);
 
-  const canCreate = name.trim().length > 0 && (dupes.length === 0 || ignoreDupes);
+  const canCreate =
+    name.trim().length > 0 && cue.trim().length > 0 && (dupes.length === 0 || ignoreDupes);
 
   return (
     <div className="mt-3 flex flex-1 flex-col overflow-y-auto">
@@ -1436,7 +1437,7 @@ function NewMoveForm({
 
         <div>
           <label className="mb-1 block text-[11px] font-black uppercase tracking-widest text-text-tertiary">
-            Cue (optional)
+            Cue
           </label>
           <Input
             value={cue}
