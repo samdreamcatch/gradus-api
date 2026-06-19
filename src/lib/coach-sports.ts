@@ -115,6 +115,18 @@ export const SPORTS: Sport[] = [
       { key: "a", label: "A", suggestedHours: 20 },
     ],
   },
+  {
+    key: "equestrian",
+    label: "Equestrian",
+    standard: "",
+    levels: [
+      { key: "beginner", label: "Beginner", suggestedHours: 2 },
+      { key: "advanced_beginner", label: "Advanced Beginner", suggestedHours: 4 },
+      { key: "intermediate", label: "Intermediate", suggestedHours: 6 },
+      { key: "advanced", label: "Advanced", suggestedHours: 10 },
+      { key: "pre_professional", label: "Pre-Professional", suggestedHours: 16 },
+    ],
+  },
 ];
 
 export const SPORT_KEYS: SportKey[] = SPORTS.map((s) => s.key);
