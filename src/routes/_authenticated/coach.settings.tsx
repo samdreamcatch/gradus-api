@@ -236,17 +236,18 @@ function SportsDisclosure({
       <div className="space-y-5">
         <div>
           <Label className="mb-2 block text-xs">Sports you coach</Label>
-          <div className="flex flex-wrap gap-2">
-            {SPORTS.map((s) => (
-              <SportChip
-                key={s.key}
-                selected={sports.includes(s.key)}
-                onClick={() => toggleSport(s.key)}
-              >
-                {s.label}
-              </SportChip>
-            ))}
-          </div>
+          <SportMultiselect
+            allowCustom={false}
+            customSports={[]}
+            selected={sports.map((k): SelectedSport => ({
+              key: k,
+              label: getSport(k)?.label ?? k,
+              custom: false,
+            }))}
+            onToggle={(s) => toggleSport(s.key as SportKey)}
+            onAddCustom={() => ({ status: "added", label: "" })}
+            onRemoveCustom={() => {}}
+          />
         </div>
 
         {sports.map((sportKey) => {
