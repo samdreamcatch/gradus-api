@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { generateObject } from "ai";
+import { generateText, Output } from "ai";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
@@ -268,9 +268,9 @@ Write a concise 2-3 sentence summary that captures how it's been going on this p
     });
 
     try {
-      const { object } = await generateObject({
+      const { experimental_output: object } = await generateText({
         model: gateway("google/gemini-2.5-flash"),
-        schema,
+        experimental_output: Output.object({ schema }),
         prompt,
       });
       return {
