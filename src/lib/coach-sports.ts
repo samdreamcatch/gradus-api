@@ -1,7 +1,7 @@
 // Pre-seeded sport catalog. `key` values are stored in the database and must
 // never change. `label` is display-only and can be edited freely.
 
-export type SportKey = "tennis" | "golf" | "figure_skating" | "dance" | "gymnastics" | "fencing" | "equestrian";
+export type SportKey = "tennis" | "golf" | "figure_skating" | "dance" | "gymnastics" | "fencing" | "equestrian" | "swimming";
 
 export interface SportLevel {
   key: string;
@@ -125,6 +125,19 @@ export const SPORTS: Sport[] = [
       { key: "intermediate", label: "Intermediate", suggestedHours: 6 },
       { key: "advanced", label: "Advanced", suggestedHours: 10 },
       { key: "pre_professional", label: "Pre-Professional", suggestedHours: 16 },
+    ],
+  },
+  {
+    key: "swimming",
+    label: "Swimming",
+    standard: "USA Swimming Motivational Time Standards",
+    levels: [
+      { key: "b", label: "B", suggestedHours: 3 },
+      { key: "bb", label: "BB", suggestedHours: 5 },
+      { key: "a", label: "A", suggestedHours: 8 },
+      { key: "aa", label: "AA", suggestedHours: 12 },
+      { key: "aaa", label: "AAA", suggestedHours: 16 },
+      { key: "aaaa", label: "AAAA", suggestedHours: 20 },
     ],
   },
 ];
