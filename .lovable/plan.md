@@ -1,58 +1,40 @@
-## Goal
+# Add Dance Sport Library
 
-Replace the row of sport chips on the onboarding "Which sports do you coach?" step with a multi-select dropdown. Add a "Custom…" entry at the bottom that lets the coach type their own sport name; for custom sports the coach also types their own level labels in the next step.
+Add **Dance** as the 4th built-in sport, with a 5-tier generic level set and 50 seeded moves across Ballet, Jazz, Hip Hop, and Contemporary categories.
 
-## Design system
+## 1. Built-in sport catalog (`src/lib/coach-sports.ts`)
 
-All new UI uses existing primitives only — `Popover`, `Command` (CommandInput / CommandList / CommandItem / CommandGroup / CommandSeparator), `Button`, `Input`, `Badge`/pill, and the existing paper/ink tokens. No new colors, shadows, fonts, or one-off styles. The dropdown trigger reuses the same chip/button styling already used elsewhere in onboarding so it feels native to the flow.
+- Extend `SportKey` union: `"tennis" | "golf" | "figure_skating" | "dance"`.
+- Append a `dance` entry to `SPORTS`:
+  - **label**: "Dance"
+  - **standard**: "Generic skill tiers"
+  - **levels** (5):
+    1. `beginner` — "Beginner"
+    2. `advanced_beginner` — "Advanced Beginner"
+    3. `intermediate` — "Intermediate"
+    4. `advanced` — "Advanced"
+    5. `pre_professional` — "Pre-Professional"
 
-## UI changes (src/routes/_authenticated/coach.onboarding.tsx)
+## 2. Seed move data (data insert, not schema change)
 
-Sports step:
-- Replace the `SportChip` row with a single dropdown trigger (shadcn `Popover` + `Command`).
-- Trigger shows selected sport labels joined ("Tennis, Golf, …") or the placeholder "Select sports".
-- Dropdown body:
-  - One selectable `CommandItem` per built-in sport from `SPORTS`, with a check mark on selected rows (standard shadcn pattern).
-  - `CommandSeparator`, then a "Custom…" `CommandItem` at the bottom. Activating it reveals an inline `Input` + Add button inside the same popover.
-  - Custom sports the coach has added also appear above the divider as checkable rows, with a small × to remove.
-- Below the trigger, render the currently-selected sports as small removable pills using the existing badge/chip styling, so the selection is visible without opening the dropdown.
+Insert 50 rows into `public.seed_moves` with `sport = 'dance'`. Each row maps directly from the provided list:
 
-Duplicate handling for the custom input:
-- On Add, slugify the typed label and compare case-insensitively against:
-  1. Built-in `SPORTS` labels and keys.
-  2. Already-added custom sport labels.
-- If a match is found:
-  - Do NOT create a new custom sport.
-  - Auto-select the existing one (built-in or custom) if not already selected.
-  - Show an inline hint inside the popover: "'Tennis' already exists — selected for you." Clear the input.
-- If no match, create the custom sport and select it.
+- `name` ← move name
+- `category` ← provided category (Barre Work, Center Work, Turns & Pirouettes, Jumps & Leaps, Artistry & Performance, Jazz, Hip Hop, Contemporary)
+- `default_target_kind` ← `reps` or `mins`
+- `default_target_value` ← provided number
+- `description`, `cue`, `why` ← provided text
 
-Levels step (custom-sport branch only):
-- Built-in sports: unchanged (uses `sport.levels`).
-- Each custom sport: editable list of level rows using the existing `Input` component. "Add level" button appends a blank row; each row has a × to remove. Adding a level implicitly selects it; hours step then iterates these like any other level.
+The existing `seed_coach_library` RPC will pick these up automatically for any coach whose `coach_levels` includes sport `dance` (it matches on normalized sport key).
 
-## Data model (frontend-only)
+## 3. No other code changes required
 
-Extend the in-memory shape used by the wizard so a "sport" can be built-in or custom, without changing `SPORTS` or the DB contract:
+- `coach-profile.functions.ts` already accepts arbitrary sport keys (recently relaxed from enum to regex), so `dance` validates without further edits.
+- The onboarding multi-select reads from `SPORTS`, so Dance will appear in the dropdown automatically once step 1 lands.
+- Levels step will render the 5-tier checklist from the catalog.
 
-- `SelectedSport = { key: string; label: string; custom: boolean }`.
-- `sports` state becomes `SelectedSport[]` instead of `SportKey[]`.
-- `CustomLevel = { sportKey: string; key: string; label: string }` stored in a `customLevels` state array.
-- `getSportMeta(key)` / `getLevelMeta(sportKey, levelKey)` helpers resolve built-ins first, then fall back to custom. All downstream code (levels list, hours list, review, submit payload) goes through these helpers.
-- Custom sport key: `custom_` + slug + short random suffix. Custom level key: `lvl_` + slug + suffix.
+## Technical notes
 
-## Submit payload
-
-`saveOnboarding` already accepts free-form `sport` / `levelKey` strings (`coach_levels.sport` is `text`, and `validate_athlete_primary_coach` only checks that the sport exists in `coach_levels` for that coach). Custom sports/levels persist via the existing `entries` array — no migration required.
-
-## Out of scope
-
-- New sport libraries (seed data for more sports) — coming in a later step.
-- Backend schema changes.
-- Parent/athlete sport pickers.
-
-## Files touched
-
-- `src/routes/_authenticated/coach.onboarding.tsx` — dropdown UI on sports step, custom-level editor on levels step, refactor `sports` state and helpers.
-- Possibly a small new component `src/components/onboarding/sport-multiselect.tsx` (using only existing primitives) to keep the route file readable.
-- No changes to `src/lib/coach-sports.ts`. `SportChip` left in place; only removed if no remaining references.
+- Data insert runs via the data-insert tool (not a migration), since `seed_moves` schema is unchanged.
+- All 50 rows inserted in a single `INSERT ... VALUES (...), (...), ...` statement.
+- Categories are free-form text in `seed_moves`, so no enum updates needed.
