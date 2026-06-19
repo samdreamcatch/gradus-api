@@ -1478,18 +1478,43 @@ function AddToLibrarySection({
   const [open, setOpen] = useState(false);
   const [sport, setSport] = useState("");
   const [category, setCategory] = useState("");
+  const [customCategory, setCustomCategory] = useState("");
   const addFn = useServerFn(addPlanMoveToLibrary);
   const fetchSports = useServerFn(listCoachSports);
+  const fetchMoves = useServerFn(listMoves);
   const sportsQuery = useQuery({
     queryKey: ["coach-sports"],
     queryFn: () => fetchSports(),
     enabled: open,
   });
+  const movesQuery = useQuery({
+    queryKey: ["moves"],
+    queryFn: () => fetchMoves(),
+    enabled: open,
+  });
   const sports = sportsQuery.data?.sports ?? [];
+
+  const categoryOptions = useMemo(() => {
+    if (!sport) return [] as string[];
+    const set = new Set<string>();
+    for (const m of movesQuery.data?.moves ?? []) {
+      if (m.sport === sport && m.category) set.add(m.category);
+    }
+    for (const s of movesQuery.data?.seedCategories ?? []) {
+      if (s.sport === sport && s.category) set.add(s.category);
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [sport, movesQuery.data]);
 
   useEffect(() => {
     if (open && sports.length > 0 && !sport) setSport(sports[0]);
   }, [open, sports, sport]);
+
+  useEffect(() => {
+    // Reset category when sport changes
+    setCategory("");
+    setCustomCategory("");
+  }, [sport]);
 
   const mutation = useMutation({
     mutationFn: addFn,
