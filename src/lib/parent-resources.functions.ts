@@ -46,7 +46,19 @@ export const getParentResources = createServerFn({ method: "GET" })
       .select("sport")
       .in("athlete_id", athleteIds);
     if (gErr) dbError(gErr);
-    const sports = Array.from(new Set((goalRows ?? []).map((g) => g.sport))).sort();
+
+    const { data: coachSportRows, error: csErr } = await supabase
+      .from("coach_athlete_sports")
+      .select("sport")
+      .in("athlete_id", athleteIds);
+    if (csErr) dbError(csErr);
+
+    const sports = Array.from(
+      new Set([
+        ...(goalRows ?? []).map((g) => g.sport),
+        ...(coachSportRows ?? []).map((c) => c.sport),
+      ]),
+    ).sort();
     if (!sports.length) return { sports: [], resources: [] };
 
     const { data: rsrcRows, error: rErr } = await supabase
