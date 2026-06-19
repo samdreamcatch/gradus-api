@@ -64,6 +64,18 @@ export const SPORTS: Sport[] = [
       { key: "senior", label: "Senior" },
     ],
   },
+  {
+    key: "dance",
+    label: "Dance",
+    standard: "Generic skill tiers",
+    levels: [
+      { key: "beginner", label: "Beginner" },
+      { key: "advanced_beginner", label: "Advanced Beginner" },
+      { key: "intermediate", label: "Intermediate" },
+      { key: "advanced", label: "Advanced" },
+      { key: "pre_professional", label: "Pre-Professional" },
+    ],
+  },
 ];
 
 export const SPORT_KEYS: SportKey[] = SPORTS.map((s) => s.key);
