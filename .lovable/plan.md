@@ -1,52 +1,47 @@
-# Add Track & Field sport
+# Add Wrestling sport
 
 ## 1. `src/lib/coach-sports.ts`
-- Add `"track_field"` to `SportKey` union.
-- Append `track_field` entry to `SPORTS`. `label: "Track & Field"`, `standard: ""`. 5 levels: Youth, High School, Collegiate, Elite, Professional. `suggestedHours`: 3, 6, 12, 18, 22.
+- Add `"wrestling"` to `SportKey` union.
+- Append `wrestling` entry. `label: "Wrestling"`, `standard: "USA Wrestling"`. 5 levels with `suggestedHours`:
+  - Beginner (3), Folkstyle Club (6), State Qualifier (12), National Qualifier (18), All-American (22)
 
-## 2. Move library (41 rows → `public.seed_moves`, `sport='track_field'`)
+## 2. Move library (26 rows → `public.seed_moves`, `sport='wrestling'`)
 
-**Category normalization** (6 buckets — merge Distance Running → Distance, merge Steeplechase → Hurdles):
-- Sprints
-- Distance
-- Jumps
-- Hurdles (includes steeplechase)
-- Throws
-- Race Walking
+**Category normalization** (6 position-based buckets, pins separate):
+- Stance & Movement
+- Takedowns
+- Defense
+- Pinning Combinations
+- Top Position (rides/turns that aren't direct pin attempts)
+- Bottom Position (escapes/reversals)
 
-**20 complete rows** inserted verbatim with the merged-category mapping.
+**Source → normalized category mapping**:
+- "Stance & Movement" → Stance & Movement
+- "Takedowns" → Takedowns
+- "Offense" → Takedowns (ankle pick/low single, front headlock, duck under)
+- "Defense" → Defense
+- "Pinning Combinations" → Pinning Combinations
+- "Top Position" → Top Position (Peterson roll, short offense)
+- "Bottom Position" → Bottom Position
+- "Bottom / Escapes" → Bottom Position (elbow pass)
 
-**21 gap rows filled** (standard references, in the same voice):
+**20 complete rows** inserted verbatim with mapping above.
+
+**6 gap rows filled** (standard wrestling references):
 
 | Move | Kind | Target | Category |
 |---|---|---|---|
-| 1500m / mile race strategy | reps | 4 | Distance |
-| B-skip | reps | 10 | Sprints |
-| Weight throw | reps | 12 | Throws |
-| Build-ups / strides | reps | 6 | Distance |
-| A-skip | reps | 10 | Sprints |
-| Butt kicks | reps | 10 | Sprints |
-| Hammer throw | reps | 12 | Throws |
-| Steeplechase water jump | reps | 6 | Hurdles |
-| Steeplechase barrier clearance | reps | 8 | Hurdles |
-| 5K / 10K race strategy | reps | 4 | Distance |
-| Stride rate drill | reps | 6 | Sprints |
-| Ankle paw-back drill | reps | 8 | Sprints |
-| Race walking technique | mins | 10 | Race Walking |
-| Fartlek run | mins | 30 | Distance |
-| Standing long jump | reps | 6 | Jumps |
-| High knees | reps | 10 | Sprints |
-| Bounding | reps | 8 | Jumps |
-| Sprint arm drive drill | reps | 8 | Sprints |
-| Standing triple jump | reps | 6 | Jumps |
-| Hill sprint | reps | 8 | Sprints |
+| Elbow pass | reps | 12 | Bottom Position |
+| Ankle pick / low single | reps | 12 | Takedowns |
+| Peterson roll | reps | 8 | Top Position |
+| Front headlock | reps | 12 | Takedowns |
+| Duck under | reps | 10 | Takedowns |
+| Short offense (referee's position) | reps | 10 | Top Position |
 
-(Note: Bounding moved to Jumps, Hill sprint moved to Sprints — these are more accurate buckets than the source's "Distance" label for plyometric/power work. **Confirm or I'll keep as written.**)
-
-Each gap row gets a 2–3 sentence description, a short cue, and a one-line why grounded in standard track coaching (e.g. A-skip: "Drive knee up to parallel, foot dorsiflexed, strike under hip. Single bounce between reps." cue "Knee up, toe up" why "Reinforces the sprint cycle in slow motion — the foundation drill of every sprint warm-up.").
+Each gets a 2–3 sentence description, short cue, and one-line why grounded in standard folkstyle coaching.
 
 ## 3. Seed insert
-Single SQL INSERT via supabase--insert with all 41 rows. `default_target_kind` set per move (mins for sustained efforts, reps for everything else).
+Single SQL INSERT via supabase--insert. All `default_target_kind='reps'` per source.
 
 ## 4. No other code changes
-Sport-key validator accepts arbitrary slugs; onboarding multi-select and hours step pre-populate automatically.
+Sport-key validator accepts arbitrary slugs; onboarding pre-populates automatically.
