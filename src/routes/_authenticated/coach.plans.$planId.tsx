@@ -716,7 +716,7 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
                       kind="textarea"
                       label="Cue"
                       value={m.cue}
-                      placeholder="One line the athlete can repeat"
+                      placeholder="One line to help the athlete in the moment"
                       rows={2}
                       saving={savingField === `m-cue-${m.id}`}
                       highlighted={isMoveFieldTouched(m.id, "cue")}
