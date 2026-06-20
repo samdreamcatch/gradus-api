@@ -142,9 +142,9 @@
   /* Navy ink — replaces the near-black used on bright accent/attention surfaces in dark mode */
   --ink-navy: oklch(0.22 0.09 255);
 
-  --accent: var(--pen-tennis);
+  --accent: var(--pen-pool);
   --accent-foreground: var(--ink-navy);
-  --accent-ink: var(--pen-tennis);
+  --accent-ink: var(--pen-pool);
 
   --pen-pool: oklch(0.84 0.110 210);
   --pen-pool-wash: oklch(0.28 0.090 210);
