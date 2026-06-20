@@ -91,6 +91,10 @@
   --page-title-stripe: var(--pen-tennis);
   --logo-stripe-color: var(--page-title-stripe);
 
+  /* Flow-state bars accent (tennis in light, pool in dark) */
+  --flow-accent: var(--pen-tennis);
+  --flow-accent-ink: var(--pen-tennis-ink);
+
   /* Orange pen — attention/live token */
   --pen-orange: oklch(0.78 0.16 55);
   --pen-orange-wash: oklch(0.97 0.03 55);
@@ -150,6 +154,10 @@
   /* Logo highlighter stripe uses pool blue in dark mode */
   --logo-stripe-color: var(--pen-pool);
   --logo-stripe-opacity: 0.7;
+
+  /* Flow-state bars use pool blue in dark mode */
+  --flow-accent: var(--pen-pool);
+  --flow-accent-ink: var(--pen-pool-ink);
 
   --pen-pool: oklch(0.84 0.110 210);
   --pen-pool-wash: oklch(0.28 0.090 210);
