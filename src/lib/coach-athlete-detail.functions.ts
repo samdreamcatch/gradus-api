@@ -285,14 +285,23 @@ export const getCoachAthleteDetail = createServerFn({ method: "GET" })
       duration_seconds: number | null;
       logged_at: string;
       parent_id: string | null;
-      plans: { coach_id: string } | { coach_id: string }[] | null;
     };
     const sessions30d = (sessionsRes.data ?? []) as SessionRow[];
-    const sessionCoachId = (s: SessionRow): string | null => {
-      const p = s.plans;
-      if (!p) return null;
-      return Array.isArray(p) ? (p[0]?.coach_id ?? null) : p.coach_id;
-    };
+
+    // Map plan_id -> coach_id for every plan referenced by these sessions,
+    // so we can attribute practice to "mine" vs other coaches'.
+    const planIds = Array.from(new Set(sessions30d.map((s) => s.plan_id)));
+    const planCoachMap = new Map<string, string>();
+    if (planIds.length > 0) {
+      const planCoachRes = await supabaseAdmin
+        .from("plans")
+        .select("id, coach_id")
+        .in("id", planIds);
+      if (planCoachRes.error) dbError(planCoachRes.error);
+      for (const p of planCoachRes.data ?? []) {
+        planCoachMap.set(p.id as string, p.coach_id as string);
+      }
+    }
     const plans: AthletePlanSummaryDTO[] = (planRes.data ?? []).map((p) => {
       const planSessions = sessions30d.filter((s) => s.plan_id === p.id);
       const sessionsByState: SessionsByState = {
