@@ -11,7 +11,7 @@ export function FilterBar({
   return (
     <div
       className={cn(
-        "rounded-[28px] bg-[#DCEAF5] p-2.5 shadow-sm dark:bg-[color-mix(in_oklab,var(--background)_55%,var(--card))]",
+        "rounded-[28px] bg-[#DCEAF5] p-2.5 shadow-sm dark:bg-transparent dark:p-0 dark:shadow-none",
         className,
       )}
     >
