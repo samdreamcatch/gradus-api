@@ -305,11 +305,9 @@ function EmptyLine({ children }: { children: React.ReactNode }) {
 }
 
 function ActivityCounts({
-  practiceMinutesMine,
   practiceMinutesTotal,
   lessonMinutesTotal,
 }: {
-  practiceMinutesMine: number;
   practiceMinutesTotal: number;
   lessonMinutesTotal: number;
 }) {
@@ -318,12 +316,10 @@ function ActivityCounts({
     <div className="grid grid-cols-2 gap-3 border-b border-divider/60 pb-3">
       <div>
         <div className="font-display text-xl font-black tabular-nums text-text-primary">
-          {fmt(practiceMinutesMine)}{" "}
-          <span className="text-text-tertiary">/</span>{" "}
           {fmt(practiceMinutesTotal)}
         </div>
         <div className="text-[10px] font-bold uppercase tracking-widest text-text-tertiary">
-          My / Total practice hrs
+          Total practice hrs
         </div>
       </div>
       <div>
