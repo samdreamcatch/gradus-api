@@ -167,14 +167,14 @@ function AthleteDetailBody({ athleteId }: { athleteId: string }) {
 
         <div className="mt-2 rounded-xl border border-divider bg-card p-4">
           <ActivityCounts
-            sessions={d.activity.sessions}
-            minutes={d.activity.practiceMinutes}
-            messages={d.activity.messagesFromAthleteOrParent}
+            practiceMinutesMine={d.activity.practiceMinutesMine}
+            practiceMinutesTotal={d.activity.practiceMinutesTotal}
+            lessonMinutesTotal={d.activity.lessonMinutesTotal}
           />
 
           {!d.hasAnySignal ? (
             <p className="mt-3 text-sm text-text-secondary">
-              No practice logs or messages yet in the last {d.windowDays} days.
+              No practice or lessons in the last {d.windowDays} days.
             </p>
           ) : summary.isFetching && !summary.data ? (
             <div className="mt-3 flex items-center gap-2 text-sm text-text-tertiary">
@@ -306,35 +306,39 @@ function EmptyLine({ children }: { children: React.ReactNode }) {
 }
 
 function ActivityCounts({
-  sessions,
-  minutes,
-  messages,
+  practiceMinutesMine,
+  practiceMinutesTotal,
+  lessonMinutesTotal,
 }: {
-  sessions: number;
-  minutes: number;
-  messages: number;
+  practiceMinutesMine: number;
+  practiceMinutesTotal: number;
+  lessonMinutesTotal: number;
 }) {
+  const fmt = (mins: number) => (mins / 60).toFixed(1);
   return (
-    <div className="grid grid-cols-3 gap-3 border-b border-divider/60 pb-3">
-      <Stat value={sessions} label={sessions === 1 ? "Practice" : "Practices"} />
-      <Stat value={minutes} label="Minutes" />
-      <Stat value={messages} label={messages === 1 ? "Message" : "Messages"} />
+    <div className="grid grid-cols-2 gap-3 border-b border-divider/60 pb-3">
+      <div>
+        <div className="font-display text-xl font-black tabular-nums text-text-primary">
+          {fmt(practiceMinutesMine)}{" "}
+          <span className="text-text-tertiary">/</span>{" "}
+          {fmt(practiceMinutesTotal)}
+        </div>
+        <div className="text-[10px] font-bold uppercase tracking-widest text-text-tertiary">
+          My / Total practice hrs
+        </div>
+      </div>
+      <div>
+        <div className="font-display text-xl font-black tabular-nums text-text-primary">
+          {fmt(lessonMinutesTotal)}
+        </div>
+        <div className="text-[10px] font-bold uppercase tracking-widest text-text-tertiary">
+          Total lesson hrs
+        </div>
+      </div>
     </div>
   );
 }
 
-function Stat({ value, label }: { value: number; label: string }) {
-  return (
-    <div>
-      <div className="font-display text-xl font-black tabular-nums text-text-primary">
-        {value}
-      </div>
-      <div className="text-[10px] font-bold uppercase tracking-widest text-text-tertiary">
-        {label}
-      </div>
-    </div>
-  );
-}
 
 function VerdictPill({
   verdict,

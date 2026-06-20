@@ -35,9 +35,9 @@ export interface AthletePlanSummaryDTO {
 }
 
 export interface AthleteActivityCountsDTO {
-  sessions: number;
-  practiceMinutes: number;
-  messagesFromAthleteOrParent: number;
+  practiceMinutesMine: number;
+  practiceMinutesTotal: number;
+  lessonMinutesTotal: number;
 }
 
 export interface CoachAthleteDetailDTO {
@@ -52,6 +52,92 @@ export interface CoachAthleteDetailDTO {
   hasAnySignal: boolean;
   windowDays: number;
 }
+
+type SlotRow = {
+  id: string;
+  day_of_week: number;
+  start_minute: number;
+  end_minute: number;
+  frequency: string;
+  weeks_of_month: number[];
+  starts_on: string | null;
+};
+
+type OverrideRow = {
+  slot_id: string;
+  occurrence_date: string;
+  status: string;
+  start_minute: number | null;
+  end_minute: number | null;
+};
+
+// Returns true if a slot fires on the given UTC date based on its
+// frequency / weeks_of_month / starts_on configuration. day_of_week match
+// is the caller's responsibility (we filter slots by weekday before calling).
+function slotFiresOn(slot: SlotRow, date: Date): boolean {
+  if (slot.starts_on) {
+    const startsOn = new Date(`${slot.starts_on}T00:00:00Z`);
+    if (date < startsOn) return false;
+  }
+  if (slot.frequency === "weekly") return true;
+  if (slot.frequency === "biweekly") {
+    // Even/odd ISO week alternation anchored at epoch.
+    const epochWeek = Math.floor(date.getTime() / (7 * 86400_000));
+    return epochWeek % 2 === 0;
+  }
+  // "twice_monthly" and "monthly" both use weeks_of_month: which Nth
+  // occurrence of this weekday in the month the slot fires on.
+  if (slot.frequency === "twice_monthly" || slot.frequency === "monthly") {
+    const dayOfMonth = date.getUTCDate();
+    const nth = Math.floor((dayOfMonth - 1) / 7) + 1;
+    return slot.weeks_of_month.includes(nth);
+  }
+  return false;
+}
+
+function computeLessonMinutes(
+  slots: SlotRow[],
+  overridesBySlot: Map<string, OverrideRow[]>,
+  windowStart: Date,
+  windowEnd: Date,
+): number {
+  let total = 0;
+  // Iterate day-by-day over the window, then slots that match that weekday.
+  const slotsByWeekday = new Map<number, SlotRow[]>();
+  for (const s of slots) {
+    const arr = slotsByWeekday.get(s.day_of_week) ?? [];
+    arr.push(s);
+    slotsByWeekday.set(s.day_of_week, arr);
+  }
+  const cursor = new Date(Date.UTC(
+    windowStart.getUTCFullYear(),
+    windowStart.getUTCMonth(),
+    windowStart.getUTCDate(),
+  ));
+  const end = new Date(Date.UTC(
+    windowEnd.getUTCFullYear(),
+    windowEnd.getUTCMonth(),
+    windowEnd.getUTCDate(),
+  ));
+  while (cursor <= end) {
+    const weekday = cursor.getUTCDay();
+    const todays = slotsByWeekday.get(weekday) ?? [];
+    const dateStr = cursor.toISOString().slice(0, 10);
+    for (const slot of todays) {
+      if (!slotFiresOn(slot, cursor)) continue;
+      const override = (overridesBySlot.get(slot.id) ?? []).find(
+        (o) => o.occurrence_date === dateStr,
+      );
+      if (override?.status === "canceled") continue;
+      const startM = override?.start_minute ?? slot.start_minute;
+      const endM = override?.end_minute ?? slot.end_minute;
+      total += Math.max(0, endM - startM);
+    }
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
+  }
+  return total;
+}
+
 
 async function getAdmin() {
   const m = await import("@/integrations/supabase/client.server");
@@ -117,11 +203,12 @@ export const getCoachAthleteDetail = createServerFn({ method: "GET" })
     if (!coachId) throw new Error("Coach profile not found");
     await assertCoachOwnsAthlete(coachId, data.athleteId);
 
-    const since = new Date(Date.now() - WINDOW_DAYS * 86400_000).toISOString();
+    const windowStart = new Date(Date.now() - WINDOW_DAYS * 86400_000);
+    const since = windowStart.toISOString();
 
     const coachSports = await getCoachAthleteSports(coachId, data.athleteId);
 
-    const [athleteRes, goalsRes, planRes, sessionsRes, roomRes] = await Promise.all([
+    const [athleteRes, goalsRes, planRes, sessionsRes, roomRes, slotsRes] = await Promise.all([
       supabaseAdmin
         .from("athletes")
         .select(
@@ -156,12 +243,19 @@ export const getCoachAthleteDetail = createServerFn({ method: "GET" })
         .eq("coach_id", coachId)
         .eq("athlete_id", data.athleteId)
         .maybeSingle(),
+      // All lesson slots for this athlete across every coach — load
+      // balancing view. Caller is already authorized via assertCoachOwnsAthlete.
+      supabaseAdmin
+        .from("athlete_lesson_slots")
+        .select("id, day_of_week, start_minute, end_minute, frequency, weeks_of_month, starts_on")
+        .eq("athlete_id", data.athleteId),
     ]);
     if (athleteRes.error) dbError(athleteRes.error);
     if (goalsRes.error) dbError(goalsRes.error);
     if (planRes.error) dbError(planRes.error);
     if (sessionsRes.error) dbError(sessionsRes.error);
     if (roomRes.error) dbError(roomRes.error);
+    if (slotsRes.error) dbError(slotsRes.error);
 
     const athlete = athleteRes.data as unknown as {
       first_name: string;
@@ -185,7 +279,29 @@ export const getCoachAthleteDetail = createServerFn({ method: "GET" })
       "lockedIn",
       "flowing",
     ];
-    const sessions30d = sessionsRes.data ?? [];
+    type SessionRow = {
+      plan_id: string;
+      state_index: number | null;
+      duration_seconds: number | null;
+      logged_at: string;
+      parent_id: string | null;
+    };
+    const sessions30d = (sessionsRes.data ?? []) as SessionRow[];
+
+    // Map plan_id -> coach_id for every plan referenced by these sessions,
+    // so we can attribute practice to "mine" vs other coaches'.
+    const planIds = Array.from(new Set(sessions30d.map((s) => s.plan_id)));
+    const planCoachMap = new Map<string, string>();
+    if (planIds.length > 0) {
+      const planCoachRes = await supabaseAdmin
+        .from("plans")
+        .select("id, coach_id")
+        .in("id", planIds);
+      if (planCoachRes.error) dbError(planCoachRes.error);
+      for (const p of planCoachRes.data ?? []) {
+        planCoachMap.set(p.id as string, p.coach_id as string);
+      }
+    }
     const plans: AthletePlanSummaryDTO[] = (planRes.data ?? []).map((p) => {
       const planSessions = sessions30d.filter((s) => s.plan_id === p.id);
       const sessionsByState: SessionsByState = {
@@ -207,8 +323,39 @@ export const getCoachAthleteDetail = createServerFn({ method: "GET" })
         sessionsTotal: planSessions.length,
       };
     });
-    const practiceMinutes = Math.round(
-      sessions30d.reduce((sum, s) => sum + (s.duration_seconds ?? 0), 0) / 60,
+
+    const practiceSecondsTotal = sessions30d.reduce(
+      (sum, s) => sum + (s.duration_seconds ?? 0),
+      0,
+    );
+    const practiceSecondsMine = sessions30d
+      .filter((s) => planCoachMap.get(s.plan_id) === coachId)
+      .reduce((sum, s) => sum + (s.duration_seconds ?? 0), 0);
+    const practiceMinutesTotal = Math.round(practiceSecondsTotal / 60);
+    const practiceMinutesMine = Math.round(practiceSecondsMine / 60);
+
+    // Lesson minutes across all coaches in the window.
+    const slots = (slotsRes.data ?? []) as SlotRow[];
+    const slotIds = slots.map((s) => s.id);
+    let overridesBySlot = new Map<string, OverrideRow[]>();
+    if (slotIds.length > 0) {
+      const overridesRes = await supabaseAdmin
+        .from("lesson_slot_overrides")
+        .select("slot_id, occurrence_date, status, start_minute, end_minute")
+        .in("slot_id", slotIds)
+        .gte("occurrence_date", windowStart.toISOString().slice(0, 10));
+      if (overridesRes.error) dbError(overridesRes.error);
+      for (const o of (overridesRes.data ?? []) as OverrideRow[]) {
+        const arr = overridesBySlot.get(o.slot_id) ?? [];
+        arr.push(o);
+        overridesBySlot.set(o.slot_id, arr);
+      }
+    }
+    const lessonMinutesTotal = computeLessonMinutes(
+      slots,
+      overridesBySlot,
+      windowStart,
+      new Date(),
     );
 
     let msgCount = 0;
@@ -223,6 +370,7 @@ export const getCoachAthleteDetail = createServerFn({ method: "GET" })
       msgCount = msgRes.count ?? 0;
     }
 
+    // Messages still feed the AI summary; gate auto-run on either signal.
     const hasAnySignal = sessions30d.length > 0 || msgCount > 0;
 
     return {
@@ -234,14 +382,15 @@ export const getCoachAthleteDetail = createServerFn({ method: "GET" })
       goals,
       plans,
       activity: {
-        sessions: sessions30d.length,
-        practiceMinutes,
-        messagesFromAthleteOrParent: msgCount,
+        practiceMinutesMine,
+        practiceMinutesTotal,
+        lessonMinutesTotal,
       },
       hasAnySignal,
       windowDays: WINDOW_DAYS,
     };
   });
+
 
 // --- AI summary ---
 
