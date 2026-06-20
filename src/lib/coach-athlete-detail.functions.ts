@@ -329,7 +329,7 @@ export const getCoachAthleteDetail = createServerFn({ method: "GET" })
       0,
     );
     const practiceSecondsMine = sessions30d
-      .filter((s) => sessionCoachId(s) === coachId)
+      .filter((s) => planCoachMap.get(s.plan_id) === coachId)
       .reduce((sum, s) => sum + (s.duration_seconds ?? 0), 0);
     const practiceMinutesTotal = Math.round(practiceSecondsTotal / 60);
     const practiceMinutesMine = Math.round(practiceSecondsMine / 60);
