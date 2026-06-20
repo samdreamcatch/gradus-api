@@ -306,35 +306,39 @@ function EmptyLine({ children }: { children: React.ReactNode }) {
 }
 
 function ActivityCounts({
-  sessions,
-  minutes,
-  messages,
+  practiceMinutesMine,
+  practiceMinutesTotal,
+  lessonMinutesTotal,
 }: {
-  sessions: number;
-  minutes: number;
-  messages: number;
+  practiceMinutesMine: number;
+  practiceMinutesTotal: number;
+  lessonMinutesTotal: number;
 }) {
+  const fmt = (mins: number) => (mins / 60).toFixed(1);
   return (
-    <div className="grid grid-cols-3 gap-3 border-b border-divider/60 pb-3">
-      <Stat value={sessions} label={sessions === 1 ? "Practice" : "Practices"} />
-      <Stat value={minutes} label="Minutes" />
-      <Stat value={messages} label={messages === 1 ? "Message" : "Messages"} />
+    <div className="grid grid-cols-2 gap-3 border-b border-divider/60 pb-3">
+      <div>
+        <div className="font-display text-xl font-black tabular-nums text-text-primary">
+          {fmt(practiceMinutesMine)}{" "}
+          <span className="text-text-tertiary">/</span>{" "}
+          {fmt(practiceMinutesTotal)}
+        </div>
+        <div className="text-[10px] font-bold uppercase tracking-widest text-text-tertiary">
+          My / Total practice hrs
+        </div>
+      </div>
+      <div>
+        <div className="font-display text-xl font-black tabular-nums text-text-primary">
+          {fmt(lessonMinutesTotal)}
+        </div>
+        <div className="text-[10px] font-bold uppercase tracking-widest text-text-tertiary">
+          Total lesson hrs
+        </div>
+      </div>
     </div>
   );
 }
 
-function Stat({ value, label }: { value: number; label: string }) {
-  return (
-    <div>
-      <div className="font-display text-xl font-black tabular-nums text-text-primary">
-        {value}
-      </div>
-      <div className="text-[10px] font-bold uppercase tracking-widest text-text-tertiary">
-        {label}
-      </div>
-    </div>
-  );
-}
 
 function VerdictPill({
   verdict,
