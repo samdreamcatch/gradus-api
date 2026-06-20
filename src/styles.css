@@ -167,8 +167,9 @@
   --secondary-accent-wash: var(--pen-pool-wash);
   --secondary-accent-ink: var(--pen-pool-ink);
 
-  /* Dark mode: mid-tone olive stripe behind page titles (matches Gradus site). */
-  --page-title-stripe: oklch(0.62 0.13 119);
+  /* Dark mode: pool blue stripe behind page titles, matching the Gradus wordmark. */
+  --page-title-stripe: var(--pen-pool);
+  --page-title-stripe-opacity: 0.7;
 
   /* Orange pen — attention/live token (dark) */
   --pen-orange: oklch(0.87 0.170 55);
