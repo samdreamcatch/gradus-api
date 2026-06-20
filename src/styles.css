@@ -89,6 +89,7 @@
 
   /* Stripe behind page titles. Tennis in light; remapped per theme. */
   --page-title-stripe: var(--pen-tennis);
+  --logo-stripe-color: var(--page-title-stripe);
 
   /* Orange pen — attention/live token */
   --pen-orange: oklch(0.78 0.16 55);
