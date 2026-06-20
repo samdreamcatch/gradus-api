@@ -203,11 +203,12 @@ export const getCoachAthleteDetail = createServerFn({ method: "GET" })
     if (!coachId) throw new Error("Coach profile not found");
     await assertCoachOwnsAthlete(coachId, data.athleteId);
 
-    const since = new Date(Date.now() - WINDOW_DAYS * 86400_000).toISOString();
+    const windowStart = new Date(Date.now() - WINDOW_DAYS * 86400_000);
+    const since = windowStart.toISOString();
 
     const coachSports = await getCoachAthleteSports(coachId, data.athleteId);
 
-    const [athleteRes, goalsRes, planRes, sessionsRes, roomRes] = await Promise.all([
+    const [athleteRes, goalsRes, planRes, sessionsRes, roomRes, slotsRes] = await Promise.all([
       supabaseAdmin
         .from("athletes")
         .select(
@@ -233,7 +234,7 @@ export const getCoachAthleteDetail = createServerFn({ method: "GET" })
         .order("updated_at", { ascending: false }),
       supabaseAdmin
         .from("plan_sessions")
-        .select("plan_id, state_index, duration_seconds, logged_at, parent_id")
+        .select("plan_id, state_index, duration_seconds, logged_at, parent_id, plans!inner(coach_id)")
         .eq("athlete_id", data.athleteId)
         .gte("logged_at", since),
       supabaseAdmin
@@ -242,12 +243,19 @@ export const getCoachAthleteDetail = createServerFn({ method: "GET" })
         .eq("coach_id", coachId)
         .eq("athlete_id", data.athleteId)
         .maybeSingle(),
+      // All lesson slots for this athlete across every coach — load
+      // balancing view. Caller is already authorized via assertCoachOwnsAthlete.
+      supabaseAdmin
+        .from("athlete_lesson_slots")
+        .select("id, day_of_week, start_minute, end_minute, frequency, weeks_of_month, starts_on")
+        .eq("athlete_id", data.athleteId),
     ]);
     if (athleteRes.error) dbError(athleteRes.error);
     if (goalsRes.error) dbError(goalsRes.error);
     if (planRes.error) dbError(planRes.error);
     if (sessionsRes.error) dbError(sessionsRes.error);
     if (roomRes.error) dbError(roomRes.error);
+    if (slotsRes.error) dbError(slotsRes.error);
 
     const athlete = athleteRes.data as unknown as {
       first_name: string;
@@ -271,7 +279,20 @@ export const getCoachAthleteDetail = createServerFn({ method: "GET" })
       "lockedIn",
       "flowing",
     ];
-    const sessions30d = sessionsRes.data ?? [];
+    type SessionRow = {
+      plan_id: string;
+      state_index: number | null;
+      duration_seconds: number | null;
+      logged_at: string;
+      parent_id: string | null;
+      plans: { coach_id: string } | { coach_id: string }[] | null;
+    };
+    const sessions30d = (sessionsRes.data ?? []) as SessionRow[];
+    const sessionCoachId = (s: SessionRow): string | null => {
+      const p = s.plans;
+      if (!p) return null;
+      return Array.isArray(p) ? (p[0]?.coach_id ?? null) : p.coach_id;
+    };
     const plans: AthletePlanSummaryDTO[] = (planRes.data ?? []).map((p) => {
       const planSessions = sessions30d.filter((s) => s.plan_id === p.id);
       const sessionsByState: SessionsByState = {
@@ -293,8 +314,39 @@ export const getCoachAthleteDetail = createServerFn({ method: "GET" })
         sessionsTotal: planSessions.length,
       };
     });
-    const practiceMinutes = Math.round(
-      sessions30d.reduce((sum, s) => sum + (s.duration_seconds ?? 0), 0) / 60,
+
+    const practiceSecondsTotal = sessions30d.reduce(
+      (sum, s) => sum + (s.duration_seconds ?? 0),
+      0,
+    );
+    const practiceSecondsMine = sessions30d
+      .filter((s) => sessionCoachId(s) === coachId)
+      .reduce((sum, s) => sum + (s.duration_seconds ?? 0), 0);
+    const practiceMinutesTotal = Math.round(practiceSecondsTotal / 60);
+    const practiceMinutesMine = Math.round(practiceSecondsMine / 60);
+
+    // Lesson minutes across all coaches in the window.
+    const slots = (slotsRes.data ?? []) as SlotRow[];
+    const slotIds = slots.map((s) => s.id);
+    let overridesBySlot = new Map<string, OverrideRow[]>();
+    if (slotIds.length > 0) {
+      const overridesRes = await supabaseAdmin
+        .from("lesson_slot_overrides")
+        .select("slot_id, occurrence_date, status, start_minute, end_minute")
+        .in("slot_id", slotIds)
+        .gte("occurrence_date", windowStart.toISOString().slice(0, 10));
+      if (overridesRes.error) dbError(overridesRes.error);
+      for (const o of (overridesRes.data ?? []) as OverrideRow[]) {
+        const arr = overridesBySlot.get(o.slot_id) ?? [];
+        arr.push(o);
+        overridesBySlot.set(o.slot_id, arr);
+      }
+    }
+    const lessonMinutesTotal = computeLessonMinutes(
+      slots,
+      overridesBySlot,
+      windowStart,
+      new Date(),
     );
 
     let msgCount = 0;
@@ -309,6 +361,7 @@ export const getCoachAthleteDetail = createServerFn({ method: "GET" })
       msgCount = msgRes.count ?? 0;
     }
 
+    // Messages still feed the AI summary; gate auto-run on either signal.
     const hasAnySignal = sessions30d.length > 0 || msgCount > 0;
 
     return {
@@ -320,14 +373,15 @@ export const getCoachAthleteDetail = createServerFn({ method: "GET" })
       goals,
       plans,
       activity: {
-        sessions: sessions30d.length,
-        practiceMinutes,
-        messagesFromAthleteOrParent: msgCount,
+        practiceMinutesMine,
+        practiceMinutesTotal,
+        lessonMinutesTotal,
       },
       hasAnySignal,
       windowDays: WINDOW_DAYS,
     };
   });
+
 
 // --- AI summary ---
 
