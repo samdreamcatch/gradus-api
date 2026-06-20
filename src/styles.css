@@ -91,6 +91,10 @@
   --page-title-stripe: var(--pen-tennis);
   --logo-stripe-color: var(--page-title-stripe);
 
+  /* Flow-state bars accent (tennis in light, pool in dark) */
+  --flow-accent: var(--pen-tennis);
+  --flow-accent-ink: var(--pen-tennis-ink);
+
   /* Orange pen — attention/live token */
   --pen-orange: oklch(0.78 0.16 55);
   --pen-orange-wash: oklch(0.97 0.03 55);
