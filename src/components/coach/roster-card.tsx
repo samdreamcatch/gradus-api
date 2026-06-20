@@ -63,7 +63,7 @@ export function RosterCard({
     >
       <span
         aria-hidden
-        className="absolute inset-y-0 left-0 w-1.5 bg-[var(--pen-tennis)]"
+        className="absolute inset-y-0 left-0 w-1.5 bg-[var(--pen-tennis)] dark:bg-[var(--pen-pool)]"
       />
 
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
