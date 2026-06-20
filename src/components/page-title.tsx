@@ -37,6 +37,7 @@ export function PageTitle({ children, subtitle }: PageTitleProps) {
                 "linear-gradient(to right, color-mix(in oklab, var(--page-title-stripe) 90%, transparent) 0%, color-mix(in oklab, var(--page-title-stripe) 60%, transparent) 50%, color-mix(in oklab, var(--page-title-stripe) 25%, transparent) 80%, transparent 100%)",
               transform: "rotate(-2.5deg)",
               transformOrigin: "left center",
+              opacity: "var(--page-title-stripe-opacity, 1)",
               zIndex: 0,
               pointerEvents: "none",
             }}
