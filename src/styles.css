@@ -146,6 +146,9 @@
   --accent-foreground: var(--ink-navy);
   --accent-ink: var(--pen-pool);
 
+  /* Logo highlighter stripe uses pool blue in dark mode */
+  --logo-stripe-color: var(--pen-pool);
+
   --pen-pool: oklch(0.84 0.110 210);
   --pen-pool-wash: oklch(0.28 0.090 210);
   --pen-pool-ink: oklch(0.84 0.110 210);
