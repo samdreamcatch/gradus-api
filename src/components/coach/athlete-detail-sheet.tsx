@@ -167,7 +167,6 @@ function AthleteDetailBody({ athleteId }: { athleteId: string }) {
 
         <div className="mt-2 rounded-xl border border-divider bg-card p-4">
           <ActivityCounts
-            practiceMinutesMine={d.activity.practiceMinutesMine}
             practiceMinutesTotal={d.activity.practiceMinutesTotal}
             lessonMinutesTotal={d.activity.lessonMinutesTotal}
           />
