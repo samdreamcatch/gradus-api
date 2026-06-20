@@ -39,11 +39,9 @@ export function PlanCard({
         aria-hidden
         className={cn(
           "absolute inset-y-0 left-0 w-1.5",
-          edgeTone === "active"
-            ? "bg-[var(--pen-tennis)]"
-            : edgeTone === "template"
-              ? "bg-[var(--pen-pool)]"
-              : "bg-[var(--divider)]",
+          edgeTone === "active" || edgeTone === "template"
+            ? "bg-[var(--flow-accent)]"
+            : "bg-[var(--divider)]",
         )}
       />
 
