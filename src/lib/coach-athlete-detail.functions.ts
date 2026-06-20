@@ -234,7 +234,7 @@ export const getCoachAthleteDetail = createServerFn({ method: "GET" })
         .order("updated_at", { ascending: false }),
       supabaseAdmin
         .from("plan_sessions")
-        .select("plan_id, state_index, duration_seconds, logged_at, parent_id, plans!inner(coach_id)")
+        .select("plan_id, state_index, duration_seconds, logged_at, parent_id")
         .eq("athlete_id", data.athleteId)
         .gte("logged_at", since),
       supabaseAdmin
