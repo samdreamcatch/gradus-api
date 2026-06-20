@@ -174,7 +174,7 @@ function AthleteDetailBody({ athleteId }: { athleteId: string }) {
 
           {!d.hasAnySignal ? (
             <p className="mt-3 text-sm text-text-secondary">
-              No practice logs or messages yet in the last {d.windowDays} days.
+              No practice or lessons in the last {d.windowDays} days.
             </p>
           ) : summary.isFetching && !summary.data ? (
             <div className="mt-3 flex items-center gap-2 text-sm text-text-tertiary">
