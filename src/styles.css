@@ -89,6 +89,7 @@
 
   /* Stripe behind page titles. Tennis in light; remapped per theme. */
   --page-title-stripe: var(--pen-tennis);
+  --logo-stripe-color: var(--page-title-stripe);
 
   /* Orange pen — attention/live token */
   --pen-orange: oklch(0.78 0.16 55);
@@ -145,6 +146,9 @@
   --accent: var(--pen-pool);
   --accent-foreground: var(--ink-navy);
   --accent-ink: var(--pen-pool);
+
+  /* Logo highlighter stripe uses pool blue in dark mode */
+  --logo-stripe-color: var(--pen-pool);
 
   --pen-pool: oklch(0.84 0.110 210);
   --pen-pool-wash: oklch(0.28 0.090 210);

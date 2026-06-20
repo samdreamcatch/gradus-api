@@ -27,6 +27,7 @@ export function Logo({ className }: LogoProps) {
       <span
         aria-hidden="true"
         role="presentation"
+        className="logo-stripe"
         style={{
           position: "absolute",
           left: "-0.02em",
@@ -34,13 +35,14 @@ export function Logo({ className }: LogoProps) {
           top: "44%",
           height: "42%",
           background:
-            "linear-gradient(to right, color-mix(in oklab, var(--page-title-stripe) 90%, transparent) 0%, color-mix(in oklab, var(--page-title-stripe) 60%, transparent) 50%, color-mix(in oklab, var(--page-title-stripe) 25%, transparent) 80%, transparent 100%)",
+            "linear-gradient(to right, color-mix(in oklab, var(--logo-stripe-color) 90%, transparent) 0%, color-mix(in oklab, var(--logo-stripe-color) 60%, transparent) 50%, color-mix(in oklab, var(--logo-stripe-color) 25%, transparent) 80%, transparent 100%)",
           transform: "rotate(-2.5deg)",
           transformOrigin: "left center",
           zIndex: 0,
           pointerEvents: "none",
         }}
       />
+
       <span style={{ position: "relative", zIndex: 1 }}>Gradus</span>
     </span>
   );
