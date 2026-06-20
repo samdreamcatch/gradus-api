@@ -35,9 +35,9 @@ export interface AthletePlanSummaryDTO {
 }
 
 export interface AthleteActivityCountsDTO {
-  sessions: number;
-  practiceMinutes: number;
-  messagesFromAthleteOrParent: number;
+  practiceMinutesMine: number;
+  practiceMinutesTotal: number;
+  lessonMinutesTotal: number;
 }
 
 export interface CoachAthleteDetailDTO {
@@ -52,6 +52,92 @@ export interface CoachAthleteDetailDTO {
   hasAnySignal: boolean;
   windowDays: number;
 }
+
+type SlotRow = {
+  id: string;
+  day_of_week: number;
+  start_minute: number;
+  end_minute: number;
+  frequency: string;
+  weeks_of_month: number[];
+  starts_on: string | null;
+};
+
+type OverrideRow = {
+  slot_id: string;
+  occurrence_date: string;
+  status: string;
+  start_minute: number | null;
+  end_minute: number | null;
+};
+
+// Returns true if a slot fires on the given UTC date based on its
+// frequency / weeks_of_month / starts_on configuration. day_of_week match
+// is the caller's responsibility (we filter slots by weekday before calling).
+function slotFiresOn(slot: SlotRow, date: Date): boolean {
+  if (slot.starts_on) {
+    const startsOn = new Date(`${slot.starts_on}T00:00:00Z`);
+    if (date < startsOn) return false;
+  }
+  if (slot.frequency === "weekly") return true;
+  if (slot.frequency === "biweekly") {
+    // Even/odd ISO week alternation anchored at epoch.
+    const epochWeek = Math.floor(date.getTime() / (7 * 86400_000));
+    return epochWeek % 2 === 0;
+  }
+  // "twice_monthly" and "monthly" both use weeks_of_month: which Nth
+  // occurrence of this weekday in the month the slot fires on.
+  if (slot.frequency === "twice_monthly" || slot.frequency === "monthly") {
+    const dayOfMonth = date.getUTCDate();
+    const nth = Math.floor((dayOfMonth - 1) / 7) + 1;
+    return slot.weeks_of_month.includes(nth);
+  }
+  return false;
+}
+
+function computeLessonMinutes(
+  slots: SlotRow[],
+  overridesBySlot: Map<string, OverrideRow[]>,
+  windowStart: Date,
+  windowEnd: Date,
+): number {
+  let total = 0;
+  // Iterate day-by-day over the window, then slots that match that weekday.
+  const slotsByWeekday = new Map<number, SlotRow[]>();
+  for (const s of slots) {
+    const arr = slotsByWeekday.get(s.day_of_week) ?? [];
+    arr.push(s);
+    slotsByWeekday.set(s.day_of_week, arr);
+  }
+  const cursor = new Date(Date.UTC(
+    windowStart.getUTCFullYear(),
+    windowStart.getUTCMonth(),
+    windowStart.getUTCDate(),
+  ));
+  const end = new Date(Date.UTC(
+    windowEnd.getUTCFullYear(),
+    windowEnd.getUTCMonth(),
+    windowEnd.getUTCDate(),
+  ));
+  while (cursor <= end) {
+    const weekday = cursor.getUTCDay();
+    const todays = slotsByWeekday.get(weekday) ?? [];
+    const dateStr = cursor.toISOString().slice(0, 10);
+    for (const slot of todays) {
+      if (!slotFiresOn(slot, cursor)) continue;
+      const override = (overridesBySlot.get(slot.id) ?? []).find(
+        (o) => o.occurrence_date === dateStr,
+      );
+      if (override?.status === "canceled") continue;
+      const startM = override?.start_minute ?? slot.start_minute;
+      const endM = override?.end_minute ?? slot.end_minute;
+      total += Math.max(0, endM - startM);
+    }
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
+  }
+  return total;
+}
+
 
 async function getAdmin() {
   const m = await import("@/integrations/supabase/client.server");
