@@ -101,7 +101,7 @@ function AthleteDetailBody({ athleteId }: { athleteId: string }) {
 
       {/* Goals */}
       <section>
-        <SectionHeading>Goals from parent</SectionHeading>
+        <SectionHeading>GOALS FROM PARENT & ATHLETE</SectionHeading>
         {d.goals.length === 0 ? (
           <EmptyLine>
             {d.parentFirstName} hasn't set goals yet.
