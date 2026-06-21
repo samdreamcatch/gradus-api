@@ -128,13 +128,20 @@ export function FeedbackSettingsRow() {
   return (
     <FeedbackDialog
       trigger={
-        <SettingsButtonRow
-          icon={<MessageSquarePlus className="size-4" />}
-          label="Share feedback"
-          description="Gradus is in beta — tell us what to fix or build"
-          tone="accent"
-          onClick={() => {}}
-        />
+        <button
+          type="button"
+          className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm text-accent-ink transition hover:bg-elevated/50"
+        >
+          <span className="shrink-0">
+            <MessageSquarePlus className="size-4" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="truncate font-medium">Share feedback</div>
+            <div className="mt-0.5 text-xs text-text-tertiary">
+              Gradus is in beta — tell us what to fix or build
+            </div>
+          </div>
+        </button>
       }
     />
   );
