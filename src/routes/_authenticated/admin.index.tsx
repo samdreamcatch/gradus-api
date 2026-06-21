@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { getAdminOverview, searchUsers, setUserTestFlag, getDailyActiveUsers } from "@/lib/admin.functions";
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
+import { SettingsGroup, SettingsList, SettingsButtonRow } from "@/components/settings/primitives";
+import { LogOut } from "lucide-react";
 
 const searchSchema = z.object({
   test: fallback(z.boolean(), false).default(false),
