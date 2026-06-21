@@ -7,7 +7,7 @@ import { z } from "zod";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { getAdminOverview, searchUsers, setUserTestFlag, getDailyActiveUsers } from "@/lib/admin.functions";
+import { getAdminOverview, searchUsers, setUserTestFlag, getDailyActiveUsers, getAdminReporting } from "@/lib/admin.functions";
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 import { SettingsGroup, SettingsList, SettingsButtonRow } from "@/components/settings/primitives";
 import { LogOut } from "lucide-react";
