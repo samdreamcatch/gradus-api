@@ -46,13 +46,19 @@ export const setUserTestFlag = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-export const getAdminOverview = createServerFn({ method: "GET" })
+export const getAdminOverview = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .inputValidator((input: unknown) =>
+    z.object({ includeTest: z.boolean().optional().default(false) }).parse(input ?? {}),
+  )
+  .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const excludeTest = !data.includeTest;
+    const filterTest = <T extends { eq: (col: string, v: any) => T }>(q: T) =>
+      excludeTest ? q.eq("is_test", false) : q;
 
     const [
       coaches,
@@ -67,25 +73,29 @@ export const getAdminOverview = createServerFn({ method: "GET" })
       recentCoaches,
       recentParents,
     ] = await Promise.all([
-      supabaseAdmin.from("coach_profiles").select("id", { count: "exact", head: true }),
-      supabaseAdmin.from("parent_profiles").select("id", { count: "exact", head: true }),
+      filterTest(supabaseAdmin.from("coach_profiles").select("id", { count: "exact", head: true })),
+      filterTest(supabaseAdmin.from("parent_profiles").select("id", { count: "exact", head: true })),
       supabaseAdmin.from("athletes").select("id", { count: "exact", head: true }),
       supabaseAdmin.from("plans").select("id", { count: "exact", head: true }).eq("kind", "plan"),
       supabaseAdmin.from("plans").select("id", { count: "exact", head: true }).eq("kind", "plan").eq("status", "active"),
-      supabaseAdmin.from("coach_profiles").select("id", { count: "exact", head: true }).gte("created_at", sevenDaysAgo),
-      supabaseAdmin.from("parent_profiles").select("id", { count: "exact", head: true }).gte("created_at", sevenDaysAgo),
-      supabaseAdmin.from("parent_profiles").select("id", { count: "exact", head: true }).is("coach_id", null),
-      supabaseAdmin.from("parent_profiles").select("id", { count: "exact", head: true }).not("coach_id", "is", null),
-      supabaseAdmin
-        .from("coach_profiles")
-        .select("id, user_id, first_name, last_name, created_at, onboarded_at")
-        .order("created_at", { ascending: false })
-        .limit(10),
-      supabaseAdmin
-        .from("parent_profiles")
-        .select("id, user_id, first_name, last_name, created_at, coach_id")
-        .order("created_at", { ascending: false })
-        .limit(10),
+      filterTest(supabaseAdmin.from("coach_profiles").select("id", { count: "exact", head: true }).gte("created_at", sevenDaysAgo)),
+      filterTest(supabaseAdmin.from("parent_profiles").select("id", { count: "exact", head: true }).gte("created_at", sevenDaysAgo)),
+      filterTest(supabaseAdmin.from("parent_profiles").select("id", { count: "exact", head: true }).is("coach_id", null)),
+      filterTest(supabaseAdmin.from("parent_profiles").select("id", { count: "exact", head: true }).not("coach_id", "is", null)),
+      filterTest(
+        supabaseAdmin
+          .from("coach_profiles")
+          .select("id, user_id, first_name, last_name, created_at, onboarded_at, is_test")
+          .order("created_at", { ascending: false })
+          .limit(10),
+      ),
+      filterTest(
+        supabaseAdmin
+          .from("parent_profiles")
+          .select("id, user_id, first_name, last_name, created_at, coach_id, is_test")
+          .order("created_at", { ascending: false })
+          .limit(10),
+      ),
     ]);
 
     if (recentCoaches.error) dbError(recentCoaches.error);
