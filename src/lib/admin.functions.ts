@@ -425,3 +425,43 @@ export const getAdminList = createServerFn({ method: "POST" })
 
     return { rows: [] };
   });
+
+export const getAdminConnectionMap = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const [coaches, parents, athletes, coachAthletes] = await Promise.all([
+      supabaseAdmin.from("coach_profiles").select("id, user_id, first_name, last_name"),
+      supabaseAdmin.from("parent_profiles").select("id, user_id, first_name, last_name, coach_id"),
+      supabaseAdmin.from("athletes").select("id, first_name, last_name, parent_id"),
+      supabaseAdmin.from("coach_athletes").select("coach_id, athlete_id"),
+    ]);
+
+    const fullName = (f?: string | null, l?: string | null) =>
+      `${f ?? ""} ${l ?? ""}`.trim() || "(no name)";
+
+    return {
+      coaches: (coaches.data ?? []).map((c) => ({
+        id: c.id,
+        userId: c.user_id,
+        name: fullName(c.first_name, c.last_name),
+      })),
+      parents: (parents.data ?? []).map((p) => ({
+        id: p.id,
+        userId: p.user_id,
+        name: fullName(p.first_name, p.last_name),
+        coachId: p.coach_id as string | null,
+      })),
+      athletes: (athletes.data ?? []).map((a) => ({
+        id: a.id,
+        name: fullName(a.first_name, a.last_name),
+        parentId: a.parent_id as string | null,
+      })),
+      coachAthletes: (coachAthletes.data ?? []).map((l) => ({
+        coachId: l.coach_id,
+        athleteId: l.athlete_id,
+      })),
+    };
+  });

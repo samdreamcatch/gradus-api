@@ -33,6 +33,7 @@ import { Route as AuthenticatedCoachRosterRouteImport } from './routes/_authenti
 import { Route as AuthenticatedCoachPlansRouteImport } from './routes/_authenticated/coach.plans'
 import { Route as AuthenticatedCoachOnboardingRouteImport } from './routes/_authenticated/coach.onboarding'
 import { Route as AuthenticatedAthleteSettingsRouteImport } from './routes/_authenticated/athlete.settings'
+import { Route as AuthenticatedAdminMapRouteImport } from './routes/_authenticated/admin.map'
 import { Route as AuthenticatedParentResourcesIndexRouteImport } from './routes/_authenticated/parent.resources.index'
 import { Route as AuthenticatedParentPlansIndexRouteImport } from './routes/_authenticated/parent.plans.index'
 import { Route as AuthenticatedParentMessagesIndexRouteImport } from './routes/_authenticated/parent.messages.index'
@@ -179,6 +180,11 @@ const AuthenticatedAthleteSettingsRoute =
     path: '/athlete/settings',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAdminMapRoute = AuthenticatedAdminMapRouteImport.update({
+  id: '/map',
+  path: '/map',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
 const AuthenticatedParentResourcesIndexRoute =
   AuthenticatedParentResourcesIndexRouteImport.update({
     id: '/resources/',
@@ -301,6 +307,7 @@ export interface FileRoutesByFullPath {
   '/signup/athlete': typeof SignupAthleteRouteWithChildren
   '/signup/coach': typeof SignupCoachRoute
   '/signup/parent': typeof SignupParentRouteWithChildren
+  '/admin/map': typeof AuthenticatedAdminMapRoute
   '/athlete/settings': typeof AuthenticatedAthleteSettingsRoute
   '/coach/onboarding': typeof AuthenticatedCoachOnboardingRoute
   '/coach/plans': typeof AuthenticatedCoachPlansRouteWithChildren
@@ -343,6 +350,7 @@ export interface FileRoutesByTo {
   '/signup/athlete': typeof SignupAthleteRouteWithChildren
   '/signup/coach': typeof SignupCoachRoute
   '/signup/parent': typeof SignupParentRouteWithChildren
+  '/admin/map': typeof AuthenticatedAdminMapRoute
   '/athlete/settings': typeof AuthenticatedAthleteSettingsRoute
   '/coach/onboarding': typeof AuthenticatedCoachOnboardingRoute
   '/coach/roster': typeof AuthenticatedCoachRosterRoute
@@ -388,6 +396,7 @@ export interface FileRoutesById {
   '/signup/athlete': typeof SignupAthleteRouteWithChildren
   '/signup/coach': typeof SignupCoachRoute
   '/signup/parent': typeof SignupParentRouteWithChildren
+  '/_authenticated/admin/map': typeof AuthenticatedAdminMapRoute
   '/_authenticated/athlete/settings': typeof AuthenticatedAthleteSettingsRoute
   '/_authenticated/coach/onboarding': typeof AuthenticatedCoachOnboardingRoute
   '/_authenticated/coach/plans': typeof AuthenticatedCoachPlansRouteWithChildren
@@ -434,6 +443,7 @@ export interface FileRouteTypes {
     | '/signup/athlete'
     | '/signup/coach'
     | '/signup/parent'
+    | '/admin/map'
     | '/athlete/settings'
     | '/coach/onboarding'
     | '/coach/plans'
@@ -476,6 +486,7 @@ export interface FileRouteTypes {
     | '/signup/athlete'
     | '/signup/coach'
     | '/signup/parent'
+    | '/admin/map'
     | '/athlete/settings'
     | '/coach/onboarding'
     | '/coach/roster'
@@ -520,6 +531,7 @@ export interface FileRouteTypes {
     | '/signup/athlete'
     | '/signup/coach'
     | '/signup/parent'
+    | '/_authenticated/admin/map'
     | '/_authenticated/athlete/settings'
     | '/_authenticated/coach/onboarding'
     | '/_authenticated/coach/plans'
@@ -739,6 +751,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAthleteSettingsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/admin/map': {
+      id: '/_authenticated/admin/map'
+      path: '/map'
+      fullPath: '/admin/map'
+      preLoaderRoute: typeof AuthenticatedAdminMapRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/parent/resources/': {
       id: '/_authenticated/parent/resources/'
       path: '/resources'
@@ -876,12 +895,14 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedAdminRouteChildren {
+  AuthenticatedAdminMapRoute: typeof AuthenticatedAdminMapRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
   AuthenticatedAdminListKindRoute: typeof AuthenticatedAdminListKindRoute
   AuthenticatedAdminUsersUserIdRoute: typeof AuthenticatedAdminUsersUserIdRoute
 }
 
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
+  AuthenticatedAdminMapRoute: AuthenticatedAdminMapRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
   AuthenticatedAdminListKindRoute: AuthenticatedAdminListKindRoute,
   AuthenticatedAdminUsersUserIdRoute: AuthenticatedAdminUsersUserIdRoute,
