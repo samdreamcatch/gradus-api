@@ -88,6 +88,7 @@ function SettingsPage() {
 
         <SettingsGroup>
           <SettingsList>
+            <FeedbackSettingsRow />
             <SignOutRow />
           </SettingsList>
         </SettingsGroup>
