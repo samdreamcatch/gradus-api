@@ -3,19 +3,11 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
-import { Bug, Lightbulb, Heart, MoreHorizontal, Check, ArrowLeft } from "lucide-react";
+import { Check, ArrowLeft } from "lucide-react";
 import { listFeedback, setFeedbackResolved } from "@/lib/feedback.functions";
 import { cn } from "@/lib/utils";
 
-const TYPE_META: Record<string, { label: string; icon: typeof Bug }> = {
-  bug: { label: "Bug", icon: Bug },
-  idea: { label: "Idea", icon: Lightbulb },
-  praise: { label: "Praise", icon: Heart },
-  other: { label: "Other", icon: MoreHorizontal },
-};
-
 const searchSchema = z.object({
-  type: fallback(z.enum(["all", "bug", "idea", "praise", "other"]), "all").default("all"),
   unresolved: fallback(z.boolean(), false).default(false),
 });
 
@@ -25,14 +17,14 @@ export const Route = createFileRoute("/_authenticated/admin/feedback")({
 });
 
 function AdminFeedback() {
-  const { type, unresolved } = Route.useSearch();
+  const { unresolved } = Route.useSearch();
   const listFn = useServerFn(listFeedback);
   const resolveFn = useServerFn(setFeedbackResolved);
   const qc = useQueryClient();
 
   const { data, isLoading } = useQuery({
-    queryKey: ["admin-feedback", type, unresolved],
-    queryFn: () => listFn({ data: { type, unresolvedOnly: unresolved } }),
+    queryKey: ["admin-feedback", unresolved],
+    queryFn: () => listFn({ data: { unresolvedOnly: unresolved } }),
   });
 
   const toggle = useMutation({
@@ -54,24 +46,6 @@ function AdminFeedback() {
           <h1 className="font-display text-h1 text-text-primary">Feedback</h1>
         </div>
         <div className="flex flex-wrap gap-2">
-          {(["all", "bug", "idea", "praise", "other"] as const).map((t) => {
-            const active = type === t;
-            return (
-              <Link
-                key={t}
-                from={Route.fullPath}
-                search={(prev: any) => ({ ...prev, type: t })}
-                className={cn(
-                  "rounded-pill border px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition",
-                  active
-                    ? "border-accent bg-accent text-accent-foreground"
-                    : "border-divider bg-card text-text-secondary hover:bg-elevated",
-                )}
-              >
-                {t === "all" ? "All" : TYPE_META[t].label}
-              </Link>
-            );
-          })}
           <Link
             from={Route.fullPath}
             search={(prev: any) => ({ ...prev, unresolved: !unresolved })}
@@ -94,22 +68,17 @@ function AdminFeedback() {
       ) : (
         <ul className="space-y-3">
           {data.items.map((f: any) => {
-            const meta = TYPE_META[f.type] ?? TYPE_META.other;
-            const Icon = meta.icon;
             const resolved = !!f.resolved_at;
             return (
               <li
                 key={f.id}
                 className={cn(
-                  "rounded-lg border bg-card p-4 shadow-card",
-                  resolved ? "border-divider opacity-70" : "border-divider",
+                  "rounded-lg border bg-card p-4 shadow-card border-divider",
+                  resolved && "opacity-70",
                 )}
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="flex items-center gap-2">
-                    <span className="inline-flex items-center gap-1.5 rounded-pill border border-accent/40 bg-accent/10 px-2 py-1 text-[11px] font-bold uppercase tracking-wider text-accent-ink">
-                      <Icon className="size-3" /> {meta.label}
-                    </span>
                     <span className="text-xs font-semibold text-text-primary">{f.name}</span>
                     <span className="text-[11px] uppercase tracking-wider text-text-tertiary">
                       {f.role}

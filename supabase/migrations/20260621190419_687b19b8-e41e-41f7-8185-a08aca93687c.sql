@@ -1,0 +1,1 @@
+ALTER TABLE public.feedback DROP COLUMN type;

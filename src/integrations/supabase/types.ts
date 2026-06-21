@@ -508,7 +508,6 @@ export type Database = {
           path: string | null
           resolved_at: string | null
           role: string
-          type: string
           user_agent: string | null
           user_id: string
           viewport: string | null
@@ -520,7 +519,6 @@ export type Database = {
           path?: string | null
           resolved_at?: string | null
           role: string
-          type: string
           user_agent?: string | null
           user_id: string
           viewport?: string | null
@@ -532,7 +530,6 @@ export type Database = {
           path?: string | null
           resolved_at?: string | null
           role?: string
-          type?: string
           user_agent?: string | null
           user_id?: string
           viewport?: string | null
