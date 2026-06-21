@@ -93,7 +93,7 @@ export function FeedbackFab() {
         </DialogHeader>
 
         <div className="space-y-4">
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-nowrap gap-1.5">
             {TYPES.map((t) => {
               const Icon = t.icon;
               const active = type === t.value;
@@ -103,13 +103,13 @@ export function FeedbackFab() {
                   type="button"
                   onClick={() => setType(t.value)}
                   className={cn(
-                    "inline-flex items-center gap-1.5 rounded-pill border px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition",
+                    "inline-flex flex-1 min-w-0 items-center justify-center gap-1 rounded-pill border px-2 py-1.5 text-[11px] font-bold uppercase tracking-wider transition",
                     active
                       ? "border-accent bg-accent text-accent-foreground"
                       : "border-divider bg-card text-text-secondary hover:bg-elevated",
                   )}
                 >
-                  <Icon className="size-3.5" />
+                  <Icon className="size-3.5 shrink-0" />
                   {t.label}
                 </button>
               );
