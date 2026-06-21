@@ -71,7 +71,7 @@ export function FeedbackFab() {
           type="button"
           aria-label="Gradus is in beta, share feedback"
           className={cn(
-            "fixed bottom-20 left-4 z-30 inline-flex items-center gap-2 rounded-pill bg-accent px-3.5 py-2 text-[11px] font-bold uppercase tracking-wider text-accent-foreground shadow-card transition-all hover:scale-105 active:scale-95 md:bottom-6",
+            "fixed bottom-20 left-4 z-30 inline-flex items-center gap-2 rounded-pill bg-pen-orange px-3.5 py-2 text-[11px] font-bold uppercase tracking-wider text-pen-orange-ink shadow-card transition-all hover:scale-105 active:scale-95 md:bottom-6",
             bannerLocked && !open && "pointer-events-none translate-y-4 opacity-0",
           )}
         >
