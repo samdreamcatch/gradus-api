@@ -94,24 +94,33 @@ function AdminList() {
         )}
       </header>
 
-      {cfg.filters.length > 1 && (
-        <div className="flex flex-wrap gap-2">
-          {cfg.filters.map((f) => (
-            <Link
-              key={f.value}
-              from={Route.fullPath}
-              search={{ filter: f.value }}
-              className={`rounded-pill border px-3 py-1 text-xs font-medium uppercase tracking-wider transition ${
-                filter === f.value
-                  ? "border-accent bg-accent text-accent-foreground"
-                  : "border-divider bg-card text-text-secondary hover:bg-elevated"
-              }`}
-            >
-              {f.label}
-            </Link>
-          ))}
-        </div>
-      )}
+      <div className="flex flex-wrap items-center gap-2">
+        {cfg.filters.length > 1 && cfg.filters.map((f) => (
+          <Link
+            key={f.value}
+            from={Route.fullPath}
+            search={(prev) => ({ ...prev, filter: f.value })}
+            className={`rounded-pill border px-3 py-1 text-xs font-medium uppercase tracking-wider transition ${
+              filter === f.value
+                ? "border-accent bg-accent text-accent-foreground"
+                : "border-divider bg-card text-text-secondary hover:bg-elevated"
+            }`}
+          >
+            {f.label}
+          </Link>
+        ))}
+        <Link
+          from={Route.fullPath}
+          search={(prev) => ({ ...prev, test: !includeTest })}
+          className={`ml-auto rounded-pill border px-3 py-1 text-xs font-medium uppercase tracking-wider transition ${
+            includeTest
+              ? "border-accent bg-accent text-accent-foreground"
+              : "border-divider bg-card text-text-secondary hover:bg-elevated"
+          }`}
+        >
+          {includeTest ? "Test users: on" : "Test users: hidden"}
+        </Link>
+      </div>
 
       <div className="rounded-xl border border-divider bg-card">
         {isLoading ? (
