@@ -155,7 +155,6 @@ function AdminMap() {
           <ReactFlow
             nodes={nodes}
             edges={edges}
-            edges={edges}
             fitView
             minZoom={0.1}
             maxZoom={2}
