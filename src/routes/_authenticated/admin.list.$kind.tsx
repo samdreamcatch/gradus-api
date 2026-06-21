@@ -1,9 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
-import { getAdminList } from "@/lib/admin.functions";
+import { getAdminList, setUserTestFlag } from "@/lib/admin.functions";
 
 const KIND_CONFIG = {
   coaches: {
@@ -62,6 +62,8 @@ function AdminList() {
   const { kind } = Route.useParams();
   const { filter, test: includeTest } = Route.useSearch();
   const fn = useServerFn(getAdminList);
+  const toggleFn = useServerFn(setUserTestFlag);
+  const qc = useQueryClient();
 
   if (!KINDS.includes(kind as Kind)) {
     return (
@@ -75,6 +77,12 @@ function AdminList() {
   const { data, isLoading } = useQuery({
     queryKey: ["admin-list", kind, filter, includeTest],
     queryFn: () => fn({ data: { kind: kind as Kind, filter, includeTest } }),
+  });
+
+  const toggleTest = useMutation({
+    mutationFn: ({ userId, isTest }: { userId: string; isTest: boolean }) =>
+      toggleFn({ data: { userId, isTest } }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-list", kind] }),
   });
 
   return (
@@ -141,11 +149,32 @@ function AdminList() {
                   </p>
                   {r.email && <p className="truncate text-xs text-text-secondary">{r.email}</p>}
                 </div>
-                  <div className="shrink-0 text-right">
-                    <p className="text-xs font-mono uppercase text-accent-ink">{r.tag}</p>
-                    <p className="text-xs text-text-tertiary">
-                      {new Date(r.createdAt).toLocaleDateString()}
-                    </p>
+                  <div className="shrink-0 flex items-center gap-3">
+                    {r.userId && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          toggleTest.mutate({ userId: r.userId!, isTest: !(r as any).isTest });
+                        }}
+                        disabled={toggleTest.isPending}
+                        className={`rounded-pill border px-2 py-0.5 text-[10px] font-mono uppercase tracking-wider transition ${
+                          (r as any).isTest
+                            ? "border-accent bg-accent text-accent-foreground"
+                            : "border-divider bg-card text-text-tertiary hover:bg-elevated"
+                        }`}
+                        title={(r as any).isTest ? "Unmark test user" : "Mark as test user"}
+                      >
+                        {(r as any).isTest ? "test ✓" : "mark test"}
+                      </button>
+                    )}
+                    <div className="text-right">
+                      <p className="text-xs font-mono uppercase text-accent-ink">{r.tag}</p>
+                      <p className="text-xs text-text-tertiary">
+                        {new Date(r.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
                   </div>
                 </div>
               );
