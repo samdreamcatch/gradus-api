@@ -28,6 +28,7 @@ export function FeedbackFab() {
   const [open, setOpen] = useState(false);
   const [type, setType] = useState<FeedbackType>("idea");
   const [message, setMessage] = useState("");
+  const bannerLocked = useBottomBannerLocked();
 
   const submitFn = useServerFn(submitFeedback);
   const mutation = useMutation({
