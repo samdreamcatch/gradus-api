@@ -106,25 +106,29 @@ function AdminHome() {
             ) : (
               <ul className="divide-y divide-divider">
                 {results!.results.map((r) => (
-                  <li key={`${r.kind}-${r.profileId}`}>
+                  <li key={`${r.kind}-${r.profileId}`} className="flex items-center gap-2 px-4 py-3 hover:bg-elevated">
                     <Link
                       to="/admin/users/$userId"
                       params={{ userId: r.userId }}
-                      className="flex items-center justify-between gap-4 px-4 py-3 hover:bg-elevated"
+                      className="flex flex-1 items-center justify-between gap-4 min-w-0"
                     >
-                      <div>
-                        <p className="text-sm font-semibold text-text-primary">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-text-primary">
                           {`${r.firstName} ${r.lastName}`.trim() || "(no name)"}
+                          {r.isTest && (
+                            <span className="ml-2 rounded-pill border border-divider bg-elevated px-1.5 py-0.5 text-[10px] font-mono uppercase tracking-wider text-text-tertiary">test</span>
+                          )}
                         </p>
-                        <p className="text-xs text-text-secondary">{r.email ?? "—"}</p>
+                        <p className="truncate text-xs text-text-secondary">{r.email ?? "—"}</p>
                       </div>
-                      <div className="text-right">
+                      <div className="text-right shrink-0">
                         <p className="text-xs font-mono uppercase text-accent-ink">{r.kind}</p>
                         <p className="text-xs text-text-tertiary">
                           {new Date(r.createdAt).toLocaleDateString()}
                         </p>
                       </div>
                     </Link>
+                    <TestToggle isTest={r.isTest} onToggle={() => toggleTest(r.userId, !r.isTest)} />
                   </li>
                 ))}
               </ul>
