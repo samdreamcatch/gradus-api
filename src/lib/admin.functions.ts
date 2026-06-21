@@ -532,3 +532,128 @@ export const getAdminConnectionMap = createServerFn({ method: "POST" })
         })),
     };
   });
+
+/** Daily active users for the last N days, based on messages sent and plan sessions started/completed. */
+export const getDailyActiveUsers = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        days: z.number().int().min(7).max(90).optional().default(30),
+        includeTest: z.boolean().optional().default(false),
+      })
+      .parse(input ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const days = data.days;
+    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+    const sinceISO = since.toISOString();
+
+    // Gather activity signals
+    const [messages, sessions, wrapUps] = await Promise.all([
+      supabaseAdmin
+        .from("messages")
+        .select("sender_id, created_at")
+        .gte("created_at", sinceISO)
+        .limit(50000),
+      supabaseAdmin
+        .from("plan_sessions")
+        .select("athlete_id, started_at, completed_at")
+        .or(`started_at.gte.${sinceISO},completed_at.gte.${sinceISO}`)
+        .limit(50000),
+      supabaseAdmin
+        .from("lesson_wrap_ups")
+        .select("coach_id, created_at")
+        .gte("created_at", sinceISO)
+        .limit(50000),
+    ]);
+
+    if (messages.error) dbError(messages.error);
+    if (sessions.error) dbError(sessions.error);
+    if (wrapUps.error) dbError(wrapUps.error);
+
+    // Resolve athlete_id -> user_id, coach_id -> user_id
+    const athleteIds = Array.from(
+      new Set((sessions.data ?? []).map((s) => s.athlete_id).filter(Boolean) as string[]),
+    );
+    const coachIds = Array.from(
+      new Set((wrapUps.data ?? []).map((w) => w.coach_id).filter(Boolean) as string[]),
+    );
+
+    const athleteUserMap = new Map<string, string>();
+    const coachUserMap = new Map<string, string>();
+    const testUsers = new Set<string>();
+
+    if (athleteIds.length > 0) {
+      const { data: aRows } = await supabaseAdmin
+        .from("athletes")
+        .select("id, user_id, is_test")
+        .in("id", athleteIds);
+      for (const a of aRows ?? []) {
+        if (a.user_id) athleteUserMap.set(a.id, a.user_id);
+        if (a.is_test && a.user_id) testUsers.add(a.user_id);
+      }
+    }
+    if (coachIds.length > 0) {
+      const { data: cRows } = await supabaseAdmin
+        .from("coach_profiles")
+        .select("id, user_id, is_test")
+        .in("id", coachIds);
+      for (const c of cRows ?? []) {
+        if (c.user_id) coachUserMap.set(c.id, c.user_id);
+        if (c.is_test) testUsers.add(c.user_id);
+      }
+    }
+
+    // For excluding test senders from messages: load test user_ids from both profile tables
+    if (!data.includeTest) {
+      const [{ data: testCoaches }, { data: testParents }] = await Promise.all([
+        supabaseAdmin.from("coach_profiles").select("user_id").eq("is_test", true),
+        supabaseAdmin.from("parent_profiles").select("user_id").eq("is_test", true),
+      ]);
+      for (const r of testCoaches ?? []) if (r.user_id) testUsers.add(r.user_id);
+      for (const r of testParents ?? []) if (r.user_id) testUsers.add(r.user_id);
+    }
+
+    // Build day buckets in local UTC date
+    const buckets = new Map<string, Set<string>>();
+    const dayKey = (d: Date | string) => new Date(d).toISOString().slice(0, 10);
+    const startKey = dayKey(since);
+
+    const addActivity = (userId: string | null | undefined, when: string | null | undefined) => {
+      if (!userId || !when) return;
+      if (!data.includeTest && testUsers.has(userId)) return;
+      const k = dayKey(when);
+      if (k < startKey) return;
+      let s = buckets.get(k);
+      if (!s) {
+        s = new Set();
+        buckets.set(k, s);
+      }
+      s.add(userId);
+    };
+
+    for (const m of messages.data ?? []) addActivity(m.sender_id as string | null, m.created_at);
+    for (const s of sessions.data ?? []) {
+      const uid = athleteUserMap.get(s.athlete_id);
+      addActivity(uid, s.started_at);
+      addActivity(uid, s.completed_at);
+    }
+    for (const w of wrapUps.data ?? []) {
+      const uid = coachUserMap.get(w.coach_id);
+      addActivity(uid, w.created_at);
+    }
+
+    // Emit a row per day in the window (zero-fill)
+    const series: { date: string; activeUsers: number }[] = [];
+    for (let i = days - 1; i >= 0; i--) {
+      const d = new Date(Date.now() - i * 24 * 60 * 60 * 1000);
+      const k = dayKey(d);
+      series.push({ date: k, activeUsers: buckets.get(k)?.size ?? 0 });
+    }
+
+    return { days, series };
+  });
