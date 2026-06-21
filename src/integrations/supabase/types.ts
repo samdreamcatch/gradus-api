@@ -385,6 +385,7 @@ export type Database = {
           created_at: string
           first_name: string
           id: string
+          is_test: boolean
           last_name: string
           onboarded_at: string | null
           updated_at: string
@@ -394,6 +395,7 @@ export type Database = {
           created_at?: string
           first_name?: string
           id?: string
+          is_test?: boolean
           last_name?: string
           onboarded_at?: string | null
           updated_at?: string
@@ -403,6 +405,7 @@ export type Database = {
           created_at?: string
           first_name?: string
           id?: string
+          is_test?: boolean
           last_name?: string
           onboarded_at?: string | null
           updated_at?: string
@@ -795,6 +798,7 @@ export type Database = {
           created_at: string
           first_name: string
           id: string
+          is_test: boolean
           last_name: string
           updated_at: string
           user_id: string
@@ -804,6 +808,7 @@ export type Database = {
           created_at?: string
           first_name?: string
           id?: string
+          is_test?: boolean
           last_name?: string
           updated_at?: string
           user_id: string
@@ -813,6 +818,7 @@ export type Database = {
           created_at?: string
           first_name?: string
           id?: string
+          is_test?: boolean
           last_name?: string
           updated_at?: string
           user_id?: string
