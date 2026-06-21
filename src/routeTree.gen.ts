@@ -15,10 +15,13 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as SignupParentRouteImport } from './routes/signup.parent'
 import { Route as SignupCoachRouteImport } from './routes/signup.coach'
 import { Route as SignupAthleteRouteImport } from './routes/signup.athlete'
+import { Route as SignupAdminRouteImport } from './routes/signup.admin'
 import { Route as AuthenticatedParentRouteImport } from './routes/_authenticated/parent'
+import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedParentIndexRouteImport } from './routes/_authenticated/parent.index'
 import { Route as AuthenticatedCoachIndexRouteImport } from './routes/_authenticated/coach.index'
 import { Route as AuthenticatedAthleteIndexRouteImport } from './routes/_authenticated/athlete.index'
+import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as SignupParentScheduleRouteImport } from './routes/signup.parent.schedule'
 import { Route as SignupParentGoalsRouteImport } from './routes/signup.parent.goals'
 import { Route as SignupParentAthletesRouteImport } from './routes/signup.parent.athletes'
@@ -47,6 +50,7 @@ import { Route as AuthenticatedCoachPlansPlanIdRouteImport } from './routes/_aut
 import { Route as AuthenticatedCoachMessagesRoomIdRouteImport } from './routes/_authenticated/coach.messages.$roomId'
 import { Route as AuthenticatedAthletePlansPlanIdRouteImport } from './routes/_authenticated/athlete.plans.$planId'
 import { Route as AuthenticatedAthleteMessagesRoomIdRouteImport } from './routes/_authenticated/athlete.messages.$roomId'
+import { Route as AuthenticatedAdminUsersUserIdRouteImport } from './routes/_authenticated/admin.users.$userId'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -77,9 +81,19 @@ const SignupAthleteRoute = SignupAthleteRouteImport.update({
   path: '/signup/athlete',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SignupAdminRoute = SignupAdminRouteImport.update({
+  id: '/signup/admin',
+  path: '/signup/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedParentRoute = AuthenticatedParentRouteImport.update({
   id: '/parent',
   path: '/parent',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedParentIndexRoute =
@@ -99,6 +113,11 @@ const AuthenticatedAthleteIndexRoute =
     path: '/athlete/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
 const SignupParentScheduleRoute = SignupParentScheduleRouteImport.update({
   id: '/schedule',
   path: '/schedule',
@@ -259,11 +278,19 @@ const AuthenticatedAthleteMessagesRoomIdRoute =
     path: '/athlete/messages/$roomId',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAdminUsersUserIdRoute =
+  AuthenticatedAdminUsersUserIdRouteImport.update({
+    id: '/users/$userId',
+    path: '/users/$userId',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/parent': typeof AuthenticatedParentRouteWithChildren
+  '/signup/admin': typeof SignupAdminRoute
   '/signup/athlete': typeof SignupAthleteRouteWithChildren
   '/signup/coach': typeof SignupCoachRoute
   '/signup/parent': typeof SignupParentRouteWithChildren
@@ -278,9 +305,11 @@ export interface FileRoutesByFullPath {
   '/signup/parent/athletes': typeof SignupParentAthletesRoute
   '/signup/parent/goals': typeof SignupParentGoalsRoute
   '/signup/parent/schedule': typeof SignupParentScheduleRoute
+  '/admin/': typeof AuthenticatedAdminIndexRoute
   '/athlete/': typeof AuthenticatedAthleteIndexRoute
   '/coach/': typeof AuthenticatedCoachIndexRoute
   '/parent/': typeof AuthenticatedParentIndexRoute
+  '/admin/users/$userId': typeof AuthenticatedAdminUsersUserIdRoute
   '/athlete/messages/$roomId': typeof AuthenticatedAthleteMessagesRoomIdRoute
   '/athlete/plans/$planId': typeof AuthenticatedAthletePlansPlanIdRoute
   '/coach/messages/$roomId': typeof AuthenticatedCoachMessagesRoomIdRoute
@@ -302,6 +331,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/signup/admin': typeof SignupAdminRoute
   '/signup/athlete': typeof SignupAthleteRouteWithChildren
   '/signup/coach': typeof SignupCoachRoute
   '/signup/parent': typeof SignupParentRouteWithChildren
@@ -315,9 +345,11 @@ export interface FileRoutesByTo {
   '/signup/parent/athletes': typeof SignupParentAthletesRoute
   '/signup/parent/goals': typeof SignupParentGoalsRoute
   '/signup/parent/schedule': typeof SignupParentScheduleRoute
+  '/admin': typeof AuthenticatedAdminIndexRoute
   '/athlete': typeof AuthenticatedAthleteIndexRoute
   '/coach': typeof AuthenticatedCoachIndexRoute
   '/parent': typeof AuthenticatedParentIndexRoute
+  '/admin/users/$userId': typeof AuthenticatedAdminUsersUserIdRoute
   '/athlete/messages/$roomId': typeof AuthenticatedAthleteMessagesRoomIdRoute
   '/athlete/plans/$planId': typeof AuthenticatedAthletePlansPlanIdRoute
   '/coach/messages/$roomId': typeof AuthenticatedCoachMessagesRoomIdRoute
@@ -341,7 +373,9 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/login': typeof LoginRoute
+  '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/_authenticated/parent': typeof AuthenticatedParentRouteWithChildren
+  '/signup/admin': typeof SignupAdminRoute
   '/signup/athlete': typeof SignupAthleteRouteWithChildren
   '/signup/coach': typeof SignupCoachRoute
   '/signup/parent': typeof SignupParentRouteWithChildren
@@ -356,9 +390,11 @@ export interface FileRoutesById {
   '/signup/parent/athletes': typeof SignupParentAthletesRoute
   '/signup/parent/goals': typeof SignupParentGoalsRoute
   '/signup/parent/schedule': typeof SignupParentScheduleRoute
+  '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/athlete/': typeof AuthenticatedAthleteIndexRoute
   '/_authenticated/coach/': typeof AuthenticatedCoachIndexRoute
   '/_authenticated/parent/': typeof AuthenticatedParentIndexRoute
+  '/_authenticated/admin/users/$userId': typeof AuthenticatedAdminUsersUserIdRoute
   '/_authenticated/athlete/messages/$roomId': typeof AuthenticatedAthleteMessagesRoomIdRoute
   '/_authenticated/athlete/plans/$planId': typeof AuthenticatedAthletePlansPlanIdRoute
   '/_authenticated/coach/messages/$roomId': typeof AuthenticatedCoachMessagesRoomIdRoute
@@ -382,7 +418,9 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/login'
+    | '/admin'
     | '/parent'
+    | '/signup/admin'
     | '/signup/athlete'
     | '/signup/coach'
     | '/signup/parent'
@@ -397,9 +435,11 @@ export interface FileRouteTypes {
     | '/signup/parent/athletes'
     | '/signup/parent/goals'
     | '/signup/parent/schedule'
+    | '/admin/'
     | '/athlete/'
     | '/coach/'
     | '/parent/'
+    | '/admin/users/$userId'
     | '/athlete/messages/$roomId'
     | '/athlete/plans/$planId'
     | '/coach/messages/$roomId'
@@ -421,6 +461,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/login'
+    | '/signup/admin'
     | '/signup/athlete'
     | '/signup/coach'
     | '/signup/parent'
@@ -434,9 +475,11 @@ export interface FileRouteTypes {
     | '/signup/parent/athletes'
     | '/signup/parent/goals'
     | '/signup/parent/schedule'
+    | '/admin'
     | '/athlete'
     | '/coach'
     | '/parent'
+    | '/admin/users/$userId'
     | '/athlete/messages/$roomId'
     | '/athlete/plans/$planId'
     | '/coach/messages/$roomId'
@@ -459,7 +502,9 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/login'
+    | '/_authenticated/admin'
     | '/_authenticated/parent'
+    | '/signup/admin'
     | '/signup/athlete'
     | '/signup/coach'
     | '/signup/parent'
@@ -474,9 +519,11 @@ export interface FileRouteTypes {
     | '/signup/parent/athletes'
     | '/signup/parent/goals'
     | '/signup/parent/schedule'
+    | '/_authenticated/admin/'
     | '/_authenticated/athlete/'
     | '/_authenticated/coach/'
     | '/_authenticated/parent/'
+    | '/_authenticated/admin/users/$userId'
     | '/_authenticated/athlete/messages/$roomId'
     | '/_authenticated/athlete/plans/$planId'
     | '/_authenticated/coach/messages/$roomId'
@@ -500,6 +547,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   LoginRoute: typeof LoginRoute
+  SignupAdminRoute: typeof SignupAdminRoute
   SignupAthleteRoute: typeof SignupAthleteRouteWithChildren
   SignupCoachRoute: typeof SignupCoachRoute
   SignupParentRoute: typeof SignupParentRouteWithChildren
@@ -552,11 +600,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SignupAthleteRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/signup/admin': {
+      id: '/signup/admin'
+      path: '/signup/admin'
+      fullPath: '/signup/admin'
+      preLoaderRoute: typeof SignupAdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/parent': {
       id: '/_authenticated/parent'
       path: '/parent'
       fullPath: '/parent'
       preLoaderRoute: typeof AuthenticatedParentRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/admin': {
+      id: '/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/parent/': {
@@ -579,6 +641,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/athlete/'
       preLoaderRoute: typeof AuthenticatedAthleteIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/admin/': {
+      id: '/_authenticated/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
     }
     '/signup/parent/schedule': {
       id: '/signup/parent/schedule'
@@ -776,8 +845,28 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAthleteMessagesRoomIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/admin/users/$userId': {
+      id: '/_authenticated/admin/users/$userId'
+      path: '/users/$userId'
+      fullPath: '/admin/users/$userId'
+      preLoaderRoute: typeof AuthenticatedAdminUsersUserIdRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
   }
 }
+
+interface AuthenticatedAdminRouteChildren {
+  AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
+  AuthenticatedAdminUsersUserIdRoute: typeof AuthenticatedAdminUsersUserIdRoute
+}
+
+const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
+  AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
+  AuthenticatedAdminUsersUserIdRoute: AuthenticatedAdminUsersUserIdRoute,
+}
+
+const AuthenticatedAdminRouteWithChildren =
+  AuthenticatedAdminRoute._addFileChildren(AuthenticatedAdminRouteChildren)
 
 interface AuthenticatedParentRouteChildren {
   AuthenticatedParentSettingsRoute: typeof AuthenticatedParentSettingsRoute
@@ -821,6 +910,7 @@ const AuthenticatedCoachPlansRouteWithChildren =
   )
 
 interface AuthenticatedRouteChildren {
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
   AuthenticatedParentRoute: typeof AuthenticatedParentRouteWithChildren
   AuthenticatedAthleteSettingsRoute: typeof AuthenticatedAthleteSettingsRoute
   AuthenticatedCoachOnboardingRoute: typeof AuthenticatedCoachOnboardingRoute
@@ -839,6 +929,7 @@ interface AuthenticatedRouteChildren {
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
   AuthenticatedParentRoute: AuthenticatedParentRouteWithChildren,
   AuthenticatedAthleteSettingsRoute: AuthenticatedAthleteSettingsRoute,
   AuthenticatedCoachOnboardingRoute: AuthenticatedCoachOnboardingRoute,
@@ -897,6 +988,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   LoginRoute: LoginRoute,
+  SignupAdminRoute: SignupAdminRoute,
   SignupAthleteRoute: SignupAthleteRouteWithChildren,
   SignupCoachRoute: SignupCoachRoute,
   SignupParentRoute: SignupParentRouteWithChildren,
@@ -907,13 +999,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
