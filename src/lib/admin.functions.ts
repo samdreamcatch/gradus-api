@@ -134,6 +134,7 @@ export const getAdminOverview = createServerFn({ method: "POST" })
         email: emailMap.get(c.user_id) ?? null,
         createdAt: c.created_at,
         onboarded: !!c.onboarded_at,
+        isTest: !!c.is_test,
       })),
       recentParents: (recentParents.data ?? []).map((p) => ({
         id: p.id,
@@ -143,6 +144,7 @@ export const getAdminOverview = createServerFn({ method: "POST" })
         email: emailMap.get(p.user_id) ?? null,
         createdAt: p.created_at,
         viaBeta: !p.coach_id,
+        isTest: !!p.is_test,
       })),
     };
   });
