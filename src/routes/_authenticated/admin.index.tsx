@@ -174,7 +174,7 @@ function AdminHome() {
             <Stat kind="coaches" label="Coaches" value={overview.counts.coaches} includeTest={includeTest} />
             <Stat kind="parents" label="Parents" value={overview.counts.parents} sub={`${overview.counts.parentsLast7Days} new / 7d`} includeTest={includeTest} />
             <Stat kind="athletes" label="Athletes" value={overview.counts.athletes} includeTest={includeTest} />
-            <Stat kind="plans" label="Plans" value={overview.counts.plansTotal} sub={`${overview.counts.plansActive} active`} includeTest={includeTest} />
+            <Stat kind="plans" label="Plans" value={overview.counts.plansActive} includeTest={includeTest} />
             <Stat kind="beta-signups" label="Beta signups" value={overview.counts.betaParents} sub="No coach yet" includeTest={includeTest} />
             <Stat kind="parents" filter="coach" label="Via coach code" value={overview.counts.coachCodeParents} sub="Signed up through a coach" includeTest={includeTest} />
           </div>
