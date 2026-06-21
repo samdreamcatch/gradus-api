@@ -218,9 +218,11 @@ function Stat({ kind, label, value, sub, includeTest, filter = "all" }: { kind: 
 function RecentList({
   title,
   items,
+  onToggleTest,
 }: {
   title: string;
-  items: { id: string; primary: string; secondary: string; meta: string; tag: string }[];
+  items: { id: string; primary: string; secondary: string; meta: string; tag: string; isTest: boolean }[];
+  onToggleTest: (userId: string, next: boolean) => void | Promise<void>;
 }) {
   return (
     <div className="rounded-xl border border-divider bg-card">
@@ -230,25 +232,52 @@ function RecentList({
       ) : (
         <ul className="divide-y divide-divider">
           {items.map((it) => (
-            <li key={it.id}>
+            <li key={it.id} className="flex items-center gap-2 px-4 py-3 hover:bg-elevated">
               <Link
                 to="/admin/users/$userId"
                 params={{ userId: it.id }}
-                className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-elevated"
+                className="flex flex-1 items-center justify-between gap-3 min-w-0"
               >
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-text-primary">{it.primary}</p>
+                  <p className="truncate text-sm font-semibold text-text-primary">
+                    {it.primary}
+                    {it.isTest && (
+                      <span className="ml-2 rounded-pill border border-divider bg-elevated px-1.5 py-0.5 text-[10px] font-mono uppercase tracking-wider text-text-tertiary">test</span>
+                    )}
+                  </p>
                   <p className="truncate text-xs text-text-secondary">{it.secondary}</p>
                 </div>
-                <div className="text-right">
+                <div className="text-right shrink-0">
                   <p className="text-xs uppercase tracking-wider text-accent-ink">{it.tag}</p>
                   <p className="text-xs text-text-tertiary">{it.meta}</p>
                 </div>
               </Link>
+              <TestToggle isTest={it.isTest} onToggle={() => onToggleTest(it.id, !it.isTest)} />
             </li>
           ))}
         </ul>
       )}
     </div>
+  );
+}
+
+function TestToggle({ isTest, onToggle }: { isTest: boolean; onToggle: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onToggle();
+      }}
+      title={isTest ? "Unmark as test user" : "Mark as test user"}
+      className={`shrink-0 rounded-pill border px-2 py-1 text-[10px] font-mono uppercase tracking-wider transition ${
+        isTest
+          ? "border-accent bg-accent text-accent-foreground"
+          : "border-divider bg-card text-text-tertiary hover:bg-elevated"
+      }`}
+    >
+      {isTest ? "test ✓" : "test"}
+    </button>
   );
 }
