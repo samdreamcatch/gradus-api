@@ -3,10 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { dbError } from "./db-error";
 
-const FEEDBACK_TYPES = ["bug", "idea", "praise", "other"] as const;
-
 const submitSchema = z.object({
-  type: z.enum(FEEDBACK_TYPES),
   message: z.string().trim().min(1).max(2000),
   path: z.string().max(500).optional().nullable(),
   userAgent: z.string().max(500).optional().nullable(),
@@ -48,7 +45,6 @@ export const submitFeedback = createServerFn({ method: "POST" })
     const { error } = await supabaseAdmin.from("feedback").insert({
       user_id: context.userId,
       role,
-      type: data.type,
       message: data.message,
       path: data.path ?? null,
       user_agent: data.userAgent ?? null,
@@ -59,7 +55,6 @@ export const submitFeedback = createServerFn({ method: "POST" })
   });
 
 const listSchema = z.object({
-  type: z.enum(["all", ...FEEDBACK_TYPES]).default("all"),
   unresolvedOnly: z.boolean().default(false),
 });
 
@@ -71,10 +66,9 @@ export const listFeedback = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     let q = supabaseAdmin
       .from("feedback")
-      .select("id, user_id, role, type, message, path, user_agent, viewport, resolved_at, created_at")
+      .select("id, user_id, role, message, path, user_agent, viewport, resolved_at, created_at")
       .order("created_at", { ascending: false })
       .limit(200);
-    if (data.type !== "all") q = q.eq("type", data.type);
     if (data.unresolvedOnly) q = q.is("resolved_at", null);
     const { data: rows, error } = await q;
     if (error) dbError(error);
@@ -119,3 +113,4 @@ export const setFeedbackResolved = createServerFn({ method: "POST" })
     if (error) dbError(error);
     return { ok: true };
   });
+
