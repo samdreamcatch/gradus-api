@@ -117,20 +117,10 @@ function AdminList() {
             {f.label}
           </Link>
         ))}
-        <Link
-          from={Route.fullPath}
-          search={(prev: any) => ({ ...prev, test: !includeTest })}
-          className={`ml-auto rounded-pill border px-3 py-1 text-xs font-medium uppercase tracking-wider transition ${
-            includeTest
-              ? "border-accent bg-accent text-accent-foreground"
-              : "border-divider bg-card text-text-secondary hover:bg-elevated"
-          }`}
-        >
-          {includeTest ? "Test users: on" : "Test users: hidden"}
-        </Link>
       </div>
 
       <div className="rounded-xl border border-divider bg-card">
+
         {isLoading ? (
           <p className="p-4 text-sm text-text-secondary">Loading…</p>
         ) : (data?.rows ?? []).length === 0 ? (
@@ -192,6 +182,20 @@ function AdminList() {
             })}
           </ul>
         )}
+      </div>
+
+      <div className="flex justify-center pt-2">
+        <Link
+          from={Route.fullPath}
+          search={(prev: any) => ({ ...prev, test: !includeTest })}
+          className={`rounded-pill border px-3 py-1 text-xs font-medium uppercase tracking-wider transition ${
+            includeTest
+              ? "border-accent bg-accent text-accent-foreground"
+              : "border-divider bg-card text-text-secondary hover:bg-elevated"
+          }`}
+        >
+          {includeTest ? "Test users: on" : "Test users: hidden"}
+        </Link>
       </div>
     </div>
   );
