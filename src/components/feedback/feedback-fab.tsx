@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation } from "@tanstack/react-query";
+import { useRouterState } from "@tanstack/react-router";
 import { MessageSquarePlus } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -11,14 +12,14 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { SettingsButtonRow } from "@/components/settings/primitives";
 import { submitFeedback } from "@/lib/feedback.functions";
 import { useBottomBannerLocked } from "@/lib/bottom-banner-store";
 import { cn } from "@/lib/utils";
 
-export function FeedbackFab() {
+function FeedbackDialog({ trigger }: { trigger: ReactNode }) {
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState("");
-  const bannerLocked = useBottomBannerLocked();
 
   const submitFn = useServerFn(submitFeedback);
   const mutation = useMutation({
@@ -52,22 +53,9 @@ export function FeedbackFab() {
     });
   };
 
-
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <button
-          type="button"
-          aria-label="Gradus is in beta, share feedback"
-          className={cn(
-            "fixed bottom-24 left-4 z-30 inline-flex items-center gap-2 rounded-pill bg-attention px-3.5 py-2 text-[11px] font-bold uppercase tracking-wider text-[#0A2540] shadow-card transition-all hover:scale-105 active:scale-95 md:bottom-6",
-            bannerLocked && !open && "pointer-events-none translate-y-4 opacity-0",
-          )}
-        >
-          <MessageSquarePlus className="size-4" />
-          <span>Gradus is in beta, share feedback</span>
-        </button>
-      </DialogTrigger>
+      <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="top-4 translate-y-0 sm:top-[50%] sm:max-w-md sm:translate-y-[-50%]">
         <DialogHeader>
           <p className="text-[11px] font-black uppercase tracking-widest text-accent-ink">
@@ -82,8 +70,6 @@ export function FeedbackFab() {
         </DialogHeader>
 
         <div className="space-y-4">
-
-
           <textarea
             value={message}
             onChange={(e) => setMessage(e.target.value)}
@@ -92,7 +78,6 @@ export function FeedbackFab() {
             placeholder=""
             className="w-full resize-none rounded-xl border border-divider bg-elevated px-3 py-2 text-[15px] leading-relaxed text-text-primary placeholder:text-text-tertiary focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
           />
-
 
           <button
             type="button"
@@ -110,5 +95,47 @@ export function FeedbackFab() {
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+export function FeedbackFab() {
+  const bannerLocked = useBottomBannerLocked();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  // Hide the persistent banner on settings pages — it overlaps the sign-out
+  // button on mobile. Settings pages get a dedicated feedback row instead.
+  if (pathname.endsWith("/settings")) return null;
+
+  return (
+    <FeedbackDialog
+      trigger={
+        <button
+          type="button"
+          aria-label="Gradus is in beta, share feedback"
+          className={cn(
+            "fixed bottom-24 left-4 z-30 inline-flex items-center gap-2 rounded-pill bg-attention px-3.5 py-2 text-[11px] font-bold uppercase tracking-wider text-[#0A2540] shadow-card transition-all hover:scale-105 active:scale-95 md:bottom-6",
+            bannerLocked && "pointer-events-none translate-y-4 opacity-0",
+          )}
+        >
+          <MessageSquarePlus className="size-4" />
+          <span>Gradus is in beta, share feedback</span>
+        </button>
+      }
+    />
+  );
+}
+
+export function FeedbackSettingsRow() {
+  return (
+    <FeedbackDialog
+      trigger={
+        <SettingsButtonRow
+          icon={<MessageSquarePlus className="size-4" />}
+          label="Share feedback"
+          description="Gradus is in beta — tell us what to fix or build"
+          tone="accent"
+          onClick={() => {}}
+        />
+      }
+    />
   );
 }
