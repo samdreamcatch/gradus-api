@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/logo";
-import { startParentSignup } from "@/lib/parent-signup.functions";
+import { startParentSignup, validateSignupCode } from "@/lib/parent-signup.functions";
 
 export const Route = createFileRoute("/signup/parent")({
   component: ParentSignupPage,
@@ -16,6 +16,7 @@ function ParentSignupPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const start = useServerFn(startParentSignup);
+  const validateCode = useServerFn(validateSignupCode);
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -55,18 +56,17 @@ function ParentSignupPage() {
     }
   };
 
-  const submit = async (withCode: boolean) => {
+  const submit = async () => {
     setError(null);
     setLoading(true);
     try {
-      await ensureAuthed();
       const trimmed = code.trim().toUpperCase();
+      // Validate the code BEFORE creating an auth account so a bad code
+      // doesn't leave behind a dangling user.
+      await validateCode({ data: { code: trimmed, role: "parent" } });
+      await ensureAuthed();
       const { code: normalized } = await start({
-        data: {
-          firstName,
-          lastName,
-          code: withCode ? trimmed : null,
-        },
+        data: { firstName, lastName, code: trimmed },
       });
       if (normalized) {
         navigate({ to: "/signup/parent/athletes", search: { code: normalized } });
@@ -82,19 +82,7 @@ function ParentSignupPage() {
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    void submit(true);
-  };
-
-  const handleSkip = () => {
-    if (!firstName.trim() || !lastName.trim()) {
-      setError("Please enter your first and last name first.");
-      return;
-    }
-    if (!isAuthed && (!email.trim() || !password)) {
-      setError("Please enter your email and password to create your account.");
-      return;
-    }
-    void submit(false);
+    void submit();
   };
 
   return (
@@ -137,7 +125,7 @@ function ParentSignupPage() {
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="code">Coach&apos;s invite code <span className="font-normal text-text-tertiary">(optional)</span></Label>
+            <Label htmlFor="code">Invite code</Label>
             <Input
               id="code"
               value={code}
@@ -146,32 +134,17 @@ function ParentSignupPage() {
               placeholder="––––––––"
               className="font-mono tracking-[0.25em] uppercase"
               autoComplete="off"
+              required
             />
             <p className="text-xs text-text-tertiary">
-              Have an 8-character code from your coach? Enter it here. No code? Skip below — you can invite your coach later.
+              Enter your coach&apos;s 8-character invite code, or your Gradus beta code.
             </p>
           </div>
 
           {error && <p className="text-sm text-destructive">{error}</p>}
 
           <Button type="submit" className="w-full" disabled={loading || code.trim().length !== 8}>
-            {loading ? "Creating account..." : "Continue with coach code"}
-          </Button>
-
-          <div className="flex items-center gap-3 py-1 text-xs uppercase tracking-wider text-text-tertiary">
-            <div className="h-px flex-1 bg-divider" />
-            or
-            <div className="h-px flex-1 bg-divider" />
-          </div>
-
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full"
-            disabled={loading}
-            onClick={handleSkip}
-          >
-            I don&apos;t have a coach code — set up on my own
+            {loading ? "Creating account..." : "Continue"}
           </Button>
         </form>
 
