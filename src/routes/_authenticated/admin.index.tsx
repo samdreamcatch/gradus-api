@@ -41,11 +41,11 @@ function AdminHome() {
           <p className="text-sm text-text-secondary">Loading…</p>
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
-            <Stat label="Coaches" value={overview.counts.coaches} sub={`${overview.counts.coachesLast7Days} new / 7d`} />
-            <Stat label="Parents" value={overview.counts.parents} sub={`${overview.counts.parentsLast7Days} new / 7d`} />
-            <Stat label="Athletes" value={overview.counts.athletes} />
-            <Stat label="Plans" value={overview.counts.plansTotal} sub={`${overview.counts.plansActive} active`} />
-            <Stat label="Beta signups" value={overview.counts.betaParents} sub={`${overview.counts.coachCodeParents} via coach`} />
+            <Stat kind="coaches" label="Coaches" value={overview.counts.coaches} sub={`${overview.counts.coachesLast7Days} new / 7d`} />
+            <Stat kind="parents" label="Parents" value={overview.counts.parents} sub={`${overview.counts.parentsLast7Days} new / 7d`} />
+            <Stat kind="athletes" label="Athletes" value={overview.counts.athletes} />
+            <Stat kind="plans" label="Plans" value={overview.counts.plansTotal} sub={`${overview.counts.plansActive} active`} />
+            <Stat kind="beta-signups" label="Beta signups" value={overview.counts.betaParents} sub={`${overview.counts.coachCodeParents} via coach`} />
           </div>
         )}
       </section>
@@ -127,13 +127,17 @@ function AdminHome() {
   );
 }
 
-function Stat({ label, value, sub }: { label: string; value: number; sub?: string }) {
+function Stat({ kind, label, value, sub }: { kind: "coaches" | "parents" | "athletes" | "plans" | "beta-signups"; label: string; value: number; sub?: string }) {
   return (
-    <div className="rounded-xl border border-divider bg-card p-4">
+    <Link
+      to="/admin/list/$kind"
+      params={{ kind }}
+      className="rounded-xl border border-divider bg-card p-4 transition hover:border-accent/50 hover:bg-elevated"
+    >
       <p className="text-xs uppercase tracking-wider text-text-tertiary">{label}</p>
       <p className="mt-1 font-display text-h2 text-text-primary">{value}</p>
       {sub && <p className="text-xs text-text-secondary">{sub}</p>}
-    </div>
+    </Link>
   );
 }
 

@@ -287,3 +287,141 @@ export const getUserDetail = createServerFn({ method: "POST" })
 
     return { auth, coach: coachDetail, parent: parentDetail };
   });
+
+const LIST_KINDS = ["coaches", "parents", "athletes", "plans", "beta-signups"] as const;
+
+export const getAdminList = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({
+      kind: z.enum(LIST_KINDS),
+      filter: z.string().optional().default("all"),
+    }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Fetch emails once for any kind that needs them
+    const loadEmails = async () => {
+      const map = new Map<string, string>();
+      const { data: usersData } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+      for (const u of usersData?.users ?? []) {
+        if (u.id && u.email) map.set(u.id, u.email);
+      }
+      return map;
+    };
+
+    if (data.kind === "coaches") {
+      let q = supabaseAdmin
+        .from("coach_profiles")
+        .select("id, user_id, first_name, last_name, created_at, onboarded_at")
+        .order("created_at", { ascending: false })
+        .limit(200);
+      if (data.filter === "onboarded") q = q.not("onboarded_at", "is", null);
+      else if (data.filter === "stub") q = q.is("onboarded_at", null);
+      const [{ data: rows, error }, emails] = await Promise.all([q, loadEmails()]);
+      if (error) dbError(error);
+      return {
+        rows: (rows ?? []).map((c) => ({
+          id: c.id,
+          userId: c.user_id,
+          name: `${c.first_name ?? ""} ${c.last_name ?? ""}`.trim() || "(no name)",
+          email: emails.get(c.user_id) ?? null,
+          tag: c.onboarded_at ? "onboarded" : "stub",
+          createdAt: c.created_at,
+        })),
+      };
+    }
+
+    if (data.kind === "parents") {
+      let q = supabaseAdmin
+        .from("parent_profiles")
+        .select("id, user_id, first_name, last_name, created_at, coach_id")
+        .order("created_at", { ascending: false })
+        .limit(200);
+      if (data.filter === "beta") q = q.is("coach_id", null);
+      else if (data.filter === "coach") q = q.not("coach_id", "is", null);
+      const [{ data: rows, error }, emails] = await Promise.all([q, loadEmails()]);
+      if (error) dbError(error);
+      return {
+        rows: (rows ?? []).map((p) => ({
+          id: p.id,
+          userId: p.user_id,
+          name: `${p.first_name ?? ""} ${p.last_name ?? ""}`.trim() || "(no name)",
+          email: emails.get(p.user_id) ?? null,
+          tag: p.coach_id ? "via coach" : "beta",
+          createdAt: p.created_at,
+        })),
+      };
+    }
+
+    if (data.kind === "athletes") {
+      const { data: rows, error } = await supabaseAdmin
+        .from("athletes")
+        .select("id, first_name, last_name, birthdate, created_at, parent_id, parent_profiles(first_name, last_name, user_id)")
+        .order("created_at", { ascending: false })
+        .limit(200);
+      if (error) dbError(error);
+      return {
+        rows: (rows ?? []).map((a: any) => ({
+          id: a.id,
+          userId: a.parent_profiles?.user_id ?? null,
+          name: `${a.first_name ?? ""} ${a.last_name ?? ""}`.trim() || "(no name)",
+          email: a.parent_profiles
+            ? `Parent: ${`${a.parent_profiles.first_name ?? ""} ${a.parent_profiles.last_name ?? ""}`.trim() || "—"}`
+            : null,
+          tag: a.birthdate ? new Date(a.birthdate).toLocaleDateString() : "—",
+          createdAt: a.created_at,
+        })),
+      };
+    }
+
+    if (data.kind === "plans") {
+      let q = supabaseAdmin
+        .from("plans")
+        .select("id, kind, status, created_at, coach_id, athlete_id, coach_profiles(first_name, last_name, user_id), athletes(first_name, last_name)")
+        .eq("kind", "plan")
+        .order("created_at", { ascending: false })
+        .limit(200);
+      if (data.filter === "active") q = q.eq("status", "active");
+      else if (data.filter === "benched") q = q.eq("status", "benched");
+      else if (data.filter === "draft") q = q.eq("status", "draft");
+      const { data: rows, error } = await q;
+      if (error) dbError(error);
+      return {
+        rows: (rows ?? []).map((p: any) => ({
+          id: p.id,
+          userId: p.coach_profiles?.user_id ?? null,
+          name: `${p.athletes?.first_name ?? ""} ${p.athletes?.last_name ?? ""}`.trim() || "(no athlete)",
+          email: `Coach: ${`${p.coach_profiles?.first_name ?? ""} ${p.coach_profiles?.last_name ?? ""}`.trim() || "—"}`,
+          tag: p.status,
+          createdAt: p.created_at,
+        })),
+      };
+    }
+
+    if (data.kind === "beta-signups") {
+      let q = supabaseAdmin
+        .from("parent_profiles")
+        .select("id, user_id, first_name, last_name, created_at, coach_id")
+        .is("coach_id", null)
+        .order("created_at", { ascending: false })
+        .limit(200);
+      const [{ data: rows, error }, emails] = await Promise.all([q, loadEmails()]);
+      if (error) dbError(error);
+      let mapped = (rows ?? []).map((p) => ({
+        id: p.id,
+        userId: p.user_id,
+        name: `${p.first_name ?? ""} ${p.last_name ?? ""}`.trim() || "(no name)",
+        email: emails.get(p.user_id) ?? null,
+        tag: "beta",
+        createdAt: p.created_at,
+      }));
+      if (data.filter === "with-email") mapped = mapped.filter((r) => !!r.email);
+      else if (data.filter === "no-email") mapped = mapped.filter((r) => !r.email);
+      return { rows: mapped };
+    }
+
+    return { rows: [] };
+  });
