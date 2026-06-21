@@ -672,3 +672,222 @@ export const getDailyActiveUsers = createServerFn({ method: "POST" })
 
     return { days, series };
   });
+
+/**
+ * Reporting panel: per-user-type metrics covering counts, connections, plans,
+ * templates, and engagement (active users in last 7d / 30d).
+ */
+export const getAdminReporting = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ includeTest: z.boolean().optional().default(false) }).parse(input ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const now = Date.now();
+    const day = 24 * 60 * 60 * 1000;
+    const iso = (ms: number) => new Date(ms).toISOString();
+    const since7 = iso(now - 7 * day);
+    const since30 = iso(now - 30 * day);
+    const excludeTest = !data.includeTest;
+    const ft = <T extends { eq: (c: string, v: any) => T }>(q: T) =>
+      excludeTest ? q.eq("is_test", false) : q;
+
+    const [
+      coaches,
+      parents,
+      athletes,
+      coachProfiles,
+      parentProfiles,
+      athleteRows,
+      coachAthletes,
+      plans,
+      messages,
+      sessions,
+      wrapUps,
+    ] = await Promise.all([
+      ft(supabaseAdmin.from("coach_profiles").select("id", { count: "exact", head: true })),
+      ft(supabaseAdmin.from("parent_profiles").select("id", { count: "exact", head: true })),
+      supabaseAdmin.from("athletes").select("id", { count: "exact", head: true }),
+      supabaseAdmin
+        .from("coach_profiles")
+        .select("id, user_id, is_test, onboarded_at, created_at"),
+      supabaseAdmin
+        .from("parent_profiles")
+        .select("id, user_id, is_test, coach_id, created_at"),
+      supabaseAdmin
+        .from("athletes")
+        .select("id, user_id, parent_id, created_at"),
+      supabaseAdmin.from("coach_athletes").select("coach_id, athlete_id"),
+      supabaseAdmin
+        .from("plans")
+        .select("id, kind, status, coach_id, athlete_id, created_at"),
+      supabaseAdmin
+        .from("messages")
+        .select("sender_user_id, created_at")
+        .gte("created_at", since30)
+        .limit(50000),
+      supabaseAdmin
+        .from("plan_sessions")
+        .select("athlete_id, parent_id, logged_at")
+        .gte("logged_at", since30)
+        .limit(50000),
+      supabaseAdmin
+        .from("lesson_wrap_ups")
+        .select("coach_id, created_at")
+        .gte("created_at", since30)
+        .limit(50000),
+    ]);
+
+    const coachList = coachProfiles.data ?? [];
+    const parentList = parentProfiles.data ?? [];
+    const athleteList = athleteRows.data ?? [];
+    const links = coachAthletes.data ?? [];
+    const planList = plans.data ?? [];
+
+    // Test exclusion sets
+    const testCoachIds = new Set(coachList.filter((c) => c.is_test).map((c) => c.id));
+    const testParentIds = new Set(parentList.filter((p) => p.is_test).map((p) => p.id));
+    const testUserIds = new Set<string>();
+    if (excludeTest) {
+      for (const c of coachList) if (c.is_test && c.user_id) testUserIds.add(c.user_id);
+      for (const p of parentList) if (p.is_test && p.user_id) testUserIds.add(p.user_id);
+    }
+    const isExcludedCoach = (id: string) => excludeTest && testCoachIds.has(id);
+    const isExcludedParent = (id: string) => excludeTest && testParentIds.has(id);
+
+    // Visible (non-test) profile lists
+    const visibleCoaches = excludeTest ? coachList.filter((c) => !c.is_test) : coachList;
+    const visibleParents = excludeTest ? parentList.filter((p) => !p.is_test) : parentList;
+    const visibleAthletes = athleteList.filter(
+      (a) => !a.parent_id || !isExcludedParent(a.parent_id),
+    );
+
+    // 7d new
+    const new7 = (rows: { created_at: string | null }[]) =>
+      rows.filter((r) => r.created_at && r.created_at >= since7).length;
+
+    // Coach metrics
+    const onboardedCoaches = visibleCoaches.filter((c) => !!c.onboarded_at).length;
+    const coachWithAthlete = new Set(
+      links.filter((l) => !isExcludedCoach(l.coach_id)).map((l) => l.coach_id),
+    );
+    const visibleCoachIds = new Set(visibleCoaches.map((c) => c.id));
+    const coachesWithAthletes = [...coachWithAthlete].filter((id) => visibleCoachIds.has(id)).length;
+    const coachPlans = planList.filter(
+      (p) => p.kind === "plan" && p.coach_id && !isExcludedCoach(p.coach_id),
+    );
+    const coachActivePlans = coachPlans.filter((p) => p.status === "active").length;
+    const coachTemplates = planList.filter(
+      (p) => p.kind === "template" && p.coach_id && !isExcludedCoach(p.coach_id),
+    ).length;
+
+    // Parent metrics
+    const parentsViaCoach = visibleParents.filter((p) => !!p.coach_id).length;
+    const parentsBeta = visibleParents.filter((p) => !p.coach_id).length;
+    const visibleParentIds = new Set(visibleParents.map((p) => p.id));
+    const parentsWithAthletes = new Set(
+      athleteList
+        .filter((a) => a.parent_id && visibleParentIds.has(a.parent_id))
+        .map((a) => a.parent_id as string),
+    ).size;
+
+    // Athlete metrics
+    const athletesWithCoach = new Set(
+      links
+        .filter((l) => !isExcludedCoach(l.coach_id))
+        .map((l) => l.athlete_id),
+    );
+    const visibleAthleteIds = new Set(visibleAthletes.map((a) => a.id));
+    const athletesConnected = [...athletesWithCoach].filter((id) => visibleAthleteIds.has(id)).length;
+    const athleteActivePlans = planList.filter(
+      (p) =>
+        p.kind === "plan" &&
+        p.status === "active" &&
+        p.athlete_id &&
+        visibleAthleteIds.has(p.athlete_id),
+    ).length;
+    const sessions7 = (sessions.data ?? []).filter(
+      (s) => s.logged_at && s.logged_at >= since7,
+    ).length;
+
+    // Engagement: distinct user_ids per type active in 7d / 30d
+    const coachUserById = new Map<string, string>();
+    for (const c of coachList) if (c.user_id) coachUserById.set(c.id, c.user_id);
+    const parentUserById = new Map<string, string>();
+    for (const p of parentList) if (p.user_id) parentUserById.set(p.id, p.user_id);
+    const athleteUserById = new Map<string, string>();
+    for (const a of athleteList) if (a.user_id) athleteUserById.set(a.id, a.user_id);
+
+    const coachUserIds = new Set(visibleCoaches.map((c) => c.user_id).filter(Boolean) as string[]);
+    const parentUserIds = new Set(visibleParents.map((p) => p.user_id).filter(Boolean) as string[]);
+    const athleteUserIds = new Set(
+      visibleAthletes.map((a) => a.user_id).filter(Boolean) as string[],
+    );
+
+    const active = {
+      coach7: new Set<string>(),
+      coach30: new Set<string>(),
+      parent7: new Set<string>(),
+      parent30: new Set<string>(),
+      athlete7: new Set<string>(),
+      athlete30: new Set<string>(),
+    };
+    const bump = (uid: string | null | undefined, when: string | null | undefined) => {
+      if (!uid || !when) return;
+      if (excludeTest && testUserIds.has(uid)) return;
+      const recent7 = when >= since7;
+      if (coachUserIds.has(uid)) {
+        active.coach30.add(uid);
+        if (recent7) active.coach7.add(uid);
+      }
+      if (parentUserIds.has(uid)) {
+        active.parent30.add(uid);
+        if (recent7) active.parent7.add(uid);
+      }
+      if (athleteUserIds.has(uid)) {
+        active.athlete30.add(uid);
+        if (recent7) active.athlete7.add(uid);
+      }
+    };
+    for (const m of messages.data ?? []) bump(m.sender_user_id, m.created_at);
+    for (const s of sessions.data ?? []) {
+      if (s.parent_id) bump(parentUserById.get(s.parent_id), s.logged_at);
+      else if (s.athlete_id) bump(athleteUserById.get(s.athlete_id), s.logged_at);
+    }
+    for (const w of wrapUps.data ?? []) bump(coachUserById.get(w.coach_id), w.created_at);
+
+    return {
+      coaches: {
+        total: coaches.count ?? 0,
+        new7: new7(visibleCoaches),
+        onboarded: onboardedCoaches,
+        withAthletes: coachesWithAthletes,
+        activePlans: coachActivePlans,
+        templates: coachTemplates,
+        active7: active.coach7.size,
+        active30: active.coach30.size,
+      },
+      parents: {
+        total: parents.count ?? 0,
+        new7: new7(visibleParents),
+        viaCoach: parentsViaCoach,
+        beta: parentsBeta,
+        withAthletes: parentsWithAthletes,
+        active7: active.parent7.size,
+        active30: active.parent30.size,
+      },
+      athletes: {
+        total: athletes.count ?? 0,
+        new7: new7(visibleAthletes),
+        withCoach: athletesConnected,
+        activePlans: athleteActivePlans,
+        sessions7,
+        active7: active.athlete7.size,
+        active30: active.athlete30.size,
+      },
+    };
+  });
+

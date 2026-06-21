@@ -7,10 +7,11 @@ import { z } from "zod";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { getAdminOverview, searchUsers, setUserTestFlag, getDailyActiveUsers } from "@/lib/admin.functions";
+import { getAdminOverview, searchUsers, setUserTestFlag, getDailyActiveUsers, getAdminReporting } from "@/lib/admin.functions";
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 import { SettingsGroup, SettingsList, SettingsButtonRow } from "@/components/settings/primitives";
 import { LogOut } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 const searchSchema = z.object({
   test: fallback(z.boolean(), false).default(false),
@@ -165,21 +166,8 @@ function AdminHome() {
         )}
       </section>
 
-      <section className="space-y-3">
-        <h2 className="font-display text-h3 text-text-primary">Overview</h2>
-        {isLoading || !overview ? (
-          <p className="text-sm text-text-secondary">Loading…</p>
-        ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-6">
-            <Stat kind="coaches" label="Coaches" value={overview.counts.coaches} includeTest={includeTest} />
-            <Stat kind="parents" label="Parents" value={overview.counts.parents} sub={`${overview.counts.parentsLast7Days} new / 7d`} includeTest={includeTest} />
-            <Stat kind="athletes" label="Athletes" value={overview.counts.athletes} includeTest={includeTest} />
-            <Stat kind="plans" label="Plans" value={overview.counts.plansActive} includeTest={includeTest} />
-            <Stat kind="beta-signups" label="Beta signups" value={overview.counts.betaParents} sub="No coach yet" includeTest={includeTest} />
-            <Stat kind="parents" filter="coach" label="Via coach code" value={overview.counts.coachCodeParents} sub="Signed up through a coach" includeTest={includeTest} />
-          </div>
-        )}
-      </section>
+      <ReportingPanel includeTest={includeTest} />
+
 
       <DauChart includeTest={includeTest} />
 
@@ -199,6 +187,79 @@ function AdminHome() {
 
 
 
+    </div>
+  );
+}
+
+function ReportingPanel({ includeTest }: { includeTest: boolean }) {
+  const reportFn = useServerFn(getAdminReporting);
+  const { data, isLoading } = useQuery({
+    queryKey: ["admin-reporting", includeTest],
+    queryFn: () => reportFn({ data: { includeTest } }),
+  });
+
+  return (
+    <section className="space-y-3">
+      <h2 className="font-display text-h3 text-text-primary">Reporting</h2>
+      {isLoading || !data ? (
+        <p className="text-sm text-text-secondary">Loading…</p>
+      ) : (
+        <Tabs defaultValue="coaches" className="w-full">
+          <TabsList>
+            <TabsTrigger value="coaches">Coaches</TabsTrigger>
+            <TabsTrigger value="parents">Parents</TabsTrigger>
+            <TabsTrigger value="athletes">Athletes</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="coaches" className="mt-3">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+              <Stat kind="coaches" label="Total" value={data.coaches.total} includeTest={includeTest} />
+              <Stat kind="coaches" label="New / 7d" value={data.coaches.new7} includeTest={includeTest} />
+              <Stat kind="coaches" filter="onboarded" label="Onboarded" value={data.coaches.onboarded} includeTest={includeTest} />
+              <Metric label="With athletes" value={data.coaches.withAthletes} />
+              <Stat kind="plans" filter="active" label="Active plans" value={data.coaches.activePlans} includeTest={includeTest} />
+              <Metric label="Templates" value={data.coaches.templates} />
+              <Metric label="Active / 7d" value={data.coaches.active7} />
+              <Metric label="Active / 30d" value={data.coaches.active30} />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="parents" className="mt-3">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+              <Stat kind="parents" label="Total" value={data.parents.total} includeTest={includeTest} />
+              <Stat kind="parents" label="New / 7d" value={data.parents.new7} includeTest={includeTest} />
+              <Stat kind="parents" filter="coach" label="Via coach code" value={data.parents.viaCoach} includeTest={includeTest} />
+              <Stat kind="beta-signups" label="Beta (no coach)" value={data.parents.beta} includeTest={includeTest} />
+              <Metric label="With athletes" value={data.parents.withAthletes} />
+              <Metric label="Active / 7d" value={data.parents.active7} />
+              <Metric label="Active / 30d" value={data.parents.active30} />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="athletes" className="mt-3">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+              <Stat kind="athletes" label="Total" value={data.athletes.total} includeTest={includeTest} />
+              <Stat kind="athletes" label="New / 7d" value={data.athletes.new7} includeTest={includeTest} />
+              <Metric label="With coach" value={data.athletes.withCoach} />
+              <Stat kind="plans" filter="active" label="Active plans" value={data.athletes.activePlans} includeTest={includeTest} />
+              <Metric label="Sessions / 7d" value={data.athletes.sessions7} />
+              <Metric label="Active / 7d" value={data.athletes.active7} />
+              <Metric label="Active / 30d" value={data.athletes.active30} />
+            </div>
+          </TabsContent>
+        </Tabs>
+      )}
+    </section>
+  );
+}
+
+function Metric({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-xl border border-divider bg-card px-3 py-2">
+      <div className="flex items-baseline justify-between gap-2">
+        <p className="text-[10px] uppercase tracking-wider text-text-tertiary truncate">{label}</p>
+        <p className="font-display text-h3 leading-none text-text-primary">{value}</p>
+      </div>
     </div>
   );
 }
