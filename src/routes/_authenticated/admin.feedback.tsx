@@ -60,7 +60,7 @@ function AdminFeedback() {
               <Link
                 key={t}
                 from={Route.fullPath}
-                search={(prev) => ({ ...prev, type: t })}
+                search={(prev: any) => ({ ...prev, type: t })}
                 className={cn(
                   "rounded-pill border px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition",
                   active
@@ -74,7 +74,7 @@ function AdminFeedback() {
           })}
           <Link
             from={Route.fullPath}
-            search={(prev) => ({ ...prev, unresolved: !unresolved })}
+            search={(prev: any) => ({ ...prev, unresolved: !unresolved })}
             className={cn(
               "rounded-pill border px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition",
               unresolved
