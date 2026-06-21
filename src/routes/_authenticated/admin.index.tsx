@@ -93,6 +93,24 @@ function AdminHome() {
         </div>
       </header>
 
+      {overview?.betaInviteCode && (
+        <section className="rounded-lg border border-divider bg-card p-4 flex items-center justify-between gap-4">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-widest text-text-secondary">Beta invite code</p>
+            <p className="font-mono text-h3 text-text-primary tracking-widest mt-1">{overview.betaInviteCode}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => navigator.clipboard.writeText(overview.betaInviteCode!)}
+            className="rounded-pill border border-divider bg-elevated px-3 py-2 text-xs font-semibold uppercase tracking-wider text-text-secondary hover:text-text-primary"
+          >
+            Copy
+          </button>
+        </section>
+      )}
+
+
+
       <section className="space-y-3">
         <h2 className="font-display text-h3 text-text-primary">User lookup</h2>
         <form
