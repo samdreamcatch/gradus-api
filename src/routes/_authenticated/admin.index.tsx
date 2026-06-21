@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { getAdminOverview, searchUsers, setUserTestFlag } from "@/lib/admin.functions";
 
 const searchSchema = z.object({
@@ -20,10 +20,18 @@ export const Route = createFileRoute("/_authenticated/admin/")({
 
 function AdminHome() {
   const { test: includeTest } = Route.useSearch();
+  const navigate = useNavigate();
   const overviewFn = useServerFn(getAdminOverview);
   const searchFn = useServerFn(searchUsers);
   const toggleFn = useServerFn(setUserTestFlag);
   const qc = useQueryClient();
+
+  const handleSignOut = async () => {
+    await qc.cancelQueries();
+    qc.clear();
+    await supabase.auth.signOut();
+    navigate({ to: "/auth", replace: true });
+  };
 
   const toggleTest = async (userId: string, next: boolean) => {
     await toggleFn({ data: { userId, isTest: next } });
@@ -75,6 +83,13 @@ function AdminHome() {
           >
             Connection map →
           </Link>
+          <button
+            type="button"
+            onClick={handleSignOut}
+            className="rounded-pill border border-divider bg-card px-3 py-2 text-xs font-semibold uppercase tracking-wider text-text-secondary hover:bg-elevated hover:text-text-primary"
+          >
+            Sign out
+          </button>
         </div>
       </header>
 
