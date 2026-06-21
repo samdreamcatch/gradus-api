@@ -187,6 +187,10 @@ function AdminHome() {
         )}
       </section>
 
+      <DauChart includeTest={includeTest} />
+
+
+
       {overview && (
         <section className="rounded-xl border border-divider bg-card p-4">
           <p className="mb-2 text-xs font-bold uppercase tracking-widest text-accent-ink">Status key</p>
