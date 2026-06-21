@@ -133,13 +133,20 @@ function AdminMap() {
         </p>
       </header>
 
-      <Legend />
-
-      <div className="h-[70vh] rounded-xl border border-divider bg-card overflow-hidden">
-        {isLoading ? (
-          <p className="p-4 text-sm text-text-secondary">Loading…</p>
-        ) : (
-          <ReactFlow
+      <div className="flex items-center justify-between gap-3">
+        <Legend />
+        <Link
+          from={Route.fullPath}
+          search={(prev: any) => ({ ...prev, test: !includeTest })}
+          className={`rounded-pill border px-3 py-1 text-xs font-medium uppercase tracking-wider transition ${
+            includeTest
+              ? "border-accent bg-accent text-accent-foreground"
+              : "border-divider bg-card text-text-secondary hover:bg-elevated"
+          }`}
+        >
+          {includeTest ? "Test users: on" : "Test users: hidden"}
+        </Link>
+      </div>
             nodes={nodes}
             edges={edges}
             fitView
