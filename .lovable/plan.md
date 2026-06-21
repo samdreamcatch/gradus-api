@@ -1,49 +1,14 @@
+## Plan: Ignore "Extension in Public" finding
 
-## Feedback feature
+### What I'll do
+1. **Mark the finding as ignored** in the security scanner (`SUPA_extension_in_public`) with an explanation of why it's not applicable for this app.
+2. **Update the security memory** to note that this warning is intentionally accepted, so future scans and AI sessions don't re-flag it as actionable.
 
-A jelly-pen FAB on every authenticated page lets users send quick feedback. Each entry auto-captures page, role, and device info, and shows up in a new Feedback tab in admin.
+### Rationale recorded
+- The flagged extension (most likely `citext`) is embedded in the `admin_allowlist.email` column type. Moving it would require dropping and recreating that column and its dependent trigger (`grant_admin_if_allowlisted`).
+- `pgmq` is already namespaced to its own `pgmq` schema (functions call `pgmq.send(...)` qualified), so it's not the offender.
+- The warning is hygiene-level (namespace cleanliness), not an exploitable vulnerability. RLS, role grants, and auth paths are unaffected by extension schema location.
+- Cost of fixing (migration risk to admin allowlist) outweighs benefit (silencing a lint warning).
 
-### User experience
-
-- **Floating button**: small circular pen-accent FAB anchored bottom-right, sitting above the bottom nav on coach/parent/athlete layouts. Uses `MessageSquarePlus` icon + `shadow-card`. Tooltip "Send feedback".
-- **Sheet** (mobile: bottom Sheet, desktop: Dialog) titled "Send feedback" with:
-  - Type chips: Bug · Idea · Praise · Other (single select, default Idea)
-  - Message textarea (required, max 2000 chars), placeholder "What's on your mind?"
-  - Tiny footer line: "We'll know which page you're on and your device." (transparency)
-  - Submit button "Send" → toast "Thanks — got it." then closes
-- Styling follows existing patterns (`session-feedback-modal.tsx` as reference: Fraunces display title, accent submit button, divider borders).
-
-### Data captured
-
-User-entered: `type`, `message`.
-Auto: `user_id`, `role` (coach/parent/athlete/admin), `path` (`window.location.pathname + search`), `user_agent`, `viewport` (`${w}x${h}`), `created_at`.
-
-### Schema
-
-New table `public.feedback`:
-- `id uuid pk default gen_random_uuid()`
-- `user_id uuid not null` (no FK to auth.users)
-- `role text not null check in ('coach','parent','athlete','admin','unknown')`
-- `type text not null check in ('bug','idea','praise','other')`
-- `message text not null check (length(message) between 1 and 2000)`
-- `path text`, `user_agent text`, `viewport text`
-- `created_at timestamptz default now()`
-- `resolved_at timestamptz` (admin can mark handled later)
-
-GRANTs: `INSERT` to authenticated; `SELECT/UPDATE` gated by admin via RLS using `has_role(auth.uid(),'admin')`. Service role full. Index on `created_at desc`, `user_id`.
-
-### Server functions (`src/lib/feedback.functions.ts`)
-
-- `submitFeedback` — `requireSupabaseAuth`, validates `{type, message, path, userAgent, viewport}` with zod, derives role by checking coach_profiles/parent_profiles/athletes for `userId`, inserts row.
-- `listFeedback` — admin-only (checks `has_role`), returns recent feedback joined with user display name + test flag; supports filter by `type` and `unresolved`.
-- `setFeedbackResolved` — admin-only, toggles `resolved_at`.
-
-### UI placement
-
-- New component `src/components/feedback/feedback-fab.tsx` (FAB + sheet) mounted once inside `src/routes/_authenticated.tsx` so it appears on every signed-in route. Hidden on admin routes if desired (keep visible — admins can dogfood).
-- New admin route `src/routes/_authenticated/admin.feedback.tsx`: list view with type filter chips, unresolved toggle, rows showing user name + role + test badge, type pill, time-ago, page path (mono), and expandable message. Click row to mark resolved.
-- Add "Feedback" tab to admin nav alongside existing Overview / Lists tabs in `admin.tsx`.
-
-### Out of scope (call out)
-
-No screenshot upload, no sentiment scale, no email notifications. Easy to add later.
+### No database changes
+No migrations, no code edits. This is purely scanner state + memory hygiene.
