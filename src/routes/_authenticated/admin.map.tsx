@@ -147,7 +147,14 @@ function AdminMap() {
           {includeTest ? "Test users: on" : "Test users: hidden"}
         </Link>
       </div>
+
+      <div className="h-[70vh] rounded-xl border border-divider bg-card overflow-hidden">
+        {isLoading ? (
+          <p className="p-4 text-sm text-text-secondary">Loading…</p>
+        ) : (
+          <ReactFlow
             nodes={nodes}
+            edges={edges}
             edges={edges}
             fitView
             minZoom={0.1}
