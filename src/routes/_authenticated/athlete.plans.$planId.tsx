@@ -1,19 +1,16 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, ChevronDown, MessageCircle, X } from "lucide-react";
-import { IdleSlide, RunningPill } from "@/components/plans/session-timer-controls";
-import { toast } from "sonner";
 import { AthleteBottomNav } from "@/components/athlete/bottom-nav";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import {
   getAthletePlan,
   type AthletePlanMoveDTO,
 } from "@/lib/athlete-plans.functions";
-import { submitAthletePlanSession } from "@/lib/plan-sessions.functions";
 import { MessageCoachAboutPlanDialog } from "@/components/plans/message-coach-about-plan-dialog";
+import { PlanSessionTimer } from "@/components/plans/plan-session-timer";
 
 export const Route = createFileRoute("/_authenticated/athlete/plans/$planId")({
   component: AthletePlanDetail,
@@ -83,7 +80,8 @@ function AthletePlanDetail() {
         </h1>
       </div>
 
-      <SessionTimer
+      <PlanSessionTimer
+        role="athlete"
         planId={plan.id}
         coachFirstName={plan.coachFirstName}
         athleteFirstName={plan.athleteFirstName}
