@@ -169,20 +169,30 @@ function AdminHome() {
 
       {overview && (
         <section className="grid gap-6 md:grid-cols-2">
-          <RecentList title="Recent coaches" items={overview.recentCoaches.map((c) => ({
-            id: c.userId,
-            primary: `${c.firstName ?? ""} ${c.lastName ?? ""}`.trim() || "(no name)",
-            secondary: c.email ?? "—",
-            meta: new Date(c.createdAt).toLocaleDateString(),
-            tag: c.onboarded ? "onboarded" : "stub",
-          }))} />
-          <RecentList title="Recent parents" items={overview.recentParents.map((p) => ({
-            id: p.userId,
-            primary: `${p.firstName ?? ""} ${p.lastName ?? ""}`.trim() || "(no name)",
-            secondary: p.email ?? "—",
-            meta: new Date(p.createdAt).toLocaleDateString(),
-            tag: p.viaBeta ? "beta" : "coach code",
-          }))} />
+          <RecentList
+            title="Recent coaches"
+            onToggleTest={toggleTest}
+            items={overview.recentCoaches.map((c) => ({
+              id: c.userId,
+              primary: `${c.firstName ?? ""} ${c.lastName ?? ""}`.trim() || "(no name)",
+              secondary: c.email ?? "—",
+              meta: new Date(c.createdAt).toLocaleDateString(),
+              tag: c.onboarded ? "onboarded" : "stub",
+              isTest: c.isTest,
+            }))}
+          />
+          <RecentList
+            title="Recent parents"
+            onToggleTest={toggleTest}
+            items={overview.recentParents.map((p) => ({
+              id: p.userId,
+              primary: `${p.firstName ?? ""} ${p.lastName ?? ""}`.trim() || "(no name)",
+              secondary: p.email ?? "—",
+              meta: new Date(p.createdAt).toLocaleDateString(),
+              tag: p.viaBeta ? "beta" : "coach code",
+              isTest: p.isTest,
+            }))}
+          />
         </section>
       )}
 
