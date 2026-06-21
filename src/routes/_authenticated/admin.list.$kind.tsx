@@ -50,6 +50,7 @@ const KINDS = Object.keys(KIND_CONFIG) as Kind[];
 
 const searchSchema = z.object({
   filter: fallback(z.string(), "all").default("all"),
+  test: fallback(z.boolean(), false).default(false),
 });
 
 export const Route = createFileRoute("/_authenticated/admin/list/$kind")({
@@ -59,7 +60,7 @@ export const Route = createFileRoute("/_authenticated/admin/list/$kind")({
 
 function AdminList() {
   const { kind } = Route.useParams();
-  const { filter } = Route.useSearch();
+  const { filter, test: includeTest } = Route.useSearch();
   const fn = useServerFn(getAdminList);
 
   if (!KINDS.includes(kind as Kind)) {
@@ -72,8 +73,8 @@ function AdminList() {
 
   const cfg = KIND_CONFIG[kind as Kind];
   const { data, isLoading } = useQuery({
-    queryKey: ["admin-list", kind, filter],
-    queryFn: () => fn({ data: { kind: kind as Kind, filter } }),
+    queryKey: ["admin-list", kind, filter, includeTest],
+    queryFn: () => fn({ data: { kind: kind as Kind, filter, includeTest } }),
   });
 
   return (
@@ -93,24 +94,33 @@ function AdminList() {
         )}
       </header>
 
-      {cfg.filters.length > 1 && (
-        <div className="flex flex-wrap gap-2">
-          {cfg.filters.map((f) => (
-            <Link
-              key={f.value}
-              from={Route.fullPath}
-              search={{ filter: f.value }}
-              className={`rounded-pill border px-3 py-1 text-xs font-medium uppercase tracking-wider transition ${
-                filter === f.value
-                  ? "border-accent bg-accent text-accent-foreground"
-                  : "border-divider bg-card text-text-secondary hover:bg-elevated"
-              }`}
-            >
-              {f.label}
-            </Link>
-          ))}
-        </div>
-      )}
+      <div className="flex flex-wrap items-center gap-2">
+        {cfg.filters.length > 1 && cfg.filters.map((f) => (
+          <Link
+            key={f.value}
+            from={Route.fullPath}
+            search={(prev: any) => ({ ...prev, filter: f.value })}
+            className={`rounded-pill border px-3 py-1 text-xs font-medium uppercase tracking-wider transition ${
+              filter === f.value
+                ? "border-accent bg-accent text-accent-foreground"
+                : "border-divider bg-card text-text-secondary hover:bg-elevated"
+            }`}
+          >
+            {f.label}
+          </Link>
+        ))}
+        <Link
+          from={Route.fullPath}
+          search={(prev: any) => ({ ...prev, test: !includeTest })}
+          className={`ml-auto rounded-pill border px-3 py-1 text-xs font-medium uppercase tracking-wider transition ${
+            includeTest
+              ? "border-accent bg-accent text-accent-foreground"
+              : "border-divider bg-card text-text-secondary hover:bg-elevated"
+          }`}
+        >
+          {includeTest ? "Test users: on" : "Test users: hidden"}
+        </Link>
+      </div>
 
       <div className="rounded-xl border border-divider bg-card">
         {isLoading ? (
@@ -122,10 +132,15 @@ function AdminList() {
             {data!.rows.map((r) => {
               const inner = (
                 <div className="flex items-center justify-between gap-4 px-4 py-3 hover:bg-elevated">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-text-primary">{r.name}</p>
-                    {r.email && <p className="truncate text-xs text-text-secondary">{r.email}</p>}
-                  </div>
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold text-text-primary">
+                    {r.name}
+                    {(r as any).isTest && (
+                      <span className="ml-2 rounded-pill border border-divider bg-elevated px-1.5 py-0.5 text-[10px] font-mono uppercase tracking-wider text-text-tertiary">test</span>
+                    )}
+                  </p>
+                  {r.email && <p className="truncate text-xs text-text-secondary">{r.email}</p>}
+                </div>
                   <div className="shrink-0 text-right">
                     <p className="text-xs font-mono uppercase text-accent-ink">{r.tag}</p>
                     <p className="text-xs text-text-tertiary">

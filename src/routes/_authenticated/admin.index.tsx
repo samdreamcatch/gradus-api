@@ -2,21 +2,29 @@ import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
+import { zodValidator, fallback } from "@tanstack/zod-adapter";
+import { z } from "zod";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { getAdminOverview, searchUsers } from "@/lib/admin.functions";
 
+const searchSchema = z.object({
+  test: fallback(z.boolean(), false).default(false),
+});
+
 export const Route = createFileRoute("/_authenticated/admin/")({
+  validateSearch: zodValidator(searchSchema),
   component: AdminHome,
 });
 
 function AdminHome() {
+  const { test: includeTest } = Route.useSearch();
   const overviewFn = useServerFn(getAdminOverview);
   const searchFn = useServerFn(searchUsers);
 
   const { data: overview, isLoading } = useQuery({
-    queryKey: ["admin-overview"],
-    queryFn: () => overviewFn(),
+    queryKey: ["admin-overview", includeTest],
+    queryFn: () => overviewFn({ data: { includeTest } }),
   });
 
   const [query, setQuery] = useState("");
@@ -35,12 +43,27 @@ function AdminHome() {
           <h1 className="font-display text-h1 text-text-primary">Admin</h1>
           <p className="text-sm text-text-secondary">Read-only overview &amp; user lookup.</p>
         </div>
-        <Link
-          to="/admin/map"
-          className="rounded-pill border border-accent bg-accent px-4 py-2 text-xs font-semibold uppercase tracking-wider text-accent-foreground hover:opacity-90"
-        >
-          Connection map →
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link
+            from={Route.fullPath}
+            search={{ test: !includeTest }}
+            className={`rounded-pill border px-3 py-2 text-xs font-semibold uppercase tracking-wider transition ${
+              includeTest
+                ? "border-accent bg-accent text-accent-foreground"
+                : "border-divider bg-card text-text-secondary hover:bg-elevated"
+            }`}
+            title="Toggle test users"
+          >
+            {includeTest ? "Test users: on" : "Test users: hidden"}
+          </Link>
+          <Link
+            to="/admin/map"
+            search={{ test: includeTest }}
+            className="rounded-pill border border-accent bg-accent px-4 py-2 text-xs font-semibold uppercase tracking-wider text-accent-foreground hover:opacity-90"
+          >
+            Connection map →
+          </Link>
+        </div>
       </header>
 
       <section className="space-y-3">
@@ -104,11 +127,11 @@ function AdminHome() {
           <p className="text-sm text-text-secondary">Loading…</p>
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
-            <Stat kind="coaches" label="Coaches" value={overview.counts.coaches} sub={`${overview.counts.coachesLast7Days} new / 7d`} />
-            <Stat kind="parents" label="Parents" value={overview.counts.parents} sub={`${overview.counts.parentsLast7Days} new / 7d`} />
-            <Stat kind="athletes" label="Athletes" value={overview.counts.athletes} />
-            <Stat kind="plans" label="Plans" value={overview.counts.plansTotal} sub={`${overview.counts.plansActive} active`} />
-            <Stat kind="beta-signups" label="Beta signups" value={overview.counts.betaParents} sub={`${overview.counts.coachCodeParents} via coach`} />
+            <Stat kind="coaches" label="Coaches" value={overview.counts.coaches} sub={`${overview.counts.coachesLast7Days} new / 7d`} includeTest={includeTest} />
+            <Stat kind="parents" label="Parents" value={overview.counts.parents} sub={`${overview.counts.parentsLast7Days} new / 7d`} includeTest={includeTest} />
+            <Stat kind="athletes" label="Athletes" value={overview.counts.athletes} includeTest={includeTest} />
+            <Stat kind="plans" label="Plans" value={overview.counts.plansTotal} sub={`${overview.counts.plansActive} active`} includeTest={includeTest} />
+            <Stat kind="beta-signups" label="Beta signups" value={overview.counts.betaParents} sub={`${overview.counts.coachCodeParents} via coach`} includeTest={includeTest} />
           </div>
         )}
       </section>
@@ -150,11 +173,12 @@ function AdminHome() {
   );
 }
 
-function Stat({ kind, label, value, sub }: { kind: "coaches" | "parents" | "athletes" | "plans" | "beta-signups"; label: string; value: number; sub?: string }) {
+function Stat({ kind, label, value, sub, includeTest }: { kind: "coaches" | "parents" | "athletes" | "plans" | "beta-signups"; label: string; value: number; sub?: string; includeTest: boolean }) {
   return (
     <Link
       to="/admin/list/$kind"
       params={{ kind }}
+      search={{ filter: "all", test: includeTest }}
       className="rounded-xl border border-divider bg-card p-4 transition hover:border-accent/50 hover:bg-elevated"
     >
       <p className="text-xs uppercase tracking-wider text-text-tertiary">{label}</p>

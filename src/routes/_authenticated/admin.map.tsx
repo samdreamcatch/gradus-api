@@ -10,9 +10,16 @@ import ReactFlow, {
   type Edge,
 } from "reactflow";
 import "reactflow/dist/style.css";
+import { zodValidator, fallback } from "@tanstack/zod-adapter";
+import { z } from "zod";
 import { getAdminConnectionMap } from "@/lib/admin.functions";
 
+const searchSchema = z.object({
+  test: fallback(z.boolean(), false).default(false),
+});
+
 export const Route = createFileRoute("/_authenticated/admin/map")({
+  validateSearch: zodValidator(searchSchema),
   component: AdminMap,
 });
 
@@ -20,10 +27,11 @@ type NodeKind = "coach" | "parent" | "athlete";
 
 function AdminMap() {
   const navigate = useNavigate();
+  const { test: includeTest } = Route.useSearch();
   const fn = useServerFn(getAdminConnectionMap);
   const { data, isLoading } = useQuery({
-    queryKey: ["admin-connection-map"],
-    queryFn: () => fn(),
+    queryKey: ["admin-connection-map", includeTest],
+    queryFn: () => fn({ data: { includeTest } }),
   });
 
   const { nodes, edges } = useMemo(() => {
@@ -125,7 +133,20 @@ function AdminMap() {
         </p>
       </header>
 
-      <Legend />
+      <div className="flex items-center justify-between gap-3">
+        <Legend />
+        <Link
+          from={Route.fullPath}
+          search={(prev: any) => ({ ...prev, test: !includeTest })}
+          className={`rounded-pill border px-3 py-1 text-xs font-medium uppercase tracking-wider transition ${
+            includeTest
+              ? "border-accent bg-accent text-accent-foreground"
+              : "border-divider bg-card text-text-secondary hover:bg-elevated"
+          }`}
+        >
+          {includeTest ? "Test users: on" : "Test users: hidden"}
+        </Link>
+      </div>
 
       <div className="h-[70vh] rounded-xl border border-divider bg-card overflow-hidden">
         {isLoading ? (

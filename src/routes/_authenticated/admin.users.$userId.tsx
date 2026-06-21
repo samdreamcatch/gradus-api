@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { getUserDetail } from "@/lib/admin.functions";
+import { getUserDetail, setUserTestFlag } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/users/$userId")({
   component: UserDetail,
@@ -10,7 +10,8 @@ export const Route = createFileRoute("/_authenticated/admin/users/$userId")({
 function UserDetail() {
   const { userId } = Route.useParams();
   const fn = useServerFn(getUserDetail);
-  const { data, isLoading, error } = useQuery({
+  const toggleFn = useServerFn(setUserTestFlag);
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["admin-user", userId],
     queryFn: () => fn({ data: { userId } }),
   });
@@ -27,10 +28,33 @@ function UserDetail() {
       {data && (
         <>
           <header className="rounded-xl border border-divider bg-card p-5">
-            <p className="text-xs uppercase tracking-wider text-text-tertiary">Auth user</p>
-            <h1 className="mt-1 font-display text-h2 text-text-primary">
-              {data.auth?.email ?? "(no email)"}
-            </h1>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs uppercase tracking-wider text-text-tertiary">Auth user</p>
+                <h1 className="mt-1 font-display text-h2 text-text-primary">
+                  {data.auth?.email ?? "(no email)"}
+                  {data.isTest && (
+                    <span className="ml-2 align-middle rounded-pill border border-divider bg-elevated px-2 py-0.5 text-[11px] font-mono uppercase tracking-wider text-text-tertiary">test user</span>
+                  )}
+                </h1>
+              </div>
+              {(data.coach || data.parent) && (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await toggleFn({ data: { userId, isTest: !data.isTest } });
+                    await refetch();
+                  }}
+                  className={`shrink-0 rounded-pill border px-3 py-1.5 text-xs font-semibold uppercase tracking-wider transition ${
+                    data.isTest
+                      ? "border-accent bg-accent text-accent-foreground"
+                      : "border-divider bg-card text-text-secondary hover:bg-elevated"
+                  }`}
+                >
+                  {data.isTest ? "Unmark test user" : "Mark as test user"}
+                </button>
+              )}
+            </div>
             <dl className="mt-3 grid grid-cols-2 gap-3 text-sm">
               <Field label="User ID" value={data.auth?.id ?? "—"} mono />
               <Field label="Provider" value={data.auth?.provider ?? "—"} />
