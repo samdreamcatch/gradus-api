@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { LessonWrapUpProvider } from "@/components/coach/lesson-wrap-up-provider";
 import { ActiveSessionProvider } from "@/lib/active-session-store";
 import { ActiveSessionBar } from "@/components/plans/active-session-bar";
+import { FeedbackFab } from "@/components/feedback/feedback-fab";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
