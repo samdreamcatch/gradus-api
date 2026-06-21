@@ -12,6 +12,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { submitFeedback } from "@/lib/feedback.functions";
+import { useBottomBannerLocked } from "@/lib/bottom-banner-store";
 import { cn } from "@/lib/utils";
 
 type FeedbackType = "bug" | "idea" | "praise" | "other";
