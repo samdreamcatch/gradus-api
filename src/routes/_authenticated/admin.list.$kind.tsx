@@ -50,6 +50,7 @@ const KINDS = Object.keys(KIND_CONFIG) as Kind[];
 
 const searchSchema = z.object({
   filter: fallback(z.string(), "all").default("all"),
+  test: fallback(z.boolean(), false).default(false),
 });
 
 export const Route = createFileRoute("/_authenticated/admin/list/$kind")({
@@ -59,7 +60,7 @@ export const Route = createFileRoute("/_authenticated/admin/list/$kind")({
 
 function AdminList() {
   const { kind } = Route.useParams();
-  const { filter } = Route.useSearch();
+  const { filter, test: includeTest } = Route.useSearch();
   const fn = useServerFn(getAdminList);
 
   if (!KINDS.includes(kind as Kind)) {
@@ -72,8 +73,8 @@ function AdminList() {
 
   const cfg = KIND_CONFIG[kind as Kind];
   const { data, isLoading } = useQuery({
-    queryKey: ["admin-list", kind, filter],
-    queryFn: () => fn({ data: { kind: kind as Kind, filter } }),
+    queryKey: ["admin-list", kind, filter, includeTest],
+    queryFn: () => fn({ data: { kind: kind as Kind, filter, includeTest } }),
   });
 
   return (
