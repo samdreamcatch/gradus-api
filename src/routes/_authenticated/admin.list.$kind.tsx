@@ -99,7 +99,7 @@ function AdminList() {
           <Link
             key={f.value}
             from={Route.fullPath}
-            search={(prev) => ({ ...prev, filter: f.value })}
+            search={(prev: any) => ({ ...prev, filter: f.value })}
             className={`rounded-pill border px-3 py-1 text-xs font-medium uppercase tracking-wider transition ${
               filter === f.value
                 ? "border-accent bg-accent text-accent-foreground"
@@ -111,7 +111,7 @@ function AdminList() {
         ))}
         <Link
           from={Route.fullPath}
-          search={(prev) => ({ ...prev, test: !includeTest })}
+          search={(prev: any) => ({ ...prev, test: !includeTest })}
           className={`ml-auto rounded-pill border px-3 py-1 text-xs font-medium uppercase tracking-wider transition ${
             includeTest
               ? "border-accent bg-accent text-accent-foreground"
