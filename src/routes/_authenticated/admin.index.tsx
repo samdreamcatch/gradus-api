@@ -174,12 +174,12 @@ function AdminHome() {
   );
 }
 
-function Stat({ kind, label, value, sub, includeTest }: { kind: "coaches" | "parents" | "athletes" | "plans" | "beta-signups"; label: string; value: number; sub?: string; includeTest: boolean }) {
+function Stat({ kind, label, value, sub, includeTest, filter = "all" }: { kind: "coaches" | "parents" | "athletes" | "plans" | "beta-signups"; label: string; value: number; sub?: string; includeTest: boolean; filter?: string }) {
   return (
     <Link
       to="/admin/list/$kind"
       params={{ kind }}
-      search={{ filter: "all", test: includeTest }}
+      search={{ filter, test: includeTest }}
       className="rounded-xl border border-divider bg-card p-4 transition hover:border-accent/50 hover:bg-elevated"
     >
       <p className="text-xs uppercase tracking-wider text-text-tertiary">{label}</p>
