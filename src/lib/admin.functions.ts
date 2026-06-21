@@ -556,13 +556,13 @@ export const getDailyActiveUsers = createServerFn({ method: "POST" })
     const [messages, sessions, wrapUps] = await Promise.all([
       supabaseAdmin
         .from("messages")
-        .select("sender_id, created_at")
+        .select("sender_user_id, created_at")
         .gte("created_at", sinceISO)
         .limit(50000),
       supabaseAdmin
         .from("plan_sessions")
-        .select("athlete_id, started_at, completed_at")
-        .or(`started_at.gte.${sinceISO},completed_at.gte.${sinceISO}`)
+        .select("athlete_id, parent_id, logged_at")
+        .gte("logged_at", sinceISO)
         .limit(50000),
       supabaseAdmin
         .from("lesson_wrap_ups")
@@ -584,31 +584,19 @@ export const getDailyActiveUsers = createServerFn({ method: "POST" })
     );
 
     const athleteUserMap = new Map<string, string>();
-    const coachUserMap = new Map<string, string>();
     const testUsers = new Set<string>();
 
     if (athleteIds.length > 0) {
       const { data: aRows } = await supabaseAdmin
         .from("athletes")
-        .select("id, user_id, is_test")
+        .select("id, user_id")
         .in("id", athleteIds);
       for (const a of aRows ?? []) {
         if (a.user_id) athleteUserMap.set(a.id, a.user_id);
-        if (a.is_test && a.user_id) testUsers.add(a.user_id);
-      }
-    }
-    if (coachIds.length > 0) {
-      const { data: cRows } = await supabaseAdmin
-        .from("coach_profiles")
-        .select("id, user_id, is_test")
-        .in("id", coachIds);
-      for (const c of cRows ?? []) {
-        if (c.user_id) coachUserMap.set(c.id, c.user_id);
-        if (c.is_test) testUsers.add(c.user_id);
       }
     }
 
-    // For excluding test senders from messages: load test user_ids from both profile tables
+    // For excluding test users: load test user_ids from coach + parent profiles
     if (!data.includeTest) {
       const [{ data: testCoaches }, { data: testParents }] = await Promise.all([
         supabaseAdmin.from("coach_profiles").select("user_id").eq("is_test", true),
@@ -618,7 +606,19 @@ export const getDailyActiveUsers = createServerFn({ method: "POST" })
       for (const r of testParents ?? []) if (r.user_id) testUsers.add(r.user_id);
     }
 
-    // Build day buckets in local UTC date
+    // Map coach_profile.id -> user_id for wrap-up signals
+    const coachUserMap = new Map<string, string>();
+    if (coachIds.length > 0) {
+      const { data: cRows } = await supabaseAdmin
+        .from("coach_profiles")
+        .select("id, user_id")
+        .in("id", coachIds);
+      for (const c of cRows ?? []) {
+        if (c.user_id) coachUserMap.set(c.id, c.user_id);
+      }
+    }
+
+    // Build day buckets keyed by UTC date
     const buckets = new Map<string, Set<string>>();
     const dayKey = (d: Date | string) => new Date(d).toISOString().slice(0, 10);
     const startKey = dayKey(since);
@@ -636,16 +636,16 @@ export const getDailyActiveUsers = createServerFn({ method: "POST" })
       s.add(userId);
     };
 
-    for (const m of messages.data ?? []) addActivity(m.sender_id as string | null, m.created_at);
+    for (const m of messages.data ?? []) addActivity(m.sender_user_id, m.created_at);
     for (const s of sessions.data ?? []) {
-      const uid = athleteUserMap.get(s.athlete_id);
-      addActivity(uid, s.started_at);
-      addActivity(uid, s.completed_at);
+      // Parents often log on behalf of athletes; count both when present.
+      addActivity(athleteUserMap.get(s.athlete_id), s.logged_at);
+      addActivity(s.parent_id ?? null, s.logged_at);
     }
     for (const w of wrapUps.data ?? []) {
-      const uid = coachUserMap.get(w.coach_id);
-      addActivity(uid, w.created_at);
+      addActivity(coachUserMap.get(w.coach_id), w.created_at);
     }
+
 
     // Emit a row per day in the window (zero-fill)
     const series: { date: string; activeUsers: number }[] = [];
