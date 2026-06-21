@@ -86,6 +86,13 @@ function AdminHome() {
           >
             Connection map →
           </Link>
+          <Link
+            to="/admin/feedback"
+            search={{ type: "all", unresolved: false }}
+            className="rounded-pill border border-divider bg-card px-4 py-2 text-xs font-semibold uppercase tracking-wider text-text-primary hover:bg-elevated"
+          >
+            Feedback →
+          </Link>
         </div>
       </header>
 
