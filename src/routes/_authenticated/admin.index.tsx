@@ -62,7 +62,7 @@ function AdminHome() {
         <div className="space-y-1">
           <p className="text-xs font-bold uppercase tracking-widest text-accent-ink">Internal</p>
           <h1 className="font-display text-h1 text-text-primary">Admin</h1>
-          <p className="text-sm text-text-secondary">Read-only overview &amp; user lookup.</p>
+          
         </div>
         <div className="flex items-center gap-3">
           <Link
