@@ -121,8 +121,6 @@ function AdminList() {
 
       <div className="rounded-xl border border-divider bg-card">
 
-
-      <div className="rounded-xl border border-divider bg-card">
         {isLoading ? (
           <p className="p-4 text-sm text-text-secondary">Loading…</p>
         ) : (data?.rows ?? []).length === 0 ? (
