@@ -317,7 +317,8 @@ export const getUserDetail = createServerFn({ method: "POST" })
       };
     }
 
-    return { auth, coach: coachDetail, parent: parentDetail };
+    const isTest = !!(coach.data?.is_test || parent.data?.is_test);
+    return { auth, coach: coachDetail, parent: parentDetail, isTest };
   });
 
 const LIST_KINDS = ["coaches", "parents", "athletes", "plans", "beta-signups"] as const;
