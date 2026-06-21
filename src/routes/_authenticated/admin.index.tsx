@@ -58,13 +58,12 @@ function AdminHome() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 space-y-10">
-      <header className="flex items-end justify-between gap-4">
+      <header className="space-y-4">
         <div className="space-y-1">
           <p className="text-xs font-bold uppercase tracking-widest text-accent-ink">Internal</p>
           <h1 className="font-display text-h1 text-text-primary">Admin</h1>
-          
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <Link
             from={Route.fullPath}
             search={{ test: !includeTest }}
