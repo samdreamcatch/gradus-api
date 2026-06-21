@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { getAdminOverview, searchUsers, setUserTestFlag, getDailyActiveUsers } from "@/lib/admin.functions";
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
+import { SettingsGroup, SettingsList, SettingsButtonRow } from "@/components/settings/primitives";
+import { LogOut } from "lucide-react";
 
 const searchSchema = z.object({
   test: fallback(z.boolean(), false).default(false),
@@ -83,13 +85,6 @@ function AdminHome() {
           >
             Connection map →
           </Link>
-          <button
-            type="button"
-            onClick={handleSignOut}
-            className="rounded-pill border border-divider bg-card px-3 py-2 text-xs font-semibold uppercase tracking-wider text-text-secondary hover:bg-elevated hover:text-text-primary"
-          >
-            Sign out
-          </button>
         </div>
       </header>
 
@@ -187,6 +182,18 @@ function AdminHome() {
       </section>
 
       <DauChart includeTest={includeTest} />
+
+      <SettingsGroup>
+        <SettingsList>
+          <SettingsButtonRow
+            icon={<LogOut className="size-4" />}
+            label="Sign out"
+            tone="destructive"
+            onClick={handleSignOut}
+          />
+        </SettingsList>
+      </SettingsGroup>
+
 
 
 
