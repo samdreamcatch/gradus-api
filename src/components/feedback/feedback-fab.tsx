@@ -120,9 +120,6 @@ export function FeedbackFab() {
             className="w-full resize-none rounded-xl border border-divider bg-elevated px-3 py-2 text-[15px] leading-relaxed text-text-primary placeholder:text-text-tertiary focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
           />
 
-          <p className="text-[11px] text-text-tertiary">
-            We&apos;ll know which page you&apos;re on and your device.
-          </p>
 
           <button
             type="button"
