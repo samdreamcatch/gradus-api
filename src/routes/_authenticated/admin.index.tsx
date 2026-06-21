@@ -7,7 +7,8 @@ import { z } from "zod";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { getAdminOverview, searchUsers, setUserTestFlag } from "@/lib/admin.functions";
+import { getAdminOverview, searchUsers, setUserTestFlag, getDailyActiveUsers } from "@/lib/admin.functions";
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 
 const searchSchema = z.object({
   test: fallback(z.boolean(), false).default(false),
