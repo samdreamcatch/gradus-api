@@ -171,7 +171,7 @@ function AdminHome() {
           <p className="text-sm text-text-secondary">Loading…</p>
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-6">
-            <Stat kind="coaches" label="Coaches" value={overview.counts.coaches} sub={`${overview.counts.coachesLast7Days} new / 7d`} includeTest={includeTest} />
+            <Stat kind="coaches" label="Coaches" value={overview.counts.coaches} includeTest={includeTest} />
             <Stat kind="parents" label="Parents" value={overview.counts.parents} sub={`${overview.counts.parentsLast7Days} new / 7d`} includeTest={includeTest} />
             <Stat kind="athletes" label="Athletes" value={overview.counts.athletes} includeTest={includeTest} />
             <Stat kind="plans" label="Plans" value={overview.counts.plansTotal} sub={`${overview.counts.plansActive} active`} includeTest={includeTest} />
