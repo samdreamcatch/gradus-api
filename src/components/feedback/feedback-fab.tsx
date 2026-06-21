@@ -74,7 +74,7 @@ export function FeedbackFab() {
             Feedback
           </p>
           <DialogTitle className="font-display text-2xl font-black leading-tight text-text-primary">
-            Send us a note
+            Your feedback shapes what we build
           </DialogTitle>
           <DialogDescription className="sr-only">
             Share a bug, idea, or anything else.
