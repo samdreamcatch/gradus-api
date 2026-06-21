@@ -22,6 +22,7 @@ import {
   type PendingWrapUp,
 } from "@/lib/lesson-wrap-ups.functions";
 import { createPlan } from "@/lib/plans.functions";
+import { useBottomBannerLock } from "@/lib/bottom-banner-store";
 
 function nowParts() {
   const d = new Date();
@@ -130,6 +131,7 @@ export function LessonWrapUpProvider() {
   }
 
   const bannerCount = pending.length;
+  useBottomBannerLock(bannerCount > 0 && !modalFor);
 
   const bannerLabel = useMemo(() => {
     if (bannerCount === 0) return "";

@@ -12,6 +12,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { submitFeedback } from "@/lib/feedback.functions";
+import { useBottomBannerLocked } from "@/lib/bottom-banner-store";
 import { cn } from "@/lib/utils";
 
 type FeedbackType = "bug" | "idea" | "praise" | "other";
@@ -27,6 +28,7 @@ export function FeedbackFab() {
   const [open, setOpen] = useState(false);
   const [type, setType] = useState<FeedbackType>("idea");
   const [message, setMessage] = useState("");
+  const bannerLocked = useBottomBannerLocked();
 
   const submitFn = useServerFn(submitFeedback);
   const mutation = useMutation({
@@ -68,7 +70,10 @@ export function FeedbackFab() {
         <button
           type="button"
           aria-label="Gradus is in beta, share feedback"
-          className="fixed bottom-20 left-4 z-30 inline-flex items-center gap-2 rounded-pill bg-accent px-3.5 py-2 text-[11px] font-bold uppercase tracking-wider text-accent-foreground shadow-card transition-transform hover:scale-105 active:scale-95 md:bottom-6"
+          className={cn(
+            "fixed bottom-20 left-4 z-30 inline-flex items-center gap-2 rounded-pill bg-accent px-3.5 py-2 text-[11px] font-bold uppercase tracking-wider text-accent-foreground shadow-card transition-all hover:scale-105 active:scale-95 md:bottom-6",
+            bannerLocked && !open && "pointer-events-none translate-y-4 opacity-0",
+          )}
         >
           <MessageSquarePlus className="size-4" />
           <span>Gradus is in beta, share feedback</span>
