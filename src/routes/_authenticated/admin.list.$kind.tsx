@@ -1,9 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
-import { getAdminList } from "@/lib/admin.functions";
+import { getAdminList, setUserTestFlag } from "@/lib/admin.functions";
 
 const KIND_CONFIG = {
   coaches: {
