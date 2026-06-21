@@ -31,7 +31,13 @@ function LoginPage() {
   const [hasInteracted, setHasInteracted] = useState(false);
 
   const detectRole = async (userId: string) => {
-    const [coach, parent, athlete] = await Promise.all([
+    const [admin, coach, parent, athlete] = await Promise.all([
+      supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userId)
+        .eq("role", "admin")
+        .maybeSingle(),
       supabase
         .from("coach_profiles")
         .select("id, onboarded_at")
@@ -41,10 +47,12 @@ function LoginPage() {
       supabase.from("athletes").select("id").eq("user_id", userId).limit(1).maybeSingle(),
     ]);
 
+    if (admin.error) throw admin.error;
     if (coach.error) throw coach.error;
     if (parent.error) throw parent.error;
     if (athlete.error) throw athlete.error;
 
+    if (admin.data) return "admin" as const;
     // Coach wins over parent/athlete — a coach signing in should always land
     // in the coach area, even if their coach_profiles row is pre-onboarding
     // (CoachHome routes them to /coach/onboarding if onboarded_at is null).
@@ -55,6 +63,7 @@ function LoginPage() {
   };
 
   const roleHome = (role: string | null) => {
+    if (role === "admin") return "/admin" as const;
     if (role === "parent") return "/parent/plans" as const;
     if (role === "coach") return "/coach/roster" as const;
     if (role === "athlete") return "/athlete/plans" as const;
@@ -62,6 +71,7 @@ function LoginPage() {
   };
 
   const rolePrefix = (role: string | null) => {
+    if (role === "admin") return "/admin";
     if (role === "parent") return "/parent";
     if (role === "coach") return "/coach";
     if (role === "athlete") return "/athlete";
