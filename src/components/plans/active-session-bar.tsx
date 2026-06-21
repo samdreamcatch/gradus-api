@@ -15,14 +15,19 @@ export function ActiveSessionBar() {
 
   if (!session) return null;
 
-  const targetPath =
+  const routePattern =
+    session.role === "parent"
+      ? "/parent/plans/$planId"
+      : "/athlete/plans/$planId";
+  const resolvedPath =
     session.role === "parent"
       ? `/parent/plans/${session.planId}`
       : `/athlete/plans/${session.planId}`;
 
   // Don't render the floating bar on the plan's own page — the inline
   // RunningPill already shows the timer there.
-  if (pathname === targetPath) return null;
+  if (pathname === resolvedPath) return null;
+
 
   const totalSec = Math.floor(elapsedMs / 1000);
   const mm = String(Math.floor(totalSec / 60)).padStart(2, "0");
@@ -33,7 +38,7 @@ export function ActiveSessionBar() {
     <div className="sticky top-2 z-40 mx-auto mt-2 flex max-w-2xl px-3">
       <button
         type="button"
-        onClick={() => navigate({ to: targetPath })}
+        onClick={() => navigate({ to: routePattern, params: { planId: session.planId } })}
         className="group flex w-full items-center gap-2 rounded-full border border-attention/50 bg-attention/15 px-3 py-1.5 text-attention-ink shadow-card backdrop-blur"
       >
         {running ? (
