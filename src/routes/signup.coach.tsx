@@ -170,7 +170,30 @@ function CoachSignupPage() {
           </div>
         )}
 
-        <Button type="button" variant="outline" className="w-full" onClick={handleGoogle} disabled={loading}>
+        <div className="mb-6 space-y-2">
+          <Label htmlFor="betaCode">Beta invite code</Label>
+          <Input
+            id="betaCode"
+            value={betaCode}
+            onChange={(e) => setBetaCode(e.target.value.toUpperCase())}
+            maxLength={8}
+            placeholder="––––––––"
+            className="font-mono tracking-[0.25em] uppercase"
+            autoComplete="off"
+            required
+          />
+          <p className="text-xs text-text-tertiary">
+            Gradus is invite-only during beta. Enter the 8-character code we sent you.
+          </p>
+        </div>
+
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full"
+          onClick={handleGoogle}
+          disabled={loading || betaCode.trim().length !== 8}
+        >
           Continue with Google
         </Button>
 
@@ -200,7 +223,7 @@ function CoachSignupPage() {
             <Input id="password" type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
-          <Button type="submit" className="w-full" disabled={loading}>
+          <Button type="submit" className="w-full" disabled={loading || betaCode.trim().length !== 8}>
             {loading ? "..." : "Create coach account"}
           </Button>
         </form>
