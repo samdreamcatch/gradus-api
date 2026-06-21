@@ -44,54 +44,6 @@ function AdminHome() {
       </header>
 
       <section className="space-y-3">
-        <h2 className="font-display text-h3 text-text-primary">Overview</h2>
-        {isLoading || !overview ? (
-          <p className="text-sm text-text-secondary">Loading…</p>
-        ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
-            <Stat kind="coaches" label="Coaches" value={overview.counts.coaches} sub={`${overview.counts.coachesLast7Days} new / 7d`} />
-            <Stat kind="parents" label="Parents" value={overview.counts.parents} sub={`${overview.counts.parentsLast7Days} new / 7d`} />
-            <Stat kind="athletes" label="Athletes" value={overview.counts.athletes} />
-            <Stat kind="plans" label="Plans" value={overview.counts.plansTotal} sub={`${overview.counts.plansActive} active`} />
-            <Stat kind="beta-signups" label="Beta signups" value={overview.counts.betaParents} sub={`${overview.counts.coachCodeParents} via coach`} />
-          </div>
-        )}
-      </section>
-
-      {overview && (
-        <section className="rounded-xl border border-divider bg-card p-4">
-          <p className="mb-2 text-xs font-bold uppercase tracking-widest text-accent-ink">Status key</p>
-          <dl className="grid grid-cols-1 gap-x-6 gap-y-1 text-xs text-text-secondary sm:grid-cols-2">
-            <div className="flex gap-2"><dt className="font-mono uppercase text-accent-ink">onboarded</dt><dd>Coach finished onboarding flow</dd></div>
-            <div className="flex gap-2"><dt className="font-mono uppercase text-accent-ink">stub</dt><dd>Coach account exists but onboarding incomplete</dd></div>
-            <div className="flex gap-2"><dt className="font-mono uppercase text-accent-ink">coach code</dt><dd>Parent signed up via a coach's invite code</dd></div>
-            <div className="flex gap-2"><dt className="font-mono uppercase text-accent-ink">via coach</dt><dd>Same as "coach code" (shown in lists)</dd></div>
-            <div className="flex gap-2"><dt className="font-mono uppercase text-accent-ink">beta</dt><dd>Parent signed up directly with the beta invite code</dd></div>
-            <div className="flex gap-2"><dt className="font-mono uppercase text-accent-ink">active / benched / draft</dt><dd>Plan status</dd></div>
-          </dl>
-        </section>
-      )}
-
-      {overview && (
-        <section className="grid gap-6 md:grid-cols-2">
-          <RecentList title="Recent coaches" items={overview.recentCoaches.map((c) => ({
-            id: c.userId,
-            primary: `${c.firstName ?? ""} ${c.lastName ?? ""}`.trim() || "(no name)",
-            secondary: c.email ?? "—",
-            meta: new Date(c.createdAt).toLocaleDateString(),
-            tag: c.onboarded ? "onboarded" : "stub",
-          }))} />
-          <RecentList title="Recent parents" items={overview.recentParents.map((p) => ({
-            id: p.userId,
-            primary: `${p.firstName ?? ""} ${p.lastName ?? ""}`.trim() || "(no name)",
-            secondary: p.email ?? "—",
-            meta: new Date(p.createdAt).toLocaleDateString(),
-            tag: p.viaBeta ? "beta" : "coach code",
-          }))} />
-        </section>
-      )}
-
-      <section className="space-y-3">
         <h2 className="font-display text-h3 text-text-primary">User lookup</h2>
         <form
           onSubmit={(e) => {
@@ -145,6 +97,55 @@ function AdminHome() {
           </div>
         )}
       </section>
+
+      <section className="space-y-3">
+        <h2 className="font-display text-h3 text-text-primary">Overview</h2>
+        {isLoading || !overview ? (
+          <p className="text-sm text-text-secondary">Loading…</p>
+        ) : (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
+            <Stat kind="coaches" label="Coaches" value={overview.counts.coaches} sub={`${overview.counts.coachesLast7Days} new / 7d`} />
+            <Stat kind="parents" label="Parents" value={overview.counts.parents} sub={`${overview.counts.parentsLast7Days} new / 7d`} />
+            <Stat kind="athletes" label="Athletes" value={overview.counts.athletes} />
+            <Stat kind="plans" label="Plans" value={overview.counts.plansTotal} sub={`${overview.counts.plansActive} active`} />
+            <Stat kind="beta-signups" label="Beta signups" value={overview.counts.betaParents} sub={`${overview.counts.coachCodeParents} via coach`} />
+          </div>
+        )}
+      </section>
+
+      {overview && (
+        <section className="rounded-xl border border-divider bg-card p-4">
+          <p className="mb-2 text-xs font-bold uppercase tracking-widest text-accent-ink">Status key</p>
+          <dl className="grid grid-cols-1 gap-x-6 gap-y-1 text-xs text-text-secondary sm:grid-cols-2">
+            <div className="flex gap-2"><dt className="font-mono uppercase text-accent-ink">onboarded</dt><dd>Coach finished onboarding flow</dd></div>
+            <div className="flex gap-2"><dt className="font-mono uppercase text-accent-ink">stub</dt><dd>Coach account exists but onboarding incomplete</dd></div>
+            <div className="flex gap-2"><dt className="font-mono uppercase text-accent-ink">coach code</dt><dd>Parent signed up via a coach's invite code</dd></div>
+            <div className="flex gap-2"><dt className="font-mono uppercase text-accent-ink">via coach</dt><dd>Same as "coach code" (shown in lists)</dd></div>
+            <div className="flex gap-2"><dt className="font-mono uppercase text-accent-ink">beta</dt><dd>Parent signed up directly with the beta invite code</dd></div>
+            <div className="flex gap-2"><dt className="font-mono uppercase text-accent-ink">active / benched / draft</dt><dd>Plan status</dd></div>
+          </dl>
+        </section>
+      )}
+
+      {overview && (
+        <section className="grid gap-6 md:grid-cols-2">
+          <RecentList title="Recent coaches" items={overview.recentCoaches.map((c) => ({
+            id: c.userId,
+            primary: `${c.firstName ?? ""} ${c.lastName ?? ""}`.trim() || "(no name)",
+            secondary: c.email ?? "—",
+            meta: new Date(c.createdAt).toLocaleDateString(),
+            tag: c.onboarded ? "onboarded" : "stub",
+          }))} />
+          <RecentList title="Recent parents" items={overview.recentParents.map((p) => ({
+            id: p.userId,
+            primary: `${p.firstName ?? ""} ${p.lastName ?? ""}`.trim() || "(no name)",
+            secondary: p.email ?? "—",
+            meta: new Date(p.createdAt).toLocaleDateString(),
+            tag: p.viaBeta ? "beta" : "coach code",
+          }))} />
+        </section>
+      )}
+
     </div>
   );
 }
