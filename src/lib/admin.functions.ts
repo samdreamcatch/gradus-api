@@ -263,12 +263,12 @@ export const getUserDetail = createServerFn({ method: "POST" })
       supabaseAdmin.auth.admin.getUserById(data.userId),
       supabaseAdmin
         .from("coach_profiles")
-        .select("id, first_name, last_name, created_at, onboarded_at")
+        .select("id, first_name, last_name, created_at, onboarded_at, is_test")
         .eq("user_id", data.userId)
         .maybeSingle(),
       supabaseAdmin
         .from("parent_profiles")
-        .select("id, first_name, last_name, created_at, coach_id")
+        .select("id, first_name, last_name, created_at, coach_id, is_test")
         .eq("user_id", data.userId)
         .maybeSingle(),
     ]);
