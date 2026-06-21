@@ -26,6 +26,26 @@ export const checkIsAdmin = createServerFn({ method: "GET" })
     return { isAdmin: !!data };
   });
 
+export const setUserTestFlag = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({
+      userId: z.string().uuid(),
+      isTest: z.boolean(),
+    }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const [c, p] = await Promise.all([
+      supabaseAdmin.from("coach_profiles").update({ is_test: data.isTest }).eq("user_id", data.userId),
+      supabaseAdmin.from("parent_profiles").update({ is_test: data.isTest }).eq("user_id", data.userId),
+    ]);
+    if (c.error) dbError(c.error);
+    if (p.error) dbError(p.error);
+    return { ok: true };
+  });
+
 export const getAdminOverview = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
