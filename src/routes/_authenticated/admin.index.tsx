@@ -44,6 +44,61 @@ function AdminHome() {
       </header>
 
       <section className="space-y-3">
+        <h2 className="font-display text-h3 text-text-primary">User lookup</h2>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            setSubmitted(query.trim());
+          }}
+          className="flex gap-2"
+        >
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search by name or email"
+          />
+          <Button type="submit" disabled={query.trim().length < 2}>
+            Search
+          </Button>
+        </form>
+
+        {submitted.length >= 2 && (
+          <div className="rounded-xl border border-divider bg-card">
+            {isFetching ? (
+              <p className="p-4 text-sm text-text-secondary">Searching…</p>
+            ) : (results?.results ?? []).length === 0 ? (
+              <p className="p-4 text-sm text-text-secondary">No matches.</p>
+            ) : (
+              <ul className="divide-y divide-divider">
+                {results!.results.map((r) => (
+                  <li key={`${r.kind}-${r.profileId}`}>
+                    <Link
+                      to="/admin/users/$userId"
+                      params={{ userId: r.userId }}
+                      className="flex items-center justify-between gap-4 px-4 py-3 hover:bg-elevated"
+                    >
+                      <div>
+                        <p className="text-sm font-semibold text-text-primary">
+                          {`${r.firstName} ${r.lastName}`.trim() || "(no name)"}
+                        </p>
+                        <p className="text-xs text-text-secondary">{r.email ?? "—"}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs font-mono uppercase text-accent-ink">{r.kind}</p>
+                        <p className="text-xs text-text-tertiary">
+                          {new Date(r.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+      </section>
+
+      <section className="space-y-3">
         <h2 className="font-display text-h3 text-text-primary">Overview</h2>
         {isLoading || !overview ? (
           <p className="text-sm text-text-secondary">Loading…</p>
