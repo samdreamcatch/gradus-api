@@ -82,7 +82,8 @@ function ParentPlanDetail() {
         </h1>
       </div>
 
-      <SessionTimer
+      <PlanSessionTimer
+        role="parent"
         planId={plan.id}
         coachFirstName={plan.coachFirstName}
         athleteFirstName={plan.athleteFirstName}
