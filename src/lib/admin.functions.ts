@@ -3,8 +3,8 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { dbError } from "./db-error";
 
-/** Throws if the caller is not an admin. Returns userId for chaining. */
-async function assertAdmin(context: { userId: string; supabase: ReturnType<typeof requireSupabaseAuth> extends never ? never : any }) {
+/** Throws if the caller is not an admin. */
+async function assertAdmin(context: { userId: string; supabase: any }) {
   const { data, error } = await context.supabase.rpc("has_role", {
     _user_id: context.userId,
     _role: "admin",
