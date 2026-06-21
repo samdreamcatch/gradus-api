@@ -12,7 +12,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { SettingsButtonRow } from "@/components/settings/primitives";
+
 import { submitFeedback } from "@/lib/feedback.functions";
 import { useBottomBannerLocked } from "@/lib/bottom-banner-store";
 import { cn } from "@/lib/utils";
