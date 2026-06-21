@@ -238,6 +238,91 @@ function AdminHome() {
   );
 }
 
+function DauChart({ includeTest }: { includeTest: boolean }) {
+  const dauFn = useServerFn(getDailyActiveUsers);
+  const { data, isLoading } = useQuery({
+    queryKey: ["admin-dau", includeTest],
+    queryFn: () => dauFn({ data: { days: 30, includeTest } }),
+  });
+
+  const series = data?.series ?? [];
+  const peak = series.reduce((m, p) => Math.max(m, p.activeUsers), 0);
+  const total = series.reduce((s, p) => s + p.activeUsers, 0);
+  const avg = series.length ? Math.round((total / series.length) * 10) / 10 : 0;
+
+  return (
+    <section className="rounded-xl border border-divider bg-card p-4">
+      <div className="flex items-end justify-between gap-4 mb-3">
+        <div>
+          <h2 className="font-display text-h3 text-text-primary">Daily active users</h2>
+          <p className="text-xs text-text-secondary">
+            Last 30 days · unique users who sent a message, logged a session, or saved a lesson wrap-up.
+          </p>
+        </div>
+        <div className="text-right text-xs text-text-secondary shrink-0">
+          <p><span className="font-mono text-text-primary">{peak}</span> peak</p>
+          <p><span className="font-mono text-text-primary">{avg}</span> avg / day</p>
+        </div>
+      </div>
+      <div className="h-56 w-full">
+        {isLoading ? (
+          <p className="text-sm text-text-secondary">Loading…</p>
+        ) : (
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={series} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
+              <defs>
+                <linearGradient id="dauFill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="var(--accent)" stopOpacity={0.5} />
+                  <stop offset="100%" stopColor="var(--accent)" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid stroke="var(--divider)" strokeDasharray="3 3" vertical={false} />
+              <XAxis
+                dataKey="date"
+                tick={{ fill: "var(--text-tertiary)", fontSize: 11 }}
+                tickLine={false}
+                axisLine={{ stroke: "var(--divider)" }}
+                tickFormatter={(d: string) => {
+                  const dt = new Date(d);
+                  return `${dt.getMonth() + 1}/${dt.getDate()}`;
+                }}
+                minTickGap={24}
+              />
+              <YAxis
+                allowDecimals={false}
+                tick={{ fill: "var(--text-tertiary)", fontSize: 11 }}
+                tickLine={false}
+                axisLine={{ stroke: "var(--divider)" }}
+                width={32}
+              />
+              <Tooltip
+                contentStyle={{
+                  background: "var(--popover, var(--card))",
+                  border: "1px solid var(--divider)",
+                  borderRadius: 8,
+                  fontSize: 12,
+                  color: "var(--text-primary)",
+                }}
+                labelFormatter={(d) => new Date(d as string).toLocaleDateString()}
+                formatter={(v: number) => [v, "Active users"]}
+              />
+              <Area
+                type="monotone"
+                dataKey="activeUsers"
+                stroke="var(--accent)"
+                strokeWidth={2}
+                fill="url(#dauFill)"
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        )}
+      </div>
+    </section>
+  );
+}
+
+
+
 function Stat({ kind, label, value, sub, includeTest, filter = "all" }: { kind: "coaches" | "parents" | "athletes" | "plans" | "beta-signups"; label: string; value: number; sub?: string; includeTest: boolean; filter?: string }) {
   return (
     <Link
