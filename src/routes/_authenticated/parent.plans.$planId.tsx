@@ -1,19 +1,16 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, ChevronDown, MessageCircle, X } from "lucide-react";
-import { IdleSlide, RunningPill } from "@/components/plans/session-timer-controls";
-import { toast } from "sonner";
 import { ParentBottomNav } from "@/components/parent/bottom-nav";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import {
   getParentPlan,
   type ParentPlanMoveDTO,
 } from "@/lib/parent-plans.functions";
-import { submitPlanSession } from "@/lib/plan-sessions.functions";
 import { MessageCoachAboutPlanDialog } from "@/components/plans/message-coach-about-plan-dialog";
+import { PlanSessionTimer } from "@/components/plans/plan-session-timer";
 
 export const Route = createFileRoute("/_authenticated/parent/plans/$planId")({
   component: ParentPlanDetail,
