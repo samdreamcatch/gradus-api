@@ -70,6 +70,7 @@ function AthleteSettingsPage() {
 
             <SettingsGroup>
               <SettingsList>
+                <FeedbackSettingsRow />
                 <SignOutRow />
               </SettingsList>
             </SettingsGroup>
