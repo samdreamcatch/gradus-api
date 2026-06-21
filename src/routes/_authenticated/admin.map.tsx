@@ -10,9 +10,16 @@ import ReactFlow, {
   type Edge,
 } from "reactflow";
 import "reactflow/dist/style.css";
+import { zodValidator, fallback } from "@tanstack/zod-adapter";
+import { z } from "zod";
 import { getAdminConnectionMap } from "@/lib/admin.functions";
 
+const searchSchema = z.object({
+  test: fallback(z.boolean(), false).default(false),
+});
+
 export const Route = createFileRoute("/_authenticated/admin/map")({
+  validateSearch: zodValidator(searchSchema),
   component: AdminMap,
 });
 
@@ -20,10 +27,11 @@ type NodeKind = "coach" | "parent" | "athlete";
 
 function AdminMap() {
   const navigate = useNavigate();
+  const { test: includeTest } = Route.useSearch();
   const fn = useServerFn(getAdminConnectionMap);
   const { data, isLoading } = useQuery({
-    queryKey: ["admin-connection-map"],
-    queryFn: () => fn(),
+    queryKey: ["admin-connection-map", includeTest],
+    queryFn: () => fn({ data: { includeTest } }),
   });
 
   const { nodes, edges } = useMemo(() => {
