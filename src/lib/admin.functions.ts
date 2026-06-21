@@ -223,10 +223,11 @@ export const searchUsers = createServerFn({ method: "POST" })
       lastName: string;
       email: string | null;
       createdAt: string;
+      isTest: boolean;
     };
 
     const results: Result[] = [
-      ...(coaches.data ?? []).map((c) => ({
+      ...(coaches.data ?? []).map((c: any) => ({
         kind: "coach" as const,
         profileId: c.id,
         userId: c.user_id,
@@ -234,8 +235,9 @@ export const searchUsers = createServerFn({ method: "POST" })
         lastName: c.last_name ?? "",
         email: emailMap.get(c.user_id) ?? null,
         createdAt: c.created_at,
+        isTest: !!c.is_test,
       })),
-      ...(parents.data ?? []).map((p) => ({
+      ...(parents.data ?? []).map((p: any) => ({
         kind: "parent" as const,
         profileId: p.id,
         userId: p.user_id,
@@ -243,6 +245,7 @@ export const searchUsers = createServerFn({ method: "POST" })
         lastName: p.last_name ?? "",
         email: emailMap.get(p.user_id) ?? null,
         createdAt: p.created_at,
+        isTest: !!p.is_test,
       })),
     ];
 
