@@ -2,11 +2,18 @@ import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
+import { zodValidator, fallback } from "@tanstack/zod-adapter";
+import { z } from "zod";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { getAdminOverview, searchUsers } from "@/lib/admin.functions";
 
+const searchSchema = z.object({
+  test: fallback(z.boolean(), false).default(false),
+});
+
 export const Route = createFileRoute("/_authenticated/admin/")({
+  validateSearch: zodValidator(searchSchema),
   component: AdminHome,
 });
 
