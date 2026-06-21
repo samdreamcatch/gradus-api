@@ -13,6 +13,7 @@ import { Logo } from "@/components/logo";
 import {
   claimParentInvite,
   getParentByInviteCode,
+  validateSignupCode,
 } from "@/lib/parent-signup.functions";
 
 const PENDING_INVITE_KEY = "gradus.pendingParentInvite";
@@ -46,11 +47,13 @@ function CoachSignupPage() {
   const navigate = useNavigate();
   const lookupParent = useServerFn(getParentByInviteCode);
   const claim = useServerFn(claimParentInvite);
+  const validateCode = useServerFn(validateSignupCode);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [betaCode, setBetaCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -108,6 +111,7 @@ function CoachSignupPage() {
     setError(null);
     setLoading(true);
     try {
+      await validateCode({ data: { code: betaCode.trim().toUpperCase(), role: "coach" } });
       const { error } = await supabase.auth.signUp({
         email,
         password,
@@ -129,6 +133,7 @@ function CoachSignupPage() {
     setError(null);
     setLoading(true);
     try {
+      await validateCode({ data: { code: betaCode.trim().toUpperCase(), role: "coach" } });
       const result = await lovable.auth.signInWithOAuth("google", {
         redirect_uri: window.location.origin + "/coach",
       });
