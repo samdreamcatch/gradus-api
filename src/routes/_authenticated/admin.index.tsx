@@ -83,6 +83,13 @@ function AdminHome() {
           >
             Connection map →
           </Link>
+          <button
+            type="button"
+            onClick={handleSignOut}
+            className="rounded-pill border border-divider bg-card px-3 py-2 text-xs font-semibold uppercase tracking-wider text-text-secondary hover:bg-elevated hover:text-text-primary"
+          >
+            Sign out
+          </button>
         </div>
       </header>
 
