@@ -22,6 +22,17 @@ function AdminHome() {
   const { test: includeTest } = Route.useSearch();
   const overviewFn = useServerFn(getAdminOverview);
   const searchFn = useServerFn(searchUsers);
+  const toggleFn = useServerFn(setUserTestFlag);
+  const qc = useQueryClient();
+
+  const toggleTest = async (userId: string, next: boolean) => {
+    await toggleFn({ data: { userId, isTest: next } });
+    await Promise.all([
+      qc.invalidateQueries({ queryKey: ["admin-overview"] }),
+      qc.invalidateQueries({ queryKey: ["admin-search"] }),
+      qc.invalidateQueries({ queryKey: ["admin-user", userId] }),
+    ]);
+  };
 
   const { data: overview, isLoading } = useQuery({
     queryKey: ["admin-overview", includeTest],
