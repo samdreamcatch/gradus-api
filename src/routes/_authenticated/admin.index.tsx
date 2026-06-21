@@ -18,12 +18,13 @@ export const Route = createFileRoute("/_authenticated/admin/")({
 });
 
 function AdminHome() {
+  const { test: includeTest } = Route.useSearch();
   const overviewFn = useServerFn(getAdminOverview);
   const searchFn = useServerFn(searchUsers);
 
   const { data: overview, isLoading } = useQuery({
-    queryKey: ["admin-overview"],
-    queryFn: () => overviewFn(),
+    queryKey: ["admin-overview", includeTest],
+    queryFn: () => overviewFn({ data: { includeTest } }),
   });
 
   const [query, setQuery] = useState("");
@@ -42,12 +43,27 @@ function AdminHome() {
           <h1 className="font-display text-h1 text-text-primary">Admin</h1>
           <p className="text-sm text-text-secondary">Read-only overview &amp; user lookup.</p>
         </div>
-        <Link
-          to="/admin/map"
-          className="rounded-pill border border-accent bg-accent px-4 py-2 text-xs font-semibold uppercase tracking-wider text-accent-foreground hover:opacity-90"
-        >
-          Connection map →
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link
+            from={Route.fullPath}
+            search={{ test: !includeTest }}
+            className={`rounded-pill border px-3 py-2 text-xs font-semibold uppercase tracking-wider transition ${
+              includeTest
+                ? "border-accent bg-accent text-accent-foreground"
+                : "border-divider bg-card text-text-secondary hover:bg-elevated"
+            }`}
+            title="Toggle test users"
+          >
+            {includeTest ? "Test users: on" : "Test users: hidden"}
+          </Link>
+          <Link
+            to="/admin/map"
+            search={{ test: includeTest }}
+            className="rounded-pill border border-accent bg-accent px-4 py-2 text-xs font-semibold uppercase tracking-wider text-accent-foreground hover:opacity-90"
+          >
+            Connection map →
+          </Link>
+        </div>
       </header>
 
       <section className="space-y-3">
