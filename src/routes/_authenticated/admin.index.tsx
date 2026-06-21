@@ -127,13 +127,17 @@ function AdminHome() {
   );
 }
 
-function Stat({ label, value, sub }: { label: string; value: number; sub?: string }) {
+function Stat({ kind, label, value, sub }: { kind: "coaches" | "parents" | "athletes" | "plans" | "beta-signups"; label: string; value: number; sub?: string }) {
   return (
-    <div className="rounded-xl border border-divider bg-card p-4">
+    <Link
+      to="/admin/list/$kind"
+      params={{ kind }}
+      className="rounded-xl border border-divider bg-card p-4 transition hover:border-accent/50 hover:bg-elevated"
+    >
       <p className="text-xs uppercase tracking-wider text-text-tertiary">{label}</p>
       <p className="mt-1 font-display text-h2 text-text-primary">{value}</p>
       {sub && <p className="text-xs text-text-secondary">{sub}</p>}
-    </div>
+    </Link>
   );
 }
 
