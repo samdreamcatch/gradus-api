@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation } from "@tanstack/react-query";
-import { MessageSquarePlus, Bug, Lightbulb, Heart, MoreHorizontal } from "lucide-react";
+import { MessageSquarePlus } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -15,18 +15,8 @@ import { submitFeedback } from "@/lib/feedback.functions";
 import { useBottomBannerLocked } from "@/lib/bottom-banner-store";
 import { cn } from "@/lib/utils";
 
-type FeedbackType = "bug" | "idea" | "praise" | "other";
-
-const TYPES: { value: FeedbackType; label: string; icon: typeof Bug }[] = [
-  { value: "bug", label: "Bug", icon: Bug },
-  { value: "idea", label: "Idea", icon: Lightbulb },
-  { value: "praise", label: "Praise", icon: Heart },
-  { value: "other", label: "Other", icon: MoreHorizontal },
-];
-
 export function FeedbackFab() {
   const [open, setOpen] = useState(false);
-  const [type, setType] = useState<FeedbackType>("idea");
   const [message, setMessage] = useState("");
   const bannerLocked = useBottomBannerLocked();
 
@@ -37,7 +27,6 @@ export function FeedbackFab() {
       toast("Thanks — got it.", { description: "We read every one of these." });
       setOpen(false);
       setMessage("");
-      setType("idea");
     },
     onError: (e) => {
       toast.error("Couldn't send feedback", {
@@ -51,7 +40,6 @@ export function FeedbackFab() {
     if (!trimmed) return;
     mutation.mutate({
       data: {
-        type,
         message: trimmed,
         path:
           typeof window !== "undefined"
@@ -63,6 +51,7 @@ export function FeedbackFab() {
       },
     });
   };
+
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
