@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getParentSignupStatus } from "@/lib/parent-signup.functions";
 import { InviteCoachBanner } from "@/components/parent/invite-coach-banner";
+import { useAuthReady } from "@/hooks/use-auth-ready";
 
 export const Route = createFileRoute("/_authenticated/parent")({
   component: ParentLayout,
@@ -10,9 +11,12 @@ export const Route = createFileRoute("/_authenticated/parent")({
 
 function ParentLayout() {
   const fetchStatus = useServerFn(getParentSignupStatus);
+  const { user, isReady } = useAuthReady();
   const { data: status } = useQuery({
-    queryKey: ["parent-signup-status"],
+    queryKey: ["parent-signup-status", user?.id],
     queryFn: () => fetchStatus(),
+    enabled: isReady && !!user,
+    retry: false,
   });
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
