@@ -51,6 +51,20 @@ function AdminHome() {
       </section>
 
       {overview && (
+        <section className="rounded-xl border border-divider bg-card p-4">
+          <p className="mb-2 text-xs font-bold uppercase tracking-widest text-accent-ink">Status key</p>
+          <dl className="grid grid-cols-1 gap-x-6 gap-y-1 text-xs text-text-secondary sm:grid-cols-2">
+            <div className="flex gap-2"><dt className="font-mono uppercase text-accent-ink">onboarded</dt><dd>Coach finished onboarding flow</dd></div>
+            <div className="flex gap-2"><dt className="font-mono uppercase text-accent-ink">stub</dt><dd>Coach account exists but onboarding incomplete</dd></div>
+            <div className="flex gap-2"><dt className="font-mono uppercase text-accent-ink">coach code</dt><dd>Parent signed up via a coach's invite code</dd></div>
+            <div className="flex gap-2"><dt className="font-mono uppercase text-accent-ink">via coach</dt><dd>Same as "coach code" (shown in lists)</dd></div>
+            <div className="flex gap-2"><dt className="font-mono uppercase text-accent-ink">beta</dt><dd>Parent signed up directly with the beta invite code</dd></div>
+            <div className="flex gap-2"><dt className="font-mono uppercase text-accent-ink">active / benched / draft</dt><dd>Plan status</dd></div>
+          </dl>
+        </section>
+      )}
+
+      {overview && (
         <section className="grid gap-6 md:grid-cols-2">
           <RecentList title="Recent coaches" items={overview.recentCoaches.map((c) => ({
             id: c.userId,
