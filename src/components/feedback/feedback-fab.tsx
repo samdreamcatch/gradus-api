@@ -67,10 +67,11 @@ export function FeedbackFab() {
       <DialogTrigger asChild>
         <button
           type="button"
-          aria-label="Send feedback"
-          className="fixed bottom-20 right-4 z-30 inline-flex size-12 items-center justify-center rounded-full bg-accent text-accent-foreground shadow-card transition-transform hover:scale-105 active:scale-95 md:bottom-6"
+          aria-label="Gradus is in beta, share feedback"
+          className="fixed bottom-20 left-4 z-30 inline-flex items-center gap-2 rounded-pill bg-accent px-3.5 py-2 text-[11px] font-bold uppercase tracking-wider text-accent-foreground shadow-card transition-transform hover:scale-105 active:scale-95 md:bottom-6"
         >
-          <MessageSquarePlus className="size-5" />
+          <MessageSquarePlus className="size-4" />
+          <span>Gradus is in beta, share feedback</span>
         </button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
