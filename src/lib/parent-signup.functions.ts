@@ -38,8 +38,46 @@ function clientIp(): string {
 
 
 /**
- * Step 1: validate the coach's invite code and create/update the parent profile.
- * Returns the (normalized) code so the next screen can fetch coach details.
+ * Validates an 8-character signup code. Accepts either:
+ *  - a coach invite code (from `coach_invite_codes`), OR
+ *  - the shared Gradus beta code (env `BETA_INVITE_CODE`).
+ * For role='coach', only the beta code is accepted.
+ * Runs before account creation, so it does NOT require auth.
+ */
+export const validateSignupCode = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        code: codeSchema,
+        role: z.enum(["parent", "coach"]),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    const beta = (process.env.BETA_INVITE_CODE ?? "").trim().toUpperCase();
+    if (beta && data.code === beta) {
+      return { kind: "beta" as const };
+    }
+    if (data.role === "coach") {
+      throw new Error("That beta code isn't valid.");
+    }
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const codeLookup = await supabaseAdmin
+      .from("coach_invite_codes")
+      .select("coach_id")
+      .eq("code", data.code)
+      .maybeSingle();
+    if (codeLookup.error) dbError(codeLookup.error);
+    if (!codeLookup.data) {
+      throw new Error("That code isn't valid. Check with your coach, or use your Gradus beta code.");
+    }
+    return { kind: "coach" as const, coachId: codeLookup.data.coach_id };
+  });
+
+/**
+ * Step 1: validate the signup code (coach invite or beta) and create/update
+ * the parent profile. Returns the coach invite code (or null for beta) so the
+ * next screen can fetch coach details.
  */
 export const startParentSignup = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -48,7 +86,7 @@ export const startParentSignup = createServerFn({ method: "POST" })
       .object({
         firstName: z.string().trim().min(1, "First name required").max(80),
         lastName: z.string().trim().min(1, "Last name required").max(80),
-        code: optionalCodeSchema,
+        code: codeSchema,
       })
       .parse(input),
   )
@@ -56,8 +94,12 @@ export const startParentSignup = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const userId = context.userId;
 
+    const beta = (process.env.BETA_INVITE_CODE ?? "").trim().toUpperCase();
+    const isBeta = beta && data.code === beta;
+
     let coachId: string | null = null;
-    if (data.code) {
+    let returnedCode: string | null = null;
+    if (!isBeta) {
       const codeLookup = await supabaseAdmin
         .from("coach_invite_codes")
         .select("coach_id")
@@ -65,9 +107,10 @@ export const startParentSignup = createServerFn({ method: "POST" })
         .maybeSingle();
       if (codeLookup.error) dbError(codeLookup.error);
       if (!codeLookup.data) {
-        throw new Error("That invite code isn't valid. Double-check with your coach.");
+        throw new Error("That code isn't valid. Check with your coach, or use your Gradus beta code.");
       }
       coachId = codeLookup.data.coach_id;
+      returnedCode = data.code;
     }
 
     const existing = await supabaseAdmin
@@ -83,8 +126,8 @@ export const startParentSignup = createServerFn({ method: "POST" })
         .update({
           first_name: data.firstName,
           last_name: data.lastName,
-          // Only set coach_id if a new code was provided; never clobber an
-          // existing link with NULL when the parent re-runs the form.
+          // Only set coach_id if a new coach code was provided; never clobber
+          // an existing link with NULL when the parent re-runs the form.
           ...(coachId ? { coach_id: coachId } : {}),
         })
         .eq("id", existing.data.id);
@@ -99,7 +142,7 @@ export const startParentSignup = createServerFn({ method: "POST" })
       if (ins.error) dbError(ins.error);
     }
 
-    return { code: data.code };
+    return { code: returnedCode };
   });
 
 
