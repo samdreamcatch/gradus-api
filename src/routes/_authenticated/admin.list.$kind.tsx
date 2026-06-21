@@ -62,6 +62,8 @@ function AdminList() {
   const { kind } = Route.useParams();
   const { filter, test: includeTest } = Route.useSearch();
   const fn = useServerFn(getAdminList);
+  const toggleFn = useServerFn(setUserTestFlag);
+  const qc = useQueryClient();
 
   if (!KINDS.includes(kind as Kind)) {
     return (
@@ -75,6 +77,12 @@ function AdminList() {
   const { data, isLoading } = useQuery({
     queryKey: ["admin-list", kind, filter, includeTest],
     queryFn: () => fn({ data: { kind: kind as Kind, filter, includeTest } }),
+  });
+
+  const toggleTest = useMutation({
+    mutationFn: ({ userId, isTest }: { userId: string; isTest: boolean }) =>
+      toggleFn({ data: { userId, isTest } }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-list", kind] }),
   });
 
   return (
