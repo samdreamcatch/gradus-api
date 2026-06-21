@@ -159,6 +159,7 @@ function ParentSettingsPage() {
 
             <SettingsGroup>
               <SettingsList>
+                <FeedbackSettingsRow />
                 <SignOutRow />
               </SettingsList>
             </SettingsGroup>
