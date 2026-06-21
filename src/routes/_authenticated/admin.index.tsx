@@ -6,7 +6,8 @@ import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { getAdminOverview, searchUsers } from "@/lib/admin.functions";
+import { useQueryClient } from "@tanstack/react-query";
+import { getAdminOverview, searchUsers, setUserTestFlag } from "@/lib/admin.functions";
 
 const searchSchema = z.object({
   test: fallback(z.boolean(), false).default(false),
