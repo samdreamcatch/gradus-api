@@ -1,6 +1,8 @@
 import { createFileRoute, Outlet, redirect, useRouterState } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { LessonWrapUpProvider } from "@/components/coach/lesson-wrap-up-provider";
+import { ActiveSessionProvider } from "@/lib/active-session-store";
+import { ActiveSessionBar } from "@/components/plans/active-session-bar";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -18,9 +20,10 @@ function AuthedLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isCoach = pathname.startsWith("/coach");
   return (
-    <>
+    <ActiveSessionProvider>
+      <ActiveSessionBar />
       <Outlet />
       {isCoach ? <LessonWrapUpProvider /> : null}
-    </>
+    </ActiveSessionProvider>
   );
 }
