@@ -636,11 +636,26 @@ export const getDailyActiveUsers = createServerFn({ method: "POST" })
       s.add(userId);
     };
 
+    // Resolve parent_profile.id -> user_id for plan_session parent loggers
+    const parentProfileIds = Array.from(
+      new Set((sessions.data ?? []).map((s) => s.parent_id).filter(Boolean) as string[]),
+    );
+    const parentUserMap = new Map<string, string>();
+    if (parentProfileIds.length > 0) {
+      const { data: pRows } = await supabaseAdmin
+        .from("parent_profiles")
+        .select("id, user_id")
+        .in("id", parentProfileIds);
+      for (const p of pRows ?? []) {
+        if (p.user_id) parentUserMap.set(p.id, p.user_id);
+      }
+    }
+
     for (const m of messages.data ?? []) addActivity(m.sender_user_id, m.created_at);
     for (const s of sessions.data ?? []) {
-      // Parents often log on behalf of athletes; count both when present.
-      addActivity(athleteUserMap.get(s.athlete_id), s.logged_at);
-      addActivity(s.parent_id ?? null, s.logged_at);
+      // Parents often log on behalf of athletes; count whoever logged it.
+      if (s.parent_id) addActivity(parentUserMap.get(s.parent_id), s.logged_at);
+      else addActivity(athleteUserMap.get(s.athlete_id), s.logged_at);
     }
     for (const w of wrapUps.data ?? []) {
       addActivity(coachUserMap.get(w.coach_id), w.created_at);
