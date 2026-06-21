@@ -130,6 +130,7 @@ export function LessonWrapUpProvider() {
   }
 
   const bannerCount = pending.length;
+  useBottomBannerLock(bannerCount > 0 && !modalFor);
 
   const bannerLabel = useMemo(() => {
     if (bannerCount === 0) return "";
