@@ -68,7 +68,7 @@ export function FeedbackFab() {
           <span>Gradus is in beta, share feedback</span>
         </button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="top-4 translate-y-0 sm:top-[50%] sm:max-w-md sm:translate-y-[-50%]">
         <DialogHeader>
           <p className="text-[11px] font-black uppercase tracking-widest text-accent-ink">
             Feedback
