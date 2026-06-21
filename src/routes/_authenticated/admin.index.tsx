@@ -287,11 +287,13 @@ function Stat({ kind, label, value, sub, includeTest, filter = "all" }: { kind: 
       to="/admin/list/$kind"
       params={{ kind }}
       search={{ filter, test: includeTest }}
-      className="rounded-xl border border-divider bg-card p-4 transition hover:border-accent/50 hover:bg-elevated"
+      className="rounded-xl border border-divider bg-card px-3 py-2 transition hover:border-accent/50 hover:bg-elevated"
     >
-      <p className="text-xs uppercase tracking-wider text-text-tertiary">{label}</p>
-      <p className="mt-1 font-display text-h2 text-text-primary">{value}</p>
-      {sub && <p className="text-xs text-text-secondary">{sub}</p>}
+      <div className="flex items-baseline justify-between gap-2">
+        <p className="text-[10px] uppercase tracking-wider text-text-tertiary truncate">{label}</p>
+        <p className="font-display text-h3 leading-none text-text-primary">{value}</p>
+      </div>
+      {sub && <p className="mt-0.5 text-[11px] text-text-secondary truncate">{sub}</p>}
     </Link>
   );
 }
