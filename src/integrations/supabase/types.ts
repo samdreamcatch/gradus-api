@@ -500,6 +500,45 @@ export type Database = {
         }
         Relationships: []
       }
+      feedback: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          path: string | null
+          resolved_at: string | null
+          role: string
+          type: string
+          user_agent: string | null
+          user_id: string
+          viewport: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          path?: string | null
+          resolved_at?: string | null
+          role: string
+          type: string
+          user_agent?: string | null
+          user_id: string
+          viewport?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          path?: string | null
+          resolved_at?: string | null
+          role?: string
+          type?: string
+          user_agent?: string | null
+          user_id?: string
+          viewport?: string | null
+        }
+        Relationships: []
+      }
       invite_lookup_attempts: {
         Row: {
           attempted_at: string
