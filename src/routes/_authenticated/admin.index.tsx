@@ -11,6 +11,7 @@ import { getAdminOverview, searchUsers, setUserTestFlag, getDailyActiveUsers, ge
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 import { SettingsGroup, SettingsList, SettingsButtonRow } from "@/components/settings/primitives";
 import { LogOut } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 const searchSchema = z.object({
   test: fallback(z.boolean(), false).default(false),
