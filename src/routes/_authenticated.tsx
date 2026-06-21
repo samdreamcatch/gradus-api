@@ -20,11 +20,13 @@ export const Route = createFileRoute("/_authenticated")({
 function AuthedLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isCoach = pathname.startsWith("/coach");
+  const isAdmin = pathname.startsWith("/admin");
   return (
     <ActiveSessionProvider>
       <ActiveSessionBar />
       <Outlet />
       {isCoach ? <LessonWrapUpProvider /> : null}
+      {isAdmin ? null : <FeedbackFab />}
     </ActiveSessionProvider>
   );
 }
