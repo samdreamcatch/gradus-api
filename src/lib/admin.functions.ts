@@ -880,7 +880,7 @@ export const getAdminReporting = createServerFn({ method: "POST" })
         active30: active.parent30.size,
       },
       athletes: {
-        total: athletes.count ?? 0,
+        total: visibleAthletes.length,
         new7: new7(visibleAthletes),
         withCoach: athletesConnected,
         activePlans: athleteActivePlans,
