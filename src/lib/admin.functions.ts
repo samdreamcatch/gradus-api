@@ -269,7 +269,7 @@ export const getUserDetail = createServerFn({ method: "POST" })
         athletes: (athleteLinks.data ?? []).map((l: any) => l.athletes).filter(Boolean),
         plansCount: (plans.data ?? []).filter((p) => p.kind === "plan").length,
         activePlansCount: (plans.data ?? []).filter((p) => p.kind === "plan" && p.status === "active").length,
-        sports: (levels.data ?? []).map((l) => l.sport),
+        sports: Array.from(new Set((levels.data ?? []).map((l) => l.sport))),
       };
     }
 
