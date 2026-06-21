@@ -2,9 +2,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Share, Plus } from "lucide-react";
 import { useInstallPrompt } from "@/pwa/use-install-prompt";
 import { Button } from "@/components/ui/button";
+import { useBottomBannerLock } from "@/lib/bottom-banner-store";
 
 export function InstallBanner() {
   const { status, promptInstall, dismiss } = useInstallPrompt();
+  useBottomBannerLock(status !== "hidden");
 
   return (
     <AnimatePresence>
