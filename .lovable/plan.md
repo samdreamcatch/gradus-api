@@ -1,97 +1,49 @@
-## What happened
+# Why Lily saw a blank screen (in plain English)
 
-Your new user is **Lily Evo (`lilyevo2003@gmail.com`)** — she signed up via Google through `/signup/coach` at 22:40 today. The DB shows:
+A React component is like a recipe. Every time the page redraws, React reads the recipe top-to-bottom and expects **the same ingredients in the same order, every single time**. The "ingredients" are React hooks (`useState`, `useEffect`, `useQuery`).
 
-- `auth.users`: created with `app_provider: google` ✓
-- `coach_profiles`: row inserted 3 seconds later, `onboarded_at = NULL` ✗
-- No sports, no athletes, no completion
+Lily's onboarding page broke this rule:
 
-So she successfully signed in with Google and the empty coach profile stub was created, but she never made it through the onboarding wizard. The screen went blank when `/coach/onboarding` tried to render.
+1. **First render** — she just signed up, her profile data was still loading. React read 3 hooks, then hit a line saying "no data yet, stop here." React memorized: *this recipe has 3 ingredients*.
+2. **Second render** — data arrived a moment later. React read past the "stop here" line and found **more** hooks below it. React panicked: *you promised 3 ingredients, now there are 8 — I can't trust this recipe*.
+3. React threw the component away rather than risk a broken render. No error popup, no retry — just a white screen.
 
-## Root cause: Rules-of-Hooks violation in `src/routes/_authenticated/coach.onboarding.tsx`
+Existing coaches never hit this because their data was already cached, so the "stop here" line never fired. Lily was the first brand-new Google signup to load the page with an empty cache, so she tripped the bug instantly.
 
-```tsx
-function OnboardingPage() {
-  const { data } = useQuery(coachProfileQueryOptions);  // hook 1
-  const navigate = useNavigate();                        // hook 2
-  useEffect(() => { ... }, [...]);                       // hook 3
+The fix already shipped: the page was split into an outer shell (handles loading) and an inner form (only mounts once data exists). Now the hook count never changes mid-render.
 
-  if (!data) return null;   // ← early return BEFORE the rest of the hooks
+# What we need to check next
 
-  const needsName = ...;
-  const [step, setStep] = useState(1);                   // hooks 4+
-  const [firstName, setFirstName] = useState(...);
-  const [lastName, setLastName] = useState(...);
-  const { initialSports, ... } = useMemo(...);
-  const [sports, setSports] = useState(...);
-  // ...10+ more hooks
-}
-```
+Any page a brand-new user lands on **before data is cached** could have the same bug. I already scanned the signup and authenticated routes — most are safe (early returns happen before any hooks, or after all hooks). Two areas still deserve a careful look and a real-world test.
 
-For an existing coach, `coachProfileQueryOptions` is pre-cached by the `_authenticated/coach/` loader, so `data` is defined on first render and nothing breaks. **For a brand-new Google signup hitting `/coach/onboarding` for the first time**, the query isn't warm:
+## Audit (read-only review)
 
-1. First render: `data` is `undefined` → React records 3 hooks, returns `null` (blank).
-2. Query resolves, re-render: `data` is defined → React tries to call ~15 hooks.
-3. React throws *"Rendered more hooks than during the previous render"* and the route tree unmounts. Result: permanent blank screen, error in console only.
+Walk through each file and confirm: are all hooks declared *before* any `if (...) return ...`? Files to review:
 
-The user has no way out except clearing the tab. That matches Lily's experience exactly.
+- `src/routes/_authenticated/coach.roster.tsx` — has an early `return null` mid-component
+- `src/routes/_authenticated/coach.plans.tsx` — two early returns inside subcomponents
+- `src/routes/_authenticated/coach.plans.$planId.tsx` — early return for `planId === "new"`
+- Any other `_authenticated/*` route that calls `useQuery` and renders conditionally on the result
+- `src/routes/signup.*.tsx` — confirm hook order is clean for first-time visitors
 
-## Fix
+For each one, the question is the same: *if a brand-new user with an empty cache landed here, would the hook count change between the first and second render?*
 
-Refactor `OnboardingPage` so all hooks run on every render, regardless of `data` being loaded. Two clean options — going with the simpler one:
+## Live test (end-to-end)
 
-1. Split the component in two: a thin outer `OnboardingPage` that does `useQuery` + loading/early-return only, and an inner `OnboardingForm({ data })` that owns all the state hooks. The inner component only mounts once `data` exists, so its hook count is stable.
+The audit catches the obvious cases, but the only way to be sure is to walk the new-user path with a fresh account:
 
-2. (Alternative if we want to keep one component) Move every `useState` / `useMemo` / mutation hook above the `if (!data) return null` and seed them with safe defaults derived from a possibly-undefined `data`. More fiddly, easier to regress.
+1. **Coach signup via Google** — repeat Lily's exact path with a test Gmail. Confirm onboarding renders, complete it, land on the coach home.
+2. **Coach signup via email/password** — same flow, different auth method.
+3. **Parent signup via Google + invite code** — first parent landing on `/parent`.
+4. **Athlete signup via invite code** — first athlete landing on their home.
+5. **Admin signup** — fresh admin email through `/signup/admin`.
 
-Going with **option 1** — it's a mechanical split with no behavior change for existing coaches and zero risk of reintroducing the bug.
+For each: watch the browser console for *"Rendered more hooks than during the previous render"* — that's the exact error signature. If it appears, the route has the same bug.
 
-## Implementation
+## Optional safety net
 
-**File: `src/routes/_authenticated/coach.onboarding.tsx`**
+Add a top-level error boundary at `__root.tsx` that catches render crashes and shows a "Something went wrong, reload" screen instead of going blank. This won't fix the underlying bug, but it converts silent blank screens into a visible error the user can recover from and we can spot in logs.
 
-- Keep the `Route` export unchanged.
-- Replace `OnboardingPage` with:
-  ```tsx
-  function OnboardingPage() {
-    const { data, isLoading, error } = useQuery(coachProfileQueryOptions);
-    const navigate = useNavigate();
+# Technical detail
 
-    useEffect(() => {
-      if (data?.profile.onboardedAt) navigate({ to: "/coach" });
-    }, [data?.profile.onboardedAt, navigate]);
-
-    if (error) {
-      return (
-        <div className="flex min-h-dvh items-center justify-center p-6 text-center">
-          <p className="text-sm text-text-secondary">
-            Couldn't load your coach profile. Please refresh.
-          </p>
-        </div>
-      );
-    }
-    if (isLoading || !data) {
-      return (
-        <div className="flex min-h-dvh items-center justify-center text-sm text-text-secondary">
-          Loading…
-        </div>
-      );
-    }
-    return <OnboardingForm data={data} />;
-  }
-  ```
-- Rename the existing big function body to `function OnboardingForm({ data }: { data: NonNullable<ReturnType<typeof useCoachProfile>["data"]> })` and remove the `useQuery`, `useNavigate`, the redirect `useEffect`, and the `if (!data) return null` from inside it (the outer guard handles them now). Everything else stays identical.
-
-That's the only file that needs to change.
-
-## After the fix
-
-Lily's account is recoverable — her `coach_profiles` row already exists with her name. Once the fix is live, she can:
-
-- Sign back in with Google → `/login` detects coach role → routes to `/coach/roster` → loader sees `onboarded_at IS NULL` → redirects to `/coach/onboarding` → wizard now renders correctly and she can finish.
-
-No DB cleanup needed. If you want to give her a heads-up, her email is `lilyevo2003@gmail.com`.
-
-## Worth checking after this lands
-
-I'd also audit the other onboarding/signup routes for the same `useQuery` + early-return + later hooks pattern, since the same crash would silently hit any other new-user code path. Quick to do once we're in build mode.
+The bug is a **Rules of Hooks violation** — React requires hooks to be called in the same order on every render. An early `return` before some hooks causes the hook count to differ between renders, which throws "Rendered more hooks than during the previous render" and unmounts the component. The standard fix is to either (a) move all hooks above any early return, or (b) split into parent/child components where the parent handles the conditional and the child owns the hooks. We used (b) for `coach.onboarding.tsx`.
