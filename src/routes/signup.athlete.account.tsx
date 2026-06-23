@@ -89,19 +89,21 @@ function AthleteAccountPage() {
               required
               maxLength={255}
             />
-            <p className="text-center text-xs text-text-tertiary">
-
-              Use an email no one else has signed up with.{" "}
+            <p className="flex items-center justify-center gap-1 text-center text-xs text-text-tertiary">
+              <span>
+                Use an email no one else has signed up with. Don&apos;t have your own email address yet?
+              </span>
               <Popover>
                 <PopoverTrigger asChild>
                   <button
                     type="button"
-                    className="inline-flex items-center gap-1 text-accent-ink underline-offset-4 hover:underline"
+                    aria-label="More info about email options"
+                    className="inline-flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full border border-text-tertiary text-text-tertiary hover:border-accent-ink hover:text-accent-ink"
                   >
-                    Don&apos;t have your own email address yet?
+                    <Info className="h-2.5 w-2.5" strokeWidth={2.5} />
                   </button>
                 </PopoverTrigger>
-                <PopoverContent side="top" align="start" className="w-80 text-xs leading-relaxed">
+                <PopoverContent side="top" align="center" className="w-80 text-xs leading-relaxed">
                   <p className="text-text-primary">
                     If your parent uses Gmail, iCloud, or Outlook, they can give
                     you{" "}
@@ -122,6 +124,7 @@ function AthleteAccountPage() {
                 </PopoverContent>
               </Popover>
             </p>
+
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
