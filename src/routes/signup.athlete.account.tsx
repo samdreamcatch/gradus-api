@@ -113,7 +113,7 @@ function AthleteAccountPage() {
                     account with your own login.
                   </p>
                   <p className="mt-2 text-text-secondary">
-                    Heads up: a few providers (Yahoo, some work or school
+                    Heads up: a few providers (Yahoo, and some work or school
                     emails) don&apos;t support this. If the verification email
                     never arrives, ask your parent to use a free Gmail or iCloud
                     address instead.
