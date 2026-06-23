@@ -81,7 +81,13 @@ export const listAthletePlans = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const supabase = context.supabase as Client;
-    const athlete = await getMyAthleteRow(supabase, context.userId);
+    const athlete = await findMyAthleteRow(supabase, context.userId);
+    if (!athlete) {
+      return {
+        athlete: { id: "", firstName: "" },
+        plans: [] as AthletePlanSummaryDTO[],
+      };
+    }
 
     const { data: planRows, error: pErr } = await supabase
       .from("plans")
