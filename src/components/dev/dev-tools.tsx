@@ -3,8 +3,10 @@
 // everything it imports tree-shakes out of production builds.
 import { useEffect, useState } from "react";
 import { useNavigate, useRouter } from "@tanstack/react-router";
-import { Wrench, LogIn, RotateCcw, Check } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { Wrench, LogIn, RotateCcw, Check, Ticket } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { mintDevAthleteInvite } from "@/lib/dev-athlete-invite.functions";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -143,6 +145,26 @@ export function DevTools() {
     }
   };
 
+  const mintInvite = useServerFn(mintDevAthleteInvite);
+
+  const jumpToAthleteStep = async (to: "/signup/athlete/confirm" | "/signup/athlete/account") => {
+    if (session.role !== "parent") {
+      toast.error("Sign in as a parent first — that's who mints athlete invite codes.");
+      return;
+    }
+    setBusy(true);
+    try {
+      const { code, athleteName } = await mintInvite();
+      toast.success(`Minted code ${code} for ${athleteName}`);
+      await navigate({ to, search: { code } });
+      setOpen(false);
+    } catch (e) {
+      toast.error(`Mint failed: ${(e as Error).message}`);
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const steps = session.role ? ONBOARDING_STEPS[session.role] : [];
 
   return (
@@ -266,6 +288,52 @@ export function DevTools() {
             </section>
 
             <Separator />
+
+            <section className="space-y-3">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-text-secondary">
+                Athlete signup walkthrough
+              </h3>
+              <p className="text-xs text-text-secondary">
+                Mints a fresh unclaimed athlete + invite code under the signed-in
+                parent, then jumps into the screen with{" "}
+                <code>?code=…</code> attached. Requires being signed in as a parent.
+              </p>
+              <div className="grid gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={busy || session.role !== "parent"}
+                  onClick={() => navigate({ to: "/signup/athlete" }).then(() => setOpen(false))}
+                  className="justify-start"
+                >
+                  <Ticket className="size-3.5" />
+                  1. Invite code entry
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={busy || session.role !== "parent"}
+                  onClick={() => jumpToAthleteStep("/signup/athlete/confirm")}
+                  className="justify-start"
+                >
+                  <Ticket className="size-3.5" />
+                  2. Mint code → Confirm screen
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={busy || session.role !== "parent"}
+                  onClick={() => jumpToAthleteStep("/signup/athlete/account")}
+                  className="justify-start"
+                >
+                  <Ticket className="size-3.5" />
+                  3. Mint code → Account screen
+                </Button>
+              </div>
+            </section>
+
+            <Separator />
+
 
             <section className="space-y-3">
               <h3 className="text-xs font-bold uppercase tracking-widest text-text-secondary">
