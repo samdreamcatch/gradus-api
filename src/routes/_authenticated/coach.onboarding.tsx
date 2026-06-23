@@ -48,14 +48,36 @@ function prettify(s: string) {
 }
 
 function OnboardingPage() {
-  const { data } = useQuery(coachProfileQueryOptions);
+  const { data, isLoading, error } = useQuery(coachProfileQueryOptions);
   const navigate = useNavigate();
 
   useEffect(() => {
     if (data?.profile.onboardedAt) navigate({ to: "/coach" });
   }, [data?.profile.onboardedAt, navigate]);
 
-  if (!data) return null;
+  if (error) {
+    return (
+      <div className="flex min-h-dvh items-center justify-center p-6 text-center">
+        <p className="text-sm text-text-secondary">
+          Couldn&apos;t load your coach profile. Please refresh.
+        </p>
+      </div>
+    );
+  }
+  if (isLoading || !data) {
+    return (
+      <div className="flex min-h-dvh items-center justify-center text-sm text-text-secondary">
+        Loading…
+      </div>
+    );
+  }
+  return <OnboardingForm data={data} />;
+}
+
+type OnboardingData = NonNullable<ReturnType<typeof useCoachProfile>["data"]>;
+
+function OnboardingForm({ data }: { data: OnboardingData }) {
+  const navigate = useNavigate();
 
   const needsName =
     !data.profile.firstName.trim() || !data.profile.lastName.trim();
@@ -63,6 +85,7 @@ function OnboardingPage() {
   const [step, setStep] = useState(1);
   const [firstName, setFirstName] = useState(data.profile.firstName);
   const [lastName, setLastName] = useState(data.profile.lastName);
+
 
   // Initial sport & custom-level reconstruction from saved data.
   const { initialSports, initialCustomLevels } = useMemo(() => {
