@@ -3,8 +3,10 @@
 // everything it imports tree-shakes out of production builds.
 import { useEffect, useState } from "react";
 import { useNavigate, useRouter } from "@tanstack/react-router";
-import { Wrench, LogIn, RotateCcw, Check } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { Wrench, LogIn, RotateCcw, Check, Ticket } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { mintDevAthleteInvite } from "@/lib/dev-athlete-invite.functions";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
