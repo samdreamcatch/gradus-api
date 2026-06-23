@@ -15,10 +15,12 @@ import {
 import { SPORTS, getSport, getSportLevel, getSuggestedHours, DEFAULT_SUGGESTED_HOURS } from "@/lib/coach-sports";
 import {
   coachProfileQueryOptions,
+  useCoachProfile,
   useCompleteOnboarding,
   useSaveCoachLevels,
   useSaveCoachProfile,
 } from "@/hooks/use-coach-profile";
+
 import { claimParentInvite } from "@/lib/parent-signup.functions";
 
 import { InviteCard } from "@/components/onboarding/invite-card";
