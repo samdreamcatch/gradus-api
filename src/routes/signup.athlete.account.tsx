@@ -89,42 +89,42 @@ function AthleteAccountPage() {
               required
               maxLength={255}
             />
-            <p className="flex items-center justify-center gap-1 text-center text-xs text-text-tertiary">
-              <span>
-                Use an email no one else has signed up with.
-                <br />
+            <p className="text-center text-xs text-text-tertiary">
+              Use an email no one else has signed up with.
+              <br />
+              <span className="inline-flex items-center gap-1">
                 Don&apos;t have your own email address yet?
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button
+                      type="button"
+                      aria-label="More info about email options"
+                      className="inline-flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full border border-text-tertiary text-text-tertiary hover:border-accent-ink hover:text-accent-ink"
+                    >
+                      <Info className="h-2.5 w-2.5" strokeWidth={2.5} />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent side="top" align="center" className="w-80 text-xs leading-relaxed">
+                    <p className="text-text-primary">
+                      If your parent uses Gmail, iCloud, or Outlook, they can give
+                      you{" "}
+                      <code className="rounded bg-elevated px-1 py-0.5 font-mono text-[11px]">
+                        theirname+yourname@gmail.com
+                      </code>
+                      . Most big email providers ignore anything after a{" "}
+                      <code className="font-mono">+</code>, so the verification
+                      email lands in their inbox — but to Gradus it&apos;s your own
+                      account with your own login.
+                    </p>
+                    <p className="mt-2 text-text-secondary">
+                      Heads up: a few providers (Yahoo, and some work or school
+                      emails) don&apos;t support this. If the verification email
+                      never arrives, ask your parent to use a free Gmail or iCloud
+                      address instead.
+                    </p>
+                  </PopoverContent>
+                </Popover>
               </span>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <button
-                    type="button"
-                    aria-label="More info about email options"
-                    className="inline-flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full border border-text-tertiary text-text-tertiary hover:border-accent-ink hover:text-accent-ink"
-                  >
-                    <Info className="h-2.5 w-2.5" strokeWidth={2.5} />
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent side="top" align="center" className="w-80 text-xs leading-relaxed">
-                  <p className="text-text-primary">
-                    If your parent uses Gmail, iCloud, or Outlook, they can give
-                    you{" "}
-                    <code className="rounded bg-elevated px-1 py-0.5 font-mono text-[11px]">
-                      theirname+yourname@gmail.com
-                    </code>
-                    . Most big email providers ignore anything after a{" "}
-                    <code className="font-mono">+</code>, so the verification
-                    email lands in their inbox — but to Gradus it&apos;s your own
-                    account with your own login.
-                  </p>
-                  <p className="mt-2 text-text-secondary">
-                    Heads up: a few providers (Yahoo, and some work or school
-                    emails) don&apos;t support this. If the verification email
-                    never arrives, ask your parent to use a free Gmail or iCloud
-                    address instead.
-                  </p>
-                </PopoverContent>
-              </Popover>
             </p>
 
           </div>
