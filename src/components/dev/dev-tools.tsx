@@ -145,6 +145,26 @@ export function DevTools() {
     }
   };
 
+  const mintInvite = useServerFn(mintDevAthleteInvite);
+
+  const jumpToAthleteStep = async (to: "/signup/athlete/confirm" | "/signup/athlete/account") => {
+    if (session.role !== "parent") {
+      toast.error("Sign in as a parent first — that's who mints athlete invite codes.");
+      return;
+    }
+    setBusy(true);
+    try {
+      const { code, athleteName } = await mintInvite();
+      toast.success(`Minted code ${code} for ${athleteName}`);
+      await navigate({ to, search: { code } });
+      setOpen(false);
+    } catch (e) {
+      toast.error(`Mint failed: ${(e as Error).message}`);
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const steps = session.role ? ONBOARDING_STEPS[session.role] : [];
 
   return (
