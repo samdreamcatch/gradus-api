@@ -291,6 +291,52 @@ export function DevTools() {
 
             <section className="space-y-3">
               <h3 className="text-xs font-bold uppercase tracking-widest text-text-secondary">
+                Athlete signup walkthrough
+              </h3>
+              <p className="text-xs text-text-secondary">
+                Mints a fresh unclaimed athlete + invite code under the signed-in
+                parent, then jumps into the screen with{" "}
+                <code>?code=…</code> attached. Requires being signed in as a parent.
+              </p>
+              <div className="grid gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={busy || session.role !== "parent"}
+                  onClick={() => navigate({ to: "/signup/athlete" }).then(() => setOpen(false))}
+                  className="justify-start"
+                >
+                  <Ticket className="size-3.5" />
+                  1. Invite code entry
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={busy || session.role !== "parent"}
+                  onClick={() => jumpToAthleteStep("/signup/athlete/confirm")}
+                  className="justify-start"
+                >
+                  <Ticket className="size-3.5" />
+                  2. Mint code → Confirm screen
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={busy || session.role !== "parent"}
+                  onClick={() => jumpToAthleteStep("/signup/athlete/account")}
+                  className="justify-start"
+                >
+                  <Ticket className="size-3.5" />
+                  3. Mint code → Account screen
+                </Button>
+              </div>
+            </section>
+
+            <Separator />
+
+
+            <section className="space-y-3">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-text-secondary">
                 Reset onboarding
               </h3>
               <p className="text-xs text-text-secondary">
