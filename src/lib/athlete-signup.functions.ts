@@ -88,20 +88,26 @@ export const getAthleteInviteSummary = createServerFn({ method: "POST" })
       .limit(1)
       .maybeSingle();
     if (link.error) dbError(link.error);
-    if (!link.data) throw new Error("No coach is linked to this athlete yet.");
-    const coachId = link.data.coach_id;
+    const coachId = link.data?.coach_id ?? null;
 
+    // Coach is optional: a parent may invite an athlete before connecting a
+    // coach. Sports fall back to the athlete's own goals when no coach is
+    // linked yet.
     const [coach, goals, levels] = await Promise.all([
-      supabaseAdmin
-        .from("coach_profiles")
-        .select("first_name, last_name")
-        .eq("id", coachId)
-        .single(),
+      coachId
+        ? supabaseAdmin
+            .from("coach_profiles")
+            .select("first_name, last_name")
+            .eq("id", coachId)
+            .single()
+        : Promise.resolve({ data: null, error: null } as const),
       supabaseAdmin
         .from("athlete_goals")
         .select("sport")
         .eq("athlete_id", athlete.data.id),
-      supabaseAdmin.from("coach_levels").select("sport").eq("coach_id", coachId),
+      coachId
+        ? supabaseAdmin.from("coach_levels").select("sport").eq("coach_id", coachId)
+        : Promise.resolve({ data: [] as { sport: string }[], error: null } as const),
     ]);
     if (coach.error) dbError(coach.error);
 
@@ -114,8 +120,8 @@ export const getAthleteInviteSummary = createServerFn({ method: "POST" })
     return {
       athleteFirstName: athlete.data.first_name,
       athleteLastName: athlete.data.last_name,
-      coachFirstName: coach.data.first_name,
-      coachLastName: coach.data.last_name,
+      coachFirstName: coach.data?.first_name ?? null,
+      coachLastName: coach.data?.last_name ?? null,
       sports,
     };
   });
