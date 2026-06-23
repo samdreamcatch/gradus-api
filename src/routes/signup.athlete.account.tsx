@@ -88,7 +88,8 @@ function AthleteAccountPage() {
               required
               maxLength={255}
             />
-            <p className="text-xs text-text-tertiary">
+            <p className="text-center text-xs text-text-tertiary">
+
               Use an email no one else has signed up with.{" "}
               <Popover>
                 <PopoverTrigger asChild>
