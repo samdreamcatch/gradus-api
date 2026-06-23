@@ -1,49 +1,29 @@
-# Why Lily saw a blank screen (in plain English)
+## What I'll change
 
-A React component is like a recipe. Every time the page redraws, React reads the recipe top-to-bottom and expects **the same ingredients in the same order, every single time**. The "ingredients" are React hooks (`useState`, `useEffect`, `useQuery`).
+In `src/routes/signup.athlete.account.tsx`, just under the email `<Input>` (where the password hint "At least 8 characters." currently lives for the password field), add a two-line helper:
 
-Lily's onboarding page broke this rule:
+> Use an email no one else has signed up with. **Tip:** if your parent uses Gmail, iCloud, or Outlook, they can give you `theirname+yourname@gmail.com` — the verification email lands in their inbox, but you get your own login. [ⓘ How does this work?]
 
-1. **First render** — she just signed up, her profile data was still loading. React read 3 hooks, then hit a line saying "no data yet, stop here." React memorized: *this recipe has 3 ingredients*.
-2. **Second render** — data arrived a moment later. React read past the "stop here" line and found **more** hooks below it. React panicked: *you promised 3 ingredients, now there are 8 — I can't trust this recipe*.
-3. React threw the component away rather than risk a broken render. No error popup, no retry — just a white screen.
+The **ⓘ How does this work?** is a small inline trigger (icon + underlined link, no new route) that opens a shadcn `Popover` with the longer explanation:
 
-Existing coaches never hit this because their data was already cached, so the "stop here" line never fired. Lily was the first brand-new Google signup to load the page with an empty cache, so she tripped the bug instantly.
+> Most big email providers (Gmail, iCloud, Outlook, Fastmail, ProtonMail) ignore anything after a `+` in the address. So `mom@gmail.com` and `mom+jamie@gmail.com` both deliver to mom's inbox — but to Gradus they're two different accounts. That means your parent can confirm your account from their email, and you still get to log in as you.
+>
+> Heads up: a few providers (Yahoo, some company emails) don't support this. If the verification email never arrives, ask your parent to use a different free email like Gmail.
 
-The fix already shipped: the page was split into an outer shell (handles loading) and an inner form (only mounts once data exists). Now the hook count never changes mid-render.
+## Why a popover, not a separate page
 
-# What we need to check next
+- You picked inline-only, so no new route or doc page to maintain.
+- A popover keeps the form short for the 95% who already get it, and gives the longer caveat-aware explanation to the 5% who tap.
+- Uses the existing `@/components/ui/popover` primitive — already styled to the design system, no new dependencies.
 
-Any page a brand-new user lands on **before data is cached** could have the same bug. I already scanned the signup and authenticated routes — most are safe (early returns happen before any hooks, or after all hooks). Two areas still deserve a careful look and a real-world test.
+## Technical correctness recap (so it's in the plan, not just the chat)
 
-## Audit (read-only review)
+- Plus-addressing is a real RFC 5233 feature. Gmail, iCloud, Outlook, Fastmail, ProtonMail honor it.
+- Supabase Auth's `users.email` unique constraint is a literal string compare, so `mom@gmail.com` and `mom+jamie@gmail.com` coexist as separate auth users with separate sessions and passwords — exactly what we want.
+- Yahoo uses `-` instead of `+`, and a handful of corporate/ISP mailservers strip aliases — hence the "heads up" sentence so support tickets don't pile up.
 
-Walk through each file and confirm: are all hooks declared *before* any `if (...) return ...`? Files to review:
+## Files touched
 
-- `src/routes/_authenticated/coach.roster.tsx` — has an early `return null` mid-component
-- `src/routes/_authenticated/coach.plans.tsx` — two early returns inside subcomponents
-- `src/routes/_authenticated/coach.plans.$planId.tsx` — early return for `planId === "new"`
-- Any other `_authenticated/*` route that calls `useQuery` and renders conditionally on the result
-- `src/routes/signup.*.tsx` — confirm hook order is clean for first-time visitors
+- `src/routes/signup.athlete.account.tsx` — add the helper text + popover under the email field; import `Popover`, `PopoverTrigger`, `PopoverContent` from `@/components/ui/popover` and the `Info` icon from `lucide-react`.
 
-For each one, the question is the same: *if a brand-new user with an empty cache landed here, would the hook count change between the first and second render?*
-
-## Live test (end-to-end)
-
-The audit catches the obvious cases, but the only way to be sure is to walk the new-user path with a fresh account:
-
-1. **Coach signup via Google** — repeat Lily's exact path with a test Gmail. Confirm onboarding renders, complete it, land on the coach home.
-2. **Coach signup via email/password** — same flow, different auth method.
-3. **Parent signup via Google + invite code** — first parent landing on `/parent`.
-4. **Athlete signup via invite code** — first athlete landing on their home.
-5. **Admin signup** — fresh admin email through `/signup/admin`.
-
-For each: watch the browser console for *"Rendered more hooks than during the previous render"* — that's the exact error signature. If it appears, the route has the same bug.
-
-## Optional safety net
-
-Add a top-level error boundary at `__root.tsx` that catches render crashes and shows a "Something went wrong, reload" screen instead of going blank. This won't fix the underlying bug, but it converts silent blank screens into a visible error the user can recover from and we can spot in logs.
-
-# Technical detail
-
-The bug is a **Rules of Hooks violation** — React requires hooks to be called in the same order on every render. An early `return` before some hooks causes the hook count to differ between renders, which throws "Rendered more hooks than during the previous render" and unmounts the component. The standard fix is to either (a) move all hooks above any early return, or (b) split into parent/child components where the parent handles the conditional and the child owns the hooks. We used (b) for `coach.onboarding.tsx`.
+No new routes, no new components, no backend changes.
