@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Info } from "lucide-react";
+
 import { Logo } from "@/components/logo";
 import { claimAthleteInvite } from "@/lib/athlete-signup.functions";
 
@@ -90,43 +90,35 @@ function AthleteAccountPage() {
             />
             <p className="text-xs text-text-tertiary">
               Use an email no one else has signed up with.{" "}
-              <span className="block sm:inline">
-                <strong className="font-semibold text-text-secondary">Tip:</strong>{" "}
-                if your parent uses Gmail, iCloud, or Outlook, they can give you{" "}
-                <code className="rounded bg-elevated px-1 py-0.5 font-mono text-[11px] text-text-secondary">
-                  theirname+yourname@gmail.com
-                </code>{" "}
-                — the verification email lands in their inbox, but you get your own login.{" "}
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <button
-                      type="button"
-                      className="inline-flex items-center gap-1 text-accent-ink underline-offset-4 hover:underline"
-                    >
-                      <Info className="size-3" aria-hidden />
-                      How does this work?
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent side="top" align="start" className="w-80 text-xs leading-relaxed">
-                    <p className="text-text-primary">
-                      Most big email providers — Gmail, iCloud, Outlook, Fastmail,
-                      ProtonMail — ignore anything after a{" "}
-                      <code className="font-mono">+</code> in the address. So{" "}
-                      <code className="font-mono">mom@gmail.com</code> and{" "}
-                      <code className="font-mono">mom+jamie@gmail.com</code> both
-                      deliver to mom&apos;s inbox, but to Gradus they&apos;re two
-                      different accounts. Your parent can confirm your account from
-                      their email, and you still get to log in as you.
-                    </p>
-                    <p className="mt-2 text-text-secondary">
-                      Heads up: a few providers (Yahoo, some work or school emails)
-                      don&apos;t support this. If the verification email never
-                      arrives, ask your parent to use a free Gmail or iCloud
-                      address instead.
-                    </p>
-                  </PopoverContent>
-                </Popover>
-              </span>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-1 text-accent-ink underline-offset-4 hover:underline"
+                  >
+                    Don&apos;t have your own email address yet?
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent side="top" align="start" className="w-80 text-xs leading-relaxed">
+                  <p className="text-text-primary">
+                    If your parent uses Gmail, iCloud, or Outlook, they can give
+                    you{" "}
+                    <code className="rounded bg-elevated px-1 py-0.5 font-mono text-[11px]">
+                      theirname+yourname@gmail.com
+                    </code>
+                    . Most big email providers ignore anything after a{" "}
+                    <code className="font-mono">+</code>, so the verification
+                    email lands in their inbox — but to Gradus it&apos;s your own
+                    account with your own login.
+                  </p>
+                  <p className="mt-2 text-text-secondary">
+                    Heads up: a few providers (Yahoo, some work or school
+                    emails) don&apos;t support this. If the verification email
+                    never arrives, ask your parent to use a free Gmail or iCloud
+                    address instead.
+                  </p>
+                </PopoverContent>
+              </Popover>
             </p>
           </div>
           <div className="space-y-2">
