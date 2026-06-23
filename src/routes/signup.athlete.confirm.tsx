@@ -71,12 +71,18 @@ function AthleteConfirmPage() {
                 </div>
               )}
 
-              <p className="mt-6 text-sm text-text-secondary">
-                Coached by{" "}
-                <span className="font-semibold text-text-primary">
-                  {data.coachFirstName} {data.coachLastName}
-                </span>
-              </p>
+              {data.coachFirstName ? (
+                <p className="mt-6 text-sm text-text-secondary">
+                  Coached by{" "}
+                  <span className="font-semibold text-text-primary">
+                    {data.coachFirstName} {data.coachLastName}
+                  </span>
+                </p>
+              ) : (
+                <p className="mt-6 text-sm text-text-secondary">
+                  No coach connected yet — your parent can add one later.
+                </p>
+              )}
             </div>
 
             <div className="space-y-3">
