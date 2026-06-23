@@ -91,7 +91,9 @@ function AthleteAccountPage() {
             />
             <p className="flex items-center justify-center gap-1 text-center text-xs text-text-tertiary">
               <span>
-                Use an email no one else has signed up with. Don&apos;t have your own email address yet?
+                Use an email no one else has signed up with.
+                <br />
+                Don&apos;t have your own email address yet?
               </span>
               <Popover>
                 <PopoverTrigger asChild>
