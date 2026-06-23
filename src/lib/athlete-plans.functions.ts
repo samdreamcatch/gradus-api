@@ -64,6 +64,16 @@ async function getMyAthleteRow(supabase: Client, userId: string) {
   return data;
 }
 
+async function findMyAthleteRow(supabase: Client, userId: string) {
+  const { data, error } = await supabase
+    .from("athletes")
+    .select("id, first_name, last_name")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (error) dbError(error);
+  return data;
+}
+
 /* ---------------- list ---------------- */
 
 export const listAthletePlans = createServerFn({ method: "GET" })
@@ -71,7 +81,13 @@ export const listAthletePlans = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const supabase = context.supabase as Client;
-    const athlete = await getMyAthleteRow(supabase, context.userId);
+    const athlete = await findMyAthleteRow(supabase, context.userId);
+    if (!athlete) {
+      return {
+        athlete: { id: "", firstName: "" },
+        plans: [] as AthletePlanSummaryDTO[],
+      };
+    }
 
     const { data: planRows, error: pErr } = await supabase
       .from("plans")
