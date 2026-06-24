@@ -1151,6 +1151,81 @@ function InviteSubrow({ athlete }: { athlete: AthleteData }) {
   );
 }
 
+function PasswordResetSubrow({ athlete }: { athlete: AthleteData }) {
+  const reset = useServerFn(resetAthletePassword);
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    if (password.length < 8) {
+      toast.error("Password must be at least 8 characters.");
+      return;
+    }
+    if (password !== confirm) {
+      toast.error("Passwords don't match.");
+      return;
+    }
+    setSaving(true);
+    try {
+      await reset({ data: { athleteId: athlete.id, password } });
+      toast.success(`Password updated for ${athlete.firstName}.`);
+      setPassword("");
+      setConfirm("");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Couldn't reset password");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <SettingsDisclosure
+      icon={<KeyRound className="size-4" />}
+      label="Sign-in"
+      value={athlete.username ? `@${athlete.username}` : "Account"}
+    >
+      <p className="mb-3 text-xs text-text-tertiary">
+        {athlete.username
+          ? `${athlete.firstName} signs in with @${athlete.username}.`
+          : `${athlete.firstName} signs in with their email.`}{" "}
+        Set a new password here if they&apos;ve forgotten it.
+      </p>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="space-y-1.5">
+          <Label className="text-xs">New password</Label>
+          <Input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            autoComplete="new-password"
+            minLength={8}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs">Confirm password</Label>
+          <Input
+            type="password"
+            value={confirm}
+            onChange={(e) => setConfirm(e.target.value)}
+            autoComplete="new-password"
+            minLength={8}
+          />
+        </div>
+      </div>
+      <div className="mt-3 flex justify-end">
+        <Button
+          size="sm"
+          onClick={handleSave}
+          disabled={saving || password.length < 8 || password !== confirm}
+        >
+          {saving ? "Saving…" : "Set password"}
+        </Button>
+      </div>
+    </SettingsDisclosure>
+  );
+}
+
 function RemoveBlock({ athlete }: { athlete: AthleteData }) {
   const qc = useQueryClient();
   const remove = useServerFn(removeAthlete);
