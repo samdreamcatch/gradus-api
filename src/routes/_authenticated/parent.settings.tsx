@@ -288,6 +288,7 @@ function AthleteDisclosure({ athlete }: { athlete: AthleteData }) {
           <GoalsSection athlete={athlete} />
           <ScheduleSection athlete={athlete} />
           <InviteSubrow athlete={athlete} />
+          {athlete.hasAccount && <PasswordResetSubrow athlete={athlete} />}
         </NestedList>
         <RemoveBlock athlete={athlete} />
       </div>
