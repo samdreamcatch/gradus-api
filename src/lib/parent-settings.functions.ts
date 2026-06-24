@@ -109,7 +109,7 @@ export const getParentSettings = createServerFn({ method: "GET" })
 
     const athletesRes = await supabaseAdmin
       .from("athletes")
-      .select("id, first_name, last_name, birthdate")
+      .select("id, first_name, last_name, birthdate, username, user_id")
       .eq("parent_id", parent.id)
       .order("created_at", { ascending: true });
     if (athletesRes.error) dbError(athletesRes.error);
