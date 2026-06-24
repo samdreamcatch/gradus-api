@@ -192,15 +192,17 @@ function LoginPage() {
 
         <form onSubmit={handleEmail} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="identifier">Email or username</Label>
             <Input
-              id="email"
-              type="email"
-              autoComplete="email"
-              value={email}
+              id="identifier"
+              type="text"
+              autoComplete="username"
+              autoCapitalize="none"
+              spellCheck={false}
+              value={identifier}
               onChange={(e) => {
                 setHasInteracted(true);
-                setEmail(e.target.value);
+                setIdentifier(e.target.value);
               }}
               required
             />
