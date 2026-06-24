@@ -86,7 +86,7 @@ function AthleteSettingsPage() {
 function ProfileDisclosure({
   profile,
 }: {
-  profile: { firstName: string; lastName: string; birthdate: string | null };
+  profile: { firstName: string; lastName: string; birthdate: string | null; username: string | null };
 }) {
   const [firstName, setFirstName] = useState(profile.firstName);
   const [lastName, setLastName] = useState(profile.lastName);
