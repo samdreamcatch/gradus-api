@@ -248,6 +248,8 @@ export const getParentSettings = createServerFn({ method: "GET" })
           firstName: a.first_name,
           lastName: a.last_name,
           birthdate: a.birthdate as string | null,
+          username: (a as { username: string | null }).username ?? null,
+          hasAccount: !!(a as { user_id: string | null }).user_id,
           inviteCode: codeMap.get(a.id) ?? null,
           coaches,
           sports,
