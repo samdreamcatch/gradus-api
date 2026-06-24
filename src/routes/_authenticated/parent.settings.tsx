@@ -99,6 +99,8 @@ type AthleteData = {
   firstName: string;
   lastName: string;
   birthdate: string | null;
+  username: string | null;
+  hasAccount: boolean;
   inviteCode: string | null;
   coaches: { coachId: string; coachName: string; sports: string[] }[];
   sports: SportEntry[];
