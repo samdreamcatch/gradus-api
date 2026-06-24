@@ -199,6 +199,7 @@ export type Database = {
           parent_id: string
           updated_at: string
           user_id: string | null
+          username: string | null
         }
         Insert: {
           birthdate?: string | null
@@ -210,6 +211,7 @@ export type Database = {
           parent_id: string
           updated_at?: string
           user_id?: string | null
+          username?: string | null
         }
         Update: {
           birthdate?: string | null
@@ -221,6 +223,7 @@ export type Database = {
           parent_id?: string
           updated_at?: string
           user_id?: string | null
+          username?: string | null
         }
         Relationships: [
           {
@@ -1281,6 +1284,7 @@ export type Database = {
         }
         Returns: number
       }
+      resolve_athlete_username: { Args: { _username: string }; Returns: string }
       seed_coach_library: { Args: { _coach_id: string }; Returns: number }
     }
     Enums: {
