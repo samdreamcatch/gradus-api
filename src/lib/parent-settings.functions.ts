@@ -109,7 +109,7 @@ export const getParentSettings = createServerFn({ method: "GET" })
 
     const athletesRes = await supabaseAdmin
       .from("athletes")
-      .select("id, first_name, last_name, birthdate")
+      .select("id, first_name, last_name, birthdate, username, user_id")
       .eq("parent_id", parent.id)
       .order("created_at", { ascending: true });
     if (athletesRes.error) dbError(athletesRes.error);
@@ -248,6 +248,8 @@ export const getParentSettings = createServerFn({ method: "GET" })
           firstName: a.first_name,
           lastName: a.last_name,
           birthdate: a.birthdate as string | null,
+          username: (a as { username: string | null }).username ?? null,
+          hasAccount: !!(a as { user_id: string | null }).user_id,
           inviteCode: codeMap.get(a.id) ?? null,
           coaches,
           sports,
@@ -754,4 +756,38 @@ export const removeAthlete = createServerFn({ method: "POST" })
     const del = await supabaseAdmin.from("athletes").delete().eq("id", data.athleteId);
     if (del.error) dbError(del.error);
     return { ok: true };
+  });
+
+/**
+ * Reset (or set) the password for one of the parent's athletes. Only works
+ * for athletes that have an account (user_id is set). Used by the parent
+ * settings page since username-only athletes have no email-based recovery.
+ */
+export const resetAthletePassword = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        athleteId: z.string().uuid(),
+        password: z.string().min(8, "Password must be at least 8 characters"),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await assertOwnsAthlete(context.userId, data.athleteId);
+    const supabaseAdmin = await getAdmin();
+    const row = await supabaseAdmin
+      .from("athletes")
+      .select("user_id, username")
+      .eq("id", data.athleteId)
+      .single();
+    if (row.error) dbError(row.error);
+    if (!row.data.user_id) {
+      throw new Error("This athlete hasn't created their account yet.");
+    }
+    const upd = await supabaseAdmin.auth.admin.updateUserById(row.data.user_id, {
+      password: data.password,
+    });
+    if (upd.error) throw new Error(upd.error.message);
+    return { ok: true, username: row.data.username as string | null };
   });

@@ -53,8 +53,8 @@ function AthleteSettingsPage() {
                 <ProfileDisclosure profile={data} />
                 <SettingsRow
                   icon={<Mail className="size-4" />}
-                  label="Email"
-                  value={email ?? "—"}
+                  label={data.username ? "Username" : "Email"}
+                  value={data.username ? `@${data.username}` : (email ?? "—")}
                 />
               </SettingsList>
             </SettingsGroup>
@@ -86,7 +86,7 @@ function AthleteSettingsPage() {
 function ProfileDisclosure({
   profile,
 }: {
-  profile: { firstName: string; lastName: string; birthdate: string | null };
+  profile: { firstName: string; lastName: string; birthdate: string | null; username: string | null };
 }) {
   const [firstName, setFirstName] = useState(profile.firstName);
   const [lastName, setLastName] = useState(profile.lastName);

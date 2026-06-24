@@ -199,6 +199,7 @@ export type Database = {
           parent_id: string
           updated_at: string
           user_id: string | null
+          username: string | null
         }
         Insert: {
           birthdate?: string | null
@@ -210,6 +211,7 @@ export type Database = {
           parent_id: string
           updated_at?: string
           user_id?: string | null
+          username?: string | null
         }
         Update: {
           birthdate?: string | null
@@ -221,6 +223,7 @@ export type Database = {
           parent_id?: string
           updated_at?: string
           user_id?: string | null
+          username?: string | null
         }
         Relationships: [
           {

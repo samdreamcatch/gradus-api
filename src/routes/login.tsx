@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { Button } from "@/components/ui/button";
@@ -7,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/logo";
 import { useAuthReady } from "@/hooks/use-auth-ready";
+import { resolveAthleteLogin } from "@/lib/athlete-signup.functions";
 
 export const Route = createFileRoute("/login")({
   validateSearch: (s: Record<string, unknown>) => {
@@ -24,7 +26,8 @@ function LoginPage() {
   const search = Route.useSearch();
   const navigate = useNavigate();
   const { user, isReady } = useAuthReady();
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
+  const resolveLogin = useServerFn(resolveAthleteLogin);
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -123,6 +126,18 @@ function LoginPage() {
     setError(null);
     setLoading(true);
     try {
+      const raw = identifier.trim();
+      let email = raw;
+      // If they typed something that isn't an email, treat it as an athlete
+      // username and resolve it to the synthetic email server-side.
+      if (!raw.includes("@")) {
+        const resolved = await resolveLogin({
+          data: { username: raw.toLowerCase() },
+        });
+        email = resolved.email;
+      } else {
+        email = raw.toLowerCase();
+      }
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
       if (!data.user?.id) throw new Error("Sign-in succeeded but no user was returned.");
@@ -177,15 +192,17 @@ function LoginPage() {
 
         <form onSubmit={handleEmail} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="identifier">Email or username</Label>
             <Input
-              id="email"
-              type="email"
-              autoComplete="email"
-              value={email}
+              id="identifier"
+              type="text"
+              autoComplete="username"
+              autoCapitalize="none"
+              spellCheck={false}
+              value={identifier}
               onChange={(e) => {
                 setHasInteracted(true);
-                setEmail(e.target.value);
+                setIdentifier(e.target.value);
               }}
               required
             />

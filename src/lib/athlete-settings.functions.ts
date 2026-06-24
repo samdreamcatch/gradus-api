@@ -9,7 +9,7 @@ export const getAthleteSettings = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const row = await supabaseAdmin
       .from("athletes")
-      .select("id, first_name, last_name, birthdate")
+      .select("id, first_name, last_name, birthdate, username")
       .eq("user_id", context.userId)
       .maybeSingle();
     if (row.error) dbError(row.error);
@@ -19,6 +19,7 @@ export const getAthleteSettings = createServerFn({ method: "GET" })
       firstName: row.data.first_name,
       lastName: row.data.last_name,
       birthdate: (row.data.birthdate as string | null) ?? null,
+      username: (row.data as { username: string | null }).username ?? null,
     };
   });
 
