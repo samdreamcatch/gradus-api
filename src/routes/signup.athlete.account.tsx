@@ -139,7 +139,7 @@ function AthleteAccountPage() {
                 required
                 maxLength={24}
                 minLength={3}
-                placeholder="e.g. maya07"
+                placeholder=""
                 className="pr-9 lowercase"
               />
               <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
