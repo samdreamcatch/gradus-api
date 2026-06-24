@@ -154,9 +154,13 @@ function AthleteAccountPage() {
                 )}
               </div>
             </div>
-            {availability === "taken" && (
-              <p className="text-xs text-destructive">That username is already taken.</p>
-            )}
+            <p className="text-xs text-text-tertiary">
+              {availability === "taken"
+                ? "That username is already taken."
+                : availability === "invalid"
+                  ? "3–24 lowercase letters, numbers, or underscores."
+                  : "3–24 lowercase letters, numbers, or underscores."}
+            </p>
           </div>
 
           <div className="space-y-2">
