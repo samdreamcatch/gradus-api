@@ -63,6 +63,7 @@ import {
   unlinkAthleteFromCoach,
   previewCoachByInviteCode,
   updateCoachAthleteSports,
+  resetAthletePassword,
 } from "@/lib/parent-settings.functions";
 import { getSport } from "@/lib/coach-sports";
 
