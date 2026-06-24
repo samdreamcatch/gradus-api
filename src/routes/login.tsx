@@ -126,6 +126,18 @@ function LoginPage() {
     setError(null);
     setLoading(true);
     try {
+      const raw = identifier.trim();
+      let email = raw;
+      // If they typed something that isn't an email, treat it as an athlete
+      // username and resolve it to the synthetic email server-side.
+      if (!raw.includes("@")) {
+        const resolved = await resolveLogin({
+          data: { username: raw.toLowerCase() },
+        });
+        email = resolved.email;
+      } else {
+        email = raw.toLowerCase();
+      }
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
       if (!data.user?.id) throw new Error("Sign-in succeeded but no user was returned.");
