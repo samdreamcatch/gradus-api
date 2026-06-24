@@ -26,7 +26,8 @@ function LoginPage() {
   const search = Route.useSearch();
   const navigate = useNavigate();
   const { user, isReady } = useAuthReady();
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
+  const resolveLogin = useServerFn(resolveAthleteLogin);
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
