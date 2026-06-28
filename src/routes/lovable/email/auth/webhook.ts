@@ -33,7 +33,7 @@ const EMAIL_TEMPLATES: Record<string, React.ComponentType<any>> = {
 // Configuration
 const SITE_NAME = "gradussportsapp"
 const SENDER_DOMAIN = "support.gradussports.com"
-const ROOT_DOMAIN = "gradussports.com"
+const ROOT_DOMAIN = "gradus.training"
 const FROM_DOMAIN = "support.gradussports.com"
 
 function redactEmail(email: string | null | undefined): string {
