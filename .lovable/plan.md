@@ -1,56 +1,67 @@
 ## Goal
 
-Figure out why this user's voice plan came back empty, and make sure the next coach who hits the same edge case (long dictation, sport-specific vocabulary, no library matches) gets a usable result instead of a blank plan.
+Add a final "Accept Terms of Service" step to coach and parent onboarding. New signups must click through Common Paper TOS before reaching the app. Existing users are grandfathered.
 
-## What we know vs. don't know
+## Schema
 
-Known: recording was 95s (over the 90s client cap), two LLM calls completed, the resulting plan has 0 moves / no athlete / no notes, no server logs were emitted because the code only logs on thrown errors.
+New migration adds `public.terms_acceptances`:
+- `user_id uuid` (auth.users)
+- `role text` ('coach' | 'parent')
+- `terms_version text` (e.g. `'2026-06-29'`)
+- `accepted_at timestamptz default now()`
+- `user_agent text`, `ip text` (nullable, for audit)
+- unique on `(user_id, terms_version)`
+- RLS: users can insert/select their own rows; service_role full.
+- GRANTs per project convention.
 
-Unknown without new telemetry: what the transcript actually said, what the slotter returned, whether moves were dropped at filter time, whether the athlete name failed to resolve.
+## Constants & content
 
-## Changes
+- `src/lib/terms.ts` — exports `CURRENT_TERMS_VERSION = '2026-06-29'` and a short summary string used on the click-through screen.
+- `src/routes/terms.tsx` — public route rendering the full Common Paper TOS (from the uploaded doc) as styled markdown. Linked to from the checkbox label and from settings/footer.
 
-### 1. Capture diagnostics on every voice attempt (server)
+## Server functions (`src/lib/terms.functions.ts`)
 
-In `src/lib/voice.server.ts`:
-- After `transcribeWithElevenLabs`, `console.info` the transcript length and first 200 chars.
-- After `slotTranscript`, `console.info` a compact summary: `{ title, athleteName, moveCount, moveNames, leftoverLen }`.
-- In `applyDraft`, count moves filtered out by the `name?.trim() || matchExistingMoveId` guard and log that count.
-- On any caught error in `buildDraft`, include the transcript length in the log line.
+- `acceptTerms({ role })` — authed via `requireSupabaseAuth`, inserts a row with `CURRENT_TERMS_VERSION` (idempotent on conflict).
+- `getTermsStatus()` — returns `{ accepted: boolean, version: string }` for the current user against `CURRENT_TERMS_VERSION`.
 
-This is the cheapest way to unblock future debugging — next time this happens we read the worker logs and see exactly where it broke.
+## UI — shared component
 
-### 2. Persist the transcript on the plan
+`src/components/onboarding/terms-step.tsx`:
+- Page card with heading "One last thing", short summary (what they're agreeing to: subscription, governing law = Delaware, contact email), checkbox "I have read and agree to the Gradus Terms of Service" with `<Link to="/terms" target="_blank">`, primary CTA "Agree & continue", secondary "Open full terms".
+- Calls `acceptTerms` then navigates to the destination passed in via prop.
 
-Add a nullable `voice_transcript text` column to `plans` via migration, write it in `applyDraft` for both create and edit modes. Surface it in the plan editor as a collapsible "What you said" panel so the coach can recover their dictation when parsing fails (and we can read it after-the-fact when investigating).
+## Coach flow
 
-### 3. Better empty-result UX (client)
+- New route `src/routes/_authenticated/coach.onboarding.terms.tsx` (or inline as final step inside existing `coach.onboarding.tsx` wizard — whichever matches current pattern).
+- After `completeOnboarding` succeeds, navigate to terms step instead of `/coach`. Only call `acceptTerms` then route to `/coach`.
 
-In `src/components/coach/voice-fab.tsx`:
-- When `result.appliedMoveCount === 0` and `mode === "create"`, show a `toast.warning` instead of `toast.success`: "Couldn't pick out moves from that — your dictation is saved on the plan."
-- When `mode === "edit"` and 0 moves applied, same warning.
+## Parent flow
 
-Keeps the plan (so notes/transcript aren't lost) but tells the coach to expect a manual pass.
+- New route `src/routes/signup.parent.terms.tsx`.
+- `signup.parent.schedule.tsx` `finish()` currently navigates to `/parent`. Change destination to `/signup/parent/terms` (preserving any code), which on accept navigates to `/parent`.
 
-### 4. Raise the recording cap to match real dictation length
+## Grandfathering
 
-In `src/hooks/use-voice-capture.ts` default `maxMs` from 90_000 → 120_000, and update `MAX_AUDIO_BYTES` in `src/lib/voice.server.ts` from 8 MB → 12 MB plus the matching "keep under 120 seconds" copy. The "Wrapping up at 90 s" warning text in `voice-fab.tsx` becomes "Wrapping up at 120 s".
+- No backfill needed. `getTermsStatus` only blocks brand-new flows because the gate lives inside the signup wizards, not as a global guard. Existing users who already reached `/coach` or `/parent` are unaffected.
+- (Optional future: a global gate keyed off `CURRENT_TERMS_VERSION` for re-acceptance on updates — not in scope now.)
 
-### 5. Loosen the move filter so figure-skating-style moves aren't silently dropped
+## Files touched
 
-Today `applyDraft` keeps a move only if `name.trim()` is non-empty or it's an existing-id update. That's correct, but the slotting prompt currently encourages the LLM to leave `name` null when only a description was given. Tweak the system prompt in `slotTranscript` to require `name` for every move (use a short noun phrase derived from the dictation if the coach didn't name it explicitly, e.g. "Double salchow reps"). Add one more few-shot example covering a long multi-move dictation.
+New:
+- `supabase` migration (terms_acceptances)
+- `src/lib/terms.ts`
+- `src/lib/terms.functions.ts`
+- `src/routes/terms.tsx`
+- `src/components/onboarding/terms-step.tsx`
+- `src/routes/signup.parent.terms.tsx`
+- `src/routes/_authenticated/coach.onboarding.terms.tsx` (or modify existing coach.onboarding.tsx as final step)
 
-### 6. Verify against the user's actual recording
+Modified:
+- `src/routes/signup.parent.schedule.tsx` — change final navigate target.
+- `src/routes/_authenticated/coach.onboarding.tsx` — append terms step / change post-complete navigation.
 
-After deploying, replay the audio from the screen recording (extract with `ffmpeg`) against the live `voiceBuildPlan` endpoint in a test coach account and confirm we now get ≥1 move plus a usable transcript/notes block. Capture before/after screenshots.
+## Out of scope
 
-## Out of scope (for this pass)
-
-- Sport-specific custom vocabulary lists for ElevenLabs. We pass the coach's library names already; pulling in a curated figure-skating glossary is a separate, larger task once we confirm from logs that mis-transcription (not slotting) is the dominant failure mode.
-- Resuming a cut-off recording / chunked uploads.
-
-## Technical notes
-
-- Migration adds one nullable text column; no RLS changes required (existing plan policies cover it).
-- Logs land in worker logs; readable via `stack_modern--server-function-logs` with `search: "voice"`.
-- No new dependencies.
+- Athlete signup (parent acceptance covers minors).
+- Re-prompting existing users on version bumps.
+- Storing signed PDFs / DocuSign-style receipts (DB row + version is the record).
