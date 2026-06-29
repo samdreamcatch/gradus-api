@@ -25,6 +25,7 @@ import { claimParentInvite } from "@/lib/parent-signup.functions";
 
 import { InviteCard } from "@/components/onboarding/invite-card";
 import { CoachBottomNav } from "@/components/coach/bottom-nav";
+import { TermsStep } from "@/components/onboarding/terms-step";
 import { useQuery } from "@tanstack/react-query";
 
 const PENDING_INVITE_KEY = "gradus.pendingParentInvite";
