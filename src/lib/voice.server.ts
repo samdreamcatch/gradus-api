@@ -634,7 +634,8 @@ export async function applyDraft(
       title?: string;
       notes?: string;
       athlete_id?: string | null;
-    } = { updated_at: new Date().toISOString() };
+      voice_transcript?: string;
+    } = { updated_at: new Date().toISOString(), voice_transcript: transcript };
     if (draft.title) {
       patch.title = draft.title;
       touched.plan.title = true;
