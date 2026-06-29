@@ -545,24 +545,36 @@ function OnboardingForm({ data }: { data: OnboardingData }) {
           </Step>
         )}
 
-        <div className="mt-6 flex items-center justify-between">
-          <Button
-            variant="ghost"
-            onClick={() => setStep((s) => Math.max(1, s - 1))}
-            disabled={step === 1 || busy}
-          >
-            Back
-          </Button>
-          {!isLastStep ? (
+        {currentKind === "terms" && (
+          <TermsStep role="coach" busy={busy} onAccepted={handleFinish} />
+        )}
+
+        {currentKind !== "terms" && (
+          <div className="mt-6 flex items-center justify-between">
+            <Button
+              variant="ghost"
+              onClick={() => setStep((s) => Math.max(1, s - 1))}
+              disabled={step === 1 || busy}
+            >
+              Back
+            </Button>
             <Button onClick={handleContinue} disabled={!canContinue || busy}>
               {busy ? "Saving…" : "Continue"}
             </Button>
-          ) : (
-            <Button onClick={handleFinish} disabled={busy}>
-              {busy ? "Finishing…" : "Finish setup"}
+          </div>
+        )}
+
+        {currentKind === "terms" && (
+          <div className="mt-6 flex items-center">
+            <Button
+              variant="ghost"
+              onClick={() => setStep((s) => Math.max(1, s - 1))}
+              disabled={busy}
+            >
+              Back
             </Button>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
     <CoachBottomNav />
