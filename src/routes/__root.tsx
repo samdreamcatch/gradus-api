@@ -44,6 +44,9 @@ function NotFoundComponent() {
 
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
+  useEffect(() => {
+    reportError(error, { metadata: { type: 'router.errorComponent' } });
+  }, [error]);
   const router = useRouter();
   // In production, hide raw error messages — they can leak internal
   // schema names, constraint identifiers, or stack details. Developers
