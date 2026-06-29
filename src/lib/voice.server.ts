@@ -461,7 +461,14 @@ export async function buildDraft(ctx: ParseContext): Promise<VoicePlanDraft> {
     slotted = await slotTranscript(ctx);
   } catch (e) {
     const err = e as { statusCode?: number; message?: string };
-    console.error("voice slot failed", err);
+    console.error(
+      "[voice] slot failed",
+      JSON.stringify({
+        transcriptLen: ctx.transcript.length,
+        statusCode: err.statusCode,
+        message: err.message,
+      }),
+    );
     if (err.statusCode === 429) throw new Error("AI is busy — try again in a moment");
     if (err.statusCode === 402)
       throw new Error("AI credits exhausted — add credits in workspace settings");
