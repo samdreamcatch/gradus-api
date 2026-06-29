@@ -490,8 +490,16 @@ export async function buildDraft(ctx: ParseContext): Promise<VoicePlanDraft> {
     athleteFirstName,
   });
 
-  const moves = (slotted.moves ?? [])
-    .filter((m) => m && (m.name?.trim() || m.matchExistingMoveId))
+  const rawMoves = slotted.moves ?? [];
+  const keptMoves = rawMoves.filter((m) => m && (m.name?.trim() || m.matchExistingMoveId));
+  const droppedCount = rawMoves.length - keptMoves.length;
+  if (droppedCount > 0) {
+    console.warn(
+      "[voice] moves dropped (no name & no matchExistingMoveId)",
+      JSON.stringify({ droppedCount, kept: keptMoves.length }),
+    );
+  }
+  const moves = keptMoves
     .map((m) => {
       const targetFromVoice =
         typeof m.targetValue === "number" || Boolean(m.targetQuote?.trim());
