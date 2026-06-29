@@ -273,10 +273,10 @@ export function VoiceFab({
 
             ) : null}
 
-            {elapsedMs > 75_000 && state === "recording" ? (
+            {elapsedMs > 165_000 && state === "recording" ? (
               <div className="mt-3 flex items-center gap-1.5 text-[11px] font-bold text-destructive">
                 <AlertCircle className="h-3 w-3" />
-                <span>Wrapping up at 90 s</span>
+                <span>Wrapping up at 3 min</span>
               </div>
             ) : null}
           </div>

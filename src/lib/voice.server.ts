@@ -12,8 +12,8 @@ import type {
   VoiceTouched,
 } from "./voice-types";
 
-export const MAX_AUDIO_BYTES = 12 * 1024 * 1024; // 12 MB hard cap (~120s)
-export const MAX_AUDIO_SECONDS = 120;
+export const MAX_AUDIO_BYTES = 18 * 1024 * 1024; // 18 MB hard cap (~180s)
+export const MAX_AUDIO_SECONDS = 180;
 
 export type Client = SupabaseClient<Database>;
 
