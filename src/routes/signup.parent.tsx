@@ -5,8 +5,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Logo } from "@/components/logo";
 import { startParentSignup, validateSignupCode } from "@/lib/parent-signup.functions";
+import { acceptTerms } from "@/lib/terms.functions";
+import { CURRENT_TERMS_VERSION, PENDING_TERMS_ACCEPT_KEY } from "@/lib/terms";
 
 export const Route = createFileRoute("/signup/parent")({
   component: ParentSignupPage,
@@ -17,12 +20,14 @@ function ParentSignupPage() {
   const navigate = useNavigate();
   const start = useServerFn(startParentSignup);
   const validateCode = useServerFn(validateSignupCode);
+  const accept = useServerFn(acceptTerms);
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [code, setCode] = useState("");
+  const [agreed, setAgreed] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [isAuthed, setIsAuthed] = useState(false);
@@ -64,7 +69,21 @@ function ParentSignupPage() {
       // Validate the code BEFORE creating an auth account so a bad code
       // doesn't leave behind a dangling user.
       await validateCode({ data: { code: trimmed, role: "parent" } });
+      // Stash so the authed layout can record acceptance even if the auth
+      // session lands after a redirect / email confirmation.
+      try {
+        localStorage.setItem(PENDING_TERMS_ACCEPT_KEY, "parent");
+      } catch {
+        /* ignore */
+      }
       await ensureAuthed();
+      // Best-effort immediate accept (session usually exists here).
+      try {
+        await accept({ data: { role: "parent" } });
+        localStorage.removeItem(PENDING_TERMS_ACCEPT_KEY);
+      } catch {
+        /* layout fallback will retry */
+      }
       const { code: normalized } = await start({
         data: { firstName, lastName, code: trimmed },
       });
@@ -141,9 +160,31 @@ function ParentSignupPage() {
             </p>
           </div>
 
+          <label className="flex cursor-pointer items-start gap-2.5 text-sm text-text-secondary">
+            <Checkbox
+              checked={agreed}
+              onCheckedChange={(v) => setAgreed(v === true)}
+              className="mt-0.5"
+              aria-label="Agree to Terms of Service"
+            />
+            <span>
+              I agree to the{" "}
+              <Link
+                to="/terms"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-accent-ink underline underline-offset-2"
+                onClick={(e) => e.stopPropagation()}
+              >
+                Gradus Terms of Service
+              </Link>{" "}
+              (v{CURRENT_TERMS_VERSION}).
+            </span>
+          </label>
+
           {error && <p className="text-sm text-destructive">{error}</p>}
 
-          <Button type="submit" className="w-full" disabled={loading || code.trim().length !== 8}>
+          <Button type="submit" className="w-full" disabled={loading || code.trim().length !== 8 || !agreed}>
             {loading ? "Creating account..." : "Continue"}
           </Button>
         </form>
