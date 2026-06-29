@@ -601,6 +601,7 @@ export async function applyDraft(
         kind: "plan",
         athlete_id: draft.athleteId ?? null,
         status: "draft",
+        voice_transcript: transcript,
       })
       .select("id")
       .single();
