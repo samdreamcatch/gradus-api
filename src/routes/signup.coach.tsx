@@ -9,12 +9,14 @@ import { lovable } from "@/integrations/lovable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Logo } from "@/components/logo";
 import {
   claimParentInvite,
   getParentByInviteCode,
   validateSignupCode,
 } from "@/lib/parent-signup.functions";
+import { CURRENT_TERMS_VERSION, PENDING_TERMS_ACCEPT_KEY } from "@/lib/terms";
 
 const PENDING_INVITE_KEY = "gradus.pendingParentInvite";
 
@@ -54,6 +56,7 @@ function CoachSignupPage() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [betaCode, setBetaCode] = useState("");
+  const [agreed, setAgreed] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -106,12 +109,21 @@ function CoachSignupPage() {
     retry: false,
   });
 
+  const stashPendingAccept = () => {
+    try {
+      localStorage.setItem(PENDING_TERMS_ACCEPT_KEY, "coach");
+    } catch {
+      /* ignore */
+    }
+  };
+
   const handleEmail = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
     try {
       await validateCode({ data: { code: betaCode.trim().toUpperCase(), role: "coach" } });
+      stashPendingAccept();
       const { error } = await supabase.auth.signUp({
         email,
         password,
@@ -134,6 +146,7 @@ function CoachSignupPage() {
     setLoading(true);
     try {
       await validateCode({ data: { code: betaCode.trim().toUpperCase(), role: "coach" } });
+      stashPendingAccept();
       const result = await lovable.auth.signInWithOAuth("google", {
         redirect_uri: window.location.origin + "/coach",
       });
@@ -170,7 +183,7 @@ function CoachSignupPage() {
           </div>
         )}
 
-        <div className="mb-6 space-y-2">
+        <div className="mb-4 space-y-2">
           <Label htmlFor="betaCode">Beta invite code</Label>
           <Input
             id="betaCode"
@@ -187,12 +200,34 @@ function CoachSignupPage() {
           </p>
         </div>
 
+        <label className="mb-6 flex cursor-pointer items-start gap-2.5 text-sm text-text-secondary">
+          <Checkbox
+            checked={agreed}
+            onCheckedChange={(v) => setAgreed(v === true)}
+            className="mt-0.5"
+            aria-label="Agree to Terms of Service"
+          />
+          <span>
+            I agree to the{" "}
+            <Link
+              to="/terms"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-accent-ink underline underline-offset-2"
+              onClick={(e) => e.stopPropagation()}
+            >
+              Gradus Terms of Service
+            </Link>{" "}
+            (v{CURRENT_TERMS_VERSION}).
+          </span>
+        </label>
+
         <Button
           type="button"
           variant="outline"
           className="w-full"
           onClick={handleGoogle}
-          disabled={loading || betaCode.trim().length !== 8}
+          disabled={loading || betaCode.trim().length !== 8 || !agreed}
         >
           Continue with Google
         </Button>
