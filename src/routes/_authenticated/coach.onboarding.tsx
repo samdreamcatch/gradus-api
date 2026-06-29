@@ -25,7 +25,7 @@ import { claimParentInvite } from "@/lib/parent-signup.functions";
 
 import { InviteCard } from "@/components/onboarding/invite-card";
 import { CoachBottomNav } from "@/components/coach/bottom-nav";
-import { TermsStep } from "@/components/onboarding/terms-step";
+
 import { useQuery } from "@tanstack/react-query";
 
 const PENDING_INVITE_KEY = "gradus.pendingParentInvite";
@@ -233,12 +233,13 @@ function OnboardingForm({ data }: { data: OnboardingData }) {
     );
   };
 
-  const totalSteps = needsName ? 7 : 6;
-  type StepKind = "name" | "sports" | "levels" | "hours" | "invite" | "review" | "terms";
+  const totalSteps = needsName ? 6 : 5;
+  type StepKind = "name" | "sports" | "levels" | "hours" | "invite" | "review";
   const stepOrder: StepKind[] = needsName
-    ? ["name", "sports", "levels", "hours", "invite", "review", "terms"]
-    : ["sports", "levels", "hours", "invite", "review", "terms"];
+    ? ["name", "sports", "levels", "hours", "invite", "review"]
+    : ["sports", "levels", "hours", "invite", "review"];
   const currentKind = stepOrder[step - 1];
+  const isLastStep = step === totalSteps;
 
   const canContinue = (() => {
     if (currentKind === "name")
@@ -545,36 +546,21 @@ function OnboardingForm({ data }: { data: OnboardingData }) {
           </Step>
         )}
 
-        {currentKind === "terms" && (
-          <TermsStep role="coach" busy={busy} onAccepted={handleFinish} />
-        )}
-
-        {currentKind !== "terms" && (
-          <div className="mt-6 flex items-center justify-between">
-            <Button
-              variant="ghost"
-              onClick={() => setStep((s) => Math.max(1, s - 1))}
-              disabled={step === 1 || busy}
-            >
-              Back
-            </Button>
-            <Button onClick={handleContinue} disabled={!canContinue || busy}>
-              {busy ? "Saving…" : "Continue"}
-            </Button>
-          </div>
-        )}
-
-        {currentKind === "terms" && (
-          <div className="mt-6 flex items-center">
-            <Button
-              variant="ghost"
-              onClick={() => setStep((s) => Math.max(1, s - 1))}
-              disabled={busy}
-            >
-              Back
-            </Button>
-          </div>
-        )}
+        <div className="mt-6 flex items-center justify-between">
+          <Button
+            variant="ghost"
+            onClick={() => setStep((s) => Math.max(1, s - 1))}
+            disabled={step === 1 || busy}
+          >
+            Back
+          </Button>
+          <Button
+            onClick={isLastStep ? handleFinish : handleContinue}
+            disabled={!canContinue || busy}
+          >
+            {busy ? "Saving…" : isLastStep ? "Finish" : "Continue"}
+          </Button>
+        </div>
       </div>
     </div>
     <CoachBottomNav />
