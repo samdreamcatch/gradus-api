@@ -1003,6 +1003,7 @@ export type Database = {
           status: string
           title: string
           updated_at: string
+          voice_transcript: string | null
         }
         Insert: {
           athlete_id?: string | null
@@ -1014,6 +1015,7 @@ export type Database = {
           status?: string
           title?: string
           updated_at?: string
+          voice_transcript?: string | null
         }
         Update: {
           athlete_id?: string | null
@@ -1025,6 +1027,7 @@ export type Database = {
           status?: string
           title?: string
           updated_at?: string
+          voice_transcript?: string | null
         }
         Relationships: [
           {
