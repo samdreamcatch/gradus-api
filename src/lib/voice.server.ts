@@ -158,7 +158,9 @@ async function slotTranscript(ctx: ParseContext) {
     "- Cue = a SINGLE short repeatable phrase. Why = ONE sentence. Description = brief, what the athlete does.",
     "- targetKind: 'reps' for counted reps ('20 reps', 'ten swings'); 'mins' for time ('5 minutes').",
     "- Move target defaults: if unclear, 10 reps.",
-    "- Move name: if the spoken move name clearly matches a name in KNOWN MOVES, copy that KNOWN MOVES name exactly into the `name` field — do not paraphrase, pluralize, or reword it.",
+    "- EVERY move MUST have a non-empty `name` — a short noun phrase (2-5 words) for the drill or skill, even if the coach didn't name it explicitly. Derive it from what they said (e.g. 'Double salchow reps', 'Single loop combination', 'Three-turn waltz pacing'). Never leave `name` null or empty.",
+    "- Move name: if the spoken move name clearly matches a name in KNOWN MOVES, copy that KNOWN MOVES name exactly into the `name` field — do not paraphrase, pluralize, or reword it. Otherwise create a name from the coach's words.",
+    "- Be generous: if the coach mentions a skill they want the athlete to practice (even briefly), create a move for it. A long dictation typically has 3-8 moves.",
     ctx.mode === "edit"
       ? "- EDIT MODE: if the coach clearly modifies an existing plan move (by name/order), set matchExistingMoveId. Otherwise leave null for new moves."
       : "- CREATE MODE: every move is new. Leave matchExistingMoveId null.",
