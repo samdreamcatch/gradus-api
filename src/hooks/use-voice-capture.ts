@@ -32,7 +32,7 @@ interface UseVoiceCaptureResult {
  */
 export function useVoiceCapture({
   onCapture,
-  maxMs = 90_000,
+  maxMs = 120_000,
 }: UseVoiceCaptureOptions): UseVoiceCaptureResult {
   const [state, setState] = useState<VoiceState>("idle");
   const [level, setLevel] = useState(0);
