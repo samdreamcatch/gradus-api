@@ -12,7 +12,8 @@ import type {
   VoiceTouched,
 } from "./voice-types";
 
-export const MAX_AUDIO_BYTES = 8 * 1024 * 1024; // 8 MB hard cap
+export const MAX_AUDIO_BYTES = 12 * 1024 * 1024; // 12 MB hard cap (~120s)
+export const MAX_AUDIO_SECONDS = 120;
 
 export type Client = SupabaseClient<Database>;
 
@@ -62,7 +63,12 @@ export async function transcribeWithElevenLabs(audio: Blob, vocabularyHints?: st
   }
 
   const json = (await res.json()) as { text?: string };
-  return (json.text ?? "").trim();
+  const text = (json.text ?? "").trim();
+  console.info(
+    "[voice] transcript",
+    JSON.stringify({ length: text.length, preview: text.slice(0, 200) }),
+  );
+  return text;
 }
 
 /* ---------------- Pass 1: Slotting ---------------- */
@@ -134,7 +140,10 @@ SLOTS: athleteName "Sarah"; moves[0].name "Crosscourt forehands", description "H
 TRANSCRIPT: "Add a five minute split-step drill — low athletic stance, helps her first step."
 SLOTS: moves[0].name "Split-step drill", description "Five-minute split-step practice.", cue "Low athletic stance", why "Helps her first step.", targetKind "mins", targetValue 5.
 
-Cue = ONE short phrase. Why = ONE sentence. Don't lump everything into description.`;
+TRANSCRIPT: "Plan for Leon. He needs single axel landings about five times every session, then double salchow eight or so times working on the tempo of the entry, and his double toe four or five times — don't twist too early on the ice."
+SLOTS: athleteName "Leon"; moves[0].name "Single axel landings", description "Land single axels cleanly.", targetKind "reps", targetValue 5; moves[1].name "Double salchow", description "Work on tempo of the entry.", cue "Hold the entry tempo", targetKind "reps", targetValue 8; moves[2].name "Double toe", description "Double toe loop reps.", cue "Don't twist too early", targetKind "reps", targetValue 5.
+
+Cue = ONE short phrase. Why = ONE sentence. Don't lump everything into description. Every move needs a name.`;
 
 async function slotTranscript(ctx: ParseContext) {
   const apiKey = process.env.LOVABLE_API_KEY;
@@ -152,7 +161,9 @@ async function slotTranscript(ctx: ParseContext) {
     "- Cue = a SINGLE short repeatable phrase. Why = ONE sentence. Description = brief, what the athlete does.",
     "- targetKind: 'reps' for counted reps ('20 reps', 'ten swings'); 'mins' for time ('5 minutes').",
     "- Move target defaults: if unclear, 10 reps.",
-    "- Move name: if the spoken move name clearly matches a name in KNOWN MOVES, copy that KNOWN MOVES name exactly into the `name` field — do not paraphrase, pluralize, or reword it.",
+    "- EVERY move MUST have a non-empty `name` — a short noun phrase (2-5 words) for the drill or skill, even if the coach didn't name it explicitly. Derive it from what they said (e.g. 'Double salchow reps', 'Single loop combination', 'Three-turn waltz pacing'). Never leave `name` null or empty.",
+    "- Move name: if the spoken move name clearly matches a name in KNOWN MOVES, copy that KNOWN MOVES name exactly into the `name` field — do not paraphrase, pluralize, or reword it. Otherwise create a name from the coach's words.",
+    "- Be generous: if the coach mentions a skill they want the athlete to practice (even briefly), create a move for it. A long dictation typically has 3-8 moves.",
     ctx.mode === "edit"
       ? "- EDIT MODE: if the coach clearly modifies an existing plan move (by name/order), set matchExistingMoveId. Otherwise leave null for new moves."
       : "- CREATE MODE: every move is new. Leave matchExistingMoveId null.",
@@ -191,6 +202,17 @@ async function slotTranscript(ctx: ParseContext) {
     prompt: promptParts.join("\n\n"),
     experimental_output: Output.object({ schema: slotSchema }),
   });
+  console.info(
+    "[voice] slot",
+    JSON.stringify({
+      mode: ctx.mode,
+      title: experimental_output.title ?? null,
+      athleteName: experimental_output.athleteName ?? null,
+      moveCount: experimental_output.moves?.length ?? 0,
+      moveNames: (experimental_output.moves ?? []).map((m) => m?.name ?? null),
+      leftoverLen: (experimental_output.leftover ?? "").length,
+    }),
+  );
   return experimental_output;
 }
 
@@ -439,7 +461,14 @@ export async function buildDraft(ctx: ParseContext): Promise<VoicePlanDraft> {
     slotted = await slotTranscript(ctx);
   } catch (e) {
     const err = e as { statusCode?: number; message?: string };
-    console.error("voice slot failed", err);
+    console.error(
+      "[voice] slot failed",
+      JSON.stringify({
+        transcriptLen: ctx.transcript.length,
+        statusCode: err.statusCode,
+        message: err.message,
+      }),
+    );
     if (err.statusCode === 429) throw new Error("AI is busy — try again in a moment");
     if (err.statusCode === 402)
       throw new Error("AI credits exhausted — add credits in workspace settings");
@@ -461,8 +490,16 @@ export async function buildDraft(ctx: ParseContext): Promise<VoicePlanDraft> {
     athleteFirstName,
   });
 
-  const moves = (slotted.moves ?? [])
-    .filter((m) => m && (m.name?.trim() || m.matchExistingMoveId))
+  const rawMoves = slotted.moves ?? [];
+  const keptMoves = rawMoves.filter((m) => m && (m.name?.trim() || m.matchExistingMoveId));
+  const droppedCount = rawMoves.length - keptMoves.length;
+  if (droppedCount > 0) {
+    console.warn(
+      "[voice] moves dropped (no name & no matchExistingMoveId)",
+      JSON.stringify({ droppedCount, kept: keptMoves.length }),
+    );
+  }
+  const moves = keptMoves
     .map((m) => {
       const targetFromVoice =
         typeof m.targetValue === "number" || Boolean(m.targetQuote?.trim());
@@ -564,6 +601,7 @@ export async function applyDraft(
         kind: "plan",
         athlete_id: draft.athleteId ?? null,
         status: "draft",
+        voice_transcript: transcript,
       })
       .select("id")
       .single();
@@ -596,7 +634,8 @@ export async function applyDraft(
       title?: string;
       notes?: string;
       athlete_id?: string | null;
-    } = { updated_at: new Date().toISOString() };
+      voice_transcript?: string;
+    } = { updated_at: new Date().toISOString(), voice_transcript: transcript };
     if (draft.title) {
       patch.title = draft.title;
       touched.plan.title = true;
@@ -761,6 +800,17 @@ export async function applyDraft(
       .update({ updated_at: new Date().toISOString() })
       .eq("id", workingPlanId);
   }
+
+  console.info(
+    "[voice] applied",
+    JSON.stringify({
+      mode,
+      planId: workingPlanId,
+      appliedMoveCount,
+      draftMoveCount: draft.moves.length,
+      unresolvedAthleteName: draft.unresolvedAthleteName ?? null,
+    }),
+  );
 
   return {
     planId: workingPlanId,

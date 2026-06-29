@@ -71,9 +71,17 @@ export function VoiceFab({
 
       const moveLabel =
         result.appliedMoveCount === 1 ? "1 move" : `${result.appliedMoveCount} moves`;
-      toast.success(
-        mode === "create" ? `New plan from voice · ${moveLabel}` : `Updated · ${moveLabel}`,
-      );
+      if (result.appliedMoveCount === 0) {
+        toast.warning(
+          mode === "create"
+            ? "Couldn't pick out moves from that — your dictation is saved on the plan so you can add moves manually."
+            : "Couldn't pick out moves from that — your dictation is saved on the plan.",
+        );
+      } else {
+        toast.success(
+          mode === "create" ? `New plan from voice · ${moveLabel}` : `Updated · ${moveLabel}`,
+        );
+      }
 
       if (result.unresolvedAthleteName) {
         toast.warning(`Couldn't find "${result.unresolvedAthleteName}" in your roster`);

@@ -72,6 +72,7 @@ export interface PlanSummaryDTO {
 export interface PlanDetailDTO extends PlanSummaryDTO {
   notes: string;
   moves: PlanMoveDTO[];
+  voiceTranscript: string | null;
 }
 
 export interface AthleteOptionDTO {
@@ -267,7 +268,7 @@ export const getPlan = createServerFn({ method: "POST" })
 
     const { data: plan, error } = await supabase
       .from("plans")
-      .select("id, title, notes, kind, status, athlete_id, updated_at")
+      .select("id, title, notes, kind, status, athlete_id, updated_at, voice_transcript")
       .eq("id", data.id)
       .eq("coach_id", coachId)
       .maybeSingle();
@@ -324,6 +325,7 @@ export const getPlan = createServerFn({ method: "POST" })
       totalMinutes,
       updatedAt: plan.updated_at,
       moves: planMoves,
+      voiceTranscript: (plan as { voice_transcript?: string | null }).voice_transcript ?? null,
       sessionsByState: sessions.sessionsByState,
       sessionsTotal: sessions.sessionsTotal,
     };

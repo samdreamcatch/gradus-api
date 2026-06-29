@@ -5,7 +5,7 @@ export type VoiceState = "idle" | "recording" | "processing" | "error";
 export interface UseVoiceCaptureOptions {
   /** Called when the user releases and the recording is ready. */
   onCapture: (blob: Blob) => Promise<void> | void;
-  /** Maximum recording length in milliseconds (default 90s). */
+  /** Maximum recording length in milliseconds (default 120s). */
   maxMs?: number;
 }
 
@@ -32,7 +32,7 @@ interface UseVoiceCaptureResult {
  */
 export function useVoiceCapture({
   onCapture,
-  maxMs = 90_000,
+  maxMs = 120_000,
 }: UseVoiceCaptureOptions): UseVoiceCaptureResult {
   const [state, setState] = useState<VoiceState>("idle");
   const [level, setLevel] = useState(0);

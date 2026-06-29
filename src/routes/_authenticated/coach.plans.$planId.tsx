@@ -822,6 +822,19 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
           />
         </div>
 
+        {plan.voiceTranscript ? (
+          <details className="rounded-lg border border-divider bg-card p-4 text-sm">
+            <summary className="cursor-pointer select-none text-muted-foreground">
+              What you dictated
+            </summary>
+            <p className="mt-3 whitespace-pre-wrap text-foreground">
+              {plan.voiceTranscript}
+            </p>
+          </details>
+        ) : null}
+
+
+
 
         <div className="sticky bottom-0 -mx-6 mt-4 flex items-center justify-between gap-3 border-t border-divider bg-popover px-6 pt-3 pb-[max(env(safe-area-inset-bottom),0.75rem)]">
           {plan.status === "active" ? (
