@@ -1,14 +1,13 @@
 // Browser-side global error reporter.
 // Wires window.onerror + unhandledrejection and posts to the
-// public reportClientError server function via sendBeacon.
+// public reportClientError server function.
 //
 // Deliberately dumb and defensive:
 //   - skipped in dev (import.meta.env.DEV)
 //   - 50-report session cap, prevents runaway loops from spamming alerts
 //   - wrapped in try/catch so the reporter itself can never throw
-//   - sendBeacon falls back to fetch keepalive
 
-import { supabase } from '@/integrations/supabase/client'
+import { reportClientError } from './error-tracking.functions'
 
 const SESSION_CAP = 50
 let reportCount = 0
@@ -26,7 +25,7 @@ function fmtError(value: unknown): { message: string; stack?: string } {
   }
 }
 
-async function send(payload: {
+function send(payload: {
   message: string
   stack?: string | null
   route?: string | null
@@ -36,23 +35,7 @@ async function send(payload: {
   if (reportCount >= SESSION_CAP) return
   reportCount += 1
   try {
-    // Attach bearer token via fetch keepalive so the server can attribute
-    // the error to the signed-in user. sendBeacon can't set headers.
-    let authHeader: Record<string, string> = {}
-    try {
-      const { data } = await supabase.auth.getSession()
-      const token = data.session?.access_token
-      if (token) authHeader = { Authorization: `Bearer ${token}` }
-    } catch {
-      // ignore
-    }
-
-    await fetch('/_serverFn/reportClientError', {
-      method: 'POST',
-      keepalive: true,
-      headers: { 'content-type': 'application/json', ...authHeader },
-      body: JSON.stringify({ data: payload }),
-    }).catch(() => {})
+    void reportClientError({ data: payload }).catch(() => {})
   } catch {
     // never throw from the reporter
   }
@@ -64,7 +47,7 @@ export function reportError(
 ) {
   try {
     const { message, stack } = fmtError(error)
-    void send({
+    send({
       message,
       stack: stack ?? null,
       route: extra.route ?? (typeof window !== 'undefined' ? window.location.pathname : null),
@@ -84,7 +67,12 @@ export function installErrorReporter() {
 
   window.addEventListener('error', (evt) => {
     reportError(evt.error ?? evt.message, {
-      metadata: { type: 'window.error', filename: evt.filename, lineno: evt.lineno, colno: evt.colno },
+      metadata: {
+        type: 'window.error',
+        filename: evt.filename,
+        lineno: evt.lineno,
+        colno: evt.colno,
+      },
     })
   })
 
