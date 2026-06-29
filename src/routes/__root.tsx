@@ -17,6 +17,8 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { DevToolsMount } from "@/components/dev/dev-tools-mount";
 import { registerServiceWorker } from "@/pwa/register-sw";
 import { InstallBanner } from "@/components/install-banner";
+import { GlobalErrorBoundary } from "@/components/global-error-boundary";
+import { installErrorReporter, reportError } from "@/lib/client-error-reporter";
 
 function NotFoundComponent() {
   return (
