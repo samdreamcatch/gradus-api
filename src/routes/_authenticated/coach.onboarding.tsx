@@ -233,11 +233,11 @@ function OnboardingForm({ data }: { data: OnboardingData }) {
     );
   };
 
-  const totalSteps = needsName ? 6 : 5;
-  type StepKind = "name" | "sports" | "levels" | "hours" | "invite" | "review";
+  const totalSteps = needsName ? 7 : 6;
+  type StepKind = "name" | "sports" | "levels" | "hours" | "invite" | "review" | "terms";
   const stepOrder: StepKind[] = needsName
-    ? ["name", "sports", "levels", "hours", "invite", "review"]
-    : ["sports", "levels", "hours", "invite", "review"];
+    ? ["name", "sports", "levels", "hours", "invite", "review", "terms"]
+    : ["sports", "levels", "hours", "invite", "review", "terms"];
   const currentKind = stepOrder[step - 1];
 
   const canContinue = (() => {
