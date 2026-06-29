@@ -182,7 +182,7 @@ function ParentSchedulePage() {
       if (index + 1 < athletes.length) {
         setIndex(index + 1);
       } else {
-        navigate({ to: "/parent" });
+        navigate({ to: "/signup/parent/terms" });
       }
     } catch (e) {
       setFormError(e instanceof Error ? e.message : "Couldn't save");
