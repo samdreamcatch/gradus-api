@@ -314,7 +314,7 @@ function OnboardingForm({ data }: { data: OnboardingData }) {
   };
 
   const busy = saveProfile.isPending || saveLevels.isPending || complete.isPending;
-  const isLastStep = step === totalSteps;
+  
 
   return (
     <>
