@@ -801,6 +801,17 @@ export async function applyDraft(
       .eq("id", workingPlanId);
   }
 
+  console.info(
+    "[voice] applied",
+    JSON.stringify({
+      mode,
+      planId: workingPlanId,
+      appliedMoveCount,
+      draftMoveCount: draft.moves.length,
+      unresolvedAthleteName: draft.unresolvedAthleteName ?? null,
+    }),
+  );
+
   return {
     planId: workingPlanId,
     transcript,
