@@ -325,6 +325,7 @@ export const getPlan = createServerFn({ method: "POST" })
       totalMinutes,
       updatedAt: plan.updated_at,
       moves: planMoves,
+      voiceTranscript: (plan as { voice_transcript?: string | null }).voice_transcript ?? null,
       sessionsByState: sessions.sessionsByState,
       sessionsTotal: sessions.sessionsTotal,
     };
