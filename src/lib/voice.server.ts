@@ -63,7 +63,12 @@ export async function transcribeWithElevenLabs(audio: Blob, vocabularyHints?: st
   }
 
   const json = (await res.json()) as { text?: string };
-  return (json.text ?? "").trim();
+  const text = (json.text ?? "").trim();
+  console.info(
+    "[voice] transcript",
+    JSON.stringify({ length: text.length, preview: text.slice(0, 200) }),
+  );
+  return text;
 }
 
 /* ---------------- Pass 1: Slotting ---------------- */
