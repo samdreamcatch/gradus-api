@@ -131,6 +131,7 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   useEffect(() => {
     registerServiceWorker();
+    installErrorReporter();
   }, []);
   return (
     <QueryClientProvider client={queryClient}>
@@ -143,7 +144,9 @@ function RootComponent() {
           Skip to main content
         </a>
         <main id="main">
-          <Outlet />
+          <GlobalErrorBoundary>
+            <Outlet />
+          </GlobalErrorBoundary>
         </main>
         <Toaster />
         <InstallBanner />
@@ -151,27 +154,4 @@ function RootComponent() {
       </ThemeProvider>
     </QueryClientProvider>
   );
-}
-
-function AuthSync() {
-  const router = useRouter();
-  const queryClient = useQueryClient();
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      // Only react to identity transitions. Refresh events are frequent and
-      // should not churn the whole app during or after sign-in.
-      if (event !== "SIGNED_OUT" && event !== "SIGNED_IN" && event !== "USER_UPDATED") {
-        return;
-      }
-
-      // Drop ALL cached queries when identity changes so one user's cached
-      // data cannot briefly render for the next user before refetch resolves.
-      if (event === "SIGNED_OUT" || event === "SIGNED_IN" || event === "USER_UPDATED") {
-        queryClient.clear();
-      }
-      router.invalidate();
-    });
-    return () => subscription.unsubscribe();
-  }, [router, queryClient]);
-  return null;
 }
