@@ -258,7 +258,7 @@ function CoachSignupPage() {
             <Input id="password" type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
-          <Button type="submit" className="w-full" disabled={loading || betaCode.trim().length !== 8}>
+          <Button type="submit" className="w-full" disabled={loading || betaCode.trim().length !== 8 || !agreed}>
             {loading ? "..." : "Create coach account"}
           </Button>
         </form>
