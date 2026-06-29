@@ -72,6 +72,7 @@ export interface PlanSummaryDTO {
 export interface PlanDetailDTO extends PlanSummaryDTO {
   notes: string;
   moves: PlanMoveDTO[];
+  voiceTranscript: string | null;
 }
 
 export interface AthleteOptionDTO {
