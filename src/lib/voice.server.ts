@@ -202,6 +202,17 @@ async function slotTranscript(ctx: ParseContext) {
     prompt: promptParts.join("\n\n"),
     experimental_output: Output.object({ schema: slotSchema }),
   });
+  console.info(
+    "[voice] slot",
+    JSON.stringify({
+      mode: ctx.mode,
+      title: experimental_output.title ?? null,
+      athleteName: experimental_output.athleteName ?? null,
+      moveCount: experimental_output.moves?.length ?? 0,
+      moveNames: (experimental_output.moves ?? []).map((m) => m?.name ?? null),
+      leftoverLen: (experimental_output.leftover ?? "").length,
+    }),
+  );
   return experimental_output;
 }
 
