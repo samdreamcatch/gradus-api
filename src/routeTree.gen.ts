@@ -23,7 +23,6 @@ import { Route as AuthenticatedParentIndexRouteImport } from './routes/_authenti
 import { Route as AuthenticatedCoachIndexRouteImport } from './routes/_authenticated/coach.index'
 import { Route as AuthenticatedAthleteIndexRouteImport } from './routes/_authenticated/athlete.index'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
-import { Route as SignupParentTermsRouteImport } from './routes/signup.parent.terms'
 import { Route as SignupParentScheduleRouteImport } from './routes/signup.parent.schedule'
 import { Route as SignupParentGoalsRouteImport } from './routes/signup.parent.goals'
 import { Route as SignupParentAthletesRouteImport } from './routes/signup.parent.athletes'
@@ -127,11 +126,6 @@ const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AuthenticatedAdminRoute,
-} as any)
-const SignupParentTermsRoute = SignupParentTermsRouteImport.update({
-  id: '/terms',
-  path: '/terms',
-  getParentRoute: () => SignupParentRoute,
 } as any)
 const SignupParentScheduleRoute = SignupParentScheduleRouteImport.update({
   id: '/schedule',
@@ -340,7 +334,6 @@ export interface FileRoutesByFullPath {
   '/signup/parent/athletes': typeof SignupParentAthletesRoute
   '/signup/parent/goals': typeof SignupParentGoalsRoute
   '/signup/parent/schedule': typeof SignupParentScheduleRoute
-  '/signup/parent/terms': typeof SignupParentTermsRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/athlete/': typeof AuthenticatedAthleteIndexRoute
   '/coach/': typeof AuthenticatedCoachIndexRoute
@@ -385,7 +378,6 @@ export interface FileRoutesByTo {
   '/signup/parent/athletes': typeof SignupParentAthletesRoute
   '/signup/parent/goals': typeof SignupParentGoalsRoute
   '/signup/parent/schedule': typeof SignupParentScheduleRoute
-  '/signup/parent/terms': typeof SignupParentTermsRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/athlete': typeof AuthenticatedAthleteIndexRoute
   '/coach': typeof AuthenticatedCoachIndexRoute
@@ -435,7 +427,6 @@ export interface FileRoutesById {
   '/signup/parent/athletes': typeof SignupParentAthletesRoute
   '/signup/parent/goals': typeof SignupParentGoalsRoute
   '/signup/parent/schedule': typeof SignupParentScheduleRoute
-  '/signup/parent/terms': typeof SignupParentTermsRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/athlete/': typeof AuthenticatedAthleteIndexRoute
   '/_authenticated/coach/': typeof AuthenticatedCoachIndexRoute
@@ -485,7 +476,6 @@ export interface FileRouteTypes {
     | '/signup/parent/athletes'
     | '/signup/parent/goals'
     | '/signup/parent/schedule'
-    | '/signup/parent/terms'
     | '/admin/'
     | '/athlete/'
     | '/coach/'
@@ -530,7 +520,6 @@ export interface FileRouteTypes {
     | '/signup/parent/athletes'
     | '/signup/parent/goals'
     | '/signup/parent/schedule'
-    | '/signup/parent/terms'
     | '/admin'
     | '/athlete'
     | '/coach'
@@ -579,7 +568,6 @@ export interface FileRouteTypes {
     | '/signup/parent/athletes'
     | '/signup/parent/goals'
     | '/signup/parent/schedule'
-    | '/signup/parent/terms'
     | '/_authenticated/admin/'
     | '/_authenticated/athlete/'
     | '/_authenticated/coach/'
@@ -718,13 +706,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/'
       preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/signup/parent/terms': {
-      id: '/signup/parent/terms'
-      path: '/terms'
-      fullPath: '/signup/parent/terms'
-      preLoaderRoute: typeof SignupParentTermsRouteImport
-      parentRoute: typeof SignupParentRoute
     }
     '/signup/parent/schedule': {
       id: '/signup/parent/schedule'
@@ -1076,14 +1057,12 @@ interface SignupParentRouteChildren {
   SignupParentAthletesRoute: typeof SignupParentAthletesRoute
   SignupParentGoalsRoute: typeof SignupParentGoalsRoute
   SignupParentScheduleRoute: typeof SignupParentScheduleRoute
-  SignupParentTermsRoute: typeof SignupParentTermsRoute
 }
 
 const SignupParentRouteChildren: SignupParentRouteChildren = {
   SignupParentAthletesRoute: SignupParentAthletesRoute,
   SignupParentGoalsRoute: SignupParentGoalsRoute,
   SignupParentScheduleRoute: SignupParentScheduleRoute,
-  SignupParentTermsRoute: SignupParentTermsRoute,
 }
 
 const SignupParentRouteWithChildren = SignupParentRoute._addFileChildren(
