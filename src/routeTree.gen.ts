@@ -36,6 +36,7 @@ import { Route as AuthenticatedCoachOnboardingRouteImport } from './routes/_auth
 import { Route as AuthenticatedAthleteSettingsRouteImport } from './routes/_authenticated/athlete.settings'
 import { Route as AuthenticatedAdminMapRouteImport } from './routes/_authenticated/admin.map'
 import { Route as AuthenticatedAdminFeedbackRouteImport } from './routes/_authenticated/admin.feedback'
+import { Route as AuthenticatedAdminErrorsRouteImport } from './routes/_authenticated/admin.errors'
 import { Route as AuthenticatedParentResourcesIndexRouteImport } from './routes/_authenticated/parent.resources.index'
 import { Route as AuthenticatedParentPlansIndexRouteImport } from './routes/_authenticated/parent.plans.index'
 import { Route as AuthenticatedParentMessagesIndexRouteImport } from './routes/_authenticated/parent.messages.index'
@@ -55,6 +56,7 @@ import { Route as AuthenticatedAthletePlansPlanIdRouteImport } from './routes/_a
 import { Route as AuthenticatedAthleteMessagesRoomIdRouteImport } from './routes/_authenticated/athlete.messages.$roomId'
 import { Route as AuthenticatedAdminUsersUserIdRouteImport } from './routes/_authenticated/admin.users.$userId'
 import { Route as AuthenticatedAdminListKindRouteImport } from './routes/_authenticated/admin.list.$kind'
+import { Route as AuthenticatedAdminErrorsIdRouteImport } from './routes/_authenticated/admin.errors.$id'
 
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
@@ -198,6 +200,12 @@ const AuthenticatedAdminFeedbackRoute =
     path: '/feedback',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminErrorsRoute =
+  AuthenticatedAdminErrorsRouteImport.update({
+    id: '/errors',
+    path: '/errors',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedParentResourcesIndexRoute =
   AuthenticatedParentResourcesIndexRouteImport.update({
     id: '/resources/',
@@ -310,6 +318,12 @@ const AuthenticatedAdminListKindRoute =
     path: '/list/$kind',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminErrorsIdRoute =
+  AuthenticatedAdminErrorsIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => AuthenticatedAdminErrorsRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -321,6 +335,7 @@ export interface FileRoutesByFullPath {
   '/signup/athlete': typeof SignupAthleteRouteWithChildren
   '/signup/coach': typeof SignupCoachRoute
   '/signup/parent': typeof SignupParentRouteWithChildren
+  '/admin/errors': typeof AuthenticatedAdminErrorsRouteWithChildren
   '/admin/feedback': typeof AuthenticatedAdminFeedbackRoute
   '/admin/map': typeof AuthenticatedAdminMapRoute
   '/athlete/settings': typeof AuthenticatedAthleteSettingsRoute
@@ -338,6 +353,7 @@ export interface FileRoutesByFullPath {
   '/athlete/': typeof AuthenticatedAthleteIndexRoute
   '/coach/': typeof AuthenticatedCoachIndexRoute
   '/parent/': typeof AuthenticatedParentIndexRoute
+  '/admin/errors/$id': typeof AuthenticatedAdminErrorsIdRoute
   '/admin/list/$kind': typeof AuthenticatedAdminListKindRoute
   '/admin/users/$userId': typeof AuthenticatedAdminUsersUserIdRoute
   '/athlete/messages/$roomId': typeof AuthenticatedAthleteMessagesRoomIdRoute
@@ -366,6 +382,7 @@ export interface FileRoutesByTo {
   '/signup/athlete': typeof SignupAthleteRouteWithChildren
   '/signup/coach': typeof SignupCoachRoute
   '/signup/parent': typeof SignupParentRouteWithChildren
+  '/admin/errors': typeof AuthenticatedAdminErrorsRouteWithChildren
   '/admin/feedback': typeof AuthenticatedAdminFeedbackRoute
   '/admin/map': typeof AuthenticatedAdminMapRoute
   '/athlete/settings': typeof AuthenticatedAthleteSettingsRoute
@@ -382,6 +399,7 @@ export interface FileRoutesByTo {
   '/athlete': typeof AuthenticatedAthleteIndexRoute
   '/coach': typeof AuthenticatedCoachIndexRoute
   '/parent': typeof AuthenticatedParentIndexRoute
+  '/admin/errors/$id': typeof AuthenticatedAdminErrorsIdRoute
   '/admin/list/$kind': typeof AuthenticatedAdminListKindRoute
   '/admin/users/$userId': typeof AuthenticatedAdminUsersUserIdRoute
   '/athlete/messages/$roomId': typeof AuthenticatedAthleteMessagesRoomIdRoute
@@ -414,6 +432,7 @@ export interface FileRoutesById {
   '/signup/athlete': typeof SignupAthleteRouteWithChildren
   '/signup/coach': typeof SignupCoachRoute
   '/signup/parent': typeof SignupParentRouteWithChildren
+  '/_authenticated/admin/errors': typeof AuthenticatedAdminErrorsRouteWithChildren
   '/_authenticated/admin/feedback': typeof AuthenticatedAdminFeedbackRoute
   '/_authenticated/admin/map': typeof AuthenticatedAdminMapRoute
   '/_authenticated/athlete/settings': typeof AuthenticatedAthleteSettingsRoute
@@ -431,6 +450,7 @@ export interface FileRoutesById {
   '/_authenticated/athlete/': typeof AuthenticatedAthleteIndexRoute
   '/_authenticated/coach/': typeof AuthenticatedCoachIndexRoute
   '/_authenticated/parent/': typeof AuthenticatedParentIndexRoute
+  '/_authenticated/admin/errors/$id': typeof AuthenticatedAdminErrorsIdRoute
   '/_authenticated/admin/list/$kind': typeof AuthenticatedAdminListKindRoute
   '/_authenticated/admin/users/$userId': typeof AuthenticatedAdminUsersUserIdRoute
   '/_authenticated/athlete/messages/$roomId': typeof AuthenticatedAthleteMessagesRoomIdRoute
@@ -463,6 +483,7 @@ export interface FileRouteTypes {
     | '/signup/athlete'
     | '/signup/coach'
     | '/signup/parent'
+    | '/admin/errors'
     | '/admin/feedback'
     | '/admin/map'
     | '/athlete/settings'
@@ -480,6 +501,7 @@ export interface FileRouteTypes {
     | '/athlete/'
     | '/coach/'
     | '/parent/'
+    | '/admin/errors/$id'
     | '/admin/list/$kind'
     | '/admin/users/$userId'
     | '/athlete/messages/$roomId'
@@ -508,6 +530,7 @@ export interface FileRouteTypes {
     | '/signup/athlete'
     | '/signup/coach'
     | '/signup/parent'
+    | '/admin/errors'
     | '/admin/feedback'
     | '/admin/map'
     | '/athlete/settings'
@@ -524,6 +547,7 @@ export interface FileRouteTypes {
     | '/athlete'
     | '/coach'
     | '/parent'
+    | '/admin/errors/$id'
     | '/admin/list/$kind'
     | '/admin/users/$userId'
     | '/athlete/messages/$roomId'
@@ -555,6 +579,7 @@ export interface FileRouteTypes {
     | '/signup/athlete'
     | '/signup/coach'
     | '/signup/parent'
+    | '/_authenticated/admin/errors'
     | '/_authenticated/admin/feedback'
     | '/_authenticated/admin/map'
     | '/_authenticated/athlete/settings'
@@ -572,6 +597,7 @@ export interface FileRouteTypes {
     | '/_authenticated/athlete/'
     | '/_authenticated/coach/'
     | '/_authenticated/parent/'
+    | '/_authenticated/admin/errors/$id'
     | '/_authenticated/admin/list/$kind'
     | '/_authenticated/admin/users/$userId'
     | '/_authenticated/athlete/messages/$roomId'
@@ -798,6 +824,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminFeedbackRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/errors': {
+      id: '/_authenticated/admin/errors'
+      path: '/errors'
+      fullPath: '/admin/errors'
+      preLoaderRoute: typeof AuthenticatedAdminErrorsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/parent/resources/': {
       id: '/_authenticated/parent/resources/'
       path: '/resources'
@@ -931,10 +964,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminListKindRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/errors/$id': {
+      id: '/_authenticated/admin/errors/$id'
+      path: '/$id'
+      fullPath: '/admin/errors/$id'
+      preLoaderRoute: typeof AuthenticatedAdminErrorsIdRouteImport
+      parentRoute: typeof AuthenticatedAdminErrorsRoute
+    }
   }
 }
 
+interface AuthenticatedAdminErrorsRouteChildren {
+  AuthenticatedAdminErrorsIdRoute: typeof AuthenticatedAdminErrorsIdRoute
+}
+
+const AuthenticatedAdminErrorsRouteChildren: AuthenticatedAdminErrorsRouteChildren =
+  {
+    AuthenticatedAdminErrorsIdRoute: AuthenticatedAdminErrorsIdRoute,
+  }
+
+const AuthenticatedAdminErrorsRouteWithChildren =
+  AuthenticatedAdminErrorsRoute._addFileChildren(
+    AuthenticatedAdminErrorsRouteChildren,
+  )
+
 interface AuthenticatedAdminRouteChildren {
+  AuthenticatedAdminErrorsRoute: typeof AuthenticatedAdminErrorsRouteWithChildren
   AuthenticatedAdminFeedbackRoute: typeof AuthenticatedAdminFeedbackRoute
   AuthenticatedAdminMapRoute: typeof AuthenticatedAdminMapRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
@@ -943,6 +998,7 @@ interface AuthenticatedAdminRouteChildren {
 }
 
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
+  AuthenticatedAdminErrorsRoute: AuthenticatedAdminErrorsRouteWithChildren,
   AuthenticatedAdminFeedbackRoute: AuthenticatedAdminFeedbackRoute,
   AuthenticatedAdminMapRoute: AuthenticatedAdminMapRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,

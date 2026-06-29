@@ -17,6 +17,8 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { DevToolsMount } from "@/components/dev/dev-tools-mount";
 import { registerServiceWorker } from "@/pwa/register-sw";
 import { InstallBanner } from "@/components/install-banner";
+import { GlobalErrorBoundary } from "@/components/global-error-boundary";
+import { installErrorReporter, reportError } from "@/lib/client-error-reporter";
 
 function NotFoundComponent() {
   return (
@@ -42,6 +44,9 @@ function NotFoundComponent() {
 
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
+  useEffect(() => {
+    reportError(error, { metadata: { type: 'router.errorComponent' } });
+  }, [error]);
   const router = useRouter();
   // In production, hide raw error messages — they can leak internal
   // schema names, constraint identifiers, or stack details. Developers
@@ -126,6 +131,7 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   useEffect(() => {
     registerServiceWorker();
+    installErrorReporter();
   }, []);
   return (
     <QueryClientProvider client={queryClient}>
@@ -138,7 +144,9 @@ function RootComponent() {
           Skip to main content
         </a>
         <main id="main">
-          <Outlet />
+          <GlobalErrorBoundary>
+            <Outlet />
+          </GlobalErrorBoundary>
         </main>
         <Toaster />
         <InstallBanner />
@@ -153,14 +161,9 @@ function AuthSync() {
   const queryClient = useQueryClient();
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      // Only react to identity transitions. Refresh events are frequent and
-      // should not churn the whole app during or after sign-in.
       if (event !== "SIGNED_OUT" && event !== "SIGNED_IN" && event !== "USER_UPDATED") {
         return;
       }
-
-      // Drop ALL cached queries when identity changes so one user's cached
-      // data cannot briefly render for the next user before refetch resolves.
       if (event === "SIGNED_OUT" || event === "SIGNED_IN" || event === "USER_UPDATED") {
         queryClient.clear();
       }
