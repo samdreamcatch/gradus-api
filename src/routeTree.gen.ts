@@ -18,6 +18,7 @@ import { Route as SignupCoachRouteImport } from './routes/signup.coach'
 import { Route as SignupAthleteRouteImport } from './routes/signup.athlete'
 import { Route as SignupAdminRouteImport } from './routes/signup.admin'
 import { Route as AuthenticatedParentRouteImport } from './routes/_authenticated/parent'
+import { Route as AuthenticatedCoachRouteImport } from './routes/_authenticated/coach'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedParentIndexRouteImport } from './routes/_authenticated/parent.index'
 import { Route as AuthenticatedCoachIndexRouteImport } from './routes/_authenticated/coach.index'
@@ -102,6 +103,11 @@ const AuthenticatedParentRoute = AuthenticatedParentRouteImport.update({
   path: '/parent',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedCoachRoute = AuthenticatedCoachRouteImport.update({
+  id: '/coach',
+  path: '/coach',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -114,9 +120,9 @@ const AuthenticatedParentIndexRoute =
     getParentRoute: () => AuthenticatedParentRoute,
   } as any)
 const AuthenticatedCoachIndexRoute = AuthenticatedCoachIndexRouteImport.update({
-  id: '/coach/',
-  path: '/coach/',
-  getParentRoute: () => AuthenticatedRoute,
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedCoachRoute,
 } as any)
 const AuthenticatedAthleteIndexRoute =
   AuthenticatedAthleteIndexRouteImport.update({
@@ -162,26 +168,26 @@ const AuthenticatedParentSettingsRoute =
   } as any)
 const AuthenticatedCoachSettingsRoute =
   AuthenticatedCoachSettingsRouteImport.update({
-    id: '/coach/settings',
-    path: '/coach/settings',
-    getParentRoute: () => AuthenticatedRoute,
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => AuthenticatedCoachRoute,
   } as any)
 const AuthenticatedCoachRosterRoute =
   AuthenticatedCoachRosterRouteImport.update({
-    id: '/coach/roster',
-    path: '/coach/roster',
-    getParentRoute: () => AuthenticatedRoute,
+    id: '/roster',
+    path: '/roster',
+    getParentRoute: () => AuthenticatedCoachRoute,
   } as any)
 const AuthenticatedCoachPlansRoute = AuthenticatedCoachPlansRouteImport.update({
-  id: '/coach/plans',
-  path: '/coach/plans',
-  getParentRoute: () => AuthenticatedRoute,
+  id: '/plans',
+  path: '/plans',
+  getParentRoute: () => AuthenticatedCoachRoute,
 } as any)
 const AuthenticatedCoachOnboardingRoute =
   AuthenticatedCoachOnboardingRouteImport.update({
-    id: '/coach/onboarding',
-    path: '/coach/onboarding',
-    getParentRoute: () => AuthenticatedRoute,
+    id: '/onboarding',
+    path: '/onboarding',
+    getParentRoute: () => AuthenticatedCoachRoute,
   } as any)
 const AuthenticatedAthleteSettingsRoute =
   AuthenticatedAthleteSettingsRouteImport.update({
@@ -232,9 +238,9 @@ const AuthenticatedCoachPlansIndexRoute =
   } as any)
 const AuthenticatedCoachMessagesIndexRoute =
   AuthenticatedCoachMessagesIndexRouteImport.update({
-    id: '/coach/messages/',
-    path: '/coach/messages/',
-    getParentRoute: () => AuthenticatedRoute,
+    id: '/messages/',
+    path: '/messages/',
+    getParentRoute: () => AuthenticatedCoachRoute,
   } as any)
 const AuthenticatedAthleteResourcesIndexRoute =
   AuthenticatedAthleteResourcesIndexRouteImport.update({
@@ -290,9 +296,9 @@ const AuthenticatedCoachPlansPlanIdRoute =
   } as any)
 const AuthenticatedCoachMessagesRoomIdRoute =
   AuthenticatedCoachMessagesRoomIdRouteImport.update({
-    id: '/coach/messages/$roomId',
-    path: '/coach/messages/$roomId',
-    getParentRoute: () => AuthenticatedRoute,
+    id: '/messages/$roomId',
+    path: '/messages/$roomId',
+    getParentRoute: () => AuthenticatedCoachRoute,
   } as any)
 const AuthenticatedAthletePlansPlanIdRoute =
   AuthenticatedAthletePlansPlanIdRouteImport.update({
@@ -330,6 +336,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/terms': typeof TermsRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
+  '/coach': typeof AuthenticatedCoachRouteWithChildren
   '/parent': typeof AuthenticatedParentRouteWithChildren
   '/signup/admin': typeof SignupAdminRoute
   '/signup/athlete': typeof SignupAthleteRouteWithChildren
@@ -427,6 +434,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/terms': typeof TermsRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
+  '/_authenticated/coach': typeof AuthenticatedCoachRouteWithChildren
   '/_authenticated/parent': typeof AuthenticatedParentRouteWithChildren
   '/signup/admin': typeof SignupAdminRoute
   '/signup/athlete': typeof SignupAthleteRouteWithChildren
@@ -478,6 +486,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/terms'
     | '/admin'
+    | '/coach'
     | '/parent'
     | '/signup/admin'
     | '/signup/athlete'
@@ -574,6 +583,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/terms'
     | '/_authenticated/admin'
+    | '/_authenticated/coach'
     | '/_authenticated/parent'
     | '/signup/admin'
     | '/signup/athlete'
@@ -698,6 +708,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedParentRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/coach': {
+      id: '/_authenticated/coach'
+      path: '/coach'
+      fullPath: '/coach'
+      preLoaderRoute: typeof AuthenticatedCoachRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/admin': {
       id: '/_authenticated/admin'
       path: '/admin'
@@ -714,10 +731,10 @@ declare module '@tanstack/react-router' {
     }
     '/_authenticated/coach/': {
       id: '/_authenticated/coach/'
-      path: '/coach'
+      path: '/'
       fullPath: '/coach/'
       preLoaderRoute: typeof AuthenticatedCoachIndexRouteImport
-      parentRoute: typeof AuthenticatedRoute
+      parentRoute: typeof AuthenticatedCoachRoute
     }
     '/_authenticated/athlete/': {
       id: '/_authenticated/athlete/'
@@ -777,31 +794,31 @@ declare module '@tanstack/react-router' {
     }
     '/_authenticated/coach/settings': {
       id: '/_authenticated/coach/settings'
-      path: '/coach/settings'
+      path: '/settings'
       fullPath: '/coach/settings'
       preLoaderRoute: typeof AuthenticatedCoachSettingsRouteImport
-      parentRoute: typeof AuthenticatedRoute
+      parentRoute: typeof AuthenticatedCoachRoute
     }
     '/_authenticated/coach/roster': {
       id: '/_authenticated/coach/roster'
-      path: '/coach/roster'
+      path: '/roster'
       fullPath: '/coach/roster'
       preLoaderRoute: typeof AuthenticatedCoachRosterRouteImport
-      parentRoute: typeof AuthenticatedRoute
+      parentRoute: typeof AuthenticatedCoachRoute
     }
     '/_authenticated/coach/plans': {
       id: '/_authenticated/coach/plans'
-      path: '/coach/plans'
+      path: '/plans'
       fullPath: '/coach/plans'
       preLoaderRoute: typeof AuthenticatedCoachPlansRouteImport
-      parentRoute: typeof AuthenticatedRoute
+      parentRoute: typeof AuthenticatedCoachRoute
     }
     '/_authenticated/coach/onboarding': {
       id: '/_authenticated/coach/onboarding'
-      path: '/coach/onboarding'
+      path: '/onboarding'
       fullPath: '/coach/onboarding'
       preLoaderRoute: typeof AuthenticatedCoachOnboardingRouteImport
-      parentRoute: typeof AuthenticatedRoute
+      parentRoute: typeof AuthenticatedCoachRoute
     }
     '/_authenticated/athlete/settings': {
       id: '/_authenticated/athlete/settings'
@@ -861,10 +878,10 @@ declare module '@tanstack/react-router' {
     }
     '/_authenticated/coach/messages/': {
       id: '/_authenticated/coach/messages/'
-      path: '/coach/messages'
+      path: '/messages'
       fullPath: '/coach/messages/'
       preLoaderRoute: typeof AuthenticatedCoachMessagesIndexRouteImport
-      parentRoute: typeof AuthenticatedRoute
+      parentRoute: typeof AuthenticatedCoachRoute
     }
     '/_authenticated/athlete/resources/': {
       id: '/_authenticated/athlete/resources/'
@@ -931,10 +948,10 @@ declare module '@tanstack/react-router' {
     }
     '/_authenticated/coach/messages/$roomId': {
       id: '/_authenticated/coach/messages/$roomId'
-      path: '/coach/messages/$roomId'
+      path: '/messages/$roomId'
       fullPath: '/coach/messages/$roomId'
       preLoaderRoute: typeof AuthenticatedCoachMessagesRoomIdRouteImport
-      parentRoute: typeof AuthenticatedRoute
+      parentRoute: typeof AuthenticatedCoachRoute
     }
     '/_authenticated/athlete/plans/$planId': {
       id: '/_authenticated/athlete/plans/$planId'
@@ -1009,6 +1026,45 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
 const AuthenticatedAdminRouteWithChildren =
   AuthenticatedAdminRoute._addFileChildren(AuthenticatedAdminRouteChildren)
 
+interface AuthenticatedCoachPlansRouteChildren {
+  AuthenticatedCoachPlansPlanIdRoute: typeof AuthenticatedCoachPlansPlanIdRoute
+  AuthenticatedCoachPlansIndexRoute: typeof AuthenticatedCoachPlansIndexRoute
+}
+
+const AuthenticatedCoachPlansRouteChildren: AuthenticatedCoachPlansRouteChildren =
+  {
+    AuthenticatedCoachPlansPlanIdRoute: AuthenticatedCoachPlansPlanIdRoute,
+    AuthenticatedCoachPlansIndexRoute: AuthenticatedCoachPlansIndexRoute,
+  }
+
+const AuthenticatedCoachPlansRouteWithChildren =
+  AuthenticatedCoachPlansRoute._addFileChildren(
+    AuthenticatedCoachPlansRouteChildren,
+  )
+
+interface AuthenticatedCoachRouteChildren {
+  AuthenticatedCoachOnboardingRoute: typeof AuthenticatedCoachOnboardingRoute
+  AuthenticatedCoachPlansRoute: typeof AuthenticatedCoachPlansRouteWithChildren
+  AuthenticatedCoachRosterRoute: typeof AuthenticatedCoachRosterRoute
+  AuthenticatedCoachSettingsRoute: typeof AuthenticatedCoachSettingsRoute
+  AuthenticatedCoachIndexRoute: typeof AuthenticatedCoachIndexRoute
+  AuthenticatedCoachMessagesRoomIdRoute: typeof AuthenticatedCoachMessagesRoomIdRoute
+  AuthenticatedCoachMessagesIndexRoute: typeof AuthenticatedCoachMessagesIndexRoute
+}
+
+const AuthenticatedCoachRouteChildren: AuthenticatedCoachRouteChildren = {
+  AuthenticatedCoachOnboardingRoute: AuthenticatedCoachOnboardingRoute,
+  AuthenticatedCoachPlansRoute: AuthenticatedCoachPlansRouteWithChildren,
+  AuthenticatedCoachRosterRoute: AuthenticatedCoachRosterRoute,
+  AuthenticatedCoachSettingsRoute: AuthenticatedCoachSettingsRoute,
+  AuthenticatedCoachIndexRoute: AuthenticatedCoachIndexRoute,
+  AuthenticatedCoachMessagesRoomIdRoute: AuthenticatedCoachMessagesRoomIdRoute,
+  AuthenticatedCoachMessagesIndexRoute: AuthenticatedCoachMessagesIndexRoute,
+}
+
+const AuthenticatedCoachRouteWithChildren =
+  AuthenticatedCoachRoute._addFileChildren(AuthenticatedCoachRouteChildren)
+
 interface AuthenticatedParentRouteChildren {
   AuthenticatedParentSettingsRoute: typeof AuthenticatedParentSettingsRoute
   AuthenticatedParentIndexRoute: typeof AuthenticatedParentIndexRoute
@@ -1034,61 +1090,33 @@ const AuthenticatedParentRouteChildren: AuthenticatedParentRouteChildren = {
 const AuthenticatedParentRouteWithChildren =
   AuthenticatedParentRoute._addFileChildren(AuthenticatedParentRouteChildren)
 
-interface AuthenticatedCoachPlansRouteChildren {
-  AuthenticatedCoachPlansPlanIdRoute: typeof AuthenticatedCoachPlansPlanIdRoute
-  AuthenticatedCoachPlansIndexRoute: typeof AuthenticatedCoachPlansIndexRoute
-}
-
-const AuthenticatedCoachPlansRouteChildren: AuthenticatedCoachPlansRouteChildren =
-  {
-    AuthenticatedCoachPlansPlanIdRoute: AuthenticatedCoachPlansPlanIdRoute,
-    AuthenticatedCoachPlansIndexRoute: AuthenticatedCoachPlansIndexRoute,
-  }
-
-const AuthenticatedCoachPlansRouteWithChildren =
-  AuthenticatedCoachPlansRoute._addFileChildren(
-    AuthenticatedCoachPlansRouteChildren,
-  )
-
 interface AuthenticatedRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
+  AuthenticatedCoachRoute: typeof AuthenticatedCoachRouteWithChildren
   AuthenticatedParentRoute: typeof AuthenticatedParentRouteWithChildren
   AuthenticatedAthleteSettingsRoute: typeof AuthenticatedAthleteSettingsRoute
-  AuthenticatedCoachOnboardingRoute: typeof AuthenticatedCoachOnboardingRoute
-  AuthenticatedCoachPlansRoute: typeof AuthenticatedCoachPlansRouteWithChildren
-  AuthenticatedCoachRosterRoute: typeof AuthenticatedCoachRosterRoute
-  AuthenticatedCoachSettingsRoute: typeof AuthenticatedCoachSettingsRoute
   AuthenticatedAthleteIndexRoute: typeof AuthenticatedAthleteIndexRoute
-  AuthenticatedCoachIndexRoute: typeof AuthenticatedCoachIndexRoute
   AuthenticatedAthleteMessagesRoomIdRoute: typeof AuthenticatedAthleteMessagesRoomIdRoute
   AuthenticatedAthletePlansPlanIdRoute: typeof AuthenticatedAthletePlansPlanIdRoute
-  AuthenticatedCoachMessagesRoomIdRoute: typeof AuthenticatedCoachMessagesRoomIdRoute
   AuthenticatedAthleteMessagesIndexRoute: typeof AuthenticatedAthleteMessagesIndexRoute
   AuthenticatedAthletePlansIndexRoute: typeof AuthenticatedAthletePlansIndexRoute
   AuthenticatedAthleteResourcesIndexRoute: typeof AuthenticatedAthleteResourcesIndexRoute
-  AuthenticatedCoachMessagesIndexRoute: typeof AuthenticatedCoachMessagesIndexRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
+  AuthenticatedCoachRoute: AuthenticatedCoachRouteWithChildren,
   AuthenticatedParentRoute: AuthenticatedParentRouteWithChildren,
   AuthenticatedAthleteSettingsRoute: AuthenticatedAthleteSettingsRoute,
-  AuthenticatedCoachOnboardingRoute: AuthenticatedCoachOnboardingRoute,
-  AuthenticatedCoachPlansRoute: AuthenticatedCoachPlansRouteWithChildren,
-  AuthenticatedCoachRosterRoute: AuthenticatedCoachRosterRoute,
-  AuthenticatedCoachSettingsRoute: AuthenticatedCoachSettingsRoute,
   AuthenticatedAthleteIndexRoute: AuthenticatedAthleteIndexRoute,
-  AuthenticatedCoachIndexRoute: AuthenticatedCoachIndexRoute,
   AuthenticatedAthleteMessagesRoomIdRoute:
     AuthenticatedAthleteMessagesRoomIdRoute,
   AuthenticatedAthletePlansPlanIdRoute: AuthenticatedAthletePlansPlanIdRoute,
-  AuthenticatedCoachMessagesRoomIdRoute: AuthenticatedCoachMessagesRoomIdRoute,
   AuthenticatedAthleteMessagesIndexRoute:
     AuthenticatedAthleteMessagesIndexRoute,
   AuthenticatedAthletePlansIndexRoute: AuthenticatedAthletePlansIndexRoute,
   AuthenticatedAthleteResourcesIndexRoute:
     AuthenticatedAthleteResourcesIndexRoute,
-  AuthenticatedCoachMessagesIndexRoute: AuthenticatedCoachMessagesIndexRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
