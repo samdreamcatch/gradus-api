@@ -157,7 +157,7 @@ function MoveSheetBody({
   const upsertMutation = useMutation({
     mutationFn: upsertFn,
     onSuccess: (res, variables) => {
-      const payload = variables.data as UpsertPayload;
+      const payload = (variables?.data ?? {}) as UpsertPayload;
       if (!res.ok) {
         setConflict({
           existingMoveId: res.conflict.existingMoveId,
