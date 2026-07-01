@@ -1803,9 +1803,23 @@ function LibrarySyncStrip({
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const [forkConflict, setForkConflict] = useState<
+    | { existingMoveId: string; existingName: string; payload: { planMoveId: string; sport: string; category: string } }
+    | null
+  >(null);
+
   const forkMutation = useMutation({
     mutationFn: forkFn,
-    onSuccess: () => {
+    onSuccess: (res, variables) => {
+      if (!res.ok) {
+        const payload = (variables?.data ?? {}) as { planMoveId: string; sport: string; category: string };
+        setForkConflict({
+          existingMoveId: res.conflict.existingMoveId,
+          existingName: res.conflict.name,
+          payload,
+        });
+        return;
+      }
       toast.success("Saved as new library move");
       setForkOpen(false);
       setCategory("");
