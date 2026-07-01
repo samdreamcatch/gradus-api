@@ -360,6 +360,7 @@ const forkPlanMoveToLibraryInput = z.object({
   planMoveId: z.string().uuid(),
   sport: z.string().min(1).max(64),
   category: z.string().min(1).max(64),
+  overwriteMoveId: z.string().uuid().optional(),
 });
 
 export const forkPlanMoveToLibrary = createServerFn({ method: "POST" })
@@ -387,29 +388,57 @@ export const forkPlanMoveToLibrary = createServerFn({ method: "POST" })
       throw new Error("Add a cue and a why before saving this move to your library");
     }
 
-    const { data: inserted, error } = await supabase
-      .from("moves")
-      .insert({
-        coach_id: coachId,
-        sport: data.sport,
-        category: data.category,
-        name: pm.name,
-        description: pm.description ?? "",
-        cue,
-        why,
-        default_target_kind: pm.target_kind,
-        default_target_value: pm.target_value,
-      })
-      .select("id")
-      .single();
-    if (error) dbError(error);
+    if (!data.overwriteMoveId) {
+      const conflict = await findNameConflict(supabase, coachId, pm.name);
+      if (conflict) {
+        return { ok: false as const, conflict };
+      }
+    }
 
-    const { error: updErr } = await supabase
+    let libraryMoveId: string;
+    if (data.overwriteMoveId) {
+      const { error: updErr } = await supabase
+        .from("moves")
+        .update({
+          sport: data.sport,
+          category: data.category,
+          name: pm.name,
+          description: pm.description ?? "",
+          cue,
+          why,
+          default_target_kind: pm.target_kind,
+          default_target_value: pm.target_value,
+        })
+        .eq("id", data.overwriteMoveId)
+        .eq("coach_id", coachId);
+      if (updErr) dbError(updErr);
+      libraryMoveId = data.overwriteMoveId;
+    } else {
+      const { data: inserted, error } = await supabase
+        .from("moves")
+        .insert({
+          coach_id: coachId,
+          sport: data.sport,
+          category: data.category,
+          name: pm.name,
+          description: pm.description ?? "",
+          cue,
+          why,
+          default_target_kind: pm.target_kind,
+          default_target_value: pm.target_value,
+        })
+        .select("id")
+        .single();
+      if (error) dbError(error);
+      libraryMoveId = inserted.id as string;
+    }
+
+    const { error: linkErr } = await supabase
       .from("plan_moves")
-      .update({ move_id: inserted.id })
+      .update({ move_id: libraryMoveId })
       .eq("id", pm.id);
-    if (updErr) dbError(updErr);
+    if (linkErr) dbError(linkErr);
 
-    return { moveId: inserted.id as string };
+    return { ok: true as const, moveId: libraryMoveId };
   });
 
