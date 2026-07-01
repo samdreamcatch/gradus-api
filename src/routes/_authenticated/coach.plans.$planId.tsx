@@ -1806,7 +1806,7 @@ function LibrarySyncStrip({
   });
 
   const [forkConflict, setForkConflict] = useState<
-    | { existingMoveId: string; existingName: string; payload: { planMoveId: string; sport: string; category: string } }
+    | { existingMoveId: string; existingName: string; payload: { planMoveId: string; sport: string; category: string; name: string } }
     | null
   >(null);
 
@@ -1814,7 +1814,7 @@ function LibrarySyncStrip({
     mutationFn: forkFn,
     onSuccess: (res, variables) => {
       if (!res.ok) {
-        const payload = (variables?.data ?? {}) as { planMoveId: string; sport: string; category: string };
+        const payload = (variables?.data ?? {}) as { planMoveId: string; sport: string; category: string; name: string };
         setForkConflict({
           existingMoveId: res.conflict.existingMoveId,
           existingName: res.conflict.name,
@@ -1835,6 +1835,10 @@ function LibrarySyncStrip({
   useEffect(() => {
     if (forkOpen && !sport && sports.length) setSport(sports[0]);
   }, [forkOpen, sport, sports]);
+  useEffect(() => {
+    if (forkOpen) setForkName(planMove.name);
+  }, [forkOpen, planMove.name]);
+
   const categoryOptions = useMemo(() => {
     const all = movesQuery.data?.moves ?? [];
     return Array.from(
