@@ -176,6 +176,18 @@ export const SPORTS: Sport[] = [
       { key: "pre_professional", label: "Pre-Professional", suggestedHours: 16 },
     ],
   },
+  {
+    key: "strength_conditioning",
+    label: "Strength & Conditioning",
+    standard: "",
+    levels: [
+      { key: "general_fitness", label: "General fitness", hint: "Health, longevity, no sport goal", suggestedHours: 2 },
+      { key: "in_season_maintenance", label: "Sport prep · in-season", hint: "Maintain during competition", suggestedHours: 3 },
+      { key: "off_season_build", label: "Sport prep · off-season", hint: "Build strength between seasons", suggestedHours: 5 },
+      { key: "performance_athlete", label: "Performance athlete", hint: "Competitive, structured programming", suggestedHours: 8 },
+      { key: "elite_performance", label: "Elite performance", hint: "Collegiate / pro / national team", suggestedHours: 12 },
+    ],
+  },
 ];
 
 export const SPORT_KEYS: SportKey[] = SPORTS.map((s) => s.key);
