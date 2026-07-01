@@ -52,7 +52,15 @@ import {
 
 
 
-import { listMoves, upsertMove, addPlanMoveToLibrary, type MoveDTO } from "@/lib/moves.functions";
+import {
+  listMoves,
+  upsertMove,
+  addPlanMoveToLibrary,
+  updateLibraryMoveFromPlanMove,
+  forkPlanMoveToLibrary,
+  type MoveDTO,
+} from "@/lib/moves.functions";
+
 import { MoveField } from "@/components/coach/move-field";
 import { VoiceFab } from "@/components/coach/voice-fab";
 import { consumeVoiceTouched, type VoiceTouchedSnapshot } from "@/lib/voice-touched-store";
