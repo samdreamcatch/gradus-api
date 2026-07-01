@@ -131,13 +131,23 @@ function MoveSheetBody({
   });
   const [savingField, setSavingField] = useState<string | null>(null);
 
-  type UpsertPayload = Parameters<typeof upsertFn>[0]["data"];
+  type UpsertPayload = {
+    id?: string;
+    sport: string;
+    category: string;
+    name: string;
+    description: string;
+    cue: string;
+    why: string;
+    defaultTargetKind: TargetKind;
+    defaultTargetValue: number;
+    overwriteMoveId?: string;
+  };
   const [conflict, setConflict] = useState<{
     existingMoveId: string;
     existingName: string;
     attemptedName: string;
     payload: UpsertPayload;
-    /** Whether this attempt was creating a brand-new library move. */
     wasNew: boolean;
   } | null>(null);
 
@@ -147,13 +157,14 @@ function MoveSheetBody({
   const upsertMutation = useMutation({
     mutationFn: upsertFn,
     onSuccess: (res, variables) => {
+      const payload = variables.data as UpsertPayload;
       if (!res.ok) {
         setConflict({
           existingMoveId: res.conflict.existingMoveId,
           existingName: res.conflict.name,
-          attemptedName: variables.data.name,
-          payload: variables.data,
-          wasNew: !variables.data.id && !variables.data.overwriteMoveId,
+          attemptedName: payload.name,
+          payload,
+          wasNew: !payload.id && !payload.overwriteMoveId,
         });
         return;
       }
