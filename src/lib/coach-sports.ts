@@ -1,7 +1,7 @@
 // Pre-seeded sport catalog. `key` values are stored in the database and must
 // never change. `label` is display-only and can be edited freely.
 
-export type SportKey = "tennis" | "golf" | "figure_skating" | "dance" | "gymnastics" | "fencing" | "equestrian" | "swimming" | "track_field" | "wrestling" | "skiing";
+export type SportKey = "tennis" | "golf" | "figure_skating" | "dance" | "gymnastics" | "fencing" | "equestrian" | "swimming" | "track_field" | "wrestling" | "skiing" | "strength_conditioning";
 
 export interface SportLevel {
   key: string;
@@ -174,6 +174,18 @@ export const SPORTS: Sport[] = [
       { key: "intermediate", label: "Intermediate", suggestedHours: 6 },
       { key: "advanced", label: "Advanced", suggestedHours: 10 },
       { key: "pre_professional", label: "Pre-Professional", suggestedHours: 16 },
+    ],
+  },
+  {
+    key: "strength_conditioning",
+    label: "Strength & Conditioning",
+    standard: "",
+    levels: [
+      { key: "general_fitness", label: "General fitness", hint: "Health, longevity, no sport goal", suggestedHours: 2 },
+      { key: "in_season_maintenance", label: "Sport prep · in-season", hint: "Maintain during competition", suggestedHours: 3 },
+      { key: "off_season_build", label: "Sport prep · off-season", hint: "Build strength between seasons", suggestedHours: 5 },
+      { key: "performance_athlete", label: "Performance athlete", hint: "Competitive, structured programming", suggestedHours: 8 },
+      { key: "elite_performance", label: "Elite performance", hint: "Collegiate / pro / national team", suggestedHours: 12 },
     ],
   },
 ];
