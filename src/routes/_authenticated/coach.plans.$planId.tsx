@@ -1986,6 +1986,7 @@ function LibrarySyncStrip({
                 !sport.trim() ||
                 !category ||
                 (category === "__other__" && !customCategory.trim()) ||
+                !forkName.trim() ||
                 forkMutation.isPending
               }
               onClick={(e) => {
@@ -1997,6 +1998,7 @@ function LibrarySyncStrip({
                     planMoveId: planMove.id,
                     sport: sport.trim(),
                     category: finalCategory,
+                    name: forkName.trim(),
                   },
                 });
               }}
@@ -2009,7 +2011,8 @@ function LibrarySyncStrip({
 
       <NameConflictDialog
         open={!!forkConflict}
-        attemptedName={planMove.name}
+        attemptedName={forkName}
+
         existingName={forkConflict?.existingName ?? ""}
         busy={forkMutation.isPending}
         onOpenChange={(v) => !v && setForkConflict(null)}
