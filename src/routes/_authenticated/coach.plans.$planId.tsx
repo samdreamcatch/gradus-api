@@ -1292,11 +1292,29 @@ function MovePicker({
             saving={upsertMutation.isPending}
             onCancel={() => setMode("pick")}
             onUseExisting={(m) => onAdd([m])}
-            onCreate={(input) => upsertMutation.mutate({ data: input })}
+            onCreate={(input) => {
+              setLastCreateInput(input);
+              upsertMutation.mutate({ data: input });
+            }}
           />
         )}
       </SheetContent>
     </Sheet>
+    <NameConflictDialog
+      open={!!nameConflict}
+      attemptedName={nameConflict?.attemptedName ?? ""}
+      existingName={nameConflict?.existingName ?? ""}
+      busy={upsertMutation.isPending}
+      onOpenChange={(v) => !v && setNameConflict(null)}
+      onOverwrite={() => {
+        if (!nameConflict || !lastCreateInput) return;
+        upsertMutation.mutate({
+          data: { ...lastCreateInput, overwriteMoveId: nameConflict.existingMoveId },
+        });
+        setNameConflict(null);
+      }}
+    />
+    </>
   );
 }
 
