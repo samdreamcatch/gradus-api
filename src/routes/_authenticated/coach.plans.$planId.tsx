@@ -1991,6 +1991,21 @@ function LibrarySyncStrip({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <NameConflictDialog
+        open={!!forkConflict}
+        attemptedName={planMove.name}
+        existingName={forkConflict?.existingName ?? ""}
+        busy={forkMutation.isPending}
+        onOpenChange={(v) => !v && setForkConflict(null)}
+        onOverwrite={() => {
+          if (!forkConflict) return;
+          forkMutation.mutate({
+            data: { ...forkConflict.payload, overwriteMoveId: forkConflict.existingMoveId },
+          });
+          setForkConflict(null);
+        }}
+      />
     </div>
   );
 }
