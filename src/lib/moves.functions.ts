@@ -104,6 +104,35 @@ export const listMoves = createServerFn({ method: "GET" })
 
 
 
+export interface NameConflict {
+  existingMoveId: string;
+  name: string;
+}
+
+function normalizeName(s: string): string {
+  return s.trim().toLowerCase();
+}
+
+async function findNameConflict(
+  supabase: Client,
+  coachId: string,
+  name: string,
+  excludeMoveId?: string,
+): Promise<NameConflict | null> {
+  const normalized = normalizeName(name);
+  if (!normalized) return null;
+  const { data, error } = await supabase
+    .from("moves")
+    .select("id, name")
+    .eq("coach_id", coachId)
+    .is("archived_at", null);
+  if (error) dbError(error);
+  const hit = (data ?? []).find(
+    (r) => normalizeName(r.name as string) === normalized && r.id !== excludeMoveId,
+  );
+  return hit ? { existingMoveId: hit.id as string, name: hit.name as string } : null;
+}
+
 const moveInput = z.object({
   id: z.string().uuid().optional(),
   sport: z.string().min(1).max(64),
@@ -114,6 +143,7 @@ const moveInput = z.object({
   why: z.string().max(1000).default(""),
   defaultTargetKind: z.enum(["reps", "mins"]),
   defaultTargetValue: z.number().min(0).max(10000),
+  overwriteMoveId: z.string().uuid().optional(),
 });
 
 export const upsertMove = createServerFn({ method: "POST" })
@@ -135,18 +165,29 @@ export const upsertMove = createServerFn({ method: "POST" })
       default_target_value: data.defaultTargetValue,
     };
 
-    if (data.id) {
+    // If coach chose to overwrite an existing move, target that row.
+    const targetId = data.overwriteMoveId ?? data.id;
+
+    // Conflict check: skip when overwriting explicitly.
+    if (!data.overwriteMoveId) {
+      const conflict = await findNameConflict(supabase, coachId, data.name, data.id);
+      if (conflict) {
+        return { ok: false as const, conflict };
+      }
+    }
+
+    if (targetId) {
       const { data: updated, error } = await supabase
         .from("moves")
         .update(row)
-        .eq("id", data.id)
+        .eq("id", targetId)
         .eq("coach_id", coachId)
         .select(
           "id, sport, category, name, description, cue, why, default_target_kind, default_target_value",
         )
         .single();
       if (error) dbError(error);
-      return { move: toDTO(updated) };
+      return { ok: true as const, move: toDTO(updated) };
     }
 
     const { data: inserted, error } = await supabase
@@ -157,7 +198,7 @@ export const upsertMove = createServerFn({ method: "POST" })
       )
       .single();
     if (error) dbError(error);
-    return { move: toDTO(inserted) };
+    return { ok: true as const, move: toDTO(inserted) };
   });
 
 export const archiveMove = createServerFn({ method: "POST" })
@@ -181,6 +222,7 @@ const addPlanMoveToLibraryInput = z.object({
   planMoveId: z.string().uuid(),
   sport: z.string().min(1).max(64),
   category: z.string().min(1).max(64),
+  overwriteMoveId: z.string().uuid().optional(),
 });
 
 export const addPlanMoveToLibrary = createServerFn({ method: "POST" })
@@ -201,7 +243,7 @@ export const addPlanMoveToLibrary = createServerFn({ method: "POST" })
     if (!pm) throw new Error("Move not found");
     const planCoachId = (pm as unknown as { plans: { coach_id: string } }).plans.coach_id;
     if (planCoachId !== coachId) throw new Error("Not authorized");
-    if (pm.move_id) return { moveId: pm.move_id as string };
+    if (pm.move_id) return { ok: true as const, moveId: pm.move_id as string };
 
     const cue = (pm.cue ?? "").trim();
     const why = (pm.why ?? "").trim();
@@ -209,30 +251,58 @@ export const addPlanMoveToLibrary = createServerFn({ method: "POST" })
       throw new Error("Add a cue and a why before saving this move to your library");
     }
 
-    const { data: inserted, error } = await supabase
-      .from("moves")
-      .insert({
-        coach_id: coachId,
-        sport: data.sport,
-        category: data.category,
-        name: pm.name,
-        description: pm.description ?? "",
-        cue,
-        why,
-        default_target_kind: pm.target_kind,
-        default_target_value: pm.target_value,
-      })
-      .select("id")
-      .single();
-    if (error) dbError(error);
+    if (!data.overwriteMoveId) {
+      const conflict = await findNameConflict(supabase, coachId, pm.name);
+      if (conflict) {
+        return { ok: false as const, conflict };
+      }
+    }
 
-    const { error: updErr } = await supabase
+    let libraryMoveId: string;
+    if (data.overwriteMoveId) {
+      const { error: updErr } = await supabase
+        .from("moves")
+        .update({
+          sport: data.sport,
+          category: data.category,
+          name: pm.name,
+          description: pm.description ?? "",
+          cue,
+          why,
+          default_target_kind: pm.target_kind,
+          default_target_value: pm.target_value,
+        })
+        .eq("id", data.overwriteMoveId)
+        .eq("coach_id", coachId);
+      if (updErr) dbError(updErr);
+      libraryMoveId = data.overwriteMoveId;
+    } else {
+      const { data: inserted, error } = await supabase
+        .from("moves")
+        .insert({
+          coach_id: coachId,
+          sport: data.sport,
+          category: data.category,
+          name: pm.name,
+          description: pm.description ?? "",
+          cue,
+          why,
+          default_target_kind: pm.target_kind,
+          default_target_value: pm.target_value,
+        })
+        .select("id")
+        .single();
+      if (error) dbError(error);
+      libraryMoveId = inserted.id as string;
+    }
+
+    const { error: linkErr } = await supabase
       .from("plan_moves")
-      .update({ move_id: inserted.id })
+      .update({ move_id: libraryMoveId })
       .eq("id", pm.id);
-    if (updErr) dbError(updErr);
+    if (linkErr) dbError(linkErr);
 
-    return { moveId: inserted.id as string };
+    return { ok: true as const, moveId: libraryMoveId };
   });
 
 /* ---------------- Update the linked library move from a plan move's fields ---------------- */
