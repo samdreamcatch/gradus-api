@@ -1776,6 +1776,8 @@ function LibrarySyncStrip({
   const [sport, setSport] = useState("");
   const [category, setCategory] = useState("");
   const [customCategory, setCustomCategory] = useState("");
+  const [forkName, setForkName] = useState(planMove.name);
+
 
   const updateFn = useServerFn(updateLibraryMoveFromPlanMove);
   const forkFn = useServerFn(forkPlanMoveToLibrary);
@@ -1804,7 +1806,7 @@ function LibrarySyncStrip({
   });
 
   const [forkConflict, setForkConflict] = useState<
-    | { existingMoveId: string; existingName: string; payload: { planMoveId: string; sport: string; category: string } }
+    | { existingMoveId: string; existingName: string; payload: { planMoveId: string; sport: string; category: string; name: string } }
     | null
   >(null);
 
@@ -1812,7 +1814,7 @@ function LibrarySyncStrip({
     mutationFn: forkFn,
     onSuccess: (res, variables) => {
       if (!res.ok) {
-        const payload = (variables?.data ?? {}) as { planMoveId: string; sport: string; category: string };
+        const payload = (variables?.data ?? {}) as { planMoveId: string; sport: string; category: string; name: string };
         setForkConflict({
           existingMoveId: res.conflict.existingMoveId,
           existingName: res.conflict.name,
@@ -1833,6 +1835,10 @@ function LibrarySyncStrip({
   useEffect(() => {
     if (forkOpen && !sport && sports.length) setSport(sports[0]);
   }, [forkOpen, sport, sports]);
+  useEffect(() => {
+    if (forkOpen) setForkName(planMove.name);
+  }, [forkOpen, planMove.name]);
+
   const categoryOptions = useMemo(() => {
     const all = movesQuery.data?.moves ?? [];
     return Array.from(
@@ -1906,13 +1912,25 @@ function LibrarySyncStrip({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Save "{planMove.name}" as a new library move</AlertDialogTitle>
+            <AlertDialogTitle>Save as a new library move</AlertDialogTitle>
             <AlertDialogDescription>
-              Pick a sport and category so you can find this move next time. The original
-              library move is left untouched.
+              Name it, then pick a sport and category so you can find it next time. The
+              original library move is left untouched.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="space-y-3 py-1">
+            <label className="block">
+              <span className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
+                Name
+              </span>
+              <Input
+                value={forkName}
+                onChange={(e) => setForkName(e.target.value)}
+                placeholder="Move name"
+                className="mt-1"
+              />
+            </label>
+
             <label className="block">
               <span className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
                 Sport
@@ -1968,6 +1986,7 @@ function LibrarySyncStrip({
                 !sport.trim() ||
                 !category ||
                 (category === "__other__" && !customCategory.trim()) ||
+                !forkName.trim() ||
                 forkMutation.isPending
               }
               onClick={(e) => {
@@ -1979,6 +1998,7 @@ function LibrarySyncStrip({
                     planMoveId: planMove.id,
                     sport: sport.trim(),
                     category: finalCategory,
+                    name: forkName.trim(),
                   },
                 });
               }}
@@ -1991,7 +2011,8 @@ function LibrarySyncStrip({
 
       <NameConflictDialog
         open={!!forkConflict}
-        attemptedName={planMove.name}
+        attemptedName={forkName}
+
         existingName={forkConflict?.existingName ?? ""}
         busy={forkMutation.isPending}
         onOpenChange={(v) => !v && setForkConflict(null)}
