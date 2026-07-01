@@ -42,6 +42,16 @@ async function getCoachId(supabase: Client, userId: string): Promise<string> {
   return created.data.id;
 }
 
+export interface LibraryMoveSnapshotDTO {
+  id: string;
+  name: string;
+  description: string;
+  cue: string;
+  why: string;
+  defaultTargetKind: TargetKind;
+  defaultTargetValue: number;
+}
+
 export interface PlanMoveDTO {
   id: string;
   position: number;
@@ -52,7 +62,9 @@ export interface PlanMoveDTO {
   why: string;
   targetKind: TargetKind;
   targetValue: number;
+  libraryMove: LibraryMoveSnapshotDTO | null;
 }
+
 
 export interface PlanSummaryDTO {
   id: string;
