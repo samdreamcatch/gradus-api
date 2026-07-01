@@ -1776,6 +1776,8 @@ function LibrarySyncStrip({
   const [sport, setSport] = useState("");
   const [category, setCategory] = useState("");
   const [customCategory, setCustomCategory] = useState("");
+  const [forkName, setForkName] = useState(planMove.name);
+
 
   const updateFn = useServerFn(updateLibraryMoveFromPlanMove);
   const forkFn = useServerFn(forkPlanMoveToLibrary);
