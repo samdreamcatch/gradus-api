@@ -201,7 +201,7 @@ export const addPlanMoveToLibrary = createServerFn({ method: "POST" })
     if (!pm) throw new Error("Move not found");
     const planCoachId = (pm as unknown as { plans: { coach_id: string } }).plans.coach_id;
     if (planCoachId !== coachId) throw new Error("Not authorized");
-    if (pm.move_id) throw new Error("This move is already in your library");
+    if (pm.move_id) return { moveId: pm.move_id as string };
 
     const cue = (pm.cue ?? "").trim();
     const why = (pm.why ?? "").trim();
