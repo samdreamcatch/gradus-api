@@ -1,4 +1,4 @@
-import { queryOptions } from "@tanstack/react-query";
+import { queryOptions, type QueryClient } from "@tanstack/react-query";
 import { redirect } from "@tanstack/react-router";
 import { getMyRole } from "@/lib/parent-signup.functions";
 
@@ -21,15 +21,10 @@ const ROLE_HOME: Record<AppRole, string> = {
  * expected role, silently redirect to their own home instead of letting a
  * server-fn role check throw into the error boundary.
  */
-export async function requireRole(
-  expected: AppRole,
-  queryClient: { ensureQueryData: <T>(opts: typeof myRoleQueryOptions) => Promise<T> },
-) {
+export async function requireRole(expected: AppRole, queryClient: QueryClient) {
   let role: AppRole | null = null;
   try {
-    const data = (await queryClient.ensureQueryData(myRoleQueryOptions)) as {
-      role: AppRole | null;
-    };
+    const data = await queryClient.ensureQueryData(myRoleQueryOptions);
     role = data.role;
   } catch {
     // If role lookup fails, don't block — let downstream loaders handle it.
