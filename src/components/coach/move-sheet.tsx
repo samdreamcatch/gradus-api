@@ -32,6 +32,7 @@ import {
 import { listPlans, addMoveToPlan } from "@/lib/plans.functions";
 import { useVisualViewport } from "@/hooks/use-visual-viewport";
 import { MoveField } from "./move-field";
+import { NameConflictDialog } from "./name-conflict-dialog";
 
 type Mode = "new" | string; // moveId or "new"
 
