@@ -1,67 +1,58 @@
 ## Goal
 
-Add a final "Accept Terms of Service" step to coach and parent onboarding. New signups must click through Common Paper TOS before reaching the app. Existing users are grandfathered.
+When a coach edits a move inside a plan and that move is linked to a library move, offer two one-click actions:
 
-## Schema
+1. **Update library move** — push the plan-move's current text/targets back to the library entry (all future plans referencing it get the new version going forward; existing plan_moves rows are unchanged because they store their own copy of the fields).
+2. **Save as new library move** — fork the edits into a brand-new library entry, then re-point this plan-move at the new library id. Picks sport + category (same UX as the existing "Add to library" dialog).
 
-New migration adds `public.terms_acceptances`:
-- `user_id uuid` (auth.users)
-- `role text` ('coach' | 'parent')
-- `terms_version text` (e.g. `'2026-06-29'`)
-- `accepted_at timestamptz default now()`
-- `user_agent text`, `ip text` (nullable, for audit)
-- unique on `(user_id, terms_version)`
-- RLS: users can insert/select their own rows; service_role full.
-- GRANTs per project convention.
+If the plan-move is unlinked, the existing "Add to library" card stays as-is.
+If the plan-move is linked and unchanged, no affordance is shown.
 
-## Constants & content
+## UX
 
-- `src/lib/terms.ts` — exports `CURRENT_TERMS_VERSION = '2026-06-29'` and a short summary string used on the click-through screen.
-- `src/routes/terms.tsx` — public route rendering the full Common Paper TOS (from the uploaded doc) as styled markdown. Linked to from the checkbox label and from settings/footer.
+Inside each expanded move card in the plan editor (`src/routes/_authenticated/coach.plans.$planId.tsx`), below the fields, add a small "library sync" strip that mirrors the styling of the existing "Not in your library" card:
 
-## Server functions (`src/lib/terms.functions.ts`)
+```text
+[ Library ]  Edited from "<library move name>" · description, cue changed
+                          [ Update library move ]  [ Save as new move ]
+```
 
-- `acceptTerms({ role })` — authed via `requireSupabaseAuth`, inserts a row with `CURRENT_TERMS_VERSION` (idempotent on conflict).
-- `getTermsStatus()` — returns `{ accepted: boolean, version: string }` for the current user against `CURRENT_TERMS_VERSION`.
+Only shown when `move_id` is set AND at least one of {name, description, cue, why, target_kind, target_value} differs from the linked library row.
 
-## UI — shared component
+- "Update library move" → confirm dialog listing the fields that will change → mutation → toast.
+- "Save as new move" → reuse the existing sport/category picker dialog → mutation → the plan-move is now linked to the new library id, strip disappears.
 
-`src/components/onboarding/terms-step.tsx`:
-- Page card with heading "One last thing", short summary (what they're agreeing to: subscription, governing law = Delaware, contact email), checkbox "I have read and agree to the Gradus Terms of Service" with `<Link to="/terms" target="_blank">`, primary CTA "Agree & continue", secondary "Open full terms".
-- Calls `acceptTerms` then navigates to the destination passed in via prop.
+## Data / server
 
-## Coach flow
+`src/lib/moves.functions.ts`:
 
-- New route `src/routes/_authenticated/coach.onboarding.terms.tsx` (or inline as final step inside existing `coach.onboarding.tsx` wizard — whichever matches current pattern).
-- After `completeOnboarding` succeeds, navigate to terms step instead of `/coach`. Only call `acceptTerms` then route to `/coach`.
+- Extend `listMoves` return (or add a lightweight `getMoveSnapshots` fn) so the editor can diff plan-moves against their linked library rows. Simplest: the plan detail loader already fetches plan_moves; add `libraryMove` snapshot (name/description/cue/why/target_kind/target_value) to each move DTO in `getPlan` (`src/lib/plans.functions.ts`) via a single `moves` lookup keyed by the plan_move's `move_id`.
+- New `updateLibraryMoveFromPlanMove({ planMoveId })`:
+  - Verify coach owns both the plan and the linked library move.
+  - Copy name/description/cue/why/default_target_kind/default_target_value from plan_moves → moves.
+  - Require non-empty cue and why (same guard as the existing add flow).
+- New `forkPlanMoveToLibrary({ planMoveId, sport, category })`:
+  - Same as `addPlanMoveToLibrary` but does NOT require `move_id` to be null; after insert, updates `plan_moves.move_id` to the new library id.
+  - We can implement this by relaxing the existing `addPlanMoveToLibrary` guard OR (cleaner) add a sibling fn `forkPlanMoveToLibrary` that shares a private helper. Recommend the sibling to keep the "add" flow's semantics.
 
-## Parent flow
+No schema changes. No new tables.
 
-- New route `src/routes/signup.parent.terms.tsx`.
-- `signup.parent.schedule.tsx` `finish()` currently navigates to `/parent`. Change destination to `/signup/parent/terms` (preserving any code), which on accept navigates to `/parent`.
+## Diff detection
 
-## Grandfathering
-
-- No backfill needed. `getTermsStatus` only blocks brand-new flows because the gate lives inside the signup wizards, not as a global guard. Existing users who already reached `/coach` or `/parent` are unaffected.
-- (Optional future: a global gate keyed off `CURRENT_TERMS_VERSION` for re-acceptance on updates — not in scope now.)
+Client-side, trimmed string compare for text fields and strict equality for target_kind/target_value. Show which fields changed as a comma-separated list in the strip subtitle so the coach knows what "Update" will do.
 
 ## Files touched
 
-New:
-- `supabase` migration (terms_acceptances)
-- `src/lib/terms.ts`
-- `src/lib/terms.functions.ts`
-- `src/routes/terms.tsx`
-- `src/components/onboarding/terms-step.tsx`
-- `src/routes/signup.parent.terms.tsx`
-- `src/routes/_authenticated/coach.onboarding.terms.tsx` (or modify existing coach.onboarding.tsx as final step)
-
-Modified:
-- `src/routes/signup.parent.schedule.tsx` — change final navigate target.
-- `src/routes/_authenticated/coach.onboarding.tsx` — append terms step / change post-complete navigation.
+- `src/lib/plans.functions.ts` — include linked library snapshot in the plan DTO for each move.
+- `src/lib/moves.functions.ts` — add `updateLibraryMoveFromPlanMove` and `forkPlanMoveToLibrary`.
+- `src/routes/_authenticated/coach.plans.$planId.tsx` — new `LibrarySyncStrip` component rendered inside each expanded move, wired to the two mutations; invalidate plan + moves queries on success. Reuse the existing sport/category dialog for the fork flow.
 
 ## Out of scope
 
-- Athlete signup (parent acceptance covers minors).
-- Re-prompting existing users on version bumps.
-- Storing signed PDFs / DocuSign-style receipts (DB row + version is the record).
+- Retroactively updating other plans that reference the same library move (they keep their own copies — this matches how plan_moves already works).
+- Bulk "update all edited moves at once" — per-move only for MVP.
+- Version history for library moves.
+
+## Open question
+
+When the coach clicks "Update library move", should we ALSO refresh this plan-move's snapshot so the strip disappears (it will naturally, since after the update the two rows match)? Assumed yes.
