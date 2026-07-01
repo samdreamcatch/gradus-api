@@ -42,6 +42,16 @@ async function getCoachId(supabase: Client, userId: string): Promise<string> {
   return created.data.id;
 }
 
+export interface LibraryMoveSnapshotDTO {
+  id: string;
+  name: string;
+  description: string;
+  cue: string;
+  why: string;
+  defaultTargetKind: TargetKind;
+  defaultTargetValue: number;
+}
+
 export interface PlanMoveDTO {
   id: string;
   position: number;
@@ -52,7 +62,9 @@ export interface PlanMoveDTO {
   why: string;
   targetKind: TargetKind;
   targetValue: number;
+  libraryMove: LibraryMoveSnapshotDTO | null;
 }
+
 
 export interface PlanSummaryDTO {
   id: string;
@@ -292,6 +304,37 @@ export const getPlan = createServerFn({ method: "POST" })
       if (a) athleteName = `${a.first_name} ${a.last_name}`.trim();
     }
 
+    // Load library snapshots for any linked moves so the client can detect edits.
+    const linkedMoveIds = Array.from(
+      new Set(
+        (moves ?? [])
+          .map((m) => m.move_id)
+          .filter((x): x is string => !!x),
+      ),
+    );
+    const libSnapshot = new Map<string, LibraryMoveSnapshotDTO>();
+    if (linkedMoveIds.length) {
+      const { data: libRows, error: libErr } = await supabase
+        .from("moves")
+        .select(
+          "id, name, description, cue, why, default_target_kind, default_target_value",
+        )
+        .in("id", linkedMoveIds)
+        .eq("coach_id", coachId);
+      if (libErr) dbError(libErr);
+      for (const r of libRows ?? []) {
+        libSnapshot.set(r.id, {
+          id: r.id,
+          name: r.name,
+          description: r.description ?? "",
+          cue: r.cue ?? "",
+          why: r.why ?? "",
+          defaultTargetKind: r.default_target_kind as TargetKind,
+          defaultTargetValue: Number(r.default_target_value),
+        });
+      }
+    }
+
     const planMoves: PlanMoveDTO[] = (moves ?? []).map((m) => ({
       id: m.id,
       position: m.position,
@@ -302,7 +345,9 @@ export const getPlan = createServerFn({ method: "POST" })
       why: m.why,
       targetKind: m.target_kind as TargetKind,
       targetValue: Number(m.target_value),
+      libraryMove: m.move_id ? (libSnapshot.get(m.move_id) ?? null) : null,
     }));
+
 
     const totalMinutes = planMoves
       .filter((m) => m.targetKind === "mins")

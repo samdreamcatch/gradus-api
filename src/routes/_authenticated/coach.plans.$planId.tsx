@@ -52,7 +52,15 @@ import {
 
 
 
-import { listMoves, upsertMove, addPlanMoveToLibrary, type MoveDTO } from "@/lib/moves.functions";
+import {
+  listMoves,
+  upsertMove,
+  addPlanMoveToLibrary,
+  updateLibraryMoveFromPlanMove,
+  forkPlanMoveToLibrary,
+  type MoveDTO,
+} from "@/lib/moves.functions";
+
 import { MoveField } from "@/components/coach/move-field";
 import { VoiceFab } from "@/components/coach/voice-fab";
 import { consumeVoiceTouched, type VoiceTouchedSnapshot } from "@/lib/voice-touched-store";
@@ -748,7 +756,10 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
 
                     {m.moveId === null ? (
                       <AddToLibrarySection planMove={m} onAdded={invalidate} />
-                    ) : null}
+                    ) : (
+                      <LibrarySyncStrip planMove={m} onSynced={invalidate} />
+                    )}
+
 
                     <div className="flex items-center justify-between border-t border-divider/60 pt-3">
 
@@ -1668,3 +1679,240 @@ function AddToLibrarySection({
     </div>
   );
 }
+
+function diffLibraryFields(
+  planMove: PlanMoveDTO,
+): { changed: string[]; libName: string } | null {
+  const lib = planMove.libraryMove;
+  if (!lib) return null;
+  const changed: string[] = [];
+  if (planMove.name.trim() !== lib.name.trim()) changed.push("name");
+  if ((planMove.description ?? "").trim() !== (lib.description ?? "").trim())
+    changed.push("description");
+  if (planMove.cue.trim() !== lib.cue.trim()) changed.push("cue");
+  if (planMove.why.trim() !== lib.why.trim()) changed.push("why");
+  if (planMove.targetKind !== lib.defaultTargetKind) changed.push("target");
+  else if (Number(planMove.targetValue) !== Number(lib.defaultTargetValue))
+    changed.push("target");
+  if (changed.length === 0) return null;
+  return { changed, libName: lib.name };
+}
+
+function LibrarySyncStrip({
+  planMove,
+  onSynced,
+}: {
+  planMove: PlanMoveDTO;
+  onSynced: () => void;
+}) {
+  const diff = diffLibraryFields(planMove);
+  const [confirmUpdate, setConfirmUpdate] = useState(false);
+  const [forkOpen, setForkOpen] = useState(false);
+  const [sport, setSport] = useState("");
+  const [category, setCategory] = useState("");
+  const [customCategory, setCustomCategory] = useState("");
+
+  const updateFn = useServerFn(updateLibraryMoveFromPlanMove);
+  const forkFn = useServerFn(forkPlanMoveToLibrary);
+  const fetchSports = useServerFn(listCoachSports);
+  const fetchMoves = useServerFn(listMoves);
+
+  const sportsQuery = useQuery({
+    queryKey: ["coach-sports"],
+    queryFn: () => fetchSports(),
+    enabled: forkOpen,
+  });
+  const movesQuery = useQuery({
+    queryKey: ["moves"],
+    queryFn: () => fetchMoves(),
+    enabled: forkOpen,
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: updateFn,
+    onSuccess: () => {
+      toast.success("Library move updated");
+      setConfirmUpdate(false);
+      onSynced();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const forkMutation = useMutation({
+    mutationFn: forkFn,
+    onSuccess: () => {
+      toast.success("Saved as new library move");
+      setForkOpen(false);
+      setCategory("");
+      setCustomCategory("");
+      onSynced();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const sports = sportsQuery.data?.sports ?? [];
+  useEffect(() => {
+    if (forkOpen && !sport && sports.length) setSport(sports[0]);
+  }, [forkOpen, sport, sports]);
+  const categoryOptions = useMemo(() => {
+    const all = movesQuery.data?.moves ?? [];
+    return Array.from(
+      new Set(all.filter((m) => m.sport === sport).map((m) => m.category)),
+    ).sort();
+  }, [movesQuery.data, sport]);
+
+  if (!diff) return null;
+
+  const changedLabel = diff.changed.join(", ");
+
+  return (
+    <div className="rounded-lg border border-dashed border-accent/50 bg-accent/5 px-3 py-2.5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0 flex-1 text-xs">
+          <p className="font-bold uppercase tracking-wide text-text-secondary">
+            Edited from library
+          </p>
+          <p className="mt-0.5 text-text-tertiary">
+            Changed: {changedLabel}. Update "{diff.libName}" in your library, or save as a new move.
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={() => setConfirmUpdate(true)}
+          >
+            Update library
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            onClick={() => setForkOpen(true)}
+          >
+            Save as new
+          </Button>
+        </div>
+      </div>
+
+      <AlertDialog
+        open={confirmUpdate}
+        onOpenChange={(v) => !updateMutation.isPending && setConfirmUpdate(v)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Update "{diff.libName}" in your library?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This overwrites {changedLabel} on the library move. Existing plans that
+              already use this move keep their current text — only future plans pick up
+              the new version.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={updateMutation.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={updateMutation.isPending}
+              onClick={(e) => {
+                e.preventDefault();
+                updateMutation.mutate({ data: { planMoveId: planMove.id } });
+              }}
+            >
+              {updateMutation.isPending ? "Updating…" : "Update library"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={forkOpen}
+        onOpenChange={(v) => !forkMutation.isPending && setForkOpen(v)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Save "{planMove.name}" as a new library move</AlertDialogTitle>
+            <AlertDialogDescription>
+              Pick a sport and category so you can find this move next time. The original
+              library move is left untouched.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-3 py-1">
+            <label className="block">
+              <span className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
+                Sport
+              </span>
+              <select
+                value={sport}
+                onChange={(e) => setSport(e.target.value)}
+                className="mt-1 block w-full rounded-md border border-divider bg-card px-2 py-2 text-sm text-text-primary focus:border-accent focus:outline-none"
+              >
+                {sports.length === 0 ? <option value="">No sports configured</option> : null}
+                {sports.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="block">
+              <span className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
+                Category
+              </span>
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="mt-1 block w-full rounded-md border border-divider bg-card px-2 py-2 text-sm text-text-primary focus:border-accent focus:outline-none"
+                disabled={!sport || movesQuery.isLoading}
+              >
+                <option value="">
+                  {movesQuery.isLoading ? "Loading…" : "Select a category…"}
+                </option>
+                {categoryOptions.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+                <option value="__other__">Other…</option>
+              </select>
+              {category === "__other__" ? (
+                <Input
+                  value={customCategory}
+                  onChange={(e) => setCustomCategory(e.target.value)}
+                  placeholder="e.g. Forehand, Footwork, Strength"
+                  className="mt-2"
+                  autoFocus
+                />
+              ) : null}
+            </label>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={forkMutation.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={
+                !sport.trim() ||
+                !category ||
+                (category === "__other__" && !customCategory.trim()) ||
+                forkMutation.isPending
+              }
+              onClick={(e) => {
+                e.preventDefault();
+                const finalCategory =
+                  category === "__other__" ? customCategory.trim() : category;
+                forkMutation.mutate({
+                  data: {
+                    planMoveId: planMove.id,
+                    sport: sport.trim(),
+                    category: finalCategory,
+                  },
+                });
+              }}
+            >
+              {forkMutation.isPending ? "Saving…" : "Save as new move"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}
+
