@@ -1912,13 +1912,25 @@ function LibrarySyncStrip({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Save "{planMove.name}" as a new library move</AlertDialogTitle>
+            <AlertDialogTitle>Save as a new library move</AlertDialogTitle>
             <AlertDialogDescription>
-              Pick a sport and category so you can find this move next time. The original
-              library move is left untouched.
+              Name it, then pick a sport and category so you can find it next time. The
+              original library move is left untouched.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="space-y-3 py-1">
+            <label className="block">
+              <span className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
+                Name
+              </span>
+              <Input
+                value={forkName}
+                onChange={(e) => setForkName(e.target.value)}
+                placeholder="Move name"
+                className="mt-1"
+              />
+            </label>
+
             <label className="block">
               <span className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
                 Sport
