@@ -397,8 +397,11 @@ export const forkPlanMoveToLibrary = createServerFn({ method: "POST" })
       throw new Error("Add a cue and a why before saving this move to your library");
     }
 
+    const newName = (data.name ?? pm.name).trim();
+    if (!newName) throw new Error("Name is required");
+
     if (!data.overwriteMoveId) {
-      const conflict = await findNameConflict(supabase, coachId, pm.name);
+      const conflict = await findNameConflict(supabase, coachId, newName);
       if (conflict) {
         return { ok: false as const, conflict };
       }
@@ -411,7 +414,7 @@ export const forkPlanMoveToLibrary = createServerFn({ method: "POST" })
         .update({
           sport: data.sport,
           category: data.category,
-          name: pm.name,
+          name: newName,
           description: pm.description ?? "",
           cue,
           why,
@@ -429,7 +432,7 @@ export const forkPlanMoveToLibrary = createServerFn({ method: "POST" })
           coach_id: coachId,
           sport: data.sport,
           category: data.category,
-          name: pm.name,
+          name: newName,
           description: pm.description ?? "",
           cue,
           why,
@@ -442,11 +445,14 @@ export const forkPlanMoveToLibrary = createServerFn({ method: "POST" })
       libraryMoveId = inserted.id as string;
     }
 
+    const planMoveUpdate: { move_id: string; name?: string } = { move_id: libraryMoveId };
+    if (newName !== pm.name) planMoveUpdate.name = newName;
     const { error: linkErr } = await supabase
       .from("plan_moves")
-      .update({ move_id: libraryMoveId })
+      .update(planMoveUpdate)
       .eq("id", pm.id);
     if (linkErr) dbError(linkErr);
+
 
     return { ok: true as const, moveId: libraryMoveId };
   });
