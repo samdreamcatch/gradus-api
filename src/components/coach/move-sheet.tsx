@@ -131,14 +131,34 @@ function MoveSheetBody({
   });
   const [savingField, setSavingField] = useState<string | null>(null);
 
+  type UpsertPayload = Parameters<typeof upsertFn>[0]["data"];
+  const [conflict, setConflict] = useState<{
+    existingMoveId: string;
+    existingName: string;
+    attemptedName: string;
+    payload: UpsertPayload;
+    /** Whether this attempt was creating a brand-new library move. */
+    wasNew: boolean;
+  } | null>(null);
+
   const isNew = selection === "new" && !existing;
   const move: Partial<MoveDTO> = existing ?? draft;
 
   const upsertMutation = useMutation({
     mutationFn: upsertFn,
-    onSuccess: ({ move: saved }) => {
+    onSuccess: (res, variables) => {
+      if (!res.ok) {
+        setConflict({
+          existingMoveId: res.conflict.existingMoveId,
+          existingName: res.conflict.name,
+          attemptedName: variables.data.name,
+          payload: variables.data,
+          wasNew: !variables.data.id && !variables.data.overwriteMoveId,
+        });
+        return;
+      }
       qc.invalidateQueries({ queryKey: ["moves"] });
-      if (isNew) onSelect(saved.id);
+      if (isNew) onSelect(res.move.id);
     },
     onError: (e: Error) => toast.error(e.message),
     onSettled: () => setSavingField(null),
@@ -215,8 +235,10 @@ function MoveSheetBody({
           defaultTargetValue: existing.defaultTargetValue,
         },
       });
-      onSelect(res.move.id);
-      toast.success("Duplicated");
+      if (res.ok) {
+        onSelect(res.move.id);
+        toast.success("Duplicated");
+      }
     } finally {
       setSavingField(null);
     }
