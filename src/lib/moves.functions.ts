@@ -234,3 +234,112 @@ export const addPlanMoveToLibrary = createServerFn({ method: "POST" })
 
     return { moveId: inserted.id as string };
   });
+
+/* ---------------- Update the linked library move from a plan move's fields ---------------- */
+
+const updateLibraryFromPlanMoveInput = z.object({
+  planMoveId: z.string().uuid(),
+});
+
+export const updateLibraryMoveFromPlanMove = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => updateLibraryFromPlanMoveInput.parse(input))
+  .handler(async ({ context, data }) => {
+    const supabase = context.supabase as Client;
+    const coachId = await getCoachId(supabase, context.userId);
+
+    const { data: pm, error: pmErr } = await supabase
+      .from("plan_moves")
+      .select(
+        "id, move_id, name, description, cue, why, target_kind, target_value, plans!inner(coach_id)",
+      )
+      .eq("id", data.planMoveId)
+      .maybeSingle();
+    if (pmErr) dbError(pmErr);
+    if (!pm) throw new Error("Move not found");
+    const planCoachId = (pm as unknown as { plans: { coach_id: string } }).plans.coach_id;
+    if (planCoachId !== coachId) throw new Error("Not authorized");
+    if (!pm.move_id) throw new Error("This move is not linked to a library move yet");
+
+    const cue = (pm.cue ?? "").trim();
+    const why = (pm.why ?? "").trim();
+    if (!cue || !why) {
+      throw new Error("Add a cue and a why before updating the library move");
+    }
+
+    const { error: updErr } = await supabase
+      .from("moves")
+      .update({
+        name: pm.name,
+        description: pm.description ?? "",
+        cue,
+        why,
+        default_target_kind: pm.target_kind,
+        default_target_value: pm.target_value,
+      })
+      .eq("id", pm.move_id)
+      .eq("coach_id", coachId);
+    if (updErr) dbError(updErr);
+
+    return { moveId: pm.move_id as string };
+  });
+
+/* ---------------- Fork edits into a new library move ---------------- */
+
+const forkPlanMoveToLibraryInput = z.object({
+  planMoveId: z.string().uuid(),
+  sport: z.string().min(1).max(64),
+  category: z.string().min(1).max(64),
+});
+
+export const forkPlanMoveToLibrary = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => forkPlanMoveToLibraryInput.parse(input))
+  .handler(async ({ context, data }) => {
+    const supabase = context.supabase as Client;
+    const coachId = await getCoachId(supabase, context.userId);
+
+    const { data: pm, error: pmErr } = await supabase
+      .from("plan_moves")
+      .select(
+        "id, name, description, cue, why, target_kind, target_value, plans!inner(coach_id)",
+      )
+      .eq("id", data.planMoveId)
+      .maybeSingle();
+    if (pmErr) dbError(pmErr);
+    if (!pm) throw new Error("Move not found");
+    const planCoachId = (pm as unknown as { plans: { coach_id: string } }).plans.coach_id;
+    if (planCoachId !== coachId) throw new Error("Not authorized");
+
+    const cue = (pm.cue ?? "").trim();
+    const why = (pm.why ?? "").trim();
+    if (!cue || !why) {
+      throw new Error("Add a cue and a why before saving this move to your library");
+    }
+
+    const { data: inserted, error } = await supabase
+      .from("moves")
+      .insert({
+        coach_id: coachId,
+        sport: data.sport,
+        category: data.category,
+        name: pm.name,
+        description: pm.description ?? "",
+        cue,
+        why,
+        default_target_kind: pm.target_kind,
+        default_target_value: pm.target_value,
+      })
+      .select("id")
+      .single();
+    if (error) dbError(error);
+
+    const { error: updErr } = await supabase
+      .from("plan_moves")
+      .update({ move_id: inserted.id })
+      .eq("id", pm.id);
+    if (updErr) dbError(updErr);
+
+    return { moveId: inserted.id as string };
+  });
+
