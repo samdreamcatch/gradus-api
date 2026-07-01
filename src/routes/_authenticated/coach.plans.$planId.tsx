@@ -1584,9 +1584,23 @@ function AddToLibrarySection({
     setCustomCategory("");
   }, [sport]);
 
+  const [conflict, setConflict] = useState<
+    | { existingMoveId: string; existingName: string; payload: { planMoveId: string; sport: string; category: string } }
+    | null
+  >(null);
+
   const mutation = useMutation({
     mutationFn: addFn,
-    onSuccess: () => {
+    onSuccess: (res, variables) => {
+      if (!res.ok) {
+        const payload = (variables?.data ?? {}) as { planMoveId: string; sport: string; category: string };
+        setConflict({
+          existingMoveId: res.conflict.existingMoveId,
+          existingName: res.conflict.name,
+          payload,
+        });
+        return;
+      }
       toast.success("Saved to your move library");
       setOpen(false);
       setCategory("");
