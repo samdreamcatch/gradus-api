@@ -431,6 +431,35 @@ function MoveSheetBody({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <NameConflictDialog
+        open={!!conflict}
+        attemptedName={conflict?.attemptedName ?? ""}
+        existingName={conflict?.existingName ?? ""}
+        busy={upsertMutation.isPending}
+        onOpenChange={(v) => {
+          if (!v) {
+            // Revert the local name so the collision doesn't linger in the UI.
+            if (conflict && !conflict.wasNew && existing) {
+              // For edit mode, refresh from server (revert unsaved rename).
+              qc.invalidateQueries({ queryKey: ["moves"] });
+            }
+            if (conflict?.wasNew) {
+              setDraft((d) => ({ ...d, name: "" }));
+            }
+            setConflict(null);
+          }
+        }}
+        onOverwrite={() => {
+          if (!conflict) return;
+          const { payload, existingMoveId } = conflict;
+          setConflict(null);
+          setSavingField("name");
+          upsertMutation.mutate({
+            data: { ...payload, overwriteMoveId: existingMoveId },
+          });
+        }}
+      />
     </>
   );
 }
