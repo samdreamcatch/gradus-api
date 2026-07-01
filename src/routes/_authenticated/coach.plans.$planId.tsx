@@ -1851,9 +1851,6 @@ function LibrarySyncStrip({
           <p className="font-bold uppercase tracking-wide text-text-secondary">
             Edited from library
           </p>
-          <p className="mt-0.5 text-text-tertiary">
-            Changed: {changedLabel}. Update "{diff.libName}" in your library, or save as a new move.
-          </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Button
