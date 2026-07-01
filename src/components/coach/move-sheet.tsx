@@ -32,6 +32,7 @@ import {
 import { listPlans, addMoveToPlan } from "@/lib/plans.functions";
 import { useVisualViewport } from "@/hooks/use-visual-viewport";
 import { MoveField } from "./move-field";
+import { NameConflictDialog } from "./name-conflict-dialog";
 
 type Mode = "new" | string; // moveId or "new"
 
@@ -130,14 +131,45 @@ function MoveSheetBody({
   });
   const [savingField, setSavingField] = useState<string | null>(null);
 
+  type UpsertPayload = {
+    id?: string;
+    sport: string;
+    category: string;
+    name: string;
+    description: string;
+    cue: string;
+    why: string;
+    defaultTargetKind: TargetKind;
+    defaultTargetValue: number;
+    overwriteMoveId?: string;
+  };
+  const [conflict, setConflict] = useState<{
+    existingMoveId: string;
+    existingName: string;
+    attemptedName: string;
+    payload: UpsertPayload;
+    wasNew: boolean;
+  } | null>(null);
+
   const isNew = selection === "new" && !existing;
   const move: Partial<MoveDTO> = existing ?? draft;
 
   const upsertMutation = useMutation({
     mutationFn: upsertFn,
-    onSuccess: ({ move: saved }) => {
+    onSuccess: (res, variables) => {
+      const payload = (variables?.data ?? {}) as UpsertPayload;
+      if (!res.ok) {
+        setConflict({
+          existingMoveId: res.conflict.existingMoveId,
+          existingName: res.conflict.name,
+          attemptedName: payload.name,
+          payload,
+          wasNew: !payload.id && !payload.overwriteMoveId,
+        });
+        return;
+      }
       qc.invalidateQueries({ queryKey: ["moves"] });
-      if (isNew) onSelect(saved.id);
+      if (isNew) onSelect(res.move.id);
     },
     onError: (e: Error) => toast.error(e.message),
     onSettled: () => setSavingField(null),
@@ -214,8 +246,10 @@ function MoveSheetBody({
           defaultTargetValue: existing.defaultTargetValue,
         },
       });
-      onSelect(res.move.id);
-      toast.success("Duplicated");
+      if (res.ok) {
+        onSelect(res.move.id);
+        toast.success("Duplicated");
+      }
     } finally {
       setSavingField(null);
     }
@@ -397,6 +431,35 @@ function MoveSheetBody({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <NameConflictDialog
+        open={!!conflict}
+        attemptedName={conflict?.attemptedName ?? ""}
+        existingName={conflict?.existingName ?? ""}
+        busy={upsertMutation.isPending}
+        onOpenChange={(v) => {
+          if (!v) {
+            // Revert the local name so the collision doesn't linger in the UI.
+            if (conflict && !conflict.wasNew && existing) {
+              // For edit mode, refresh from server (revert unsaved rename).
+              qc.invalidateQueries({ queryKey: ["moves"] });
+            }
+            if (conflict?.wasNew) {
+              setDraft((d) => ({ ...d, name: "" }));
+            }
+            setConflict(null);
+          }
+        }}
+        onOverwrite={() => {
+          if (!conflict) return;
+          const { payload, existingMoveId } = conflict;
+          setConflict(null);
+          setSavingField("name");
+          upsertMutation.mutate({
+            data: { ...payload, overwriteMoveId: existingMoveId },
+          });
+        }}
+      />
     </>
   );
 }

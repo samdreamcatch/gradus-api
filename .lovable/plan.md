@@ -1,58 +1,48 @@
+
 ## Goal
 
-When a coach edits a move inside a plan and that move is linked to a library move, offer two one-click actions:
+Prevent two library moves belonging to the same coach from having identical names. When a save would create a duplicate, show a dialog letting the coach either rename the new move or overwrite the existing one.
 
-1. **Update library move** — push the plan-move's current text/targets back to the library entry (all future plans referencing it get the new version going forward; existing plan_moves rows are unchanged because they store their own copy of the fields).
-2. **Save as new library move** — fork the edits into a brand-new library entry, then re-point this plan-move at the new library id. Picks sport + category (same UX as the existing "Add to library" dialog).
+## Scope of uniqueness
 
-If the plan-move is unlinked, the existing "Add to library" card stays as-is.
-If the plan-move is linked and unchanged, no affordance is shown.
+- **Per coach**, across all sports/categories (a coach's library is one namespace).
+- **Case-insensitive** and trimmed (`"Forehand"` == `"forehand "` == `"FOREHAND"`).
+- **Ignores archived moves** (`archived_at IS NULL`) — an archived move with the same name doesn't block a new one.
 
-## UX
+## Server changes (`src/lib/moves.functions.ts`)
 
-Inside each expanded move card in the plan editor (`src/routes/_authenticated/coach.plans.$planId.tsx`), below the fields, add a small "library sync" strip that mirrors the styling of the existing "Not in your library" card:
+Three insert/update paths need conflict detection. Instead of throwing, each returns a discriminated result so the client can prompt.
 
-```text
-[ Library ]  Edited from "<library move name>" · description, cue changed
-                          [ Update library move ]  [ Save as new move ]
+Return shape becomes either:
+```ts
+{ ok: true, move: MoveDTO }          // or { ok: true, moveId }
+{ ok: false, conflict: { existingMoveId, name } }
 ```
 
-Only shown when `move_id` is set AND at least one of {name, description, cue, why, target_kind, target_value} differs from the linked library row.
+1. **`upsertMove`** (library editor, "Add move" and rename): before insert/update, look up an active move with the same normalized name for this coach. If found and it's not the row being edited, return the conflict. Add a new `overwriteMoveId` optional input — when set, the handler updates that existing move instead of inserting/renaming a different one.
+2. **`addPlanMoveToLibrary`** and **`forkPlanMoveToLibrary`** ("Add to library" / "Save as new" from the plan editor): same conflict check. Add optional `overwriteMoveId` — when set, update the existing library move in place and link the plan move to it (same effect as `updateLibraryMoveFromPlanMove` but targeting the coach-chosen existing move).
 
-- "Update library move" → confirm dialog listing the fields that will change → mutation → toast.
-- "Save as new move" → reuse the existing sport/category picker dialog → mutation → the plan-move is now linked to the new library id, strip disappears.
+No DB migration required — the check is application-level so we can return a structured conflict rather than a raw Postgres error. (If we ever want a hard guarantee we can add a partial unique index later; not part of this plan.)
 
-## Data / server
+## Client changes
 
-`src/lib/moves.functions.ts`:
+Add a shared `NameConflictDialog` component used by all three save flows:
 
-- Extend `listMoves` return (or add a lightweight `getMoveSnapshots` fn) so the editor can diff plan-moves against their linked library rows. Simplest: the plan detail loader already fetches plan_moves; add `libraryMove` snapshot (name/description/cue/why/target_kind/target_value) to each move DTO in `getPlan` (`src/lib/plans.functions.ts`) via a single `moves` lookup keyed by the plan_move's `move_id`.
-- New `updateLibraryMoveFromPlanMove({ planMoveId })`:
-  - Verify coach owns both the plan and the linked library move.
-  - Copy name/description/cue/why/default_target_kind/default_target_value from plan_moves → moves.
-  - Require non-empty cue and why (same guard as the existing add flow).
-- New `forkPlanMoveToLibrary({ planMoveId, sport, category })`:
-  - Same as `addPlanMoveToLibrary` but does NOT require `move_id` to be null; after insert, updates `plan_moves.move_id` to the new library id.
-  - We can implement this by relaxing the existing `addPlanMoveToLibrary` guard OR (cleaner) add a sibling fn `forkPlanMoveToLibrary` that shares a private helper. Recommend the sibling to keep the "add" flow's semantics.
+- Body: "You already have a move named 'Forehand' in your library."
+- Two primary actions:
+  - **Rename** — closes the dialog and focuses the name input so the coach can pick a new name.
+  - **Overwrite existing move** — re-submits the save with `overwriteMoveId` set. Confirms with a secondary "This will replace the cue, why, description, and target of the existing move" line so it's not a surprise.
+- Cancel button dismisses.
 
-No schema changes. No new tables.
+Wire it into:
+- `src/routes/_authenticated/coach.library.tsx` (or wherever `upsertMove` is called from the move editor form).
+- `AddToLibrarySection` in `src/routes/_authenticated/coach.plans.$planId.tsx`.
+- `LibrarySyncStrip`'s "Save as new" flow in the same file.
 
-## Diff detection
-
-Client-side, trimmed string compare for text fields and strict equality for target_kind/target_value. Show which fields changed as a comma-separated list in the strip subtitle so the coach knows what "Update" will do.
-
-## Files touched
-
-- `src/lib/plans.functions.ts` — include linked library snapshot in the plan DTO for each move.
-- `src/lib/moves.functions.ts` — add `updateLibraryMoveFromPlanMove` and `forkPlanMoveToLibrary`.
-- `src/routes/_authenticated/coach.plans.$planId.tsx` — new `LibrarySyncStrip` component rendered inside each expanded move, wired to the two mutations; invalidate plan + moves queries on success. Reuse the existing sport/category dialog for the fork flow.
+Each caller checks `result.ok`; if false, opens the dialog with the conflict details and the retry callback bound to the same server fn plus `overwriteMoveId`.
 
 ## Out of scope
 
-- Retroactively updating other plans that reference the same library move (they keep their own copies — this matches how plan_moves already works).
-- Bulk "update all edited moves at once" — per-move only for MVP.
-- Version history for library moves.
-
-## Open question
-
-When the coach clicks "Update library move", should we ALSO refresh this plan-move's snapshot so the strip disappears (it will naturally, since after the update the two rows match)? Assumed yes.
+- No cross-coach uniqueness (each coach's library is independent).
+- No renaming of *existing* library moves triggering a conflict prompt beyond what `upsertMove` already covers.
+- No merge/dedupe of already-duplicated rows created before this change (can be handled manually or in a later cleanup).

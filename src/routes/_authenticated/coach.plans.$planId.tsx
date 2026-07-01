@@ -62,6 +62,7 @@ import {
 } from "@/lib/moves.functions";
 
 import { MoveField } from "@/components/coach/move-field";
+import { NameConflictDialog } from "@/components/coach/name-conflict-dialog";
 import { VoiceFab } from "@/components/coach/voice-fab";
 import { consumeVoiceTouched, type VoiceTouchedSnapshot } from "@/lib/voice-touched-store";
 import { FlowStateBars } from "@/components/plans/flow-state-bars";
@@ -1165,11 +1166,27 @@ function MovePicker({
 
   const count = Object.keys(selected).length;
 
+  const [nameConflict, setNameConflict] = useState<
+    | { existingMoveId: string; existingName: string; attemptedName: string }
+    | null
+  >(null);
+  const [lastCreateInput, setLastCreateInput] = useState<Parameters<
+    NonNullable<React.ComponentProps<typeof NewMoveForm>["onCreate"]>
+  >[0] | null>(null);
+
   const upsertMutation = useMutation({
     mutationFn: upsertFn,
-    onSuccess: ({ move }) => {
+    onSuccess: (res) => {
+      if (!res.ok) {
+        setNameConflict({
+          existingMoveId: res.conflict.existingMoveId,
+          existingName: res.conflict.name,
+          attemptedName: lastCreateInput?.name ?? "",
+        });
+        return;
+      }
       qc.invalidateQueries({ queryKey: ["moves"] });
-      onAdd([move]);
+      onAdd([res.move]);
       toast.success("Saved to library");
     },
     onError: (e: Error) => toast.error(e.message),
@@ -1178,6 +1195,7 @@ function MovePicker({
   const vv = useVisualViewport();
 
   return (
+    <>
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="bottom"
@@ -1276,11 +1294,29 @@ function MovePicker({
             saving={upsertMutation.isPending}
             onCancel={() => setMode("pick")}
             onUseExisting={(m) => onAdd([m])}
-            onCreate={(input) => upsertMutation.mutate({ data: input })}
+            onCreate={(input) => {
+              setLastCreateInput(input);
+              upsertMutation.mutate({ data: input });
+            }}
           />
         )}
       </SheetContent>
     </Sheet>
+    <NameConflictDialog
+      open={!!nameConflict}
+      attemptedName={nameConflict?.attemptedName ?? ""}
+      existingName={nameConflict?.existingName ?? ""}
+      busy={upsertMutation.isPending}
+      onOpenChange={(v: boolean) => !v && setNameConflict(null)}
+      onOverwrite={() => {
+        if (!nameConflict || !lastCreateInput) return;
+        upsertMutation.mutate({
+          data: { ...lastCreateInput, overwriteMoveId: nameConflict.existingMoveId },
+        });
+        setNameConflict(null);
+      }}
+    />
+    </>
   );
 }
 
@@ -1548,9 +1584,23 @@ function AddToLibrarySection({
     setCustomCategory("");
   }, [sport]);
 
+  const [conflict, setConflict] = useState<
+    | { existingMoveId: string; existingName: string; payload: { planMoveId: string; sport: string; category: string } }
+    | null
+  >(null);
+
   const mutation = useMutation({
     mutationFn: addFn,
-    onSuccess: () => {
+    onSuccess: (res, variables) => {
+      if (!res.ok) {
+        const payload = (variables?.data ?? {}) as { planMoveId: string; sport: string; category: string };
+        setConflict({
+          existingMoveId: res.conflict.existingMoveId,
+          existingName: res.conflict.name,
+          payload,
+        });
+        return;
+      }
       toast.success("Saved to your move library");
       setOpen(false);
       setCategory("");
@@ -1676,6 +1726,21 @@ function AddToLibrarySection({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <NameConflictDialog
+        open={!!conflict}
+        attemptedName={planMove.name}
+        existingName={conflict?.existingName ?? ""}
+        busy={mutation.isPending}
+        onOpenChange={(v) => !v && setConflict(null)}
+        onOverwrite={() => {
+          if (!conflict) return;
+          mutation.mutate({
+            data: { ...conflict.payload, overwriteMoveId: conflict.existingMoveId },
+          });
+          setConflict(null);
+        }}
+      />
     </div>
   );
 }
@@ -1738,9 +1803,23 @@ function LibrarySyncStrip({
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const [forkConflict, setForkConflict] = useState<
+    | { existingMoveId: string; existingName: string; payload: { planMoveId: string; sport: string; category: string } }
+    | null
+  >(null);
+
   const forkMutation = useMutation({
     mutationFn: forkFn,
-    onSuccess: () => {
+    onSuccess: (res, variables) => {
+      if (!res.ok) {
+        const payload = (variables?.data ?? {}) as { planMoveId: string; sport: string; category: string };
+        setForkConflict({
+          existingMoveId: res.conflict.existingMoveId,
+          existingName: res.conflict.name,
+          payload,
+        });
+        return;
+      }
       toast.success("Saved as new library move");
       setForkOpen(false);
       setCategory("");
@@ -1912,6 +1991,21 @@ function LibrarySyncStrip({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <NameConflictDialog
+        open={!!forkConflict}
+        attemptedName={planMove.name}
+        existingName={forkConflict?.existingName ?? ""}
+        busy={forkMutation.isPending}
+        onOpenChange={(v) => !v && setForkConflict(null)}
+        onOverwrite={() => {
+          if (!forkConflict) return;
+          forkMutation.mutate({
+            data: { ...forkConflict.payload, overwriteMoveId: forkConflict.existingMoveId },
+          });
+          setForkConflict(null);
+        }}
+      />
     </div>
   );
 }
