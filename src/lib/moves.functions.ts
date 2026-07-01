@@ -368,6 +368,7 @@ const forkPlanMoveToLibraryInput = z.object({
   planMoveId: z.string().uuid(),
   sport: z.string().min(1).max(64),
   category: z.string().min(1).max(64),
+  name: z.string().min(1).max(120).optional(),
   overwriteMoveId: z.string().uuid().optional(),
 });
 
