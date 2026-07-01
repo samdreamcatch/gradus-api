@@ -62,6 +62,7 @@ import {
 } from "@/lib/moves.functions";
 
 import { MoveField } from "@/components/coach/move-field";
+import { NameConflictDialog } from "@/components/coach/name-conflict-dialog";
 import { VoiceFab } from "@/components/coach/voice-fab";
 import { consumeVoiceTouched, type VoiceTouchedSnapshot } from "@/lib/voice-touched-store";
 import { FlowStateBars } from "@/components/plans/flow-state-bars";
