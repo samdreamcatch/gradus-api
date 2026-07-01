@@ -1307,7 +1307,7 @@ function MovePicker({
       attemptedName={nameConflict?.attemptedName ?? ""}
       existingName={nameConflict?.existingName ?? ""}
       busy={upsertMutation.isPending}
-      onOpenChange={(v) => !v && setNameConflict(null)}
+      onOpenChange={(v: boolean) => !v && setNameConflict(null)}
       onOverwrite={() => {
         if (!nameConflict || !lastCreateInput) return;
         upsertMutation.mutate({
