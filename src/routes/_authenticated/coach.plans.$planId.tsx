@@ -1194,6 +1194,7 @@ function MovePicker({
   const vv = useVisualViewport();
 
   return (
+    <>
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="bottom"
