@@ -1165,11 +1165,27 @@ function MovePicker({
 
   const count = Object.keys(selected).length;
 
+  const [nameConflict, setNameConflict] = useState<
+    | { existingMoveId: string; existingName: string; attemptedName: string }
+    | null
+  >(null);
+  const [lastCreateInput, setLastCreateInput] = useState<Parameters<
+    NonNullable<React.ComponentProps<typeof NewMoveForm>["onCreate"]>
+  >[0] | null>(null);
+
   const upsertMutation = useMutation({
     mutationFn: upsertFn,
-    onSuccess: ({ move }) => {
+    onSuccess: (res) => {
+      if (!res.ok) {
+        setNameConflict({
+          existingMoveId: res.conflict.existingMoveId,
+          existingName: res.conflict.name,
+          attemptedName: lastCreateInput?.name ?? "",
+        });
+        return;
+      }
       qc.invalidateQueries({ queryKey: ["moves"] });
-      onAdd([move]);
+      onAdd([res.move]);
       toast.success("Saved to library");
     },
     onError: (e: Error) => toast.error(e.message),
