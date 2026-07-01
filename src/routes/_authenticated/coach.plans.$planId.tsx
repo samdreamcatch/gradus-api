@@ -756,7 +756,10 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
 
                     {m.moveId === null ? (
                       <AddToLibrarySection planMove={m} onAdded={invalidate} />
-                    ) : null}
+                    ) : (
+                      <LibrarySyncStrip planMove={m} onSynced={invalidate} />
+                    )}
+
 
                     <div className="flex items-center justify-between border-t border-divider/60 pt-3">
 
