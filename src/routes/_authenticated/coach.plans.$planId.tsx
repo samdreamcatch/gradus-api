@@ -1726,6 +1726,21 @@ function AddToLibrarySection({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <NameConflictDialog
+        open={!!conflict}
+        attemptedName={planMove.name}
+        existingName={conflict?.existingName ?? ""}
+        busy={mutation.isPending}
+        onOpenChange={(v) => !v && setConflict(null)}
+        onOverwrite={() => {
+          if (!conflict) return;
+          mutation.mutate({
+            data: { ...conflict.payload, overwriteMoveId: conflict.existingMoveId },
+          });
+          setConflict(null);
+        }}
+      />
     </div>
   );
 }
