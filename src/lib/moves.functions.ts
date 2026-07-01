@@ -337,6 +337,14 @@ export const updateLibraryMoveFromPlanMove = createServerFn({ method: "POST" })
       throw new Error("Add a cue and a why before updating the library move");
     }
 
+    // Prevent updating this library move to a name already used by another.
+    const conflict = await findNameConflict(supabase, coachId, pm.name, pm.move_id);
+    if (conflict) {
+      throw new Error(
+        `Another move in your library is already named "${conflict.name}". Rename this move first, then update the library.`,
+      );
+    }
+
     const { error: updErr } = await supabase
       .from("moves")
       .update({
