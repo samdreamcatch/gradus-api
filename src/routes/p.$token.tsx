@@ -218,12 +218,12 @@ function ImportCTA({ token }: { token: string }) {
 
   return (
     <div className="fixed inset-x-0 bottom-0 border-t border-divider bg-popover/95 px-4 py-3 backdrop-blur">
-      <div className="mx-auto flex max-w-2xl items-center justify-between gap-3">
+      <div className="mx-auto flex max-w-2xl flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
         <div className="min-w-0">
           <p className="text-[11px] font-black uppercase tracking-widest text-text-tertiary">
             Get this workout
           </p>
-          <p className="truncate text-[13px] text-text-secondary">
+          <p className="text-[13px] text-text-secondary">
             {authState === "anon"
               ? "Coaches can save this to their library."
               : authState === "user" && !isCoach
@@ -237,13 +237,13 @@ function ImportCTA({ token }: { token: string }) {
             <Link
               to="/login"
               search={{ redirect: redirectTo }}
-              className="inline-flex items-center rounded-full border border-divider bg-card px-4 py-2.5 text-sm font-bold text-text-primary"
+              className="inline-flex flex-1 items-center justify-center rounded-full border border-divider bg-card px-4 py-2.5 text-sm font-bold text-text-primary sm:flex-none"
             >
               Sign in
             </Link>
             <Link
               to="/signup/coach"
-              className="inline-flex items-center rounded-full bg-accent px-5 py-2.5 text-sm font-bold text-accent-foreground shadow-card"
+              className="inline-flex flex-1 items-center justify-center rounded-full bg-accent px-5 py-2.5 text-sm font-bold text-accent-foreground shadow-card sm:flex-none"
             >
               Sign up
             </Link>
@@ -254,7 +254,7 @@ function ImportCTA({ token }: { token: string }) {
             onClick={onSaveClick}
             disabled={loading || !isCoach}
             className={cn(
-              "inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold shadow-card",
+              "inline-flex w-full items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold shadow-card sm:w-auto",
               !isCoach
                 ? "bg-divider text-text-tertiary"
                 : "bg-accent text-accent-foreground",
@@ -264,8 +264,6 @@ function ImportCTA({ token }: { token: string }) {
             {isCoach ? "Save to my library" : "Coaches only"}
           </button>
         )}
-
-
       </div>
     </div>
   );
