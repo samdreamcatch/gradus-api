@@ -143,7 +143,7 @@ export function LessonWrapUpProvider() {
     <>
       {/* Banner — fixed above the coach bottom nav (which is h-16ish + safe area) */}
       {bannerCount > 0 && !modalFor ? (
-        <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 flex justify-center pb-[calc(env(safe-area-inset-bottom)+72px)]">
+        <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 flex justify-start pb-[calc(env(safe-area-inset-bottom)+72px)] sm:justify-center">
           <div className="pointer-events-auto ml-3 mr-3 flex w-3/4 max-w-3xl items-center gap-2 rounded-full border border-foreground/15 bg-popover px-3 py-2 shadow-page sm:mx-3 sm:w-full">
             <button
               type="button"
