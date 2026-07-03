@@ -86,7 +86,7 @@ function SharedPlanPage() {
       <div className="mx-auto max-w-2xl px-4 pt-6 pb-32">
         <div className="text-center">
           <p className="text-[11px] font-black uppercase tracking-widest text-text-tertiary">
-            Shared by Coach {plan.coachFirstName}
+            Plan by Coach {[plan.coachFirstName, plan.coachLastName].filter(Boolean).join(" ")}
           </p>
           <h1 className="mt-1 font-display text-3xl font-black leading-tight tracking-tight text-text-primary">
             {plan.title}
