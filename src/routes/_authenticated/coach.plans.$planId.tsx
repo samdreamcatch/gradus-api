@@ -49,6 +49,7 @@ import {
   type TargetKind,
   type PlanMoveDTO,
 } from "@/lib/plans.functions";
+import { ShareToSocialsButton } from "@/components/plans/share-to-socials-button";
 
 
 
