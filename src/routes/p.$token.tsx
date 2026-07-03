@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useQuery } from "@tanstack/react-query";
+import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { ChevronDown, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -15,12 +15,15 @@ import {
 
 const SITE_ORIGIN = "https://gradus.training";
 
+const sharedPlanQueryOptions = (token: string) =>
+  queryOptions({
+    queryKey: ["shared-plan", token],
+    queryFn: () => getSharedPlanPublic({ data: { token } }),
+  });
+
 export const Route = createFileRoute("/p/$token")({
   loader: ({ params, context }) =>
-    context.queryClient.ensureQueryData({
-      queryKey: ["shared-plan", params.token],
-      queryFn: () => getSharedPlanPublic({ data: { token: params.token } }),
-    }),
+    context.queryClient.ensureQueryData(sharedPlanQueryOptions(params.token)),
   head: ({ loaderData, params }) => {
     const plan = loaderData as SharedPlanDTO | null | undefined;
     if (!plan) {
@@ -79,21 +82,10 @@ function NotFound() {
 
 function SharedPlanPage() {
   const { token } = Route.useParams();
-  const fetchPlan = useServerFn(getSharedPlanPublic);
-  const { data: plan, isLoading } = useQuery({
-    queryKey: ["shared-plan", token],
-    queryFn: () => fetchPlan({ data: { token } }),
-  });
-
-  if (isLoading) {
-    return (
-      <div className="mx-auto max-w-2xl px-4 py-16 text-center text-sm text-text-secondary">
-        Loading…
-      </div>
-    );
-  }
+  const { data: plan } = useSuspenseQuery(sharedPlanQueryOptions(token));
 
   if (!plan) return <NotFound />;
+
 
   return (
     <div className="min-h-dvh">
