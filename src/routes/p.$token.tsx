@@ -215,14 +215,7 @@ function ImportCTA({ token }: { token: string }) {
   }, []);
 
   const onSaveClick = async () => {
-    if (authState !== "user") {
-      navigate({ to: "/login", search: { redirect: `/p/${token}` } });
-      return;
-    }
-    if (!isCoach) {
-      toast.error("Only coaches can save shared plans.");
-      return;
-    }
+    if (!isCoach) return;
     setLoading(true);
     try {
       const { planId } = await importFn({ data: { token } });
@@ -235,14 +228,7 @@ function ImportCTA({ token }: { token: string }) {
     }
   };
 
-  const label =
-    authState === "anon"
-      ? "Sign in to save"
-      : authState === "user" && !isCoach
-        ? "Coaches only"
-        : "Save to my library";
-
-  const disabled = loading || (authState === "user" && !isCoach);
+  const redirectTo = `/p/${token}`;
 
   return (
     <div className="fixed inset-x-0 bottom-0 border-t border-divider bg-popover/95 px-4 py-3 backdrop-blur">
@@ -252,23 +238,48 @@ function ImportCTA({ token }: { token: string }) {
             Get this workout
           </p>
           <p className="truncate text-[13px] text-text-secondary">
-            Adds any missing moves to your library.
+            {authState === "anon"
+              ? "Coaches can save this to their library."
+              : authState === "user" && !isCoach
+                ? "Only coaches can save shared plans."
+                : "Adds any missing moves to your library."}
           </p>
         </div>
-        <button
-          type="button"
-          onClick={onSaveClick}
-          disabled={disabled}
-          className={cn(
-            "inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold shadow-card",
-            disabled
-              ? "bg-divider text-text-tertiary"
-              : "bg-accent text-accent-foreground",
-          )}
-        >
-          {loading ? <Loader2 className="size-4 animate-spin" /> : null}
-          {label}
-        </button>
+
+        {authState === "anon" ? (
+          <div className="flex shrink-0 items-center gap-2">
+            <Link
+              to="/login"
+              search={{ redirect: redirectTo }}
+              className="inline-flex items-center rounded-full border border-divider bg-card px-4 py-2.5 text-sm font-bold text-text-primary"
+            >
+              Sign in
+            </Link>
+            <Link
+              to="/signup/coach"
+              className="inline-flex items-center rounded-full bg-accent px-5 py-2.5 text-sm font-bold text-accent-foreground shadow-card"
+            >
+              Sign up
+            </Link>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={onSaveClick}
+            disabled={loading || !isCoach}
+            className={cn(
+              "inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold shadow-card",
+              !isCoach
+                ? "bg-divider text-text-tertiary"
+                : "bg-accent text-accent-foreground",
+            )}
+          >
+            {loading ? <Loader2 className="size-4 animate-spin" /> : null}
+            {isCoach ? "Save to my library" : "Coaches only"}
+          </button>
+        )}
+
+
       </div>
     </div>
   );
