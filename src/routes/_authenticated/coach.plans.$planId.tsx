@@ -49,6 +49,7 @@ import {
   type TargetKind,
   type PlanMoveDTO,
 } from "@/lib/plans.functions";
+import { ShareToSocialsButton } from "@/components/plans/share-to-socials-button";
 
 
 
@@ -540,6 +541,12 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
             </div>
           ) : null}
         </div>
+
+        <div className="flex justify-end">
+          <ShareToSocialsButton planId={plan.id} planTitle={plan.title || "Untitled plan"} />
+        </div>
+
+
 
         {plan.status === "active" ? (
           <div className="space-y-3">

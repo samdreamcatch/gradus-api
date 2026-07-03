@@ -1045,6 +1045,8 @@ export type Database = {
           id: string
           kind: string
           notes: string
+          share_token: string | null
+          shared_at: string | null
           status: string
           title: string
           updated_at: string
@@ -1057,6 +1059,8 @@ export type Database = {
           id?: string
           kind: string
           notes?: string
+          share_token?: string | null
+          shared_at?: string | null
           status?: string
           title?: string
           updated_at?: string
@@ -1069,6 +1073,8 @@ export type Database = {
           id?: string
           kind?: string
           notes?: string
+          share_token?: string | null
+          shared_at?: string | null
           status?: string
           title?: string
           updated_at?: string
@@ -1320,6 +1326,7 @@ export type Database = {
           parent_id: string
         }[]
       }
+      get_shared_plan: { Args: { _token: string }; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1327,6 +1334,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      import_shared_plan: { Args: { _token: string }; Returns: string }
       is_parent_of_athlete: { Args: { _athlete_id: string }; Returns: boolean }
       is_parent_of_plan: { Args: { _plan_id: string }; Returns: boolean }
       is_room_participant: {
