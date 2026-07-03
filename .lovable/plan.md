@@ -1,27 +1,30 @@
-## What's actually happening
+## Goal
 
-The `/p/$token` route works — I confirmed the token `5g3h321n3725652i222c6d40` exists in the database and `get_shared_plan` is set up for anon access. The 404 you're seeing is because **gradus.training is still serving a build from before this feature shipped**. The live site literally has no `/p/$token` route yet. Confirmed by fetching the URL — it returns the site's generic 404, not our custom "Plan not found" page.
+1. Add the Share to Socials button on athlete and parent plan detail pages. The link resolves to the same public `/p/{token}` view coaches produce — identical title, notes, moves, coach name.
+2. Change the share caption from `"{title} — a workout I put together on Gradus."` to `"{title} — My workout on Gradus"`.
 
-The fix is a **Publish**. After that, the same link will open the public plan view on gradus.training, signed in or not.
+## Server
 
-## Second ask: viewable to anyone, with a clear sign-in / sign-up CTA
+Relax `getOrCreateShareToken` in `src/lib/plan-share.functions.ts` to authorize any of:
+- the plan's owning coach (current), OR
+- the assigned athlete (`athletes.user_id = auth.uid()`), OR
+- that athlete's parent (`parent_profiles.user_id = auth.uid()` via `athletes.parent_id`).
 
-The public route already renders the plan for signed-out visitors — no auth wall. The only gap is the CTA. Today it shows a single button: "Sign in to save" for anon, "Coaches only" (disabled) for signed-in non-coaches, "Save to my library" for coaches.
+Behavior unchanged: returns existing `share_token` if set, else generates one and stamps `shared_at`. The token write uses `supabaseAdmin` (loaded inside the handler) after the in-handler authorization check passes, so we don't have to widen RLS on `plans` for non-coaches.
 
-I'll adjust the anon state so visitors see both options clearly:
+No SQL migration. `get_shared_plan` and `plans.share_token` already exist and are anon-readable by token.
 
-- **Anon viewers**: two buttons in the bottom bar — **Sign up** (primary, routes to `/signup.coach` since only coaches can save, with the token preserved as a `redirect` param) and **Sign in** (secondary, routes to `/login?redirect=/p/{token}`). Copy above them: "Coaches can save this to their library."
-- **Signed in, not a coach**: keep the disabled "Coaches only" state, unchanged.
-- **Signed-in coach**: unchanged — "Save to my library".
+## Client
 
-Also, `/p/$token` already renders the plan itself for everyone — no changes to the plan view, just the bottom CTA bar.
+- `src/components/plans/share-to-socials-button.tsx` — change caption to `` `${planTitle} — My workout on Gradus` ``. Component otherwise unchanged.
+- `src/routes/_authenticated/athlete.plans.$planId.tsx` — render `<ShareToSocialsButton planId={plan.id} planTitle={plan.title} />` in the top header row (right side of the Back row).
+- `src/routes/_authenticated/parent.plans.$planId.tsx` — same placement and props.
+
+Coach page is already wired and unchanged. The public `/p/{token}` view is unchanged — shared payload is byte-for-byte identical regardless of who shares.
 
 ## Files touched
 
-- `src/routes/p.$token.tsx` — replace single-button CTA with two-button anon state; keep the coach and non-coach states as-is.
-
-Nothing else changes. No schema changes, no server-fn changes.
-
-## After merge
-
-Hit **Publish** so gradus.training picks up the new route. The shared link will then open the plan for anyone.
+- `src/lib/plan-share.functions.ts`
+- `src/components/plans/share-to-socials-button.tsx`
+- `src/routes/_authenticated/athlete.plans.$planId.tsx`
+- `src/routes/_authenticated/parent.plans.$planId.tsx`

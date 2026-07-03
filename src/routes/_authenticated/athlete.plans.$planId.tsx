@@ -11,6 +11,7 @@ import {
 } from "@/lib/athlete-plans.functions";
 import { MessageCoachAboutPlanDialog } from "@/components/plans/message-coach-about-plan-dialog";
 import { PlanSessionTimer } from "@/components/plans/plan-session-timer";
+import { ShareToSocialsButton } from "@/components/plans/share-to-socials-button";
 
 export const Route = createFileRoute("/_authenticated/athlete/plans/$planId")({
   component: AthletePlanDetail,
@@ -69,6 +70,7 @@ function AthletePlanDetail() {
         >
           <ArrowLeft className="size-4" /> Back
         </Link>
+        <ShareToSocialsButton planId={plan.id} planTitle={plan.title} />
       </div>
 
       <div className="mt-4">

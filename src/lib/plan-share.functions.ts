@@ -45,40 +45,68 @@ export const getOrCreateShareToken = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const supabase = context.supabase as Client;
 
-    // Confirm the caller is a coach and owns this plan (RLS also enforces).
-    const { data: coach, error: coachErr } = await supabase
+    // Load the plan and its athlete so we can authorize any of:
+    //  - the owning coach
+    //  - the assigned athlete
+    //  - the assigned athlete's parent
+    const { data: plan, error: planErr } = await supabase
+      .from("plans")
+      .select("id, share_token, coach_id, athlete_id")
+      .eq("id", data.planId)
+      .maybeSingle();
+    if (planErr) dbError(planErr);
+    if (!plan) throw new Error("Plan not found.");
+
+    let authorized = false;
+
+    const { data: coach } = await supabase
       .from("coach_profiles")
       .select("id")
       .eq("user_id", context.userId)
       .maybeSingle();
-    if (coachErr) dbError(coachErr);
-    if (!coach) throw new Error("Only coaches can share plans.");
+    if (coach && coach.id === plan.coach_id) authorized = true;
 
-    const { data: plan, error: planErr } = await supabase
-      .from("plans")
-      .select("id, share_token, coach_id")
-      .eq("id", data.planId)
-      .maybeSingle();
-    if (planErr) dbError(planErr);
-    if (!plan || plan.coach_id !== coach.id) throw new Error("Plan not found.");
+    if (!authorized && plan.athlete_id) {
+      const { data: athlete } = await supabase
+        .from("athletes")
+        .select("id, user_id, parent_id")
+        .eq("id", plan.athlete_id)
+        .maybeSingle();
+      if (athlete) {
+        if (athlete.user_id && athlete.user_id === context.userId) {
+          authorized = true;
+        } else if (athlete.parent_id) {
+          const { data: parent } = await supabase
+            .from("parent_profiles")
+            .select("id")
+            .eq("user_id", context.userId)
+            .maybeSingle();
+          if (parent && parent.id === athlete.parent_id) authorized = true;
+        }
+      }
+    }
+
+    if (!authorized) throw new Error("Not allowed to share this plan.");
 
     if (plan.share_token) {
       return { token: plan.share_token };
     }
 
-    // Try a few times in the unlikely event of a collision.
+    // Write with admin client — athletes/parents don't have UPDATE rights on
+    // plans, and the caller has already been authorized above.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
     let lastErr: unknown = null;
     for (let i = 0; i < 5; i++) {
       const token = randomToken();
-      const { error } = await supabase
+      const { error } = await supabaseAdmin
         .from("plans")
         .update({ share_token: token, shared_at: new Date().toISOString() })
         .eq("id", plan.id)
         .is("share_token", null);
       if (!error) return { token };
       lastErr = error;
-      // If someone else set it in the meantime, re-read and return it.
-      const { data: refetch } = await supabase
+      const { data: refetch } = await supabaseAdmin
         .from("plans")
         .select("share_token")
         .eq("id", plan.id)

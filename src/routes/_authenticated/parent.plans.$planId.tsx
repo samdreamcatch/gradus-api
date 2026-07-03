@@ -11,6 +11,7 @@ import {
 } from "@/lib/parent-plans.functions";
 import { MessageCoachAboutPlanDialog } from "@/components/plans/message-coach-about-plan-dialog";
 import { PlanSessionTimer } from "@/components/plans/plan-session-timer";
+import { ShareToSocialsButton } from "@/components/plans/share-to-socials-button";
 
 export const Route = createFileRoute("/_authenticated/parent/plans/$planId")({
   component: ParentPlanDetail,
@@ -71,6 +72,7 @@ function ParentPlanDetail() {
         >
           <ArrowLeft className="size-4" /> Back
         </Link>
+        <ShareToSocialsButton planId={plan.id} planTitle={plan.title} />
       </div>
 
       <div className="mt-4">
