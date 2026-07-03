@@ -191,10 +191,11 @@ function ImportCTA({ token }: { token: string }) {
   const [isCoach, setIsCoach] = useState<boolean>(false);
 
   // Client-only check — this route is public/SSR, so probe the session in-browser.
-  useState(() => {
-    if (typeof window === "undefined") return;
+  useEffect(() => {
+    let cancelled = false;
     (async () => {
       const { data: { session } } = await supabase.auth.getSession();
+      if (cancelled) return;
       if (!session) {
         setAuthState("anon");
         return;
@@ -204,10 +205,14 @@ function ImportCTA({ token }: { token: string }) {
         .select("id")
         .eq("user_id", session.user.id)
         .maybeSingle();
+      if (cancelled) return;
       setAuthState("user");
       setIsCoach(!!coach);
     })();
-  });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const onSaveClick = async () => {
     if (authState !== "user") {
