@@ -30,7 +30,7 @@ export function ShareToSocialsButton({
     try {
       const { token } = await mutation.mutateAsync();
       const url = `${SITE_ORIGIN}/p/${token}`;
-      const caption = `${planTitle} — a workout I put together on Gradus.`;
+      const caption = `${planTitle} — My workout on Gradus`;
 
       const canShare =
         typeof navigator !== "undefined" && typeof navigator.share === "function";
