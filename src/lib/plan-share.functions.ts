@@ -24,6 +24,7 @@ export interface SharedPlanDTO {
   title: string;
   notes: string;
   coachFirstName: string;
+  coachLastName: string;
   sharedAt: string | null;
   moves: SharedPlanMoveDTO[];
 }
