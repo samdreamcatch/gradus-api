@@ -17,6 +17,7 @@ import { Route as SignupParentRouteImport } from './routes/signup.parent'
 import { Route as SignupCoachRouteImport } from './routes/signup.coach'
 import { Route as SignupAthleteRouteImport } from './routes/signup.athlete'
 import { Route as SignupAdminRouteImport } from './routes/signup.admin'
+import { Route as PTokenRouteImport } from './routes/p.$token'
 import { Route as AuthenticatedParentRouteImport } from './routes/_authenticated/parent'
 import { Route as AuthenticatedCoachRouteImport } from './routes/_authenticated/coach'
 import { Route as AuthenticatedAthleteRouteImport } from './routes/_authenticated/athlete'
@@ -97,6 +98,11 @@ const SignupAthleteRoute = SignupAthleteRouteImport.update({
 const SignupAdminRoute = SignupAdminRouteImport.update({
   id: '/signup/admin',
   path: '/signup/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PTokenRoute = PTokenRouteImport.update({
+  id: '/p/$token',
+  path: '/p/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedParentRoute = AuthenticatedParentRouteImport.update({
@@ -345,6 +351,7 @@ export interface FileRoutesByFullPath {
   '/athlete': typeof AuthenticatedAthleteRouteWithChildren
   '/coach': typeof AuthenticatedCoachRouteWithChildren
   '/parent': typeof AuthenticatedParentRouteWithChildren
+  '/p/$token': typeof PTokenRoute
   '/signup/admin': typeof SignupAdminRoute
   '/signup/athlete': typeof SignupAthleteRouteWithChildren
   '/signup/coach': typeof SignupCoachRoute
@@ -392,6 +399,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/terms': typeof TermsRoute
+  '/p/$token': typeof PTokenRoute
   '/signup/admin': typeof SignupAdminRoute
   '/signup/athlete': typeof SignupAthleteRouteWithChildren
   '/signup/coach': typeof SignupCoachRoute
@@ -444,6 +452,7 @@ export interface FileRoutesById {
   '/_authenticated/athlete': typeof AuthenticatedAthleteRouteWithChildren
   '/_authenticated/coach': typeof AuthenticatedCoachRouteWithChildren
   '/_authenticated/parent': typeof AuthenticatedParentRouteWithChildren
+  '/p/$token': typeof PTokenRoute
   '/signup/admin': typeof SignupAdminRoute
   '/signup/athlete': typeof SignupAthleteRouteWithChildren
   '/signup/coach': typeof SignupCoachRoute
@@ -497,6 +506,7 @@ export interface FileRouteTypes {
     | '/athlete'
     | '/coach'
     | '/parent'
+    | '/p/$token'
     | '/signup/admin'
     | '/signup/athlete'
     | '/signup/coach'
@@ -544,6 +554,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/terms'
+    | '/p/$token'
     | '/signup/admin'
     | '/signup/athlete'
     | '/signup/coach'
@@ -595,6 +606,7 @@ export interface FileRouteTypes {
     | '/_authenticated/athlete'
     | '/_authenticated/coach'
     | '/_authenticated/parent'
+    | '/p/$token'
     | '/signup/admin'
     | '/signup/athlete'
     | '/signup/coach'
@@ -644,6 +656,7 @@ export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   LoginRoute: typeof LoginRoute
   TermsRoute: typeof TermsRoute
+  PTokenRoute: typeof PTokenRoute
   SignupAdminRoute: typeof SignupAdminRoute
   SignupAthleteRoute: typeof SignupAthleteRouteWithChildren
   SignupCoachRoute: typeof SignupCoachRoute
@@ -709,6 +722,13 @@ declare module '@tanstack/react-router' {
       path: '/signup/admin'
       fullPath: '/signup/admin'
       preLoaderRoute: typeof SignupAdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/p/$token': {
+      id: '/p/$token'
+      path: '/p/$token'
+      fullPath: '/p/$token'
+      preLoaderRoute: typeof PTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/parent': {
@@ -1186,6 +1206,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   LoginRoute: LoginRoute,
   TermsRoute: TermsRoute,
+  PTokenRoute: PTokenRoute,
   SignupAdminRoute: SignupAdminRoute,
   SignupAthleteRoute: SignupAthleteRouteWithChildren,
   SignupCoachRoute: SignupCoachRoute,
