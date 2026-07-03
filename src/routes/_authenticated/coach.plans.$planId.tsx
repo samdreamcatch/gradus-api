@@ -541,6 +541,12 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
           ) : null}
         </div>
 
+        <div className="flex justify-end">
+          <ShareToSocialsButton planId={plan.id} planTitle={plan.title || "Untitled plan"} />
+        </div>
+
+
+
         {plan.status === "active" ? (
           <div className="space-y-3">
             {/* Logged instances bar chart */}
