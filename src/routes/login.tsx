@@ -134,12 +134,14 @@ function LoginPage() {
   const handleEmail = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
+    if (!captchaToken) {
+      setError("Please complete the human check first.");
+      return;
+    }
     setLoading(true);
     try {
       const raw = identifier.trim();
       let email = raw;
-      // If they typed something that isn't an email, treat it as an athlete
-      // username and resolve it to the synthetic email server-side.
       if (!raw.includes("@")) {
         const resolved = await resolveLogin({
           data: { username: raw.toLowerCase() },
@@ -148,12 +150,17 @@ function LoginPage() {
       } else {
         email = raw.toLowerCase();
       }
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+        options: { captchaToken },
+      });
       if (error) throw error;
       if (!data.user?.id) throw new Error("Sign-in succeeded but no user was returned.");
       await routeByRole(data.user.id);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");
+      resetCaptcha();
     } finally {
       setLoading(false);
     }
@@ -161,8 +168,13 @@ function LoginPage() {
 
   const handleGoogle = async () => {
     setError(null);
+    if (!captchaToken) {
+      setError("Please complete the human check first.");
+      return;
+    }
     setLoading(true);
     try {
+      await verifyCaptcha({ data: { token: captchaToken } });
       const result = await lovable.auth.signInWithOAuth("google", {
         redirect_uri: window.location.origin + (search.redirect || "/"),
       });
@@ -173,6 +185,7 @@ function LoginPage() {
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Google sign-in failed");
+      resetCaptcha();
       setLoading(false);
     }
   };
