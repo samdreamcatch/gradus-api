@@ -86,7 +86,7 @@ export const startParentSignup = createServerFn({ method: "POST" })
       .object({
         firstName: z.string().trim().min(1, "First name required").max(80),
         lastName: z.string().trim().min(1, "Last name required").max(80),
-        code: codeSchema,
+        code: optionalCodeSchema,
       })
       .parse(input),
   )
@@ -95,11 +95,11 @@ export const startParentSignup = createServerFn({ method: "POST" })
     const userId = context.userId;
 
     const beta = (process.env.BETA_INVITE_CODE ?? "").trim().toUpperCase();
-    const isBeta = beta && data.code === beta;
+    const isBeta = !!(beta && data.code && data.code === beta);
 
     let coachId: string | null = null;
     let returnedCode: string | null = null;
-    if (!isBeta) {
+    if (data.code && !isBeta) {
       const codeLookup = await supabaseAdmin
         .from("coach_invite_codes")
         .select("coach_id")
@@ -107,7 +107,7 @@ export const startParentSignup = createServerFn({ method: "POST" })
         .maybeSingle();
       if (codeLookup.error) dbError(codeLookup.error);
       if (!codeLookup.data) {
-        throw new Error("That code isn't valid. Check with your coach, or use your Gradus beta code.");
+        throw new Error("That coach invite code isn't valid.");
       }
       coachId = codeLookup.data.coach_id;
       returnedCode = data.code;
