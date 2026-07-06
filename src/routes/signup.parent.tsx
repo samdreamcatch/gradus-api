@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent, type MutableRefObject } from "react";
 import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
@@ -78,6 +78,31 @@ function usePreserveFieldsAgainstInjectedClears(formId: string) {
   }, [formId]);
 }
 
+function useLatestValue<T>(value: T) {
+  const ref = useRef(value);
+  ref.current = value;
+  return ref;
+}
+
+function guardFilledValueChange(
+  e: ChangeEvent<HTMLInputElement>,
+  currentValueRef: MutableRefObject<string>,
+  setValue: (value: string) => void,
+  transform: (value: string) => string = (value) => value,
+) {
+  const nextValue = transform(e.currentTarget.value);
+  const currentValue = currentValueRef.current;
+  const wasClearedByInjectedScript =
+    currentValue.length > 0 && nextValue === "" && e.nativeEvent.isTrusted === false;
+
+  if (wasClearedByInjectedScript) {
+    e.currentTarget.value = currentValue;
+    return;
+  }
+
+  setValue(nextValue);
+}
+
 function ParentSignupPage() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -96,6 +121,11 @@ function ParentSignupPage() {
   const [loading, setLoading] = useState(false);
   const [isAuthed, setIsAuthed] = useState(false);
   const formId = useRef("parent-signup-form");
+  const firstNameRef = useLatestValue(firstName);
+  const lastNameRef = useLatestValue(lastName);
+  const emailRef = useLatestValue(email);
+  const passwordRef = useLatestValue(password);
+  const codeRef = useLatestValue(code);
 
   usePreserveFieldsAgainstInjectedClears(formId.current);
 
@@ -208,7 +238,7 @@ function ParentSignupPage() {
                 data-bwignore="true"
                 data-preserve-filled-value="true"
                 value={firstName}
-                onChange={(e) => guardedValueChange(e, firstName, setFirstName)}
+                onChange={(e) => guardFilledValueChange(e, firstNameRef, setFirstName)}
                 required
                 maxLength={80}
               />
@@ -224,7 +254,7 @@ function ParentSignupPage() {
                 data-bwignore="true"
                 data-preserve-filled-value="true"
                 value={lastName}
-                onChange={(e) => guardedValueChange(e, lastName, setLastName)}
+                onChange={(e) => guardFilledValueChange(e, lastNameRef, setLastName)}
                 required
                 maxLength={80}
               />
@@ -242,7 +272,7 @@ function ParentSignupPage() {
                   autoComplete="username"
                   data-preserve-filled-value="true"
                   value={email}
-                  onChange={(e) => guardedValueChange(e, email, setEmail)}
+                  onChange={(e) => guardFilledValueChange(e, emailRef, setEmail)}
                   required
                 />
               </div>
@@ -256,7 +286,7 @@ function ParentSignupPage() {
                   autoComplete="new-password"
                   data-preserve-filled-value="true"
                   value={password}
-                  onChange={(e) => guardedValueChange(e, password, setPassword)}
+                  onChange={(e) => guardFilledValueChange(e, passwordRef, setPassword)}
                   required
                 />
               </div>
@@ -271,7 +301,7 @@ function ParentSignupPage() {
               id="code"
               name="coach-invite-code"
               value={code}
-              onChange={(e) => guardedValueChange(e, code, setCode, (value) => value.toUpperCase())}
+              onChange={(e) => guardFilledValueChange(e, codeRef, setCode, (value) => value.toUpperCase())}
               maxLength={8}
               placeholder="––––––––"
               className="font-mono tracking-[0.25em] uppercase"
