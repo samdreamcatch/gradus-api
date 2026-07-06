@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ChangeEvent, type FormEvent, type MutableRefObject } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,6 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Logo } from "@/components/logo";
 import { TurnstileWidget } from "@/components/auth/turnstile";
 import { startParentSignup } from "@/lib/parent-signup.functions";
@@ -15,83 +22,6 @@ import { CURRENT_TERMS_VERSION, PENDING_TERMS_ACCEPT_KEY } from "@/lib/terms";
 export const Route = createFileRoute("/signup/parent")({
   component: ParentSignupPage,
 });
-
-function useLatestValue<T>(value: T) {
-  const ref = useRef(value);
-  ref.current = value;
-  return ref;
-}
-
-function usePreserveFieldsAgainstInjectedClears(
-  formId: string,
-  values: Record<string, MutableRefObject<string>>,
-) {
-  useEffect(() => {
-    const form = document.getElementById(formId);
-    if (!form) return;
-
-    const preserveFilledValue = (event: Event) => {
-      const target = event.target;
-      if (!(target instanceof HTMLInputElement)) return;
-      if (target.dataset.preserveFilledValue !== "true") return;
-
-      const previousValue = values[target.id]?.current ?? "";
-      const nextValue = target.value;
-
-      if (nextValue === "" && previousValue !== "" && event.isTrusted === false) {
-        target.value = previousValue;
-        event.preventDefault();
-        event.stopImmediatePropagation();
-        return;
-      }
-
-      if (target.value === "" && previousValue !== "" && document.activeElement !== target) {
-        target.value = previousValue;
-      }
-    };
-
-    const restoreClearedFields = () => {
-      for (const [id, valueRef] of Object.entries(values)) {
-        const input = document.getElementById(id);
-        if (!(input instanceof HTMLInputElement)) continue;
-        if (input.dataset.preserveFilledValue !== "true") continue;
-        if (input.value === "" && valueRef.current !== "" && document.activeElement !== input) {
-          input.value = valueRef.current;
-        }
-      }
-    };
-
-    const restoreTimer = window.setInterval(restoreClearedFields, 50);
-
-    form.addEventListener("input", preserveFilledValue, true);
-    form.addEventListener("change", preserveFilledValue, true);
-
-    return () => {
-      form.removeEventListener("input", preserveFilledValue, true);
-      form.removeEventListener("change", preserveFilledValue, true);
-      window.clearInterval(restoreTimer);
-    };
-  }, [formId, values]);
-}
-
-function guardFilledValueChange(
-  e: ChangeEvent<HTMLInputElement>,
-  currentValueRef: MutableRefObject<string>,
-  setValue: (value: string) => void,
-  transform: (value: string) => string = (value) => value,
-) {
-  const nextValue = transform(e.currentTarget.value);
-  const currentValue = currentValueRef.current;
-  const wasClearedByInjectedScript =
-    currentValue.length > 0 && nextValue === "" && e.nativeEvent.isTrusted === false;
-
-  if (wasClearedByInjectedScript) {
-    e.currentTarget.value = currentValue;
-    return;
-  }
-
-  setValue(nextValue);
-}
 
 function ParentSignupPage() {
   const location = useLocation();
@@ -107,23 +37,10 @@ function ParentSignupPage() {
   const [agreed, setAgreed] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [captchaKey, setCaptchaKey] = useState(0);
+  const [captchaOpen, setCaptchaOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [isAuthed, setIsAuthed] = useState(false);
-  const formId = useRef("parent-signup-form");
-  const firstNameRef = useLatestValue(firstName);
-  const lastNameRef = useLatestValue(lastName);
-  const emailRef = useLatestValue(email);
-  const passwordRef = useLatestValue(password);
-  const codeRef = useLatestValue(code);
-
-  usePreserveFieldsAgainstInjectedClears(formId.current, {
-    firstName: firstNameRef,
-    lastName: lastNameRef,
-    email: emailRef,
-    password: passwordRef,
-    code: codeRef,
-  });
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setIsAuthed(!!data.session));
@@ -138,17 +55,17 @@ function ParentSignupPage() {
     setCaptchaKey((k) => k + 1);
   };
 
-  const ensureAuthed = async () => {
+  const ensureAuthed = async (verifiedCaptchaToken: string | null) => {
     const { data: sessionData } = await supabase.auth.getSession();
     if (sessionData.session) return;
-    if (!captchaToken) throw new Error("Please complete the human check first.");
+    if (!verifiedCaptchaToken) throw new Error("Please complete the human check first.");
     const { data: signUp, error: signUpErr } = await supabase.auth.signUp({
       email,
       password,
       options: {
         emailRedirectTo: window.location.origin + "/parent",
         data: { full_name: `${firstName} ${lastName}`.trim() },
-        captchaToken,
+        captchaToken: verifiedCaptchaToken,
       },
     });
     if (signUpErr) throw signUpErr;
@@ -156,16 +73,16 @@ function ParentSignupPage() {
       const { error: signInErr } = await supabase.auth.signInWithPassword({
         email,
         password,
-        options: { captchaToken },
+        options: { captchaToken: verifiedCaptchaToken },
       });
       if (signInErr) throw signInErr;
     }
   };
 
-  const submit = async () => {
+  const submit = async (verifiedCaptchaToken = captchaToken) => {
     setError(null);
-    if (!isAuthed && !captchaToken) {
-      setError("Please complete the human check first.");
+    if (!isAuthed && !verifiedCaptchaToken) {
+      setCaptchaOpen(true);
       return;
     }
     setLoading(true);
@@ -176,7 +93,7 @@ function ParentSignupPage() {
       } catch {
         /* ignore */
       }
-      await ensureAuthed();
+      await ensureAuthed(verifiedCaptchaToken);
       try {
         await accept({ data: { role: "parent" } });
         localStorage.removeItem(PENDING_TERMS_ACCEPT_KEY);
@@ -204,9 +121,14 @@ function ParentSignupPage() {
     void submit();
   };
 
+  const handleCaptchaVerified = (token: string) => {
+    setCaptchaToken(token);
+    setCaptchaOpen(false);
+    void submit(token);
+  };
+
   const codeValid = code.trim().length === 0 || code.trim().length === 8;
-  const canSubmit =
-    !loading && agreed && codeValid && (isAuthed || !!captchaToken);
+  const canSubmit = !loading && agreed && codeValid;
 
   return (
     <div className="flex min-h-dvh items-center justify-center px-4 py-12">
@@ -221,7 +143,7 @@ function ParentSignupPage() {
           </p>
         </div>
 
-        <form id={formId.current} onSubmit={handleSubmit} className="space-y-4" autoComplete="on">
+        <form id="parent-signup-form" onSubmit={handleSubmit} className="space-y-4" autoComplete="on">
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label htmlFor="firstName">First name</Label>
@@ -232,9 +154,8 @@ function ParentSignupPage() {
                 data-lpignore="true"
                 data-1p-ignore="true"
                 data-bwignore="true"
-                data-preserve-filled-value="true"
                 value={firstName}
-                onChange={(e) => guardFilledValueChange(e, firstNameRef, setFirstName)}
+                onChange={(e) => setFirstName(e.target.value)}
                 required
                 maxLength={80}
               />
@@ -248,9 +169,8 @@ function ParentSignupPage() {
                 data-lpignore="true"
                 data-1p-ignore="true"
                 data-bwignore="true"
-                data-preserve-filled-value="true"
                 value={lastName}
-                onChange={(e) => guardFilledValueChange(e, lastNameRef, setLastName)}
+                onChange={(e) => setLastName(e.target.value)}
                 required
                 maxLength={80}
               />
@@ -266,9 +186,8 @@ function ParentSignupPage() {
                   name="email"
                   type="email"
                   autoComplete="username"
-                  data-preserve-filled-value="true"
                   value={email}
-                  onChange={(e) => guardFilledValueChange(e, emailRef, setEmail)}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
                 />
               </div>
@@ -280,9 +199,8 @@ function ParentSignupPage() {
                   name="new-password"
                   type="password"
                   autoComplete="new-password"
-                  data-preserve-filled-value="true"
                   value={password}
-                  onChange={(e) => guardFilledValueChange(e, passwordRef, setPassword)}
+                  onChange={(e) => setPassword(e.target.value)}
                   required
                 />
               </div>
@@ -297,7 +215,7 @@ function ParentSignupPage() {
               id="code"
               name="coach-invite-code"
               value={code}
-              onChange={(e) => guardFilledValueChange(e, codeRef, setCode, (value) => value.toUpperCase())}
+              onChange={(e) => setCode(e.target.value.toUpperCase())}
               maxLength={8}
               placeholder="––––––––"
               className="font-mono tracking-[0.25em] uppercase"
@@ -305,7 +223,6 @@ function ParentSignupPage() {
               data-lpignore="true"
               data-1p-ignore="true"
               data-bwignore="true"
-              data-preserve-filled-value="true"
             />
             <p className="text-xs text-text-tertiary">
               Have a coach&apos;s 8-character code? Enter it to link your athlete now. You can skip this and add a coach later.
@@ -336,22 +253,26 @@ function ParentSignupPage() {
 
         </form>
 
-        {!isAuthed && (
-          <div className="mt-4">
-            <TurnstileWidget
-              resetKey={captchaKey}
-              onVerify={(t) => setCaptchaToken(t)}
-              onExpire={() => setCaptchaToken(null)}
-              onError={() => setCaptchaToken(null)}
-            />
-          </div>
-        )}
-
         {error && <p className="mt-4 text-sm text-destructive">{error}</p>}
 
         <Button type="submit" form="parent-signup-form" className="mt-4 w-full" disabled={!canSubmit}>
           {loading ? "Creating account..." : "Continue"}
         </Button>
+
+        <Dialog open={captchaOpen} onOpenChange={setCaptchaOpen}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle>One last check</DialogTitle>
+              <DialogDescription>Complete the security check to continue.</DialogDescription>
+            </DialogHeader>
+            <TurnstileWidget
+              resetKey={captchaKey}
+              onVerify={handleCaptchaVerified}
+              onExpire={() => setCaptchaToken(null)}
+              onError={() => setCaptchaToken(null)}
+            />
+          </DialogContent>
+        </Dialog>
 
         <p className="mt-6 text-center text-sm text-text-secondary">
           Wrong role?{" "}
