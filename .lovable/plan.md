@@ -1,30 +1,103 @@
-## Diagnosis
+# Open signups + add Turnstile CAPTCHA
 
-React error #418 is a **hydration mismatch** — the client's first render didn't match the server's HTML. Every occurrence in the log is on `/p/{token}` (the public shared-plan page), which is the one SSR'd route that fetches data.
+Replace the beta code gate on **coach** and **parent** signup with Cloudflare Turnstile, and add Turnstile to **login** and **password reset**. Keep the beta code on `/signup/admin` (admin should stay vetted). No email auth is enabled — Google + existing email/password flows only.
 
-Looking at `src/routes/p.$token.tsx`:
+## Provider choice: Cloudflare Turnstile
 
-- The `loader` calls `context.queryClient.ensureQueryData({ queryKey: [...], queryFn: () => getSharedPlanPublic(...) })` — so on the **server** the query cache has the plan and SSR renders the full plan UI.
-- The component then calls `useQuery({ queryKey: [...], queryFn: () => fetchPlan(...) })` with a **separate inline queryFn** (via `useServerFn`), and shows a `Loading…` fallback while `isLoading`.
-- On the **client**, `getRouter()` in `src/router.tsx` creates a fresh `new QueryClient()` per request. The router hydrates loader promises, but the canonical TanStack Query + Router integration relies on both sides using the **same `queryOptions` object** so the cache entry lines up. Because the loader and component use two different queryFn identities and no shared `queryOptions`, the client's cache is empty on first render → component renders `Loading…` → doesn't match the server's plan HTML → React #418.
+- Free, no visible puzzles in the common case (managed challenge).
+- Privacy-friendly (no ad-tech tracking).
+- Officially supported by Supabase Auth — token is passed via `options.captchaToken` on `signUp`, `signInWithPassword`, `resetPasswordForEmail`.
+- Works with Lovable's Google OAuth broker: Turnstile guards the "Continue with Google" *button* client-side; the OAuth broker itself is not directly protected, but bots can't kick off the flow without solving the challenge.
 
-`ImportCTA`'s `authState === "unknown"` initial state is fine (identical on both sides), so it isn't the culprit.
+## What changes
 
-## Fix
+### 1. Remove beta code from coach + parent signup
+- `src/routes/signup.coach.tsx`: delete the beta code input, `validateSignupCode` call, and the disabled-until-8-chars logic.
+- `src/routes/signup.parent.tsx`: same treatment if a code field is present.
+- Keep `src/routes/signup.admin.tsx` code-gated as-is.
+- Keep the Terms-of-Service checkbox.
+- `BETA_INVITE_CODE` secret stays (still used by admin). `validateSignupCode` server fn stays, just no longer called from coach/parent.
 
-Refactor `src/routes/p.$token.tsx` to the canonical loader/component pattern:
+### 2. Add Turnstile widget
 
-1. Define a shared `sharedPlanQueryOptions(token)` helper returning `queryOptions({ queryKey, queryFn })` where `queryFn` calls `getSharedPlanPublic({ data: { token } })` directly (server fns are isomorphic — they work in both loader and component contexts).
-2. Loader: `context.queryClient.ensureQueryData(sharedPlanQueryOptions(params.token))`.
-3. Component: replace `useQuery` + `isLoading` branch with `useSuspenseQuery(sharedPlanQueryOptions(token))`. Drop the `useServerFn(getSharedPlanPublic)` call and the `Loading…` block — Suspense + the loader guarantee data is ready at render time, so SSR and client first render match.
-4. Keep `notFoundComponent` handling: if `data` is `null`, render `<NotFound />` from the component (same as today).
-5. Leave `ImportCTA` unchanged — its client-only auth probe runs in `useEffect` after hydration and doesn't affect SSR output.
+Create `src/components/auth/turnstile.tsx` — a small wrapper around Cloudflare's `<script>` + `cf-turnstile` div that:
+- Loads `https://challenges.cloudflare.com/turnstile/v0/api.js` once.
+- Renders an invisible/managed widget with the site key from `VITE_TURNSTILE_SITE_KEY`.
+- Exposes `onVerify(token)` and `reset()`.
+- Auto-resets after a successful sign-up/sign-in attempt (tokens are single-use).
 
-No other files need to change. The `errorComponent` and `notFoundComponent` on the route already cover the Suspense/error edges.
+Mount it in:
+- `src/routes/signup.coach.tsx`
+- `src/routes/signup.parent.tsx`
+- `src/routes/login.tsx`
+- Wherever password reset lives (add if missing — see "Open questions").
 
-## Verification
+Disable the primary submit / Google button until `captchaToken` is present.
 
-After the edit, load `/p/{some-token}` in the preview, open DevTools console, and confirm:
-- No React #418 warning on first paint.
-- The plan renders immediately (no `Loading…` flash).
-- The bottom Save/Sign-in CTA still hydrates to the correct auth state after a beat.
+### 3. Verify token server-side
+
+Two paths, both need protection:
+
+**a. Email/password sign-up and sign-in (Supabase native):**
+Pass the token straight to Supabase — it verifies against Cloudflare:
+```ts
+supabase.auth.signUp({ email, password, options: { captchaToken, ... } })
+supabase.auth.signInWithPassword({ email, password, options: { captchaToken } })
+supabase.auth.resetPasswordForEmail(email, { captchaToken, redirectTo })
+```
+This requires **enabling CAPTCHA in the Lovable Cloud auth settings** (Provider: Turnstile, paste the secret key). Once enabled, Supabase rejects any auth call without a valid token — belt-and-suspenders.
+
+**b. Google OAuth (via `lovable.auth.signInWithOAuth`):**
+The Lovable broker doesn't accept a captchaToken parameter, so we verify client-side gating only: the Google button is disabled until Turnstile fires, and the token is consumed by a lightweight server fn (`verifyTurnstileToken`) before we call `lovable.auth.signInWithOAuth`. This blocks scripted OAuth initiations from the browser but is not as strong as native Supabase enforcement.
+
+Create `src/lib/turnstile.functions.ts`:
+```ts
+export const verifyTurnstileToken = createServerFn({ method: "POST" })
+  .inputValidator((d: { token: string }) => d)
+  .handler(async ({ data }) => {
+    const res = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        secret: process.env.TURNSTILE_SECRET_KEY!,
+        response: data.token,
+      }),
+    });
+    const body = await res.json();
+    if (!body.success) throw new Error("CAPTCHA verification failed");
+    return { ok: true };
+  });
+```
+Call it before the Google OAuth kickoff on coach signup, parent signup, and login.
+
+### 4. Secrets + config
+- **Runtime secret** (via `add_secret`): `TURNSTILE_SECRET_KEY` — obtained from Cloudflare dashboard.
+- **Public site key**: `VITE_TURNSTILE_SITE_KEY` in `.env` (safe to commit; it's public by design).
+- Enable Turnstile in Lovable Cloud auth settings after secrets are in place.
+
+## Implications (what the user needs to know)
+
+1. **Anyone can now create a coach or parent account.** Beta positioning is gone for those roles. Onboarding traffic is no longer throttled by handing out codes.
+2. **Admin signup stays code-gated** — this is the safe default; admins should never be self-serve.
+3. **No new dependencies on email auth.** Google OAuth continues to work; email/password continues to work exactly as today.
+4. **Password reset gets protection too**, closing a common credential-stuffing vector.
+5. **Very low UX cost.** Turnstile is invisible for the vast majority of users; a small "Verifying you're human…" indicator sits by the submit button.
+6. **Attribution loss.** You lose the "which cohort / campaign issued this code" signal. If you want that back later, add a `?ref=` query param captured into the profile row at signup.
+7. **Instant shut-off.** Today you can kill signups by rotating `BETA_INVITE_CODE`. After this change, the equivalent kill-switch is toggling `disable_signup` in Cloud auth settings (still one action, different location).
+8. **Bot-abuse ceiling.** Turnstile stops casual scripted signups. Determined attackers using CAPTCHA-solving services can still get through — if abuse becomes real, add per-IP rate limiting on `verifyTurnstileToken` and Supabase auth webhook signals.
+9. **Slight bundle cost.** ~15KB of Cloudflare script loaded on the four auth pages only.
+
+## Rollout order
+
+1. User creates a Turnstile site + secret key in their Cloudflare dashboard.
+2. Add `TURNSTILE_SECRET_KEY` via `add_secret`; add `VITE_TURNSTILE_SITE_KEY` to `.env`.
+3. Ship the Turnstile component + `verifyTurnstileToken` server fn.
+4. Wire it into coach signup, parent signup, login, password reset.
+5. Enable CAPTCHA in Cloud auth settings (Turnstile + paste secret).
+6. Remove beta code UI from coach + parent signup.
+7. Smoke test all four flows (email signup, Google signup, email login, Google login, password reset) as coach and parent.
+
+## Open questions (not blocking approval)
+
+- Do you currently have a `/reset-password` route + "Forgot password" link? I don't see one in the routes list — if not, I'll add both as part of step 4.
+- OK to leave the beta code active on `/signup/admin`? (Strong recommendation: yes.)
