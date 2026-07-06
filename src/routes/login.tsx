@@ -203,7 +203,22 @@ function LoginPage() {
           <p className="mt-4 text-sm text-text-secondary">Sign in to your account</p>
         </div>
 
-        <Button type="button" variant="outline" className="w-full" onClick={handleGoogle} disabled={loading}>
+        <div className="mb-4">
+          <TurnstileWidget
+            resetKey={captchaKey}
+            onVerify={(t) => setCaptchaToken(t)}
+            onExpire={() => setCaptchaToken(null)}
+            onError={() => setCaptchaToken(null)}
+          />
+        </div>
+
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full"
+          onClick={handleGoogle}
+          disabled={loading || !captchaToken}
+        >
           Continue with Google
         </Button>
 
@@ -245,12 +260,17 @@ function LoginPage() {
             />
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
-          <Button type="submit" className="w-full" disabled={loading}>
+          <Button type="submit" className="w-full" disabled={loading || !captchaToken}>
             {loading ? "..." : "Sign in"}
           </Button>
         </form>
 
         <p className="mt-6 text-center text-sm text-text-secondary">
+          <Link to="/forgot-password" className="font-semibold text-accent-ink underline-offset-4 hover:underline">
+            Forgot password?
+          </Link>
+        </p>
+        <p className="mt-2 text-center text-sm text-text-secondary">
           Need an account?{" "}
           <Link to="/" className="font-semibold text-accent-ink underline-offset-4 hover:underline">
             Sign up
