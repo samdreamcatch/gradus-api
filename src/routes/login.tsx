@@ -7,8 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/logo";
+import { TurnstileWidget } from "@/components/auth/turnstile";
 import { useAuthReady } from "@/hooks/use-auth-ready";
 import { resolveAthleteLogin } from "@/lib/athlete-signup.functions";
+import { verifyTurnstileToken } from "@/lib/turnstile.functions";
 
 export const Route = createFileRoute("/login")({
   validateSearch: (s: Record<string, unknown>) => {
