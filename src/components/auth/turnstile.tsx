@@ -103,7 +103,7 @@ export function TurnstileWidget({
     }
     let cancelled = false;
     let observer: MutationObserver | null = null;
-    let fallbackTimer: ReturnType<typeof window.setInterval> | null = null;
+    let fallbackTimer: number | null = null;
 
     const verifyFromHiddenResponse = () => {
       const token = containerRef.current?.querySelector<HTMLInputElement>(
