@@ -16,44 +16,26 @@ export const Route = createFileRoute("/signup/parent")({
   component: ParentSignupPage,
 });
 
-function guardedValueChange(
-  e: ChangeEvent<HTMLInputElement>,
-  currentValue: string,
-  setValue: (value: string) => void,
-  transform: (value: string) => string = (value) => value,
-) {
-  const nextValue = transform(e.currentTarget.value);
-  const wasClearedByInjectedScript =
-    currentValue.length > 0 && nextValue === "" && e.nativeEvent.isTrusted === false;
-
-  if (wasClearedByInjectedScript) {
-    e.currentTarget.value = currentValue;
-    return;
-  }
-
-  setValue(nextValue);
+function useLatestValue<T>(value: T) {
+  const ref = useRef(value);
+  ref.current = value;
+  return ref;
 }
 
-function usePreserveFieldsAgainstInjectedClears(formId: string) {
+function usePreserveFieldsAgainstInjectedClears(
+  formId: string,
+  values: Record<string, MutableRefObject<string>>,
+) {
   useEffect(() => {
     const form = document.getElementById(formId);
     if (!form) return;
-
-    const lastValues = new Map<HTMLInputElement, string>();
-
-    const protectedInputs = () =>
-      Array.from(form.querySelectorAll<HTMLInputElement>("input[data-preserve-filled-value='true']"));
-
-    for (const input of protectedInputs()) {
-      if (input.value) lastValues.set(input, input.value);
-    }
 
     const preserveFilledValue = (event: Event) => {
       const target = event.target;
       if (!(target instanceof HTMLInputElement)) return;
       if (target.dataset.preserveFilledValue !== "true") return;
 
-      const previousValue = lastValues.get(target) ?? "";
+      const previousValue = values[target.id]?.current ?? "";
       const nextValue = target.value;
 
       if (nextValue === "" && previousValue !== "" && event.isTrusted === false) {
@@ -63,8 +45,8 @@ function usePreserveFieldsAgainstInjectedClears(formId: string) {
         return;
       }
 
-      if (nextValue !== "") {
-        lastValues.set(target, nextValue);
+      if (target.value === "" && previousValue !== "" && document.activeElement !== target) {
+        target.value = previousValue;
       }
     };
 
@@ -75,13 +57,7 @@ function usePreserveFieldsAgainstInjectedClears(formId: string) {
       form.removeEventListener("input", preserveFilledValue, true);
       form.removeEventListener("change", preserveFilledValue, true);
     };
-  }, [formId]);
-}
-
-function useLatestValue<T>(value: T) {
-  const ref = useRef(value);
-  ref.current = value;
-  return ref;
+  }, [formId, values]);
 }
 
 function guardFilledValueChange(
@@ -127,7 +103,13 @@ function ParentSignupPage() {
   const passwordRef = useLatestValue(password);
   const codeRef = useLatestValue(code);
 
-  usePreserveFieldsAgainstInjectedClears(formId.current);
+  usePreserveFieldsAgainstInjectedClears(formId.current, {
+    firstName: firstNameRef,
+    lastName: lastNameRef,
+    email: emailRef,
+    password: passwordRef,
+    code: codeRef,
+  });
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setIsAuthed(!!data.session));
