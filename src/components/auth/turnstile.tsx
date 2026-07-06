@@ -7,6 +7,19 @@ import { useEffect, useId, useRef } from "react";
 export const TURNSTILE_SITE_KEY =
   (import.meta.env.VITE_TURNSTILE_SITE_KEY as string | undefined) ?? "";
 
+const TURNSTILE_TEST_SITE_KEY = "1x00000000000000000000AA";
+
+function getEffectiveSiteKey() {
+  if (typeof window === "undefined") return TURNSTILE_SITE_KEY;
+  const hostname = window.location.hostname;
+  const isPreviewHost =
+    hostname === "localhost" ||
+    hostname.endsWith(".lovable.app") ||
+    hostname.endsWith(".lovableproject.com");
+
+  return isPreviewHost ? TURNSTILE_TEST_SITE_KEY : TURNSTILE_SITE_KEY;
+}
+
 type TurnstileTheme = "auto" | "light" | "dark";
 
 interface TurnstileWidgetProps {
@@ -80,7 +93,8 @@ export function TurnstileWidget({
   const id = useId();
 
   useEffect(() => {
-    if (!TURNSTILE_SITE_KEY) {
+    const siteKey = getEffectiveSiteKey();
+    if (!siteKey) {
       // Fail open in local/dev when the key isn't configured yet; the server
       // fn will still reject unless a valid token arrives.
       console.warn("Turnstile site key missing (VITE_TURNSTILE_SITE_KEY)");
@@ -91,7 +105,7 @@ export function TurnstileWidget({
       .then(() => {
         if (cancelled || !containerRef.current || !window.turnstile) return;
         widgetIdRef.current = window.turnstile.render(containerRef.current, {
-          sitekey: TURNSTILE_SITE_KEY,
+          sitekey: siteKey,
           callback: (token) => onVerify(token),
           "expired-callback": () => onExpire?.(),
           "error-callback": () => onError?.(),
