@@ -1,4 +1,4 @@
-import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
@@ -34,6 +34,50 @@ function guardedValueChange(
   setValue(nextValue);
 }
 
+function usePreserveFieldsAgainstInjectedClears(formId: string) {
+  useEffect(() => {
+    const form = document.getElementById(formId);
+    if (!form) return;
+
+    const lastValues = new Map<HTMLInputElement, string>();
+
+    const protectedInputs = () =>
+      Array.from(form.querySelectorAll<HTMLInputElement>("input[data-preserve-filled-value='true']"));
+
+    for (const input of protectedInputs()) {
+      if (input.value) lastValues.set(input, input.value);
+    }
+
+    const preserveFilledValue = (event: Event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLInputElement)) return;
+      if (target.dataset.preserveFilledValue !== "true") return;
+
+      const previousValue = lastValues.get(target) ?? "";
+      const nextValue = target.value;
+
+      if (nextValue === "" && previousValue !== "" && event.isTrusted === false) {
+        target.value = previousValue;
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        return;
+      }
+
+      if (nextValue !== "") {
+        lastValues.set(target, nextValue);
+      }
+    };
+
+    form.addEventListener("input", preserveFilledValue, true);
+    form.addEventListener("change", preserveFilledValue, true);
+
+    return () => {
+      form.removeEventListener("input", preserveFilledValue, true);
+      form.removeEventListener("change", preserveFilledValue, true);
+    };
+  }, [formId]);
+}
+
 function ParentSignupPage() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -51,6 +95,9 @@ function ParentSignupPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [isAuthed, setIsAuthed] = useState(false);
+  const formId = useRef("parent-signup-form");
+
+  usePreserveFieldsAgainstInjectedClears(formId.current);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setIsAuthed(!!data.session));
@@ -148,7 +195,7 @@ function ParentSignupPage() {
           </p>
         </div>
 
-        <form id="parent-signup-form" onSubmit={handleSubmit} className="space-y-4" autoComplete="on">
+        <form id={formId.current} onSubmit={handleSubmit} className="space-y-4" autoComplete="on">
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label htmlFor="firstName">First name</Label>
@@ -159,6 +206,7 @@ function ParentSignupPage() {
                 data-lpignore="true"
                 data-1p-ignore="true"
                 data-bwignore="true"
+                data-preserve-filled-value="true"
                 value={firstName}
                 onChange={(e) => guardedValueChange(e, firstName, setFirstName)}
                 required
@@ -174,6 +222,7 @@ function ParentSignupPage() {
                 data-lpignore="true"
                 data-1p-ignore="true"
                 data-bwignore="true"
+                data-preserve-filled-value="true"
                 value={lastName}
                 onChange={(e) => guardedValueChange(e, lastName, setLastName)}
                 required
@@ -191,6 +240,7 @@ function ParentSignupPage() {
                   name="email"
                   type="email"
                   autoComplete="username"
+                  data-preserve-filled-value="true"
                   value={email}
                   onChange={(e) => guardedValueChange(e, email, setEmail)}
                   required
@@ -204,6 +254,7 @@ function ParentSignupPage() {
                   name="new-password"
                   type="password"
                   autoComplete="new-password"
+                  data-preserve-filled-value="true"
                   value={password}
                   onChange={(e) => guardedValueChange(e, password, setPassword)}
                   required
@@ -228,6 +279,7 @@ function ParentSignupPage() {
               data-lpignore="true"
               data-1p-ignore="true"
               data-bwignore="true"
+              data-preserve-filled-value="true"
             />
             <p className="text-xs text-text-tertiary">
               Have a coach&apos;s 8-character code? Enter it to link your athlete now. You can skip this and add a coach later.
