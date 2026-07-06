@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent, type MutableRefObject } from "react";
 import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,6 +15,83 @@ import { CURRENT_TERMS_VERSION, PENDING_TERMS_ACCEPT_KEY } from "@/lib/terms";
 export const Route = createFileRoute("/signup/parent")({
   component: ParentSignupPage,
 });
+
+function useLatestValue<T>(value: T) {
+  const ref = useRef(value);
+  ref.current = value;
+  return ref;
+}
+
+function usePreserveFieldsAgainstInjectedClears(
+  formId: string,
+  values: Record<string, MutableRefObject<string>>,
+) {
+  useEffect(() => {
+    const form = document.getElementById(formId);
+    if (!form) return;
+
+    const preserveFilledValue = (event: Event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLInputElement)) return;
+      if (target.dataset.preserveFilledValue !== "true") return;
+
+      const previousValue = values[target.id]?.current ?? "";
+      const nextValue = target.value;
+
+      if (nextValue === "" && previousValue !== "" && event.isTrusted === false) {
+        target.value = previousValue;
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        return;
+      }
+
+      if (target.value === "" && previousValue !== "" && document.activeElement !== target) {
+        target.value = previousValue;
+      }
+    };
+
+    const restoreClearedFields = () => {
+      for (const [id, valueRef] of Object.entries(values)) {
+        const input = document.getElementById(id);
+        if (!(input instanceof HTMLInputElement)) continue;
+        if (input.dataset.preserveFilledValue !== "true") continue;
+        if (input.value === "" && valueRef.current !== "" && document.activeElement !== input) {
+          input.value = valueRef.current;
+        }
+      }
+    };
+
+    const restoreTimer = window.setInterval(restoreClearedFields, 50);
+
+    form.addEventListener("input", preserveFilledValue, true);
+    form.addEventListener("change", preserveFilledValue, true);
+
+    return () => {
+      form.removeEventListener("input", preserveFilledValue, true);
+      form.removeEventListener("change", preserveFilledValue, true);
+      window.clearInterval(restoreTimer);
+    };
+  }, [formId, values]);
+}
+
+function guardFilledValueChange(
+  e: ChangeEvent<HTMLInputElement>,
+  currentValueRef: MutableRefObject<string>,
+  setValue: (value: string) => void,
+  transform: (value: string) => string = (value) => value,
+) {
+  const nextValue = transform(e.currentTarget.value);
+  const currentValue = currentValueRef.current;
+  const wasClearedByInjectedScript =
+    currentValue.length > 0 && nextValue === "" && e.nativeEvent.isTrusted === false;
+
+  if (wasClearedByInjectedScript) {
+    e.currentTarget.value = currentValue;
+    return;
+  }
+
+  setValue(nextValue);
+}
 
 function ParentSignupPage() {
   const location = useLocation();
@@ -33,6 +110,20 @@ function ParentSignupPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [isAuthed, setIsAuthed] = useState(false);
+  const formId = useRef("parent-signup-form");
+  const firstNameRef = useLatestValue(firstName);
+  const lastNameRef = useLatestValue(lastName);
+  const emailRef = useLatestValue(email);
+  const passwordRef = useLatestValue(password);
+  const codeRef = useLatestValue(code);
+
+  usePreserveFieldsAgainstInjectedClears(formId.current, {
+    firstName: firstNameRef,
+    lastName: lastNameRef,
+    email: emailRef,
+    password: passwordRef,
+    code: codeRef,
+  });
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setIsAuthed(!!data.session));
@@ -130,15 +221,39 @@ function ParentSignupPage() {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4" autoComplete="on">
+        <form id={formId.current} onSubmit={handleSubmit} className="space-y-4" autoComplete="on">
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label htmlFor="firstName">First name</Label>
-              <Input id="firstName" name="given-name" autoComplete="given-name" value={firstName} onChange={(e) => setFirstName(e.target.value)} required maxLength={80} />
+              <Input
+                id="firstName"
+                name="given-name"
+                autoComplete="given-name"
+                data-lpignore="true"
+                data-1p-ignore="true"
+                data-bwignore="true"
+                data-preserve-filled-value="true"
+                value={firstName}
+                onChange={(e) => guardFilledValueChange(e, firstNameRef, setFirstName)}
+                required
+                maxLength={80}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="lastName">Last name</Label>
-              <Input id="lastName" name="family-name" autoComplete="family-name" value={lastName} onChange={(e) => setLastName(e.target.value)} required maxLength={80} />
+              <Input
+                id="lastName"
+                name="family-name"
+                autoComplete="family-name"
+                data-lpignore="true"
+                data-1p-ignore="true"
+                data-bwignore="true"
+                data-preserve-filled-value="true"
+                value={lastName}
+                onChange={(e) => guardFilledValueChange(e, lastNameRef, setLastName)}
+                required
+                maxLength={80}
+              />
             </div>
           </div>
 
@@ -146,12 +261,30 @@ function ParentSignupPage() {
             <>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" name="email" type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="username"
+                  data-preserve-filled-value="true"
+                  value={email}
+                  onChange={(e) => guardFilledValueChange(e, emailRef, setEmail)}
+                  required
+                />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
-                <Input id="password" name="new-password" type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                <Input
+                  id="password"
+                  name="new-password"
+                  type="password"
+                  autoComplete="new-password"
+                  data-preserve-filled-value="true"
+                  value={password}
+                  onChange={(e) => guardFilledValueChange(e, passwordRef, setPassword)}
+                  required
+                />
               </div>
             </>
           )}
@@ -162,12 +295,17 @@ function ParentSignupPage() {
             </Label>
             <Input
               id="code"
+              name="coach-invite-code"
               value={code}
-              onChange={(e) => setCode(e.target.value.toUpperCase())}
+              onChange={(e) => guardFilledValueChange(e, codeRef, setCode, (value) => value.toUpperCase())}
               maxLength={8}
               placeholder="––––––––"
               className="font-mono tracking-[0.25em] uppercase"
               autoComplete="off"
+              data-lpignore="true"
+              data-1p-ignore="true"
+              data-bwignore="true"
+              data-preserve-filled-value="true"
             />
             <p className="text-xs text-text-tertiary">
               Have a coach&apos;s 8-character code? Enter it to link your athlete now. You can skip this and add a coach later.
@@ -196,21 +334,24 @@ function ParentSignupPage() {
             </span>
           </label>
 
-          {!isAuthed && (
+        </form>
+
+        {!isAuthed && (
+          <div className="mt-4">
             <TurnstileWidget
               resetKey={captchaKey}
               onVerify={(t) => setCaptchaToken(t)}
               onExpire={() => setCaptchaToken(null)}
               onError={() => setCaptchaToken(null)}
             />
-          )}
+          </div>
+        )}
 
-          {error && <p className="text-sm text-destructive">{error}</p>}
+        {error && <p className="mt-4 text-sm text-destructive">{error}</p>}
 
-          <Button type="submit" className="w-full" disabled={!canSubmit}>
-            {loading ? "Creating account..." : "Continue"}
-          </Button>
-        </form>
+        <Button type="submit" form="parent-signup-form" className="mt-4 w-full" disabled={!canSubmit}>
+          {loading ? "Creating account..." : "Continue"}
+        </Button>
 
         <p className="mt-6 text-center text-sm text-text-secondary">
           Wrong role?{" "}
