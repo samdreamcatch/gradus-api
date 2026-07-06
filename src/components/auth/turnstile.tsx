@@ -90,6 +90,7 @@ export function TurnstileWidget({
 }: TurnstileWidgetProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const widgetIdRef = useRef<string | null>(null);
+  const lastTokenRef = useRef<string | null>(null);
   const id = useId();
 
   useEffect(() => {
@@ -101,12 +102,29 @@ export function TurnstileWidget({
       return;
     }
     let cancelled = false;
+    let observer: MutationObserver | null = null;
+    let fallbackTimer: ReturnType<typeof window.setInterval> | null = null;
+
+    const verifyFromHiddenResponse = () => {
+      const token = containerRef.current?.querySelector<HTMLInputElement>(
+        'input[name="cf-turnstile-response"]',
+      )?.value;
+
+      if (token && token !== lastTokenRef.current) {
+        lastTokenRef.current = token;
+        onVerify(token);
+      }
+    };
+
     loadTurnstileScript()
       .then(() => {
         if (cancelled || !containerRef.current || !window.turnstile) return;
         widgetIdRef.current = window.turnstile.render(containerRef.current, {
           sitekey: siteKey,
-          callback: (token) => onVerify(token),
+          callback: (token) => {
+            lastTokenRef.current = token;
+            onVerify(token);
+          },
           "expired-callback": () => onExpire?.(),
           "error-callback": () => onError?.(),
           theme,
@@ -114,6 +132,16 @@ export function TurnstileWidget({
           appearance: "interaction-only",
           size: "flexible",
         });
+
+        observer = new MutationObserver(verifyFromHiddenResponse);
+        observer.observe(containerRef.current, {
+          subtree: true,
+          childList: true,
+          attributes: true,
+          attributeFilter: ["value"],
+        });
+        fallbackTimer = window.setInterval(verifyFromHiddenResponse, 250);
+        verifyFromHiddenResponse();
       })
       .catch(() => onError?.());
 
@@ -126,7 +154,10 @@ export function TurnstileWidget({
           /* ignore */
         }
       }
+      observer?.disconnect();
+      if (fallbackTimer) window.clearInterval(fallbackTimer);
       widgetIdRef.current = null;
+      lastTokenRef.current = null;
     };
     // resetKey forces a fresh render for a new challenge.
     // eslint-disable-next-line react-hooks/exhaustive-deps
