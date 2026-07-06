@@ -11,11 +11,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Logo } from "@/components/logo";
+import { TurnstileWidget } from "@/components/auth/turnstile";
 import {
   claimParentInvite,
   getParentByInviteCode,
-  validateSignupCode,
 } from "@/lib/parent-signup.functions";
+import { verifyTurnstileToken } from "@/lib/turnstile.functions";
 import { CURRENT_TERMS_VERSION, PENDING_TERMS_ACCEPT_KEY } from "@/lib/terms";
 
 const PENDING_INVITE_KEY = "gradus.pendingParentInvite";
@@ -33,12 +34,9 @@ const searchSchema = z.object({
 export const Route = createFileRoute("/signup/coach")({
   validateSearch: (s) => searchSchema.parse(s),
   beforeLoad: async ({ search }) => {
-    // If already signed in: do NOT redirect away when there's a pending
-    // invite — let the component claim it first.
     const { data } = await supabase.auth.getSession();
     if (data.session && !search.invite) {
-      // Standard redirect — no claim work to do here.
-      // (Using throw redirect would require the import; navigate in component instead.)
+      // no-op; navigation handled in component
     }
   },
   component: CoachSignupPage,
@@ -49,30 +47,28 @@ function CoachSignupPage() {
   const navigate = useNavigate();
   const lookupParent = useServerFn(getParentByInviteCode);
   const claim = useServerFn(claimParentInvite);
-  const validateCode = useServerFn(validateSignupCode);
+  const verifyCaptcha = useServerFn(verifyTurnstileToken);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [betaCode, setBetaCode] = useState("");
   const [agreed, setAgreed] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaKey, setCaptchaKey] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // Persist the invite across the email-confirmation redirect.
   useEffect(() => {
     if (invite) {
       try {
         localStorage.setItem(PENDING_INVITE_KEY, invite);
       } catch {
-        // ignore
+        /* ignore */
       }
     }
   }, [invite]);
 
-  // If already authed and an invite is in the URL: claim immediately, then
-  // bounce to /coach.
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -101,7 +97,6 @@ function CoachSignupPage() {
     };
   }, [invite, claim, navigate]);
 
-  // Preview of the parent the coach is joining.
   const { data: parent } = useQuery({
     queryKey: ["parent-by-invite-code", invite ?? null],
     queryFn: () => lookupParent({ data: { code: invite! } }),
@@ -117,12 +112,20 @@ function CoachSignupPage() {
     }
   };
 
+  const resetCaptcha = () => {
+    setCaptchaToken(null);
+    setCaptchaKey((k) => k + 1);
+  };
+
   const handleEmail = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
+    if (!captchaToken) {
+      setError("Please complete the human check first.");
+      return;
+    }
     setLoading(true);
     try {
-      await validateCode({ data: { code: betaCode.trim().toUpperCase(), role: "coach" } });
       stashPendingAccept();
       const { error } = await supabase.auth.signUp({
         email,
@@ -130,12 +133,14 @@ function CoachSignupPage() {
         options: {
           emailRedirectTo: window.location.origin + "/coach",
           data: { full_name: `${firstName} ${lastName}`.trim(), first_name: firstName, last_name: lastName },
+          captchaToken,
         },
       });
       if (error) throw error;
       navigate({ to: "/coach" });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");
+      resetCaptcha();
     } finally {
       setLoading(false);
     }
@@ -143,9 +148,13 @@ function CoachSignupPage() {
 
   const handleGoogle = async () => {
     setError(null);
+    if (!captchaToken) {
+      setError("Please complete the human check first.");
+      return;
+    }
     setLoading(true);
     try {
-      await validateCode({ data: { code: betaCode.trim().toUpperCase(), role: "coach" } });
+      await verifyCaptcha({ data: { token: captchaToken } });
       stashPendingAccept();
       const result = await lovable.auth.signInWithOAuth("google", {
         redirect_uri: window.location.origin + "/coach",
@@ -154,13 +163,13 @@ function CoachSignupPage() {
       if (!result.redirected) navigate({ to: "/coach" });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Google sign-in failed");
+      resetCaptcha();
       setLoading(false);
     }
   };
 
-  const parentName = parent
-    ? `${parent.firstName} ${parent.lastName}`.trim()
-    : null;
+  const parentName = parent ? `${parent.firstName} ${parent.lastName}`.trim() : null;
+  const canSubmit = agreed && !!captchaToken && !loading;
 
   return (
     <div className="flex min-h-dvh items-center justify-center px-4 py-12">
@@ -183,24 +192,7 @@ function CoachSignupPage() {
           </div>
         )}
 
-        <div className="mb-4 space-y-2">
-          <Label htmlFor="betaCode">Beta invite code</Label>
-          <Input
-            id="betaCode"
-            value={betaCode}
-            onChange={(e) => setBetaCode(e.target.value.toUpperCase())}
-            maxLength={8}
-            placeholder="––––––––"
-            className="font-mono tracking-[0.25em] uppercase"
-            autoComplete="off"
-            required
-          />
-          <p className="text-xs text-text-tertiary">
-            Gradus is invite-only during beta. Enter the 8-character code we sent you.
-          </p>
-        </div>
-
-        <label className="mb-6 flex cursor-pointer items-start gap-2.5 text-sm text-text-secondary">
+        <label className="mb-4 flex cursor-pointer items-start gap-2.5 text-sm text-text-secondary">
           <Checkbox
             checked={agreed}
             onCheckedChange={(v) => setAgreed(v === true)}
@@ -222,12 +214,21 @@ function CoachSignupPage() {
           </span>
         </label>
 
+        <div className="mb-4">
+          <TurnstileWidget
+            resetKey={captchaKey}
+            onVerify={(t) => setCaptchaToken(t)}
+            onExpire={() => setCaptchaToken(null)}
+            onError={() => setCaptchaToken(null)}
+          />
+        </div>
+
         <Button
           type="button"
           variant="outline"
           className="w-full"
           onClick={handleGoogle}
-          disabled={loading || betaCode.trim().length !== 8 || !agreed}
+          disabled={!canSubmit}
         >
           Continue with Google
         </Button>
@@ -258,7 +259,7 @@ function CoachSignupPage() {
             <Input id="password" type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
-          <Button type="submit" className="w-full" disabled={loading || betaCode.trim().length !== 8 || !agreed}>
+          <Button type="submit" className="w-full" disabled={!canSubmit}>
             {loading ? "..." : "Create coach account"}
           </Button>
         </form>

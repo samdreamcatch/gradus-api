@@ -7,8 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/logo";
+import { TurnstileWidget } from "@/components/auth/turnstile";
 import { useAuthReady } from "@/hooks/use-auth-ready";
 import { resolveAthleteLogin } from "@/lib/athlete-signup.functions";
+import { verifyTurnstileToken } from "@/lib/turnstile.functions";
 
 export const Route = createFileRoute("/login")({
   validateSearch: (s: Record<string, unknown>) => {
@@ -28,10 +30,18 @@ function LoginPage() {
   const { user, isReady } = useAuthReady();
   const [identifier, setIdentifier] = useState("");
   const resolveLogin = useServerFn(resolveAthleteLogin);
+  const verifyCaptcha = useServerFn(verifyTurnstileToken);
   const [password, setPassword] = useState("");
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaKey, setCaptchaKey] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
+
+  const resetCaptcha = () => {
+    setCaptchaToken(null);
+    setCaptchaKey((k) => k + 1);
+  };
 
   const detectRole = async (userId: string) => {
     const [admin, coach, parent, athlete] = await Promise.all([
@@ -124,12 +134,14 @@ function LoginPage() {
   const handleEmail = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
+    if (!captchaToken) {
+      setError("Please complete the human check first.");
+      return;
+    }
     setLoading(true);
     try {
       const raw = identifier.trim();
       let email = raw;
-      // If they typed something that isn't an email, treat it as an athlete
-      // username and resolve it to the synthetic email server-side.
       if (!raw.includes("@")) {
         const resolved = await resolveLogin({
           data: { username: raw.toLowerCase() },
@@ -138,12 +150,17 @@ function LoginPage() {
       } else {
         email = raw.toLowerCase();
       }
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+        options: { captchaToken },
+      });
       if (error) throw error;
       if (!data.user?.id) throw new Error("Sign-in succeeded but no user was returned.");
       await routeByRole(data.user.id);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");
+      resetCaptcha();
     } finally {
       setLoading(false);
     }
@@ -151,8 +168,13 @@ function LoginPage() {
 
   const handleGoogle = async () => {
     setError(null);
+    if (!captchaToken) {
+      setError("Please complete the human check first.");
+      return;
+    }
     setLoading(true);
     try {
+      await verifyCaptcha({ data: { token: captchaToken } });
       const result = await lovable.auth.signInWithOAuth("google", {
         redirect_uri: window.location.origin + (search.redirect || "/"),
       });
@@ -163,6 +185,7 @@ function LoginPage() {
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Google sign-in failed");
+      resetCaptcha();
       setLoading(false);
     }
   };
@@ -180,7 +203,22 @@ function LoginPage() {
           <p className="mt-4 text-sm text-text-secondary">Sign in to your account</p>
         </div>
 
-        <Button type="button" variant="outline" className="w-full" onClick={handleGoogle} disabled={loading}>
+        <div className="mb-4">
+          <TurnstileWidget
+            resetKey={captchaKey}
+            onVerify={(t) => setCaptchaToken(t)}
+            onExpire={() => setCaptchaToken(null)}
+            onError={() => setCaptchaToken(null)}
+          />
+        </div>
+
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full"
+          onClick={handleGoogle}
+          disabled={loading || !captchaToken}
+        >
           Continue with Google
         </Button>
 
@@ -222,12 +260,17 @@ function LoginPage() {
             />
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
-          <Button type="submit" className="w-full" disabled={loading}>
+          <Button type="submit" className="w-full" disabled={loading || !captchaToken}>
             {loading ? "..." : "Sign in"}
           </Button>
         </form>
 
         <p className="mt-6 text-center text-sm text-text-secondary">
+          <Link to="/forgot-password" className="font-semibold text-accent-ink underline-offset-4 hover:underline">
+            Forgot password?
+          </Link>
+        </p>
+        <p className="mt-2 text-center text-sm text-text-secondary">
           Need an account?{" "}
           <Link to="/" className="font-semibold text-accent-ink underline-offset-4 hover:underline">
             Sign up

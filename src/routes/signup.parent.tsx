@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Logo } from "@/components/logo";
-import { startParentSignup, validateSignupCode } from "@/lib/parent-signup.functions";
+import { TurnstileWidget } from "@/components/auth/turnstile";
+import { startParentSignup } from "@/lib/parent-signup.functions";
 import { acceptTerms } from "@/lib/terms.functions";
 import { CURRENT_TERMS_VERSION, PENDING_TERMS_ACCEPT_KEY } from "@/lib/terms";
 
@@ -19,7 +20,6 @@ function ParentSignupPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const start = useServerFn(startParentSignup);
-  const validateCode = useServerFn(validateSignupCode);
   const accept = useServerFn(acceptTerms);
 
   const [firstName, setFirstName] = useState("");
@@ -28,6 +28,8 @@ function ParentSignupPage() {
   const [password, setPassword] = useState("");
   const [code, setCode] = useState("");
   const [agreed, setAgreed] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaKey, setCaptchaKey] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [isAuthed, setIsAuthed] = useState(false);
@@ -40,15 +42,22 @@ function ParentSignupPage() {
     return <Outlet />;
   }
 
+  const resetCaptcha = () => {
+    setCaptchaToken(null);
+    setCaptchaKey((k) => k + 1);
+  };
+
   const ensureAuthed = async () => {
     const { data: sessionData } = await supabase.auth.getSession();
     if (sessionData.session) return;
+    if (!captchaToken) throw new Error("Please complete the human check first.");
     const { data: signUp, error: signUpErr } = await supabase.auth.signUp({
       email,
       password,
       options: {
         emailRedirectTo: window.location.origin + "/parent",
         data: { full_name: `${firstName} ${lastName}`.trim() },
+        captchaToken,
       },
     });
     if (signUpErr) throw signUpErr;
@@ -56,6 +65,7 @@ function ParentSignupPage() {
       const { error: signInErr } = await supabase.auth.signInWithPassword({
         email,
         password,
+        options: { captchaToken },
       });
       if (signInErr) throw signInErr;
     }
@@ -63,21 +73,19 @@ function ParentSignupPage() {
 
   const submit = async () => {
     setError(null);
+    if (!isAuthed && !captchaToken) {
+      setError("Please complete the human check first.");
+      return;
+    }
     setLoading(true);
     try {
       const trimmed = code.trim().toUpperCase();
-      // Validate the code BEFORE creating an auth account so a bad code
-      // doesn't leave behind a dangling user.
-      await validateCode({ data: { code: trimmed, role: "parent" } });
-      // Stash so the authed layout can record acceptance even if the auth
-      // session lands after a redirect / email confirmation.
       try {
         localStorage.setItem(PENDING_TERMS_ACCEPT_KEY, "parent");
       } catch {
         /* ignore */
       }
       await ensureAuthed();
-      // Best-effort immediate accept (session usually exists here).
       try {
         await accept({ data: { role: "parent" } });
         localStorage.removeItem(PENDING_TERMS_ACCEPT_KEY);
@@ -85,7 +93,7 @@ function ParentSignupPage() {
         /* layout fallback will retry */
       }
       const { code: normalized } = await start({
-        data: { firstName, lastName, code: trimmed },
+        data: { firstName, lastName, code: trimmed || undefined },
       });
       if (normalized) {
         navigate({ to: "/signup/parent/athletes", search: { code: normalized } });
@@ -94,6 +102,7 @@ function ParentSignupPage() {
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");
+      resetCaptcha();
     } finally {
       setLoading(false);
     }
@@ -103,6 +112,10 @@ function ParentSignupPage() {
     e.preventDefault();
     void submit();
   };
+
+  const codeValid = code.trim().length === 0 || code.trim().length === 8;
+  const canSubmit =
+    !loading && agreed && codeValid && (isAuthed || !!captchaToken);
 
   return (
     <div className="flex min-h-dvh items-center justify-center px-4 py-12">
@@ -144,7 +157,9 @@ function ParentSignupPage() {
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="code">Invite code</Label>
+            <Label htmlFor="code">
+              Coach invite code <span className="text-text-tertiary">(optional)</span>
+            </Label>
             <Input
               id="code"
               value={code}
@@ -153,10 +168,9 @@ function ParentSignupPage() {
               placeholder="––––––––"
               className="font-mono tracking-[0.25em] uppercase"
               autoComplete="off"
-              required
             />
             <p className="text-xs text-text-tertiary">
-              Enter your coach&apos;s 8-character invite code, or your Gradus beta code.
+              Have a coach&apos;s 8-character code? Enter it to link your athlete now. You can skip this and add a coach later.
             </p>
           </div>
 
@@ -182,9 +196,18 @@ function ParentSignupPage() {
             </span>
           </label>
 
+          {!isAuthed && (
+            <TurnstileWidget
+              resetKey={captchaKey}
+              onVerify={(t) => setCaptchaToken(t)}
+              onExpire={() => setCaptchaToken(null)}
+              onError={() => setCaptchaToken(null)}
+            />
+          )}
+
           {error && <p className="text-sm text-destructive">{error}</p>}
 
-          <Button type="submit" className="w-full" disabled={loading || code.trim().length !== 8 || !agreed}>
+          <Button type="submit" className="w-full" disabled={!canSubmit}>
             {loading ? "Creating account..." : "Continue"}
           </Button>
         </form>
