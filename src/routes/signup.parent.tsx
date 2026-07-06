@@ -50,12 +50,26 @@ function usePreserveFieldsAgainstInjectedClears(
       }
     };
 
+    const restoreClearedFields = () => {
+      for (const [id, valueRef] of Object.entries(values)) {
+        const input = document.getElementById(id);
+        if (!(input instanceof HTMLInputElement)) continue;
+        if (input.dataset.preserveFilledValue !== "true") continue;
+        if (input.value === "" && valueRef.current !== "" && document.activeElement !== input) {
+          input.value = valueRef.current;
+        }
+      }
+    };
+
+    const restoreTimer = window.setInterval(restoreClearedFields, 50);
+
     form.addEventListener("input", preserveFilledValue, true);
     form.addEventListener("change", preserveFilledValue, true);
 
     return () => {
       form.removeEventListener("input", preserveFilledValue, true);
       form.removeEventListener("change", preserveFilledValue, true);
+      window.clearInterval(restoreTimer);
     };
   }, [formId, values]);
 }
