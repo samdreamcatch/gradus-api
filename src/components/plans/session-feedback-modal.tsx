@@ -90,14 +90,14 @@ export function SessionFeedbackModal({
             {planTitle}
           </DialogTitle>
           <DialogDescription className="sr-only">
-            Report back to Coach {coachFirstName} on how {athleteFirstName} showed up.
+            Report back to Coach {coachFirstName} on how you showed up.
           </DialogDescription>
         </DialogHeader>
 
         <div className="mt-2 space-y-5">
           <div>
             <p className="font-display text-lg font-bold leading-snug text-text-primary">
-              How did {athleteFirstName} show up today?
+              How did you show up today?
             </p>
 
             <FlowStateScale
