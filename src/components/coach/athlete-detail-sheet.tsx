@@ -108,7 +108,11 @@ function AthleteDetailBody({ athleteId }: { athleteId: string }) {
         </SectionHeading>
         {d.goals.length === 0 ? (
           <EmptyLine>
-            {d.selfManaged ? `${d.firstName} hasn't set goals yet.` : `${d.parentFirstName ?? d.firstName} hasn't set goals yet.`}
+            {d.coachedSports.length > 0
+              ? `${d.firstName} hasn't set goals for ${formatSportList(d.coachedSports.map((s) => s.label))} yet.`
+              : d.selfManaged
+                ? `${d.firstName} hasn't set goals yet.`
+                : `${d.parentFirstName ?? d.firstName} hasn't set goals yet.`}
           </EmptyLine>
 
         ) : (
