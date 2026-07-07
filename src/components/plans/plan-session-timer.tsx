@@ -123,6 +123,7 @@ export function PlanSessionTimer({
         planTitle={planTitle}
         coachFirstName={coachFirstName}
         athleteFirstName={athleteFirstName}
+        viewerIsAthlete={role !== "parent"}
         onSubmit={async (payload) => {
           try {
             await submitMutation.mutateAsync({
