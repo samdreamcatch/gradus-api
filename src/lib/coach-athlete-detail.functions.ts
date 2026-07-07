@@ -44,14 +44,17 @@ export interface CoachAthleteDetailDTO {
   athleteId: string;
   firstName: string;
   lastName: string;
-  parentFirstName: string;
-  parentLastName: string;
+  // Null for self-managed adult athletes.
+  parentFirstName: string | null;
+  parentLastName: string | null;
+  selfManaged: boolean;
   goals: AthleteGoalDTO[];
   plans: AthletePlanSummaryDTO[];
   activity: AthleteActivityCountsDTO;
   hasAnySignal: boolean;
   windowDays: number;
 }
+
 
 type SlotRow = {
   id: string;
