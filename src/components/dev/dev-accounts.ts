@@ -50,6 +50,13 @@ export const DEV_ACCOUNTS: DevAccount[] = [
     note: "Tami's athlete",
     home: "/athlete",
   },
+  {
+    email: "adult-athlete@test.dev",
+    label: "Dani California",
+    role: "athlete",
+    note: "Adult self-managed athlete",
+    home: "/athlete",
+  },
 ];
 
 export const ONBOARDING_STEPS: Record<DevRole, { label: string; to: string }[]> = {
