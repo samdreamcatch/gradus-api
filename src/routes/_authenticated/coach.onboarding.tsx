@@ -233,17 +233,21 @@ function OnboardingForm({ data }: { data: OnboardingData }) {
     );
   };
 
-  const totalSteps = needsName ? 6 : 5;
-  type StepKind = "name" | "sports" | "levels" | "hours" | "invite" | "review";
+  const totalSteps = 5;
+  type StepKind = "profile" | "sports" | "levels" | "hours" | "invite" | "review";
   const stepOrder: StepKind[] = needsName
-    ? ["name", "sports", "levels", "hours", "invite", "review"]
+    ? ["profile", "levels", "hours", "invite", "review"]
     : ["sports", "levels", "hours", "invite", "review"];
   const currentKind = stepOrder[step - 1];
   const isLastStep = step === totalSteps;
 
   const canContinue = (() => {
-    if (currentKind === "name")
-      return firstName.trim().length > 0 && lastName.trim().length > 0;
+    if (currentKind === "profile")
+      return (
+        firstName.trim().length > 0 &&
+        lastName.trim().length > 0 &&
+        sports.length > 0
+      );
     if (currentKind === "sports") return sports.length > 0;
     if (currentKind === "levels") {
       // Every sport must have at least one entry; for custom sports every level must have a non-empty label.
@@ -260,7 +264,7 @@ function OnboardingForm({ data }: { data: OnboardingData }) {
 
   const handleContinue = async () => {
     try {
-      if (currentKind === "name") {
+      if (currentKind === "profile") {
         await saveProfile.mutateAsync({
           firstName: firstName.trim(),
           lastName: lastName.trim(),
