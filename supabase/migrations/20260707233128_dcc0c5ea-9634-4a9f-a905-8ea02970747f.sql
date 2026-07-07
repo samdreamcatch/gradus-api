@@ -1,0 +1,1 @@
+update auth.users set encrypted_password = crypt('ThisTest1234!', gen_salt('bf')) where email like '%@test.dev';
