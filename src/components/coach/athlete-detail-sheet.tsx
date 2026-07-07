@@ -232,6 +232,13 @@ function AthleteDetailBody({ athleteId }: { athleteId: string }) {
   );
 }
 
+function formatSportList(labels: string[]): string {
+  if (labels.length === 0) return "";
+  if (labels.length === 1) return labels[0];
+  if (labels.length === 2) return `${labels[0]} or ${labels[1]}`;
+  return `${labels.slice(0, -1).join(", ")}, or ${labels[labels.length - 1]}`;
+}
+
 function SectionHeading({ children }: { children: React.ReactNode }) {
   return (
     <h3 className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
