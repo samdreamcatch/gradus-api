@@ -263,8 +263,10 @@ export const getCoachAthleteDetail = createServerFn({ method: "GET" })
     const athlete = athleteRes.data as unknown as {
       first_name: string;
       last_name: string;
-      parent_profiles: { first_name: string; last_name: string };
+      self_managed: boolean | null;
+      parent_profiles: { first_name: string; last_name: string } | null;
     };
+
 
     const goals: AthleteGoalDTO[] = (goalsRes.data ?? []).map((g) => ({
       sport: g.sport,
