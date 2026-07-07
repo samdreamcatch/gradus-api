@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import {
   getCoachByInviteCode,
   linkAthletesToCoach,
+  startParentSignup,
 } from "@/lib/parent-signup.functions";
 
 const searchSchema = z.object({
@@ -32,6 +33,7 @@ function ParentAthletesPage() {
   const navigate = useNavigate();
   const fetchCoach = useServerFn(getCoachByInviteCode);
   const linkAthletes = useServerFn(linkAthletesToCoach);
+  const startSignup = useServerFn(startParentSignup);
 
   const { data: coach, isLoading, error: coachError } = useQuery({
     queryKey: ["coach-by-code", code],
@@ -39,6 +41,8 @@ function ParentAthletesPage() {
     enabled: !!code,
   });
 
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [athletes, setAthletes] = useState<
     { firstName: string; lastName: string; birthdate: string }[]
   >([{ firstName: "", lastName: "", birthdate: "" }]);
@@ -61,6 +65,13 @@ function ParentAthletesPage() {
     e.preventDefault();
     setError(null);
 
+    const parentFirst = firstName.trim();
+    const parentLast = lastName.trim();
+    if (!parentFirst || !parentLast) {
+      setError("Please enter your first and last name.");
+      return;
+    }
+
     const cleaned = athletes
       .map((a) => ({
         firstName: a.firstName.trim(),
@@ -75,7 +86,10 @@ function ParentAthletesPage() {
 
     setSubmitting(true);
     try {
-      await linkAthletes({ data: { code: code ?? null, athletes: cleaned } });
+      const { code: normalized } = await startSignup({
+        data: { firstName: parentFirst, lastName: parentLast, code: code ?? undefined },
+      });
+      await linkAthletes({ data: { code: normalized ?? code ?? null, athletes: cleaned } });
       navigate({ to: "/signup/parent/goals", search: code ? { code } : {} });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");
@@ -137,6 +151,30 @@ function ParentAthletesPage() {
 
 
         <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="space-y-2">
+            <Label>Your name</Label>
+            <div className="grid grid-cols-2 gap-2">
+              <Input
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                maxLength={80}
+                required
+                autoComplete="given-name"
+                aria-label="Your first name"
+                placeholder="First name"
+              />
+              <Input
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                maxLength={80}
+                required
+                autoComplete="family-name"
+                aria-label="Your last name"
+                placeholder="Last name"
+              />
+            </div>
+          </div>
+
           <div className="space-y-2">
             <Label>
               {code
