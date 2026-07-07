@@ -10,19 +10,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Logo } from "@/components/logo";
 import { TurnstileWidget } from "@/components/auth/turnstile";
-import {
-  claimParentInvite,
-  getParentByInviteCode,
-} from "@/lib/parent-signup.functions";
+import { claimParentInvite, getParentByInviteCode } from "@/lib/parent-signup.functions";
 import { verifyTurnstileToken } from "@/lib/turnstile.functions";
 import { CURRENT_TERMS_VERSION, PENDING_TERMS_ACCEPT_KEY } from "@/lib/terms";
 
@@ -206,9 +197,7 @@ function CoachSignupPage() {
     <div className="flex min-h-dvh items-center justify-center px-4 py-12">
       <div className="w-full max-w-md rounded-2xl bg-card p-8 shadow-card">
         <div className="mb-8 text-center">
-          <p className="text-xs font-bold uppercase tracking-widest text-accent-ink">
-            Welcome to
-          </p>
+          <p className="text-xs font-bold uppercase tracking-widest text-accent-ink">Welcome to</p>
           <h1 className="mt-2">
             <Logo className="text-6xl" />
           </h1>
@@ -223,13 +212,7 @@ function CoachSignupPage() {
           </div>
         )}
 
-        <Button
-          type="button"
-          variant="outline"
-          className="w-full"
-          onClick={handleGoogle}
-          disabled={!canSubmit}
-        >
+        <Button type="button" variant="outline" className="w-full" onClick={handleGoogle} disabled={!canSubmit}>
           Continue with Google
         </Button>
 
@@ -240,9 +223,6 @@ function CoachSignupPage() {
         </div>
 
         <form onSubmit={handleEmailSubmit} className="space-y-4" autoComplete="on">
-
-
-
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
@@ -312,7 +292,7 @@ function CoachSignupPage() {
           <DialogContent className="max-w-sm">
             <DialogHeader>
               <DialogTitle>One last check</DialogTitle>
-              <DialogDescription>Complete the security check to continue.</DialogDescription>
+              <DialogDescription>Verifying you're a human.</DialogDescription>
             </DialogHeader>
             <TurnstileWidget
               resetKey={captchaKey}
