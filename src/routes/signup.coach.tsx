@@ -10,6 +10,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Logo } from "@/components/logo";
 import { TurnstileWidget } from "@/components/auth/turnstile";
 import {
@@ -42,6 +49,8 @@ export const Route = createFileRoute("/signup/coach")({
   component: CoachSignupPage,
 });
 
+type PendingAction = "email" | "google";
+
 function CoachSignupPage() {
   const { invite } = Route.useSearch();
   const navigate = useNavigate();
@@ -56,6 +65,8 @@ function CoachSignupPage() {
   const [agreed, setAgreed] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [captchaKey, setCaptchaKey] = useState(0);
+  const [captchaOpen, setCaptchaOpen] = useState(false);
+  const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -117,13 +128,7 @@ function CoachSignupPage() {
     setCaptchaKey((k) => k + 1);
   };
 
-  const handleEmail = async (e: FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    if (!captchaToken) {
-      setError("Please complete the human check first.");
-      return;
-    }
+  const doEmailSignup = async (verifiedCaptchaToken: string) => {
     setLoading(true);
     try {
       stashPendingAccept();
@@ -132,8 +137,12 @@ function CoachSignupPage() {
         password,
         options: {
           emailRedirectTo: window.location.origin + "/coach",
-          data: { full_name: `${firstName} ${lastName}`.trim(), first_name: firstName, last_name: lastName },
-          captchaToken,
+          data: {
+            full_name: `${firstName} ${lastName}`.trim(),
+            first_name: firstName,
+            last_name: lastName,
+          },
+          captchaToken: verifiedCaptchaToken,
         },
       });
       if (error) throw error;
@@ -146,15 +155,10 @@ function CoachSignupPage() {
     }
   };
 
-  const handleGoogle = async () => {
-    setError(null);
-    if (!captchaToken) {
-      setError("Please complete the human check first.");
-      return;
-    }
+  const doGoogleSignup = async (verifiedCaptchaToken: string) => {
     setLoading(true);
     try {
-      await verifyCaptcha({ data: { token: captchaToken } });
+      await verifyCaptcha({ data: { token: verifiedCaptchaToken } });
       stashPendingAccept();
       const result = await lovable.auth.signInWithOAuth("google", {
         redirect_uri: window.location.origin + "/coach",
@@ -168,8 +172,42 @@ function CoachSignupPage() {
     }
   };
 
+  const runPending = async (action: PendingAction, token: string) => {
+    if (action === "email") await doEmailSignup(token);
+    else await doGoogleSignup(token);
+  };
+
+  const handleEmailSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    if (captchaToken) {
+      void doEmailSignup(captchaToken);
+      return;
+    }
+    setPendingAction("email");
+    setCaptchaOpen(true);
+  };
+
+  const handleGoogle = () => {
+    setError(null);
+    if (captchaToken) {
+      void doGoogleSignup(captchaToken);
+      return;
+    }
+    setPendingAction("google");
+    setCaptchaOpen(true);
+  };
+
+  const handleCaptchaVerified = (token: string) => {
+    setCaptchaToken(token);
+    setCaptchaOpen(false);
+    const action = pendingAction;
+    setPendingAction(null);
+    if (action) void runPending(action, token);
+  };
+
   const parentName = parent ? `${parent.firstName} ${parent.lastName}`.trim() : null;
-  const canSubmit = agreed && !!captchaToken && !loading;
+  const canSubmit = agreed && !loading;
 
   return (
     <div className="flex min-h-dvh items-center justify-center px-4 py-12">
@@ -192,37 +230,6 @@ function CoachSignupPage() {
           </div>
         )}
 
-        <label className="mb-4 flex cursor-pointer items-start gap-2.5 text-sm text-text-secondary">
-          <Checkbox
-            checked={agreed}
-            onCheckedChange={(v) => setAgreed(v === true)}
-            className="mt-0.5"
-            aria-label="Agree to Terms of Service"
-          />
-          <span>
-            I agree to the{" "}
-            <Link
-              to="/terms"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-medium text-accent-ink underline underline-offset-2"
-              onClick={(e) => e.stopPropagation()}
-            >
-              Gradus Terms of Service
-            </Link>{" "}
-            (v{CURRENT_TERMS_VERSION}).
-          </span>
-        </label>
-
-        <div className="mb-4">
-          <TurnstileWidget
-            resetKey={captchaKey}
-            onVerify={(t) => setCaptchaToken(t)}
-            onExpire={() => setCaptchaToken(null)}
-            onError={() => setCaptchaToken(null)}
-          />
-        </div>
-
         <Button
           type="button"
           variant="outline"
@@ -239,30 +246,107 @@ function CoachSignupPage() {
           <div className="h-px flex-1 bg-divider" />
         </div>
 
-        <form onSubmit={handleEmail} className="space-y-4">
+        <form onSubmit={handleEmailSubmit} className="space-y-4" autoComplete="on">
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label htmlFor="firstName">First name</Label>
-              <Input id="firstName" value={firstName} onChange={(e) => setFirstName(e.target.value)} required maxLength={80} />
+              <Input
+                id="firstName"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                required
+                maxLength={80}
+                autoComplete="given-name"
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="lastName">Last name</Label>
-              <Input id="lastName" value={lastName} onChange={(e) => setLastName(e.target.value)} required maxLength={80} />
+              <Input
+                id="lastName"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                required
+                maxLength={80}
+                autoComplete="family-name"
+              />
             </div>
           </div>
+
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              autoComplete="username"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
           </div>
+
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
-            <Input id="password" type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+            <Input
+              id="password"
+              name="new-password"
+              type="password"
+              autoComplete="new-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
           </div>
+
+          <label className="flex cursor-pointer items-start gap-2.5 text-sm text-text-secondary">
+            <Checkbox
+              checked={agreed}
+              onCheckedChange={(v) => setAgreed(v === true)}
+              className="mt-0.5"
+              aria-label="Agree to Terms of Service"
+            />
+            <span>
+              I agree to the{" "}
+              <Link
+                to="/terms"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-accent-ink underline underline-offset-2"
+                onClick={(e) => e.stopPropagation()}
+              >
+                Gradus Terms of Service
+              </Link>{" "}
+              (v{CURRENT_TERMS_VERSION}).
+            </span>
+          </label>
+
           {error && <p className="text-sm text-destructive">{error}</p>}
+
           <Button type="submit" className="w-full" disabled={!canSubmit}>
-            {loading ? "..." : "Create coach account"}
+            {loading ? "Creating account..." : "Continue"}
           </Button>
         </form>
+
+        <Dialog
+          open={captchaOpen}
+          onOpenChange={(open) => {
+            setCaptchaOpen(open);
+            if (!open) setPendingAction(null);
+          }}
+        >
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle>One last check</DialogTitle>
+              <DialogDescription>Complete the security check to continue.</DialogDescription>
+            </DialogHeader>
+            <TurnstileWidget
+              resetKey={captchaKey}
+              onVerify={handleCaptchaVerified}
+              onExpire={() => setCaptchaToken(null)}
+              onError={() => setCaptchaToken(null)}
+            />
+          </DialogContent>
+        </Dialog>
 
         <p className="mt-6 text-center text-sm text-text-secondary">
           Wrong role?{" "}
