@@ -509,5 +509,3 @@ function SignOutRow() {
   );
 }
 
-// Suppress unused-import warning for useEffect (kept for future use).
-void useEffect;
