@@ -196,7 +196,8 @@ export type Database = {
           id: string
           last_name: string
           motivation: string
-          parent_id: string
+          parent_id: string | null
+          self_managed: boolean
           updated_at: string
           user_id: string | null
           username: string | null
@@ -208,7 +209,8 @@ export type Database = {
           id?: string
           last_name?: string
           motivation?: string
-          parent_id: string
+          parent_id?: string | null
+          self_managed?: boolean
           updated_at?: string
           user_id?: string | null
           username?: string | null
@@ -220,7 +222,8 @@ export type Database = {
           id?: string
           last_name?: string
           motivation?: string
-          parent_id?: string
+          parent_id?: string | null
+          self_managed?: boolean
           updated_at?: string
           user_id?: string | null
           username?: string | null
@@ -1339,6 +1342,10 @@ export type Database = {
       is_parent_of_plan: { Args: { _plan_id: string }; Returns: boolean }
       is_room_participant: {
         Args: { _room_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_self_managed_athlete: {
+        Args: { _athlete_id: string }
         Returns: boolean
       }
       move_to_dlq: {
