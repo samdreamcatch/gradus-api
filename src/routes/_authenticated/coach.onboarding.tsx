@@ -341,28 +341,40 @@ function OnboardingForm({ data }: { data: OnboardingData }) {
           </div>
         </div>
 
-        {currentKind === "name" && (
+        {currentKind === "profile" && (
           <Step
-            title="What's your name?"
-            subtitle="Your athletes will see this on their lessons."
+            title="Tell us about yourself"
+            subtitle="Your athletes will see your name on their lessons."
           >
-            <div className="grid gap-2 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="firstName">First name</Label>
-                <Input
-                  id="firstName"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  maxLength={80}
-                />
+            <div className="space-y-6">
+              <div className="grid gap-2 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="firstName">First name</Label>
+                  <Input
+                    id="firstName"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    maxLength={80}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="lastName">Last name</Label>
+                  <Input
+                    id="lastName"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    maxLength={80}
+                  />
+                </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="lastName">Last name</Label>
-                <Input
-                  id="lastName"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  maxLength={80}
+                <Label>Which sports do you coach?</Label>
+                <SportMultiselect
+                  selected={sports}
+                  customSports={customSports}
+                  onToggle={toggleSport}
+                  onAddCustom={addCustomSport}
+                  onRemoveCustom={removeCustomSport}
                 />
               </div>
             </div>
