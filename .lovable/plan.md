@@ -1,32 +1,35 @@
-## Recommendation
-Do not rip-and-replace with another CAPTCHA provider yet. The recurring field clears are happening in preview because the CAPTCHA widget/script is being inserted while the signup form is still being filled. A different provider can still inject iframes/hidden fields/scripts and trigger the same Chrome/password-manager rescan behavior.
+## Change
+Move parent first/last name collection off the initial `/signup/parent` page. Collect it on the next screen, `/signup/parent/athletes`, alongside "Add your athletes" — where the user is already entering names.
 
-## Plan
-1. **Remove Turnstile from the live parent signup form UI**
-   - Do not render the CAPTCHA widget while the user is typing first name, last name, email, or password.
-   - Remove the field-preservation hacks added to fight browser extensions; they are not reliable enough and add complexity.
+## `/signup/parent` becomes
+- Email
+- Password
+- Coach invite code (optional)
+- Terms of service checkbox
+- Continue → CAPTCHA dialog → create account → navigate to athletes page
 
-2. **Show CAPTCHA only at submit time**
-   - Let the user fill the parent signup form normally.
-   - When they click **Continue**, open a small modal/dialog containing the Turnstile check.
-   - After the check succeeds, immediately continue the existing signup flow.
+No first/last name inputs on this page at all. This removes the exact combination (name inputs sitting next to email + new-password inputs) that trips Chrome's autofill / password-manager rescan.
 
-3. **Keep security behavior intact**
-   - Still require a CAPTCHA token before account creation.
-   - Still pass the token to the existing auth/signup calls.
-   - Still reset the CAPTCHA token after an error.
+## `/signup/parent/athletes` becomes
+- New section at the top: **Your name** — First name, Last name
+- Existing "Add your athletes" section unchanged below
+- Submit calls `startParentSignup` with the parent's name, then the existing `linkAthletesToCoach` flow
 
-4. **Apply the same safer pattern where needed later**
-   - For this fix, focus on `/signup/parent` only, since that is where the bug is actively blocking you.
-   - If this works in preview, we can optionally convert coach signup, login, and forgot-password to the same submit-time gate afterward.
+Because this page has no email/password fields, name inputs are safe from credential-form autofill.
 
-## Why this is better than switching providers
-- Avoids adding new vendor setup, secrets, and verification paths.
-- Avoids the exact failure mode: CAPTCHA DOM changes while text fields are active.
-- Keeps the current backend/auth integration intact.
-- Gives us a clean rollback path if needed.
+## Backend
+- No schema changes.
+- `startParentSignup` already accepts `{ firstName, lastName, code? }` and upserts `parent_profiles`. We just call it from the athletes page instead of from the first page.
+- The first page's Supabase sign-up call drops `data.full_name` (it's set later by `startParentSignup`).
+- `getParentSignupStatus` / resume logic is unaffected: a parent who signed up but never entered a name will land on the athletes page and be prompted for it.
+
+## Cleanup
+- Remove all field-preservation hacks and the split-form workarounds from `/signup/parent`.
+- Keep the submit-time CAPTCHA dialog exactly as it is now.
 
 ## Validation
-- In preview Chrome, fill first name, last name, email, and password before any CAPTCHA is mounted.
-- Confirm no fields clear while typing.
-- Click **Continue**, complete the CAPTCHA dialog, and verify the flow advances normally.
+1. Hard refresh `/signup/parent`.
+2. Type email and password — confirm nothing clears.
+3. Click Continue → CAPTCHA dialog opens → complete it → routed to athletes page.
+4. On athletes page: enter your first/last name and at least one athlete; submit succeeds.
+5. Re-run signup with an existing account partway through: confirm resume still lands correctly.
