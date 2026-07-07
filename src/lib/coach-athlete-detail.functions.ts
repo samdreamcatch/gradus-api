@@ -382,9 +382,11 @@ export const getCoachAthleteDetail = createServerFn({ method: "GET" })
       athleteId: data.athleteId,
       firstName: athlete.first_name,
       lastName: athlete.last_name,
-      parentFirstName: athlete.parent_profiles.first_name,
-      parentLastName: athlete.parent_profiles.last_name,
+      parentFirstName: athlete.parent_profiles?.first_name ?? null,
+      parentLastName: athlete.parent_profiles?.last_name ?? null,
+      selfManaged: athlete.self_managed === true,
       goals,
+
       plans,
       activity: {
         practiceMinutesMine,
