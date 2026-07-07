@@ -47,6 +47,7 @@ export function SessionFeedbackModal({
   planTitle,
   coachFirstName,
   athleteFirstName,
+  viewerIsAthlete,
   onSubmit,
 }: {
   open: boolean;
@@ -55,6 +56,7 @@ export function SessionFeedbackModal({
   planTitle: string;
   coachFirstName: string;
   athleteFirstName: string;
+  viewerIsAthlete: boolean;
   onSubmit: (payload: FeedbackPayload) => void;
 }) {
   const [stateIndex, setStateIndex] = useState<number | null>(null);
@@ -79,6 +81,9 @@ export function SessionFeedbackModal({
     });
   };
 
+  const subjectShowed = viewerIsAthlete ? "you showed" : `${athleteFirstName} showed`;
+  const subjectShow = viewerIsAthlete ? "you show" : `${athleteFirstName} show`;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -90,14 +95,14 @@ export function SessionFeedbackModal({
             {planTitle}
           </DialogTitle>
           <DialogDescription className="sr-only">
-            Report back to Coach {coachFirstName} on how you showed up.
+            Report back to Coach {coachFirstName} on how {subjectShowed} up.
           </DialogDescription>
         </DialogHeader>
 
         <div className="mt-2 space-y-5">
           <div>
             <p className="font-display text-lg font-bold leading-snug text-text-primary">
-              How did you show up today?
+              How did {subjectShow} up today?
             </p>
 
             <FlowStateScale
