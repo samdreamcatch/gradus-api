@@ -5,13 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Logo } from "@/components/logo";
 import { TurnstileWidget } from "@/components/auth/turnstile";
 import { CURRENT_TERMS_VERSION, PENDING_TERMS_ACCEPT_KEY } from "@/lib/terms";
@@ -174,7 +168,8 @@ function ParentSignupPage() {
               data-bwignore="true"
             />
             <p className="text-xs text-text-tertiary">
-              Have a coach&apos;s 8-character code? Enter it to link your athlete now. You can skip this and add a coach later.
+              Have a coach&apos;s 8-character code? Enter it to link your athlete now. You can skip this and add a coach
+              later.
             </p>
           </div>
 
@@ -211,7 +206,7 @@ function ParentSignupPage() {
           <DialogContent className="max-w-sm">
             <DialogHeader>
               <DialogTitle>One last check</DialogTitle>
-              <DialogDescription>Complete the security check to continue.</DialogDescription>
+              <DialogDescription>Verifying that you're a human.</DialogDescription>
             </DialogHeader>
             <TurnstileWidget
               resetKey={captchaKey}
