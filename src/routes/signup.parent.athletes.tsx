@@ -210,7 +210,7 @@ function ParentAthletesPage() {
                       />
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-xs text-text-secondary">Birthday</Label>
+                      <Label className="text-xs text-text-secondary">Your athlete's birthday</Label>
                       <Input
                         type="date"
                         value={a.birthdate}
