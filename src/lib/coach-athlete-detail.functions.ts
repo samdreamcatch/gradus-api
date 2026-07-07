@@ -391,6 +391,10 @@ export const getCoachAthleteDetail = createServerFn({ method: "GET" })
       parentFirstName: athlete.parent_profiles?.first_name ?? null,
       parentLastName: athlete.parent_profiles?.last_name ?? null,
       selfManaged: athlete.self_managed === true,
+      coachedSports: coachSports.map((s) => ({
+        key: s,
+        label: sportLabel(s),
+      })),
       goals,
 
       plans,
