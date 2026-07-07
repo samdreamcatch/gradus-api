@@ -369,11 +369,21 @@ export const listAdultAthleteCoaches = createServerFn({ method: "GET" })
     }
     const athleteId = me.data.id;
 
+    // RLS lets the athlete read their own coach_athletes rows, but not
+    // coach_profiles — a !inner join would silently drop every row. Fetch
+    // coach ids under RLS, then resolve names via the admin client (the
+    // coach_athletes row already authorized the lookup).
     const links = await supabase
       .from("coach_athletes")
-      .select("coach_id, coach_profiles!inner(id, first_name, last_name)")
+      .select("coach_id")
       .eq("athlete_id", athleteId);
     if (links.error) dbError(links.error);
+    const coachIds = Array.from(
+      new Set((links.data ?? []).map((l) => l.coach_id)),
+    );
+    if (coachIds.length === 0) {
+      return { selfManaged: true as const, coaches: [] };
+    }
 
     const scoped = await supabase
       .from("coach_athlete_sports")
@@ -387,18 +397,19 @@ export const listAdultAthleteCoaches = createServerFn({ method: "GET" })
       sportsByCoach.set(row.coach_id, arr);
     }
 
-    const coaches = (links.data ?? []).map((l) => {
-      const cp = l.coach_profiles as unknown as {
-        id: string;
-        first_name: string;
-        last_name: string;
-      };
-      return {
-        coachId: cp.id,
-        coachName: `${cp.first_name} ${cp.last_name}`.trim(),
-        sports: sportsByCoach.get(cp.id) ?? [],
-      };
-    });
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const profiles = await supabaseAdmin
+      .from("coach_profiles")
+      .select("id, first_name, last_name")
+      .in("id", coachIds);
+    if (profiles.error) dbError(profiles.error);
+
+    const coaches = (profiles.data ?? []).map((cp) => ({
+      coachId: cp.id,
+      coachName: `${cp.first_name} ${cp.last_name}`.trim(),
+      sports: sportsByCoach.get(cp.id) ?? [],
+    }));
+
 
     return { selfManaged: true as const, coaches };
   });
