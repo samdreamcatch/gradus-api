@@ -145,18 +145,21 @@ export const getCoachRoster = createServerFn({ method: "GET" })
         id: string;
         first_name: string;
         last_name: string;
-        parent_profiles: { first_name: string; last_name: string };
+        self_managed: boolean | null;
+        parent_profiles: { first_name: string; last_name: string } | null;
       };
       return {
         athleteId: a.id,
         firstName: a.first_name,
         lastName: a.last_name,
         sport: sportByAthlete.get(a.id) ?? null,
-        parentFirstName: a.parent_profiles.first_name,
-        parentLastName: a.parent_profiles.last_name,
+        parentFirstName: a.parent_profiles?.first_name ?? null,
+        parentLastName: a.parent_profiles?.last_name ?? null,
+        selfManaged: a.self_managed === true,
         slots: slotsByAthlete.get(a.id) ?? [],
       };
     });
+
 
     result.sort(
       (a, b) =>
