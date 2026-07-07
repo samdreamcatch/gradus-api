@@ -149,14 +149,15 @@ function AdultAthleteOnboardingPage() {
                   return (
                     <SportChip
                       key={s}
-                      label={s}
                       selected={checked}
                       onClick={() =>
                         setSelectedSports((prev) =>
                           checked ? prev.filter((x) => x !== s) : [...prev, s],
                         )
                       }
-                    />
+                    >
+                      {s}
+                    </SportChip>
                   );
                 })}
               </div>
