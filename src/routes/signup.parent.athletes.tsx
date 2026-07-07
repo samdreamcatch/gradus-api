@@ -152,6 +152,30 @@ function ParentAthletesPage() {
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-2">
+            <Label>Your name</Label>
+            <div className="grid grid-cols-2 gap-2">
+              <Input
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                maxLength={80}
+                required
+                autoComplete="given-name"
+                aria-label="Your first name"
+                placeholder="First name"
+              />
+              <Input
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                maxLength={80}
+                required
+                autoComplete="family-name"
+                aria-label="Your last name"
+                placeholder="Last name"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
             <Label>
               {code
                 ? `Which of your athletes train${athletes.length > 1 ? "" : "s"} with${coachName ? ` Coach ${coachName}` : " this coach"}?`
