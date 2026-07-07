@@ -233,17 +233,21 @@ function OnboardingForm({ data }: { data: OnboardingData }) {
     );
   };
 
-  const totalSteps = needsName ? 6 : 5;
-  type StepKind = "name" | "sports" | "levels" | "hours" | "invite" | "review";
+  const totalSteps = 5;
+  type StepKind = "profile" | "sports" | "levels" | "hours" | "invite" | "review";
   const stepOrder: StepKind[] = needsName
-    ? ["name", "sports", "levels", "hours", "invite", "review"]
+    ? ["profile", "levels", "hours", "invite", "review"]
     : ["sports", "levels", "hours", "invite", "review"];
   const currentKind = stepOrder[step - 1];
   const isLastStep = step === totalSteps;
 
   const canContinue = (() => {
-    if (currentKind === "name")
-      return firstName.trim().length > 0 && lastName.trim().length > 0;
+    if (currentKind === "profile")
+      return (
+        firstName.trim().length > 0 &&
+        lastName.trim().length > 0 &&
+        sports.length > 0
+      );
     if (currentKind === "sports") return sports.length > 0;
     if (currentKind === "levels") {
       // Every sport must have at least one entry; for custom sports every level must have a non-empty label.
@@ -260,7 +264,7 @@ function OnboardingForm({ data }: { data: OnboardingData }) {
 
   const handleContinue = async () => {
     try {
-      if (currentKind === "name") {
+      if (currentKind === "profile") {
         await saveProfile.mutateAsync({
           firstName: firstName.trim(),
           lastName: lastName.trim(),
@@ -337,28 +341,40 @@ function OnboardingForm({ data }: { data: OnboardingData }) {
           </div>
         </div>
 
-        {currentKind === "name" && (
+        {currentKind === "profile" && (
           <Step
-            title="What's your name?"
-            subtitle="Your athletes will see this on their lessons."
+            title="Tell us about yourself"
+            subtitle="Your athletes will see your name on their lessons."
           >
-            <div className="grid gap-2 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="firstName">First name</Label>
-                <Input
-                  id="firstName"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  maxLength={80}
-                />
+            <div className="space-y-6">
+              <div className="grid gap-2 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="firstName">First name</Label>
+                  <Input
+                    id="firstName"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    maxLength={80}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="lastName">Last name</Label>
+                  <Input
+                    id="lastName"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    maxLength={80}
+                  />
+                </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="lastName">Last name</Label>
-                <Input
-                  id="lastName"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  maxLength={80}
+                <Label>Which sports do you coach?</Label>
+                <SportMultiselect
+                  selected={sports}
+                  customSports={customSports}
+                  onToggle={toggleSport}
+                  onAddCustom={addCustomSport}
+                  onRemoveCustom={removeCustomSport}
                 />
               </div>
             </div>
