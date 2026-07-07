@@ -108,7 +108,11 @@ function AthleteDetailBody({ athleteId }: { athleteId: string }) {
         </SectionHeading>
         {d.goals.length === 0 ? (
           <EmptyLine>
-            {d.selfManaged ? `${d.firstName} hasn't set goals yet.` : `${d.parentFirstName ?? d.firstName} hasn't set goals yet.`}
+            {d.coachedSports.length > 0
+              ? `${d.firstName} hasn't set goals for ${formatSportList(d.coachedSports.map((s) => s.label))} yet.`
+              : d.selfManaged
+                ? `${d.firstName} hasn't set goals yet.`
+                : `${d.parentFirstName ?? d.firstName} hasn't set goals yet.`}
           </EmptyLine>
 
         ) : (
@@ -226,6 +230,13 @@ function AthleteDetailBody({ athleteId }: { athleteId: string }) {
       </section>
     </div>
   );
+}
+
+function formatSportList(labels: string[]): string {
+  if (labels.length === 0) return "";
+  if (labels.length === 1) return labels[0];
+  if (labels.length === 2) return `${labels[0]} or ${labels[1]}`;
+  return `${labels.slice(0, -1).join(", ")}, or ${labels[labels.length - 1]}`;
 }
 
 function SectionHeading({ children }: { children: React.ReactNode }) {
