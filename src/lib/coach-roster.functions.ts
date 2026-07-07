@@ -61,10 +61,11 @@ export const getCoachRoster = createServerFn({ method: "GET" })
     const links = await supabaseAdmin
       .from("coach_athletes")
       .select(
-        "athlete_id, athletes!inner(id, first_name, last_name, parent_profiles!inner(first_name, last_name))",
+        "athlete_id, athletes!inner(id, first_name, last_name, self_managed, parent_profiles(first_name, last_name))",
       )
       .eq("coach_id", coachId);
     if (links.error) dbError(links.error);
+
     const rows = links.data ?? [];
     if (rows.length === 0) return { coachSports, athletes: [] };
 
