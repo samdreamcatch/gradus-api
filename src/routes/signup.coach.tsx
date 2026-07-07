@@ -249,7 +249,11 @@ function CoachSignupPage() {
               id="email"
               name="email"
               type="email"
-              autoComplete="username"
+              autoComplete="email"
+              inputMode="email"
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck={false}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
