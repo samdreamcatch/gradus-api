@@ -32,6 +32,7 @@ import { Route as SignupParentScheduleRouteImport } from './routes/signup.parent
 import { Route as SignupParentGoalsRouteImport } from './routes/signup.parent.goals'
 import { Route as SignupParentAthletesRouteImport } from './routes/signup.parent.athletes'
 import { Route as SignupAthleteConfirmRouteImport } from './routes/signup.athlete.confirm'
+import { Route as SignupAthleteAdultRouteImport } from './routes/signup.athlete.adult'
 import { Route as SignupAthleteAccountRouteImport } from './routes/signup.athlete.account'
 import { Route as AuthenticatedParentSettingsRouteImport } from './routes/_authenticated/parent.settings'
 import { Route as AuthenticatedCoachSettingsRouteImport } from './routes/_authenticated/coach.settings'
@@ -177,6 +178,11 @@ const SignupParentAthletesRoute = SignupParentAthletesRouteImport.update({
 const SignupAthleteConfirmRoute = SignupAthleteConfirmRouteImport.update({
   id: '/confirm',
   path: '/confirm',
+  getParentRoute: () => SignupAthleteRoute,
+} as any)
+const SignupAthleteAdultRoute = SignupAthleteAdultRouteImport.update({
+  id: '/adult',
+  path: '/adult',
   getParentRoute: () => SignupAthleteRoute,
 } as any)
 const SignupAthleteAccountRoute = SignupAthleteAccountRouteImport.update({
@@ -380,6 +386,7 @@ export interface FileRoutesByFullPath {
   '/coach/settings': typeof AuthenticatedCoachSettingsRoute
   '/parent/settings': typeof AuthenticatedParentSettingsRoute
   '/signup/athlete/account': typeof SignupAthleteAccountRoute
+  '/signup/athlete/adult': typeof SignupAthleteAdultRoute
   '/signup/athlete/confirm': typeof SignupAthleteConfirmRoute
   '/signup/parent/athletes': typeof SignupParentAthletesRoute
   '/signup/parent/goals': typeof SignupParentGoalsRoute
@@ -429,6 +436,7 @@ export interface FileRoutesByTo {
   '/coach/settings': typeof AuthenticatedCoachSettingsRoute
   '/parent/settings': typeof AuthenticatedParentSettingsRoute
   '/signup/athlete/account': typeof SignupAthleteAccountRoute
+  '/signup/athlete/adult': typeof SignupAthleteAdultRoute
   '/signup/athlete/confirm': typeof SignupAthleteConfirmRoute
   '/signup/parent/athletes': typeof SignupParentAthletesRoute
   '/signup/parent/goals': typeof SignupParentGoalsRoute
@@ -485,6 +493,7 @@ export interface FileRoutesById {
   '/_authenticated/coach/settings': typeof AuthenticatedCoachSettingsRoute
   '/_authenticated/parent/settings': typeof AuthenticatedParentSettingsRoute
   '/signup/athlete/account': typeof SignupAthleteAccountRoute
+  '/signup/athlete/adult': typeof SignupAthleteAdultRoute
   '/signup/athlete/confirm': typeof SignupAthleteConfirmRoute
   '/signup/parent/athletes': typeof SignupParentAthletesRoute
   '/signup/parent/goals': typeof SignupParentGoalsRoute
@@ -541,6 +550,7 @@ export interface FileRouteTypes {
     | '/coach/settings'
     | '/parent/settings'
     | '/signup/athlete/account'
+    | '/signup/athlete/adult'
     | '/signup/athlete/confirm'
     | '/signup/parent/athletes'
     | '/signup/parent/goals'
@@ -590,6 +600,7 @@ export interface FileRouteTypes {
     | '/coach/settings'
     | '/parent/settings'
     | '/signup/athlete/account'
+    | '/signup/athlete/adult'
     | '/signup/athlete/confirm'
     | '/signup/parent/athletes'
     | '/signup/parent/goals'
@@ -645,6 +656,7 @@ export interface FileRouteTypes {
     | '/_authenticated/coach/settings'
     | '/_authenticated/parent/settings'
     | '/signup/athlete/account'
+    | '/signup/athlete/adult'
     | '/signup/athlete/confirm'
     | '/signup/parent/athletes'
     | '/signup/parent/goals'
@@ -853,6 +865,13 @@ declare module '@tanstack/react-router' {
       path: '/confirm'
       fullPath: '/signup/athlete/confirm'
       preLoaderRoute: typeof SignupAthleteConfirmRouteImport
+      parentRoute: typeof SignupAthleteRoute
+    }
+    '/signup/athlete/adult': {
+      id: '/signup/athlete/adult'
+      path: '/adult'
+      fullPath: '/signup/athlete/adult'
+      preLoaderRoute: typeof SignupAthleteAdultRouteImport
       parentRoute: typeof SignupAthleteRoute
     }
     '/signup/athlete/account': {
@@ -1213,11 +1232,13 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
 
 interface SignupAthleteRouteChildren {
   SignupAthleteAccountRoute: typeof SignupAthleteAccountRoute
+  SignupAthleteAdultRoute: typeof SignupAthleteAdultRoute
   SignupAthleteConfirmRoute: typeof SignupAthleteConfirmRoute
 }
 
 const SignupAthleteRouteChildren: SignupAthleteRouteChildren = {
   SignupAthleteAccountRoute: SignupAthleteAccountRoute,
+  SignupAthleteAdultRoute: SignupAthleteAdultRoute,
   SignupAthleteConfirmRoute: SignupAthleteConfirmRoute,
 }
 
