@@ -240,30 +240,8 @@ function CoachSignupPage() {
         </div>
 
         <form onSubmit={handleEmailSubmit} className="space-y-4" autoComplete="on">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label htmlFor="firstName">First name</Label>
-              <Input
-                id="firstName"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                required
-                maxLength={80}
-                autoComplete="given-name"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="lastName">Last name</Label>
-              <Input
-                id="lastName"
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                required
-                maxLength={80}
-                autoComplete="family-name"
-              />
-            </div>
-          </div>
+
+
 
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
