@@ -22,10 +22,13 @@ export type RosterAthlete = {
   firstName: string;
   lastName: string;
   sport: string | null;
-  parentFirstName: string;
-  parentLastName: string;
+  // Null for self-managed adult athletes (no parent in the loop).
+  parentFirstName: string | null;
+  parentLastName: string | null;
+  selfManaged: boolean;
   slots: RosterSlot[];
 };
+
 
 export type CoachRoster = {
   coachSports: string[];
