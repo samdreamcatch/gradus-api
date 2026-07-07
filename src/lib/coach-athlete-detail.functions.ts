@@ -212,7 +212,7 @@ export const getCoachAthleteDetail = createServerFn({ method: "GET" })
       supabaseAdmin
         .from("athletes")
         .select(
-          "id, first_name, last_name, parent_profiles!inner(first_name, last_name)",
+          "id, first_name, last_name, self_managed, parent_profiles(first_name, last_name)",
         )
         .eq("id", data.athleteId)
         .single(),
