@@ -40,6 +40,11 @@ export interface AthleteActivityCountsDTO {
   lessonMinutesTotal: number;
 }
 
+export interface CoachedSportDTO {
+  key: string;
+  label: string;
+}
+
 export interface CoachAthleteDetailDTO {
   athleteId: string;
   firstName: string;
@@ -48,6 +53,7 @@ export interface CoachAthleteDetailDTO {
   parentFirstName: string | null;
   parentLastName: string | null;
   selfManaged: boolean;
+  coachedSports: CoachedSportDTO[];
   goals: AthleteGoalDTO[];
   plans: AthletePlanSummaryDTO[];
   activity: AthleteActivityCountsDTO;
