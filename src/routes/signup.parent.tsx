@@ -1,6 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,8 +14,6 @@ import {
 } from "@/components/ui/dialog";
 import { Logo } from "@/components/logo";
 import { TurnstileWidget } from "@/components/auth/turnstile";
-import { startParentSignup } from "@/lib/parent-signup.functions";
-import { acceptTerms } from "@/lib/terms.functions";
 import { CURRENT_TERMS_VERSION, PENDING_TERMS_ACCEPT_KEY } from "@/lib/terms";
 
 export const Route = createFileRoute("/signup/parent")({
@@ -26,11 +23,7 @@ export const Route = createFileRoute("/signup/parent")({
 function ParentSignupPage() {
   const location = useLocation();
   const navigate = useNavigate();
-  const start = useServerFn(startParentSignup);
-  const accept = useServerFn(acceptTerms);
 
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [code, setCode] = useState("");
@@ -64,7 +57,6 @@ function ParentSignupPage() {
       password,
       options: {
         emailRedirectTo: window.location.origin + "/parent",
-        data: { full_name: `${firstName} ${lastName}`.trim() },
         captchaToken: verifiedCaptchaToken,
       },
     });
@@ -94,20 +86,10 @@ function ParentSignupPage() {
         /* ignore */
       }
       await ensureAuthed(verifiedCaptchaToken);
-      try {
-        await accept({ data: { role: "parent" } });
-        localStorage.removeItem(PENDING_TERMS_ACCEPT_KEY);
-      } catch {
-        /* layout fallback will retry */
-      }
-      const { code: normalized } = await start({
-        data: { firstName, lastName, code: trimmed || undefined },
+      navigate({
+        to: "/signup/parent/athletes",
+        search: trimmed ? { code: trimmed } : {},
       });
-      if (normalized) {
-        navigate({ to: "/signup/parent/athletes", search: { code: normalized } });
-      } else {
-        navigate({ to: "/signup/parent/athletes", search: {} });
-      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");
       resetCaptcha();
@@ -143,40 +125,7 @@ function ParentSignupPage() {
           </p>
         </div>
 
-        <form id="parent-signup-form" onSubmit={handleSubmit} className="space-y-4" autoComplete="on">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label htmlFor="firstName">First name</Label>
-              <Input
-                id="firstName"
-                name="given-name"
-                autoComplete="given-name"
-                data-lpignore="true"
-                data-1p-ignore="true"
-                data-bwignore="true"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                required
-                maxLength={80}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="lastName">Last name</Label>
-              <Input
-                id="lastName"
-                name="family-name"
-                autoComplete="family-name"
-                data-lpignore="true"
-                data-1p-ignore="true"
-                data-bwignore="true"
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                required
-                maxLength={80}
-              />
-            </div>
-          </div>
-
+        <form onSubmit={handleSubmit} className="space-y-4" autoComplete="on">
           {!isAuthed && (
             <>
               <div className="space-y-2">
@@ -251,13 +200,12 @@ function ParentSignupPage() {
             </span>
           </label>
 
+          {error && <p className="text-sm text-destructive">{error}</p>}
+
+          <Button type="submit" className="w-full" disabled={!canSubmit}>
+            {loading ? "Creating account..." : "Continue"}
+          </Button>
         </form>
-
-        {error && <p className="mt-4 text-sm text-destructive">{error}</p>}
-
-        <Button type="submit" form="parent-signup-form" className="mt-4 w-full" disabled={!canSubmit}>
-          {loading ? "Creating account..." : "Continue"}
-        </Button>
 
         <Dialog open={captchaOpen} onOpenChange={setCaptchaOpen}>
           <DialogContent className="max-w-sm">

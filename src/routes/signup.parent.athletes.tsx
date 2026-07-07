@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import {
   getCoachByInviteCode,
   linkAthletesToCoach,
+  startParentSignup,
 } from "@/lib/parent-signup.functions";
 
 const searchSchema = z.object({
