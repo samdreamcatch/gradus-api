@@ -277,3 +277,281 @@ export const getAdultOnboardingStatus = createServerFn({ method: "GET" })
       athleteId: me.data?.id ?? null,
     };
   });
+
+/**
+ * Resolve the caller's self-managed athlete row. Throws if the caller is not
+ * a self-managed athlete — every adult-scoped mutator below funnels through
+ * here so a minor's user_id can never reach these code paths.
+ */
+async function requireSelfManagedAthleteId(
+  supabase: Client,
+  userId: string,
+): Promise<string> {
+  const me = await supabase
+    .from("athletes")
+    .select("id, self_managed")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (me.error) dbError(me.error);
+  if (!me.data) throw new Error("Finish setting up your athlete profile first.");
+  if (!me.data.self_managed) {
+    throw new Error("This account is parent-managed.");
+  }
+  return me.data.id;
+}
+
+/**
+ * Upsert a goal for the caller's self-managed athlete. Mirrors
+ * saveAthleteGoals from parent-signup, but scoped to auth.uid() — the
+ * user-scoped supabase client + self_managed RLS branches are the gate.
+ * If a linked primary coach for (athlete, sport) exists, stamp coach_id.
+ */
+export const saveAdultAthleteGoals = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        sport: z.string().min(1).max(64),
+        currentLevelKey: z.string().min(1).max(64),
+        seasonGoalKey: z.string().min(1).max(64),
+        longTermGoal: z.string().max(2000).default(""),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const supabase = context.supabase as Client;
+    const athleteId = await requireSelfManagedAthleteId(supabase, context.userId);
+
+    // If a primary coach for this sport exists, stamp coach_id so the row
+    // matches the coach-visible RLS branch.
+    const primary = await supabase
+      .from("athlete_primary_coaches")
+      .select("coach_id")
+      .eq("athlete_id", athleteId)
+      .eq("sport", data.sport)
+      .maybeSingle();
+    if (primary.error) dbError(primary.error);
+    const coachId = primary.data?.coach_id ?? null;
+
+    const up = await supabase
+      .from("athlete_goals")
+      .upsert(
+        {
+          athlete_id: athleteId,
+          coach_id: coachId,
+          sport: data.sport,
+          current_level_key: data.currentLevelKey,
+          season_goal_key: data.seasonGoalKey,
+          long_term_goal: data.longTermGoal,
+        },
+        { onConflict: "athlete_id,sport" },
+      );
+    if (up.error) dbError(up.error);
+    return { ok: true };
+  });
+
+/**
+ * List the caller's linked coaches (with per-coach sport scoping) for the
+ * adult athlete settings screen.
+ */
+export const listAdultAthleteCoaches = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const supabase = context.supabase as Client;
+    const me = await supabase
+      .from("athletes")
+      .select("id, self_managed")
+      .eq("user_id", context.userId)
+      .maybeSingle();
+    if (me.error) dbError(me.error);
+    if (!me.data || !me.data.self_managed) {
+      return { selfManaged: false as const, coaches: [] };
+    }
+    const athleteId = me.data.id;
+
+    const links = await supabase
+      .from("coach_athletes")
+      .select("coach_id, coach_profiles!inner(id, first_name, last_name)")
+      .eq("athlete_id", athleteId);
+    if (links.error) dbError(links.error);
+
+    const scoped = await supabase
+      .from("coach_athlete_sports")
+      .select("coach_id, sport")
+      .eq("athlete_id", athleteId);
+    if (scoped.error) dbError(scoped.error);
+    const sportsByCoach = new Map<string, string[]>();
+    for (const row of scoped.data ?? []) {
+      const arr = sportsByCoach.get(row.coach_id) ?? [];
+      arr.push(row.sport);
+      sportsByCoach.set(row.coach_id, arr);
+    }
+
+    const coaches = (links.data ?? []).map((l) => {
+      const cp = l.coach_profiles as unknown as {
+        id: string;
+        first_name: string;
+        last_name: string;
+      };
+      return {
+        coachId: cp.id,
+        coachName: `${cp.first_name} ${cp.last_name}`.trim(),
+        sports: sportsByCoach.get(cp.id) ?? [],
+      };
+    });
+
+    return { selfManaged: true as const, coaches };
+  });
+
+/**
+ * Unlink one of the caller's coaches. Deletes coach-scoped data so a relink
+ * starts fresh (mirrors parent-settings unlinkAthleteFromCoach).
+ */
+export const unlinkAdultAthleteFromCoach = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ coachId: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const supabase = context.supabase as Client;
+    const athleteId = await requireSelfManagedAthleteId(supabase, context.userId);
+
+    await supabase
+      .from("athlete_lesson_slots")
+      .delete()
+      .eq("athlete_id", athleteId)
+      .eq("coach_id", data.coachId);
+    await supabase
+      .from("athlete_primary_coaches")
+      .delete()
+      .eq("athlete_id", athleteId)
+      .eq("coach_id", data.coachId);
+    await supabase
+      .from("athlete_goals")
+      .delete()
+      .eq("athlete_id", athleteId)
+      .eq("coach_id", data.coachId);
+
+    const del = await supabase
+      .from("coach_athletes")
+      .delete()
+      .eq("athlete_id", athleteId)
+      .eq("coach_id", data.coachId);
+    if (del.error) dbError(del.error);
+    return { ok: true };
+  });
+
+/**
+ * Replace the per-coach sport scoping for the caller. Mirrors
+ * updateCoachAthleteSports from parent-settings.
+ */
+export const updateAdultAthleteCoachSports = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        coachId: z.string().uuid(),
+        sports: z
+          .array(z.string().min(1).max(64))
+          .min(1, "Pick at least one sport")
+          .max(20),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const supabase = context.supabase as Client;
+    const athleteId = await requireSelfManagedAthleteId(supabase, context.userId);
+
+    const link = await supabase
+      .from("coach_athletes")
+      .select("id")
+      .eq("athlete_id", athleteId)
+      .eq("coach_id", data.coachId)
+      .maybeSingle();
+    if (link.error) dbError(link.error);
+    if (!link.data) throw new Error("That coach isn't linked to your account.");
+
+    const offered = await supabaseAdmin
+      .from("coach_levels")
+      .select("sport")
+      .eq("coach_id", data.coachId);
+    if (offered.error) dbError(offered.error);
+    const offeredSet = new Set((offered.data ?? []).map((r) => r.sport));
+    const chosen = Array.from(new Set(data.sports));
+    for (const s of chosen) {
+      if (!offeredSet.has(s)) throw new Error(`Coach doesn't offer ${s}.`);
+    }
+
+    const existing = await supabase
+      .from("coach_athlete_sports")
+      .select("sport")
+      .eq("athlete_id", athleteId)
+      .eq("coach_id", data.coachId);
+    if (existing.error) dbError(existing.error);
+    const currentSet = new Set((existing.data ?? []).map((r) => r.sport));
+    const chosenSet = new Set(chosen);
+    const toAdd = chosen.filter((s) => !currentSet.has(s));
+    const toRemove = Array.from(currentSet).filter((s) => !chosenSet.has(s));
+
+    if (toAdd.length > 0) {
+      const ins = await supabase.from("coach_athlete_sports").insert(
+        toAdd.map((sport) => ({
+          athlete_id: athleteId,
+          coach_id: data.coachId,
+          sport,
+        })),
+      );
+      if (ins.error) dbError(ins.error);
+    }
+    if (toRemove.length > 0) {
+      const del = await supabase
+        .from("coach_athlete_sports")
+        .delete()
+        .eq("athlete_id", athleteId)
+        .eq("coach_id", data.coachId)
+        .in("sport", toRemove);
+      if (del.error) dbError(del.error);
+
+      await supabase
+        .from("athlete_primary_coaches")
+        .delete()
+        .eq("athlete_id", athleteId)
+        .eq("coach_id", data.coachId)
+        .in("sport", toRemove);
+    }
+    return { ok: true };
+  });
+
+/**
+ * Return the coach's full offered sports so settings can offer *adding*
+ * sports (not just removing). Only callable by self-managed athletes who
+ * actually have the coach linked.
+ */
+export const getCoachOfferedSportsForAdult = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ coachId: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const supabase = context.supabase as Client;
+    const athleteId = await requireSelfManagedAthleteId(supabase, context.userId);
+
+    const link = await supabase
+      .from("coach_athletes")
+      .select("id")
+      .eq("athlete_id", athleteId)
+      .eq("coach_id", data.coachId)
+      .maybeSingle();
+    if (link.error) dbError(link.error);
+    if (!link.data) throw new Error("That coach isn't linked to your account.");
+
+    const offered = await supabaseAdmin
+      .from("coach_levels")
+      .select("sport")
+      .eq("coach_id", data.coachId);
+    if (offered.error) dbError(offered.error);
+    const sports = Array.from(new Set((offered.data ?? []).map((r) => r.sport)));
+    return { sports };
+  });
