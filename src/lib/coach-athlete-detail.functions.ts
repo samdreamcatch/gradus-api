@@ -44,14 +44,17 @@ export interface CoachAthleteDetailDTO {
   athleteId: string;
   firstName: string;
   lastName: string;
-  parentFirstName: string;
-  parentLastName: string;
+  // Null for self-managed adult athletes.
+  parentFirstName: string | null;
+  parentLastName: string | null;
+  selfManaged: boolean;
   goals: AthleteGoalDTO[];
   plans: AthletePlanSummaryDTO[];
   activity: AthleteActivityCountsDTO;
   hasAnySignal: boolean;
   windowDays: number;
 }
+
 
 type SlotRow = {
   id: string;
@@ -212,7 +215,7 @@ export const getCoachAthleteDetail = createServerFn({ method: "GET" })
       supabaseAdmin
         .from("athletes")
         .select(
-          "id, first_name, last_name, parent_profiles!inner(first_name, last_name)",
+          "id, first_name, last_name, self_managed, parent_profiles(first_name, last_name)",
         )
         .eq("id", data.athleteId)
         .single(),
@@ -260,8 +263,10 @@ export const getCoachAthleteDetail = createServerFn({ method: "GET" })
     const athlete = athleteRes.data as unknown as {
       first_name: string;
       last_name: string;
-      parent_profiles: { first_name: string; last_name: string };
+      self_managed: boolean | null;
+      parent_profiles: { first_name: string; last_name: string } | null;
     };
+
 
     const goals: AthleteGoalDTO[] = (goalsRes.data ?? []).map((g) => ({
       sport: g.sport,
@@ -377,9 +382,11 @@ export const getCoachAthleteDetail = createServerFn({ method: "GET" })
       athleteId: data.athleteId,
       firstName: athlete.first_name,
       lastName: athlete.last_name,
-      parentFirstName: athlete.parent_profiles.first_name,
-      parentLastName: athlete.parent_profiles.last_name,
+      parentFirstName: athlete.parent_profiles?.first_name ?? null,
+      parentLastName: athlete.parent_profiles?.last_name ?? null,
+      selfManaged: athlete.self_managed === true,
       goals,
+
       plans,
       activity: {
         practiceMinutesMine,

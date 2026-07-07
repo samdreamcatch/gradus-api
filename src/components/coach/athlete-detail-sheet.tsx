@@ -86,7 +86,9 @@ function AthleteDetailBody({ athleteId }: { athleteId: string }) {
 
   const d = detail.data;
   const fullName = `${d.firstName} ${d.lastName}`.trim();
-  const parentName = `${d.parentFirstName} ${d.parentLastName}`.trim();
+  const parentName = d.selfManaged
+    ? null
+    : `${d.parentFirstName ?? ""} ${d.parentLastName ?? ""}`.trim();
 
   return (
     <div className="space-y-6">
@@ -95,17 +97,20 @@ function AthleteDetailBody({ athleteId }: { athleteId: string }) {
           {fullName}
         </SheetTitle>
         <p className="text-xs text-text-tertiary">
-          Parent: {parentName}
+          {d.selfManaged ? "Adult athlete (self-managed)" : `Parent: ${parentName}`}
         </p>
       </SheetHeader>
 
       {/* Goals */}
       <section>
-        <SectionHeading>GOALS FROM PARENT & ATHLETE</SectionHeading>
+        <SectionHeading>
+          {d.selfManaged ? "GOALS FROM ATHLETE" : "GOALS FROM PARENT & ATHLETE"}
+        </SectionHeading>
         {d.goals.length === 0 ? (
           <EmptyLine>
-            {d.parentFirstName} hasn't set goals yet.
+            {d.selfManaged ? `${d.firstName} hasn't set goals yet.` : `${d.parentFirstName ?? d.firstName} hasn't set goals yet.`}
           </EmptyLine>
+
         ) : (
           <ul className="mt-2 space-y-3">
             {d.goals.map((g) => (

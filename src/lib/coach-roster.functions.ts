@@ -22,10 +22,13 @@ export type RosterAthlete = {
   firstName: string;
   lastName: string;
   sport: string | null;
-  parentFirstName: string;
-  parentLastName: string;
+  // Null for self-managed adult athletes (no parent in the loop).
+  parentFirstName: string | null;
+  parentLastName: string | null;
+  selfManaged: boolean;
   slots: RosterSlot[];
 };
+
 
 export type CoachRoster = {
   coachSports: string[];
@@ -58,10 +61,11 @@ export const getCoachRoster = createServerFn({ method: "GET" })
     const links = await supabaseAdmin
       .from("coach_athletes")
       .select(
-        "athlete_id, athletes!inner(id, first_name, last_name, parent_profiles!inner(first_name, last_name))",
+        "athlete_id, athletes!inner(id, first_name, last_name, self_managed, parent_profiles(first_name, last_name))",
       )
       .eq("coach_id", coachId);
     if (links.error) dbError(links.error);
+
     const rows = links.data ?? [];
     if (rows.length === 0) return { coachSports, athletes: [] };
 
@@ -141,18 +145,21 @@ export const getCoachRoster = createServerFn({ method: "GET" })
         id: string;
         first_name: string;
         last_name: string;
-        parent_profiles: { first_name: string; last_name: string };
+        self_managed: boolean | null;
+        parent_profiles: { first_name: string; last_name: string } | null;
       };
       return {
         athleteId: a.id,
         firstName: a.first_name,
         lastName: a.last_name,
         sport: sportByAthlete.get(a.id) ?? null,
-        parentFirstName: a.parent_profiles.first_name,
-        parentLastName: a.parent_profiles.last_name,
+        parentFirstName: a.parent_profiles?.first_name ?? null,
+        parentLastName: a.parent_profiles?.last_name ?? null,
+        selfManaged: a.self_managed === true,
         slots: slotsByAthlete.get(a.id) ?? [],
       };
     });
+
 
     result.sort(
       (a, b) =>
