@@ -6,13 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Logo } from "@/components/logo";
 import { TurnstileWidget } from "@/components/auth/turnstile";
 import { CURRENT_TERMS_VERSION, PENDING_TERMS_ACCEPT_KEY } from "@/lib/terms";
@@ -126,18 +120,14 @@ function AdultAthleteSignupPage() {
     const dt = new Date(y, m - 1, d);
     const now = new Date();
     let age = now.getFullYear() - y;
-    if (
-      now.getMonth() < m - 1 ||
-      (now.getMonth() === m - 1 && now.getDate() < d)
-    ) {
+    if (now.getMonth() < m - 1 || (now.getMonth() === m - 1 && now.getDate() < d)) {
       age -= 1;
     }
     return dt.getFullYear() === y && age >= 18 && age < 120;
   })();
 
   const namesValid = firstName.trim().length > 0 && lastName.trim().length > 0;
-  const canSubmit =
-    !loading && agreed && birthdateValid && namesValid && (isAuthed || (email && password.length >= 8));
+  const canSubmit = !loading && agreed && birthdateValid && namesValid && (isAuthed || (email && password.length >= 8));
 
   return (
     <div className="flex min-h-dvh items-center justify-center px-4 py-12">
@@ -191,9 +181,7 @@ function AdultAthleteSignupPage() {
               onChange={(e) => setBirthdate(e.target.value)}
               required
             />
-            <p className="text-xs text-text-tertiary">
-              You must be 18 or older to create your own account.
-            </p>
+            <p className="text-xs text-text-tertiary">You must be 18 or older to create your own account.</p>
           </div>
 
           {!isAuthed && (
@@ -263,7 +251,7 @@ function AdultAthleteSignupPage() {
           <DialogContent className="max-w-sm">
             <DialogHeader>
               <DialogTitle>One last check</DialogTitle>
-              <DialogDescription>Complete the security check to continue.</DialogDescription>
+              <DialogDescription>Verifying you're a human.</DialogDescription>
             </DialogHeader>
             <TurnstileWidget
               resetKey={captchaKey}
@@ -276,10 +264,7 @@ function AdultAthleteSignupPage() {
 
         <p className="mt-6 text-center text-sm text-text-secondary">
           Under 18?{" "}
-          <Link
-            to="/signup/athlete"
-            className="font-semibold text-accent-ink underline-offset-4 hover:underline"
-          >
+          <Link to="/signup/athlete" className="font-semibold text-accent-ink underline-offset-4 hover:underline">
             Use a parent invite code
           </Link>
         </p>
