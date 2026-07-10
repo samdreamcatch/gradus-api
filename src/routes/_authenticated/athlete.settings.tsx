@@ -220,6 +220,7 @@ function AdultCoachesSection({ coaches }: { coaches: AdultCoach[] }) {
   const [editOptions, setEditOptions] = useState<string[]>([]);
   const [editSports, setEditSports] = useState<string[]>([]);
   const [editSaving, setEditSaving] = useState(false);
+  const [scheduleCoachId, setScheduleCoachId] = useState<string | null>(null);
 
   const summary =
     coaches.length === 0 ? "None linked" : `${coaches.length} linked`;
