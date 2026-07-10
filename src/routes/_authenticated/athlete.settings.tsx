@@ -34,6 +34,17 @@ import {
   updateAdultAthleteCoachSports,
 } from "@/lib/adult-athlete-signup.functions";
 import { getSport } from "@/lib/coach-sports";
+import {
+  getAdultAthleteSchedules,
+  saveAdultAthleteScheduleForCoach,
+} from "@/lib/adult-athlete-schedule.functions";
+import {
+  ScheduleEditor,
+  emptySlot,
+  toISODate,
+  validateSlots,
+  type Slot,
+} from "@/components/parent/schedule-editor";
 
 export const Route = createFileRoute("/_authenticated/athlete/settings")({
   component: AthleteSettingsPage,
