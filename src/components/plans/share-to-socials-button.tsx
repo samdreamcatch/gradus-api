@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { useMutation } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Share2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -20,35 +20,56 @@ export function ShareToSocialsButton({
   const shareFn = useServerFn(getOrCreateShareToken);
   const [busy, setBusy] = useState(false);
 
-  const mutation = useMutation({
-    mutationFn: () => shareFn({ data: { planId } }),
+  // Prefetch the token on mount so the click handler can call
+  // navigator.share() synchronously and preserve user activation
+  // (required by Safari / iOS for the native share sheet).
+  const { data: prefetched } = useQuery({
+    queryKey: ["plan-share-token", planId],
+    queryFn: () => shareFn({ data: { planId } }),
+    enabled: !!planId,
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
   });
+
+  const copyFallback = async (url: string) => {
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success("Link copied", { description: url });
+    } catch {
+      toast.success("Share link", { description: url });
+    }
+  };
 
   const onClick = async () => {
     if (busy) return;
-    setBusy(true);
-    try {
-      const { token } = await mutation.mutateAsync();
-      const url = `${SITE_ORIGIN}/p/${token}`;
-      const caption = `${planTitle} — My workout on Gradus`;
+    const caption = `${planTitle} — My workout on Gradus`;
+    const canShare =
+      typeof navigator !== "undefined" && typeof navigator.share === "function";
 
-      const canShare =
-        typeof navigator !== "undefined" && typeof navigator.share === "function";
+    // Hot path: token already cached — invoke share sheet synchronously
+    // in the click handler to keep user activation alive.
+    if (prefetched?.token) {
+      const url = `${SITE_ORIGIN}/p/${prefetched.token}`;
       if (canShare) {
         try {
           await navigator.share({ title: planTitle, text: caption, url });
           return;
         } catch (err) {
-          // User canceled or share failed — fall through to copy.
           if ((err as DOMException)?.name === "AbortError") return;
+          // fall through to copy
         }
       }
-      try {
-        await navigator.clipboard.writeText(url);
-        toast.success("Link copied", { description: url });
-      } catch {
-        toast.success("Share link", { description: url });
-      }
+      await copyFallback(url);
+      return;
+    }
+
+    // Cold path: token not ready yet. Awaiting the server fn consumes user
+    // activation, so Safari won't open the share sheet — copy instead.
+    setBusy(true);
+    try {
+      const { token } = await shareFn({ data: { planId } });
+      const url = `${SITE_ORIGIN}/p/${token}`;
+      await copyFallback(url);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Couldn't create share link.");
     } finally {
