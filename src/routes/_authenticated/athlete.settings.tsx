@@ -541,3 +541,94 @@ function SignOutRow() {
   );
 }
 
+function CoachScheduleEditor({
+  coachId,
+  coachName,
+  onDone,
+}: {
+  coachId: string;
+  coachName: string;
+  onDone: () => void;
+}) {
+  const qc = useQueryClient();
+  const fetchSchedules = useServerFn(getAdultAthleteSchedules);
+  const saveFn = useServerFn(saveAdultAthleteScheduleForCoach);
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["adult-athlete-schedules"],
+    queryFn: () => fetchSchedules(),
+  });
+
+  const coach = data?.coaches.find((c) => c.coachId === coachId);
+  const initial: Slot[] = coach && coach.slots.length > 0
+    ? coach.slots.map((s) => ({
+        dayOfWeek: s.dayOfWeek,
+        startMinute: s.startMinute,
+        endMinute: s.endMinute,
+        frequency: s.frequency,
+        weeksOfMonth: s.weeksOfMonth,
+        startsOn: s.startsOn ? new Date(s.startsOn + "T00:00:00") : null,
+      }))
+    : [emptySlot()];
+
+  const [slots, setSlots] = useState<Slot[]>(initial);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  if (isLoading) {
+    return <p className="text-sm text-text-tertiary">Loading schedule…</p>;
+  }
+
+  const save = async () => {
+    setError(null);
+    const filtered = slots.filter(
+      (s): s is Slot & { dayOfWeek: number; startMinute: number; endMinute: number } =>
+        s.dayOfWeek !== null && s.startMinute !== null && s.endMinute !== null,
+    );
+    const err = filtered.length ? validateSlots(filtered) : null;
+    if (err) {
+      setError(err);
+      return;
+    }
+    const cleaned = filtered.map((s) => ({
+      dayOfWeek: s.dayOfWeek,
+      startMinute: s.startMinute,
+      endMinute: s.endMinute,
+      frequency: s.frequency,
+      weeksOfMonth:
+        s.frequency === "weekly" || s.frequency === "biweekly"
+          ? []
+          : [...s.weeksOfMonth].sort((a, b) => a - b),
+      startsOn:
+        s.frequency === "biweekly" && s.startsOn ? toISODate(s.startsOn) : null,
+    }));
+    setSaving(true);
+    try {
+      await saveFn({ data: { coachId, slots: cleaned } });
+      toast.success("Schedule saved");
+      qc.invalidateQueries({ queryKey: ["adult-athlete-schedules"] });
+      onDone();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Couldn't save");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      <Label className="text-xs">Your lessons with {coachName}</Label>
+      <ScheduleEditor slots={slots} onChange={setSlots} />
+      {error && <p className="text-sm text-destructive">{error}</p>}
+      <div className="flex justify-end gap-2">
+        <Button size="sm" variant="ghost" onClick={onDone} disabled={saving}>
+          Cancel
+        </Button>
+        <Button size="sm" onClick={save} disabled={saving}>
+          {saving ? "Saving…" : "Save schedule"}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
