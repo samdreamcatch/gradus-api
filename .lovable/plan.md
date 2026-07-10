@@ -1,29 +1,43 @@
-# Adult athlete lesson schedule
+## Why the native share sheet stopped appearing
 
-Adult (self-managed) athletes can already link one or more coaches, but there's no way for them to record when their lessons happen. Parents do this today via `ScheduleEditor` writing to `athlete_lesson_slots` scoped by `(athlete_id, coach_id)`. We'll give adult athletes the same capability, in both onboarding and settings, reusing the existing editor and slot table.
+`ShareToSocialsButton` currently does:
 
-## What we'll build
+```
+click → await getOrCreateShareToken() → navigator.share(...)
+```
 
-**1. Reusable server functions** (new `src/lib/adult-athlete-schedule.functions.ts`)
-- `getAdultAthleteSchedules` — returns the signed-in adult athlete's linked coaches, each with their current slots (day, start/end, frequency, weeks-of-month, starts-on).
-- `saveAdultAthleteScheduleForCoach({ coachId, slots })` — verifies the caller is a self-managed athlete linked to that coach, then replaces the slot rows for `(athlete_id, coach_id)` — same delete-then-insert pattern parent uses.
+Browsers gate `navigator.share()` behind **transient user activation** — it must be called synchronously in the same tick as the click. `await`ing a server function first (network round-trip) consumes the activation, so:
 
-**2. Onboarding — new "Schedule" step** (`src/routes/_authenticated/athlete.onboarding.tsx`)
-- Flow becomes: Coach → Goals → **Schedule** → done.
-- Only shown if the athlete linked at least one coach in step 1 (skipped otherwise, same as goals).
-- One page per linked coach with the shared `ScheduleEditor`; "Skip for now" and "Save & next / Finish" match the parent signup schedule step.
+- iOS Safari and Safari macOS reject the call with `NotAllowedError` → we swallow it and fall through to `navigator.clipboard.writeText`, so the user sees a "Link copied" toast instead of the share sheet.
+- Chrome Android is more lenient but has been tightening this in recent versions.
 
-**3. Settings — schedule editor per coach** (`src/routes/_authenticated/athlete.settings.tsx`, `AdultCoachesSection`)
-- Under each linked coach row (alongside "Edit sports" / "Unlink"), add a "Schedule" disclosure that opens the shared `ScheduleEditor` prefilled with saved slots and saves via `saveAdultAthleteScheduleForCoach`.
-- Uses the same visual pattern as parent settings' `CoachScheduleEditor` — no new component, just wire the existing one in.
+The code path itself is intact — this is a user-activation regression, not a missing feature.
 
-## Not doing
-- No schema change — `athlete_lesson_slots` already supports this shape.
-- No changes to parent flows or coach-side roster views (they already read from the same table).
-- No new UI for coach-less schedule entry (adult athletes without a linked coach have nowhere to schedule against; the step is skipped, matching current parent behaviour).
+## Fix
 
-## Technical notes
-- Both new server fns use `requireSupabaseAuth` and load `supabaseAdmin` inside the handler; they resolve `athletes.id` via `user_id = context.userId` and enforce `self_managed = true` plus a `coach_athletes` link before writing.
-- The editor's `Slot` shape maps 1:1 to the parent `saveAthleteSchedule` payload — we reuse `validateSlots`, `toISODate`, and `emptySlot` from `src/components/parent/schedule-editor.tsx`.
-- Onboarding after Goals: fetch linked coaches via existing `listAdultAthleteCoaches`; if empty, navigate straight to `/athlete/plans`.
-- Settings uses `useQuery(["adult-athlete-schedules"])` and invalidates it (plus `["adult-athlete-coaches"]`) after save.
+Rework `src/components/plans/share-to-socials-button.tsx` so the share sheet opens within the click gesture:
+
+1. **Prefetch the share token** so the click has a URL ready synchronously:
+   - On mount (and after successful mutation) call `getOrCreateShareToken` once via `useQuery` / `useEffect`, cache the returned `token` in state.
+   - When the token is already known, the click handler runs `navigator.share({...})` immediately — no `await` before it — preserving user activation.
+2. **Cold-path fallback** (token not yet loaded when user clicks):
+   - Keep the current `await` + share flow, but recognize the share sheet won't open on Safari. In that case, skip straight to clipboard copy with the existing toast so behaviour is predictable.
+3. Keep the existing clipboard fallback for browsers without `navigator.share` (desktop Firefox, older Chrome) and for the AbortError branch.
+4. No changes to `getOrCreateShareToken` or the server side.
+
+### Technical notes
+
+- Prefetch key: `["plan-share-token", planId]`; run only when the button mounts on an authenticated route (both athlete and parent plan detail pages already gate this).
+- Guard the prefetch behind `enabled: !!planId` and don't retry aggressively (tokens rarely fail; we still have the on-click fallback).
+- No UI changes; button label, spinner, and toast copy stay the same.
+- No new dependencies.
+
+## Files touched
+
+- `src/components/plans/share-to-socials-button.tsx` — prefetch token, call `navigator.share` synchronously in click handler.
+
+## Verification
+
+- On iOS Safari (published site), tapping "Share to socials" opens the native share sheet on the second render (token cached). First-ever click may still fall back to copy — acceptable and matches prior behaviour.
+- On desktop Chrome/Edge with Web Share, the OS share dialog opens.
+- On desktop Firefox (no Web Share), link is copied to clipboard with toast — unchanged.
