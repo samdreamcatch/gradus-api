@@ -352,7 +352,7 @@ function AdultCoachesSection({ coaches }: { coaches: AdultCoach[] }) {
                             .join(", ")}
                     </div>
                   </div>
-                  <div className="flex shrink-0 gap-1">
+                  <div className="flex shrink-0 flex-wrap justify-end gap-1">
                     {!isEditing && (
                       <Button
                         size="sm"
@@ -365,6 +365,17 @@ function AdultCoachesSection({ coaches }: { coaches: AdultCoach[] }) {
                     <Button
                       size="sm"
                       variant="ghost"
+                      onClick={() =>
+                        setScheduleCoachId(
+                          scheduleCoachId === c.coachId ? null : c.coachId,
+                        )
+                      }
+                    >
+                      {scheduleCoachId === c.coachId ? "Close schedule" : "Schedule"}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
                       onClick={() => handleUnlink(c.coachId)}
                       disabled={removingId === c.coachId}
                       className="text-destructive hover:text-destructive"
@@ -373,6 +384,15 @@ function AdultCoachesSection({ coaches }: { coaches: AdultCoach[] }) {
                     </Button>
                   </div>
                 </div>
+                {scheduleCoachId === c.coachId && (
+                  <div className="mt-3 border-t border-divider pt-3">
+                    <CoachScheduleEditor
+                      coachId={c.coachId}
+                      coachName={c.coachName}
+                      onDone={() => setScheduleCoachId(null)}
+                    />
+                  </div>
+                )}
                 {isEditing && (
                   <div className="mt-3 space-y-2 border-t border-divider pt-3">
                     <Label className="text-xs">
