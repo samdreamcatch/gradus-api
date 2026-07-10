@@ -34,6 +34,17 @@ import {
   updateAdultAthleteCoachSports,
 } from "@/lib/adult-athlete-signup.functions";
 import { getSport } from "@/lib/coach-sports";
+import {
+  getAdultAthleteSchedules,
+  saveAdultAthleteScheduleForCoach,
+} from "@/lib/adult-athlete-schedule.functions";
+import {
+  ScheduleEditor,
+  emptySlot,
+  toISODate,
+  validateSlots,
+  type Slot,
+} from "@/components/parent/schedule-editor";
 
 export const Route = createFileRoute("/_authenticated/athlete/settings")({
   component: AthleteSettingsPage,
@@ -209,6 +220,7 @@ function AdultCoachesSection({ coaches }: { coaches: AdultCoach[] }) {
   const [editOptions, setEditOptions] = useState<string[]>([]);
   const [editSports, setEditSports] = useState<string[]>([]);
   const [editSaving, setEditSaving] = useState(false);
+  const [scheduleCoachId, setScheduleCoachId] = useState<string | null>(null);
 
   const summary =
     coaches.length === 0 ? "None linked" : `${coaches.length} linked`;
@@ -340,7 +352,7 @@ function AdultCoachesSection({ coaches }: { coaches: AdultCoach[] }) {
                             .join(", ")}
                     </div>
                   </div>
-                  <div className="flex shrink-0 gap-1">
+                  <div className="flex shrink-0 flex-wrap justify-end gap-1">
                     {!isEditing && (
                       <Button
                         size="sm"
@@ -353,6 +365,17 @@ function AdultCoachesSection({ coaches }: { coaches: AdultCoach[] }) {
                     <Button
                       size="sm"
                       variant="ghost"
+                      onClick={() =>
+                        setScheduleCoachId(
+                          scheduleCoachId === c.coachId ? null : c.coachId,
+                        )
+                      }
+                    >
+                      {scheduleCoachId === c.coachId ? "Close schedule" : "Schedule"}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
                       onClick={() => handleUnlink(c.coachId)}
                       disabled={removingId === c.coachId}
                       className="text-destructive hover:text-destructive"
@@ -361,6 +384,15 @@ function AdultCoachesSection({ coaches }: { coaches: AdultCoach[] }) {
                     </Button>
                   </div>
                 </div>
+                {scheduleCoachId === c.coachId && (
+                  <div className="mt-3 border-t border-divider pt-3">
+                    <CoachScheduleEditor
+                      coachId={c.coachId}
+                      coachName={c.coachName}
+                      onDone={() => setScheduleCoachId(null)}
+                    />
+                  </div>
+                )}
                 {isEditing && (
                   <div className="mt-3 space-y-2 border-t border-divider pt-3">
                     <Label className="text-xs">
@@ -506,6 +538,97 @@ function SignOutRow() {
         navigate({ to: "/login" });
       }}
     />
+  );
+}
+
+function CoachScheduleEditor({
+  coachId,
+  coachName,
+  onDone,
+}: {
+  coachId: string;
+  coachName: string;
+  onDone: () => void;
+}) {
+  const qc = useQueryClient();
+  const fetchSchedules = useServerFn(getAdultAthleteSchedules);
+  const saveFn = useServerFn(saveAdultAthleteScheduleForCoach);
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["adult-athlete-schedules"],
+    queryFn: () => fetchSchedules(),
+  });
+
+  const coach = data?.coaches.find((c) => c.coachId === coachId);
+  const initial: Slot[] = coach && coach.slots.length > 0
+    ? coach.slots.map((s) => ({
+        dayOfWeek: s.dayOfWeek,
+        startMinute: s.startMinute,
+        endMinute: s.endMinute,
+        frequency: s.frequency,
+        weeksOfMonth: s.weeksOfMonth,
+        startsOn: s.startsOn ? new Date(s.startsOn + "T00:00:00") : null,
+      }))
+    : [emptySlot()];
+
+  const [slots, setSlots] = useState<Slot[]>(initial);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  if (isLoading) {
+    return <p className="text-sm text-text-tertiary">Loading schedule…</p>;
+  }
+
+  const save = async () => {
+    setError(null);
+    const filtered = slots.filter(
+      (s): s is Slot & { dayOfWeek: number; startMinute: number; endMinute: number } =>
+        s.dayOfWeek !== null && s.startMinute !== null && s.endMinute !== null,
+    );
+    const err = filtered.length ? validateSlots(filtered) : null;
+    if (err) {
+      setError(err);
+      return;
+    }
+    const cleaned = filtered.map((s) => ({
+      dayOfWeek: s.dayOfWeek,
+      startMinute: s.startMinute,
+      endMinute: s.endMinute,
+      frequency: s.frequency,
+      weeksOfMonth:
+        s.frequency === "weekly" || s.frequency === "biweekly"
+          ? []
+          : [...s.weeksOfMonth].sort((a, b) => a - b),
+      startsOn:
+        s.frequency === "biweekly" && s.startsOn ? toISODate(s.startsOn) : null,
+    }));
+    setSaving(true);
+    try {
+      await saveFn({ data: { coachId, slots: cleaned } });
+      toast.success("Schedule saved");
+      qc.invalidateQueries({ queryKey: ["adult-athlete-schedules"] });
+      onDone();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Couldn't save");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      <Label className="text-xs">Your lessons with {coachName}</Label>
+      <ScheduleEditor slots={slots} onChange={setSlots} />
+      {error && <p className="text-sm text-destructive">{error}</p>}
+      <div className="flex justify-end gap-2">
+        <Button size="sm" variant="ghost" onClick={onDone} disabled={saving}>
+          Cancel
+        </Button>
+        <Button size="sm" onClick={save} disabled={saving}>
+          {saving ? "Saving…" : "Save schedule"}
+        </Button>
+      </div>
+    </div>
   );
 }
 

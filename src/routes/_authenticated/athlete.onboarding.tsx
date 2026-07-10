@@ -19,22 +19,28 @@ import { getSport, SPORTS } from "@/lib/coach-sports";
 import {
   getAdultOnboardingStatus,
   linkAdultAthleteToCoach,
+  listAdultAthleteCoaches,
   previewCoachForAdultAthlete,
   saveAdultAthleteGoals,
 } from "@/lib/adult-athlete-signup.functions";
+import {
+  ScheduleEditor,
+  emptySlot,
+  toISODate,
+  validateSlots,
+  type Slot,
+} from "@/components/parent/schedule-editor";
+import { saveAdultAthleteScheduleForCoach } from "@/lib/adult-athlete-schedule.functions";
 
 export const Route = createFileRoute("/_authenticated/athlete/onboarding")({
   component: AdultAthleteOnboardingPage,
 });
 
 /**
- * Post-signup onboarding for adult (self-managed) athletes. Two steps:
+ * Post-signup onboarding for adult (self-managed) athletes:
  *   1. Optional: enter a coach's 8-char invite code + pick sports → link.
  *   2. Set current level + season goal + long-term goal per selected sport.
- *
- * Minor athletes onboard through the parent flow and never see this page;
- * we guard by checking `selfManaged` on the athlete row and redirecting
- * everyone else to their normal home.
+ *   3. If linked to any coaches, set lesson schedule per coach.
  */
 function AdultAthleteOnboardingPage() {
   const navigate = useNavigate();
@@ -45,7 +51,7 @@ function AdultAthleteOnboardingPage() {
     queryFn: () => statusFn(),
   });
 
-  const [step, setStep] = useState<"coach" | "goals">("coach");
+  const [step, setStep] = useState<"coach" | "goals" | "schedule">("coach");
   const [sportsToGoal, setSportsToGoal] = useState<string[]>([]);
 
   if (statusLoading) {
@@ -61,6 +67,8 @@ function AdultAthleteOnboardingPage() {
     return null;
   }
 
+  const finish = () => navigate({ to: "/athlete/plans" });
+
   return (
     <div className="flex min-h-dvh items-center justify-center px-4 py-12">
       <div className="w-full max-w-md rounded-2xl bg-card p-8 shadow-card">
@@ -75,16 +83,142 @@ function AdultAthleteOnboardingPage() {
               setStep("goals");
             }}
           />
-        ) : (
+        ) : step === "goals" ? (
           <GoalsStep
             initialSports={sportsToGoal}
-            onDone={() => navigate({ to: "/athlete/plans" })}
+            onDone={() => setStep("schedule")}
           />
+        ) : (
+          <ScheduleStep onDone={finish} />
         )}
       </div>
     </div>
   );
 }
+
+function ScheduleStep({ onDone }: { onDone: () => void }) {
+  const listCoaches = useServerFn(listAdultAthleteCoaches);
+  const saveFn = useServerFn(saveAdultAthleteScheduleForCoach);
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["adult-athlete-coaches"],
+    queryFn: () => listCoaches(),
+  });
+
+  const coaches = data?.coaches ?? [];
+  const [index, setIndex] = useState(0);
+  const [byCoach, setByCoach] = useState<Record<string, Slot[]>>({});
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  if (isLoading) {
+    return <p className="text-sm text-text-secondary">Loading…</p>;
+  }
+  if (coaches.length === 0) {
+    onDone();
+    return null;
+  }
+
+  const current = coaches[index];
+  const slots = byCoach[current.coachId] ?? [emptySlot()];
+  const setSlots = (next: Slot[]) =>
+    setByCoach((p) => ({ ...p, [current.coachId]: next }));
+
+  const finish = async (skip: boolean) => {
+    setError(null);
+    let cleaned: Array<{
+      dayOfWeek: number;
+      startMinute: number;
+      endMinute: number;
+      frequency: Slot["frequency"];
+      weeksOfMonth: number[];
+      startsOn: string | null;
+    }> = [];
+    if (!skip) {
+      const filtered = slots.filter(
+        (s): s is Slot & { dayOfWeek: number; startMinute: number; endMinute: number } =>
+          s.dayOfWeek !== null && s.startMinute !== null && s.endMinute !== null,
+      );
+      const err = filtered.length ? validateSlots(filtered) : null;
+      if (err) {
+        setError(err);
+        return;
+      }
+      cleaned = filtered.map((s) => ({
+        dayOfWeek: s.dayOfWeek,
+        startMinute: s.startMinute,
+        endMinute: s.endMinute,
+        frequency: s.frequency,
+        weeksOfMonth:
+          s.frequency === "weekly" || s.frequency === "biweekly"
+            ? []
+            : [...s.weeksOfMonth].sort((a, b) => a - b),
+        startsOn:
+          s.frequency === "biweekly" && s.startsOn ? toISODate(s.startsOn) : null,
+      }));
+    }
+    setSaving(true);
+    try {
+      await saveFn({ data: { coachId: current.coachId, slots: cleaned } });
+      if (index + 1 < coaches.length) {
+        setIndex(index + 1);
+      } else {
+        onDone();
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Couldn't save");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <>
+      <div className="mb-6 flex items-center justify-between">
+        <p className="text-xs font-bold uppercase tracking-widest text-accent-ink">
+          Coach {index + 1} of {coaches.length}
+        </p>
+        <div className="flex gap-1.5">
+          {coaches.map((_, n) => (
+            <span
+              key={n}
+              className={`h-1.5 w-6 rounded-full ${n <= index ? "bg-accent" : "bg-divider"}`}
+            />
+          ))}
+        </div>
+      </div>
+
+      <h1 className="font-display text-3xl text-text-primary">
+        Your lessons with {current.coachName}
+      </h1>
+      <p className="mt-2 text-sm text-text-secondary">
+        When do you see this coach each week? We&apos;ll use it to recommend a
+        practice schedule around lessons.
+      </p>
+
+      <div className="mt-6">
+        <ScheduleEditor slots={slots} onChange={setSlots} />
+      </div>
+
+      {error && <p className="mt-4 text-sm text-destructive">{error}</p>}
+
+      <div className="mt-8 flex items-center justify-between gap-2">
+        <Button variant="ghost" onClick={() => finish(true)} disabled={saving}>
+          Skip
+        </Button>
+        <Button onClick={() => finish(false)} disabled={saving}>
+          {saving
+            ? "Saving…"
+            : index + 1 < coaches.length
+              ? "Save & next"
+              : "Finish"}
+        </Button>
+      </div>
+    </>
+  );
+}
+
+
 
 function CoachStep({ onDone }: { onDone: (sports: string[]) => void }) {
   const previewFn = useServerFn(previewCoachForAdultAthlete);
