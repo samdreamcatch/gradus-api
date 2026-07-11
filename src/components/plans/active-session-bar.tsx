@@ -28,6 +28,11 @@ export function ActiveSessionBar() {
   // RunningPill already shows the timer there.
   if (pathname === resolvedPath) return null;
 
+  // The session belongs to an athlete/parent context. Coaches can't
+  // resolve it from their own routes, so don't show the return pill
+  // while browsing the coach app.
+  if (pathname.startsWith("/coach")) return null;
+
 
   const totalSec = Math.floor(elapsedMs / 1000);
   const mm = String(Math.floor(totalSec / 60)).padStart(2, "0");
