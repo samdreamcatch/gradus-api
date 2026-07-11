@@ -137,7 +137,7 @@ export const updatePromoCode = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const patch: Record<string, unknown> = {};
+    const patch: { label?: string; notes?: string | null; active?: boolean } = {};
     if (data.label !== undefined) patch.label = data.label;
     if (data.notes !== undefined) patch.notes = data.notes;
     if (data.active !== undefined) patch.active = data.active;
@@ -146,6 +146,7 @@ export const updatePromoCode = createServerFn({ method: "POST" })
       .from("promo_codes")
       .update(patch)
       .eq("code", data.code);
+
     if (error) dbError(error);
     return { ok: true };
   });
