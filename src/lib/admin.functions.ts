@@ -403,18 +403,21 @@ export const getAdminList = createServerFn({ method: "POST" })
     if (data.kind === "athletes") {
       const { data: rows, error } = await supabaseAdmin
         .from("athletes")
-        .select("id, first_name, last_name, birthdate, created_at, parent_id, parent_profiles(first_name, last_name, user_id, is_test)")
+        .select("id, first_name, last_name, birthdate, created_at, parent_id, user_id, self_managed, parent_profiles(first_name, last_name, user_id, is_test)")
         .order("created_at", { ascending: false })
         .limit(200);
       if (error) dbError(error);
       let mapped = (rows ?? []).map((a: any) => ({
         id: a.id,
-        userId: a.parent_profiles?.user_id ?? null,
+        // Adult self-managed athletes link via their own user_id; kids via parent's.
+        userId: a.self_managed && a.user_id ? a.user_id : (a.parent_profiles?.user_id ?? null),
         name: `${a.first_name ?? ""} ${a.last_name ?? ""}`.trim() || "(no name)",
-        email: a.parent_profiles
-          ? `Parent: ${`${a.parent_profiles.first_name ?? ""} ${a.parent_profiles.last_name ?? ""}`.trim() || "—"}`
-          : null,
-        tag: a.birthdate ? new Date(a.birthdate).toLocaleDateString() : "—",
+        email: a.self_managed
+          ? "Adult athlete"
+          : a.parent_profiles
+            ? `Parent: ${`${a.parent_profiles.first_name ?? ""} ${a.parent_profiles.last_name ?? ""}`.trim() || "—"}`
+            : null,
+        tag: a.birthdate ? new Date(a.birthdate).toLocaleDateString() : (a.self_managed ? "adult" : "—"),
         createdAt: a.created_at,
         isTest: !!a.parent_profiles?.is_test,
       }));
