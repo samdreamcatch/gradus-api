@@ -15,7 +15,21 @@ import { PromoCodeField } from "@/components/signup/promo-code-field";
 import { savePendingPromoCode } from "@/lib/pending-promo-code";
 
 
+import { z } from "zod";
+import { PENDING_COACH_INVITE_KEY } from "@/routes/i.$code";
+
+const searchSchema = z.object({
+  invite: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .length(8)
+    .regex(/^[A-Z2-9]+$/)
+    .optional(),
+});
+
 export const Route = createFileRoute("/signup/athlete/adult")({
+  validateSearch: (s) => searchSchema.parse(s),
   component: AdultAthleteSignupPage,
 });
 
