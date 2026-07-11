@@ -1,0 +1,2 @@
+UPDATE public.athletes SET user_id = '760192a0-adbc-453a-b6ed-bb0671feb95b' WHERE id = '5666dde4-304f-44a5-8cec-85117cebab21' AND user_id IS NULL;
+UPDATE public.athletes SET user_id = 'c1f5500e-d04b-4961-aaa6-8455f7f3c6bd' WHERE id = 'ccff0f5e-a147-44aa-9021-8c6e5cf207bb' AND user_id IS NULL;
