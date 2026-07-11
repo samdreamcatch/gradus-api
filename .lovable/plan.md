@@ -1,43 +1,58 @@
-## Why the native share sheet stopped appearing
+## Goal
 
-`ShareToSocialsButton` currently does:
+Merge the "Athlete" dropdown and "Save as template" toggle into one **Assign to** dropdown, and drive the bottom-right primary button + the Share-to-socials button off that selection.
 
-```
-click → await getOrCreateShareToken() → navigator.share(...)
-```
+## Dropdown (Assign to)
 
-Browsers gate `navigator.share()` behind **transient user activation** — it must be called synchronously in the same tick as the click. `await`ing a server function first (network round-trip) consumes the activation, so:
+Replace the current athlete select + separate template Switch with a single dropdown ordered:
 
-- iOS Safari and Safari macOS reject the call with `NotAllowedError` → we swallow it and fall through to `navigator.clipboard.writeText`, so the user sees a "Link copied" toast instead of the share sheet.
-- Chrome Android is more lenient but has been tightening this in recent versions.
+1. **Public / Shareable Link** — public plan (no athlete, no template)
+2. **Save as Template** — library template
+3. — divider —
+4. Athlete Name 1
+5. Athlete Name 2
+6. …
 
-The code path itself is intact — this is a user-activation regression, not a missing feature.
+Selected value drives everything below. The right-hand "Save as template" Switch and its border-left divider go away.
 
-## Fix
+## Bottom-right primary button
 
-Rework `src/components/plans/share-to-socials-button.tsx` so the share sheet opens within the click gesture:
+Label + behavior swap based on the dropdown selection:
 
-1. **Prefetch the share token** so the click has a URL ready synchronously:
-   - On mount (and after successful mutation) call `getOrCreateShareToken` once via `useQuery` / `useEffect`, cache the returned `token` in state.
-   - When the token is already known, the click handler runs `navigator.share({...})` immediately — no `await` before it — preserving user activation.
-2. **Cold-path fallback** (token not yet loaded when user clicks):
-   - Keep the current `await` + share flow, but recognize the share sheet won't open on Safari. In that case, skip straight to clipboard copy with the existing toast so behaviour is predictable.
-3. Keep the existing clipboard fallback for browsers without `navigator.share` (desktop Firefox, older Chrome) and for the AbortError branch.
-4. No changes to `getOrCreateShareToken` or the server side.
+| Selection | Button label | On click |
+| --- | --- | --- |
+| Athlete | **Send to Athlete** | Existing `activate` flow (activates for that athlete; conflict dialog logic unchanged) |
+| Public / Shareable Link | **Publish & Share** | Activates the plan with `athleteId: null`, then fires the native share sheet (reuses the prefetched token path from `ShareToSocialsButton`) |
+| Save as Template | **Save to Library** | Existing `saveTemplate` flow |
+| Nothing selected | **Send to Athlete** (disabled) | — |
 
-### Technical notes
+Already-active plan keeps saying "Update & share" for the athlete case, "Publish & Share" for the public case.
 
-- Prefetch key: `["plan-share-token", planId]`; run only when the button mounts on an authenticated route (both athlete and parent plan detail pages already gate this).
-- Guard the prefetch behind `enabled: !!planId` and don't retry aggressively (tokens rarely fail; we still have the on-click fallback).
-- No UI changes; button label, spinner, and toast copy stay the same.
-- No new dependencies.
+## Share-to-socials button visibility
 
-## Files touched
+Sits where it does today (above the timeline / logged-instances section).
 
-- `src/components/plans/share-to-socials-button.tsx` — prefetch token, call `navigator.share` synchronously in click handler.
+- **Athlete selected** → hidden (private plan).
+- **Public / Shareable Link** → shown, visually promoted (slightly larger, filled accent instead of the current outline chip) so it reads as the headline action for this mode. Still works pre-activation via the existing prefetch path.
+- **Save as Template** → hidden.
 
-## Verification
+## Public plan tag
 
-- On iOS Safari (published site), tapping "Share to socials" opens the native share sheet on the second render (token cached). First-ever click may still fall back to copy — acceptable and matches prior behaviour.
-- On desktop Chrome/Edge with Web Share, the OS share dialog opens.
-- On desktop Firefox (no Web Share), link is copied to clipboard with toast — unchanged.
+No DB change (UI-only). "Public" is derived at render time from `athleteId == null && !isTemplate`. Small `Public` chip rendered next to the plan title when true, so the coach can tell public plans apart in the editor. Existing plan list card gets the same chip via the same derivation.
+
+## Technical notes
+
+- File: `src/routes/_authenticated/coach.plans.$planId.tsx` only, plus a tiny visual variant prop on `src/components/plans/share-to-socials-button.tsx` (e.g. `variant?: "chip" | "primary"`) — no logic changes to the share flow itself.
+- Dropdown built with the existing `MoveField kind="select"`, extending its options list with two sentinel values (`__public__`, `__template__`) handled in `onCommit` before the athlete-name lookup. Divider is rendered by injecting a disabled `<option>──────</option>` between sentinels and athletes in `SelectOrCombo`, gated by an optional `dividerAfter?: string[]` prop so no other caller changes behavior.
+- "Publish & Share" click handler:
+  1. `planUpdate.mutateAsync({ athleteId: null })` if not already null
+  2. `statusFn({ status: "active" })` (skip the athlete-conflict pre-check; conflicts only apply per-athlete)
+  3. Synchronously invoke `navigator.share(...)` via the prefetched token — same pattern the button already uses, just triggered from the primary CTA instead of the chip.
+- Selecting **Save as Template** in the dropdown calls the existing `useTemplate.mutateAsync({ kind: "template", fromPlanId })` — same effect as flipping the old switch.
+- The disabled state on the current button (`!plan.athleteId`) is replaced with `assignment == null` so Public and Template modes are always enabled.
+
+## Out of scope
+
+- No schema/migration changes; no new "shared externally" flag persisted server-side.
+- No changes to `plan-share.functions.ts`, share-token generation, or the public `/p/:token` page.
+- No change to how templates or athlete-assigned plans behave once activated.
