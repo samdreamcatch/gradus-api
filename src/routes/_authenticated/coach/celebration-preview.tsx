@@ -10,11 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 
-import snowboarder from "@/assets/celebration/snowboarder.png.asset.json";
-import polevaulter from "@/assets/celebration/polevaulter.png.asset.json";
-import jockey from "@/assets/celebration/jockey.png.asset.json";
-import ballerina from "@/assets/celebration/ballerina.png.asset.json";
-import wave from "@/assets/celebration/wave.png.asset.json";
+import poster from "@/assets/celebration/sports-poster.png.asset.json";
 
 export const Route = createFileRoute("/_authenticated/coach/celebration-preview")({
   component: CelebrationPreview,
@@ -22,14 +18,6 @@ export const Route = createFileRoute("/_authenticated/coach/celebration-preview"
 
 type Variant = "coach" | "parent" | "athlete";
 type Direction = "v1" | "v2" | "v3";
-
-const ILLUSTRATIONS = [
-  snowboarder.url,
-  polevaulter.url,
-  jockey.url,
-  ballerina.url,
-  wave.url,
-];
 
 function CelebrationPreview() {
   const [variant, setVariant] = useState<Variant>("coach");
@@ -41,7 +29,7 @@ function CelebrationPreview() {
         Celebration mockups
       </h1>
       <p className="text-sm text-text-secondary">
-        Three tiled-pattern directions. Copy is unchanged — imagery varies.
+        Three directions using the sports poster art directly, like the business card.
       </p>
 
       <div className="flex flex-wrap gap-2">
@@ -63,15 +51,15 @@ function CelebrationPreview() {
 
       <div className="grid grid-cols-1 gap-3">
         <PreviewCard
-          label="Direction 1 — Pattern wallpaper"
+          label="Direction 1 — Poster wallpaper wash"
           onClick={() => setDirection("v1")}
         />
         <PreviewCard
-          label="Direction 2 — Pattern header band"
+          label="Direction 2 — Poster header band"
           onClick={() => setDirection("v2")}
         />
         <PreviewCard
-          label="Direction 3 — Subtle pattern + highlighter pill"
+          label="Direction 3 — Poster wash + highlighter pill"
           onClick={() => setDirection("v3")}
         />
       </div>
@@ -99,58 +87,38 @@ function PreviewCard({ label, onClick }: { label: string; onClick: () => void })
   );
 }
 
-/* ------------------------------ Shared helpers ----------------------------- */
+/* -------------------------- Shared poster background ----------------------- */
 
 /**
- * Deterministic tiled grid of the 5 illustrations. Density controls tile size
- * and opacity controls how much the pattern reads through the surface.
+ * The full sports poster as a background image. `opacity` controls how much it
+ * reads through the paper surface. `cover` fills the frame (crops); otherwise
+ * it contains and repeats.
  */
-function IllustrationTile({
-  density = 5,
-  opacity = 0.14,
-  rows = 6,
+function PosterBg({
+  opacity = 0.16,
+  mode = "cover",
 }: {
-  density?: number;
   opacity?: number;
-  rows?: number;
+  mode?: "cover" | "contain";
 }) {
-  const cells = Array.from({ length: density * rows });
   return (
     <div
       aria-hidden
-      className="pointer-events-none absolute inset-0 grid"
+      className="pointer-events-none absolute inset-0"
       style={{
-        gridTemplateColumns: `repeat(${density}, minmax(0, 1fr))`,
-        gridAutoRows: `${100 / rows}%`,
+        backgroundImage: `url(${poster.url})`,
+        backgroundSize: mode === "cover" ? "cover" : "auto 100%",
+        backgroundPosition: "center",
+        backgroundRepeat: mode === "cover" ? "no-repeat" : "repeat-x",
         opacity,
+        mixBlendMode: "multiply",
       }}
-    >
-      {cells.map((_, i) => {
-        const img = ILLUSTRATIONS[(i * 3 + Math.floor(i / density)) % ILLUSTRATIONS.length];
-        const rotate = ((i * 37) % 30) - 15;
-        return (
-          <div key={i} className="flex items-center justify-center p-1.5">
-            <img
-              src={img}
-              alt=""
-              className="max-h-full max-w-full object-contain mix-blend-multiply"
-              style={{ transform: `rotate(${rotate}deg)` }}
-            />
-          </div>
-        );
-      })}
-    </div>
+    />
   );
 }
 
 function CoachName({ variant }: { variant: Variant }) {
   return variant === "coach" ? "Alex Rivera" : "Coach Jamie";
-}
-
-function Headline({ variant }: { variant: Variant }) {
-  return variant === "coach"
-    ? `You're connected with ${CoachName({ variant })}!`
-    : `You're connected with ${CoachName({ variant })}!`;
 }
 
 function Subhead({ variant }: { variant: Variant }) {
@@ -183,13 +151,12 @@ function CTAButtons({ variant }: { variant: Variant }) {
 }
 
 /* ------------------------------ Direction 1 -------------------------------- */
-// Full-modal tiled illustration wallpaper, serif headline, pen highlight
-// under the coach name.
+// Poster art as a faint wallpaper across the whole modal, content on top.
 
 function DirectionOne({ variant }: { variant: Variant }) {
   return (
     <div className="relative overflow-hidden rounded-2xl bg-card p-6 shadow-2xl">
-      <IllustrationTile density={5} rows={7} opacity={0.12} />
+      <PosterBg opacity={0.18} mode="cover" />
       <div className="relative">
         <DialogHeader className="items-center text-center">
           <DialogTitle className="font-display text-2xl font-black text-text-primary">
@@ -215,24 +182,24 @@ function DirectionOne({ variant }: { variant: Variant }) {
 }
 
 /* ------------------------------ Direction 2 -------------------------------- */
-// Dense illustration pattern in top ~40% band, clean paper below for content.
+// Full-color poster art in a top band, clean paper below (like card front→back).
 
 function DirectionTwo({ variant }: { variant: Variant }) {
   return (
     <div className="overflow-hidden rounded-2xl bg-card shadow-2xl">
-      <div className="relative h-40 overflow-hidden border-b border-divider bg-elevated">
-        <IllustrationTile density={5} rows={3} opacity={0.55} />
-        {/* Jelly-pen highlighter sweep across the band */}
-        <div
-          aria-hidden
-          className="absolute left-1/2 top-1/2 h-6 w-40 -translate-x-1/2 -translate-y-1/2 -rotate-3 rounded-full"
-          style={{ background: "var(--pen-tennis)", opacity: 0.75 }}
-        />
-      </div>
+      <div
+        className="relative h-44 border-b border-divider bg-white"
+        style={{
+          backgroundImage: `url(${poster.url})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center 30%",
+        }}
+        aria-hidden
+      />
       <div className="p-6">
         <DialogHeader className="items-center text-center">
           <DialogTitle className="font-display text-2xl font-black text-text-primary">
-            <Headline variant={variant} />
+            You're connected with <CoachName variant={variant} />!
           </DialogTitle>
           <DialogDescription className="text-sm text-text-secondary">
             <Subhead variant={variant} />
@@ -250,13 +217,13 @@ function DirectionTwo({ variant }: { variant: Variant }) {
 }
 
 /* ------------------------------ Direction 3 -------------------------------- */
-// Very subtle pattern wash, headline phrase wrapped in a jelly-pen
-// highlighter pill (like "Try Gradus" on the reference card).
+// Very subtle poster wash, key phrase wrapped in a jelly-pen highlighter pill
+// exactly like "Try Gradus" on the business card back.
 
 function DirectionThree({ variant }: { variant: Variant }) {
   return (
     <div className="relative overflow-hidden rounded-2xl bg-card p-6 shadow-2xl">
-      <IllustrationTile density={6} rows={8} opacity={0.06} />
+      <PosterBg opacity={0.09} mode="cover" />
       <div className="relative">
         <DialogHeader className="items-center text-center">
           <DialogTitle className="font-display text-2xl font-black leading-tight text-text-primary">
