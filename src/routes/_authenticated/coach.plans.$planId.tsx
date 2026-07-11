@@ -409,6 +409,46 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
     );
   };
 
+  const publishAndShare = () => {
+    if (!plan.title.trim()) {
+      toast.error("Give the plan a title.");
+      return;
+    }
+    // Fire native share sheet SYNCHRONOUSLY (user activation is preserved
+    // only in the same tick as the click). Kick off the activation mutation
+    // in parallel — order matters, share must not be awaited.
+    const caption = `${plan.title || "Untitled plan"} — My workout on Gradus`;
+    const canShare = typeof navigator !== "undefined" && typeof navigator.share === "function";
+    if (prefetchedShare?.token && canShare) {
+      const url = `${SITE_ORIGIN}/p/${prefetchedShare.token}`;
+      navigator.share({ title: plan.title || "Untitled plan", text: caption, url }).catch(() => {});
+    } else if (prefetchedShare?.token) {
+      const url = `${SITE_ORIGIN}/p/${prefetchedShare.token}`;
+      navigator.clipboard?.writeText(url).catch(() => {});
+      toast.success("Link copied", { description: url });
+    }
+    statusMutation.mutate(
+      { data: { id: plan.id, status: "active" } },
+      {
+        onSuccess: () => {
+          toast.success(plan.status === "active" ? "Plan updated" : "Plan published");
+          onClose();
+        },
+      },
+    );
+  };
+
+  const saveToLibrary = () => {
+    if (!plan.title.trim()) {
+      toast.error("Give the plan a title.");
+      return;
+    }
+    void useTemplate.mutateAsync({
+      data: { kind: "template", fromPlanId: plan.id },
+    });
+  };
+
+
   const reorder = (from: number, to: number) => {
     if (to < 0 || to >= plan.moves.length || from === to) return;
     const ids = plan.moves.map((m) => m.id);
