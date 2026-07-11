@@ -263,7 +263,7 @@ export const getUserDetail = createServerFn({ method: "POST" })
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const [authUser, coach, parent] = await Promise.all([
+    const [authUser, coach, parent, athlete] = await Promise.all([
       supabaseAdmin.auth.admin.getUserById(data.userId),
       supabaseAdmin
         .from("coach_profiles")
@@ -273,6 +273,11 @@ export const getUserDetail = createServerFn({ method: "POST" })
       supabaseAdmin
         .from("parent_profiles")
         .select("id, first_name, last_name, created_at, coach_id, is_test")
+        .eq("user_id", data.userId)
+        .maybeSingle(),
+      supabaseAdmin
+        .from("athletes")
+        .select("id, first_name, last_name, birthdate, created_at, self_managed, parent_id, motivation")
         .eq("user_id", data.userId)
         .maybeSingle(),
     ]);
@@ -321,8 +326,32 @@ export const getUserDetail = createServerFn({ method: "POST" })
       };
     }
 
+    let athleteDetail: any = null;
+    if (athlete.data) {
+      const [coachLinks, plans] = await Promise.all([
+        supabaseAdmin
+          .from("athlete_primary_coaches")
+          .select("sport, coach_id, coach_profiles(first_name, last_name, user_id)")
+          .eq("athlete_id", athlete.data.id),
+        supabaseAdmin
+          .from("plans")
+          .select("id, kind, status")
+          .eq("athlete_id", athlete.data.id),
+      ]);
+      athleteDetail = {
+        ...athlete.data,
+        coaches: (coachLinks.data ?? []).map((l: any) => ({
+          sport: l.sport,
+          coachUserId: l.coach_profiles?.user_id ?? null,
+          coachName: `${l.coach_profiles?.first_name ?? ""} ${l.coach_profiles?.last_name ?? ""}`.trim() || "—",
+        })),
+        plansCount: (plans.data ?? []).filter((p) => p.kind === "plan").length,
+        activePlansCount: (plans.data ?? []).filter((p) => p.kind === "plan" && p.status === "active").length,
+      };
+    }
+
     const isTest = !!(coach.data?.is_test || parent.data?.is_test);
-    return { auth, coach: coachDetail, parent: parentDetail, isTest };
+    return { auth, coach: coachDetail, parent: parentDetail, athlete: athleteDetail, isTest };
   });
 
 const LIST_KINDS = ["coaches", "parents", "athletes", "plans", "beta-signups"] as const;
