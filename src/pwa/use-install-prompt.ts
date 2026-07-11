@@ -6,6 +6,7 @@ type BeforeInstallPromptEvent = Event & {
 };
 
 export type InstallStatus = "hidden" | "installable" | "ios-instructions";
+export type InstallPlatform = "none" | "installable" | "ios";
 
 // v2: bumping the key invalidates every previously stored dismissal so the
 // banner reappears once for returning users, then the normal snooze kicks in.
@@ -50,8 +51,6 @@ function isIosSafari(): boolean {
   if (!isIos()) return false;
   const ua = window.navigator.userAgent;
   // Exclude only in-app webviews where Add to Home Screen isn't reachable.
-  // All real iOS browsers (Safari, Chrome/CriOS, Firefox/FxiOS, Edge/EdgiOS) use WebKit
-  // and expose Share → Add to Home Screen.
   if (/FBAN|FBAV|Instagram|Line|Snapchat|MicroMessenger/i.test(ua)) return false;
   return true;
 }
@@ -70,12 +69,12 @@ function dismissedRecently(): boolean {
 
 export function useInstallPrompt() {
   const [status, setStatus] = useState<InstallStatus>("hidden");
+  const [platform, setPlatform] = useState<InstallPlatform>("none");
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
 
   useEffect(() => {
     if (shouldRefuseEnv()) return;
     if (isStandalone()) return;
-    if (dismissedRecently()) return;
 
     let timer: ReturnType<typeof setTimeout> | null = null;
 
@@ -83,11 +82,15 @@ export function useInstallPrompt() {
       e.preventDefault();
       const evt = e as BeforeInstallPromptEvent;
       setDeferred(evt);
-      timer = setTimeout(() => setStatus("installable"), SHOW_DELAY_MS);
+      setPlatform("installable");
+      if (!dismissedRecently()) {
+        timer = setTimeout(() => setStatus("installable"), SHOW_DELAY_MS);
+      }
     };
 
     const onInstalled = () => {
       setStatus("hidden");
+      setPlatform("none");
       setDeferred(null);
       try {
         window.localStorage.setItem(DISMISS_KEY, String(Date.now() + DISMISS_TTL_MS * 52));
@@ -101,7 +104,10 @@ export function useInstallPrompt() {
 
     // iOS Safari never fires beforeinstallprompt — show instructions after delay
     if (isIosSafari()) {
-      timer = setTimeout(() => setStatus("ios-instructions"), SHOW_DELAY_MS);
+      setPlatform("ios");
+      if (!dismissedRecently()) {
+        timer = setTimeout(() => setStatus("ios-instructions"), SHOW_DELAY_MS);
+      }
     }
 
     return () => {
@@ -134,5 +140,15 @@ export function useInstallPrompt() {
     setStatus("hidden");
   }, []);
 
-  return { status, promptInstall, dismiss };
+  const show = useCallback(() => {
+    try {
+      window.localStorage.removeItem(DISMISS_KEY);
+    } catch {
+      // ignore
+    }
+    if (platform === "installable") setStatus("installable");
+    else if (platform === "ios") setStatus("ios-instructions");
+  }, [platform]);
+
+  return { status, platform, promptInstall, dismiss, show };
 }
