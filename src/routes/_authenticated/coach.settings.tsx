@@ -73,6 +73,8 @@ function SettingsPage() {
             <SportsDisclosure levels={data.levels} summary={sportsSummary} />
             <RosterSettingsSection />
             <InviteDisclosure />
+            <InviteAdultAthletesDisclosure />
+
           </SettingsList>
         </SettingsGroup>
 
