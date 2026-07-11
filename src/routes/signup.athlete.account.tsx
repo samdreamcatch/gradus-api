@@ -37,6 +37,8 @@ function AthleteAccountPage() {
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [promoCode, setPromoCode] = useState("");
+
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
