@@ -408,7 +408,7 @@ export const getUserDetail = createServerFn({ method: "POST" })
       };
     }
 
-    const isTest = !!(coach.data?.is_test || parent.data?.is_test);
+    const isTest = !!(coach.data?.is_test || parent.data?.is_test || athlete.data?.is_test);
     return { auth, coach: coachDetail, parent: parentDetail, athlete: athleteDetail, isTest };
   });
 
