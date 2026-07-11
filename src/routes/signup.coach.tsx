@@ -260,7 +260,10 @@ function CoachSignupPage() {
             />
           </div>
 
+          <PromoCodeField value={promoCode} onChange={setPromoCode} />
+
           <label className="flex cursor-pointer items-start gap-2.5 text-sm text-text-secondary">
+
             <Checkbox
               checked={agreed}
               onCheckedChange={(v) => setAgreed(v === true)}
