@@ -1,15 +1,17 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Copy, Check, Link as LinkIcon } from "lucide-react";
+import { Copy, Check } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { ShareInviteButton } from "@/components/share/share-invite-button";
 import { getOrCreateParentInviteCode } from "@/lib/parent-signup.functions";
 
 /**
- * Card the parent uses to invite their coach(es). Shows a shareable URL and
- * the underlying 8-character code, both copy-to-clipboard. No coach-side
- * email/SMS send — the parent shares the link themselves.
+ * Card the parent uses to invite their coach(es). Primary CTA opens the
+ * native share sheet with a code-embedded link so the coach lands on the
+ * signup page pre-linked. The raw code stays visible for coaches who are
+ * already on Gradus and want to paste it on their roster page.
  */
 export function InviteCoachCard() {
   const fetchCode = useServerFn(getOrCreateParentInviteCode);
@@ -18,7 +20,6 @@ export function InviteCoachCard() {
     queryFn: () => fetchCode(),
   });
 
-  const [linkCopied, setLinkCopied] = useState(false);
   const [codeCopied, setCodeCopied] = useState(false);
 
   const code = data?.code;
@@ -26,19 +27,13 @@ export function InviteCoachCard() {
     ? `${typeof window !== "undefined" ? window.location.origin : "https://gradus.training"}/signup/coach?invite=${code}`
     : "";
 
-  const copy = async (text: string, kind: "link" | "code") => {
-    if (!text) return;
+  const copyCode = async () => {
+    if (!code) return;
     try {
-      await navigator.clipboard.writeText(text);
-      if (kind === "link") {
-        setLinkCopied(true);
-        toast.success("Link copied — paste it to your coach");
-        setTimeout(() => setLinkCopied(false), 1800);
-      } else {
-        setCodeCopied(true);
-        toast.success("Code copied");
-        setTimeout(() => setCodeCopied(false), 1800);
-      }
+      await navigator.clipboard.writeText(code);
+      setCodeCopied(true);
+      toast.success("Code copied");
+      setTimeout(() => setCodeCopied(false), 1800);
     } catch {
       toast.error("Couldn't copy — try selecting it manually");
     }
@@ -50,40 +45,19 @@ export function InviteCoachCard() {
         Invite your coach
       </h2>
       <p className="mt-2 text-sm text-text-secondary">
-        Share the link below — when your coach signs up, they'll be linked to
-        your athletes, sports, goals, and lesson times automatically.
+        Tap share — when your coach signs up they'll be linked to your
+        athletes, sports, goals, and lesson times automatically.
       </p>
 
       <div className="mt-5 space-y-3">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
-          <div
-            aria-label="Shareable signup link"
-            className="flex-1 truncate rounded-md border border-divider bg-elevated px-4 py-3 text-sm text-text-primary"
-          >
-            {isLoading || !url ? (
-              <span className="text-text-tertiary">Generating link…</span>
-            ) : (
-              url
-            )}
-          </div>
-          <Button
-            type="button"
-            variant="default"
-            onClick={() => copy(url, "link")}
-            disabled={!url}
-            className="shrink-0"
-          >
-            {linkCopied ? (
-              <>
-                <Check className="size-4" aria-hidden /> Copied
-              </>
-            ) : (
-              <>
-                <LinkIcon className="size-4" aria-hidden /> Copy link
-              </>
-            )}
-          </Button>
-        </div>
+        <ShareInviteButton
+          url={url}
+          title="Invite your coach to Gradus"
+          text="Join me on Gradus so we can share practice plans and messages."
+          label={isLoading ? "Generating link…" : "Share invite"}
+          disabled={isLoading || !url}
+          className="w-full"
+        />
 
         <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
           <div
@@ -99,7 +73,7 @@ export function InviteCoachCard() {
           <Button
             type="button"
             variant="outline"
-            onClick={() => copy(code ?? "", "code")}
+            onClick={copyCode}
             disabled={!code}
             className="shrink-0"
           >
