@@ -7,8 +7,10 @@ type BeforeInstallPromptEvent = Event & {
 
 export type InstallStatus = "hidden" | "installable" | "ios-instructions";
 
-const DISMISS_KEY = "gradus.installBannerDismissedAt";
-const DISMISS_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+// v2: bumping the key invalidates every previously stored dismissal so the
+// banner reappears once for returning users, then the normal snooze kicks in.
+const DISMISS_KEY = "gradus.installBannerDismissedAt.v2";
+const DISMISS_TTL_MS = 2 * 24 * 60 * 60 * 1000;
 const SHOW_DELAY_MS = 3000;
 
 function shouldRefuseEnv(): boolean {
