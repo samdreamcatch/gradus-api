@@ -9,6 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/logo";
 import { getAthleteInviteSummary } from "@/lib/athlete-signup.functions";
+import { PromoCodeField } from "@/components/signup/promo-code-field";
+
+
 
 
 const searchSchema = z.object({
@@ -38,8 +41,10 @@ function AthleteEntryPage() {
   const lookup = useServerFn(getAthleteInviteSummary);
 
   const [code, setCode] = useState("");
+  const [promoCode, setPromoCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
 
   if (location.pathname !== "/signup/athlete") {
     return <Outlet />;
@@ -128,7 +133,10 @@ function AthleteEntryPage() {
                 />
               </div>
 
+              <PromoCodeField value={promoCode} onChange={setPromoCode} />
+
               {error && <p className="text-sm text-destructive">{error}</p>}
+
 
               <Button type="submit" className="w-full" disabled={loading || code.length !== 8}>
                 {loading ? "Checking..." : "Continue"}
@@ -152,7 +160,11 @@ function AthleteEntryPage() {
                 variant="outline"
                 className="mt-3 w-full"
                 onClick={async () => {
-                  const url = "https://gradus.training/signup/parent";
+                  const trimmed = promoCode.trim().toUpperCase();
+                  const url = trimmed
+                    ? `https://gradus.training/signup/parent?promo=${encodeURIComponent(trimmed)}`
+                    : "https://gradus.training/signup/parent";
+
                   const shareData = {
                     title: "Join me on Gradus",
                     text: "Hey — I want to sign up for Gradus. Can you make a parent account so you can add me?",

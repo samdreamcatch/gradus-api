@@ -11,20 +11,27 @@ import { TurnstileWidget } from "@/components/auth/turnstile";
 import { CURRENT_TERMS_VERSION, PENDING_TERMS_ACCEPT_KEY } from "@/lib/terms";
 import { PromoCodeField } from "@/components/signup/promo-code-field";
 import { savePendingPromoCode } from "@/lib/pending-promo-code";
+import { z } from "zod";
 
+const searchSchema = z.object({
+  promo: z.string().trim().toUpperCase().max(32).optional(),
+});
 
 export const Route = createFileRoute("/signup/parent")({
+  validateSearch: (s) => searchSchema.parse(s),
   component: ParentSignupPage,
 });
 
 function ParentSignupPage() {
   const location = useLocation();
   const navigate = useNavigate();
+  const search = Route.useSearch();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [code, setCode] = useState("");
-  const [promoCode, setPromoCode] = useState("");
+  const [promoCode, setPromoCode] = useState(search.promo ?? "");
+
 
   const [agreed, setAgreed] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
