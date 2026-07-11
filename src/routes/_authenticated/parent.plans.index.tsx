@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { listParentPlans } from "@/lib/parent-plans.functions";
 import { GoalsDashboard, useGoalsDashboard } from "@/components/parent/goals/goals-dashboard";
+import { useActiveSession } from "@/lib/active-session-store";
 
 export const Route = createFileRoute("/_authenticated/parent/plans/")({
   component: ParentPlansPage,
@@ -38,9 +39,15 @@ function ParentPlansPage() {
     queryKey: ["parent-plans"],
     queryFn: () => fetchPlans(),
   });
+  const { session, clear } = useActiveSession();
 
   const athletes = data?.athletes ?? [];
   const plans = data?.plans ?? [];
+
+  useEffect(() => {
+    if (!data || session?.role !== "parent") return;
+    if (!plans.some((plan) => plan.id === session.planId)) clear();
+  }, [clear, data, plans, session]);
 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("active");
   const [athleteId, setAthleteId] = useState<string>("");

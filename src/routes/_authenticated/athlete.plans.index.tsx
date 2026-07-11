@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
@@ -22,6 +22,7 @@ import {
 } from "@/lib/athlete-goals.functions";
 import { SportGoalCard } from "@/components/parent/goals/sport-goal-card";
 import { MotivationCard } from "@/components/athlete/motivation-card";
+import { useActiveSession } from "@/lib/active-session-store";
 
 export const Route = createFileRoute("/_authenticated/athlete/plans/")({
   component: AthletePlansPage,
@@ -51,8 +52,14 @@ function AthletePlansPage() {
     queryKey: ["athlete-plans"],
     queryFn: () => fetchPlans(),
   });
+  const { session, clear } = useActiveSession();
 
   const plans = data?.plans ?? [];
+
+  useEffect(() => {
+    if (!data || session?.role !== "athlete") return;
+    if (!plans.some((plan) => plan.id === session.planId)) clear();
+  }, [clear, data, plans, session]);
 
   const [tab, setTab] = useState<Tab>("plans");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("active");

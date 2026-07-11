@@ -22,6 +22,7 @@ export const Route = createFileRoute("/_authenticated")({
 });
 
 function AuthedLayout() {
+  const { user } = Route.useRouteContext();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isCoach = pathname.startsWith("/coach");
   const isAdmin = pathname.startsWith("/admin");
@@ -48,7 +49,7 @@ function AuthedLayout() {
   }, [accept]);
 
   return (
-    <ActiveSessionProvider>
+    <ActiveSessionProvider userId={user.id}>
       <ActiveSessionBar />
       <Outlet />
       {isCoach ? <LessonWrapUpProvider /> : null}
