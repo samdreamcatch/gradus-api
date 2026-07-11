@@ -9,6 +9,9 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Logo } from "@/components/logo";
 import { TurnstileWidget } from "@/components/auth/turnstile";
 import { CURRENT_TERMS_VERSION, PENDING_TERMS_ACCEPT_KEY } from "@/lib/terms";
+import { PromoCodeField } from "@/components/signup/promo-code-field";
+import { savePendingPromoCode } from "@/lib/pending-promo-code";
+
 
 export const Route = createFileRoute("/signup/parent")({
   component: ParentSignupPage,
@@ -21,6 +24,8 @@ function ParentSignupPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [code, setCode] = useState("");
+  const [promoCode, setPromoCode] = useState("");
+
   const [agreed, setAgreed] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [captchaKey, setCaptchaKey] = useState(0);
@@ -79,7 +84,9 @@ function ParentSignupPage() {
       } catch {
         /* ignore */
       }
+      savePendingPromoCode(promoCode);
       await ensureAuthed(verifiedCaptchaToken);
+
       navigate({
         to: "/signup/parent/athletes",
         search: trimmed ? { code: trimmed } : {},
@@ -172,6 +179,10 @@ function ParentSignupPage() {
               later.
             </p>
           </div>
+
+          <PromoCodeField value={promoCode} onChange={setPromoCode} />
+
+
 
           <label className="flex cursor-pointer items-start gap-2.5 text-sm text-text-secondary">
             <Checkbox

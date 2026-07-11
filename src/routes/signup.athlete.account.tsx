@@ -14,6 +14,9 @@ import {
   checkAthleteUsername,
   signupAthleteWithUsername,
 } from "@/lib/athlete-signup.functions";
+import { PromoCodeField } from "@/components/signup/promo-code-field";
+import { savePendingPromoCode } from "@/lib/pending-promo-code";
+
 
 const searchSchema = z.object({
   code: z.string().trim().toUpperCase().length(8).regex(/^[A-Z2-9]+$/),
@@ -34,6 +37,8 @@ function AthleteAccountPage() {
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [promoCode, setPromoCode] = useState("");
+
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -75,7 +80,9 @@ function AthleteAccountPage() {
       const { email } = await signup({
         data: { code, username: u, password },
       });
+      savePendingPromoCode(promoCode);
       // Sign in with the synthetic email so the client picks up the session.
+
       const { error: signInErr } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -177,7 +184,11 @@ function AthleteAccountPage() {
             <p className="text-xs text-text-tertiary">At least 8 characters.</p>
           </div>
 
+          <PromoCodeField value={promoCode} onChange={setPromoCode} />
+
           {error && <p className="text-sm text-destructive">{error}</p>}
+
+
 
           <Button
             type="submit"

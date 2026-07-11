@@ -16,6 +16,9 @@ import { TurnstileWidget } from "@/components/auth/turnstile";
 import { claimParentInvite, getParentByInviteCode } from "@/lib/parent-signup.functions";
 import { verifyTurnstileToken } from "@/lib/turnstile.functions";
 import { CURRENT_TERMS_VERSION, PENDING_TERMS_ACCEPT_KEY } from "@/lib/terms";
+import { PromoCodeField } from "@/components/signup/promo-code-field";
+import { savePendingPromoCode } from "@/lib/pending-promo-code";
+
 
 const PENDING_INVITE_KEY = "gradus.pendingParentInvite";
 
@@ -58,6 +61,8 @@ function CoachSignupPage() {
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [promoCode, setPromoCode] = useState("");
+
 
   useEffect(() => {
     if (invite) {
@@ -110,7 +115,9 @@ function CoachSignupPage() {
     } catch {
       /* ignore */
     }
+    savePendingPromoCode(promoCode);
   };
+
 
   const resetCaptcha = () => {
     setCaptchaToken(null);
@@ -253,7 +260,10 @@ function CoachSignupPage() {
             />
           </div>
 
+          <PromoCodeField value={promoCode} onChange={setPromoCode} />
+
           <label className="flex cursor-pointer items-start gap-2.5 text-sm text-text-secondary">
+
             <Checkbox
               checked={agreed}
               onCheckedChange={(v) => setAgreed(v === true)}
