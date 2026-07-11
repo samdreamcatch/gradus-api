@@ -433,7 +433,15 @@ function IdentitySubrow({ athlete }: { athlete: AthleteData }) {
   );
 }
 
-function CoachesSection({ athlete }: { athlete: AthleteData }) {
+function CoachesSection({
+  athlete,
+  initialLinkCoach,
+  onLinkCoachConsumed,
+}: {
+  athlete: AthleteData;
+  initialLinkCoach?: string | null;
+  onLinkCoachConsumed?: () => void;
+}) {
   const [adding, setAdding] = useState(false);
   const [code, setCode] = useState("");
   const [preview, setPreview] = useState<{
@@ -467,10 +475,12 @@ function CoachesSection({ athlete }: { athlete: AthleteData }) {
     setSelectedSports([]);
   };
 
-  const handleLookup = async () => {
+  const handleLookup = async (rawCode?: string) => {
+    const c = (rawCode ?? code).trim().toUpperCase();
+    if (c.length !== 8) return;
     setLookingUp(true);
     try {
-      const result = await previewFn({ data: { code: code.trim() } });
+      const result = await previewFn({ data: { code: c } });
       setPreview(result);
       // Default: pre-select if there's only one sport
       setSelectedSports(result.sports.length === 1 ? [result.sports[0]] : []);
@@ -480,6 +490,18 @@ function CoachesSection({ athlete }: { athlete: AthleteData }) {
       setLookingUp(false);
     }
   };
+
+  // Auto-open + auto-preview when a coach invite code was passed in via
+  // `?linkCoach=CODE` (from the /i/CODE universal invite entry).
+  useEffect(() => {
+    if (!initialLinkCoach) return;
+    setAdding(true);
+    setCode(initialLinkCoach);
+    void handleLookup(initialLinkCoach);
+    onLinkCoachConsumed?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialLinkCoach]);
+
 
   const handleLink = async () => {
     if (!preview) return;
