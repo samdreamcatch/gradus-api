@@ -224,6 +224,7 @@ export function MoveField(props: MoveFieldProps) {
         <SelectOrCombo
           value={draft}
           options={props.options}
+          dividerAfter={props.dividerAfter}
           allowFreeText={props.allowFreeText !== false}
           onChange={setDraft}
           onCommit={(override) => commit(override)}
@@ -234,6 +235,7 @@ export function MoveField(props: MoveFieldProps) {
             inputRef.current = el;
           }}
         />
+
 
       )}
     </div>
