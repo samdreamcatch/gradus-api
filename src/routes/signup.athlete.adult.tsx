@@ -89,7 +89,9 @@ function AdultAthleteSignupPage() {
       } catch {
         /* ignore */
       }
+      savePendingPromoCode(promoCode);
       await ensureAuthed(verifiedCaptchaToken);
+
       await createAthlete({
         data: {
           firstName: firstName.trim(),
