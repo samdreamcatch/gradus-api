@@ -115,7 +115,9 @@ function CoachSignupPage() {
     } catch {
       /* ignore */
     }
+    savePendingPromoCode(promoCode);
   };
+
 
   const resetCaptcha = () => {
     setCaptchaToken(null);
