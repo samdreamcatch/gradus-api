@@ -133,7 +133,10 @@ function AthleteEntryPage() {
                 />
               </div>
 
+              <PromoCodeField value={promoCode} onChange={setPromoCode} />
+
               {error && <p className="text-sm text-destructive">{error}</p>}
+
 
               <Button type="submit" className="w-full" disabled={loading || code.length !== 8}>
                 {loading ? "Checking..." : "Continue"}
