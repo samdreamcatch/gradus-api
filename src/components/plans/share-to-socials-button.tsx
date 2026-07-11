@@ -113,7 +113,7 @@ export function ShareToSocialsButton({
       ) : (
         <Share2 className={cn(primary ? "size-4" : "size-3.5")} />
       )}
-      Share to socials
+      {label}
     </button>
   );
 }
