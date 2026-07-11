@@ -34,6 +34,8 @@ function AdultAthleteSignupPage() {
   const [birthdate, setBirthdate] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [promoCode, setPromoCode] = useState("");
+
   const [agreed, setAgreed] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [captchaKey, setCaptchaKey] = useState(0);
