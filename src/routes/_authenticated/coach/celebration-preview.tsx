@@ -224,7 +224,7 @@ function DirectionTwo({ variant }: { variant: Variant }) {
 
 function DirectionThree({ variant }: { variant: Variant }) {
   return (
-    <div className="relative overflow-hidden rounded-2xl bg-card p-6 shadow-2xl">
+    <div className="relative overflow-hidden rounded-2xl bg-popover p-6 shadow-2xl">
       <PosterBg opacity={0.12} tile={220} mode="tile" />
       <div className="relative">
         <DialogHeader className="items-center text-center">
