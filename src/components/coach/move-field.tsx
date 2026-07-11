@@ -245,6 +245,7 @@ export function MoveField(props: MoveFieldProps) {
 function SelectOrCombo({
   value,
   options,
+  dividerAfter,
   allowFreeText,
   onChange,
   onCommit,
@@ -255,6 +256,7 @@ function SelectOrCombo({
 }: {
   value: string;
   options: string[];
+  dividerAfter?: string[];
   allowFreeText: boolean;
   onChange: (v: string) => void;
   onCommit: (override?: string) => void;
@@ -293,6 +295,8 @@ function SelectOrCombo({
     );
   }
 
+  const dividers = new Set(dividerAfter ?? []);
+
   return (
     <select
       value={value}
@@ -326,9 +330,16 @@ function SelectOrCombo({
         </option>
       ) : null}
       {options.map((o) => (
-        <option key={o} value={o}>
-          {o}
-        </option>
+        <>
+          <option key={o} value={o}>
+            {o}
+          </option>
+          {dividers.has(o) ? (
+            <option key={`__div-${o}`} value="" disabled>
+              ──────────
+            </option>
+          ) : null}
+        </>
       ))}
       {allowFreeText ? (
         <option value={CUSTOM}>Custom…</option>
@@ -336,4 +347,5 @@ function SelectOrCombo({
     </select>
   );
 }
+
 
