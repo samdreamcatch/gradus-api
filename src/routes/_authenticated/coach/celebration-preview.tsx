@@ -41,7 +41,7 @@ function CelebrationPreview() {
         Celebration mockups
       </h1>
       <p className="text-sm text-text-secondary">
-        Three visual directions using the hand-drawn illustrations. Tap one to preview.
+        Three tiled-pattern directions. Copy is unchanged — imagery varies.
       </p>
 
       <div className="flex flex-wrap gap-2">
@@ -63,15 +63,15 @@ function CelebrationPreview() {
 
       <div className="grid grid-cols-1 gap-3">
         <PreviewCard
-          label="Direction 1 — Cream card, illustration hero"
+          label="Direction 1 — Pattern wallpaper"
           onClick={() => setDirection("v1")}
         />
         <PreviewCard
-          label="Direction 2 — Notebook page with highlighter"
+          label="Direction 2 — Pattern header band"
           onClick={() => setDirection("v2")}
         />
         <PreviewCard
-          label="Direction 3 — Full-bleed illustration band"
+          label="Direction 3 — Subtle pattern + highlighter pill"
           onClick={() => setDirection("v3")}
         />
       </div>
@@ -101,16 +101,56 @@ function PreviewCard({ label, onClick }: { label: string; onClick: () => void })
 
 /* ------------------------------ Shared helpers ----------------------------- */
 
-function useIllustration() {
-  // Rotate through illustrations so the mockups feel varied.
-  const idx = Math.floor(Math.random() * ILLUSTRATIONS.length);
-  return ILLUSTRATIONS[idx];
+/**
+ * Deterministic tiled grid of the 5 illustrations. Density controls tile size
+ * and opacity controls how much the pattern reads through the surface.
+ */
+function IllustrationTile({
+  density = 5,
+  opacity = 0.14,
+  rows = 6,
+}: {
+  density?: number;
+  opacity?: number;
+  rows?: number;
+}) {
+  const cells = Array.from({ length: density * rows });
+  return (
+    <div
+      aria-hidden
+      className="pointer-events-none absolute inset-0 grid"
+      style={{
+        gridTemplateColumns: `repeat(${density}, minmax(0, 1fr))`,
+        gridAutoRows: `${100 / rows}%`,
+        opacity,
+      }}
+    >
+      {cells.map((_, i) => {
+        const img = ILLUSTRATIONS[(i * 3 + Math.floor(i / density)) % ILLUSTRATIONS.length];
+        const rotate = ((i * 37) % 30) - 15;
+        return (
+          <div key={i} className="flex items-center justify-center p-1.5">
+            <img
+              src={img}
+              alt=""
+              className="max-h-full max-w-full object-contain mix-blend-multiply"
+              style={{ transform: `rotate(${rotate}deg)` }}
+            />
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function CoachName({ variant }: { variant: Variant }) {
+  return variant === "coach" ? "Alex Rivera" : "Coach Jamie";
 }
 
 function Headline({ variant }: { variant: Variant }) {
   return variant === "coach"
-    ? "You're connected with Alex Rivera!"
-    : "You're connected with Coach Jamie!";
+    ? `You're connected with ${CoachName({ variant })}!`
+    : `You're connected with ${CoachName({ variant })}!`;
 }
 
 function Subhead({ variant }: { variant: Variant }) {
@@ -143,90 +183,96 @@ function CTAButtons({ variant }: { variant: Variant }) {
 }
 
 /* ------------------------------ Direction 1 -------------------------------- */
-// Cream paper card, centered illustration hero, serif headline, pen accent dot.
+// Full-modal tiled illustration wallpaper, serif headline, pen highlight
+// under the coach name.
 
 function DirectionOne({ variant }: { variant: Variant }) {
-  const img = useIllustration();
   return (
-    <div className="rounded-2xl bg-[#F5EFE1] p-6 shadow-2xl">
-      <div className="relative mx-auto mb-4 flex h-40 items-center justify-center">
-        <img
-          src={img}
-          alt=""
-          className="max-h-40 w-auto object-contain"
-        />
-        <span className="absolute right-6 top-2 h-3 w-3 rounded-full bg-[--pen-tennis]" />
+    <div className="relative overflow-hidden rounded-2xl bg-card p-6 shadow-2xl">
+      <IllustrationTile density={5} rows={7} opacity={0.12} />
+      <div className="relative">
+        <DialogHeader className="items-center text-center">
+          <DialogTitle className="font-display text-2xl font-black text-text-primary">
+            You're connected with{" "}
+            <span className="pen-highlight">
+              <CoachName variant={variant} />
+            </span>
+            !
+          </DialogTitle>
+          <DialogDescription className="text-sm text-text-secondary">
+            <Subhead variant={variant} />
+          </DialogDescription>
+        </DialogHeader>
+        <div className="mt-5">
+          <CTAButtons variant={variant} />
+        </div>
+        <button className="mt-3 w-full text-center text-xs font-medium text-text-tertiary">
+          Maybe later
+        </button>
       </div>
-      <DialogHeader className="items-center text-center">
-        <DialogTitle className="font-display text-2xl font-black text-[#1F2937]">
-          <Headline variant={variant} />
-        </DialogTitle>
-        <DialogDescription className="text-sm text-[#6B7280]">
-          <Subhead variant={variant} />
-        </DialogDescription>
-      </DialogHeader>
-      <div className="mt-5">
-        <CTAButtons variant={variant} />
-      </div>
-      <button className="mt-3 w-full text-center text-xs font-medium text-[#9CA3AF]">
-        Maybe later
-      </button>
     </div>
   );
 }
 
 /* ------------------------------ Direction 2 -------------------------------- */
-// White card with a highlighter swipe under the name and a small illustration
-// tucked into the top-right corner like a notebook doodle.
+// Dense illustration pattern in top ~40% band, clean paper below for content.
 
 function DirectionTwo({ variant }: { variant: Variant }) {
-  const img = useIllustration();
-  const name =
-    variant === "coach" ? "Alex Rivera" : "Coach Jamie";
   return (
-    <div className="relative overflow-hidden rounded-2xl bg-card p-6 shadow-2xl">
-      <img
-        src={img}
-        alt=""
-        className="absolute -right-4 -top-4 h-28 w-28 object-contain opacity-90"
-      />
-      <div className="mt-24">
-        <p className="font-hand text-lg text-text-secondary">You're connected with</p>
-        <h2 className="mt-1 font-display text-3xl font-black leading-tight text-text-primary">
-          <span className="pen-highlight">{name}</span>
-        </h2>
-        <p className="mt-3 text-sm text-text-secondary">
-          <Subhead variant={variant} />
-        </p>
+    <div className="overflow-hidden rounded-2xl bg-card shadow-2xl">
+      <div className="relative h-40 overflow-hidden border-b border-divider bg-elevated">
+        <IllustrationTile density={5} rows={3} opacity={0.55} />
+        {/* Jelly-pen highlighter sweep across the band */}
+        <div
+          aria-hidden
+          className="absolute left-1/2 top-1/2 h-6 w-40 -translate-x-1/2 -translate-y-1/2 -rotate-3 rounded-full"
+          style={{ background: "var(--pen-tennis)", opacity: 0.75 }}
+        />
       </div>
-      <div className="mt-5">
-        <CTAButtons variant={variant} />
+      <div className="p-6">
+        <DialogHeader className="items-center text-center">
+          <DialogTitle className="font-display text-2xl font-black text-text-primary">
+            <Headline variant={variant} />
+          </DialogTitle>
+          <DialogDescription className="text-sm text-text-secondary">
+            <Subhead variant={variant} />
+          </DialogDescription>
+        </DialogHeader>
+        <div className="mt-5">
+          <CTAButtons variant={variant} />
+        </div>
+        <button className="mt-3 w-full text-center text-xs font-medium text-text-tertiary">
+          Maybe later
+        </button>
       </div>
-      <button className="mt-3 w-full text-center text-xs font-medium text-text-tertiary">
-        Maybe later
-      </button>
     </div>
   );
 }
 
 /* ------------------------------ Direction 3 -------------------------------- */
-// Illustration fills the top ~45% as a cream band; content sits on white below.
+// Very subtle pattern wash, headline phrase wrapped in a jelly-pen
+// highlighter pill (like "Try Gradus" on the reference card).
 
 function DirectionThree({ variant }: { variant: Variant }) {
-  const img = useIllustration();
   return (
-    <div className="overflow-hidden rounded-2xl bg-card shadow-2xl">
-      <div className="relative flex h-48 items-center justify-center bg-[#F5EFE1]">
-        <img src={img} alt="" className="max-h-40 w-auto object-contain" />
-        <span className="absolute left-8 top-6 h-2 w-2 rounded-full bg-[--pen-orange]" />
-        <span className="absolute right-10 bottom-8 h-2.5 w-2.5 rounded-full bg-[--pen-tennis]" />
-      </div>
-      <div className="p-6">
-        <DialogHeader className="items-start text-left">
-          <DialogTitle className="font-display text-2xl font-black text-text-primary">
-            <Headline variant={variant} />
+    <div className="relative overflow-hidden rounded-2xl bg-card p-6 shadow-2xl">
+      <IllustrationTile density={6} rows={8} opacity={0.06} />
+      <div className="relative">
+        <DialogHeader className="items-center text-center">
+          <DialogTitle className="font-display text-2xl font-black leading-tight text-text-primary">
+            <span className="relative inline-block">
+              <span
+                aria-hidden
+                className="absolute inset-x-[-10px] inset-y-[2px] -rotate-1 rounded-full"
+                style={{ background: "var(--pen-tennis)", opacity: 0.85 }}
+              />
+              <span className="relative">You're connected!</span>
+            </span>
+            <div className="mt-2 text-xl font-black text-text-primary">
+              with <CoachName variant={variant} />
+            </div>
           </DialogTitle>
-          <DialogDescription className="text-sm text-text-secondary">
+          <DialogDescription className="mt-2 text-sm text-text-secondary">
             <Subhead variant={variant} />
           </DialogDescription>
         </DialogHeader>
