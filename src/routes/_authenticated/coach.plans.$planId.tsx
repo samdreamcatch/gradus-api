@@ -983,6 +983,30 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
               {statusMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
               Save template
             </Button>
+          ) : assignmentMode === "template" ? (
+            <Button
+              type="button"
+              onClick={saveToLibrary}
+              disabled={useTemplate.isPending}
+              className="gap-2"
+            >
+              {useTemplate.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+              Save to Library
+            </Button>
+          ) : assignmentMode === "public" ? (
+            <Button
+              type="button"
+              onClick={publishAndShare}
+              disabled={statusMutation.isPending}
+              className="gap-2"
+            >
+              {statusMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
+              {plan.status === "active" ? "Update & Share" : "Publish & Share"}
+            </Button>
           ) : (
             <Button
               type="button"
@@ -995,9 +1019,10 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
               ) : (
                 <Send className="h-4 w-4" />
               )}
-              {plan.status === "active" ? "Update & share" : "Activate & share"}
+              {plan.status === "active" ? "Update Plan" : "Send to Athlete"}
             </Button>
           )}
+
         </div>
       </div>
 
