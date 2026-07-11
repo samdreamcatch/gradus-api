@@ -179,6 +179,7 @@ function ParentSettingsPage() {
 
             <SettingsGroup label="Coaches">
               <ConnectedCoachesList athletes={data.athletes as AthleteData[]} />
+              <AddCoachByCodeCard athletes={data.athletes as AthleteData[]} />
               <InviteCoachCard />
             </SettingsGroup>
 
