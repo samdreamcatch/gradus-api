@@ -16,7 +16,7 @@ export function InviteCard({ compact = false }: InviteCardProps) {
 
   const code = data?.code;
   const url = code
-    ? `${typeof window !== "undefined" ? window.location.origin : "https://gradus.training"}/signup/parent?invite=${code}`
+    ? `${typeof window !== "undefined" ? window.location.origin : "https://gradus.training"}/i/${code}`
     : "";
 
   const handleCopy = async () => {
