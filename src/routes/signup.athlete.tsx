@@ -145,15 +145,42 @@ function AthleteEntryPage() {
               <p className="text-sm text-text-secondary">
                 Parent not on Gradus yet?
               </p>
-              <a
-                href={`sms:?&body=${encodeURIComponent(
-                  "Hey — I want to sign up for Gradus. Can you make a parent account so you can add me? https://gradus.training/signup/parent",
-                )}`}
-                className="mt-1 inline-block font-semibold text-accent-ink underline-offset-4 hover:underline"
+              <Button
+                type="button"
+                variant="outline"
+                className="mt-3 w-full"
+                onClick={async () => {
+                  const url = "https://gradus.training/signup/parent";
+                  const shareData = {
+                    title: "Join me on Gradus",
+                    text: "Hey — I want to sign up for Gradus. Can you make a parent account so you can add me?",
+                    url,
+                  };
+                  const canShare =
+                    typeof navigator !== "undefined" &&
+                    typeof navigator.share === "function";
+                  if (canShare) {
+                    try {
+                      await navigator.share(shareData);
+                      return;
+                    } catch (err) {
+                      if ((err as DOMException)?.name === "AbortError") return;
+                      // fall through to copy
+                    }
+                  }
+                  try {
+                    await navigator.clipboard.writeText(`${shareData.text} ${url}`);
+                    toast.success("Invite copied", { description: url });
+                  } catch {
+                    toast.success("Share this link", { description: url });
+                  }
+                }}
               >
-                Send them an invite
-              </a>
+                <Share2 className="size-4" aria-hidden />
+                Send my parent an invite
+              </Button>
             </div>
+
 
           </>
         )}
