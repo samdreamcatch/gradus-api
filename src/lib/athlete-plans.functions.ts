@@ -204,7 +204,7 @@ export const getAthletePlan = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const supabase = context.supabase as Client;
     const athlete = await findMyAthleteRow(supabase, context.userId);
-    if (!athlete) throw new Error("Plan not found");
+    if (!athlete) throw notFound();
 
     const { data: plan, error } = await supabase
       .from("plans")
@@ -213,11 +213,11 @@ export const getAthletePlan = createServerFn({ method: "POST" })
       .maybeSingle();
     if (error) dbError(error);
     if (!plan || plan.kind !== "plan" || plan.athlete_id !== athlete.id) {
-      throw new Error("Plan not found");
+      throw notFound();
     }
 
     if (plan.status !== "active" && plan.status !== "benched") {
-      throw new Error("Plan not found");
+      throw notFound();
     }
 
     const [movesRes, coachRes] = await Promise.all([
