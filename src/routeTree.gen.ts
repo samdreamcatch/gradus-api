@@ -20,6 +20,7 @@ import { Route as SignupCoachRouteImport } from './routes/signup.coach'
 import { Route as SignupAthleteRouteImport } from './routes/signup.athlete'
 import { Route as SignupAdminRouteImport } from './routes/signup.admin'
 import { Route as PTokenRouteImport } from './routes/p.$token'
+import { Route as ICodeRouteImport } from './routes/i.$code'
 import { Route as AuthenticatedParentRouteImport } from './routes/_authenticated/parent'
 import { Route as AuthenticatedCoachRouteImport } from './routes/_authenticated/coach'
 import { Route as AuthenticatedAthleteRouteImport } from './routes/_authenticated/athlete'
@@ -118,6 +119,11 @@ const SignupAdminRoute = SignupAdminRouteImport.update({
 const PTokenRoute = PTokenRouteImport.update({
   id: '/p/$token',
   path: '/p/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ICodeRoute = ICodeRouteImport.update({
+  id: '/i/$code',
+  path: '/i/$code',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedParentRoute = AuthenticatedParentRouteImport.update({
@@ -385,6 +391,7 @@ export interface FileRoutesByFullPath {
   '/athlete': typeof AuthenticatedAthleteRouteWithChildren
   '/coach': typeof AuthenticatedCoachRouteWithChildren
   '/parent': typeof AuthenticatedParentRouteWithChildren
+  '/i/$code': typeof ICodeRoute
   '/p/$token': typeof PTokenRoute
   '/signup/admin': typeof SignupAdminRoute
   '/signup/athlete': typeof SignupAthleteRouteWithChildren
@@ -438,6 +445,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
+  '/i/$code': typeof ICodeRoute
   '/p/$token': typeof PTokenRoute
   '/signup/admin': typeof SignupAdminRoute
   '/signup/athlete': typeof SignupAthleteRouteWithChildren
@@ -496,6 +504,7 @@ export interface FileRoutesById {
   '/_authenticated/athlete': typeof AuthenticatedAthleteRouteWithChildren
   '/_authenticated/coach': typeof AuthenticatedCoachRouteWithChildren
   '/_authenticated/parent': typeof AuthenticatedParentRouteWithChildren
+  '/i/$code': typeof ICodeRoute
   '/p/$token': typeof PTokenRoute
   '/signup/admin': typeof SignupAdminRoute
   '/signup/athlete': typeof SignupAthleteRouteWithChildren
@@ -555,6 +564,7 @@ export interface FileRouteTypes {
     | '/athlete'
     | '/coach'
     | '/parent'
+    | '/i/$code'
     | '/p/$token'
     | '/signup/admin'
     | '/signup/athlete'
@@ -608,6 +618,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/reset-password'
     | '/terms'
+    | '/i/$code'
     | '/p/$token'
     | '/signup/admin'
     | '/signup/athlete'
@@ -665,6 +676,7 @@ export interface FileRouteTypes {
     | '/_authenticated/athlete'
     | '/_authenticated/coach'
     | '/_authenticated/parent'
+    | '/i/$code'
     | '/p/$token'
     | '/signup/admin'
     | '/signup/athlete'
@@ -720,6 +732,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   TermsRoute: typeof TermsRoute
+  ICodeRoute: typeof ICodeRoute
   PTokenRoute: typeof PTokenRoute
   SignupAdminRoute: typeof SignupAdminRoute
   SignupAthleteRoute: typeof SignupAthleteRouteWithChildren
@@ -807,6 +820,13 @@ declare module '@tanstack/react-router' {
       path: '/p/$token'
       fullPath: '/p/$token'
       preLoaderRoute: typeof PTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/i/$code': {
+      id: '/i/$code'
+      path: '/i/$code'
+      fullPath: '/i/$code'
+      preLoaderRoute: typeof ICodeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/parent': {
@@ -1313,6 +1333,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   TermsRoute: TermsRoute,
+  ICodeRoute: ICodeRoute,
   PTokenRoute: PTokenRoute,
   SignupAdminRoute: SignupAdminRoute,
   SignupAthleteRoute: SignupAthleteRouteWithChildren,
