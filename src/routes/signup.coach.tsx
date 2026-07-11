@@ -16,6 +16,9 @@ import { TurnstileWidget } from "@/components/auth/turnstile";
 import { claimParentInvite, getParentByInviteCode } from "@/lib/parent-signup.functions";
 import { verifyTurnstileToken } from "@/lib/turnstile.functions";
 import { CURRENT_TERMS_VERSION, PENDING_TERMS_ACCEPT_KEY } from "@/lib/terms";
+import { PromoCodeField } from "@/components/signup/promo-code-field";
+import { savePendingPromoCode } from "@/lib/pending-promo-code";
+
 
 const PENDING_INVITE_KEY = "gradus.pendingParentInvite";
 
