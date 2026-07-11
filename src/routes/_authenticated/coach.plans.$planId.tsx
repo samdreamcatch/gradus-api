@@ -985,19 +985,25 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
               Save to Library
             </Button>
           ) : assignmentMode === "public" ? (
-            <Button
-              type="button"
-              onClick={publishAndShare}
-              disabled={statusMutation.isPending}
-              className="gap-2"
-            >
-              {statusMutation.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Send className="h-4 w-4" />
-              )}
-              {plan.status === "active" ? "Update & Share" : "Publish & Share"}
-            </Button>
+            <ShareToSocialsButton
+              planId={plan.id}
+              planTitle={plan.title || "Untitled plan"}
+              variant="primary"
+              label={plan.status === "active" ? "Update & Share" : "Publish & Share"}
+              disabled={statusMutation.isPending || !plan.title.trim()}
+              onShareInvoked={() => {
+                statusMutation.mutate(
+                  { data: { id: plan.id, status: "active" } },
+                  {
+                    onSuccess: () => {
+                      toast.success(plan.status === "active" ? "Plan updated" : "Plan published");
+                      onClose();
+                    },
+                  },
+                );
+              }}
+            />
+
           ) : (
             <Button
               type="button"
