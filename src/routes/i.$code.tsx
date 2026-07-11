@@ -87,7 +87,7 @@ function InviteEntryPage() {
 
         // Signed-out: send them into the right signup with the code carried.
         if (!signedIn) {
-          if (kind === "parent") {
+          if (kind === "parent" || kind === "adult-athlete") {
             navigate({ to: "/signup/coach", search: { invite: code } });
             return;
           }
