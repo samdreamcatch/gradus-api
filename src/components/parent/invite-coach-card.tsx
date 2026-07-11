@@ -24,7 +24,7 @@ export function InviteCoachCard() {
 
   const code = data?.code;
   const url = code
-    ? `${typeof window !== "undefined" ? window.location.origin : "https://gradus.training"}/signup/coach?invite=${code}`
+    ? `${typeof window !== "undefined" ? window.location.origin : "https://gradus.training"}/i/${code}`
     : "";
 
   const copyCode = async () => {
