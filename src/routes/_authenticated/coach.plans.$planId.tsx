@@ -155,7 +155,7 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
   const [expandedMoves, setExpandedMoves] = useState<Record<string, boolean>>({});
   const [didInitExpansion, setDidInitExpansion] = useState(false);
   const [useTemplateOpen, setUseTemplateOpen] = useState(false);
-  const [pendingAssignment, setPendingAssignment] = useState<null | "public" | "template">(null);
+  const [pendingAssignment, setPendingAssignment] = useState<null | "public" | "template" | "athlete">(null);
   const [activeConflicts, setActiveConflicts] = useState<{ id: string; title: string }[] | null>(null);
   const [chosenReplaceId, setChosenReplaceId] = useState<string | null>(null);
 
@@ -302,15 +302,18 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
   });
 
   // Derive assignment mode for the merged "Assign to" dropdown.
-  // Public = plan with no athlete assigned (or explicitly picked "Public" before save).
+  // Pending selection wins over the saved value so the UI stays consistent
+  // during the save round-trip after picking a new option in the dropdown.
   const assignmentMode: "athlete" | "public" | "template" | null = isTemplate
     ? "template"
-    : plan?.athleteId
+    : pendingAssignment === "athlete"
     ? "athlete"
     : pendingAssignment === "public"
     ? "public"
     : pendingAssignment === "template"
     ? "template"
+    : plan?.athleteId
+    ? "athlete"
     : null;
 
   // Prefetch share token so "Publish & Share" can invoke navigator.share
@@ -583,7 +586,7 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
                   return;
                 }
                 const match = athletes.find((a) => a.name === v);
-                setPendingAssignment(null);
+                setPendingAssignment(match ? "athlete" : null);
                 return commit("assignment", () =>
                   planUpdate.mutateAsync({
                     data: { id: plan.id, athleteId: match?.id ?? null },
@@ -1016,7 +1019,7 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
               ) : (
                 <Send className="h-4 w-4" />
               )}
-              {plan.status === "active" ? "Update Plan" : "Send to Athlete"}
+              {plan.status === "active" ? "Update & Share" : "Activate & Share"}
             </Button>
           )}
 
