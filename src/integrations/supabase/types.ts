@@ -370,21 +370,27 @@ export type Database = {
       coach_athletes: {
         Row: {
           athlete_id: string
+          coach_ack_at: string | null
           coach_id: string
           created_at: string
           id: string
+          other_ack_at: string | null
         }
         Insert: {
           athlete_id: string
+          coach_ack_at?: string | null
           coach_id: string
           created_at?: string
           id?: string
+          other_ack_at?: string | null
         }
         Update: {
           athlete_id?: string
+          coach_ack_at?: string | null
           coach_id?: string
           created_at?: string
           id?: string
+          other_ack_at?: string | null
         }
         Relationships: [
           {
