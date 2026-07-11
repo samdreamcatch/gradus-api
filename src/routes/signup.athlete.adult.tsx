@@ -225,8 +225,10 @@ function AdultAthleteSignupPage() {
             <p className="text-xs text-text-tertiary">You must be 18 or older to create your own account.</p>
           </div>
 
+          <PromoCodeField value={promoCode} onChange={setPromoCode} />
 
           <label className="flex cursor-pointer items-start gap-2.5 text-sm text-text-secondary">
+
             <Checkbox
               checked={agreed}
               onCheckedChange={(v) => setAgreed(v === true)}
