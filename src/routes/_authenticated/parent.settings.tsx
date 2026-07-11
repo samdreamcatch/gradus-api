@@ -1205,7 +1205,7 @@ function CoachScheduleEditor({
 function InviteSubrow({ athlete }: { athlete: AthleteData }) {
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const url = athlete.inviteCode
-    ? `${origin}/signup/athlete?code=${athlete.inviteCode}`
+    ? `${origin}/i/${athlete.inviteCode}`
     : null;
   return (
     <SettingsDisclosure
