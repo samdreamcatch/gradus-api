@@ -241,6 +241,26 @@ function CoachStep({ onDone }: { onDone: (sports: string[]) => void }) {
     onError: (e) => setError(e instanceof Error ? e.message : "Something went wrong"),
   });
 
+  // If we stashed a coach invite code from /i/CODE before signup, prefill it
+  // and auto-run the preview so the athlete lands on the sport-selection step.
+  useEffect(() => {
+    let pending: string | null = null;
+    try {
+      pending = localStorage.getItem("gradus.pendingCoachInvite");
+    } catch {
+      pending = null;
+    }
+    if (!pending) return;
+    setCode(pending);
+    previewMut.mutate(pending);
+    try {
+      localStorage.removeItem("gradus.pendingCoachInvite");
+    } catch {
+      /* ignore */
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const linkMut = useMutation({
     mutationFn: async () =>
       linkFn({ data: { code: code.trim().toUpperCase(), sports: selectedSports } }),
