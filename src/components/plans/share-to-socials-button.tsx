@@ -99,7 +99,7 @@ export function ShareToSocialsButton({
     <button
       type="button"
       onClick={onClick}
-      disabled={busy}
+      disabled={busy || disabled}
       className={cn(
         primary
           ? "inline-flex items-center gap-2 rounded-full border border-accent bg-accent px-4 py-2 text-[13px] font-black uppercase tracking-widest text-accent-foreground shadow-card hover:opacity-90"
