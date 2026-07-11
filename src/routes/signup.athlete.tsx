@@ -140,6 +140,21 @@ function AthleteEntryPage() {
                 Back
               </Button>
             </form>
+
+            <div className="mt-6 rounded-xl border border-divider bg-elevated p-4 text-center">
+              <p className="text-sm text-text-secondary">
+                Parent not on Gradus yet?
+              </p>
+              <a
+                href={`sms:?&body=${encodeURIComponent(
+                  "Hey — I want to sign up for Gradus (the training app my coach uses). Can you make a parent account so you can add me? https://gradus.training/signup/parent",
+                )}`}
+                className="mt-1 inline-block font-semibold text-accent-ink underline-offset-4 hover:underline"
+              >
+                Send them an invite
+              </a>
+            </div>
+
           </>
         )}
 
