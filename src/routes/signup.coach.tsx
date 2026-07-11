@@ -53,7 +53,9 @@ function CoachSignupPage() {
   const { invite } = Route.useSearch();
   const navigate = useNavigate();
   const lookupParent = useServerFn(getParentByInviteCode);
+  const lookupAdultAthlete = useServerFn(getAdultAthleteByInviteCode);
   const claim = useServerFn(claimParentInvite);
+  const claimAdultAthlete = useServerFn(claimAdultAthleteInvite);
   const verifyCaptcha = useServerFn(verifyTurnstileToken);
 
   const [email, setEmail] = useState("");
