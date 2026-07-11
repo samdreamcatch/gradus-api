@@ -202,7 +202,8 @@ export const getAthletePlan = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const supabase = context.supabase as Client;
-    const athlete = await getMyAthleteRow(supabase, context.userId);
+    const athlete = await findMyAthleteRow(supabase, context.userId);
+    if (!athlete) throw new Error("Plan not found");
 
     const { data: plan, error } = await supabase
       .from("plans")
@@ -213,6 +214,7 @@ export const getAthletePlan = createServerFn({ method: "POST" })
     if (!plan || plan.kind !== "plan" || plan.athlete_id !== athlete.id) {
       throw new Error("Plan not found");
     }
+
     if (plan.status !== "active" && plan.status !== "benched") {
       throw new Error("Plan not found");
     }
