@@ -65,6 +65,8 @@ export const Route = createFileRoute("/_authenticated/athlete/settings")({
 
 function AthleteSettingsPage() {
   const fetchSettings = useServerFn(getAthleteSettings);
+  const { linkCoach } = Route.useSearch();
+  const navigate = useNavigate();
   const { data, isLoading } = useQuery({
     queryKey: ["athlete-settings"],
     queryFn: () => fetchSettings(),
@@ -77,6 +79,10 @@ function AthleteSettingsPage() {
     queryFn: () => fetchCoaches(),
   });
   const isSelfManaged = coachData?.selfManaged === true;
+
+  useEffect(() => {
+    if (linkCoach) toast.success(`Coach invite ${linkCoach} ready to link`);
+  }, [linkCoach]);
 
   return (
     <>
@@ -105,6 +111,14 @@ function AthleteSettingsPage() {
                 <SettingsList>
                   <AdultCoachesSection
                     coaches={coachData?.coaches ?? []}
+                    initialLinkCoach={linkCoach ?? null}
+                    onLinkCoachConsumed={() =>
+                      navigate({
+                        to: "/athlete/settings",
+                        search: {},
+                        replace: true,
+                      })
+                    }
                   />
                 </SettingsList>
               </SettingsGroup>
