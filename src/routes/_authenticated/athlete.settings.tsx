@@ -46,7 +46,20 @@ import {
   type Slot,
 } from "@/components/parent/schedule-editor";
 
+import { z } from "zod";
+
+const searchSchema = z.object({
+  linkCoach: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .length(8)
+    .regex(/^[A-Z2-9]+$/)
+    .optional(),
+});
+
 export const Route = createFileRoute("/_authenticated/athlete/settings")({
+  validateSearch: (s) => searchSchema.parse(s),
   component: AthleteSettingsPage,
 });
 
