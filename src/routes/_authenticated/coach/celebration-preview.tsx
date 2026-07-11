@@ -188,7 +188,7 @@ function DirectionOne({ variant }: { variant: Variant }) {
 
 function DirectionTwo({ variant }: { variant: Variant }) {
   return (
-    <div className="overflow-hidden rounded-2xl bg-card shadow-2xl">
+    <div className="overflow-hidden rounded-2xl bg-popover shadow-2xl">
       <div
         className="relative h-44 border-b border-divider bg-white"
         style={{
