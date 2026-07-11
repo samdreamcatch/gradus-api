@@ -11,6 +11,9 @@ import { Logo } from "@/components/logo";
 import { TurnstileWidget } from "@/components/auth/turnstile";
 import { CURRENT_TERMS_VERSION, PENDING_TERMS_ACCEPT_KEY } from "@/lib/terms";
 import { createSelfManagedAthlete } from "@/lib/adult-athlete-signup.functions";
+import { PromoCodeField } from "@/components/signup/promo-code-field";
+import { savePendingPromoCode } from "@/lib/pending-promo-code";
+
 
 export const Route = createFileRoute("/signup/athlete/adult")({
   component: AdultAthleteSignupPage,
