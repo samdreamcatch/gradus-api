@@ -197,6 +197,7 @@ export type Database = {
           last_name: string
           motivation: string
           parent_id: string | null
+          promo_code: string | null
           self_managed: boolean
           updated_at: string
           user_id: string | null
@@ -210,6 +211,7 @@ export type Database = {
           last_name?: string
           motivation?: string
           parent_id?: string | null
+          promo_code?: string | null
           self_managed?: boolean
           updated_at?: string
           user_id?: string | null
@@ -223,6 +225,7 @@ export type Database = {
           last_name?: string
           motivation?: string
           parent_id?: string | null
+          promo_code?: string | null
           self_managed?: boolean
           updated_at?: string
           user_id?: string | null
@@ -235,6 +238,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "parent_profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "athletes_promo_code_fkey"
+            columns: ["promo_code"]
+            isOneToOne: false
+            referencedRelation: "promo_codes"
+            referencedColumns: ["code"]
           },
         ]
       }
@@ -439,6 +449,7 @@ export type Database = {
           is_test: boolean
           last_name: string
           onboarded_at: string | null
+          promo_code: string | null
           updated_at: string
           user_id: string
         }
@@ -449,6 +460,7 @@ export type Database = {
           is_test?: boolean
           last_name?: string
           onboarded_at?: string | null
+          promo_code?: string | null
           updated_at?: string
           user_id: string
         }
@@ -459,10 +471,19 @@ export type Database = {
           is_test?: boolean
           last_name?: string
           onboarded_at?: string | null
+          promo_code?: string | null
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "coach_profiles_promo_code_fkey"
+            columns: ["promo_code"]
+            isOneToOne: false
+            referencedRelation: "promo_codes"
+            referencedColumns: ["code"]
+          },
+        ]
       }
       email_send_log: {
         Row: {
@@ -887,6 +908,7 @@ export type Database = {
           id: string
           is_test: boolean
           last_name: string
+          promo_code: string | null
           updated_at: string
           user_id: string
         }
@@ -897,6 +919,7 @@ export type Database = {
           id?: string
           is_test?: boolean
           last_name?: string
+          promo_code?: string | null
           updated_at?: string
           user_id: string
         }
@@ -907,6 +930,7 @@ export type Database = {
           id?: string
           is_test?: boolean
           last_name?: string
+          promo_code?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -917,6 +941,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "coach_profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "parent_profiles_promo_code_fkey"
+            columns: ["promo_code"]
+            isOneToOne: false
+            referencedRelation: "promo_codes"
+            referencedColumns: ["code"]
           },
         ]
       }
@@ -1150,6 +1181,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      promo_codes: {
+        Row: {
+          active: boolean
+          code: string
+          created_at: string
+          label: string
+          notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          created_at?: string
+          label: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          created_at?: string
+          label?: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       resources: {
         Row: {
