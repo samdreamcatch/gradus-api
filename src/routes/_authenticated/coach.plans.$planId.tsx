@@ -1016,7 +1016,7 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
               ) : (
                 <Send className="h-4 w-4" />
               )}
-              {plan.status === "active" ? "Update Plan" : "Send to Athlete"}
+              {plan.status === "active" ? "Update & Share" : "Activate & Share"}
             </Button>
           )}
 
