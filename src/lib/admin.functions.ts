@@ -490,7 +490,7 @@ export const getAdminList = createServerFn({ method: "POST" })
     if (data.kind === "athletes") {
       const { data: rows, error } = await supabaseAdmin
         .from("athletes")
-        .select("id, first_name, last_name, birthdate, created_at, parent_id, user_id, self_managed, parent_profiles(first_name, last_name, user_id, is_test)")
+        .select("id, first_name, last_name, birthdate, created_at, parent_id, user_id, self_managed, is_test, parent_profiles(first_name, last_name, user_id, is_test)")
         .order("created_at", { ascending: false })
         .limit(200);
       if (error) dbError(error);
