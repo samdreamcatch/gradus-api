@@ -1,41 +1,50 @@
 ## Goal
-Let an under-18 athlete enter a promo code on the athlete signup screen and have it follow through to their parent's account when the parent signs up — so the influencer attribution lands on the parent (the paying account), even though the kid is the one holding the code.
 
-## Flow
+Every "Invite your …" surface in the app should offer a one-tap native share (iOS/Android share sheet, desktop clipboard fallback) with the invite code already embedded in the URL, so whoever taps the link lands in signup pre-linked. No more "copy link + copy code" two-button dance.
 
-```text
-Kid opens /signup/athlete → "No, I'm under 18"
-   ├── (optional) enters promo code
-   └── taps "Send my parent an invite"
-         → share URL becomes  https://gradus.training/signup/parent?promo=<CODE>
+## New shared component
 
-Parent taps the link → /signup/parent
-   ├── promo field is pre-filled from ?promo=
-   └── parent completes signup → code saved to parent_profiles.promo_code
-```
+**`src/components/share/share-invite-button.tsx`** — one primitive used everywhere.
 
-No code is required — leaving it blank still works exactly as today.
+Props: `url`, `title`, `text`, `label?` (default "Share invite"), `variant?`, `size?`, `className?`, `onShared?`.
 
-## Changes
+Behavior (mirrors the pattern already in `signup.athlete.tsx` and `plans/share-to-socials-button.tsx`):
+1. Call `navigator.share({ title, text, url })` synchronously in the click handler (preserves iOS user-activation).
+2. On `AbortError` → do nothing.
+3. If Web Share unsupported or throws → `navigator.clipboard.writeText(\`${text} ${url}\`)` and toast "Invite copied".
+4. Final fallback: toast "Share this link" with the URL as description.
 
-1. **`src/routes/signup.athlete.tsx`** (under-18 "code" stage only)
-   - Add a `PromoCodeField` below the invite-code input, labelled "Promo code (optional)".
-   - Include the entered promo code as `?promo=<CODE>` in the "Send my parent an invite" share URL and the fallback clipboard text. Only append when non-empty.
-   - Also stash it in `sessionStorage` via `savePendingPromoCode` so if the kid ends up completing an athlete flow on the same device (self-managed adult edge case), it still attaches.
+Icon: `Share2` from lucide.
 
-2. **`src/routes/signup.parent.tsx`**
-   - Extend the route's `validateSearch` to accept an optional `promo` string.
-   - Seed the existing `promoCode` state from `Route.useSearch().promo` on mount so the field shows up pre-filled and editable. Everything downstream (validation, `savePendingPromoCode`, post-signup apply) already works.
+## Wire it into every invite CTA
 
-3. **Under-18 confirm/account sub-flow** (`signup.athlete.confirm.tsx`, `signup.athlete.account.tsx`)
-   - No behavior change needed for attribution — the kid's account isn't the paying one. We do NOT attach the promo code to the athlete account in this path; it belongs to the parent.
+For each surface below, the existing shareable URL already embeds the code that auto-links on signup — no backend or route changes needed.
 
-## Not changing
-- Database schema (`promo_codes` table + `parent_profiles.promo_code` already exist).
-- Validation rules, admin promo-codes page, stats, or the "we don't recognize that code" inline error behavior.
-- Adult (18+) athlete flow — already has its own promo field.
+| Surface | File | URL to share |
+|---|---|---|
+| Parent → Coach card (settings, parent home) | `src/components/parent/invite-coach-card.tsx` | `${origin}/signup/coach?invite=${code}` |
+| Parent → Coach banner (app-wide until first coach) | `src/components/parent/invite-coach-banner.tsx` | same |
+| Parent → Athlete card (per-athlete QR card in settings) | `src/components/parent/athlete-invite-card.tsx` | `url` prop (already `/signup/athlete?code=…`) |
+| Coach → Parent invite (onboarding, roster, settings) | `src/components/onboarding/invite-card.tsx` | `${origin}/signup/parent?invite=${code}` |
+| Under-18 athlete → Parent invite | `src/routes/signup.athlete.tsx` | already uses this pattern — refactor to use the new component |
 
-## Edge cases
-- Parent already had an account and just uses the kid's invite code: no promo attribution happens (there's no parent signup event). This matches the "attribution at signup" model we picked earlier — call it out to the user only if they want to expand later.
-- Invalid promo typed by the kid: same inline "we don't recognize that code" message the parent form uses; still passed through to parent link so parent can correct.
-- Kid shares link but parent edits the promo field before submitting: parent's final value wins.
+In each card the primary CTA becomes **"Share invite"** (the new button). The raw code chip stays visible for read-out / manual entry, and a small secondary "Copy code" icon-button stays for the "coach already on Gradus, paste this code" flow. The standalone "Copy link" button goes away — sharing replaces it.
+
+Copy tweaks per surface (short, in the button/toast only):
+- Coach card / banner: title "Invite your coach to Gradus", text "Join me on Gradus so we can share practice plans and messages."
+- Athlete card: title "Join me on Gradus", text "Tap the link to set up your athlete account — it'll link straight to me."
+- Coach's parent-invite card: title "Join me on Gradus", text "I'm your coach on Gradus — tap to set up your parent account and we'll be connected."
+- Under-18 kid: keep existing copy.
+
+## Out of scope
+
+- No DB/schema changes. Codes and auto-link logic already exist end-to-end.
+- No changes to `/signup/*` routes — they already accept `?invite=` / `?code=` / `?promo=`.
+- No email/SMS sending — sharing stays user-initiated via the native sheet.
+- Plan sharing (`share-to-socials-button.tsx`) is a separate feature and stays as-is.
+
+## Technical notes
+
+- `navigator.share` must be called synchronously inside the click handler (not after an `await`) or iOS rejects it — the component's handler is structured accordingly.
+- `navigator.clipboard.writeText` is the desktop fallback; wrapped in `try/catch` because it can reject in insecure contexts.
+- Component is client-only (uses `navigator`), safe in these client-rendered cards; guarded with `typeof navigator !== "undefined"` for SSR.
