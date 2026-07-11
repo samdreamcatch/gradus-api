@@ -177,8 +177,10 @@ function ParentSettingsPage() {
 
 
             <SettingsGroup label="Coaches">
+              <ConnectedCoachesList athletes={data.athletes as AthleteData[]} />
               <InviteCoachCard />
             </SettingsGroup>
+
 
 
             <SettingsGroup label="Preferences">
@@ -203,6 +205,60 @@ function ParentSettingsPage() {
       </div>
       <ParentBottomNav />
     </>
+  );
+}
+
+function ConnectedCoachesList({ athletes }: { athletes: AthleteData[] }) {
+  const byCoach = new Map<
+    string,
+    { coachName: string; entries: { athleteName: string; sports: string[] }[] }
+  >();
+  for (const a of athletes) {
+    for (const c of a.coaches) {
+      const existing = byCoach.get(c.coachId);
+      const athleteName = `${a.firstName} ${a.lastName}`.trim();
+      if (existing) {
+        existing.entries.push({ athleteName, sports: c.sports });
+      } else {
+        byCoach.set(c.coachId, {
+          coachName: c.coachName,
+          entries: [{ athleteName, sports: c.sports }],
+        });
+      }
+    }
+  }
+  const coaches = Array.from(byCoach.values());
+
+  if (coaches.length === 0) {
+    return (
+      <p className="mb-3 px-1 text-sm text-text-tertiary">
+        No coaches connected yet. Share your invite code below, or link a coach
+        from an athlete&apos;s Coaches section above.
+      </p>
+    );
+  }
+
+  return (
+    <div className="mb-3 overflow-hidden rounded-xl border border-divider bg-card divide-y divide-divider">
+      {coaches.map((c, i) => (
+        <div key={i} className="px-4 py-3">
+          <div className="text-sm font-medium">{c.coachName}</div>
+          <ul className="mt-1 space-y-0.5">
+            {c.entries.map((e, j) => {
+              const sportLabels = e.sports
+                .map((s) => getSport(s)?.label ?? s)
+                .join(", ");
+              return (
+                <li key={j} className="text-xs text-text-tertiary">
+                  {e.athleteName}
+                  {sportLabels ? ` — ${sportLabels}` : ""}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ))}
+    </div>
   );
 }
 
