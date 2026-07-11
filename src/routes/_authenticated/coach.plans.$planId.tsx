@@ -71,7 +71,12 @@ import { consumeVoiceTouched, type VoiceTouchedSnapshot } from "@/lib/voice-touc
 import { FlowStateBars } from "@/components/plans/flow-state-bars";
 import { getPlanSessions, getPlanSessionsSummary } from "@/lib/plan-sessions.functions";
 
+const PUBLIC_OPTION = "Public / Shareable Link";
+const TEMPLATE_OPTION = "Save as Template";
+const SITE_ORIGIN = "https://gradus.training";
+
 export const Route = createFileRoute("/_authenticated/coach/plans/$planId")({
+
   component: PlanEditorSheet,
   validateSearch: (search: Record<string, unknown>) => ({
     from: search.from === "plus" ? ("plus" as const) : undefined,
