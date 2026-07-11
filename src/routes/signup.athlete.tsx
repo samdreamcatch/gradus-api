@@ -1,8 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { Share2 } from "lucide-react";
-import { toast } from "sonner";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/logo";
 import { getAthleteInviteSummary } from "@/lib/athlete-signup.functions";
 import { PromoCodeField } from "@/components/signup/promo-code-field";
+import { ShareInviteButton } from "@/components/share/share-invite-button";
 
 
 
@@ -155,44 +154,22 @@ function AthleteEntryPage() {
               <p className="text-sm text-text-secondary">
                 Parent not on Gradus yet?
               </p>
-              <Button
-                type="button"
-                variant="outline"
-                className="mt-3 w-full"
-                onClick={async () => {
-                  const trimmed = promoCode.trim().toUpperCase();
-                  const url = trimmed
-                    ? `https://gradus.training/signup/parent?promo=${encodeURIComponent(trimmed)}`
-                    : "https://gradus.training/signup/parent";
-
-                  const shareData = {
-                    title: "Join me on Gradus",
-                    text: "Hey — I want to sign up for Gradus. Can you make a parent account so you can add me?",
-                    url,
-                  };
-                  const canShare =
-                    typeof navigator !== "undefined" &&
-                    typeof navigator.share === "function";
-                  if (canShare) {
-                    try {
-                      await navigator.share(shareData);
-                      return;
-                    } catch (err) {
-                      if ((err as DOMException)?.name === "AbortError") return;
-                      // fall through to copy
-                    }
-                  }
-                  try {
-                    await navigator.clipboard.writeText(`${shareData.text} ${url}`);
-                    toast.success("Invite copied", { description: url });
-                  } catch {
-                    toast.success("Share this link", { description: url });
-                  }
-                }}
-              >
-                <Share2 className="size-4" aria-hidden />
-                Send my parent an invite
-              </Button>
+              {(() => {
+                const trimmed = promoCode.trim().toUpperCase();
+                const url = trimmed
+                  ? `https://gradus.training/signup/parent?promo=${encodeURIComponent(trimmed)}`
+                  : "https://gradus.training/signup/parent";
+                return (
+                  <ShareInviteButton
+                    url={url}
+                    title="Join me on Gradus"
+                    text="Hey — I want to sign up for Gradus. Can you make a parent account so you can add me?"
+                    label="Send my parent an invite"
+                    variant="outline"
+                    className="mt-3 w-full"
+                  />
+                );
+              })()}
             </div>
 
 

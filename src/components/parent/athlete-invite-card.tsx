@@ -2,6 +2,7 @@ import { useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ShareInviteButton } from "@/components/share/share-invite-button";
 
 interface AthleteInviteCardProps {
   name: string;
@@ -26,7 +27,13 @@ export function AthleteInviteCard({ name, code, url }: AthleteInviteCardProps) {
           <div className="mt-4 flex items-center justify-center rounded-md bg-card p-4">
             <QRCodeSVG value={url} size={140} bgColor="transparent" />
           </div>
-          <div className="mt-3 flex items-center justify-between gap-2">
+          <ShareInviteButton
+            url={url}
+            title={`Invite ${name} to Gradus`}
+            text={`${name} — tap to set up your Gradus athlete account. It'll link straight to me.`}
+            className="mt-3 w-full"
+          />
+          <div className="mt-2 flex items-center justify-between gap-2">
             <span className="font-mono text-sm tracking-[0.25em] uppercase text-text-secondary">
               {code}
             </span>
