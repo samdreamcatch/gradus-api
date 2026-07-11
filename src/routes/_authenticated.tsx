@@ -30,6 +30,7 @@ function AuthedLayout() {
   const isCoach = pathname.startsWith("/coach");
   const isAdmin = pathname.startsWith("/admin");
   const accept = useServerFn(acceptTerms);
+  const applyPromo = useServerFn(applyPromoCodeToMyProfile);
 
   // If the user checked the terms box on signup before the session existed,
   // record their acceptance now that they're authed.
@@ -50,6 +51,23 @@ function AuthedLayout() {
       }
     })();
   }, [accept]);
+
+  // Apply any promo code the user entered on the signup screen, retrying on
+  // subsequent authed page loads if the profile row hadn't been created yet.
+  useEffect(() => {
+    const code = readPendingPromoCode();
+    if (!code) return;
+    (async () => {
+      try {
+        const res = await applyPromo({ data: { code } });
+        if (res.applied) clearPendingPromoCode();
+      } catch (err) {
+        console.error("[AuthedLayout] apply promo code failed", err);
+      }
+    })();
+  }, [applyPromo, pathname]);
+
+
 
   return (
     <ActiveSessionProvider userId={user.id}>
