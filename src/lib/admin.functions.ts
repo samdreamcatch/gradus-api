@@ -506,7 +506,7 @@ export const getAdminList = createServerFn({ method: "POST" })
             : null,
         tag: a.birthdate ? new Date(a.birthdate).toLocaleDateString() : (a.self_managed ? "adult" : "—"),
         createdAt: a.created_at,
-        isTest: !!a.parent_profiles?.is_test,
+        isTest: !!a.is_test || !!a.parent_profiles?.is_test,
       }));
       if (excludeTest) mapped = mapped.filter((r) => !r.isTest);
       return { rows: mapped };
