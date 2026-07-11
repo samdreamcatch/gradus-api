@@ -90,16 +90,18 @@ function PreviewCard({ label, onClick }: { label: string; onClick: () => void })
 /* -------------------------- Shared poster background ----------------------- */
 
 /**
- * The full sports poster as a background image. `opacity` controls how much it
- * reads through the paper surface. `cover` fills the frame (crops); otherwise
- * it contains and repeats.
+ * The full sports poster PNG as a repeating wallpaper. `tile` sets the tile
+ * width; the poster repeats horizontally and vertically. `opacity` controls
+ * how much of the paper surface reads through.
  */
 function PosterBg({
-  opacity = 0.16,
-  mode = "cover",
+  opacity = 0.18,
+  tile = 320,
+  mode = "tile",
 }: {
   opacity?: number;
-  mode?: "cover" | "contain";
+  tile?: number;
+  mode?: "tile" | "cover";
 }) {
   return (
     <div
@@ -107,9 +109,9 @@ function PosterBg({
       className="pointer-events-none absolute inset-0"
       style={{
         backgroundImage: `url(${poster.url})`,
-        backgroundSize: mode === "cover" ? "cover" : "auto 100%",
-        backgroundPosition: "center",
-        backgroundRepeat: mode === "cover" ? "no-repeat" : "repeat-x",
+        backgroundSize: mode === "cover" ? "cover" : `${tile}px auto`,
+        backgroundPosition: mode === "cover" ? "center" : "top left",
+        backgroundRepeat: mode === "cover" ? "no-repeat" : "repeat",
         opacity,
         mixBlendMode: "multiply",
       }}
@@ -156,7 +158,7 @@ function CTAButtons({ variant }: { variant: Variant }) {
 function DirectionOne({ variant }: { variant: Variant }) {
   return (
     <div className="relative overflow-hidden rounded-2xl bg-card p-6 shadow-2xl">
-      <PosterBg opacity={0.18} mode="cover" />
+      <PosterBg opacity={0.22} tile={260} mode="tile" />
       <div className="relative">
         <DialogHeader className="items-center text-center">
           <DialogTitle className="font-display text-2xl font-black text-text-primary">
@@ -223,7 +225,7 @@ function DirectionTwo({ variant }: { variant: Variant }) {
 function DirectionThree({ variant }: { variant: Variant }) {
   return (
     <div className="relative overflow-hidden rounded-2xl bg-card p-6 shadow-2xl">
-      <PosterBg opacity={0.09} mode="cover" />
+      <PosterBg opacity={0.12} tile={220} mode="tile" />
       <div className="relative">
         <DialogHeader className="items-center text-center">
           <DialogTitle className="font-display text-2xl font-black leading-tight text-text-primary">
