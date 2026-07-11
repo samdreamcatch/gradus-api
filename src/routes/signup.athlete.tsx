@@ -13,6 +13,7 @@ import { getAthleteInviteSummary } from "@/lib/athlete-signup.functions";
 
 const searchSchema = z.object({
   code: z.string().trim().toUpperCase().length(8).regex(/^[A-Z2-9]+$/).optional(),
+  stage: z.enum(["code"]).optional(),
 });
 
 export const Route = createFileRoute("/signup/athlete")({
@@ -33,9 +34,9 @@ export const Route = createFileRoute("/signup/athlete")({
 function AthleteEntryPage() {
   const location = useLocation();
   const navigate = useNavigate();
+  const search = Route.useSearch();
   const lookup = useServerFn(getAthleteInviteSummary);
 
-  const [stage, setStage] = useState<"age" | "code">("age");
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -43,6 +44,8 @@ function AthleteEntryPage() {
   if (location.pathname !== "/signup/athlete") {
     return <Outlet />;
   }
+
+  const stage = search.stage ?? "age";
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -82,19 +85,19 @@ function AthleteEntryPage() {
 
             <div className="space-y-3">
               <Button
-                type="button"
+                asChild
                 className="w-full"
-                onClick={() => navigate({ to: "/signup/athlete/adult" })}
               >
-                Yes, I&apos;m 18 or older
+                <Link to="/signup/athlete/adult">Yes, I&apos;m 18 or older</Link>
               </Button>
               <Button
-                type="button"
+                asChild
                 variant="outline"
                 className="w-full"
-                onClick={() => setStage("code")}
               >
-                No, I&apos;m under 18
+                <Link to="/signup/athlete" search={{ stage: "code" }}>
+                  No, I&apos;m under 18
+                </Link>
               </Button>
             </div>
           </div>
@@ -132,15 +135,11 @@ function AthleteEntryPage() {
               </Button>
 
               <Button
-                type="button"
+                asChild
                 variant="ghost"
                 className="w-full"
-                onClick={() => {
-                  setError(null);
-                  setStage("age");
-                }}
               >
-                Back
+                <Link to="/signup/athlete" search={{}}>Back</Link>
               </Button>
             </form>
 
