@@ -46,6 +46,11 @@ function AthletePlanDetail() {
   const { data, isLoading } = useQuery({
     queryKey: ["athlete-plan", planId],
     queryFn: () => fetchPlan({ data: { id: planId } }),
+    // Loader already primed this key and owns error handling via
+    // errorComponent. Keep the cached value fresh so this component
+    // doesn't re-throw across the RPC boundary on mount.
+    staleTime: 60_000,
+    retry: false,
   });
 
   const plan = data?.plan;
@@ -60,6 +65,7 @@ function AthletePlanDetail() {
       </div>
     );
   }
+
 
   return (
     <div className="mx-auto max-w-2xl px-3 pt-3 pb-24">
