@@ -89,14 +89,24 @@ function CoachSignupPage() {
         navigate({ to: "/coach" });
         return;
       }
+      // Try parent invite first; fall back to adult-athlete invite.
       try {
-        await claim({ data: { code: invite } });
+        try {
+          await claim({ data: { code: invite } });
+          if (!cancelled) toast.success("Linked to the parent's account");
+        } catch (parentErr) {
+          try {
+            await claimAdultAthlete({ data: { code: invite } });
+            if (!cancelled) toast.success("Linked to the athlete's account");
+          } catch {
+            throw parentErr;
+          }
+        }
         try {
           localStorage.removeItem(PENDING_INVITE_KEY);
         } catch {
           /* ignore */
         }
-        if (!cancelled) toast.success("Linked to the parent's account");
       } catch (e) {
         if (!cancelled) toast.error(e instanceof Error ? e.message : "Couldn't claim invite");
       } finally {
@@ -106,12 +116,19 @@ function CoachSignupPage() {
     return () => {
       cancelled = true;
     };
-  }, [invite, claim, navigate]);
+  }, [invite, claim, claimAdultAthlete, navigate]);
 
   const { data: parent } = useQuery({
     queryKey: ["parent-by-invite-code", invite ?? null],
     queryFn: () => lookupParent({ data: { code: invite! } }),
     enabled: !!invite,
+    retry: false,
+  });
+
+  const { data: adultAthlete } = useQuery({
+    queryKey: ["adult-athlete-by-invite-code", invite ?? null],
+    queryFn: () => lookupAdultAthlete({ data: { code: invite! } }),
+    enabled: !!invite && !parent,
     retry: false,
   });
 
