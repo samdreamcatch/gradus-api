@@ -226,7 +226,15 @@ function ProfileDisclosure({
 
 type AdultCoach = { coachId: string; coachName: string; sports: string[] };
 
-function AdultCoachesSection({ coaches }: { coaches: AdultCoach[] }) {
+function AdultCoachesSection({
+  coaches,
+  initialLinkCoach,
+  onLinkCoachConsumed,
+}: {
+  coaches: AdultCoach[];
+  initialLinkCoach?: string | null;
+  onLinkCoachConsumed?: () => void;
+}) {
   const qc = useQueryClient();
   const previewFn = useServerFn(previewCoachForAdultAthlete);
   const linkFn = useServerFn(linkAdultAthleteToCoach);
@@ -263,10 +271,12 @@ function AdultCoachesSection({ coaches }: { coaches: AdultCoach[] }) {
     setSelectedSports([]);
   };
 
-  const handleLookup = async () => {
+  const handleLookup = async (rawCode?: string) => {
+    const c = (rawCode ?? code).trim().toUpperCase();
+    if (c.length !== 8) return;
     setLookingUp(true);
     try {
-      const result = await previewFn({ data: { code: code.trim() } });
+      const result = await previewFn({ data: { code: c } });
       setPreview(result);
       setSelectedSports(result.sports.length === 1 ? [result.sports[0]] : []);
     } catch (err) {
@@ -275,6 +285,18 @@ function AdultCoachesSection({ coaches }: { coaches: AdultCoach[] }) {
       setLookingUp(false);
     }
   };
+
+  // Auto-open + auto-preview when a coach invite code was passed in via
+  // `?linkCoach=CODE` (from the /i/CODE universal invite entry).
+  useEffect(() => {
+    if (!initialLinkCoach) return;
+    setAdding(true);
+    setCode(initialLinkCoach);
+    void handleLookup(initialLinkCoach);
+    onLinkCoachConsumed?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialLinkCoach]);
+
 
   const handleLink = async () => {
     if (!preview) return;
