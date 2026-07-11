@@ -118,9 +118,39 @@ function UserDetail() {
             </section>
           )}
 
-          {!data.coach && !data.parent && (
+          {data.athlete && (
+            <section className="rounded-xl border border-divider bg-card p-5 space-y-3">
+              <h2 className="font-display text-h3 text-text-primary">
+                Athlete profile
+                {data.athlete.self_managed && (
+                  <span className="ml-2 rounded-pill border border-divider bg-elevated px-2 py-0.5 text-[11px] font-mono uppercase tracking-wider text-text-tertiary">adult</span>
+                )}
+              </h2>
+              <dl className="grid grid-cols-2 gap-3 text-sm">
+                <Field label="Name" value={`${data.athlete.first_name ?? ""} ${data.athlete.last_name ?? ""}`.trim() || "—"} />
+                <Field label="Birthdate" value={data.athlete.birthdate ?? "—"} />
+                <Field label="Managed by" value={data.athlete.self_managed ? "Self (adult)" : data.athlete.parent_id ? "Parent" : "—"} />
+                <Field label="Active plans" value={`${data.athlete.activePlansCount} / ${data.athlete.plansCount}`} />
+              </dl>
+              <div>
+                <p className="text-xs uppercase tracking-wider text-text-tertiary">
+                  Coaches ({(data.athlete.coaches as any[]).length})
+                </p>
+                <ul className="mt-1 text-sm text-text-primary">
+                  {(data.athlete.coaches as any[]).map((c, i) => (
+                    <li key={i}>
+                      • {c.coachName}
+                      {c.sport ? ` (${c.sport})` : ""}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </section>
+          )}
+
+          {!data.coach && !data.parent && !data.athlete && (
             <p className="rounded-xl border border-divider bg-card p-5 text-sm text-text-secondary">
-              No coach or parent profile (likely an admin-only account).
+              No coach, parent, or athlete profile (likely an admin-only account).
             </p>
           )}
         </>
