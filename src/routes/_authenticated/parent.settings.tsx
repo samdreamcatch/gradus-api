@@ -705,7 +705,7 @@ function CoachesSection({
                 </Button>
                 <Button
                   size="sm"
-                  onClick={handleLookup}
+                  onClick={() => handleLookup()}
                   disabled={lookingUp || code.trim().length !== 8}
                 >
                   {lookingUp ? "Looking up…" : "Continue"}
