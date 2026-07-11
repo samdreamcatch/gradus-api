@@ -34,6 +34,8 @@ function ParentLayout() {
     <>
       {showBanner && <InviteCoachBanner />}
       <Outlet />
+      <ConnectionCelebration role="parent" />
     </>
   );
 }
+
