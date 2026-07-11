@@ -158,7 +158,7 @@ function CTAButtons({ variant }: { variant: Variant }) {
 function DirectionOne({ variant }: { variant: Variant }) {
   return (
     <div className="relative overflow-hidden rounded-2xl bg-card p-6 shadow-2xl">
-      <PosterBg opacity={0.18} mode="cover" />
+      <PosterBg opacity={0.22} tile={260} mode="tile" />
       <div className="relative">
         <DialogHeader className="items-center text-center">
           <DialogTitle className="font-display text-2xl font-black text-text-primary">
