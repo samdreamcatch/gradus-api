@@ -13,11 +13,19 @@ export function ShareToSocialsButton({
   planTitle,
   className,
   variant = "chip",
+  label = "Share to socials",
+  onShareInvoked,
+  disabled,
 }: {
   planId: string;
   planTitle: string;
   className?: string;
   variant?: "chip" | "primary";
+  label?: string;
+  /** Fired synchronously after navigator.share is invoked (or fallback copy),
+   *  so callers can kick off activation/publish without awaiting. */
+  onShareInvoked?: () => void;
+  disabled?: boolean;
 }) {
 
   const shareFn = useServerFn(getOrCreateShareToken);
