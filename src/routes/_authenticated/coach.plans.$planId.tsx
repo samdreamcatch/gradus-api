@@ -586,7 +586,7 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
                   return;
                 }
                 const match = athletes.find((a) => a.name === v);
-                setPendingAssignment(null);
+                setPendingAssignment(match ? "athlete" : null);
                 return commit("assignment", () =>
                   planUpdate.mutateAsync({
                     data: { id: plan.id, athleteId: match?.id ?? null },
