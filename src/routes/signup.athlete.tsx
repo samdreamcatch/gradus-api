@@ -160,7 +160,11 @@ function AthleteEntryPage() {
                 variant="outline"
                 className="mt-3 w-full"
                 onClick={async () => {
-                  const url = "https://gradus.training/signup/parent";
+                  const trimmed = promoCode.trim().toUpperCase();
+                  const url = trimmed
+                    ? `https://gradus.training/signup/parent?promo=${encodeURIComponent(trimmed)}`
+                    : "https://gradus.training/signup/parent";
+
                   const shareData = {
                     title: "Join me on Gradus",
                     text: "Hey — I want to sign up for Gradus. Can you make a parent account so you can add me?",
