@@ -302,15 +302,18 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
   });
 
   // Derive assignment mode for the merged "Assign to" dropdown.
-  // Public = plan with no athlete assigned (or explicitly picked "Public" before save).
+  // Pending selection wins over the saved value so the UI stays consistent
+  // during the save round-trip after picking a new option in the dropdown.
   const assignmentMode: "athlete" | "public" | "template" | null = isTemplate
     ? "template"
-    : plan?.athleteId
+    : pendingAssignment === "athlete"
     ? "athlete"
     : pendingAssignment === "public"
     ? "public"
     : pendingAssignment === "template"
     ? "template"
+    : plan?.athleteId
+    ? "athlete"
     : null;
 
   // Prefetch share token so "Publish & Share" can invoke navigator.share
