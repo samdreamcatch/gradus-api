@@ -21,6 +21,7 @@ import { ThemeSelect } from "@/components/settings/theme-select";
 import { SportChip } from "@/components/onboarding/sport-chip";
 import { useCurrentUserEmail } from "@/hooks/use-current-user-email";
 import { FeedbackSettingsRow } from "@/components/feedback/feedback-fab";
+import { InstallAppRow } from "@/components/settings/install-app-row";
 import {
   getAthleteSettings,
   updateAthleteSelf,
@@ -143,6 +144,7 @@ function AthleteSettingsPage() {
 
             <SettingsGroup>
               <SettingsList>
+                <InstallAppRow />
                 <FeedbackSettingsRow />
                 <SignOutRow />
               </SettingsList>
