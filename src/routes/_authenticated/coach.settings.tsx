@@ -73,6 +73,8 @@ function SettingsPage() {
             <SportsDisclosure levels={data.levels} summary={sportsSummary} />
             <RosterSettingsSection />
             <InviteDisclosure />
+            <InviteAdultAthletesDisclosure />
+
           </SettingsList>
         </SettingsGroup>
 
@@ -339,13 +341,26 @@ function InviteDisclosure() {
   return (
     <SettingsDisclosure
       icon={<Send className="size-4" />}
-      label="Invite parents"
+      label="Invite parents of youth athletes"
       description="Share your code so parents can connect"
     >
       <InviteCard compact />
     </SettingsDisclosure>
   );
 }
+
+function InviteAdultAthletesDisclosure() {
+  return (
+    <SettingsDisclosure
+      icon={<Send className="size-4" />}
+      label="Invite adult athletes"
+      description="Share your code so adult athletes (18+) can connect"
+    >
+      <InviteCard compact audience="adult-athletes" />
+    </SettingsDisclosure>
+  );
+}
+
 
 function SignOutRow() {
   const navigate = useNavigate();

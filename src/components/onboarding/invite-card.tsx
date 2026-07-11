@@ -8,9 +8,11 @@ import { useCoachInvite } from "@/hooks/use-coach-invite";
 interface InviteCardProps {
   /** When true, render only the code chip + share/copy (no headline). */
   compact?: boolean;
+  /** Which audience the coach is inviting. Only affects copy — same code. */
+  audience?: "parents" | "adult-athletes";
 }
 
-export function InviteCard({ compact = false }: InviteCardProps) {
+export function InviteCard({ compact = false, audience = "parents" }: InviteCardProps) {
   const { data, isLoading, error } = useCoachInvite();
   const [copied, setCopied] = useState(false);
 
@@ -18,6 +20,23 @@ export function InviteCard({ compact = false }: InviteCardProps) {
   const url = code
     ? `${typeof window !== "undefined" ? window.location.origin : "https://gradus.training"}/i/${code}`
     : "";
+
+  const copy =
+    audience === "adult-athletes"
+      ? {
+          shareText:
+            "I'm your coach on Gradus — tap to set up your athlete account and we'll be connected.",
+          codeAria: "Your adult-athlete invite code",
+          footer:
+            "Share this with adult athletes (18+) to add them to your roster.\n\nFind your code any time in settings.",
+        }
+      : {
+          shareText:
+            "I'm your coach on Gradus — tap to set up your parent account and we'll be connected.",
+          codeAria: "Your parent invite code",
+          footer:
+            "Share this with parents to add their athlete to your roster.\n\nFind your code any time in settings.",
+        };
 
   const handleCopy = async () => {
     if (!code) return;
@@ -36,14 +55,14 @@ export function InviteCard({ compact = false }: InviteCardProps) {
       <ShareInviteButton
         url={url}
         title="Join me on Gradus"
-        text="I'm your coach on Gradus — tap to set up your parent account and we'll be connected."
+        text={copy.shareText}
         label={isLoading ? "Generating link…" : "Share invite"}
         disabled={isLoading || !url}
         className="w-full"
       />
       <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
         <div
-          aria-label="Your parent invite code"
+          aria-label={copy.codeAria}
           className="flex-1 rounded-md border border-divider bg-elevated px-5 py-4 text-center font-mono text-2xl tracking-[0.25em] text-text-primary sm:text-3xl"
         >
           {isLoading || !code ? (
@@ -88,8 +107,7 @@ export function InviteCard({ compact = false }: InviteCardProps) {
     <div>
       {controls}
       <p className="mt-3 font-hand text-lg text-accent-ink whitespace-pre-wrap">
-        Share this with parents to add their athlete to your roster.{"\n\n"}
-        Find your code any time in settings.
+        {copy.footer}
       </p>
 
       {error && (
@@ -98,3 +116,4 @@ export function InviteCard({ compact = false }: InviteCardProps) {
     </div>
   );
 }
+
