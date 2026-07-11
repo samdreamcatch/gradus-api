@@ -31,6 +31,7 @@ import {
 import { ParentBottomNav } from "@/components/parent/bottom-nav";
 import { AthleteInviteCard } from "@/components/parent/athlete-invite-card";
 import { InviteCoachCard } from "@/components/parent/invite-coach-card";
+import { AddCoachByCodeCard } from "@/components/parent/add-coach-by-code-card";
 
 import {
   ScheduleEditor,
