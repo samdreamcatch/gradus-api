@@ -80,7 +80,9 @@ function AthleteAccountPage() {
       const { email } = await signup({
         data: { code, username: u, password },
       });
+      savePendingPromoCode(promoCode);
       // Sign in with the synthetic email so the client picks up the session.
+
       const { error: signInErr } = await supabase.auth.signInWithPassword({
         email,
         password,
