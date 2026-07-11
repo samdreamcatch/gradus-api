@@ -1,7 +1,9 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { getUserDetail, setUserTestFlag } from "@/lib/admin.functions";
+import { useState } from "react";
+import { toast } from "sonner";
+import { getUserDetail, setUserTestFlag, deleteTestUser } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/users/$userId")({
   component: UserDetail,
@@ -9,8 +11,11 @@ export const Route = createFileRoute("/_authenticated/admin/users/$userId")({
 
 function UserDetail() {
   const { userId } = Route.useParams();
+  const navigate = useNavigate();
   const fn = useServerFn(getUserDetail);
   const toggleFn = useServerFn(setUserTestFlag);
+  const deleteFn = useServerFn(deleteTestUser);
+  const [deleting, setDeleting] = useState(false);
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["admin-user", userId],
     queryFn: () => fn({ data: { userId } }),
@@ -38,22 +43,46 @@ function UserDetail() {
                   )}
                 </h1>
               </div>
-              {(data.coach || data.parent) && (
-                <button
-                  type="button"
-                  onClick={async () => {
-                    await toggleFn({ data: { userId, isTest: !data.isTest } });
-                    await refetch();
-                  }}
-                  className={`shrink-0 rounded-pill border px-3 py-1.5 text-xs font-semibold uppercase tracking-wider transition ${
-                    data.isTest
-                      ? "border-accent bg-accent text-accent-foreground"
-                      : "border-divider bg-card text-text-secondary hover:bg-elevated"
-                  }`}
-                >
-                  {data.isTest ? "Unmark test user" : "Mark as test user"}
-                </button>
-              )}
+              <div className="shrink-0 flex flex-col items-end gap-2">
+                {(data.coach || data.parent || data.athlete) && (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      await toggleFn({ data: { userId, isTest: !data.isTest } });
+                      await refetch();
+                    }}
+                    className={`rounded-pill border px-3 py-1.5 text-xs font-semibold uppercase tracking-wider transition ${
+                      data.isTest
+                        ? "border-accent bg-accent text-accent-foreground"
+                        : "border-divider bg-card text-text-secondary hover:bg-elevated"
+                    }`}
+                  >
+                    {data.isTest ? "Unmark test user" : "Mark as test user"}
+                  </button>
+                )}
+                {data.isTest && (
+                  <button
+                    type="button"
+                    disabled={deleting}
+                    onClick={async () => {
+                      const email = data.auth?.email ?? "this user";
+                      if (!confirm(`Permanently delete ${email}? This removes their account and profiles so the email can be reused. This cannot be undone.`)) return;
+                      setDeleting(true);
+                      try {
+                        await deleteFn({ data: { userId } });
+                        toast.success("Test user deleted");
+                        navigate({ to: "/admin" });
+                      } catch (e: any) {
+                        toast.error(e?.message ?? "Failed to delete user");
+                        setDeleting(false);
+                      }
+                    }}
+                    className="rounded-pill border border-destructive/50 bg-card px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-destructive transition hover:bg-destructive hover:text-white disabled:opacity-50"
+                  >
+                    {deleting ? "Deleting…" : "Delete user"}
+                  </button>
+                )}
+              </div>
             </div>
             <dl className="mt-3 grid grid-cols-2 gap-3 text-sm">
               <Field label="User ID" value={data.auth?.id ?? "—"} mono />

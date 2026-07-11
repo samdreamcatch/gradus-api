@@ -37,12 +37,70 @@ export const setUserTestFlag = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const [c, p] = await Promise.all([
+    const [c, p, a] = await Promise.all([
       supabaseAdmin.from("coach_profiles").update({ is_test: data.isTest }).eq("user_id", data.userId),
       supabaseAdmin.from("parent_profiles").update({ is_test: data.isTest }).eq("user_id", data.userId),
+      supabaseAdmin.from("athletes").update({ is_test: data.isTest }).eq("user_id", data.userId),
     ]);
     if (c.error) dbError(c.error);
     if (p.error) dbError(p.error);
+    if (a.error) dbError(a.error);
+    return { ok: true };
+  });
+
+export const deleteTestUser = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ userId: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    if (data.userId === context.userId) {
+      throw new Error("You cannot delete your own account.");
+    }
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Guard: only allow deletion of accounts explicitly marked as test users.
+    const [coach, parent, athlete] = await Promise.all([
+      supabaseAdmin.from("coach_profiles").select("id, is_test").eq("user_id", data.userId).maybeSingle(),
+      supabaseAdmin.from("parent_profiles").select("id, is_test").eq("user_id", data.userId).maybeSingle(),
+      supabaseAdmin.from("athletes").select("id, is_test, parent_id").eq("user_id", data.userId).maybeSingle(),
+    ]);
+    const anyTest =
+      !!coach.data?.is_test || !!parent.data?.is_test || !!athlete.data?.is_test;
+    const hasAnyProfile = !!coach.data || !!parent.data || !!athlete.data;
+    if (hasAnyProfile && !anyTest) {
+      throw new Error("Refusing to delete: user is not marked as a test user.");
+    }
+
+    // Delete athlete rows owned by this user (self-managed) or parented by their parent profile.
+    if (parent.data) {
+      const kids = await supabaseAdmin.from("athletes").select("id").eq("parent_id", parent.data.id);
+      const ids = (kids.data ?? []).map((a) => a.id);
+      if (ids.length > 0) {
+        const del = await supabaseAdmin.from("athletes").delete().in("id", ids);
+        if (del.error) dbError(del.error);
+      }
+    }
+    if (athlete.data) {
+      const del = await supabaseAdmin.from("athletes").delete().eq("id", athlete.data.id);
+      if (del.error) dbError(del.error);
+    }
+
+    // Delete profile rows explicitly (FKs to auth.users may or may not cascade).
+    if (coach.data) {
+      const del = await supabaseAdmin.from("coach_profiles").delete().eq("id", coach.data.id);
+      if (del.error) dbError(del.error);
+    }
+    if (parent.data) {
+      const del = await supabaseAdmin.from("parent_profiles").delete().eq("id", parent.data.id);
+      if (del.error) dbError(del.error);
+    }
+
+    // Finally, remove the auth user so the email address is freed up.
+    const { error: authErr } = await supabaseAdmin.auth.admin.deleteUser(data.userId);
+    if (authErr) throw new Error(authErr.message);
+
     return { ok: true };
   });
 
@@ -277,7 +335,7 @@ export const getUserDetail = createServerFn({ method: "POST" })
         .maybeSingle(),
       supabaseAdmin
         .from("athletes")
-        .select("id, first_name, last_name, birthdate, created_at, self_managed, parent_id, motivation")
+        .select("id, first_name, last_name, birthdate, created_at, self_managed, parent_id, motivation, is_test")
         .eq("user_id", data.userId)
         .maybeSingle(),
     ]);
@@ -350,7 +408,7 @@ export const getUserDetail = createServerFn({ method: "POST" })
       };
     }
 
-    const isTest = !!(coach.data?.is_test || parent.data?.is_test);
+    const isTest = !!(coach.data?.is_test || parent.data?.is_test || athlete.data?.is_test);
     return { auth, coach: coachDetail, parent: parentDetail, athlete: athleteDetail, isTest };
   });
 
@@ -432,7 +490,7 @@ export const getAdminList = createServerFn({ method: "POST" })
     if (data.kind === "athletes") {
       const { data: rows, error } = await supabaseAdmin
         .from("athletes")
-        .select("id, first_name, last_name, birthdate, created_at, parent_id, user_id, self_managed, parent_profiles(first_name, last_name, user_id, is_test)")
+        .select("id, first_name, last_name, birthdate, created_at, parent_id, user_id, self_managed, is_test, parent_profiles(first_name, last_name, user_id, is_test)")
         .order("created_at", { ascending: false })
         .limit(200);
       if (error) dbError(error);
@@ -448,7 +506,7 @@ export const getAdminList = createServerFn({ method: "POST" })
             : null,
         tag: a.birthdate ? new Date(a.birthdate).toLocaleDateString() : (a.self_managed ? "adult" : "—"),
         createdAt: a.created_at,
-        isTest: !!a.parent_profiles?.is_test,
+        isTest: !!a.is_test || !!a.parent_profiles?.is_test,
       }));
       if (excludeTest) mapped = mapped.filter((r) => !r.isTest);
       return { rows: mapped };

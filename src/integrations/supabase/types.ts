@@ -194,6 +194,7 @@ export type Database = {
           created_at: string
           first_name: string
           id: string
+          is_test: boolean
           last_name: string
           motivation: string
           parent_id: string | null
@@ -208,6 +209,7 @@ export type Database = {
           created_at?: string
           first_name: string
           id?: string
+          is_test?: boolean
           last_name?: string
           motivation?: string
           parent_id?: string | null
@@ -222,6 +224,7 @@ export type Database = {
           created_at?: string
           first_name?: string
           id?: string
+          is_test?: boolean
           last_name?: string
           motivation?: string
           parent_id?: string | null
