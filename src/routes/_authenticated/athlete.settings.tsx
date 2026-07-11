@@ -45,6 +45,7 @@ import {
   validateSlots,
   type Slot,
 } from "@/components/parent/schedule-editor";
+import { InviteCoachCard } from "@/components/parent/invite-coach-card";
 
 import { z } from "zod";
 
