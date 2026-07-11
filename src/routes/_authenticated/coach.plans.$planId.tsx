@@ -542,51 +542,55 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
               />
             </div>
           ) : (
-            <div className="flex items-center justify-between gap-3">
-              <div className="min-w-0 flex-1">
-                <MoveField
-                  kind="select"
-                  label="Athlete"
-                  value={
-                    plan.athleteId
-                      ? athletes.find((a) => a.id === plan.athleteId)?.name ?? ""
-                      : ""
-                  }
-                  options={athletes.map((a) => a.name)}
-                  allowFreeText={false}
-                  placeholder="Choose an athlete"
-                  saving={savingField === "athleteId"}
-                  highlighted={!!touched.plan.athleteId}
-                  sourceQuote={planSource("athleteId")}
-
-                  onCommit={(v) => {
-                    const match = athletes.find((a) => a.name === v);
-                    clearPlanTouch("athleteId");
-                    return commit("athleteId", () =>
+            <MoveField
+              kind="select"
+              label="Assign to"
+              value={
+                assignmentMode === "public"
+                  ? PUBLIC_OPTION
+                  : assignmentMode === "template"
+                  ? TEMPLATE_OPTION
+                  : plan.athleteId
+                  ? athletes.find((a) => a.id === plan.athleteId)?.name ?? ""
+                  : ""
+              }
+              options={[
+                PUBLIC_OPTION,
+                TEMPLATE_OPTION,
+                ...athletes.map((a) => a.name),
+              ]}
+              dividerAfter={[TEMPLATE_OPTION]}
+              allowFreeText={false}
+              placeholder="Public, template, or athlete"
+              saving={savingField === "assignment" || useTemplate.isPending}
+              highlighted={!!touched.plan.athleteId}
+              sourceQuote={planSource("athleteId")}
+              onCommit={(v) => {
+                clearPlanTouch("athleteId");
+                if (v === PUBLIC_OPTION) {
+                  setPendingAssignment("public");
+                  if (plan.athleteId) {
+                    return commit("assignment", () =>
                       planUpdate.mutateAsync({
-                        data: { id: plan.id, athleteId: match?.id ?? null },
+                        data: { id: plan.id, athleteId: null },
                       }),
                     );
-                  }}
-                />
-
-              </div>
-              <div className="flex shrink-0 items-center gap-2 border-l border-divider pl-3">
-                <label className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
-                  Save as template
-                </label>
-                <Switch
-                  checked={isTemplate}
-                  disabled={useTemplate.isPending}
-                  onCheckedChange={(v) => {
-                    if (!v) return;
-                    void useTemplate.mutateAsync({
-                      data: { kind: "template", fromPlanId: plan.id },
-                    });
-                  }}
-                />
-              </div>
-            </div>
+                  }
+                  return;
+                }
+                if (v === TEMPLATE_OPTION) {
+                  setPendingAssignment("template");
+                  return;
+                }
+                const match = athletes.find((a) => a.name === v);
+                setPendingAssignment(null);
+                return commit("assignment", () =>
+                  planUpdate.mutateAsync({
+                    data: { id: plan.id, athleteId: match?.id ?? null },
+                  }),
+                );
+              }}
+            />
           )}
           {isTemplate && useTemplateOpen ? (
             <div className="mt-2 border-t border-divider pt-2">
@@ -617,9 +621,16 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
           ) : null}
         </div>
 
-        <div className="flex justify-end">
-          <ShareToSocialsButton planId={plan.id} planTitle={plan.title || "Untitled plan"} />
-        </div>
+        {assignmentMode === "public" ? (
+          <div className="flex justify-end">
+            <ShareToSocialsButton
+              planId={plan.id}
+              planTitle={plan.title || "Untitled plan"}
+              variant="primary"
+            />
+          </div>
+        ) : null}
+
 
 
 
