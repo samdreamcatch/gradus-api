@@ -148,8 +148,10 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
   const [expandedMoves, setExpandedMoves] = useState<Record<string, boolean>>({});
   const [didInitExpansion, setDidInitExpansion] = useState(false);
   const [useTemplateOpen, setUseTemplateOpen] = useState(false);
+  const [pendingAssignment, setPendingAssignment] = useState<null | "public" | "template">(null);
   const [activeConflicts, setActiveConflicts] = useState<{ id: string; title: string }[] | null>(null);
   const [chosenReplaceId, setChosenReplaceId] = useState<string | null>(null);
+
   const [touched, setTouched] = useState<VoiceTouchedSnapshot>(
     () => consumeVoiceTouched(planId) ?? { plan: {}, moves: {}, newMoveIds: [] },
   );
