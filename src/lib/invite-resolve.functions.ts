@@ -30,7 +30,7 @@ function clientIp(): string {
   return `ua:${ua.slice(0, 64)}`;
 }
 
-export type InviteKind = "coach" | "parent" | "athlete";
+export type InviteKind = "coach" | "parent" | "athlete" | "adult-athlete";
 
 /**
  * Public: identify whether an 8-char code belongs to a coach, parent, or
