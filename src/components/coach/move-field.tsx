@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
 interface BaseProps {
@@ -33,7 +33,10 @@ interface SelectFieldProps extends BaseProps {
   kind: "select";
   options: string[];
   allowFreeText?: boolean;
+  /** Values after which a non-selectable divider row is inserted. */
+  dividerAfter?: string[];
 }
+
 
 export type MoveFieldProps = TextFieldProps | TextareaFieldProps | SelectFieldProps;
 
@@ -221,6 +224,7 @@ export function MoveField(props: MoveFieldProps) {
         <SelectOrCombo
           value={draft}
           options={props.options}
+          dividerAfter={props.dividerAfter}
           allowFreeText={props.allowFreeText !== false}
           onChange={setDraft}
           onCommit={(override) => commit(override)}
@@ -232,6 +236,7 @@ export function MoveField(props: MoveFieldProps) {
           }}
         />
 
+
       )}
     </div>
   );
@@ -240,6 +245,7 @@ export function MoveField(props: MoveFieldProps) {
 function SelectOrCombo({
   value,
   options,
+  dividerAfter,
   allowFreeText,
   onChange,
   onCommit,
@@ -250,6 +256,7 @@ function SelectOrCombo({
 }: {
   value: string;
   options: string[];
+  dividerAfter?: string[];
   allowFreeText: boolean;
   onChange: (v: string) => void;
   onCommit: (override?: string) => void;
@@ -288,6 +295,8 @@ function SelectOrCombo({
     );
   }
 
+  const dividers = new Set(dividerAfter ?? []);
+
   return (
     <select
       value={value}
@@ -321,14 +330,22 @@ function SelectOrCombo({
         </option>
       ) : null}
       {options.map((o) => (
-        <option key={o} value={o}>
-          {o}
-        </option>
+        <Fragment key={o}>
+          <option value={o}>{o}</option>
+          {dividers.has(o) ? (
+            <option value="" disabled>
+              ──────────
+            </option>
+          ) : null}
+        </Fragment>
       ))}
+
+
       {allowFreeText ? (
         <option value={CUSTOM}>Custom…</option>
       ) : null}
     </select>
   );
 }
+
 

@@ -50,6 +50,8 @@ import {
   type PlanMoveDTO,
 } from "@/lib/plans.functions";
 import { ShareToSocialsButton } from "@/components/plans/share-to-socials-button";
+import { getOrCreateShareToken } from "@/lib/plan-share.functions";
+
 
 
 
@@ -69,7 +71,12 @@ import { consumeVoiceTouched, type VoiceTouchedSnapshot } from "@/lib/voice-touc
 import { FlowStateBars } from "@/components/plans/flow-state-bars";
 import { getPlanSessions, getPlanSessionsSummary } from "@/lib/plan-sessions.functions";
 
+const PUBLIC_OPTION = "Public / Shareable Link";
+const TEMPLATE_OPTION = "Save as Template";
+const SITE_ORIGIN = "https://gradus.training";
+
 export const Route = createFileRoute("/_authenticated/coach/plans/$planId")({
+
   component: PlanEditorSheet,
   validateSearch: (search: Record<string, unknown>) => ({
     from: search.from === "plus" ? ("plus" as const) : undefined,
@@ -128,6 +135,8 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
   const deleteFn = useServerFn(deletePlan);
   const createPlanFn = useServerFn(createPlan);
   const getActivesFn = useServerFn(getAthleteActivePlans);
+  const shareTokenFn = useServerFn(getOrCreateShareToken);
+
 
 
   const { data, isLoading } = useQuery({
@@ -146,8 +155,10 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
   const [expandedMoves, setExpandedMoves] = useState<Record<string, boolean>>({});
   const [didInitExpansion, setDidInitExpansion] = useState(false);
   const [useTemplateOpen, setUseTemplateOpen] = useState(false);
+  const [pendingAssignment, setPendingAssignment] = useState<null | "public" | "template">(null);
   const [activeConflicts, setActiveConflicts] = useState<{ id: string; title: string }[] | null>(null);
   const [chosenReplaceId, setChosenReplaceId] = useState<string | null>(null);
+
   const [touched, setTouched] = useState<VoiceTouchedSnapshot>(
     () => consumeVoiceTouched(planId) ?? { plan: {}, moves: {}, newMoveIds: [] },
   );
@@ -290,11 +301,35 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
     staleTime: 5 * 60 * 1000,
   });
 
+  // Derive assignment mode for the merged "Assign to" dropdown.
+  // Public = plan with no athlete assigned (or explicitly picked "Public" before save).
+  const assignmentMode: "athlete" | "public" | "template" | null = isTemplate
+    ? "template"
+    : plan?.athleteId
+    ? "athlete"
+    : pendingAssignment === "public"
+    ? "public"
+    : pendingAssignment === "template"
+    ? "template"
+    : null;
+
+  // Prefetch share token so "Publish & Share" can invoke navigator.share
+  // synchronously in the click handler (needed for iOS Safari user activation).
+  const { data: prefetchedShare } = useQuery({
+    queryKey: ["plan-share-token", plan?.id],
+    queryFn: () => shareTokenFn({ data: { planId: plan!.id } }),
+    enabled: !!plan?.id && assignmentMode === "public",
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
+  });
+
   if (isLoading || !plan) {
     return (
       <div className="py-8 text-center text-sm text-text-secondary">Loading…</div>
     );
   }
+
+
 
 
   const toggleMove = (id: string) =>
@@ -373,6 +408,46 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
       },
     );
   };
+
+  const publishAndShare = () => {
+    if (!plan.title.trim()) {
+      toast.error("Give the plan a title.");
+      return;
+    }
+    // Fire native share sheet SYNCHRONOUSLY (user activation is preserved
+    // only in the same tick as the click). Kick off the activation mutation
+    // in parallel — order matters, share must not be awaited.
+    const caption = `${plan.title || "Untitled plan"} — My workout on Gradus`;
+    const canShare = typeof navigator !== "undefined" && typeof navigator.share === "function";
+    if (prefetchedShare?.token && canShare) {
+      const url = `${SITE_ORIGIN}/p/${prefetchedShare.token}`;
+      navigator.share({ title: plan.title || "Untitled plan", text: caption, url }).catch(() => {});
+    } else if (prefetchedShare?.token) {
+      const url = `${SITE_ORIGIN}/p/${prefetchedShare.token}`;
+      navigator.clipboard?.writeText(url).catch(() => {});
+      toast.success("Link copied", { description: url });
+    }
+    statusMutation.mutate(
+      { data: { id: plan.id, status: "active" } },
+      {
+        onSuccess: () => {
+          toast.success(plan.status === "active" ? "Plan updated" : "Plan published");
+          onClose();
+        },
+      },
+    );
+  };
+
+  const saveToLibrary = () => {
+    if (!plan.title.trim()) {
+      toast.error("Give the plan a title.");
+      return;
+    }
+    void useTemplate.mutateAsync({
+      data: { kind: "template", fromPlanId: plan.id },
+    });
+  };
+
 
   const reorder = (from: number, to: number) => {
     if (to < 0 || to >= plan.moves.length || from === to) return;
@@ -467,51 +542,55 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
               />
             </div>
           ) : (
-            <div className="flex items-center justify-between gap-3">
-              <div className="min-w-0 flex-1">
-                <MoveField
-                  kind="select"
-                  label="Athlete"
-                  value={
-                    plan.athleteId
-                      ? athletes.find((a) => a.id === plan.athleteId)?.name ?? ""
-                      : ""
-                  }
-                  options={athletes.map((a) => a.name)}
-                  allowFreeText={false}
-                  placeholder="Choose an athlete"
-                  saving={savingField === "athleteId"}
-                  highlighted={!!touched.plan.athleteId}
-                  sourceQuote={planSource("athleteId")}
-
-                  onCommit={(v) => {
-                    const match = athletes.find((a) => a.name === v);
-                    clearPlanTouch("athleteId");
-                    return commit("athleteId", () =>
+            <MoveField
+              kind="select"
+              label="Assign to"
+              value={
+                assignmentMode === "public"
+                  ? PUBLIC_OPTION
+                  : assignmentMode === "template"
+                  ? TEMPLATE_OPTION
+                  : plan.athleteId
+                  ? athletes.find((a) => a.id === plan.athleteId)?.name ?? ""
+                  : ""
+              }
+              options={[
+                PUBLIC_OPTION,
+                TEMPLATE_OPTION,
+                ...athletes.map((a) => a.name),
+              ]}
+              dividerAfter={[TEMPLATE_OPTION]}
+              allowFreeText={false}
+              placeholder="Public, template, or athlete"
+              saving={savingField === "assignment" || useTemplate.isPending}
+              highlighted={!!touched.plan.athleteId}
+              sourceQuote={planSource("athleteId")}
+              onCommit={(v) => {
+                clearPlanTouch("athleteId");
+                if (v === PUBLIC_OPTION) {
+                  setPendingAssignment("public");
+                  if (plan.athleteId) {
+                    return commit("assignment", () =>
                       planUpdate.mutateAsync({
-                        data: { id: plan.id, athleteId: match?.id ?? null },
+                        data: { id: plan.id, athleteId: null },
                       }),
                     );
-                  }}
-                />
-
-              </div>
-              <div className="flex shrink-0 items-center gap-2 border-l border-divider pl-3">
-                <label className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
-                  Save as template
-                </label>
-                <Switch
-                  checked={isTemplate}
-                  disabled={useTemplate.isPending}
-                  onCheckedChange={(v) => {
-                    if (!v) return;
-                    void useTemplate.mutateAsync({
-                      data: { kind: "template", fromPlanId: plan.id },
-                    });
-                  }}
-                />
-              </div>
-            </div>
+                  }
+                  return;
+                }
+                if (v === TEMPLATE_OPTION) {
+                  setPendingAssignment("template");
+                  return;
+                }
+                const match = athletes.find((a) => a.name === v);
+                setPendingAssignment(null);
+                return commit("assignment", () =>
+                  planUpdate.mutateAsync({
+                    data: { id: plan.id, athleteId: match?.id ?? null },
+                  }),
+                );
+              }}
+            />
           )}
           {isTemplate && useTemplateOpen ? (
             <div className="mt-2 border-t border-divider pt-2">
@@ -542,9 +621,16 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
           ) : null}
         </div>
 
-        <div className="flex justify-end">
-          <ShareToSocialsButton planId={plan.id} planTitle={plan.title || "Untitled plan"} />
-        </div>
+        {assignmentMode === "public" ? (
+          <div className="flex justify-end">
+            <ShareToSocialsButton
+              planId={plan.id}
+              planTitle={plan.title || "Untitled plan"}
+              variant="primary"
+            />
+          </div>
+        ) : null}
+
 
 
 
@@ -897,6 +983,30 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
               {statusMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
               Save template
             </Button>
+          ) : assignmentMode === "template" ? (
+            <Button
+              type="button"
+              onClick={saveToLibrary}
+              disabled={useTemplate.isPending}
+              className="gap-2"
+            >
+              {useTemplate.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+              Save to Library
+            </Button>
+          ) : assignmentMode === "public" ? (
+            <Button
+              type="button"
+              onClick={publishAndShare}
+              disabled={statusMutation.isPending}
+              className="gap-2"
+            >
+              {statusMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
+              {plan.status === "active" ? "Update & Share" : "Publish & Share"}
+            </Button>
           ) : (
             <Button
               type="button"
@@ -909,9 +1019,10 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
               ) : (
                 <Send className="h-4 w-4" />
               )}
-              {plan.status === "active" ? "Update & share" : "Activate & share"}
+              {plan.status === "active" ? "Update Plan" : "Send to Athlete"}
             </Button>
           )}
+
         </div>
       </div>
 

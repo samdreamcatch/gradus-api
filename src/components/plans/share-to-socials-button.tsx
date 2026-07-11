@@ -12,11 +12,14 @@ export function ShareToSocialsButton({
   planId,
   planTitle,
   className,
+  variant = "chip",
 }: {
   planId: string;
   planTitle: string;
   className?: string;
+  variant?: "chip" | "primary";
 }) {
+
   const shareFn = useServerFn(getOrCreateShareToken);
   const [busy, setBusy] = useState(false);
 
@@ -77,19 +80,28 @@ export function ShareToSocialsButton({
     }
   };
 
+  const primary = variant === "primary";
+
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={busy}
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full border border-divider bg-card px-3 py-1.5 text-[12px] font-bold text-text-primary shadow-card hover:border-accent/60",
+        primary
+          ? "inline-flex items-center gap-2 rounded-full border border-accent bg-accent px-4 py-2 text-[13px] font-black uppercase tracking-widest text-accent-foreground shadow-card hover:opacity-90"
+          : "inline-flex items-center gap-1.5 rounded-full border border-divider bg-card px-3 py-1.5 text-[12px] font-bold text-text-primary shadow-card hover:border-accent/60",
         busy && "opacity-70",
         className,
       )}
     >
-      {busy ? <Loader2 className="size-3.5 animate-spin" /> : <Share2 className="size-3.5" />}
+      {busy ? (
+        <Loader2 className={cn(primary ? "size-4 animate-spin" : "size-3.5 animate-spin")} />
+      ) : (
+        <Share2 className={cn(primary ? "size-4" : "size-3.5")} />
+      )}
       Share to socials
     </button>
   );
 }
+
