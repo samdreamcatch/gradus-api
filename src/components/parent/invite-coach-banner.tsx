@@ -1,14 +1,15 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ChevronDown, Copy, Check, Link as LinkIcon, UserPlus } from "lucide-react";
+import { ChevronDown, Copy, Check, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { ShareInviteButton } from "@/components/share/share-invite-button";
 import { getOrCreateParentInviteCode } from "@/lib/parent-signup.functions";
 
 /**
  * Slim app-wide banner shown on every /parent/* route until the parent has
- * linked at least one coach. Expands inline to reveal the shareable link and
+ * linked at least one coach. Expands inline to reveal the share button and
  * 8-char code. Intentionally non-dismissible — disappears the moment a coach
  * is linked.
  */
@@ -19,7 +20,6 @@ export function InviteCoachBanner() {
     queryFn: () => fetchCode(),
   });
   const [open, setOpen] = useState(false);
-  const [linkCopied, setLinkCopied] = useState(false);
   const [codeCopied, setCodeCopied] = useState(false);
 
   const code = data?.code;
@@ -27,19 +27,13 @@ export function InviteCoachBanner() {
     ? `${typeof window !== "undefined" ? window.location.origin : "https://gradus.training"}/signup/coach?invite=${code}`
     : "";
 
-  const copy = async (text: string, kind: "link" | "code") => {
-    if (!text) return;
+  const copyCode = async () => {
+    if (!code) return;
     try {
-      await navigator.clipboard.writeText(text);
-      if (kind === "link") {
-        setLinkCopied(true);
-        toast.success("Link copied — paste it to your coach");
-        setTimeout(() => setLinkCopied(false), 1800);
-      } else {
-        setCodeCopied(true);
-        toast.success("Code copied");
-        setTimeout(() => setCodeCopied(false), 1800);
-      }
+      await navigator.clipboard.writeText(code);
+      setCodeCopied(true);
+      toast.success("Code copied");
+      setTimeout(() => setCodeCopied(false), 1800);
     } catch {
       toast.error("Couldn't copy — try selecting it manually");
     }
@@ -70,30 +64,17 @@ export function InviteCoachBanner() {
         {open && (
           <div className="mt-3 space-y-2 pb-2">
             <p className="text-xs text-text-secondary">
-              Share this link — when your coach signs up they'll be linked to
-              your athletes, sports, goals, and lesson times automatically.
+              Tap share — when your coach signs up they'll be linked to your
+              athletes, sports, goals, and lesson times automatically.
             </p>
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <div
-                aria-label="Shareable signup link"
-                className="flex-1 truncate rounded-md border border-divider bg-elevated px-3 py-2 text-xs text-text-primary"
-              >
-                {url || <span className="text-text-tertiary">Generating link…</span>}
-              </div>
-              <Button
-                type="button"
-                size="sm"
-                onClick={() => copy(url, "link")}
-                disabled={!url}
-                className="shrink-0"
-              >
-                {linkCopied ? (
-                  <><Check className="size-4" aria-hidden /> Copied</>
-                ) : (
-                  <><LinkIcon className="size-4" aria-hidden /> Copy link</>
-                )}
-              </Button>
-            </div>
+            <ShareInviteButton
+              url={url}
+              title="Invite your coach to Gradus"
+              text="Join me on Gradus so we can share practice plans and messages."
+              size="sm"
+              disabled={!url}
+              className="w-full"
+            />
             <div className="flex flex-col gap-2 sm:flex-row">
               <div
                 aria-label="Your parent invite code"
@@ -105,7 +86,7 @@ export function InviteCoachBanner() {
                 type="button"
                 size="sm"
                 variant="outline"
-                onClick={() => copy(code ?? "", "code")}
+                onClick={copyCode}
                 disabled={!code}
                 className="shrink-0"
               >
