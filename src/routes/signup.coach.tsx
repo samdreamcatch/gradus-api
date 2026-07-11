@@ -221,6 +221,9 @@ function CoachSignupPage() {
   };
 
   const parentName = parent ? `${parent.firstName} ${parent.lastName}`.trim() : null;
+  const adultAthleteName = adultAthlete
+    ? `${adultAthlete.firstName} ${adultAthlete.lastName}`.trim()
+    : null;
   const canSubmit = agreed && !loading;
 
   return (
@@ -234,10 +237,12 @@ function CoachSignupPage() {
           <p className="mt-4 text-sm text-text-secondary">Create your coach account</p>
         </div>
 
-        {invite && parentName && (
+        {invite && (parentName || adultAthleteName) && (
           <div className="mb-6 rounded-xl border border-accent/40 bg-accent/10 px-4 py-3 text-sm">
             <p className="font-semibold text-text-primary">
-              You&apos;re connecting with {parentName} and their athlete
+              {parentName
+                ? `You're connecting with ${parentName} and their athlete`
+                : `You're connecting with ${adultAthleteName}`}
             </p>
           </div>
         )}
