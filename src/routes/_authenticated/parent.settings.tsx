@@ -267,13 +267,26 @@ function NameDisclosure({
   );
 }
 
-function AthletesList({ athletes }: { athletes: AthleteData[] }) {
+function AthletesList({
+  athletes,
+  initialLinkCoach,
+  onLinkCoachConsumed,
+}: {
+  athletes: AthleteData[];
+  initialLinkCoach?: string | null;
+  onLinkCoachConsumed?: () => void;
+}) {
   const [adding, setAdding] = useState(false);
 
   return (
     <SettingsList>
-      {athletes.map((a) => (
-        <AthleteDisclosure key={a.id} athlete={a} />
+      {athletes.map((a, idx) => (
+        <AthleteDisclosure
+          key={a.id}
+          athlete={a}
+          initialLinkCoach={idx === 0 ? initialLinkCoach ?? null : null}
+          onLinkCoachConsumed={idx === 0 ? onLinkCoachConsumed : undefined}
+        />
       ))}
       {adding ? (
         <div className="border-t border-divider bg-elevated/30 px-4 py-4">
@@ -291,7 +304,15 @@ function AthletesList({ athletes }: { athletes: AthleteData[] }) {
   );
 }
 
-function AthleteDisclosure({ athlete }: { athlete: AthleteData }) {
+function AthleteDisclosure({
+  athlete,
+  initialLinkCoach,
+  onLinkCoachConsumed,
+}: {
+  athlete: AthleteData;
+  initialLinkCoach?: string | null;
+  onLinkCoachConsumed?: () => void;
+}) {
   const summary =
     athlete.sports.length > 0
       ? athlete.sports
@@ -308,11 +329,16 @@ function AthleteDisclosure({ athlete }: { athlete: AthleteData }) {
       icon={<Users className="size-4" />}
       label={`${athlete.firstName} ${athlete.lastName}`.trim()}
       value={summary}
+      defaultOpen={!!initialLinkCoach}
     >
       <div className="space-y-3">
         <NestedList>
           <IdentitySubrow athlete={athlete} />
-          <CoachesSection athlete={athlete} />
+          <CoachesSection
+            athlete={athlete}
+            initialLinkCoach={initialLinkCoach ?? null}
+            onLinkCoachConsumed={onLinkCoachConsumed}
+          />
           <GoalsSection athlete={athlete} />
           <ScheduleSection athlete={athlete} />
           <InviteSubrow athlete={athlete} />
