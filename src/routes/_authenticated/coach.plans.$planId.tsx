@@ -301,11 +301,35 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
     staleTime: 5 * 60 * 1000,
   });
 
+  // Derive assignment mode for the merged "Assign to" dropdown.
+  // Public = plan with no athlete assigned (or explicitly picked "Public" before save).
+  const assignmentMode: "athlete" | "public" | "template" | null = isTemplate
+    ? "template"
+    : plan?.athleteId
+    ? "athlete"
+    : pendingAssignment === "public"
+    ? "public"
+    : pendingAssignment === "template"
+    ? "template"
+    : null;
+
+  // Prefetch share token so "Publish & Share" can invoke navigator.share
+  // synchronously in the click handler (needed for iOS Safari user activation).
+  const { data: prefetchedShare } = useQuery({
+    queryKey: ["plan-share-token", plan?.id],
+    queryFn: () => shareTokenFn({ data: { planId: plan!.id } }),
+    enabled: !!plan?.id && assignmentMode === "public",
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
+  });
+
   if (isLoading || !plan) {
     return (
       <div className="py-8 text-center text-sm text-text-secondary">Loading…</div>
     );
   }
+
+
 
 
   const toggleMove = (id: string) =>
