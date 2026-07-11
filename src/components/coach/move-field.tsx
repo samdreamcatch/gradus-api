@@ -330,15 +330,16 @@ function SelectOrCombo({
         </option>
       ) : null}
       {options.map((o) => (
-        <React.Fragment key={o}>
+        <Fragment key={o}>
           <option value={o}>{o}</option>
           {dividers.has(o) ? (
             <option value="" disabled>
               ──────────
             </option>
           ) : null}
-        </React.Fragment>
+        </Fragment>
       ))}
+
 
       {allowFreeText ? (
         <option value={CUSTOM}>Custom…</option>
