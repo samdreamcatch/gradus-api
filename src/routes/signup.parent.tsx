@@ -84,7 +84,9 @@ function ParentSignupPage() {
       } catch {
         /* ignore */
       }
+      savePendingPromoCode(promoCode);
       await ensureAuthed(verifiedCaptchaToken);
+
       navigate({
         to: "/signup/parent/athletes",
         search: trimmed ? { code: trimmed } : {},
