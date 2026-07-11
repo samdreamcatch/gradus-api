@@ -157,7 +157,7 @@ function CTAButtons({ variant }: { variant: Variant }) {
 
 function DirectionOne({ variant }: { variant: Variant }) {
   return (
-    <div className="relative overflow-hidden rounded-2xl bg-card p-6 shadow-2xl">
+    <div className="relative overflow-hidden rounded-2xl bg-popover p-6 shadow-2xl">
       <PosterBg opacity={0.22} tile={260} mode="tile" />
       <div className="relative">
         <DialogHeader className="items-center text-center">
@@ -188,7 +188,7 @@ function DirectionOne({ variant }: { variant: Variant }) {
 
 function DirectionTwo({ variant }: { variant: Variant }) {
   return (
-    <div className="overflow-hidden rounded-2xl bg-card shadow-2xl">
+    <div className="overflow-hidden rounded-2xl bg-popover shadow-2xl">
       <div
         className="relative h-44 border-b border-divider bg-white"
         style={{
@@ -224,7 +224,7 @@ function DirectionTwo({ variant }: { variant: Variant }) {
 
 function DirectionThree({ variant }: { variant: Variant }) {
   return (
-    <div className="relative overflow-hidden rounded-2xl bg-card p-6 shadow-2xl">
+    <div className="relative overflow-hidden rounded-2xl bg-popover p-6 shadow-2xl">
       <PosterBg opacity={0.12} tile={220} mode="tile" />
       <div className="relative">
         <DialogHeader className="items-center text-center">
