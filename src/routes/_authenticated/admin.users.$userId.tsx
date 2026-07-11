@@ -1,7 +1,9 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { getUserDetail, setUserTestFlag } from "@/lib/admin.functions";
+import { useState } from "react";
+import { toast } from "sonner";
+import { getUserDetail, setUserTestFlag, deleteTestUser } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/users/$userId")({
   component: UserDetail,
@@ -9,8 +11,11 @@ export const Route = createFileRoute("/_authenticated/admin/users/$userId")({
 
 function UserDetail() {
   const { userId } = Route.useParams();
+  const navigate = useNavigate();
   const fn = useServerFn(getUserDetail);
   const toggleFn = useServerFn(setUserTestFlag);
+  const deleteFn = useServerFn(deleteTestUser);
+  const [deleting, setDeleting] = useState(false);
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["admin-user", userId],
     queryFn: () => fn({ data: { userId } }),
