@@ -386,22 +386,60 @@ export const getUserDetail = createServerFn({ method: "POST" })
 
     let athleteDetail: any = null;
     if (athlete.data) {
-      const [coachLinks, plans] = await Promise.all([
+      const [primaryLinks, roster, sports, plans] = await Promise.all([
         supabaseAdmin
           .from("athlete_primary_coaches")
           .select("sport, coach_id, coach_profiles(first_name, last_name, user_id)")
+          .eq("athlete_id", athlete.data.id),
+        supabaseAdmin
+          .from("coach_athletes")
+          .select("coach_id, coach_profiles(first_name, last_name, user_id)")
+          .eq("athlete_id", athlete.data.id),
+        supabaseAdmin
+          .from("coach_athlete_sports")
+          .select("coach_id, sport")
           .eq("athlete_id", athlete.data.id),
         supabaseAdmin
           .from("plans")
           .select("id, kind, status")
           .eq("athlete_id", athlete.data.id),
       ]);
+
+      const sportsByCoach = new Map<string, string[]>();
+      for (const s of (sports.data ?? []) as any[]) {
+        const arr = sportsByCoach.get(s.coach_id) ?? [];
+        arr.push(s.sport);
+        sportsByCoach.set(s.coach_id, arr);
+      }
+
+      const merged = new Map<string, { coachUserId: string | null; coachName: string; sports: Set<string> }>();
+      const ensure = (coachId: string, profile: any) => {
+        let entry = merged.get(coachId);
+        if (!entry) {
+          entry = {
+            coachUserId: profile?.user_id ?? null,
+            coachName: `${profile?.first_name ?? ""} ${profile?.last_name ?? ""}`.trim() || "—",
+            sports: new Set<string>(),
+          };
+          merged.set(coachId, entry);
+        }
+        return entry;
+      };
+      for (const l of (roster.data ?? []) as any[]) {
+        const entry = ensure(l.coach_id, l.coach_profiles);
+        for (const sp of sportsByCoach.get(l.coach_id) ?? []) entry.sports.add(sp);
+      }
+      for (const l of (primaryLinks.data ?? []) as any[]) {
+        const entry = ensure(l.coach_id, l.coach_profiles);
+        if (l.sport) entry.sports.add(l.sport);
+      }
+
       athleteDetail = {
         ...athlete.data,
-        coaches: (coachLinks.data ?? []).map((l: any) => ({
-          sport: l.sport,
-          coachUserId: l.coach_profiles?.user_id ?? null,
-          coachName: `${l.coach_profiles?.first_name ?? ""} ${l.coach_profiles?.last_name ?? ""}`.trim() || "—",
+        coaches: Array.from(merged.values()).map((c) => ({
+          coachUserId: c.coachUserId,
+          coachName: c.coachName,
+          sport: Array.from(c.sports).join(", ") || null,
         })),
         plansCount: (plans.data ?? []).filter((p) => p.kind === "plan").length,
         activePlansCount: (plans.data ?? []).filter((p) => p.kind === "plan" && p.status === "active").length,
