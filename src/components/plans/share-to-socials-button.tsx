@@ -12,11 +12,14 @@ export function ShareToSocialsButton({
   planId,
   planTitle,
   className,
+  variant = "chip",
 }: {
   planId: string;
   planTitle: string;
   className?: string;
+  variant?: "chip" | "primary";
 }) {
+
   const shareFn = useServerFn(getOrCreateShareToken);
   const [busy, setBusy] = useState(false);
 
