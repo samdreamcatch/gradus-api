@@ -184,7 +184,11 @@ function AthleteAccountPage() {
             <p className="text-xs text-text-tertiary">At least 8 characters.</p>
           </div>
 
+          <PromoCodeField value={promoCode} onChange={setPromoCode} />
+
           {error && <p className="text-sm text-destructive">{error}</p>}
+
+
 
           <Button
             type="submit"
