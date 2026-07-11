@@ -57,6 +57,7 @@ function InviteEntryPage() {
   const resolve = useServerFn(resolveInviteCode);
   const roleFn = useServerFn(getMyRole);
   const claimParent = useServerFn(claimParentInvite);
+  const claimAdultAthlete = useServerFn(claimAdultAthleteInvite);
 
   const [stage, setStage] = useState<Stage>({ kind: "loading" });
 
