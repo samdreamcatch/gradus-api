@@ -8,6 +8,9 @@ import { ActiveSessionBar } from "@/components/plans/active-session-bar";
 import { FeedbackFab } from "@/components/feedback/feedback-fab";
 import { acceptTerms } from "@/lib/terms.functions";
 import { PENDING_TERMS_ACCEPT_KEY } from "@/lib/terms";
+import { applyPromoCodeToMyProfile } from "@/lib/promo-codes.functions";
+import { readPendingPromoCode, clearPendingPromoCode } from "@/lib/pending-promo-code";
+
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
