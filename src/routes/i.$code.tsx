@@ -10,6 +10,7 @@ import { Logo } from "@/components/logo";
 import { resolveInviteCode, type InviteKind } from "@/lib/invite-resolve.functions";
 import { claimParentInvite } from "@/lib/parent-signup.functions";
 import { getMyRole } from "@/lib/parent-signup.functions";
+import { claimAdultAthleteInvite } from "@/lib/adult-athlete-invite.functions";
 
 /** localStorage key read by the athlete-onboarding coach step to prefill a
  *  pending coach invite code after signup. */
