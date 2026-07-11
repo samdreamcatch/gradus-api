@@ -61,6 +61,8 @@ function CoachSignupPage() {
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [promoCode, setPromoCode] = useState("");
+
 
   useEffect(() => {
     if (invite) {
