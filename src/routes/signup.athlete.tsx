@@ -41,8 +41,10 @@ function AthleteEntryPage() {
   const lookup = useServerFn(getAthleteInviteSummary);
 
   const [code, setCode] = useState("");
+  const [promoCode, setPromoCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
 
   if (location.pathname !== "/signup/athlete") {
     return <Outlet />;
