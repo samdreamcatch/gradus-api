@@ -33,7 +33,10 @@ interface SelectFieldProps extends BaseProps {
   kind: "select";
   options: string[];
   allowFreeText?: boolean;
+  /** Values after which a non-selectable divider row is inserted. */
+  dividerAfter?: string[];
 }
+
 
 export type MoveFieldProps = TextFieldProps | TextareaFieldProps | SelectFieldProps;
 
