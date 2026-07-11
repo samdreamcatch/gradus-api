@@ -13,11 +13,19 @@ export function ShareToSocialsButton({
   planTitle,
   className,
   variant = "chip",
+  label = "Share to socials",
+  onShareInvoked,
+  disabled,
 }: {
   planId: string;
   planTitle: string;
   className?: string;
   variant?: "chip" | "primary";
+  label?: string;
+  /** Fired synchronously after navigator.share is invoked (or fallback copy),
+   *  so callers can kick off activation/publish without awaiting. */
+  onShareInvoked?: () => void;
+  disabled?: boolean;
 }) {
 
   const shareFn = useServerFn(getOrCreateShareToken);
@@ -54,13 +62,17 @@ export function ShareToSocialsButton({
     if (prefetched?.token) {
       const url = `${SITE_ORIGIN}/p/${prefetched.token}`;
       if (canShare) {
+        const p = navigator.share({ title: planTitle, text: caption, url });
+        onShareInvoked?.();
         try {
-          await navigator.share({ title: planTitle, text: caption, url });
+          await p;
           return;
         } catch (err) {
           if ((err as DOMException)?.name === "AbortError") return;
           // fall through to copy
         }
+      } else {
+        onShareInvoked?.();
       }
       await copyFallback(url);
       return;
@@ -72,6 +84,7 @@ export function ShareToSocialsButton({
     try {
       const { token } = await shareFn({ data: { planId } });
       const url = `${SITE_ORIGIN}/p/${token}`;
+      onShareInvoked?.();
       await copyFallback(url);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Couldn't create share link.");
@@ -86,7 +99,7 @@ export function ShareToSocialsButton({
     <button
       type="button"
       onClick={onClick}
-      disabled={busy}
+      disabled={busy || disabled}
       className={cn(
         primary
           ? "inline-flex items-center gap-2 rounded-full border border-accent bg-accent px-4 py-2 text-[13px] font-black uppercase tracking-widest text-accent-foreground shadow-card hover:opacity-90"
@@ -100,7 +113,7 @@ export function ShareToSocialsButton({
       ) : (
         <Share2 className={cn(primary ? "size-4" : "size-3.5")} />
       )}
-      Share to socials
+      {label}
     </button>
   );
 }
