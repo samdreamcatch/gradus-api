@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -46,12 +46,27 @@ import {
   type Slot,
 } from "@/components/parent/schedule-editor";
 
+import { z } from "zod";
+
+const searchSchema = z.object({
+  linkCoach: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .length(8)
+    .regex(/^[A-Z2-9]+$/)
+    .optional(),
+});
+
 export const Route = createFileRoute("/_authenticated/athlete/settings")({
+  validateSearch: (s) => searchSchema.parse(s),
   component: AthleteSettingsPage,
 });
 
 function AthleteSettingsPage() {
   const fetchSettings = useServerFn(getAthleteSettings);
+  const { linkCoach } = Route.useSearch();
+  const navigate = useNavigate();
   const { data, isLoading } = useQuery({
     queryKey: ["athlete-settings"],
     queryFn: () => fetchSettings(),
@@ -64,6 +79,10 @@ function AthleteSettingsPage() {
     queryFn: () => fetchCoaches(),
   });
   const isSelfManaged = coachData?.selfManaged === true;
+
+  useEffect(() => {
+    if (linkCoach) toast.success(`Coach invite ${linkCoach} ready to link`);
+  }, [linkCoach]);
 
   return (
     <>
@@ -92,6 +111,14 @@ function AthleteSettingsPage() {
                 <SettingsList>
                   <AdultCoachesSection
                     coaches={coachData?.coaches ?? []}
+                    initialLinkCoach={linkCoach ?? null}
+                    onLinkCoachConsumed={() =>
+                      navigate({
+                        to: "/athlete/settings",
+                        search: {},
+                        replace: true,
+                      })
+                    }
                   />
                 </SettingsList>
               </SettingsGroup>
@@ -199,7 +226,15 @@ function ProfileDisclosure({
 
 type AdultCoach = { coachId: string; coachName: string; sports: string[] };
 
-function AdultCoachesSection({ coaches }: { coaches: AdultCoach[] }) {
+function AdultCoachesSection({
+  coaches,
+  initialLinkCoach,
+  onLinkCoachConsumed,
+}: {
+  coaches: AdultCoach[];
+  initialLinkCoach?: string | null;
+  onLinkCoachConsumed?: () => void;
+}) {
   const qc = useQueryClient();
   const previewFn = useServerFn(previewCoachForAdultAthlete);
   const linkFn = useServerFn(linkAdultAthleteToCoach);
@@ -236,10 +271,12 @@ function AdultCoachesSection({ coaches }: { coaches: AdultCoach[] }) {
     setSelectedSports([]);
   };
 
-  const handleLookup = async () => {
+  const handleLookup = async (rawCode?: string) => {
+    const c = (rawCode ?? code).trim().toUpperCase();
+    if (c.length !== 8) return;
     setLookingUp(true);
     try {
-      const result = await previewFn({ data: { code: code.trim() } });
+      const result = await previewFn({ data: { code: c } });
       setPreview(result);
       setSelectedSports(result.sports.length === 1 ? [result.sports[0]] : []);
     } catch (err) {
@@ -248,6 +285,18 @@ function AdultCoachesSection({ coaches }: { coaches: AdultCoach[] }) {
       setLookingUp(false);
     }
   };
+
+  // Auto-open + auto-preview when a coach invite code was passed in via
+  // `?linkCoach=CODE` (from the /i/CODE universal invite entry).
+  useEffect(() => {
+    if (!initialLinkCoach) return;
+    setAdding(true);
+    setCode(initialLinkCoach);
+    void handleLookup(initialLinkCoach);
+    onLinkCoachConsumed?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialLinkCoach]);
+
 
   const handleLink = async () => {
     if (!preview) return;

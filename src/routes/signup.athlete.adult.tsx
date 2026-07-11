@@ -15,7 +15,21 @@ import { PromoCodeField } from "@/components/signup/promo-code-field";
 import { savePendingPromoCode } from "@/lib/pending-promo-code";
 
 
+import { z } from "zod";
+import { PENDING_COACH_INVITE_KEY } from "@/routes/i.$code";
+
+const searchSchema = z.object({
+  invite: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .length(8)
+    .regex(/^[A-Z2-9]+$/)
+    .optional(),
+});
+
 export const Route = createFileRoute("/signup/athlete/adult")({
+  validateSearch: (s) => searchSchema.parse(s),
   component: AdultAthleteSignupPage,
 });
 
@@ -28,6 +42,7 @@ export const Route = createFileRoute("/signup/athlete/adult")({
 function AdultAthleteSignupPage() {
   const navigate = useNavigate();
   const createAthlete = useServerFn(createSelfManagedAthlete);
+  const { invite } = Route.useSearch();
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -47,6 +62,18 @@ function AdultAthleteSignupPage() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setIsAuthed(!!data.session));
   }, []);
+
+  // Stash a coach invite code (from /i/CODE) so the athlete-onboarding coach
+  // step can prefill + auto-preview it after signup completes.
+  useEffect(() => {
+    if (!invite) return;
+    try {
+      localStorage.setItem(PENDING_COACH_INVITE_KEY, invite);
+    } catch {
+      /* ignore */
+    }
+  }, [invite]);
+
 
   const resetCaptcha = () => {
     setCaptchaToken(null);

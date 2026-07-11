@@ -15,6 +15,13 @@ import { z } from "zod";
 
 const searchSchema = z.object({
   promo: z.string().trim().toUpperCase().max(32).optional(),
+  invite: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .length(8)
+    .regex(/^[A-Z2-9]+$/)
+    .optional(),
 });
 
 export const Route = createFileRoute("/signup/parent")({
@@ -29,7 +36,7 @@ function ParentSignupPage() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [code, setCode] = useState("");
+  const [code, setCode] = useState(search.invite ?? "");
   const [promoCode, setPromoCode] = useState(search.promo ?? "");
 
 

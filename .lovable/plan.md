@@ -1,50 +1,67 @@
 ## Goal
 
-Every "Invite your …" surface in the app should offer a one-tap native share (iOS/Android share sheet, desktop clipboard fallback) with the invite code already embedded in the URL, so whoever taps the link lands in signup pre-linked. No more "copy link + copy code" two-button dance.
+Every invite link "just works" — signed-in recipients get auto-connected; signed-out recipients get the code carried into signup so they're connected the moment they finish onboarding. No copy-pasting codes.
 
-## New shared component
+## Current state (what already works vs. what's missing)
 
-**`src/components/share/share-invite-button.tsx`** — one primitive used everywhere.
+| Link | Recipient | Signed-in behavior today | Signed-out behavior today |
+|---|---|---|---|
+| `/signup/coach?invite=CODE` (parent→coach) | Coach | Auto-claims and routes to `/coach` ✅ | Stores code, claims after signup ✅ |
+| `/signup/parent?invite=CODE` (coach→parent) | Parent | **Ignored — no auto-claim** ❌ | **Ignored — code not prefilled** ❌ |
+| Coach invite → Adult athlete | Adult athlete | **No path exists** ❌ | **No path exists** ❌ |
+| `/signup/athlete?code=CODE` (parent→under-18 athlete) | Under-18 athlete | Already flows through parent-invite claim ✅ | Same ✅ |
 
-Props: `url`, `title`, `text`, `label?` (default "Share invite"), `variant?`, `size?`, `className?`, `onShared?`.
+The parent↔athlete invite flow already behaves correctly, so the plan targets only the coach↔parent/adult-athlete pairs.
 
-Behavior (mirrors the pattern already in `signup.athlete.tsx` and `plans/share-to-socials-button.tsx`):
-1. Call `navigator.share({ title, text, url })` synchronously in the click handler (preserves iOS user-activation).
-2. On `AbortError` → do nothing.
-3. If Web Share unsupported or throws → `navigator.clipboard.writeText(\`${text} ${url}\`)` and toast "Invite copied".
-4. Final fallback: toast "Share this link" with the URL as description.
+## Behavior rules (from your answers)
 
-Icon: `Share2` from lucide.
+1. **Coach's invite link lands on a small role picker** ("Are you a parent or an adult athlete?"). One tap, then flow continues with the code attached.
+2. **Wrong-role click** → friendly "this invite isn't for your account" screen with sign-out option. No silent second-account creation.
+3. **Already-connected / already-used** → toast "Already connected" and route to their dashboard. No confirmation screen.
 
-## Wire it into every invite CTA
+## Changes
 
-For each surface below, the existing shareable URL already embeds the code that auto-links on signup — no backend or route changes needed.
+### New route: `/i/$code` — universal invite entry
 
-| Surface | File | URL to share |
-|---|---|---|
-| Parent → Coach card (settings, parent home) | `src/components/parent/invite-coach-card.tsx` | `${origin}/signup/coach?invite=${code}` |
-| Parent → Coach banner (app-wide until first coach) | `src/components/parent/invite-coach-banner.tsx` | same |
-| Parent → Athlete card (per-athlete QR card in settings) | `src/components/parent/athlete-invite-card.tsx` | `url` prop (already `/signup/athlete?code=…`) |
-| Coach → Parent invite (onboarding, roster, settings) | `src/components/onboarding/invite-card.tsx` | `${origin}/signup/parent?invite=${code}` |
-| Under-18 athlete → Parent invite | `src/routes/signup.athlete.tsx` | already uses this pattern — refactor to use the new component |
+A single short link every "Share invite" button uses. It:
 
-In each card the primary CTA becomes **"Share invite"** (the new button). The raw code chip stays visible for read-out / manual entry, and a small secondary "Copy code" icon-button stays for the "coach already on Gradus, paste this code" flow. The standalone "Copy link" button goes away — sharing replaces it.
+1. Looks up the code server-side, resolves whether it's a `coach_invite_codes` row (parent→coach), a `parent_invite_codes` row (coach→parent), or an `athlete_invite_codes` row (parent→athlete, unchanged path).
+2. Reads current session:
+   - **Signed out** → routes to the right signup entry with the code attached:
+     - coach-invite code → role picker (parent vs adult athlete) → `/signup/parent?invite=CODE` or `/signup/athlete/adult?invite=CODE`
+     - parent-invite code → `/signup/coach?invite=CODE`
+     - athlete-invite code → existing `/signup/athlete?code=CODE`
+   - **Signed in, right role** → calls the appropriate claim server fn, toasts success (or "Already connected" if idempotent), navigates to the user's dashboard.
+   - **Signed in, wrong role** → renders the "this invite isn't for your account" screen with a "Sign out and continue" button that signs out and re-enters the same `/i/$code` URL.
 
-Copy tweaks per surface (short, in the button/toast only):
-- Coach card / banner: title "Invite your coach to Gradus", text "Join me on Gradus so we can share practice plans and messages."
-- Athlete card: title "Join me on Gradus", text "Tap the link to set up your athlete account — it'll link straight to me."
-- Coach's parent-invite card: title "Join me on Gradus", text "I'm your coach on Gradus — tap to set up your parent account and we'll be connected."
-- Under-18 kid: keep existing copy.
+All existing `ShareInviteButton` URLs are updated to point at `/i/CODE` so shared links get the new behavior; old `/signup/*?invite=` URLs keep working as fallbacks.
 
-## Out of scope
+### `/signup/parent` — honor `invite=CODE`
 
-- No DB/schema changes. Codes and auto-link logic already exist end-to-end.
-- No changes to `/signup/*` routes — they already accept `?invite=` / `?code=` / `?promo=`.
-- No email/SMS sending — sharing stays user-initiated via the native sheet.
-- Plan sharing (`share-to-socials-button.tsx`) is a separate feature and stays as-is.
+- Extend `validateSearch` to accept `invite` (8-char coach code).
+- If present: prefill the "Coach invite code" input (read-only chip) and pass it through to the existing `/signup/parent/athletes` step, which already claims it. No new server fn needed — the existing parent-signup claim path handles it.
+- If a signed-in parent lands here with `invite`, immediately call the existing parent-signup coach-claim path (same one `/signup/parent/athletes` uses) and route to `/parent`.
+
+### `/signup/athlete/adult` — accept `invite=CODE`
+
+- Extend `validateSearch` to accept `invite`.
+- If present: prefill the coach-code field (already exists in the adult onboarding step) so `createSelfManagedAthlete` (which already accepts a coach code) links the coach on signup.
+- If a signed-in adult athlete lands here with `invite`, call the existing adult-athlete coach-claim server fn (`linkAthleteToCoach` in `adult-athlete-signup.functions.ts`) and route to `/athlete`.
+
+### Update share targets
+
+- `src/components/parent/invite-coach-card.tsx`, `invite-coach-banner.tsx`, `onboarding/invite-card.tsx`, `parent/athlete-invite-card.tsx`, and the under-18 "invite my parent" button in `signup.athlete.tsx` — swap the shared URL from `/signup/*?invite=CODE` to `/i/CODE`. The role picker + auto-claim then handles the rest.
 
 ## Technical notes
 
-- `navigator.share` must be called synchronously inside the click handler (not after an `await`) or iOS rejects it — the component's handler is structured accordingly.
-- `navigator.clipboard.writeText` is the desktop fallback; wrapped in `try/catch` because it can reject in insecure contexts.
-- Component is client-only (uses `navigator`), safe in these client-rendered cards; guarded with `typeof navigator !== "undefined"` for SSR.
+- One tiny new server fn `resolveInviteCode({ code })` returning `{ kind: 'coach'|'parent'|'athlete', valid, expired, used }` — reuses the existing rate-limited `record_invite_lookup_attempt` RPC. All actual claiming reuses existing server fns (`claimParentInvite`, the parent-signup coach-claim path, `linkAthleteToCoach`, `claimAthleteInvite`).
+- Wrong-role detection is a client-side compare of `kind` vs. current user's role (via existing `has_role` / role context).
+- "Already connected" is detected by the claim server fns returning idempotently, or by a pre-check `coach_athletes` / `athlete_primary_coaches` row lookup — surfaced as a toast, not an error.
+- No DB schema changes. No new tables. No new columns.
+
+## Out of scope
+
+- Athlete↔parent flow (already works).
+- Email / SMS delivery of invites.
+- Expiring or rotating existing codes on click.
+- Multi-code batching.

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -67,7 +67,20 @@ import {
 } from "@/lib/parent-settings.functions";
 import { getSport } from "@/lib/coach-sports";
 
+import { z } from "zod";
+
+const searchSchema = z.object({
+  linkCoach: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .length(8)
+    .regex(/^[A-Z2-9]+$/)
+    .optional(),
+});
+
 export const Route = createFileRoute("/_authenticated/parent/settings")({
+  validateSearch: (s) => searchSchema.parse(s),
   component: ParentSettingsPage,
 });
 
@@ -111,11 +124,19 @@ type AthleteData = {
 
 function ParentSettingsPage() {
   const fetchSettings = useServerFn(getParentSettings);
+  const { linkCoach } = Route.useSearch();
+  const navigate = useNavigate();
   const { data, isLoading, error } = useQuery({
     queryKey: ["parent-settings"],
     queryFn: () => fetchSettings(),
   });
   const email = useCurrentUserEmail();
+
+  // Toast the incoming invite so the parent sees it landed, then let the
+  // first athlete's Coaches section auto-open the link form (below).
+  useEffect(() => {
+    if (linkCoach) toast.success(`Coach invite ${linkCoach} ready to link`);
+  }, [linkCoach]);
 
   return (
     <>
@@ -144,8 +165,15 @@ function ParentSettingsPage() {
             </SettingsGroup>
 
             <SettingsGroup label="My athletes">
-              <AthletesList athletes={data.athletes as AthleteData[]} />
+              <AthletesList
+                athletes={data.athletes as AthleteData[]}
+                initialLinkCoach={linkCoach ?? null}
+                onLinkCoachConsumed={() =>
+                  navigate({ to: "/parent/settings", search: {}, replace: true })
+                }
+              />
             </SettingsGroup>
+
 
             <SettingsGroup label="Coaches">
               <InviteCoachCard />
@@ -239,13 +267,26 @@ function NameDisclosure({
   );
 }
 
-function AthletesList({ athletes }: { athletes: AthleteData[] }) {
+function AthletesList({
+  athletes,
+  initialLinkCoach,
+  onLinkCoachConsumed,
+}: {
+  athletes: AthleteData[];
+  initialLinkCoach?: string | null;
+  onLinkCoachConsumed?: () => void;
+}) {
   const [adding, setAdding] = useState(false);
 
   return (
     <SettingsList>
-      {athletes.map((a) => (
-        <AthleteDisclosure key={a.id} athlete={a} />
+      {athletes.map((a, idx) => (
+        <AthleteDisclosure
+          key={a.id}
+          athlete={a}
+          initialLinkCoach={idx === 0 ? initialLinkCoach ?? null : null}
+          onLinkCoachConsumed={idx === 0 ? onLinkCoachConsumed : undefined}
+        />
       ))}
       {adding ? (
         <div className="border-t border-divider bg-elevated/30 px-4 py-4">
@@ -263,7 +304,15 @@ function AthletesList({ athletes }: { athletes: AthleteData[] }) {
   );
 }
 
-function AthleteDisclosure({ athlete }: { athlete: AthleteData }) {
+function AthleteDisclosure({
+  athlete,
+  initialLinkCoach,
+  onLinkCoachConsumed,
+}: {
+  athlete: AthleteData;
+  initialLinkCoach?: string | null;
+  onLinkCoachConsumed?: () => void;
+}) {
   const summary =
     athlete.sports.length > 0
       ? athlete.sports
@@ -280,11 +329,16 @@ function AthleteDisclosure({ athlete }: { athlete: AthleteData }) {
       icon={<Users className="size-4" />}
       label={`${athlete.firstName} ${athlete.lastName}`.trim()}
       value={summary}
+      defaultOpen={!!initialLinkCoach}
     >
       <div className="space-y-3">
         <NestedList>
           <IdentitySubrow athlete={athlete} />
-          <CoachesSection athlete={athlete} />
+          <CoachesSection
+            athlete={athlete}
+            initialLinkCoach={initialLinkCoach ?? null}
+            onLinkCoachConsumed={onLinkCoachConsumed}
+          />
           <GoalsSection athlete={athlete} />
           <ScheduleSection athlete={athlete} />
           <InviteSubrow athlete={athlete} />
@@ -379,7 +433,15 @@ function IdentitySubrow({ athlete }: { athlete: AthleteData }) {
   );
 }
 
-function CoachesSection({ athlete }: { athlete: AthleteData }) {
+function CoachesSection({
+  athlete,
+  initialLinkCoach,
+  onLinkCoachConsumed,
+}: {
+  athlete: AthleteData;
+  initialLinkCoach?: string | null;
+  onLinkCoachConsumed?: () => void;
+}) {
   const [adding, setAdding] = useState(false);
   const [code, setCode] = useState("");
   const [preview, setPreview] = useState<{
@@ -413,10 +475,12 @@ function CoachesSection({ athlete }: { athlete: AthleteData }) {
     setSelectedSports([]);
   };
 
-  const handleLookup = async () => {
+  const handleLookup = async (rawCode?: string) => {
+    const c = (rawCode ?? code).trim().toUpperCase();
+    if (c.length !== 8) return;
     setLookingUp(true);
     try {
-      const result = await previewFn({ data: { code: code.trim() } });
+      const result = await previewFn({ data: { code: c } });
       setPreview(result);
       // Default: pre-select if there's only one sport
       setSelectedSports(result.sports.length === 1 ? [result.sports[0]] : []);
@@ -426,6 +490,18 @@ function CoachesSection({ athlete }: { athlete: AthleteData }) {
       setLookingUp(false);
     }
   };
+
+  // Auto-open + auto-preview when a coach invite code was passed in via
+  // `?linkCoach=CODE` (from the /i/CODE universal invite entry).
+  useEffect(() => {
+    if (!initialLinkCoach) return;
+    setAdding(true);
+    setCode(initialLinkCoach);
+    void handleLookup(initialLinkCoach);
+    onLinkCoachConsumed?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialLinkCoach]);
+
 
   const handleLink = async () => {
     if (!preview) return;
@@ -629,7 +705,7 @@ function CoachesSection({ athlete }: { athlete: AthleteData }) {
                 </Button>
                 <Button
                   size="sm"
-                  onClick={handleLookup}
+                  onClick={() => handleLookup()}
                   disabled={lookingUp || code.trim().length !== 8}
                 >
                   {lookingUp ? "Looking up…" : "Continue"}
@@ -1129,7 +1205,7 @@ function CoachScheduleEditor({
 function InviteSubrow({ athlete }: { athlete: AthleteData }) {
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const url = athlete.inviteCode
-    ? `${origin}/signup/athlete?code=${athlete.inviteCode}`
+    ? `${origin}/i/${athlete.inviteCode}`
     : null;
   return (
     <SettingsDisclosure
