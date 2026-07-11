@@ -124,11 +124,19 @@ type AthleteData = {
 
 function ParentSettingsPage() {
   const fetchSettings = useServerFn(getParentSettings);
+  const { linkCoach } = Route.useSearch();
+  const navigate = useNavigate();
   const { data, isLoading, error } = useQuery({
     queryKey: ["parent-settings"],
     queryFn: () => fetchSettings(),
   });
   const email = useCurrentUserEmail();
+
+  // Toast the incoming invite so the parent sees it landed, then let the
+  // first athlete's Coaches section auto-open the link form (below).
+  useEffect(() => {
+    if (linkCoach) toast.success(`Coach invite ${linkCoach} ready to link`);
+  }, [linkCoach]);
 
   return (
     <>
@@ -157,8 +165,15 @@ function ParentSettingsPage() {
             </SettingsGroup>
 
             <SettingsGroup label="My athletes">
-              <AthletesList athletes={data.athletes as AthleteData[]} />
+              <AthletesList
+                athletes={data.athletes as AthleteData[]}
+                initialLinkCoach={linkCoach ?? null}
+                onLinkCoachConsumed={() =>
+                  navigate({ to: "/parent/settings", search: {}, replace: true })
+                }
+              />
             </SettingsGroup>
+
 
             <SettingsGroup label="Coaches">
               <InviteCoachCard />
