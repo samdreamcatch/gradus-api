@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useSyncExternalStore } from "react";
 
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>;
@@ -33,7 +33,6 @@ function shouldRefuseEnv(): boolean {
 function isStandalone(): boolean {
   if (typeof window === "undefined") return false;
   if (window.matchMedia?.("(display-mode: standalone)").matches) return true;
-  // iOS Safari
   if ((window.navigator as unknown as { standalone?: boolean }).standalone) return true;
   return false;
 }
@@ -42,7 +41,6 @@ function isIos(): boolean {
   if (typeof window === "undefined") return false;
   const ua = window.navigator.userAgent;
   const iOSDevice = /iPad|iPhone|iPod/.test(ua);
-  // iPadOS 13+ reports as Mac; detect touch
   const iPadOS = ua.includes("Macintosh") && "ontouchend" in document;
   return iOSDevice || iPadOS;
 }
@@ -50,7 +48,6 @@ function isIos(): boolean {
 function isIosSafari(): boolean {
   if (!isIos()) return false;
   const ua = window.navigator.userAgent;
-  // Exclude only in-app webviews where Add to Home Screen isn't reachable.
   if (/FBAN|FBAV|Instagram|Line|Snapchat|MicroMessenger/i.test(ua)) return false;
   return true;
 }
@@ -67,69 +64,106 @@ function dismissedRecently(): boolean {
   }
 }
 
-export function useInstallPrompt() {
-  const [status, setStatus] = useState<InstallStatus>("hidden");
-  const [platform, setPlatform] = useState<InstallPlatform>("none");
-  const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
+// ---------------------------------------------------------------------------
+// Shared module-level store so multiple components (banner + settings row)
+// see and drive the same install state.
+// ---------------------------------------------------------------------------
 
-  useEffect(() => {
-    if (shouldRefuseEnv()) return;
-    if (isStandalone()) return;
+type State = {
+  status: InstallStatus;
+  platform: InstallPlatform;
+  deferred: BeforeInstallPromptEvent | null;
+};
 
-    let timer: ReturnType<typeof setTimeout> | null = null;
+let state: State = { status: "hidden", platform: "none", deferred: null };
+const listeners = new Set<() => void>();
+let initialized = false;
+let autoShowTimer: ReturnType<typeof setTimeout> | null = null;
 
-    const onBeforeInstall = (e: Event) => {
-      e.preventDefault();
-      const evt = e as BeforeInstallPromptEvent;
-      setDeferred(evt);
-      setPlatform("installable");
-      if (!dismissedRecently()) {
-        timer = setTimeout(() => setStatus("installable"), SHOW_DELAY_MS);
-      }
-    };
+function setState(next: Partial<State>) {
+  state = { ...state, ...next };
+  listeners.forEach((l) => l());
+}
 
-    const onInstalled = () => {
-      setStatus("hidden");
-      setPlatform("none");
-      setDeferred(null);
-      try {
-        window.localStorage.setItem(DISMISS_KEY, String(Date.now() + DISMISS_TTL_MS * 52));
-      } catch {
-        // ignore
-      }
-    };
+function subscribe(l: () => void): () => void {
+  listeners.add(l);
+  return () => listeners.delete(l);
+}
 
-    window.addEventListener("beforeinstallprompt", onBeforeInstall);
-    window.addEventListener("appinstalled", onInstalled);
+function getSnapshot(): State {
+  return state;
+}
 
-    // iOS Safari never fires beforeinstallprompt — show instructions after delay
-    if (isIosSafari()) {
-      setPlatform("ios");
-      if (!dismissedRecently()) {
-        timer = setTimeout(() => setStatus("ios-instructions"), SHOW_DELAY_MS);
-      }
+function getServerSnapshot(): State {
+  return { status: "hidden", platform: "none", deferred: null };
+}
+
+function initOnce() {
+  if (initialized) return;
+  initialized = true;
+  if (shouldRefuseEnv()) return;
+  if (isStandalone()) return;
+
+  const onBeforeInstall = (e: Event) => {
+    e.preventDefault();
+    const evt = e as BeforeInstallPromptEvent;
+    setState({ deferred: evt, platform: "installable" });
+    if (!dismissedRecently()) {
+      if (autoShowTimer) clearTimeout(autoShowTimer);
+      autoShowTimer = setTimeout(
+        () => setState({ status: "installable" }),
+        SHOW_DELAY_MS,
+      );
     }
+  };
 
-    return () => {
-      window.removeEventListener("beforeinstallprompt", onBeforeInstall);
-      window.removeEventListener("appinstalled", onInstalled);
-      if (timer) clearTimeout(timer);
-    };
+  const onInstalled = () => {
+    setState({ status: "hidden", platform: "none", deferred: null });
+    try {
+      window.localStorage.setItem(
+        DISMISS_KEY,
+        String(Date.now() + DISMISS_TTL_MS * 52),
+      );
+    } catch {
+      // ignore
+    }
+  };
+
+  window.addEventListener("beforeinstallprompt", onBeforeInstall);
+  window.addEventListener("appinstalled", onInstalled);
+
+  if (isIosSafari()) {
+    setState({ platform: "ios" });
+    if (!dismissedRecently()) {
+      if (autoShowTimer) clearTimeout(autoShowTimer);
+      autoShowTimer = setTimeout(
+        () => setState({ status: "ios-instructions" }),
+        SHOW_DELAY_MS,
+      );
+    }
+  }
+}
+
+export function useInstallPrompt() {
+  useEffect(() => {
+    initOnce();
   }, []);
 
+  const snap = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+
   const promptInstall = useCallback(async () => {
-    if (!deferred) return;
+    const d = state.deferred;
+    if (!d) return;
     try {
-      await deferred.prompt();
-      const choice = await deferred.userChoice;
+      await d.prompt();
+      const choice = await d.userChoice;
       if (choice.outcome === "accepted" || choice.outcome === "dismissed") {
-        setStatus("hidden");
-        setDeferred(null);
+        setState({ status: "hidden", deferred: null });
       }
     } catch {
-      setStatus("hidden");
+      setState({ status: "hidden" });
     }
-  }, [deferred]);
+  }, []);
 
   const dismiss = useCallback(() => {
     try {
@@ -137,7 +171,7 @@ export function useInstallPrompt() {
     } catch {
       // ignore
     }
-    setStatus("hidden");
+    setState({ status: "hidden" });
   }, []);
 
   const show = useCallback(() => {
@@ -146,9 +180,19 @@ export function useInstallPrompt() {
     } catch {
       // ignore
     }
-    if (platform === "installable") setStatus("installable");
-    else if (platform === "ios") setStatus("ios-instructions");
-  }, [platform]);
+    if (state.platform === "installable") setState({ status: "installable" });
+    else if (state.platform === "ios") setState({ status: "ios-instructions" });
+  }, []);
 
-  return { status, platform, promptInstall, dismiss, show };
+  // Keep a no-op useState so the hook signature/behavior stays stable if
+  // React fast-refresh remounts the module.
+  useState(0);
+
+  return {
+    status: snap.status,
+    platform: snap.platform,
+    promptInstall,
+    dismiss,
+    show,
+  };
 }
