@@ -1,20 +1,24 @@
-## Diagnosis: stale SSR HTML, not a code bug
+## Swap the SMS link for a native Web Share button
 
-The button's `onClick` is wired correctly (`onClick={() => setStage("code")}`) and the session replay confirms it actually worked earlier in the same preview session — clicking "No, I'm under 18" swapped in the invite-code form.
+Replace the current text link ("Send them an invite" → `sms:` href) with a proper button that uses the same native share flow as the plan share-to-socials button (`navigator.share`). This opens the OS share sheet, letting the athlete pick Messages, WhatsApp, Mail, AirDrop, etc. — not just SMS — while keeping "text it to my parent" as the natural first choice on mobile.
 
-What broke interactivity afterwards is visible in the console:
+### Changes to `src/routes/signup.athlete.tsx`
 
-1. `[vite] server connection lost. Polling for restart...` — the dev server restarted after the recent edits.
-2. React then logged **hydration mismatch** on `__root.tsx` — the SSR HTML the preview is still holding was rendered against an older version of `__root.tsx` (line numbers `118/121/140/146`), while the freshly hot-reloaded client is on the new version (`150/153/171/174`). When React sees a mismatched tree at the root, it bails out of hydration for that subtree, so nothing below `<html>` gets its event handlers attached — buttons look rendered but do nothing.
+Replace the current invite block at the bottom of the "code" stage with a real button that:
 
-Nothing in `signup.athlete.tsx`, the age-stage buttons, or the new SMS invite CTA is at fault. No code change is needed.
+- Is visually a **button**, not a link — using the shadcn `Button` component so it clearly reads as an action.
+- Copy: primary label **"Send my parent an invite"**, with a `Send`/`Share2` icon from `lucide-react`, and a small line of secondary text above it: **"Parent not on Gradus yet?"** for context.
+- On click, calls `navigator.share({ title, text, url })` with:
+  - `title`: `"Join me on Gradus"`
+  - `text`: `"Hey — I want to sign up for Gradus. Can you make a parent account so you can add me?"`
+  - `url`: `https://gradus.training/signup/parent`
+- Falls back to `navigator.clipboard.writeText(url)` + a `toast.success("Link copied")` when the Web Share API isn't available (desktop browsers), matching the fallback pattern in `share-to-socials-button.tsx`.
+- Swallows `AbortError` silently (user dismissed the share sheet).
 
-## Fix
+No token/server fetch is needed (unlike the plan share button, this URL is static), so the button can call `navigator.share` synchronously inside the click handler — preserving user activation on iOS/Safari.
 
-Hard-reload the preview tab (or close and reopen the preview) so the browser fetches fresh SSR HTML that matches the current client bundle. After the reload, "No, I'm under 18" will respond again.
+### Scope
 
-If it recurs after future edits, it's the same class of stale-SSR issue — a reload clears it.
-
-## Nothing to change in code
-
-I'm not queueing any file edits for this. Approve if you'd like me to proceed with a no-op confirmation, or tell me if you're still seeing the button dead after a hard reload and I'll dig deeper.
+- Edits only `src/routes/signup.athlete.tsx`.
+- Imports `Button` from `@/components/ui/button` (already imported), `toast` from `sonner`, and an icon from `lucide-react`.
+- No new component, no backend, no dependencies.
