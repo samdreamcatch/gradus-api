@@ -98,10 +98,9 @@ export function AddCoachByCodeCard({ athletes }: { athletes: Athlete[] }) {
           size="sm"
           variant="outline"
           onClick={() => setOpen(true)}
-          className="gap-2"
+          className="gap-1.5"
         >
-          <KeyRound className="size-4" />
-          Add coach by code
+          <Plus className="size-3.5" /> Add a coach
         </Button>
       </div>
     );
@@ -110,9 +109,10 @@ export function AddCoachByCodeCard({ athletes }: { athletes: Athlete[] }) {
   return (
     <div className="mb-3 space-y-3 rounded-xl border border-divider bg-card p-4">
       <div className="flex items-center gap-2">
-        <KeyRound className="size-4 text-text-secondary" />
-        <div className="text-sm font-medium">Add coach by code</div>
+        <Plus className="size-4 text-text-secondary" />
+        <div className="text-sm font-medium">Add a coach</div>
       </div>
+
 
       {!preview ? (
         <form
