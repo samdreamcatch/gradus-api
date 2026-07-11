@@ -62,13 +62,17 @@ export function ShareToSocialsButton({
     if (prefetched?.token) {
       const url = `${SITE_ORIGIN}/p/${prefetched.token}`;
       if (canShare) {
+        const p = navigator.share({ title: planTitle, text: caption, url });
+        onShareInvoked?.();
         try {
-          await navigator.share({ title: planTitle, text: caption, url });
+          await p;
           return;
         } catch (err) {
           if ((err as DOMException)?.name === "AbortError") return;
           // fall through to copy
         }
+      } else {
+        onShareInvoked?.();
       }
       await copyFallback(url);
       return;
@@ -80,6 +84,7 @@ export function ShareToSocialsButton({
     try {
       const { token } = await shareFn({ data: { planId } });
       const url = `${SITE_ORIGIN}/p/${token}`;
+      onShareInvoked?.();
       await copyFallback(url);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Couldn't create share link.");
