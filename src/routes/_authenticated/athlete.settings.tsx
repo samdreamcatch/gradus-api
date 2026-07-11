@@ -125,6 +125,12 @@ function AthleteSettingsPage() {
               </SettingsGroup>
             )}
 
+            {isSelfManaged && (
+              <SettingsGroup label="Invite your coach">
+                <InviteCoachCard audience="adult-athlete" />
+              </SettingsGroup>
+            )}
+
             <SettingsGroup label="Preferences">
               <SettingsList>
                 <SettingsRow
