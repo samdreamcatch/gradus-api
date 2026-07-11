@@ -621,15 +621,6 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
           ) : null}
         </div>
 
-        {assignmentMode === "public" ? (
-          <div className="flex justify-end">
-            <ShareToSocialsButton
-              planId={plan.id}
-              planTitle={plan.title || "Untitled plan"}
-              variant="primary"
-            />
-          </div>
-        ) : null}
 
 
 
