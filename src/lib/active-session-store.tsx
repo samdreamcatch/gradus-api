@@ -14,6 +14,7 @@ const STORAGE_KEY = "gradus.activeSession.v1";
 export type ActiveSessionRole = "parent" | "athlete";
 
 export type ActiveSession = {
+  ownerUserId: string;
   planId: string;
   role: ActiveSessionRole;
   planTitle: string;
@@ -25,7 +26,7 @@ export type ActiveSession = {
   accumulatedMs: number;
 };
 
-type StartArgs = Omit<ActiveSession, "startedAt" | "accumulatedMs">;
+type StartArgs = Omit<ActiveSession, "ownerUserId" | "startedAt" | "accumulatedMs">;
 
 type Ctx = {
   session: ActiveSession | null;
@@ -39,13 +40,17 @@ type Ctx = {
 
 const ActiveSessionContext = createContext<Ctx | null>(null);
 
-function readStorage(): ActiveSession | null {
+function readStorage(ownerUserId: string): ActiveSession | null {
   if (typeof window === "undefined") return null;
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as ActiveSession;
     if (!parsed || typeof parsed.planId !== "string") return null;
+    if (parsed.ownerUserId !== ownerUserId) {
+      writeStorage(null);
+      return null;
+    }
     return parsed;
   } catch {
     return null;
@@ -68,18 +73,24 @@ export function elapsedMsOf(s: ActiveSession | null): number {
   return s.accumulatedMs + Math.max(0, Date.now() - s.startedAt);
 }
 
-export function ActiveSessionProvider({ children }: { children: ReactNode }) {
+export function ActiveSessionProvider({
+  children,
+  userId,
+}: {
+  children: ReactNode;
+  userId: string;
+}) {
   const [session, setSession] = useState<ActiveSession | null>(null);
 
   // Hydrate from localStorage on mount (client only).
   useEffect(() => {
-    setSession(readStorage());
+    setSession(readStorage(userId));
     const onStorage = (e: StorageEvent) => {
-      if (e.key === STORAGE_KEY) setSession(readStorage());
+      if (e.key === STORAGE_KEY) setSession(readStorage(userId));
     };
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
-  }, []);
+  }, [userId]);
 
   const update = useCallback((next: ActiveSession | null) => {
     setSession(next);
@@ -88,12 +99,17 @@ export function ActiveSessionProvider({ children }: { children: ReactNode }) {
 
   const start = useCallback<Ctx["start"]>(
     (args) => {
-      const current = readStorage();
+      const current = readStorage(userId);
       if (current && current.planId !== args.planId) return false;
-      update({ ...args, startedAt: Date.now(), accumulatedMs: current?.accumulatedMs ?? 0 });
+      update({
+        ...args,
+        ownerUserId: userId,
+        startedAt: Date.now(),
+        accumulatedMs: current?.accumulatedMs ?? 0,
+      });
       return true;
     },
-    [update],
+    [update, userId],
   );
 
   const pause = useCallback(() => {
