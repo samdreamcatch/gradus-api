@@ -10,6 +10,7 @@ import { Logo } from "@/components/logo";
 import { resolveInviteCode, type InviteKind } from "@/lib/invite-resolve.functions";
 import { claimParentInvite } from "@/lib/parent-signup.functions";
 import { getMyRole } from "@/lib/parent-signup.functions";
+import { claimAdultAthleteInvite } from "@/lib/adult-athlete-invite.functions";
 
 /** localStorage key read by the athlete-onboarding coach step to prefill a
  *  pending coach invite code after signup. */
@@ -56,6 +57,7 @@ function InviteEntryPage() {
   const resolve = useServerFn(resolveInviteCode);
   const roleFn = useServerFn(getMyRole);
   const claimParent = useServerFn(claimParentInvite);
+  const claimAdultAthlete = useServerFn(claimAdultAthleteInvite);
 
   const [stage, setStage] = useState<Stage>({ kind: "loading" });
 
@@ -85,7 +87,7 @@ function InviteEntryPage() {
 
         // Signed-out: send them into the right signup with the code carried.
         if (!signedIn) {
-          if (kind === "parent") {
+          if (kind === "parent" || kind === "adult-athlete") {
             navigate({ to: "/signup/coach", search: { invite: code } });
             return;
           }
@@ -119,6 +121,31 @@ function InviteEntryPage() {
           try {
             await claimParent({ data: { code } });
             toast.success("Linked to the parent's account");
+          } catch (e) {
+            const msg = e instanceof Error ? e.message : "Couldn't claim invite";
+            if (/already/i.test(msg)) toast.success("Already connected");
+            else toast.error(msg);
+          }
+          qc.invalidateQueries();
+          navigate({ to: "/coach" });
+          return;
+        }
+
+        if (kind === "adult-athlete") {
+          // Recipient must be a coach.
+          if (role !== "coach") {
+            setStage({
+              kind: "wrong-role",
+              message:
+                "This invite is for a coach. You're signed in as a " +
+                (role ?? "different") +
+                " account.",
+            });
+            return;
+          }
+          try {
+            await claimAdultAthlete({ data: { code } });
+            toast.success("Linked to the athlete's account");
           } catch (e) {
             const msg = e instanceof Error ? e.message : "Couldn't claim invite";
             if (/already/i.test(msg)) toast.success("Already connected");

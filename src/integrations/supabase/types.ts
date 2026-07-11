@@ -29,6 +29,35 @@ export type Database = {
         }
         Relationships: []
       }
+      adult_athlete_invite_codes: {
+        Row: {
+          athlete_id: string
+          code: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          athlete_id: string
+          code: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          athlete_id?: string
+          code?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "adult_athlete_invite_codes_athlete_id_fkey"
+            columns: ["athlete_id"]
+            isOneToOne: true
+            referencedRelation: "athletes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       athlete_goals: {
         Row: {
           athlete_id: string
@@ -1380,6 +1409,14 @@ export type Database = {
       enqueue_email: {
         Args: { payload: Json; queue_name: string }
         Returns: number
+      }
+      get_adult_athlete_by_invite_code: {
+        Args: { _code: string }
+        Returns: {
+          athlete_id: string
+          first_name: string
+          last_name: string
+        }[]
       }
       get_parent_by_invite_code: {
         Args: { _code: string }

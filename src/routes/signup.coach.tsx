@@ -14,6 +14,10 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Logo } from "@/components/logo";
 import { TurnstileWidget } from "@/components/auth/turnstile";
 import { claimParentInvite, getParentByInviteCode } from "@/lib/parent-signup.functions";
+import {
+  claimAdultAthleteInvite,
+  getAdultAthleteByInviteCode,
+} from "@/lib/adult-athlete-invite.functions";
 import { verifyTurnstileToken } from "@/lib/turnstile.functions";
 import { CURRENT_TERMS_VERSION, PENDING_TERMS_ACCEPT_KEY } from "@/lib/terms";
 import { PromoCodeField } from "@/components/signup/promo-code-field";
@@ -49,7 +53,9 @@ function CoachSignupPage() {
   const { invite } = Route.useSearch();
   const navigate = useNavigate();
   const lookupParent = useServerFn(getParentByInviteCode);
+  const lookupAdultAthlete = useServerFn(getAdultAthleteByInviteCode);
   const claim = useServerFn(claimParentInvite);
+  const claimAdultAthlete = useServerFn(claimAdultAthleteInvite);
   const verifyCaptcha = useServerFn(verifyTurnstileToken);
 
   const [email, setEmail] = useState("");
@@ -83,14 +89,24 @@ function CoachSignupPage() {
         navigate({ to: "/coach" });
         return;
       }
+      // Try parent invite first; fall back to adult-athlete invite.
       try {
-        await claim({ data: { code: invite } });
+        try {
+          await claim({ data: { code: invite } });
+          if (!cancelled) toast.success("Linked to the parent's account");
+        } catch (parentErr) {
+          try {
+            await claimAdultAthlete({ data: { code: invite } });
+            if (!cancelled) toast.success("Linked to the athlete's account");
+          } catch {
+            throw parentErr;
+          }
+        }
         try {
           localStorage.removeItem(PENDING_INVITE_KEY);
         } catch {
           /* ignore */
         }
-        if (!cancelled) toast.success("Linked to the parent's account");
       } catch (e) {
         if (!cancelled) toast.error(e instanceof Error ? e.message : "Couldn't claim invite");
       } finally {
@@ -100,12 +116,19 @@ function CoachSignupPage() {
     return () => {
       cancelled = true;
     };
-  }, [invite, claim, navigate]);
+  }, [invite, claim, claimAdultAthlete, navigate]);
 
   const { data: parent } = useQuery({
     queryKey: ["parent-by-invite-code", invite ?? null],
     queryFn: () => lookupParent({ data: { code: invite! } }),
     enabled: !!invite,
+    retry: false,
+  });
+
+  const { data: adultAthlete } = useQuery({
+    queryKey: ["adult-athlete-by-invite-code", invite ?? null],
+    queryFn: () => lookupAdultAthlete({ data: { code: invite! } }),
+    enabled: !!invite && !parent,
     retry: false,
   });
 
@@ -198,6 +221,9 @@ function CoachSignupPage() {
   };
 
   const parentName = parent ? `${parent.firstName} ${parent.lastName}`.trim() : null;
+  const adultAthleteName = adultAthlete
+    ? `${adultAthlete.firstName} ${adultAthlete.lastName}`.trim()
+    : null;
   const canSubmit = agreed && !loading;
 
   return (
@@ -211,10 +237,12 @@ function CoachSignupPage() {
           <p className="mt-4 text-sm text-text-secondary">Create your coach account</p>
         </div>
 
-        {invite && parentName && (
+        {invite && (parentName || adultAthleteName) && (
           <div className="mb-6 rounded-xl border border-accent/40 bg-accent/10 px-4 py-3 text-sm">
             <p className="font-semibold text-text-primary">
-              You&apos;re connecting with {parentName} and their athlete
+              {parentName
+                ? `You're connecting with ${parentName} and their athlete`
+                : `You're connecting with ${adultAthleteName}`}
             </p>
           </div>
         )}

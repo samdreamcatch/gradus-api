@@ -30,7 +30,7 @@ function clientIp(): string {
   return `ua:${ua.slice(0, 64)}`;
 }
 
-export type InviteKind = "coach" | "parent" | "athlete";
+export type InviteKind = "coach" | "parent" | "athlete" | "adult-athlete";
 
 /**
  * Public: identify whether an 8-char code belongs to a coach, parent, or
@@ -61,7 +61,7 @@ export const resolveInviteCode = createServerFn({ method: "POST" })
       throw new Error("Too many attempts. Please wait a minute and try again.");
     }
 
-    const [coach, parent, athlete] = await Promise.all([
+    const [coach, parent, athlete, adultAthlete] = await Promise.all([
       supabaseAdmin
         .from("coach_invite_codes")
         .select("code")
@@ -77,13 +77,20 @@ export const resolveInviteCode = createServerFn({ method: "POST" })
         .select("code, used_at, expires_at")
         .eq("code", data.code)
         .maybeSingle(),
+      supabaseAdmin
+        .from("adult_athlete_invite_codes")
+        .select("code")
+        .eq("code", data.code)
+        .maybeSingle(),
     ]);
     if (coach.error) dbError(coach.error);
     if (parent.error) dbError(parent.error);
     if (athlete.error) dbError(athlete.error);
+    if (adultAthlete.error) dbError(adultAthlete.error);
 
     if (coach.data) return { kind: "coach" as const, valid: true };
     if (parent.data) return { kind: "parent" as const, valid: true };
+    if (adultAthlete.data) return { kind: "adult-athlete" as const, valid: true };
     if (athlete.data) {
       const expired = new Date(athlete.data.expires_at) < new Date();
       return {
