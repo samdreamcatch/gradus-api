@@ -3,6 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getParentSignupStatus } from "@/lib/parent-signup.functions";
 import { InviteCoachBanner } from "@/components/parent/invite-coach-banner";
+import { ConnectionCelebration } from "@/components/connection-celebration";
+
 import { useAuthReady } from "@/hooks/use-auth-ready";
 import { requireRole } from "@/lib/role-guard";
 
