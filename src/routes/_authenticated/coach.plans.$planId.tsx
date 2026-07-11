@@ -130,6 +130,8 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
   const deleteFn = useServerFn(deletePlan);
   const createPlanFn = useServerFn(createPlan);
   const getActivesFn = useServerFn(getAthleteActivePlans);
+  const shareTokenFn = useServerFn(getOrCreateShareToken);
+
 
 
   const { data, isLoading } = useQuery({
