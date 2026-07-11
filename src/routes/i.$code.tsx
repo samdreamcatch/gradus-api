@@ -131,6 +131,31 @@ function InviteEntryPage() {
           return;
         }
 
+        if (kind === "adult-athlete") {
+          // Recipient must be a coach.
+          if (role !== "coach") {
+            setStage({
+              kind: "wrong-role",
+              message:
+                "This invite is for a coach. You're signed in as a " +
+                (role ?? "different") +
+                " account.",
+            });
+            return;
+          }
+          try {
+            await claimAdultAthlete({ data: { code } });
+            toast.success("Linked to the athlete's account");
+          } catch (e) {
+            const msg = e instanceof Error ? e.message : "Couldn't claim invite";
+            if (/already/i.test(msg)) toast.success("Already connected");
+            else toast.error(msg);
+          }
+          qc.invalidateQueries();
+          navigate({ to: "/coach" });
+          return;
+        }
+
         if (kind === "coach") {
           // Recipient is a parent or adult athlete.
           if (role === "parent") {
