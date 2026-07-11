@@ -246,6 +246,22 @@ export function WeekScheduleView({
         />
       ) : null}
 
+      {athletes.length > 0 ? (
+        <button
+          type="button"
+          onClick={() =>
+            setSheetMode({
+              kind: "create",
+              defaultDayOfWeek: selectedDate.getDay(),
+            })
+          }
+          className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-divider bg-card px-4 py-3 text-sm font-bold uppercase tracking-widest text-text-secondary shadow-card transition hover:border-accent hover:text-accent-ink"
+        >
+          <Plus className="h-4 w-4" />
+          Create new lesson
+        </button>
+      ) : null}
+
       {/* Selected day */}
       <div className="mt-4 overflow-hidden rounded-2xl border border-divider bg-card shadow-card">
         <div className="flex items-center justify-between gap-3 border-b border-divider px-4 py-4">
@@ -262,29 +278,13 @@ export function WeekScheduleView({
               </span>
             ) : null}
           </div>
-          <div className="flex shrink-0 items-center gap-2">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-text-tertiary">
-              {selectedSessions.length === 0
-                ? "Rest"
-                : `${selectedSessions.length} LESSON${selectedSessions.length === 1 ? "" : "S"}`}
-            </span>
-            {athletes.length > 0 ? (
-              <button
-                type="button"
-                onClick={() =>
-                  setSheetMode({
-                    kind: "create",
-                    defaultDayOfWeek: selectedDate.getDay(),
-                  })
-                }
-                aria-label="Add lesson"
-                className="flex h-7 w-7 items-center justify-center rounded-full border border-divider text-text-secondary transition hover:border-accent hover:text-accent-ink"
-              >
-                <Plus className="h-3.5 w-3.5" />
-              </button>
-            ) : null}
-          </div>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-text-tertiary">
+            {selectedSessions.length === 0
+              ? "Rest"
+              : `${selectedSessions.length} LESSON${selectedSessions.length === 1 ? "" : "S"}`}
+          </span>
         </div>
+
 
         {selectedSessions.length === 0 ? (
           <div className="px-4 py-10 text-center text-sm text-text-tertiary">
