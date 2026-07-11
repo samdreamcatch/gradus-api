@@ -1,70 +1,41 @@
-## Optional promo-code attribution for signup
+## Goal
+Let an under-18 athlete enter a promo code on the athlete signup screen and have it follow through to their parent's account when the parent signs up — so the influencer attribution lands on the parent (the paying account), even though the kid is the one holding the code.
 
-Add a promo code field to every signup entry point. Codes are optional (never block signup), validated against a managed list you control, and stored per user so you can attribute conversions to a specific source.
+## Flow
 
-### Database
+```text
+Kid opens /signup/athlete → "No, I'm under 18"
+   ├── (optional) enters promo code
+   └── taps "Send my parent an invite"
+         → share URL becomes  https://gradus.training/signup/parent?promo=<CODE>
 
-New table `public.promo_codes`:
+Parent taps the link → /signup/parent
+   ├── promo field is pre-filled from ?promo=
+   └── parent completes signup → code saved to parent_profiles.promo_code
+```
 
-- `code` (text, PK, uppercase) — the code shared with users, e.g. `JANESMITH`
-- `label` (text) — human name shown in admin, e.g. "Jane Smith"
-- `active` (boolean, default true)
-- `notes` (text, nullable) — campaign, platform, etc.
-- `created_at` (timestamptz)
+No code is required — leaving it blank still works exactly as today.
 
-New column on `parent_profiles`, `coach_profiles`, and `athletes`:
+## Changes
 
-- `promo_code` (text, nullable, FK → `promo_codes.code` with `ON DELETE SET NULL`)
+1. **`src/routes/signup.athlete.tsx`** (under-18 "code" stage only)
+   - Add a `PromoCodeField` below the invite-code input, labelled "Promo code (optional)".
+   - Include the entered promo code as `?promo=<CODE>` in the "Send my parent an invite" share URL and the fallback clipboard text. Only append when non-empty.
+   - Also stash it in `sessionStorage` via `savePendingPromoCode` so if the kid ends up completing an athlete flow on the same device (self-managed adult edge case), it still attaches.
 
-Adult athletes without a parent already flow through athlete/coach records, so those three tables cover every signup path (parent, coach, adult athlete, under‑18 athlete, admin — admin gets it on their coach/parent profile if applicable; we can add to `admin_allowlist` too if you want, but it's usually not needed).
+2. **`src/routes/signup.parent.tsx`**
+   - Extend the route's `validateSearch` to accept an optional `promo` string.
+   - Seed the existing `promoCode` state from `Route.useSearch().promo` on mount so the field shows up pre-filled and editable. Everything downstream (validation, `savePendingPromoCode`, post-signup apply) already works.
 
-RLS + grants:
+3. **Under-18 confirm/account sub-flow** (`signup.athlete.confirm.tsx`, `signup.athlete.account.tsx`)
+   - No behavior change needed for attribution — the kid's account isn't the paying one. We do NOT attach the promo code to the athlete account in this path; it belongs to the parent.
 
-- `promo_codes`: `SELECT` for `authenticated` (so the signup form can validate the code the user typed) — read-only for everyone except `service_role`. Only admins insert/update via the admin UI (`has_role(auth.uid(), 'admin')`).
-- The new `promo_code` column on profile/athlete tables is covered by their existing owner + admin policies.
+## Not changing
+- Database schema (`promo_codes` table + `parent_profiles.promo_code` already exist).
+- Validation rules, admin promo-codes page, stats, or the "we don't recognize that code" inline error behavior.
+- Adult (18+) athlete flow — already has its own promo field.
 
-### Signup UX (all roles)
-
-On each signup form (`signup.parent.tsx`, `signup.coach.tsx`, `signup.athlete.account.tsx`, `signup.athlete.adult.tsx`, `signup.admin.tsx`), add an optional field:
-
-- Label: **"Promo code (optional)"** — no helper text.
-- Uppercased on input, max 32 chars, trimmed.
-- On submit, if the field is non-empty, validate against `promo_codes` (must exist AND `active = true`):
-  - Valid → save `promo_code` on the profile row being created.
-  - Invalid/inactive → show inline **"We don't recognize that code — you can leave it blank or double‑check."** Do NOT block signup: the user can clear the field and continue, and account creation proceeds normally. (No silent write of an invalid code.)
-- Empty field → skip validation entirely, create account as today.
-
-Validation runs in the existing signup server functions, so it's a single round‑trip per submit.
-
-### Admin UI
-
-New admin page at `/admin/promo-codes`:
-
-- Table of codes with `code`, `label`, `active`, `notes`, `created_at`, and **signup count** (aggregate across the three profile tables).
-- "New code" form (code, label, notes, active).
-- Toggle active/inactive and edit label/notes; codes themselves are immutable once created (to avoid orphaning attributions).
-- Server functions guarded by `has_role(auth.uid(), 'admin')`.
-
-Add a link from the existing admin index.
-
-### Reporting
-
-A small server function `getPromoCodeStats` (admin-only) returns `{ code, label, parents, coaches, athletes, total }` for the admin page. Fine to start there — export/CSV can come later if you need it.
-
-### Files touched
-
-- `supabase/migrations/<ts>_promo_codes.sql` — table, columns, RLS, grants.
-- `src/lib/promo-codes.functions.ts` — `validatePromoCode`, `listPromoCodes`, `createPromoCode`, `updatePromoCode`, `getPromoCodeStats`.
-- `src/components/signup/promo-code-field.tsx` — reusable input + inline validation state.
-- Each signup route file: mount the field and pass its value into the existing signup server fn.
-- Signup server fns (`parent-signup.functions.ts`, `coach-profile.functions.ts` / coach signup path, `adult-athlete-signup.functions.ts`, `athlete-signup.functions.ts`, `admin-signup.functions.ts`): accept optional `promoCode`, validate, persist.
-- `src/routes/_authenticated/admin.promo-codes.tsx` — new admin page.
-- Link on `src/routes/_authenticated/admin.index.tsx`.
-
-### Not in scope (per your answer)
-
-- No `?ref=` URL auto-capture, no session/localStorage persistence, no landing-page pre-fill. Users always type the code on the signup screen.
-
-### Open question
-
-Should we also let existing users add a promo code retroactively (e.g. a "Promo code" row in their settings), or is this signup-only?
+## Edge cases
+- Parent already had an account and just uses the kid's invite code: no promo attribution happens (there's no parent signup event). This matches the "attribution at signup" model we picked earlier — call it out to the user only if they want to expand later.
+- Invalid promo typed by the kid: same inline "we don't recognize that code" message the parent form uses; still passed through to parent link so parent can correct.
+- Kid shares link but parent edits the promo field before submitting: parent's final value wins.
