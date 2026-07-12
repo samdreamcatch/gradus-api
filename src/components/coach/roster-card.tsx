@@ -57,8 +57,7 @@ export function RosterCard({
   return (
     <div
       className={cn(
-        "group relative block w-full overflow-hidden rounded-2xl border border-divider bg-card p-4 pl-5 text-left shadow-card transition-all",
-        "hover:-translate-y-0.5 hover:shadow-page",
+        "press group relative block w-full overflow-hidden rounded-2xl border border-divider bg-card p-4 pl-5 text-left shadow-card",
       )}
     >
       <span
