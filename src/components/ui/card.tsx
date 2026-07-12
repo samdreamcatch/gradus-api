@@ -30,21 +30,24 @@ type CardBaseProps = React.HTMLAttributes<HTMLDivElement> & {
 };
 
 const Card = React.forwardRef<HTMLDivElement, CardBaseProps>(
-  ({ className, variant, as: As = "div", ...props }, ref) => (
-    <As
-      // @ts-expect-error dynamic element ref
-      ref={ref}
-      className={cn(
-        variant
-          ? VARIANT_CLASS[variant]
-          : "rounded-xl border bg-card text-card-foreground shadow",
-        className,
-      )}
-      {...props}
-    />
-  ),
+  ({ className, variant, as: As = "div", ...props }, ref) => {
+    const Component = As as React.ElementType;
+    return (
+      <Component
+        ref={ref}
+        className={cn(
+          variant
+            ? VARIANT_CLASS[variant]
+            : "rounded-xl border bg-card text-card-foreground shadow",
+          className,
+        )}
+        {...props}
+      />
+    );
+  },
 );
 Card.displayName = "Card";
+
 
 
 const CardHeader = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
