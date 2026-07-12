@@ -29,7 +29,6 @@ function LoginPage() {
   const { user, isReady } = useAuthReady();
   const [identifier, setIdentifier] = useState("");
   const resolveLogin = useServerFn(resolveAthleteLogin);
-  const verifyCaptcha = useServerFn(verifyTurnstileToken);
   const [password, setPassword] = useState("");
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [captchaKey, setCaptchaKey] = useState(0);
