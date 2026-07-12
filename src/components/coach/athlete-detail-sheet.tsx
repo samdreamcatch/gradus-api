@@ -35,8 +35,7 @@ export function AthleteDetailSheet({
     >
       <SheetContent
         side="bottom"
-        className="max-h-[90dvh] overflow-y-auto border-t border-divider shadow-page"
-        style={{ backgroundColor: "var(--popover)", backgroundImage: "none" }}
+        className="paper-surface max-h-[90dvh] overflow-y-auto border-t border-divider shadow-page"
       >
         {open ? <AthleteDetailBody athleteId={athleteId!} /> : null}
       </SheetContent>
