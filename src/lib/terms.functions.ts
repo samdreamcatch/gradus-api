@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { CURRENT_TERMS_VERSION } from "./terms";
+import { dbError } from "./db-error";
 
 export const acceptTerms = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -21,7 +22,7 @@ export const acceptTerms = createServerFn({ method: "POST" })
         },
         { onConflict: "user_id,terms_version", ignoreDuplicates: true },
       );
-    if (error) throw error;
+    if (error) dbError(error);
     return { ok: true, version: CURRENT_TERMS_VERSION };
   });
 
@@ -34,7 +35,7 @@ export const getTermsStatus = createServerFn({ method: "GET" })
       .eq("user_id", context.userId)
       .eq("terms_version", CURRENT_TERMS_VERSION)
       .maybeSingle();
-    if (error) throw error;
+    if (error) dbError(error);
     return {
       accepted: !!data,
       version: CURRENT_TERMS_VERSION,
