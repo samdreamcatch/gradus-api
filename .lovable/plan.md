@@ -1,63 +1,45 @@
-# Design System Codification — Batch 1
+## Goal
 
-Lock in four patterns already used consistently across the app. No visual changes — this only extracts current usage into reusable primitives and tokens so future work stays on the rails.
+Two small changes so coaches can share plans to socials the same way athletes/parents can, and their public plans read cleanly in the plans list.
 
-## 1. Eyebrow labels — 3-tier system
+## 1. Persistent share-to-socials button in the coach plan editor
 
-Confirmed roles from screenshots + code sweep:
-- **9px** — dense grids/rings (week schedule day cells, practice-ring labels, attention chips)
-- **10px** — component-level labels (plan-card, sport-goal-card, athlete-detail-sheet, move-field, bottom-nav, voice-fab)
-- **11px** — page-section headers (public share, feedback FAB, room-view/room-list headers, settings section markers, sports filter chips, beta banner)
+**File:** `src/routes/_authenticated/coach.plans.$planId.tsx`
 
-**Deliverable:**
-- Add three text tokens in `src/styles.css` under `@theme`: `--text-nano: 9px`, `--text-micro: 10px`, `--text-caption: 11px` (each with `line-height` and `letter-spacing: 0.05em`, uppercase applied by the component).
-- New component `src/components/ui/eyebrow.tsx` — `<Eyebrow size="nano|micro|caption" tone?="secondary|tertiary|accent-ink|attention-ink">`. Renders `<p>` with `font-bold uppercase tracking-wide` + the size token; tone maps to existing color tokens.
-- Codemod pass: replace hand-rolled `text-[9px]/[10px]/[11px] font-bold uppercase tracking-*` at the confirmed call sites with `<Eyebrow>`. Preserve exact color per site.
+Today the `ShareToSocialsButton` only renders when the editor is in "Public" assignment mode (as the primary Publish & Share action). Athlete and parent plan pages, by contrast, show a chip-style share button in the header on any viewable plan.
 
-## 2. Focus rings — 2 modes
+Add the same chip-style button to the coach editor header (next to the existing Back/close control), rendered whenever the plan is shareable:
 
-- **`focus-input`** — diluted: `focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30`. Used on textareas/inputs (feedback-fab, room-view, move-sheet).
-- **`focus-surface`** — solid: `focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-0`. Used on discrete tap targets (bottom-nav tile, roster-card).
+- `plan.status === "active"` (any assignment — assigned to an athlete OR public), OR
+- `isTemplate === true`
 
-**Deliverable:**
-- Two `@utility` blocks in `src/styles.css`: `focus-input` and `focus-surface` (both no offset, matching current behavior).
-- Codemod pass: replace inline ring utilities at the confirmed sites.
-- Add a short note to the design doc: "Never use `ring-offset-*` — flush rings only."
+Skip it for drafts and benched plans (nothing meaningful to share yet).
 
-## 3. Card padding — 3 tiers
+Reuse `<ShareToSocialsButton planId={plan.id} planTitle={plan.title || "Untitled plan"} />` with default `variant="chip"`. No changes to the `getOrCreateShareToken` server fn — it already authorizes the owning coach and works for templates and athlete-assigned actives (the plan's `share_token` column is per-plan regardless of `kind`/`athlete_id`).
 
-- **`p-4`** = row-style list cards (roster-card, plan-card in list)
-- **`p-5`** = content-section cards + dialog interior (motivation-card, invite-card, admin section cards, `<Dialog>` primitive)
-- **`p-6`** = empty states + hero/feature cards
+Leave the existing bottom "Publish & Share" primary button in Public mode untouched — it's the activation+share combo for first publish. The new header chip covers re-sharing thereafter and sharing of already-active/template plans.
 
-**Deliverable:**
-- Extend the existing `Card` primitive with a `variant` prop: `row | section | hero` → applies `p-4 | p-5 | p-6` and matches existing `rounded-2xl border border-divider bg-card shadow-sm` defaults where applicable.
-- Codemod: convert existing hand-rolled `article.rounded-2xl.border.border-divider.bg-card.p-{4,5,6}` at the confirmed sites to `<Card variant=…>`. Leave one-off cards with divergent styling (custom bg, gradients, ring accents) alone.
+## 2. "Shared" caption + colored edge for active public plans
 
-## 4. Simulated-surface tokens (pure whites)
+**File:** `src/routes/_authenticated/coach.plans.tsx` (in `PlanRow` and `edgeTone` derivation, ~lines 446–476)
 
-Each is an intentional simulation of an external context — not a design-system surface. Lock them behind named tokens so nobody confuses them with `bg-card`.
+Public plans (published to socials, no athlete) already fall into the "Active" filter because `listPlans` only checks `status: "active"`. They just render as "Unassigned" with a muted grey edge, which is indistinguishable from an unfinished plan.
 
-- `--surface-athlete-screen` = `#FFFFFF` (celebration-preview: coach previewing athlete's phone)
-- `--surface-email-client` = `#FFFFFF` (admin.emails email preview)
-- `--surface-code-block` = `#0F172A` fg `#E2E8F0` (admin.errors stack trace)
+Update the caption logic so:
 
-**Deliverable:**
-- Add the three tokens in `src/styles.css` under `:root` + register in `@theme inline` as `--color-surface-athlete-screen`, `--color-surface-email-client`, `--color-surface-code-block` (+ `--color-surface-code-block-foreground`).
-- Replace the current `bg-white` / `bg-[#0F172A]` at the three known sites with the semantic token classes.
-- Add a comment in `styles.css` above the block: "Surface simulations — reserved for previewing an external context inside our UI. Never use for our own surfaces."
+- `kind === "plan"` AND `status === "active"` AND no `athleteName` → caption **"Shared"**
+- Draft/benched with no athlete → **still "Unassigned"** (unchanged)
+- All other branches unchanged (Template, Draft, Benched, or athlete-name-only)
+
+Update the `edgeTone` derivation so an active plan with no athlete is treated as **"active"** (colored edge — tennis/pool per the pen system) instead of falling into "muted". Assigned actives still get "active"; templates still get "template"; drafts/benched still muted.
+
+## Out of scope
+
+- No schema, RLS, or server-function changes — the `plans.share_token` column, `getOrCreateShareToken` authorization, and `listPlans` filtering already support this.
+- No changes to athlete/parent share surfaces.
+- No new filter or separate "Shared" tab — public actives continue to live in the existing Active list.
 
 ## Files touched
 
-- `src/styles.css` — tokens + utilities
-- `src/components/ui/eyebrow.tsx` (new)
-- `src/components/ui/card.tsx` — add `variant` prop
-- Call sites for each pattern (roughly 45 files across coach/athlete/parent/admin/messages/plans)
-- `docs/features.md` or the design doc — short "how to pick" section for each primitive
-
-## Out of scope (explicitly)
-
-- No color, spacing, or typography changes beyond wrapping current values.
-- No dark-mode retuning.
-- No behavior changes on focus (same ring width, same offset = 0).
-- Other drift categories (button variants, dialog patterns, etc.) come in later batches.
+- `src/routes/_authenticated/coach.plans.$planId.tsx` — add header `ShareToSocialsButton` gated on `status==="active" || isTemplate`.
+- `src/routes/_authenticated/coach.plans.tsx` — caption + `edgeTone` tweak in `PlanRow`.
