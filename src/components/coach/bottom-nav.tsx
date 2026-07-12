@@ -3,7 +3,7 @@ import { ClipboardList, Users, MessageSquare, Settings, type LucideIcon } from "
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useMessagesUnread } from "@/hooks/use-messages-unread";
-import { Eyebrow } from "@/components/ui/eyebrow";
+
 
 
 type Item = {
