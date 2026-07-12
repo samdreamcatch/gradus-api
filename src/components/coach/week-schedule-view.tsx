@@ -370,7 +370,7 @@ export const WeekScheduleView = forwardRef<
       />
     </div>
   );
-}
+});
 
 
 const STATE_COLORS = [
