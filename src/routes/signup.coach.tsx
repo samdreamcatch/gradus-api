@@ -222,15 +222,6 @@ function CoachSignupPage() {
           </div>
         )}
 
-        <Button type="button" variant="outline" className="w-full" onClick={handleGoogle} disabled={!canSubmit}>
-          Continue with Google
-        </Button>
-
-        <div className="my-6 flex items-center gap-3 text-xs uppercase tracking-wider text-text-tertiary">
-          <div className="h-px flex-1 bg-divider" />
-          or
-          <div className="h-px flex-1 bg-divider" />
-        </div>
 
         <form onSubmit={handleEmailSubmit} className="space-y-4" autoComplete="on">
           <div className="space-y-2">
