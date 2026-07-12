@@ -7,7 +7,7 @@ import { PageTitle } from "@/components/page-title";
 import { RosterCard } from "@/components/coach/roster-card";
 import { FilterPill } from "@/components/ui/filter-pill";
 import { getSport, type SportKey } from "@/lib/coach-sports";
-import { WeekScheduleView } from "@/components/coach/week-schedule-view";
+import { WeekScheduleView, type WeekScheduleHandle } from "@/components/coach/week-schedule-view";
 import { AthleteDetailSheet } from "@/components/coach/athlete-detail-sheet";
 import { InviteCard } from "@/components/onboarding/invite-card";
 import { EnterInviteCodeCard } from "@/components/coach/enter-invite-code-card";
