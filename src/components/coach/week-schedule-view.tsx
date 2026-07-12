@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { forwardRef, useImperativeHandle, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Plus, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { RosterAthlete } from "@/lib/coach-roster.functions";
