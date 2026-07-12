@@ -5,11 +5,13 @@ import { useRouterState } from "@tanstack/react-router";
 import { MessageSquarePlus } from "lucide-react";
 import { toast } from "sonner";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Eyebrow } from "@/components/ui/eyebrow";
 
 
@@ -55,48 +57,48 @@ function FeedbackDialog({ trigger }: { trigger: ReactNode }) {
   };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>{trigger}</PopoverTrigger>
-      <PopoverContent
-        side="top"
-        align="start"
-        sideOffset={8}
-        className="w-80 space-y-4 sm:w-96"
-      >
-        <div className="space-y-1">
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>{trigger}</DialogTrigger>
+      <DialogContent className="top-4 translate-y-0 sm:top-[50%] sm:max-w-md sm:translate-y-[-50%]">
+        <DialogHeader>
           <Eyebrow size="caption" tone="accent-ink" weight="black">Feedback</Eyebrow>
-          <h2 className="font-display text-2xl font-black leading-tight text-text-primary">
+          <DialogTitle className="font-display text-2xl font-black leading-tight text-text-primary">
             Your feedback shapes what we build
-          </h2>
+          </DialogTitle>
+          <DialogDescription className="sr-only">
+            Share a bug, idea, or anything else.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          <textarea
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            rows={5}
+            maxLength={2000}
+            placeholder=""
+            className="focus-input w-full resize-none rounded-xl border border-divider bg-elevated px-3 py-2 text-[15px] leading-relaxed text-text-primary placeholder:text-text-tertiary"
+          />
+
+
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={!message.trim() || mutation.isPending}
+            className={cn(
+              "w-full rounded-full px-5 py-3 text-sm font-bold shadow-card transition-opacity",
+              message.trim() && !mutation.isPending
+                ? "bg-accent text-accent-foreground"
+                : "cursor-not-allowed bg-divider text-text-tertiary opacity-70",
+            )}
+          >
+            {mutation.isPending ? "Sending…" : "Send"}
+          </button>
         </div>
-
-        <textarea
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          rows={5}
-          maxLength={2000}
-          placeholder="Share a bug, idea, or anything else."
-          className="focus-input w-full resize-none rounded-xl border border-divider bg-elevated px-3 py-2 text-[15px] leading-relaxed text-text-primary placeholder:text-text-tertiary"
-        />
-
-        <button
-          type="button"
-          onClick={handleSubmit}
-          disabled={!message.trim() || mutation.isPending}
-          className={cn(
-            "w-full rounded-full px-5 py-3 text-sm font-bold shadow-card transition-opacity",
-            message.trim() && !mutation.isPending
-              ? "bg-accent text-accent-foreground"
-              : "cursor-not-allowed bg-divider text-text-tertiary opacity-70",
-          )}
-        >
-          {mutation.isPending ? "Sending…" : "Send"}
-        </button>
-      </PopoverContent>
-    </Popover>
+      </DialogContent>
+    </Dialog>
   );
 }
-
 
 export function FeedbackFab() {
   const bannerLocked = useBottomBannerLocked();
