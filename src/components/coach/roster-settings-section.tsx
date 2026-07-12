@@ -3,6 +3,8 @@ import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/r
 import { toast } from "sonner";
 import { CalendarDays, Pencil, Plus, Trash2, UserMinus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Chip } from "@/components/ui/chip";
+
 import {
   AlertDialog,
   AlertDialogAction,
