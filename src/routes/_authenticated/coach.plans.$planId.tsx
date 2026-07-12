@@ -107,7 +107,7 @@ function PlanEditorSheet() {
     <Sheet open onOpenChange={(v) => { if (!v) close(); }}>
       <SheetContent
         side="bottom"
-        className="max-h-[92vh] overflow-y-auto border-t border-divider shadow-page"
+        className="max-h-[92dvh] overflow-y-auto border-t border-divider shadow-page"
         style={{
           backgroundColor: "var(--background)",
           backgroundImage:
