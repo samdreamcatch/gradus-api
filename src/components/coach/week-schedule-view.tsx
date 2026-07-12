@@ -297,11 +297,11 @@ export const WeekScheduleView = forwardRef<
               </span>
             ) : null}
           </div>
-          <span className="text-[10px] font-bold uppercase tracking-widest text-text-tertiary">
-            {selectedSessions.length === 0
-              ? "Rest"
-              : `${selectedSessions.length} LESSON${selectedSessions.length === 1 ? "" : "S"}`}
-          </span>
+          {selectedSessions.length > 0 ? (
+            <span className="text-[10px] font-bold uppercase tracking-widest text-text-tertiary">
+              {selectedSessions.length} LESSON{selectedSessions.length === 1 ? "" : "S"}
+            </span>
+          ) : null}
         </div>
 
 
