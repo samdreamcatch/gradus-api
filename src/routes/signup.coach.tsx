@@ -92,11 +92,11 @@ function CoachSignupPage() {
       // Try parent invite first; fall back to adult-athlete invite.
       try {
         try {
-          await claim({ data: { code: invite } });
+          await claim({ data: { code: invite, autoAckCoach: true } });
           if (!cancelled) toast.success("Linked to the parent's account");
         } catch (parentErr) {
           try {
-            await claimAdultAthlete({ data: { code: invite } });
+            await claimAdultAthlete({ data: { code: invite, autoAckCoach: true } });
             if (!cancelled) toast.success("Linked to the athlete's account");
           } catch {
             throw parentErr;

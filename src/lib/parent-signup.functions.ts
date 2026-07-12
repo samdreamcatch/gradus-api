@@ -300,9 +300,14 @@ export const linkAthletesToCoach = createServerFn({ method: "POST" })
     if (athletesIns.error) dbError(athletesIns.error);
 
     if (coachId) {
+      // Auto-ack the parent side — the signup wizard's final screen already
+      // shows the connection confirmation, so suppress the celebration modal
+      // on first load of /parent/plans. The coach still sees theirs.
+      const nowIso = new Date().toISOString();
       const linkRows = (athletesIns.data ?? []).map((a) => ({
         coach_id: coachId!,
         athlete_id: a.id,
+        other_ack_at: nowIso,
       }));
       const linksIns = await supabaseAdmin.from("coach_athletes").insert(linkRows);
       if (linksIns.error) dbError(linksIns.error);
@@ -766,7 +771,17 @@ export const getParentByInviteCode = createServerFn({ method: "POST" })
  */
 export const claimParentInvite = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ code: codeSchema }).parse(input))
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        code: codeSchema,
+        // When true, marks the coach side as already acknowledged so the
+        // celebration modal doesn't appear on the coach's first page load
+        // after the signup wizard. Used by /signup/coach?invite=...
+        autoAckCoach: z.boolean().optional(),
+      })
+      .parse(input),
+  )
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const userId = context.userId;
@@ -806,8 +821,15 @@ export const claimParentInvite = createServerFn({ method: "POST" })
     if (levelsRes.error) dbError(levelsRes.error);
     const coachSports = Array.from(new Set((levelsRes.data ?? []).map((l) => l.sport)));
 
-    // 1. coach_athletes (skip duplicates)
-    const linkRows = athleteIds.map((athlete_id) => ({ coach_id: coachId, athlete_id }));
+    // 1. coach_athletes (skip duplicates). Ack coach side when the caller
+    //    is the signup wizard (celebration modal would duplicate the
+    //    wizard's own confirmation screen).
+    const ackIso = data.autoAckCoach ? new Date().toISOString() : null;
+    const linkRows = athleteIds.map((athlete_id) => ({
+      coach_id: coachId,
+      athlete_id,
+      ...(ackIso ? { coach_ack_at: ackIso } : {}),
+    }));
     const linksIns = await supabaseAdmin
       .from("coach_athletes")
       .upsert(linkRows, { onConflict: "coach_id,athlete_id", ignoreDuplicates: true });
