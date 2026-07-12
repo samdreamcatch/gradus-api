@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as LoginRouteImport } from './routes/login'
@@ -21,6 +22,7 @@ import { Route as SignupAthleteRouteImport } from './routes/signup.athlete'
 import { Route as SignupAdminRouteImport } from './routes/signup.admin'
 import { Route as PTokenRouteImport } from './routes/p.$token'
 import { Route as ICodeRouteImport } from './routes/i.$code'
+import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as AuthenticatedParentRouteImport } from './routes/_authenticated/parent'
 import { Route as AuthenticatedCoachRouteImport } from './routes/_authenticated/coach'
 import { Route as AuthenticatedAthleteRouteImport } from './routes/_authenticated/athlete'
@@ -35,6 +37,7 @@ import { Route as SignupParentAthletesRouteImport } from './routes/signup.parent
 import { Route as SignupAthleteConfirmRouteImport } from './routes/signup.athlete.confirm'
 import { Route as SignupAthleteAdultRouteImport } from './routes/signup.athlete.adult'
 import { Route as SignupAthleteAccountRouteImport } from './routes/signup.athlete.account'
+import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as AuthenticatedParentSettingsRouteImport } from './routes/_authenticated/parent.settings'
 import { Route as AuthenticatedCoachSettingsRouteImport } from './routes/_authenticated/coach.settings'
 import { Route as AuthenticatedCoachRosterRouteImport } from './routes/_authenticated/coach.roster'
@@ -47,6 +50,7 @@ import { Route as AuthenticatedAdminPromoCodesRouteImport } from './routes/_auth
 import { Route as AuthenticatedAdminMapRouteImport } from './routes/_authenticated/admin.map'
 import { Route as AuthenticatedAdminFeedbackRouteImport } from './routes/_authenticated/admin.feedback'
 import { Route as AuthenticatedAdminErrorsRouteImport } from './routes/_authenticated/admin.errors'
+import { Route as AuthenticatedAdminEmailsRouteImport } from './routes/_authenticated/admin.emails'
 import { Route as AuthenticatedParentResourcesIndexRouteImport } from './routes/_authenticated/parent.resources.index'
 import { Route as AuthenticatedParentPlansIndexRouteImport } from './routes/_authenticated/parent.plans.index'
 import { Route as AuthenticatedParentMessagesIndexRouteImport } from './routes/_authenticated/parent.messages.index'
@@ -55,6 +59,8 @@ import { Route as AuthenticatedCoachMessagesIndexRouteImport } from './routes/_a
 import { Route as AuthenticatedAthleteResourcesIndexRouteImport } from './routes/_authenticated/athlete.resources.index'
 import { Route as AuthenticatedAthletePlansIndexRouteImport } from './routes/_authenticated/athlete.plans.index'
 import { Route as AuthenticatedAthleteMessagesIndexRouteImport } from './routes/_authenticated/athlete.messages.index'
+import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
+import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
@@ -68,6 +74,11 @@ import { Route as AuthenticatedAdminUsersUserIdRouteImport } from './routes/_aut
 import { Route as AuthenticatedAdminListKindRouteImport } from './routes/_authenticated/admin.list.$kind'
 import { Route as AuthenticatedAdminErrorsIdRouteImport } from './routes/_authenticated/admin.errors.$id'
 
+const UnsubscribeRoute = UnsubscribeRouteImport.update({
+  id: '/unsubscribe',
+  path: '/unsubscribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
   path: '/terms',
@@ -125,6 +136,11 @@ const PTokenRoute = PTokenRouteImport.update({
 const ICodeRoute = ICodeRouteImport.update({
   id: '/i/$code',
   path: '/i/$code',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EmailUnsubscribeRoute = EmailUnsubscribeRouteImport.update({
+  id: '/email/unsubscribe',
+  path: '/email/unsubscribe',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedParentRoute = AuthenticatedParentRouteImport.update({
@@ -199,6 +215,11 @@ const SignupAthleteAccountRoute = SignupAthleteAccountRouteImport.update({
   path: '/account',
   getParentRoute: () => SignupAthleteRoute,
 } as any)
+const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
+  id: '/lovable/email/suppression',
+  path: '/lovable/email/suppression',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedParentSettingsRoute =
   AuthenticatedParentSettingsRouteImport.update({
     id: '/settings',
@@ -269,6 +290,12 @@ const AuthenticatedAdminErrorsRoute =
     path: '/errors',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminEmailsRoute =
+  AuthenticatedAdminEmailsRouteImport.update({
+    id: '/emails',
+    path: '/emails',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedParentResourcesIndexRoute =
   AuthenticatedParentResourcesIndexRouteImport.update({
     id: '/resources/',
@@ -316,6 +343,18 @@ const AuthenticatedAthleteMessagesIndexRoute =
     id: '/messages/',
     path: '/messages/',
     getParentRoute: () => AuthenticatedAthleteRoute,
+  } as any)
+const LovableEmailTransactionalSendRoute =
+  LovableEmailTransactionalSendRouteImport.update({
+    id: '/lovable/email/transactional/send',
+    path: '/lovable/email/transactional/send',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const LovableEmailTransactionalPreviewRoute =
+  LovableEmailTransactionalPreviewRouteImport.update({
+    id: '/lovable/email/transactional/preview',
+    path: '/lovable/email/transactional/preview',
+    getParentRoute: () => rootRouteImport,
   } as any)
 const LovableEmailQueueProcessRoute =
   LovableEmailQueueProcessRouteImport.update({
@@ -394,16 +433,19 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/athlete': typeof AuthenticatedAthleteRouteWithChildren
   '/coach': typeof AuthenticatedCoachRouteWithChildren
   '/parent': typeof AuthenticatedParentRouteWithChildren
+  '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/i/$code': typeof ICodeRoute
   '/p/$token': typeof PTokenRoute
   '/signup/admin': typeof SignupAdminRoute
   '/signup/athlete': typeof SignupAthleteRouteWithChildren
   '/signup/coach': typeof SignupCoachRoute
   '/signup/parent': typeof SignupParentRouteWithChildren
+  '/admin/emails': typeof AuthenticatedAdminEmailsRoute
   '/admin/errors': typeof AuthenticatedAdminErrorsRouteWithChildren
   '/admin/feedback': typeof AuthenticatedAdminFeedbackRoute
   '/admin/map': typeof AuthenticatedAdminMapRoute
@@ -416,6 +458,7 @@ export interface FileRoutesByFullPath {
   '/coach/roster': typeof AuthenticatedCoachRosterRoute
   '/coach/settings': typeof AuthenticatedCoachSettingsRoute
   '/parent/settings': typeof AuthenticatedParentSettingsRoute
+  '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/signup/athlete/account': typeof SignupAthleteAccountRoute
   '/signup/athlete/adult': typeof SignupAthleteAdultRoute
   '/signup/athlete/confirm': typeof SignupAthleteConfirmRoute
@@ -438,6 +481,8 @@ export interface FileRoutesByFullPath {
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
+  '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
+  '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
   '/athlete/messages/': typeof AuthenticatedAthleteMessagesIndexRoute
   '/athlete/plans/': typeof AuthenticatedAthletePlansIndexRoute
   '/athlete/resources/': typeof AuthenticatedAthleteResourcesIndexRoute
@@ -453,12 +498,15 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
+  '/unsubscribe': typeof UnsubscribeRoute
+  '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/i/$code': typeof ICodeRoute
   '/p/$token': typeof PTokenRoute
   '/signup/admin': typeof SignupAdminRoute
   '/signup/athlete': typeof SignupAthleteRouteWithChildren
   '/signup/coach': typeof SignupCoachRoute
   '/signup/parent': typeof SignupParentRouteWithChildren
+  '/admin/emails': typeof AuthenticatedAdminEmailsRoute
   '/admin/errors': typeof AuthenticatedAdminErrorsRouteWithChildren
   '/admin/feedback': typeof AuthenticatedAdminFeedbackRoute
   '/admin/map': typeof AuthenticatedAdminMapRoute
@@ -470,6 +518,7 @@ export interface FileRoutesByTo {
   '/coach/roster': typeof AuthenticatedCoachRosterRoute
   '/coach/settings': typeof AuthenticatedCoachSettingsRoute
   '/parent/settings': typeof AuthenticatedParentSettingsRoute
+  '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/signup/athlete/account': typeof SignupAthleteAccountRoute
   '/signup/athlete/adult': typeof SignupAthleteAdultRoute
   '/signup/athlete/confirm': typeof SignupAthleteConfirmRoute
@@ -492,6 +541,8 @@ export interface FileRoutesByTo {
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
+  '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
+  '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
   '/athlete/messages': typeof AuthenticatedAthleteMessagesIndexRoute
   '/athlete/plans': typeof AuthenticatedAthletePlansIndexRoute
   '/athlete/resources': typeof AuthenticatedAthleteResourcesIndexRoute
@@ -509,16 +560,19 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/_authenticated/athlete': typeof AuthenticatedAthleteRouteWithChildren
   '/_authenticated/coach': typeof AuthenticatedCoachRouteWithChildren
   '/_authenticated/parent': typeof AuthenticatedParentRouteWithChildren
+  '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/i/$code': typeof ICodeRoute
   '/p/$token': typeof PTokenRoute
   '/signup/admin': typeof SignupAdminRoute
   '/signup/athlete': typeof SignupAthleteRouteWithChildren
   '/signup/coach': typeof SignupCoachRoute
   '/signup/parent': typeof SignupParentRouteWithChildren
+  '/_authenticated/admin/emails': typeof AuthenticatedAdminEmailsRoute
   '/_authenticated/admin/errors': typeof AuthenticatedAdminErrorsRouteWithChildren
   '/_authenticated/admin/feedback': typeof AuthenticatedAdminFeedbackRoute
   '/_authenticated/admin/map': typeof AuthenticatedAdminMapRoute
@@ -531,6 +585,7 @@ export interface FileRoutesById {
   '/_authenticated/coach/roster': typeof AuthenticatedCoachRosterRoute
   '/_authenticated/coach/settings': typeof AuthenticatedCoachSettingsRoute
   '/_authenticated/parent/settings': typeof AuthenticatedParentSettingsRoute
+  '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/signup/athlete/account': typeof SignupAthleteAccountRoute
   '/signup/athlete/adult': typeof SignupAthleteAdultRoute
   '/signup/athlete/confirm': typeof SignupAthleteConfirmRoute
@@ -553,6 +608,8 @@ export interface FileRoutesById {
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
+  '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
+  '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
   '/_authenticated/athlete/messages/': typeof AuthenticatedAthleteMessagesIndexRoute
   '/_authenticated/athlete/plans/': typeof AuthenticatedAthletePlansIndexRoute
   '/_authenticated/athlete/resources/': typeof AuthenticatedAthleteResourcesIndexRoute
@@ -570,16 +627,19 @@ export interface FileRouteTypes {
     | '/login'
     | '/reset-password'
     | '/terms'
+    | '/unsubscribe'
     | '/admin'
     | '/athlete'
     | '/coach'
     | '/parent'
+    | '/email/unsubscribe'
     | '/i/$code'
     | '/p/$token'
     | '/signup/admin'
     | '/signup/athlete'
     | '/signup/coach'
     | '/signup/parent'
+    | '/admin/emails'
     | '/admin/errors'
     | '/admin/feedback'
     | '/admin/map'
@@ -592,6 +652,7 @@ export interface FileRouteTypes {
     | '/coach/roster'
     | '/coach/settings'
     | '/parent/settings'
+    | '/lovable/email/suppression'
     | '/signup/athlete/account'
     | '/signup/athlete/adult'
     | '/signup/athlete/confirm'
@@ -614,6 +675,8 @@ export interface FileRouteTypes {
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
+    | '/lovable/email/transactional/preview'
+    | '/lovable/email/transactional/send'
     | '/athlete/messages/'
     | '/athlete/plans/'
     | '/athlete/resources/'
@@ -629,12 +692,15 @@ export interface FileRouteTypes {
     | '/login'
     | '/reset-password'
     | '/terms'
+    | '/unsubscribe'
+    | '/email/unsubscribe'
     | '/i/$code'
     | '/p/$token'
     | '/signup/admin'
     | '/signup/athlete'
     | '/signup/coach'
     | '/signup/parent'
+    | '/admin/emails'
     | '/admin/errors'
     | '/admin/feedback'
     | '/admin/map'
@@ -646,6 +712,7 @@ export interface FileRouteTypes {
     | '/coach/roster'
     | '/coach/settings'
     | '/parent/settings'
+    | '/lovable/email/suppression'
     | '/signup/athlete/account'
     | '/signup/athlete/adult'
     | '/signup/athlete/confirm'
@@ -668,6 +735,8 @@ export interface FileRouteTypes {
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
+    | '/lovable/email/transactional/preview'
+    | '/lovable/email/transactional/send'
     | '/athlete/messages'
     | '/athlete/plans'
     | '/athlete/resources'
@@ -684,16 +753,19 @@ export interface FileRouteTypes {
     | '/login'
     | '/reset-password'
     | '/terms'
+    | '/unsubscribe'
     | '/_authenticated/admin'
     | '/_authenticated/athlete'
     | '/_authenticated/coach'
     | '/_authenticated/parent'
+    | '/email/unsubscribe'
     | '/i/$code'
     | '/p/$token'
     | '/signup/admin'
     | '/signup/athlete'
     | '/signup/coach'
     | '/signup/parent'
+    | '/_authenticated/admin/emails'
     | '/_authenticated/admin/errors'
     | '/_authenticated/admin/feedback'
     | '/_authenticated/admin/map'
@@ -706,6 +778,7 @@ export interface FileRouteTypes {
     | '/_authenticated/coach/roster'
     | '/_authenticated/coach/settings'
     | '/_authenticated/parent/settings'
+    | '/lovable/email/suppression'
     | '/signup/athlete/account'
     | '/signup/athlete/adult'
     | '/signup/athlete/confirm'
@@ -728,6 +801,8 @@ export interface FileRouteTypes {
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
+    | '/lovable/email/transactional/preview'
+    | '/lovable/email/transactional/send'
     | '/_authenticated/athlete/messages/'
     | '/_authenticated/athlete/plans/'
     | '/_authenticated/athlete/resources/'
@@ -745,19 +820,31 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   TermsRoute: typeof TermsRoute
+  UnsubscribeRoute: typeof UnsubscribeRoute
+  EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   ICodeRoute: typeof ICodeRoute
   PTokenRoute: typeof PTokenRoute
   SignupAdminRoute: typeof SignupAdminRoute
   SignupAthleteRoute: typeof SignupAthleteRouteWithChildren
   SignupCoachRoute: typeof SignupCoachRoute
   SignupParentRoute: typeof SignupParentRouteWithChildren
+  LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
+  LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
+  LovableEmailTransactionalSendRoute: typeof LovableEmailTransactionalSendRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/unsubscribe': {
+      id: '/unsubscribe'
+      path: '/unsubscribe'
+      fullPath: '/unsubscribe'
+      preLoaderRoute: typeof UnsubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/terms': {
       id: '/terms'
       path: '/terms'
@@ -840,6 +927,13 @@ declare module '@tanstack/react-router' {
       path: '/i/$code'
       fullPath: '/i/$code'
       preLoaderRoute: typeof ICodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/email/unsubscribe': {
+      id: '/email/unsubscribe'
+      path: '/email/unsubscribe'
+      fullPath: '/email/unsubscribe'
+      preLoaderRoute: typeof EmailUnsubscribeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/parent': {
@@ -940,6 +1034,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SignupAthleteAccountRouteImport
       parentRoute: typeof SignupAthleteRoute
     }
+    '/lovable/email/suppression': {
+      id: '/lovable/email/suppression'
+      path: '/lovable/email/suppression'
+      fullPath: '/lovable/email/suppression'
+      preLoaderRoute: typeof LovableEmailSuppressionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/parent/settings': {
       id: '/_authenticated/parent/settings'
       path: '/settings'
@@ -1024,6 +1125,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminErrorsRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/emails': {
+      id: '/_authenticated/admin/emails'
+      path: '/emails'
+      fullPath: '/admin/emails'
+      preLoaderRoute: typeof AuthenticatedAdminEmailsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/parent/resources/': {
       id: '/_authenticated/parent/resources/'
       path: '/resources'
@@ -1079,6 +1187,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/athlete/messages/'
       preLoaderRoute: typeof AuthenticatedAthleteMessagesIndexRouteImport
       parentRoute: typeof AuthenticatedAthleteRoute
+    }
+    '/lovable/email/transactional/send': {
+      id: '/lovable/email/transactional/send'
+      path: '/lovable/email/transactional/send'
+      fullPath: '/lovable/email/transactional/send'
+      preLoaderRoute: typeof LovableEmailTransactionalSendRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/email/transactional/preview': {
+      id: '/lovable/email/transactional/preview'
+      path: '/lovable/email/transactional/preview'
+      fullPath: '/lovable/email/transactional/preview'
+      preLoaderRoute: typeof LovableEmailTransactionalPreviewRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/lovable/email/queue/process': {
       id: '/lovable/email/queue/process'
@@ -1182,6 +1304,7 @@ const AuthenticatedAdminErrorsRouteWithChildren =
   )
 
 interface AuthenticatedAdminRouteChildren {
+  AuthenticatedAdminEmailsRoute: typeof AuthenticatedAdminEmailsRoute
   AuthenticatedAdminErrorsRoute: typeof AuthenticatedAdminErrorsRouteWithChildren
   AuthenticatedAdminFeedbackRoute: typeof AuthenticatedAdminFeedbackRoute
   AuthenticatedAdminMapRoute: typeof AuthenticatedAdminMapRoute
@@ -1192,6 +1315,7 @@ interface AuthenticatedAdminRouteChildren {
 }
 
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
+  AuthenticatedAdminEmailsRoute: AuthenticatedAdminEmailsRoute,
   AuthenticatedAdminErrorsRoute: AuthenticatedAdminErrorsRouteWithChildren,
   AuthenticatedAdminFeedbackRoute: AuthenticatedAdminFeedbackRoute,
   AuthenticatedAdminMapRoute: AuthenticatedAdminMapRoute,
@@ -1356,15 +1480,20 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   TermsRoute: TermsRoute,
+  UnsubscribeRoute: UnsubscribeRoute,
+  EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   ICodeRoute: ICodeRoute,
   PTokenRoute: PTokenRoute,
   SignupAdminRoute: SignupAdminRoute,
   SignupAthleteRoute: SignupAthleteRouteWithChildren,
   SignupCoachRoute: SignupCoachRoute,
   SignupParentRoute: SignupParentRouteWithChildren,
+  LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
+  LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
+  LovableEmailTransactionalSendRoute: LovableEmailTransactionalSendRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
