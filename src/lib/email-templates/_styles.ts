@@ -11,7 +11,7 @@ export const watermarkUrl = `https://gradus.training${watermarkAsset.url}`;
 export const fonts = {
   display: 'Fraunces, Georgia, "Times New Roman", serif',
   body: '"Atkinson Hyperlegible", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif',
-  hand: 'Fraunces, Georgia, serif',
+  hand: '"Atkinson Hyperlegible", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif',
 }
 
 export const colors = {

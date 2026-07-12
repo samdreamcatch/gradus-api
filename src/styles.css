@@ -7,7 +7,7 @@
 @theme inline {
   --font-display: "Fraunces", Georgia, serif;
   --font-sans: "Atkinson Hyperlegible", system-ui, sans-serif;
-  --font-hand: "Fraunces", "Georgia", serif;
+  --font-hand: "Atkinson Hyperlegible", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 
   --radius-sm: 8px;
@@ -281,12 +281,13 @@
 
 @layer base {
   .font-hand {
-    font-style: italic;
+    font-family: "Atkinson Hyperlegible", system-ui, sans-serif;
+    font-style: normal;
     font-weight: 400;
     font-size: 0.9375rem;
     line-height: 1.35;
     letter-spacing: 0;
-    font-feature-settings: "ss01";
+    font-feature-settings: normal;
   }
 }
 
