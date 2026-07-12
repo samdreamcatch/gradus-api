@@ -187,7 +187,7 @@ function TemplateEditor({ name }: { name: string }) {
         <div className="border-b border-divider bg-elevated px-4 py-2 text-xs font-bold uppercase tracking-widest text-text-secondary">
           Live preview
         </div>
-        <div className="bg-white">
+        <div className="bg-surface-email-client">
           <iframe
             title="Email preview"
             className="w-full h-[520px] border-0"
