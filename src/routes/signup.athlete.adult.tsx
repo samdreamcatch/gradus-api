@@ -112,11 +112,7 @@ function AdultAthleteSignupPage() {
     }
     setLoading(true);
     try {
-      try {
-        localStorage.setItem(PENDING_TERMS_ACCEPT_KEY, "athlete");
-      } catch {
-        /* ignore */
-      }
+      stashPendingTermsAccept();
       savePendingPromoCode(promoCode);
       await ensureAuthed(verifiedCaptchaToken);
 

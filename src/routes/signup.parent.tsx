@@ -94,11 +94,7 @@ function ParentSignupPage() {
     setLoading(true);
     try {
       const trimmed = code.trim().toUpperCase();
-      try {
-        localStorage.setItem(PENDING_TERMS_ACCEPT_KEY, "parent");
-      } catch {
-        /* ignore */
-      }
+      stashPendingTermsAccept();
       savePendingPromoCode(promoCode);
       await ensureAuthed(verifiedCaptchaToken);
 
