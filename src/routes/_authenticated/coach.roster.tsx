@@ -122,58 +122,59 @@ function RosterPage() {
       <div className="mx-auto min-h-dvh max-w-3xl px-4 pt-8 pb-24">
         <PageTitle>Roster</PageTitle>
 
-        <div className="mt-4">
-          <SegmentedToggle tab={tab} onChange={setTab} />
-        </div>
-
-        <FirstPlanBanner />
-
         <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
-          <div className="mt-4 flex items-center gap-2">
-            {athletes.length > 0 && sports.length > 0 ? (
+          <header className="sticky top-0 z-20 -mx-4 mt-4 bg-background/90 px-4 pb-2 pt-1 backdrop-blur supports-[backdrop-filter]:bg-background/70">
+            <SegmentedToggle tab={tab} onChange={setTab} />
+
+            <div className="mt-3 flex items-center gap-2">
+              {athletes.length > 0 && sports.length > 0 ? (
+                <div className="min-w-0 flex-1">
+                  <FilterPill
+                    aria-label="Sport"
+                    value={selectedSport ?? "__all"}
+                    onValueChange={(v) => setSelectedSport(v === "__all" ? null : v)}
+                    placeholder="All sports"
+                    options={[
+                      { value: "__all", label: "All sports" },
+                      ...sports.map((s) => ({
+                        value: s,
+                        label: getSport(s as SportKey)?.label ?? s,
+                      })),
+                    ]}
+                  />
+                </div>
+              ) : (
+                <div className="flex-1" />
+              )}
+
               <div className="min-w-0 flex-1">
-                <FilterPill
-                  aria-label="Sport"
-                  value={selectedSport ?? "__all"}
-                  onValueChange={(v) => setSelectedSport(v === "__all" ? null : v)}
-                  placeholder="All sports"
-                  options={[
-                    { value: "__all", label: "All sports" },
-                    ...sports.map((s) => ({
-                      value: s,
-                      label: getSport(s as SportKey)?.label ?? s,
-                    })),
-                  ]}
-                />
+                <DialogTrigger asChild>
+                  <Button type="button" variant="outline" size="sm" className="w-full">
+                    <UserPlus className="size-4" aria-hidden />
+                    <span className="truncate">Add athlete</span>
+                  </Button>
+                </DialogTrigger>
               </div>
-            ) : (
-              <div className="flex-1" />
-            )}
 
-            <div className="min-w-0 flex-1">
-              <DialogTrigger asChild>
-                <Button type="button" variant="outline" size="sm" className="w-full">
-                  <UserPlus className="size-4" aria-hidden />
-                  <span className="truncate">Add athlete</span>
-                </Button>
-              </DialogTrigger>
+              <div className="min-w-0 flex-1">
+                {tab === "schedule" && athletes.length > 0 ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => scheduleRef.current?.openCreateLesson()}
+                  >
+                    <Plus className="size-4" aria-hidden />
+                    <span className="truncate">Add event</span>
+                  </Button>
+                ) : null}
+              </div>
             </div>
+          </header>
 
-            <div className="min-w-0 flex-1">
-              {tab === "schedule" && athletes.length > 0 ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="w-full"
-                  onClick={() => scheduleRef.current?.openCreateLesson()}
-                >
-                  <Plus className="size-4" aria-hidden />
-                  <span className="truncate">Add event</span>
-                </Button>
-              ) : null}
-            </div>
-          </div>
+          <FirstPlanBanner />
+
 
 
           <DialogContent className="bg-popover">
