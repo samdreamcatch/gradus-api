@@ -25,6 +25,7 @@
   --color-card-foreground: var(--foreground);
   --color-popover: var(--popover);
   --color-popover-foreground: var(--foreground);
+  --color-dialog: var(--dialog);
   --color-elevated: var(--elevated);
   --color-muted: var(--elevated);
   --color-muted-foreground: var(--text-secondary);
@@ -67,7 +68,8 @@
   --background: oklch(0.972 0.005 250);   /* #F5F6FA */
   --foreground: oklch(0.24 0.08 260);      /* dark navy ink */
   --card: oklch(1 0 0 / 0.55);             /* translucent so paper shows through */
-  --popover: oklch(0.972 0.019 90);        /* warm cream #FAF5E9, matches gradussports.com */
+  --popover: oklch(1 0 0);                 /* solid for floating menus */
+  --dialog: oklch(0.972 0.019 90);         /* warm cream #FAF5E9 for dialogs only */
   --elevated: oklch(0.982 0.004 250 / 0.62);
   --divider: oklch(0.92 0.005 260);        /* #E6E7EB */
 
@@ -147,6 +149,7 @@
   /* Card sits clearly above background so on-card text reads comfortably. */
   --card: oklch(0.255 0.012 245 / 0.62);
   --popover: oklch(0.30 0.012 245);
+  --dialog: oklch(0.30 0.012 245);         /* dark-mode dialog surface — same as popover for now */
   --elevated: oklch(0.285 0.012 245);
   --divider: oklch(0.36 0.012 245);
 
