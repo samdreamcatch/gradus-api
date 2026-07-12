@@ -508,8 +508,16 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
                 }
               />
             )}
+            {plan.status === "active" || isTemplate ? (
+              <ShareToSocialsButton
+                planId={plan.id}
+                planTitle={plan.title || "Untitled plan"}
+                className="mt-1 shrink-0"
+              />
+            ) : null}
 
           </div>
+
         </SheetTitle>
       </SheetHeader>
 

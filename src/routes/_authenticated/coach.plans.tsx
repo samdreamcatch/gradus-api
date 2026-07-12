@@ -444,20 +444,24 @@ function SwipeableDeleteRow({
   );
 }
 function PlanRow({ plan }: { plan: PlanSummaryDTO }) {
+  const isPublicActive =
+    plan.kind === "plan" && plan.status === "active" && !plan.athleteName;
   const caption =
     plan.kind === "template"
       ? "Template"
-      : !plan.athleteName
-        ? "Unassigned"
-        : plan.status === "draft"
-          ? "Draft"
-          : plan.status === "benched"
-            ? "Benched"
-            : undefined;
+      : isPublicActive
+        ? "Shared"
+        : !plan.athleteName
+          ? "Unassigned"
+          : plan.status === "draft"
+            ? "Draft"
+            : plan.status === "benched"
+              ? "Benched"
+              : undefined;
   const edgeTone: "active" | "template" | "muted" =
     plan.kind === "template"
       ? "template"
-      : plan.status === "active" && !!plan.athleteName
+      : plan.status === "active"
         ? "active"
         : "muted";
   return (
@@ -475,6 +479,7 @@ function PlanRow({ plan }: { plan: PlanSummaryDTO }) {
 
   );
 }
+
 
 function StatusPill({ plan }: { plan: PlanSummaryDTO }) {
   if (plan.kind === "template") {
