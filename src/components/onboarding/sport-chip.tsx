@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils";
+import { Chip } from "@/components/ui/chip";
 
 interface SportChipProps {
   selected: boolean;
@@ -8,21 +8,21 @@ interface SportChipProps {
   disabled?: boolean;
 }
 
+/**
+ * SportChip is a thin wrapper around the shared `<Chip>` primitive so sport
+ * pickers stay visually consistent with every other chip in the app. Sport
+ * labels are mixed-case (e.g. "Basketball"), so we opt into `caseSensitive`.
+ */
 export function SportChip({ selected, onClick, children, disabled }: SportChipProps) {
   return (
-    <button
-      type="button"
+    <Chip
+      as="button"
+      caseSensitive
+      selected={selected}
       onClick={onClick}
       disabled={disabled}
-      className={cn(
-        "rounded-pill border-2 px-5 py-2.5 text-sm font-semibold transition",
-        "disabled:cursor-not-allowed disabled:opacity-50",
-        selected
-          ? "border-accent bg-accent text-accent-foreground shadow-sm"
-          : "border-divider bg-card text-text-primary hover:border-accent/40",
-      )}
     >
       {children}
-    </button>
+    </Chip>
   );
 }
