@@ -21,6 +21,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Chip } from "@/components/ui/chip";
+
 import {
   Select,
   SelectContent,
@@ -696,22 +698,19 @@ function CoachesSection({
                       {editOptions.map((s) => {
                         const selected = editSports.includes(s);
                         return (
-                          <button
+                          <Chip
                             key={s}
-                            type="button"
+                            as="button"
+                            caseSensitive
+                            selected={selected}
                             onClick={() => toggleSport(s, editSports, setEditSports)}
-                            className={
-                              "rounded-pill border-2 px-3 py-1 text-xs font-semibold transition " +
-                              (selected
-                                ? "border-accent bg-accent text-accent-foreground"
-                                : "border-divider bg-card text-text-primary")
-                            }
                           >
                             {getSport(s)?.label ?? s}
-                          </button>
+                          </Chip>
                         );
                       })}
                     </div>
+
                     <p className="text-xs text-text-tertiary">
                       Removing a sport here keeps the coach linked but stops
                       tracking that sport with them. To add a sport this coach
@@ -792,24 +791,21 @@ function CoachesSection({
                     {preview.sports.map((s) => {
                       const selected = selectedSports.includes(s);
                       return (
-                        <button
+                        <Chip
                           key={s}
-                          type="button"
+                          as="button"
+                          caseSensitive
+                          selected={selected}
                           onClick={() =>
                             toggleSport(s, selectedSports, setSelectedSports)
                           }
-                          className={
-                            "rounded-pill border-2 px-3 py-1 text-xs font-semibold transition " +
-                            (selected
-                              ? "border-accent bg-accent text-accent-foreground"
-                              : "border-divider bg-card text-text-primary")
-                          }
                         >
                           {getSport(s)?.label ?? s}
-                        </button>
+                        </Chip>
                       );
                     })}
                   </div>
+
                 </>
               )}
               <div className="flex justify-end gap-2">
