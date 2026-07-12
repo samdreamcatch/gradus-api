@@ -42,7 +42,7 @@ export function AthleteBottomNav() {
           const inner = (
             <span
               className={cn(
-                "flex flex-1 flex-col items-center justify-center gap-1 px-3 py-3.5 text-[10px] font-bold uppercase tracking-widest transition-colors",
+                "flex flex-1 flex-col items-center justify-center gap-1 px-3 py-3.5 text-micro font-bold uppercase tracking-widest transition-colors",
                 isActive
                   ? "text-accent-ink"
                   : item.to
@@ -68,7 +68,7 @@ export function AthleteBottomNav() {
               {item.to ? (
                 <Link
                   to={item.to}
-                  className="flex flex-1 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded-md"
+                  className="focus-surface flex flex-1 cursor-pointer rounded-md"
                   aria-current={isActive ? "page" : undefined}
                 >
                   {inner}
@@ -77,13 +77,14 @@ export function AthleteBottomNav() {
                 <button
                   type="button"
                   onClick={() => toast(`${item.label} coming soon`)}
-                  className="flex flex-1 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded-md"
+                  className="focus-surface flex flex-1 cursor-pointer rounded-md"
                 >
                   {inner}
                 </button>
               )}
             </li>
           );
+
         })}
       </ul>
     </nav>
