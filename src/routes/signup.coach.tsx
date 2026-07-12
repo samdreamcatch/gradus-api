@@ -20,9 +20,13 @@ import {
   getAdultAthleteByInviteCode,
 } from "@/lib/adult-athlete-invite.functions";
 import { verifyTurnstileToken } from "@/lib/turnstile.functions";
-import { CURRENT_TERMS_VERSION, PENDING_TERMS_ACCEPT_KEY } from "@/lib/terms";
+import {
+  CURRENT_TERMS_VERSION,
+  stashPendingTermsAccept,
+  clearPendingTermsAccept,
+} from "@/lib/terms";
 import { PromoCodeField } from "@/components/signup/promo-code-field";
-import { savePendingPromoCode } from "@/lib/pending-promo-code";
+import { savePendingPromoCode, clearPendingPromoCode } from "@/lib/pending-promo-code";
 
 
 const PENDING_INVITE_KEY = "gradus.pendingParentInvite";
@@ -69,6 +73,7 @@ function CoachSignupPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [promoCode, setPromoCode] = useState("");
+  const [showAgreeHint, setShowAgreeHint] = useState(false);
 
 
   useEffect(() => {
@@ -134,13 +139,15 @@ function CoachSignupPage() {
   });
 
   const stashPendingAccept = () => {
-    try {
-      localStorage.setItem(PENDING_TERMS_ACCEPT_KEY, "coach");
-    } catch {
-      /* ignore */
-    }
+    stashPendingTermsAccept();
     savePendingPromoCode(promoCode);
   };
+
+  const clearPendingAccept = () => {
+    clearPendingTermsAccept();
+    clearPendingPromoCode();
+  };
+
 
 
   const resetCaptcha = () => {
@@ -181,6 +188,9 @@ function CoachSignupPage() {
       if (result.error) throw result.error;
       if (!result.redirected) navigate({ to: "/coach" });
     } catch (e) {
+      // OAuth cancelled / popup blocked / provider error — clear any stash
+      // so it can't cross-apply to another account signed in later.
+      clearPendingAccept();
       setError(e instanceof Error ? e.message : "Google sign-in failed");
       resetCaptcha();
       setLoading(false);
@@ -195,6 +205,10 @@ function CoachSignupPage() {
   const handleEmailSubmit = (e: FormEvent) => {
     e.preventDefault();
     setError(null);
+    if (!agreed) {
+      setShowAgreeHint(true);
+      return;
+    }
     if (captchaToken) {
       void doEmailSignup(captchaToken);
       return;
@@ -205,6 +219,10 @@ function CoachSignupPage() {
 
   const handleGoogle = () => {
     setError(null);
+    if (!agreed) {
+      setShowAgreeHint(true);
+      return;
+    }
     if (captchaToken) {
       void doGoogleSignup(captchaToken);
       return;
@@ -225,7 +243,7 @@ function CoachSignupPage() {
   const adultAthleteName = adultAthlete
     ? `${adultAthlete.firstName} ${adultAthlete.lastName}`.trim()
     : null;
-  const canSubmit = agreed && !loading;
+  
 
   return (
     <div className="relative flex min-h-dvh items-center justify-center overflow-hidden px-4 py-12">
@@ -250,14 +268,37 @@ function CoachSignupPage() {
           </div>
         )}
 
-        <Button type="button" variant="outline" className="w-full" onClick={handleGoogle} disabled={!canSubmit}>
-          Continue with Google
-        </Button>
-
-        <div className="my-6 flex items-center gap-3 text-xs uppercase tracking-wider text-text-tertiary">
-          <div className="h-px flex-1 bg-divider" />
-          or
-          <div className="h-px flex-1 bg-divider" />
+        {/* Shared ToS gate — visible above both signup paths. */}
+        <div className="mb-6">
+          <label className="flex cursor-pointer items-start gap-2.5 text-sm text-text-secondary">
+            <Checkbox
+              checked={agreed}
+              onCheckedChange={(v) => {
+                setAgreed(v === true);
+                if (v === true) setShowAgreeHint(false);
+              }}
+              className="mt-0.5"
+              aria-label="Agree to Terms of Service"
+            />
+            <span>
+              I agree to the{" "}
+              <Link
+                to="/terms"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-accent-ink underline underline-offset-2"
+                onClick={(e) => e.stopPropagation()}
+              >
+                Gradus Terms of Service
+              </Link>{" "}
+              (v{CURRENT_TERMS_VERSION}).
+            </span>
+          </label>
+          {showAgreeHint && !agreed && (
+            <p className="mt-2 pl-7 text-sm text-destructive">
+              Please accept the Terms to continue.
+            </p>
+          )}
         </div>
 
         <form onSubmit={handleEmailSubmit} className="space-y-4" autoComplete="on">
@@ -293,35 +334,29 @@ function CoachSignupPage() {
 
           <PromoCodeField value={promoCode} onChange={setPromoCode} />
 
-          <label className="flex cursor-pointer items-start gap-2.5 text-sm text-text-secondary">
-
-            <Checkbox
-              checked={agreed}
-              onCheckedChange={(v) => setAgreed(v === true)}
-              className="mt-0.5"
-              aria-label="Agree to Terms of Service"
-            />
-            <span>
-              I agree to the{" "}
-              <Link
-                to="/terms"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-medium text-accent-ink underline underline-offset-2"
-                onClick={(e) => e.stopPropagation()}
-              >
-                Gradus Terms of Service
-              </Link>{" "}
-              (v{CURRENT_TERMS_VERSION}).
-            </span>
-          </label>
-
           {error && <p className="text-sm text-destructive">{error}</p>}
 
-          <Button type="submit" className="w-full" disabled={!canSubmit}>
+          <Button type="submit" className="w-full" disabled={loading}>
             {loading ? "Creating account..." : "Continue"}
           </Button>
         </form>
+
+        <div className="my-6 flex items-center gap-3 text-xs uppercase tracking-wider text-text-tertiary">
+          <div className="h-px flex-1 bg-divider" />
+          or
+          <div className="h-px flex-1 bg-divider" />
+        </div>
+
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full"
+          onClick={handleGoogle}
+          disabled={loading}
+        >
+          Continue with Google
+        </Button>
+
 
         <Dialog
           open={captchaOpen}

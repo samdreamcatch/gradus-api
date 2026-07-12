@@ -12,6 +12,8 @@ import { TurnstileWidget } from "@/components/auth/turnstile";
 import { useAuthReady } from "@/hooks/use-auth-ready";
 import { resolveAthleteLogin } from "@/lib/athlete-signup.functions";
 import { verifyTurnstileToken } from "@/lib/turnstile.functions";
+import { clearPendingTermsAccept } from "@/lib/terms";
+import { clearPendingPromoCode } from "@/lib/pending-promo-code";
 
 export const Route = createFileRoute("/login")({
   validateSearch: (s: Record<string, unknown>) => {
@@ -185,6 +187,10 @@ function LoginPage() {
         if (data.user?.id) await routeByRole(data.user.id);
       }
     } catch (e) {
+      // Clear any lingering pending-accept stash from an earlier signup
+      // attempt so it can't cross-apply to this session.
+      clearPendingTermsAccept();
+      clearPendingPromoCode();
       setError(e instanceof Error ? e.message : "Google sign-in failed");
       resetCaptcha();
       setLoading(false);
