@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { AthleteBottomNav } from "@/components/athlete/bottom-nav";
-import { SportsPoster } from "@/components/ui/sports-poster";
+
 import { PlanCard } from "@/components/plans/plan-card";
 import { PageTitle } from "@/components/page-title";
 import {
