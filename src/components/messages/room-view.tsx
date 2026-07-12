@@ -450,7 +450,7 @@ function Composer({
             disabled={disabled}
             placeholder={transcribing ? "Transcribing…" : "Message…"}
             rows={1}
-            className="min-h-10 max-h-32 flex-1 resize-none rounded-2xl border border-divider bg-card px-3.5 py-2 text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-accent/40"
+            className="focus-input min-h-10 max-h-32 flex-1 resize-none rounded-2xl border border-divider bg-card px-3.5 py-2 text-sm text-text-primary placeholder:text-text-tertiary"
           />
           {text.trim().length > 0 ? (
             <button
