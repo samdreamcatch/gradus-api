@@ -144,7 +144,9 @@ function AdminList() {
                   <div className="shrink-0 flex items-center gap-3">
                     {r.userId && (
                       <Chip
+                        as="button"
                         size="micro"
+
                         mono
                         selected={(r as any).isTest}
                         onClick={(e) => {
