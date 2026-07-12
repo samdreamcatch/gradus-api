@@ -15,10 +15,11 @@ import { cn } from "@/lib/utils";
  * - `caption` (11px) — heading-adjacent stamps
  * - `small`   (12px)
  */
-export type TagSize = "nano" | "micro" | "caption" | "small";
+export type TagSize = "pico" | "nano" | "micro" | "caption" | "small";
 export type TagTone = "default" | "accent" | "muted";
 
 const SIZE_CLASS: Record<TagSize, string> = {
+  pico: "text-pico px-1 py-0.5",
   nano: "text-nano px-1.5 py-0.5",
   micro: "text-micro px-1.5 py-0.5",
   caption: "text-caption px-2 py-0.5",
