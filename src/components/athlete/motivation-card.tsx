@@ -106,6 +106,6 @@ export function MotivationCard({
           Tap edit to share what drives you…
         </p>
       )}
-    </article>
+    </Card>
   );
 }
