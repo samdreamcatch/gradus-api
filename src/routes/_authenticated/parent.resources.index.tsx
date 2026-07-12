@@ -442,7 +442,7 @@ function ResourceSheet({
     <Sheet open={!!resource} onOpenChange={(o) => !o && onClose()}>
       <SheetContent
         side="bottom"
-        className="h-[92dvh] rounded-t-3xl border-divider bg-popover p-0"
+        className="paper-surface h-[92dvh] rounded-t-3xl border-divider p-0"
       >
         <SheetHeader className="px-5 pt-5 pb-3 text-left">
           <SheetTitle className="text-lg">{resource?.title}</SheetTitle>
