@@ -64,9 +64,11 @@ function UserDetail() {
                 )}
 
                 {data.isTest && (
-                  <button
-                    type="button"
+                  <Chip
+                    as="button"
+                    tone="destructive"
                     disabled={deleting}
+                    className="disabled:opacity-50"
                     onClick={async () => {
                       const email = data.auth?.email ?? "this user";
                       if (!confirm(`Permanently delete ${email}? This removes their account and profiles so the email can be reused. This cannot be undone.`)) return;
@@ -80,11 +82,11 @@ function UserDetail() {
                         setDeleting(false);
                       }
                     }}
-                    className="rounded-pill border border-destructive/50 bg-card px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-destructive transition hover:bg-destructive hover:text-white disabled:opacity-50"
                   >
                     {deleting ? "Deleting…" : "Delete user"}
-                  </button>
+                  </Chip>
                 )}
+
               </div>
             </div>
             <dl className="mt-3 grid grid-cols-2 gap-3 text-sm">
