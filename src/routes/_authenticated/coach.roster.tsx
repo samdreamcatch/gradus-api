@@ -122,7 +122,7 @@ function RosterPage() {
   return (
     <>
       <div className="mx-auto flex min-h-dvh max-w-3xl flex-col px-3 pt-4 pb-24">
-        <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
+        <Sheet open={inviteOpen} onOpenChange={setInviteOpen}>
           <header className="sticky top-0 z-20 -mx-3 bg-background/90 px-3 pb-2 pt-1 backdrop-blur supports-[backdrop-filter]:bg-background/70">
             <SegmentedToggle tab={tab} onChange={setTab} />
 
@@ -149,12 +149,12 @@ function RosterPage() {
               )}
 
               <div className="min-w-0 flex-1">
-                <DialogTrigger asChild>
+                <SheetTrigger asChild>
                   <Button type="button" variant="outline" size="sm" className="w-full">
                     <UserPlus className="size-4" aria-hidden />
                     <span className="truncate">Add athlete</span>
                   </Button>
-                </DialogTrigger>
+                </SheetTrigger>
               </div>
 
               <div className="min-w-0 flex-1">
@@ -178,20 +178,21 @@ function RosterPage() {
 
 
 
-          <DialogContent className="bg-popover">
-            <DialogHeader>
-              <DialogTitle>Add athletes to your roster</DialogTitle>
-              <DialogDescription>
+          <SheetContent side="bottom" className="paper-surface max-h-[85dvh] overflow-y-auto">
+            <SheetHeader>
+              <SheetTitle>Add athletes to your roster</SheetTitle>
+              <SheetDescription>
                 Share your code with parents or adult athletes — or paste a code they gave you.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="mt-2 space-y-5">
+              </SheetDescription>
+            </SheetHeader>
+            <div className="mt-4 space-y-5">
               <InviteCard compact />
               <div className="border-t border-divider" />
               <EnterInviteCodeCard onSuccess={() => setInviteOpen(false)} />
             </div>
-          </DialogContent>
-        </Dialog>
+          </SheetContent>
+        </Sheet>
+
 
 
 
