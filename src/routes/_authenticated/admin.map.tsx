@@ -141,7 +141,7 @@ function AdminMap() {
         <Link
           from={Route.fullPath}
           search={(prev: any) => ({ ...prev, test: !includeTest })}
-          className={chipClasses({ size: "caption", tone: "muted", weight: "medium", selected: includeTest })}
+          className={chipClasses({ tone: "muted", weight: "medium", selected: includeTest })}
         >
           {includeTest ? "Test users: on" : "Test users: hidden"}
         </Link>
