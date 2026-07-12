@@ -199,14 +199,8 @@ function ConfettiBurst() {
         delay: Math.random() * 0.2,
         duration: 1.2 + Math.random() * 0.9,
         rotate: Math.random() * 360,
-        color: [
-          "var(--pen-tennis)",
-          "var(--pen-pool)",
-          "var(--pen-iris)",
-          "var(--pen-pink)",
-          "var(--pen-orange)",
-        ][i % 5],
       })),
+
     [],
   );
   return (
@@ -219,7 +213,7 @@ function ConfettiBurst() {
           key={p.id}
           style={{
             left: `${p.left}%`,
-            background: p.color,
+            background: "var(--accent)",
             animationDelay: `${p.delay}s`,
             animationDuration: `${p.duration}s`,
             transform: `rotate(${p.rotate}deg)`,
