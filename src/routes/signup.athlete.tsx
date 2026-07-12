@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/logo";
+import { SportsPoster } from "@/components/ui/sports-poster";
 import { getAthleteInviteSummary } from "@/lib/athlete-signup.functions";
 import { PromoCodeField } from "@/components/signup/promo-code-field";
 import { ShareInviteButton } from "@/components/share/share-invite-button";
@@ -67,8 +68,10 @@ function AthleteEntryPage() {
   };
 
   return (
-    <div className="flex min-h-dvh items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md rounded-2xl bg-card p-8 shadow-card">
+    <div className="relative flex min-h-dvh items-center justify-center overflow-hidden px-4 py-12">
+      <SportsPoster fill opacity={0.08} />
+      <div className="relative w-full max-w-md rounded-2xl bg-card p-8 shadow-card">
+
         <div className="mb-8 text-center">
           <p className="text-xs font-bold uppercase tracking-widest text-accent-ink">Welcome to</p>
           <h1 className="mt-2">
