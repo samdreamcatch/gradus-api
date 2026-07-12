@@ -16,8 +16,8 @@ export const fonts = {
 
 export const colors = {
   ink: '#1F2937',
-  inkSoft: '#4B5563',
-  meta: '#6B7280',
+  inkSoft: '#1F2937',
+  meta: '#1F2937',
   hair: '#E6E7EB',
   paper: '#F8F9FC',
   penFill: '#C0DD27',
