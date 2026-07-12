@@ -407,6 +407,9 @@
   &:active {
     transform: scale(0.99);
   }
+}
+
+
 
 /*
  * paper-surface — page-consistent wash + ruled paper background used by
