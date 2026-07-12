@@ -172,58 +172,42 @@ function PlansFilterStrip({
   const sports = sportsData?.sports ?? [];
   const isTemplate = filter === "templates";
 
-  const triggerClass =
-    "h-8 w-full rounded-full border border-foreground/15 bg-popover px-3 text-xs font-bold text-text-primary shadow-sm";
-
   return (
     <div className="mt-2.5 grid grid-cols-3 gap-2">
-      <Select value={filter} onValueChange={(v) => onFilter(v as PlanFilter)}>
-        <SelectTrigger className={triggerClass} aria-label="Plan type">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="active">Active</SelectItem>
-          <SelectItem value="drafts">Drafts</SelectItem>
-          <SelectItem value="benched">Benched</SelectItem>
-          <SelectItem value="templates">Templates</SelectItem>
-        </SelectContent>
-      </Select>
+      <FilterPill
+        aria-label="Plan type"
+        value={filter}
+        onValueChange={(v) => onFilter(v as PlanFilter)}
+        options={[
+          { value: "active", label: "Active" },
+          { value: "drafts", label: "Drafts" },
+          { value: "benched", label: "Benched" },
+          { value: "templates", label: "Templates" },
+        ]}
+      />
 
-      <Select
+      <FilterPill
+        aria-label="Athlete"
         value={athleteId || "__all"}
         onValueChange={(v) => onAthlete(v === "__all" ? "" : v)}
+        placeholder="All athletes"
         disabled={isTemplate}
-      >
-        <SelectTrigger className={triggerClass} aria-label="Athlete">
-          <SelectValue placeholder="All athletes" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="__all">All athletes</SelectItem>
-          {athletes.map((a) => (
-            <SelectItem key={a.id} value={a.id}>
-              {a.name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+        options={[
+          { value: "__all", label: "All athletes" },
+          ...athletes.map((a) => ({ value: a.id, label: a.name })),
+        ]}
+      />
 
-      <Select
+      <FilterPill
+        aria-label="Sport"
         value={sport || "__all"}
         onValueChange={(v) => onSport(v === "__all" ? "" : v)}
-        disabled={sports.length === 0}
-      >
-        <SelectTrigger className={triggerClass} aria-label="Sport">
-          <SelectValue placeholder="All sports" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="__all">All sports</SelectItem>
-          {sports.map((s) => (
-            <SelectItem key={s} value={s}>
-              {getSport(s)?.label ?? s}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+        placeholder="All sports"
+        options={[
+          { value: "__all", label: "All sports" },
+          ...sports.map((s) => ({ value: s, label: getSport(s)?.label ?? s })),
+        ]}
+      />
     </div>
   );
 }
