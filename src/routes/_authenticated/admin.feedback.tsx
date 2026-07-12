@@ -5,6 +5,7 @@ import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { Check, ArrowLeft } from "lucide-react";
 import { listFeedback, setFeedbackResolved } from "@/lib/feedback.functions";
+import { Eyebrow } from "@/components/ui/eyebrow";
 import { cn } from "@/lib/utils";
 
 const searchSchema = z.object({
@@ -42,7 +43,7 @@ function AdminFeedback() {
           <ArrowLeft className="size-3.5" /> Back to admin
         </Link>
         <div>
-          <p className="text-xs font-bold uppercase tracking-widest text-accent-ink">Internal</p>
+          <Eyebrow size="small" tone="accent-ink">Internal</Eyebrow>
           <h1 className="font-display text-h1 text-text-primary">Feedback</h1>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -80,9 +81,9 @@ function AdminFeedback() {
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-semibold text-text-primary">{f.name}</span>
-                    <span className="text-[11px] uppercase tracking-wider text-text-tertiary">
+                    <Eyebrow as="span" size="caption" tone="tertiary" weight="normal" tracking="wide">
                       {f.role}
-                    </span>
+                    </Eyebrow>
                     {f.isTest && (
                       <span className="rounded border border-divider px-1.5 py-0.5 text-[10px] uppercase tracking-wider text-text-tertiary">
                         test

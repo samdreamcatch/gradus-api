@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { getAdminList, setUserTestFlag } from "@/lib/admin.functions";
+import { Eyebrow } from "@/components/ui/eyebrow";
 
 const KIND_CONFIG = {
   coaches: {
@@ -92,7 +93,7 @@ function AdminList() {
       </Link>
 
       <header className="space-y-1">
-        <p className="text-xs font-bold uppercase tracking-widest text-accent-ink">Admin</p>
+        <Eyebrow size="small" tone="accent-ink">Admin</Eyebrow>
         <h1 className="font-display text-h1 text-text-primary">{cfg.title}</h1>
         {data && (
           <p className="text-sm text-text-secondary">

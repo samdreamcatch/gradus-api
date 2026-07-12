@@ -13,6 +13,7 @@ import "reactflow/dist/style.css";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { getAdminConnectionMap } from "@/lib/admin.functions";
+import { Eyebrow } from "@/components/ui/eyebrow";
 
 const searchSchema = z.object({
   test: fallback(z.boolean(), false).default(false),
@@ -126,7 +127,7 @@ function AdminMap() {
       </Link>
 
       <header className="space-y-1">
-        <p className="text-xs font-bold uppercase tracking-widest text-accent-ink">Internal</p>
+        <Eyebrow size="small" tone="accent-ink">Internal</Eyebrow>
         <h1 className="font-display text-h1 text-text-primary">Connection map</h1>
         <p className="text-sm text-text-secondary">
           Coaches, athletes, and parents and the links between them. Click a coach or parent to open their detail page. Pan and zoom with mouse / trackpad.

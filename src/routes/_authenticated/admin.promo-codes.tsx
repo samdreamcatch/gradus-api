@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Eyebrow } from "@/components/ui/eyebrow";
 import {
   listPromoCodes,
   createPromoCode,
@@ -151,14 +152,14 @@ function PromoCodesPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-divider text-left text-[11px] uppercase tracking-wider text-text-tertiary">
-                  <th className="px-5 py-3">Code</th>
-                  <th className="px-3 py-3">Label</th>
-                  <th className="px-3 py-3 text-right">Parents</th>
-                  <th className="px-3 py-3 text-right">Coaches</th>
-                  <th className="px-3 py-3 text-right">Athletes</th>
-                  <th className="px-3 py-3 text-right">Total</th>
-                  <th className="px-5 py-3 text-right">Active</th>
+                <tr className="border-b border-divider text-left text-text-tertiary">
+                  <Eyebrow as="th" size="caption" tone="tertiary" weight="normal" tracking="wide" className="px-5 py-3">Code</Eyebrow>
+                  <Eyebrow as="th" size="caption" tone="tertiary" weight="normal" tracking="wide" className="px-3 py-3">Label</Eyebrow>
+                  <Eyebrow as="th" size="caption" tone="tertiary" weight="normal" tracking="wide" className="px-3 py-3 text-right">Parents</Eyebrow>
+                  <Eyebrow as="th" size="caption" tone="tertiary" weight="normal" tracking="wide" className="px-3 py-3 text-right">Coaches</Eyebrow>
+                  <Eyebrow as="th" size="caption" tone="tertiary" weight="normal" tracking="wide" className="px-3 py-3 text-right">Athletes</Eyebrow>
+                  <Eyebrow as="th" size="caption" tone="tertiary" weight="normal" tracking="wide" className="px-3 py-3 text-right">Total</Eyebrow>
+                  <Eyebrow as="th" size="caption" tone="tertiary" weight="normal" tracking="wide" className="px-5 py-3 text-right">Active</Eyebrow>
                 </tr>
               </thead>
               <tbody className="divide-y divide-divider">
