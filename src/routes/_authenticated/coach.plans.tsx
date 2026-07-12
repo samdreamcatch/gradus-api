@@ -30,13 +30,7 @@ import {
 import { listMoves, type MoveDTO } from "@/lib/moves.functions";
 import { MoveSheet } from "@/components/coach/move-sheet";
 import { PlanCard } from "@/components/plans/plan-card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { FilterPill } from "@/components/ui/filter-pill";
 import { getSport } from "@/lib/coach-sports";
 import { SegmentedToggle } from "@/components/plans/segmented-toggle";
 import { FilterBar } from "@/components/plans/filter-bar";
