@@ -122,7 +122,7 @@ function RosterPage() {
             <DialogTrigger asChild>
               <Button type="button" variant="outline" size="sm" className="mt-1 shrink-0">
                 <UserPlus className="size-4" aria-hidden />
-                Invite code
+                Add to Roster
               </Button>
             </DialogTrigger>
             <DialogContent className="bg-popover">
