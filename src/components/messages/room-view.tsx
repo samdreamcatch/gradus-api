@@ -421,9 +421,10 @@ function Composer({
               </button>
             </PopoverTrigger>
             <PopoverContent align="start" side="top" className="w-64 p-1">
-              <p className="px-2 py-1.5 text-[11px] font-black uppercase tracking-widest text-text-tertiary">
+              <p className="px-2 py-1.5 text-caption font-black uppercase tracking-widest text-text-tertiary">
                 Tag a plan
               </p>
+
               <div className="flex flex-col">
                 {activePlans.map((p) => (
                   <button
