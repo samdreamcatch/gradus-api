@@ -1,12 +1,13 @@
 // Gradus email design tokens — paper & ink, jelly-pen accent (Tennis).
 // Body bg must remain #ffffff for inbox compatibility.
-
-import watermarkAsset from "@/assets/email-poster-watermark.jpg.asset.json";
-
-// Absolute CDN URL for the sports-poster watermark. Email clients require an
-// absolute URL for background-image to resolve.
-export const watermarkUrl = `https://gradus.training${watermarkAsset.url}`;
-
+//
+// Visual identity matches the founder "welcome" email:
+//   - Flat cream-grey paper card (no watermark, no border, no radius)
+//   - Large serif "Gradus" wordmark centered at top with a lime pen-highlight
+//     stripe behind it, followed by a full-width hairline rule
+//   - Big serif headings, humanist sans body
+//   - Dark charcoal callout section for checklists/emphasis blocks
+//   - Pill CTA in tennis lime with dark ink + dark hairline border
 
 export const fonts = {
   display: 'Fraunces, Georgia, "Times New Roman", serif',
@@ -18,10 +19,12 @@ export const colors = {
   ink: '#1F2937',
   inkSoft: '#1F2937',
   meta: '#1F2937',
-  hair: '#E6E7EB',
-  paper: '#F8F9FC',
+  hair: '#D9DCE3',
+  paper: '#F1F3F7',
+  charcoal: '#1B2530',
+  charcoalInk: '#FFFFFF',
   penFill: '#C0DD27',
-  penInk: '#333E00',
+  penInk: '#2A3300',
   penWash: '#F7FCE6',
 }
 
@@ -29,54 +32,74 @@ export const main: React.CSSProperties = {
   backgroundColor: '#ffffff',
   fontFamily: fonts.body,
   margin: 0,
-  padding: '32px 0',
+  padding: '0',
 }
 
 export const container: React.CSSProperties = {
   width: '100%',
-  maxWidth: '560px',
+  maxWidth: '640px',
   margin: '0 auto',
-  padding: '56px 36px',
+  padding: '0',
   backgroundColor: colors.paper,
-  backgroundImage: `url("${watermarkUrl}")`,
-  backgroundRepeat: 'no-repeat',
-  backgroundPosition: 'center center',
-  backgroundSize: '100% 100%',
-  border: `1px solid ${colors.hair}`,
-  borderRadius: '20px',
 }
 
+// Inner padding wrapper for the "paper" content above the dark callout.
+export const pageInner: React.CSSProperties = {
+  padding: '40px 44px 8px',
+}
 
+// Inner padding wrapper for content BELOW a dark callout (CTA + footer area).
+export const pageInnerBottom: React.CSSProperties = {
+  padding: '32px 44px 40px',
+  textAlign: 'center' as const,
+}
 
-
-
+// Wordmark = large serif "Gradus" with a lime highlighter stripe behind it.
+// The linear-gradient background renders reliably in Gmail/Apple Mail/Outlook.
 export const wordmark: React.CSSProperties = {
+  display: 'block',
+  textAlign: 'center' as const,
   fontFamily: fonts.display,
-  fontSize: '20px',
-  fontWeight: 600,
-  letterSpacing: '-0.01em',
+  fontSize: '44px',
+  fontWeight: 700,
+  letterSpacing: '-0.02em',
   color: colors.ink,
-  margin: '0 0 4px',
+  margin: '0 auto 24px',
+  padding: '0',
+}
+
+// Span placed INSIDE the wordmark <Text> to carry the highlight stripe.
+export const wordmarkHighlight: React.CSSProperties = {
+  backgroundImage: `linear-gradient(180deg, transparent 0%, transparent 52%, ${colors.penFill} 52%, ${colors.penFill} 90%, transparent 90%)`,
+  padding: '0 6px',
+}
+
+// Full-width hairline that sits under the wordmark.
+export const topRule: React.CSSProperties = {
+  border: 'none',
+  borderTop: `1px solid ${colors.ink}`,
+  margin: '0 0 36px',
+  opacity: 0.9,
 }
 
 export const eyebrow: React.CSSProperties = {
   fontFamily: fonts.body,
   fontSize: '11px',
   fontWeight: 700,
-  letterSpacing: '0.12em',
+  letterSpacing: '0.14em',
   textTransform: 'uppercase',
   color: colors.meta,
-  margin: '0 0 28px',
+  margin: '0 0 16px',
 }
 
 export const h1: React.CSSProperties = {
   fontFamily: fonts.display,
-  fontSize: '32px',
-  fontWeight: 600,
-  lineHeight: 1.12,
-  letterSpacing: '-0.015em',
+  fontSize: '40px',
+  fontWeight: 700,
+  lineHeight: 1.08,
+  letterSpacing: '-0.02em',
   color: colors.ink,
-  margin: '0 0 20px',
+  margin: '0 0 28px',
 }
 
 export const text: React.CSSProperties = {
@@ -95,17 +118,40 @@ export const link: React.CSSProperties = {
   textUnderlineOffset: '2px',
 }
 
+// Dark charcoal callout — used for checklists / emphasized blocks.
+export const callout: React.CSSProperties = {
+  backgroundColor: colors.charcoal,
+  color: colors.charcoalInk,
+  padding: '28px 36px',
+  margin: '8px 0 32px',
+}
+
+export const calloutText: React.CSSProperties = {
+  fontFamily: fonts.body,
+  fontSize: '16px',
+  lineHeight: 1.55,
+  color: colors.charcoalInk,
+  margin: '0 0 12px',
+}
+
+// Pill CTA — tennis lime with dark ink and a dark hairline border.
 export const button: React.CSSProperties = {
   display: 'inline-block',
   backgroundColor: colors.penFill,
   color: colors.penInk,
   fontFamily: fonts.body,
-  fontSize: '15px',
+  fontSize: '16px',
   fontWeight: 700,
   borderRadius: '9999px',
-  padding: '14px 28px',
+  padding: '16px 34px',
   textDecoration: 'none',
   border: `1px solid ${colors.penInk}`,
+}
+
+// Wrap the CTA in this to center it under the callout.
+export const buttonWrap: React.CSSProperties = {
+  textAlign: 'center' as const,
+  margin: '4px 0 24px',
 }
 
 export const code: React.CSSProperties = {
@@ -125,20 +171,23 @@ export const code: React.CSSProperties = {
 export const divider: React.CSSProperties = {
   border: 'none',
   borderTop: `1px solid ${colors.hair}`,
-  margin: '32px 0 20px',
+  margin: '28px 0 18px',
 }
 
 export const footer: React.CSSProperties = {
   fontFamily: fonts.body,
-  fontSize: '12px',
-  lineHeight: 1.5,
+  fontSize: '13px',
+  lineHeight: 1.55,
   color: colors.meta,
   margin: '0',
+  textAlign: 'center' as const,
 }
 
 export const sign: React.CSSProperties = {
   fontFamily: fonts.hand,
-  fontSize: '22px',
+  fontStyle: 'italic' as const,
+  fontSize: '16px',
   color: colors.ink,
   margin: '24px 0 0',
 }
+

@@ -1,7 +1,8 @@
 import * as React from "react";
 import { Body, Container, Head, Heading, Hr, Html, Preview, Text } from "@react-email/components";
 import parse from "html-react-parser";
-import { code, container, divider, eyebrow, footer, h1, main, text, wordmark } from "./_styles";
+import { code, container, divider, eyebrow, footer, h1, main, text } from "./_styles";
+import { Header } from "./_layout";
 import { resolveCopy, renderTemplateString } from "./copy-schema";
 
 interface ReauthenticationEmailProps {
@@ -18,7 +19,7 @@ export const ReauthenticationEmail = ({ token, copyOverrides }: Reauthentication
       <Preview>{renderTemplateString(c.preview, vars)}</Preview>
       <Body style={main}>
         <Container style={container}>
-          <Text style={wordmark}>Gradus</Text>
+          <Header />
           <Text style={eyebrow}>{renderTemplateString(c.eyebrow, vars)}</Text>
           <Heading style={h1}>{renderTemplateString(c.heading, vars)}</Heading>
           <Text style={text}>{parse(renderTemplateString(c.body, vars))}</Text>
