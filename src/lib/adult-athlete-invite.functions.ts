@@ -129,7 +129,17 @@ export const getAdultAthleteByInviteCode = createServerFn({ method: "POST" })
  */
 export const claimAdultAthleteInvite = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ code: codeSchema }).parse(input))
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        code: codeSchema,
+        // When true, marks the coach side as already acknowledged so the
+        // celebration modal doesn't appear on the coach's first page load
+        // after the signup wizard. Used by /signup/coach?invite=...
+        autoAckCoach: z.boolean().optional(),
+      })
+      .parse(input),
+  )
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const userId = context.userId;
@@ -152,10 +162,17 @@ export const claimAdultAthleteInvite = createServerFn({ method: "POST" })
     if (!inviteRow.data) throw new Error("That adult-athlete invite code isn't valid.");
     const athleteId = inviteRow.data.athlete_id;
 
+    const ackIso = data.autoAckCoach ? new Date().toISOString() : null;
     const linkIns = await supabaseAdmin
       .from("coach_athletes")
       .upsert(
-        [{ coach_id: coachId, athlete_id: athleteId }],
+        [
+          {
+            coach_id: coachId,
+            athlete_id: athleteId,
+            ...(ackIso ? { coach_ack_at: ackIso } : {}),
+          },
+        ],
         { onConflict: "coach_id,athlete_id", ignoreDuplicates: true },
       );
     if (linkIns.error) dbError(linkIns.error);
