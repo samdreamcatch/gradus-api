@@ -3,7 +3,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { LogOut, Mail, Palette, User, Dumbbell, Send } from "lucide-react";
+import { LogOut, Mail, Palette, User, Dumbbell, Send, Link2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -74,9 +74,7 @@ function SettingsPage() {
           <SettingsList>
             <SportsDisclosure levels={data.levels} summary={sportsSummary} />
             <RosterSettingsSection />
-            <InviteDisclosure />
-            <InviteAdultAthletesDisclosure />
-            <EnterCodeDisclosure />
+            <ConnectionsDisclosure />
 
 
 
@@ -343,39 +341,66 @@ function SportsDisclosure({
   );
 }
 
-function InviteDisclosure() {
+function ConnectionsDisclosure() {
+  const [audience, setAudience] = useState<"parents" | "adult-athletes">("parents");
+  const options: Array<{ value: "parents" | "adult-athletes"; label: string }> = [
+    { value: "parents", label: "Youth parents" },
+    { value: "adult-athletes", label: "Adult (18+)" },
+  ];
+
   return (
     <SettingsDisclosure
-      icon={<Send className="size-4" />}
-      label="Invite parents of youth athletes"
-      description="Share your code so parents can connect"
+      icon={<Link2 className="size-4" />}
+      label="Connections"
+      description="Share your code or enter someone else's"
     >
-      <InviteCard compact />
-    </SettingsDisclosure>
-  );
-}
+      <div className="space-y-6">
+        <section className="space-y-3">
+          <div className="flex items-center gap-3">
+            <Send className="size-3.5 text-text-tertiary" />
+            <h3 className="text-caption font-semibold uppercase tracking-wider text-text-secondary">
+              Share your code
+            </h3>
+          </div>
+          <div
+            role="tablist"
+            aria-label="Invite audience"
+            className="inline-flex rounded-full border border-divider bg-elevated p-1"
+          >
+            {options.map((opt) => {
+              const active = audience === opt.value;
+              return (
+                <button
+                  key={opt.value}
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => setAudience(opt.value)}
+                  className={`rounded-full px-3 py-1.5 text-label font-medium transition-colors ${
+                    active
+                      ? "bg-accent text-accent-foreground"
+                      : "text-text-secondary hover:text-text-primary"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
+          <InviteCard compact audience={audience} />
+        </section>
 
-function EnterCodeDisclosure() {
-  return (
-    <SettingsDisclosure
-      icon={<Send className="size-4" />}
-      label="Enter a parent or athlete's code"
-      description="Add someone to your roster using a code they gave you"
-    >
-      <EnterInviteCodeCard />
-    </SettingsDisclosure>
-  );
-}
+        <div className="h-px bg-divider" />
 
-
-function InviteAdultAthletesDisclosure() {
-  return (
-    <SettingsDisclosure
-      icon={<Send className="size-4" />}
-      label="Invite adult athletes"
-      description="Share your code so adult athletes (18+) can connect"
-    >
-      <InviteCard compact audience="adult-athletes" />
+        <section className="space-y-3">
+          <div className="flex items-center gap-3">
+            <Send className="size-3.5 rotate-180 text-text-tertiary" />
+            <h3 className="text-caption font-semibold uppercase tracking-wider text-text-secondary">
+              Have a code?
+            </h3>
+          </div>
+          <EnterInviteCodeCard />
+        </section>
+      </div>
     </SettingsDisclosure>
   );
 }
