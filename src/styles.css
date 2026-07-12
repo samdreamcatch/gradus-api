@@ -194,7 +194,7 @@
   --cream: oklch(0.32 0.015 85);
 
   /* Destructive — fill stays toned-down; ink is brightened to pass AAA on dark surfaces. */
-  --destructive: oklch(0.55 0.135 28);
+  --destructive: oklch(0.70 0.17 25);
   --destructive-ink: oklch(0.82 0.150 25);
 }
 
