@@ -6,7 +6,10 @@ import { z } from "zod";
 import { Check, ArrowLeft } from "lucide-react";
 import { listFeedback, setFeedbackResolved } from "@/lib/feedback.functions";
 import { Eyebrow } from "@/components/ui/eyebrow";
+import { Chip, chipClasses } from "@/components/ui/chip";
+import { Tag } from "@/components/ui/tag";
 import { cn } from "@/lib/utils";
+
 
 const searchSchema = z.object({
   unresolved: fallback(z.boolean(), false).default(false),
