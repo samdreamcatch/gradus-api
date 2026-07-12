@@ -12,6 +12,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Eyebrow } from "@/components/ui/eyebrow";
+
+
 
 import { submitFeedback } from "@/lib/feedback.functions";
 import { useBottomBannerLocked } from "@/lib/bottom-banner-store";
