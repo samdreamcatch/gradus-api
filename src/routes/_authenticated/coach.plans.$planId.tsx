@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Eyebrow } from "@/components/ui/eyebrow";
 import { useVisualViewport } from "@/hooks/use-visual-viewport";
 import {
   AlertDialog,
@@ -543,9 +544,9 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
         <div className="rounded-lg border border-divider bg-card px-3 py-2">
           {isTemplate ? (
             <div className="flex items-center justify-between gap-3">
-              <label className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
+              <Eyebrow as="label" size="micro" tone="tertiary" weight="black">
                 Use this template
-              </label>
+              </Eyebrow>
               <Switch
                 checked={useTemplateOpen}
                 disabled={useTemplate.isPending}
@@ -643,9 +644,9 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
               <div className="mb-3 flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <BarChart3 className="h-4 w-4 text-text-tertiary" />
-                  <span className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
+                  <Eyebrow as="span" size="micro" tone="tertiary" weight="black">
                     Logged instances
-                  </span>
+                  </Eyebrow>
                 </div>
                 <span className="text-xs text-text-tertiary tabular-nums">
                   {loggedSessionsTotal === 0
@@ -659,9 +660,9 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
               <div className="mt-4 border-t border-dashed border-divider pt-3">
                 <div className="mb-2 flex items-center gap-2">
                   <Sparkles className="h-4 w-4 text-text-tertiary" />
-                  <span className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
+                  <Eyebrow as="span" size="micro" tone="tertiary" weight="black">
                     Summary
-                  </span>
+                  </Eyebrow>
                 </div>
                 {loggedSessionsTotal === 0 ? (
                   <p className="text-xs text-text-tertiary">
@@ -697,9 +698,9 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
 
         {/* Moves */}
         <div className="mb-3 mt-2 flex items-end justify-between">
-          <p className="text-[11px] font-black uppercase tracking-widest text-text-secondary">
+          <Eyebrow size="caption" tone="secondary" weight="black">
             What does {plan.athleteName?.split(" ")[0] ?? "your athlete"} need to work on?
-          </p>
+          </Eyebrow>
         </div>
 
         <ul className="space-y-1.5">
@@ -1204,9 +1205,9 @@ function PlanMoveTarget({
   return (
     <div className="space-y-1">
       <div className="flex items-center gap-2">
-        <span className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
+        <Eyebrow as="span" size="micro" tone="tertiary" weight="black">
           Target
-        </span>
+        </Eyebrow>
         {saving ? (
           <span className="text-[10px] font-medium text-text-tertiary">Saving…</span>
         ) : null}
@@ -1390,12 +1391,12 @@ function MovePicker({
                         <p className="truncate text-sm font-bold text-text-primary">
                           {m.name}
                         </p>
-                        <p className="text-[11px] font-bold uppercase tracking-widest text-text-tertiary">
+                        <Eyebrow size="caption" tone="tertiary">
                           {m.category} ·{" "}
                           {m.defaultTargetKind === "mins"
                             ? `${m.defaultTargetValue} mins`
                             : `${m.defaultTargetValue} reps`}
-                        </p>
+                        </Eyebrow>
                       </div>
                     </button>
                   </li>
@@ -1512,9 +1513,9 @@ function NewMoveForm({
     <div className="mt-3 flex flex-1 flex-col overflow-y-auto">
       <div className="space-y-3 pb-4">
         <div>
-          <label className="mb-1 block text-[11px] font-black uppercase tracking-widest text-text-tertiary">
+          <Eyebrow as="label" size="caption" tone="tertiary" weight="black" className="mb-1 block">
             Name
-          </label>
+          </Eyebrow>
           <Input
             value={name}
             onChange={(e) => {
@@ -1536,9 +1537,9 @@ function NewMoveForm({
                 <li key={m.id} className="flex items-center justify-between gap-2 py-1.5">
                   <div className="min-w-0">
                     <p className="truncate text-sm font-bold text-text-primary">{m.name}</p>
-                    <p className="text-[11px] font-bold uppercase tracking-widest text-text-tertiary">
+                    <Eyebrow size="caption" tone="tertiary">
                       {m.category}
-                    </p>
+                    </Eyebrow>
                   </div>
                   <Button
                     type="button"
@@ -1564,9 +1565,9 @@ function NewMoveForm({
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="mb-1 block text-[11px] font-black uppercase tracking-widest text-text-tertiary">
+            <Eyebrow as="label" size="caption" tone="tertiary" weight="black" className="mb-1 block">
               Sport
-            </label>
+            </Eyebrow>
             <Input
               value={sport}
               onChange={(e) => setSport(e.target.value)}
@@ -1579,9 +1580,9 @@ function NewMoveForm({
             </datalist>
           </div>
           <div>
-            <label className="mb-1 block text-[11px] font-black uppercase tracking-widest text-text-tertiary">
+            <Eyebrow as="label" size="caption" tone="tertiary" weight="black" className="mb-1 block">
               Category
-            </label>
+            </Eyebrow>
             <Input
               value={category}
               onChange={(e) => setCategory(e.target.value)}
@@ -1590,9 +1591,9 @@ function NewMoveForm({
         </div>
 
         <div>
-          <label className="mb-1 block text-[11px] font-black uppercase tracking-widest text-text-tertiary">
+          <Eyebrow as="label" size="caption" tone="tertiary" weight="black" className="mb-1 block">
             Default target
-          </label>
+          </Eyebrow>
           <div className="flex items-center gap-2">
             <div className="inline-flex overflow-hidden rounded-md border border-divider">
               {(["reps", "mins"] as const).map((k) => (
@@ -1622,9 +1623,9 @@ function NewMoveForm({
         </div>
 
         <div>
-          <label className="mb-1 block text-[11px] font-black uppercase tracking-widest text-text-tertiary">
+          <Eyebrow as="label" size="caption" tone="tertiary" weight="black" className="mb-1 block">
             Cue
-          </label>
+          </Eyebrow>
           <Input
             value={cue}
             onChange={(e) => setCue(e.target.value)}
@@ -1747,9 +1748,9 @@ function AddToLibrarySection({
     <div className="rounded-lg border border-dashed border-accent/50 bg-accent/5 px-3 py-2.5">
       <div className="flex items-center justify-between gap-3">
         <div className="flex-1 text-xs">
-          <p className="font-bold uppercase tracking-wide text-text-secondary">
+          <Eyebrow size="small" tone="secondary" tracking="wide">
             Not in your library
-          </p>
+          </Eyebrow>
           <p className="mt-0.5 text-text-tertiary">
             {ready
               ? "Save this move so you can reuse it in future plans."
@@ -1776,9 +1777,9 @@ function AddToLibrarySection({
           </AlertDialogHeader>
           <div className="space-y-3 py-1">
             <label className="block">
-              <span className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
+              <Eyebrow as="span" size="micro" tone="tertiary" weight="black">
                 Sport
-              </span>
+              </Eyebrow>
               <select
                 value={sport}
                 onChange={(e) => setSport(e.target.value)}
@@ -1795,9 +1796,9 @@ function AddToLibrarySection({
               </select>
             </label>
             <label className="block">
-              <span className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
+              <Eyebrow as="span" size="micro" tone="tertiary" weight="black">
                 Category
-              </span>
+              </Eyebrow>
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
@@ -1980,9 +1981,9 @@ function LibrarySyncStrip({
     <div className="rounded-lg border border-dashed border-accent/50 bg-accent/5 px-3 py-2.5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0 flex-1 text-xs">
-          <p className="font-bold uppercase tracking-wide text-text-secondary">
+          <Eyebrow size="small" tone="secondary" tracking="wide">
             Edited from library
-          </p>
+          </Eyebrow>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Button
@@ -2046,9 +2047,9 @@ function LibrarySyncStrip({
           </AlertDialogHeader>
           <div className="space-y-3 py-1">
             <label className="block">
-              <span className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
+              <Eyebrow as="span" size="micro" tone="tertiary" weight="black">
                 Name
-              </span>
+              </Eyebrow>
               <Input
                 value={forkName}
                 onChange={(e) => setForkName(e.target.value)}
@@ -2058,9 +2059,9 @@ function LibrarySyncStrip({
             </label>
 
             <label className="block">
-              <span className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
+              <Eyebrow as="span" size="micro" tone="tertiary" weight="black">
                 Sport
-              </span>
+              </Eyebrow>
               <select
                 value={sport}
                 onChange={(e) => setSport(e.target.value)}
@@ -2075,9 +2076,9 @@ function LibrarySyncStrip({
               </select>
             </label>
             <label className="block">
-              <span className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
+              <Eyebrow as="span" size="micro" tone="tertiary" weight="black">
                 Category
-              </span>
+              </Eyebrow>
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}

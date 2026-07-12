@@ -7,6 +7,7 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Eyebrow } from "@/components/ui/eyebrow";
 import {
   listEmailTemplates,
   getEmailTemplate,
@@ -37,7 +38,7 @@ function EmailsAdmin() {
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 space-y-6">
       <header className="space-y-2">
-        <p className="text-xs font-bold uppercase tracking-widest text-accent-ink">Internal</p>
+        <Eyebrow size="small" tone="accent-ink">Internal</Eyebrow>
         <div className="flex items-baseline justify-between gap-4">
           <h1 className="font-display text-h1 text-text-primary">Email copy</h1>
           <Link
@@ -58,7 +59,7 @@ function EmailsAdmin() {
         <aside className="space-y-4">
           {groupByCategory(templates ?? []).map(([category, items]) => (
             <div key={category} className="space-y-1">
-              <p className="text-xs font-bold uppercase tracking-widest text-text-tertiary px-2">{category}</p>
+              <Eyebrow size="small" tone="tertiary" className="px-2">{category}</Eyebrow>
               <ul className="rounded-xl border border-divider bg-card overflow-hidden">
                 {items.map((tpl) => (
                   <li key={tpl.name}>
@@ -184,8 +185,8 @@ function TemplateEditor({ name }: { name: string }) {
       </section>
 
       <section className="rounded-xl border border-divider bg-card overflow-hidden">
-        <div className="border-b border-divider bg-elevated px-4 py-2 text-xs font-bold uppercase tracking-widest text-text-secondary">
-          Live preview
+        <div className="border-b border-divider bg-elevated px-4 py-2">
+          <Eyebrow size="small" tone="secondary">Live preview</Eyebrow>
         </div>
         <div className="bg-surface-email-client">
           <iframe
@@ -204,7 +205,7 @@ function TemplateEditor({ name }: { name: string }) {
           return (
             <div key={slot.key} className="space-y-1.5">
               <div className="flex items-center justify-between gap-2">
-                <label className="text-xs font-bold uppercase tracking-widest text-text-secondary">
+                <Eyebrow as="label" size="small" tone="secondary">
                   {slot.label}
                   {isOverridden && (
                     <span className="ml-2 text-[10px] font-mono uppercase text-accent-ink">custom</span>
@@ -212,7 +213,7 @@ function TemplateEditor({ name }: { name: string }) {
                   {isDirty && (
                     <span className="ml-2 text-[10px] font-mono uppercase text-pen-orange-ink">unsaved</span>
                   )}
-                </label>
+                </Eyebrow>
                 <div className="flex items-center gap-2">
                   {isOverridden && (
                     <button
@@ -286,8 +287,8 @@ function HistoryPanel({ name, historyFn }: { name: string; historyFn: any }) {
   }
   return (
     <section className="rounded-xl border border-divider bg-card overflow-hidden">
-      <div className="border-b border-divider bg-elevated px-4 py-2 text-xs font-bold uppercase tracking-widest text-text-secondary">
-        History
+      <div className="border-b border-divider bg-elevated px-4 py-2">
+        <Eyebrow size="small" tone="secondary">History</Eyebrow>
       </div>
       <ul className="divide-y divide-divider">
         {history.map((row: any) => (

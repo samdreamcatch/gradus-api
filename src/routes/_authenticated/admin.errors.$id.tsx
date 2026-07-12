@@ -2,6 +2,7 @@ import { createFileRoute, Link } from '@tanstack/react-router'
 import { useServerFn } from '@tanstack/react-start'
 import { useQuery } from '@tanstack/react-query'
 import { ArrowLeft } from 'lucide-react'
+import { Eyebrow } from '@/components/ui/eyebrow'
 import { getAdminError } from '@/lib/error-tracking.functions'
 
 export const Route = createFileRoute('/_authenticated/admin/errors/$id')({
@@ -63,9 +64,9 @@ function AdminErrorDetail() {
 
           {e.stack && (
             <section>
-              <p className="text-xs font-bold uppercase tracking-widest text-text-secondary mb-2">
+              <Eyebrow size="small" tone="secondary" className="mb-2">
                 Stack
-              </p>
+              </Eyebrow>
               <pre className="rounded-lg bg-surface-code-block text-surface-code-block-foreground p-4 text-caption leading-relaxed overflow-auto whitespace-pre-wrap">
                 {e.stack}
               </pre>
@@ -74,9 +75,9 @@ function AdminErrorDetail() {
 
           {e.metadata && Object.keys(e.metadata).length > 0 && (
             <section>
-              <p className="text-xs font-bold uppercase tracking-widest text-text-secondary mb-2">
+              <Eyebrow size="small" tone="secondary" className="mb-2">
                 Metadata
-              </p>
+              </Eyebrow>
               <pre className="rounded-lg border border-divider bg-elevated p-4 text-[11px] leading-relaxed overflow-auto whitespace-pre-wrap">
                 {JSON.stringify(e.metadata, null, 2)}
               </pre>
@@ -91,9 +92,9 @@ function AdminErrorDetail() {
 function Row({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
   return (
     <div className="flex gap-3 text-sm">
-      <span className="text-[11px] uppercase tracking-wider text-text-tertiary w-24 shrink-0 pt-0.5">
+      <Eyebrow as="span" size="caption" tone="tertiary" weight="normal" tracking="wide" className="w-24 shrink-0 pt-0.5">
         {label}
-      </span>
+      </Eyebrow>
       <span
         className={
           'text-text-primary break-all ' + (mono ? 'font-mono text-xs' : '')

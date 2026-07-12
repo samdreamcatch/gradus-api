@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 import { getUserDetail, setUserTestFlag, deleteTestUser } from "@/lib/admin.functions";
+import { Eyebrow } from "@/components/ui/eyebrow";
 
 export const Route = createFileRoute("/_authenticated/admin/users/$userId")({
   component: UserDetail,
@@ -35,7 +36,7 @@ function UserDetail() {
           <header className="rounded-xl border border-divider bg-card p-5">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-xs uppercase tracking-wider text-text-tertiary">Auth user</p>
+                <Eyebrow size="small" tone="tertiary" weight="normal" tracking="wide">Auth user</Eyebrow>
                 <h1 className="mt-1 font-display text-h2 text-text-primary">
                   {data.auth?.email ?? "(no email)"}
                   {data.isTest && (
@@ -112,9 +113,9 @@ function UserDetail() {
                 <Field label="Sports" value={(data.coach.sports as string[]).join(", ") || "—"} />
               </dl>
               <div>
-                <p className="text-xs uppercase tracking-wider text-text-tertiary">
+                <Eyebrow size="small" tone="tertiary" weight="normal" tracking="wide">
                   Athletes ({(data.coach.athletes as any[]).length})
-                </p>
+                </Eyebrow>
                 <ul className="mt-1 text-sm text-text-primary">
                   {(data.coach.athletes as any[]).map((a) => (
                     <li key={a.id}>• {a.first_name} {a.last_name}</li>
@@ -132,9 +133,9 @@ function UserDetail() {
                 <Field label="Coach link" value={data.parent.coach_id ? "Linked" : "Beta (no coach)"} />
               </dl>
               <div>
-                <p className="text-xs uppercase tracking-wider text-text-tertiary">
+                <Eyebrow size="small" tone="tertiary" weight="normal" tracking="wide">
                   Athletes ({(data.parent.athletes as any[]).length})
-                </p>
+                </Eyebrow>
                 <ul className="mt-1 text-sm text-text-primary">
                   {(data.parent.athletes as any[]).map((a) => (
                     <li key={a.id}>
@@ -162,9 +163,9 @@ function UserDetail() {
                 <Field label="Active plans" value={`${data.athlete.activePlansCount} / ${data.athlete.plansCount}`} />
               </dl>
               <div>
-                <p className="text-xs uppercase tracking-wider text-text-tertiary">
+                <Eyebrow size="small" tone="tertiary" weight="normal" tracking="wide">
                   Coaches ({(data.athlete.coaches as any[]).length})
-                </p>
+                </Eyebrow>
                 <ul className="mt-1 text-sm text-text-primary">
                   {(data.athlete.coaches as any[]).map((c, i) => (
                     <li key={i}>
@@ -191,7 +192,7 @@ function UserDetail() {
 function Field({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
   return (
     <div>
-      <dt className="text-xs uppercase tracking-wider text-text-tertiary">{label}</dt>
+      <Eyebrow as="dt" size="small" tone="tertiary" weight="normal" tracking="wide">{label}</Eyebrow>
       <dd className={`text-sm text-text-primary ${mono ? "font-mono break-all" : ""}`}>{value}</dd>
     </div>
   );

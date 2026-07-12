@@ -5,6 +5,7 @@ import { zodValidator, fallback } from '@tanstack/zod-adapter'
 import { z } from 'zod'
 import { ArrowLeft } from 'lucide-react'
 import { listAdminErrors } from '@/lib/error-tracking.functions'
+import { Eyebrow } from '@/components/ui/eyebrow'
 import { cn } from '@/lib/utils'
 
 const searchSchema = z.object({
@@ -35,7 +36,7 @@ function AdminErrors() {
           <ArrowLeft className="size-3.5" /> Back to admin
         </Link>
         <div>
-          <p className="text-xs font-bold uppercase tracking-widest text-accent-ink">Internal</p>
+          <Eyebrow size="small" tone="accent-ink">Internal</Eyebrow>
           <h1 className="font-display text-h1 text-text-primary">Errors</h1>
           <p className="text-text-secondary text-sm mt-1">
             Every captured error from the app, newest first. One row per occurrence.
