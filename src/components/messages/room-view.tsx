@@ -229,9 +229,10 @@ export function RoomView({ roomId, viewerRole }: { roomId: string; viewerRole?: 
                       <Link
                         to={planHrefForRole(room.myRole, m.plan.id)}
                         className={cn(
-                          "mb-1 inline-flex max-w-[78%] items-center gap-1.5 rounded-full bg-accent/15 px-2.5 py-1 text-[11px] font-black uppercase tracking-widest text-accent-ink ring-1 ring-accent/30 hover:bg-accent/25",
+                          "mb-1 inline-flex max-w-[78%] items-center gap-1.5 rounded-full bg-accent/15 px-2.5 py-1 text-caption font-black uppercase tracking-widest text-accent-ink ring-1 ring-accent/30 hover:bg-accent/25",
                         )}
                       >
+
                         <ClipboardList className="size-3" />
                         <span className="truncate normal-case tracking-normal text-xs font-bold">
                           {m.plan.title}
