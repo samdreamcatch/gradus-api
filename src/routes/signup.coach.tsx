@@ -184,15 +184,6 @@ function CoachSignupPage() {
     setCaptchaOpen(true);
   };
 
-  const handleGoogle = () => {
-    setError(null);
-    if (captchaToken) {
-      void doGoogleSignup(captchaToken);
-      return;
-    }
-    setPendingAction("google");
-    setCaptchaOpen(true);
-  };
 
   const handleCaptchaVerified = (token: string) => {
     setCaptchaToken(token);
