@@ -40,8 +40,8 @@ export const container: React.CSSProperties = {
   backgroundColor: colors.paper,
   backgroundImage: `url("${watermarkUrl}")`,
   backgroundRepeat: 'no-repeat',
-  backgroundPosition: 'center top',
-  backgroundSize: '560px auto',
+  backgroundPosition: 'right -40px top -30px',
+  backgroundSize: '420px auto',
   border: `1px solid ${colors.hair}`,
   borderRadius: '20px',
 }
