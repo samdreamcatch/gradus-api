@@ -41,13 +41,14 @@ export class GlobalErrorBoundary extends Component<Props, State> {
           <p className="text-text-secondary mt-3">
             We've been notified and are looking into it. Try reloading the page.
           </p>
-          <button
-            type="button"
+          <Chip
+            tone="accent"
+            className="mt-6"
             onClick={() => window.location.reload()}
-            className="mt-6 rounded-pill border border-accent bg-accent px-5 py-2 text-xs font-bold uppercase tracking-wider text-accent-foreground"
           >
             Reload
-          </button>
+          </Chip>
+
         </div>
       )
     }
