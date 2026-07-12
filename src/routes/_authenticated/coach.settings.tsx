@@ -355,6 +355,19 @@ function InviteDisclosure() {
   );
 }
 
+function EnterCodeDisclosure() {
+  return (
+    <SettingsDisclosure
+      icon={<Send className="size-4" />}
+      label="Enter a parent or athlete's code"
+      description="Add someone to your roster using a code they gave you"
+    >
+      <EnterInviteCodeCard />
+    </SettingsDisclosure>
+  );
+}
+
+
 function InviteAdultAthletesDisclosure() {
   return (
     <SettingsDisclosure
