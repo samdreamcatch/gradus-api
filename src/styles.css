@@ -282,8 +282,9 @@
 @layer base {
   .font-hand {
     font-style: italic;
-    font-weight: 500;
-    line-height: 1.3;
+    font-weight: 400;
+    font-size: 0.9375rem;
+    line-height: 1.35;
     letter-spacing: 0;
     font-feature-settings: "ss01";
   }
