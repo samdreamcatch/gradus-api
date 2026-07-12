@@ -66,6 +66,7 @@ function CoachSignupPage() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [inviteCode, setInviteCode] = useState(invite ?? "");
   const [agreed, setAgreed] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [captchaKey, setCaptchaKey] = useState(0);
@@ -76,7 +77,13 @@ function CoachSignupPage() {
   const [promoCode, setPromoCode] = useState("");
   const [showAgreeHint, setShowAgreeHint] = useState(false);
 
+  // Keep the visible field in sync if the search param changes (e.g. OG deeplink).
+  useEffect(() => {
+    if (invite) setInviteCode(invite);
+  }, [invite]);
 
+  // Stash the URL-provided invite immediately so a signed-in user's auto-claim
+  // effect below (and coach onboarding's post-complete claim) can pick it up.
   useEffect(() => {
     if (invite) {
       try {
@@ -139,17 +146,27 @@ function CoachSignupPage() {
     retry: false,
   });
 
+  const trimmedCode = inviteCode.trim().toUpperCase();
+  const inviteCodeValid = trimmedCode.length === 0 || /^[A-Z2-9]{8}$/.test(trimmedCode);
+
   const stashPendingAccept = () => {
     stashPendingTermsAccept();
     savePendingPromoCode(promoCode);
+    // Stash the currently-typed invite so coach onboarding can claim it after
+    // sign-in completes (parent-first with adult-athlete fallback).
+    if (trimmedCode.length === 8) {
+      try {
+        localStorage.setItem(PENDING_INVITE_KEY, trimmedCode);
+      } catch {
+        /* ignore */
+      }
+    }
   };
 
   const clearPendingAccept = () => {
     clearPendingTermsAccept();
     clearPendingPromoCode();
   };
-
-
 
   const resetCaptcha = () => {
     setCaptchaToken(null);
@@ -210,6 +227,10 @@ function CoachSignupPage() {
       setShowAgreeHint(true);
       return;
     }
+    if (!inviteCodeValid) {
+      setError("Invite code must be 8 characters.");
+      return;
+    }
     if (captchaToken) {
       void doEmailSignup(captchaToken);
       return;
@@ -222,6 +243,10 @@ function CoachSignupPage() {
     setError(null);
     if (!agreed) {
       setShowAgreeHint(true);
+      return;
+    }
+    if (!inviteCodeValid) {
+      setError("Invite code must be 8 characters.");
       return;
     }
     if (captchaToken) {
@@ -244,7 +269,7 @@ function CoachSignupPage() {
   const adultAthleteName = adultAthlete
     ? `${adultAthlete.firstName} ${adultAthlete.lastName}`.trim()
     : null;
-  
+
 
   return (
     <div className="relative flex min-h-dvh items-center justify-center overflow-hidden px-4 py-12">
@@ -300,6 +325,28 @@ function CoachSignupPage() {
               Please accept the Terms to continue.
             </p>
           )}
+        </div>
+
+        <div className="mb-4 space-y-2">
+          <Label htmlFor="invite-code">
+            Athlete or parent invite code <span className="text-text-tertiary">(optional)</span>
+          </Label>
+          <Input
+            id="invite-code"
+            name="invite-code"
+            value={inviteCode}
+            onChange={(e) => setInviteCode(e.target.value.toUpperCase().slice(0, 8))}
+            maxLength={8}
+            placeholder="––––––––"
+            className="font-mono tracking-[0.25em] uppercase"
+            autoComplete="off"
+            data-lpignore="true"
+            data-1p-ignore="true"
+            data-bwignore="true"
+          />
+          <p className="text-xs text-text-tertiary">
+            Got an 8-character code from a family or athlete? Enter it to connect on signup.
+          </p>
         </div>
 
         <div className="mb-6">
