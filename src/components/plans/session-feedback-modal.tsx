@@ -179,7 +179,7 @@ function FlowStateScale({
   return (
     <div className="mt-4 px-1">
       <div className="relative">
-        <div className="pointer-events-none absolute left-5 right-5 top-1/2 z-0 border-t-2 border-text-primary" />
+        <div className="pointer-events-none absolute left-5 right-5 top-1/2 z-0 border-t-2 border-pen-pool-ink" />
         <div className="relative z-10 flex h-10 items-center justify-between">
           {FLOW_STATES.map((s, i) => {
             const active = value === i;
@@ -194,10 +194,10 @@ function FlowStateScale({
               >
                 <span
                   className={cn(
-                    "block rounded-full border-2 border-text-primary bg-card transition-all",
+                    "block rounded-full border-2 border-pen-pool-ink bg-card transition-all",
                     active
                       ? "size-5 bg-accent"
-                      : "size-3 group-hover:bg-text-primary/20",
+                      : "size-3 group-hover:bg-pen-pool-ink/20",
                   )}
                 />
               </button>
