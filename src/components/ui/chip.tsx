@@ -91,6 +91,8 @@ export function chipClasses({
 }: Omit<ChipOwnProps, "children"> = {}) {
   return cn(
     "inline-flex items-center justify-center gap-1.5 rounded-pill border transition",
+    "disabled:cursor-not-allowed disabled:opacity-50",
+
     SIZE_CLASS[size],
     mono ? "font-mono" : WEIGHT_CLASS[weight],
     !caseSensitive && "uppercase",
