@@ -46,16 +46,15 @@ function AdminErrors() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Chip
-            as={Link}
+          <Link
             from={Route.fullPath}
             search={(prev: any) => ({ ...prev, test: !includeTest })}
-            tone="muted"
-            selected={includeTest}
+            className={chipClasses({ tone: 'muted', selected: includeTest })}
           >
             {includeTest ? 'Test users: on' : 'Test users: hidden'}
-          </Chip>
+          </Link>
         </div>
+
 
       </header>
 
