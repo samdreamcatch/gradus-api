@@ -37,15 +37,16 @@ export const container: React.CSSProperties = {
   width: '100%',
   maxWidth: '560px',
   margin: '0 auto',
-  padding: '40px 36px',
+  padding: '64px 36px 72px',
   backgroundColor: colors.paper,
-  backgroundImage: `url("${watermarkUrl}")`,
-  backgroundRepeat: 'no-repeat',
-  backgroundPosition: 'right -40px top -30px',
-  backgroundSize: '420px auto',
+  backgroundImage: `url("${watermarkUrl}"), url("${watermarkUrl}")`,
+  backgroundRepeat: 'no-repeat, no-repeat',
+  backgroundPosition: 'center top, center bottom',
+  backgroundSize: '560px auto, 560px auto',
   border: `1px solid ${colors.hair}`,
   borderRadius: '20px',
 }
+
 
 
 export const wordmark: React.CSSProperties = {
