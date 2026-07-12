@@ -143,24 +143,22 @@ function AdminList() {
                 </div>
                   <div className="shrink-0 flex items-center gap-3">
                     {r.userId && (
-                      <button
-                        type="button"
+                      <Chip
+                        size="micro"
+                        mono
+                        selected={(r as any).isTest}
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
                           toggleTest.mutate({ userId: r.userId!, isTest: !(r as any).isTest });
                         }}
                         disabled={toggleTest.isPending}
-                        className={`rounded-pill border px-2 py-0.5 text-[10px] font-mono uppercase tracking-wider transition ${
-                          (r as any).isTest
-                            ? "border-accent bg-accent text-accent-foreground"
-                            : "border-divider bg-card text-text-tertiary hover:bg-elevated"
-                        }`}
                         title={(r as any).isTest ? "Unmark test user" : "Mark as test user"}
                       >
                         {(r as any).isTest ? "test ✓" : "mark test"}
-                      </button>
+                      </Chip>
                     )}
+
                     <div className="text-right">
                       <p className="text-xs font-mono uppercase text-accent-ink">{r.tag}</p>
                       <p className="text-xs text-text-tertiary">
