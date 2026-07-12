@@ -173,7 +173,6 @@ export const getAdminOverview = createServerFn({ method: "POST" })
     }
 
     return {
-      betaInviteCode: (process.env.BETA_INVITE_CODE ?? "").trim().toUpperCase() || null,
       counts: {
         coaches: coaches.count ?? 0,
         parents: parents.count ?? 0,

@@ -120,21 +120,6 @@ function AdminHome() {
         </div>
       </header>
 
-      {overview?.betaInviteCode && (
-        <section className="rounded-lg border border-divider bg-card p-4 flex items-center justify-between gap-4">
-          <div>
-            <Eyebrow size="small" tone="secondary">Beta invite code</Eyebrow>
-            <p className="font-mono text-h3 text-text-primary tracking-widest mt-1">{overview.betaInviteCode}</p>
-          </div>
-          <Chip
-            tone="muted"
-            onClick={() => navigator.clipboard.writeText(overview.betaInviteCode!)}
-          >
-            Copy
-          </Chip>
-
-        </section>
-      )}
 
 
 
