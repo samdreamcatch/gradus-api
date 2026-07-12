@@ -41,6 +41,22 @@ function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
 
+  // Surface OAuth callback errors that come back in the URL hash
+  // (e.g. #error=invalid_request&error_description=...). Without this the
+  // provider bounces the user to /login and the failure is invisible.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const hash = window.location.hash;
+    if (!hash || !hash.includes("error")) return;
+    const params = new URLSearchParams(hash.startsWith("#") ? hash.slice(1) : hash);
+    const err = params.get("error");
+    if (!err) return;
+    const desc = params.get("error_description") || err;
+    setError(`Google sign-in failed: ${decodeURIComponent(desc).replace(/\+/g, " ")}`);
+    // Strip the hash so a refresh doesn't re-show the toast.
+    window.history.replaceState(null, "", window.location.pathname + window.location.search);
+  }, []);
+
   const resetCaptcha = () => {
     setCaptchaToken(null);
     setCaptchaKey((k) => k + 1);
