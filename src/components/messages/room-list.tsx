@@ -116,9 +116,10 @@ export function RoomList({
                 >
                   {display}
                 </p>
-                <span className="shrink-0 text-[11px] font-bold uppercase tracking-widest text-text-tertiary">
+                <span className="shrink-0 text-caption font-bold uppercase tracking-widest text-text-tertiary">
                   {relativeTime(room.updatedAt)}
                 </span>
+
               </div>
 
               <div className="mt-0.5 flex items-center justify-between gap-2">
