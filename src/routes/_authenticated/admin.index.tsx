@@ -446,21 +446,21 @@ function RecentList({
 
 function TestToggle({ isTest, onToggle }: { isTest: boolean; onToggle: () => void }) {
   return (
-    <button
-      type="button"
+    <Chip
+      as="button"
+      size="micro"
+      mono
+      selected={isTest}
+      className="shrink-0"
       onClick={(e) => {
         e.preventDefault();
         e.stopPropagation();
         onToggle();
       }}
       title={isTest ? "Unmark as test user" : "Mark as test user"}
-      className={`shrink-0 rounded-pill border px-2 py-1 text-[10px] font-mono uppercase tracking-wider transition ${
-        isTest
-          ? "border-accent bg-accent text-accent-foreground"
-          : "border-divider bg-card text-text-tertiary hover:bg-elevated"
-      }`}
     >
       {isTest ? "test ✓" : "test"}
-    </button>
+    </Chip>
   );
+
 }
