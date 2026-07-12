@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { KeyRound } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -86,12 +86,9 @@ export function EnterInviteCodeCard({ onSuccess }: { onSuccess?: () => void } = 
 
   return (
     <div className="space-y-3">
-      <div className="flex items-start gap-2">
-        <KeyRound className="mt-0.5 size-4 text-text-secondary" />
-        <div className="text-xs text-text-secondary">
-          Got a code from a parent or an adult athlete? Enter it here to add
-          them to your roster.
-        </div>
+      <div className="text-xs text-text-secondary">
+        Got a code from a parent or an adult athlete? Enter it here to add
+        them to your roster.
       </div>
       <form
         className="space-y-3"
