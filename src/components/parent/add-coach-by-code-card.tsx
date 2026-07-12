@@ -164,22 +164,19 @@ export function AddCoachByCodeCard({ athletes }: { athletes: Athlete[] }) {
                 {athletes.map((a) => {
                   const selected = athleteId === a.id;
                   return (
-                    <button
+                    <Chip
                       key={a.id}
-                      type="button"
+                      as="button"
+                      caseSensitive
+                      selected={selected}
                       onClick={() => setAthleteId(a.id)}
-                      className={
-                        "rounded-pill border-2 px-3 py-1 text-xs font-semibold transition " +
-                        (selected
-                          ? "border-accent bg-accent text-accent-foreground"
-                          : "border-divider bg-card text-text-primary")
-                      }
                     >
                       {`${a.firstName} ${a.lastName}`.trim()}
-                    </button>
+                    </Chip>
                   );
                 })}
               </div>
+
             </div>
           )}
 
