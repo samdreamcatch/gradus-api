@@ -189,21 +189,6 @@ function LoginPage() {
           />
         </div>
 
-        <Button
-          type="button"
-          variant="outline"
-          className="w-full"
-          onClick={handleGoogle}
-          disabled={loading || !captchaToken}
-        >
-          Continue with Google
-        </Button>
-
-        <div className="my-6 flex items-center gap-3 text-xs uppercase tracking-wider text-text-tertiary">
-          <div className="h-px flex-1 bg-divider" />
-          or
-          <div className="h-px flex-1 bg-divider" />
-        </div>
 
         <form onSubmit={handleEmail} className="space-y-4">
           <div className="space-y-2">
