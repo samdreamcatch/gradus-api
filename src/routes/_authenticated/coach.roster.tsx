@@ -119,12 +119,11 @@ function RosterPage() {
 
   return (
     <>
-      <div className="mx-auto min-h-dvh max-w-3xl px-4 pt-8 pb-24">
-        <PageTitle>Roster</PageTitle>
-
+      <div className="mx-auto flex min-h-dvh max-w-3xl flex-col px-3 pt-4 pb-24">
         <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
-          <header className="sticky top-0 z-20 -mx-4 mt-4 bg-background/90 px-4 pb-2 pt-1 backdrop-blur supports-[backdrop-filter]:bg-background/70">
+          <header className="sticky top-0 z-20 -mx-3 bg-background/90 px-3 pb-2 pt-1 backdrop-blur supports-[backdrop-filter]:bg-background/70">
             <SegmentedToggle tab={tab} onChange={setTab} />
+
 
             <div className="mt-3 flex items-center gap-2">
               {athletes.length > 0 && sports.length > 0 ? (
