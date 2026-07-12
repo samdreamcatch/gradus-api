@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Body, Container, Head, Heading, Hr, Html, Preview, Text } from "@react-email/components";
 import parse from "html-react-parser";
-import { code, container, divider, eyebrow, footer, h1, main, text, buttonWrap } from "./_styles";
+import { code, container, divider, eyebrow, footer, h1, main, text } from "./_styles";
 import { Header } from "./_layout";
 import { resolveCopy, renderTemplateString } from "./copy-schema";
 
