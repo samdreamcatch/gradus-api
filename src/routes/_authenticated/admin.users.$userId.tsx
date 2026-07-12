@@ -104,6 +104,13 @@ function UserDetail() {
                     : "Never"
                 }
               />
+              <Field
+                label="Last active"
+                value={(() => {
+                  const seen = (data.coach as any)?.last_seen_at ?? (data.parent as any)?.last_seen_at ?? null;
+                  return seen ? new Date(seen).toLocaleString() : "Never";
+                })()}
+              />
             </dl>
           </header>
 
