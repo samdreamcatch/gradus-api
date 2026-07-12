@@ -518,38 +518,39 @@ export const setPlanStatus = createServerFn({ method: "POST" })
         .maybeSingle();
       if (ownErr) dbError(ownErr);
       if (!owned) throw new Error("Plan not found");
-      if (!owned.athlete_id) throw new Error("Assign an athlete before activating.");
-
-      // Count other active plans for this athlete from this coach.
-      const { data: others, error: othersErr } = await supabase
-        .from("plans")
-        .select("id")
-        .eq("coach_id", coachId)
-        .eq("athlete_id", owned.athlete_id)
-        .eq("kind", "plan")
-        .eq("status", "active")
-        .neq("id", data.id);
-      if (othersErr) dbError(othersErr);
-      const activeOthers = (others ?? []) as { id: string }[];
-
-      if (activeOthers.length >= MAX_ACTIVE_PLANS_PER_ATHLETE) {
-        // Already at the cap — require coach to pick one to bench.
-        if (!data.replaceId || !activeOthers.some((p) => p.id === data.replaceId)) {
-          throw new Error("BENCH_CHOICE_REQUIRED");
-        }
-      }
-
-      if (data.replaceId) {
-        if (!activeOthers.some((p) => p.id === data.replaceId)) {
-          throw new Error("Selected plan is not active.");
-        }
-        const { error: bErr } = await supabase
+      // Athlete-scoped conflict logic only runs when an athlete is assigned.
+      // A plan with no athlete is a public/social share and activates directly.
+      if (owned.athlete_id) {
+        const { data: others, error: othersErr } = await supabase
           .from("plans")
-          .update({ status: "benched" })
-          .eq("id", data.replaceId)
-          .eq("coach_id", coachId);
-        if (bErr) dbError(bErr);
+          .select("id")
+          .eq("coach_id", coachId)
+          .eq("athlete_id", owned.athlete_id)
+          .eq("kind", "plan")
+          .eq("status", "active")
+          .neq("id", data.id);
+        if (othersErr) dbError(othersErr);
+        const activeOthers = (others ?? []) as { id: string }[];
+
+        if (activeOthers.length >= MAX_ACTIVE_PLANS_PER_ATHLETE) {
+          if (!data.replaceId || !activeOthers.some((p) => p.id === data.replaceId)) {
+            throw new Error("BENCH_CHOICE_REQUIRED");
+          }
+        }
+
+        if (data.replaceId) {
+          if (!activeOthers.some((p) => p.id === data.replaceId)) {
+            throw new Error("Selected plan is not active.");
+          }
+          const { error: bErr } = await supabase
+            .from("plans")
+            .update({ status: "benched" })
+            .eq("id", data.replaceId)
+            .eq("coach_id", coachId);
+          if (bErr) dbError(bErr);
+        }
       }
+
 
       const { error } = await supabase
         .from("plans")
