@@ -49,13 +49,19 @@ type EyebrowProps<As extends React.ElementType = "p"> = {
   as?: As;
   size?: EyebrowSize;
   tone?: EyebrowTone;
-  /** Font weight token. `bold` is the default; some sites use `black`. */
-  weight?: "bold" | "black";
+  /** Font weight token. `bold` is the default; some sites use `black` or `normal`. */
+  weight?: "normal" | "bold" | "black";
   /** Letter-spacing token. `widest` is the default. */
   tracking?: EyebrowTracking;
   className?: string;
   children: React.ReactNode;
 } & Omit<React.ComponentPropsWithoutRef<As>, "className" | "children">;
+
+const WEIGHT_CLASS = {
+  normal: "font-normal",
+  bold: "font-bold",
+  black: "font-black",
+} as const;
 
 export function Eyebrow<As extends React.ElementType = "p">({
   as,
@@ -73,7 +79,7 @@ export function Eyebrow<As extends React.ElementType = "p">({
       className={cn(
         SIZE_CLASS[size],
         TONE_CLASS[tone],
-        weight === "black" ? "font-black" : "font-bold",
+        WEIGHT_CLASS[weight],
         "uppercase",
         TRACKING_CLASS[tracking],
         className,
