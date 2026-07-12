@@ -253,7 +253,7 @@ function FirstPlanBanner() {
   return (
     <Link
       to="/coach/plans"
-      className="mt-4 flex items-center gap-3 rounded-xl border border-accent/40 bg-accent/10 px-4 py-3 text-sm transition hover:bg-accent/15"
+      className="press mt-4 flex items-center gap-3 rounded-xl border border-accent/40 bg-accent/10 px-4 py-3 text-sm"
     >
       <Sparkles className="size-5 shrink-0 text-accent-ink" aria-hidden />
       <div>
