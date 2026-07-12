@@ -255,7 +255,7 @@ export function RoomView({ roomId, viewerRole }: { roomId: string; viewerRole?: 
                     </div>
                     <p
                       className={cn(
-                        "mt-0.5 px-2 text-[10px] font-bold uppercase tracking-widest text-text-tertiary",
+                        "mt-0.5 px-2 text-micro font-bold uppercase tracking-widest text-text-tertiary",
                         mine ? "text-right" : "text-left",
                       )}
                     >
@@ -264,6 +264,7 @@ export function RoomView({ roomId, viewerRole }: { roomId: string; viewerRole?: 
                         <span className="ml-1.5">· Seen</span>
                       ) : null}
                     </p>
+
                   </div>
                 );
               })}
