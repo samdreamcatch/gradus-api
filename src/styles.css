@@ -308,9 +308,9 @@
     pointer-events: none;
     z-index: 0;
   }
-  &.dark::before,
   :where(.dark) &::before {
-    display: none;
+    filter: invert(1);
+    opacity: 0.08;
   }
   & > * {
     position: relative;
