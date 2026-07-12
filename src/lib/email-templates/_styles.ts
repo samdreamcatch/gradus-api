@@ -36,15 +36,16 @@ export const container: React.CSSProperties = {
   width: '100%',
   maxWidth: '560px',
   margin: '0 auto',
-  padding: '40px 36px',
+  padding: '48px 36px 56px',
   backgroundColor: colors.paper,
   backgroundImage: `url("${watermarkUrl}")`,
   backgroundRepeat: 'no-repeat',
-  backgroundPosition: 'right -40px top -30px',
-  backgroundSize: '420px auto',
+  backgroundPosition: 'center top',
+  backgroundSize: '560px auto',
   border: `1px solid ${colors.hair}`,
   borderRadius: '20px',
 }
+
 
 
 
