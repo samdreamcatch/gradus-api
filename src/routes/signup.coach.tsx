@@ -5,7 +5,6 @@ import { useQuery } from "@tanstack/react-query";
 import { z } from "zod";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -48,7 +47,7 @@ export const Route = createFileRoute("/signup/coach")({
   component: CoachSignupPage,
 });
 
-type PendingAction = "email" | "google";
+type PendingAction = "email";
 
 function CoachSignupPage() {
   const { invite } = Route.useSearch();
@@ -170,26 +169,8 @@ function CoachSignupPage() {
     }
   };
 
-  const doGoogleSignup = async (verifiedCaptchaToken: string) => {
-    setLoading(true);
-    try {
-      await verifyCaptcha({ data: { token: verifiedCaptchaToken } });
-      stashPendingAccept();
-      const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin + "/coach",
-      });
-      if (result.error) throw result.error;
-      if (!result.redirected) navigate({ to: "/coach" });
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Google sign-in failed");
-      resetCaptcha();
-      setLoading(false);
-    }
-  };
-
   const runPending = async (action: PendingAction, token: string) => {
     if (action === "email") await doEmailSignup(token);
-    else await doGoogleSignup(token);
   };
 
   const handleEmailSubmit = (e: FormEvent) => {
@@ -203,15 +184,6 @@ function CoachSignupPage() {
     setCaptchaOpen(true);
   };
 
-  const handleGoogle = () => {
-    setError(null);
-    if (captchaToken) {
-      void doGoogleSignup(captchaToken);
-      return;
-    }
-    setPendingAction("google");
-    setCaptchaOpen(true);
-  };
 
   const handleCaptchaVerified = (token: string) => {
     setCaptchaToken(token);
@@ -250,15 +222,6 @@ function CoachSignupPage() {
           </div>
         )}
 
-        <Button type="button" variant="outline" className="w-full" onClick={handleGoogle} disabled={!canSubmit}>
-          Continue with Google
-        </Button>
-
-        <div className="my-6 flex items-center gap-3 text-xs uppercase tracking-wider text-text-tertiary">
-          <div className="h-px flex-1 bg-divider" />
-          or
-          <div className="h-px flex-1 bg-divider" />
-        </div>
 
         <form onSubmit={handleEmailSubmit} className="space-y-4" autoComplete="on">
           <div className="space-y-2">

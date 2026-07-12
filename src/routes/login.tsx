@@ -2,7 +2,6 @@ import { useEffect, useState, type FormEvent } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,7 +10,6 @@ import { SportsPoster } from "@/components/ui/sports-poster";
 import { TurnstileWidget } from "@/components/auth/turnstile";
 import { useAuthReady } from "@/hooks/use-auth-ready";
 import { resolveAthleteLogin } from "@/lib/athlete-signup.functions";
-import { verifyTurnstileToken } from "@/lib/turnstile.functions";
 
 export const Route = createFileRoute("/login")({
   validateSearch: (s: Record<string, unknown>) => {
@@ -31,7 +29,6 @@ function LoginPage() {
   const { user, isReady } = useAuthReady();
   const [identifier, setIdentifier] = useState("");
   const resolveLogin = useServerFn(resolveAthleteLogin);
-  const verifyCaptcha = useServerFn(verifyTurnstileToken);
   const [password, setPassword] = useState("");
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [captchaKey, setCaptchaKey] = useState(0);
@@ -167,29 +164,6 @@ function LoginPage() {
     }
   };
 
-  const handleGoogle = async () => {
-    setError(null);
-    if (!captchaToken) {
-      setError("Please complete the human check first.");
-      return;
-    }
-    setLoading(true);
-    try {
-      await verifyCaptcha({ data: { token: captchaToken } });
-      const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin + (search.redirect || "/"),
-      });
-      if (result.error) throw result.error;
-      if (!result.redirected) {
-        const { data } = await supabase.auth.getUser();
-        if (data.user?.id) await routeByRole(data.user.id);
-      }
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Google sign-in failed");
-      resetCaptcha();
-      setLoading(false);
-    }
-  };
 
   return (
     <div className="relative flex min-h-dvh items-center justify-center overflow-hidden px-4 py-12">
@@ -215,21 +189,6 @@ function LoginPage() {
           />
         </div>
 
-        <Button
-          type="button"
-          variant="outline"
-          className="w-full"
-          onClick={handleGoogle}
-          disabled={loading || !captchaToken}
-        >
-          Continue with Google
-        </Button>
-
-        <div className="my-6 flex items-center gap-3 text-xs uppercase tracking-wider text-text-tertiary">
-          <div className="h-px flex-1 bg-divider" />
-          or
-          <div className="h-px flex-1 bg-divider" />
-        </div>
 
         <form onSubmit={handleEmail} className="space-y-4">
           <div className="space-y-2">
