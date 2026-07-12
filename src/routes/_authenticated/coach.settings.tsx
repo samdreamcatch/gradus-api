@@ -19,6 +19,7 @@ import { coachInviteQueryOptions } from "@/hooks/use-coach-invite";
 import { InviteCard } from "@/components/onboarding/invite-card";
 import { CoachBottomNav } from "@/components/coach/bottom-nav";
 import { RosterSettingsSection } from "@/components/coach/roster-settings-section";
+import { EnterInviteCodeCard } from "@/components/coach/enter-invite-code-card";
 
 import {
   SettingsGroup,
@@ -75,6 +76,9 @@ function SettingsPage() {
             <RosterSettingsSection />
             <InviteDisclosure />
             <InviteAdultAthletesDisclosure />
+            <EnterCodeDisclosure />
+
+
 
           </SettingsList>
         </SettingsGroup>
@@ -350,6 +354,19 @@ function InviteDisclosure() {
     </SettingsDisclosure>
   );
 }
+
+function EnterCodeDisclosure() {
+  return (
+    <SettingsDisclosure
+      icon={<Send className="size-4" />}
+      label="Enter a parent or athlete's code"
+      description="Add someone to your roster using a code they gave you"
+    >
+      <EnterInviteCodeCard />
+    </SettingsDisclosure>
+  );
+}
+
 
 function InviteAdultAthletesDisclosure() {
   return (

@@ -9,6 +9,7 @@ import { SportFilterChips } from "@/components/coach/sport-filter-chips";
 import { WeekScheduleView } from "@/components/coach/week-schedule-view";
 import { AthleteDetailSheet } from "@/components/coach/athlete-detail-sheet";
 import { InviteCard } from "@/components/onboarding/invite-card";
+import { EnterInviteCodeCard } from "@/components/coach/enter-invite-code-card";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -126,16 +127,19 @@ function RosterPage() {
             </DialogTrigger>
             <DialogContent className="bg-popover">
               <DialogHeader>
-                <DialogTitle>Your invite code</DialogTitle>
+                <DialogTitle>Add athletes to your roster</DialogTitle>
                 <DialogDescription>
-                  Share this code with parents to add their athlete to your roster.
+                  Share your code with parents or adult athletes — or paste a code they gave you.
                 </DialogDescription>
               </DialogHeader>
-              <div className="mt-2">
+              <div className="mt-2 space-y-5">
                 <InviteCard compact />
+                <div className="border-t border-divider" />
+                <EnterInviteCodeCard />
               </div>
             </DialogContent>
           </Dialog>
+
         </div>
 
         <div className="mt-4">
