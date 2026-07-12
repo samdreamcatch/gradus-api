@@ -26,7 +26,7 @@ const COPY: Record<
 > = {
   parent: {
     intro:
-      "Tap share — when your coach signs up they'll be linked to your athletes, sports, goals, and lesson times automatically.",
+      "Tap share — when your coach signs up they'll be linked to your athletes, sports, goals, and lesson times automatically, or they can add the code directly in their settings.\u00a0",
     shareText:
       "Join me on Gradus so we can share practice plans and messages.",
     codeAria: "Your parent invite code",
