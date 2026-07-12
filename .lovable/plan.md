@@ -1,101 +1,102 @@
+# Emails: poster watermark + admin audit/edit tool
 
-# Adult-athlete → coach invites + suppress redundant celebration
+Two pieces of work, shipped together.
 
-Two changes, both scoped to closing gaps in the connection experience audit.
+---
 
-## 1. Adult athlete can invite a coach
+## Part 1 — Sports poster as a paper watermark
 
-Today an adult athlete can only hand out their own code and wait. This adds
-the mirror direction: the athlete sends a link that either (a) links an
-existing coach account by code, or (b) walks a brand-new coach through
-signup and links them at the end.
+The uploaded multi-sport line-art poster becomes a very subtle "paper" watermark behind the email card. It reinforces the notebook/paper feel of the design system without competing with the copy.
 
-### What the athlete sees
+### How it will look
 
-- **Athlete Settings → "Invite a coach"** card (mirrors the parent's existing
-  "Invite coach" card). Shows a shareable link and copy button.
-- The link is `/i/<8-char-code>` — the same universal entry we already have.
-- Below it, a small "How this works" note: "Send this to your coach. They'll
-  either sign in, or create a Gradus coach account. Either way, you'll be
-  connected as soon as they finish."
+- The poster is uploaded to Lovable Assets (CDN), lightened, and used as a `background-image` on the email `<Container>` (the paper card, not `<Body>` — some clients still strip body backgrounds).
+- Opacity target: **~7% in light mode**. The icons should read as ghosted paper texture, not as illustrations.
+- Position: `background-repeat: no-repeat; background-position: right -40px top -30px; background-size: 420px auto;` — bleeds off the top-right corner so the icons feel like they wander onto the page, leaving the left column clean for reading.
+- The `--pen-tennis` jelly-pen accent (green) stays as the only saturated color; the watermark is monochrome ink.
+- The lightened PNG is baked in — no CSS filters (Gmail/Outlook strip `filter:`). Uploaded once, referenced by URL from the shared `_styles.ts`.
 
-### What the recipient sees
+### Graceful degradation
 
-- Universal `/i/<code>` already resolves to an invite kind. Today it resolves
-  `adult-athlete` codes and, if the visitor is signed out, routes them to
-  `/signup/coach?invite=<code>`. We keep that.
-- If the visitor is already signed in as a coach: route to a lightweight
-  confirm page ("Link with Dani California?") that calls the existing
-  `claimAdultAthleteInvite`.
-- If signed in as anything other than a coach: friendly "This invite is for a
-  coach account" screen with a sign-out option.
+- Every major client that ships email in 2026 renders `background-image` on a table/div (Gmail web/iOS/Android, Apple Mail, Outlook 365, Yahoo). Outlook 2016/2019 desktop is the one holdout — those recipients see the plain paper card, which is fine.
+- No VML fallback needed; the watermark is decoration, not content.
+- Dark mode: Gmail and Apple Mail auto-invert light backgrounds. Because we lock the container to `#F8F9FC` and the watermark is monochrome ink, it stays readable in both.
 
-### What's already done vs. new
+### Files touched
 
-- **Already built:** `adult_athlete_invite_codes` table, code generation,
-  `getAdultAthleteByInviteCode`, `claimAdultAthleteInvite`, `/signup/coach`
-  handling `?invite=` for adult-athlete codes, `/i/$code` resolving to it.
-- **New:** the athlete-facing invite card + settings entry point, and the
-  signed-in-coach confirm screen at `/i/$code` (short-circuit instead of
-  bouncing to `/signup/coach`).
+- New: `src/assets/email-poster-watermark.png.asset.json` (CDN pointer).
+- `src/lib/email-templates/_styles.ts` — add `watermarkUrl` const and extend `container` with background-image properties.
+- No changes to individual template files.
 
-## 2. Suppress the celebration modal for the just-signed-up user
+---
 
-The celebration modal is meant to be a moment of delight when a new
-connection appears. Right after a signup wizard whose final screen already
-says "you're connected", it reads as a duplicate. We auto-ack the new
-user's side at the moment the link is created inside the wizard.
+## Part 2 — Admin tool to audit & edit all email copy
 
-### Where to auto-ack
+An admin-only page where you can see every email the system sends, preview each one live, and edit the copy (subject, preview text, headings, body paragraphs, CTA labels) without a code change. Edits are stored in the database and applied at send time.
 
-Two places create a link during a signup wizard:
+### What "editable" means, exactly
 
-1. **Parent signup with `?invite=<coach-code>`** — parent claims a coach
-   during `/signup/parent`. Set `other_ack_at = now()` on the new
-   `coach_athletes` rows in the same insert.
-2. **Coach signup with `?invite=<adult-athlete-code>`** — coach claims an
-   adult athlete during `/signup/coach`. Set `coach_ack_at = now()` on the
-   new `coach_athletes` row.
+Templates keep their layout, styling, and dynamic variables (`{siteName}`, `{recipient}`, `{confirmationUrl}`, etc.) in code. **Only the text strings** are overridable — so a non-technical editor can't accidentally break the HTML.
 
-The **other side** (the existing coach in case 1, the existing adult athlete
-in case 2) still has their `*_ack_at` NULL, so they see the celebration
-normally on their next visit. Nothing changes for existing users.
+Each template exposes a fixed set of copy slots. Example for the signup email:
+- `preview` — inbox preview line
+- `subject` — subject line
+- `eyebrow` — the small caps line above the heading
+- `heading` — the big serif line
+- `body` — main paragraph (supports `{variables}` and `<strong>`)
+- `ctaLabel` — button text
+- `secondaryHelp` — the "button not working?" line
+- `signOff` — the handwritten sign-off
+- `footer` — the disclaimer at the bottom
 
-### What stays the same
+Every template's slots are declared in one file (`src/lib/email-templates/copy-schema.ts`); the admin UI reads that schema and renders the right fields per template automatically.
 
-- Parent adding a coach from Settings (post-signup) → **both** sides see the
-  celebration. Unchanged.
-- Coach claiming a code from Settings → **both** sides see the celebration.
-  Unchanged.
-- Every non-wizard path unchanged.
+### The admin page: `/admin/emails`
 
-### Trade-off the user should know
+Sits next to the existing admin routes (`/admin/users`, `/admin/feedback`, etc.). Admin-only via existing `has_role` gate.
 
-The new user never sees the celebration animation for their first
-connection. The wizard's own confirmation is the moment. If we later want a
-"welcome to Gradus, here's who you're linked with" screen, that's a
-different surface — this change just prevents the duplicate modal.
+Layout, top-to-bottom:
 
-## Test plan updates
+1. **Template list** (left column, ~1/3 width): every email in the system grouped by category — "Auth emails" (6), "Internal alerts" (1: error-alert), and later "App emails" as they're added. Each row shows the display name, the last-edited-by/at, and a small dot indicator if it has overrides vs. defaults.
+2. **Editor** (right column, ~2/3 width):
+    - **Live preview** at the top — an iframe that re-renders the email HTML as you type (uses the existing `/lovable/email/auth/preview` route, extended to accept override copy).
+    - **Copy fields** below, one input per slot with help text explaining what variables are available (e.g. "`{siteName}` — always resolves to Gradus"). Long fields use a textarea.
+    - **Save**, **Revert to default**, and **Send test to me** buttons.
+    - **History**: last 10 versions with who/when, one-click restore.
 
-Existing test paths B (parent signup with invite) and E (coach signup with
-adult-athlete invite) should now assert **no modal** on the new user's first
-page load, and modal-as-usual on the other side. Add a new **Path I: Adult
-athlete invites a coach** covering both branches (existing coach account,
-brand-new coach signup).
+### How overrides get applied
 
-## Technical notes
+- New DB table `email_template_overrides` stores one row per (template_name, slot_key) with the current custom string, plus a `email_template_override_history` audit table.
+- When an email is queued for sending, the auth webhook / transactional send route fetches all overrides for that template, merges them over the code defaults, then renders. Missing overrides fall back to whatever's in the `.tsx` file — nothing breaks if the DB is empty.
+- Variables like `{recipient}` are always resolved from real send data, never editable.
 
-- Auto-ack lives in `src/lib/parent-signup.functions.ts` and
-  `src/lib/adult-athlete-invite.functions.ts` (or wherever the coach-signup
-  claim happens — verify during implementation). The change is a single
-  extra field on the existing `coach_athletes` insert; no schema change.
-- New athlete-facing invite card: reuse `src/components/parent/invite-coach-card.tsx`
-  as the template, swap the copy and the `getOrCreateAdultAthleteInviteCode`
-  → coach-invite-code hook pattern (there's already an equivalent hook for
-  the parent invite card).
-- Signed-in-coach short-circuit at `/i/$code`: extend
-  `src/routes/i.$code.tsx` to check auth + role before redirecting to
-  `/signup/coach`, and render a confirm screen that calls
-  `claimAdultAthleteInvite` on click.
-- No DB migration needed — every table and RPC already exists.
+### Coverage — including future app emails
+
+Right now the system only sends the 6 auth emails and internal error alerts. To make future app/transactional emails (celebration notifications, coach messages, digests, etc.) show up in the same admin tool automatically:
+
+- Run the app-email infrastructure setup (pgmq queues for transactional emails, send log, suppression, unsubscribe tokens).
+- Scaffold the transactional email pipeline (registry, send route, preview route, unsubscribe page).
+- Every new template added to the registry auto-appears in `/admin/emails` because the admin page reads the registry, not a hard-coded list.
+
+You'll get one placeholder app-email template as part of the scaffold ("Sample notification") to prove the pipeline works end-to-end. Real app emails (celebration digest, invite reminders, etc.) can be added later as separate work.
+
+---
+
+## Testing checklist (dev)
+
+1. **Watermark rendering**: open `/lovable/email/auth/preview` for each of the 6 auth emails, confirm the poster shows subtle in the top-right corner of the card. Send a real test email to a Gmail address and to an Apple Mail address; confirm both render the watermark and neither has color casts.
+2. **Copy editor round-trip**: as an admin, edit the signup email's heading + CTA label, save, then trigger a real signup — verify the sent email uses the new copy. Revert to default, trigger again — verify the code default returns.
+3. **History**: make three edits, restore the second one from the history list, confirm the current copy matches.
+4. **Fallback safety**: manually delete a row from `email_template_overrides` mid-flight; the next send should still work using the code default.
+5. **Variables safe**: try entering a broken variable like `{doesNotExist}` in a copy field — the template should render it as literal text, not crash the send.
+
+---
+
+## Technical notes (skip if non-technical)
+
+- Poster upload: `lovable-assets create --file /mnt/user-uploads/Multi-Sport_Line_Art_Icons_Poster-2.png --filename email-poster-watermark.png`. The lightening step (~7% opacity baked in) is done in Python with PIL before upload so no CSS filter is required.
+- New tables: `email_template_overrides (template_name text, slot_key text, value text, updated_by uuid, updated_at timestamptz, PRIMARY KEY (template_name, slot_key))` and `email_template_override_history (id uuid, template_name text, slot_key text, value text, changed_by uuid, changed_at timestamptz)`. RLS: `admin` role read/write on both; no `authenticated` or `anon` grants. Loaded at send time via a `requireSupabaseAuth`-free server helper using the publishable client + a narrow admin-only policy (or the admin client inside the webhook handler, which is already server-only).
+- Copy schema (`copy-schema.ts`) exports `{ [templateName]: { slots: [{ key, label, kind: 'text'|'textarea', help, allowsHtml?: boolean }], defaults: {...} } }`. Templates import defaults from here (single source of truth) instead of hardcoding strings, so audit view and rendering agree.
+- Preview route (`/lovable/email/auth/preview`) extended to accept an optional `overrides` payload so the admin editor shows edits live without saving.
+- App-email infra: `email_domain--setup_email_infra` + `email_domain--scaffold_transactional_email`. Adds `/lovable/email/transactional/{send,preview}`, `/email/unsubscribe` API + branded page, registry file, sample template.
+- Admin route file: `src/routes/_authenticated/admin.emails.tsx` (list + editor in one page, template selection via search param `?t=signup`).
