@@ -11,6 +11,9 @@ import { getAdminOverview, searchUsers, setUserTestFlag, getDailyActiveUsers, ge
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 import { SettingsGroup, SettingsList, SettingsButtonRow } from "@/components/settings/primitives";
 import { Eyebrow } from "@/components/ui/eyebrow";
+import { Chip, chipClasses } from "@/components/ui/chip";
+import { Tag } from "@/components/ui/tag";
+
 import { LogOut } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
