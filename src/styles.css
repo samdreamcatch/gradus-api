@@ -282,7 +282,7 @@
 @layer base {
   .font-hand {
     font-family: "Atkinson Hyperlegible", system-ui, sans-serif;
-    font-style: normal;
+    font-style: italic;
     font-weight: 400;
     font-size: 0.9375rem;
     line-height: 1.35;
