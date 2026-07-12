@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Mic } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { SportsPoster } from "@/components/ui/sports-poster";
+
 import type { RoomSummary, RoleInRoom } from "@/lib/messages.functions";
 
 
@@ -65,9 +65,8 @@ export function RoomList({
 }) {
   if (rooms.length === 0) {
     return (
-      <div className="relative overflow-hidden rounded-2xl border border-dashed border-divider bg-card p-8 text-center">
-        <SportsPoster fill opacity={0.08} />
-        <p className="relative font-hand text-2xl text-text-secondary">{emptyMessage}</p>
+      <div className="rounded-2xl border border-dashed border-divider bg-card p-8 text-center">
+        <p className="font-hand text-2xl text-text-secondary">{emptyMessage}</p>
       </div>
     );
   }

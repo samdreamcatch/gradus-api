@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { AthleteBottomNav } from "@/components/athlete/bottom-nav";
-import { SportsPoster } from "@/components/ui/sports-poster";
+
 import { PlanCard } from "@/components/plans/plan-card";
 import { PageTitle } from "@/components/page-title";
 import {
@@ -195,9 +195,8 @@ function AthletePlansPage() {
 
 function EmptyCard({ status }: { status: StatusFilter }) {
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-dashed border-divider bg-card p-8 text-center">
-      <SportsPoster fill opacity={0.08} />
-      <p className="relative font-hand text-2xl text-text-secondary">
+    <div className="rounded-2xl border border-dashed border-divider bg-card p-8 text-center">
+      <p className="font-hand text-2xl text-text-secondary">
         {status === "active"
           ? "No active plans yet — your coach will share one here."
           : "No benched plans."}

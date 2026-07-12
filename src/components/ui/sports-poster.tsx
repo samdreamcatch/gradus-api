@@ -21,8 +21,21 @@ interface SportsPosterProps {
 }
 
 /**
- * Gradus design-system watermark: the multi-sport line-art poster tucked
- * behind a container. Absolutely positioned, non-interactive, decorative.
+ * Gradus design-system watermark: the multi-sport line-art poster.
+ *
+ * DOCTRINE — ceremony surfaces only.
+ * The watermark marks arrival, exit, and celebration. It is NOT a page skin,
+ * NOT for authenticated app pages, lists, dashboards, or forms inside the
+ * app shell. Adding it to a routine surface dilutes the moment.
+ *
+ * Allowed surfaces (kept in sync with the ESLint allowlist in
+ * `eslint.config.js`):
+ *   Auth entry:  login, forgot-password, reset-password, i.$code
+ *   Signup:      signup.athlete, signup.athlete.adult, signup.coach, signup.parent
+ *   Celebration: connection-celebration, onboarding/invite-card
+ *
+ * New ceremony surfaces require an additive change to that allowlist —
+ * that friction is intentional.
  *
  * Parent must be `position: relative` (or `absolute/fixed`) and clip
  * overflow if you want the poster to bleed to the edge.

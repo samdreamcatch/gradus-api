@@ -1,41 +1,78 @@
-# Shrink bottom nav labels one step further
+# Restrict the sports-poster watermark to ceremony surfaces
 
-## Problem
+## Doctrine
 
-`nano` (9px) still reads too large in the bottom nav on mobile. `Eyebrow`'s smallest size is 9px, so we need a new smaller step in the design system rather than a one-off className override.
+The `<SportsPoster>` watermark is reserved for **ceremony surfaces** — auth entry/exit points and moments worth marking. It never appears on routine authenticated app pages.
 
-## Fix
+**Ceremony surfaces (10, keep watermark):**
+- Auth entry: `login.tsx`, `forgot-password.tsx`, `reset-password.tsx`, `i.$code.tsx`
+- Signup roots: `signup.athlete.tsx`, `signup.athlete.adult.tsx`, `signup.coach.tsx`, `signup.parent.tsx`
+- Celebration: `components/connection-celebration.tsx`, `components/onboarding/invite-card.tsx`
 
-### 1. Add a new size token to the Eyebrow scale
-`src/styles.css` — add a new utility next to `text-nano`:
-```css
-@utility text-pico {
-  font-size: 8px;
-  line-height: 1.2;
-}
+**Non-ceremony surfaces (4, strip watermark):**
+- `routes/_authenticated/coach.roster.tsx`
+- `routes/_authenticated/athlete.plans.index.tsx`
+- `routes/_authenticated/parent.plans.index.tsx`
+- `components/messages/room-list.tsx`
+
+## Changes
+
+### 1. Strip watermark from the 4 non-ceremony surfaces
+In each file, remove:
+- The `import { SportsPoster } from "@/components/ui/sports-poster"` line.
+- The `<SportsPoster fill opacity={0.08} />` JSX.
+- If the containing wrapper was only there to host the absolutely-positioned watermark (e.g. a `relative overflow-hidden` div with no other children), collapse it.
+
+Confirm each edit doesn't leave dead `relative` / `overflow-hidden` classes on wrappers that no longer need them.
+
+### 2. Tighten `src/components/ui/sports-poster.tsx` doc block
+Replace the current JSDoc with a doctrine block that names the exact allowed surfaces (bullet list above) and states: *"Not for authenticated app pages, lists, dashboards, or forms inside the app shell — the watermark is a ceremony marker, not a page skin."*
+
+No API changes to the component itself. The `corner` / `size` / `inset` / non-`fill` props stay (unused today, but they were designed for future ceremony compositions and cost nothing to keep).
+
+### 3. Lint rule in `eslint.config.js`
+Add `@/components/ui/sports-poster` to the existing `no-restricted-imports` block with a message pointing at the doctrine:
+
+```js
+{
+  name: "@/components/ui/sports-poster",
+  message:
+    "SportsPoster is reserved for ceremony surfaces (auth entry, signup roots, celebration). Do not import into authenticated app pages, lists, or dashboards. See the doc block in src/components/ui/sports-poster.tsx.",
+},
 ```
 
-### 2. Extend `Eyebrow` (and `Chip`/`Tag` for consistency)
-`src/components/ui/eyebrow.tsx`:
-- Add `"pico"` to `EyebrowSize` union.
-- Map `pico: "text-pico"` in `SIZE_CLASS`.
-- Update doc block: `pico (8px) — bottom-nav tile labels`; `nano (9px) — dense grids, rings`.
+Then append a second flat-config block that scopes an override for the 10 ceremony files, redefining `no-restricted-imports` for those files to only ban `server-only` (i.e. dropping the sports-poster entry):
 
-`src/components/ui/chip.tsx` and `src/components/ui/tag.tsx`:
-- Add `"pico"` to their size unions with matching `text-pico` + tight padding (`px-1.5 py-0.5` for Chip; `px-1 py-0.5` for Tag) so the scale stays aligned. Not used yet, but keeps the primitives in sync.
+```js
+{
+  files: [
+    "src/routes/login.tsx",
+    "src/routes/forgot-password.tsx",
+    "src/routes/reset-password.tsx",
+    "src/routes/i.$code.tsx",
+    "src/routes/signup.athlete.tsx",
+    "src/routes/signup.athlete.adult.tsx",
+    "src/routes/signup.coach.tsx",
+    "src/routes/signup.parent.tsx",
+    "src/components/connection-celebration.tsx",
+    "src/components/onboarding/invite-card.tsx",
+  ],
+  rules: {
+    "no-restricted-imports": ["error", { paths: [{ name: "server-only", message: "…" /* same server-only message */ }] }],
+  },
+},
+```
 
-### 3. Use `pico` in all three bottom navs
-`src/components/{coach,parent,athlete}/bottom-nav.tsx`:
-- Change `<Eyebrow size="nano" …>` → `<Eyebrow size="pico" …>`.
-- No other spacing/icon changes.
+New ceremony surfaces added later will require an additive one-line change to this allowlist — that friction is the point.
 
 ## Verification
 
-- Preview `/coach/roster`, `/parent/plans`, `/athlete/plans` on 390px: labels visibly smaller, no clipping.
-- `rg 'text-pico|size="pico"' src` → shows the new utility + three nav files.
-- Typecheck clean.
+- `rg -n "SportsPoster|sports-poster" src/` returns exactly 11 hits: the component file + 10 ceremony imports/usages (2 per ceremony file, minus any I miscounted; will confirm).
+- `bunx eslint src/` passes cleanly.
+- Manually try `import { SportsPoster } from "@/components/ui/sports-poster"` in a scratch line in `coach.roster.tsx` → ESLint errors with the doctrine message. Remove the scratch line.
+- Preview the 4 stripped pages at 390px: layout still holds, no visual regression beyond the missing watermark.
 
 ## Out of scope
 
-- Icon sizes stay at 18px (per prior turn).
-- No changes to other Eyebrow / Chip / Tag call sites.
+- No changes to `<SportsPoster>`'s API or the ceremony pages' composition. This is a scope-tightening pass, not a redesign.
+- No `<CeremonyPage>` wrapper. That's a future refactor if/when the ceremony surfaces prove they want shared scaffolding.

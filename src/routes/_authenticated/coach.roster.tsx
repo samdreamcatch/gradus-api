@@ -11,7 +11,7 @@ import { AthleteDetailSheet } from "@/components/coach/athlete-detail-sheet";
 import { InviteCard } from "@/components/onboarding/invite-card";
 import { EnterInviteCodeCard } from "@/components/coach/enter-invite-code-card";
 import { Button } from "@/components/ui/button";
-import { SportsPoster } from "@/components/ui/sports-poster";
+
 import {
   Dialog,
   DialogContent,
@@ -161,9 +161,9 @@ function RosterPage() {
 
         {tab === "athletes" ? (
           athletes.length === 0 ? (
-            <div className="relative mt-8 overflow-hidden rounded-2xl bg-card p-6 shadow-[0_10px_40px_-12px_rgba(0,0,0,0.15)] sm:p-8">
-              <SportsPoster fill opacity={0.08} />
-              <div className="relative">
+            <div className="mt-8 rounded-2xl bg-card p-6 shadow-[0_10px_40px_-12px_rgba(0,0,0,0.15)] sm:p-8">
+              <div>
+
                 <h2 className="font-display text-xl text-text-primary">
                   No athletes yet
                 </h2>
