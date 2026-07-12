@@ -6,7 +6,8 @@ import { z } from 'zod'
 import { ArrowLeft } from 'lucide-react'
 import { listAdminErrors } from '@/lib/error-tracking.functions'
 import { Eyebrow } from '@/components/ui/eyebrow'
-import { cn } from '@/lib/utils'
+import { Chip } from '@/components/ui/chip'
+
 
 const searchSchema = z.object({
   test: fallback(z.boolean(), false).default(false),
