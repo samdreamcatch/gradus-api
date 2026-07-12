@@ -89,10 +89,10 @@ export function ConnectionCelebration({ role }: ConnectionCelebrationProps) {
         if (!next) dismiss(currentGroup);
       }}
     >
-      <DialogContent className="max-w-sm overflow-hidden border-divider bg-elevated">
-        <SportsPoster corner="top-right" size="260px" opacity={0.14} inset={28} />
-        <SportsPoster corner="bottom-left" size="200px" opacity={0.1} inset={24} />
+      <DialogContent className="max-w-sm overflow-hidden border-divider bg-popover">
+        <SportsPoster fill opacity={0.08} />
         <ConfettiBurst key={confettiKey} />
+
 
         <DialogHeader className="relative items-center text-center">
           <div className="mb-2 flex h-14 w-14 items-center justify-center rounded-full bg-accent/20 text-accent-ink shadow-sm ring-1 ring-accent/30">
