@@ -75,6 +75,7 @@ export function EnterInviteCodeCard({ onSuccess }: { onSuccess?: () => void } = 
       if (/already/i.test(msg)) {
         toast.success("Already on your roster");
         reset();
+        onSuccess?.();
       } else {
         toast.error(msg);
       }
