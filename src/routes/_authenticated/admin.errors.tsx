@@ -6,7 +6,9 @@ import { z } from 'zod'
 import { ArrowLeft } from 'lucide-react'
 import { listAdminErrors } from '@/lib/error-tracking.functions'
 import { Eyebrow } from '@/components/ui/eyebrow'
-import { Chip } from '@/components/ui/chip'
+import { chipClasses } from '@/components/ui/chip'
+import { cn } from '@/lib/utils'
+
 
 
 const searchSchema = z.object({
