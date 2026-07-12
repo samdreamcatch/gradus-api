@@ -43,19 +43,17 @@ function AdminErrors() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Link
+          <Chip
+            as={Link}
             from={Route.fullPath}
             search={(prev: any) => ({ ...prev, test: !includeTest })}
-            className={cn(
-              'rounded-pill border px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition',
-              includeTest
-                ? 'border-accent bg-accent text-accent-foreground'
-                : 'border-divider bg-card text-text-secondary hover:bg-elevated',
-            )}
+            tone="muted"
+            selected={includeTest}
           >
             {includeTest ? 'Test users: on' : 'Test users: hidden'}
-          </Link>
+          </Chip>
         </div>
+
       </header>
 
       {isLoading ? (
