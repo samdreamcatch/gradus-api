@@ -586,6 +586,60 @@ export type Database = {
         }
         Relationships: []
       }
+      email_template_override_history: {
+        Row: {
+          action: string
+          changed_at: string
+          changed_by: string | null
+          id: string
+          slot_key: string
+          template_name: string
+          value: string
+        }
+        Insert: {
+          action: string
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          slot_key: string
+          template_name: string
+          value: string
+        }
+        Update: {
+          action?: string
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          slot_key?: string
+          template_name?: string
+          value?: string
+        }
+        Relationships: []
+      }
+      email_template_overrides: {
+        Row: {
+          slot_key: string
+          template_name: string
+          updated_at: string
+          updated_by: string | null
+          value: string
+        }
+        Insert: {
+          slot_key: string
+          template_name: string
+          updated_at?: string
+          updated_by?: string | null
+          value: string
+        }
+        Update: {
+          slot_key?: string
+          template_name?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: string
+        }
+        Relationships: []
+      }
       email_unsubscribe_tokens: {
         Row: {
           created_at: string
