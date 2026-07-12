@@ -221,10 +221,10 @@ export const WeekScheduleView = forwardRef<
                 onClick={() => setSelectedDayIndex(i)}
                 aria-label={`${DAY_LONG[date.getDay()]} ${date.getDate()}, ${count} session${count === 1 ? "" : "s"}`}
                 className={cn(
-                  "flex flex-col items-center gap-0.5 rounded-xl px-1 py-2 transition",
+                  "press-soft flex flex-col items-center gap-0.5 rounded-xl px-1 py-2",
                   isSelected
                     ? "bg-accent text-accent-foreground shadow-sm"
-                    : "text-text-secondary hover:bg-elevated hover:text-text-primary",
+                    : "text-text-secondary",
                   !isSelected && isDayToday && "ring-1 ring-accent",
                   !isSelected && isEmpty && "opacity-50",
                 )}
