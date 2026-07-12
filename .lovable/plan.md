@@ -1,48 +1,29 @@
-## Fork-on-reassign for active plans
+# Diagnosis
 
-Today, editing a plan's athlete assignment (or moving a shared/public active plan to an athlete) mutates the original row in place. That destroys the original assignment or the shared plan. We'll change reassignment to **fork** the plan when the source is `active`, so the original stays intact and a new plan is created for the new athlete.
+**No — it's not because the email already exists in auth.** Google sign-in itself succeeded (the auth log shows a clean login). The failure happens on the next step, when parent signup tries to insert a `parent_profiles` row for that user.
 
-### Behavior
+That user (`mariah.slone@gmail.com`) already has a **coach_profiles stub row** in the database:
 
-When the coach changes the assignment on a plan whose current `status = 'active'`:
+- `first_name: Mariah`, `last_name: Gillespie`
+- `is_test: true`, `onboarded_at: null` (never finished coach onboarding)
+- Created 2026-06-23 — a leftover from earlier dev/test seeding
 
-- **Active + assigned → different athlete**: keep the original plan attached to Athlete A (status stays `active`), create a new plan for Athlete B (cloned title/notes/moves, status `draft` — same as today's "create from template" path).
-- **Active + assigned → cleared (null)**: keep original active with Athlete A, create a new unassigned draft (public-shareable) clone.
-- **Active + shared/public (athlete_id null) → athlete**: keep the original public/shared active plan intact, create a new draft assigned to the athlete.
-- **Active + assigned → same athlete**: no fork (no-op).
+There's a DB trigger `prevent_dual_role_on_parent_profiles` that raises:
 
-For any non-active source (`draft`, `benched`), keep today's in-place update behavior — those aren't "live" plans, so mutating them is fine.
+> `This account is registered as a coach, not a parent.`
 
-Template plans are unchanged (they already have a dedicated "Assign to athlete" flow that forks via `useTemplate`).
+whenever anyone tries to insert a parent row for a `user_id` that already has a coach row. That's what's blowing up the signup — but the UI swallows the real message and shows the generic "Something went wrong. Please try again."
 
-### Where the change lives
+# Plan
 
-Server-side, in `updatePlan` (`src/lib/plans.functions.ts`). We keep the client mutation call sites the same — the server decides whether to update-in-place or fork, and returns the new plan id when it forks so the editor can navigate to the new copy.
+1. **Delete the stale coach stub** for user `3c279baf-a305-478a-9492-9be3362f64d7` (mariah.slone@gmail.com) so she can complete parent signup. Safe because the row is `is_test: true` and never onboarded — no coach data hangs off it worth keeping.
 
-```text
-updatePlan({ id, athleteId? , ... })
-  ├── load current { kind, status, athlete_id, title, notes }
-  ├── if athleteId is in the patch AND kind='plan' AND status='active'
-  │      AND (patch.athleteId ?? null) !== (current.athlete_id ?? null):
-  │        → fork: insert new plan row (draft, athlete_id = patch.athleteId),
-  │          copy plan_moves, return { ok, forkedId }
-  │        → leave the original row untouched
-  └── else: apply patch in place as today, return { ok }
-```
+2. **Surface the real error message in the parent signup form.** Right now `handleSubmit` in `src/routes/signup.parent.athletes.tsx` catches the thrown Error and shows `e.message`, but the trigger's `RAISE EXCEPTION` string gets wrapped by PostgREST and reduced to a generic string in `dbError()`. Update `dbError` (or the specific handler) so known dual-role errors return their PostgreSQL message intact, and any parent-signup dual-role hit shows "This account is registered as a coach, not a parent." instead of "Something went wrong."
 
-The share_token / shared_at fields stay on the original (the public link keeps working). The new forked copy starts as a fresh draft with no share token, matching how "create from template" works today.
+3. **Optional follow-up (not in this change):** if you actually want mariah.slone@gmail.com to be *both* a coach and a parent long-term, we'd need to relax the dual-role trigger — but that's a bigger product decision. For now assume the stub was accidental and just delete it.
 
-### Client change
+# Technical notes
 
-`coach.plans.$planId.tsx`: after `planUpdate.mutateAsync(...)` for an assignment change, if the response includes `forkedId`, `navigate({ to: "/coach/plans/$planId", params: { planId: forkedId } })` and toast something like "Created a copy for {athlete name}. Original plan kept for {previous athlete / public link}." No change to any other call site of `updatePlan`.
-
-### Not in scope
-
-- Renaming the plan title, editing notes, or editing moves on an active plan — still mutates in place (user's message is specifically about the athlete assignment; changing a title on an active plan is not a fork trigger).
-- Athlete/parent-side plan views.
-- DB schema — no migration required.
-
-### Verification
-
-- Typecheck.
-- Manual: (a) active plan assigned to A → reassign to B → expect two plans, A still active with original, B has new draft copy. (b) active shared plan (no athlete) → assign to athlete → original shared plan still exists and its share link still resolves, new draft exists for the athlete. (c) draft plan → reassign athlete → in-place update, no fork.
+- Trigger source (confirmed): `prevent_dual_role_parent()` in `public`, raises `check_violation` when `coach_profiles.user_id = NEW.user_id`.
+- Delete uses `supabase--insert` with a scoped `DELETE FROM public.coach_profiles WHERE user_id = '3c279baf-...' AND is_test = true AND onboarded_at IS NULL;` — narrow enough that it can't nuke a real coach.
+- Error surfacing lives in `src/lib/db-error.ts` (or wherever `dbError` is defined) plus a small message tweak in `startParentSignup`'s catch path.

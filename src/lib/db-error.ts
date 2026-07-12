@@ -11,11 +11,26 @@
  *   if (error) dbError(error);                            // generic fallback
  *   if (error) dbError(error, "Couldn't load plans");     // custom fallback
  */
+// Messages raised by our own PL/pgSQL triggers that are safe (and useful) to
+// surface verbatim to end users. These are intentional, user-facing validation
+// errors — not internal schema details.
+const PASSTHROUGH_MESSAGES = [
+  "This account is registered as a coach, not a parent.",
+  "This account is registered as a parent, not a coach.",
+  "Self-managed athletes must be at least 18 years old",
+];
+
 export function dbError(
   err: { message?: string; code?: string; details?: string; hint?: string } | null | undefined,
   fallback = "Something went wrong. Please try again.",
 ): never {
   // Full detail goes to server logs only.
   console.error("[db]", err);
+  const msg = err?.message ?? "";
+  for (const allowed of PASSTHROUGH_MESSAGES) {
+    if (msg.includes(allowed)) {
+      throw new Error(allowed);
+    }
+  }
   throw new Error(fallback);
 }
