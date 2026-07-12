@@ -2,6 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { ClipboardList, MessageSquare, BookOpen, Settings, type LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { Eyebrow } from "@/components/ui/eyebrow";
 import { useMessagesUnread } from "@/hooks/use-messages-unread";
 
 type Item = {
