@@ -18,8 +18,11 @@ import { cn } from "@/lib/utils";
  *
  * `selected` visually fills the chip with `accent` and overrides `tone`.
  * `tone="accent"` fills the chip solid at rest — use for always-on call-to-action pills.
- * `tone="destructive"` outlines in destructive color and fills on hover.
+ * `tone="destructive"` outlines in destructive color.
  * `tone="muted"` softens text to `text-secondary`.
+ *
+ * Press feedback (scale + brightness) comes from the shared `press` utility
+ * — the same feedback language buttons and cards use.
  */
 export type ChipSize = "pico" | "nano" | "micro" | "caption" | "small";
 export type ChipTone = "default" | "accent" | "muted" | "destructive";
