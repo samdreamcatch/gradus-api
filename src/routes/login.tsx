@@ -164,29 +164,6 @@ function LoginPage() {
     }
   };
 
-  const handleGoogle = async () => {
-    setError(null);
-    if (!captchaToken) {
-      setError("Please complete the human check first.");
-      return;
-    }
-    setLoading(true);
-    try {
-      await verifyCaptcha({ data: { token: captchaToken } });
-      const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin + (search.redirect || "/"),
-      });
-      if (result.error) throw result.error;
-      if (!result.redirected) {
-        const { data } = await supabase.auth.getUser();
-        if (data.user?.id) await routeByRole(data.user.id);
-      }
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Google sign-in failed");
-      resetCaptcha();
-      setLoading(false);
-    }
-  };
 
   return (
     <div className="relative flex min-h-dvh items-center justify-center overflow-hidden px-4 py-12">
