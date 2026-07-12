@@ -1,7 +1,8 @@
 import * as React from "react";
 import { Body, Button, Container, Head, Heading, Hr, Html, Link, Preview, Text } from "@react-email/components";
 import parse from "html-react-parser";
-import { button, container, divider, eyebrow, footer, h1, link, main, sign, text, wordmark } from "./_styles";
+import { button, container, divider, eyebrow, footer, h1, link, main, sign, text } from "./_styles";
+import { Header } from "./_layout";
 import { resolveCopy, renderTemplateString } from "./copy-schema";
 
 interface SignupEmailProps {
@@ -21,11 +22,11 @@ export const SignupEmail = ({ siteName, siteUrl, recipient, confirmationUrl, cop
       <Preview>{renderTemplateString(c.preview, vars)}</Preview>
       <Body style={main}>
         <Container style={container}>
-          <Text style={wordmark}>Gradus</Text>
+          <Header />
           <Text style={eyebrow}>{renderTemplateString(c.eyebrow, vars)}</Text>
           <Heading style={h1}>{renderTemplateString(c.heading, vars)}</Heading>
           <Text style={text}>{parse(renderTemplateString(c.body, vars))}</Text>
-          <Button style={button} href={confirmationUrl}>{renderTemplateString(c.ctaLabel, vars)}</Button>
+          <div style={buttonWrap}><Button style={button} href={confirmationUrl}>{renderTemplateString(c.ctaLabel, vars)}</Button></div>
           <Text style={{ ...text, marginTop: "28px", fontSize: "14px" }}>
             {renderTemplateString(c.fallbackHelp, vars)}
             <br />
