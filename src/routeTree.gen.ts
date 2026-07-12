@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as LoginRouteImport } from './routes/login'
@@ -49,6 +50,7 @@ import { Route as AuthenticatedAdminPromoCodesRouteImport } from './routes/_auth
 import { Route as AuthenticatedAdminMapRouteImport } from './routes/_authenticated/admin.map'
 import { Route as AuthenticatedAdminFeedbackRouteImport } from './routes/_authenticated/admin.feedback'
 import { Route as AuthenticatedAdminErrorsRouteImport } from './routes/_authenticated/admin.errors'
+import { Route as AuthenticatedAdminEmailsRouteImport } from './routes/_authenticated/admin.emails'
 import { Route as AuthenticatedParentResourcesIndexRouteImport } from './routes/_authenticated/parent.resources.index'
 import { Route as AuthenticatedParentPlansIndexRouteImport } from './routes/_authenticated/parent.plans.index'
 import { Route as AuthenticatedParentMessagesIndexRouteImport } from './routes/_authenticated/parent.messages.index'
@@ -72,6 +74,11 @@ import { Route as AuthenticatedAdminUsersUserIdRouteImport } from './routes/_aut
 import { Route as AuthenticatedAdminListKindRouteImport } from './routes/_authenticated/admin.list.$kind'
 import { Route as AuthenticatedAdminErrorsIdRouteImport } from './routes/_authenticated/admin.errors.$id'
 
+const UnsubscribeRoute = UnsubscribeRouteImport.update({
+  id: '/unsubscribe',
+  path: '/unsubscribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
   path: '/terms',
@@ -283,6 +290,12 @@ const AuthenticatedAdminErrorsRoute =
     path: '/errors',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminEmailsRoute =
+  AuthenticatedAdminEmailsRouteImport.update({
+    id: '/emails',
+    path: '/emails',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedParentResourcesIndexRoute =
   AuthenticatedParentResourcesIndexRouteImport.update({
     id: '/resources/',
@@ -420,6 +433,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/athlete': typeof AuthenticatedAthleteRouteWithChildren
   '/coach': typeof AuthenticatedCoachRouteWithChildren
@@ -431,6 +445,7 @@ export interface FileRoutesByFullPath {
   '/signup/athlete': typeof SignupAthleteRouteWithChildren
   '/signup/coach': typeof SignupCoachRoute
   '/signup/parent': typeof SignupParentRouteWithChildren
+  '/admin/emails': typeof AuthenticatedAdminEmailsRoute
   '/admin/errors': typeof AuthenticatedAdminErrorsRouteWithChildren
   '/admin/feedback': typeof AuthenticatedAdminFeedbackRoute
   '/admin/map': typeof AuthenticatedAdminMapRoute
@@ -483,6 +498,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/i/$code': typeof ICodeRoute
   '/p/$token': typeof PTokenRoute
@@ -490,6 +506,7 @@ export interface FileRoutesByTo {
   '/signup/athlete': typeof SignupAthleteRouteWithChildren
   '/signup/coach': typeof SignupCoachRoute
   '/signup/parent': typeof SignupParentRouteWithChildren
+  '/admin/emails': typeof AuthenticatedAdminEmailsRoute
   '/admin/errors': typeof AuthenticatedAdminErrorsRouteWithChildren
   '/admin/feedback': typeof AuthenticatedAdminFeedbackRoute
   '/admin/map': typeof AuthenticatedAdminMapRoute
@@ -543,6 +560,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/_authenticated/athlete': typeof AuthenticatedAthleteRouteWithChildren
   '/_authenticated/coach': typeof AuthenticatedCoachRouteWithChildren
@@ -554,6 +572,7 @@ export interface FileRoutesById {
   '/signup/athlete': typeof SignupAthleteRouteWithChildren
   '/signup/coach': typeof SignupCoachRoute
   '/signup/parent': typeof SignupParentRouteWithChildren
+  '/_authenticated/admin/emails': typeof AuthenticatedAdminEmailsRoute
   '/_authenticated/admin/errors': typeof AuthenticatedAdminErrorsRouteWithChildren
   '/_authenticated/admin/feedback': typeof AuthenticatedAdminFeedbackRoute
   '/_authenticated/admin/map': typeof AuthenticatedAdminMapRoute
@@ -608,6 +627,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/reset-password'
     | '/terms'
+    | '/unsubscribe'
     | '/admin'
     | '/athlete'
     | '/coach'
@@ -619,6 +639,7 @@ export interface FileRouteTypes {
     | '/signup/athlete'
     | '/signup/coach'
     | '/signup/parent'
+    | '/admin/emails'
     | '/admin/errors'
     | '/admin/feedback'
     | '/admin/map'
@@ -671,6 +692,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/reset-password'
     | '/terms'
+    | '/unsubscribe'
     | '/email/unsubscribe'
     | '/i/$code'
     | '/p/$token'
@@ -678,6 +700,7 @@ export interface FileRouteTypes {
     | '/signup/athlete'
     | '/signup/coach'
     | '/signup/parent'
+    | '/admin/emails'
     | '/admin/errors'
     | '/admin/feedback'
     | '/admin/map'
@@ -730,6 +753,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/reset-password'
     | '/terms'
+    | '/unsubscribe'
     | '/_authenticated/admin'
     | '/_authenticated/athlete'
     | '/_authenticated/coach'
@@ -741,6 +765,7 @@ export interface FileRouteTypes {
     | '/signup/athlete'
     | '/signup/coach'
     | '/signup/parent'
+    | '/_authenticated/admin/emails'
     | '/_authenticated/admin/errors'
     | '/_authenticated/admin/feedback'
     | '/_authenticated/admin/map'
@@ -795,6 +820,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   TermsRoute: typeof TermsRoute
+  UnsubscribeRoute: typeof UnsubscribeRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   ICodeRoute: typeof ICodeRoute
   PTokenRoute: typeof PTokenRoute
@@ -812,6 +838,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/unsubscribe': {
+      id: '/unsubscribe'
+      path: '/unsubscribe'
+      fullPath: '/unsubscribe'
+      preLoaderRoute: typeof UnsubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/terms': {
       id: '/terms'
       path: '/terms'
@@ -1092,6 +1125,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminErrorsRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/emails': {
+      id: '/_authenticated/admin/emails'
+      path: '/emails'
+      fullPath: '/admin/emails'
+      preLoaderRoute: typeof AuthenticatedAdminEmailsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/parent/resources/': {
       id: '/_authenticated/parent/resources/'
       path: '/resources'
@@ -1264,6 +1304,7 @@ const AuthenticatedAdminErrorsRouteWithChildren =
   )
 
 interface AuthenticatedAdminRouteChildren {
+  AuthenticatedAdminEmailsRoute: typeof AuthenticatedAdminEmailsRoute
   AuthenticatedAdminErrorsRoute: typeof AuthenticatedAdminErrorsRouteWithChildren
   AuthenticatedAdminFeedbackRoute: typeof AuthenticatedAdminFeedbackRoute
   AuthenticatedAdminMapRoute: typeof AuthenticatedAdminMapRoute
@@ -1274,6 +1315,7 @@ interface AuthenticatedAdminRouteChildren {
 }
 
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
+  AuthenticatedAdminEmailsRoute: AuthenticatedAdminEmailsRoute,
   AuthenticatedAdminErrorsRoute: AuthenticatedAdminErrorsRouteWithChildren,
   AuthenticatedAdminFeedbackRoute: AuthenticatedAdminFeedbackRoute,
   AuthenticatedAdminMapRoute: AuthenticatedAdminMapRoute,
@@ -1438,6 +1480,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   TermsRoute: TermsRoute,
+  UnsubscribeRoute: UnsubscribeRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   ICodeRoute: ICodeRoute,
   PTokenRoute: PTokenRoute,
