@@ -74,11 +74,7 @@ function AdminHome() {
           <Link
             from={Route.fullPath}
             search={{ test: !includeTest }}
-            className={`rounded-pill border px-3 py-2 text-xs font-semibold uppercase tracking-wider transition ${
-              includeTest
-                ? "border-accent bg-accent text-accent-foreground"
-                : "border-divider bg-card text-text-secondary hover:bg-elevated"
-            }`}
+            className={chipClasses({ tone: "muted", selected: includeTest })}
             title="Toggle test users"
           >
             {includeTest ? "Test users: on" : "Test users: hidden"}
@@ -86,37 +82,38 @@ function AdminHome() {
           <Link
             to="/admin/map"
             search={{ test: includeTest }}
-            className="rounded-pill border border-accent bg-accent px-4 py-2 text-xs font-semibold uppercase tracking-wider text-accent-foreground hover:opacity-90"
+            className={chipClasses({ tone: "accent" })}
           >
             Connection map →
           </Link>
           <Link
             to="/admin/feedback"
             search={{ type: "all", unresolved: false }}
-            className="rounded-pill border border-divider bg-card px-4 py-2 text-xs font-semibold uppercase tracking-wider text-text-primary hover:bg-elevated"
+            className={chipClasses()}
           >
             Feedback →
           </Link>
           <Link
             to="/admin/errors"
             search={{ test: includeTest }}
-            className="rounded-pill border border-divider bg-card px-4 py-2 text-xs font-semibold uppercase tracking-wider text-text-primary hover:bg-elevated"
+            className={chipClasses()}
           >
             Errors →
           </Link>
           <Link
             to="/admin/promo-codes"
-            className="rounded-pill border border-divider bg-card px-4 py-2 text-xs font-semibold uppercase tracking-wider text-text-primary hover:bg-elevated"
+            className={chipClasses()}
           >
             Promo codes →
           </Link>
           <Link
             to="/admin/emails"
             search={{ t: "signup" }}
-            className="rounded-pill border border-divider bg-card px-4 py-2 text-xs font-semibold uppercase tracking-wider text-text-primary hover:bg-elevated"
+            className={chipClasses()}
           >
             Email copy →
           </Link>
+
 
 
 
