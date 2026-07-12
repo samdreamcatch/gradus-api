@@ -518,7 +518,12 @@ export const setPlanStatus = createServerFn({ method: "POST" })
         .maybeSingle();
       if (ownErr) dbError(ownErr);
       if (!owned) throw new Error("Plan not found");
-      if (!owned.athlete_id) throw new Error("Assign an athlete before activating.");
+      // No athlete = public/social share plan — allowed to activate without an athlete.
+      // Athlete-scoped conflict logic below only runs when an athlete is assigned.
+      if (!owned.athlete_id) {
+        return { ok: true };
+      }
+
 
       // Count other active plans for this athlete from this coach.
       const { data: others, error: othersErr } = await supabase
