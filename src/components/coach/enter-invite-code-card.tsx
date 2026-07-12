@@ -69,6 +69,7 @@ export function EnterInviteCodeCard({ onSuccess }: { onSuccess?: () => void } = 
       }
       qc.invalidateQueries();
       reset();
+      onSuccess?.();
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Couldn't add to roster";
       if (/already/i.test(msg)) {
