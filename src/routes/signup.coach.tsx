@@ -47,7 +47,7 @@ export const Route = createFileRoute("/signup/coach")({
   component: CoachSignupPage,
 });
 
-type PendingAction = "email" | "google";
+type PendingAction = "email";
 
 function CoachSignupPage() {
   const { invite } = Route.useSearch();
