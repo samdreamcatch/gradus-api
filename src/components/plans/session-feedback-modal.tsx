@@ -105,27 +105,29 @@ export function SessionFeedbackModal({
               How did {subjectShow} up today?
             </p>
 
-            <FlowStateScale
-              value={stateIndex}
-              onChange={setStateIndex}
-              endLabels={["Frustrated", "Steady", "Flowing"]}
-            />
+            <div className="mt-3 rounded-xl border border-divider bg-elevated px-3 pb-3 pt-1">
+              <FlowStateScale
+                value={stateIndex}
+                onChange={setStateIndex}
+                endLabels={["Frustrated", "Steady", "Flowing"]}
+              />
 
-            <div className="mt-3 min-h-[3.25rem] px-1">
-              {selected ? (
-                <>
-                  <p className="text-[11px] font-black uppercase tracking-widest text-accent-ink">
-                    {selected.label}
+              <div className="mt-3 min-h-[3.25rem] px-1">
+                {selected ? (
+                  <>
+                    <p className="text-[11px] font-black uppercase tracking-widest text-accent-ink">
+                      {selected.label}
+                    </p>
+                    <p className="font-sans text-base leading-snug text-text-primary">
+                      {selected.blurb}
+                    </p>
+                  </>
+                ) : (
+                  <p className="font-sans text-base leading-snug text-text-tertiary">
+                    Tap a dot to describe today&apos;s energy.
                   </p>
-                  <p className="font-sans text-base leading-snug text-text-primary">
-                    {selected.blurb}
-                  </p>
-                </>
-              ) : (
-                <p className="font-sans text-base leading-snug text-text-tertiary">
-                  Tap a dot to describe today&apos;s energy.
-                </p>
-              )}
+                )}
+              </div>
             </div>
           </div>
 
