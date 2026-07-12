@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { SportsPoster } from "@/components/ui/sports-poster";
 import {
   acknowledgeConnection,
   getPendingConnectionCelebrations,
