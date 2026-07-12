@@ -268,14 +268,37 @@ function CoachSignupPage() {
           </div>
         )}
 
-        <Button type="button" variant="outline" className="w-full" onClick={handleGoogle} disabled={!canSubmit}>
-          Continue with Google
-        </Button>
-
-        <div className="my-6 flex items-center gap-3 text-xs uppercase tracking-wider text-text-tertiary">
-          <div className="h-px flex-1 bg-divider" />
-          or
-          <div className="h-px flex-1 bg-divider" />
+        {/* Shared ToS gate — visible above both signup paths. */}
+        <div className="mb-6">
+          <label className="flex cursor-pointer items-start gap-2.5 text-sm text-text-secondary">
+            <Checkbox
+              checked={agreed}
+              onCheckedChange={(v) => {
+                setAgreed(v === true);
+                if (v === true) setShowAgreeHint(false);
+              }}
+              className="mt-0.5"
+              aria-label="Agree to Terms of Service"
+            />
+            <span>
+              I agree to the{" "}
+              <Link
+                to="/terms"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-accent-ink underline underline-offset-2"
+                onClick={(e) => e.stopPropagation()}
+              >
+                Gradus Terms of Service
+              </Link>{" "}
+              (v{CURRENT_TERMS_VERSION}).
+            </span>
+          </label>
+          {showAgreeHint && !agreed && (
+            <p className="mt-2 pl-7 text-sm text-destructive">
+              Please accept the Terms to continue.
+            </p>
+          )}
         </div>
 
         <form onSubmit={handleEmailSubmit} className="space-y-4" autoComplete="on">
@@ -311,35 +334,29 @@ function CoachSignupPage() {
 
           <PromoCodeField value={promoCode} onChange={setPromoCode} />
 
-          <label className="flex cursor-pointer items-start gap-2.5 text-sm text-text-secondary">
-
-            <Checkbox
-              checked={agreed}
-              onCheckedChange={(v) => setAgreed(v === true)}
-              className="mt-0.5"
-              aria-label="Agree to Terms of Service"
-            />
-            <span>
-              I agree to the{" "}
-              <Link
-                to="/terms"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-medium text-accent-ink underline underline-offset-2"
-                onClick={(e) => e.stopPropagation()}
-              >
-                Gradus Terms of Service
-              </Link>{" "}
-              (v{CURRENT_TERMS_VERSION}).
-            </span>
-          </label>
-
           {error && <p className="text-sm text-destructive">{error}</p>}
 
-          <Button type="submit" className="w-full" disabled={!canSubmit}>
+          <Button type="submit" className="w-full" disabled={loading}>
             {loading ? "Creating account..." : "Continue"}
           </Button>
         </form>
+
+        <div className="my-6 flex items-center gap-3 text-xs uppercase tracking-wider text-text-tertiary">
+          <div className="h-px flex-1 bg-divider" />
+          or
+          <div className="h-px flex-1 bg-divider" />
+        </div>
+
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full"
+          onClick={handleGoogle}
+          disabled={loading}
+        >
+          Continue with Google
+        </Button>
+
 
         <Dialog
           open={captchaOpen}
