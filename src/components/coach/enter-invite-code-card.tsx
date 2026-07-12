@@ -18,7 +18,7 @@ import {
  * invite code (given to them in person / by text) to link that person's
  * athlete(s) onto their roster without needing the shareable link.
  */
-export function EnterInviteCodeCard() {
+export function EnterInviteCodeCard({ onSuccess }: { onSuccess?: () => void } = {}) {
   const qc = useQueryClient();
   const resolveFn = useServerFn(resolveInviteCode);
   const previewAdultFn = useServerFn(getAdultAthleteByInviteCode);
@@ -69,11 +69,13 @@ export function EnterInviteCodeCard() {
       }
       qc.invalidateQueries();
       reset();
+      onSuccess?.();
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Couldn't add to roster";
       if (/already/i.test(msg)) {
         toast.success("Already on your roster");
         reset();
+        onSuccess?.();
       } else {
         toast.error(msg);
       }

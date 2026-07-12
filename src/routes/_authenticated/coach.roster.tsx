@@ -87,6 +87,7 @@ function RosterPage() {
   const [tab, setTab] = useState<RosterTab>("schedule");
   const [selectedSport, setSelectedSport] = useState<string | null>(null);
   const [selectedAthleteId, setSelectedAthleteId] = useState<string | null>(null);
+  const [inviteOpen, setInviteOpen] = useState(false);
 
   const sports = useMemo(() => {
     const set = new Set<string>(coachSports);
@@ -118,7 +119,7 @@ function RosterPage() {
       <div className="mx-auto min-h-dvh max-w-3xl px-4 pt-8 pb-24">
         <div className="flex items-start justify-between gap-3">
           <PageTitle>Roster</PageTitle>
-          <Dialog>
+          <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
             <DialogTrigger asChild>
               <Button type="button" variant="outline" size="sm" className="mt-1 shrink-0">
                 <UserPlus className="size-4" aria-hidden />
@@ -135,7 +136,7 @@ function RosterPage() {
               <div className="mt-2 space-y-5">
                 <InviteCard compact />
                 <div className="border-t border-divider" />
-                <EnterInviteCodeCard />
+                <EnterInviteCodeCard onSuccess={() => setInviteOpen(false)} />
               </div>
             </DialogContent>
           </Dialog>
