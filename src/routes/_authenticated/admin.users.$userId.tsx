@@ -50,21 +50,19 @@ function UserDetail() {
               </div>
               <div className="shrink-0 flex flex-col items-end gap-2">
                 {(data.coach || data.parent || data.athlete) && (
-                  <button
-                    type="button"
+                  <Chip
+                    as="button"
+                    tone="muted"
+                    selected={data.isTest}
                     onClick={async () => {
                       await toggleFn({ data: { userId, isTest: !data.isTest } });
                       await refetch();
                     }}
-                    className={`rounded-pill border px-3 py-1.5 text-xs font-semibold uppercase tracking-wider transition ${
-                      data.isTest
-                        ? "border-accent bg-accent text-accent-foreground"
-                        : "border-divider bg-card text-text-secondary hover:bg-elevated"
-                    }`}
                   >
                     {data.isTest ? "Unmark test user" : "Mark as test user"}
-                  </button>
+                  </Chip>
                 )}
+
                 {data.isTest && (
                   <button
                     type="button"
