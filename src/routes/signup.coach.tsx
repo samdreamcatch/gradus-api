@@ -138,13 +138,15 @@ function CoachSignupPage() {
   });
 
   const stashPendingAccept = () => {
-    try {
-      localStorage.setItem(PENDING_TERMS_ACCEPT_KEY, "coach");
-    } catch {
-      /* ignore */
-    }
+    stashPendingTermsAccept();
     savePendingPromoCode(promoCode);
   };
+
+  const clearPendingAccept = () => {
+    clearPendingTermsAccept();
+    clearPendingPromoCode();
+  };
+
 
 
   const resetCaptcha = () => {
