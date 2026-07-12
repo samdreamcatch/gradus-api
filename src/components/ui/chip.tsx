@@ -21,12 +21,13 @@ import { cn } from "@/lib/utils";
  * `tone="destructive"` outlines in destructive color and fills on hover.
  * `tone="muted"` softens text to `text-secondary`.
  */
-export type ChipSize = "nano" | "micro" | "caption" | "small";
+export type ChipSize = "pico" | "nano" | "micro" | "caption" | "small";
 export type ChipTone = "default" | "accent" | "muted" | "destructive";
 export type ChipWeight = "medium" | "semibold" | "bold" | "black";
 export type ChipTracking = "wide" | "wider" | "widest";
 
 const SIZE_CLASS: Record<ChipSize, string> = {
+  pico: "text-pico px-1.5 py-0.5",
   nano: "text-nano px-2 py-0.5",
   micro: "text-micro px-2 py-1",
   caption: "text-caption px-3 py-1",

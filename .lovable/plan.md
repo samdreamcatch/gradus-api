@@ -1,42 +1,41 @@
-# Align coach sport-filter chips with the shared Chip system
+# Shrink bottom nav labels one step further
 
 ## Problem
 
-`src/components/coach/sport-filter-chips.tsx` overrides the `Chip` primitive's defaults (`size="caption" weight="bold" tracking="widest"` on the filter row, `size="micro" weight="bold" tracking="widest"` on the single-sport case), and uppercases the labels. Every other sport picker in the app (`parent.settings.tsx` sport toggles, `add-coach-by-code-card.tsx`, `onboarding/sport-chip.tsx`) uses `Chip` at its defaults with `caseSensitive`, producing rounded pills at `text-xs` / `semibold` / `tracking-wider` in mixed case. The coach roster filter reads visually as a different vocabulary.
+`nano` (9px) still reads too large in the bottom nav on mobile. `Eyebrow`'s smallest size is 9px, so we need a new smaller step in the design system rather than a one-off className override.
 
 ## Fix
 
-`src/components/coach/sport-filter-chips.tsx`:
+### 1. Add a new size token to the Eyebrow scale
+`src/styles.css` — add a new utility next to `text-nano`:
+```css
+@utility text-pico {
+  font-size: 8px;
+  line-height: 1.2;
+}
+```
 
-1. **Multi-sport filter row** — render each option as:
-   ```tsx
-   <Chip
-     key={opt.key ?? "__all"}
-     caseSensitive
-     tone="muted"
-     selected={isActive}
-     onClick={() => onSelect(opt.key)}
-   >
-     {opt.label}
-   </Chip>
-   ```
-   Drop the `as="button"` (implicit from `onClick`), `size`, `weight`, `tracking` overrides. Keep `tone="muted"` for the unselected pills so "All" reads as a filter, not a CTA.
+### 2. Extend `Eyebrow` (and `Chip`/`Tag` for consistency)
+`src/components/ui/eyebrow.tsx`:
+- Add `"pico"` to `EyebrowSize` union.
+- Map `pico: "text-pico"` in `SIZE_CLASS`.
+- Update doc block: `pico (8px) — bottom-nav tile labels`; `nano (9px) — dense grids, rings`.
 
-2. **Single-sport case** — this is a static label, not an interactive chip. Swap to `<Tag>` (the primitive built for exactly this):
-   ```tsx
-   <Tag tone="accent" caseSensitive>{sportLabel(sports[0])}</Tag>
-   ```
-   Removes the `text-accent-ink` className hack and the mismatched `micro/bold/widest` triple.
+`src/components/ui/chip.tsx` and `src/components/ui/tag.tsx`:
+- Add `"pico"` to their size unions with matching `text-pico` + tight padding (`px-1.5 py-0.5` for Chip; `px-1 py-0.5` for Tag) so the scale stays aligned. Not used yet, but keeps the primitives in sync.
 
-3. Import `Tag` alongside `Chip`; leave the wrapper `<div className="mt-4 …">` and the empty-array early return untouched.
+### 3. Use `pico` in all three bottom navs
+`src/components/{coach,parent,athlete}/bottom-nav.tsx`:
+- Change `<Eyebrow size="nano" …>` → `<Eyebrow size="pico" …>`.
+- No other spacing/icon changes.
 
 ## Verification
 
-- Preview `/coach/roster` on 390px: filter chips read as mixed-case rounded pills matching the parent sport toggles; single-sport case shows a small accent tag.
-- `rg 'tracking-widest|size="caption"|size="micro"' src/components/coach/sport-filter-chips.tsx` → no matches.
+- Preview `/coach/roster`, `/parent/plans`, `/athlete/plans` on 390px: labels visibly smaller, no clipping.
+- `rg 'text-pico|size="pico"' src` → shows the new utility + three nav files.
 - Typecheck clean.
 
 ## Out of scope
 
-- No changes to `Chip` / `Tag` primitives themselves — this is a call-site alignment.
-- No changes to other sport pickers; they already match the target.
+- Icon sizes stay at 18px (per prior turn).
+- No changes to other Eyebrow / Chip / Tag call sites.
