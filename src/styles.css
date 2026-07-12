@@ -53,7 +53,14 @@
   --color-attention-wash: var(--attention-wash);
   --color-attention-ink: var(--attention-ink);
   --color-attention-foreground: var(--attention-foreground);
+
+  /* Surface simulations — see `:root` note. */
+  --color-surface-athlete-screen: var(--surface-athlete-screen);
+  --color-surface-email-client: var(--surface-email-client);
+  --color-surface-code-block: var(--surface-code-block);
+  --color-surface-code-block-foreground: var(--surface-code-block-foreground);
 }
+
 
 :root {
   /* Surfaces — cool slate paper */
