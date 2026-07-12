@@ -201,7 +201,7 @@ export const WeekScheduleView = forwardRef<
             type="button"
             onClick={() => setWeekStart((w) => addDays(w, 7))}
             aria-label="Next week"
-            className="flex h-9 w-9 items-center justify-center rounded-full text-text-secondary hover:bg-elevated hover:text-text-primary"
+            className="press flex h-9 w-9 items-center justify-center rounded-full text-text-secondary"
           >
             <ChevronRight className="h-5 w-5" />
           </button>
