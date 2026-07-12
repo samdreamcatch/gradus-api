@@ -43,9 +43,10 @@ function ConversationHeader({
       <p className="text-base font-bold text-text-primary">
         {ordered.map((p) => p.firstName).join(" & ")}
       </p>
-      <p className="text-[11px] font-black uppercase tracking-widest text-text-tertiary">
+      <p className="text-caption font-black uppercase tracking-widest text-text-tertiary">
         {ordered.map((p) => roleWord(p.role)).join(" · ")}
       </p>
+
     </div>
   );
 }
@@ -219,17 +220,19 @@ export function RoomView({ roomId, viewerRole }: { roomId: string; viewerRole?: 
                     className={cn("flex flex-col", mine ? "items-end" : "items-start")}
                   >
                     {!mine ? (
-                      <p className="mb-0.5 px-2 text-[11px] font-black uppercase tracking-widest text-text-tertiary">
+                      <p className="mb-0.5 px-2 text-caption font-black uppercase tracking-widest text-text-tertiary">
                         {roleWord(m.senderRole)} {m.senderFirstName}
                       </p>
+
                     ) : null}
                     {m.plan ? (
                       <Link
                         to={planHrefForRole(room.myRole, m.plan.id)}
                         className={cn(
-                          "mb-1 inline-flex max-w-[78%] items-center gap-1.5 rounded-full bg-accent/15 px-2.5 py-1 text-[11px] font-black uppercase tracking-widest text-accent-ink ring-1 ring-accent/30 hover:bg-accent/25",
+                          "mb-1 inline-flex max-w-[78%] items-center gap-1.5 rounded-full bg-accent/15 px-2.5 py-1 text-caption font-black uppercase tracking-widest text-accent-ink ring-1 ring-accent/30 hover:bg-accent/25",
                         )}
                       >
+
                         <ClipboardList className="size-3" />
                         <span className="truncate normal-case tracking-normal text-xs font-bold">
                           {m.plan.title}
@@ -252,7 +255,7 @@ export function RoomView({ roomId, viewerRole }: { roomId: string; viewerRole?: 
                     </div>
                     <p
                       className={cn(
-                        "mt-0.5 px-2 text-[10px] font-bold uppercase tracking-widest text-text-tertiary",
+                        "mt-0.5 px-2 text-micro font-bold uppercase tracking-widest text-text-tertiary",
                         mine ? "text-right" : "text-left",
                       )}
                     >
@@ -261,6 +264,7 @@ export function RoomView({ roomId, viewerRole }: { roomId: string; viewerRole?: 
                         <span className="ml-1.5">· Seen</span>
                       ) : null}
                     </p>
+
                   </div>
                 );
               })}
@@ -417,9 +421,10 @@ function Composer({
               </button>
             </PopoverTrigger>
             <PopoverContent align="start" side="top" className="w-64 p-1">
-              <p className="px-2 py-1.5 text-[11px] font-black uppercase tracking-widest text-text-tertiary">
+              <p className="px-2 py-1.5 text-caption font-black uppercase tracking-widest text-text-tertiary">
                 Tag a plan
               </p>
+
               <div className="flex flex-col">
                 {activePlans.map((p) => (
                   <button
@@ -450,7 +455,7 @@ function Composer({
             disabled={disabled}
             placeholder={transcribing ? "Transcribing…" : "Message…"}
             rows={1}
-            className="min-h-10 max-h-32 flex-1 resize-none rounded-2xl border border-divider bg-card px-3.5 py-2 text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-accent/40"
+            className="focus-input min-h-10 max-h-32 flex-1 resize-none rounded-2xl border border-divider bg-card px-3.5 py-2 text-sm text-text-primary placeholder:text-text-tertiary"
           />
           {text.trim().length > 0 ? (
             <button

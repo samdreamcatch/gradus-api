@@ -1,5 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { Pencil } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { Eyebrow } from "@/components/ui/eyebrow";
+
+
 
 export function MotivationCard({
   value,
@@ -43,16 +47,14 @@ export function MotivationCard({
   }
 
   return (
-    <article className="rounded-2xl border border-divider bg-card p-5 shadow-sm">
+    <Card as="article" variant="section">
       <div className="flex items-center justify-between">
-        <p className="text-[11px] font-bold uppercase tracking-wide text-text-secondary">
-          What motivates you?
-        </p>
+        <Eyebrow size="caption">What motivates you?</Eyebrow>
         {!editing && (
           <button
             type="button"
             onClick={() => setEditing(true)}
-            className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold text-text-secondary hover:bg-muted hover:text-text-primary"
+            className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-caption font-semibold text-text-secondary hover:bg-muted hover:text-text-primary"
             aria-label="Edit motivation"
           >
             <Pencil className="h-3 w-3" />
@@ -60,6 +62,7 @@ export function MotivationCard({
           </button>
         )}
       </div>
+
 
       {editing ? (
         <div className="mt-2 space-y-2">
@@ -103,6 +106,6 @@ export function MotivationCard({
           Tap edit to share what drives you…
         </p>
       )}
-    </article>
+    </Card>
   );
 }

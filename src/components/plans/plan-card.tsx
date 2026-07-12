@@ -53,10 +53,11 @@ export function PlanCard({
               {athleteName}
             </p>
           ) : caption ? (
-            <p className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
+            <p className="text-micro font-black uppercase tracking-widest text-text-tertiary">
               {caption}
             </p>
           ) : null}
+
           <h3 className="truncate font-display text-lg font-black leading-tight tracking-tight text-text-primary">
             {title || "Untitled plan"}
           </h3>

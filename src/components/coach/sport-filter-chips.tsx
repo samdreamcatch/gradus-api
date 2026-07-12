@@ -17,7 +17,7 @@ export function SportFilterChips({ sports, selected, onSelect }: SportFilterChip
   if (sports.length === 1) {
     return (
       <div className="mt-4">
-        <span className="inline-block rounded-pill border border-divider bg-card px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-accent-ink">
+        <span className="inline-block rounded-pill border border-divider bg-card px-3 py-1 text-micro font-bold uppercase tracking-widest text-accent-ink">
           {sportLabel(sports[0])}
         </span>
       </div>
@@ -39,7 +39,7 @@ export function SportFilterChips({ sports, selected, onSelect }: SportFilterChip
             type="button"
             onClick={() => onSelect(opt.key)}
             className={cn(
-              "rounded-pill border px-3 py-1 text-[11px] font-bold uppercase tracking-widest transition",
+              "rounded-pill border px-3 py-1 text-caption font-bold uppercase tracking-widest transition",
               isActive
                 ? "border-accent bg-accent text-accent-foreground"
                 : "border-divider bg-card text-text-secondary hover:text-text-primary",
@@ -51,4 +51,5 @@ export function SportFilterChips({ sports, selected, onSelect }: SportFilterChip
       })}
     </div>
   );
+
 }

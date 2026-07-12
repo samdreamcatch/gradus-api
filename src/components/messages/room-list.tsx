@@ -116,9 +116,10 @@ export function RoomList({
                 >
                   {display}
                 </p>
-                <span className="shrink-0 text-[11px] font-bold uppercase tracking-widest text-text-tertiary">
+                <span className="shrink-0 text-caption font-bold uppercase tracking-widest text-text-tertiary">
                   {relativeTime(room.updatedAt)}
                 </span>
+
               </div>
 
               <div className="mt-0.5 flex items-center justify-between gap-2">
@@ -135,9 +136,10 @@ export function RoomList({
                   </span>
                 </p>
                 {unread ? (
-                  <span className="inline-flex h-5 min-w-[20px] shrink-0 items-center justify-center rounded-full bg-attention px-1.5 text-[11px] font-black text-attention-foreground">
+                  <span className="inline-flex h-5 min-w-[20px] shrink-0 items-center justify-center rounded-full bg-attention px-1.5 text-caption font-black text-attention-foreground">
                     {room.unreadCount}
                   </span>
+
                 ) : null}
               </div>
             </div>

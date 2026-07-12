@@ -70,10 +70,11 @@ export function RosterCard({
         <button
           type="button"
           onClick={() => onSelect?.(athlete.athleteId)}
-          className="min-w-0 truncate text-left font-display text-lg font-black leading-tight tracking-tight text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          className="focus-surface min-w-0 truncate text-left font-display text-lg font-black leading-tight tracking-tight text-text-primary"
         >
           {name}
         </button>
+
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

@@ -66,7 +66,7 @@ function AdminErrorDetail() {
               <p className="text-xs font-bold uppercase tracking-widest text-text-secondary mb-2">
                 Stack
               </p>
-              <pre className="rounded-lg bg-[#0F172A] text-[#E2E8F0] p-4 text-[11px] leading-relaxed overflow-auto whitespace-pre-wrap">
+              <pre className="rounded-lg bg-surface-code-block text-surface-code-block-foreground p-4 text-caption leading-relaxed overflow-auto whitespace-pre-wrap">
                 {e.stack}
               </pre>
             </section>
