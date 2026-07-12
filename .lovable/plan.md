@@ -1,54 +1,93 @@
 ## Goal
 
-Sweep the remaining hand-rolled eyebrow labels in the coach plan editor and the admin routes to use the `<Eyebrow>` primitive, extending the primitive only as needed to codify what the current app already does. Where an existing element mixes an eyebrow with a full decorative wrapper (chip, pill, tab, button), the wrapper stays hand-rolled this batch — that's a separate "Chip" primitive later.
+Extract the two pill patterns that repeat across the app into primitives that codify what the current app actually renders — no visual drift, no new tokens.
 
-## Extending `Eyebrow` to match reality
+- **`<Chip>`** — interactive pill: tabs, filters, action pills, selectable options. Renders `<button>` when `onClick` is present, `<span>` otherwise. Accepts `selected` for the accent-filled state.
+- **`<Tag>`** — static meta stamp: the `test` / `adult` / `custom` / `unsaved` style labels. Always a `<span>`, no interactive states.
 
-Two additions so the sweep is pure refactor (zero visual drift):
+Then sweep the eyebrow-batch out-of-scope wrappers plus any other pure-pattern sites the sweep uncovers.
 
-1. **New size `small` (12px = `text-xs`)** — used for the "Internal" / "Admin" page-header eyebrows and section labels in the admin routes. Current sizes stay: `nano` (9), `micro` (10), `caption` (11), plus new `small` (12).
-2. **New `tracking` prop** — `"wide" | "widest"`, default `"widest"`. A handful of eyebrows in the plan editor and admin tabs use `tracking-wide` today; codify that variant instead of forcing them to widen.
+## Primitives
 
-No other prop or token changes. Docstring at the top of `eyebrow.tsx` updates to list the four sizes and the tracking option.
+Both live in `src/components/ui/`. Both forward `...rest` and merge `className` so call sites can still add layout classes like `ml-2`, `shrink-0`, `w-fit`.
 
-## In scope (pure-text eyebrow labels only)
+### `<Chip>` API
 
-Files and approximate counts (each conversion is: strip the raw uppercase/tracking/size/tone classes, keep only layout classes like `mb-1 block` / `truncate` via `className`, pick matching `size`/`tone`/`weight`/`tracking`/`as`):
+```
+size:      "nano" | "micro" | "caption" | "small"   // 9 / 10 / 11 / 12 px, matches Eyebrow
+tone:      "default" | "accent" | "muted" | "destructive"
+selected:  boolean                                    // accent fill + accent border
+onClick?:  () => void                                 // presence → renders <button>
+disabled?: boolean
+as?:       "button" | "span" | "a"                    // override auto element
+```
 
-- `src/routes/_authenticated/coach.plans.$planId.tsx` — ~19 label/span eyebrows around form fields, filter labels, section markers (lines 546, 646, 662, 700, 962, 972, 1207, 1393, 1515, 1539, 1558, 1567, 1582, 1593, 1625, 1750, 1779, 1798, 1983, 2049, 2061, 2078). `<label htmlFor>` sites pass `as="label"`.
-- `src/routes/_authenticated/admin.errors.$id.tsx` — 4 (back link text, two section headers, key label).
-- `src/routes/_authenticated/admin.emails.tsx` — 4 (page eyebrow "Internal", category labels, panel headers, field label).
-- `src/routes/_authenticated/admin.feedback.tsx` — 2 (back link text, page eyebrow, inline meta span).
-- `src/routes/_authenticated/admin.map.tsx` — 1 (page eyebrow "Internal").
-- `src/routes/_authenticated/admin.index.tsx` — 4 (page eyebrow "Internal", "Beta invite code", two `<StatLabel>`-style `text-[10px]` labels, one `text-xs text-accent-ink` tag).
-- `src/routes/_authenticated/admin.list.$kind.tsx` — 1 (page eyebrow "Admin").
-- `src/routes/_authenticated/admin.errors.tsx` — 2 (back link text, page eyebrow "Internal").
-- `src/routes/_authenticated/admin.users.$userId.tsx` — ~6 (page eyebrow, section labels, dt labels in the definition list — including the `SectionLabel` helper).
-- `src/routes/_authenticated/admin.promo-codes.tsx` — 2 (back link text, table `<th>` row with `text-[11px] uppercase tracking-wider text-text-tertiary`).
+Shape is fixed to match the app: `rounded-pill border px-3 py-1 font-bold uppercase tracking-widest transition`. `selected` maps to `border-accent bg-accent text-accent-foreground` — exactly what admin.errors / admin.feedback / admin.list already do. Non-selected defaults to `border-divider bg-card text-text-primary hover:bg-elevated`, matching admin.index action pills.
 
-Every one of these is currently a pure `<p>`/`<span>`/`<label>`/`<th>`/`<dt>` with the same uppercase+tracking+size+tone shape the primitive already models.
+Tones affect the resting fill and text color only; `selected` always overrides to accent. `destructive` uses `border-destructive/50 text-destructive` (from admin.users.$userId delete button).
 
-## Explicitly out of scope this batch
+### `<Tag>` API
 
-To keep the churn safe and reviewable, don't touch anything where the eyebrow text is welded to a decorative wrapper — those get a separate Chip/Pill primitive later:
+```
+size:  "nano" | "micro" | "caption" | "small"       // default "micro" (10 px)
+tone:  "default" | "accent" | "muted"                // default "muted"
+mono?: boolean                                       // font-mono (test/adult/custom stamps default true)
+```
 
-- Any `rounded-pill border … uppercase` chip, tab, or filter button (admin tabs, roster filter chips, the tone tabs inside the plan editor at lines 1222 / 1604).
-- Any `font-mono uppercase` tag pill (`test`, `adult`, `custom`, `unsaved`, promo code cells).
-- The circular accent chip at plans line 532 (`rounded-full bg-accent … text-accent-foreground`).
-- The "coach mode" toggle button at admin.index line 73 and its siblings — those are buttons, not eyebrows.
-- The `pen-highlight` wrappers around bottom-nav / eyebrow labels — the highlight background stays a `<span>` around the child; the eyebrow inside can still convert if it's pure text, but the wrapper doesn't change.
+Shape fixed to: `inline-flex items-center rounded-pill border px-1.5 py-0.5 uppercase tracking-wider`. Default renders as the current `border-divider bg-elevated text-text-tertiary` mono stamp seen 8+ times across admin.
+
+## In-scope call sites for the sweep
+
+Only sites that are pure chip/pill patterns — the accent circle chip on plans line 532 and the `pen-highlight` wrappers stay out (still not a chip).
+
+**Chip conversions** (interactive tab / filter / action pills):
+
+- `admin.errors.tsx` line 50 — status tabs
+- `admin.feedback.tsx` lines 54, 103 — status tabs + inline meta chip
+- `admin.list.$kind.tsx` lines 112, 153, 192 — segmented tabs + filter row + pagination
+- `admin.map.tsx` line 142 — filter tabs
+- `admin.index.tsx` lines 74, 86, 93, 100, 106, 113, 132, 456 — coach-mode toggle, action pills, mini status filter
+- `admin.users.$userId.tsx` lines 55, 81 — role toggle + destructive action
+- `parent.settings.tsx` lines 704, 802 — settings toggles
+- `parent/add-coach-by-code-card.tsx` lines 170, 200 — chip options
+- `coach/sport-filter-chips.tsx` line 42 — sport filter (line 20's label is already an eyebrow-shaped chip; leave it a `<span>`-styled Chip with `selected={false}` disabled state, or keep as-is if it's not clickable)
+- `coach/roster-settings-section.tsx` line 154 — destructive action pill
+- `signup.parent.athletes.tsx` line 129 — chip label
+- `global-error-boundary.tsx` line 44 — action pill
+
+**Tag conversions** (static mono stamps):
+
+- `admin.list.$kind.tsx` line 138 — `test` stamp
+- `admin.index.tsx` lines 179, 427 — `test` stamps
+- `admin.users.$userId.tsx` lines 43, 156 — `test user` / `adult` stamps
+- `coach/roster-card.tsx` line 112 — count stamp (tabular-nums layout class preserved via `className`)
+
+## Explicitly out of scope
+
+To keep the churn safe:
+
+- `coach/week-schedule-view.tsx` pen-colored pills (lines 276, 422, 439, 450, 460, 492) — they use pen-orange tokens and custom tracking; skipping now avoids inventing a "pen tone" API you rejected.
+- `onboarding/sport-chip.tsx` and `onboarding/sport-multiselect.tsx` — already a well-scoped primitive, `text-sm` size sits outside the Eyebrow scale, and they use `border-2`. Leave them.
+- The accent circle chip at `coach.plans.$planId.tsx` line 532 — that's a badge, not a pill.
+- `pen-highlight` wrappers — not chips.
+- `ui/switch.tsx`, `ui/carousel.tsx`, `ui/slider.tsx`, FABs — `rounded-pill` on those is layout, not a chip pattern.
+
+These stay hand-rolled; if you later want a pen-tone or badge primitive we do them as their own batches.
 
 ## Verification per file
 
-After each file's edits: read the file back, run `rg 'uppercase tracking-(wid|wide)' <file>` to confirm only wrapper-attached eyebrows remain, and visually check that the file still builds. No behavioral change; typography values are unchanged because the primitive now has both `wide`/`widest` and the `small` (12px) size.
+After each file's edits:
+1. Read the file back and eyeball the diff.
+2. `rg 'rounded-pill' <file>` — only the deliberately-skipped patterns (pen-colored, sport-chip, accent circle, switch/slider/carousel) should remain.
+3. Visual check the tabs/filters still highlight correctly.
 
 ## Technical notes
 
-- Line numbers above are pre-edit references from the current tree; edits will be applied by matching the exact `<p|span|label|th|dt className="…">` snippet, not by line number.
-- `Eyebrow` forwards `...rest`, so `htmlFor` on `<label>` and `scope` on `<th>` keep working via `as="label"` / `as="th"`.
-- `SectionLabel` helper in `admin.users.$userId.tsx` (line ~194) becomes a one-line wrapper around `<Eyebrow as="dt" size="small" tone="tertiary">`; call sites unchanged.
-- No changes to `src/styles.css`, no new tokens, no theme edits.
+- Files: `src/components/ui/chip.tsx`, `src/components/ui/tag.tsx`. Both use `cva` for variants, matching how `eyebrow.tsx` and other primitives are structured.
+- `size` maps to the same `text-[9px|10px|11px|12px]` pairs Eyebrow uses. Weight is `font-bold` on Chip, `font-medium` on Tag (matches roster-card stamp) unless `mono` is set, which switches to `font-mono` and keeps `font-medium`.
+- Chip auto-element: if `onClick` is passed and `as` is not, render `<button type="button">`; otherwise render `<span>`. This preserves the two dozen existing `<button className="rounded-pill …">` sites without asking each to pass `as="button"`.
+- No changes to `src/styles.css`, no new tokens.
 
 ## What this codifies
 
-The current app's eyebrow vocabulary is: four sizes (9/10/11/12px), five tones already in the primitive, two tracking widths, two weights. After this batch, that's exactly what the primitive exposes and nothing more — the design system doc gets simpler, not larger.
+The app's chip vocabulary — four sizes (matching Eyebrow), four tones, selected-vs-not, and a static mono tag — captured in two primitives. Anything exotic (pen fills, big sport chips, accent circle badges) stays out and gets its own primitive later if we want.
