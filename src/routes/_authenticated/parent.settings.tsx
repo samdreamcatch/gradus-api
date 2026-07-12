@@ -698,22 +698,19 @@ function CoachesSection({
                       {editOptions.map((s) => {
                         const selected = editSports.includes(s);
                         return (
-                          <button
+                          <Chip
                             key={s}
-                            type="button"
+                            as="button"
+                            caseSensitive
+                            selected={selected}
                             onClick={() => toggleSport(s, editSports, setEditSports)}
-                            className={
-                              "rounded-pill border-2 px-3 py-1 text-xs font-semibold transition " +
-                              (selected
-                                ? "border-accent bg-accent text-accent-foreground"
-                                : "border-divider bg-card text-text-primary")
-                            }
                           >
                             {getSport(s)?.label ?? s}
-                          </button>
+                          </Chip>
                         );
                       })}
                     </div>
+
                     <p className="text-xs text-text-tertiary">
                       Removing a sport here keeps the coach linked but stops
                       tracking that sport with them. To add a sport this coach
