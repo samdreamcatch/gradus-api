@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/logo";
+import { SportsPoster } from "@/components/ui/sports-poster";
 import { getAthleteInviteSummary } from "@/lib/athlete-signup.functions";
 import { PromoCodeField } from "@/components/signup/promo-code-field";
 import { ShareInviteButton } from "@/components/share/share-invite-button";
