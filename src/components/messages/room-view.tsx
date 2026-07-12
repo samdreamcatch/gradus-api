@@ -43,9 +43,10 @@ function ConversationHeader({
       <p className="text-base font-bold text-text-primary">
         {ordered.map((p) => p.firstName).join(" & ")}
       </p>
-      <p className="text-[11px] font-black uppercase tracking-widest text-text-tertiary">
+      <p className="text-caption font-black uppercase tracking-widest text-text-tertiary">
         {ordered.map((p) => roleWord(p.role)).join(" · ")}
       </p>
+
     </div>
   );
 }
