@@ -43,8 +43,9 @@ function UserDetail() {
                 <h1 className="mt-1 font-display text-h2 text-text-primary">
                   {data.auth?.email ?? "(no email)"}
                   {data.isTest && (
-                    <span className="ml-2 align-middle rounded-pill border border-divider bg-elevated px-2 py-0.5 text-[11px] font-mono uppercase tracking-wider text-text-tertiary">test user</span>
+                    <Tag size="caption" className="ml-2 align-middle">test user</Tag>
                   )}
+
                 </h1>
               </div>
               <div className="shrink-0 flex flex-col items-end gap-2">
