@@ -486,6 +486,7 @@ export type Database = {
           id: string
           is_test: boolean
           last_name: string
+          last_seen_at: string | null
           onboarded_at: string | null
           promo_code: string | null
           updated_at: string
@@ -497,6 +498,7 @@ export type Database = {
           id?: string
           is_test?: boolean
           last_name?: string
+          last_seen_at?: string | null
           onboarded_at?: string | null
           promo_code?: string | null
           updated_at?: string
@@ -508,6 +510,7 @@ export type Database = {
           id?: string
           is_test?: boolean
           last_name?: string
+          last_seen_at?: string | null
           onboarded_at?: string | null
           promo_code?: string | null
           updated_at?: string
@@ -661,6 +664,36 @@ export type Database = {
           id?: string
           token?: string
           used_at?: string | null
+        }
+        Relationships: []
+      }
+      error_group_explanations: {
+        Row: {
+          created_at: string
+          explanation: string
+          id: string
+          model: string | null
+          sample_message: string
+          signature: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          explanation: string
+          id?: string
+          model?: string | null
+          sample_message: string
+          signature: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          explanation?: string
+          id?: string
+          model?: string | null
+          sample_message?: string
+          signature?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -1000,6 +1033,7 @@ export type Database = {
           id: string
           is_test: boolean
           last_name: string
+          last_seen_at: string | null
           promo_code: string | null
           updated_at: string
           user_id: string
@@ -1011,6 +1045,7 @@ export type Database = {
           id?: string
           is_test?: boolean
           last_name?: string
+          last_seen_at?: string | null
           promo_code?: string | null
           updated_at?: string
           user_id: string
@@ -1022,6 +1057,7 @@ export type Database = {
           id?: string
           is_test?: boolean
           last_name?: string
+          last_seen_at?: string | null
           promo_code?: string | null
           updated_at?: string
           user_id?: string
@@ -1537,6 +1573,7 @@ export type Database = {
         Returns: number
       }
       seed_coach_library: { Args: { _coach_id: string }; Returns: number }
+      touch_last_seen: { Args: never; Returns: undefined }
     }
     Enums: {
       app_role: "admin"
