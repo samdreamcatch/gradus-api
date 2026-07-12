@@ -112,11 +112,11 @@ export function ConnectionCelebration({ role }: ConnectionCelebrationProps) {
 
 
         {role === "coach" ? (
-          <div className="mt-4 grid grid-cols-2 gap-2">
+          <div className="relative mt-4 grid grid-cols-2 gap-2">
             <Button
               type="button"
               variant="outline"
-              className="h-auto flex-col gap-1 py-3"
+              className="h-auto flex-col gap-1 bg-card py-3"
               onClick={() =>
                 handleAction(currentGroup, () => {
                   navigate({ to: "/coach/roster" });
@@ -140,7 +140,7 @@ export function ConnectionCelebration({ role }: ConnectionCelebrationProps) {
             </Button>
           </div>
         ) : (
-          <div className="mt-4">
+          <div className="relative mt-4">
             <Button
               type="button"
               className="w-full gap-2"
@@ -168,8 +168,9 @@ export function ConnectionCelebration({ role }: ConnectionCelebrationProps) {
         <button
           type="button"
           onClick={() => dismiss(currentGroup)}
-          className="mt-3 w-full text-center text-xs font-medium text-text-tertiary hover:text-text-secondary"
+          className="relative mt-3 w-full text-center text-xs font-medium text-text-tertiary hover:text-text-secondary"
         >
+
           Maybe later
         </button>
       </DialogContent>
