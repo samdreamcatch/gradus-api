@@ -292,31 +292,14 @@
 }
 
 @utility dialog-watermark {
+  /* Watermark intentionally removed: the sports line-art is reserved for
+     celebration moments. Dialogs rely on the paper surface + wash alone
+     so they read as notebook pages, not mini-celebrations. */
   position: relative;
   isolation: isolate;
   overflow: hidden;
-  &::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    background-image: url("/__l5e/assets-v1/1c15c96d-8f62-4ff0-bb75-fb1136d15146/sports-watermark.png");
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    opacity: 0.06;
-    pointer-events: none;
-    z-index: 0;
-  }
-  :where(.dark) &::before {
-    filter: invert(1);
-    opacity: 0.08;
-  }
-  & > * {
-    position: relative;
-    z-index: 1;
-  }
 }
+
 
 
 @utility ask-glow {
