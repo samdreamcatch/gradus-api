@@ -73,6 +73,7 @@ function CoachSignupPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [promoCode, setPromoCode] = useState("");
+  const [showAgreeHint, setShowAgreeHint] = useState(false);
 
 
   useEffect(() => {
