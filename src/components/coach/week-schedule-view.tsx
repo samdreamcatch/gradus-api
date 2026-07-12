@@ -307,7 +307,7 @@ export const WeekScheduleView = forwardRef<
 
         {selectedSessions.length === 0 ? (
           <div className="px-4 py-10 text-center text-sm text-text-tertiary">
-            Rest day — no lessons scheduled
+            No lessons scheduled
           </div>
         ) : (
           <div className="relative px-4 py-5">
