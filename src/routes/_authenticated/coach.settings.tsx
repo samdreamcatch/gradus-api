@@ -20,6 +20,7 @@ import { InviteCard } from "@/components/onboarding/invite-card";
 import { CoachBottomNav } from "@/components/coach/bottom-nav";
 import { RosterSettingsSection } from "@/components/coach/roster-settings-section";
 import { EnterInviteCodeCard } from "@/components/coach/enter-invite-code-card";
+import { SegmentedToggle } from "@/components/plans/segmented-toggle";
 
 import {
   SettingsGroup,
@@ -343,10 +344,6 @@ function SportsDisclosure({
 
 function ConnectionsDisclosure() {
   const [audience, setAudience] = useState<"parents" | "adult-athletes">("parents");
-  const options: Array<{ value: "parents" | "adult-athletes"; label: string }> = [
-    { value: "parents", label: "Youth parents" },
-    { value: "adult-athletes", label: "Adult (18+)" },
-  ];
 
   return (
     <SettingsDisclosure
@@ -362,30 +359,14 @@ function ConnectionsDisclosure() {
               Share your code
             </h3>
           </div>
-          <div
-            role="tablist"
-            aria-label="Invite audience"
-            className="inline-flex rounded-full border border-divider bg-elevated p-1"
-          >
-            {options.map((opt) => {
-              const active = audience === opt.value;
-              return (
-                <button
-                  key={opt.value}
-                  role="tab"
-                  aria-selected={active}
-                  onClick={() => setAudience(opt.value)}
-                  className={`rounded-full px-3 py-1.5 text-label font-medium transition-colors ${
-                    active
-                      ? "bg-accent text-accent-foreground"
-                      : "text-text-secondary hover:text-text-primary"
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              );
-            })}
-          </div>
+          <SegmentedToggle
+            value={audience}
+            onChange={setAudience}
+            options={[
+              { key: "parents", label: "Youth parents" },
+              { key: "adult-athletes", label: "Adult (18+)" },
+            ]}
+          />
           <InviteCard compact audience={audience} />
         </section>
 
