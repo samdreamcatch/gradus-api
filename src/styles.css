@@ -64,6 +64,15 @@
   --elevated: oklch(0.982 0.004 250 / 0.62);
   --divider: oklch(0.92 0.005 260);        /* #E6E7EB */
 
+  /* Surface simulations — reserved for previewing an external context
+     inside our UI (an athlete's phone, an email client, a code editor).
+     Never use for our own surfaces; use `bg-card` / `bg-elevated` instead. */
+  --surface-athlete-screen: #ffffff;
+  --surface-email-client: #ffffff;
+  --surface-code-block: #0f172a;
+  --surface-code-block-foreground: #e2e8f0;
+
+
   --text-primary: oklch(0.24 0.08 260);
   --text-secondary: oklch(0.42 0.02 260);   /* AAA: ~7.2:1 on background */
   --text-tertiary: oklch(0.44 0.015 260);   /* AAA at any size on paper */
