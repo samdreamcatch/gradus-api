@@ -1,25 +1,39 @@
-## Chip / Tag primitives — DONE
+# Shrink all three bottom navigation bars
 
-`src/components/ui/chip.tsx` and `src/components/ui/tag.tsx` codify the pill vocabulary. Chip exposes `size` (nano/micro/caption/small — matches Eyebrow), `tone` (default/accent/muted/destructive), `weight`, `tracking`, `selected`, `mono`, `caseSensitive`, and `as`. Auto-renders `<button>` when `onClick` is passed; use `as="button"` explicitly when passing other button-only props (`disabled`, typed handlers) so TS infers correctly. `chipClasses()` helper is exported for TanStack Router `<Link>` sites, where the generic doesn't survive through `<Chip as={Link}>`.
+## Problem
 
-Tag defaults to `font-mono` + `micro` (10px) + `default` tone — the `test`/`adult`/`test user` stamps.
+On 390px-wide mobile, the coach nav tiles push text and icons off-screen. The labels currently render at `text-micro` (10px) with `tracking-widest` (0.1em) and heavy horizontal padding (`px-3`), and none of the bottom navs route through the design system's `<Eyebrow>` primitive — so they've drifted out of sync with its documented "component-level" role. Parent and athlete bottom navs share the same construction and need the same fix so all three stay consistent.
 
-## Sites converted
+## Fix
 
-- `admin.errors.tsx` — status toggle Link → `chipClasses`
-- `admin.feedback.tsx` — status toggle Link + inline Mark-resolved button
-- `admin.map.tsx` — test-user Link
-- `admin.list.$kind.tsx` — filter Links, test-toggle button, pagination Link, test Tag
-- `admin.index.tsx` — 6 header action Links, copy button, TestToggle helper, 2 test Tags
-- `admin.users.$userId.tsx` — mark-test button, delete-user destructive button, 2 Tags (`test user`, `adult`)
-- `signup.parent.athletes.tsx` — coach-sport display Chips
-- `coach/sport-filter-chips.tsx` — single-sport label + filter row
-- `coach/roster-settings-section.tsx` — Remove destructive Chip
-- `global-error-boundary.tsx` — Reload Chip
+### 1. Bottom nav components (apply identical rules to all three)
+Files:
+- `src/components/coach/bottom-nav.tsx`
+- `src/components/parent/bottom-nav.tsx`
+- `src/components/athlete/bottom-nav.tsx`
 
-## Deferred (documented in plan discussion)
+Changes in each file (identical tokens/spacing):
+- Replace the hand-rolled label `<span>` with `<Eyebrow as="span" size="nano" tracking="wide" weight="bold" tone={...} />` so nav labels flow through the design system.
+- Tighten the tile so items comfortably fit ≤360px:
+  - Row padding: `px-2` → `px-1`
+  - Tile padding: `px-3 py-3.5` → `px-1.5 py-2.5`
+  - Icon size: `h-5 w-5` → `h-[18px] w-[18px]`
+  - Gap: `gap-1` → `gap-1.5`
+  - Label wrapper adds `truncate max-w-full` guardrail
+- Preserve per-nav behavior untouched: active-state `pen-highlight`, unread dot (coach messages), any parent/athlete-specific badges or item sets, focus ring, safe-area padding.
 
-- `parent.settings.tsx` (2 sport-toggle sites) and `parent/add-coach-by-code-card.tsx` (2 sites) — use `border-2` and are case-sensitive labels. Same family as `onboarding/sport-chip.tsx`. Belongs to a future SportChip primitive.
-- `coach/roster-card.tsx` line 112 — day+time slot pill, mixed-case with tabular-nums. Belongs to a future TimeSlotPill primitive.
-- `coach/week-schedule-view.tsx` pen-colored pills — need a per-pen tone API you rejected.
-- `admin.feedback.tsx` line 87 `test` stamp — uses `rounded` (not pill). Kept as-is.
+Confirm before editing that parent/athlete navs share the same base structure; if one has a divergent shape (e.g. FAB slot), keep that shape and only swap in the shared tokens/label primitive.
+
+### 2. `src/components/ui/eyebrow.tsx` (design system update)
+- Update the size doc block so the "bottom nav / dense tile label" role points at **`nano` (9px)**, not `micro`. `micro` becomes "card sub-labels / meta rows"; `nano` becomes "dense grids, rings, bottom nav tiles".
+- No API change — just doc + intent alignment so future call sites match what the navs now use.
+
+### 3. Verification
+- Preview each role's bottom nav at 390px: all tiles visible with label + icon, no clipping, active pen highlight still reads.
+- `rg "text-micro" src/components/{coach,parent,athlete}/bottom-nav.tsx` → no matches.
+- Typecheck clean.
+
+## Out of scope
+
+- No token changes to `text-nano` / `text-micro` sizes themselves; the fix is *using the right token*, not resizing tokens.
+- No changes to top nav / page headers / other Eyebrow call sites.
