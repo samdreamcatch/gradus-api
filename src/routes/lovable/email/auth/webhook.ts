@@ -135,6 +135,9 @@ export const Route = createFileRoute("/lovable/email/auth/webhook")({
           )
         }
 
+        // Fetch DB copy overrides for this template (falls back to defaults if empty)
+        const copyOverrides = await fetchOverridesFor(emailType)
+
         // Build template props from payload.data (HookData structure)
         const templateProps = {
           siteName: SITE_NAME,
@@ -145,12 +148,14 @@ export const Route = createFileRoute("/lovable/email/auth/webhook")({
           email: payload.data.email,
           oldEmail: payload.data.old_email,
           newEmail: payload.data.new_email,
+          copyOverrides,
         }
 
         // Render React Email to HTML and plain text
         const element = React.createElement(EmailTemplate, templateProps)
         const html = await render(element)
         const text = await render(element, { plainText: true })
+
 
         // Enqueue email for async processing by the dispatcher (process-email-queue).
         const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
