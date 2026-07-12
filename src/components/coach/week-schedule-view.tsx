@@ -416,17 +416,17 @@ function LessonRow({
       </div>
       <div
         className={cn(
-          "flex-1 rounded-xl bg-card transition",
+          "flex-1 rounded-xl bg-card",
           expanded
             ? "border-2 border-text-primary/80 shadow-card"
-            : "border border-divider hover:border-accent/40",
+            : "border border-divider",
         )}
       >
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
           aria-expanded={expanded}
-          className="flex w-full items-center justify-between gap-3 p-4 text-left transition active:scale-[0.99] focus-visible:outline-none"
+          className="press-soft flex w-full items-center justify-between gap-3 p-4 text-left focus-visible:outline-none"
         >
           <div className="flex min-w-0 flex-col gap-1">
             <h3
