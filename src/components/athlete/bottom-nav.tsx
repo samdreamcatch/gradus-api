@@ -29,7 +29,7 @@ export function AthleteBottomNav() {
       aria-label="Athlete navigation"
       className="fixed inset-x-0 bottom-0 z-40 border-t border-divider bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_-12px_rgba(0,0,0,0.12)]"
     >
-      <ul className="mx-auto flex min-h-16 max-w-3xl items-stretch justify-around px-2">
+      <ul className="mx-auto flex min-h-16 max-w-3xl items-stretch justify-around px-1">
         {ITEMS.map((item) => {
           const Icon = item.icon;
           const isActive = item.to
@@ -43,7 +43,7 @@ export function AthleteBottomNav() {
           const inner = (
             <span
               className={cn(
-                "flex flex-1 flex-col items-center justify-center gap-1 px-3 py-3.5 text-micro font-bold uppercase tracking-widest transition-colors",
+                "flex flex-1 flex-col items-center justify-center gap-1.5 px-1.5 py-2.5 transition-colors",
                 isActive
                   ? "text-accent-ink"
                   : item.to
@@ -52,7 +52,7 @@ export function AthleteBottomNav() {
               )}
             >
               <span className="relative">
-                <Icon className={cn("h-5 w-5", isActive && "text-accent-ink")} aria-hidden />
+                <Icon className={cn("h-[18px] w-[18px]", isActive && "text-accent-ink")} aria-hidden />
                 {hasUnread ? (
                   <span
                     aria-label={`${item.unreadCount} unread`}
@@ -60,7 +60,16 @@ export function AthleteBottomNav() {
                   />
                 ) : null}
               </span>
-              <span className={cn("leading-none", isActive && "pen-highlight")}>{item.label}</span>
+              <Eyebrow
+                as="span"
+                size="nano"
+                tracking="wide"
+                weight="bold"
+                tone={isActive ? "accent-ink" : item.to ? "secondary" : "tertiary"}
+                className={cn("max-w-full truncate leading-none", isActive && "pen-highlight")}
+              >
+                {item.label}
+              </Eyebrow>
             </span>
           );
 
