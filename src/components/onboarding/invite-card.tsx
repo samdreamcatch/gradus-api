@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Copy, Check } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { SportsPoster } from "@/components/ui/sports-poster";
 import { ShareInviteButton } from "@/components/share/share-invite-button";
 import { useCoachInvite } from "@/hooks/use-coach-invite";
 
