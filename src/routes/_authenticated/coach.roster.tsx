@@ -5,7 +5,8 @@ import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { CoachBottomNav } from "@/components/coach/bottom-nav";
 import { PageTitle } from "@/components/page-title";
 import { RosterCard } from "@/components/coach/roster-card";
-import { SportFilterChips } from "@/components/coach/sport-filter-chips";
+import { FilterPill } from "@/components/ui/filter-pill";
+import { getSport, type SportKey } from "@/lib/coach-sports";
 import { WeekScheduleView } from "@/components/coach/week-schedule-view";
 import { AthleteDetailSheet } from "@/components/coach/athlete-detail-sheet";
 import { InviteCard } from "@/components/onboarding/invite-card";
@@ -151,12 +152,22 @@ function RosterPage() {
         <FirstPlanBanner />
 
 
-        {athletes.length > 0 && (
-          <SportFilterChips
-            sports={sports}
-            selected={selectedSport}
-            onSelect={setSelectedSport}
-          />
+        {athletes.length > 0 && sports.length > 0 && (
+          <div className="mt-4 grid grid-cols-3 gap-2">
+            <FilterPill
+              aria-label="Sport"
+              value={selectedSport ?? "__all"}
+              onValueChange={(v) => setSelectedSport(v === "__all" ? null : v)}
+              placeholder="All sports"
+              options={[
+                { value: "__all", label: "All sports" },
+                ...sports.map((s) => ({
+                  value: s,
+                  label: getSport(s as SportKey)?.label ?? s,
+                })),
+              ]}
+            />
+          </div>
         )}
 
         {tab === "athletes" ? (
