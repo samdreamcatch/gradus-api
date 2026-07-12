@@ -17,6 +17,7 @@ import { Logo } from "@/components/logo";
 import { SportChip } from "@/components/onboarding/sport-chip";
 import { getSport, SPORTS } from "@/lib/coach-sports";
 import {
+  createSelfManagedAthlete,
   getAdultOnboardingStatus,
   linkAdultAthleteToCoach,
   listAdultAthleteCoaches,
@@ -31,6 +32,7 @@ import {
   type Slot,
 } from "@/components/parent/schedule-editor";
 import { saveAdultAthleteScheduleForCoach } from "@/lib/adult-athlete-schedule.functions";
+import { useQueryClient } from "@tanstack/react-query";
 
 export const Route = createFileRoute("/_authenticated/athlete/onboarding")({
   component: AdultAthleteOnboardingPage,
@@ -51,8 +53,17 @@ function AdultAthleteOnboardingPage() {
     queryFn: () => statusFn(),
   });
 
-  const [step, setStep] = useState<"coach" | "goals" | "schedule">("coach");
+  const [step, setStep] = useState<"profile" | "coach" | "goals" | "schedule">(
+    "profile",
+  );
   const [sportsToGoal, setSportsToGoal] = useState<string[]>([]);
+
+  // Once the athlete row exists, jump past the profile step.
+  useEffect(() => {
+    if (status?.hasAthlete && status.selfManaged && step === "profile") {
+      setStep("coach");
+    }
+  }, [status?.hasAthlete, status?.selfManaged, step]);
 
   if (statusLoading) {
     return (
@@ -62,7 +73,8 @@ function AdultAthleteOnboardingPage() {
     );
   }
 
-  if (status && !status.selfManaged) {
+  // A parent-managed athlete row exists — this flow is for self-managed only.
+  if (status?.hasAthlete && !status.selfManaged) {
     navigate({ to: "/athlete/plans" });
     return null;
   }
@@ -76,7 +88,9 @@ function AdultAthleteOnboardingPage() {
           <Logo className="text-5xl" />
         </div>
 
-        {step === "coach" ? (
+        {step === "profile" ? (
+          <ProfileStep onDone={() => setStep("coach")} />
+        ) : step === "coach" ? (
           <CoachStep
             onDone={(sports) => {
               setSportsToGoal(sports);
@@ -93,6 +107,120 @@ function AdultAthleteOnboardingPage() {
         )}
       </div>
     </div>
+  );
+}
+
+function ProfileStep({ onDone }: { onDone: () => void }) {
+  const createAthlete = useServerFn(createSelfManagedAthlete);
+  const qc = useQueryClient();
+
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [birthdate, setBirthdate] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  // Client-side age check; DB trigger enforce_adult_self_managed is the
+  // authoritative gate.
+  const birthdateValid = (() => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(birthdate)) return false;
+    const [y, m, d] = birthdate.split("-").map(Number);
+    const dt = new Date(y, m - 1, d);
+    const now = new Date();
+    let age = now.getFullYear() - y;
+    if (now.getMonth() < m - 1 || (now.getMonth() === m - 1 && now.getDate() < d)) {
+      age -= 1;
+    }
+    return dt.getFullYear() === y && age >= 18 && age < 120;
+  })();
+
+  const namesValid = firstName.trim().length > 0 && lastName.trim().length > 0;
+  const canSubmit = !saving && namesValid && birthdateValid;
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setSaving(true);
+    try {
+      await createAthlete({
+        data: {
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          birthdate,
+        },
+      });
+      await qc.invalidateQueries({ queryKey: ["adult-onboarding-status"] });
+      onDone();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Something went wrong");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <>
+      <div className="mb-6 text-center">
+        <p className="font-display text-2xl text-text-primary">
+          Tell us about yourself
+        </p>
+        <p className="mt-2 text-sm text-text-secondary">
+          Your coach will see your name on your lessons.
+        </p>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-4" autoComplete="on">
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-2">
+            <Label htmlFor="firstName">First name</Label>
+            <Input
+              id="firstName"
+              name="given-name"
+              autoComplete="given-name"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              required
+              maxLength={60}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="lastName">Last name</Label>
+            <Input
+              id="lastName"
+              name="family-name"
+              autoComplete="family-name"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              required
+              maxLength={60}
+            />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="birthdate">Date of birth</Label>
+          <Input
+            id="birthdate"
+            name="bday"
+            type="date"
+            autoComplete="bday"
+            value={birthdate}
+            onChange={(e) => setBirthdate(e.target.value)}
+            required
+            max={new Date().toISOString().slice(0, 10)}
+          />
+          <p className="text-xs text-text-tertiary">
+            You must be 18 or older to have your own account.
+          </p>
+        </div>
+
+        {error && <p className="text-sm text-destructive">{error}</p>}
+
+        <Button type="submit" className="w-full" disabled={!canSubmit}>
+          {saving ? "Saving…" : "Continue"}
+        </Button>
+      </form>
+    </>
   );
 }
 
