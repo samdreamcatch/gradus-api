@@ -425,7 +425,7 @@ function RecentList({
                   <p className="truncate text-sm font-semibold text-text-primary">
                     {it.primary}
                     {it.isTest && (
-                      <span className="ml-2 rounded-pill border border-divider bg-elevated px-1.5 py-0.5 text-[10px] font-mono uppercase tracking-wider text-text-tertiary">test</span>
+                      <Tag className="ml-2">test</Tag>
                     )}
                   </p>
                   <p className="truncate text-xs text-text-secondary">{it.secondary}</p>
