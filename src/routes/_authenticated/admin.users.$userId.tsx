@@ -157,7 +157,7 @@ function UserDetail() {
               <h2 className="font-display text-h3 text-text-primary">
                 Athlete profile
                 {data.athlete.self_managed && (
-                  <span className="ml-2 rounded-pill border border-divider bg-elevated px-2 py-0.5 text-[11px] font-mono uppercase tracking-wider text-text-tertiary">adult</span>
+                  <Tag size="caption" className="ml-2">adult</Tag>
                 )}
               </h2>
               <dl className="grid grid-cols-2 gap-3 text-sm">
