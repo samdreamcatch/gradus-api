@@ -108,13 +108,7 @@ function PlanEditorSheet() {
     <Sheet open onOpenChange={(v) => { if (!v) close(); }}>
       <SheetContent
         side="bottom"
-        className="max-h-[92dvh] overflow-y-auto border-t border-divider shadow-page"
-        style={{
-          backgroundColor: "var(--background)",
-          backgroundImage:
-            "radial-gradient(1200px 800px at 100% 0%, color-mix(in oklab, var(--pen-pool) 18%, transparent), transparent 60%), radial-gradient(1000px 700px at 0% 100%, color-mix(in oklab, var(--pen-tennis) 16%, transparent), transparent 60%), repeating-linear-gradient(to bottom, transparent 0px, transparent 31px, color-mix(in oklab, var(--foreground) 7%, transparent) 31px, color-mix(in oklab, var(--foreground) 7%, transparent) 32px)",
-        }}
-
+        className="paper-surface max-h-[92dvh] overflow-y-auto border-t border-divider shadow-page"
       >
         <PlanEditorBody planId={planId} onClose={close} from={from} />
       </SheetContent>
@@ -1326,7 +1320,7 @@ function MovePicker({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="bottom"
-        className="flex flex-col"
+        className="paper-surface flex flex-col"
         style={{
           bottom: vv.keyboardInset,
           maxHeight: Math.round(vv.height * 0.85),

@@ -219,7 +219,7 @@ export function LessonSlotSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="bottom"
-        className="max-h-[90dvh] overflow-y-auto bg-popover"
+        className="paper-surface max-h-[90dvh] overflow-y-auto"
       >
         <SheetHeader className="text-left">
           <SheetTitle>{title}</SheetTitle>

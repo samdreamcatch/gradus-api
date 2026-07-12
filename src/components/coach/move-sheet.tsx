@@ -54,10 +54,8 @@ export function MoveSheet({
     >
       <SheetContent
         side="bottom"
-        className="overflow-y-auto border-t border-divider shadow-page"
+        className="paper-surface overflow-y-auto border-t border-divider shadow-page"
         style={{
-          backgroundColor: "var(--popover)",
-          backgroundImage: "none",
           bottom: vv.keyboardInset,
           maxHeight: Math.round(vv.height * 0.9),
         }}
