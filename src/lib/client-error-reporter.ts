@@ -55,6 +55,8 @@ export function reportError(
   error: unknown,
   extra: { route?: string | null; metadata?: Record<string, unknown> } = {},
 ) {
+  if (import.meta.env.DEV) return
+  if (!isProductionHost()) return
   try {
     const { message, stack } = fmtError(error)
     send({
@@ -73,6 +75,7 @@ export function installErrorReporter() {
   if (installed) return
   if (typeof window === 'undefined') return
   if (import.meta.env.DEV) return
+  if (!isProductionHost()) return
   installed = true
 
   window.addEventListener('error', (evt) => {
