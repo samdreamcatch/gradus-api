@@ -1,5 +1,8 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
 import { reportError } from '@/lib/client-error-reporter'
+import { Chip } from '@/components/ui/chip'
+
+
 
 interface Props {
   children: ReactNode
