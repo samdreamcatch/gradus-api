@@ -300,9 +300,14 @@ export const linkAthletesToCoach = createServerFn({ method: "POST" })
     if (athletesIns.error) dbError(athletesIns.error);
 
     if (coachId) {
+      // Auto-ack the parent side — the signup wizard's final screen already
+      // shows the connection confirmation, so suppress the celebration modal
+      // on first load of /parent/plans. The coach still sees theirs.
+      const nowIso = new Date().toISOString();
       const linkRows = (athletesIns.data ?? []).map((a) => ({
         coach_id: coachId!,
         athlete_id: a.id,
+        other_ack_at: nowIso,
       }));
       const linksIns = await supabaseAdmin.from("coach_athletes").insert(linkRows);
       if (linksIns.error) dbError(linksIns.error);
