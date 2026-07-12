@@ -82,7 +82,13 @@ export async function logError(input: ErrorLogInput): Promise<{ id: string } | n
   })
 
   const user = await resolveUser(supabaseAdmin, input.userId ?? null)
+  if (user.isTest) {
+    // Skip logging + alert email for known test users so real production
+    // signal isn't diluted by staff/QA activity.
+    return null
+  }
   const occurredAt = new Date().toISOString()
+
 
   const { data: inserted, error: insertError } = await supabaseAdmin
     .from('client_errors')
