@@ -205,9 +205,8 @@ function ParentPlansPage() {
 
 function EmptyCard({ status }: { status: StatusFilter }) {
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-dashed border-divider bg-card p-8 text-center">
-      <SportsPoster fill opacity={0.08} />
-      <p className="relative font-hand text-2xl text-text-secondary">
+    <div className="rounded-2xl border border-dashed border-divider bg-card p-8 text-center">
+      <p className="font-hand text-2xl text-text-secondary">
         {status === "active"
           ? "No active plans — your coach will share one here."
           : "No benched plans."}
