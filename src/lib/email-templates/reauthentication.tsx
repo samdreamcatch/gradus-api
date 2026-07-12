@@ -1,57 +1,34 @@
-import * as React from 'react'
-
-import {
-  Body,
-  Container,
-  Head,
-  Heading,
-  Hr,
-  Html,
-  Preview,
-  Text,
-} from '@react-email/components'
-
-import {
-  code,
-  container,
-  divider,
-  eyebrow,
-  footer,
-  h1,
-  main,
-  text,
-  wordmark,
-} from './_styles'
+import * as React from "react";
+import { Body, Container, Head, Heading, Hr, Html, Preview, Text } from "@react-email/components";
+import parse from "html-react-parser";
+import { code, container, divider, eyebrow, footer, h1, main, text, wordmark } from "./_styles";
+import { resolveCopy, renderTemplateString } from "./copy-schema";
 
 interface ReauthenticationEmailProps {
-  token: string
+  token: string;
+  copyOverrides?: Record<string, string>;
 }
 
-export const ReauthenticationEmail = ({ token }: ReauthenticationEmailProps) => (
-  <Html lang="en" dir="ltr">
-    <Head />
-    <Preview>Your Gradus verification code</Preview>
-    <Body style={main}>
-      <Container style={container}>
-        <Text style={wordmark}>Gradus</Text>
-        <Text style={eyebrow}>Verification code</Text>
+export const ReauthenticationEmail = ({ token, copyOverrides }: ReauthenticationEmailProps) => {
+  const c = resolveCopy("reauthentication", copyOverrides);
+  const vars = { token };
+  return (
+    <Html lang="en" dir="ltr">
+      <Head />
+      <Preview>{renderTemplateString(c.preview, vars)}</Preview>
+      <Body style={main}>
+        <Container style={container}>
+          <Text style={wordmark}>Gradus</Text>
+          <Text style={eyebrow}>{renderTemplateString(c.eyebrow, vars)}</Text>
+          <Heading style={h1}>{renderTemplateString(c.heading, vars)}</Heading>
+          <Text style={text}>{parse(renderTemplateString(c.body, vars))}</Text>
+          <Text style={code}>{token}</Text>
+          <Hr style={divider} />
+          <Text style={footer}>{parse(renderTemplateString(c.footer, vars))}</Text>
+        </Container>
+      </Body>
+    </Html>
+  );
+};
 
-        <Heading style={h1}>Confirm it's you.</Heading>
-
-        <Text style={text}>
-          Enter the code below to confirm your identity:
-        </Text>
-
-        <Text style={code}>{token}</Text>
-
-        <Hr style={divider} />
-        <Text style={footer}>
-          This code expires shortly. If you didn't request it, you can safely
-          ignore this email.
-        </Text>
-      </Container>
-    </Body>
-  </Html>
-)
-
-export default ReauthenticationEmail
+export default ReauthenticationEmail;

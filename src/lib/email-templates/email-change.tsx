@@ -1,55 +1,58 @@
 import * as React from "react";
-
-import { Body, Button, Container, Head, Heading, Hr, Html, Link, Preview, Text } from "@react-email/components";
-
+import { Body, Button, Container, Head, Heading, Hr, Html, Preview, Text } from "@react-email/components";
+import parse, { domToReact, type HTMLReactParserOptions, type DOMNode } from "html-react-parser";
 import { button, container, divider, eyebrow, footer, h1, link, main, text, wordmark, colors } from "./_styles";
+import { resolveCopy, renderTemplateString } from "./copy-schema";
 
 interface EmailChangeEmailProps {
   siteName: string;
-  // oldEmail is the user's current address (HookData.OldEmail). For the
-  // NEW-recipient half of a secure email_change fanout, `email` equals the
-  // recipient (NEW), so the "from" line must render oldEmail to read
-  // "from OLD to NEW" instead of "from NEW to NEW".
   oldEmail: string;
   email: string;
   newEmail: string;
   confirmationUrl: string;
+  copyOverrides?: Record<string, string>;
 }
 
-export const EmailChangeEmail = ({ siteName, oldEmail, newEmail, confirmationUrl }: EmailChangeEmailProps) => (
-  <Html lang="en" dir="ltr">
-    <Head />
-    <Preview>Confirm your email change for Gradus </Preview>
-    <Body style={main}>
-      <Container style={container}>
-        <Text style={wordmark}>Gradus</Text>
-        <Text style={eyebrow}>Email change request</Text>
+// Turns <a>{oldEmail}</a>/<a>{newEmail}</a> in copy into real mailto links.
+function makeMailtoParser(oldEmail: string, newEmail: string): HTMLReactParserOptions {
+  return {
+    replace: (node) => {
+      if (node.type === "tag" && node.name === "a") {
+        const el = node as unknown as { children: DOMNode[] };
+        const inner = domToReact(el.children, {});
+        const raw = typeof inner === "string" ? inner : String(inner ?? "").trim();
+        const target = raw === newEmail ? newEmail : oldEmail;
+        return (
+          <a href={`mailto:${target}`} style={link}>
+            {raw}
+          </a>
+        );
+      }
+    },
+  };
+}
 
-        <Heading style={h1}>Confirm your new email.</Heading>
-
-        <Text style={text}>
-          You asked to change your <strong>Gradus</strong> email from{" "}
-          <Link href={`mailto:${oldEmail}`} style={link}>
-            {oldEmail}
-          </Link>{" "}
-          to{" "}
-          <Link href={`mailto:${newEmail}`} style={link}>
-            {newEmail}
-          </Link>
-          .
-        </Text>
-
-        <Button style={button} href={confirmationUrl}>
-          Confirm email change
-        </Button>
-
-        <Hr style={divider} />
-        <Text style={{ ...footer, color: colors.inkSoft }}>
-          <strong>Didn't request this?</strong> Reset your password right away to secure your account.
-        </Text>
-      </Container>
-    </Body>
-  </Html>
-);
+export const EmailChangeEmail = ({ siteName, oldEmail, email, newEmail, confirmationUrl, copyOverrides }: EmailChangeEmailProps) => {
+  const c = resolveCopy("email_change", copyOverrides);
+  const vars = { siteName, oldEmail, email, newEmail, confirmationUrl };
+  const parser = makeMailtoParser(oldEmail, newEmail);
+  return (
+    <Html lang="en" dir="ltr">
+      <Head />
+      <Preview>{renderTemplateString(c.preview, vars)}</Preview>
+      <Body style={main}>
+        <Container style={container}>
+          <Text style={wordmark}>Gradus</Text>
+          <Text style={eyebrow}>{renderTemplateString(c.eyebrow, vars)}</Text>
+          <Heading style={h1}>{renderTemplateString(c.heading, vars)}</Heading>
+          <Text style={text}>{parse(renderTemplateString(c.body, vars), parser)}</Text>
+          <Button style={button} href={confirmationUrl}>{renderTemplateString(c.ctaLabel, vars)}</Button>
+          <Hr style={divider} />
+          <Text style={{ ...footer, color: colors.inkSoft }}>{parse(renderTemplateString(c.footer, vars))}</Text>
+        </Container>
+      </Body>
+    </Html>
+  );
+};
 
 export default EmailChangeEmail;
