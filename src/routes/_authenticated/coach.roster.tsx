@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { UserPlus, Sparkles } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
+import { UserPlus, Sparkles, Plus } from "lucide-react";
 import { queryOptions, useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { CoachBottomNav } from "@/components/coach/bottom-nav";
@@ -7,7 +7,7 @@ import { PageTitle } from "@/components/page-title";
 import { RosterCard } from "@/components/coach/roster-card";
 import { FilterPill } from "@/components/ui/filter-pill";
 import { getSport, type SportKey } from "@/lib/coach-sports";
-import { WeekScheduleView } from "@/components/coach/week-schedule-view";
+import { WeekScheduleView, type WeekScheduleHandle } from "@/components/coach/week-schedule-view";
 import { AthleteDetailSheet } from "@/components/coach/athlete-detail-sheet";
 import { InviteCard } from "@/components/onboarding/invite-card";
 import { EnterInviteCodeCard } from "@/components/coach/enter-invite-code-card";
@@ -90,6 +90,7 @@ function RosterPage() {
   const [selectedSport, setSelectedSport] = useState<string | null>(null);
   const [selectedAthleteId, setSelectedAthleteId] = useState<string | null>(null);
   const [inviteOpen, setInviteOpen] = useState(false);
+  const scheduleRef = useRef<WeekScheduleHandle>(null);
 
   const sports = useMemo(() => {
     const set = new Set<string>(coachSports);
@@ -119,31 +120,7 @@ function RosterPage() {
   return (
     <>
       <div className="mx-auto min-h-dvh max-w-3xl px-4 pt-8 pb-24">
-        <div className="flex items-start justify-between gap-3">
-          <PageTitle>Roster</PageTitle>
-          <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
-            <DialogTrigger asChild>
-              <Button type="button" variant="outline" size="sm" className="mt-1 shrink-0">
-                <UserPlus className="size-4" aria-hidden />
-                Add to Roster
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="bg-popover">
-              <DialogHeader>
-                <DialogTitle>Add athletes to your roster</DialogTitle>
-                <DialogDescription>
-                  Share your code with parents or adult athletes — or paste a code they gave you.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="mt-2 space-y-5">
-                <InviteCard compact />
-                <div className="border-t border-divider" />
-                <EnterInviteCodeCard onSuccess={() => setInviteOpen(false)} />
-              </div>
-            </DialogContent>
-          </Dialog>
-
-        </div>
+        <PageTitle>Roster</PageTitle>
 
         <div className="mt-4">
           <SegmentedToggle tab={tab} onChange={setTab} />
@@ -151,24 +128,65 @@ function RosterPage() {
 
         <FirstPlanBanner />
 
+        <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
+          <div className="mt-4 flex items-center gap-2">
+            {athletes.length > 0 && sports.length > 0 ? (
+              <div className="min-w-0 flex-1">
+                <FilterPill
+                  aria-label="Sport"
+                  value={selectedSport ?? "__all"}
+                  onValueChange={(v) => setSelectedSport(v === "__all" ? null : v)}
+                  placeholder="All sports"
+                  options={[
+                    { value: "__all", label: "All sports" },
+                    ...sports.map((s) => ({
+                      value: s,
+                      label: getSport(s as SportKey)?.label ?? s,
+                    })),
+                  ]}
+                />
+              </div>
+            ) : (
+              <div className="flex-1" />
+            )}
 
-        {athletes.length > 0 && sports.length > 0 && (
-          <div className="mt-4 grid grid-cols-3 gap-2">
-            <FilterPill
-              aria-label="Sport"
-              value={selectedSport ?? "__all"}
-              onValueChange={(v) => setSelectedSport(v === "__all" ? null : v)}
-              placeholder="All sports"
-              options={[
-                { value: "__all", label: "All sports" },
-                ...sports.map((s) => ({
-                  value: s,
-                  label: getSport(s as SportKey)?.label ?? s,
-                })),
-              ]}
-            />
+            <DialogTrigger asChild>
+              <Button type="button" variant="outline" size="sm" className="shrink-0">
+                <UserPlus className="size-4" aria-hidden />
+                <span className="sr-only sm:not-sr-only">Add to Roster</span>
+              </Button>
+            </DialogTrigger>
+
+            {tab === "schedule" && athletes.length > 0 ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="shrink-0"
+                onClick={() => scheduleRef.current?.openCreateLesson()}
+              >
+                <Plus className="size-4" aria-hidden />
+                <span className="sr-only sm:not-sr-only">New lesson</span>
+              </Button>
+            ) : null}
           </div>
-        )}
+
+          <DialogContent className="bg-popover">
+            <DialogHeader>
+              <DialogTitle>Add athletes to your roster</DialogTitle>
+              <DialogDescription>
+                Share your code with parents or adult athletes — or paste a code they gave you.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="mt-2 space-y-5">
+              <InviteCard compact />
+              <div className="border-t border-divider" />
+              <EnterInviteCodeCard onSuccess={() => setInviteOpen(false)} />
+            </div>
+          </DialogContent>
+        </Dialog>
+
+
 
         {tab === "athletes" ? (
           athletes.length === 0 ? (
@@ -207,9 +225,11 @@ function RosterPage() {
           )
         ) : (
           <WeekScheduleView
+            ref={scheduleRef}
             athletes={visibleAthletes}
             summariesByAthlete={summariesByAthlete}
             onSelectAthlete={setSelectedAthleteId}
+            hideInlineCreateButton
           />
 
         )}

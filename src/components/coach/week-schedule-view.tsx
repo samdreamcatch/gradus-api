@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { forwardRef, useImperativeHandle, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Plus, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { RosterAthlete } from "@/lib/coach-roster.functions";
@@ -66,15 +66,22 @@ function toIsoDate(d: Date): string {
 }
 
 
-export function WeekScheduleView({
-  athletes,
-  summariesByAthlete,
-  onSelectAthlete,
-}: {
-  athletes: RosterAthlete[];
-  summariesByAthlete?: Map<string, AthletePracticeSummary>;
-  onSelectAthlete?: (athleteId: string) => void;
-}) {
+export type WeekScheduleHandle = {
+  openCreateLesson: () => void;
+};
+
+export const WeekScheduleView = forwardRef<
+  WeekScheduleHandle,
+  {
+    athletes: RosterAthlete[];
+    summariesByAthlete?: Map<string, AthletePracticeSummary>;
+    onSelectAthlete?: (athleteId: string) => void;
+    hideInlineCreateButton?: boolean;
+  }
+>(function WeekScheduleView(
+  { athletes, summariesByAthlete, onSelectAthlete, hideInlineCreateButton },
+  ref,
+) {
   const today = useMemo(() => new Date(), []);
   const currentWeekStart = useMemo(() => startOfWeekMonday(today), [today]);
   const [weekStart, setWeekStart] = useState<Date>(currentWeekStart);
@@ -88,6 +95,18 @@ export function WeekScheduleView({
   );
   const [sheetMode, setSheetMode] = useState<LessonSlotSheetMode | null>(null);
   const sheetOpen = sheetMode != null;
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      openCreateLesson: () =>
+        setSheetMode({
+          kind: "create",
+          defaultDayOfWeek: (weekStart.getDay() + selectedDayIndex) % 7,
+        }),
+    }),
+    [weekStart, selectedDayIndex],
+  );
 
 
   const weekEnd = addDays(weekStart, 6);
@@ -246,7 +265,7 @@ export function WeekScheduleView({
         />
       ) : null}
 
-      {athletes.length > 0 ? (
+      {athletes.length > 0 && !hideInlineCreateButton ? (
         <button
           type="button"
           onClick={() =>
@@ -351,7 +370,7 @@ export function WeekScheduleView({
       />
     </div>
   );
-}
+});
 
 
 const STATE_COLORS = [
