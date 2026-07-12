@@ -11,14 +11,18 @@ import { RecoveryEmail } from '@/lib/email-templates/recovery'
 import { EmailChangeEmail } from '@/lib/email-templates/email-change'
 import { ReauthenticationEmail } from '@/lib/email-templates/reauthentication'
 
+import { EMAIL_COPY_SCHEMA } from '@/lib/email-templates/copy-schema'
+import { fetchOverridesFor } from '@/lib/email-templates/overrides.server'
+
 const EMAIL_SUBJECTS: Record<string, string> = {
-  signup: 'Confirm your email',
-  invite: "You've been invited",
-  magiclink: 'Your login link',
-  recovery: 'Reset your password',
-  email_change: 'Confirm your new email',
-  reauthentication: 'Your verification code',
+  signup: EMAIL_COPY_SCHEMA.signup?.defaults.subject ?? 'Confirm your email',
+  invite: EMAIL_COPY_SCHEMA.invite?.defaults.subject ?? "You've been invited",
+  magiclink: EMAIL_COPY_SCHEMA.magiclink?.defaults.subject ?? 'Your login link',
+  recovery: EMAIL_COPY_SCHEMA.recovery?.defaults.subject ?? 'Reset your password',
+  email_change: EMAIL_COPY_SCHEMA.email_change?.defaults.subject ?? 'Confirm your new email',
+  reauthentication: EMAIL_COPY_SCHEMA.reauthentication?.defaults.subject ?? 'Your verification code',
 }
+
 
 // Template mapping
 const EMAIL_TEMPLATES: Record<string, React.ComponentType<any>> = {
