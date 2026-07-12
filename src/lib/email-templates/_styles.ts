@@ -1,11 +1,13 @@
 // Gradus email design tokens — paper & ink, jelly-pen accent (Tennis).
 // Body bg must remain #ffffff for inbox compatibility.
 
-import watermarkAsset from "@/assets/email-poster-watermark.jpg.asset.json";
+import watermarkAsset from "@/assets/email-strip-watermark.jpg.asset.json";
 
-// Absolute CDN URL for the sports-poster watermark. Email clients require an
-// absolute URL for background-image to resolve.
+// Absolute CDN URL for the sports-poster strip watermark. Email clients
+// require an absolute URL for background-image to resolve. We use the same
+// strip twice — once at the top, once at the bottom of the container.
 export const watermarkUrl = `https://gradus.training${watermarkAsset.url}`;
+
 
 export const fonts = {
   display: 'Fraunces, Georgia, "Times New Roman", serif',
