@@ -213,7 +213,7 @@ function ConfettiBurst() {
           key={p.id}
           style={{
             left: `${p.left}%`,
-            background: p.color,
+            background: "var(--accent)",
             animationDelay: `${p.delay}s`,
             animationDuration: `${p.duration}s`,
             transform: `rotate(${p.rotate}deg)`,
