@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/logo";
+import { SportsPoster } from "@/components/ui/sports-poster";
 import { TurnstileWidget } from "@/components/auth/turnstile";
 import { useAuthReady } from "@/hooks/use-auth-ready";
 import { resolveAthleteLogin } from "@/lib/athlete-signup.functions";
