@@ -5,6 +5,9 @@ import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { getAdminList, setUserTestFlag } from "@/lib/admin.functions";
 import { Eyebrow } from "@/components/ui/eyebrow";
+import { Chip, chipClasses } from "@/components/ui/chip";
+import { Tag } from "@/components/ui/tag";
+
 
 const KIND_CONFIG = {
   coaches: {
