@@ -345,6 +345,10 @@
    Roles: nano = dense grids/rings; micro = component-level labels;
    caption = page-section headers / form field labels.
    ============================================================ */
+@utility text-pico {
+  font-size: 8px;
+  line-height: 1.2;
+}
 @utility text-nano {
   font-size: 9px;
   line-height: 1.2;
