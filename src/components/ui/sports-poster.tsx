@@ -9,12 +9,14 @@ type Corner = "top-right" | "top-left" | "bottom-right" | "bottom-left" | "cente
 interface SportsPosterProps {
   /** Where the poster anchors within its container. */
   corner?: Corner;
-  /** CSS size for the poster's longest edge. Defaults to 420px. */
+  /** CSS size for the poster's longest edge. Defaults to 420px. Ignored when `fill` is set. */
   size?: string;
   /** 0–1 opacity applied over the artwork. Defaults to 0.18. */
   opacity?: number;
-  /** Extra margin (px) pulling the poster off the edge for a tucked look. */
+  /** Extra margin (px) pulling the poster off the edge for a tucked look. Ignored when `fill` is set. */
   inset?: number;
+  /** Fill the parent entirely with a single, un-repeated poster (cover). */
+  fill?: boolean;
   className?: string;
 }
 
@@ -30,11 +32,13 @@ export function SportsPoster({
   size = "420px",
   opacity = 0.18,
   inset = 30,
+  fill = false,
   className,
 }: SportsPosterProps) {
   const offset = `-${inset}px`;
-  const pos: React.CSSProperties =
-    corner === "center"
+  const pos: React.CSSProperties = fill
+    ? { inset: 0 }
+    : corner === "center"
       ? { top: "50%", left: "50%", transform: "translate(-50%, -50%)" }
       : {
           top: corner.startsWith("top") ? offset : "auto",
@@ -48,13 +52,12 @@ export function SportsPoster({
       className={cn("pointer-events-none absolute select-none", className)}
       style={{
         ...pos,
-        width: size,
-        height: size,
+        ...(fill ? {} : { width: size, height: size }),
         opacity,
         backgroundImage: `url("${sportsPosterUrl}")`,
         backgroundRepeat: "no-repeat",
         backgroundPosition: "center",
-        backgroundSize: "contain",
+        backgroundSize: "cover",
       }}
     />
   );
