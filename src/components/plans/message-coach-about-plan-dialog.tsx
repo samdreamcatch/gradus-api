@@ -92,7 +92,7 @@ export function MessageCoachAboutPlanDialog({
           rows={4}
           autoFocus
           disabled={mutation.isPending}
-          className="mt-3 w-full resize-none rounded-xl border border-divider bg-card px-3 py-2 text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-accent/40"
+          className="mt-3 w-full resize-none rounded-xl border border-divider bg-foreground/[0.04] px-3 py-2 text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-accent/40 dark:bg-foreground/5"
           onKeyDown={(e) => {
             if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
               e.preventDefault();
