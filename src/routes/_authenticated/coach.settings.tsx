@@ -76,6 +76,9 @@ function SettingsPage() {
             <RosterSettingsSection />
             <InviteDisclosure />
             <InviteAdultAthletesDisclosure />
+            <EnterCodeDisclosure />
+
+
 
           </SettingsList>
         </SettingsGroup>
