@@ -44,10 +44,10 @@ function SegmentedToggle({ tab, onChange }: { tab: RosterTab; onChange: (t: Rost
           type="button"
           onClick={() => onChange(t.key)}
           className={cn(
-            "flex-1 rounded-md py-1.5 text-sm font-bold transition",
+            "press-soft flex-1 rounded-md py-1.5 text-sm font-bold",
             tab === t.key
               ? "bg-accent text-accent-foreground shadow-sm"
-              : "text-text-secondary hover:text-text-primary",
+              : "text-text-secondary",
           )}
         >
           {t.label}
