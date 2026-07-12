@@ -225,9 +225,11 @@ function RosterPage() {
           )
         ) : (
           <WeekScheduleView
+            ref={scheduleRef}
             athletes={visibleAthletes}
             summariesByAthlete={summariesByAthlete}
             onSelectAthlete={setSelectedAthleteId}
+            hideInlineCreateButton
           />
 
         )}
