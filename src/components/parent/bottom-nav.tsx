@@ -63,7 +63,7 @@ export function ParentBottomNav() {
               </span>
               <Eyebrow
                 as="span"
-                size="pico"
+                size="micro"
                 tracking="wide"
                 weight="bold"
                 tone={isActive ? "accent-ink" : item.to ? "secondary" : "tertiary"}
