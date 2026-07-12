@@ -136,9 +136,10 @@ export function RoomList({
                   </span>
                 </p>
                 {unread ? (
-                  <span className="inline-flex h-5 min-w-[20px] shrink-0 items-center justify-center rounded-full bg-attention px-1.5 text-[11px] font-black text-attention-foreground">
+                  <span className="inline-flex h-5 min-w-[20px] shrink-0 items-center justify-center rounded-full bg-attention px-1.5 text-caption font-black text-attention-foreground">
                     {room.unreadCount}
                   </span>
+
                 ) : null}
               </div>
             </div>
