@@ -11,6 +11,7 @@ import { AthleteDetailSheet } from "@/components/coach/athlete-detail-sheet";
 import { InviteCard } from "@/components/onboarding/invite-card";
 import { EnterInviteCodeCard } from "@/components/coach/enter-invite-code-card";
 import { Button } from "@/components/ui/button";
+import { SportsPoster } from "@/components/ui/sports-poster";
 import {
   Dialog,
   DialogContent,
