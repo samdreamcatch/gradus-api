@@ -154,7 +154,7 @@ function RosterPage() {
               <DialogTrigger asChild>
                 <Button type="button" variant="outline" size="sm" className="w-full">
                   <UserPlus className="size-4" aria-hidden />
-                  <span className="truncate">Add to roster</span>
+                  <span className="truncate">Add athlete</span>
                 </Button>
               </DialogTrigger>
             </div>
