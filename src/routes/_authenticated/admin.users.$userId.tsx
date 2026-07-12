@@ -5,6 +5,9 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { getUserDetail, setUserTestFlag, deleteTestUser } from "@/lib/admin.functions";
 import { Eyebrow } from "@/components/ui/eyebrow";
+import { Chip } from "@/components/ui/chip";
+import { Tag } from "@/components/ui/tag";
+
 
 export const Route = createFileRoute("/_authenticated/admin/users/$userId")({
   component: UserDetail,
@@ -40,31 +43,32 @@ function UserDetail() {
                 <h1 className="mt-1 font-display text-h2 text-text-primary">
                   {data.auth?.email ?? "(no email)"}
                   {data.isTest && (
-                    <span className="ml-2 align-middle rounded-pill border border-divider bg-elevated px-2 py-0.5 text-[11px] font-mono uppercase tracking-wider text-text-tertiary">test user</span>
+                    <Tag size="caption" className="ml-2 align-middle">test user</Tag>
                   )}
+
                 </h1>
               </div>
               <div className="shrink-0 flex flex-col items-end gap-2">
                 {(data.coach || data.parent || data.athlete) && (
-                  <button
-                    type="button"
+                  <Chip
+                    as="button"
+                    tone="muted"
+                    selected={data.isTest}
                     onClick={async () => {
                       await toggleFn({ data: { userId, isTest: !data.isTest } });
                       await refetch();
                     }}
-                    className={`rounded-pill border px-3 py-1.5 text-xs font-semibold uppercase tracking-wider transition ${
-                      data.isTest
-                        ? "border-accent bg-accent text-accent-foreground"
-                        : "border-divider bg-card text-text-secondary hover:bg-elevated"
-                    }`}
                   >
                     {data.isTest ? "Unmark test user" : "Mark as test user"}
-                  </button>
+                  </Chip>
                 )}
+
                 {data.isTest && (
-                  <button
-                    type="button"
+                  <Chip
+                    as="button"
+                    tone="destructive"
                     disabled={deleting}
+                    className="disabled:opacity-50"
                     onClick={async () => {
                       const email = data.auth?.email ?? "this user";
                       if (!confirm(`Permanently delete ${email}? This removes their account and profiles so the email can be reused. This cannot be undone.`)) return;
@@ -78,11 +82,11 @@ function UserDetail() {
                         setDeleting(false);
                       }
                     }}
-                    className="rounded-pill border border-destructive/50 bg-card px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-destructive transition hover:bg-destructive hover:text-white disabled:opacity-50"
                   >
                     {deleting ? "Deleting…" : "Delete user"}
-                  </button>
+                  </Chip>
                 )}
+
               </div>
             </div>
             <dl className="mt-3 grid grid-cols-2 gap-3 text-sm">
@@ -153,7 +157,7 @@ function UserDetail() {
               <h2 className="font-display text-h3 text-text-primary">
                 Athlete profile
                 {data.athlete.self_managed && (
-                  <span className="ml-2 rounded-pill border border-divider bg-elevated px-2 py-0.5 text-[11px] font-mono uppercase tracking-wider text-text-tertiary">adult</span>
+                  <Tag size="caption" className="ml-2">adult</Tag>
                 )}
               </h2>
               <dl className="grid grid-cols-2 gap-3 text-sm">

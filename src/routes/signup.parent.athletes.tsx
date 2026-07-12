@@ -7,6 +7,8 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Chip } from "@/components/ui/chip";
+
 import {
   getCoachByInviteCode,
   linkAthletesToCoach,
@@ -124,13 +126,15 @@ function ParentAthletesPage() {
                   {coach && coach.sports.length > 0 && (
                     <div className="mt-3 flex flex-wrap justify-center gap-2">
                       {coach.sports.map((s) => (
-                        <span
+                        <Chip
                           key={s}
-                          className="rounded-pill border border-divider bg-elevated px-3 py-1 text-xs font-semibold uppercase tracking-wide text-text-secondary"
+                          tone="muted"
+                          tracking="wide"
                         >
                           {s}
-                        </span>
+                        </Chip>
                       ))}
+
                     </div>
                   )}
                 </>

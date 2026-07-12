@@ -11,6 +11,9 @@ import { getAdminOverview, searchUsers, setUserTestFlag, getDailyActiveUsers, ge
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 import { SettingsGroup, SettingsList, SettingsButtonRow } from "@/components/settings/primitives";
 import { Eyebrow } from "@/components/ui/eyebrow";
+import { Chip, chipClasses } from "@/components/ui/chip";
+import { Tag } from "@/components/ui/tag";
+
 import { LogOut } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
@@ -71,11 +74,7 @@ function AdminHome() {
           <Link
             from={Route.fullPath}
             search={{ test: !includeTest }}
-            className={`rounded-pill border px-3 py-2 text-xs font-semibold uppercase tracking-wider transition ${
-              includeTest
-                ? "border-accent bg-accent text-accent-foreground"
-                : "border-divider bg-card text-text-secondary hover:bg-elevated"
-            }`}
+            className={chipClasses({ tone: "muted", selected: includeTest })}
             title="Toggle test users"
           >
             {includeTest ? "Test users: on" : "Test users: hidden"}
@@ -83,37 +82,38 @@ function AdminHome() {
           <Link
             to="/admin/map"
             search={{ test: includeTest }}
-            className="rounded-pill border border-accent bg-accent px-4 py-2 text-xs font-semibold uppercase tracking-wider text-accent-foreground hover:opacity-90"
+            className={chipClasses({ tone: "accent" })}
           >
             Connection map →
           </Link>
           <Link
             to="/admin/feedback"
             search={{ type: "all", unresolved: false }}
-            className="rounded-pill border border-divider bg-card px-4 py-2 text-xs font-semibold uppercase tracking-wider text-text-primary hover:bg-elevated"
+            className={chipClasses()}
           >
             Feedback →
           </Link>
           <Link
             to="/admin/errors"
             search={{ test: includeTest }}
-            className="rounded-pill border border-divider bg-card px-4 py-2 text-xs font-semibold uppercase tracking-wider text-text-primary hover:bg-elevated"
+            className={chipClasses()}
           >
             Errors →
           </Link>
           <Link
             to="/admin/promo-codes"
-            className="rounded-pill border border-divider bg-card px-4 py-2 text-xs font-semibold uppercase tracking-wider text-text-primary hover:bg-elevated"
+            className={chipClasses()}
           >
             Promo codes →
           </Link>
           <Link
             to="/admin/emails"
             search={{ t: "signup" }}
-            className="rounded-pill border border-divider bg-card px-4 py-2 text-xs font-semibold uppercase tracking-wider text-text-primary hover:bg-elevated"
+            className={chipClasses()}
           >
             Email copy →
           </Link>
+
 
 
 
@@ -126,13 +126,13 @@ function AdminHome() {
             <Eyebrow size="small" tone="secondary">Beta invite code</Eyebrow>
             <p className="font-mono text-h3 text-text-primary tracking-widest mt-1">{overview.betaInviteCode}</p>
           </div>
-          <button
-            type="button"
+          <Chip
+            tone="muted"
             onClick={() => navigator.clipboard.writeText(overview.betaInviteCode!)}
-            className="rounded-pill border border-divider bg-elevated px-3 py-2 text-xs font-semibold uppercase tracking-wider text-text-secondary hover:text-text-primary"
           >
             Copy
-          </button>
+          </Chip>
+
         </section>
       )}
 
@@ -176,7 +176,8 @@ function AdminHome() {
                         <p className="truncate text-sm font-semibold text-text-primary">
                           {`${r.firstName} ${r.lastName}`.trim() || "(no name)"}
                           {r.isTest && (
-                            <span className="ml-2 rounded-pill border border-divider bg-elevated px-1.5 py-0.5 text-[10px] font-mono uppercase tracking-wider text-text-tertiary">test</span>
+                          <Tag className="ml-2">test</Tag>
+
                           )}
                         </p>
                         <p className="truncate text-xs text-text-secondary">{r.email ?? "—"}</p>
@@ -424,7 +425,7 @@ function RecentList({
                   <p className="truncate text-sm font-semibold text-text-primary">
                     {it.primary}
                     {it.isTest && (
-                      <span className="ml-2 rounded-pill border border-divider bg-elevated px-1.5 py-0.5 text-[10px] font-mono uppercase tracking-wider text-text-tertiary">test</span>
+                      <Tag className="ml-2">test</Tag>
                     )}
                   </p>
                   <p className="truncate text-xs text-text-secondary">{it.secondary}</p>
@@ -445,21 +446,21 @@ function RecentList({
 
 function TestToggle({ isTest, onToggle }: { isTest: boolean; onToggle: () => void }) {
   return (
-    <button
-      type="button"
+    <Chip
+      as="button"
+      size="micro"
+      mono
+      selected={isTest}
+      className="shrink-0"
       onClick={(e) => {
         e.preventDefault();
         e.stopPropagation();
         onToggle();
       }}
       title={isTest ? "Unmark as test user" : "Mark as test user"}
-      className={`shrink-0 rounded-pill border px-2 py-1 text-[10px] font-mono uppercase tracking-wider transition ${
-        isTest
-          ? "border-accent bg-accent text-accent-foreground"
-          : "border-divider bg-card text-text-tertiary hover:bg-elevated"
-      }`}
     >
       {isTest ? "test ✓" : "test"}
-    </button>
+    </Chip>
   );
+
 }

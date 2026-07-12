@@ -6,7 +6,10 @@ import { z } from "zod";
 import { Check, ArrowLeft } from "lucide-react";
 import { listFeedback, setFeedbackResolved } from "@/lib/feedback.functions";
 import { Eyebrow } from "@/components/ui/eyebrow";
+import { Chip, chipClasses } from "@/components/ui/chip";
+import { Tag } from "@/components/ui/tag";
 import { cn } from "@/lib/utils";
+
 
 const searchSchema = z.object({
   unresolved: fallback(z.boolean(), false).default(false),
@@ -50,17 +53,13 @@ function AdminFeedback() {
           <Link
             from={Route.fullPath}
             search={(prev: any) => ({ ...prev, unresolved: !unresolved })}
-            className={cn(
-              "rounded-pill border px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition",
-              unresolved
-                ? "border-accent bg-accent text-accent-foreground"
-                : "border-divider bg-card text-text-secondary hover:bg-elevated",
-            )}
+            className={chipClasses({ tone: "muted", selected: unresolved })}
           >
             {unresolved ? "Unresolved only" : "All statuses"}
           </Link>
         </div>
       </header>
+
 
       {isLoading ? (
         <p className="text-text-secondary">Loading…</p>
@@ -94,21 +93,18 @@ function AdminFeedback() {
                     <span className="text-[11px] text-text-tertiary">
                       {new Date(f.created_at).toLocaleString()}
                     </span>
-                    <button
-                      type="button"
+                    <Chip
+                      size="caption"
+                      tone="muted"
+                      selected={resolved}
                       onClick={() =>
                         toggle.mutate({ data: { id: f.id, resolved: !resolved } })
                       }
-                      className={cn(
-                        "inline-flex items-center gap-1 rounded-pill border px-2 py-1 text-[11px] font-bold uppercase tracking-wider transition",
-                        resolved
-                          ? "border-accent bg-accent text-accent-foreground"
-                          : "border-divider bg-card text-text-secondary hover:bg-elevated",
-                      )}
                     >
                       <Check className="size-3" />
                       {resolved ? "Resolved" : "Mark resolved"}
-                    </button>
+                    </Chip>
+
                   </div>
                 </div>
                 <p className="mt-3 whitespace-pre-wrap text-[15px] leading-relaxed text-text-primary">

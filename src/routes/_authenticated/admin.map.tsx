@@ -14,6 +14,8 @@ import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { getAdminConnectionMap } from "@/lib/admin.functions";
 import { Eyebrow } from "@/components/ui/eyebrow";
+import { chipClasses } from "@/components/ui/chip";
+
 
 const searchSchema = z.object({
   test: fallback(z.boolean(), false).default(false),
@@ -139,14 +141,11 @@ function AdminMap() {
         <Link
           from={Route.fullPath}
           search={(prev: any) => ({ ...prev, test: !includeTest })}
-          className={`rounded-pill border px-3 py-1 text-xs font-medium uppercase tracking-wider transition ${
-            includeTest
-              ? "border-accent bg-accent text-accent-foreground"
-              : "border-divider bg-card text-text-secondary hover:bg-elevated"
-          }`}
+          className={chipClasses({ tone: "muted", weight: "medium", selected: includeTest })}
         >
           {includeTest ? "Test users: on" : "Test users: hidden"}
         </Link>
+
       </div>
 
       <div className="h-[70vh] rounded-xl border border-divider bg-card overflow-hidden">

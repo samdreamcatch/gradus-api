@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils";
+import { Chip } from "@/components/ui/chip";
 import { getSport, type SportKey } from "@/lib/coach-sports";
 
 function sportLabel(sport: string): string {
@@ -17,9 +17,9 @@ export function SportFilterChips({ sports, selected, onSelect }: SportFilterChip
   if (sports.length === 1) {
     return (
       <div className="mt-4">
-        <span className="inline-block rounded-pill border border-divider bg-card px-3 py-1 text-micro font-bold uppercase tracking-widest text-accent-ink">
+        <Chip size="micro" weight="bold" tracking="widest" className="text-accent-ink">
           {sportLabel(sports[0])}
-        </span>
+        </Chip>
       </div>
     );
   }
@@ -34,22 +34,20 @@ export function SportFilterChips({ sports, selected, onSelect }: SportFilterChip
       {options.map((opt) => {
         const isActive = selected === opt.key;
         return (
-          <button
+          <Chip
             key={opt.key ?? "__all"}
-            type="button"
+            as="button"
+            size="caption"
+            tone="muted"
+            weight="bold"
+            tracking="widest"
+            selected={isActive}
             onClick={() => onSelect(opt.key)}
-            className={cn(
-              "rounded-pill border px-3 py-1 text-caption font-bold uppercase tracking-widest transition",
-              isActive
-                ? "border-accent bg-accent text-accent-foreground"
-                : "border-divider bg-card text-text-secondary hover:text-text-primary",
-            )}
           >
             {opt.label}
-          </button>
+          </Chip>
         );
       })}
     </div>
   );
-
 }

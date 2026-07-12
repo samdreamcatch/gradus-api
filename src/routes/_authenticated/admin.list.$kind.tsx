@@ -5,6 +5,9 @@ import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { getAdminList, setUserTestFlag } from "@/lib/admin.functions";
 import { Eyebrow } from "@/components/ui/eyebrow";
+import { Chip, chipClasses } from "@/components/ui/chip";
+import { Tag } from "@/components/ui/tag";
+
 
 const KIND_CONFIG = {
   coaches: {
@@ -109,16 +112,13 @@ function AdminList() {
             key={f.value}
             from={Route.fullPath}
             search={(prev: any) => ({ ...prev, filter: f.value })}
-            className={`rounded-pill border px-3 py-1 text-xs font-medium uppercase tracking-wider transition ${
-              filter === f.value
-                ? "border-accent bg-accent text-accent-foreground"
-                : "border-divider bg-card text-text-secondary hover:bg-elevated"
-            }`}
+            className={chipClasses({ tone: "muted", weight: "medium", selected: filter === f.value })}
           >
             {f.label}
           </Link>
         ))}
       </div>
+
 
       <div className="rounded-xl border border-divider bg-card">
 
@@ -135,31 +135,32 @@ function AdminList() {
                   <p className="truncate text-sm font-semibold text-text-primary">
                     {r.name}
                     {(r as any).isTest && (
-                      <span className="ml-2 rounded-pill border border-divider bg-elevated px-1.5 py-0.5 text-[10px] font-mono uppercase tracking-wider text-text-tertiary">test</span>
+                      <Tag className="ml-2">test</Tag>
                     )}
+
                   </p>
                   {r.email && <p className="truncate text-xs text-text-secondary">{r.email}</p>}
                 </div>
                   <div className="shrink-0 flex items-center gap-3">
                     {r.userId && (
-                      <button
-                        type="button"
+                      <Chip
+                        as="button"
+                        size="micro"
+
+                        mono
+                        selected={(r as any).isTest}
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
                           toggleTest.mutate({ userId: r.userId!, isTest: !(r as any).isTest });
                         }}
                         disabled={toggleTest.isPending}
-                        className={`rounded-pill border px-2 py-0.5 text-[10px] font-mono uppercase tracking-wider transition ${
-                          (r as any).isTest
-                            ? "border-accent bg-accent text-accent-foreground"
-                            : "border-divider bg-card text-text-tertiary hover:bg-elevated"
-                        }`}
                         title={(r as any).isTest ? "Unmark test user" : "Mark as test user"}
                       >
                         {(r as any).isTest ? "test ✓" : "mark test"}
-                      </button>
+                      </Chip>
                     )}
+
                     <div className="text-right">
                       <p className="text-xs font-mono uppercase text-accent-ink">{r.tag}</p>
                       <p className="text-xs text-text-tertiary">
@@ -189,15 +190,12 @@ function AdminList() {
         <Link
           from={Route.fullPath}
           search={(prev: any) => ({ ...prev, test: !includeTest })}
-          className={`rounded-pill border px-3 py-1 text-xs font-medium uppercase tracking-wider transition ${
-            includeTest
-              ? "border-accent bg-accent text-accent-foreground"
-              : "border-divider bg-card text-text-secondary hover:bg-elevated"
-          }`}
+          className={chipClasses({ tone: "muted", weight: "medium", selected: includeTest })}
         >
           {includeTest ? "Test users: on" : "Test users: hidden"}
         </Link>
       </div>
+
     </div>
   );
 }

@@ -6,7 +6,10 @@ import { z } from 'zod'
 import { ArrowLeft } from 'lucide-react'
 import { listAdminErrors } from '@/lib/error-tracking.functions'
 import { Eyebrow } from '@/components/ui/eyebrow'
+import { chipClasses } from '@/components/ui/chip'
 import { cn } from '@/lib/utils'
+
+
 
 const searchSchema = z.object({
   test: fallback(z.boolean(), false).default(false),
@@ -46,16 +49,13 @@ function AdminErrors() {
           <Link
             from={Route.fullPath}
             search={(prev: any) => ({ ...prev, test: !includeTest })}
-            className={cn(
-              'rounded-pill border px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition',
-              includeTest
-                ? 'border-accent bg-accent text-accent-foreground'
-                : 'border-divider bg-card text-text-secondary hover:bg-elevated',
-            )}
+            className={chipClasses({ tone: 'muted', selected: includeTest })}
           >
             {includeTest ? 'Test users: on' : 'Test users: hidden'}
           </Link>
         </div>
+
+
       </header>
 
       {isLoading ? (
