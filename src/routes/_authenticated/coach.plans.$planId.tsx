@@ -1320,7 +1320,7 @@ function MovePicker({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="bottom"
-        className="flex flex-col"
+        className="paper-surface flex flex-col"
         style={{
           bottom: vv.keyboardInset,
           maxHeight: Math.round(vv.height * 0.85),
