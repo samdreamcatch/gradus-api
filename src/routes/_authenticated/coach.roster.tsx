@@ -152,12 +152,22 @@ function RosterPage() {
         <FirstPlanBanner />
 
 
-        {athletes.length > 0 && (
-          <SportFilterChips
-            sports={sports}
-            selected={selectedSport}
-            onSelect={setSelectedSport}
-          />
+        {athletes.length > 0 && sports.length > 0 && (
+          <div className="mt-4 grid grid-cols-3 gap-2">
+            <FilterPill
+              aria-label="Sport"
+              value={selectedSport ?? "__all"}
+              onValueChange={(v) => setSelectedSport(v === "__all" ? null : v)}
+              placeholder="All sports"
+              options={[
+                { value: "__all", label: "All sports" },
+                ...sports.map((s) => ({
+                  value: s,
+                  label: getSport(s as SportKey)?.label ?? s,
+                })),
+              ]}
+            />
+          </div>
         )}
 
         {tab === "athletes" ? (
