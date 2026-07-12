@@ -7,6 +7,7 @@
 
 import { createServerFn } from '@tanstack/react-start'
 import { getRequestHeader } from '@tanstack/react-start/server'
+import { createHash } from 'node:crypto'
 import { z } from 'zod'
 import { requireSupabaseAuth } from '@/integrations/supabase/auth-middleware'
 import { dbError } from './db-error'
@@ -19,6 +20,29 @@ async function assertAdmin(context: { userId: string; supabase: any }) {
   if (error) dbError(error)
   if (!data) throw new Error('Forbidden')
 }
+
+/**
+ * Normalize an error message so semantically-identical errors collapse into
+ * one group: strip UUIDs, hex ids, decimals, URLs, quoted strings, and
+ * whitespace. Keep it deterministic so hashing yields a stable signature.
+ */
+function normalizeErrorMessage(msg: string): string {
+  return msg
+    .replace(/https?:\/\/\S+/g, '<url>')
+    .replace(/\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi, '<uuid>')
+    .replace(/\b[0-9a-f]{16,}\b/gi, '<hex>')
+    .replace(/"[^"]{1,120}"/g, '"<str>"')
+    .replace(/'[^']{1,120}'/g, "'<str>'")
+    .replace(/\b\d+(?:\.\d+)?\b/g, '<n>')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 500)
+}
+
+function signatureFor(source: string, normalized: string): string {
+  return createHash('sha256').update(`${source}::${normalized}`).digest('hex').slice(0, 32)
+}
+
 
 const reportInput = z.object({
   message: z.string().min(1).max(4000),
