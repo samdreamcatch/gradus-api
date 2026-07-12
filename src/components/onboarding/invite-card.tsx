@@ -64,13 +64,16 @@ export function InviteCard({ compact = false, audience = "parents" }: InviteCard
       <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
         <div
           aria-label={copy.codeAria}
-          className="flex-1 rounded-md border border-divider bg-elevated px-5 py-4 text-center font-mono text-2xl tracking-[0.25em] text-text-primary sm:text-3xl"
+          className="relative flex-1 overflow-hidden rounded-md border border-divider bg-elevated px-5 py-4 text-center font-mono text-2xl tracking-[0.25em] text-text-primary sm:text-3xl"
         >
-          {isLoading || !code ? (
-            <span className="text-text-tertiary">········</span>
-          ) : (
-            code
-          )}
+          <SportsPoster fill opacity={0.08} />
+          <span className="relative">
+            {isLoading || !code ? (
+              <span className="text-text-tertiary">········</span>
+            ) : (
+              code
+            )}
+          </span>
         </div>
         <Button
           type="button"
