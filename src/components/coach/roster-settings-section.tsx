@@ -150,15 +150,19 @@ function AthleteRosterRow({
             </div>
           ) : null}
         </div>
-        <button
-          type="button"
+        <Chip
+          as="button"
+          size="micro"
+          weight="bold"
+          tracking="widest"
+          className="shrink-0 border-divider text-destructive hover:bg-elevated"
           onClick={() => setConfirmRemove(true)}
-          className="inline-flex shrink-0 items-center gap-1 rounded-pill border border-divider px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-destructive hover:bg-elevated"
         >
           <UserMinus className="h-3 w-3" />
           Remove
-        </button>
+        </Chip>
       </div>
+
 
       {athlete.slots.length > 0 ? (
         <ul className="mt-2 space-y-1.5">
