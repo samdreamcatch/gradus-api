@@ -48,12 +48,10 @@ const TRACKING_CLASS: Record<ChipTracking, string> = {
 };
 
 const TONE_CLASS: Record<ChipTone, string> = {
-  default: "border-divider bg-card text-text-primary hover:bg-elevated",
-  muted: "border-divider bg-card text-text-secondary hover:bg-elevated",
-  accent:
-    "border-accent bg-accent text-accent-foreground hover:opacity-90",
-  destructive:
-    "border-destructive/50 bg-card text-destructive hover:bg-destructive hover:text-white",
+  default: "border-divider bg-card text-text-primary",
+  muted: "border-divider bg-card text-text-secondary",
+  accent: "border-accent bg-accent text-accent-foreground",
+  destructive: "border-destructive/50 bg-card text-destructive",
 };
 
 const SELECTED_CLASS = "border-accent bg-accent text-accent-foreground";
