@@ -89,11 +89,13 @@ export function ConnectionCelebration({ role }: ConnectionCelebrationProps) {
         if (!next) dismiss(currentGroup);
       }}
     >
-      <DialogContent className="max-w-sm overflow-hidden">
+      <DialogContent className="max-w-sm overflow-hidden border-divider bg-elevated">
+        <SportsPoster corner="top-right" size="260px" opacity={0.14} inset={28} />
+        <SportsPoster corner="bottom-left" size="200px" opacity={0.1} inset={24} />
         <ConfettiBurst key={confettiKey} />
 
-        <DialogHeader className="items-center text-center">
-          <div className="mb-2 flex h-14 w-14 items-center justify-center rounded-full bg-accent/15 text-accent-ink">
+        <DialogHeader className="relative items-center text-center">
+          <div className="mb-2 flex h-14 w-14 items-center justify-center rounded-full bg-accent/20 text-accent-ink shadow-sm ring-1 ring-accent/30">
             <PartyPopper className="h-7 w-7" aria-hidden />
           </div>
           <DialogTitle className="font-display text-2xl font-black text-text-primary">
@@ -107,6 +109,7 @@ export function ConnectionCelebration({ role }: ConnectionCelebrationProps) {
               : "Say hi so they know you're here."}
           </DialogDescription>
         </DialogHeader>
+
 
         {role === "coach" ? (
           <div className="mt-4 grid grid-cols-2 gap-2">
