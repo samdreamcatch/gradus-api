@@ -169,26 +169,8 @@ function CoachSignupPage() {
     }
   };
 
-  const doGoogleSignup = async (verifiedCaptchaToken: string) => {
-    setLoading(true);
-    try {
-      await verifyCaptcha({ data: { token: verifiedCaptchaToken } });
-      stashPendingAccept();
-      const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin + "/coach",
-      });
-      if (result.error) throw result.error;
-      if (!result.redirected) navigate({ to: "/coach" });
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Google sign-in failed");
-      resetCaptcha();
-      setLoading(false);
-    }
-  };
-
   const runPending = async (action: PendingAction, token: string) => {
     if (action === "email") await doEmailSignup(token);
-    else await doGoogleSignup(token);
   };
 
   const handleEmailSubmit = (e: FormEvent) => {
