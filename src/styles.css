@@ -126,7 +126,7 @@
 
 .dark {
   /* Surfaces — ported from Gradus Website */
-  --background: oklch(0.14 0.012 245);
+  --background: oklch(0.24 0.03 218);
   --foreground: var(--text-primary);
   /* Card sits clearly above background so on-card text reads comfortably. */
   --card: oklch(0.255 0.012 245 / 0.62);
