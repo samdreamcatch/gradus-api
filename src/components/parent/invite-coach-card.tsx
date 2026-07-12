@@ -131,7 +131,7 @@ export function InviteCoachCard({ audience = "parent" }: InviteCoachCardProps) {
         </div>
       </div>
 
-      <p className="mt-4 font-hand text-lg text-accent-ink">{copy.alreadyOn}</p>
+      
 
       {error && (
         <p className="mt-3 text-xs text-destructive">{(error as Error).message}</p>
