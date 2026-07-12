@@ -126,13 +126,13 @@ function AdminHome() {
             <Eyebrow size="small" tone="secondary">Beta invite code</Eyebrow>
             <p className="font-mono text-h3 text-text-primary tracking-widest mt-1">{overview.betaInviteCode}</p>
           </div>
-          <button
-            type="button"
+          <Chip
+            tone="muted"
             onClick={() => navigator.clipboard.writeText(overview.betaInviteCode!)}
-            className="rounded-pill border border-divider bg-elevated px-3 py-2 text-xs font-semibold uppercase tracking-wider text-text-secondary hover:text-text-primary"
           >
             Copy
-          </button>
+          </Chip>
+
         </section>
       )}
 
