@@ -274,7 +274,7 @@ export const WeekScheduleView = forwardRef<
               defaultDayOfWeek: selectedDate.getDay(),
             })
           }
-          className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-divider bg-card px-4 py-3 text-sm font-bold uppercase tracking-widest text-text-secondary shadow-card transition hover:border-accent hover:text-accent-ink"
+          className="press mt-4 flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-divider bg-card px-4 py-3 text-sm font-bold uppercase tracking-widest text-text-secondary shadow-card"
         >
           <Plus className="h-4 w-4" />
           Create new lesson
