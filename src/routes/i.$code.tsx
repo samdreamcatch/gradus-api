@@ -7,6 +7,7 @@ import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/logo";
+import { SportsPoster } from "@/components/ui/sports-poster";
 import { resolveInviteCode, type InviteKind } from "@/lib/invite-resolve.functions";
 import { claimParentInvite } from "@/lib/parent-signup.functions";
 import { getMyRole } from "@/lib/parent-signup.functions";
