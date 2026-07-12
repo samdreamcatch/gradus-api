@@ -1,68 +1,48 @@
-## Goal
+## Fork-on-reassign for active plans
 
-Unify the three adult signup entry points (coach, parent, adult athlete) into the same layout, with the "commitment" fields (invite code, promo code, Terms) **above** the "credentials" fields (email/password, Google), matching today's coach page.
+Today, editing a plan's athlete assignment (or moving a shared/public active plan to an athlete) mutates the original row in place. That destroys the original assignment or the shared plan. We'll change reassignment to **fork** the plan when the source is `active`, so the original stays intact and a new plan is created for the new athlete.
 
-## Shared field order (all three routes)
+### Behavior
 
-Every adult signup page renders in this exact order, top to bottom:
+When the coach changes the assignment on a plan whose current `status = 'active'`:
 
-1. Header ("Create your {role} account")
-2. Context banner (only when an invite is attached, e.g. "You're connecting with Coach Jane")
-3. **Terms of Service** checkbox
-4. **Optional invite code** (audience-specific label)
-5. **Promo code** (optional)
-6. Divider
-7. Email + password fields
-8. Continue button
-9. "or" divider
-10. Continue with Google button
-11. Footer link ("Wrong role?" / "Under 18?")
+- **Active + assigned → different athlete**: keep the original plan attached to Athlete A (status stays `active`), create a new plan for Athlete B (cloned title/notes/moves, status `draft` — same as today's "create from template" path).
+- **Active + assigned → cleared (null)**: keep original active with Athlete A, create a new unassigned draft (public-shareable) clone.
+- **Active + shared/public (athlete_id null) → athlete**: keep the original public/shared active plan intact, create a new draft assigned to the athlete.
+- **Active + assigned → same athlete**: no fork (no-op).
 
-Signup is only enabled once ToS is checked. Any invite-code / promo-code entered above is stashed via the existing `sessionStorage` helpers before the Supabase call, so it survives the email-verify or Google round-trip.
+For any non-active source (`draft`, `benched`), keep today's in-place update behavior — those aren't "live" plans, so mutating them is fine.
 
-## Per-route changes
+Template plans are unchanged (they already have a dedicated "Assign to athlete" flow that forks via `useTemplate`).
 
-### `/signup/coach`
-- Already has this ordering; add one new field: **optional "Athlete or parent invite code"** input, placed with promo code above the divider.
-- Seed the input's initial value from `Route.useSearch().invite` so an OG deeplink pre-fills it.
-- On submit, stash the entered code under `PENDING_INVITE_KEY = "gradus.pendingParentInvite"` — the coach onboarding already claims it and falls back parent→adult-athlete.
+### Where the change lives
 
-### `/signup/parent`
-- Reorder to the shared shape: move ToS + coach-invite + promo **above** email/password.
-- Keep the existing search-prefill for `invite` and `promo` (already wired).
-- Add a **Continue with Google** button using the same broker helper as coach (`lovable.auth.signInWithOAuth("google", { redirect_uri: origin + "/signup/parent/athletes" })`). Invite + promo are already stashed pre-auth, so they survive the round trip.
+Server-side, in `updatePlan` (`src/lib/plans.functions.ts`). We keep the client mutation call sites the same — the server decides whether to update-in-place or fork, and returns the new plan id when it forks so the editor can navigate to the new copy.
 
-### `/signup/athlete/adult`
-- Reorder to the shared shape.
-- Remove first name, last name, **and birthdate** from this screen entirely.
-- Add an **optional "Coach invite code"** input, seeded from `Route.useSearch().invite`, stashed under the existing `PENDING_COACH_INVITE_KEY` (already consumed by athlete onboarding's CoachStep to prefill + auto-preview).
-- Add **Continue with Google** (`redirect_uri = origin + "/athlete/onboarding"`).
-- Move name + DOB collection to a **new first step in athlete onboarding** ("Tell us about yourself": first name, last name, date of birth). That step calls `createSelfManagedAthlete` before advancing to the existing coach → goals → schedule steps. `enforce_adult_self_managed` DB trigger stays the authoritative age gate.
-- Keep the "Under 18? Use a parent invite code" footer link.
+```text
+updatePlan({ id, athleteId? , ... })
+  ├── load current { kind, status, athlete_id, title, notes }
+  ├── if athleteId is in the patch AND kind='plan' AND status='active'
+  │      AND (patch.athleteId ?? null) !== (current.athlete_id ?? null):
+  │        → fork: insert new plan row (draft, athlete_id = patch.athleteId),
+  │          copy plan_moves, return { ok, forkedId }
+  │        → leave the original row untouched
+  └── else: apply patch in place as today, return { ok }
+```
 
-## Invite-code prefill on OG-shared links (verified)
+The share_token / shared_at fields stay on the original (the public link keeps working). The new forked copy starts as a fresh draft with no share token, matching how "create from template" works today.
 
-`/i/$code` already dispatches signed-out users into the signup routes with `?invite=CODE`. Each signup route's Zod search schema already accepts `invite`. Concrete behavior after this change:
+### Client change
 
-| Sender's link | Route landed on | Behavior |
-|---|---|---|
-| Parent shares parent code | `/signup/coach?invite=…` | Code visible in the new coach invite-code input, editable |
-| Adult athlete shares their code | `/signup/coach?invite=…` | Same input; coach onboarding falls back parent→adult-athlete claim |
-| Coach shares coach code → user picks "I'm a parent" | `/signup/parent?invite=…` | Code visible in existing parent invite-code input |
-| Coach shares coach code → user picks "I'm an adult athlete" | `/signup/athlete/adult?invite=…` | Code visible in the new adult-athlete invite-code input |
-| Under-18 athlete claim link | `/signup/athlete/confirm?code=…` | Unchanged (separate flow, out of scope) |
+`coach.plans.$planId.tsx`: after `planUpdate.mutateAsync(...)` for an assignment change, if the response includes `forkedId`, `navigate({ to: "/coach/plans/$planId", params: { planId: forkedId } })` and toast something like "Created a copy for {athlete name}. Original plan kept for {previous athlete / public link}." No change to any other call site of `updatePlan`.
 
-Under-18 (`/signup/athlete`) and its confirm step are unchanged.
+### Not in scope
 
-## Technical notes
+- Renaming the plan title, editing notes, or editing moves on an active plan — still mutates in place (user's message is specifically about the athlete assignment; changing a title on an active plan is not a fork trigger).
+- Athlete/parent-side plan views.
+- DB schema — no migration required.
 
-- No DB migrations; no server-fn signature changes. `createSelfManagedAthlete` still takes `{ firstName, lastName, birthdate }`, just called from onboarding instead of the signup page.
-- Google button on parent + adult-athlete uses `lovable.auth.signInWithOAuth("google", { redirect_uri })` with a public same-origin `redirect_uri`; invite/promo state is preserved via the existing sessionStorage stashes, not through `redirect_uri`.
-- ToS gating already blocks submit when unchecked; port that behavior to any route where it currently only shows an inline hint.
-- `_authenticated.tsx`'s existing effect applies the stashed promo code + ToS acceptance once the session lands, so no changes there.
+### Verification
 
-## Out of scope
-
-- Account-collision UX (same email as a different role).
-- Friendly dual-role trigger error messages.
-- Under-18 flow.
+- Typecheck.
+- Manual: (a) active plan assigned to A → reassign to B → expect two plans, A still active with original, B has new draft copy. (b) active shared plan (no athlete) → assign to athlete → original shared plan still exists and its share link still resolves, new draft exists for the athlete. (c) draft plan → reassign athlete → in-place update, no fork.

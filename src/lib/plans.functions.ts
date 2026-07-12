@@ -773,11 +773,63 @@ export const updatePlan = createServerFn({ method: "POST" })
     // valid per the plans_kind_athlete_chk constraint.
     const { data: current, error: loadErr } = await supabase
       .from("plans")
-      .select("kind,status,athlete_id")
+      .select("kind,status,athlete_id,title,notes")
       .eq("id", data.id)
       .eq("coach_id", coachId)
       .single();
     if (loadErr || !current) dbError(loadErr, "Plan not found");
+
+    // Fork-on-reassign: if the coach changes the athlete on an active plan,
+    // clone into a new draft for the new assignment and leave the original
+    // row (and any share_token) untouched.
+    const isAthleteChange =
+      data.athleteId !== undefined &&
+      (data.kind === undefined || data.kind === "plan") &&
+      current.kind === "plan" &&
+      current.status === "active" &&
+      (data.athleteId ?? null) !== (current.athlete_id ?? null);
+
+    if (isAthleteChange) {
+      const nextTitle = data.title ?? current.title ?? "Untitled plan";
+      const nextNotes = data.notes ?? current.notes ?? "";
+      const { data: inserted, error: insErr } = await supabase
+        .from("plans")
+        .insert({
+          coach_id: coachId,
+          title: nextTitle,
+          notes: nextNotes,
+          kind: "plan",
+          athlete_id: data.athleteId ?? null,
+          status: "draft",
+        })
+        .select("id")
+        .single();
+      if (insErr) dbError(insErr);
+
+      const { data: srcMoves, error: mErr } = await supabase
+        .from("plan_moves")
+        .select("position, move_id, name, description, cue, why, target_kind, target_value")
+        .eq("plan_id", data.id)
+        .order("position", { ascending: true });
+      if (mErr) dbError(mErr);
+      if (srcMoves && srcMoves.length) {
+        const rows = srcMoves.map((m, i) => ({
+          plan_id: inserted.id,
+          position: i,
+          move_id: m.move_id,
+          name: m.name,
+          description: m.description,
+          cue: m.cue,
+          why: m.why,
+          target_kind: m.target_kind,
+          target_value: m.target_value,
+        }));
+        const { error: pmErr } = await supabase.from("plan_moves").insert(rows);
+        if (pmErr) dbError(pmErr);
+      }
+
+      return { ok: true as const, forkedId: inserted.id as string };
+    }
 
     const patch: {
       updated_at: string;
@@ -821,8 +873,9 @@ export const updatePlan = createServerFn({ method: "POST" })
       .eq("coach_id", coachId);
     if (error) dbError(error);
 
-    return { ok: true };
+    return { ok: true as const };
   });
+
 
 /* ---------------- per-move plan updates ---------------- */
 

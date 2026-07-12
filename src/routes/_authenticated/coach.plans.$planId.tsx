@@ -217,10 +217,20 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
 
   const planUpdate = useMutation({
     mutationFn: updatePlanFn,
-    onSuccess: invalidate,
+    onSuccess: (res) => {
+      invalidate();
+      if (res && "forkedId" in res && res.forkedId) {
+        toast.success("Created a copy. Original plan kept as-is.");
+        navigate({
+          to: "/coach/plans/$planId",
+          params: { planId: res.forkedId },
+        });
+      }
+    },
     onError: (e: Error) => toast.error(e.message),
     onSettled: () => setSavingField(null),
   });
+
   const moveUpdate = useMutation({
     mutationFn: updateMoveFn,
     onSuccess: invalidate,
