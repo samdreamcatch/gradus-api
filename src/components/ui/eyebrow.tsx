@@ -6,7 +6,8 @@ import { cn } from "@/lib/utils";
  *
  * Four sizes cover every eyebrow role in the app. Pick by role, not by pixel:
  *
- * - `nano`    (9px)  — dense grids, rings, bottom-nav tile labels
+ * - `pico`    (8px)  — bottom-nav tile labels
+ * - `nano`    (9px)  — dense grids, rings
  * - `micro`   (10px) — card sub-labels, meta rows
  * - `caption` (11px) — page-section headers, form field labels
  * - `small`   (12px) — page-header eyebrows (e.g. "Internal", "Admin")
