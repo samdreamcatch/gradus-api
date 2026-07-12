@@ -205,6 +205,10 @@ function CoachSignupPage() {
   const handleEmailSubmit = (e: FormEvent) => {
     e.preventDefault();
     setError(null);
+    if (!agreed) {
+      setShowAgreeHint(true);
+      return;
+    }
     if (captchaToken) {
       void doEmailSignup(captchaToken);
       return;
@@ -215,6 +219,10 @@ function CoachSignupPage() {
 
   const handleGoogle = () => {
     setError(null);
+    if (!agreed) {
+      setShowAgreeHint(true);
+      return;
+    }
     if (captchaToken) {
       void doGoogleSignup(captchaToken);
       return;
