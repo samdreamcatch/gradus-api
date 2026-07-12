@@ -476,7 +476,7 @@ function LessonRow({
                     <button
                       type="button"
                       onClick={onEditOccurrence}
-                      className="inline-flex items-center justify-center rounded-pill border border-divider/70 px-3 py-2.5 text-center text-[9px] font-black uppercase tracking-[0.15em] text-text-secondary transition hover:border-accent/50 hover:text-accent-ink"
+                      className="press inline-flex items-center justify-center rounded-pill border border-divider/70 px-3 py-2.5 text-center text-[9px] font-black uppercase tracking-[0.15em] text-text-secondary"
                     >
                       Just this date
                     </button>
