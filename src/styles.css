@@ -67,7 +67,7 @@
   --background: oklch(0.972 0.005 250);   /* #F5F6FA */
   --foreground: oklch(0.24 0.08 260);      /* dark navy ink */
   --card: oklch(1 0 0 / 0.55);             /* translucent so paper shows through */
-  --popover: oklch(1 0 0);                 /* solid for floating menus */
+  --popover: oklch(0.972 0.019 90);        /* warm cream #FAF5E9, matches gradussports.com */
   --elevated: oklch(0.982 0.004 250 / 0.62);
   --divider: oklch(0.92 0.005 260);        /* #E6E7EB */
 
