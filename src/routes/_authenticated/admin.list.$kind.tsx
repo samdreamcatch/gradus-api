@@ -112,16 +112,13 @@ function AdminList() {
             key={f.value}
             from={Route.fullPath}
             search={(prev: any) => ({ ...prev, filter: f.value })}
-            className={`rounded-pill border px-3 py-1 text-xs font-medium uppercase tracking-wider transition ${
-              filter === f.value
-                ? "border-accent bg-accent text-accent-foreground"
-                : "border-divider bg-card text-text-secondary hover:bg-elevated"
-            }`}
+            className={chipClasses({ tone: "muted", weight: "medium", selected: filter === f.value })}
           >
             {f.label}
           </Link>
         ))}
       </div>
+
 
       <div className="rounded-xl border border-divider bg-card">
 
