@@ -69,15 +69,17 @@ type ChipOwnProps = {
   /** Font-mono variant for tag-style toggles (`test ✓`, `mark test`). */
   mono?: boolean;
   className?: string;
-  children: React.ReactNode;
+  children?: React.ReactNode;
 };
 
-type ChipProps<As extends React.ElementType = "span"> = ChipOwnProps & {
-  as?: As;
-} & Omit<React.ComponentPropsWithoutRef<As>, keyof ChipOwnProps | "as">;
-
-export function Chip<As extends React.ElementType = "span">({
-  as,
+/**
+ * Compose the chip class string. Use when you need a chip-styled element
+ * whose generic types don't survive through `<Chip as={…}>` — most notably
+ * TanStack Router's `<Link>`, which loses `search`/`params` inference through
+ * an intermediate generic component. In that case, render the `<Link>` directly
+ * and pass its `className={chipClasses({ tone: "muted", selected })}`.
+ */
+export function chipClasses({
   size = "small",
   tone = "default",
   weight = "semibold",
@@ -85,6 +87,32 @@ export function Chip<As extends React.ElementType = "span">({
   selected = false,
   caseSensitive = false,
   mono = false,
+  className,
+}: Omit<ChipOwnProps, "children"> = {}) {
+  return cn(
+    "inline-flex items-center justify-center gap-1.5 rounded-pill border transition",
+    SIZE_CLASS[size],
+    mono ? "font-mono" : WEIGHT_CLASS[weight],
+    !caseSensitive && "uppercase",
+    TRACKING_CLASS[tracking],
+    selected ? SELECTED_CLASS : TONE_CLASS[tone],
+    className,
+  );
+}
+
+type ChipProps<As extends React.ElementType = "span"> = ChipOwnProps & {
+  as?: As;
+} & Omit<React.ComponentPropsWithoutRef<As>, keyof ChipOwnProps | "as">;
+
+export function Chip<As extends React.ElementType = "span">({
+  as,
+  size,
+  tone,
+  weight,
+  tracking,
+  selected,
+  caseSensitive,
+  mono,
   className,
   children,
   ...rest
@@ -95,18 +123,20 @@ export function Chip<As extends React.ElementType = "span">({
   return (
     <Comp
       {...(isButton ? { type: "button" as const } : {})}
-      className={cn(
-        "inline-flex items-center justify-center gap-1.5 rounded-pill border transition",
-        SIZE_CLASS[size],
-        mono ? "font-mono" : WEIGHT_CLASS[weight],
-        !caseSensitive && "uppercase",
-        TRACKING_CLASS[tracking],
-        selected ? SELECTED_CLASS : TONE_CLASS[tone],
+      className={chipClasses({
+        size,
+        tone,
+        weight,
+        tracking,
+        selected,
+        caseSensitive,
+        mono,
         className,
-      )}
+      })}
       {...rest}
     >
       {children}
     </Comp>
   );
 }
+
