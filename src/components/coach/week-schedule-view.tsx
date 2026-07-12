@@ -265,7 +265,7 @@ export const WeekScheduleView = forwardRef<
         />
       ) : null}
 
-      {athletes.length > 0 ? (
+      {athletes.length > 0 && !hideInlineCreateButton ? (
         <button
           type="button"
           onClick={() =>
