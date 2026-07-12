@@ -53,17 +53,13 @@ function AdminFeedback() {
           <Link
             from={Route.fullPath}
             search={(prev: any) => ({ ...prev, unresolved: !unresolved })}
-            className={cn(
-              "rounded-pill border px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition",
-              unresolved
-                ? "border-accent bg-accent text-accent-foreground"
-                : "border-divider bg-card text-text-secondary hover:bg-elevated",
-            )}
+            className={chipClasses({ tone: "muted", selected: unresolved })}
           >
             {unresolved ? "Unresolved only" : "All statuses"}
           </Link>
         </div>
       </header>
+
 
       {isLoading ? (
         <p className="text-text-secondary">Loading…</p>
