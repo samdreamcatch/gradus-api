@@ -1,5 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { Pencil } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { Eyebrow } from "@/components/ui/eyebrow";
+
+
 
 export function MotivationCard({
   value,
