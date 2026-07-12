@@ -15,13 +15,14 @@ import { EnterInviteCodeCard } from "@/components/coach/enter-invite-code-card";
 import { Button } from "@/components/ui/button";
 
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+
 import { cn } from "@/lib/utils";
 import { getCoachRoster } from "@/lib/coach-roster.functions";
 import { listPlans } from "@/lib/plans.functions";
