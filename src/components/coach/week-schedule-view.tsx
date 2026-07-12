@@ -187,7 +187,7 @@ export const WeekScheduleView = forwardRef<
               <button
                 type="button"
                 onClick={() => setWeekStart(currentWeekStart)}
-                className="mt-0.5 text-[10px] font-bold uppercase tracking-widest text-accent-ink hover:underline"
+                className="press-soft mt-0.5 text-[10px] font-bold uppercase tracking-widest text-accent-ink underline"
               >
                 Jump to this week
               </button>
