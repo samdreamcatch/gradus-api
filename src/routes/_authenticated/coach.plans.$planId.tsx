@@ -455,12 +455,46 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
     moveReorder.mutate({ data: { planId: plan.id, orderedIds: ids } });
   };
 
+  const showVoiceAction = from !== "plus";
+  const showShareAction = plan.status === "active" || isTemplate;
+
   return (
     <>
-      <SheetHeader className="-mx-6 -mt-6 border-b border-divider px-6 pt-5 pb-3 pr-14">
-        <SheetTitle asChild>
-          <div className="flex items-start gap-3">
-            <div className="min-w-0 flex-1">
+      <SheetHeader className="-mx-6 -mt-6 border-b border-divider px-6 pt-5 pb-3 text-left">
+        <div className="flex flex-col gap-3 sm:grid sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start sm:gap-4">
+          {showVoiceAction || showShareAction ? (
+            <div className="order-1 flex min-h-9 items-center justify-end gap-3 pr-12 sm:order-2">
+              {showVoiceAction ? (
+                <VoiceFab
+                  mode="edit"
+                  planId={plan.id}
+                  variant="inline"
+                  className="shrink-0"
+                  onVoiceApplied={(r) =>
+                    setTouched((prev) => ({
+                      plan: { ...prev.plan, ...r.touched.plan },
+                      moves: { ...prev.moves, ...r.touched.moves },
+                      newMoveIds: [...prev.newMoveIds, ...r.touched.newMoveIds],
+                      transcript: r.touched.transcript ?? prev.transcript,
+                      sources: {
+                        plan: { ...(prev.sources?.plan ?? {}), ...(r.touched.sources?.plan ?? {}) },
+                        moves: { ...(prev.sources?.moves ?? {}), ...(r.touched.sources?.moves ?? {}) },
+                      },
+                    }))
+                  }
+                />
+              ) : null}
+              {showShareAction ? (
+                <ShareToSocialsButton
+                  planId={plan.id}
+                  planTitle={plan.title || "Untitled plan"}
+                  className="shrink-0"
+                />
+              ) : null}
+          </div>
+          ) : null}
+          <SheetTitle asChild>
+            <div className="order-2 min-w-0 sm:order-1">
               <MoveField
                 kind="text"
                 label="Plan title"
@@ -483,37 +517,8 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
                 inputClassName="font-display text-2xl font-black leading-tight tracking-tight"
               />
             </div>
-            {from === "plus" ? null : (
-              <VoiceFab
-                mode="edit"
-                planId={plan.id}
-                variant="inline"
-                className="mt-1 shrink-0"
-                onVoiceApplied={(r) =>
-                  setTouched((prev) => ({
-                    plan: { ...prev.plan, ...r.touched.plan },
-                    moves: { ...prev.moves, ...r.touched.moves },
-                    newMoveIds: [...prev.newMoveIds, ...r.touched.newMoveIds],
-                    transcript: r.touched.transcript ?? prev.transcript,
-                    sources: {
-                      plan: { ...(prev.sources?.plan ?? {}), ...(r.touched.sources?.plan ?? {}) },
-                      moves: { ...(prev.sources?.moves ?? {}), ...(r.touched.sources?.moves ?? {}) },
-                    },
-                  }))
-                }
-              />
-            )}
-            {plan.status === "active" || isTemplate ? (
-              <ShareToSocialsButton
-                planId={plan.id}
-                planTitle={plan.title || "Untitled plan"}
-                className="mt-1 shrink-0"
-              />
-            ) : null}
-
-          </div>
-
-        </SheetTitle>
+          </SheetTitle>
+        </div>
       </SheetHeader>
 
       {touchedCount > 0 ? (
