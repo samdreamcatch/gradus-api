@@ -19,6 +19,7 @@ import { coachInviteQueryOptions } from "@/hooks/use-coach-invite";
 import { InviteCard } from "@/components/onboarding/invite-card";
 import { CoachBottomNav } from "@/components/coach/bottom-nav";
 import { RosterSettingsSection } from "@/components/coach/roster-settings-section";
+import { EnterInviteCodeCard } from "@/components/coach/enter-invite-code-card";
 
 import {
   SettingsGroup,
