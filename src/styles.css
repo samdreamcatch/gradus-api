@@ -25,6 +25,7 @@
   --color-card-foreground: var(--foreground);
   --color-popover: var(--popover);
   --color-popover-foreground: var(--foreground);
+  --color-dialog: var(--dialog);
   --color-elevated: var(--elevated);
   --color-muted: var(--elevated);
   --color-muted-foreground: var(--text-secondary);
