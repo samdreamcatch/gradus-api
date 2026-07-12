@@ -455,7 +455,7 @@ function LessonRow({
                 <button
                   type="button"
                   onClick={() => onSelect(session.athleteId)}
-                  className="w-full rounded-pill border border-text-primary px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-text-primary transition active:scale-[0.98] hover:border-accent hover:text-accent-ink"
+                  className="press w-full rounded-pill border border-text-primary px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-text-primary"
                 >
                   View athlete
                 </button>
