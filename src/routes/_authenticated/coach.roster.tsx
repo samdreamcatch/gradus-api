@@ -90,6 +90,7 @@ function RosterPage() {
   const [selectedSport, setSelectedSport] = useState<string | null>(null);
   const [selectedAthleteId, setSelectedAthleteId] = useState<string | null>(null);
   const [inviteOpen, setInviteOpen] = useState(false);
+  const scheduleRef = useRef<WeekScheduleHandle>(null);
 
   const sports = useMemo(() => {
     const set = new Set<string>(coachSports);
