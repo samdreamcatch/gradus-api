@@ -106,6 +106,15 @@ function AdminHome() {
           >
             Promo codes →
           </Link>
+          <Link
+            to="/admin/emails"
+            search={{ t: "signup" }}
+            className="rounded-pill border border-divider bg-card px-4 py-2 text-xs font-semibold uppercase tracking-wider text-text-primary hover:bg-elevated"
+          >
+            Email copy →
+          </Link>
+
+
 
         </div>
       </header>
