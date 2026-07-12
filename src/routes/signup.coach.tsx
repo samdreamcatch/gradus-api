@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Separator } from "@/components/ui/separator";
 import { Logo } from "@/components/logo";
 import { SportsPoster } from "@/components/ui/sports-poster";
 import { TurnstileWidget } from "@/components/auth/turnstile";
