@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Logo } from "@/components/logo";
+import { SportsPoster } from "@/components/ui/sports-poster";
 import { TurnstileWidget } from "@/components/auth/turnstile";
 import { CURRENT_TERMS_VERSION, PENDING_TERMS_ACCEPT_KEY } from "@/lib/terms";
 import { PromoCodeField } from "@/components/signup/promo-code-field";
