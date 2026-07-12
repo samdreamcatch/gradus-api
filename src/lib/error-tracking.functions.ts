@@ -160,3 +160,214 @@ export const getAdminError = createServerFn({ method: 'POST' })
     if (error) dbError(error)
     return { error: row }
   })
+
+/**
+ * List errors grouped by (source + normalized message). Newest occurrence first.
+ * Filters out test-user occurrences unless includeTest is set.
+ */
+export const listAdminErrorGroups = createServerFn({ method: 'POST' })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        limit: z.number().int().min(50).max(2000).optional().default(1000),
+        includeTest: z.boolean().optional().default(false),
+      })
+      .parse(input ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context)
+    const { supabaseAdmin } = await import('@/integrations/supabase/client.server')
+
+    const { data: rows, error } = await supabaseAdmin
+      .from('client_errors')
+      .select('id,source,message,route,user_id,user_role,created_at')
+      .order('created_at', { ascending: false })
+      .limit(data.limit)
+    if (error) dbError(error)
+
+    let filtered = rows ?? []
+    if (!data.includeTest && filtered.length) {
+      const userIds = Array.from(new Set(filtered.map((r: any) => r.user_id).filter(Boolean))) as string[]
+      if (userIds.length) {
+        const [coaches, parents] = await Promise.all([
+          supabaseAdmin.from('coach_profiles').select('user_id').in('user_id', userIds).eq('is_test', true),
+          supabaseAdmin.from('parent_profiles').select('user_id').in('user_id', userIds).eq('is_test', true),
+        ])
+        const testIds = new Set<string>([
+          ...((coaches.data ?? []).map((r: any) => r.user_id)),
+          ...((parents.data ?? []).map((r: any) => r.user_id)),
+        ])
+        filtered = filtered.filter((r: any) => !r.user_id || !testIds.has(r.user_id))
+      }
+    }
+
+    type Group = {
+      signature: string
+      source: string
+      sampleMessage: string
+      count: number
+      lastSeen: string
+      firstSeen: string
+      routes: Set<string>
+      users: Set<string>
+      latestId: string
+    }
+
+    const groups = new Map<string, Group>()
+    for (const r of filtered as any[]) {
+      const normalized = normalizeErrorMessage(r.message ?? '')
+      const sig = signatureFor(r.source ?? 'unknown', normalized)
+      let g = groups.get(sig)
+      if (!g) {
+        g = {
+          signature: sig,
+          source: r.source ?? 'unknown',
+          sampleMessage: r.message ?? '',
+          count: 0,
+          lastSeen: r.created_at,
+          firstSeen: r.created_at,
+          routes: new Set(),
+          users: new Set(),
+          latestId: r.id,
+        }
+        groups.set(sig, g)
+      }
+      g.count += 1
+      if (r.created_at > g.lastSeen) {
+        g.lastSeen = r.created_at
+        g.latestId = r.id
+        g.sampleMessage = r.message ?? g.sampleMessage
+      }
+      if (r.created_at < g.firstSeen) g.firstSeen = r.created_at
+      if (r.route) g.routes.add(r.route)
+      if (r.user_id) g.users.add(r.user_id)
+    }
+
+    // Fetch cached explanations for all signatures present.
+    const sigs = Array.from(groups.keys())
+    const explanations = new Map<string, string>()
+    if (sigs.length) {
+      const { data: cached } = await supabaseAdmin
+        .from('error_group_explanations')
+        .select('signature, explanation')
+        .in('signature', sigs)
+      for (const c of cached ?? []) explanations.set(c.signature, c.explanation)
+    }
+
+    const items = Array.from(groups.values())
+      .map((g) => ({
+        signature: g.signature,
+        source: g.source,
+        sampleMessage: g.sampleMessage,
+        count: g.count,
+        uniqueUsers: g.users.size,
+        lastSeen: g.lastSeen,
+        firstSeen: g.firstSeen,
+        routes: Array.from(g.routes).slice(0, 5),
+        latestId: g.latestId,
+        explanation: explanations.get(g.signature) ?? null,
+      }))
+      .sort((a, b) => (a.lastSeen < b.lastSeen ? 1 : -1))
+
+    return { groups: items, totalOccurrences: filtered.length }
+  })
+
+/**
+ * Generate (or return cached) a plain-English AI explanation for one error group.
+ * On-demand: only runs when an admin clicks "Explain" in the UI.
+ */
+export const explainErrorGroup = createServerFn({ method: 'POST' })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        signature: z.string().min(8).max(64),
+        force: z.boolean().optional().default(false),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context)
+    const { supabaseAdmin } = await import('@/integrations/supabase/client.server')
+
+    if (!data.force) {
+      const { data: existing } = await supabaseAdmin
+        .from('error_group_explanations')
+        .select('explanation, updated_at, model')
+        .eq('signature', data.signature)
+        .maybeSingle()
+      if (existing) return { explanation: existing.explanation, cached: true, model: existing.model }
+    }
+
+    // Pull up to 3 recent samples that hash to this signature so the model
+    // sees real messages + stack + route context.
+    const { data: recent } = await supabaseAdmin
+      .from('client_errors')
+      .select('source, message, stack, route, created_at')
+      .order('created_at', { ascending: false })
+      .limit(500)
+    const samples = (recent ?? [])
+      .filter((r: any) => signatureFor(r.source ?? 'unknown', normalizeErrorMessage(r.message ?? '')) === data.signature)
+      .slice(0, 3)
+
+    if (samples.length === 0) {
+      throw new Error('No occurrences found for this signature.')
+    }
+
+    const key = process.env.LOVABLE_API_KEY
+    if (!key) throw new Error('Missing LOVABLE_API_KEY')
+
+    const { createLovableAiGatewayProvider } = await import('./ai-gateway.server')
+    const { generateText } = await import('ai')
+    const gateway = createLovableAiGatewayProvider(key)
+    const model = 'google/gemini-2.5-flash'
+
+    const prompt = [
+      'You are helping the Gradus engineering team triage errors from their web app.',
+      'Below are one to three occurrences of the SAME error (grouped by normalized message).',
+      'In 3-6 short sentences, explain in plain English:',
+      '  1) What this error most likely means.',
+      '  2) The most likely root cause given the message/stack/route.',
+      '  3) A concrete first thing to check or fix.',
+      'Be concrete and technical but avoid jargon dumps. No headings, no lists — just prose.',
+      '',
+      ...samples.map((s: any, i: number) =>
+        [
+          `--- Occurrence ${i + 1} (${s.source}, route: ${s.route ?? 'n/a'}) ---`,
+          `Message: ${s.message}`,
+          s.stack ? `Stack (truncated):\n${String(s.stack).slice(0, 1200)}` : '',
+        ]
+          .filter(Boolean)
+          .join('\n'),
+      ),
+    ].join('\n')
+
+    let explanation: string
+    try {
+      const res = await generateText({ model: gateway(model), prompt })
+      explanation = (res.text ?? '').trim()
+    } catch (err: any) {
+      const msg = String(err?.message ?? err)
+      if (msg.includes('429')) throw new Error('AI rate limit hit. Try again in a moment.')
+      if (msg.includes('402')) throw new Error('AI credits exhausted. Add credits in workspace billing.')
+      throw new Error('AI explainer failed. Try again.')
+    }
+    if (!explanation) throw new Error('AI returned an empty explanation.')
+
+    await supabaseAdmin
+      .from('error_group_explanations')
+      .upsert(
+        {
+          signature: data.signature,
+          sample_message: samples[0]!.message ?? '',
+          explanation,
+          model,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'signature' },
+      )
+
+    return { explanation, cached: false, model }
+  })
+
