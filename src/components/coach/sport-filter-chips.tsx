@@ -17,7 +17,7 @@ export function SportFilterChips({ sports, selected, onSelect }: SportFilterChip
   if (sports.length === 1) {
     return (
       <div className="mt-4">
-        <Chip size="micro" weight="bold" tracking="widest" className="text-accent-ink">
+        <Chip caseSensitive tone="accent">
           {sportLabel(sports[0])}
         </Chip>
       </div>
@@ -36,11 +36,8 @@ export function SportFilterChips({ sports, selected, onSelect }: SportFilterChip
         return (
           <Chip
             key={opt.key ?? "__all"}
-            as="button"
-            size="caption"
+            caseSensitive
             tone="muted"
-            weight="bold"
-            tracking="widest"
             selected={isActive}
             onClick={() => onSelect(opt.key)}
           >
