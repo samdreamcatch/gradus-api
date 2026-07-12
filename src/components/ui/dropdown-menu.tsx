@@ -65,11 +65,8 @@ const DropdownMenuContent = React.forwardRef<
       className={cn(
         "z-50 max-h-[var(--radix-dropdown-menu-content-available-height)] min-w-[8rem] overflow-y-auto overflow-x-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md",
         "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 origin-(--radix-dropdown-menu-content-transform-origin)",
-        // Mobile: pin to top of viewport (overlay doctrine). Overrides Radix inline styles.
-        "max-sm:![position:fixed] max-sm:![top:1rem] max-sm:![left:1rem] max-sm:![right:1rem] max-sm:![bottom:auto] max-sm:![transform:none] max-sm:![min-width:0] max-sm:!w-auto max-sm:!max-w-none",
         className,
       )}
-
       {...props}
     />
   </DropdownMenuPrimitive.Portal>
