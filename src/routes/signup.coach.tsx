@@ -301,6 +301,12 @@ function CoachSignupPage() {
           )}
         </div>
 
+        <div className="mb-6">
+          <PromoCodeField value={promoCode} onChange={setPromoCode} />
+        </div>
+
+        <Separator className="mb-6" />
+
         <form onSubmit={handleEmailSubmit} className="space-y-4" autoComplete="on">
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
@@ -332,14 +338,13 @@ function CoachSignupPage() {
             />
           </div>
 
-          <PromoCodeField value={promoCode} onChange={setPromoCode} />
-
           {error && <p className="text-sm text-destructive">{error}</p>}
 
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? "Creating account..." : "Continue"}
           </Button>
         </form>
+
 
         <div className="my-6 flex items-center gap-3 text-xs uppercase tracking-wider text-text-tertiary">
           <div className="h-px flex-1 bg-divider" />
