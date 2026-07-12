@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
@@ -30,12 +30,35 @@ export const Route = createFileRoute("/signup/parent/athletes")({
   component: ParentAthletesPage,
 });
 
+const PENDING_PARENT_COACH_CODE_KEY = "gradus.pendingParentCoachCode";
+
 function ParentAthletesPage() {
-  const { code } = Route.useSearch();
+  const { code: searchCode } = Route.useSearch();
   const navigate = useNavigate();
   const fetchCoach = useServerFn(getCoachByInviteCode);
   const linkAthletes = useServerFn(linkAthletesToCoach);
   const startSignup = useServerFn(startParentSignup);
+
+  // If the parent came in via Google OAuth, the URL search param may be
+  // missing — restore from the sessionStorage stash we set on /signup/parent.
+  const [code, setCode] = useState<string | undefined>(searchCode);
+  useEffect(() => {
+    if (searchCode) return;
+    try {
+      const stashed = sessionStorage.getItem(PENDING_PARENT_COACH_CODE_KEY);
+      if (stashed && /^[A-Z2-9]{8}$/.test(stashed)) {
+        setCode(stashed);
+        navigate({ to: "/signup/parent/athletes", search: { code: stashed }, replace: true });
+      }
+    } catch {
+      /* ignore */
+    }
+    try {
+      sessionStorage.removeItem(PENDING_PARENT_COACH_CODE_KEY);
+    } catch {
+      /* ignore */
+    }
+  }, [searchCode, navigate]);
 
   const { data: coach, isLoading, error: coachError } = useQuery({
     queryKey: ["coach-by-code", code],
