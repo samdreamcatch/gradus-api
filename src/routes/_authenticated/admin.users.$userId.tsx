@@ -5,6 +5,9 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { getUserDetail, setUserTestFlag, deleteTestUser } from "@/lib/admin.functions";
 import { Eyebrow } from "@/components/ui/eyebrow";
+import { Chip } from "@/components/ui/chip";
+import { Tag } from "@/components/ui/tag";
+
 
 export const Route = createFileRoute("/_authenticated/admin/users/$userId")({
   component: UserDetail,
