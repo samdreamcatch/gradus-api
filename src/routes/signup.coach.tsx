@@ -187,6 +187,9 @@ function CoachSignupPage() {
       if (result.error) throw result.error;
       if (!result.redirected) navigate({ to: "/coach" });
     } catch (e) {
+      // OAuth cancelled / popup blocked / provider error — clear any stash
+      // so it can't cross-apply to another account signed in later.
+      clearPendingAccept();
       setError(e instanceof Error ? e.message : "Google sign-in failed");
       resetCaptcha();
       setLoading(false);
