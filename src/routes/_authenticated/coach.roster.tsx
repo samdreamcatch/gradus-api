@@ -120,31 +120,7 @@ function RosterPage() {
   return (
     <>
       <div className="mx-auto min-h-dvh max-w-3xl px-4 pt-8 pb-24">
-        <div className="flex items-start justify-between gap-3">
-          <PageTitle>Roster</PageTitle>
-          <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
-            <DialogTrigger asChild>
-              <Button type="button" variant="outline" size="sm" className="mt-1 shrink-0">
-                <UserPlus className="size-4" aria-hidden />
-                Add to Roster
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="bg-popover">
-              <DialogHeader>
-                <DialogTitle>Add athletes to your roster</DialogTitle>
-                <DialogDescription>
-                  Share your code with parents or adult athletes — or paste a code they gave you.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="mt-2 space-y-5">
-                <InviteCard compact />
-                <div className="border-t border-divider" />
-                <EnterInviteCodeCard onSuccess={() => setInviteOpen(false)} />
-              </div>
-            </DialogContent>
-          </Dialog>
-
-        </div>
+        <PageTitle>Roster</PageTitle>
 
         <div className="mt-4">
           <SegmentedToggle tab={tab} onChange={setTab} />
@@ -152,24 +128,65 @@ function RosterPage() {
 
         <FirstPlanBanner />
 
+        <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
+          <div className="mt-4 flex items-center gap-2">
+            {athletes.length > 0 && sports.length > 0 ? (
+              <div className="min-w-0 flex-1">
+                <FilterPill
+                  aria-label="Sport"
+                  value={selectedSport ?? "__all"}
+                  onValueChange={(v) => setSelectedSport(v === "__all" ? null : v)}
+                  placeholder="All sports"
+                  options={[
+                    { value: "__all", label: "All sports" },
+                    ...sports.map((s) => ({
+                      value: s,
+                      label: getSport(s as SportKey)?.label ?? s,
+                    })),
+                  ]}
+                />
+              </div>
+            ) : (
+              <div className="flex-1" />
+            )}
 
-        {athletes.length > 0 && sports.length > 0 && (
-          <div className="mt-4 grid grid-cols-3 gap-2">
-            <FilterPill
-              aria-label="Sport"
-              value={selectedSport ?? "__all"}
-              onValueChange={(v) => setSelectedSport(v === "__all" ? null : v)}
-              placeholder="All sports"
-              options={[
-                { value: "__all", label: "All sports" },
-                ...sports.map((s) => ({
-                  value: s,
-                  label: getSport(s as SportKey)?.label ?? s,
-                })),
-              ]}
-            />
+            <DialogTrigger asChild>
+              <Button type="button" variant="outline" size="sm" className="shrink-0">
+                <UserPlus className="size-4" aria-hidden />
+                <span className="sr-only sm:not-sr-only">Add to Roster</span>
+              </Button>
+            </DialogTrigger>
+
+            {tab === "schedule" && athletes.length > 0 ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="shrink-0"
+                onClick={() => scheduleRef.current?.openCreateLesson()}
+              >
+                <Plus className="size-4" aria-hidden />
+                <span className="sr-only sm:not-sr-only">New lesson</span>
+              </Button>
+            ) : null}
           </div>
-        )}
+
+          <DialogContent className="bg-popover">
+            <DialogHeader>
+              <DialogTitle>Add athletes to your roster</DialogTitle>
+              <DialogDescription>
+                Share your code with parents or adult athletes — or paste a code they gave you.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="mt-2 space-y-5">
+              <InviteCard compact />
+              <div className="border-t border-divider" />
+              <EnterInviteCodeCard onSuccess={() => setInviteOpen(false)} />
+            </div>
+          </DialogContent>
+        </Dialog>
+
+
 
         {tab === "athletes" ? (
           athletes.length === 0 ? (
