@@ -175,7 +175,7 @@ export const WeekScheduleView = forwardRef<
             type="button"
             onClick={() => setWeekStart((w) => addDays(w, -7))}
             aria-label="Previous week"
-            className="flex h-9 w-9 items-center justify-center rounded-full text-text-secondary hover:bg-elevated hover:text-text-primary"
+            className="press flex h-9 w-9 items-center justify-center rounded-full text-text-secondary"
           >
             <ChevronLeft className="h-5 w-5" />
           </button>
@@ -187,7 +187,7 @@ export const WeekScheduleView = forwardRef<
               <button
                 type="button"
                 onClick={() => setWeekStart(currentWeekStart)}
-                className="mt-0.5 text-[10px] font-bold uppercase tracking-widest text-accent-ink hover:underline"
+                className="press-soft mt-0.5 text-[10px] font-bold uppercase tracking-widest text-accent-ink underline"
               >
                 Jump to this week
               </button>
@@ -201,7 +201,7 @@ export const WeekScheduleView = forwardRef<
             type="button"
             onClick={() => setWeekStart((w) => addDays(w, 7))}
             aria-label="Next week"
-            className="flex h-9 w-9 items-center justify-center rounded-full text-text-secondary hover:bg-elevated hover:text-text-primary"
+            className="press flex h-9 w-9 items-center justify-center rounded-full text-text-secondary"
           >
             <ChevronRight className="h-5 w-5" />
           </button>
@@ -221,10 +221,10 @@ export const WeekScheduleView = forwardRef<
                 onClick={() => setSelectedDayIndex(i)}
                 aria-label={`${DAY_LONG[date.getDay()]} ${date.getDate()}, ${count} session${count === 1 ? "" : "s"}`}
                 className={cn(
-                  "flex flex-col items-center gap-0.5 rounded-xl px-1 py-2 transition",
+                  "press-soft flex flex-col items-center gap-0.5 rounded-xl px-1 py-2",
                   isSelected
                     ? "bg-accent text-accent-foreground shadow-sm"
-                    : "text-text-secondary hover:bg-elevated hover:text-text-primary",
+                    : "text-text-secondary",
                   !isSelected && isDayToday && "ring-1 ring-accent",
                   !isSelected && isEmpty && "opacity-50",
                 )}
@@ -274,7 +274,7 @@ export const WeekScheduleView = forwardRef<
               defaultDayOfWeek: selectedDate.getDay(),
             })
           }
-          className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-divider bg-card px-4 py-3 text-sm font-bold uppercase tracking-widest text-text-secondary shadow-card transition hover:border-accent hover:text-accent-ink"
+          className="press mt-4 flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-divider bg-card px-4 py-3 text-sm font-bold uppercase tracking-widest text-text-secondary shadow-card"
         >
           <Plus className="h-4 w-4" />
           Create new lesson
@@ -416,17 +416,17 @@ function LessonRow({
       </div>
       <div
         className={cn(
-          "flex-1 rounded-xl bg-card transition",
+          "flex-1 rounded-xl bg-card",
           expanded
             ? "border-2 border-text-primary/80 shadow-card"
-            : "border border-divider hover:border-accent/40",
+            : "border border-divider",
         )}
       >
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
           aria-expanded={expanded}
-          className="flex w-full items-center justify-between gap-3 p-4 text-left transition active:scale-[0.99] focus-visible:outline-none"
+          className="press-soft flex w-full items-center justify-between gap-3 p-4 text-left focus-visible:outline-none"
         >
           <div className="flex min-w-0 flex-col gap-1">
             <h3
@@ -455,7 +455,7 @@ function LessonRow({
                 <button
                   type="button"
                   onClick={() => onSelect(session.athleteId)}
-                  className="w-full rounded-pill border border-text-primary px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-text-primary transition active:scale-[0.98] hover:border-accent hover:text-accent-ink"
+                  className="press w-full rounded-pill border border-text-primary px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-text-primary"
                 >
                   View athlete
                 </button>
@@ -466,7 +466,7 @@ function LessonRow({
                     <button
                       type="button"
                       onClick={onEditRecurring}
-                      className="inline-flex items-center justify-center gap-1.5 rounded-pill border border-divider/70 px-3 py-2.5 text-[9px] font-black uppercase tracking-[0.15em] text-text-secondary transition hover:border-accent/50 hover:text-accent-ink"
+                      className="press inline-flex items-center justify-center gap-1.5 rounded-pill border border-divider/70 px-3 py-2.5 text-[9px] font-black uppercase tracking-[0.15em] text-text-secondary"
                     >
                       <Pencil className="h-2.5 w-2.5" />
                       Edit recurring
@@ -476,7 +476,7 @@ function LessonRow({
                     <button
                       type="button"
                       onClick={onEditOccurrence}
-                      className="inline-flex items-center justify-center rounded-pill border border-divider/70 px-3 py-2.5 text-center text-[9px] font-black uppercase tracking-[0.15em] text-text-secondary transition hover:border-accent/50 hover:text-accent-ink"
+                      className="press inline-flex items-center justify-center rounded-pill border border-divider/70 px-3 py-2.5 text-center text-[9px] font-black uppercase tracking-[0.15em] text-text-secondary"
                     >
                       Just this date
                     </button>

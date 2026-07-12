@@ -31,7 +31,7 @@ export function PlanCard({
       to={to}
       params={{ planId }}
       className={cn(
-        "group relative block overflow-hidden rounded-2xl border border-divider bg-card p-4 pl-5 shadow-card transition-all hover:-translate-y-0.5 hover:shadow-page",
+        "press group relative block overflow-hidden rounded-2xl border border-divider bg-card p-4 pl-5 shadow-card",
         muted && "opacity-70",
       )}
     >

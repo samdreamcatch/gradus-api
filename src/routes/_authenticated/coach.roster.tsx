@@ -44,10 +44,10 @@ function SegmentedToggle({ tab, onChange }: { tab: RosterTab; onChange: (t: Rost
           type="button"
           onClick={() => onChange(t.key)}
           className={cn(
-            "flex-1 rounded-md py-1.5 text-sm font-bold transition",
+            "press-soft flex-1 rounded-md py-1.5 text-sm font-bold",
             tab === t.key
               ? "bg-accent text-accent-foreground shadow-sm"
-              : "text-text-secondary hover:text-text-primary",
+              : "text-text-secondary",
           )}
         >
           {t.label}
@@ -253,7 +253,7 @@ function FirstPlanBanner() {
   return (
     <Link
       to="/coach/plans"
-      className="mt-4 flex items-center gap-3 rounded-xl border border-accent/40 bg-accent/10 px-4 py-3 text-sm transition hover:bg-accent/15"
+      className="press mt-4 flex items-center gap-3 rounded-xl border border-accent/40 bg-accent/10 px-4 py-3 text-sm"
     >
       <Sparkles className="size-5 shrink-0 text-accent-ink" aria-hidden />
       <div>

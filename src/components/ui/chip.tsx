@@ -18,8 +18,11 @@ import { cn } from "@/lib/utils";
  *
  * `selected` visually fills the chip with `accent` and overrides `tone`.
  * `tone="accent"` fills the chip solid at rest — use for always-on call-to-action pills.
- * `tone="destructive"` outlines in destructive color and fills on hover.
+ * `tone="destructive"` outlines in destructive color.
  * `tone="muted"` softens text to `text-secondary`.
+ *
+ * Press feedback (scale + brightness) comes from the shared `press` utility
+ * — the same feedback language buttons and cards use.
  */
 export type ChipSize = "pico" | "nano" | "micro" | "caption" | "small";
 export type ChipTone = "default" | "accent" | "muted" | "destructive";
@@ -48,12 +51,10 @@ const TRACKING_CLASS: Record<ChipTracking, string> = {
 };
 
 const TONE_CLASS: Record<ChipTone, string> = {
-  default: "border-divider bg-card text-text-primary hover:bg-elevated",
-  muted: "border-divider bg-card text-text-secondary hover:bg-elevated",
-  accent:
-    "border-accent bg-accent text-accent-foreground hover:opacity-90",
-  destructive:
-    "border-destructive/50 bg-card text-destructive hover:bg-destructive hover:text-white",
+  default: "border-divider bg-card text-text-primary",
+  muted: "border-divider bg-card text-text-secondary",
+  accent: "border-accent bg-accent text-accent-foreground",
+  destructive: "border-destructive/50 bg-card text-destructive",
 };
 
 const SELECTED_CLASS = "border-accent bg-accent text-accent-foreground";
@@ -91,7 +92,7 @@ export function chipClasses({
   className,
 }: Omit<ChipOwnProps, "children"> = {}) {
   return cn(
-    "inline-flex items-center justify-center gap-1.5 rounded-pill border transition",
+    "press inline-flex items-center justify-center gap-1.5 rounded-pill border",
     "disabled:cursor-not-allowed disabled:opacity-50",
 
     SIZE_CLASS[size],

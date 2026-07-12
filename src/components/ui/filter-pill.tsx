@@ -48,7 +48,7 @@ export function FilterPill({
       <SelectTrigger
         aria-label={ariaLabel}
         className={cn(
-          "h-8 w-full rounded-full border border-foreground/15 bg-popover px-3 text-xs font-bold text-text-primary shadow-sm",
+          "press h-8 w-full rounded-full border border-foreground/15 bg-popover px-3 text-xs font-bold text-text-primary shadow-sm",
           className,
         )}
       >

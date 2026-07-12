@@ -381,3 +381,30 @@
     box-shadow: 0 0 0 2px var(--accent);
   }
 }
+
+/*
+ * Interaction doctrine — press only, no hover.
+ *
+ * Hover states don't exist on our mobile target and won't survive the native
+ * rewrite. Press is the single feedback signal that something is interactive.
+ *
+ *   press       → buttons, chips, cards, action pills. Firm tactile squish.
+ *   press-soft  → segmented toggles, day-picker cells. Selection change is the
+ *                 primary feedback; press is a soft acknowledgement.
+ *
+ * `brightness(0.95)` darkens any starting surface (paper, popover, accent
+ * fill) uniformly in both themes without needing per-variant token swaps.
+ */
+@utility press {
+  transition: transform 120ms ease-out, filter 120ms ease-out;
+  &:active {
+    transform: scale(0.98);
+    filter: brightness(0.95);
+  }
+}
+@utility press-soft {
+  transition: transform 120ms ease-out;
+  &:active {
+    transform: scale(0.99);
+  }
+}
