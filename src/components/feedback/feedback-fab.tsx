@@ -58,9 +58,7 @@ function FeedbackDialog({ trigger }: { trigger: ReactNode }) {
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="top-4 translate-y-0 sm:top-[50%] sm:max-w-md sm:translate-y-[-50%]">
         <DialogHeader>
-          <p className="text-[11px] font-black uppercase tracking-widest text-accent-ink">
-            Feedback
-          </p>
+          <Eyebrow size="caption" tone="accent-ink" weight="black">Feedback</Eyebrow>
           <DialogTitle className="font-display text-2xl font-black leading-tight text-text-primary">
             Your feedback shapes what we build
           </DialogTitle>
@@ -76,8 +74,9 @@ function FeedbackDialog({ trigger }: { trigger: ReactNode }) {
             rows={5}
             maxLength={2000}
             placeholder=""
-            className="w-full resize-none rounded-xl border border-divider bg-elevated px-3 py-2 text-[15px] leading-relaxed text-text-primary placeholder:text-text-tertiary focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
+            className="focus-input w-full resize-none rounded-xl border border-divider bg-elevated px-3 py-2 text-[15px] leading-relaxed text-text-primary placeholder:text-text-tertiary"
           />
+
 
           <button
             type="button"
