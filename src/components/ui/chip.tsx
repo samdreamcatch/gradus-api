@@ -89,7 +89,7 @@ export function chipClasses({
   className,
 }: Omit<ChipOwnProps, "children"> = {}) {
   return cn(
-    "inline-flex items-center justify-center gap-1.5 rounded-pill border transition",
+    "press inline-flex items-center justify-center gap-1.5 rounded-pill border",
     "disabled:cursor-not-allowed disabled:opacity-50",
 
     SIZE_CLASS[size],
