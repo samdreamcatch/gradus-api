@@ -243,7 +243,7 @@ function CoachSignupPage() {
   const adultAthleteName = adultAthlete
     ? `${adultAthlete.firstName} ${adultAthlete.lastName}`.trim()
     : null;
-  const canSubmit = agreed && !loading;
+  
 
   return (
     <div className="relative flex min-h-dvh items-center justify-center overflow-hidden px-4 py-12">
