@@ -150,26 +150,31 @@ function RosterPage() {
               <div className="flex-1" />
             )}
 
-            <DialogTrigger asChild>
-              <Button type="button" variant="outline" size="sm" className="shrink-0">
-                <UserPlus className="size-4" aria-hidden />
-                <span className="sr-only sm:not-sr-only">Add to Roster</span>
-              </Button>
-            </DialogTrigger>
+            <div className="min-w-0 flex-1">
+              <DialogTrigger asChild>
+                <Button type="button" variant="outline" size="sm" className="w-full">
+                  <UserPlus className="size-4" aria-hidden />
+                  <span className="truncate">Add to roster</span>
+                </Button>
+              </DialogTrigger>
+            </div>
 
-            {tab === "schedule" && athletes.length > 0 ? (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="shrink-0"
-                onClick={() => scheduleRef.current?.openCreateLesson()}
-              >
-                <Plus className="size-4" aria-hidden />
-                <span className="sr-only sm:not-sr-only">New lesson</span>
-              </Button>
-            ) : null}
+            <div className="min-w-0 flex-1">
+              {tab === "schedule" && athletes.length > 0 ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  onClick={() => scheduleRef.current?.openCreateLesson()}
+                >
+                  <Plus className="size-4" aria-hidden />
+                  <span className="truncate">Add event</span>
+                </Button>
+              ) : null}
+            </div>
           </div>
+
 
           <DialogContent className="bg-popover">
             <DialogHeader>
