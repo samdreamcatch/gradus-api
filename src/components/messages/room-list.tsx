@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Mic } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { SportsPoster } from "@/components/ui/sports-poster";
 import type { RoomSummary, RoleInRoom } from "@/lib/messages.functions";
 
 
