@@ -220,9 +220,10 @@ export function RoomView({ roomId, viewerRole }: { roomId: string; viewerRole?: 
                     className={cn("flex flex-col", mine ? "items-end" : "items-start")}
                   >
                     {!mine ? (
-                      <p className="mb-0.5 px-2 text-[11px] font-black uppercase tracking-widest text-text-tertiary">
+                      <p className="mb-0.5 px-2 text-caption font-black uppercase tracking-widest text-text-tertiary">
                         {roleWord(m.senderRole)} {m.senderFirstName}
                       </p>
+
                     ) : null}
                     {m.plan ? (
                       <Link
