@@ -291,6 +291,33 @@
   }
 }
 
+@utility dialog-watermark {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background-image: url("/__l5e/assets-v1/1c15c96d-8f62-4ff0-bb75-fb1136d15146/sports-watermark.png");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    opacity: 0.03;
+    pointer-events: none;
+    z-index: 0;
+  }
+  &.dark::before,
+  :where(.dark) &::before {
+    display: none;
+  }
+  & > * {
+    position: relative;
+    z-index: 1;
+  }
+}
+
 
 @utility ask-glow {
   position: relative;
