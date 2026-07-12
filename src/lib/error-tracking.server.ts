@@ -30,11 +30,12 @@ type ResolvedUser = {
   userEmail: string | null
   userRole: string | null
   userName: string | null
+  isTest: boolean
 }
 
 async function resolveUser(supabaseAdmin: any, userId: string | null): Promise<ResolvedUser> {
   if (!userId) {
-    return { userId: null, userEmail: null, userRole: null, userName: null }
+    return { userId: null, userEmail: null, userRole: null, userName: null, isTest: false }
   }
   try {
     const { data: authData } = await supabaseAdmin.auth.admin.getUserById(userId)
@@ -42,27 +43,30 @@ async function resolveUser(supabaseAdmin: any, userId: string | null): Promise<R
 
     // Try coach, parent, then athlete profile lookups in parallel
     const [coachRes, parentRes, athleteRes] = await Promise.all([
-      supabaseAdmin.from('coach_profiles').select('first_name,last_name').eq('user_id', userId).maybeSingle(),
-      supabaseAdmin.from('parent_profiles').select('first_name,last_name').eq('user_id', userId).maybeSingle(),
+      supabaseAdmin.from('coach_profiles').select('first_name,last_name,is_test').eq('user_id', userId).maybeSingle(),
+      supabaseAdmin.from('parent_profiles').select('first_name,last_name,is_test').eq('user_id', userId).maybeSingle(),
       supabaseAdmin.from('athletes').select('first_name,last_name').eq('user_id', userId).maybeSingle(),
     ])
 
     let name: string | null = null
     let role: string | null = null
+    let isTest = false
     if (coachRes.data) {
       role = 'coach'
       name = [coachRes.data.first_name, coachRes.data.last_name].filter(Boolean).join(' ') || null
+      isTest = coachRes.data.is_test === true
     } else if (parentRes.data) {
       role = 'parent'
       name = [parentRes.data.first_name, parentRes.data.last_name].filter(Boolean).join(' ') || null
+      isTest = parentRes.data.is_test === true
     } else if (athleteRes.data) {
       role = 'athlete'
       name = [athleteRes.data.first_name, athleteRes.data.last_name].filter(Boolean).join(' ') || null
     }
 
-    return { userId, userEmail: email, userRole: role, userName: name }
+    return { userId, userEmail: email, userRole: role, userName: name, isTest }
   } catch {
-    return { userId, userEmail: null, userRole: null, userName: null }
+    return { userId, userEmail: null, userRole: null, userName: null, isTest: false }
   }
 }
 
@@ -78,7 +82,13 @@ export async function logError(input: ErrorLogInput): Promise<{ id: string } | n
   })
 
   const user = await resolveUser(supabaseAdmin, input.userId ?? null)
+  if (user.isTest) {
+    // Skip logging + alert email for known test users so real production
+    // signal isn't diluted by staff/QA activity.
+    return null
+  }
   const occurredAt = new Date().toISOString()
+
 
   const { data: inserted, error: insertError } = await supabaseAdmin
     .from('client_errors')
