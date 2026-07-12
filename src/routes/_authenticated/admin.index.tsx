@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getAdminOverview, searchUsers, setUserTestFlag, getDailyActiveUsers, getAdminReporting } from "@/lib/admin.functions";
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 import { SettingsGroup, SettingsList, SettingsButtonRow } from "@/components/settings/primitives";
+import { Eyebrow } from "@/components/ui/eyebrow";
 import { LogOut } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
@@ -63,7 +64,7 @@ function AdminHome() {
     <div className="mx-auto max-w-6xl px-4 py-10 space-y-10">
       <header className="space-y-4">
         <div className="space-y-1">
-          <p className="text-xs font-bold uppercase tracking-widest text-accent-ink">Internal</p>
+          <Eyebrow size="small" tone="accent-ink">Internal</Eyebrow>
           <h1 className="font-display text-h1 text-text-primary">Admin</h1>
         </div>
         <div className="flex flex-wrap items-center gap-3">
@@ -122,7 +123,7 @@ function AdminHome() {
       {overview?.betaInviteCode && (
         <section className="rounded-lg border border-divider bg-card p-4 flex items-center justify-between gap-4">
           <div>
-            <p className="text-xs font-bold uppercase tracking-widest text-text-secondary">Beta invite code</p>
+            <Eyebrow size="small" tone="secondary">Beta invite code</Eyebrow>
             <p className="font-mono text-h3 text-text-primary tracking-widest mt-1">{overview.betaInviteCode}</p>
           </div>
           <button
@@ -287,7 +288,7 @@ function Metric({ label, value }: { label: string; value: number }) {
   return (
     <div className="rounded-xl border border-divider bg-card px-3 py-2">
       <div className="flex items-baseline justify-between gap-2">
-        <p className="text-[10px] uppercase tracking-wider text-text-tertiary truncate">{label}</p>
+        <Eyebrow size="micro" tone="tertiary" weight="normal" tracking="wide" className="truncate">{label}</Eyebrow>
         <p className="font-display text-h3 leading-none text-text-primary">{value}</p>
       </div>
     </div>
@@ -388,7 +389,7 @@ function Stat({ kind, label, value, sub, includeTest, filter = "all" }: { kind: 
       className="rounded-xl border border-divider bg-card px-3 py-2 transition hover:border-accent/50 hover:bg-elevated"
     >
       <div className="flex items-baseline justify-between gap-2">
-        <p className="text-[10px] uppercase tracking-wider text-text-tertiary truncate">{label}</p>
+        <Eyebrow size="micro" tone="tertiary" weight="normal" tracking="wide" className="truncate">{label}</Eyebrow>
         <p className="font-display text-h3 leading-none text-text-primary">{value}</p>
       </div>
       {sub && <p className="mt-0.5 text-[11px] text-text-secondary truncate">{sub}</p>}
@@ -429,7 +430,7 @@ function RecentList({
                   <p className="truncate text-xs text-text-secondary">{it.secondary}</p>
                 </div>
                 <div className="text-right shrink-0">
-                  <p className="text-xs uppercase tracking-wider text-accent-ink">{it.tag}</p>
+                  <Eyebrow size="small" tone="accent-ink" weight="normal" tracking="wide">{it.tag}</Eyebrow>
                   <p className="text-xs text-text-tertiary">{it.meta}</p>
                 </div>
               </Link>
