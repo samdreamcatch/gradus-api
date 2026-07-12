@@ -80,7 +80,7 @@ export function RosterCard({
             <button
               type="button"
               aria-label="Athlete actions"
-              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-text-tertiary transition hover:bg-elevated hover:text-text-primary"
+              className="press flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-text-tertiary"
             >
               <MoreVertical className="h-4 w-4" />
             </button>
