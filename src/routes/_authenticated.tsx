@@ -10,6 +10,7 @@ import { acceptTerms } from "@/lib/terms.functions";
 import { PENDING_TERMS_ACCEPT_KEY } from "@/lib/terms";
 import { applyPromoCodeToMyProfile } from "@/lib/promo-codes.functions";
 import { readPendingPromoCode, clearPendingPromoCode } from "@/lib/pending-promo-code";
+import { useTouchLastSeen } from "@/hooks/use-touch-last-seen";
 
 
 export const Route = createFileRoute("/_authenticated")({
@@ -31,6 +32,7 @@ function AuthedLayout() {
   const isAdmin = pathname.startsWith("/admin");
   const accept = useServerFn(acceptTerms);
   const applyPromo = useServerFn(applyPromoCodeToMyProfile);
+  useTouchLastSeen();
 
   // If the user checked the terms box on signup before the session existed,
   // record their acceptance now that they're authed.
