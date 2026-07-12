@@ -4,14 +4,24 @@
 //
 // Deliberately dumb and defensive:
 //   - skipped in dev (import.meta.env.DEV)
+//   - skipped on non-production hosts (localhost, Lovable preview/sandbox
+//     subdomains like *.lovable.dev and id-preview--*.lovable.app). Only the
+//     canonical production hosts report — this avoids alert spam while we're
+//     actively building in the Lovable editor.
 //   - 50-report session cap, prevents runaway loops from spamming alerts
 //   - wrapped in try/catch so the reporter itself can never throw
 
 import { reportClientError } from './error-tracking.functions'
 
 const SESSION_CAP = 50
+const PRODUCTION_HOSTS = new Set(['gradus.training', 'gradustraining.lovable.app'])
 let reportCount = 0
 let installed = false
+
+function isProductionHost(): boolean {
+  if (typeof window === 'undefined') return false
+  return PRODUCTION_HOSTS.has(window.location.hostname)
+}
 
 function fmtError(value: unknown): { message: string; stack?: string } {
   if (value instanceof Error) {
