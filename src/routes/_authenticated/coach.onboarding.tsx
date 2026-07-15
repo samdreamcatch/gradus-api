@@ -136,10 +136,7 @@ function OnboardingForm({
     };
   });
   const promoCode = pathValue.promoCode;
-  const [_promoOpen, setPromoOpen] = useState<boolean>(false);
-  useEffect(() => {
-    if (promoCode) setPromoOpen(true);
-  }, [promoCode]);
+
 
 
 
