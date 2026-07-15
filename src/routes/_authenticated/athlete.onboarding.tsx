@@ -32,6 +32,8 @@ import {
   type Slot,
 } from "@/components/parent/schedule-editor";
 import { saveAdultAthleteScheduleForCoach } from "@/lib/adult-athlete-schedule.functions";
+import { PromoCodeField } from "@/components/signup/promo-code-field";
+import { savePendingPromoCode } from "@/lib/pending-promo-code";
 
 
 export const Route = createFileRoute("/_authenticated/athlete/onboarding")({
