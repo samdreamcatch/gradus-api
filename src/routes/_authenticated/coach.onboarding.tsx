@@ -97,6 +97,10 @@ function OnboardingForm({ data }: { data: OnboardingData }) {
   const [firstName, setFirstName] = useState(data.profile.firstName);
   const [lastName, setLastName] = useState(data.profile.lastName);
   const [promoCode, setPromoCode] = useState("");
+  const [promoOpen, setPromoOpen] = useState<boolean>(false);
+  useEffect(() => {
+    if (promoCode) setPromoOpen(true);
+  }, [promoCode]);
 
 
   // Initial sport & custom-level reconstruction from saved data.
