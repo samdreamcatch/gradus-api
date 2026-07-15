@@ -42,11 +42,13 @@ import { Route as AuthenticatedParentSettingsRouteImport } from './routes/_authe
 import { Route as AuthenticatedCoachSettingsRouteImport } from './routes/_authenticated/coach.settings'
 import { Route as AuthenticatedCoachRosterRouteImport } from './routes/_authenticated/coach.roster'
 import { Route as AuthenticatedCoachPlansRouteImport } from './routes/_authenticated/coach.plans'
+import { Route as AuthenticatedCoachPaywallRouteImport } from './routes/_authenticated/coach.paywall'
 import { Route as AuthenticatedCoachOnboardingRouteImport } from './routes/_authenticated/coach.onboarding'
 import { Route as AuthenticatedCoachCelebrationPreviewRouteImport } from './routes/_authenticated/coach/celebration-preview'
 import { Route as AuthenticatedAthleteSettingsRouteImport } from './routes/_authenticated/athlete.settings'
 import { Route as AuthenticatedAthleteOnboardingRouteImport } from './routes/_authenticated/athlete.onboarding'
 import { Route as AuthenticatedAdminPromoCodesRouteImport } from './routes/_authenticated/admin.promo-codes'
+import { Route as AuthenticatedAdminOrganizationsRouteImport } from './routes/_authenticated/admin.organizations'
 import { Route as AuthenticatedAdminMapRouteImport } from './routes/_authenticated/admin.map'
 import { Route as AuthenticatedAdminFeedbackRouteImport } from './routes/_authenticated/admin.feedback'
 import { Route as AuthenticatedAdminErrorsRouteImport } from './routes/_authenticated/admin.errors'
@@ -243,6 +245,12 @@ const AuthenticatedCoachPlansRoute = AuthenticatedCoachPlansRouteImport.update({
   path: '/plans',
   getParentRoute: () => AuthenticatedCoachRoute,
 } as any)
+const AuthenticatedCoachPaywallRoute =
+  AuthenticatedCoachPaywallRouteImport.update({
+    id: '/paywall',
+    path: '/paywall',
+    getParentRoute: () => AuthenticatedCoachRoute,
+  } as any)
 const AuthenticatedCoachOnboardingRoute =
   AuthenticatedCoachOnboardingRouteImport.update({
     id: '/onboarding',
@@ -271,6 +279,12 @@ const AuthenticatedAdminPromoCodesRoute =
   AuthenticatedAdminPromoCodesRouteImport.update({
     id: '/promo-codes',
     path: '/promo-codes',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminOrganizationsRoute =
+  AuthenticatedAdminOrganizationsRouteImport.update({
+    id: '/organizations',
+    path: '/organizations',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
 const AuthenticatedAdminMapRoute = AuthenticatedAdminMapRouteImport.update({
@@ -449,11 +463,13 @@ export interface FileRoutesByFullPath {
   '/admin/errors': typeof AuthenticatedAdminErrorsRouteWithChildren
   '/admin/feedback': typeof AuthenticatedAdminFeedbackRoute
   '/admin/map': typeof AuthenticatedAdminMapRoute
+  '/admin/organizations': typeof AuthenticatedAdminOrganizationsRoute
   '/admin/promo-codes': typeof AuthenticatedAdminPromoCodesRoute
   '/athlete/onboarding': typeof AuthenticatedAthleteOnboardingRoute
   '/athlete/settings': typeof AuthenticatedAthleteSettingsRoute
   '/coach/celebration-preview': typeof AuthenticatedCoachCelebrationPreviewRoute
   '/coach/onboarding': typeof AuthenticatedCoachOnboardingRoute
+  '/coach/paywall': typeof AuthenticatedCoachPaywallRoute
   '/coach/plans': typeof AuthenticatedCoachPlansRouteWithChildren
   '/coach/roster': typeof AuthenticatedCoachRosterRoute
   '/coach/settings': typeof AuthenticatedCoachSettingsRoute
@@ -510,11 +526,13 @@ export interface FileRoutesByTo {
   '/admin/errors': typeof AuthenticatedAdminErrorsRouteWithChildren
   '/admin/feedback': typeof AuthenticatedAdminFeedbackRoute
   '/admin/map': typeof AuthenticatedAdminMapRoute
+  '/admin/organizations': typeof AuthenticatedAdminOrganizationsRoute
   '/admin/promo-codes': typeof AuthenticatedAdminPromoCodesRoute
   '/athlete/onboarding': typeof AuthenticatedAthleteOnboardingRoute
   '/athlete/settings': typeof AuthenticatedAthleteSettingsRoute
   '/coach/celebration-preview': typeof AuthenticatedCoachCelebrationPreviewRoute
   '/coach/onboarding': typeof AuthenticatedCoachOnboardingRoute
+  '/coach/paywall': typeof AuthenticatedCoachPaywallRoute
   '/coach/roster': typeof AuthenticatedCoachRosterRoute
   '/coach/settings': typeof AuthenticatedCoachSettingsRoute
   '/parent/settings': typeof AuthenticatedParentSettingsRoute
@@ -576,11 +594,13 @@ export interface FileRoutesById {
   '/_authenticated/admin/errors': typeof AuthenticatedAdminErrorsRouteWithChildren
   '/_authenticated/admin/feedback': typeof AuthenticatedAdminFeedbackRoute
   '/_authenticated/admin/map': typeof AuthenticatedAdminMapRoute
+  '/_authenticated/admin/organizations': typeof AuthenticatedAdminOrganizationsRoute
   '/_authenticated/admin/promo-codes': typeof AuthenticatedAdminPromoCodesRoute
   '/_authenticated/athlete/onboarding': typeof AuthenticatedAthleteOnboardingRoute
   '/_authenticated/athlete/settings': typeof AuthenticatedAthleteSettingsRoute
   '/_authenticated/coach/celebration-preview': typeof AuthenticatedCoachCelebrationPreviewRoute
   '/_authenticated/coach/onboarding': typeof AuthenticatedCoachOnboardingRoute
+  '/_authenticated/coach/paywall': typeof AuthenticatedCoachPaywallRoute
   '/_authenticated/coach/plans': typeof AuthenticatedCoachPlansRouteWithChildren
   '/_authenticated/coach/roster': typeof AuthenticatedCoachRosterRoute
   '/_authenticated/coach/settings': typeof AuthenticatedCoachSettingsRoute
@@ -643,11 +663,13 @@ export interface FileRouteTypes {
     | '/admin/errors'
     | '/admin/feedback'
     | '/admin/map'
+    | '/admin/organizations'
     | '/admin/promo-codes'
     | '/athlete/onboarding'
     | '/athlete/settings'
     | '/coach/celebration-preview'
     | '/coach/onboarding'
+    | '/coach/paywall'
     | '/coach/plans'
     | '/coach/roster'
     | '/coach/settings'
@@ -704,11 +726,13 @@ export interface FileRouteTypes {
     | '/admin/errors'
     | '/admin/feedback'
     | '/admin/map'
+    | '/admin/organizations'
     | '/admin/promo-codes'
     | '/athlete/onboarding'
     | '/athlete/settings'
     | '/coach/celebration-preview'
     | '/coach/onboarding'
+    | '/coach/paywall'
     | '/coach/roster'
     | '/coach/settings'
     | '/parent/settings'
@@ -769,11 +793,13 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/errors'
     | '/_authenticated/admin/feedback'
     | '/_authenticated/admin/map'
+    | '/_authenticated/admin/organizations'
     | '/_authenticated/admin/promo-codes'
     | '/_authenticated/athlete/onboarding'
     | '/_authenticated/athlete/settings'
     | '/_authenticated/coach/celebration-preview'
     | '/_authenticated/coach/onboarding'
+    | '/_authenticated/coach/paywall'
     | '/_authenticated/coach/plans'
     | '/_authenticated/coach/roster'
     | '/_authenticated/coach/settings'
@@ -1069,6 +1095,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCoachPlansRouteImport
       parentRoute: typeof AuthenticatedCoachRoute
     }
+    '/_authenticated/coach/paywall': {
+      id: '/_authenticated/coach/paywall'
+      path: '/paywall'
+      fullPath: '/coach/paywall'
+      preLoaderRoute: typeof AuthenticatedCoachPaywallRouteImport
+      parentRoute: typeof AuthenticatedCoachRoute
+    }
     '/_authenticated/coach/onboarding': {
       id: '/_authenticated/coach/onboarding'
       path: '/onboarding'
@@ -1102,6 +1135,13 @@ declare module '@tanstack/react-router' {
       path: '/promo-codes'
       fullPath: '/admin/promo-codes'
       preLoaderRoute: typeof AuthenticatedAdminPromoCodesRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/organizations': {
+      id: '/_authenticated/admin/organizations'
+      path: '/organizations'
+      fullPath: '/admin/organizations'
+      preLoaderRoute: typeof AuthenticatedAdminOrganizationsRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
     '/_authenticated/admin/map': {
@@ -1308,6 +1348,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminErrorsRoute: typeof AuthenticatedAdminErrorsRouteWithChildren
   AuthenticatedAdminFeedbackRoute: typeof AuthenticatedAdminFeedbackRoute
   AuthenticatedAdminMapRoute: typeof AuthenticatedAdminMapRoute
+  AuthenticatedAdminOrganizationsRoute: typeof AuthenticatedAdminOrganizationsRoute
   AuthenticatedAdminPromoCodesRoute: typeof AuthenticatedAdminPromoCodesRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
   AuthenticatedAdminListKindRoute: typeof AuthenticatedAdminListKindRoute
@@ -1319,6 +1360,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminErrorsRoute: AuthenticatedAdminErrorsRouteWithChildren,
   AuthenticatedAdminFeedbackRoute: AuthenticatedAdminFeedbackRoute,
   AuthenticatedAdminMapRoute: AuthenticatedAdminMapRoute,
+  AuthenticatedAdminOrganizationsRoute: AuthenticatedAdminOrganizationsRoute,
   AuthenticatedAdminPromoCodesRoute: AuthenticatedAdminPromoCodesRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
   AuthenticatedAdminListKindRoute: AuthenticatedAdminListKindRoute,
@@ -1375,6 +1417,7 @@ const AuthenticatedCoachPlansRouteWithChildren =
 interface AuthenticatedCoachRouteChildren {
   AuthenticatedCoachCelebrationPreviewRoute: typeof AuthenticatedCoachCelebrationPreviewRoute
   AuthenticatedCoachOnboardingRoute: typeof AuthenticatedCoachOnboardingRoute
+  AuthenticatedCoachPaywallRoute: typeof AuthenticatedCoachPaywallRoute
   AuthenticatedCoachPlansRoute: typeof AuthenticatedCoachPlansRouteWithChildren
   AuthenticatedCoachRosterRoute: typeof AuthenticatedCoachRosterRoute
   AuthenticatedCoachSettingsRoute: typeof AuthenticatedCoachSettingsRoute
@@ -1387,6 +1430,7 @@ const AuthenticatedCoachRouteChildren: AuthenticatedCoachRouteChildren = {
   AuthenticatedCoachCelebrationPreviewRoute:
     AuthenticatedCoachCelebrationPreviewRoute,
   AuthenticatedCoachOnboardingRoute: AuthenticatedCoachOnboardingRoute,
+  AuthenticatedCoachPaywallRoute: AuthenticatedCoachPaywallRoute,
   AuthenticatedCoachPlansRoute: AuthenticatedCoachPlansRouteWithChildren,
   AuthenticatedCoachRosterRoute: AuthenticatedCoachRosterRoute,
   AuthenticatedCoachSettingsRoute: AuthenticatedCoachSettingsRoute,

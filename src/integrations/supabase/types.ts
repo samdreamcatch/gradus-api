@@ -482,41 +482,66 @@ export type Database = {
       coach_profiles: {
         Row: {
           created_at: string
+          current_period_end: string | null
+          entitlement: string
           first_name: string
           id: string
           is_test: boolean
           last_name: string
           last_seen_at: string | null
           onboarded_at: string | null
+          organization_id: string | null
           promo_code: string | null
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          subscription_status: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           created_at?: string
+          current_period_end?: string | null
+          entitlement?: string
           first_name?: string
           id?: string
           is_test?: boolean
           last_name?: string
           last_seen_at?: string | null
           onboarded_at?: string | null
+          organization_id?: string | null
           promo_code?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_status?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           created_at?: string
+          current_period_end?: string | null
+          entitlement?: string
           first_name?: string
           id?: string
           is_test?: boolean
           last_name?: string
           last_seen_at?: string | null
           onboarded_at?: string | null
+          organization_id?: string | null
           promo_code?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_status?: string | null
           updated_at?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "coach_profiles_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "coach_profiles_promo_code_fkey"
             columns: ["promo_code"]
@@ -995,6 +1020,68 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      organization_invite_codes: {
+        Row: {
+          active: boolean
+          code: string
+          created_at: string
+          id: string
+          organization_id: string
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          created_at?: string
+          id?: string
+          organization_id: string
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          created_at?: string
+          id?: string
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_invite_codes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organizations: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          name: string
+          notes: string | null
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name: string
+          notes?: string | null
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       parent_invite_codes: {
         Row: {

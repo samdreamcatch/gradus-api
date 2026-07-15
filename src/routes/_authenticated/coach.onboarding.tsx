@@ -3,14 +3,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { ChevronDown, Plus, X } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -28,18 +22,31 @@ import {
 } from "@/hooks/use-coach-profile";
 
 import { claimParentInvite } from "@/lib/parent-signup.functions";
+import { claimOrganizationInviteCode } from "@/lib/coach-org.functions";
 
 import { InviteCard } from "@/components/onboarding/invite-card";
-import { PromoCodeField } from "@/components/signup/promo-code-field";
+
+import { CoachPathChoice, type CoachPathValue } from "@/components/onboarding/coach-path-choice";
 import { savePendingPromoCode } from "@/lib/pending-promo-code";
 import { CoachBottomNav } from "@/components/coach/bottom-nav";
 
 import { useQuery } from "@tanstack/react-query";
+import { z } from "zod";
 
 const PENDING_INVITE_KEY = "gradus.pendingParentInvite";
 
+const searchSchema = z.object({
+  org: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .regex(/^[A-Z2-9]{8}$/)
+    .optional(),
+  promo: z.string().trim().toUpperCase().max(32).optional(),
+});
 
 export const Route = createFileRoute("/_authenticated/coach/onboarding")({
+  validateSearch: (s) => searchSchema.parse(s),
   component: OnboardingPage,
 });
 
@@ -61,6 +68,7 @@ function prettify(s: string) {
 function OnboardingPage() {
   const { data, isLoading, error } = useQuery(coachProfileQueryOptions);
   const navigate = useNavigate();
+  const search = Route.useSearch();
 
   useEffect(() => {
     if (data?.profile.onboardedAt) navigate({ to: "/coach" });
@@ -82,25 +90,55 @@ function OnboardingPage() {
       </div>
     );
   }
-  return <OnboardingForm data={data} />;
+  return <OnboardingForm data={data} initialOrg={search.org} initialPromo={search.promo} />;
 }
 
 type OnboardingData = NonNullable<ReturnType<typeof useCoachProfile>["data"]>;
 
-function OnboardingForm({ data }: { data: OnboardingData }) {
+function OnboardingForm({
+  data,
+  initialOrg,
+  initialPromo,
+}: {
+  data: OnboardingData;
+  initialOrg?: string;
+  initialPromo?: string;
+}) {
   const navigate = useNavigate();
 
   const needsName =
     !data.profile.firstName.trim() || !data.profile.lastName.trim();
 
+  const alreadyClub = data.profile.entitlement === "club_covered";
+
   const [step, setStep] = useState(1);
   const [firstName, setFirstName] = useState(data.profile.firstName);
   const [lastName, setLastName] = useState(data.profile.lastName);
-  const [promoCode, setPromoCode] = useState("");
-  const [promoOpen, setPromoOpen] = useState<boolean>(false);
-  useEffect(() => {
-    if (promoCode) setPromoOpen(true);
-  }, [promoCode]);
+  const [pathValue, setPathValue] = useState<CoachPathValue>(() => {
+    if (alreadyClub && data.profile.organizationName) {
+      return {
+        path: "club",
+        promoCode: "",
+        orgCode: "",
+        orgName: data.profile.organizationName,
+        orgVerified: true,
+      };
+    }
+    if (initialOrg) {
+      return { path: "club", promoCode: "", orgCode: initialOrg, orgName: null, orgVerified: false };
+    }
+    return {
+      path: initialPromo ? "individual" : null,
+      promoCode: initialPromo ?? "",
+      orgCode: "",
+      orgName: null,
+      orgVerified: false,
+    };
+  });
+  const promoCode = pathValue.promoCode;
+
+
+
 
 
   // Initial sport & custom-level reconstruction from saved data.
@@ -246,15 +284,20 @@ function OnboardingForm({ data }: { data: OnboardingData }) {
     );
   };
 
-  const totalSteps = 5;
-  type StepKind = "profile" | "sports" | "levels" | "hours" | "invite" | "review";
+  type StepKind = "path" | "profile" | "sports" | "levels" | "hours" | "invite" | "review";
   const stepOrder: StepKind[] = needsName
-    ? ["profile", "levels", "hours", "invite", "review"]
-    : ["sports", "levels", "hours", "invite", "review"];
+    ? ["path", "profile", "levels", "hours", "invite", "review"]
+    : ["path", "sports", "levels", "hours", "invite", "review"];
+  const totalSteps = stepOrder.length;
   const currentKind = stepOrder[step - 1];
   const isLastStep = step === totalSteps;
 
   const canContinue = (() => {
+    if (currentKind === "path") {
+      if (pathValue.path === "individual") return true; // promo optional
+      if (pathValue.path === "club") return pathValue.orgVerified;
+      return false;
+    }
     if (currentKind === "profile")
       return (
         firstName.trim().length > 0 &&
@@ -275,8 +318,13 @@ function OnboardingForm({ data }: { data: OnboardingData }) {
     return true;
   })();
 
+  const claimOrg = useServerFn(claimOrganizationInviteCode);
+
   const handleContinue = async () => {
     try {
+      if (currentKind === "path" && pathValue.path === "club" && !alreadyClub) {
+        await claimOrg({ data: { code: pathValue.orgCode } });
+      }
       if (currentKind === "profile") {
         await saveProfile.mutateAsync({
           firstName: firstName.trim(),
@@ -331,7 +379,13 @@ function OnboardingForm({ data }: { data: OnboardingData }) {
         }
       }
     }
-    navigate({ to: "/coach/roster" });
+    // Route based on entitlement: club coaches straight into the app,
+    // individuals to the paywall until Stripe checkout completes.
+    if (pathValue.path === "club") {
+      navigate({ to: "/coach/roster" });
+    } else {
+      navigate({ to: "/coach/paywall" });
+    }
   };
 
   const busy = saveProfile.isPending || saveLevels.isPending || complete.isPending;
@@ -356,6 +410,15 @@ function OnboardingForm({ data }: { data: OnboardingData }) {
             ))}
           </div>
         </div>
+
+        {currentKind === "path" && (
+          <Step
+            title="How are you joining Gradus?"
+            subtitle="Pick the option that fits — you can change this later in Settings."
+          >
+            <CoachPathChoice value={pathValue} onChange={setPathValue} />
+          </Step>
+        )}
 
         {currentKind === "profile" && (
           <Step
@@ -562,32 +625,9 @@ function OnboardingForm({ data }: { data: OnboardingData }) {
         {currentKind === "invite" && (
           <Step title="Invite Parents">
             <InviteCard />
-            <div className="mt-6">
-              <Collapsible open={promoOpen} onOpenChange={setPromoOpen} className="space-y-3">
-                <CollapsibleTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    className="flex w-full items-center justify-between px-2 text-accent-ink"
-                  >
-                    <span className="flex items-center gap-2">
-                      Optional — enter a promo code
-                      {!promoOpen && promoCode && (
-                        <Badge variant="secondary">Code applied</Badge>
-                      )}
-                    </span>
-                    <ChevronDown
-                      className={`size-4 transition-transform ${promoOpen ? "rotate-180" : ""}`}
-                    />
-                  </Button>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="pt-1">
-                  <PromoCodeField value={promoCode} onChange={setPromoCode} />
-                </CollapsibleContent>
-              </Collapsible>
-            </div>
           </Step>
         )}
+
 
         {currentKind === "review" && (
           <Step title="Looks good?" subtitle="Review and finish.">

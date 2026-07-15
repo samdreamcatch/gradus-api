@@ -6,11 +6,20 @@ import type { Database } from "@/integrations/supabase/types";
 
 import { dbError } from "./db-error";
 
+export type CoachEntitlement =
+  | "pending"
+  | "club_covered"
+  | "paid"
+  | "promo_free";
+
 export interface CoachProfileDTO {
   id: string;
   firstName: string;
   lastName: string;
   onboardedAt: string | null;
+  entitlement: CoachEntitlement;
+  organizationId: string | null;
+  organizationName: string | null;
 }
 
 export interface CoachLevelDTO {
@@ -28,7 +37,7 @@ async function ensureProfile(
 ) {
   const existing = await supabase
     .from("coach_profiles")
-    .select("id, first_name, last_name, onboarded_at")
+    .select("id, first_name, last_name, onboarded_at, entitlement, organization_id")
     .eq("user_id", userId)
     .maybeSingle();
   if (existing.error) dbError(existing.error);
@@ -61,7 +70,7 @@ async function ensureProfile(
   const created = await supabase
     .from("coach_profiles")
     .insert({ user_id: userId, first_name: firstName, last_name: lastName })
-    .select("id, first_name, last_name, onboarded_at")
+    .select("id, first_name, last_name, onboarded_at, entitlement, organization_id")
     .single();
   if (created.error) dbError(created.error);
   return created.data;
@@ -73,11 +82,21 @@ export const getCoachProfile = createServerFn({ method: "GET" })
     const supabase = context.supabase as Client;
     const profile = await ensureProfile(supabase, context.userId, (context.claims as { user_metadata?: Record<string, unknown> }).user_metadata);
 
-    const levels = await supabase
-      .from("coach_levels")
-      .select("sport, level_key, practice_hours_per_week")
-      .eq("coach_id", profile.id);
+    const [levels, org] = await Promise.all([
+      supabase
+        .from("coach_levels")
+        .select("sport, level_key, practice_hours_per_week")
+        .eq("coach_id", profile.id),
+      profile.organization_id
+        ? supabase
+            .from("organizations")
+            .select("name")
+            .eq("id", profile.organization_id)
+            .maybeSingle()
+        : Promise.resolve({ data: null, error: null } as const),
+    ]);
     if (levels.error) dbError(levels.error);
+    if (org.error) dbError(org.error);
 
     return {
       profile: {
@@ -85,6 +104,9 @@ export const getCoachProfile = createServerFn({ method: "GET" })
         firstName: profile.first_name,
         lastName: profile.last_name,
         onboardedAt: profile.onboarded_at,
+        entitlement: (profile.entitlement ?? "pending") as CoachProfileDTO["entitlement"],
+        organizationId: profile.organization_id ?? null,
+        organizationName: org.data?.name ?? null,
       } as CoachProfileDTO,
       levels: (levels.data ?? []).map((r) => ({
         sport: r.sport,

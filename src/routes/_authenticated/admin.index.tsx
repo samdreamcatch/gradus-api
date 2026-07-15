@@ -107,6 +107,12 @@ function AdminHome() {
             Promo codes →
           </Link>
           <Link
+            to="/admin/organizations"
+            className={chipClasses()}
+          >
+            Organizations →
+          </Link>
+          <Link
             to="/admin/emails"
             search={{ t: "signup" }}
             className={chipClasses()}
