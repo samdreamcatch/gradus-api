@@ -28,18 +28,31 @@ import {
 } from "@/hooks/use-coach-profile";
 
 import { claimParentInvite } from "@/lib/parent-signup.functions";
+import { claimOrganizationInviteCode } from "@/lib/coach-org.functions";
 
 import { InviteCard } from "@/components/onboarding/invite-card";
 import { PromoCodeField } from "@/components/signup/promo-code-field";
+import { CoachPathChoice, type CoachPathValue } from "@/components/onboarding/coach-path-choice";
 import { savePendingPromoCode } from "@/lib/pending-promo-code";
 import { CoachBottomNav } from "@/components/coach/bottom-nav";
 
 import { useQuery } from "@tanstack/react-query";
+import { z } from "zod";
 
 const PENDING_INVITE_KEY = "gradus.pendingParentInvite";
 
+const searchSchema = z.object({
+  org: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .regex(/^[A-Z2-9]{8}$/)
+    .optional(),
+  promo: z.string().trim().toUpperCase().max(32).optional(),
+});
 
 export const Route = createFileRoute("/_authenticated/coach/onboarding")({
+  validateSearch: (s) => searchSchema.parse(s),
   component: OnboardingPage,
 });
 
