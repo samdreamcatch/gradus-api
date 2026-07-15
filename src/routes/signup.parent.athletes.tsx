@@ -154,7 +154,7 @@ function ParentAthletesPage() {
     <div className="flex min-h-dvh items-center justify-center px-4 py-12">
       <div className="w-full max-w-md rounded-2xl bg-card p-8 shadow-card">
         <div className="mb-6 text-center">
-          {code ? (
+          {codeIsFull ? (
             <>
               <p className="text-xs font-bold uppercase tracking-widest text-accent-ink">
                 You&apos;re connecting to
@@ -202,6 +202,28 @@ function ParentAthletesPage() {
 
 
         <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="space-y-1.5">
+            <Label htmlFor="coach-invite-code">
+              Coach invite code <span className="text-text-tertiary">(optional)</span>
+            </Label>
+            <Input
+              id="coach-invite-code"
+              name="coach-invite-code"
+              value={code}
+              onChange={(e) => setCode(e.target.value.toUpperCase().slice(0, 8))}
+              maxLength={8}
+              placeholder="––––––––"
+              className="font-mono tracking-[0.25em] uppercase"
+              autoComplete="off"
+              data-lpignore="true"
+              data-1p-ignore="true"
+              data-bwignore="true"
+            />
+            <p className="text-xs text-text-tertiary">
+              Have a coach&apos;s 8-character code? Enter it to link your athlete now. You can skip this and add a coach later.
+            </p>
+          </div>
+
           <div className="space-y-2">
             <Label>Your name</Label>
             <div className="grid grid-cols-2 gap-2">
