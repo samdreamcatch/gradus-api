@@ -27,7 +27,12 @@ export function PromoCodeField({
 }: PromoCodeFieldProps) {
   return (
     <div className={cn("space-y-1.5", className)}>
-      <Label htmlFor={id}>Promo code (optional)</Label>
+      <Label htmlFor={id} className="flex items-center gap-2">
+        Promo code
+        <Badge variant="secondary" className="text-[10px] uppercase tracking-widest">
+          Optional
+        </Badge>
+      </Label>
       <Input
         id={id}
         value={value}
