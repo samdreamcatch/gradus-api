@@ -93,7 +93,7 @@ function AuthedLayout() {
       <ActiveSessionBar />
       <Outlet />
       {isCoach ? <LessonWrapUpProvider /> : null}
-      {isAdmin ? null : <FeedbackFab />}
+      {isAdmin || isOnboarding ? null : <FeedbackFab />}
     </ActiveSessionProvider>
   );
 }
