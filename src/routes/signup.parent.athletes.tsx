@@ -321,9 +321,15 @@ function ParentAthletesPage() {
             </Button>
           </div>
 
+          <PromoCodeField value={promoCode} onChange={setPromoCode} />
+
           {error && <p className="text-sm text-destructive">{error}</p>}
 
-          <Button type="submit" className="w-full" disabled={submitting || (!!code && !coach)}>
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={submitting || (codeIsFull && !coach)}
+          >
             {submitting ? "Saving..." : "Continue"}
           </Button>
         </form>
