@@ -414,6 +414,15 @@ function OnboardingForm({
           </div>
         </div>
 
+        {currentKind === "path" && (
+          <Step
+            title="How are you joining Gradus?"
+            subtitle="Pick the option that fits — you can change this later in Settings."
+          >
+            <CoachPathChoice value={pathValue} onChange={setPathValue} />
+          </Step>
+        )}
+
         {currentKind === "profile" && (
           <Step
             title="Tell us about yourself"
