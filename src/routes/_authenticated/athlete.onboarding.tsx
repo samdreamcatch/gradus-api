@@ -456,7 +456,12 @@ function CoachStep({ onDone }: { onDone: (sports: string[]) => void }) {
           >
             {previewMut.isPending ? "Looking up…" : "Look up coach"}
           </Button>
-          <Button type="button" variant="ghost" className="w-full" onClick={() => onDone([])}>
+
+          <div className="pt-2">
+            <PromoCodeField value={promoCode} onChange={setPromoCode} />
+          </div>
+
+          <Button type="button" variant="ghost" className="w-full" onClick={handleSkip}>
             Skip for now
           </Button>
         </form>
