@@ -70,7 +70,7 @@ async function ensureProfile(
   const created = await supabase
     .from("coach_profiles")
     .insert({ user_id: userId, first_name: firstName, last_name: lastName })
-    .select("id, first_name, last_name, onboarded_at")
+    .select("id, first_name, last_name, onboarded_at, entitlement, organization_id")
     .single();
   if (created.error) dbError(created.error);
   return created.data;
