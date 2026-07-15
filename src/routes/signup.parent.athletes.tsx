@@ -41,11 +41,15 @@ function ParentAthletesPage() {
   const linkAthletes = useServerFn(linkAthletesToCoach);
   const startSignup = useServerFn(startParentSignup);
 
-  // If the parent came in via Google OAuth, the URL search param may be
-  // missing — restore from the sessionStorage stash we set on /signup/parent.
-  const [code, setCode] = useState<string | undefined>(searchCode);
+  // Editable coach-invite code. Prefill from the `?code=` URL param (set by
+  // /signup/parent when it forwarded a `/i/CODE` invite) or from the
+  // sessionStorage stash that survives the Google OAuth round-trip.
+  const [code, setCode] = useState<string>(searchCode ?? "");
   useEffect(() => {
-    if (searchCode) return;
+    if (searchCode) {
+      setCode(searchCode);
+      return;
+    }
     try {
       const stashed = sessionStorage.getItem(PENDING_PARENT_COACH_CODE_KEY);
       if (stashed && /^[A-Z2-9]{8}$/.test(stashed)) {
@@ -62,14 +66,19 @@ function ParentAthletesPage() {
     }
   }, [searchCode, navigate]);
 
+  const trimmedCode = code.trim().toUpperCase();
+  const codeIsFull = /^[A-Z2-9]{8}$/.test(trimmedCode);
+  const codeInvalid = trimmedCode.length > 0 && !codeIsFull;
+
   const { data: coach, isLoading, error: coachError } = useQuery({
-    queryKey: ["coach-by-code", code],
-    queryFn: () => fetchCoach({ data: { code: code! } }),
-    enabled: !!code,
+    queryKey: ["coach-by-code", codeIsFull ? trimmedCode : null],
+    queryFn: () => fetchCoach({ data: { code: trimmedCode } }),
+    enabled: codeIsFull,
   });
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [promoCode, setPromoCode] = useState("");
   const [athletes, setAthletes] = useState<
     { firstName: string; lastName: string; birthdate: string }[]
   >([{ firstName: "", lastName: "", birthdate: "" }]);
