@@ -563,7 +563,28 @@ function OnboardingForm({ data }: { data: OnboardingData }) {
           <Step title="Invite Parents">
             <InviteCard />
             <div className="mt-6">
-              <PromoCodeField value={promoCode} onChange={setPromoCode} />
+              <Collapsible open={promoOpen} onOpenChange={setPromoOpen} className="space-y-3">
+                <CollapsibleTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="flex w-full items-center justify-between px-2 text-accent-ink"
+                  >
+                    <span className="flex items-center gap-2">
+                      Optional — enter a promo code
+                      {!promoOpen && promoCode && (
+                        <Badge variant="secondary">Code applied</Badge>
+                      )}
+                    </span>
+                    <ChevronDown
+                      className={`size-4 transition-transform ${promoOpen ? "rotate-180" : ""}`}
+                    />
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pt-1">
+                  <PromoCodeField value={promoCode} onChange={setPromoCode} />
+                </CollapsibleContent>
+              </Collapsible>
             </div>
           </Step>
         )}
