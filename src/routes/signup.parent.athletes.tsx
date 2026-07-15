@@ -341,9 +341,27 @@ function ParentAthletesPage() {
             </CollapsibleTrigger>
             <CollapsibleContent className="space-y-4 pt-1">
               <div className="space-y-1.5">
-                <Label htmlFor="coach-invite-code">
-                  Coach invite code <span className="text-text-tertiary">(optional)</span>
-                </Label>
+                <div className="flex items-center gap-1.5">
+                  <Label htmlFor="coach-invite-code">
+                    Coach invite code <span className="text-text-tertiary">(optional)</span>
+                  </Label>
+                  <TooltipProvider delayDuration={150}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          type="button"
+                          aria-label="More about coach invite code"
+                          className="text-text-tertiary hover:text-text-secondary"
+                        >
+                          <HelpCircle className="size-3.5" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="max-w-xs">
+                        Have a coach&apos;s 8-character code? Enter it to link your athlete now. You can skip this and add a coach later.
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
                 <Input
                   id="coach-invite-code"
                   name="coach-invite-code"
@@ -357,9 +375,6 @@ function ParentAthletesPage() {
                   data-1p-ignore="true"
                   data-bwignore="true"
                 />
-                <p className="text-xs text-text-tertiary">
-                  Have a coach&apos;s 8-character code? Enter it to link your athlete now. You can skip this and add a coach later.
-                </p>
               </div>
 
               <PromoCodeField value={promoCode} onChange={setPromoCode} />
