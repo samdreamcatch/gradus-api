@@ -90,6 +90,7 @@ function OnboardingForm({ data }: { data: OnboardingData }) {
   const [step, setStep] = useState(1);
   const [firstName, setFirstName] = useState(data.profile.firstName);
   const [lastName, setLastName] = useState(data.profile.lastName);
+  const [promoCode, setPromoCode] = useState("");
 
 
   // Initial sport & custom-level reconstruction from saved data.
