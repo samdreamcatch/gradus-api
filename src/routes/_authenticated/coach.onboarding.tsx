@@ -24,6 +24,8 @@ import {
 import { claimParentInvite } from "@/lib/parent-signup.functions";
 
 import { InviteCard } from "@/components/onboarding/invite-card";
+import { PromoCodeField } from "@/components/signup/promo-code-field";
+import { savePendingPromoCode } from "@/lib/pending-promo-code";
 import { CoachBottomNav } from "@/components/coach/bottom-nav";
 
 import { useQuery } from "@tanstack/react-query";
