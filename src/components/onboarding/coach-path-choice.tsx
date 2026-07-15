@@ -179,41 +179,40 @@ function PathCard({
   return (
     <div
       className={cn(
-        "rounded-2xl border bg-elevated p-5 transition",
-        selected
-          ? "border-accent shadow-card"
-          : "border-divider",
+        "rounded-2xl border bg-elevated p-4 transition sm:p-5",
+        selected ? "border-accent shadow-card" : "border-divider",
       )}
     >
-      <Button
+      <button
         type="button"
-        variant="ghost"
         onClick={onSelect}
-        className="w-full justify-start p-0 hover:bg-transparent"
+        className="press block w-full rounded-lg text-left focus-surface"
       >
-        <div className="flex w-full items-start gap-4 text-left">
+        <div className="flex w-full items-start gap-3 sm:gap-4">
           <div
             className={cn(
-              "mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-full",
+              "mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full sm:h-11 sm:w-11",
               selected ? "bg-accent text-accent-foreground" : "bg-card text-text-secondary",
             )}
           >
             {icon}
           </div>
           <div className="min-w-0 flex-1">
-            <h3 className="text-base font-semibold text-text-primary">{title}</h3>
-            <p className="mt-1 text-sm text-text-secondary">{blurb}</p>
+            <h3 className="text-[15px] font-semibold leading-snug text-text-primary sm:text-base">
+              {title}
+            </h3>
+            <p className="mt-1 text-sm leading-snug text-text-secondary">{blurb}</p>
           </div>
           <div
             className={cn(
-              "mt-1 h-5 w-5 shrink-0 rounded-full border-2",
+              "mt-0.5 h-5 w-5 shrink-0 rounded-full border-2",
               selected ? "border-accent bg-accent" : "border-divider",
             )}
           >
             {selected && <Check className="h-full w-full p-0.5 text-accent-foreground" />}
           </div>
         </div>
-      </Button>
+      </button>
       {children}
     </div>
   );
