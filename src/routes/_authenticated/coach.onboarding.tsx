@@ -293,6 +293,9 @@ function OnboardingForm({ data }: { data: OnboardingData }) {
       toast.error(err instanceof Error ? err.message : "Couldn't finish");
       return;
     }
+    // Stash any typed promo code; the `_authenticated` layout auto-applies it
+    // on the next authed page load (see src/routes/_authenticated.tsx).
+    if (promoCode.trim()) savePendingPromoCode(promoCode);
     let pendingInvite: string | null = null;
     try {
       pendingInvite = localStorage.getItem(PENDING_INVITE_KEY);
