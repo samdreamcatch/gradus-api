@@ -1,0 +1,2 @@
+ALTER TABLE public.terms_acceptances DROP CONSTRAINT terms_acceptances_role_check;
+ALTER TABLE public.terms_acceptances ADD CONSTRAINT terms_acceptances_role_check CHECK (role = ANY (ARRAY['coach'::text, 'parent'::text, 'athlete'::text]));
