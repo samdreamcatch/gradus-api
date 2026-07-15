@@ -14,6 +14,12 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { PromoCodeField } from "@/components/signup/promo-code-field";
 import { savePendingPromoCode } from "@/lib/pending-promo-code";
 
