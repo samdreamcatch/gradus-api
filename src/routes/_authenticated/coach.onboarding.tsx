@@ -3,8 +3,14 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Plus, X } from "lucide-react";
+import { ChevronDown, Plus, X } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -91,6 +97,10 @@ function OnboardingForm({ data }: { data: OnboardingData }) {
   const [firstName, setFirstName] = useState(data.profile.firstName);
   const [lastName, setLastName] = useState(data.profile.lastName);
   const [promoCode, setPromoCode] = useState("");
+  const [promoOpen, setPromoOpen] = useState<boolean>(false);
+  useEffect(() => {
+    if (promoCode) setPromoOpen(true);
+  }, [promoCode]);
 
 
   // Initial sport & custom-level reconstruction from saved data.
@@ -553,7 +563,28 @@ function OnboardingForm({ data }: { data: OnboardingData }) {
           <Step title="Invite Parents">
             <InviteCard />
             <div className="mt-6">
-              <PromoCodeField value={promoCode} onChange={setPromoCode} />
+              <Collapsible open={promoOpen} onOpenChange={setPromoOpen} className="space-y-3">
+                <CollapsibleTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="flex w-full items-center justify-between px-2 text-accent-ink"
+                  >
+                    <span className="flex items-center gap-2">
+                      Optional — enter a promo code
+                      {!promoOpen && promoCode && (
+                        <Badge variant="secondary">Code applied</Badge>
+                      )}
+                    </span>
+                    <ChevronDown
+                      className={`size-4 transition-transform ${promoOpen ? "rotate-180" : ""}`}
+                    />
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pt-1">
+                  <PromoCodeField value={promoCode} onChange={setPromoCode} />
+                </CollapsibleContent>
+              </Collapsible>
             </div>
           </Step>
         )}
