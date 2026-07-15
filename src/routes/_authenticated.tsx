@@ -33,6 +33,8 @@ function AuthedLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isCoach = pathname.startsWith("/coach");
   const isAdmin = pathname.startsWith("/admin");
+  const isOnboarding = pathname.endsWith("/onboarding");
+
   const accept = useServerFn(acceptTerms);
   const applyPromo = useServerFn(applyPromoCodeToMyProfile);
   useTouchLastSeen();
@@ -91,7 +93,7 @@ function AuthedLayout() {
       <ActiveSessionBar />
       <Outlet />
       {isCoach ? <LessonWrapUpProvider /> : null}
-      {isAdmin ? null : <FeedbackFab />}
+      {isAdmin || isOnboarding ? null : <FeedbackFab />}
     </ActiveSessionProvider>
   );
 }
