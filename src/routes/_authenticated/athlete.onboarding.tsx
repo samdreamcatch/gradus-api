@@ -370,11 +370,8 @@ function CoachStep({ onDone }: { onDone: (sports: string[]) => void }) {
   >(null);
   const [selectedSports, setSelectedSports] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const hasPrefill = Boolean(code) || Boolean(promoCode);
-  const [codesOpen, setCodesOpen] = useState<boolean>(hasPrefill);
-  useEffect(() => {
-    if (hasPrefill) setCodesOpen(true);
-  }, [hasPrefill]);
+
+
 
   const stashPromoIfAny = () => {
     if (promoCode.trim()) savePendingPromoCode(promoCode);
