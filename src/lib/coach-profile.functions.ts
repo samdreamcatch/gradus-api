@@ -37,7 +37,7 @@ async function ensureProfile(
 ) {
   const existing = await supabase
     .from("coach_profiles")
-    .select("id, first_name, last_name, onboarded_at")
+    .select("id, first_name, last_name, onboarded_at, entitlement, organization_id")
     .eq("user_id", userId)
     .maybeSingle();
   if (existing.error) dbError(existing.error);
