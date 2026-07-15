@@ -48,6 +48,7 @@ import { Route as AuthenticatedCoachCelebrationPreviewRouteImport } from './rout
 import { Route as AuthenticatedAthleteSettingsRouteImport } from './routes/_authenticated/athlete.settings'
 import { Route as AuthenticatedAthleteOnboardingRouteImport } from './routes/_authenticated/athlete.onboarding'
 import { Route as AuthenticatedAdminPromoCodesRouteImport } from './routes/_authenticated/admin.promo-codes'
+import { Route as AuthenticatedAdminOrganizationsRouteImport } from './routes/_authenticated/admin.organizations'
 import { Route as AuthenticatedAdminMapRouteImport } from './routes/_authenticated/admin.map'
 import { Route as AuthenticatedAdminFeedbackRouteImport } from './routes/_authenticated/admin.feedback'
 import { Route as AuthenticatedAdminErrorsRouteImport } from './routes/_authenticated/admin.errors'
@@ -280,6 +281,12 @@ const AuthenticatedAdminPromoCodesRoute =
     path: '/promo-codes',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminOrganizationsRoute =
+  AuthenticatedAdminOrganizationsRouteImport.update({
+    id: '/organizations',
+    path: '/organizations',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminMapRoute = AuthenticatedAdminMapRouteImport.update({
   id: '/map',
   path: '/map',
@@ -456,6 +463,7 @@ export interface FileRoutesByFullPath {
   '/admin/errors': typeof AuthenticatedAdminErrorsRouteWithChildren
   '/admin/feedback': typeof AuthenticatedAdminFeedbackRoute
   '/admin/map': typeof AuthenticatedAdminMapRoute
+  '/admin/organizations': typeof AuthenticatedAdminOrganizationsRoute
   '/admin/promo-codes': typeof AuthenticatedAdminPromoCodesRoute
   '/athlete/onboarding': typeof AuthenticatedAthleteOnboardingRoute
   '/athlete/settings': typeof AuthenticatedAthleteSettingsRoute
@@ -518,6 +526,7 @@ export interface FileRoutesByTo {
   '/admin/errors': typeof AuthenticatedAdminErrorsRouteWithChildren
   '/admin/feedback': typeof AuthenticatedAdminFeedbackRoute
   '/admin/map': typeof AuthenticatedAdminMapRoute
+  '/admin/organizations': typeof AuthenticatedAdminOrganizationsRoute
   '/admin/promo-codes': typeof AuthenticatedAdminPromoCodesRoute
   '/athlete/onboarding': typeof AuthenticatedAthleteOnboardingRoute
   '/athlete/settings': typeof AuthenticatedAthleteSettingsRoute
@@ -585,6 +594,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/errors': typeof AuthenticatedAdminErrorsRouteWithChildren
   '/_authenticated/admin/feedback': typeof AuthenticatedAdminFeedbackRoute
   '/_authenticated/admin/map': typeof AuthenticatedAdminMapRoute
+  '/_authenticated/admin/organizations': typeof AuthenticatedAdminOrganizationsRoute
   '/_authenticated/admin/promo-codes': typeof AuthenticatedAdminPromoCodesRoute
   '/_authenticated/athlete/onboarding': typeof AuthenticatedAthleteOnboardingRoute
   '/_authenticated/athlete/settings': typeof AuthenticatedAthleteSettingsRoute
@@ -653,6 +663,7 @@ export interface FileRouteTypes {
     | '/admin/errors'
     | '/admin/feedback'
     | '/admin/map'
+    | '/admin/organizations'
     | '/admin/promo-codes'
     | '/athlete/onboarding'
     | '/athlete/settings'
@@ -715,6 +726,7 @@ export interface FileRouteTypes {
     | '/admin/errors'
     | '/admin/feedback'
     | '/admin/map'
+    | '/admin/organizations'
     | '/admin/promo-codes'
     | '/athlete/onboarding'
     | '/athlete/settings'
@@ -781,6 +793,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/errors'
     | '/_authenticated/admin/feedback'
     | '/_authenticated/admin/map'
+    | '/_authenticated/admin/organizations'
     | '/_authenticated/admin/promo-codes'
     | '/_authenticated/athlete/onboarding'
     | '/_authenticated/athlete/settings'
@@ -1124,6 +1137,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminPromoCodesRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/organizations': {
+      id: '/_authenticated/admin/organizations'
+      path: '/organizations'
+      fullPath: '/admin/organizations'
+      preLoaderRoute: typeof AuthenticatedAdminOrganizationsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/map': {
       id: '/_authenticated/admin/map'
       path: '/map'
@@ -1328,6 +1348,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminErrorsRoute: typeof AuthenticatedAdminErrorsRouteWithChildren
   AuthenticatedAdminFeedbackRoute: typeof AuthenticatedAdminFeedbackRoute
   AuthenticatedAdminMapRoute: typeof AuthenticatedAdminMapRoute
+  AuthenticatedAdminOrganizationsRoute: typeof AuthenticatedAdminOrganizationsRoute
   AuthenticatedAdminPromoCodesRoute: typeof AuthenticatedAdminPromoCodesRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
   AuthenticatedAdminListKindRoute: typeof AuthenticatedAdminListKindRoute
@@ -1339,6 +1360,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminErrorsRoute: AuthenticatedAdminErrorsRouteWithChildren,
   AuthenticatedAdminFeedbackRoute: AuthenticatedAdminFeedbackRoute,
   AuthenticatedAdminMapRoute: AuthenticatedAdminMapRoute,
+  AuthenticatedAdminOrganizationsRoute: AuthenticatedAdminOrganizationsRoute,
   AuthenticatedAdminPromoCodesRoute: AuthenticatedAdminPromoCodesRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
   AuthenticatedAdminListKindRoute: AuthenticatedAdminListKindRoute,
