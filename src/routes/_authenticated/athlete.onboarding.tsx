@@ -355,11 +355,16 @@ function CoachStep({ onDone }: { onDone: (sports: string[]) => void }) {
   const linkFn = useServerFn(linkAdultAthleteToCoach);
 
   const [code, setCode] = useState("");
+  const [promoCode, setPromoCode] = useState("");
   const [preview, setPreview] = useState<
     { coachId: string; coachName: string; sports: string[] } | null
   >(null);
   const [selectedSports, setSelectedSports] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
+
+  const stashPromoIfAny = () => {
+    if (promoCode.trim()) savePendingPromoCode(promoCode);
+  };
 
   const previewMut = useMutation({
     mutationFn: async (c: string) => previewFn({ data: { code: c } }),
