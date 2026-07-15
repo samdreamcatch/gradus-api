@@ -74,6 +74,7 @@ function prettify(s: string) {
 function OnboardingPage() {
   const { data, isLoading, error } = useQuery(coachProfileQueryOptions);
   const navigate = useNavigate();
+  const search = Route.useSearch();
 
   useEffect(() => {
     if (data?.profile.onboardedAt) navigate({ to: "/coach" });
@@ -95,25 +96,58 @@ function OnboardingPage() {
       </div>
     );
   }
-  return <OnboardingForm data={data} />;
+  return <OnboardingForm data={data} initialOrg={search.org} initialPromo={search.promo} />;
 }
 
 type OnboardingData = NonNullable<ReturnType<typeof useCoachProfile>["data"]>;
 
-function OnboardingForm({ data }: { data: OnboardingData }) {
+function OnboardingForm({
+  data,
+  initialOrg,
+  initialPromo,
+}: {
+  data: OnboardingData;
+  initialOrg?: string;
+  initialPromo?: string;
+}) {
   const navigate = useNavigate();
 
   const needsName =
     !data.profile.firstName.trim() || !data.profile.lastName.trim();
 
+  const alreadyClub = data.profile.entitlement === "club_covered";
+
   const [step, setStep] = useState(1);
   const [firstName, setFirstName] = useState(data.profile.firstName);
   const [lastName, setLastName] = useState(data.profile.lastName);
-  const [promoCode, setPromoCode] = useState("");
-  const [promoOpen, setPromoOpen] = useState<boolean>(false);
+  const [pathValue, setPathValue] = useState<CoachPathValue>(() => {
+    if (alreadyClub && data.profile.organizationName) {
+      return {
+        path: "club",
+        promoCode: "",
+        orgCode: "",
+        orgName: data.profile.organizationName,
+        orgVerified: true,
+      };
+    }
+    if (initialOrg) {
+      return { path: "club", promoCode: "", orgCode: initialOrg, orgName: null, orgVerified: false };
+    }
+    return {
+      path: initialPromo ? "individual" : null,
+      promoCode: initialPromo ?? "",
+      orgCode: "",
+      orgName: null,
+      orgVerified: false,
+    };
+  });
+  const promoCode = pathValue.promoCode;
+  const [_promoOpen, setPromoOpen] = useState<boolean>(false);
   useEffect(() => {
     if (promoCode) setPromoOpen(true);
   }, [promoCode]);
+
+
 
 
   // Initial sport & custom-level reconstruction from saved data.
