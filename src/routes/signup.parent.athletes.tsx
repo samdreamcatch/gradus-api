@@ -101,6 +101,11 @@ function ParentAthletesPage() {
     e.preventDefault();
     setError(null);
 
+    if (codeInvalid) {
+      setError("Coach invite code must be 8 characters, or leave it blank.");
+      return;
+    }
+
     const parentFirst = firstName.trim();
     const parentLast = lastName.trim();
     if (!parentFirst || !parentLast) {
@@ -122,11 +127,19 @@ function ParentAthletesPage() {
 
     setSubmitting(true);
     try {
+      // Stash any typed promo code; the `_authenticated` layout auto-applies
+      // it on the next authed page load (see src/routes/_authenticated.tsx).
+      if (promoCode.trim()) savePendingPromoCode(promoCode);
+
+      const effectiveCode = codeIsFull ? trimmedCode : undefined;
       const { code: normalized } = await startSignup({
-        data: { firstName: parentFirst, lastName: parentLast, code: code ?? undefined },
+        data: { firstName: parentFirst, lastName: parentLast, code: effectiveCode },
       });
-      await linkAthletes({ data: { code: normalized ?? code ?? null, athletes: cleaned } });
-      navigate({ to: "/signup/parent/goals", search: code ? { code } : {} });
+      await linkAthletes({ data: { code: normalized ?? effectiveCode ?? null, athletes: cleaned } });
+      navigate({
+        to: "/signup/parent/goals",
+        search: effectiveCode ? { code: effectiveCode } : {},
+      });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");
     } finally {
