@@ -1,46 +1,43 @@
-## Goal
+# Mirror parent-flow code UX to coach & athlete onboarding
 
-On `/signup/parent/athletes`, replace the two separate labeled fields (Coach invite code, Promo code) with a single collapsible section titled **"Optional — enter a coach or promo code"** that reveals both inputs when opened.
+Bring the collapsible "Optional" pattern, tooltip helper, and Badge treatment already shipped on `/signup/parent/athletes` to the two onboarding pages. Scoped strictly to presentation — no changes to validation, lookup logic, submission, or routing.
 
-## File touched
+## Coach onboarding (`src/routes/_authenticated/coach.onboarding.tsx`)
 
-- `src/routes/signup.parent.athletes.tsx` — only presentational changes; no logic/state changes.
+The "Invite Parents" step currently renders `<InviteCard />` followed by a bare `PromoCodeField`. Coaches never enter a coach invite code, so only the promo field is affected.
 
-## Component choices (all existing)
+- Wrap the `PromoCodeField` in a `Collapsible` from `@/components/ui/collapsible`.
+- Trigger: full-width ghost `Button` with `text-accent-ink`, label "Optional — enter a promo code", rotating `ChevronDown` (180° when open, `transition-transform`).
+- Auto-open state: `useState(Boolean(promoCode))` + `useEffect` that opens the collapsible when a promo code is prefilled (e.g. via `pending-promo-code`).
+- Show `<Badge variant="secondary">Code applied</Badge>` in the trigger row when collapsed AND `promoCode` has a value.
+- No new imports beyond `Collapsible*`, `Badge`, `ChevronDown`.
 
-- `Collapsible`, `CollapsibleTrigger`, `CollapsibleContent` from `@/components/ui/collapsible`
-- `Button` (`variant="ghost"`) as the trigger, containing the label + a rotating `ChevronDown` from `lucide-react`
-- `Badge` from `@/components/ui/badge` for the "Code applied" hint
-- Existing `Input` for the coach code and existing `PromoCodeField` untouched
+## Athlete onboarding (`src/routes/_authenticated/athlete.onboarding.tsx`) — "Connect with a coach" step
 
-## UX behavior (per answered questions)
+Today this step centers the 8-char coach code as the primary action with a "Look up coach" button, then shows `PromoCodeField`, then "Skip for now". The user chose to wrap both fields under one collapsible; that means the step no longer treats coach code as the required primary action. New shape:
 
-1. **Trigger style — Ghost button with chevron.** Full-width, left-aligned, `text-primary` label, chevron on the right that rotates 180° when open (`data-[state=open]:rotate-180`, `transition-transform`). No border; sits between "Add another athlete" and the Continue button (i.e., where the two field blocks used to live).
-2. **Default state — Auto-open when prefilled.** Compute `hasPrefill = Boolean(initialCoachCode) || Boolean(initialPromoCode)` from the same URL/sessionStorage sources already read today, and pass to `Collapsible defaultOpen={hasPrefill}`. Link-invited users still see their code immediately.
-3. **Prefill indicator — "Code applied" badge.** When collapsed AND a code is present, render a small `<Badge variant="secondary">Code applied</Badge>` inside the trigger row next to the label. Hidden when the section is open (so it doesn't duplicate the visible field). Uses the accent-neutral secondary badge already in the system — no new color tokens.
-
-## Layout inside `CollapsibleContent`
-
-Same two field blocks that exist today, in the same order, unchanged:
-
-```text
-Coach invite code (optional)
-[ input ]
-Have a coach's 8-character code? …
-
-Promo code (optional)
-[ PromoCodeField ]
-```
-
-Wrap in `space-y-4` to match sibling section spacing. No changes to labels, helper text, validation, or submission logic.
+- Keep the step header ("Connect with a coach") and its subheading, updated to reflect that both fields are now optional-and-collapsed:
+  - New subheading: "Have a coach's invite code or a promo code? Add either now — or skip and add later from settings."
+- Replace the current form body with:
+  - A single `Collapsible`, default-closed unless `code` OR `promoCode` is prefilled (same `hasPrefill` pattern used on parent/athletes).
+  - Trigger: ghost `Button`, label "Optional — enter a coach or promo code", rotating chevron, `Badge variant="secondary"` "Code applied" when collapsed with any value.
+  - `CollapsibleContent` (`space-y-4 pt-1`):
+    - Coach invite code block: `Label` "Coach invite code" + inline `<Badge variant="secondary" className="text-[10px] uppercase tracking-widest">Optional</Badge>` + small `HelpCircle` tooltip trigger. Tooltip content: current helper copy ("Have a coach's 8-character code? Enter it to link your athlete now. You can skip this and add a coach later."). The input keeps its current styling (`font-mono text-2xl tracking-[0.4em] uppercase h-14`, centered).
+    - `PromoCodeField` unchanged (its own "Optional" badge already ships).
+- Primary action button:
+  - Relabel from "Look up coach" to "Continue".
+  - Behavior: if `codeValid` → run existing `previewMut.mutate(...)` (coach lookup); if code is blank → call existing `handleSkip()` (which stashes any promo). Disabled while `previewMut.isPending`, or when a non-empty code is not yet 8 chars (invalid).
+- Remove the separate "Skip for now" button — the single primary button now handles both paths.
+- `TooltipProvider` wraps only the tooltip locally (matches the parent/athletes pattern).
 
 ## Out of scope
 
-- Coach and adult-athlete onboarding pages (`coach.onboarding.tsx`, `athlete.onboarding.tsx`) — unchanged for now. Can mirror this pattern in a follow-up if desired.
-- No changes to page 1 signup routes.
-- No new design tokens, no new components, no logic changes.
+- `signup.coach.tsx` and `signup.athlete.adult.tsx` entry pages (no code inputs there).
+- `PromoCodeField` — already updated to render the "Optional" Badge.
+- Validation, server functions, redirects, sessionStorage plumbing, error copy.
+- No new design tokens or components.
 
 ## Verification
 
-- Typecheck passes.
-- Manual: visit `/signup/parent/athletes` → section collapsed, badge hidden. Visit `/signup/parent/athletes?code=ABCD1234` → section open, coach code prefilled. Collapse it → badge appears.
+- Typecheck clean.
+- Manual: coach onboarding "Invite Parents" step shows collapsed promo trigger; opens when a stashed promo prefills. Athlete "Connect with a coach" step shows one collapsed trigger; opens when `?code=…` or a stashed promo prefills; tooltip on the HelpCircle shows the coach-code helper copy; "Continue" runs the coach lookup when a valid code is entered and skips otherwise.
