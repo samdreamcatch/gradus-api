@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { z } from "zod";
@@ -12,7 +12,13 @@ const searchSchema = z.object({
 });
 
 export const Route = createFileRoute("/signup/athlete/confirm")({
-  validateSearch: (s) => searchSchema.parse(s),
+  validateSearch: (s) => {
+    const parsed = searchSchema.safeParse(s);
+    if (!parsed.success) {
+      throw redirect({ to: "/signup/athlete", search: { code: undefined } });
+    }
+    return parsed.data;
+  },
   component: AthleteConfirmPage,
 });
 
