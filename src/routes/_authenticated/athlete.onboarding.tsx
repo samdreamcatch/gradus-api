@@ -527,7 +527,7 @@ function CoachStep({ onDone }: { onDone: (sports: string[]) => void }) {
             >
               Try a different code
             </Button>
-            <Button variant="ghost" className="w-full" onClick={() => onDone([])}>
+            <Button variant="ghost" className="w-full" onClick={handleSkip}>
               Skip for now
             </Button>
           </div>
