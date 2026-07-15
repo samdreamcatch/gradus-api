@@ -90,6 +90,12 @@ function ParentAthletesPage() {
   >([{ firstName: "", lastName: "", birthdate: "" }]);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const hasPrefill = Boolean(code) || Boolean(promoCode);
+  const [codesOpen, setCodesOpen] = useState<boolean>(hasPrefill);
+  useEffect(() => {
+    if (hasPrefill) setCodesOpen(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasPrefill]);
 
   const updateAthlete = (
     i: number,
