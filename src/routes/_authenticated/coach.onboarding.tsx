@@ -24,6 +24,8 @@ import {
 import { claimParentInvite } from "@/lib/parent-signup.functions";
 
 import { InviteCard } from "@/components/onboarding/invite-card";
+import { PromoCodeField } from "@/components/signup/promo-code-field";
+import { savePendingPromoCode } from "@/lib/pending-promo-code";
 import { CoachBottomNav } from "@/components/coach/bottom-nav";
 
 import { useQuery } from "@tanstack/react-query";
@@ -88,6 +90,7 @@ function OnboardingForm({ data }: { data: OnboardingData }) {
   const [step, setStep] = useState(1);
   const [firstName, setFirstName] = useState(data.profile.firstName);
   const [lastName, setLastName] = useState(data.profile.lastName);
+  const [promoCode, setPromoCode] = useState("");
 
 
   // Initial sport & custom-level reconstruction from saved data.
@@ -290,6 +293,9 @@ function OnboardingForm({ data }: { data: OnboardingData }) {
       toast.error(err instanceof Error ? err.message : "Couldn't finish");
       return;
     }
+    // Stash any typed promo code; the `_authenticated` layout auto-applies it
+    // on the next authed page load (see src/routes/_authenticated.tsx).
+    if (promoCode.trim()) savePendingPromoCode(promoCode);
     let pendingInvite: string | null = null;
     try {
       pendingInvite = localStorage.getItem(PENDING_INVITE_KEY);
@@ -546,6 +552,9 @@ function OnboardingForm({ data }: { data: OnboardingData }) {
         {currentKind === "invite" && (
           <Step title="Invite Parents">
             <InviteCard />
+            <div className="mt-6">
+              <PromoCodeField value={promoCode} onChange={setPromoCode} />
+            </div>
           </Step>
         )}
 

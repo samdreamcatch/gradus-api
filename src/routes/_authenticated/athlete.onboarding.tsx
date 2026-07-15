@@ -32,6 +32,8 @@ import {
   type Slot,
 } from "@/components/parent/schedule-editor";
 import { saveAdultAthleteScheduleForCoach } from "@/lib/adult-athlete-schedule.functions";
+import { PromoCodeField } from "@/components/signup/promo-code-field";
+import { savePendingPromoCode } from "@/lib/pending-promo-code";
 
 
 export const Route = createFileRoute("/_authenticated/athlete/onboarding")({
@@ -353,11 +355,16 @@ function CoachStep({ onDone }: { onDone: (sports: string[]) => void }) {
   const linkFn = useServerFn(linkAdultAthleteToCoach);
 
   const [code, setCode] = useState("");
+  const [promoCode, setPromoCode] = useState("");
   const [preview, setPreview] = useState<
     { coachId: string; coachName: string; sports: string[] } | null
   >(null);
   const [selectedSports, setSelectedSports] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
+
+  const stashPromoIfAny = () => {
+    if (promoCode.trim()) savePendingPromoCode(promoCode);
+  };
 
   const previewMut = useMutation({
     mutationFn: async (c: string) => previewFn({ data: { code: c } }),
@@ -392,9 +399,17 @@ function CoachStep({ onDone }: { onDone: (sports: string[]) => void }) {
   const linkMut = useMutation({
     mutationFn: async () =>
       linkFn({ data: { code: code.trim().toUpperCase(), sports: selectedSports } }),
-    onSuccess: () => onDone(selectedSports),
+    onSuccess: () => {
+      stashPromoIfAny();
+      onDone(selectedSports);
+    },
     onError: (e) => setError(e instanceof Error ? e.message : "Something went wrong"),
   });
+
+  const handleSkip = () => {
+    stashPromoIfAny();
+    onDone([]);
+  };
 
   const codeValid = /^[A-Z2-9]{8}$/.test(code.trim().toUpperCase());
 
@@ -441,7 +456,12 @@ function CoachStep({ onDone }: { onDone: (sports: string[]) => void }) {
           >
             {previewMut.isPending ? "Looking up…" : "Look up coach"}
           </Button>
-          <Button type="button" variant="ghost" className="w-full" onClick={() => onDone([])}>
+
+          <div className="pt-2">
+            <PromoCodeField value={promoCode} onChange={setPromoCode} />
+          </div>
+
+          <Button type="button" variant="ghost" className="w-full" onClick={handleSkip}>
             Skip for now
           </Button>
         </form>
@@ -507,7 +527,7 @@ function CoachStep({ onDone }: { onDone: (sports: string[]) => void }) {
             >
               Try a different code
             </Button>
-            <Button variant="ghost" className="w-full" onClick={() => onDone([])}>
+            <Button variant="ghost" className="w-full" onClick={handleSkip}>
               Skip for now
             </Button>
           </div>

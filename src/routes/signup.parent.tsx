@@ -18,12 +18,11 @@ import {
   stashPendingTermsAccept,
   clearPendingTermsAccept,
 } from "@/lib/terms";
-import { PromoCodeField } from "@/components/signup/promo-code-field";
 import { savePendingPromoCode, clearPendingPromoCode } from "@/lib/pending-promo-code";
 import { z } from "zod";
 
-/** sessionStorage key for a coach invite code entered on the parent signup
- *  page — read by `/signup/parent/athletes` after Google sign-in returns. */
+/** sessionStorage key for a coach invite code arriving via `?invite=` — read
+ *  by `/signup/parent/athletes` after Google sign-in returns. */
 const PENDING_PARENT_COACH_CODE_KEY = "gradus.pendingParentCoachCode";
 
 const searchSchema = z.object({
@@ -52,8 +51,6 @@ function ParentSignupPage() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [code, setCode] = useState(search.invite ?? "");
-  const [promoCode, setPromoCode] = useState(search.promo ?? "");
 
   const [agreed, setAgreed] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
@@ -69,28 +66,25 @@ function ParentSignupPage() {
     supabase.auth.getSession().then(({ data }) => setIsAuthed(!!data.session));
   }, []);
 
-  useEffect(() => {
-    if (search.invite) setCode(search.invite);
-  }, [search.invite]);
-
   if (location.pathname !== "/signup/parent") {
     return <Outlet />;
   }
 
-  const trimmedCode = code.trim().toUpperCase();
-  const codeValid = trimmedCode.length === 0 || /^[A-Z2-9]{8}$/.test(trimmedCode);
+  const urlInvite = search.invite ?? "";
+  const urlPromo = search.promo ?? "";
 
   const resetCaptcha = () => {
     setCaptchaToken(null);
     setCaptchaKey((k) => k + 1);
   };
 
+  /** Persist any URL-provided invite/promo across the OAuth round-trip. */
   const stashPending = () => {
     stashPendingTermsAccept();
-    savePendingPromoCode(promoCode);
-    if (trimmedCode.length === 8) {
+    if (urlPromo) savePendingPromoCode(urlPromo);
+    if (urlInvite.length === 8) {
       try {
-        sessionStorage.setItem(PENDING_PARENT_COACH_CODE_KEY, trimmedCode);
+        sessionStorage.setItem(PENDING_PARENT_COACH_CODE_KEY, urlInvite);
       } catch {
         /* ignore */
       }
@@ -135,7 +129,7 @@ function ParentSignupPage() {
 
       navigate({
         to: "/signup/parent/athletes",
-        search: trimmedCode ? { code: trimmedCode } : {},
+        search: urlInvite ? { code: urlInvite } : {},
       });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");
@@ -157,7 +151,7 @@ function ParentSignupPage() {
       if (!result.redirected) {
         navigate({
           to: "/signup/parent/athletes",
-          search: trimmedCode ? { code: trimmedCode } : {},
+          search: urlInvite ? { code: urlInvite } : {},
         });
       }
     } catch (e) {
@@ -180,10 +174,6 @@ function ParentSignupPage() {
       setShowAgreeHint(true);
       return;
     }
-    if (!codeValid) {
-      setError("Invite code must be 8 characters.");
-      return;
-    }
     if (isAuthed) {
       void doEmailSignup(null);
       return;
@@ -200,10 +190,6 @@ function ParentSignupPage() {
     setError(null);
     if (!agreed) {
       setShowAgreeHint(true);
-      return;
-    }
-    if (!codeValid) {
-      setError("Invite code must be 8 characters.");
       return;
     }
     if (captchaToken) {
@@ -267,32 +253,6 @@ function ParentSignupPage() {
               Please accept the Terms to continue.
             </p>
           )}
-        </div>
-
-        <div className="mb-4 space-y-2">
-          <Label htmlFor="code">
-            Coach invite code <span className="text-text-tertiary">(optional)</span>
-          </Label>
-          <Input
-            id="code"
-            name="coach-invite-code"
-            value={code}
-            onChange={(e) => setCode(e.target.value.toUpperCase().slice(0, 8))}
-            maxLength={8}
-            placeholder="––––––––"
-            className="font-mono tracking-[0.25em] uppercase"
-            autoComplete="off"
-            data-lpignore="true"
-            data-1p-ignore="true"
-            data-bwignore="true"
-          />
-          <p className="text-xs text-text-tertiary">
-            Have a coach&apos;s 8-character code? Enter it to link your athlete now. You can skip this and add a coach later.
-          </p>
-        </div>
-
-        <div className="mb-6">
-          <PromoCodeField value={promoCode} onChange={setPromoCode} />
         </div>
 
         <Separator className="mb-6" />
