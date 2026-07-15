@@ -1,57 +1,46 @@
-# Move invite & promo inputs off page 1 of signup
+## Goal
 
-Goal: simplify the first screen of the three signup entry points (parent, coach, adult athlete) by removing the "coach/parent invite code" and "promo code" input fields. Codes that arrive via a shared link (`/i/CODE` → `?invite=CODE`) or a URL-attached promo (`?promo=CODE`) keep working transparently — they just no longer appear as visible fields on page 1.
+On `/signup/parent/athletes`, replace the two separate labeled fields (Coach invite code, Promo code) with a single collapsible section titled **"Optional — enter a coach or promo code"** that reveals both inputs when opened.
 
-## What changes
+## File touched
 
-### `src/routes/signup.parent.tsx` (page 1)
-- Remove the visible "Coach invite code" input block and the `PromoCodeField` block.
-- Keep everything else: URL search parsing (`invite`, `promo`), the `useEffect` that stashes them, and the existing calls to `savePendingPromoCode()` and `sessionStorage.setItem(PENDING_PARENT_COACH_CODE_KEY, ...)` inside `stashPending()`.
-- Change `stashPending()` to read the code from `search.invite` (URL) and `search.promo` (URL) instead of local input state. Drop the `code`/`promoCode` local `useState`, the `trimmedCode`/`codeValid` derivations, and the "Invite code must be 8 characters" submit guards (URL codes are already validated by `searchSchema`).
-- Preserve the navigation to `/signup/parent/athletes` with `search: search.invite ? { code: search.invite } : {}`.
+- `src/routes/signup.parent.athletes.tsx` — only presentational changes; no logic/state changes.
 
-### `src/routes/signup.parent.athletes.tsx` (page 2)
-- Add a visible "Coach invite code (optional)" input, prefilled from either the `?code=` search param or `sessionStorage[PENDING_PARENT_COACH_CODE_KEY]` (both already flow in — the file already reads the sessionStorage key at line 48).
-- Add a `<PromoCodeField>` block. Because page 2 renders only after the profile row exists, we can either (a) keep the existing "stash and apply after signup" pattern for consistency, or (b) call `applyPromoCodeToMyProfile` directly on submit. Recommend (a) to reuse existing plumbing.
-- Wire the new coach-code input into the existing linking logic on this page. If none exists yet on this page, add a call to `claimParentInvite`/lookup identical to what page 1 does today when the parent proceeds.
+## Component choices (all existing)
 
-### `src/routes/signup.coach.tsx` (page 1)
-- Remove the visible "Athlete or parent invite code" input and `PromoCodeField` blocks.
-- Keep the personalized welcome banner (`{invite && (parentName || adultAthleteName) && …}`) — it's driven by the URL param, not the input.
-- Keep the URL-stash effect (`localStorage.setItem(PENDING_INVITE_KEY, invite)`), the auto-claim effect for signed-in users, and pass the URL invite through to `stashPending()`. Drop the local `inviteCode` state and its validation.
-- Page 2 for coaches is `src/routes/_authenticated/coach.onboarding.tsx`, which already has an `"invite"` step (`InviteCard`) and already reads `PENDING_INVITE_KEY` from localStorage. That page needs no changes for the invite flow. Add a `PromoCodeField` there in a natural spot (e.g. the review step) and call `applyPromoCodeToMyProfile` on completion, reading the stashed promo from `sessionStorage`.
+- `Collapsible`, `CollapsibleTrigger`, `CollapsibleContent` from `@/components/ui/collapsible`
+- `Button` (`variant="ghost"`) as the trigger, containing the label + a rotating `ChevronDown` from `lucide-react`
+- `Badge` from `@/components/ui/badge` for the "Code applied" hint
+- Existing `Input` for the coach code and existing `PromoCodeField` untouched
 
-### `src/routes/signup.athlete.adult.tsx` (page 1)
-- Remove the visible coach-code and promo inputs. Keep the URL parse, the `useEffect` that writes `PENDING_COACH_INVITE_KEY` to localStorage, and the `savePendingPromoCode` call inside `stashPending()` — feed both from `search.invite`/`search.promo` instead of local state.
-- Page 2 is `src/routes/_authenticated/athlete.onboarding.tsx`, which already prefills from `localStorage["gradus.pendingCoachInvite"]` (lines 372–385) and already shows the coach-code input. No changes needed there for invites. Add a `PromoCodeField` (e.g. on the final step) that reads the stashed promo and applies it.
+## UX behavior (per answered questions)
 
-### Shared code
-- No changes needed to `src/routes/i.$code.tsx`, `src/lib/pending-promo-code.ts`, `src/components/signup/promo-code-field.tsx`, or the invite-resolve server fns.
-- The `PENDING_PARENT_COACH_CODE_KEY`, `PENDING_COACH_INVITE_KEY`, and `PENDING_INVITE_KEY` storage contracts stay the same, so the OAuth round-trip (Google sign-in) continues to survive.
+1. **Trigger style — Ghost button with chevron.** Full-width, left-aligned, `text-primary` label, chevron on the right that rotates 180° when open (`data-[state=open]:rotate-180`, `transition-transform`). No border; sits between "Add another athlete" and the Continue button (i.e., where the two field blocks used to live).
+2. **Default state — Auto-open when prefilled.** Compute `hasPrefill = Boolean(initialCoachCode) || Boolean(initialPromoCode)` from the same URL/sessionStorage sources already read today, and pass to `Collapsible defaultOpen={hasPrefill}`. Link-invited users still see their code immediately.
+3. **Prefill indicator — "Code applied" badge.** When collapsed AND a code is present, render a small `<Badge variant="secondary">Code applied</Badge>` inside the trigger row next to the label. Hidden when the section is open (so it doesn't duplicate the visible field). Uses the accent-neutral secondary badge already in the system — no new color tokens.
 
-## Impact on shared-link users
+## Layout inside `CollapsibleContent`
 
-Zero. A user who clicks `https://gradus.training/i/ABCD2345`:
+Same two field blocks that exist today, in the same order, unchanged:
 
-1. Hits `/i/ABCD2345` → resolved → redirected to `/signup/parent?invite=ABCD2345` (or `/signup/coach`, `/signup/athlete/adult`).
-2. Page 1 no longer *shows* the code, but still parses it from the URL, stashes it before OAuth, and forwards it as a search param when navigating to page 2.
-3. Page 2 prefills the input from the stashed code and completes the link.
+```text
+Coach invite code (optional)
+[ input ]
+Have a coach's 8-character code? …
 
-The only behavioral shift: a user who was given a code verbally and lands on `/signup/parent` with no URL param now enters it on page 2 instead of page 1.
+Promo code (optional)
+[ PromoCodeField ]
+```
 
-## Files touched
+Wrap in `space-y-4` to match sibling section spacing. No changes to labels, helper text, validation, or submission logic.
 
-- Edit: `src/routes/signup.parent.tsx`
-- Edit: `src/routes/signup.coach.tsx`
-- Edit: `src/routes/signup.athlete.adult.tsx`
-- Edit: `src/routes/signup.parent.athletes.tsx` (add invite input + promo field + wiring)
-- Edit: `src/routes/_authenticated/coach.onboarding.tsx` (add promo field on review step)
-- Edit: `src/routes/_authenticated/athlete.onboarding.tsx` (add promo field)
+## Out of scope
+
+- Coach and adult-athlete onboarding pages (`coach.onboarding.tsx`, `athlete.onboarding.tsx`) — unchanged for now. Can mirror this pattern in a follow-up if desired.
+- No changes to page 1 signup routes.
+- No new design tokens, no new components, no logic changes.
 
 ## Verification
 
-- Load `/i/<valid-coach-code>` signed out → picks role → lands on `/signup/parent?invite=…` with no visible code field → completes email signup → page 2 shows the code prefilled → submitting links the coach.
-- Same flow with Google OAuth (verifies the sessionStorage/localStorage stash still bridges the redirect).
-- Load `/signup/parent` directly (no URL param) → page 1 has no invite/promo fields → page 2 shows both, both optional.
-- Load `/signup/parent?promo=FRIENDS10` → page 1 hides the field → promo applied after profile creation on page 2.
-- Coach flow: `/i/<parent-code>` → `/signup/coach?invite=…` still shows the "Kim invited you" banner, no input field, auto-claim on completion.
+- Typecheck passes.
+- Manual: visit `/signup/parent/athletes` → section collapsed, badge hidden. Visit `/signup/parent/athletes?code=ABCD1234` → section open, coach code prefilled. Collapse it → badge appears.
