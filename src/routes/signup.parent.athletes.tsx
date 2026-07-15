@@ -305,7 +305,16 @@ function ParentAthletesPage() {
             </Button>
           </div>
 
-          <PromoCodeField value={promoCode} onChange={setPromoCode} />
+          <Collapsible defaultOpen={Boolean(code) || Boolean(promoCode)}>
+            {({ open }: { open: boolean }) => null /* type helper only */}
+          </Collapsible>
+
+          <OptionalCodesSection
+            code={code}
+            setCode={setCode}
+            promoCode={promoCode}
+            setPromoCode={setPromoCode}
+          />
 
           {error && <p className="text-sm text-destructive">{error}</p>}
 
