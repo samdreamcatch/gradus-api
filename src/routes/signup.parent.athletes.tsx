@@ -323,21 +323,22 @@ function ParentAthletesPage() {
             className="space-y-3"
           >
             <CollapsibleTrigger asChild>
-              <Button
+              <button
                 type="button"
-                variant="ghost"
-                className="flex w-full items-center justify-between px-2 text-accent-ink"
+                className="group flex w-full items-center justify-between border-t border-divider pt-4 text-left"
               >
-                <span className="flex items-center gap-2">
-                  Optional — enter a coach or promo code
-                  {!codesOpen && hasPrefill && (
-                    <Badge variant="secondary">Code applied</Badge>
-                  )}
+                <span className="flex items-baseline gap-2">
+                  <span className="font-display text-lg text-text-primary">
+                    Coach or promo code
+                  </span>
+                  <Badge variant="secondary" className="text-[10px] uppercase tracking-widest">
+                    {!codesOpen && hasPrefill ? "Applied" : "Optional"}
+                  </Badge>
                 </span>
                 <ChevronDown
-                  className={`size-4 transition-transform ${codesOpen ? "rotate-180" : ""}`}
+                  className={`size-4 text-text-secondary transition-transform ${codesOpen ? "rotate-180" : ""}`}
                 />
-              </Button>
+              </button>
             </CollapsibleTrigger>
             <CollapsibleContent className="space-y-4 pt-1">
               <div className="space-y-1.5">
