@@ -388,7 +388,13 @@ function OnboardingForm({
         }
       }
     }
-    navigate({ to: "/coach/roster" });
+    // Route based on entitlement: club coaches straight into the app,
+    // individuals to the paywall until Stripe checkout completes.
+    if (pathValue.path === "club") {
+      navigate({ to: "/coach/roster" });
+    } else {
+      navigate({ to: "/coach/paywall" });
+    }
   };
 
   const busy = saveProfile.isPending || saveLevels.isPending || complete.isPending;
