@@ -82,11 +82,21 @@ export const getCoachProfile = createServerFn({ method: "GET" })
     const supabase = context.supabase as Client;
     const profile = await ensureProfile(supabase, context.userId, (context.claims as { user_metadata?: Record<string, unknown> }).user_metadata);
 
-    const levels = await supabase
-      .from("coach_levels")
-      .select("sport, level_key, practice_hours_per_week")
-      .eq("coach_id", profile.id);
+    const [levels, org] = await Promise.all([
+      supabase
+        .from("coach_levels")
+        .select("sport, level_key, practice_hours_per_week")
+        .eq("coach_id", profile.id),
+      profile.organization_id
+        ? supabase
+            .from("organizations")
+            .select("name")
+            .eq("id", profile.organization_id)
+            .maybeSingle()
+        : Promise.resolve({ data: null, error: null } as const),
+    ]);
     if (levels.error) dbError(levels.error);
+    if (org.error) dbError(org.error);
 
     return {
       profile: {
@@ -94,6 +104,9 @@ export const getCoachProfile = createServerFn({ method: "GET" })
         firstName: profile.first_name,
         lastName: profile.last_name,
         onboardedAt: profile.onboarded_at,
+        entitlement: (profile.entitlement ?? "pending") as CoachProfileDTO["entitlement"],
+        organizationId: profile.organization_id ?? null,
+        organizationName: org.data?.name ?? null,
       } as CoachProfileDTO,
       levels: (levels.data ?? []).map((r) => ({
         sport: r.sport,
