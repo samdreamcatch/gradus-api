@@ -342,8 +342,11 @@ function ParentAthletesPage() {
             <CollapsibleContent className="space-y-4 pt-1">
               <div className="space-y-1.5">
                 <div className="flex items-center gap-1.5">
-                  <Label htmlFor="coach-invite-code">
-                    Coach invite code <span className="text-text-tertiary">(optional)</span>
+                  <Label htmlFor="coach-invite-code" className="flex items-center gap-2">
+                    Coach invite code
+                    <Badge variant="secondary" className="text-[10px] uppercase tracking-widest">
+                      Optional
+                    </Badge>
                   </Label>
                   <TooltipProvider delayDuration={150}>
                     <Tooltip>
