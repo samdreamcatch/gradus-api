@@ -271,8 +271,28 @@ export function DevTools() {
                       size="sm"
                       disabled={busy}
                       onClick={async () => {
-                        await navigate({ to: step.to });
-                        setOpen(false);
+                        setBusy(true);
+                        try {
+                          if (
+                            session.role === "coach" &&
+                            step.to === "/coach/onboarding" &&
+                            session.userId
+                          ) {
+                            const { error } = await supabase
+                              .from("coach_profiles")
+                              .update({ onboarded_at: null })
+                              .eq("user_id", session.userId);
+                            if (error) throw error;
+                            await queryClient.invalidateQueries();
+                            await router.invalidate();
+                          }
+                          await navigate({ to: step.to });
+                          setOpen(false);
+                        } catch (e) {
+                          toast.error(`Jump failed: ${(e as Error).message}`);
+                        } finally {
+                          setBusy(false);
+                        }
                       }}
                       className="justify-start"
                     >
@@ -280,6 +300,7 @@ export function DevTools() {
                     </Button>
                   ))}
                 </div>
+
               ) : (
                 <p className="text-xs text-text-secondary">
                   Sign in to see steps for this role.
