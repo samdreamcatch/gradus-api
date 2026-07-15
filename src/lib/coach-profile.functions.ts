@@ -6,11 +6,20 @@ import type { Database } from "@/integrations/supabase/types";
 
 import { dbError } from "./db-error";
 
+export type CoachEntitlement =
+  | "pending"
+  | "club_covered"
+  | "paid"
+  | "promo_free";
+
 export interface CoachProfileDTO {
   id: string;
   firstName: string;
   lastName: string;
   onboardedAt: string | null;
+  entitlement: CoachEntitlement;
+  organizationId: string | null;
+  organizationName: string | null;
 }
 
 export interface CoachLevelDTO {

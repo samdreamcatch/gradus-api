@@ -42,6 +42,7 @@ import { Route as AuthenticatedParentSettingsRouteImport } from './routes/_authe
 import { Route as AuthenticatedCoachSettingsRouteImport } from './routes/_authenticated/coach.settings'
 import { Route as AuthenticatedCoachRosterRouteImport } from './routes/_authenticated/coach.roster'
 import { Route as AuthenticatedCoachPlansRouteImport } from './routes/_authenticated/coach.plans'
+import { Route as AuthenticatedCoachPaywallRouteImport } from './routes/_authenticated/coach.paywall'
 import { Route as AuthenticatedCoachOnboardingRouteImport } from './routes/_authenticated/coach.onboarding'
 import { Route as AuthenticatedCoachCelebrationPreviewRouteImport } from './routes/_authenticated/coach/celebration-preview'
 import { Route as AuthenticatedAthleteSettingsRouteImport } from './routes/_authenticated/athlete.settings'
@@ -243,6 +244,12 @@ const AuthenticatedCoachPlansRoute = AuthenticatedCoachPlansRouteImport.update({
   path: '/plans',
   getParentRoute: () => AuthenticatedCoachRoute,
 } as any)
+const AuthenticatedCoachPaywallRoute =
+  AuthenticatedCoachPaywallRouteImport.update({
+    id: '/paywall',
+    path: '/paywall',
+    getParentRoute: () => AuthenticatedCoachRoute,
+  } as any)
 const AuthenticatedCoachOnboardingRoute =
   AuthenticatedCoachOnboardingRouteImport.update({
     id: '/onboarding',
@@ -454,6 +461,7 @@ export interface FileRoutesByFullPath {
   '/athlete/settings': typeof AuthenticatedAthleteSettingsRoute
   '/coach/celebration-preview': typeof AuthenticatedCoachCelebrationPreviewRoute
   '/coach/onboarding': typeof AuthenticatedCoachOnboardingRoute
+  '/coach/paywall': typeof AuthenticatedCoachPaywallRoute
   '/coach/plans': typeof AuthenticatedCoachPlansRouteWithChildren
   '/coach/roster': typeof AuthenticatedCoachRosterRoute
   '/coach/settings': typeof AuthenticatedCoachSettingsRoute
@@ -515,6 +523,7 @@ export interface FileRoutesByTo {
   '/athlete/settings': typeof AuthenticatedAthleteSettingsRoute
   '/coach/celebration-preview': typeof AuthenticatedCoachCelebrationPreviewRoute
   '/coach/onboarding': typeof AuthenticatedCoachOnboardingRoute
+  '/coach/paywall': typeof AuthenticatedCoachPaywallRoute
   '/coach/roster': typeof AuthenticatedCoachRosterRoute
   '/coach/settings': typeof AuthenticatedCoachSettingsRoute
   '/parent/settings': typeof AuthenticatedParentSettingsRoute
@@ -581,6 +590,7 @@ export interface FileRoutesById {
   '/_authenticated/athlete/settings': typeof AuthenticatedAthleteSettingsRoute
   '/_authenticated/coach/celebration-preview': typeof AuthenticatedCoachCelebrationPreviewRoute
   '/_authenticated/coach/onboarding': typeof AuthenticatedCoachOnboardingRoute
+  '/_authenticated/coach/paywall': typeof AuthenticatedCoachPaywallRoute
   '/_authenticated/coach/plans': typeof AuthenticatedCoachPlansRouteWithChildren
   '/_authenticated/coach/roster': typeof AuthenticatedCoachRosterRoute
   '/_authenticated/coach/settings': typeof AuthenticatedCoachSettingsRoute
@@ -648,6 +658,7 @@ export interface FileRouteTypes {
     | '/athlete/settings'
     | '/coach/celebration-preview'
     | '/coach/onboarding'
+    | '/coach/paywall'
     | '/coach/plans'
     | '/coach/roster'
     | '/coach/settings'
@@ -709,6 +720,7 @@ export interface FileRouteTypes {
     | '/athlete/settings'
     | '/coach/celebration-preview'
     | '/coach/onboarding'
+    | '/coach/paywall'
     | '/coach/roster'
     | '/coach/settings'
     | '/parent/settings'
@@ -774,6 +786,7 @@ export interface FileRouteTypes {
     | '/_authenticated/athlete/settings'
     | '/_authenticated/coach/celebration-preview'
     | '/_authenticated/coach/onboarding'
+    | '/_authenticated/coach/paywall'
     | '/_authenticated/coach/plans'
     | '/_authenticated/coach/roster'
     | '/_authenticated/coach/settings'
@@ -1067,6 +1080,13 @@ declare module '@tanstack/react-router' {
       path: '/plans'
       fullPath: '/coach/plans'
       preLoaderRoute: typeof AuthenticatedCoachPlansRouteImport
+      parentRoute: typeof AuthenticatedCoachRoute
+    }
+    '/_authenticated/coach/paywall': {
+      id: '/_authenticated/coach/paywall'
+      path: '/paywall'
+      fullPath: '/coach/paywall'
+      preLoaderRoute: typeof AuthenticatedCoachPaywallRouteImport
       parentRoute: typeof AuthenticatedCoachRoute
     }
     '/_authenticated/coach/onboarding': {
@@ -1375,6 +1395,7 @@ const AuthenticatedCoachPlansRouteWithChildren =
 interface AuthenticatedCoachRouteChildren {
   AuthenticatedCoachCelebrationPreviewRoute: typeof AuthenticatedCoachCelebrationPreviewRoute
   AuthenticatedCoachOnboardingRoute: typeof AuthenticatedCoachOnboardingRoute
+  AuthenticatedCoachPaywallRoute: typeof AuthenticatedCoachPaywallRoute
   AuthenticatedCoachPlansRoute: typeof AuthenticatedCoachPlansRouteWithChildren
   AuthenticatedCoachRosterRoute: typeof AuthenticatedCoachRosterRoute
   AuthenticatedCoachSettingsRoute: typeof AuthenticatedCoachSettingsRoute
@@ -1387,6 +1408,7 @@ const AuthenticatedCoachRouteChildren: AuthenticatedCoachRouteChildren = {
   AuthenticatedCoachCelebrationPreviewRoute:
     AuthenticatedCoachCelebrationPreviewRoute,
   AuthenticatedCoachOnboardingRoute: AuthenticatedCoachOnboardingRoute,
+  AuthenticatedCoachPaywallRoute: AuthenticatedCoachPaywallRoute,
   AuthenticatedCoachPlansRoute: AuthenticatedCoachPlansRouteWithChildren,
   AuthenticatedCoachRosterRoute: AuthenticatedCoachRosterRoute,
   AuthenticatedCoachSettingsRoute: AuthenticatedCoachSettingsRoute,
