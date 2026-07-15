@@ -399,9 +399,17 @@ function CoachStep({ onDone }: { onDone: (sports: string[]) => void }) {
   const linkMut = useMutation({
     mutationFn: async () =>
       linkFn({ data: { code: code.trim().toUpperCase(), sports: selectedSports } }),
-    onSuccess: () => onDone(selectedSports),
+    onSuccess: () => {
+      stashPromoIfAny();
+      onDone(selectedSports);
+    },
     onError: (e) => setError(e instanceof Error ? e.message : "Something went wrong"),
   });
+
+  const handleSkip = () => {
+    stashPromoIfAny();
+    onDone([]);
+  };
 
   const codeValid = /^[A-Z2-9]{8}$/.test(code.trim().toUpperCase());
 
