@@ -293,15 +293,20 @@ function OnboardingForm({
     );
   };
 
-  const totalSteps = 5;
-  type StepKind = "profile" | "sports" | "levels" | "hours" | "invite" | "review";
+  type StepKind = "path" | "profile" | "sports" | "levels" | "hours" | "invite" | "review";
   const stepOrder: StepKind[] = needsName
-    ? ["profile", "levels", "hours", "invite", "review"]
-    : ["sports", "levels", "hours", "invite", "review"];
+    ? ["path", "profile", "levels", "hours", "invite", "review"]
+    : ["path", "sports", "levels", "hours", "invite", "review"];
+  const totalSteps = stepOrder.length;
   const currentKind = stepOrder[step - 1];
   const isLastStep = step === totalSteps;
 
   const canContinue = (() => {
+    if (currentKind === "path") {
+      if (pathValue.path === "individual") return true; // promo optional
+      if (pathValue.path === "club") return pathValue.orgVerified;
+      return false;
+    }
     if (currentKind === "profile")
       return (
         firstName.trim().length > 0 &&
@@ -322,8 +327,13 @@ function OnboardingForm({
     return true;
   })();
 
+  const claimOrg = useServerFn(claimOrganizationInviteCode);
+
   const handleContinue = async () => {
     try {
+      if (currentKind === "path" && pathValue.path === "club" && !alreadyClub) {
+        await claimOrg({ data: { code: pathValue.orgCode } });
+      }
       if (currentKind === "profile") {
         await saveProfile.mutateAsync({
           firstName: firstName.trim(),
