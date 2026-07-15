@@ -250,11 +250,11 @@ function ParentAthletesPage() {
 
           <div className="space-y-2">
             <Label>
-              {code
+              {codeIsFull
                 ? `Which of your athletes train${athletes.length > 1 ? "" : "s"} with${coachName ? ` Coach ${coachName}` : " this coach"}?`
                 : `Your athlete${athletes.length > 1 ? "s" : ""}`}
             </Label>
-            {code && (
+            {codeIsFull && (
               <p className="text-xs text-text-tertiary">
                 Add only the athletes connected to this coach. You can link other coaches later.
               </p>
