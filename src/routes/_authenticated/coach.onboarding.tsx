@@ -549,6 +549,9 @@ function OnboardingForm({ data }: { data: OnboardingData }) {
         {currentKind === "invite" && (
           <Step title="Invite Parents">
             <InviteCard />
+            <div className="mt-6">
+              <PromoCodeField value={promoCode} onChange={setPromoCode} />
+            </div>
           </Step>
         )}
 
