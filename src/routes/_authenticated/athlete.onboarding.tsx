@@ -2,16 +2,12 @@ import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronDown, HelpCircle } from "lucide-react";
+import { HelpCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+
 import { Textarea } from "@/components/ui/textarea";
 import {
   Tooltip,
@@ -374,11 +370,8 @@ function CoachStep({ onDone }: { onDone: (sports: string[]) => void }) {
   >(null);
   const [selectedSports, setSelectedSports] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const hasPrefill = Boolean(code) || Boolean(promoCode);
-  const [codesOpen, setCodesOpen] = useState<boolean>(hasPrefill);
-  useEffect(() => {
-    if (hasPrefill) setCodesOpen(true);
-  }, [hasPrefill]);
+
+
 
   const stashPromoIfAny = () => {
     if (promoCode.trim()) savePendingPromoCode(promoCode);
@@ -455,81 +448,70 @@ function CoachStep({ onDone }: { onDone: (sports: string[]) => void }) {
             }
           }}
         >
-          <Collapsible
-            open={codesOpen}
-            onOpenChange={setCodesOpen}
-            className="space-y-3"
-          >
-            <CollapsibleTrigger asChild>
-              <Button
-                type="button"
-                variant="ghost"
-                className="flex w-full items-center justify-between px-2 text-accent-ink"
-              >
-                <span className="flex items-center gap-2">
-                  Optional — enter a coach or promo code
-                  {!codesOpen && hasPrefill && (
-                    <Badge variant="secondary">Code applied</Badge>
-                  )}
-                </span>
-                <ChevronDown
-                  className={`size-4 transition-transform ${codesOpen ? "rotate-180" : ""}`}
-                />
-              </Button>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="space-y-4 pt-1">
-              <div className="space-y-2">
-                <div className="flex items-center gap-1.5">
-                  <Label htmlFor="code" className="flex items-center gap-2">
-                    Coach invite code
-                    <Badge variant="secondary" className="text-[10px] uppercase tracking-widest">
-                      Optional
-                    </Badge>
-                  </Label>
-                  <TooltipProvider delayDuration={150}>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button
-                          type="button"
-                          aria-label="More about coach invite code"
-                          className="text-text-tertiary hover:text-text-secondary"
-                        >
-                          <HelpCircle className="size-3.5" />
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent side="top" className="max-w-xs">
-                        Have a coach&apos;s 8-character code? Enter it to link your athlete now. You can skip this and add a coach later.
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
-                <Input
-                  id="code"
-                  value={code}
-                  onChange={(e) => setCode(e.target.value.toUpperCase())}
-                  maxLength={8}
-                  placeholder="––––––––"
-                  className="text-center font-mono text-2xl tracking-[0.4em] uppercase h-14"
-                  autoComplete="off"
-                />
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <div className="flex items-center gap-1.5">
+                <Label htmlFor="code" className="flex items-center gap-2">
+                  Coach invite code
+                  <Badge variant="secondary" className="text-[10px] uppercase tracking-widest">
+                    Optional
+                  </Badge>
+                </Label>
+                <TooltipProvider delayDuration={150}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        aria-label="More about coach invite code"
+                        className="text-text-tertiary hover:text-text-secondary"
+                      >
+                        <HelpCircle className="size-3.5" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-xs">
+                      Have a coach&apos;s 8-character code? Enter it to link your athlete now. You can skip this and add a coach later.
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               </div>
+              <Input
+                id="code"
+                value={code}
+                onChange={(e) => setCode(e.target.value.toUpperCase())}
+                maxLength={8}
+                placeholder="––––––––"
+                className="text-center font-mono text-2xl tracking-[0.4em] uppercase h-14"
+                autoComplete="off"
+              />
+            </div>
 
-              <PromoCodeField value={promoCode} onChange={setPromoCode} />
-            </CollapsibleContent>
-          </Collapsible>
+            <PromoCodeField value={promoCode} onChange={setPromoCode} />
+          </div>
 
           {error && <p className="text-sm text-destructive">{error}</p>}
 
-          <Button
-            type="submit"
-            className="w-full"
-            disabled={
-              previewMut.isPending ||
-              (code.trim().length > 0 && !codeValid)
-            }
-          >
-            {previewMut.isPending ? "Looking up…" : "Continue"}
-          </Button>
+          <div className="space-y-2 pt-2">
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={
+                previewMut.isPending ||
+                (code.trim().length > 0 && !codeValid)
+              }
+            >
+              {previewMut.isPending ? "Looking up…" : "Continue"}
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              className="w-full"
+              onClick={handleSkip}
+              disabled={previewMut.isPending}
+            >
+              Skip for now
+            </Button>
+          </div>
+
         </form>
       ) : (
         <div className="space-y-6">
