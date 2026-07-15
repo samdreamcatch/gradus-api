@@ -206,7 +206,7 @@ function ParentAthletesPage() {
               </h1>
 
               <p className="mt-2 text-sm text-text-secondary">
-                Add yourself and each athlete in your family. You can invite a coach to join them after signup.
+                Add yourself and each athlete in your family.
               </p>
             </>
           )}
