@@ -25,7 +25,7 @@ import { claimParentInvite } from "@/lib/parent-signup.functions";
 import { claimOrganizationInviteCode } from "@/lib/coach-org.functions";
 
 import { InviteCard } from "@/components/onboarding/invite-card";
-import { PromoCodeField } from "@/components/signup/promo-code-field";
+
 import { CoachPathChoice, type CoachPathValue } from "@/components/onboarding/coach-path-choice";
 import { savePendingPromoCode } from "@/lib/pending-promo-code";
 import { CoachBottomNav } from "@/components/coach/bottom-nav";
