@@ -305,16 +305,54 @@ function ParentAthletesPage() {
             </Button>
           </div>
 
-          <Collapsible defaultOpen={Boolean(code) || Boolean(promoCode)}>
-            {({ open }: { open: boolean }) => null /* type helper only */}
-          </Collapsible>
+          <Collapsible
+            open={codesOpen}
+            onOpenChange={setCodesOpen}
+            className="space-y-3"
+          >
+            <CollapsibleTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                className="flex w-full items-center justify-between px-2 text-accent-ink"
+              >
+                <span className="flex items-center gap-2">
+                  Optional — enter a coach or promo code
+                  {!codesOpen && hasPrefill && (
+                    <Badge variant="secondary">Code applied</Badge>
+                  )}
+                </span>
+                <ChevronDown
+                  className={`size-4 transition-transform ${codesOpen ? "rotate-180" : ""}`}
+                />
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="space-y-4 pt-1">
+              <div className="space-y-1.5">
+                <Label htmlFor="coach-invite-code">
+                  Coach invite code <span className="text-text-tertiary">(optional)</span>
+                </Label>
+                <Input
+                  id="coach-invite-code"
+                  name="coach-invite-code"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value.toUpperCase().slice(0, 8))}
+                  maxLength={8}
+                  placeholder="––––––––"
+                  className="font-mono tracking-[0.25em] uppercase"
+                  autoComplete="off"
+                  data-lpignore="true"
+                  data-1p-ignore="true"
+                  data-bwignore="true"
+                />
+                <p className="text-xs text-text-tertiary">
+                  Have a coach&apos;s 8-character code? Enter it to link your athlete now. You can skip this and add a coach later.
+                </p>
+              </div>
 
-          <OptionalCodesSection
-            code={code}
-            setCode={setCode}
-            promoCode={promoCode}
-            setPromoCode={setPromoCode}
-          />
+              <PromoCodeField value={promoCode} onChange={setPromoCode} />
+            </CollapsibleContent>
+          </Collapsible>
 
           {error && <p className="text-sm text-destructive">{error}</p>}
 
