@@ -14,7 +14,6 @@ import { SportsPoster } from "@/components/ui/sports-poster";
 import { TurnstileWidget } from "@/components/auth/turnstile";
 import { verifyTurnstileToken } from "@/lib/turnstile.functions";
 import { CURRENT_TERMS_VERSION, stashPendingTermsAccept, clearPendingTermsAccept } from "@/lib/terms";
-import { PromoCodeField } from "@/components/signup/promo-code-field";
 import { savePendingPromoCode, clearPendingPromoCode } from "@/lib/pending-promo-code";
 
 import { z } from "zod";
@@ -28,6 +27,7 @@ const searchSchema = z.object({
     .length(8)
     .regex(/^[A-Z2-9]+$/)
     .optional(),
+  promo: z.string().trim().toUpperCase().max(32).optional(),
 });
 
 export const Route = createFileRoute("/signup/athlete/adult")({
@@ -38,20 +38,18 @@ export const Route = createFileRoute("/signup/athlete/adult")({
 type PendingAction = "email" | "google";
 
 /**
- * Self-serve signup for adult (18+) athletes. Mirrors the coach/parent signup
- * shape: ToS + optional coach-invite + promo above credentials. Name and
- * date-of-birth are collected on the first onboarding step, where the DB
- * trigger `enforce_adult_self_managed` is the authoritative age gate.
+ * Self-serve signup for adult (18+) athletes. Name, date-of-birth, and any
+ * coach-invite / promo code are collected on the first onboarding step
+ * (`/athlete/onboarding`). The DB trigger `enforce_adult_self_managed` is the
+ * authoritative age gate.
  */
 function AdultAthleteSignupPage() {
   const navigate = useNavigate();
   const verifyCaptcha = useServerFn(verifyTurnstileToken);
-  const { invite } = Route.useSearch();
+  const { invite, promo } = Route.useSearch();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [coachCode, setCoachCode] = useState(invite ?? "");
-  const [promoCode, setPromoCode] = useState("");
 
   const [agreed, setAgreed] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
@@ -67,11 +65,6 @@ function AdultAthleteSignupPage() {
     supabase.auth.getSession().then(({ data }) => setIsAuthed(!!data.session));
   }, []);
 
-  // Sync visible field if the search param arrives (e.g. OG deeplink).
-  useEffect(() => {
-    if (invite) setCoachCode(invite);
-  }, [invite]);
-
   // Stash a coach invite from `/i/CODE` so athlete onboarding's coach step
   // prefills + auto-previews it after signup completes.
   useEffect(() => {
@@ -83,9 +76,6 @@ function AdultAthleteSignupPage() {
     }
   }, [invite]);
 
-  const trimmedCode = coachCode.trim().toUpperCase();
-  const coachCodeValid = trimmedCode.length === 0 || /^[A-Z2-9]{8}$/.test(trimmedCode);
-
   const resetCaptcha = () => {
     setCaptchaToken(null);
     setCaptchaKey((k) => k + 1);
@@ -93,10 +83,10 @@ function AdultAthleteSignupPage() {
 
   const stashPending = () => {
     stashPendingTermsAccept();
-    savePendingPromoCode(promoCode);
-    if (trimmedCode.length === 8) {
+    if (promo) savePendingPromoCode(promo);
+    if (invite) {
       try {
-        localStorage.setItem(PENDING_COACH_INVITE_KEY, trimmedCode);
+        localStorage.setItem(PENDING_COACH_INVITE_KEY, invite);
       } catch {
         /* ignore */
       }
@@ -175,10 +165,6 @@ function AdultAthleteSignupPage() {
       setShowAgreeHint(true);
       return;
     }
-    if (!coachCodeValid) {
-      setError("Coach invite code must be 8 characters.");
-      return;
-    }
     if (isAuthed) {
       void doEmailSignup(null);
       return;
@@ -195,10 +181,6 @@ function AdultAthleteSignupPage() {
     setError(null);
     if (!agreed) {
       setShowAgreeHint(true);
-      return;
-    }
-    if (!coachCodeValid) {
-      setError("Coach invite code must be 8 characters.");
       return;
     }
     if (captchaToken) {
@@ -262,32 +244,6 @@ function AdultAthleteSignupPage() {
               Please accept the Terms to continue.
             </p>
           )}
-        </div>
-
-        <div className="mb-4 space-y-2">
-          <Label htmlFor="coach-code">
-            Coach invite code <span className="text-text-tertiary">(optional)</span>
-          </Label>
-          <Input
-            id="coach-code"
-            name="coach-invite-code"
-            value={coachCode}
-            onChange={(e) => setCoachCode(e.target.value.toUpperCase().slice(0, 8))}
-            maxLength={8}
-            placeholder="––––––––"
-            className="font-mono tracking-[0.25em] uppercase"
-            autoComplete="off"
-            data-lpignore="true"
-            data-1p-ignore="true"
-            data-bwignore="true"
-          />
-          <p className="text-xs text-text-tertiary">
-            Got an 8-character code from your coach? Enter it to connect on signup.
-          </p>
-        </div>
-
-        <div className="mb-6">
-          <PromoCodeField value={promoCode} onChange={setPromoCode} />
         </div>
 
         <Separator className="mb-6" />
