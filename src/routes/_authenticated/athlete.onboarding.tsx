@@ -450,30 +450,13 @@ function CoachStep({ onDone }: { onDone: (sports: string[]) => void }) {
         >
           <div className="space-y-4">
             <div className="space-y-2">
-              <div className="flex items-center gap-1.5">
-                <Label htmlFor="code" className="flex items-center gap-2">
-                  Coach invite code
-                  <Badge variant="secondary" className="text-[10px] uppercase tracking-widest">
-                    Optional
-                  </Badge>
-                </Label>
-                <TooltipProvider delayDuration={150}>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button
-                        type="button"
-                        aria-label="More about coach invite code"
-                        className="text-text-tertiary hover:text-text-secondary"
-                      >
-                        <HelpCircle className="size-3.5" />
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent side="top" className="max-w-xs">
-                      Have a coach&apos;s 8-character code? Enter it to link your athlete now. You can skip this and add a coach later.
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
+              <Label htmlFor="code" className="flex items-center gap-2">
+                Coach invite code
+                <Badge variant="secondary" className="text-[10px] uppercase tracking-widest">
+                  Optional
+                </Badge>
+              </Label>
+
               <Input
                 id="code"
                 value={code}
