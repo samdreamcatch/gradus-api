@@ -82,14 +82,14 @@ function PaywallPage() {
     return () => window.clearInterval(iv);
   }, [checkoutStatus, qc]);
 
-  if (
+  const isEntitled =
     entitlement === "paid" ||
     entitlement === "promo_free" ||
-    entitlement === "club_covered"
-  ) {
-    navigate({ to: "/coach/roster", replace: true });
-    return null;
-  }
+    entitlement === "club_covered";
+
+  useEffect(() => {
+    if (isEntitled) navigate({ to: "/coach/roster", replace: true });
+  }, [isEntitled, navigate]);
 
   const handleSignOut = async () => {
     await qc.cancelQueries();
@@ -97,6 +97,7 @@ function PaywallPage() {
     await supabase.auth.signOut();
     navigate({ to: "/auth", replace: true });
   };
+
 
   const startCheckout = useCallback(
     async (tier: Tier) => {
