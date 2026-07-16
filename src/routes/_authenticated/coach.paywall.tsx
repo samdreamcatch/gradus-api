@@ -46,6 +46,8 @@ const FEATURES: Record<Tier, string[]> = {
     "Everything in Coach",
     "Advanced scheduling",
     "Priority support",
+    "Multi-coach visibility",
+    "Up to 75 athletes",
   ],
 };
 
