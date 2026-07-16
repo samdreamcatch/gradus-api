@@ -33,7 +33,7 @@ export type OrgOption = {
 interface Props {
   selected: OrgOption | null;
   onSelect: (org: OrgOption) => void;
-  onNotListed: () => void;
+  onNotListed: (typedQuery: string) => void;
 }
 
 /**
@@ -169,7 +169,7 @@ export function OrgSearchCombobox({ selected, onSelect, onNotListed }: Props) {
               <CommandItem
                 value="__not-listed__"
                 onSelect={() => {
-                  onNotListed();
+                  onNotListed(debounced);
                   setOpen(false);
                 }}
                 className="text-text-secondary"

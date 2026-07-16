@@ -155,6 +155,51 @@ export const getPopularOrganizations = createServerFn({ method: "GET" })
     return { organizations: ranked };
   });
 
+/**
+ * Silent lead capture: records that a coach bounced off the Club path into
+ * Individual signup, either because their club wasn't listed or because
+ * they picked a listed club but didn't have a code. No UI prompt, no
+ * message body from the coach — used to gauge demand for the outreach
+ * flow we deferred.
+ */
+export const recordSilentClubLead = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        source: z.enum(["not_listed", "no_code"]),
+        typedQuery: z.string().trim().max(200).optional(),
+        orgId: z.string().uuid().nullable().optional(),
+        orgName: z.string().trim().max(200).nullable().optional(),
+        orgCity: z.string().trim().max(120).nullable().optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const supabase = context.supabase as Client;
+    const email = (context.claims as { email?: string })?.email ?? "";
+
+    const requestedOrgName =
+      data.orgName?.trim() ||
+      data.typedQuery?.trim() ||
+      "(unknown — coach did not name a club)";
+
+    const messageBody =
+      data.source === "no_code"
+        ? `[silent:no_code] Coach picked listed org (id=${data.orgId ?? "?"}) but continued as individual without a code.`
+        : `[silent:not_listed] Coach chose 'not listed' fallback${data.typedQuery ? ` after searching "${data.typedQuery}"` : ""}.`;
+
+    const { error } = await supabase.from("organization_leads").insert({
+      coach_user_id: context.userId,
+      coach_email: String(email),
+      requested_org_name: requestedOrgName,
+      requested_org_city: data.orgCity ?? null,
+      channel: "later",
+      message_body: messageBody,
+    });
+    if (error) dbError(error);
+    return { ok: true };
+  });
 
 
 /**
