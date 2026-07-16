@@ -59,6 +59,132 @@ export const getOrganizationByInviteCode = createServerFn({ method: "POST" })
   });
 
 /**
+ * Validate that `code` unlocks the specific `orgId` the coach picked from
+ * the search dropdown. Prevents accidentally joining the wrong club with
+ * someone else's code.
+ */
+export const verifyOrgCodeForOrg = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ orgId: z.string().uuid(), code: codeSchema }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const supabase = context.supabase as Client;
+    const { data: row, error } = await supabase
+      .from("organization_invite_codes")
+      .select("organization_id, active, organizations!inner(id, name, active)")
+      .eq("code", data.code)
+      .maybeSingle();
+    if (error) dbError(error);
+    if (!row || !row.active) return { ok: false as const, reason: "unknown" as const };
+    const org = row.organizations as { id: string; name: string; active: boolean };
+    if (!org.active) return { ok: false as const, reason: "inactive" as const };
+    if (org.id !== data.orgId) return { ok: false as const, reason: "mismatch" as const };
+    return { ok: true as const, name: org.name };
+  });
+
+/** Public search for the org picker. Coach signs in first, so this is auth-only. */
+export const searchOrganizations = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ query: z.string().trim().max(80) }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const supabase = context.supabase as Client;
+    const q = data.query.trim();
+    let builder = supabase
+      .from("organizations")
+      .select("id, name, city, region, logo_url")
+      .eq("active", true)
+      .eq("is_listed", true);
+    if (q.length > 0) {
+      // Escape %/_ then match anywhere in name/city.
+      const esc = q.replace(/[%_]/g, "\\$&");
+      builder = builder.or(`name.ilike.%${esc}%,city.ilike.%${esc}%`);
+    }
+    const { data: rows, error } = await builder
+      .order("name", { ascending: true })
+      .limit(8);
+    if (error) dbError(error);
+    return {
+      organizations: (rows ?? []).map((o) => ({
+        id: o.id,
+        name: o.name,
+        city: o.city as string | null,
+        region: o.region as string | null,
+        logoUrl: o.logo_url as string | null,
+      })),
+    };
+  });
+
+/** Top orgs by coach count — used to seed the empty search state. */
+export const getPopularOrganizations = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async () => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const [orgs, coaches] = await Promise.all([
+      supabaseAdmin
+        .from("organizations")
+        .select("id, name, city, region, logo_url")
+        .eq("active", true)
+        .eq("is_listed", true),
+      supabaseAdmin
+        .from("coach_profiles")
+        .select("organization_id")
+        .not("organization_id", "is", null),
+    ]);
+    if (orgs.error) dbError(orgs.error);
+    if (coaches.error) dbError(coaches.error);
+    const tally = new Map<string, number>();
+    for (const c of coaches.data ?? []) {
+      const id = c.organization_id as string | null;
+      if (!id) continue;
+      tally.set(id, (tally.get(id) ?? 0) + 1);
+    }
+    const ranked = (orgs.data ?? [])
+      .map((o) => ({
+        id: o.id,
+        name: o.name,
+        city: o.city as string | null,
+        region: o.region as string | null,
+        logoUrl: o.logo_url as string | null,
+        count: tally.get(o.id) ?? 0,
+      }))
+      .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
+      .slice(0, 8);
+    return { organizations: ranked };
+  });
+
+/** Coach outreach — creates a "help onboard my club" lead for Gradus admins. */
+export const createOrganizationLead = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        requestedOrgName: z.string().trim().min(1).max(200),
+        requestedOrgCity: z.string().trim().max(120).nullable().optional(),
+        channel: z.enum(["share", "copy", "mailto", "sms", "later"]),
+        messageBody: z.string().trim().min(1).max(2000),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const supabase = context.supabase as Client;
+    const email = context.claims?.email ?? "";
+    const { error } = await supabase.from("organization_leads").insert({
+      coach_user_id: context.userId,
+      coach_email: String(email),
+      requested_org_name: data.requestedOrgName,
+      requested_org_city: data.requestedOrgCity ?? null,
+      channel: data.channel,
+      message_body: data.messageBody,
+    });
+    if (error) dbError(error);
+    return { ok: true };
+  });
+
+
+/**
  * Link the current coach to an org via invite code and mark them as
  * club-covered. Idempotent — safe to call repeatedly with the same code.
  */
