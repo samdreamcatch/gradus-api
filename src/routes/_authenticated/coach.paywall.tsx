@@ -160,7 +160,7 @@ function PaywallPage() {
           <Sparkles className="h-6 w-6" />
         </div>
         <h1 className="text-center font-display text-h2 text-text-primary">
-          Get your first 3 months free while Gradus is in Beta
+          Get your first 3 months free
         </h1>
         <p className="mt-2 max-w-md text-center text-sm text-text-secondary">
           Pick a plan to activate your workspace. You won't be charged until your
