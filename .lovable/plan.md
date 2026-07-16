@@ -1,33 +1,66 @@
-## Scope back the "Not listed" flow
+## Goal
+Wire real payments so individual coaches pick a plan, start a 3-month free trial, and unlock the app. Club-covered and promo_free coaches continue to bypass checkout.
 
-Right now, if a coach's club isn't listed, we push them into an outreach flow (share sheet / email / SMS / lead capture + admin "Club requests" tab). We'll defer all of that and let coaches fall back to Individual with one tap.
+## Plan (Stripe, seamless)
 
-### UX changes
+Since you chose Stripe, I'll set up Stripe payments with **tax calculation and collection only** (not full compliance handling — that's a heavier default we don't need for Beta). You can toggle full compliance handling later per-transaction.
 
-- In `OrgSearchCombobox`, keep the empty-state / footer link, but change the label from "My club isn't listed — message them about Gradus" to something like "My club isn't listed — continue as individual" (final copy TBD).
-- Clicking that link no longer opens the outreach card. Instead it directly flips `path = "individual"`, clears any `orgId/orgName/orgCity/orgCode/orgVerified`, and the parent onboarding flow drops into the existing Individual card (with promo code + paywall).
-- Same treatment for the "I don't have a code yet — message my club" secondary link on the code step: retitle to "I don't have a code — continue as individual" and route to the same fallback handler.
-- Remove the `not_listed` sub-step and the `OrgNotListedCard` render from `CoachPathChoice`. `ClubStep` becomes `"search" | "code"`.
+### 1. Enable Stripe
+Call `enable_stripe_payments`. This creates a test-mode Stripe environment immediately; live payments unlock after account claim.
 
-### Code that goes away (for now)
+### 2. Create the two products in Stripe
+Using the batch product tool after enable:
+- **Coach** — $40/month and $360/year (2 prices, same product)
+- **Coach Pro** — $70/month and $630/year (2 prices, same product)
+Each with tax code `txcd_10103001` (SaaS - business use) so `automatic_tax` works.
 
-- `src/components/onboarding/org-not-listed-card.tsx` — delete.
-- `handleNotListed` in `coach-path-choice.tsx` — replaced by `handleFallbackToIndividual`.
-- `createOrganizationLead` server function in `src/lib/coach-org.functions.ts` — remove export + implementation.
-- Admin **Club requests** tab in `src/routes/_authenticated/admin.organizations.tsx` — remove tab + its data hooks. The Organizations tab stays.
+### 3. Extend `coach_profiles` (migration)
+Add columns:
+- `stripe_customer_id text`
+- `stripe_subscription_id text`
+- `subscription_tier text` — `'coach' | 'coach_pro' | null`
+- `subscription_status text` — mirrors Stripe (`trialing`, `active`, `past_due`, `canceled`, etc.)
+- `trial_ends_at timestamptz`
+- `current_period_end timestamptz`
 
-### Data model
+Update the `entitlement` derivation: `paid` when `subscription_status IN ('trialing','active')`; otherwise falls back to `pending` (unless `club_covered` / `promo_free`).
 
-- `organization_leads` table stays in the database (dropping it is destructive and we plan to bring the feature back). We just stop reading and writing to it. No migration.
-- All other org-related schema (`organizations` search fields, `organization_id` / `is_org_template` on `moves`/`plans`/`resources`, `last_synced_content_version`) stays untouched — it's needed for the club content roadmap.
+### 4. Paywall UI (`coach.paywall.tsx`)
+Replace the current invite-only paywall with a tier picker:
+- Two cards (Coach / Coach Pro), monthly ↔ yearly toggle (yearly shows "save $120 / $210")
+- "Start 3-month free trial" CTA per tier
+- Keep the existing club-invite-code input below as a secondary option
+- Copy stays: "Get your first 3 months free while Gradus is in Beta"
 
-### Out of scope
+### 5. Checkout server function
+New `createServerFn` `startCoachCheckout({ tier, interval })`:
+- Requires auth (`requireSupabaseAuth`)
+- Creates/reuses Stripe customer, creates a Checkout Session with:
+  - `mode: 'subscription'`
+  - `subscription_data.trial_period_days: 90`
+  - `payment_method_collection: 'always'` (card required to start trial)
+  - `automatic_tax: { enabled: true }`
+  - `customer_update: { address: 'auto' }`
+  - `success_url` → `/coach/roster?checkout=success`
+  - `cancel_url` → `/coach/paywall`
+- Returns `{ url }`; client redirects to Stripe
 
-- No changes to the Individual path, promo codes, Stripe wiring, or the Club search + code verification flow itself.
-- No new design tokens or components.
-- Bringing the outreach flow back later is a separate task; the DB table and design system pieces (`Sheet`, `Textarea`, share primitives) remain reusable when we do.
+### 6. Webhook handler (`/api/public/stripe/webhook`)
+Public server route, verifies `stripe-signature` with `STRIPE_WEBHOOK_SECRET`, uses `supabaseAdmin` to update `coach_profiles`. Handles:
+- `checkout.session.completed` — link customer + subscription IDs, set tier from price ID
+- `customer.subscription.created|updated` — sync `subscription_status`, `trial_ends_at`, `current_period_end`, `subscription_tier`
+- `customer.subscription.deleted` — set status `canceled`, entitlement falls back to `pending`
 
-### Confirm before I build
+### 7. Routing (already in place)
+`coach.tsx` already redirects to `/coach/paywall` when entitlement isn't in the entitled set — no change needed. Club-covered coaches still bypass.
 
-1. On the club card, is "My club isn't listed — continue as individual" the right copy, or would you rather it read as a plain secondary button underneath the search? (I'll default to the inline link if you don't say otherwise.)
-2. OK to fully remove the Admin "Club requests" tab now (vs. hiding it behind a feature flag)?
+### 8. Post-checkout return
+On `/coach/roster?checkout=success`, briefly poll the profile (or wait for webhook) then clear the query. If subscription is `trialing` or `active`, coach lands on roster.
+
+## Out of scope for this pass
+- Billing portal (manage/cancel subscription) — can add next
+- Yearly ↔ monthly mid-cycle switching
+- Coach Pro feature gating (we're only storing the tier; gating specific features comes later)
+
+## What I need from you before building
+Just confirm this plan. The only thing that needs your input during the build is the Stripe enable form (email/business name).
