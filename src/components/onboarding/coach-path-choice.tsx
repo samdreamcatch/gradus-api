@@ -230,9 +230,11 @@ function PathCard({
             <h3 className="text-[15px] font-semibold leading-snug text-text-primary sm:text-base">
               {title}
             </h3>
-            <p className="mt-1 text-sm leading-snug text-text-secondary">
-              {blurb}
-            </p>
+            {blurb && (
+              <p className="mt-1 text-sm leading-snug text-text-secondary">
+                {blurb}
+              </p>
+            )}
           </div>
           <div
             className={cn(
