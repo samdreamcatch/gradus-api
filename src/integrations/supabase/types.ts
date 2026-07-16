@@ -495,7 +495,10 @@ export type Database = {
           promo_code: string | null
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
+          subscription_environment: string | null
           subscription_status: string | null
+          subscription_tier: string | null
+          trial_ends_at: string | null
           updated_at: string
           user_id: string
         }
@@ -514,7 +517,10 @@ export type Database = {
           promo_code?: string | null
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
+          subscription_environment?: string | null
           subscription_status?: string | null
+          subscription_tier?: string | null
+          trial_ends_at?: string | null
           updated_at?: string
           user_id: string
         }
@@ -533,7 +539,10 @@ export type Database = {
           promo_code?: string | null
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
+          subscription_environment?: string | null
           subscription_status?: string | null
+          subscription_tier?: string | null
+          trial_ends_at?: string | null
           updated_at?: string
           user_id?: string
         }
