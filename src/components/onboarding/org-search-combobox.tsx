@@ -174,7 +174,7 @@ export function OrgSearchCombobox({ selected, onSelect, onNotListed }: Props) {
                 }}
                 className="text-text-secondary"
               >
-                My club isn&apos;t listed — continue as individual
+                Club isn&apos;t on Gradus — continue as individual
               </CommandItem>
             </CommandGroup>
           </CommandList>
