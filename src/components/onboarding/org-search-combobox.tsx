@@ -33,7 +33,7 @@ export type OrgOption = {
 interface Props {
   selected: OrgOption | null;
   onSelect: (org: OrgOption) => void;
-  onNotListed: () => void;
+  onNotListed: (typedQuery: string) => void;
 }
 
 /**
