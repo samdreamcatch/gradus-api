@@ -70,8 +70,6 @@ export const startCoachCheckout = createServerFn({ method: "POST" })
         ui_mode: "embedded_page",
         return_url: data.returnUrl,
         customer: customerId,
-        automatic_tax: { enabled: true },
-        customer_update: { address: "auto" },
         subscription_data: {
           trial_period_days: 90,
           metadata: { userId },
