@@ -587,7 +587,7 @@ function OnboardingForm({
             title="Practice expectations"
             subtitle="How many hours per week should athletes at each level practice on their own?"
           >
-            <div className="space-y-3">
+            <div className="space-y-6">
               {sports.map((selSport) => {
                 const sportKey = selSport.key;
                 const meta = getSportMeta(sportKey);
@@ -595,39 +595,41 @@ function OnboardingForm({
                 if (sportEntries.length === 0) return null;
                 return (
                   <div key={sportKey}>
-                    <h2 className="text-xl">{meta.label}</h2>
-                    <div className="mt-4 space-y-3">
+                    <p className="mb-2 text-caption text-text-tertiary">
+                      {meta.label}
+                    </p>
+                    <div className="divide-y divide-divider rounded-lg border border-divider bg-elevated">
                       {sportEntries.map((entry) => (
                         <div
                           key={entry.levelKey}
-                          className="flex items-center justify-between gap-2 rounded-md border border-divider bg-elevated px-4 py-3"
+                          className="flex items-center justify-between gap-4 px-4 py-2.5"
                         >
-                          <div className="leading-tight">
-                            <div className="text-sm font-semibold text-text-primary">
-                              {getLevelLabel(sportKey, entry.levelKey)}
-                            </div>
-                            <div className="font-hand text-lg text-accent-ink">
-                              hrs / week
-                            </div>
+                          <div className="text-sm font-medium text-text-primary">
+                            {getLevelLabel(sportKey, entry.levelKey)}
                           </div>
-                          <Input
-                            type="number"
-                            inputMode="decimal"
-                            min={0}
-                            max={40}
-                            step={0.5}
-                            value={entry.hoursPerWeek === 0 ? "" : entry.hoursPerWeek}
-                            onChange={(e) => {
-                              const raw = e.target.value;
-                              const n = raw === "" ? 0 : Number(raw);
-                              updateHours(
-                                sportKey,
-                                entry.levelKey,
-                                Math.max(0, Math.min(40, Number.isFinite(n) ? n : 0)),
-                              );
-                            }}
-                            className="w-24 text-right"
-                          />
+                          <div className="flex items-baseline gap-1.5">
+                            <Input
+                              type="number"
+                              inputMode="decimal"
+                              min={0}
+                              max={40}
+                              step={0.5}
+                              value={entry.hoursPerWeek === 0 ? "" : entry.hoursPerWeek}
+                              onChange={(e) => {
+                                const raw = e.target.value;
+                                const n = raw === "" ? 0 : Number(raw);
+                                updateHours(
+                                  sportKey,
+                                  entry.levelKey,
+                                  Math.max(0, Math.min(40, Number.isFinite(n) ? n : 0)),
+                                );
+                              }}
+                              className="h-9 w-16 px-2 text-right tabular-nums"
+                            />
+                            <span className="text-xs text-text-tertiary">
+                              hrs/wk
+                            </span>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -637,6 +639,7 @@ function OnboardingForm({
             </div>
           </Step>
         )}
+
 
         {currentKind === "invite" && (
           <Step title="Invite Parents">
