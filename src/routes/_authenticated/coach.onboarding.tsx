@@ -300,9 +300,10 @@ function OnboardingForm({
   };
 
   type StepKind = "path" | "profile" | "sports" | "levels" | "hours" | "invite" | "review";
-  const stepOrder: StepKind[] = needsName
-    ? ["path", "profile", "levels", "hours", "invite", "review"]
-    : ["path", "sports", "levels", "hours", "invite", "review"];
+  // Always collect name — pre-filled from OAuth metadata when available, but
+  // coaches signing up via email have no name and we need it for their athletes.
+  void needsName;
+  const stepOrder: StepKind[] = ["path", "profile", "levels", "hours", "invite", "review"];
   const totalSteps = stepOrder.length;
   const currentKind = stepOrder[step - 1];
   const isLastStep = step === totalSteps;
