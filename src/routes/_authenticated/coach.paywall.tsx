@@ -158,19 +158,19 @@ function PaywallPage() {
   return (
     <div className="min-h-dvh">
       <PaymentTestModeBanner />
-      <div className="mx-auto flex max-w-2xl flex-col items-center px-4 py-8">
-        <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-full bg-accent/15 text-accent-ink">
-          <Sparkles className="h-6 w-6" />
+      <div className="mx-auto flex max-w-2xl flex-col items-center px-4 py-5">
+        <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-full bg-accent/15 text-accent-ink">
+          <Sparkles className="h-5 w-5" />
         </div>
         <h1 className="text-center font-display text-h2 text-text-primary">
           Get your first 3 months free
         </h1>
-        <p className="mt-2 max-w-md text-center text-sm text-text-secondary">
+        <p className="mt-1.5 max-w-md text-center text-sm text-text-secondary">
           Pick a plan to activate your workspace. You won't be charged until your
           trial ends — cancel anytime.
         </p>
 
-        <div className="mt-6 inline-flex rounded-full border border-divider bg-elevated p-1 text-sm">
+        <div className="mt-4 inline-flex rounded-full border border-divider bg-elevated p-1 text-sm">
           {(["month", "year"] as const).map((iv) => (
             <button
               key={iv}
@@ -191,7 +191,7 @@ function PaywallPage() {
           ))}
         </div>
 
-        <div className="mt-6 grid w-full gap-4 sm:grid-cols-2">
+        <div className="mt-4 grid w-full grid-cols-2 gap-3">
           {(Object.keys(PRICE_MAP) as Tier[]).map((tier) => {
             const price = PRICE_MAP[tier][interval];
             const isPro = tier === "coach_pro";
@@ -199,34 +199,34 @@ function PaywallPage() {
               <div
                 key={tier}
                 className={cn(
-                  "flex flex-col rounded-2xl border p-6 shadow-card",
+                  "flex flex-col rounded-2xl border p-3 shadow-card sm:p-4",
                   isPro
                     ? "border-accent/60 bg-card"
                     : "border-divider bg-card",
                 )}
               >
-                <div className="flex items-baseline justify-between">
-                  <h2 className="font-display text-h3 text-text-primary">
+                <div className="flex items-baseline justify-between gap-1">
+                  <h2 className="font-display text-lg text-text-primary sm:text-h3">
                     {isPro ? "Coach Pro" : "Coach"}
                   </h2>
                   {isPro && (
-                    <span className="rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-accent-ink">
-                      COMING SOON
+                    <span className="rounded-full bg-accent/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-accent-ink sm:text-[10px] sm:tracking-widest">
+                      SOON
                     </span>
                   )}
                 </div>
-                <div className="mt-3 flex items-baseline gap-1">
-                  <span className="font-display text-4xl text-text-primary tabular-nums">
+                <div className="mt-2 flex items-baseline gap-1">
+                  <span className="font-display text-2xl text-text-primary tabular-nums sm:text-4xl">
                     ${price.monthlyEquivalent}
                   </span>
-                  <span className="text-sm text-text-secondary">/ month</span>
+                  <span className="text-xs text-text-secondary sm:text-sm">/ mo</span>
                 </div>
-                <p className="mt-1 text-xs text-text-tertiary">{price.billed}</p>
+                <p className="mt-1 text-[11px] text-text-tertiary sm:text-xs">{price.billed}</p>
 
-                <ul className="mt-5 space-y-2 text-sm text-text-secondary">
+                <ul className="mt-3 space-y-1.5 text-xs text-text-secondary sm:text-sm">
                   {FEATURES[tier].map((f) => (
-                    <li key={f} className="flex items-start gap-2">
-                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-accent-ink" />
+                    <li key={f} className="flex items-start gap-1.5">
+                      <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-accent-ink sm:h-4 sm:w-4" />
                       <span>{f}</span>
                     </li>
                   ))}
@@ -234,7 +234,7 @@ function PaywallPage() {
 
                 <Button
                   type="button"
-                  className="mt-6 w-full"
+                  className="mt-4 w-full text-xs sm:text-sm"
                   disabled={loading || isPro}
                   onClick={() => startCheckout(tier)}
                 >
@@ -242,14 +242,14 @@ function PaywallPage() {
                     ? "Coming soon"
                     : loading && selectedTier === tier
                     ? "Starting…"
-                    : "Start 3-month free trial"}
+                    : "Start free trial"}
                 </Button>
               </div>
             );
           })}
         </div>
 
-        <div className="mt-8 w-full rounded-xl border border-divider bg-elevated p-4">
+        <div className="mt-5 w-full rounded-xl border border-divider bg-elevated p-3">
           <div className="flex items-start gap-3">
             <Building2 className="mt-0.5 h-5 w-5 shrink-0 text-text-secondary" />
             <div className="text-sm">
@@ -290,7 +290,7 @@ function PaywallPage() {
           </div>
         )}
 
-        <div className="mt-8 border-t border-divider pt-4 text-center">
+        <div className="mt-5 border-t border-divider pt-3 text-center">
           <button
             type="button"
             onClick={handleSignOut}

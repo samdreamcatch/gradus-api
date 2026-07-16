@@ -1,66 +1,37 @@
 ## Goal
-Wire real payments so individual coaches pick a plan, start a 3-month free trial, and unlock the app. Club-covered and promo_free coaches continue to bypass checkout.
+Fit both plan cards (Coach + Coach Pro) on a single mobile viewport (~390×822) without scrolling, using existing design tokens and components only.
 
-## Plan (Stripe, seamless)
+## Approach
+Tighten vertical rhythm across the paywall page and switch the plan cards to a mobile-optimized layout. No new components, no new tokens.
 
-Since you chose Stripe, I'll set up Stripe payments with **tax calculation and collection only** (not full compliance handling — that's a heavier default we don't need for Beta). You can toggle full compliance handling later per-transaction.
+### 1. Compress the page header (src/routes/_authenticated/coach.paywall.tsx)
+- Reduce top padding: `py-8` → `py-5`
+- Drop the Sparkles icon circle (saves ~72px including margin), or shrink `h-12 w-12` → `h-9 w-9` and `mb-6` → `mb-3`
+- Subhead: tighten `mt-2` → `mt-1.5`, keep copy
+- Interval toggle: `mt-6` → `mt-4`
+- Plans grid: `mt-6` → `mt-4`, gap `gap-4` → `gap-3`
 
-### 1. Enable Stripe
-Call `enable_stripe_payments`. This creates a test-mode Stripe environment immediately; live payments unlock after account claim.
+### 2. Make plan cards mobile-first horizontal-compact
+Currently each card is a tall vertical block. On mobile only, restructure so the two cards stack but each card is dense:
+- Card padding: `p-6` → `p-4`
+- Price row + title on one line: keep title left, price right (already close — just tighten `mt-3` → `mt-2`)
+- Feature list: `mt-5 space-y-2` → `mt-3 space-y-1.5`, drop trailing "Priority support" wrap by keeping list as-is (already 4–5 items)
+- CTA button: `mt-6` → `mt-4`, use existing `size="sm"` variant on mobile via `className` (Button already supports size)
+- Billed line `mt-1` stays
 
-### 2. Create the two products in Stripe
-Using the batch product tool after enable:
-- **Coach** — $40/month and $360/year (2 prices, same product)
-- **Coach Pro** — $70/month and $630/year (2 prices, same product)
-Each with tax code `txcd_10103001` (SaaS - business use) so `automatic_tax` works.
+### 3. Trim footer blocks on mobile
+- "Joining through a club?" card: `mt-8` → `mt-5`, `p-4` → `p-3`
+- Sign out section: `mt-8 pt-4` → `mt-5 pt-3`
 
-### 3. Extend `coach_profiles` (migration)
-Add columns:
-- `stripe_customer_id text`
-- `stripe_subscription_id text`
-- `subscription_tier text` — `'coach' | 'coach_pro' | null`
-- `subscription_status text` — mirrors Stripe (`trialing`, `active`, `past_due`, `canceled`, etc.)
-- `trial_ends_at timestamptz`
-- `current_period_end timestamptz`
+### 4. Verify
+Take a mobile screenshot at 390×822 via Playwright after build mode is enabled and confirm the second card's CTA is above the fold.
 
-Update the `entitlement` derivation: `paid` when `subscription_status IN ('trialing','active')`; otherwise falls back to `pending` (unless `club_covered` / `promo_free`).
+## Technical notes
+- All spacing changes use existing Tailwind utility scale — no token or component changes.
+- Grid stays `sm:grid-cols-2`; on mobile it remains a single column but each card is ~40% shorter, which should bring both above the fold along with the header.
+- If still overflowing after tightening, the fallback is to promote the grid to `grid-cols-2` at mobile too (two narrow side-by-side cards). This is a secondary lever; try the tightening pass first since side-by-side cards on 390px get cramped for the feature list.
 
-### 4. Paywall UI (`coach.paywall.tsx`)
-Replace the current invite-only paywall with a tier picker:
-- Two cards (Coach / Coach Pro), monthly ↔ yearly toggle (yearly shows "save $120 / $210")
-- "Start 3-month free trial" CTA per tier
-- Keep the existing club-invite-code input below as a secondary option
-- Copy stays: "Get your first 3 months free while Gradus is in Beta"
-
-### 5. Checkout server function
-New `createServerFn` `startCoachCheckout({ tier, interval })`:
-- Requires auth (`requireSupabaseAuth`)
-- Creates/reuses Stripe customer, creates a Checkout Session with:
-  - `mode: 'subscription'`
-  - `subscription_data.trial_period_days: 90`
-  - `payment_method_collection: 'always'` (card required to start trial)
-  - `automatic_tax: { enabled: true }`
-  - `customer_update: { address: 'auto' }`
-  - `success_url` → `/coach/roster?checkout=success`
-  - `cancel_url` → `/coach/paywall`
-- Returns `{ url }`; client redirects to Stripe
-
-### 6. Webhook handler (`/api/public/stripe/webhook`)
-Public server route, verifies `stripe-signature` with `STRIPE_WEBHOOK_SECRET`, uses `supabaseAdmin` to update `coach_profiles`. Handles:
-- `checkout.session.completed` — link customer + subscription IDs, set tier from price ID
-- `customer.subscription.created|updated` — sync `subscription_status`, `trial_ends_at`, `current_period_end`, `subscription_tier`
-- `customer.subscription.deleted` — set status `canceled`, entitlement falls back to `pending`
-
-### 7. Routing (already in place)
-`coach.tsx` already redirects to `/coach/paywall` when entitlement isn't in the entitled set — no change needed. Club-covered coaches still bypass.
-
-### 8. Post-checkout return
-On `/coach/roster?checkout=success`, briefly poll the profile (or wait for webhook) then clear the query. If subscription is `trialing` or `active`, coach lands on roster.
-
-## Out of scope for this pass
-- Billing portal (manage/cancel subscription) — can add next
-- Yearly ↔ monthly mid-cycle switching
-- Coach Pro feature gating (we're only storing the tier; gating specific features comes later)
-
-## What I need from you before building
-Just confirm this plan. The only thing that needs your input during the build is the Stripe enable form (email/business name).
+## Out of scope
+- No copy changes
+- No new components or tokens
+- No changes to pricing logic or Stripe wiring
