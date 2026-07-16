@@ -172,9 +172,9 @@ export function OrgSearchCombobox({ selected, onSelect, onNotListed }: Props) {
                   onNotListed();
                   setOpen(false);
                 }}
-                className="text-accent-ink"
+                className="text-text-secondary"
               >
-                My club isn&apos;t listed — tell them about Gradus →
+                My club isn&apos;t listed — continue as individual
               </CommandItem>
             </CommandGroup>
           </CommandList>
