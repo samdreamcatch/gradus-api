@@ -169,7 +169,7 @@ export function OrgSearchCombobox({ selected, onSelect, onNotListed }: Props) {
               <CommandItem
                 value="__not-listed__"
                 onSelect={() => {
-                  onNotListed();
+                  onNotListed(debounced);
                   setOpen(false);
                 }}
                 className="text-text-secondary"
