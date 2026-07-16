@@ -3,23 +3,19 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { RefreshCw, Copy, Send, Mail, MessageSquare, Share2 } from "lucide-react";
+import { RefreshCw, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Eyebrow } from "@/components/ui/eyebrow";
-import { Chip } from "@/components/ui/chip";
 import {
   createOrganization,
   getOrganizationStats,
-  listOrganizationLeads,
   listOrganizations,
   rotateOrganizationInviteCode,
   updateOrganization,
-  updateOrganizationLead,
 } from "@/lib/coach-org.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/organizations")({
@@ -46,41 +42,13 @@ function OrganizationsPage() {
         </p>
       </header>
 
-      <Tabs defaultValue="orgs" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="orgs">Organizations</TabsTrigger>
-          <TabsTrigger value="leads">Club requests</TabsTrigger>
-          <TabsTrigger value="content" disabled>
-            Content
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="orgs" className="space-y-8">
-          <OrgsTab />
-        </TabsContent>
-
-        <TabsContent value="leads" className="space-y-6">
-          <LeadsTab />
-        </TabsContent>
-
-        <TabsContent value="content">
-          <div className="rounded-2xl border border-divider bg-card p-8 text-center">
-            <p className="font-display text-h3 text-text-primary">
-              Club-owned move libraries, plan templates, and resources
-            </p>
-            <p className="mt-2 text-sm text-text-secondary">
-              Coming soon. The database is ready to push shared content from an
-              organization to every coach in it — the authoring UI ships in a
-              follow-up.
-            </p>
-          </div>
-        </TabsContent>
-      </Tabs>
+      <OrgsTab />
     </div>
   );
 }
 
 /* ---------- Organizations tab ---------- */
+
 
 function OrgsTab() {
   const list = useServerFn(listOrganizations);
@@ -327,129 +295,3 @@ function OrgsTab() {
   );
 }
 
-/* ---------- Leads tab ---------- */
-
-const CHANNEL_ICON: Record<string, React.ReactNode> = {
-  share: <Share2 className="h-3 w-3" />,
-  copy: <Copy className="h-3 w-3" />,
-  mailto: <Mail className="h-3 w-3" />,
-  sms: <MessageSquare className="h-3 w-3" />,
-  later: <Send className="h-3 w-3" />,
-};
-
-function LeadsTab() {
-  const listLeads = useServerFn(listOrganizationLeads);
-  const updateLead = useServerFn(updateOrganizationLead);
-  const qc = useQueryClient();
-
-  const { data } = useQuery({
-    queryKey: ["admin-organization-leads"],
-    queryFn: () => listLeads(),
-  });
-
-  const setStatus = async (
-    id: string,
-    status: "pending" | "contacted" | "converted" | "dismissed",
-  ) => {
-    try {
-      await updateLead({ data: { id, status } });
-      await qc.invalidateQueries({ queryKey: ["admin-organization-leads"] });
-      toast.success(`Marked ${status}`);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Update failed");
-    }
-  };
-
-  const leads = data?.leads ?? [];
-
-  return (
-    <section className="overflow-hidden rounded-2xl border border-divider bg-card">
-      <h2 className="px-5 pt-4 font-display text-h3 text-text-primary">
-        Club requests
-      </h2>
-      <p className="px-5 pb-4 text-sm text-text-secondary">
-        Coaches whose club isn&apos;t on Gradus yet. Use these to reach out to
-        club leadership and onboard new organizations.
-      </p>
-      {leads.length === 0 ? (
-        <p className="px-5 pb-6 text-sm text-text-secondary">No requests yet.</p>
-      ) : (
-        <ul className="divide-y divide-divider">
-          {leads.map((l) => (
-            <li key={l.id} className="space-y-2 px-5 py-4">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="font-semibold text-text-primary">
-                  {l.requestedOrgName}
-                </span>
-                {l.requestedOrgCity && (
-                  <span className="text-xs text-text-secondary">
-                    {l.requestedOrgCity}
-                  </span>
-                )}
-                <Chip
-                  size="nano"
-                  tone={
-                    l.status === "converted"
-                      ? "accent"
-                      : l.status === "dismissed"
-                        ? "muted"
-                        : "default"
-                  }
-                >
-                  {l.status}
-                </Chip>
-                <Chip size="nano" tone="muted">
-                  {CHANNEL_ICON[l.channel]}
-                  {l.channel}
-                </Chip>
-                <span className="ml-auto text-xs text-text-tertiary">
-                  {new Date(l.createdAt).toLocaleDateString()}
-                </span>
-              </div>
-              <div className="text-xs text-text-secondary">
-                <a
-                  href={`mailto:${l.coachEmail}`}
-                  className="text-accent-ink hover:underline"
-                >
-                  {l.coachEmail}
-                </a>
-              </div>
-              <p className="rounded-md bg-elevated px-3 py-2 text-xs text-text-primary">
-                {l.messageBody}
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {l.status !== "contacted" && (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => void setStatus(l.id, "contacted")}
-                  >
-                    Mark contacted
-                  </Button>
-                )}
-                {l.status !== "converted" && (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => void setStatus(l.id, "converted")}
-                  >
-                    Mark converted
-                  </Button>
-                )}
-                {l.status !== "dismissed" && (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => void setStatus(l.id, "dismissed")}
-                  >
-                    Dismiss
-                  </Button>
-                )}
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
-    </section>
-  );
-}

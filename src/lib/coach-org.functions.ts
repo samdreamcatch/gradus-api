@@ -155,33 +155,6 @@ export const getPopularOrganizations = createServerFn({ method: "GET" })
     return { organizations: ranked };
   });
 
-/** Coach outreach — creates a "help onboard my club" lead for Gradus admins. */
-export const createOrganizationLead = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z
-      .object({
-        requestedOrgName: z.string().trim().min(1).max(200),
-        requestedOrgCity: z.string().trim().max(120).nullable().optional(),
-        channel: z.enum(["share", "copy", "mailto", "sms", "later"]),
-        messageBody: z.string().trim().min(1).max(2000),
-      })
-      .parse(input),
-  )
-  .handler(async ({ data, context }) => {
-    const supabase = context.supabase as Client;
-    const email = (context.claims as { email?: string })?.email ?? "";
-    const { error } = await supabase.from("organization_leads").insert({
-      coach_user_id: context.userId,
-      coach_email: String(email),
-      requested_org_name: data.requestedOrgName,
-      requested_org_city: data.requestedOrgCity ?? null,
-      channel: data.channel,
-      message_body: data.messageBody,
-    });
-    if (error) dbError(error);
-    return { ok: true };
-  });
 
 
 /**
@@ -447,71 +420,4 @@ export const getOrganizationStats = createServerFn({ method: "GET" })
       tally[id] = (tally[id] ?? 0) + 1;
     }
     return { counts: tally };
-  });
-
-// ---------- Admin: club onboarding leads ----------
-
-export const listOrganizationLeads = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    await assertAdmin(context);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data, error } = await supabaseAdmin
-      .from("organization_leads")
-      .select(
-        "id, coach_user_id, coach_email, requested_org_name, requested_org_city, channel, message_body, status, admin_notes, created_at",
-      )
-      .order("created_at", { ascending: false })
-      .limit(200);
-    if (error) dbError(error);
-    return {
-      leads: (data ?? []).map((l) => ({
-        id: l.id,
-        coachEmail: l.coach_email,
-        requestedOrgName: l.requested_org_name,
-        requestedOrgCity: l.requested_org_city as string | null,
-        channel: l.channel as
-          | "share"
-          | "copy"
-          | "mailto"
-          | "sms"
-          | "later",
-        messageBody: l.message_body,
-        status: l.status as
-          | "pending"
-          | "contacted"
-          | "converted"
-          | "dismissed",
-        adminNotes: l.admin_notes as string | null,
-        createdAt: l.created_at,
-      })),
-    };
-  });
-
-export const updateOrganizationLead = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z
-      .object({
-        id: z.string().uuid(),
-        status: z
-          .enum(["pending", "contacted", "converted", "dismissed"])
-          .optional(),
-        adminNotes: z.string().trim().max(1000).nullable().optional(),
-      })
-      .parse(input),
-  )
-  .handler(async ({ data, context }) => {
-    await assertAdmin(context);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const patch: { status?: string; admin_notes?: string | null } = {};
-    if (data.status !== undefined) patch.status = data.status;
-    if (data.adminNotes !== undefined) patch.admin_notes = data.adminNotes;
-    if (Object.keys(patch).length === 0) return { ok: true };
-    const { error } = await supabaseAdmin
-      .from("organization_leads")
-      .update(patch)
-      .eq("id", data.id);
-    if (error) dbError(error);
-    return { ok: true };
   });

@@ -7,7 +7,6 @@ import {
   OrgSearchCombobox,
   type OrgOption,
 } from "@/components/onboarding/org-search-combobox";
-import { OrgNotListedCard } from "@/components/onboarding/org-not-listed-card";
 import { cn } from "@/lib/utils";
 
 export type CoachPath = "individual" | "club";
@@ -31,7 +30,7 @@ interface Props {
   onChange: (next: CoachPathValue) => void;
 }
 
-type ClubStep = "search" | "code" | "not_listed";
+type ClubStep = "search" | "code";
 
 export function CoachPathChoice({ value, onChange }: Props) {
   // Derive the club sub-step from state so the parent stays authoritative.
@@ -77,12 +76,8 @@ export function CoachPathChoice({ value, onChange }: Props) {
     setClubStep("search");
   };
 
-  const handleNotListed = () => {
-    setClubStep("not_listed");
-  };
-
-  // "Continue as Individual" from the outreach card — flip path and clear
-  // club state, keeping the parent onboarding flow unchanged from here.
+  // "My club isn't listed" / "I don't have a code" — clear club state and
+  // drop into the existing Individual path (promo code + paywall).
   const handleFallbackToIndividual = () => {
     onChange({
       ...value,
@@ -93,6 +88,7 @@ export function CoachPathChoice({ value, onChange }: Props) {
       orgCode: "",
       orgVerified: false,
     });
+    setClubStep("search");
   };
 
   return (
@@ -137,7 +133,7 @@ export function CoachPathChoice({ value, onChange }: Props) {
                     : null
                 }
                 onSelect={handleOrgSelected}
-                onNotListed={handleNotListed}
+                onNotListed={handleFallbackToIndividual}
               />
             )}
 
@@ -166,20 +162,12 @@ export function CoachPathChoice({ value, onChange }: Props) {
                 />
                 <button
                   type="button"
-                  onClick={handleNotListed}
+                  onClick={handleFallbackToIndividual}
                   className="text-xs text-text-tertiary underline-offset-2 hover:text-text-secondary hover:underline"
                 >
-                  I don&apos;t have a code yet — message my club
+                  I don&apos;t have a code — continue as individual
                 </button>
               </>
-            )}
-
-            {clubStep === "not_listed" && (
-              <OrgNotListedCard
-                initialClubName={value.orgName ?? ""}
-                initialClubCity={value.orgCity ?? ""}
-                onDone={handleFallbackToIndividual}
-              />
             )}
           </div>
         )}
@@ -187,6 +175,7 @@ export function CoachPathChoice({ value, onChange }: Props) {
     </div>
   );
 }
+
 
 function PathCard({
   selected,
