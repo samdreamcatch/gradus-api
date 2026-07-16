@@ -45,9 +45,9 @@ const FEATURES: Record<Tier, string[]> = {
   coach_pro: [
     "Everything in Coach",
     "Advanced scheduling",
-    "Priority support",
     "Multi-coach visibility",
     "Up to 75 athletes",
+    "Priority support",
   ],
 };
 
