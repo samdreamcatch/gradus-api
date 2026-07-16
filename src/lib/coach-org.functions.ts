@@ -218,9 +218,26 @@ export const claimOrganizationInviteCode = createServerFn({ method: "POST" })
     if (coach.error) dbError(coach.error);
     if (!coach.data) throw new Error("Coach profile missing.");
 
+    // Stamp the coach's sync cursor so future org content updates apply
+    // incrementally. We fetch the current org version via admin to avoid
+    // depending on the coach's read policy on that column.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const versionRow = await supabaseAdmin
+      .from("organizations")
+      .select("content_version")
+      .eq("id", org.id)
+      .maybeSingle();
+    if (versionRow.error) dbError(versionRow.error);
+    const version =
+      (versionRow.data?.content_version as number | null | undefined) ?? 0;
+
     const update = await supabase
       .from("coach_profiles")
-      .update({ organization_id: org.id, entitlement: "club_covered" })
+      .update({
+        organization_id: org.id,
+        entitlement: "club_covered",
+        last_synced_content_version: version,
+      })
       .eq("id", coach.data.id);
     if (update.error) dbError(update.error);
 
