@@ -27,11 +27,11 @@ const PRICE_MAP: Record<Tier, Record<Interval, {
 }>> = {
   coach: {
     month: { priceId: "coach_monthly", monthlyEquivalent: 40, billed: "$40/mo, billed monthly" },
-    year: { priceId: "coach_yearly", monthlyEquivalent: 34, billed: "$408/yr — save $72" },
+    year: { priceId: "coach_yearly", monthlyEquivalent: 34, billed: "$408/yr — save 15%" },
   },
   coach_pro: {
     month: { priceId: "coach_pro_monthly", monthlyEquivalent: 70, billed: "$70/mo, billed monthly" },
-    year: { priceId: "coach_pro_yearly", monthlyEquivalent: 59.5, billed: "$714/yr — save $126" },
+    year: { priceId: "coach_pro_yearly", monthlyEquivalent: 59.5, billed: "$714/yr — save 15%" },
   },
 };
 
