@@ -185,7 +185,7 @@ function PaywallPage() {
             >
               {iv === "month" ? "Monthly" : "Yearly"}
               {iv === "year" && (
-                <span className="ml-1 text-xs text-accent-ink">save 25%</span>
+                <span className="ml-1 text-xs text-accent-ink">save 15%</span>
               )}
             </button>
           ))}
