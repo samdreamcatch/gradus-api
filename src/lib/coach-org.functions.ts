@@ -448,3 +448,70 @@ export const getOrganizationStats = createServerFn({ method: "GET" })
     }
     return { counts: tally };
   });
+
+// ---------- Admin: club onboarding leads ----------
+
+export const listOrganizationLeads = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
+      .from("organization_leads")
+      .select(
+        "id, coach_user_id, coach_email, requested_org_name, requested_org_city, channel, message_body, status, admin_notes, created_at",
+      )
+      .order("created_at", { ascending: false })
+      .limit(200);
+    if (error) dbError(error);
+    return {
+      leads: (data ?? []).map((l) => ({
+        id: l.id,
+        coachEmail: l.coach_email,
+        requestedOrgName: l.requested_org_name,
+        requestedOrgCity: l.requested_org_city as string | null,
+        channel: l.channel as
+          | "share"
+          | "copy"
+          | "mailto"
+          | "sms"
+          | "later",
+        messageBody: l.message_body,
+        status: l.status as
+          | "pending"
+          | "contacted"
+          | "converted"
+          | "dismissed",
+        adminNotes: l.admin_notes as string | null,
+        createdAt: l.created_at,
+      })),
+    };
+  });
+
+export const updateOrganizationLead = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        status: z
+          .enum(["pending", "contacted", "converted", "dismissed"])
+          .optional(),
+        adminNotes: z.string().trim().max(1000).nullable().optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const patch: { status?: string; admin_notes?: string | null } = {};
+    if (data.status !== undefined) patch.status = data.status;
+    if (data.adminNotes !== undefined) patch.admin_notes = data.adminNotes;
+    if (Object.keys(patch).length === 0) return { ok: true };
+    const { error } = await supabaseAdmin
+      .from("organization_leads")
+      .update(patch)
+      .eq("id", data.id);
+    if (error) dbError(error);
+    return { ok: true };
+  });
