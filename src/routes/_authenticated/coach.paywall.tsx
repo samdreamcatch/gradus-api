@@ -44,11 +44,10 @@ function PaywallPage() {
           <Sparkles className="h-6 w-6" />
         </div>
         <h1 className="font-display text-h2 text-text-primary">
-          One last step to unlock Gradus
+          Get your first 3 months free while Gradus is in Beta
         </h1>
         <p className="mt-3 text-sm text-text-secondary">
-          Subscribe to activate your coach workspace, publish plans, and message
-          athletes and parents.
+          {"\n"}
         </p>
 
         <div className="mt-8 space-y-3">
@@ -64,8 +63,7 @@ function PaywallPage() {
             </span>
           </Button>
           <p className="text-center text-xs text-text-tertiary">
-            Checkout goes live shortly. In the meantime, if you're joining
-            through a club, add your code below.
+            Subscribe to activate your coach workspace, publish plans, and message athletes and parents.
           </p>
         </div>
 
