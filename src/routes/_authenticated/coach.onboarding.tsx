@@ -119,19 +119,34 @@ function OnboardingForm({
       return {
         path: "club",
         promoCode: "",
-        orgCode: "",
+        orgId: data.profile.organizationId ?? null,
         orgName: data.profile.organizationName,
+        orgCity: null,
+        orgCode: "",
         orgVerified: true,
       };
     }
     if (initialOrg) {
-      return { path: "club", promoCode: "", orgCode: initialOrg, orgName: null, orgVerified: false };
+      // Coach arrived via `?org=CODE` — we don't know the org yet; they'll
+      // pick it in search and then re-enter the code. Keep the code prefilled
+      // so it's just one click after they pick their club.
+      return {
+        path: "club",
+        promoCode: "",
+        orgId: null,
+        orgName: null,
+        orgCity: null,
+        orgCode: initialOrg,
+        orgVerified: false,
+      };
     }
     return {
       path: initialPromo ? "individual" : null,
       promoCode: initialPromo ?? "",
-      orgCode: "",
+      orgId: null,
       orgName: null,
+      orgCity: null,
+      orgCode: "",
       orgVerified: false,
     };
   });
