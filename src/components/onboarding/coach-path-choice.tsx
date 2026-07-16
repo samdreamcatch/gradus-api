@@ -166,7 +166,7 @@ export function CoachPathChoice({ value, onChange }: Props) {
                     : null
                 }
                 onSelect={handleOrgSelected}
-                onNotListed={handleFallbackToIndividual}
+                onNotListed={handleNotListedFallback}
               />
             )}
 
