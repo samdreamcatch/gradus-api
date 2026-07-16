@@ -102,7 +102,7 @@ export function CoachPathChoice({ value, onChange }: Props) {
         onSelect={() => setPath("individual")}
         icon={<User className="h-6 w-6" />}
         title="Individual coach"
-        blurb="You'll subscribe to Gradus directly. Add a promo code if you have one."
+        blurb=""
       >
         {value.path === "individual" && (
           <div className="mt-4 border-t border-divider pt-4">
@@ -230,9 +230,11 @@ function PathCard({
             <h3 className="text-[15px] font-semibold leading-snug text-text-primary sm:text-base">
               {title}
             </h3>
-            <p className="mt-1 text-sm leading-snug text-text-secondary">
-              {blurb}
-            </p>
+            {blurb && (
+              <p className="mt-1 text-sm leading-snug text-text-secondary">
+                {blurb}
+              </p>
+            )}
           </div>
           <div
             className={cn(
