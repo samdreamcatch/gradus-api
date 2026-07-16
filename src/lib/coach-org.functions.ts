@@ -170,7 +170,7 @@ export const createOrganizationLead = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const supabase = context.supabase as Client;
-    const email = context.claims?.email ?? "";
+    const email = (context.claims as { email?: string })?.email ?? "";
     const { error } = await supabase.from("organization_leads").insert({
       coach_user_id: context.userId,
       coach_email: String(email),
