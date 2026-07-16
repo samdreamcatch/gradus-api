@@ -195,7 +195,7 @@ export function CoachPathChoice({ value, onChange }: Props) {
                 />
                 <button
                   type="button"
-                  onClick={handleFallbackToIndividual}
+                  onClick={handleNoCodeFallback}
                   className="text-xs text-text-tertiary underline-offset-2 hover:text-text-secondary hover:underline"
                 >
                   I don&apos;t have a code — continue as individual
