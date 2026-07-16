@@ -102,7 +102,7 @@ export function CoachPathChoice({ value, onChange }: Props) {
         onSelect={() => setPath("individual")}
         icon={<User className="h-6 w-6" />}
         title="Individual coach"
-        blurb="You'll subscribe to Gradus directly. Add a promo code if you have one."
+        blurb=""
       >
         {value.path === "individual" && (
           <div className="mt-4 border-t border-divider pt-4">
