@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { Building2, Check, User } from "lucide-react";
 import { Chip } from "@/components/ui/chip";
 import { PromoCodeField } from "@/components/signup/promo-code-field";
@@ -7,6 +8,7 @@ import {
   OrgSearchCombobox,
   type OrgOption,
 } from "@/components/onboarding/org-search-combobox";
+import { recordSilentClubLead } from "@/lib/coach-org.functions";
 import { cn } from "@/lib/utils";
 
 export type CoachPath = "individual" | "club";
