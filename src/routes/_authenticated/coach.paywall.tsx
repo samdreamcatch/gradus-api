@@ -231,7 +231,7 @@ function PaywallPage() {
 
                 <Button
                   type="button"
-                  className={cn("mt-6 w-full", !isPro && "bg-text-primary text-card hover:bg-text-primary/90")}
+                  className="mt-6 w-full"
                   disabled={loading}
                   onClick={() => startCheckout(tier)}
                 >
