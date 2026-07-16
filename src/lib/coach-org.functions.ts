@@ -367,16 +367,24 @@ export const updateOrganization = createServerFn({ method: "POST" })
         name: z.string().trim().min(1).max(120).optional(),
         notes: z.string().trim().max(500).nullable().optional(),
         active: z.boolean().optional(),
+        city: z.string().trim().max(120).nullable().optional(),
+        region: z.string().trim().max(120).nullable().optional(),
+        logoUrl: z.string().trim().max(500).nullable().optional(),
+        isListed: z.boolean().optional(),
       })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const patch: { name?: string; notes?: string | null; active?: boolean } = {};
+    const patch: Record<string, unknown> = {};
     if (data.name !== undefined) patch.name = data.name;
     if (data.notes !== undefined) patch.notes = data.notes;
     if (data.active !== undefined) patch.active = data.active;
+    if (data.city !== undefined) patch.city = data.city;
+    if (data.region !== undefined) patch.region = data.region;
+    if (data.logoUrl !== undefined) patch.logo_url = data.logoUrl;
+    if (data.isListed !== undefined) patch.is_listed = data.isListed;
     if (Object.keys(patch).length === 0) return { ok: true };
     const { error } = await supabaseAdmin
       .from("organizations")
