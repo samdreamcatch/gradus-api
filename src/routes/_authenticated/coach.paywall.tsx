@@ -131,6 +131,9 @@ function PaywallPage() {
     [clientSecret],
   );
 
+  if (isEntitled) return null;
+
+
   if (clientSecret && options) {
     return (
       <div className="min-h-dvh">
