@@ -489,6 +489,7 @@ export type Database = {
           is_test: boolean
           last_name: string
           last_seen_at: string | null
+          last_synced_content_version: number
           onboarded_at: string | null
           organization_id: string | null
           promo_code: string | null
@@ -507,6 +508,7 @@ export type Database = {
           is_test?: boolean
           last_name?: string
           last_seen_at?: string | null
+          last_synced_content_version?: number
           onboarded_at?: string | null
           organization_id?: string | null
           promo_code?: string | null
@@ -525,6 +527,7 @@ export type Database = {
           is_test?: boolean
           last_name?: string
           last_seen_at?: string | null
+          last_synced_content_version?: number
           onboarded_at?: string | null
           organization_id?: string | null
           promo_code?: string | null
@@ -969,14 +972,16 @@ export type Database = {
         Row: {
           archived_at: string | null
           category: string
-          coach_id: string
+          coach_id: string | null
           created_at: string
           cue: string
           default_target_kind: string
           default_target_value: number
           description: string
           id: string
+          is_org_template: boolean
           name: string
+          organization_id: string | null
           sport: string
           updated_at: string
           why: string
@@ -984,14 +989,16 @@ export type Database = {
         Insert: {
           archived_at?: string | null
           category?: string
-          coach_id: string
+          coach_id?: string | null
           created_at?: string
           cue?: string
           default_target_kind?: string
           default_target_value?: number
           description?: string
           id?: string
+          is_org_template?: boolean
           name: string
+          organization_id?: string | null
           sport: string
           updated_at?: string
           why?: string
@@ -999,14 +1006,16 @@ export type Database = {
         Update: {
           archived_at?: string | null
           category?: string
-          coach_id?: string
+          coach_id?: string | null
           created_at?: string
           cue?: string
           default_target_kind?: string
           default_target_value?: number
           description?: string
           id?: string
+          is_org_template?: boolean
           name?: string
+          organization_id?: string | null
           sport?: string
           updated_at?: string
           why?: string
@@ -1017,6 +1026,13 @@ export type Database = {
             columns: ["coach_id"]
             isOneToOne: false
             referencedRelation: "coach_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "moves_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -1053,31 +1069,88 @@ export type Database = {
           },
         ]
       }
+      organization_leads: {
+        Row: {
+          admin_notes: string | null
+          channel: string
+          coach_email: string
+          coach_user_id: string
+          created_at: string
+          id: string
+          message_body: string
+          requested_org_city: string | null
+          requested_org_name: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          channel: string
+          coach_email: string
+          coach_user_id: string
+          created_at?: string
+          id?: string
+          message_body: string
+          requested_org_city?: string | null
+          requested_org_name: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          channel?: string
+          coach_email?: string
+          coach_user_id?: string
+          created_at?: string
+          id?: string
+          message_body?: string
+          requested_org_city?: string | null
+          requested_org_name?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       organizations: {
         Row: {
           active: boolean
+          city: string | null
+          content_version: number
           created_at: string
           id: string
+          is_listed: boolean
+          logo_url: string | null
           name: string
           notes: string | null
+          region: string | null
           slug: string
           updated_at: string
         }
         Insert: {
           active?: boolean
+          city?: string | null
+          content_version?: number
           created_at?: string
           id?: string
+          is_listed?: boolean
+          logo_url?: string | null
           name: string
           notes?: string | null
+          region?: string | null
           slug: string
           updated_at?: string
         }
         Update: {
           active?: boolean
+          city?: string | null
+          content_version?: number
           created_at?: string
           id?: string
+          is_listed?: boolean
+          logo_url?: string | null
           name?: string
           notes?: string | null
+          region?: string | null
           slug?: string
           updated_at?: string
         }
@@ -1289,11 +1362,13 @@ export type Database = {
       plans: {
         Row: {
           athlete_id: string | null
-          coach_id: string
+          coach_id: string | null
           created_at: string
           id: string
+          is_org_template: boolean
           kind: string
           notes: string
+          organization_id: string | null
           share_token: string | null
           shared_at: string | null
           status: string
@@ -1303,11 +1378,13 @@ export type Database = {
         }
         Insert: {
           athlete_id?: string | null
-          coach_id: string
+          coach_id?: string | null
           created_at?: string
           id?: string
+          is_org_template?: boolean
           kind: string
           notes?: string
+          organization_id?: string | null
           share_token?: string | null
           shared_at?: string | null
           status?: string
@@ -1317,11 +1394,13 @@ export type Database = {
         }
         Update: {
           athlete_id?: string | null
-          coach_id?: string
+          coach_id?: string | null
           created_at?: string
           id?: string
+          is_org_template?: boolean
           kind?: string
           notes?: string
+          organization_id?: string | null
           share_token?: string | null
           shared_at?: string | null
           status?: string
@@ -1342,6 +1421,13 @@ export type Database = {
             columns: ["coach_id"]
             isOneToOne: false
             referencedRelation: "coach_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plans_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -1430,6 +1516,8 @@ export type Database = {
           description: string
           display_order: number
           id: string
+          is_org_template: boolean
+          organization_id: string | null
           published: boolean
           sport: string
           storage_path: string
@@ -1441,6 +1529,8 @@ export type Database = {
           description?: string
           display_order?: number
           id?: string
+          is_org_template?: boolean
+          organization_id?: string | null
           published?: boolean
           sport: string
           storage_path: string
@@ -1452,13 +1542,23 @@ export type Database = {
           description?: string
           display_order?: number
           id?: string
+          is_org_template?: boolean
+          organization_id?: string | null
           published?: boolean
           sport?: string
           storage_path?: string
           title?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "resources_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       seed_moves: {
         Row: {

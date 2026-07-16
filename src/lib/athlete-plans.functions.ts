@@ -107,7 +107,9 @@ export const listAthletePlans = createServerFn({ method: "GET" })
     }
 
     const planIds = plans.map((p) => p.id);
-    const coachIds = Array.from(new Set(plans.map((p) => p.coach_id)));
+    const coachIds = Array.from(
+      new Set(plans.map((p) => p.coach_id).filter((v): v is string => !!v)),
+    );
 
     const [movesRes, coachesRes, goalsRes] = await Promise.all([
       supabase
@@ -172,13 +174,14 @@ export const listAthletePlans = createServerFn({ method: "GET" })
         sessionsByState: emptySessionsByState(),
         sessionsTotal: 0,
       };
-      const sport = coachSport.get(p.coach_id) || a.firstMoveSport || "";
+      const cid = p.coach_id ?? "";
+      const sport = (cid && coachSport.get(cid)) || a.firstMoveSport || "";
       return {
         id: p.id,
         title: p.title || "Untitled plan",
         status: p.status as AthletePlanStatus,
-        coachId: p.coach_id,
-        coachName: coachName.get(p.coach_id) ?? "Coach",
+        coachId: cid,
+        coachName: (cid && coachName.get(cid)) || "Coach",
         sport,
         moveCount: a.count,
         totalMinutes: a.minutes,
@@ -228,7 +231,7 @@ export const getAthletePlan = createServerFn({ method: "POST" })
       supabaseAdmin
         .from("coach_profiles")
         .select("first_name, last_name")
-        .eq("id", plan.coach_id)
+        .eq("id", plan.coach_id ?? "")
         .maybeSingle(),
     ]);
     if (movesRes.error) dbError(movesRes.error);
@@ -259,7 +262,7 @@ export const getAthletePlan = createServerFn({ method: "POST" })
       status: plan.status as AthletePlanStatus,
       athleteId: plan.athlete_id,
       athleteFirstName: athlete.first_name,
-      coachId: plan.coach_id,
+      coachId: plan.coach_id ?? "",
       coachName: `${coachFirst} ${coachLast}`.trim(),
       coachFirstName: coachFirst,
       moveCount: moves.length,

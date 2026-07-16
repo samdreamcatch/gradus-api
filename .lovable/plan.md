@@ -1,84 +1,160 @@
-
 ## Goal
 
-Coaches are the only paying role. Split them into two paths at the very start of onboarding:
+Replace the current "Club" branch (single opaque code input) with the workspace-picker pattern coaches already recognize from Slack/Notion/Linear: **search your org → confirm it → prove you belong**. If the club isn't listed, one tap sends a share-sheet message to their leadership and drops them into the existing Individual path so momentum isn't lost. At the same time, model organizations richly enough that Gradus can later push **club-owned move libraries, plan templates, and resources** to every coach in that org.
 
-- **Club coach** — enters an org invite code, gets linked to the organization, skips payment.
-- **Individual coach** — optionally enters a promo code for a discount, checks out via Stripe at the end of onboarding, gets access on webhook confirmation.
+## Reuse-first component rules (non-negotiable)
 
-Both paths converge into the existing name/sports/levels/hours/invite/review flow.
+Every new UI piece must lean on existing primitives before anything bespoke gets built:
 
-## New onboarding step order
+| Need                              | Existing primitive to reuse                                              |
+| --------------------------------- | ------------------------------------------------------------------------ |
+| Two-choice picker (Individual/Club) | `CoachPathChoice` + inner `PathCard` — already built, don't fork          |
+| Search combobox                   | shadcn `Command` inside `Popover` — the same pair used by move/sport pickers, top-anchored on mobile per overlay doctrine |
+| Selected-org "chip"               | `<Chip>` primitive (see `sport-chip.tsx`) with a "Change" affordance      |
+| 8-char code input                 | Reuse the existing `OrgCodeField` block inside `coach-path-choice.tsx` — extract it into `src/components/onboarding/org-code-field.tsx` so the not-listed → listed flow and admin tools can share it |
+| Outreach card                     | Standard `bg-card` + `border-divider` + `shadow-card` shell, `Button` (primary/secondary), `Textarea`, `Label` — no new surface tokens |
+| Confirmation toast                | Existing `sonner` toast used across admin pages                          |
+| Admin "Club requests" tab         | Reuse the exact table pattern in `admin.organizations.tsx` and `admin.promo-codes.tsx` (Eyebrow headers, `Switch`, `Copy`/`RefreshCw` icon buttons) |
+
+Any new file must be pure composition of the above — no new color tokens, no new shadow variants, no new radii. Reject bespoke styling in code review.
+
+## New onboarding flow (Club branch only)
 
 ```text
-1. Path choice       ← NEW (before profile)
-2. Profile (name + sports)
-3. Levels
-4. Hours
-5. Parent invite (existing)
-6. Review → Finish
-   ├─ club path:      → /coach   (entitled: club-covered)
-   └─ individual:     → Stripe Checkout → webhook → /coach
+[ Individual coach ]   [ Part of a club ]
+                          │
+                          ▼
+                ┌────────────────────────┐
+                │  Find your club        │
+                │  🔍 [ Search box     ] │  ← Command + Popover
+                │  ─ Elite FSC · Ashburn │
+                │  ─ Rockville Skating…  │
+                │  My club isn't listed →│  ← always-visible row
+                └────────────────────────┘
+                  │                   │
+       club picked│                   │not listed / no code
+                  ▼                   ▼
+        ┌─────────────────┐   ┌────────────────────┐
+        │ [Chip: Elite ×] │   │ Message my club    │
+        │ Enter club code │   │ [ Share ] [ Copy ] │
+        │ [• • • • • • •]│   │ mailto: · sms: fallback
+        │ No code? Message│   │ ↓ after send       │
+        └─────────────────┘   │ Continue as        │
+                              │ Individual         │
+                              └────────────────────┘
 ```
 
-Step 1 is a single screen with two large `Card`s (Individual / Club) using existing pen/paper design tokens. Selecting Club expands an org-code input (same UX as parent invite code). Selecting Individual expands the existing `PromoCodeField` (optional).
+### Sub-step A — Find your club
 
-If the coach arrives via a link that already includes `?org=CODE` or `?promo=CODE`, prefill and preselect the matching path.
+- `Command` combobox, debounced against `searchOrganizations` (public read-only server fn).
+- Each row: org name + city/region (avoids "Ashburn Ice House" vs "Ashburn FSC" confusion).
+- Empty-search state: recent/popular orgs (top 8 by coach count).
+- No-results state ends with a persistent **"My club isn't listed — tell them about Gradus →"** row. Same link sits below the input at all times.
 
-## Data model (one migration)
+### Sub-step B1 — Club found → enter code
 
-**`organizations`** — created only by Gradus admins.
-- `name`, `slug`, `active`, `notes`
+- Selected club renders as a `Chip` at the top with a "Change" affordance.
+- Reused `OrgCodeField` validates via `verifyOrgCodeForOrg({ orgId, code })` (new signature — the old "any code works" claim is replaced so a coach can't accidentally join the wrong club with someone else's code).
+- Secondary link: **"I don't have a code yet — message my club"** → sub-step B2 with the club pre-selected.
 
-**`organization_invite_codes`** — one active code per org, rotatable.
-- `organization_id`, `code` (8-char, uppercase, unique), `active`, `created_at`
+### Sub-step B2 — Not listed (or no code) → outreach
 
-**`coach_profiles`** — add:
-- `organization_id uuid null references organizations`
-- `entitlement text` — one of `pending`, `club_covered`, `paid`, `promo_free`
-- `stripe_customer_id text null`, `stripe_subscription_id text null`, `subscription_status text null`, `current_period_end timestamptz null`
+Single card with:
 
-RLS: coaches read their own org row; only admins write orgs and codes. `has_role(uid,'admin')` already exists. Reuse the `record_invite_lookup_attempt` rate limiter for org-code lookups.
+- Headline: *"Let's get {Club name / your club} on Gradus."*
+- Message preview (editable `Textarea`, default copy pre-filled):
+  > "Hey — I want to use Gradus to plan lessons and track progress for the athletes I coach at {Club}. It's free for coaches if the club joins. Take a look? gradus.training/for-clubs"
+- Editable club name (pre-filled if picked from list).
+- Primary **Share with my club** → `navigator.share({...})`; falls back to **Copy message** with `mailto:` + `sms:` links underneath on desktop / unsupported browsers.
+- After share/copy (or "I'll send it later"), confirmation state with primary CTA **"Continue as Individual for now"** and helper: *"When {Club} joins, we'll switch you over automatically — no double-charging."*
 
-## Server functions (new `src/lib/coach-org.functions.ts`)
+Choosing that CTA sets `path = "individual"` and drops into the existing PromoCode + Stripe paywall. Nothing about the Individual branch changes.
 
-- `getOrganizationByInviteCode({ code })` — public-ish (auth required), returns `{ organizationId, name }` for display before claim.
-- `claimOrganizationInviteCode({ code })` — sets `coach_profiles.organization_id` + `entitlement='club_covered'`. Idempotent.
-- Admin CRUD: `listOrganizations`, `createOrganization`, `updateOrganization`, `rotateOrganizationInviteCode`, `getOrganizationStats` — mirror the promo-code admin pattern in `promo-codes.functions.ts`.
+## Data model — built for future club-level content pushes
 
-## Payments (Lovable built-in Stripe)
+This is the part that unlocks "clubs can ship move libraries, plan templates, and resources to their coaches later." We put the ownership column in place now, even though only Gradus admins write to it initially.
 
-Deferred to a follow-up turn — requires `enable_stripe_payments`, product creation, and a webhook. This plan wires the UI + entitlement state so payment can slot in without reshuffling onboarding. Until Stripe is enabled:
+### `organizations` — additive columns
 
-- Individual path's "Continue to payment" button shows a `Coming soon` state, but still sets `entitlement='pending'` and completes onboarding into a **locked** app shell (a full-page paywall on `/coach` that reads entitlement).
-- Promo code is stashed via existing `savePendingPromoCode` and applied post-checkout.
+- `city text`, `region text`, `logo_url text null`
+- `is_listed boolean default true` — admins can hide test/dead orgs from search
+- `content_version int default 0` — bumped when the org pushes new shared content, used later to trigger per-coach sync
 
-Once Stripe is enabled in the next turn:
-- Add `startCoachCheckout` server fn → creates Stripe Checkout Session with `client_reference_id = coach_profiles.id` and any promo discount as a Stripe coupon.
-- Add `/api/public/stripe/webhook` route: on `checkout.session.completed` / `customer.subscription.updated`, set `entitlement`, `stripe_*`, `subscription_status`.
-- Paywall on `/coach` clears when `entitlement in ('paid','promo_free','club_covered')`.
+### `organization_leads` (new)
 
-## UI additions
+- `requested_org_name`, `requested_org_city`
+- `coach_user_id`, `coach_email`
+- `channel` (`share` | `copy` | `mailto` | `sms` | `later`)
+- `message_body`
+- `status` (`pending` | `contacted` | `converted` | `dismissed`) — admin-managed
+- RLS: coach INSERT/SELECT own; admins SELECT/UPDATE all via `has_role`
+- GRANTs: `SELECT, INSERT` to `authenticated`; `ALL` to `service_role`
 
-- `src/routes/_authenticated/coach.onboarding.tsx` — insert new first step `path`, gate `handleContinue` on org-code claim, thread `entitlement` through review.
-- `src/components/onboarding/coach-path-choice.tsx` — new component: two cards, expandable code inputs, uses `PromoCodeField` + a new sibling `OrgCodeField` (copy pattern from parent invite lookup).
-- `src/routes/_authenticated/admin.organizations.tsx` — new admin page (mirror `admin.promo-codes.tsx`) for org CRUD + code rotation + signup stats.
-- Add "Organizations" link to the admin nav.
-- Coach paywall component shown on `/coach` when entitlement is `pending`.
+### Content ownership — forward-compatible, no coach-facing UI yet
 
-## Design system usage
+Three existing tables (`moves`, `plans`, `resources`) each get **two nullable columns in the same migration**:
 
-All new UI uses existing tokens only: `bg-card`, `bg-elevated`, `text-accent-ink`, `pen-highlight`, `shadow-card`, `Button`, `Input`, `Label`, `Badge`, `Collapsible`. No hardcoded colors. Two-card path choice mirrors the visual weight of the existing role picker at `/`.
+- `organization_id uuid null references organizations(id) on delete set null`
+- `is_org_template boolean default false`
 
-## Out of scope (this plan)
+Semantics:
 
-- Club-admin self-serve dashboard (org creation stays admin-only).
-- Seat-based / per-coach club billing on Stripe (assumption: club pays Gradus out-of-band; `club_covered` is just a flag).
-- Migrating existing coaches to the new entitlement model — they'll be backfilled `paid` (or `club_covered` if manually assigned) in the same migration.
+- `organization_id IS NULL, coach_id IS NOT NULL` — today's normal per-coach row. Unchanged.
+- `organization_id IS NOT NULL, is_org_template = true, coach_id IS NULL` — a **club template**, authored by a Gradus admin (later: by a club admin). Not visible to athletes directly.
+- `organization_id IS NOT NULL, coach_id IS NOT NULL, is_org_template = false` — a **coach's copy** of a club template, materialized when they join or when the club pushes an update.
 
-## Ready to build?
+Fan-out mechanism (built later, but reserved now):
 
-Confirm and I'll:
-1. Run the migration.
-2. Implement org server fns + admin page + onboarding path step + paywall (no Stripe yet).
-3. In a follow-up, call `enable_stripe_payments`, add checkout + webhook, and wire the paywall to unlock.
+- A `seed_org_library(_coach_id, _organization_id)` function mirroring the existing `seed_coach_library` — runs on club-code claim, inserts a per-coach copy of every `is_org_template` row for that org whose `sport` matches the coach's `coach_levels`, respecting name-dedupe.
+- When admins push updates, they bump `organizations.content_version` and a follow-up job re-runs the seed for coaches whose `last_synced_content_version < content_version`.
+- Coach's own edits fork (copy-on-write): editing an org-sourced row nulls its `organization_id` link so future pushes don't overwrite personal changes. Details land with the actual push feature — the column is enough for now.
+
+RLS additions on `moves` / `plans` / `resources`:
+
+- Coaches SELECT org-template rows for their `organization_id` (read-only, so admin tooling can preview coach-facing content) — narrow policy, no writes.
+- All existing per-coach policies continue to work because `coach_id` still drives them.
+
+### `coach_profiles` — one column for future sync
+
+- `last_synced_content_version int default 0` — lets us push updates incrementally later. Zero UI impact today.
+
+Skipping this now means a schema migration on every table when the push feature ships. Doing it in the same migration as the search redesign is nearly free and avoids a second heavy migration.
+
+## Server functions (`src/lib/coach-org.functions.ts`)
+
+- `searchOrganizations({ query })` — public read-only via server publishable client + narrow `TO anon` SELECT policy on `organizations` (columns: `id, name, city, region, logo_url`, filtered `is_listed = true, active = true`). Returns up to 8 prefix-weighted matches.
+- `getPopularOrganizations()` — same shape, top 8 by coach count, for empty-search state.
+- `verifyOrgCodeForOrg({ orgId, code })` — replaces "any code works." Validates code belongs to the chosen org before entitlement flips.
+- `claimOrganizationInviteCode({ code })` — existing; unchanged externally, internally also stamps `last_synced_content_version = organizations.content_version` so the first push after this coach joins is scoped correctly.
+- `createOrganizationLead({ requestedOrgName, requestedOrgCity, channel, messageBody })` — auth-required.
+- **Reserved names** (empty stubs OK, not built now): `listOrgTemplates(kind)`, `pushOrgContent({ orgId })` — so the admin route can already link to placeholder tabs without churn later.
+
+## UI components (all composed from existing primitives)
+
+- `src/components/onboarding/org-search-combobox.tsx` — `Command` + `Popover` wrapper, top-anchored on mobile.
+- `src/components/onboarding/org-code-field.tsx` — **extracted** from the current inline block in `coach-path-choice.tsx` so it's reusable in both flows and testable in isolation. No visual change.
+- `src/components/onboarding/org-not-listed-card.tsx` — outreach card built from `bg-card` shell + `Textarea` + `Button` pair + toast.
+- `src/components/ui/chip.tsx` — already exists; reuse for the selected-org chip (do not create a new "OrgChip").
+- Refactor `coach-path-choice.tsx` so the "Club" branch is a small state machine: `search → (enter_code | not_listed) → confirmed | fell_back_to_individual`. The existing `PathCard` and card shell are untouched.
+
+## Admin surface
+
+Extend `src/routes/_authenticated/admin.organizations.tsx` with three tabs (using the existing table + Eyebrow header pattern already in that file — do not introduce a new tabs component if `Tabs` from shadcn isn't already imported nearby; reuse whichever pattern the sibling admin pages use):
+
+1. **Organizations** — today's table (name, code, coach count, active toggle) + new inline fields for `city`, `region`, `logo_url`, `is_listed`.
+2. **Club requests** — `organization_leads` list with quick actions: *Mark contacted*, *Create org from lead* (prefills name/city), *Dismiss*.
+3. **Content** (stub, reserved) — empty tab labelled "Move libraries, plan templates, resources" with a "Coming soon" state, wired to the reserved server fns above so the route doesn't need a rewrite when the push feature ships.
+
+## Copy (final)
+
+- Search placeholder: *"Search by club, academy, or association name"*
+- Empty search: *"No matches. Your club may not be on Gradus yet — [tell them about it]."*
+- Not-listed headline: *"Let's get your club on Gradus."*
+- Post-share confirmation: *"Nice — we'll notify you if {Club} joins. Keep going as an Individual coach for now."*
+
+## Explicitly out of scope (this turn)
+
+- The actual push mechanic for org-owned moves/plans/resources — the columns and RLS land now, the fan-out UI ships in a follow-up.
+- Club-admin self-serve dashboard — org + content authoring stays Gradus-admin-only.
+- "Waiting for club" entitlement state — per prior answer, coaches fall back to Individual.
+- Any change to the Individual branch, promo codes, Stripe wiring, or existing design tokens.

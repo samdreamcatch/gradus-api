@@ -1,20 +1,28 @@
 import { useEffect, useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
-import { Building2, User, Check, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Building2, Check, User } from "lucide-react";
+import { Chip } from "@/components/ui/chip";
 import { PromoCodeField } from "@/components/signup/promo-code-field";
-import { getOrganizationByInviteCode } from "@/lib/coach-org.functions";
+import { OrgCodeField } from "@/components/onboarding/org-code-field";
+import {
+  OrgSearchCombobox,
+  type OrgOption,
+} from "@/components/onboarding/org-search-combobox";
+import { OrgNotListedCard } from "@/components/onboarding/org-not-listed-card";
 import { cn } from "@/lib/utils";
 
 export type CoachPath = "individual" | "club";
 
+/**
+ * Onboarding path state. `orgId` is set once the coach picks a club from
+ * search. `orgVerified` flips true when the invite code matches that org.
+ */
 export interface CoachPathValue {
   path: CoachPath | null;
   promoCode: string;
-  orgCode: string;
+  orgId: string | null;
   orgName: string | null;
+  orgCity: string | null;
+  orgCode: string;
   orgVerified: boolean;
 }
 
@@ -23,62 +31,69 @@ interface Props {
   onChange: (next: CoachPathValue) => void;
 }
 
-/**
- * First step of coach onboarding: pick Individual (pay) or Club (skip payment).
- * Each choice expands its own inline detail — promo code for individuals,
- * organization invite code for club coaches.
- */
+type ClubStep = "search" | "code" | "not_listed";
+
 export function CoachPathChoice({ value, onChange }: Props) {
-  const lookup = useServerFn(getOrganizationByInviteCode);
-  const [lookupState, setLookupState] = useState<
-    "idle" | "checking" | "ok" | "notfound"
-  >(value.orgVerified ? "ok" : "idle");
+  // Derive the club sub-step from state so the parent stays authoritative.
+  const [clubStep, setClubStep] = useState<ClubStep>(() =>
+    value.orgId ? "code" : "search",
+  );
+
+  // If the parent replaces the org (e.g. prefill from URL), keep the sub-step
+  // in sync without stomping user navigation.
+  useEffect(() => {
+    if (value.path === "club" && value.orgId && clubStep === "search") {
+      setClubStep("code");
+    }
+  }, [value.path, value.orgId, clubStep]);
 
   const setPath = (path: CoachPath) => {
     onChange({ ...value, path });
+    if (path === "club" && !value.orgId) setClubStep("search");
   };
 
-  // Auto-verify the org code as soon as it hits 8 chars.
-  useEffect(() => {
-    if (value.path !== "club") return;
-    const trimmed = value.orgCode.trim().toUpperCase();
-    if (trimmed.length !== 8 || !/^[A-Z2-9]{8}$/.test(trimmed)) {
-      setLookupState(trimmed.length === 0 ? "idle" : "idle");
-      if (value.orgVerified || value.orgName) {
-        onChange({ ...value, orgName: null, orgVerified: false });
-      }
-      return;
-    }
-    if (value.orgVerified && value.orgName) return;
-    let cancelled = false;
-    setLookupState("checking");
-    (async () => {
-      try {
-        const res = await lookup({ data: { code: trimmed } });
-        if (cancelled) return;
-        if (res.found) {
-          setLookupState("ok");
-          onChange({
-            ...value,
-            orgCode: trimmed,
-            orgName: res.name,
-            orgVerified: true,
-          });
-        } else {
-          setLookupState("notfound");
-          onChange({ ...value, orgName: null, orgVerified: false });
-        }
-      } catch {
-        if (cancelled) return;
-        setLookupState("notfound");
-        onChange({ ...value, orgName: null, orgVerified: false });
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [value.orgCode, value.path]);
+  const handleOrgSelected = (org: OrgOption) => {
+    onChange({
+      ...value,
+      path: "club",
+      orgId: org.id,
+      orgName: org.name,
+      orgCity: org.city,
+      orgCode: "",
+      orgVerified: false,
+    });
+    setClubStep("code");
+  };
+
+  const handleChangeOrg = () => {
+    onChange({
+      ...value,
+      orgId: null,
+      orgName: null,
+      orgCity: null,
+      orgCode: "",
+      orgVerified: false,
+    });
+    setClubStep("search");
+  };
+
+  const handleNotListed = () => {
+    setClubStep("not_listed");
+  };
+
+  // "Continue as Individual" from the outreach card — flip path and clear
+  // club state, keeping the parent onboarding flow unchanged from here.
+  const handleFallbackToIndividual = () => {
+    onChange({
+      ...value,
+      path: "individual",
+      orgId: null,
+      orgName: null,
+      orgCity: null,
+      orgCode: "",
+      orgVerified: false,
+    });
+  };
 
   return (
     <div className="space-y-4">
@@ -104,56 +119,68 @@ export function CoachPathChoice({ value, onChange }: Props) {
         onSelect={() => setPath("club")}
         icon={<Building2 className="h-6 w-6" />}
         title="Part of a club, academy, or association"
-        blurb="Enter your club's invite code — your club covers payment for you."
+        blurb="Find your club and enter the invite code — your club covers payment for you."
       >
         {value.path === "club" && (
-          <div className="mt-4 space-y-2 border-t border-divider pt-4">
-            <Label htmlFor="org-code">Organization invite code</Label>
-            <div className="relative">
-              <Input
-                id="org-code"
-                value={value.orgCode}
-                onChange={(e) =>
-                  onChange({
-                    ...value,
-                    orgCode: e.target.value
-                      .toUpperCase()
-                      .replace(/[^A-Z2-9]/g, "")
-                      .slice(0, 8),
-                    orgName: null,
-                    orgVerified: false,
-                  })
+          <div className="mt-4 space-y-4 border-t border-divider pt-4">
+            {clubStep === "search" && (
+              <OrgSearchCombobox
+                selected={
+                  value.orgId
+                    ? {
+                        id: value.orgId,
+                        name: value.orgName ?? "",
+                        city: value.orgCity,
+                        region: null,
+                        logoUrl: null,
+                      }
+                    : null
                 }
-                placeholder="8-character code"
-                maxLength={8}
-                autoComplete="off"
-                spellCheck={false}
-                className="pr-10 font-mono uppercase tracking-widest"
+                onSelect={handleOrgSelected}
+                onNotListed={handleNotListed}
               />
-              <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
-                {lookupState === "checking" && (
-                  <Loader2 className="h-4 w-4 animate-spin text-text-tertiary" />
-                )}
-                {lookupState === "ok" && (
-                  <Check className="h-4 w-4 text-accent-ink" />
-                )}
-              </div>
-            </div>
-            {lookupState === "ok" && value.orgName && (
-              <p className="text-sm text-text-primary">
-                <span className="text-text-secondary">Linking with </span>
-                <span className="font-semibold">{value.orgName}</span>
-              </p>
             )}
-            {lookupState === "notfound" && (
-              <p className="text-xs text-destructive">
-                We don't recognize that code. Check with your club admin.
-              </p>
+
+            {clubStep === "code" && value.orgId && value.orgName && (
+              <>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Chip tone="accent" size="small" caseSensitive>
+                    <Building2 className="h-3.5 w-3.5" />
+                    {value.orgName}
+                  </Chip>
+                  <button
+                    type="button"
+                    onClick={handleChangeOrg}
+                    className="text-xs text-text-tertiary underline-offset-2 hover:text-text-secondary hover:underline"
+                  >
+                    Change
+                  </button>
+                </div>
+                <OrgCodeField
+                  orgId={value.orgId}
+                  orgName={value.orgName}
+                  value={value.orgCode}
+                  onChange={(code, verified) =>
+                    onChange({ ...value, orgCode: code, orgVerified: verified })
+                  }
+                />
+                <button
+                  type="button"
+                  onClick={handleNotListed}
+                  className="text-xs text-text-tertiary underline-offset-2 hover:text-text-secondary hover:underline"
+                >
+                  I don&apos;t have a code yet — message my club
+                </button>
+              </>
             )}
-            <p className="text-xs text-text-tertiary">
-              Don't have a code? Pick Individual coach above — you can switch later
-              from Settings.
-            </p>
+
+            {clubStep === "not_listed" && (
+              <OrgNotListedCard
+                initialClubName={value.orgName ?? ""}
+                initialClubCity={value.orgCity ?? ""}
+                onDone={handleFallbackToIndividual}
+              />
+            )}
           </div>
         )}
       </PathCard>
@@ -192,7 +219,9 @@ function PathCard({
           <div
             className={cn(
               "mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full sm:h-11 sm:w-11",
-              selected ? "bg-accent text-accent-foreground" : "bg-card text-text-secondary",
+              selected
+                ? "bg-accent text-accent-foreground"
+                : "bg-card text-text-secondary",
             )}
           >
             {icon}
@@ -201,7 +230,9 @@ function PathCard({
             <h3 className="text-[15px] font-semibold leading-snug text-text-primary sm:text-base">
               {title}
             </h3>
-            <p className="mt-1 text-sm leading-snug text-text-secondary">{blurb}</p>
+            <p className="mt-1 text-sm leading-snug text-text-secondary">
+              {blurb}
+            </p>
           </div>
           <div
             className={cn(
@@ -209,7 +240,9 @@ function PathCard({
               selected ? "border-accent bg-accent" : "border-divider",
             )}
           >
-            {selected && <Check className="h-full w-full p-0.5 text-accent-foreground" />}
+            {selected && (
+              <Check className="h-full w-full p-0.5 text-accent-foreground" />
+            )}
           </div>
         </div>
       </button>
