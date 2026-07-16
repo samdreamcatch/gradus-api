@@ -110,7 +110,7 @@ export function OrgSearchCombobox({ selected, onSelect, onNotListed }: Props) {
           ) : (
             <span className="flex items-center gap-2 text-text-secondary">
               <Search className="h-4 w-4" />
-              Search for your club, academy, or association
+              Search for your club
             </span>
           )}
           <ChevronDown className="h-4 w-4 shrink-0 text-text-secondary" />
