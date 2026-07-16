@@ -35,6 +35,8 @@ interface Props {
 type ClubStep = "search" | "code";
 
 export function CoachPathChoice({ value, onChange }: Props) {
+  const recordLead = useServerFn(recordSilentClubLead);
+
   // Derive the club sub-step from state so the parent stays authoritative.
   const [clubStep, setClubStep] = useState<ClubStep>(() =>
     value.orgId ? "code" : "search",
@@ -78,9 +80,7 @@ export function CoachPathChoice({ value, onChange }: Props) {
     setClubStep("search");
   };
 
-  // "My club isn't listed" / "I don't have a code" — clear club state and
-  // drop into the existing Individual path (promo code + paywall).
-  const handleFallbackToIndividual = () => {
+  const fallbackToIndividual = () => {
     onChange({
       ...value,
       path: "individual",
@@ -92,6 +92,37 @@ export function CoachPathChoice({ value, onChange }: Props) {
     });
     setClubStep("search");
   };
+
+  // "My club isn't listed" — silent lead with whatever they typed, then
+  // drop into Individual.
+  const handleNotListedFallback = (typedQuery: string) => {
+    void recordLead({
+      data: {
+        source: "not_listed",
+        typedQuery: typedQuery || undefined,
+      },
+    }).catch(() => {
+      /* silent — coach flow must not be blocked by lead capture */
+    });
+    fallbackToIndividual();
+  };
+
+  // "I don't have a code" — silent lead against the picked org, then
+  // drop into Individual.
+  const handleNoCodeFallback = () => {
+    void recordLead({
+      data: {
+        source: "no_code",
+        orgId: value.orgId,
+        orgName: value.orgName,
+        orgCity: value.orgCity,
+      },
+    }).catch(() => {
+      /* silent — coach flow must not be blocked by lead capture */
+    });
+    fallbackToIndividual();
+  };
+
 
   return (
     <div className="space-y-4">
