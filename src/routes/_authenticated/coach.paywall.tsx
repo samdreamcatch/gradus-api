@@ -235,10 +235,12 @@ function PaywallPage() {
                 <Button
                   type="button"
                   className="mt-6 w-full"
-                  disabled={loading}
+                  disabled={loading || isPro}
                   onClick={() => startCheckout(tier)}
                 >
-                  {loading && selectedTier === tier
+                  {isPro
+                    ? "Coming soon"
+                    : loading && selectedTier === tier
                     ? "Starting…"
                     : "Start 3-month free trial"}
                 </Button>
