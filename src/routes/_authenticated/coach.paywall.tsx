@@ -27,11 +27,11 @@ const PRICE_MAP: Record<Tier, Record<Interval, {
 }>> = {
   coach: {
     month: { priceId: "coach_monthly", monthlyEquivalent: 40, billed: "$40/mo, billed monthly" },
-    year: { priceId: "coach_yearly", monthlyEquivalent: 30, billed: "$360/yr — save $120" },
+    year: { priceId: "coach_yearly", monthlyEquivalent: 34, billed: "$408/yr — save $72" },
   },
   coach_pro: {
     month: { priceId: "coach_pro_monthly", monthlyEquivalent: 70, billed: "$70/mo, billed monthly" },
-    year: { priceId: "coach_pro_yearly", monthlyEquivalent: 52.5, billed: "$630/yr — save $210" },
+    year: { priceId: "coach_pro_yearly", monthlyEquivalent: 59.5, billed: "$714/yr — save $126" },
   },
 };
 
@@ -185,7 +185,7 @@ function PaywallPage() {
             >
               {iv === "month" ? "Monthly" : "Yearly"}
               {iv === "year" && (
-                <span className="ml-1 text-xs text-accent-ink">save 25%</span>
+                <span className="ml-1 text-xs text-accent-ink">save 15%</span>
               )}
             </button>
           ))}
@@ -235,10 +235,12 @@ function PaywallPage() {
                 <Button
                   type="button"
                   className="mt-6 w-full"
-                  disabled={loading}
+                  disabled={loading || isPro}
                   onClick={() => startCheckout(tier)}
                 >
-                  {loading && selectedTier === tier
+                  {isPro
+                    ? "Coming soon"
+                    : loading && selectedTier === tier
                     ? "Starting…"
                     : "Start 3-month free trial"}
                 </Button>
