@@ -208,7 +208,7 @@ function PaywallPage() {
                   </h2>
                   {isPro && (
                     <span className="rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-accent-ink">
-                      Popular
+                      COMING SOON
                     </span>
                   )}
                 </div>
