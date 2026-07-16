@@ -155,33 +155,6 @@ export const getPopularOrganizations = createServerFn({ method: "GET" })
     return { organizations: ranked };
   });
 
-/** Coach outreach — creates a "help onboard my club" lead for Gradus admins. */
-export const createOrganizationLead = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z
-      .object({
-        requestedOrgName: z.string().trim().min(1).max(200),
-        requestedOrgCity: z.string().trim().max(120).nullable().optional(),
-        channel: z.enum(["share", "copy", "mailto", "sms", "later"]),
-        messageBody: z.string().trim().min(1).max(2000),
-      })
-      .parse(input),
-  )
-  .handler(async ({ data, context }) => {
-    const supabase = context.supabase as Client;
-    const email = (context.claims as { email?: string })?.email ?? "";
-    const { error } = await supabase.from("organization_leads").insert({
-      coach_user_id: context.userId,
-      coach_email: String(email),
-      requested_org_name: data.requestedOrgName,
-      requested_org_city: data.requestedOrgCity ?? null,
-      channel: data.channel,
-      message_body: data.messageBody,
-    });
-    if (error) dbError(error);
-    return { ok: true };
-  });
 
 
 /**
