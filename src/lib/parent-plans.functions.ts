@@ -116,7 +116,9 @@ export const listParentPlans = createServerFn({ method: "GET" })
     }
 
     const planIds = plans.map((p) => p.id);
-    const coachIds = Array.from(new Set(plans.map((p) => p.coach_id)));
+    const coachIds = Array.from(
+      new Set(plans.map((p) => p.coach_id).filter((v): v is string => !!v)),
+    );
 
     const [movesRes, coachesRes] = await Promise.all([
       supabase
@@ -164,8 +166,8 @@ export const listParentPlans = createServerFn({ method: "GET" })
           status: p.status as ParentPlanStatus,
           athleteId: p.athlete_id as string,
           athleteName: athleteName.get(p.athlete_id as string) ?? "",
-          coachId: p.coach_id,
-          coachName: coachName.get(p.coach_id) ?? "Coach",
+          coachId: p.coach_id ?? "",
+          coachName: (p.coach_id && coachName.get(p.coach_id)) || "Coach",
           moveCount: a.count,
           totalMinutes: a.minutes,
           updatedAt: p.updated_at,
@@ -228,7 +230,7 @@ export const getParentPlan = createServerFn({ method: "POST" })
       supabaseAdmin
         .from("coach_profiles")
         .select("first_name, last_name")
-        .eq("id", plan.coach_id)
+        .eq("id", plan.coach_id ?? "")
         .maybeSingle(),
     ]);
     if (movesRes.error) dbError(movesRes.error);
@@ -260,7 +262,7 @@ export const getParentPlan = createServerFn({ method: "POST" })
       status: plan.status as ParentPlanStatus,
       athleteId: plan.athlete_id,
       athleteFirstName: athleteRes.data?.first_name ?? "",
-      coachId: plan.coach_id,
+      coachId: plan.coach_id ?? "",
       coachName: `${coachFirst} ${coachLast}`.trim(),
       coachFirstName: coachFirst,
       moveCount: moves.length,
