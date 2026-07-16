@@ -215,7 +215,7 @@ function PathCard({
         onClick={onSelect}
         className="press block w-full rounded-lg text-left focus-surface"
       >
-        <div className="flex w-full items-start gap-3 sm:gap-4">
+        <div className="flex w-full items-center gap-3 sm:gap-4">
           <div
             className={cn(
               "mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full sm:h-11 sm:w-11",
