@@ -276,7 +276,7 @@ export const listOrganizations = createServerFn({ method: "GET" })
     const [orgs, codes] = await Promise.all([
       supabaseAdmin
         .from("organizations")
-        .select("id, name, slug, active, notes, created_at")
+        .select("id, name, slug, active, notes, city, region, logo_url, is_listed, content_version, created_at")
         .order("created_at", { ascending: false }),
       supabaseAdmin
         .from("organization_invite_codes")
@@ -300,6 +300,11 @@ export const listOrganizations = createServerFn({ method: "GET" })
         slug: o.slug,
         active: o.active,
         notes: o.notes,
+        city: (o as { city?: string | null }).city ?? null,
+        region: (o as { region?: string | null }).region ?? null,
+        logoUrl: (o as { logo_url?: string | null }).logo_url ?? null,
+        isListed: (o as { is_listed?: boolean }).is_listed ?? true,
+        contentVersion: (o as { content_version?: number }).content_version ?? 0,
         createdAt: o.created_at,
         activeCode: byOrg.get(o.id)?.code ?? null,
       })),
