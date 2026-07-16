@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+import { createFileRoute, Outlet, redirect, isRedirect } from "@tanstack/react-router";
 import { requireRole } from "@/lib/role-guard";
 import { coachProfileQueryOptions } from "@/hooks/use-coach-profile";
 import { ConnectionCelebration } from "@/components/connection-celebration";
@@ -16,17 +16,20 @@ export const Route = createFileRoute("/_authenticated/coach")({
       return;
     }
 
+    let data;
     try {
-      const data = await context.queryClient.ensureQueryData(coachProfileQueryOptions);
-      if (!data.profile.onboardedAt) {
-        throw redirect({ to: "/coach/onboarding" });
-      }
-      if (!ENTITLED.has(data.profile.entitlement)) {
-        throw redirect({ to: "/coach/paywall" });
-      }
+      data = await context.queryClient.ensureQueryData(coachProfileQueryOptions);
     } catch (err) {
-      if (err && typeof err === "object" && "to" in err) throw err;
-      // If the profile query fails for another reason, let downstream loaders handle it.
+      // Re-throw redirects (e.g. auth) but swallow transient fetch failures so
+      // downstream loaders can surface their own errors.
+      if (isRedirect(err)) throw err;
+      return;
+    }
+    if (!data.profile.onboardedAt) {
+      throw redirect({ to: "/coach/onboarding" });
+    }
+    if (!ENTITLED.has(data.profile.entitlement)) {
+      throw redirect({ to: "/coach/paywall" });
     }
   },
   component: () => (
