@@ -119,7 +119,7 @@ export function CoachPathChoice({ value, onChange }: Props) {
         onSelect={() => setPath("club")}
         icon={<Building2 className="h-6 w-6" />}
         title="Part of a club, academy, or association"
-        blurb="Find your club and enter the invite code — your club covers payment for you."
+        blurb=""
       >
         {value.path === "club" && (
           <div className="mt-4 space-y-4 border-t border-divider pt-4">
