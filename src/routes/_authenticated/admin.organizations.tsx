@@ -3,19 +3,23 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { RefreshCw, Copy } from "lucide-react";
+import { RefreshCw, Copy, Send, Mail, MessageSquare, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Eyebrow } from "@/components/ui/eyebrow";
+import { Chip } from "@/components/ui/chip";
 import {
   createOrganization,
   getOrganizationStats,
+  listOrganizationLeads,
   listOrganizations,
   rotateOrganizationInviteCode,
   updateOrganization,
+  updateOrganizationLead,
 } from "@/lib/coach-org.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/organizations")({
@@ -23,6 +27,62 @@ export const Route = createFileRoute("/_authenticated/admin/organizations")({
 });
 
 function OrganizationsPage() {
+  return (
+    <div className="mx-auto max-w-5xl space-y-8 px-4 py-10">
+      <header className="space-y-2">
+        <Link
+          to="/admin"
+          search={{ test: false }}
+          className="text-xs font-semibold uppercase tracking-widest text-text-secondary hover:text-text-primary"
+        >
+          ← Admin
+        </Link>
+        <h1 className="font-display text-h1 text-text-primary">
+          Organizations
+        </h1>
+        <p className="text-sm text-text-secondary">
+          Clubs, academies, and associations whose coaches skip individual
+          payment. Each org has a rotatable 8-character invite code.
+        </p>
+      </header>
+
+      <Tabs defaultValue="orgs" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="orgs">Organizations</TabsTrigger>
+          <TabsTrigger value="leads">Club requests</TabsTrigger>
+          <TabsTrigger value="content" disabled>
+            Content
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="orgs" className="space-y-8">
+          <OrgsTab />
+        </TabsContent>
+
+        <TabsContent value="leads" className="space-y-6">
+          <LeadsTab />
+        </TabsContent>
+
+        <TabsContent value="content">
+          <div className="rounded-2xl border border-divider bg-card p-8 text-center">
+            <p className="font-display text-h3 text-text-primary">
+              Club-owned move libraries, plan templates, and resources
+            </p>
+            <p className="mt-2 text-sm text-text-secondary">
+              Coming soon. The database is ready to push shared content from an
+              organization to every coach in it — the authoring UI ships in a
+              follow-up.
+            </p>
+          </div>
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
+
+/* ---------- Organizations tab ---------- */
+
+function OrgsTab() {
   const list = useServerFn(listOrganizations);
   const stats = useServerFn(getOrganizationStats);
   const create = useServerFn(createOrganization);
@@ -40,6 +100,8 @@ function OrganizationsPage() {
   });
 
   const [name, setName] = useState("");
+  const [city, setCity] = useState("");
+  const [region, setRegion] = useState("");
   const [notes, setNotes] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -52,7 +114,20 @@ function OrganizationsPage() {
       const res = await create({
         data: { name: name.trim(), notes: notes.trim() || null },
       });
+      // If city/region were provided, patch them in a follow-up update since
+      // create only accepts name/notes today.
+      if (city.trim() || region.trim()) {
+        await update({
+          data: {
+            id: res.id,
+            city: city.trim() || null,
+            region: region.trim() || null,
+          },
+        });
+      }
       setName("");
+      setCity("");
+      setRegion("");
       setNotes("");
       toast.success(`Created — code ${res.code}`);
       await qc.invalidateQueries({ queryKey: ["admin-organizations"] });
@@ -66,6 +141,15 @@ function OrganizationsPage() {
   const toggleActive = async (id: string, next: boolean) => {
     try {
       await update({ data: { id, active: next } });
+      await qc.invalidateQueries({ queryKey: ["admin-organizations"] });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Update failed");
+    }
+  };
+
+  const toggleListed = async (id: string, next: boolean) => {
+    try {
+      await update({ data: { id, isListed: next } });
       await qc.invalidateQueries({ queryKey: ["admin-organizations"] });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Update failed");
@@ -95,35 +179,46 @@ function OrganizationsPage() {
   const counts = statsData?.counts ?? {};
 
   return (
-    <div className="mx-auto max-w-4xl space-y-8 px-4 py-10">
-      <header className="space-y-2">
-        <Link
-          to="/admin"
-          search={{ test: false }}
-          className="text-xs font-semibold uppercase tracking-widest text-text-secondary hover:text-text-primary"
-        >
-          ← Admin
-        </Link>
-        <h1 className="font-display text-h1 text-text-primary">Organizations</h1>
-        <p className="text-sm text-text-secondary">
-          Clubs, academies, and associations whose coaches skip individual
-          payment. Each org has a rotatable 8-character invite code.
-        </p>
-      </header>
-
+    <>
       <section className="rounded-2xl border border-divider bg-card p-5">
-        <h2 className="mb-4 font-display text-h3 text-text-primary">New organization</h2>
+        <h2 className="mb-4 font-display text-h3 text-text-primary">
+          New organization
+        </h2>
         <form onSubmit={handleCreate} className="grid gap-4">
-          <div className="space-y-1.5">
-            <Label htmlFor="new-name">Name</Label>
-            <Input
-              id="new-name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Elite Tennis Academy"
-              maxLength={120}
-              required
-            />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="new-name">Name</Label>
+              <Input
+                id="new-name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Elite Tennis Academy"
+                maxLength={120}
+                required
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="new-city">City</Label>
+                <Input
+                  id="new-city"
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  placeholder="Ashburn"
+                  maxLength={120}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="new-region">Region</Label>
+                <Input
+                  id="new-region"
+                  value={region}
+                  onChange={(e) => setRegion(e.target.value)}
+                  placeholder="VA"
+                  maxLength={120}
+                />
+              </div>
+            </div>
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="new-notes">Notes (optional)</Label>
@@ -146,7 +241,9 @@ function OrganizationsPage() {
       </section>
 
       <section className="overflow-hidden rounded-2xl border border-divider bg-card">
-        <h2 className="px-5 pt-4 font-display text-h3 text-text-primary">All organizations</h2>
+        <h2 className="px-5 pt-4 font-display text-h3 text-text-primary">
+          All organizations
+        </h2>
         {orgs.length === 0 ? (
           <p className="px-5 py-6 text-sm text-text-secondary">None yet.</p>
         ) : (
@@ -157,6 +254,7 @@ function OrganizationsPage() {
                   <Eyebrow as="th" size="caption" tone="tertiary" weight="normal" tracking="wide" className="px-5 py-3">Name</Eyebrow>
                   <Eyebrow as="th" size="caption" tone="tertiary" weight="normal" tracking="wide" className="px-3 py-3">Active code</Eyebrow>
                   <Eyebrow as="th" size="caption" tone="tertiary" weight="normal" tracking="wide" className="px-3 py-3 text-right">Coaches</Eyebrow>
+                  <Eyebrow as="th" size="caption" tone="tertiary" weight="normal" tracking="wide" className="px-3 py-3 text-right">Listed</Eyebrow>
                   <Eyebrow as="th" size="caption" tone="tertiary" weight="normal" tracking="wide" className="px-5 py-3 text-right">Active</Eyebrow>
                 </tr>
               </thead>
@@ -165,6 +263,11 @@ function OrganizationsPage() {
                   <tr key={o.id} className="hover:bg-elevated">
                     <td className="px-5 py-3">
                       <div className="font-semibold text-text-primary">{o.name}</div>
+                      {(o.city || o.region) && (
+                        <div className="text-xs text-text-secondary">
+                          {[o.city, o.region].filter(Boolean).join(", ")}
+                        </div>
+                      )}
                       {o.notes && (
                         <div className="line-clamp-1 text-xs text-text-tertiary">{o.notes}</div>
                       )}
@@ -199,6 +302,13 @@ function OrganizationsPage() {
                     <td className="px-3 py-3 text-right font-mono text-text-primary">
                       {counts[o.id] ?? 0}
                     </td>
+                    <td className="px-3 py-3 text-right">
+                      <Switch
+                        checked={o.isListed}
+                        onCheckedChange={(v) => void toggleListed(o.id, v === true)}
+                        aria-label={`Toggle ${o.name} listed in search`}
+                      />
+                    </td>
                     <td className="px-5 py-3 text-right">
                       <Switch
                         checked={o.active}
@@ -213,6 +323,133 @@ function OrganizationsPage() {
           </div>
         )}
       </section>
-    </div>
+    </>
+  );
+}
+
+/* ---------- Leads tab ---------- */
+
+const CHANNEL_ICON: Record<string, React.ReactNode> = {
+  share: <Share2 className="h-3 w-3" />,
+  copy: <Copy className="h-3 w-3" />,
+  mailto: <Mail className="h-3 w-3" />,
+  sms: <MessageSquare className="h-3 w-3" />,
+  later: <Send className="h-3 w-3" />,
+};
+
+function LeadsTab() {
+  const listLeads = useServerFn(listOrganizationLeads);
+  const updateLead = useServerFn(updateOrganizationLead);
+  const qc = useQueryClient();
+
+  const { data } = useQuery({
+    queryKey: ["admin-organization-leads"],
+    queryFn: () => listLeads(),
+  });
+
+  const setStatus = async (
+    id: string,
+    status: "pending" | "contacted" | "converted" | "dismissed",
+  ) => {
+    try {
+      await updateLead({ data: { id, status } });
+      await qc.invalidateQueries({ queryKey: ["admin-organization-leads"] });
+      toast.success(`Marked ${status}`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Update failed");
+    }
+  };
+
+  const leads = data?.leads ?? [];
+
+  return (
+    <section className="overflow-hidden rounded-2xl border border-divider bg-card">
+      <h2 className="px-5 pt-4 font-display text-h3 text-text-primary">
+        Club requests
+      </h2>
+      <p className="px-5 pb-4 text-sm text-text-secondary">
+        Coaches whose club isn&apos;t on Gradus yet. Use these to reach out to
+        club leadership and onboard new organizations.
+      </p>
+      {leads.length === 0 ? (
+        <p className="px-5 pb-6 text-sm text-text-secondary">No requests yet.</p>
+      ) : (
+        <ul className="divide-y divide-divider">
+          {leads.map((l) => (
+            <li key={l.id} className="space-y-2 px-5 py-4">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="font-semibold text-text-primary">
+                  {l.requestedOrgName}
+                </span>
+                {l.requestedOrgCity && (
+                  <span className="text-xs text-text-secondary">
+                    {l.requestedOrgCity}
+                  </span>
+                )}
+                <Chip
+                  size="nano"
+                  tone={
+                    l.status === "converted"
+                      ? "accent"
+                      : l.status === "dismissed"
+                        ? "muted"
+                        : "default"
+                  }
+                >
+                  {l.status}
+                </Chip>
+                <Chip size="nano" tone="muted">
+                  {CHANNEL_ICON[l.channel]}
+                  {l.channel}
+                </Chip>
+                <span className="ml-auto text-xs text-text-tertiary">
+                  {new Date(l.createdAt).toLocaleDateString()}
+                </span>
+              </div>
+              <div className="text-xs text-text-secondary">
+                <a
+                  href={`mailto:${l.coachEmail}`}
+                  className="text-accent-ink hover:underline"
+                >
+                  {l.coachEmail}
+                </a>
+              </div>
+              <p className="rounded-md bg-elevated px-3 py-2 text-xs text-text-primary">
+                {l.messageBody}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {l.status !== "contacted" && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => void setStatus(l.id, "contacted")}
+                  >
+                    Mark contacted
+                  </Button>
+                )}
+                {l.status !== "converted" && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => void setStatus(l.id, "converted")}
+                  >
+                    Mark converted
+                  </Button>
+                )}
+                {l.status !== "dismissed" && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => void setStatus(l.id, "dismissed")}
+                  >
+                    Dismiss
+                  </Button>
+                )}
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }
