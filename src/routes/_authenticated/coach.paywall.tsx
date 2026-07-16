@@ -40,6 +40,7 @@ const FEATURES: Record<Tier, string[]> = {
     "Full coaching workspace",
     "Roster, plans, and messaging",
     "Athlete & parent portals",
+    "Up to 25 athletes",
   ],
   coach_pro: [
     "Everything in Coach",
