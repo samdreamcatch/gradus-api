@@ -3,23 +3,19 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { RefreshCw, Copy, Send, Mail, MessageSquare, Share2 } from "lucide-react";
+import { RefreshCw, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Eyebrow } from "@/components/ui/eyebrow";
-import { Chip } from "@/components/ui/chip";
 import {
   createOrganization,
   getOrganizationStats,
-  listOrganizationLeads,
   listOrganizations,
   rotateOrganizationInviteCode,
   updateOrganization,
-  updateOrganizationLead,
 } from "@/lib/coach-org.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/organizations")({
@@ -46,41 +42,13 @@ function OrganizationsPage() {
         </p>
       </header>
 
-      <Tabs defaultValue="orgs" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="orgs">Organizations</TabsTrigger>
-          <TabsTrigger value="leads">Club requests</TabsTrigger>
-          <TabsTrigger value="content" disabled>
-            Content
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="orgs" className="space-y-8">
-          <OrgsTab />
-        </TabsContent>
-
-        <TabsContent value="leads" className="space-y-6">
-          <LeadsTab />
-        </TabsContent>
-
-        <TabsContent value="content">
-          <div className="rounded-2xl border border-divider bg-card p-8 text-center">
-            <p className="font-display text-h3 text-text-primary">
-              Club-owned move libraries, plan templates, and resources
-            </p>
-            <p className="mt-2 text-sm text-text-secondary">
-              Coming soon. The database is ready to push shared content from an
-              organization to every coach in it — the authoring UI ships in a
-              follow-up.
-            </p>
-          </div>
-        </TabsContent>
-      </Tabs>
+      <OrgsTab />
     </div>
   );
 }
 
 /* ---------- Organizations tab ---------- */
+
 
 function OrgsTab() {
   const list = useServerFn(listOrganizations);
