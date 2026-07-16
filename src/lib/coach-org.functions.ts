@@ -377,7 +377,15 @@ export const updateOrganization = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const patch: Record<string, unknown> = {};
+    const patch: {
+      name?: string;
+      notes?: string | null;
+      active?: boolean;
+      city?: string | null;
+      region?: string | null;
+      logo_url?: string | null;
+      is_listed?: boolean;
+    } = {};
     if (data.name !== undefined) patch.name = data.name;
     if (data.notes !== undefined) patch.notes = data.notes;
     if (data.active !== undefined) patch.active = data.active;
