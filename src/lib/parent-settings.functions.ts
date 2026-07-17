@@ -730,7 +730,12 @@ export const addAthlete = createServerFn({ method: "POST" })
       const code = genCode(8);
       const c = await supabaseAdmin
         .from("athlete_invite_codes")
-        .insert({ parent_id: parent.id, athlete_id: ins.data.id, code });
+        .insert({
+          parent_id: parent.id,
+          athlete_id: ins.data.id,
+          code,
+          promo_code: parent.promo_code,
+        });
       if (!c.error) break;
     }
 
