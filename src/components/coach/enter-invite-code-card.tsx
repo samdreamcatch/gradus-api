@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,14 @@ import {
   claimAdultAthleteInvite,
   getAdultAthleteByInviteCode,
 } from "@/lib/adult-athlete-invite.functions";
+import { coachProfileQueryOptions } from "@/hooks/use-coach-profile";
+import { isCoachProAvailable } from "@/lib/paywall-flag";
+import {
+  coachProSoonDescription,
+  coachRosterFullCopy,
+  isRosterFullError,
+} from "@/lib/roster-limits";
+
 
 /**
  * Coach-side "enter a code" card. Lets a coach paste a parent or adult-athlete
