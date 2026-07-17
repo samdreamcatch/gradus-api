@@ -19,6 +19,8 @@ import {
   getCoachAthleteAiSummary,
   type Verdict,
 } from "@/lib/coach-athlete-detail.functions";
+import { useCoachProfile } from "@/hooks/use-coach-profile";
+
 
 
 export function AthleteDetailSheet({
@@ -50,6 +52,11 @@ function AthleteDetailBody({ athleteId }: { athleteId: string }) {
   const fetchDetail = useServerFn(getCoachAthleteDetail);
   const fetchSummary = useServerFn(getCoachAthleteAiSummary);
   const [openOtherCoachId, setOpenOtherCoachId] = useState<string | null>(null);
+  const profile = useCoachProfile();
+  const effectiveTier = profile.data?.profile.effectiveTier;
+  const canViewOtherCoachPlans =
+    effectiveTier === "coach_pro" || effectiveTier === "club";
+
 
   const detail = useQuery({
     queryKey: ["coach", "athlete-detail", athleteId],
@@ -237,20 +244,24 @@ function AthleteDetailBody({ athleteId }: { athleteId: string }) {
       <AlsoCoachedByList
         coaches={d.otherCoaches}
         onOpenCoach={setOpenOtherCoachId}
+        locked={!canViewOtherCoachPlans}
       />
 
-      <OtherCoachPlansSheet
-        coach={
-          d.otherCoaches.find((c) => c.coachId === openOtherCoachId) ?? null
-        }
-        athleteFirstName={d.firstName}
-        onOpenChange={(v) => {
-          if (!v) setOpenOtherCoachId(null);
-        }}
-      />
+      {canViewOtherCoachPlans ? (
+        <OtherCoachPlansSheet
+          coach={
+            d.otherCoaches.find((c) => c.coachId === openOtherCoachId) ?? null
+          }
+          athleteFirstName={d.firstName}
+          onOpenChange={(v) => {
+            if (!v) setOpenOtherCoachId(null);
+          }}
+        />
+      ) : null}
     </div>
   );
 }
+
 
 
 function formatSportList(labels: string[]): string {
