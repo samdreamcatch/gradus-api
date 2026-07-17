@@ -68,7 +68,11 @@ export const startCoachCheckout = createServerFn({ method: "POST" })
       // promotion code in this env, attach it as a lifetime discount.
       let discountPromoId: string | undefined;
       if (profile?.promo_code) {
-        const promoLookup = await supabase
+        // Stripe IDs are hidden from the authenticated client; read via admin.
+        const { supabaseAdmin } = await import(
+          "@/integrations/supabase/client.server"
+        );
+        const promoLookup = await supabaseAdmin
           .from("promo_codes")
           .select(
             "code, active, percent_off, stripe_promo_id_sandbox, stripe_promo_id_live",
