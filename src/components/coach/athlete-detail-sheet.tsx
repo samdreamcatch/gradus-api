@@ -244,20 +244,24 @@ function AthleteDetailBody({ athleteId }: { athleteId: string }) {
       <AlsoCoachedByList
         coaches={d.otherCoaches}
         onOpenCoach={setOpenOtherCoachId}
+        locked={!canViewOtherCoachPlans}
       />
 
-      <OtherCoachPlansSheet
-        coach={
-          d.otherCoaches.find((c) => c.coachId === openOtherCoachId) ?? null
-        }
-        athleteFirstName={d.firstName}
-        onOpenChange={(v) => {
-          if (!v) setOpenOtherCoachId(null);
-        }}
-      />
+      {canViewOtherCoachPlans ? (
+        <OtherCoachPlansSheet
+          coach={
+            d.otherCoaches.find((c) => c.coachId === openOtherCoachId) ?? null
+          }
+          athleteFirstName={d.firstName}
+          onOpenChange={(v) => {
+            if (!v) setOpenOtherCoachId(null);
+          }}
+        />
+      ) : null}
     </div>
   );
 }
+
 
 
 function formatSportList(labels: string[]): string {
