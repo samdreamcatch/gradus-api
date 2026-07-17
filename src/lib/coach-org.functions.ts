@@ -267,6 +267,230 @@ export const claimOrganizationInviteCode = createServerFn({ method: "POST" })
     return { organizationId: org.id, name: org.name };
   });
 
+/**
+ * Settings-side "join a club" flow for coaches who are ALREADY signed up
+ * (individual paid, trialing, or pending) and now want to move onto a
+ * club-covered plan. Handles their existing Stripe subscription:
+ *   - Monthly:  cancel_at_period_end (no refund; they've paid for the current month)
+ *   - Annual:   immediate cancel + prorated refund for the unused fraction
+ *   - Trialing: immediate cancel, no refund
+ * Then links the coach to the org and flips entitlement to club_covered.
+ *
+ * Returns a serializable result — Stripe failures short-circuit BEFORE the
+ * org link is written so the coach can retry safely.
+ */
+export type JoinOrganizationResult =
+  | {
+      ok: true;
+      organizationId: string;
+      name: string;
+      subscriptionOutcome:
+        | { kind: "none" }
+        | { kind: "already_joined" }
+        | { kind: "canceled_immediately"; refundedCents: number; currency: string }
+        | { kind: "canceled_at_period_end"; periodEnd: string | null }
+        | { kind: "trial_canceled" };
+    }
+  | { ok: false; error: string };
+
+export const joinOrganization = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        code: codeSchema,
+        environment: z.enum(["sandbox", "live"]),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }): Promise<JoinOrganizationResult> => {
+    const supabase = context.supabase as Client;
+
+    // 1. Load coach profile.
+    const coach = await supabase
+      .from("coach_profiles")
+      .select(
+        "id, organization_id, entitlement, subscription_status, stripe_customer_id",
+      )
+      .eq("user_id", context.userId)
+      .maybeSingle();
+    if (coach.error) dbError(coach.error);
+    if (!coach.data) return { ok: false, error: "Coach profile missing." };
+
+    // 2. Resolve + validate the code.
+    const lookup = await supabase
+      .from("organization_invite_codes")
+      .select("organization_id, active, organizations!inner(id, name, active)")
+      .eq("code", data.code)
+      .maybeSingle();
+    if (lookup.error) dbError(lookup.error);
+    if (!lookup.data || !lookup.data.active) {
+      return { ok: false, error: "That code isn't recognized." };
+    }
+    const org = lookup.data.organizations as {
+      id: string;
+      name: string;
+      active: boolean;
+    };
+    if (!org.active) return { ok: false, error: "That organization is inactive." };
+
+    // Idempotent: already on this club.
+    if (
+      coach.data.entitlement === "club_covered" &&
+      coach.data.organization_id === org.id
+    ) {
+      return {
+        ok: true,
+        organizationId: org.id,
+        name: org.name,
+        subscriptionOutcome: { kind: "already_joined" },
+      };
+    }
+
+    // 3. Handle any active Stripe subscription BEFORE we flip the org link.
+    let subscriptionOutcome: (JoinOrganizationResult & { ok: true })["subscriptionOutcome"] = {
+      kind: "none",
+    };
+
+    if (coach.data.stripe_customer_id && coach.data.entitlement === "paid") {
+      try {
+        const env = data.environment as StripeEnv;
+        const stripe = createStripeClient(env);
+        const list = await stripe.subscriptions.list({
+          customer: coach.data.stripe_customer_id,
+          status: "all",
+          limit: 10,
+          expand: ["data.items.data.price"],
+        });
+        const sub = list.data
+          .filter((s) =>
+            ["active", "trialing", "past_due"].includes(s.status) &&
+            !(s.cancel_at_period_end && s.status !== "trialing"),
+          )
+          .sort((a, b) => (b.created ?? 0) - (a.created ?? 0))[0];
+
+        if (sub) {
+          if (sub.status === "trialing") {
+            await stripe.subscriptions.cancel(sub.id);
+            subscriptionOutcome = { kind: "trial_canceled" };
+          } else {
+            const item = sub.items.data[0];
+            const interval = item?.price?.recurring?.interval;
+            if (interval === "month") {
+              await stripe.subscriptions.update(sub.id, {
+                cancel_at_period_end: true,
+              });
+              const periodEnd =
+                item?.current_period_end ?? (sub as unknown as { current_period_end?: number }).current_period_end ?? null;
+              subscriptionOutcome = {
+                kind: "canceled_at_period_end",
+                periodEnd: periodEnd
+                  ? new Date(periodEnd * 1000).toISOString()
+                  : null,
+              };
+            } else if (interval === "year") {
+              // Compute unused fraction from the current period.
+              const periodStart =
+                item?.current_period_start ??
+                (sub as unknown as { current_period_start?: number }).current_period_start ??
+                null;
+              const periodEnd =
+                item?.current_period_end ??
+                (sub as unknown as { current_period_end?: number }).current_period_end ??
+                null;
+
+              let refundedCents = 0;
+              let currency = "usd";
+              if (periodStart && periodEnd && periodEnd > periodStart) {
+                const nowSec = Math.floor(Date.now() / 1000);
+                const totalSec = periodEnd - periodStart;
+                const unusedSec = Math.max(0, periodEnd - nowSec);
+                const unusedFraction = Math.min(1, unusedSec / totalSec);
+
+                if (unusedFraction > 0) {
+                  const invoices = await stripe.invoices.list({
+                    subscription: sub.id,
+                    status: "paid",
+                    limit: 1,
+                  });
+                  const inv = invoices.data[0];
+                  const chargeId =
+                    typeof (inv as unknown as { charge?: string | { id: string } })?.charge === "string"
+                      ? ((inv as unknown as { charge: string }).charge)
+                      : (inv as unknown as { charge?: { id: string } })?.charge?.id;
+                  if (inv && chargeId && inv.amount_paid > 0) {
+                    const refundAmount = Math.round(
+                      inv.amount_paid * unusedFraction,
+                    );
+                    if (refundAmount > 0) {
+                      const refund = await stripe.refunds.create({
+                        charge: chargeId,
+                        amount: refundAmount,
+                        reason: "requested_by_customer",
+                        metadata: {
+                          userId: context.userId,
+                          reason: "joined_club",
+                          organizationId: org.id,
+                        },
+                      });
+                      refundedCents = refund.amount;
+                      currency = refund.currency;
+                    }
+                  }
+                }
+              }
+              await stripe.subscriptions.cancel(sub.id);
+              subscriptionOutcome = {
+                kind: "canceled_immediately",
+                refundedCents,
+                currency,
+              };
+            } else {
+              // Unknown interval — safest to cancel at period end.
+              await stripe.subscriptions.update(sub.id, {
+                cancel_at_period_end: true,
+              });
+              subscriptionOutcome = {
+                kind: "canceled_at_period_end",
+                periodEnd: null,
+              };
+            }
+          }
+        }
+      } catch (err) {
+        return { ok: false, error: getStripeErrorMessage(err) };
+      }
+    }
+
+    // 4. Stamp the coach's sync cursor and flip to club_covered.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const versionRow = await supabaseAdmin
+      .from("organizations")
+      .select("content_version")
+      .eq("id", org.id)
+      .maybeSingle();
+    if (versionRow.error) dbError(versionRow.error);
+    const version =
+      (versionRow.data?.content_version as number | null | undefined) ?? 0;
+
+    const update = await supabase
+      .from("coach_profiles")
+      .update({
+        organization_id: org.id,
+        entitlement: "club_covered",
+        last_synced_content_version: version,
+      })
+      .eq("id", coach.data.id);
+    if (update.error) dbError(update.error);
+
+    return {
+      ok: true,
+      organizationId: org.id,
+      name: org.name,
+      subscriptionOutcome,
+    };
+  });
+
 /** Coach-side: clear the org link (rejoins the pending/paid path). */
 export const clearOrganizationLink = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
