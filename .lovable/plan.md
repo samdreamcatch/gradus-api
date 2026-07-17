@@ -1,70 +1,59 @@
 ## Goal
 
-Let an individual coach join a club from **Settings → Plan** using a search + code flow, auto-handle their existing Stripe subscription, and capture the club name when the club isn't listed so BD can follow up.
+Bypass the coach paywall entirely until we're ready to enable billing. Anyone who signs up during this window becomes a **Founding Coach** — free forever, never billed, even after the paywall goes live for future signups.
 
-## UI: "Join a club" in Plan section
+## Approach
 
-In `src/routes/_authenticated/coach.settings.tsx`, inside `PlanSection`, add a new row below "Manage subscription" (and also in the `"pending"` "No plan yet" branch):
+Add a single env flag `VITE_COACH_PAYWALL_ENABLED` (default `false`). While the flag is off:
 
-```
-🏢  Join a club              ▸
-    Your club covers your plan — enter their code to switch.
-```
+### 1. Route guard — `src/routes/_authenticated/coach.tsx`
+Drop the paywall redirect. Onboarding redirect stays. An onboarded coach with any entitlement value goes straight into the app.
 
-Tapping opens a **bottom Sheet** (per overlay doctrine) titled **"Join a club"** containing the existing two-step flow reused from onboarding:
+### 2. Onboarding completion — `src/lib/coach-profile.functions.ts`
+In `completeOnboarding`, when the flag is off, also set:
+- `entitlement = 'promo_free'` (already in the `ENTITLED` set — no schema change needed)
+- `promo_code = 'FOUNDING_COACH'`
 
-1. `OrgSearchCombobox` — search / pick the club
-2. `OrgCodeField` — enter and verify the 8-char code
-3. Primary button **"Join {club name}"** (disabled until `orgVerified === true`)
+`promo_free` + `FOUNDING_COACH` is the durable marker of the cohort. Nothing later reads the env flag to decide access — once stamped, they're free forever regardless of whether the paywall gets turned on for new signups.
 
-If the coach currently has an active paid subscription, show a small note above the button:
+Add a one-time backfill in `ensureProfile`: any existing coach still on `entitlement = 'pending'` gets upgraded to `promo_free` + `FOUNDING_COACH` on their next profile read.
 
-> Your Coach {Monthly|Annual} plan will be canceled automatically when you join. {Annual only: You'll be refunded for the unused months.}
+### 3. Paywall route — `src/routes/_authenticated/coach.paywall.tsx`
+When flag is off, silent redirect to `/coach/roster`. No UI. (Chosen because we never shipped a build with this URL.)
 
-New file: `src/components/coach/join-club-sheet.tsx` — self-contained sheet reusing `OrgSearchCombobox`, `OrgCodeField`, `recordSilentClubLead`, and the new `joinOrganization` server fn below.
+### 4. Settings plan card — `src/routes/_authenticated/coach.settings.tsx`
+When the coach's `promo_code = 'FOUNDING_COACH'`, show:
+- Plan name: **Founding Coach**
+- Status pill: **Free — lifetime**
+- Description: short line thanking them for being early
+- **Hide** all billing CTAs: no "Manage billing", no upgrade buttons, no billing-portal link
+- **Keep** the "Join a club" flow — a founding coach can still become part of a Gradus club just like an individual paid coach can, at which point their org relationship takes over the same way it does today
 
-## Server: join + auto-cancel subscription
+The billing-portal button, past-due banner, and every other paid-subscription surface remain in the codebase and continue to work for anyone whose `promo_code` is NOT `FOUNDING_COACH`. Founding coaches simply never see them.
 
-Add a new server function `joinOrganization` in `src/lib/coach-org.functions.ts` (or wrap `claimOrganizationInviteCode`). It runs, in order, inside a single handler:
+### 5. Migration
+Add a `FOUNDING_COACH` row to `promo_codes` (label "Founding Coach", `percent_off = 100`, `active = true`) so the cohort is queryable and consistent with how other promo codes are represented.
 
-1. Load coach profile: `entitlement`, `subscription_tier`, `subscription_status`, `stripe_customer_id`.
-2. Resolve + validate the org code (same lookup as `claimOrganizationInviteCode`).
-3. **If** the coach has an active/trialing Stripe subscription (`entitlement === "paid"` and `stripe_customer_id` present), look it up via `stripe.subscriptions.list({ customer, status: "all", limit: 10 })`, pick the newest `active`/`trialing`/`past_due` row, and:
-   - **Monthly plan** (`price.recurring.interval === "month"`): `stripe.subscriptions.update(id, { cancel_at_period_end: true })`. No refund. Access continues through `current_period_end` but the club coverage takes over immediately in-app.
-   - **Annual plan** (`interval === "year"`): compute unused fraction = `(period_end - now) / (period_end - period_start)`. Fetch the latest paid invoice for that sub (`stripe.invoices.list({ subscription, status: "paid", limit: 1 })`), take its `amount_paid`, and issue `stripe.refunds.create({ charge: invoice.charge, amount: round(amount_paid * unusedFraction) })`. Then `stripe.subscriptions.cancel(id)` immediately.
-   - **Trialing** (either interval): `stripe.subscriptions.cancel(id)` — nothing to refund.
-   - Wrap each Stripe call in try/catch and return `{ error: getStripeErrorMessage(err) }` — do not silently swallow.
-4. Update `coach_profiles`: `organization_id`, `entitlement = "club_covered"`, `last_synced_content_version`, and clear `subscription_tier` + `subscription_status` (webhook will finish syncing when Stripe fires `customer.subscription.deleted` / `.updated`).
-5. Return `{ organizationId, name, refundedCents?, canceledAtPeriodEnd? }` so the sheet can toast the right message:
-   - Monthly: "Joined {name} — your Coach plan won't renew."
-   - Annual: "Joined {name} — refunded ${amount} for the unused months."
-   - No sub: "Joined {name}."
+### 6. Env
+`VITE_COACH_PAYWALL_ENABLED=false` in `.env` and `.env.development`.
 
-`claimOrganizationInviteCode` stays for the onboarding path (no existing subscription there).
+## What is NOT changed (payments infra preserved)
 
-## Lead capture when club isn't listed
+Nothing about Stripe is deleted or refactored:
+- `src/lib/stripe.ts`, `stripe.server.ts`, `coach-checkout.functions.ts`
+- Webhook route `/api/public/payments/webhook`
+- `coach_profiles` billing columns (`stripe_customer_id`, `subscription_tier`, `subscription_status`, `trial_ends_at`, `current_period_end`)
+- Price catalog (`coach_monthly` / `coach_yearly` / `coach_pro_*`)
+- Billing portal, past-due banner, checkout embed
+- The paywall page's pricing UI (it still exists in the file; it's just gated behind the flag)
 
-Already partially in place: `recordSilentClubLead` writes to `organization_leads` from onboarding when the coach hits **"My club isn't listed"** in `OrgSearchCombobox`. Wire the same call into the new Join-a-Club sheet:
-
-- Pass an `onNotListed={(typedQuery) => recordSilentClubLead({ data: { source: "not_listed", typedQuery } })}` handler to `OrgSearchCombobox`.
-- After the lead is recorded, close the sheet and toast "Thanks — we'll reach out to {typedQuery}."
-
-No schema change needed — `organization_leads` already stores `requested_org_name`, `requested_org_city`, `coach_user_id`, `coach_email`, and channel.
-
-Ensure `OrgSearchCombobox`'s "not listed" affordance always passes the current search text so BD gets the club name the coach actually typed.
-
-## Edge cases handled
-
-- Coach with `entitlement === "pending"` (no sub yet): skip Stripe entirely, just link + set `club_covered`.
-- Coach with `past_due` sub: still cancel (annual → refund the last successful paid invoice only; if none, skip refund).
-- Coach whose sub is already `canceled` with `cancel_at_period_end`: no-op on Stripe, just link.
-- Stripe call fails: return `{ error }`, do NOT link the org — coach stays on their paid plan and can retry.
-- Idempotency: if they're already `club_covered` for this org, return success without touching Stripe.
+Re-enabling: set `VITE_COACH_PAYWALL_ENABLED=true` and redeploy. New coaches will go through checkout again. Founding coaches already stamped stay free forever because access is decided by `entitlement`, not by the flag.
 
 ## Files touched
 
-- `src/lib/coach-org.functions.ts` — add `joinOrganization` server fn with the Stripe cancel/refund logic
-- `src/components/coach/join-club-sheet.tsx` — new
-- `src/routes/_authenticated/coach.settings.tsx` — add the row + sheet trigger inside `PlanSection` (both `"paid"` and `"pending"` branches)
-
-No migrations, no new tables, no RLS changes.
+- `src/routes/_authenticated/coach.tsx` — remove paywall redirect when flag off
+- `src/routes/_authenticated/coach.paywall.tsx` — redirect to `/coach/roster` when flag off
+- `src/routes/_authenticated/coach.settings.tsx` — Founding Coach plan card, hide billing CTAs when `promo_code = 'FOUNDING_COACH'`
+- `src/lib/coach-profile.functions.ts` — auto-stamp Founding Coach in `completeOnboarding`; backfill in `ensureProfile`
+- one migration inserting the `FOUNDING_COACH` promo_codes row
+- `.env`, `.env.development` — add `VITE_COACH_PAYWALL_ENABLED=false`
