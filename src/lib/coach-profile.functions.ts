@@ -239,9 +239,19 @@ export const completeOnboarding = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     const supabase = context.supabase as Client;
     const profile = await ensureProfile(supabase, context.userId, (context.claims as { user_metadata?: Record<string, unknown> }).user_metadata);
+    // Founding Coach grandfathering: while the paywall is disabled, stamp
+    // the coach as lifetime-free at onboarding completion. Existing
+    // entitlement (e.g. club_covered) is preserved.
+    const founding =
+      !isCoachPaywallEnabled() && profile.entitlement === "pending" && !profile.promo_code;
+    const patch: Record<string, unknown> = { onboarded_at: new Date().toISOString() };
+    if (founding) {
+      patch.entitlement = "promo_free";
+      patch.promo_code = FOUNDING_COACH_PROMO_CODE;
+    }
     const { error } = await supabase
       .from("coach_profiles")
-      .update({ onboarded_at: new Date().toISOString() })
+      .update(patch)
       .eq("id", profile.id);
     if (error) dbError(error);
     return { ok: true };
