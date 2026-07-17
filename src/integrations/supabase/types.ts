@@ -1735,6 +1735,7 @@ export type Database = {
     }
     Functions: {
       activate_plan: { Args: { _plan_id: string }; Returns: undefined }
+      coach_effective_tier: { Args: { _coach_id: string }; Returns: string }
       coach_has_rostered_athlete_of_parent: {
         Args: { _parent_id: string }
         Returns: boolean
