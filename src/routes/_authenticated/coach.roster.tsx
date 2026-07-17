@@ -198,6 +198,23 @@ function RosterPage() {
 
           <FirstPlanBanner />
 
+          {rosterFull ? (
+            <div className="paper-surface mt-3 rounded-lg border border-divider p-3">
+              <div className="text-sm font-bold text-text-primary">
+                Roster's full — {athletes.length} / {athleteLimit}
+              </div>
+              <p className="mt-1 text-xs text-text-secondary">
+                Coach Pro raises this to 75 athletes.
+              </p>
+              <div className="mt-3">
+                <UpgradeToProRow />
+              </div>
+            </div>
+          ) : null}
+
+
+
+
 
 
           <SheetContent side="bottom" className="paper-surface max-h-[85dvh] overflow-y-auto">
