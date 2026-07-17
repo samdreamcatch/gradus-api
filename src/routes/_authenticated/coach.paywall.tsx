@@ -16,7 +16,7 @@ import { startCoachCheckout } from "@/lib/coach-checkout.functions";
 import { getStripe, getStripeEnvironment } from "@/lib/stripe";
 import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
 import { supabase } from "@/integrations/supabase/client";
-import { isCoachPaywallEnabled } from "@/lib/paywall-flag";
+import { isCoachPaywallEnabled, isCoachProAvailable } from "@/lib/paywall-flag";
 
 type Tier = "coach" | "coach_pro";
 type Interval = "month" | "year";
