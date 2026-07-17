@@ -23,6 +23,7 @@ import { Route as SignupAdminRouteImport } from './routes/signup.admin'
 import { Route as PTokenRouteImport } from './routes/p.$token'
 import { Route as ICodeRouteImport } from './routes/i.$code'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
+import { Route as DevPaywallPreviewRouteImport } from './routes/dev.paywall-preview'
 import { Route as AuthenticatedParentRouteImport } from './routes/_authenticated/parent'
 import { Route as AuthenticatedCoachRouteImport } from './routes/_authenticated/coach'
 import { Route as AuthenticatedAthleteRouteImport } from './routes/_authenticated/athlete'
@@ -144,6 +145,11 @@ const ICodeRoute = ICodeRouteImport.update({
 const EmailUnsubscribeRoute = EmailUnsubscribeRouteImport.update({
   id: '/email/unsubscribe',
   path: '/email/unsubscribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DevPaywallPreviewRoute = DevPaywallPreviewRouteImport.update({
+  id: '/dev/paywall-preview',
+  path: '/dev/paywall-preview',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedParentRoute = AuthenticatedParentRouteImport.update({
@@ -459,6 +465,7 @@ export interface FileRoutesByFullPath {
   '/athlete': typeof AuthenticatedAthleteRouteWithChildren
   '/coach': typeof AuthenticatedCoachRouteWithChildren
   '/parent': typeof AuthenticatedParentRouteWithChildren
+  '/dev/paywall-preview': typeof DevPaywallPreviewRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/i/$code': typeof ICodeRoute
   '/p/$token': typeof PTokenRoute
@@ -523,6 +530,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
   '/unsubscribe': typeof UnsubscribeRoute
+  '/dev/paywall-preview': typeof DevPaywallPreviewRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/i/$code': typeof ICodeRoute
   '/p/$token': typeof PTokenRoute
@@ -592,6 +600,7 @@ export interface FileRoutesById {
   '/_authenticated/athlete': typeof AuthenticatedAthleteRouteWithChildren
   '/_authenticated/coach': typeof AuthenticatedCoachRouteWithChildren
   '/_authenticated/parent': typeof AuthenticatedParentRouteWithChildren
+  '/dev/paywall-preview': typeof DevPaywallPreviewRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/i/$code': typeof ICodeRoute
   '/p/$token': typeof PTokenRoute
@@ -662,6 +671,7 @@ export interface FileRouteTypes {
     | '/athlete'
     | '/coach'
     | '/parent'
+    | '/dev/paywall-preview'
     | '/email/unsubscribe'
     | '/i/$code'
     | '/p/$token'
@@ -726,6 +736,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/terms'
     | '/unsubscribe'
+    | '/dev/paywall-preview'
     | '/email/unsubscribe'
     | '/i/$code'
     | '/p/$token'
@@ -794,6 +805,7 @@ export interface FileRouteTypes {
     | '/_authenticated/athlete'
     | '/_authenticated/coach'
     | '/_authenticated/parent'
+    | '/dev/paywall-preview'
     | '/email/unsubscribe'
     | '/i/$code'
     | '/p/$token'
@@ -860,6 +872,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   TermsRoute: typeof TermsRoute
   UnsubscribeRoute: typeof UnsubscribeRoute
+  DevPaywallPreviewRoute: typeof DevPaywallPreviewRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   ICodeRoute: typeof ICodeRoute
   PTokenRoute: typeof PTokenRoute
@@ -974,6 +987,13 @@ declare module '@tanstack/react-router' {
       path: '/email/unsubscribe'
       fullPath: '/email/unsubscribe'
       preLoaderRoute: typeof EmailUnsubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dev/paywall-preview': {
+      id: '/dev/paywall-preview'
+      path: '/dev/paywall-preview'
+      fullPath: '/dev/paywall-preview'
+      preLoaderRoute: typeof DevPaywallPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/parent': {
@@ -1546,6 +1566,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   TermsRoute: TermsRoute,
   UnsubscribeRoute: UnsubscribeRoute,
+  DevPaywallPreviewRoute: DevPaywallPreviewRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   ICodeRoute: ICodeRoute,
   PTokenRoute: PTokenRoute,
