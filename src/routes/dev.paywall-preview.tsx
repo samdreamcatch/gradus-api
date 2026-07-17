@@ -66,6 +66,10 @@ function PaywallPreview() {
   } | null>(null);
   const [validating, setValidating] = useState(false);
 
+  const [clubOpen, setClubOpen] = useState(false);
+  const [clubInput, setClubInput] = useState("");
+  const tiersDisabled = clubInput.trim().length > 0;
+
   const applyPromo = () => {
     const code = promoInput.trim().toUpperCase();
     if (!code) return;
