@@ -152,6 +152,15 @@ export const getCoachRoster = createServerFn({ method: "GET" })
       );
     }
 
+    // Group other-coach links per athlete.
+    type OtherLinkRow = { athlete_id: string; coach_profiles: { last_name: string } };
+    const otherByAthlete = new Map<string, string[]>();
+    for (const l of (otherLinksRes.data ?? []) as unknown as OtherLinkRow[]) {
+      const arr = otherByAthlete.get(l.athlete_id) ?? [];
+      arr.push(l.coach_profiles.last_name);
+      otherByAthlete.set(l.athlete_id, arr);
+    }
+
     const result: RosterAthlete[] = rows.map((r) => {
       const a = r.athletes as unknown as {
         id: string;
@@ -160,6 +169,7 @@ export const getCoachRoster = createServerFn({ method: "GET" })
         self_managed: boolean | null;
         parent_profiles: { first_name: string; last_name: string } | null;
       };
+      const others = otherByAthlete.get(a.id) ?? [];
       return {
         athleteId: a.id,
         firstName: a.first_name,
@@ -169,6 +179,8 @@ export const getCoachRoster = createServerFn({ method: "GET" })
         parentLastName: a.parent_profiles?.last_name ?? null,
         selfManaged: a.self_managed === true,
         slots: slotsByAthlete.get(a.id) ?? [],
+        otherCoachCount: others.length,
+        otherCoachLastName: others.length === 1 ? others[0] : null,
       };
     });
 
@@ -177,6 +189,7 @@ export const getCoachRoster = createServerFn({ method: "GET" })
       (a, b) =>
         a.firstName.localeCompare(b.firstName) || a.lastName.localeCompare(b.lastName),
     );
+
 
     return { coachSports, athletes: result };
   });
