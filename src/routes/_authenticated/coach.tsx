@@ -5,6 +5,7 @@ import { useState } from "react";
 import { AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { requireRole } from "@/lib/role-guard";
+import { isCoachPaywallEnabled } from "@/lib/paywall-flag";
 import { coachProfileQueryOptions } from "@/hooks/use-coach-profile";
 import { ConnectionCelebration } from "@/components/connection-celebration";
 import { createCoachBillingPortalSession } from "@/lib/coach-checkout.functions";
@@ -36,7 +37,10 @@ export const Route = createFileRoute("/_authenticated/coach")({
     if (!data.profile.onboardedAt) {
       throw redirect({ to: "/coach/onboarding" });
     }
-    if (!ENTITLED.has(data.profile.entitlement)) {
+    // Paywall kill-switch: while disabled, coaches are grandfathered as
+    // Founding Coaches inside completeOnboarding + ensureProfile, so the
+    // entitlement check is skipped entirely.
+    if (isCoachPaywallEnabled() && !ENTITLED.has(data.profile.entitlement)) {
       throw redirect({ to: "/coach/paywall" });
     }
   },
