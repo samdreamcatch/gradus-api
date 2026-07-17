@@ -165,6 +165,20 @@ export const getCoachProfile = createServerFn({ method: "GET" })
     if (promo.error) dbError(promo.error);
 
     const promoActive = promo.data?.active !== false;
+
+    const countRes = await supabase
+      .from("coach_athletes")
+      .select("athlete_id", { count: "exact", head: true })
+      .eq("coach_id", profile.id);
+    if (countRes.error) dbError(countRes.error);
+    const athleteCount = countRes.count ?? 0;
+
+    const organizationId = profile.organization_id ?? null;
+    const subscriptionTier =
+      (profile.subscription_tier as "coach" | "coach_pro" | null) ?? null;
+    const effectiveTier = computeEffectiveTier({ organizationId, subscriptionTier });
+    const athleteLimit = athleteLimitForTier(effectiveTier);
+
     return {
       profile: {
         id: profile.id,
@@ -172,10 +186,9 @@ export const getCoachProfile = createServerFn({ method: "GET" })
         lastName: profile.last_name,
         onboardedAt: profile.onboarded_at,
         entitlement: (profile.entitlement ?? "pending") as CoachProfileDTO["entitlement"],
-        organizationId: profile.organization_id ?? null,
+        organizationId,
         organizationName: org.data?.name ?? null,
-        subscriptionTier:
-          (profile.subscription_tier as "coach" | "coach_pro" | null) ?? null,
+        subscriptionTier,
         subscriptionStatus:
           (profile.subscription_status as string | null) ?? null,
         trialEndsAt: (profile.trial_ends_at as string | null) ?? null,
@@ -184,6 +197,9 @@ export const getCoachProfile = createServerFn({ method: "GET" })
         promoCode: profile.promo_code ?? null,
         promoLabel: promoActive ? (promo.data?.label ?? null) : null,
         promoPercentOff: promoActive ? (promo.data?.percent_off ?? 0) : 0,
+        effectiveTier,
+        athleteLimit,
+        athleteCount,
       } as CoachProfileDTO,
       levels: (levels.data ?? []).map((r) => ({
         sport: r.sport,
@@ -192,6 +208,7 @@ export const getCoachProfile = createServerFn({ method: "GET" })
       })) as CoachLevelDTO[],
     };
   });
+
 
 const nameSchema = z.object({
   firstName: z.string().trim().min(1, "Required").max(80),
