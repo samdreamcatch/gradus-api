@@ -175,7 +175,12 @@ export const getParentSettings = createServerFn({ method: "GET" })
         const code = genCode(8);
         const ins = await supabaseAdmin
           .from("athlete_invite_codes")
-          .insert({ parent_id: parent.id, athlete_id: a.id, code })
+          .insert({
+            parent_id: parent.id,
+            athlete_id: a.id,
+            code,
+            promo_code: parent.promo_code,
+          })
           .select("code")
           .maybeSingle();
         if (!ins.error && ins.data) {
