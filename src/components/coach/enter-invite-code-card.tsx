@@ -88,6 +88,24 @@ export function EnterInviteCodeCard({ onSuccess }: { onSuccess?: () => void } = 
         toast.success("Already on your roster");
         reset();
         onSuccess?.();
+      } else if (isRosterFullError(err)) {
+        const limit = coachProfile?.profile.athleteLimit ?? 25;
+        const current = coachProfile?.profile.athleteCount ?? limit;
+        const copy = coachRosterFullCopy(current, limit);
+        if (isCoachProAvailable()) {
+          toast.error(copy.title, {
+            description: copy.description,
+            action: {
+              label: "Upgrade",
+              onClick: () =>
+                navigate({ to: "/coach/paywall", search: { tier: "coach_pro" } }),
+            },
+          });
+        } else {
+          toast.error(copy.title, {
+            description: `You're at ${current} of ${limit} athletes. ${coachProSoonDescription}`,
+          });
+        }
       } else {
         toast.error(msg);
       }
@@ -95,6 +113,7 @@ export function EnterInviteCodeCard({ onSuccess }: { onSuccess?: () => void } = 
       setBusy(false);
     }
   };
+
 
   return (
     <div className="space-y-3">
