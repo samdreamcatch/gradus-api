@@ -515,9 +515,12 @@ function PlanSection({
           icon={<Sparkles className="size-4" />}
           label="Founding Coach"
           description="Thank you for being here early."
-          status={{ label: "FREE", tone: "accent" }}
+          status={{ label: "Coach · Free", tone: "accent" }}
         />
-        <SettingsList className="mt-3">{joinClubRow}</SettingsList>
+        <SettingsList className="mt-3">
+          <UpgradeToProRow />
+          {joinClubRow}
+        </SettingsList>
         {joinSheet}
       </>
     );
