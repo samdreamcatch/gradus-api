@@ -50,8 +50,10 @@ export const getOrganizationByInviteCode = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ code: codeSchema }).parse(input))
   .handler(async ({ data, context }) => {
-    const supabase = context.supabase as Client;
-    const { data: row, error } = await supabase
+    void context;
+    // Invite codes are admin-read only; caller is already authenticated.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row, error } = await supabaseAdmin
       .from("organization_invite_codes")
       .select("organization_id, active, organizations!inner(id, name, active)")
       .eq("code", data.code)
