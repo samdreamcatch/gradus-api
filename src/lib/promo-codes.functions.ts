@@ -1,6 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import {
+  createStripeClient,
+  getStripeErrorMessage,
+  type StripeEnv,
+} from "@/lib/stripe.server";
 import { dbError } from "./db-error";
 
 const codeSchema = z
@@ -18,7 +23,7 @@ async function assertAdmin(context: { userId: string; supabase: any }) {
   if (!data) throw new Error("Forbidden");
 }
 
-/** Validate a code (any signed-in user). Returns { valid, label }. */
+/** Validate a code (any signed-in user). Returns { valid, label, percentOff }. */
 export const validatePromoCode = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
@@ -27,12 +32,17 @@ export const validatePromoCode = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: row, error } = await context.supabase
       .from("promo_codes")
-      .select("code, label, active")
+      .select("code, label, active, percent_off")
       .eq("code", data.code)
       .maybeSingle();
     if (error) dbError(error);
-    if (!row || !row.active) return { valid: false as const, label: null };
-    return { valid: true as const, label: row.label as string };
+    if (!row || !row.active)
+      return { valid: false as const, label: null, percentOff: 0 };
+    return {
+      valid: true as const,
+      label: row.label as string,
+      percentOff: (row.percent_off as number | null) ?? 0,
+    };
   });
 
 /**
@@ -87,7 +97,9 @@ export const listPromoCodes = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data, error } = await supabaseAdmin
       .from("promo_codes")
-      .select("code, label, active, notes, created_at")
+      .select(
+        "code, label, active, notes, percent_off, stripe_promo_id_sandbox, stripe_promo_id_live, created_at",
+      )
       .order("created_at", { ascending: false });
     if (error) dbError(error);
     return { codes: data ?? [] };
@@ -104,6 +116,7 @@ export const createPromoCode = createServerFn({ method: "POST" })
         ),
         label: z.string().trim().min(1).max(120),
         notes: z.string().trim().max(500).optional().nullable(),
+        percentOff: z.number().int().min(0).max(100).default(0),
         active: z.boolean().optional().default(true),
       })
       .parse(input),
@@ -115,13 +128,16 @@ export const createPromoCode = createServerFn({ method: "POST" })
       code: data.code,
       label: data.label,
       notes: data.notes ?? null,
+      percent_off: data.percentOff,
       active: data.active,
     });
     if (error) dbError(error);
     return { ok: true };
   });
 
-/** Admin: update label/notes/active on an existing promo code (code itself immutable). */
+/** Admin: update label/notes/active/percent_off on an existing promo code
+ *  (code itself immutable). Changing percent_off invalidates any minted
+ *  Stripe coupon — they get cleared here so the next sync re-mints. */
 export const updatePromoCode = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
@@ -130,6 +146,7 @@ export const updatePromoCode = createServerFn({ method: "POST" })
         code: codeSchema,
         label: z.string().trim().min(1).max(120).optional(),
         notes: z.string().trim().max(500).nullable().optional(),
+        percentOff: z.number().int().min(0).max(100).optional(),
         active: z.boolean().optional(),
       })
       .parse(input),
@@ -137,10 +154,18 @@ export const updatePromoCode = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const patch: { label?: string; notes?: string | null; active?: boolean } = {};
+    const patch: Record<string, unknown> = {};
     if (data.label !== undefined) patch.label = data.label;
     if (data.notes !== undefined) patch.notes = data.notes;
     if (data.active !== undefined) patch.active = data.active;
+    if (data.percentOff !== undefined) {
+      patch.percent_off = data.percentOff;
+      // percent_off change means any minted Stripe coupon is now stale.
+      patch.stripe_coupon_id_sandbox = null;
+      patch.stripe_promo_id_sandbox = null;
+      patch.stripe_coupon_id_live = null;
+      patch.stripe_promo_id_live = null;
+    }
     if (Object.keys(patch).length === 0) return { ok: true };
     const { error } = await supabaseAdmin
       .from("promo_codes")
@@ -149,6 +174,115 @@ export const updatePromoCode = createServerFn({ method: "POST" })
 
     if (error) dbError(error);
     return { ok: true };
+  });
+
+/**
+ * Admin: idempotently mint (or re-mint) a Stripe Coupon + Promotion Code for
+ * this promo in the requested environment, then record the IDs on the row.
+ * Called from the admin UI after `createPromoCode` / `updatePromoCode`. Safe
+ * to re-run — if IDs are already stored we skip.
+ *
+ * Coupon shape: `percent_off = row.percent_off`, `duration = "forever"`.
+ * Promotion Code shape: the same `WILSON`-style code string, scoped to the
+ * coupon above.
+ */
+export const syncPromoCodeToStripe = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        code: codeSchema,
+        environment: z.enum(["sandbox", "live"]),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const env: StripeEnv = data.environment;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: row, error: readErr } = await supabaseAdmin
+      .from("promo_codes")
+      .select(
+        "code, label, percent_off, stripe_coupon_id_sandbox, stripe_promo_id_sandbox, stripe_coupon_id_live, stripe_promo_id_live",
+      )
+      .eq("code", data.code)
+      .maybeSingle();
+    if (readErr) dbError(readErr);
+    if (!row) throw new Error("Promo code not found.");
+    if (!row.percent_off || row.percent_off <= 0) {
+      throw new Error("Set a percent_off value before syncing to Stripe.");
+    }
+
+    const couponCol =
+      env === "sandbox" ? "stripe_coupon_id_sandbox" : "stripe_coupon_id_live";
+    const promoCol =
+      env === "sandbox" ? "stripe_promo_id_sandbox" : "stripe_promo_id_live";
+    const existingCoupon = (row as Record<string, string | null>)[couponCol];
+    const existingPromo = (row as Record<string, string | null>)[promoCol];
+    if (existingCoupon && existingPromo) {
+      return {
+        ok: true as const,
+        alreadyMinted: true as const,
+        couponId: existingCoupon,
+        promoId: existingPromo,
+      };
+    }
+
+    try {
+      const stripe = createStripeClient(env);
+      // 1. Coupon (lifetime percent off).
+      const coupon = await stripe.coupons.create({
+        percent_off: row.percent_off,
+        duration: "forever",
+        name: `${row.label} — ${row.percent_off}% off forever`,
+        metadata: { gradus_code: row.code },
+      });
+      // 2. Promotion code (the human-readable label attached at checkout).
+      //    Stripe requires promo `code` uniqueness per env; if a stale one
+      //    from a previous mint still exists, reuse it instead of failing.
+      let promoId: string;
+      try {
+        const promo = await stripe.promotionCodes.create({
+          coupon: coupon.id,
+          code: row.code,
+          metadata: { gradus_code: row.code },
+        });
+        promoId = promo.id;
+      } catch (err) {
+        const msg = getStripeErrorMessage(err);
+        // "code" conflict = already exists in this env; look it up.
+        if (/already been used|already exists|code_already/i.test(msg)) {
+          const list = await stripe.promotionCodes.list({
+            code: row.code,
+            limit: 1,
+          });
+          if (!list.data.length) throw err;
+          promoId = list.data[0].id;
+        } else {
+          throw err;
+        }
+      }
+
+      const patch: Record<string, string> = {
+        [couponCol]: coupon.id,
+        [promoCol]: promoId,
+      };
+      const { error: writeErr } = await supabaseAdmin
+        .from("promo_codes")
+        .update(patch)
+        .eq("code", row.code);
+      if (writeErr) dbError(writeErr);
+
+      return {
+        ok: true as const,
+        alreadyMinted: false as const,
+        couponId: coupon.id,
+        promoId,
+      };
+    } catch (err) {
+      return { ok: false as const, error: getStripeErrorMessage(err) };
+    }
   });
 
 /** Admin: signup counts per code across parents, coaches, athletes. */
