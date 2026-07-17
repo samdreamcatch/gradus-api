@@ -802,7 +802,7 @@ export const claimParentInvite = createServerFn({ method: "POST" })
 
     const coach = await supabaseAdmin
       .from("coach_profiles")
-      .select("id")
+      .select("id, promo_code")
       .eq("user_id", userId)
       .maybeSingle();
     if (coach.error) dbError(coach.error);
@@ -811,12 +811,23 @@ export const claimParentInvite = createServerFn({ method: "POST" })
 
     const inviteRow = await supabaseAdmin
       .from("parent_invite_codes")
-      .select("parent_id")
+      .select("parent_id, promo_code")
       .eq("code", data.code)
       .maybeSingle();
     if (inviteRow.error) dbError(inviteRow.error);
     if (!inviteRow.data) throw new Error("That parent invite code isn't valid.");
     const parentId = inviteRow.data.parent_id;
+
+    // Propagate the inviter's promo code onto the coach's own row so it
+    // becomes their attribution + auto-applies at Stripe checkout.
+    // First-invite-wins: only stamp when the coach doesn't already have one.
+    if (inviteRow.data.promo_code && !coach.data.promo_code) {
+      await supabaseAdmin
+        .from("coach_profiles")
+        .update({ promo_code: inviteRow.data.promo_code })
+        .eq("id", coachId)
+        .is("promo_code", null);
+    }
 
     // Athletes under this parent
     const athletesRes = await supabaseAdmin
