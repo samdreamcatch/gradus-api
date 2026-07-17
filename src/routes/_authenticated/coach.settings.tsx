@@ -556,6 +556,8 @@ function PlanSection({
           onClick={() => void openPortal()}
           disabled={openingPortal || !profile.hasStripeCustomer}
         />
+        {joinClubRow}
+        {joinSheet}
       </>
     );
   }
@@ -576,6 +578,8 @@ function PlanSection({
         tone="accent"
         onClick={() => navigate({ to: "/coach/paywall" })}
       />
+      {joinClubRow}
+      {joinSheet}
     </>
   );
 }
