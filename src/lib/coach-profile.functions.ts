@@ -5,6 +5,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
 
 import { dbError } from "./db-error";
+import { FOUNDING_COACH_PROMO_CODE, isCoachPaywallEnabled } from "./paywall-flag";
 
 export type CoachEntitlement =
   | "pending"
