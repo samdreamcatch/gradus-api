@@ -1,0 +1,1 @@
+GRANT SELECT ON public.promo_codes TO authenticated; GRANT ALL ON public.promo_codes TO service_role;
