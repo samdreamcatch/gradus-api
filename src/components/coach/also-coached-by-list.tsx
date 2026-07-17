@@ -1,4 +1,4 @@
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { OtherCoachDTO } from "@/lib/coach-athlete-detail.functions";
 
@@ -16,9 +16,11 @@ function coachMeta(coach: OtherCoachDTO): string {
 export function AlsoCoachedByList({
   coaches,
   onOpenCoach,
+  locked = false,
 }: {
   coaches: OtherCoachDTO[];
   onOpenCoach: (coachId: string) => void;
+  locked?: boolean;
 }) {
   if (coaches.length === 0) return null;
   return (
@@ -26,20 +28,26 @@ export function AlsoCoachedByList({
       <h3 className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
         Also coached by
       </h3>
+      {locked ? (
+        <p className="mt-1 font-hand text-[15px] text-text-tertiary">
+          Seeing other coaches&apos; plans is a Coach Pro &amp; Club feature.
+        </p>
+      ) : null}
       <ul className="mt-2 space-y-2">
         {coaches.map((c) => {
           const hasPlans = c.plans.length > 0;
+          const interactive = hasPlans && !locked;
           const inner = (
             <>
               <div className="min-w-0 flex-1">
                 <div
                   className={cn(
                     "truncate font-display text-[15px] font-black",
-                    hasPlans ? "text-text-primary" : "text-text-secondary",
+                    interactive ? "text-text-primary" : "text-text-secondary",
                   )}
                 >
                   Coach {c.firstName}{" "}
-                  <span className={hasPlans ? "pen-highlight" : undefined}>
+                  <span className={interactive ? "pen-highlight" : undefined}>
                     {c.lastName}
                   </span>
                 </div>
@@ -58,23 +66,36 @@ export function AlsoCoachedByList({
                 <p
                   className={cn(
                     "mt-1 font-hand text-[15px]",
-                    hasPlans ? "text-text-secondary" : "text-text-tertiary",
+                    interactive ? "text-text-secondary" : "text-text-tertiary",
                   )}
                 >
-                  {hasPlans ? coachMeta(c) : "No shared plans yet"}
+                  {hasPlans
+                    ? locked
+                      ? "Upgrade to see plans"
+                      : coachMeta(c)
+                    : "No shared plans yet"}
                 </p>
               </div>
               {hasPlans ? (
-                <ChevronRight
-                  className="size-4 shrink-0 text-text-tertiary"
-                  aria-hidden
-                />
+                locked ? (
+                  <div className="flex shrink-0 items-center gap-2">
+                    <span className="rounded-full bg-elevated px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-text-secondary">
+                      Pro
+                    </span>
+                    <Lock className="size-4 text-text-tertiary" aria-hidden />
+                  </div>
+                ) : (
+                  <ChevronRight
+                    className="size-4 shrink-0 text-text-tertiary"
+                    aria-hidden
+                  />
+                )
               ) : null}
             </>
           );
           return (
             <li key={c.coachId}>
-              {hasPlans ? (
+              {interactive ? (
                 <button
                   type="button"
                   onClick={() => onOpenCoach(c.coachId)}
