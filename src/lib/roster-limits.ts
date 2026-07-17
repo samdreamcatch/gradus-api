@@ -14,9 +14,9 @@ export function coachRosterFullCopy(current: number, limit: number): {
 } {
   return {
     title: "Roster's full",
-    description: `You're at ${current} of ${limit} athletes on the Coach plan. Upgrade to Coach Pro to add up to 75.`,
+    description: `You're at ${current} of ${limit} athletes on the Coach plan. Upgrade to Coach Pro to add up to 50.`,
   };
 }
 
 export const coachProSoonDescription =
-  "Coach Pro is coming soon — it'll raise this to 75 athletes.";
+  "Coach Pro is coming soon — it'll raise this to 50 athletes.";
