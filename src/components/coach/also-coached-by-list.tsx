@@ -28,11 +28,6 @@ export function AlsoCoachedByList({
       <h3 className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
         Also coached by
       </h3>
-      {locked ? (
-        <p className="mt-1 font-hand text-[15px] text-text-tertiary">
-          Seeing other coaches&apos; plans is a Coach Pro &amp; Club feature.
-        </p>
-      ) : null}
       <ul className="mt-2 space-y-2">
         {coaches.map((c) => {
           const hasPlans = c.plans.length > 0;
