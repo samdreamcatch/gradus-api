@@ -203,7 +203,7 @@ function RosterPage() {
           {rosterFull ? (
             <div className="paper-surface mt-3 rounded-lg border border-divider p-3">
               <div className="text-sm font-bold text-text-primary">
-                Roster's full — {athletes.length} / {athleteLimit}
+                Your athlete roster is full — {athletes.length} / {athleteLimit}
               </div>
               <p className="mt-1 text-xs text-text-secondary">
                 Coach Pro raises this to 75 athletes.
