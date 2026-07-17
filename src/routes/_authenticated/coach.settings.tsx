@@ -609,12 +609,12 @@ function PlanSummaryCard({
       ? "bg-destructive/10 text-destructive"
       : status?.tone === "muted"
         ? "bg-elevated text-text-secondary"
-        : "bg-accent-wash text-accent-ink";
+        : "bg-accent/10 text-accent-ink";
   return (
     <>
       <div className="rounded-2xl border border-divider bg-elevated/60 px-4 py-4 backdrop-blur-sm">
         <div className="flex items-start gap-3">
-          <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-accent-wash text-accent-ink">
+          <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-accent/10 text-accent-ink">
             {icon}
           </span>
           <div className="min-w-0 flex-1">
