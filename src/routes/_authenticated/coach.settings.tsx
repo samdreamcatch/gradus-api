@@ -441,12 +441,6 @@ function PlanSection({
   const [openingPortal, setOpeningPortal] = useState(false);
   const [joinOpen, setJoinOpen] = useState(false);
 
-  const paidInterval: "month" | "year" | null =
-    profile.entitlement === "paid" && profile.subscriptionTier
-      ? profile.subscriptionTier.endsWith("_yearly")
-        ? "year"
-        : "month"
-      : null;
   const hasPaidSub =
     profile.entitlement === "paid" &&
     !!profile.subscriptionTier &&
@@ -465,7 +459,7 @@ function PlanSection({
       open={joinOpen}
       onOpenChange={setJoinOpen}
       hasPaidSubscription={hasPaidSub}
-      paidInterval={paidInterval}
+      paidInterval={null}
     />
   );
 
