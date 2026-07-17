@@ -27,7 +27,12 @@ export type RosterAthlete = {
   parentLastName: string | null;
   selfManaged: boolean;
   slots: RosterSlot[];
+  // Count of OTHER coaches on this athlete's roster (excluding the viewer).
+  otherCoachCount: number;
+  // When N=1, the single other coach's last name for the "+ D. Wallace" chip.
+  otherCoachLastName: string | null;
 };
+
 
 
 export type CoachRoster = {
