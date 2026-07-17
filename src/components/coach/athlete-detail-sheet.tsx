@@ -49,6 +49,7 @@ export function AthleteDetailSheet({
 function AthleteDetailBody({ athleteId }: { athleteId: string }) {
   const fetchDetail = useServerFn(getCoachAthleteDetail);
   const fetchSummary = useServerFn(getCoachAthleteAiSummary);
+  const [openOtherCoachId, setOpenOtherCoachId] = useState<string | null>(null);
 
   const detail = useQuery({
     queryKey: ["coach", "athlete-detail", athleteId],
@@ -62,6 +63,7 @@ function AthleteDetailBody({ athleteId }: { athleteId: string }) {
     staleTime: 5 * 60_000,
     retry: false,
   });
+
 
   // Auto-run AI summary once we know there's at least some signal.
   useEffect(() => {
