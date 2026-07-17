@@ -54,7 +54,7 @@ export const getOrCreateAdultAthleteInviteCode = createServerFn({ method: "GET" 
 
     const me = await supabaseAdmin
       .from("athletes")
-      .select("id, self_managed")
+      .select("id, self_managed, promo_code")
       .eq("user_id", userId)
       .maybeSingle();
     if (me.error) dbError(me.error);
@@ -62,6 +62,7 @@ export const getOrCreateAdultAthleteInviteCode = createServerFn({ method: "GET" 
       throw new Error("Only self-managed adult athletes can create an invite code.");
     }
     const athleteId = me.data.id;
+    const inviterPromo = me.data.promo_code ?? null;
 
     const existing = await supabaseAdmin
       .from("adult_athlete_invite_codes")
@@ -75,7 +76,7 @@ export const getOrCreateAdultAthleteInviteCode = createServerFn({ method: "GET" 
       const code = generateCode();
       const ins = await supabaseAdmin
         .from("adult_athlete_invite_codes")
-        .insert({ athlete_id: athleteId, code })
+        .insert({ athlete_id: athleteId, code, promo_code: inviterPromo })
         .select("code")
         .maybeSingle();
       if (!ins.error && ins.data) return { code: ins.data.code };
