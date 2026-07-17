@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -55,6 +55,14 @@ export const Route = createFileRoute("/_authenticated/coach/paywall")({
   validateSearch: (search: Record<string, unknown>) => ({
     checkout: typeof search.checkout === "string" ? search.checkout : undefined,
   }),
+  beforeLoad: () => {
+    // Paywall kill-switch: while disabled, this URL is dead — bounce back
+    // into the app. Founding coaches are grandfathered in via onboarding.
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    if (!isCoachPaywallEnabled()) {
+      throw redirect({ to: "/coach/roster" });
+    }
+  },
   component: PaywallPage,
 });
 
