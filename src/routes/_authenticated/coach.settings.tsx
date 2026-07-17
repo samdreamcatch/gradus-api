@@ -477,7 +477,7 @@ function PlanSection({
           icon={<Building2 className="size-4" />}
           label="Club plan"
           value={profile.organizationName ?? "Club"}
-          description="Your club covers your subscription. Manage the club link under Coaching."
+          description="Your club covers your subscription."
         />
         {promoRow}
       </>
