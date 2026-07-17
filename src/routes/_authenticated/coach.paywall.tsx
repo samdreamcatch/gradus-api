@@ -74,7 +74,7 @@ function PaywallPage() {
   const qc = useQueryClient();
   const clearOrg = useServerFn(clearOrganizationLink);
   const checkoutFn = useServerFn(startCoachCheckout);
-  const { checkout: checkoutStatus } = Route.useSearch();
+  const { checkout: checkoutStatus, tier: preselectedTier } = Route.useSearch();
 
   const [interval, setInterval] = useState<Interval>("year");
   const [selectedTier, setSelectedTier] = useState<Tier | null>(null);
