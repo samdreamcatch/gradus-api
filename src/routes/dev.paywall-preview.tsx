@@ -66,6 +66,10 @@ function PaywallPreview() {
   } | null>(null);
   const [validating, setValidating] = useState(false);
 
+  const [clubOpen, setClubOpen] = useState(false);
+  const [clubInput, setClubInput] = useState("");
+  const tiersDisabled = clubInput.trim().length > 0;
+
   const applyPromo = () => {
     const code = promoInput.trim().toUpperCase();
     if (!code) return;
@@ -123,7 +127,70 @@ function PaywallPreview() {
           Pick a plan to get started. Cancel anytime.
         </p>
 
-        <div className="mt-4 inline-flex rounded-full border border-divider bg-elevated p-1 text-sm">
+        <div className="mt-5 w-full rounded-xl border border-divider bg-elevated p-3">
+          <div className="flex items-start gap-3">
+            <Building2 className="mt-0.5 h-5 w-5 shrink-0 text-text-secondary" />
+            <div className="flex-1 text-sm">
+              <p className="font-semibold text-text-primary">
+                Joining through a club?
+              </p>
+              <p className="mt-1 text-text-secondary">
+                If your academy or association is a Gradus partner, they can cover
+                your subscription.
+              </p>
+              {!clubOpen ? (
+                <button
+                  type="button"
+                  onClick={() => setClubOpen(true)}
+                  className="mt-2 inline-block text-accent-ink underline underline-offset-2"
+                >
+                  Enter club code →
+                </button>
+              ) : (
+                <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-start">
+                  <Input
+                    value={clubInput}
+                    onChange={(e) =>
+                      setClubInput(e.target.value.toUpperCase().slice(0, 32))
+                    }
+                    placeholder="Club code"
+                    className="font-mono uppercase tracking-widest sm:flex-1"
+                    autoComplete="off"
+                    spellCheck={false}
+                  />
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => {
+                        setClubOpen(false);
+                        setClubInput("");
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      disabled={!clubInput.trim()}
+                    >
+                      Join
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div
+          className={cn(
+            "mt-5 inline-flex rounded-full border border-divider bg-elevated p-1 text-sm transition-opacity",
+            tiersDisabled && "pointer-events-none opacity-50",
+          )}
+          aria-disabled={tiersDisabled}
+        >
           {(["month", "year"] as const).map((iv) => (
             <button
               key={iv}
@@ -144,12 +211,26 @@ function PaywallPreview() {
           ))}
         </div>
 
-        <div className="mt-4 grid w-full grid-cols-2 gap-3">
+        {tiersDisabled && (
+          <p className="mt-2 text-center text-xs text-text-tertiary">
+            Individual plans unavailable while a club code is entered.
+          </p>
+        )}
+
+        <div
+          className={cn(
+            "mt-4 grid w-full grid-cols-2 gap-3 transition-opacity",
+            tiersDisabled && "pointer-events-none opacity-50",
+          )}
+          aria-disabled={tiersDisabled}
+        >
           {(Object.keys(PRICE_MAP) as Tier[]).map((tier) => {
             const price = PRICE_MAP[tier][interval];
             const isPro = tier === "coach_pro";
             const coachFoundingActive = tier === "coach" && isFoundingCoach;
             const promoAppliesHere = isPro && promoApplied != null;
+
+
 
             return (
               <div
@@ -318,24 +399,6 @@ function PaywallPreview() {
               )}
             </div>
           )}
-        </div>
-
-        <div className="mt-5 w-full rounded-xl border border-divider bg-elevated p-3">
-          <div className="flex items-start gap-3">
-            <Building2 className="mt-0.5 h-5 w-5 shrink-0 text-text-secondary" />
-            <div className="text-sm">
-              <p className="font-semibold text-text-primary">
-                Joining through a club?
-              </p>
-              <p className="mt-1 text-text-secondary">
-                If your academy or association is a Gradus partner, they can cover
-                your subscription.
-              </p>
-              <span className="mt-2 inline-block text-accent-ink underline underline-offset-2">
-                Enter club code in Settings →
-              </span>
-            </div>
-          </div>
         </div>
 
         {hasOrg && (
