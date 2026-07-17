@@ -1,4 +1,5 @@
 import { ChevronRight } from "lucide-react";
+import { cn } from "@/lib/utils";
 import type { OtherCoachDTO } from "@/lib/coach-athlete-detail.functions";
 
 function coachMeta(coach: OtherCoachDTO): string {
@@ -9,7 +10,7 @@ function coachMeta(coach: OtherCoachDTO): string {
   if (coach.benchedCount > 0) {
     bits.push(`${coach.benchedCount} benched`);
   }
-  return bits.length > 0 ? bits.join(" · ") : "No active plans";
+  return bits.join(" · ");
 }
 
 export function AlsoCoachedByList({
@@ -26,17 +27,21 @@ export function AlsoCoachedByList({
         Also coached by
       </h3>
       <ul className="mt-2 space-y-2">
-        {coaches.map((c) => (
-          <li key={c.coachId}>
-            <button
-              type="button"
-              onClick={() => onOpenCoach(c.coachId)}
-              className="press flex w-full items-center gap-3 rounded-2xl border border-divider bg-card p-3 pl-4 text-left shadow-card"
-            >
+        {coaches.map((c) => {
+          const hasPlans = c.plans.length > 0;
+          const inner = (
+            <>
               <div className="min-w-0 flex-1">
-                <div className="truncate font-display text-[15px] font-black text-text-primary">
+                <div
+                  className={cn(
+                    "truncate font-display text-[15px] font-black",
+                    hasPlans ? "text-text-primary" : "text-text-secondary",
+                  )}
+                >
                   Coach {c.firstName}{" "}
-                  <span className="pen-highlight">{c.lastName}</span>
+                  <span className={hasPlans ? "pen-highlight" : undefined}>
+                    {c.lastName}
+                  </span>
                 </div>
                 {c.sports.length > 0 ? (
                   <div className="mt-1 flex flex-wrap gap-1">
@@ -50,17 +55,41 @@ export function AlsoCoachedByList({
                     ))}
                   </div>
                 ) : null}
-                <p className="mt-1 font-hand text-[15px] text-text-secondary">
-                  {coachMeta(c)}
+                <p
+                  className={cn(
+                    "mt-1 font-hand text-[15px]",
+                    hasPlans ? "text-text-secondary" : "text-text-tertiary",
+                  )}
+                >
+                  {hasPlans ? coachMeta(c) : "No shared plans yet"}
                 </p>
               </div>
-              <ChevronRight
-                className="size-4 shrink-0 text-text-tertiary"
-                aria-hidden
-              />
-            </button>
-          </li>
-        ))}
+              {hasPlans ? (
+                <ChevronRight
+                  className="size-4 shrink-0 text-text-tertiary"
+                  aria-hidden
+                />
+              ) : null}
+            </>
+          );
+          return (
+            <li key={c.coachId}>
+              {hasPlans ? (
+                <button
+                  type="button"
+                  onClick={() => onOpenCoach(c.coachId)}
+                  className="press flex w-full items-center gap-3 rounded-2xl border border-divider bg-card p-3 pl-4 text-left shadow-card"
+                >
+                  {inner}
+                </button>
+              ) : (
+                <div className="flex w-full items-center gap-3 rounded-2xl border border-dashed border-divider bg-card/40 p-3 pl-4 text-left">
+                  {inner}
+                </div>
+              )}
+            </li>
+          );
+        })}
       </ul>
     </section>
   );
