@@ -45,6 +45,36 @@ export interface CoachedSportDTO {
   label: string;
 }
 
+export interface OtherCoachMoveDTO {
+  position: number;
+  name: string;
+  description: string;
+  cue: string;
+  why: string;
+  targetKind: "reps" | "mins";
+  targetValue: number;
+}
+
+export interface OtherCoachPlanDTO {
+  planId: string;
+  title: string;
+  status: PlanStatus;
+  updatedAt: string;
+  sessionsLast30d: number;
+  notes: string;
+  moves: OtherCoachMoveDTO[];
+}
+
+export interface OtherCoachDTO {
+  coachId: string;
+  firstName: string;
+  lastName: string;
+  sports: CoachedSportDTO[];
+  activeCount: number;
+  benchedCount: number;
+  plans: OtherCoachPlanDTO[];
+}
+
 export interface CoachAthleteDetailDTO {
   athleteId: string;
   firstName: string;
@@ -59,7 +89,9 @@ export interface CoachAthleteDetailDTO {
   activity: AthleteActivityCountsDTO;
   hasAnySignal: boolean;
   windowDays: number;
+  otherCoaches: OtherCoachDTO[];
 }
+
 
 
 type SlotRow = {
