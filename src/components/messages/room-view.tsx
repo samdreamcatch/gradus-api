@@ -13,6 +13,7 @@ import {
   sendMessage,
   type MessageDTO,
   type RoleInRoom,
+  type RoomKind,
 } from "@/lib/messages.functions";
 import { voiceTranscribe } from "@/lib/voice.functions";
 import { useVoiceCapture } from "@/hooks/use-voice-capture";
@@ -199,7 +200,7 @@ export function RoomView({ roomId, viewerRole }: { roomId: string; viewerRole?: 
     <div className="flex h-[calc(100dvh-180px)] flex-col">
       <ConversationHeader
         roomId={roomId}
-        others={room.participants.filter((p) => p.role !== room.myRole)}
+        others={room.participants.filter((p) => p.userId !== room.myUserId)}
       />
       <div ref={scrollerRef} className="flex-1 overflow-y-auto">
         <div className="space-y-5">
@@ -275,6 +276,7 @@ export function RoomView({ roomId, viewerRole }: { roomId: string; viewerRole?: 
 
       <Composer
         roomId={roomId}
+        roomKind={room.kind}
         viewerRole={viewerRole}
         disabled={sendTextMutation.isPending}
         onSendText={(body, planId) => sendTextMutation.mutate({ body, planId })}
@@ -285,11 +287,13 @@ export function RoomView({ roomId, viewerRole }: { roomId: string; viewerRole?: 
 
 function Composer({
   roomId,
+  roomKind,
   viewerRole,
   disabled,
   onSendText,
 }: {
   roomId: string;
+  roomKind: RoomKind;
   viewerRole?: RoleInRoom;
   disabled: boolean;
   onSendText: (body: string, planId: string | null) => void;
@@ -299,10 +303,12 @@ function Composer({
   const [attachedPlan, setAttachedPlan] = useState<{ id: string; title: string } | null>(null);
   const transcribeFn = useServerFn(voiceTranscribe);
   const fetchActivePlans = useServerFn(getRoomActivePlans);
+  const canTagPlan = roomKind === "athlete";
 
   const { data: activePlansData } = useQuery({
     queryKey: ["room-active-plans", viewerRole ?? "default", roomId],
     queryFn: () => fetchActivePlans({ data: { roomId, viewerRole } }),
+    enabled: canTagPlan,
   });
   const activePlans = activePlansData?.plans ?? [];
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -402,6 +408,7 @@ function Composer({
         </div>
       ) : (
         <div className="flex items-end gap-2">
+          {canTagPlan ? (
           <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
             <PopoverTrigger asChild>
               <button
@@ -443,6 +450,7 @@ function Composer({
               </div>
             </PopoverContent>
           </Popover>
+          ) : null}
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}

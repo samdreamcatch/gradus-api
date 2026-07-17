@@ -36,9 +36,7 @@ function roleLabel(role: RoleInRoom): string {
  * Shows everyone except "me".
  */
 function others(room: RoomSummary): { display: string } {
-  const them = room.participants.filter(
-    (p) => p.userId !== room.myUserId && p.role !== room.myRole,
-  );
+  const them = room.participants.filter((p) => p.userId !== room.myUserId);
   if (them.length === 0) return { display: "Conversation" };
   const ordered = [...them].sort((a, b) => {
     const rank = (r: RoleInRoom) => (r === "athlete" ? 0 : r === "parent" ? 1 : 2);

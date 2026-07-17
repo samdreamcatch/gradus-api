@@ -1,5 +1,7 @@
 export type RoleInRoom = "coach" | "athlete" | "parent";
 
+export type RoomKind = "athlete" | "coach_coach" | "coach_parent";
+
 export type RoomParticipant = {
   userId: string | null;
   role: RoleInRoom;
@@ -9,8 +11,11 @@ export type RoomParticipant = {
 
 export type RoomSummary = {
   id: string;
-  coachId: string;
-  athleteId: string;
+  kind: RoomKind;
+  /** Populated for kind="athlete" only. */
+  coachId: string | null;
+  /** Populated for kind="athlete" only. */
+  athleteId: string | null;
   participants: RoomParticipant[];
   myRole: RoleInRoom;
   myUserId: string;
@@ -45,8 +50,9 @@ export type MessageDTO = {
 export type RoomDetail = {
   room: {
     id: string;
-    coachId: string;
-    athleteId: string;
+    kind: RoomKind;
+    coachId: string | null;
+    athleteId: string | null;
     participants: RoomParticipant[];
     myRole: RoleInRoom;
     myUserId: string;

@@ -584,6 +584,74 @@ export type Database = {
           },
         ]
       }
+      direct_rooms: {
+        Row: {
+          coach_a_id: string | null
+          coach_b_id: string | null
+          coach_id: string | null
+          created_at: string
+          id: string
+          kind: string
+          parent_id: string | null
+          updated_at: string
+          user_a: string
+          user_b: string
+        }
+        Insert: {
+          coach_a_id?: string | null
+          coach_b_id?: string | null
+          coach_id?: string | null
+          created_at?: string
+          id?: string
+          kind: string
+          parent_id?: string | null
+          updated_at?: string
+          user_a: string
+          user_b: string
+        }
+        Update: {
+          coach_a_id?: string | null
+          coach_b_id?: string | null
+          coach_id?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          parent_id?: string | null
+          updated_at?: string
+          user_a?: string
+          user_b?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "direct_rooms_coach_a_id_fkey"
+            columns: ["coach_a_id"]
+            isOneToOne: false
+            referencedRelation: "coach_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "direct_rooms_coach_b_id_fkey"
+            columns: ["coach_b_id"]
+            isOneToOne: false
+            referencedRelation: "coach_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "direct_rooms_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "coach_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "direct_rooms_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "parent_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_send_log: {
         Row: {
           created_at: string
@@ -956,11 +1024,12 @@ export type Database = {
           audio_url: string | null
           body: string
           created_at: string
+          direct_room_id: string | null
           duration_seconds: number | null
           id: string
           kind: string
           plan_id: string | null
-          room_id: string
+          room_id: string | null
           sender_role: string
           sender_user_id: string
         }
@@ -968,11 +1037,12 @@ export type Database = {
           audio_url?: string | null
           body?: string
           created_at?: string
+          direct_room_id?: string | null
           duration_seconds?: number | null
           id?: string
           kind: string
           plan_id?: string | null
-          room_id: string
+          room_id?: string | null
           sender_role: string
           sender_user_id: string
         }
@@ -980,15 +1050,23 @@ export type Database = {
           audio_url?: string | null
           body?: string
           created_at?: string
+          direct_room_id?: string | null
           duration_seconds?: number | null
           id?: string
           kind?: string
           plan_id?: string | null
-          room_id?: string
+          room_id?: string | null
           sender_role?: string
           sender_user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "messages_direct_room_id_fkey"
+            columns: ["direct_room_id"]
+            isOneToOne: false
+            referencedRelation: "direct_rooms"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "messages_room_id_fkey"
             columns: ["room_id"]
@@ -1775,6 +1853,10 @@ export type Database = {
         Returns: boolean
       }
       import_shared_plan: { Args: { _token: string }; Returns: string }
+      is_direct_room_participant: {
+        Args: { _direct_room_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_parent_of_athlete: { Args: { _athlete_id: string }; Returns: boolean }
       is_parent_of_plan: { Args: { _plan_id: string }; Returns: boolean }
       is_room_participant: {
