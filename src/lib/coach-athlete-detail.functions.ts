@@ -511,7 +511,6 @@ export const getCoachAthleteDetail = createServerFn({ method: "GET" })
       for (const link of otherLinks) {
         const cid = link.coach_id;
         const cplans = plansByCoach.get(cid) ?? [];
-        if (cplans.length === 0) continue; // hide coaches with no active/benched plans
         // Sort: active first (by updatedAt desc), then benched (by updatedAt desc)
         cplans.sort((a, b) => {
           if (a.status !== b.status) return a.status === "active" ? -1 : 1;
@@ -529,11 +528,16 @@ export const getCoachAthleteDetail = createServerFn({ method: "GET" })
         });
       }
 
-      // Busiest coaches (most recently updated active plan) first
+      // Coaches with plans first (by most recent updatedAt), then plan-less
+      // coaches alphabetically by last name.
       otherCoaches.sort((a, b) => {
-        const au = a.plans[0]?.updatedAt ?? "";
-        const bu = b.plans[0]?.updatedAt ?? "";
-        return bu.localeCompare(au);
+        const aHas = a.plans.length > 0;
+        const bHas = b.plans.length > 0;
+        if (aHas !== bHas) return aHas ? -1 : 1;
+        if (aHas && bHas) {
+          return (b.plans[0]?.updatedAt ?? "").localeCompare(a.plans[0]?.updatedAt ?? "");
+        }
+        return a.lastName.localeCompare(b.lastName);
       });
     }
 
