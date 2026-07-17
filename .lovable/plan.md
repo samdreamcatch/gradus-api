@@ -1,44 +1,25 @@
-# Rework the "Start a conversation" picker for scale
-
-## Problem
-The current picker renders every athlete, parent, and coach in a single long stack of grouped cards. For a coach with 15+ athletes (plus each athlete's parents and any shared-athlete coaches), it becomes an unscrollable wall — and the interaction cost of finding one person grows linearly.
-
-It also uses the retired plain `Dialog`, which violates our overlay doctrine (Sheet for views/pickers).
-
 ## Goal
-Make finding a recipient fast at any roster size, using only components and patterns already in the design system.
+Gate the "Also coached by" → other-coach plans sheet behind Pro/Club. Individual `coach`-tier users see the entry but can't open it, with a design-system-native lock affordance.
 
-## Design
+## Where
+- `src/components/coach/also-coached-by-list.tsx` — render the lock state.
+- `src/components/coach/athlete-detail-sheet.tsx` — pass tier + only wire `setOpenOtherCoachId` when unlocked.
 
-Move the picker from `Dialog` → bottom `Sheet` (`paper-surface`, matches other pickers). Inside the sheet, three reused patterns handle scale:
+## Behavior
+- Compute `canViewOtherCoachPlans = effectiveTier === "coach_pro" || effectiveTier === "club"` from `useCoachProfile()` in `AthleteDetailSheet` and pass as `locked` prop to `AlsoCoachedByList`.
+- When `locked`:
+  - Row is rendered as a non-interactive card (same `<div>` branch already used for plan-less coaches — dashed border, muted text) so it visually reads as unavailable.
+  - Replace the `ChevronRight` on entries that have plans with a `Lock` icon (lucide) plus a small pill that says `PRO` using the same pill treatment already used by `UpgradeToProRow`'s "Soon" chip: `rounded-full bg-elevated px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-text-secondary`.
+  - Meta line reads "Upgrade to see plans" in `text-text-tertiary` instead of the active/benched counts, keeping the counts hidden to avoid leaking info.
+  - `OtherCoachPlansSheet` is not mounted / receives no coachId (skip the setter call entirely).
+- When unlocked: unchanged behavior.
 
-1. **Sticky search field at the top** — filters across all groups by name (and by athlete name for parent/coach secondary labels, so "Jamie" surfaces Jamie, Lorelai Gilmore, and Alex Brinkley). Reuses the existing `Input` + search-icon pattern used elsewhere in the app.
+## Design tokens reused
+- `Lock` icon from lucide (already used elsewhere).
+- Pill styling copied verbatim from `UpgradeToProRow`'s "Soon" chip.
+- Dashed-border non-interactive card variant already present in `also-coached-by-list.tsx`.
 
-2. **Segmented filter (All / Athletes / Parents / Coaches)** directly under the search — same segmented-toggle component and `press-soft` behavior used across settings/roster filters. "All" is default. Counts shown per segment (e.g. `Athletes · 17`).
-
-3. **Grouped, virtualized-feeling list** — same divided card list as today, but:
-   - When "All" is selected and a group has > 6 members, that group collapses to the first 6 with a `Show all N` affordance (reused disclosure pattern).
-   - When a single segment is selected, the group header is hidden and the full list scrolls inside the sheet body (sheet content already scrolls).
-   - Empty search state uses the existing hand-font empty message.
-
-Row content is unchanged (primary label + secondary label + `MESSAGE` action) so muscle memory is preserved.
-
-## Behavior details
-- Search is case-insensitive, matches `primaryLabel` and `secondaryLabel`.
-- Segment counts reflect pre-search totals; when searching, counts update to matches.
-- Selecting a row still calls the same `ensureRoomForTarget` / `ensureDirectRoom` mutations and navigates to the room — no server changes.
-- Textarea/search input auto-focuses on sheet open (mobile keyboard-friendly).
-- Sheet on mobile slides from bottom; on desktop uses the standard side sheet pattern already in use.
-
-## Technical notes
-- Edit only `src/components/messages/new-conversation-button.tsx`.
-- Swap `Dialog*` imports for `Sheet*` (`side="bottom"` on mobile via existing responsive sheet usage in the codebase; check `src/components/ui/sheet.tsx` for the shared component).
-- Add local `useState` for `query` and `segment: "all" | "Athletes" | "Parents" | "Coaches"`.
-- Derive filtered/grouped targets with `useMemo`.
-- No server-fn, no schema, no new dependencies.
-- Existing `listMyMessageTargets` already returns everything needed.
-
-## Out of scope
-- Recent conversations shortcut (could be a Phase 2 if useful).
-- Server-side pagination — target lists are bounded by the coach's own roster, so client-side filtering is sufficient.
-- Changing row visuals or the underlying message target model.
+## Non-goals
+- No changes to `OtherCoachPlansSheet`.
+- No routing to paywall on tap (matches current "Coach Pro coming soon" state; club upgrade lives in settings).
+- No server-side gating change (this list is a UI-only reveal; the sheet's data fetch is not exposed unless opened).
