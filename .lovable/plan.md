@@ -1,20 +1,40 @@
 ## Goal
-Bump Tami Taylor's roster to exactly 25 so the next add-athlete attempt trips the `enforce_coach_roster_cap` trigger and surfaces the roster-full toast.
 
-## Approach
-Tami is on the `coach` tier (cap 25) with 3 real athletes. I'll seed 22 disposable placeholder athletes attached to her and tag them so they're easy to clean up later.
+Set up multi-coach + club testing on the two test accounts.
 
-## Steps
-1. Insert one placeholder `parent_profiles` row (no `user_id`, name "QA Placeholder / Roster Filler") to own the seed athletes. If a row with that exact name already exists from a prior seed, reuse it.
-2. Insert 22 `athletes` rows under that parent (`first_name = 'Filler'`, `last_name = 'NN'` for 01–22, `self_managed = false`, no birthdate needed).
-3. Insert 22 `coach_athletes` rows linking each new athlete to `coach_id = e82ce1b6-c2c3-4c66-8d31-7b6ccb3a25cd`. The cap trigger allows inserts while count < 25, so all 22 land and the roster becomes exactly 25.
-4. Verify: `SELECT count(*) FROM coach_athletes WHERE coach_id = 'e82ce1b6…'` returns 25.
+## Changes (all data-only, no schema)
 
-All writes go through the `supabase--insert` tool (data-only, no schema change).
+**1. Dev panel access (admin role)**
+- Insert `user_roles` rows for both users so the dev panel unlocks immediately:
+  - `coach@test.dev` (Tami, `dec8fc92…`) → `admin`
+  - `coach2@test.dev` (David, `0234d72e…`) → `admin`
+- Also add both emails to `admin_allowlist` so the trigger re-grants admin if the accounts are ever recreated.
 
-## Cleanup (later, on request)
-One statement: `DELETE FROM parent_profiles WHERE first_name = 'QA Placeholder' AND last_name = 'Roster Filler'` — cascades remove the 22 athletes and their `coach_athletes` rows.
+**2. Tami joins Test Club**
+- `UPDATE coach_profiles SET organization_id = '07cfbb37-e558-4f08-85f2-9304b5d3aad0' WHERE id = 'e82ce1b6…'` (Tami).
+- Per `coach_effective_tier`, this promotes her to the `club` tier — bypassing the roster cap and giving her the multi-coach visibility surface.
 
-## Out of scope
-- No changes to the trigger, cap values, tier, or any UI code.
-- Not touching the 3 real athletes already on her roster.
+**3. Two shared athletes between Tami and David**
+
+Both athletes are already on Tami's roster; adding them to David's roster in sports David already offers (`coach_levels` check by `validate_coach_athlete_sport`):
+
+- **Dani California** (`c8e7e986…`) — shared under `figure_skating`.
+- **Jamie Gilmore** (`5666dde4…`) — shared under `figure_skating` and `gymnastics` (both are in David's `coach_levels`, and both are already Jamie's sports with Tami).
+
+Per athlete:
+- Insert `coach_athletes (coach_id = David, athlete_id = <id>)`.
+- Insert matching `coach_athlete_sports` rows for David.
+
+Tami's existing links stay untouched, so both athletes end up rostered by both coaches.
+
+## Not changing
+
+- No schema migration, no RLS changes, no code changes.
+- David's tier stays `coach`; existing rosters unchanged beyond the two new shared links.
+- `athlete_primary_coaches` untouched.
+
+## Rollback
+
+- `DELETE FROM coach_athletes WHERE coach_id = '303f66c6…' AND athlete_id IN ('c8e7e986…','5666dde4…')` (cascades sports rows).
+- `UPDATE coach_profiles SET organization_id = NULL WHERE id = 'e82ce1b6…'`.
+- `DELETE FROM user_roles WHERE user_id IN (…) AND role = 'admin'` and matching `admin_allowlist` rows.
