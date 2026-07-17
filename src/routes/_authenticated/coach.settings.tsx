@@ -439,6 +439,35 @@ function PlanSection({
   const navigate = useNavigate();
   const portal = useServerFn(createCoachBillingPortalSession);
   const [openingPortal, setOpeningPortal] = useState(false);
+  const [joinOpen, setJoinOpen] = useState(false);
+
+  const paidInterval: "month" | "year" | null =
+    profile.entitlement === "paid" && profile.subscriptionTier
+      ? profile.subscriptionTier.endsWith("_yearly")
+        ? "year"
+        : "month"
+      : null;
+  const hasPaidSub =
+    profile.entitlement === "paid" &&
+    !!profile.subscriptionTier &&
+    profile.subscriptionStatus !== "canceled";
+
+  const joinClubRow = (
+    <SettingsButtonRow
+      icon={<Building2 className="size-4" />}
+      label="Join a club"
+      description="Your club covers your plan — enter their code to switch."
+      onClick={() => setJoinOpen(true)}
+    />
+  );
+  const joinSheet = (
+    <JoinClubSheet
+      open={joinOpen}
+      onOpenChange={setJoinOpen}
+      hasPaidSubscription={hasPaidSub}
+      paidInterval={paidInterval}
+    />
+  );
 
   const openPortal = async () => {
     setOpeningPortal(true);
