@@ -157,12 +157,30 @@ function RosterPage() {
 
               <div className="min-w-0 flex-1">
                 <SheetTrigger asChild>
-                  <Button type="button" variant="outline" size="sm" className="w-full">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    disabled={rosterFull}
+                    title={
+                      rosterFull
+                        ? `Roster full (${athletes.length}/${athleteLimit}). Upgrade to add more.`
+                        : athleteLimit !== null
+                          ? `${athletes.length}/${athleteLimit} athletes`
+                          : undefined
+                    }
+                  >
                     <UserPlus className="size-4" aria-hidden />
-                    <span className="truncate">Add athlete</span>
+                    <span className="truncate">
+                      {athleteLimit !== null
+                        ? `Add athlete (${athletes.length}/${athleteLimit})`
+                        : "Add athlete"}
+                    </span>
                   </Button>
                 </SheetTrigger>
               </div>
+
 
               <div className="min-w-0 flex-1">
                 {tab === "schedule" && athletes.length > 0 ? (
