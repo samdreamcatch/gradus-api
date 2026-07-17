@@ -227,8 +227,10 @@ export const syncPromoCodeToStripe = createServerFn({ method: "POST" })
       env === "sandbox" ? "stripe_coupon_id_sandbox" : "stripe_coupon_id_live";
     const promoCol =
       env === "sandbox" ? "stripe_promo_id_sandbox" : "stripe_promo_id_live";
-    const existingCoupon = (row as Record<string, string | null>)[couponCol];
-    const existingPromo = (row as Record<string, string | null>)[promoCol];
+    const existingCoupon =
+      env === "sandbox" ? row.stripe_coupon_id_sandbox : row.stripe_coupon_id_live;
+    const existingPromo =
+      env === "sandbox" ? row.stripe_promo_id_sandbox : row.stripe_promo_id_live;
     if (existingCoupon && existingPromo) {
       return {
         ok: true as const,
@@ -253,7 +255,7 @@ export const syncPromoCodeToStripe = createServerFn({ method: "POST" })
       let promoId: string;
       try {
         const promo = await stripe.promotionCodes.create({
-          coupon: coupon.id,
+          promotion: { type: "coupon", coupon: coupon.id },
           code: row.code,
           metadata: { gradus_code: row.code },
         });
@@ -273,10 +275,15 @@ export const syncPromoCodeToStripe = createServerFn({ method: "POST" })
         }
       }
 
-      const patch: Record<string, string> = {
-        [couponCol]: coupon.id,
-        [promoCol]: promoId,
-      };
+      const patch: {
+        stripe_coupon_id_sandbox?: string;
+        stripe_promo_id_sandbox?: string;
+        stripe_coupon_id_live?: string;
+        stripe_promo_id_live?: string;
+      } =
+        env === "sandbox"
+          ? { stripe_coupon_id_sandbox: coupon.id, stripe_promo_id_sandbox: promoId }
+          : { stripe_coupon_id_live: coupon.id, stripe_promo_id_live: promoId };
       const { error: writeErr } = await supabaseAdmin
         .from("promo_codes")
         .update(patch)
