@@ -52,7 +52,29 @@ async function ensureProfile(
     .eq("user_id", userId)
     .maybeSingle();
   if (existing.error) dbError(existing.error);
-  if (existing.data) return existing.data;
+  if (existing.data) {
+    // Founding Coach backfill: while the paywall is disabled, any onboarded
+    // coach still on `pending` (from before the kill-switch shipped) gets
+    // lazily upgraded to lifetime-free on their next profile read.
+    if (
+      !isCoachPaywallEnabled() &&
+      existing.data.onboarded_at &&
+      existing.data.entitlement === "pending" &&
+      !existing.data.promo_code
+    ) {
+      const upd = await supabase
+        .from("coach_profiles")
+        .update({ entitlement: "promo_free", promo_code: FOUNDING_COACH_PROMO_CODE })
+        .eq("id", existing.data.id)
+        .select(
+          "id, first_name, last_name, onboarded_at, entitlement, organization_id, subscription_tier, subscription_status, trial_ends_at, current_period_end, stripe_customer_id, promo_code",
+        )
+        .single();
+      if (upd.error) dbError(upd.error);
+      return upd.data;
+    }
+    return existing.data;
+  }
 
   // Guard: don't silently turn a parent into a coach. A coach_profiles row
   // should only be created via the explicit coach signup flow.
