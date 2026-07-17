@@ -467,7 +467,6 @@ export const joinOrganization = createServerFn({ method: "POST" })
     }
 
     // 4. Stamp the coach's sync cursor and flip to club_covered.
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const versionRow = await supabaseAdmin
       .from("organizations")
       .select("content_version")
