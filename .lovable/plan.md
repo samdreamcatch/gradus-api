@@ -1,23 +1,21 @@
-## Problem
+## Current state (coach@test.dev / Tami Taylor)
 
-On mobile the club row squeezes a fixed "Club plan" label on the left against the org name on the right (capped at 55% width and truncated). Long club names — e.g. "Southern California Junior Tennis Academy" — get clipped mid-word.
+- `organization_id`: `07cfbb37-…` (linked to a club)
+- `entitlement`: `club_covered`
+- `subscription_tier`: `coach`, `subscription_status`: `trialing`
+- `stripe_customer_id`: `cus_Utm2OYgv0nHvSc` (already has a Stripe subscription record on file)
 
-## Fix (in `src/routes/_authenticated/coach.settings.tsx`, `PlanSection` club branch only)
+## Change
 
-Reuse the existing `SettingsRow` primitive — no new component, no primitive changes. Swap which piece of info is primary:
+Single `UPDATE` on `coach_profiles` for this user:
 
-- **label** → the org name (`profile.organizationName ?? "Club plan"`), gets the full row width and can wrap naturally
-- **description** → "Club plan · your club covers your subscription."
-- **value** → removed (was the org name; now redundant)
-- Keep the `Building2` icon and the `promoRow` below it exactly as-is
+- `organization_id` → `NULL` (unlink from the club)
+- `entitlement` → `'paid'` (individual coach on their existing trialing subscription)
 
-Result on mobile:
-```text
-[🏢]  Southern California Junior Tennis Academy
-      Club plan · your club covers your subscription.
-```
-The name gets the full available width (minus icon), can wrap to two lines if truly long, and the secondary line explains what it is. Matches the pattern already used by the paid-tier branch a few lines down (tier name as label, status as description).
+Leave `subscription_tier`, `subscription_status`, and `stripe_customer_id` as-is, so `PlanSection` renders the paid/trialing branch with the "Manage subscription" button — exactly the "individual coach on trial" state you want to inspect.
 
-## Out of scope
+No schema change. Data-only, via the insert tool.
 
-No changes to `SettingsRow` itself, no new variant, no other rows in the settings screen.
+## Reverting later
+
+If you want them back on the club afterwards, we set `organization_id` back to `07cfbb37-e558-4f08-85f2-9304b5d3aad0` and `entitlement` back to `club_covered`.
