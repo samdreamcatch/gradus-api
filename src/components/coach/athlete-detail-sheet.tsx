@@ -11,12 +11,15 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { PlanCard } from "@/components/plans/plan-card";
+import { AlsoCoachedByList } from "@/components/coach/also-coached-by-list";
+import { OtherCoachPlansSheet } from "@/components/coach/other-coach-plans-sheet";
 import { cn } from "@/lib/utils";
 import {
   getCoachAthleteDetail,
   getCoachAthleteAiSummary,
   type Verdict,
 } from "@/lib/coach-athlete-detail.functions";
+
 
 export function AthleteDetailSheet({
   athleteId,
