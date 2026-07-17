@@ -1,22 +1,30 @@
-## Goal
-Differentiate the "+ Wallace" / "+N coaches" pill on the roster card from the neutral lesson-time pills so it reads as a separate category of information — without introducing new tokens or breaking design-system rules.
+## Why the mismatch
 
-## Approach
-Keep the pill shape and size consistent with siblings (still `rounded-pill`, same padding, same `text-[11px]`), but re-skin it using the **pool pen** secondary-accent tokens already reserved for "athlete identity + data/metadata about people." Coaches on the athlete are exactly that: people-metadata, so pool is the semantically correct pen (and it's the athlete-side pen, matching the left rail color that already sits on the card).
+The roster card's `+N coaches` pill counts every other coach linked to the athlete via `coach_athletes`. The Athlete Detail Sheet's "Also coached by" list, however, drops any coach who has no active/benched plans for that athlete (`coach-athlete-detail.functions.ts` line 514: `if (cplans.length === 0) continue`). Jamie has 3 other coaches linked, but only 1 has a shared plan on file — so the pill reads "+3" while only 1 card shows.
 
-## Change (single file: `src/components/coach/roster-card.tsx`)
-Replace the neutral chip classes on the `+ coaches` span:
+## Fix (chosen direction)
 
-- `bg-elevated` → `bg-secondary-accent-wash`
-- `border-divider` → `border-secondary-accent/30` (subtle, not loud)
-- `text-text-secondary` → `text-secondary-accent-ink`
-- Add a tiny leading `Users` icon (lucide, `size-3`, `-ml-0.5 mr-0.5`, `aria-hidden`) so the shape reads as "people" at a glance before the text.
-- Keep font weight `font-medium` (do not bump to bold — restraint is the system).
+Keep the roster count as-is (all linked coaches) and expand the sheet to list every other coach, tagging plan-less ones so the count reconciles at a glance.
 
-Lesson-time pills stay untouched (neutral `bg-elevated` + divider border), so the contrast between "schedule" (neutral) and "shared coaches" (pool-wash + icon) is immediate.
+### Data — `src/lib/coach-athlete-detail.functions.ts`
 
-## Not doing
-- No new colors, no new utility, no size/shape change.
-- No change to badge copy or logic.
-- No hover states (press-only doctrine).
-- Not touching the "Also coached by" list inside the sheet.
+- Remove the `if (cplans.length === 0) continue` filter so every entry in `otherLinks` becomes an `OtherCoachDTO`.
+- For coaches with no active/benched plans, return them with `plans: []`, `activeCount: 0`, `benchedCount: 0`, and their `sports` (from `coach_athlete_sports`) still populated.
+- Update the sort so plan-less coaches sink to the bottom (coaches with plans first, ordered by most recent `updatedAt`; then plan-less coaches alphabetically by last name).
+
+### UI — `src/components/coach/also-coached-by-list.tsx`
+
+- When a coach has `activeCount + benchedCount === 0`, render the row in a muted, non-interactive style:
+  - Replace the meta line ("No active plans") with a `font-hand` note: "No shared plans yet".
+  - Drop the `ChevronRight` and disable the button (or render as a `div` with no `press` affordance) so tapping doesn't open an empty sheet.
+- Coaches with plans keep the current pressable card + chevron behavior.
+
+### UI — `src/components/coach/other-coach-plans-sheet.tsx`
+
+- No changes needed; plan-less coaches won't open this sheet.
+
+## Out of scope
+
+- Roster card pill styling and count logic — untouched.
+- `OtherCoachPlansSheet` internals, plan/move rendering.
+- Any business logic beyond the visibility filter.
