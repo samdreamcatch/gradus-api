@@ -319,9 +319,24 @@ function PaywallPreview() {
             <button
               type="button"
               onClick={() => setPromoOpen(true)}
-              className="mx-auto flex items-center gap-1.5 text-xs text-text-secondary underline-offset-2 hover:underline"
+              className="press flex w-full items-center justify-between gap-3 rounded-xl border border-accent/40 bg-accent/10 px-4 py-3 text-left"
             >
-              <Tag className="h-3.5 w-3.5" /> Have a promo code?
+              <span className="flex items-center gap-2.5">
+                <span className="flex h-8 w-8 items-center justify-center rounded-md bg-accent/20 text-accent-ink">
+                  <Tag className="h-4 w-4" />
+                </span>
+                <span className="flex flex-col">
+                  <span className="text-sm font-semibold text-text-primary">
+                    Have a promo code?
+                  </span>
+                  <span className="text-xs text-text-secondary">
+                    Unlock free months of Coach Pro
+                  </span>
+                </span>
+              </span>
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-accent-ink">
+                Apply
+              </span>
             </button>
           ) : (
             <div className="rounded-xl border border-divider bg-elevated p-3">
