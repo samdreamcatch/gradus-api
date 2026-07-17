@@ -108,7 +108,7 @@ export const listPromoCodes = createServerFn({ method: "GET" })
     const { data, error } = await supabaseAdmin
       .from("promo_codes")
       .select(
-        "code, label, active, notes, percent_off, stripe_promo_id_sandbox, stripe_promo_id_live, created_at",
+        "code, label, active, notes, percent_off, duration, duration_in_months, stripe_promo_id_sandbox, stripe_promo_id_live, created_at",
       )
       .order("created_at", { ascending: false });
     if (error) dbError(error);
