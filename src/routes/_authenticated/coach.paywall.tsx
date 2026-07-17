@@ -55,6 +55,7 @@ const FEATURES: Record<Tier, string[]> = {
 export const Route = createFileRoute("/_authenticated/coach/paywall")({
   validateSearch: (search: Record<string, unknown>) => ({
     checkout: typeof search.checkout === "string" ? search.checkout : undefined,
+    tier: typeof search.tier === "string" ? search.tier : undefined,
   }),
   beforeLoad: () => {
     // Paywall kill-switch: while disabled, this URL is dead — bounce back
