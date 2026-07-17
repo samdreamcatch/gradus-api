@@ -136,6 +136,22 @@ function PaywallPage() {
     [checkoutFn, interval],
   );
 
+  // Auto-open checkout for a preselected tier (e.g. arrived from
+  // "Upgrade to Coach Pro" in settings). Fires once when Coach Pro is
+  // available and no checkout session is already in flight.
+  useEffect(() => {
+    if (
+      preselectedTier === "coach_pro" &&
+      isCoachProAvailable() &&
+      !clientSecret &&
+      !loading &&
+      !isEntitled
+    ) {
+      void startCheckout("coach_pro");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [preselectedTier]);
+
   const options = useMemo(
     () => (clientSecret ? { fetchClientSecret: async () => clientSecret } : null),
     [clientSecret],
