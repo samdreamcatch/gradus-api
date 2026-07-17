@@ -31,6 +31,8 @@ import {
   type AthletePracticeSummary,
 } from "@/lib/coach-schedule.functions";
 import { coachProfileQueryOptions } from "@/hooks/use-coach-profile";
+import { UpgradeToProRow } from "@/components/coach/upgrade-to-pro-row";
+
 
 
 type RosterTab = "athletes" | "schedule";
