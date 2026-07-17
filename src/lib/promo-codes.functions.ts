@@ -223,10 +223,6 @@ export const syncPromoCodeToStripe = createServerFn({ method: "POST" })
       throw new Error("Set a percent_off value before syncing to Stripe.");
     }
 
-    const couponCol =
-      env === "sandbox" ? "stripe_coupon_id_sandbox" : "stripe_coupon_id_live";
-    const promoCol =
-      env === "sandbox" ? "stripe_promo_id_sandbox" : "stripe_promo_id_live";
     const existingCoupon =
       env === "sandbox" ? row.stripe_coupon_id_sandbox : row.stripe_coupon_id_live;
     const existingPromo =
