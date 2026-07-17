@@ -13,6 +13,8 @@ export type CoachEntitlement =
   | "paid"
   | "promo_free";
 
+export type CoachEffectiveTier = "coach" | "coach_pro" | "club";
+
 export interface CoachProfileDTO {
   id: string;
   firstName: string;
@@ -29,7 +31,28 @@ export interface CoachProfileDTO {
   promoCode: string | null;
   promoLabel: string | null;
   promoPercentOff: number;
+  effectiveTier: CoachEffectiveTier;
+  /** null = unlimited (club). */
+  athleteLimit: number | null;
+  athleteCount: number;
 }
+
+/** Mirrors public.coach_effective_tier() in the DB — DB is authoritative. */
+export function computeEffectiveTier(input: {
+  organizationId: string | null;
+  subscriptionTier: "coach" | "coach_pro" | null;
+}): CoachEffectiveTier {
+  if (input.organizationId) return "club";
+  if (input.subscriptionTier === "coach_pro") return "coach_pro";
+  return "coach";
+}
+
+export function athleteLimitForTier(tier: CoachEffectiveTier): number | null {
+  if (tier === "club") return null;
+  if (tier === "coach_pro") return 75;
+  return 25;
+}
+
 
 export interface CoachLevelDTO {
   sport: string;
@@ -142,6 +165,20 @@ export const getCoachProfile = createServerFn({ method: "GET" })
     if (promo.error) dbError(promo.error);
 
     const promoActive = promo.data?.active !== false;
+
+    const countRes = await supabase
+      .from("coach_athletes")
+      .select("athlete_id", { count: "exact", head: true })
+      .eq("coach_id", profile.id);
+    if (countRes.error) dbError(countRes.error);
+    const athleteCount = countRes.count ?? 0;
+
+    const organizationId = profile.organization_id ?? null;
+    const subscriptionTier =
+      (profile.subscription_tier as "coach" | "coach_pro" | null) ?? null;
+    const effectiveTier = computeEffectiveTier({ organizationId, subscriptionTier });
+    const athleteLimit = athleteLimitForTier(effectiveTier);
+
     return {
       profile: {
         id: profile.id,
@@ -149,10 +186,9 @@ export const getCoachProfile = createServerFn({ method: "GET" })
         lastName: profile.last_name,
         onboardedAt: profile.onboarded_at,
         entitlement: (profile.entitlement ?? "pending") as CoachProfileDTO["entitlement"],
-        organizationId: profile.organization_id ?? null,
+        organizationId,
         organizationName: org.data?.name ?? null,
-        subscriptionTier:
-          (profile.subscription_tier as "coach" | "coach_pro" | null) ?? null,
+        subscriptionTier,
         subscriptionStatus:
           (profile.subscription_status as string | null) ?? null,
         trialEndsAt: (profile.trial_ends_at as string | null) ?? null,
@@ -161,6 +197,9 @@ export const getCoachProfile = createServerFn({ method: "GET" })
         promoCode: profile.promo_code ?? null,
         promoLabel: promoActive ? (promo.data?.label ?? null) : null,
         promoPercentOff: promoActive ? (promo.data?.percent_off ?? 0) : 0,
+        effectiveTier,
+        athleteLimit,
+        athleteCount,
       } as CoachProfileDTO,
       levels: (levels.data ?? []).map((r) => ({
         sport: r.sport,
@@ -169,6 +208,7 @@ export const getCoachProfile = createServerFn({ method: "GET" })
       })) as CoachLevelDTO[],
     };
   });
+
 
 const nameSchema = z.object({
   firstName: z.string().trim().min(1, "Required").max(80),

@@ -30,6 +30,8 @@ import {
   getRosterPracticeSummaries,
   type AthletePracticeSummary,
 } from "@/lib/coach-schedule.functions";
+import { coachProfileQueryOptions } from "@/hooks/use-coach-profile";
+
 
 type RosterTab = "athletes" | "schedule";
 
@@ -86,6 +88,7 @@ export const Route = createFileRoute("/_authenticated/coach/roster")({
 
 function RosterPage() {
   const { data: roster } = useSuspenseQuery(rosterQueryOptions);
+  const { data: coachProfile } = useQuery(coachProfileQueryOptions);
   const { athletes, coachSports } = roster;
   const router = useRouter();
   const [tab, setTab] = useState<RosterTab>("schedule");
@@ -93,6 +96,10 @@ function RosterPage() {
   const [selectedAthleteId, setSelectedAthleteId] = useState<string | null>(null);
   const [inviteOpen, setInviteOpen] = useState(false);
   const scheduleRef = useRef<WeekScheduleHandle>(null);
+
+  const athleteLimit = coachProfile?.profile.athleteLimit ?? null;
+  const rosterFull = athleteLimit !== null && athletes.length >= athleteLimit;
+
 
   const sports = useMemo(() => {
     const set = new Set<string>(coachSports);
@@ -150,12 +157,30 @@ function RosterPage() {
 
               <div className="min-w-0 flex-1">
                 <SheetTrigger asChild>
-                  <Button type="button" variant="outline" size="sm" className="w-full">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    disabled={rosterFull}
+                    title={
+                      rosterFull
+                        ? `Roster full (${athletes.length}/${athleteLimit}). Upgrade to add more.`
+                        : athleteLimit !== null
+                          ? `${athletes.length}/${athleteLimit} athletes`
+                          : undefined
+                    }
+                  >
                     <UserPlus className="size-4" aria-hidden />
-                    <span className="truncate">Add athlete</span>
+                    <span className="truncate">
+                      {athleteLimit !== null
+                        ? `Add athlete (${athletes.length}/${athleteLimit})`
+                        : "Add athlete"}
+                    </span>
                   </Button>
                 </SheetTrigger>
               </div>
+
 
               <div className="min-w-0 flex-1">
                 {tab === "schedule" && athletes.length > 0 ? (
