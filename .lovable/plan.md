@@ -1,70 +1,20 @@
 ## Goal
+Bump Tami Taylor's roster to exactly 25 so the next add-athlete attempt trips the `enforce_coach_roster_cap` trigger and surfaces the roster-full toast.
 
-When a coach's add-athlete action is rejected by the roster-cap trigger, surface it as a design-system nudge that points at Coach Pro — not a raw red toast. Also make the "at cap" state visible on the roster page before they try.
+## Approach
+Tami is on the `coach` tier (cap 25) with 3 real athletes. I'll seed 22 disposable placeholder athletes attached to her and tag them so they're easy to clean up later.
 
-## Where the error surfaces today
+## Steps
+1. Insert one placeholder `parent_profiles` row (no `user_id`, name "QA Placeholder / Roster Filler") to own the seed athletes. If a row with that exact name already exists from a prior seed, reuse it.
+2. Insert 22 `athletes` rows under that parent (`first_name = 'Filler'`, `last_name = 'NN'` for 01–22, `self_managed = false`, no birthdate needed).
+3. Insert 22 `coach_athletes` rows linking each new athlete to `coach_id = e82ce1b6-c2c3-4c66-8d31-7b6ccb3a25cd`. The cap trigger allows inserts while count < 25, so all 22 land and the roster becomes exactly 25.
+4. Verify: `SELECT count(*) FROM coach_athletes WHERE coach_id = 'e82ce1b6…'` returns 25.
 
-The DB trigger throws `Roster full: the <tier> plan is limited to <n> athletes. Upgrade to add more.` at any `coach_athletes` insert. Coach-initiated inserts run through **one** UI path: `EnterInviteCodeCard` (rendered inside the roster page's "Add athlete" sheet). It currently `toast.error(msg)`s the raw exception.
+All writes go through the `supabase--insert` tool (data-only, no schema change).
 
-The parent-side path (`add-coach-by-code-card.tsx`) hits the same trigger, but the parent isn't the person who can upgrade — handled separately below.
+## Cleanup (later, on request)
+One statement: `DELETE FROM parent_profiles WHERE first_name = 'QA Placeholder' AND last_name = 'Roster Filler'` — cascades remove the 22 athletes and their `coach_athletes` rows.
 
-## Design choices (reuses existing pieces)
-
-- **Nudge medium: enriched `sonner` toast** with an action button. Sonner action toasts already appear elsewhere in the app, honor the design tokens, and don't require a new overlay — which keeps us aligned with the overlay doctrine (Sheet / Popover / AlertDialog only; no plain Dialog for informational content).
-- **CTA reuse: `UpgradeToProRow`** for the on-page banner when at cap. Same row used in settings, so the messaging and the "coming soon" state stay in one component. It already gates behind `isCoachProAvailable()`.
-- **Copy tone: coach's-notebook plain-spoken**, no upsell tone. "Roster's full — 25 out of 25. Coach Pro raises it to 75."
-
-## Changes
-
-### 1. Shared detector + copy — `src/lib/roster-limits.ts` (new)
-
-```ts
-export function isRosterFullError(err: unknown): boolean;
-export function rosterFullCopy(tier: "coach" | "coach_pro"): {
-  title: string; description: string;
-};
-```
-
-Small helper so both the roster page and the invite card use identical phrasing. `isRosterFullError` matches the trigger's message prefix (`/Roster full/i`).
-
-### 2. Coach-side toast — `src/components/coach/enter-invite-code-card.tsx`
-
-In the `catch`, before falling back to the generic toast, check `isRosterFullError(err)`. If matched:
-
-- If `isCoachProAvailable()` → `toast.error("Roster's full", { description: "You're at 25 athletes on the Coach plan. Upgrade to Coach Pro to add up to 75.", action: { label: "Upgrade", onClick: () => navigate({ to: "/coach/paywall", search: { tier: "coach_pro" } }) } })`.
-- If not (flag off) → same title/description with "Coach Pro is coming soon — it'll raise this to 75 athletes." and no action button.
-
-Tier and cap come from the already-loaded `coachProfile` (via `useQuery(coachProfileQueryOptions)`) so the numbers match what settings shows.
-
-### 3. On-page nudge when at cap — `src/routes/_authenticated/coach.roster.tsx`
-
-Below the sticky header, when `rosterFull`, render an inline callout using the existing `paper-surface` utility (matches the roster's notebook look):
-
-```
-┌─────────────────────────────────────────────┐
-│ Roster's full — 25 / 25                     │
-│ Coach Pro raises this to 75 athletes.       │
-│ [ UpgradeToProRow ]                         │
-└─────────────────────────────────────────────┘
-```
-
-- Wraps `<UpgradeToProRow />` — its disabled "Soon" state handles the pre-launch case for free.
-- Only shown when `athleteLimit !== null && athletes.length >= athleteLimit`. Club coaches (unlimited) never see it.
-- The Add-athlete button stays disabled (already done last turn); we drop the awkward `(25/25)` count from the label since the banner now carries it — button just reads "Add athlete" with a tooltip.
-
-### 4. Parent-side polish (small) — `src/components/parent/add-coach-by-code-card.tsx`
-
-Same `isRosterFullError` check, but the message is coach-agnostic and has no upgrade CTA (parent can't upgrade someone else): `toast.error("That coach's roster is full right now. Ask them to make room and try again.")`. Prevents the parent from seeing raw "Coach plan is limited to 25 athletes" phrasing that isn't actionable for them.
-
-## Explicitly out of scope
-
-- No changes to the trigger message itself — it stays as the machine-readable source that `isRosterFullError` matches.
-- No changes to `UpgradeToProRow`, the paywall route, or pricing.
-- No proactive "you're one away" warning at 24/25 — over-engineering for now; can add later using the same `athleteCount` / `athleteLimit` fields already on the DTO.
-
-## Files touched
-
-- `src/lib/roster-limits.ts` (new)
-- `src/components/coach/enter-invite-code-card.tsx`
-- `src/routes/_authenticated/coach.roster.tsx`
-- `src/components/parent/add-coach-by-code-card.tsx`
+## Out of scope
+- No changes to the trigger, cap values, tier, or any UI code.
+- Not touching the 3 real athletes already on her roster.
