@@ -33,6 +33,7 @@ import { InviteCard } from "@/components/onboarding/invite-card";
 import { CoachBottomNav } from "@/components/coach/bottom-nav";
 import { RosterSettingsSection } from "@/components/coach/roster-settings-section";
 import { EnterInviteCodeCard } from "@/components/coach/enter-invite-code-card";
+import { JoinClubSheet } from "@/components/coach/join-club-sheet";
 import { SegmentedToggle } from "@/components/plans/segmented-toggle";
 import { createCoachBillingPortalSession } from "@/lib/coach-checkout.functions";
 import { getStripeEnvironment } from "@/lib/stripe";
@@ -438,6 +439,29 @@ function PlanSection({
   const navigate = useNavigate();
   const portal = useServerFn(createCoachBillingPortalSession);
   const [openingPortal, setOpeningPortal] = useState(false);
+  const [joinOpen, setJoinOpen] = useState(false);
+
+  const hasPaidSub =
+    profile.entitlement === "paid" &&
+    !!profile.subscriptionTier &&
+    profile.subscriptionStatus !== "canceled";
+
+  const joinClubRow = (
+    <SettingsButtonRow
+      icon={<Building2 className="size-4" />}
+      label="Join a club"
+      description="Your club covers your plan — enter their code to switch."
+      onClick={() => setJoinOpen(true)}
+    />
+  );
+  const joinSheet = (
+    <JoinClubSheet
+      open={joinOpen}
+      onOpenChange={setJoinOpen}
+      hasPaidSubscription={hasPaidSub}
+      paidInterval={null}
+    />
+  );
 
   const openPortal = async () => {
     setOpeningPortal(true);
@@ -532,6 +556,8 @@ function PlanSection({
           onClick={() => void openPortal()}
           disabled={openingPortal || !profile.hasStripeCustomer}
         />
+        {joinClubRow}
+        {joinSheet}
       </>
     );
   }
@@ -552,6 +578,8 @@ function PlanSection({
         tone="accent"
         onClick={() => navigate({ to: "/coach/paywall" })}
       />
+      {joinClubRow}
+      {joinSheet}
     </>
   );
 }
