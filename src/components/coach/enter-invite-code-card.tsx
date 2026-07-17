@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,14 @@ import {
   claimAdultAthleteInvite,
   getAdultAthleteByInviteCode,
 } from "@/lib/adult-athlete-invite.functions";
+import { coachProfileQueryOptions } from "@/hooks/use-coach-profile";
+import { isCoachProAvailable } from "@/lib/paywall-flag";
+import {
+  coachProSoonDescription,
+  coachRosterFullCopy,
+  isRosterFullError,
+} from "@/lib/roster-limits";
+
 
 /**
  * Coach-side "enter a code" card. Lets a coach paste a parent or adult-athlete
@@ -20,13 +29,16 @@ import {
  */
 export function EnterInviteCodeCard({ onSuccess }: { onSuccess?: () => void } = {}) {
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const resolveFn = useServerFn(resolveInviteCode);
   const previewAdultFn = useServerFn(getAdultAthleteByInviteCode);
   const claimParentFn = useServerFn(claimParentInvite);
   const claimAdultFn = useServerFn(claimAdultAthleteInvite);
+  const { data: coachProfile } = useQuery(coachProfileQueryOptions);
 
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
+
 
   const codeValid = /^[A-Z2-9]{8}$/.test(code.trim().toUpperCase());
 
@@ -76,6 +88,24 @@ export function EnterInviteCodeCard({ onSuccess }: { onSuccess?: () => void } = 
         toast.success("Already on your roster");
         reset();
         onSuccess?.();
+      } else if (isRosterFullError(err)) {
+        const limit = coachProfile?.profile.athleteLimit ?? 25;
+        const current = coachProfile?.profile.athleteCount ?? limit;
+        const copy = coachRosterFullCopy(current, limit);
+        if (isCoachProAvailable()) {
+          toast.error(copy.title, {
+            description: copy.description,
+            action: {
+              label: "Upgrade",
+              onClick: () =>
+                navigate({ to: "/coach/paywall", search: { tier: "coach_pro" } }),
+            },
+          });
+        } else {
+          toast.error(copy.title, {
+            description: `You're at ${current} of ${limit} athletes. ${coachProSoonDescription}`,
+          });
+        }
       } else {
         toast.error(msg);
       }
@@ -83,6 +113,7 @@ export function EnterInviteCodeCard({ onSuccess }: { onSuccess?: () => void } = 
       setBusy(false);
     }
   };
+
 
   return (
     <div className="space-y-3">

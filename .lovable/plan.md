@@ -1,75 +1,70 @@
 ## Goal
 
-Give `coach` / `coach_pro` / `club` real, enforced meaning in the database:
+When a coach's add-athlete action is rejected by the roster-cap trigger, surface it as a design-system nudge that points at Coach Pro — not a raw red toast. Also make the "at cap" state visible on the roster page before they try.
 
-- Roster caps: **Coach 25**, **Coach Pro 75**, **Club unlimited**.
-- **Coach Pro and Club coaches** can read plans another coach has assigned to an athlete they also roster.
+## Where the error surfaces today
 
-Founding Coach (promo-free, `subscription_tier IS NULL`) continues to behave as the free Coach plan → capped at 25.
+The DB trigger throws `Roster full: the <tier> plan is limited to <n> athletes. Upgrade to add more.` at any `coach_athletes` insert. Coach-initiated inserts run through **one** UI path: `EnterInviteCodeCard` (rendered inside the roster page's "Add athlete" sheet). It currently `toast.error(msg)`s the raw exception.
 
-## Tier resolution
+The parent-side path (`add-coach-by-code-card.tsx`) hits the same trigger, but the parent isn't the person who can upgrade — handled separately below.
 
-There is no `club` value in `coach_profiles.subscription_tier` today; a Club coach is one attached to an organization. Effective tier for enforcement:
+## Design choices (reuses existing pieces)
 
-```
-club     ← coach_profiles.organization_id IS NOT NULL
-coach_pro ← subscription_tier = 'coach_pro'
-coach    ← everything else (includes Founding / promo_free / null)
-```
+- **Nudge medium: enriched `sonner` toast** with an action button. Sonner action toasts already appear elsewhere in the app, honor the design tokens, and don't require a new overlay — which keeps us aligned with the overlay doctrine (Sheet / Popover / AlertDialog only; no plain Dialog for informational content).
+- **CTA reuse: `UpgradeToProRow`** for the on-page banner when at cap. Same row used in settings, so the messaging and the "coming soon" state stay in one component. It already gates behind `isCoachProAvailable()`.
+- **Copy tone: coach's-notebook plain-spoken**, no upsell tone. "Roster's full — 25 out of 25. Coach Pro raises it to 75."
 
-Encapsulated in a new SQL helper `public.coach_effective_tier(_coach_id uuid) returns text` (SECURITY DEFINER, stable). Used by both the roster-cap trigger and the plan-visibility policy so the rule lives in one place.
+## Changes
 
-## 1. Roster caps (DB-enforced)
+### 1. Shared detector + copy — `src/lib/roster-limits.ts` (new)
 
-New `BEFORE INSERT` trigger `enforce_coach_roster_cap` on `public.coach_athletes`:
-
-- Look up effective tier of `NEW.coach_id`.
-- Count existing rows in `coach_athletes` for that coach.
-- If tier = `coach` and count ≥ 25 → `RAISE EXCEPTION` with a friendly message + `ERRCODE = 'check_violation'`.
-- If tier = `coach_pro` and count ≥ 75 → same.
-- `club` → no cap.
-
-Enforced in the DB so every insert path (`parent-signup`, `adult-athlete-signup`, `athlete-signup`, `parent-settings`, `adult-athlete-invite.functions`) is covered without touching each site. `dbError()` already surfaces these to the UI.
-
-App-side polish (small, non-blocking):
-
-- Extend `CoachProfileDTO` in `src/lib/coach-profile.functions.ts` with `effectiveTier: "coach" | "coach_pro" | "club"` and `athleteLimit: number | null` (null = unlimited) so settings/roster can show "24 / 25 athletes" and disable "Add athlete" affordances before the DB rejects. No new code paths — surfaces the same helper.
-
-## 2. Cross-coach plan visibility for Pro / Club
-
-New SELECT policy on `public.plans`:
-
-```
-"Pro and Club coaches view plans on shared athletes" - SELECT
-  kind = 'plan'
-  AND status IN ('active','benched')
-  AND EXISTS (
-    SELECT 1
-    FROM coach_profiles viewer
-    JOIN coach_athletes viewer_link ON viewer_link.coach_id = viewer.id
-    WHERE viewer.user_id = auth.uid()
-      AND viewer_link.athlete_id = plans.athlete_id
-      AND public.coach_effective_tier(viewer.id) IN ('coach_pro','club')
-  )
+```ts
+export function isRosterFullError(err: unknown): boolean;
+export function rosterFullCopy(tier: "coach" | "coach_pro"): {
+  title: string; description: string;
+};
 ```
 
-Additive to existing "Coaches manage own plans - select"; owning coach still sees everything regardless of tier. The **viewer** must be Pro or Club; the **owner's** tier doesn't matter (a basic Coach's plans become visible to Pro/Club co-coaches on the shared athlete). Templates and drafts are excluded via the `kind`/`status` filter — matches the parent/athlete policies.
+Small helper so both the roster page and the invite card use identical phrasing. `isRosterFullError` matches the trigger's message prefix (`/Roster full/i`).
 
-No UI wiring in this change: the existing plan queries in `plans.functions.ts` / `coach-athlete-detail.functions.ts` will simply return more rows for Pro/Club coaches once the policy is live. Surfacing "plan by Coach X" in the athlete detail view is a follow-up.
+### 2. Coach-side toast — `src/components/coach/enter-invite-code-card.tsx`
 
-## 3. What is deliberately NOT in this change
+In the `catch`, before falling back to the generic toast, check `isRosterFullError(err)`. If matched:
 
-- No new `subscription_tier` value for `club` — organization membership already models it and `entitlement = 'club_covered'` is downstream of that.
-- No pricing / Stripe / paywall changes. Coach Pro purchase flow is still gated by `VITE_COACH_PRO_ENABLED`.
-- No backfill of `subscription_tier` for existing coaches. Founding Coaches remain `null` → effective tier `coach` → 25 cap, which matches the current messaging.
-- No changes to `Manage subscription`, `UpgradeToProRow`, or the paywall route.
+- If `isCoachProAvailable()` → `toast.error("Roster's full", { description: "You're at 25 athletes on the Coach plan. Upgrade to Coach Pro to add up to 75.", action: { label: "Upgrade", onClick: () => navigate({ to: "/coach/paywall", search: { tier: "coach_pro" } }) } })`.
+- If not (flag off) → same title/description with "Coach Pro is coming soon — it'll raise this to 75 athletes." and no action button.
+
+Tier and cap come from the already-loaded `coachProfile` (via `useQuery(coachProfileQueryOptions)`) so the numbers match what settings shows.
+
+### 3. On-page nudge when at cap — `src/routes/_authenticated/coach.roster.tsx`
+
+Below the sticky header, when `rosterFull`, render an inline callout using the existing `paper-surface` utility (matches the roster's notebook look):
+
+```
+┌─────────────────────────────────────────────┐
+│ Roster's full — 25 / 25                     │
+│ Coach Pro raises this to 75 athletes.       │
+│ [ UpgradeToProRow ]                         │
+└─────────────────────────────────────────────┘
+```
+
+- Wraps `<UpgradeToProRow />` — its disabled "Soon" state handles the pre-launch case for free.
+- Only shown when `athleteLimit !== null && athletes.length >= athleteLimit`. Club coaches (unlimited) never see it.
+- The Add-athlete button stays disabled (already done last turn); we drop the awkward `(25/25)` count from the label since the banner now carries it — button just reads "Add athlete" with a tooltip.
+
+### 4. Parent-side polish (small) — `src/components/parent/add-coach-by-code-card.tsx`
+
+Same `isRosterFullError` check, but the message is coach-agnostic and has no upgrade CTA (parent can't upgrade someone else): `toast.error("That coach's roster is full right now. Ask them to make room and try again.")`. Prevents the parent from seeing raw "Coach plan is limited to 25 athletes" phrasing that isn't actionable for them.
+
+## Explicitly out of scope
+
+- No changes to the trigger message itself — it stays as the machine-readable source that `isRosterFullError` matches.
+- No changes to `UpgradeToProRow`, the paywall route, or pricing.
+- No proactive "you're one away" warning at 24/25 — over-engineering for now; can add later using the same `athleteCount` / `athleteLimit` fields already on the DTO.
 
 ## Files touched
 
-- **Migration** (single): `coach_effective_tier` function, `enforce_coach_roster_cap` trigger on `coach_athletes`, new SELECT policy on `plans`. `GRANT EXECUTE ... TO authenticated` on the helper (used inside RLS as `SECURITY DEFINER`, so anon is not granted).
-- `src/lib/coach-profile.functions.ts`: extend `CoachProfileDTO` with `effectiveTier` and `athleteLimit`, computed server-side using the same rule as the DB helper (kept in sync by convention; the DB is authoritative).
-- `src/routes/_authenticated/coach.roster.tsx` (or the roster settings card): show `used / limit` counter and disable "Add athlete" when at cap. Small copy-only.
-
-## Open question I'm assuming an answer to
-
-The user said "Coach Pro and Club can view each other's plans." I'm reading that as **viewer-side gating only** — a Pro/Club viewer sees any co-coach's plans on a shared athlete, including plans owned by a basic Coach. Say the word if it should instead require **both** coaches to be Pro/Club (I'd add an `AND coach_effective_tier(plans.coach_id) IN ('coach_pro','club')` clause).
+- `src/lib/roster-limits.ts` (new)
+- `src/components/coach/enter-invite-code-card.tsx`
+- `src/routes/_authenticated/coach.roster.tsx`
+- `src/components/parent/add-coach-by-code-card.tsx`

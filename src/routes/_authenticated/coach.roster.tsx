@@ -31,6 +31,8 @@ import {
   type AthletePracticeSummary,
 } from "@/lib/coach-schedule.functions";
 import { coachProfileQueryOptions } from "@/hooks/use-coach-profile";
+import { UpgradeToProRow } from "@/components/coach/upgrade-to-pro-row";
+
 
 
 type RosterTab = "athletes" | "schedule";
@@ -165,21 +167,18 @@ function RosterPage() {
                     disabled={rosterFull}
                     title={
                       rosterFull
-                        ? `Roster full (${athletes.length}/${athleteLimit}). Upgrade to add more.`
+                        ? `Roster full (${athletes.length}/${athleteLimit})`
                         : athleteLimit !== null
                           ? `${athletes.length}/${athleteLimit} athletes`
                           : undefined
                     }
                   >
                     <UserPlus className="size-4" aria-hidden />
-                    <span className="truncate">
-                      {athleteLimit !== null
-                        ? `Add athlete (${athletes.length}/${athleteLimit})`
-                        : "Add athlete"}
-                    </span>
+                    <span className="truncate">Add athlete</span>
                   </Button>
                 </SheetTrigger>
               </div>
+
 
 
               <div className="min-w-0 flex-1">
@@ -200,6 +199,23 @@ function RosterPage() {
           </header>
 
           <FirstPlanBanner />
+
+          {rosterFull ? (
+            <div className="paper-surface mt-3 rounded-lg border border-divider p-3">
+              <div className="text-sm font-bold text-text-primary">
+                Roster's full — {athletes.length} / {athleteLimit}
+              </div>
+              <p className="mt-1 text-xs text-text-secondary">
+                Coach Pro raises this to 75 athletes.
+              </p>
+              <div className="mt-3">
+                <UpgradeToProRow />
+              </div>
+            </div>
+          ) : null}
+
+
+
 
 
 
