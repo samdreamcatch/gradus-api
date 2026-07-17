@@ -401,24 +401,6 @@ function PaywallPreview() {
           )}
         </div>
 
-        <div className="mt-5 w-full rounded-xl border border-divider bg-elevated p-3">
-          <div className="flex items-start gap-3">
-            <Building2 className="mt-0.5 h-5 w-5 shrink-0 text-text-secondary" />
-            <div className="text-sm">
-              <p className="font-semibold text-text-primary">
-                Joining through a club?
-              </p>
-              <p className="mt-1 text-text-secondary">
-                If your academy or association is a Gradus partner, they can cover
-                your subscription.
-              </p>
-              <span className="mt-2 inline-block text-accent-ink underline underline-offset-2">
-                Enter club code in Settings →
-              </span>
-            </div>
-          </div>
-        </div>
-
         {hasOrg && (
           <div className="mt-4 text-center">
             <button
