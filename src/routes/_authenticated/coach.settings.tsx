@@ -35,6 +35,7 @@ import { CoachBottomNav } from "@/components/coach/bottom-nav";
 import { RosterSettingsSection } from "@/components/coach/roster-settings-section";
 import { EnterInviteCodeCard } from "@/components/coach/enter-invite-code-card";
 import { JoinClubSheet } from "@/components/coach/join-club-sheet";
+import { UpgradeToProRow } from "@/components/coach/upgrade-to-pro-row";
 import { SegmentedToggle } from "@/components/plans/segmented-toggle";
 import { createCoachBillingPortalSession } from "@/lib/coach-checkout.functions";
 import { getStripeEnvironment } from "@/lib/stripe";
