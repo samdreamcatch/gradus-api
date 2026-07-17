@@ -32,16 +32,26 @@ export const validatePromoCode = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: row, error } = await context.supabase
       .from("promo_codes")
-      .select("code, label, active, percent_off")
+      .select("code, label, active, percent_off, duration, duration_in_months")
       .eq("code", data.code)
       .maybeSingle();
     if (error) dbError(error);
     if (!row || !row.active)
-      return { valid: false as const, label: null, percentOff: 0 };
+      return {
+        valid: false as const,
+        label: null,
+        percentOff: 0,
+        duration: "forever" as const,
+        durationInMonths: null,
+      };
     return {
       valid: true as const,
       label: row.label as string,
       percentOff: (row.percent_off as number | null) ?? 0,
+      duration: ((row.duration as string | null) ?? "forever") as
+        | "forever"
+        | "repeating",
+      durationInMonths: (row.duration_in_months as number | null) ?? null,
     };
   });
 
