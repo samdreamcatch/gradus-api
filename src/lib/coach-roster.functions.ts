@@ -76,7 +76,7 @@ export const getCoachRoster = createServerFn({ method: "GET" })
 
     const athleteIds = rows.map((r) => r.athlete_id as string);
 
-    const [sportsRes, slotsRes] = await Promise.all([
+    const [sportsRes, slotsRes, otherLinksRes] = await Promise.all([
       supabaseAdmin
         .from("coach_athlete_sports")
         .select("athlete_id, sport")
@@ -87,9 +87,16 @@ export const getCoachRoster = createServerFn({ method: "GET" })
         .select("id, athlete_id, day_of_week, start_minute, end_minute")
         .eq("coach_id", coachId)
         .in("athlete_id", athleteIds),
+      supabaseAdmin
+        .from("coach_athletes")
+        .select("athlete_id, coach_profiles!inner(last_name)")
+        .in("athlete_id", athleteIds)
+        .neq("coach_id", coachId),
     ]);
     if (sportsRes.error) dbError(sportsRes.error);
     if (slotsRes.error) dbError(slotsRes.error);
+    if (otherLinksRes.error) dbError(otherLinksRes.error);
+
 
     const slotIds = (slotsRes.data ?? []).map((s) => s.id as string);
     const overridesRes = slotIds.length
