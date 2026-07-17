@@ -23,6 +23,14 @@ export const DEV_ACCOUNTS: DevAccount[] = [
     home: "/coach",
   },
   {
+    email: "coach2@test.dev",
+    label: "David Wallace",
+    role: "coach",
+    note: "Coach — shares Jamie & Dani with Tami",
+    home: "/coach",
+  },
+
+  {
     email: "parent@test.dev",
     label: "Parent of Jamie Gilmore",
     role: "parent",
