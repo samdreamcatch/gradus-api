@@ -637,12 +637,20 @@ export const listAthletesWithInviteCodes = createServerFn({ method: "GET" })
     if (!parent.data) return { athletes: [] };
     const parentId = parent.data.id;
 
-    const athletes = await supabaseAdmin
-      .from("athletes")
-      .select("id, first_name, last_name")
-      .eq("parent_id", parentId)
-      .order("created_at", { ascending: true });
+    const [athletes, parentPromo] = await Promise.all([
+      supabaseAdmin
+        .from("athletes")
+        .select("id, first_name, last_name")
+        .eq("parent_id", parentId)
+        .order("created_at", { ascending: true }),
+      supabaseAdmin
+        .from("parent_profiles")
+        .select("promo_code")
+        .eq("id", parentId)
+        .maybeSingle(),
+    ]);
     if (athletes.error) dbError(athletes.error);
+    const inviterPromo = parentPromo.data?.promo_code ?? null;
 
     const existing = await supabaseAdmin
       .from("athlete_invite_codes")
@@ -659,7 +667,12 @@ export const listAthletesWithInviteCodes = createServerFn({ method: "GET" })
         const code = genCode(8);
         const ins = await supabaseAdmin
           .from("athlete_invite_codes")
-          .insert({ parent_id: parentId, athlete_id: a.id, code })
+          .insert({
+            parent_id: parentId,
+            athlete_id: a.id,
+            code,
+            promo_code: inviterPromo,
+          })
           .select("code")
           .maybeSingle();
         if (!ins.error && ins.data) {
