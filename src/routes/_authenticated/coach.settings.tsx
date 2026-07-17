@@ -2,8 +2,21 @@ import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useSuspenseQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { LogOut, Mail, Palette, User, Dumbbell, Send, Link2 } from "lucide-react";
+import {
+  LogOut,
+  Mail,
+  Palette,
+  User,
+  Dumbbell,
+  Send,
+  Link2,
+  CreditCard,
+  Sparkles,
+  Building2,
+  Tag,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,6 +34,8 @@ import { CoachBottomNav } from "@/components/coach/bottom-nav";
 import { RosterSettingsSection } from "@/components/coach/roster-settings-section";
 import { EnterInviteCodeCard } from "@/components/coach/enter-invite-code-card";
 import { SegmentedToggle } from "@/components/plans/segmented-toggle";
+import { createCoachBillingPortalSession } from "@/lib/coach-checkout.functions";
+import { getStripeEnvironment } from "@/lib/stripe";
 
 import {
   SettingsGroup,
