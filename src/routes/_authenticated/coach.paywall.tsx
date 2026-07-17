@@ -59,7 +59,7 @@ export const Route = createFileRoute("/_authenticated/coach/paywall")({
   beforeLoad: () => {
     // Paywall kill-switch: while disabled, this URL is dead — bounce back
     // into the app. Founding coaches are grandfathered in via onboarding.
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    
     if (!isCoachPaywallEnabled()) {
       throw redirect({ to: "/coach/roster" });
     }
