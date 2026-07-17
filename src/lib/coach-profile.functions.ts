@@ -13,6 +13,8 @@ export type CoachEntitlement =
   | "paid"
   | "promo_free";
 
+export type CoachEffectiveTier = "coach" | "coach_pro" | "club";
+
 export interface CoachProfileDTO {
   id: string;
   firstName: string;
@@ -29,7 +31,28 @@ export interface CoachProfileDTO {
   promoCode: string | null;
   promoLabel: string | null;
   promoPercentOff: number;
+  effectiveTier: CoachEffectiveTier;
+  /** null = unlimited (club). */
+  athleteLimit: number | null;
+  athleteCount: number;
 }
+
+/** Mirrors public.coach_effective_tier() in the DB — DB is authoritative. */
+export function computeEffectiveTier(input: {
+  organizationId: string | null;
+  subscriptionTier: "coach" | "coach_pro" | null;
+}): CoachEffectiveTier {
+  if (input.organizationId) return "club";
+  if (input.subscriptionTier === "coach_pro") return "coach_pro";
+  return "coach";
+}
+
+export function athleteLimitForTier(tier: CoachEffectiveTier): number | null {
+  if (tier === "club") return null;
+  if (tier === "coach_pro") return 75;
+  return 25;
+}
+
 
 export interface CoachLevelDTO {
   sport: string;
