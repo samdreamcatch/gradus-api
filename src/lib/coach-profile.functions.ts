@@ -5,6 +5,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
 
 import { dbError } from "./db-error";
+import { FOUNDING_COACH_PROMO_CODE, isCoachPaywallEnabled } from "./paywall-flag";
 
 export type CoachEntitlement =
   | "pending"
@@ -51,7 +52,29 @@ async function ensureProfile(
     .eq("user_id", userId)
     .maybeSingle();
   if (existing.error) dbError(existing.error);
-  if (existing.data) return existing.data;
+  if (existing.data) {
+    // Founding Coach backfill: while the paywall is disabled, any onboarded
+    // coach still on `pending` (from before the kill-switch shipped) gets
+    // lazily upgraded to lifetime-free on their next profile read.
+    if (
+      !isCoachPaywallEnabled() &&
+      existing.data.onboarded_at &&
+      existing.data.entitlement === "pending" &&
+      !existing.data.promo_code
+    ) {
+      const upd = await supabase
+        .from("coach_profiles")
+        .update({ entitlement: "promo_free", promo_code: FOUNDING_COACH_PROMO_CODE })
+        .eq("id", existing.data.id)
+        .select(
+          "id, first_name, last_name, onboarded_at, entitlement, organization_id, subscription_tier, subscription_status, trial_ends_at, current_period_end, stripe_customer_id, promo_code",
+        )
+        .single();
+      if (upd.error) dbError(upd.error);
+      return upd.data;
+    }
+    return existing.data;
+  }
 
   // Guard: don't silently turn a parent into a coach. A coach_profiles row
   // should only be created via the explicit coach signup flow.
@@ -216,9 +239,20 @@ export const completeOnboarding = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     const supabase = context.supabase as Client;
     const profile = await ensureProfile(supabase, context.userId, (context.claims as { user_metadata?: Record<string, unknown> }).user_metadata);
+    // Founding Coach grandfathering: while the paywall is disabled, stamp
+    // the coach as lifetime-free at onboarding completion. Existing
+    // entitlement (e.g. club_covered) is preserved.
+    const founding =
+      !isCoachPaywallEnabled() && profile.entitlement === "pending" && !profile.promo_code;
+    const patch = {
+      onboarded_at: new Date().toISOString(),
+      ...(founding
+        ? { entitlement: "promo_free", promo_code: FOUNDING_COACH_PROMO_CODE }
+        : {}),
+    };
     const { error } = await supabase
       .from("coach_profiles")
-      .update({ onboarded_at: new Date().toISOString() })
+      .update(patch)
       .eq("id", profile.id);
     if (error) dbError(error);
     return { ok: true };

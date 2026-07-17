@@ -504,6 +504,24 @@ function PlanSection({
     );
   }
 
+  // Founding Coach — lifetime-free grandfather cohort (pre-billing signups).
+  // Reads promo_code, not the env flag, so these coaches stay free even
+  // after the paywall is switched on for future signups.
+  if (profile.promoCode === "FOUNDING_COACH") {
+    return (
+      <>
+        <PlanSummaryCard
+          icon={<Sparkles className="size-4" />}
+          label="Founding Coach"
+          description="Free for life — thank you for being here early. No card required."
+          status={{ label: "Free · lifetime", tone: "accent" }}
+        />
+        <SettingsList className="mt-3">{joinClubRow}</SettingsList>
+        {joinSheet}
+      </>
+    );
+  }
+
   // Complimentary access
   if (profile.entitlement === "promo_free") {
     return (
