@@ -514,7 +514,7 @@ function PlanSection({
           icon={<Sparkles className="size-4" />}
           label="Founding Coach"
           description="Free for life — thank you for being here early. No card required."
-          status={{ label: "Free · lifetime", tone: "accent" }}
+          status={{ label: "FREE", tone: "accent" }}
         />
         <SettingsList className="mt-3">{joinClubRow}</SettingsList>
         {joinSheet}
