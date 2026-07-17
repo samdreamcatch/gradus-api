@@ -42,8 +42,8 @@ const PRICE_MAP: Record<
 };
 
 const FEATURES: Record<Tier, string[]> = {
-  coach: ["Full coaching workspace", "Roster, plans, and messaging", "Athlete & parent portals", "Up to 25 athletes"],
-  coach_pro: ["Everything in Coach", "Multi-sport", "Advanced scheduling", "Up to 75 athletes", "Priority support"],
+  coach: ["Full coaching workspace", "Roster, plans, and messaging", "Athlete & parent portals", "Up to 5 athletes"],
+  coach_pro: ["Everything in Coach", "Multi-sport", "Advanced scheduling", "Up to 50 athletes", "Priority support"],
 };
 
 type PromoState =
