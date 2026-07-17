@@ -50,8 +50,10 @@ export const getOrganizationByInviteCode = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ code: codeSchema }).parse(input))
   .handler(async ({ data, context }) => {
-    const supabase = context.supabase as Client;
-    const { data: row, error } = await supabase
+    void context;
+    // Invite codes are admin-read only; caller is already authenticated.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row, error } = await supabaseAdmin
       .from("organization_invite_codes")
       .select("organization_id, active, organizations!inner(id, name, active)")
       .eq("code", data.code)
@@ -74,8 +76,9 @@ export const verifyOrgCodeForOrg = createServerFn({ method: "POST" })
     z.object({ orgId: z.string().uuid(), code: codeSchema }).parse(input),
   )
   .handler(async ({ data, context }) => {
-    const supabase = context.supabase as Client;
-    const { data: row, error } = await supabase
+    void context;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row, error } = await supabaseAdmin
       .from("organization_invite_codes")
       .select("organization_id, active, organizations!inner(id, name, active)")
       .eq("code", data.code)
@@ -217,7 +220,8 @@ export const claimOrganizationInviteCode = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const supabase = context.supabase as Client;
 
-    const lookup = await supabase
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const lookup = await supabaseAdmin
       .from("organization_invite_codes")
       .select("organization_id, active, organizations!inner(id, name, active)")
       .eq("code", data.code)
@@ -244,7 +248,6 @@ export const claimOrganizationInviteCode = createServerFn({ method: "POST" })
     // Stamp the coach's sync cursor so future org content updates apply
     // incrementally. We fetch the current org version via admin to avoid
     // depending on the coach's read policy on that column.
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const versionRow = await supabaseAdmin
       .from("organizations")
       .select("content_version")
@@ -317,8 +320,9 @@ export const joinOrganization = createServerFn({ method: "POST" })
     if (coach.error) dbError(coach.error);
     if (!coach.data) return { ok: false, error: "Coach profile missing." };
 
-    // 2. Resolve + validate the code.
-    const lookup = await supabase
+    // 2. Resolve + validate the code (admin-read only).
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const lookup = await supabaseAdmin
       .from("organization_invite_codes")
       .select("organization_id, active, organizations!inner(id, name, active)")
       .eq("code", data.code)
@@ -463,7 +467,6 @@ export const joinOrganization = createServerFn({ method: "POST" })
     }
 
     // 4. Stamp the coach's sync cursor and flip to club_covered.
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const versionRow = await supabaseAdmin
       .from("organizations")
       .select("content_version")
