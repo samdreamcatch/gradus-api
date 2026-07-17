@@ -88,6 +88,7 @@ export const Route = createFileRoute("/_authenticated/coach/roster")({
 
 function RosterPage() {
   const { data: roster } = useSuspenseQuery(rosterQueryOptions);
+  const { data: coachProfile } = useQuery(coachProfileQueryOptions);
   const { athletes, coachSports } = roster;
   const router = useRouter();
   const [tab, setTab] = useState<RosterTab>("schedule");
@@ -95,6 +96,10 @@ function RosterPage() {
   const [selectedAthleteId, setSelectedAthleteId] = useState<string | null>(null);
   const [inviteOpen, setInviteOpen] = useState(false);
   const scheduleRef = useRef<WeekScheduleHandle>(null);
+
+  const athleteLimit = coachProfile?.profile.athleteLimit ?? null;
+  const rosterFull = athleteLimit !== null && athletes.length >= athleteLimit;
+
 
   const sports = useMemo(() => {
     const set = new Set<string>(coachSports);
