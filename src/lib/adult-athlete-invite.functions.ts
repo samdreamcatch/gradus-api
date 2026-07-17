@@ -54,7 +54,7 @@ export const getOrCreateAdultAthleteInviteCode = createServerFn({ method: "GET" 
 
     const me = await supabaseAdmin
       .from("athletes")
-      .select("id, self_managed")
+      .select("id, self_managed, promo_code")
       .eq("user_id", userId)
       .maybeSingle();
     if (me.error) dbError(me.error);
@@ -62,6 +62,7 @@ export const getOrCreateAdultAthleteInviteCode = createServerFn({ method: "GET" 
       throw new Error("Only self-managed adult athletes can create an invite code.");
     }
     const athleteId = me.data.id;
+    const inviterPromo = me.data.promo_code ?? null;
 
     const existing = await supabaseAdmin
       .from("adult_athlete_invite_codes")
@@ -75,7 +76,7 @@ export const getOrCreateAdultAthleteInviteCode = createServerFn({ method: "GET" 
       const code = generateCode();
       const ins = await supabaseAdmin
         .from("adult_athlete_invite_codes")
-        .insert({ athlete_id: athleteId, code })
+        .insert({ athlete_id: athleteId, code, promo_code: inviterPromo })
         .select("code")
         .maybeSingle();
       if (!ins.error && ins.data) return { code: ins.data.code };
@@ -146,7 +147,7 @@ export const claimAdultAthleteInvite = createServerFn({ method: "POST" })
 
     const coach = await supabaseAdmin
       .from("coach_profiles")
-      .select("id")
+      .select("id, promo_code")
       .eq("user_id", userId)
       .maybeSingle();
     if (coach.error) dbError(coach.error);
@@ -155,12 +156,22 @@ export const claimAdultAthleteInvite = createServerFn({ method: "POST" })
 
     const inviteRow = await supabaseAdmin
       .from("adult_athlete_invite_codes")
-      .select("athlete_id")
+      .select("athlete_id, promo_code")
       .eq("code", data.code)
       .maybeSingle();
     if (inviteRow.error) dbError(inviteRow.error);
     if (!inviteRow.data) throw new Error("That adult-athlete invite code isn't valid.");
     const athleteId = inviteRow.data.athlete_id;
+
+    // Propagate the athlete's promo code onto the coach for attribution and
+    // Stripe checkout discount. First-invite-wins.
+    if (inviteRow.data.promo_code && !coach.data.promo_code) {
+      await supabaseAdmin
+        .from("coach_profiles")
+        .update({ promo_code: inviteRow.data.promo_code })
+        .eq("id", coachId)
+        .is("promo_code", null);
+    }
 
     const ackIso = data.autoAckCoach ? new Date().toISOString() : null;
     const linkIns = await supabaseAdmin

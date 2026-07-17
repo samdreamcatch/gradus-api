@@ -20,6 +20,14 @@ export interface CoachProfileDTO {
   entitlement: CoachEntitlement;
   organizationId: string | null;
   organizationName: string | null;
+  subscriptionTier: "coach" | "coach_pro" | null;
+  subscriptionStatus: string | null;
+  trialEndsAt: string | null;
+  currentPeriodEnd: string | null;
+  hasStripeCustomer: boolean;
+  promoCode: string | null;
+  promoLabel: string | null;
+  promoPercentOff: number;
 }
 
 export interface CoachLevelDTO {
@@ -37,7 +45,9 @@ async function ensureProfile(
 ) {
   const existing = await supabase
     .from("coach_profiles")
-    .select("id, first_name, last_name, onboarded_at, entitlement, organization_id")
+    .select(
+      "id, first_name, last_name, onboarded_at, entitlement, organization_id, subscription_tier, subscription_status, trial_ends_at, current_period_end, stripe_customer_id, promo_code",
+    )
     .eq("user_id", userId)
     .maybeSingle();
   if (existing.error) dbError(existing.error);
@@ -70,7 +80,9 @@ async function ensureProfile(
   const created = await supabase
     .from("coach_profiles")
     .insert({ user_id: userId, first_name: firstName, last_name: lastName })
-    .select("id, first_name, last_name, onboarded_at, entitlement, organization_id")
+    .select(
+      "id, first_name, last_name, onboarded_at, entitlement, organization_id, subscription_tier, subscription_status, trial_ends_at, current_period_end, stripe_customer_id, promo_code",
+    )
     .single();
   if (created.error) dbError(created.error);
   return created.data;
@@ -82,7 +94,7 @@ export const getCoachProfile = createServerFn({ method: "GET" })
     const supabase = context.supabase as Client;
     const profile = await ensureProfile(supabase, context.userId, (context.claims as { user_metadata?: Record<string, unknown> }).user_metadata);
 
-    const [levels, org] = await Promise.all([
+    const [levels, org, promo] = await Promise.all([
       supabase
         .from("coach_levels")
         .select("sport, level_key, practice_hours_per_week")
@@ -94,10 +106,19 @@ export const getCoachProfile = createServerFn({ method: "GET" })
             .eq("id", profile.organization_id)
             .maybeSingle()
         : Promise.resolve({ data: null, error: null } as const),
+      profile.promo_code
+        ? supabase
+            .from("promo_codes")
+            .select("label, percent_off, active")
+            .eq("code", profile.promo_code)
+            .maybeSingle()
+        : Promise.resolve({ data: null, error: null } as const),
     ]);
     if (levels.error) dbError(levels.error);
     if (org.error) dbError(org.error);
+    if (promo.error) dbError(promo.error);
 
+    const promoActive = promo.data?.active !== false;
     return {
       profile: {
         id: profile.id,
@@ -107,6 +128,16 @@ export const getCoachProfile = createServerFn({ method: "GET" })
         entitlement: (profile.entitlement ?? "pending") as CoachProfileDTO["entitlement"],
         organizationId: profile.organization_id ?? null,
         organizationName: org.data?.name ?? null,
+        subscriptionTier:
+          (profile.subscription_tier as "coach" | "coach_pro" | null) ?? null,
+        subscriptionStatus:
+          (profile.subscription_status as string | null) ?? null,
+        trialEndsAt: (profile.trial_ends_at as string | null) ?? null,
+        currentPeriodEnd: (profile.current_period_end as string | null) ?? null,
+        hasStripeCustomer: Boolean(profile.stripe_customer_id),
+        promoCode: profile.promo_code ?? null,
+        promoLabel: promoActive ? (promo.data?.label ?? null) : null,
+        promoPercentOff: promoActive ? (promo.data?.percent_off ?? 0) : 0,
       } as CoachProfileDTO,
       levels: (levels.data ?? []).map((r) => ({
         sport: r.sport,

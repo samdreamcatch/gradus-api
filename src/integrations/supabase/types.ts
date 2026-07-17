@@ -35,18 +35,21 @@ export type Database = {
           code: string
           created_at: string
           id: string
+          promo_code: string | null
         }
         Insert: {
           athlete_id: string
           code: string
           created_at?: string
           id?: string
+          promo_code?: string | null
         }
         Update: {
           athlete_id?: string
           code?: string
           created_at?: string
           id?: string
+          promo_code?: string | null
         }
         Relationships: [
           {
@@ -55,6 +58,13 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "athletes"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "adult_athlete_invite_codes_promo_code_fkey"
+            columns: ["promo_code"]
+            isOneToOne: false
+            referencedRelation: "promo_codes"
+            referencedColumns: ["code"]
           },
         ]
       }
@@ -104,6 +114,7 @@ export type Database = {
           expires_at: string
           id: string
           parent_id: string
+          promo_code: string | null
           updated_at: string
           used_at: string | null
         }
@@ -116,6 +127,7 @@ export type Database = {
           expires_at?: string
           id?: string
           parent_id: string
+          promo_code?: string | null
           updated_at?: string
           used_at?: string | null
         }
@@ -128,10 +140,19 @@ export type Database = {
           expires_at?: string
           id?: string
           parent_id?: string
+          promo_code?: string | null
           updated_at?: string
           used_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "athlete_invite_codes_promo_code_fkey"
+            columns: ["promo_code"]
+            isOneToOne: false
+            referencedRelation: "promo_codes"
+            referencedColumns: ["code"]
+          },
+        ]
       }
       athlete_lesson_slots: {
         Row: {
@@ -1171,18 +1192,21 @@ export type Database = {
           created_at: string
           id: string
           parent_id: string
+          promo_code: string | null
         }
         Insert: {
           code: string
           created_at?: string
           id?: string
           parent_id: string
+          promo_code?: string | null
         }
         Update: {
           code?: string
           created_at?: string
           id?: string
           parent_id?: string
+          promo_code?: string | null
         }
         Relationships: [
           {
@@ -1191,6 +1215,13 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "parent_profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "parent_invite_codes_promo_code_fkey"
+            columns: ["promo_code"]
+            isOneToOne: false
+            referencedRelation: "promo_codes"
+            referencedColumns: ["code"]
           },
         ]
       }
@@ -1499,6 +1530,11 @@ export type Database = {
           created_at: string
           label: string
           notes: string | null
+          percent_off: number
+          stripe_coupon_id_live: string | null
+          stripe_coupon_id_sandbox: string | null
+          stripe_promo_id_live: string | null
+          stripe_promo_id_sandbox: string | null
           updated_at: string
         }
         Insert: {
@@ -1507,6 +1543,11 @@ export type Database = {
           created_at?: string
           label: string
           notes?: string | null
+          percent_off?: number
+          stripe_coupon_id_live?: string | null
+          stripe_coupon_id_sandbox?: string | null
+          stripe_promo_id_live?: string | null
+          stripe_promo_id_sandbox?: string | null
           updated_at?: string
         }
         Update: {
@@ -1515,6 +1556,11 @@ export type Database = {
           created_at?: string
           label?: string
           notes?: string | null
+          percent_off?: number
+          stripe_coupon_id_live?: string | null
+          stripe_coupon_id_sandbox?: string | null
+          stripe_promo_id_live?: string | null
+          stripe_promo_id_sandbox?: string | null
           updated_at?: string
         }
         Relationships: []

@@ -637,12 +637,20 @@ export const listAthletesWithInviteCodes = createServerFn({ method: "GET" })
     if (!parent.data) return { athletes: [] };
     const parentId = parent.data.id;
 
-    const athletes = await supabaseAdmin
-      .from("athletes")
-      .select("id, first_name, last_name")
-      .eq("parent_id", parentId)
-      .order("created_at", { ascending: true });
+    const [athletes, parentPromo] = await Promise.all([
+      supabaseAdmin
+        .from("athletes")
+        .select("id, first_name, last_name")
+        .eq("parent_id", parentId)
+        .order("created_at", { ascending: true }),
+      supabaseAdmin
+        .from("parent_profiles")
+        .select("promo_code")
+        .eq("id", parentId)
+        .maybeSingle(),
+    ]);
     if (athletes.error) dbError(athletes.error);
+    const inviterPromo = parentPromo.data?.promo_code ?? null;
 
     const existing = await supabaseAdmin
       .from("athlete_invite_codes")
@@ -659,7 +667,12 @@ export const listAthletesWithInviteCodes = createServerFn({ method: "GET" })
         const code = genCode(8);
         const ins = await supabaseAdmin
           .from("athlete_invite_codes")
-          .insert({ parent_id: parentId, athlete_id: a.id, code })
+          .insert({
+            parent_id: parentId,
+            athlete_id: a.id,
+            code,
+            promo_code: inviterPromo,
+          })
           .select("code")
           .maybeSingle();
         if (!ins.error && ins.data) {
@@ -692,12 +705,13 @@ export const getOrCreateParentInviteCode = createServerFn({ method: "GET" })
 
     const parent = await supabaseAdmin
       .from("parent_profiles")
-      .select("id")
+      .select("id, promo_code")
       .eq("user_id", userId)
       .maybeSingle();
     if (parent.error) dbError(parent.error);
     if (!parent.data) throw new Error("Parent profile not found.");
     const parentId = parent.data.id;
+    const inviterPromo = parent.data.promo_code ?? null;
 
     const existing = await supabaseAdmin
       .from("parent_invite_codes")
@@ -711,7 +725,7 @@ export const getOrCreateParentInviteCode = createServerFn({ method: "GET" })
       const code = genCode(8);
       const ins = await supabaseAdmin
         .from("parent_invite_codes")
-        .insert({ parent_id: parentId, code })
+        .insert({ parent_id: parentId, code, promo_code: inviterPromo })
         .select("code")
         .maybeSingle();
       if (!ins.error && ins.data) return { code: ins.data.code };
@@ -788,7 +802,7 @@ export const claimParentInvite = createServerFn({ method: "POST" })
 
     const coach = await supabaseAdmin
       .from("coach_profiles")
-      .select("id")
+      .select("id, promo_code")
       .eq("user_id", userId)
       .maybeSingle();
     if (coach.error) dbError(coach.error);
@@ -797,12 +811,23 @@ export const claimParentInvite = createServerFn({ method: "POST" })
 
     const inviteRow = await supabaseAdmin
       .from("parent_invite_codes")
-      .select("parent_id")
+      .select("parent_id, promo_code")
       .eq("code", data.code)
       .maybeSingle();
     if (inviteRow.error) dbError(inviteRow.error);
     if (!inviteRow.data) throw new Error("That parent invite code isn't valid.");
     const parentId = inviteRow.data.parent_id;
+
+    // Propagate the inviter's promo code onto the coach's own row so it
+    // becomes their attribution + auto-applies at Stripe checkout.
+    // First-invite-wins: only stamp when the coach doesn't already have one.
+    if (inviteRow.data.promo_code && !coach.data.promo_code) {
+      await supabaseAdmin
+        .from("coach_profiles")
+        .update({ promo_code: inviteRow.data.promo_code })
+        .eq("id", coachId)
+        .is("promo_code", null);
+    }
 
     // Athletes under this parent
     const athletesRes = await supabaseAdmin

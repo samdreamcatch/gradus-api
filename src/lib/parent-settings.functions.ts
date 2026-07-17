@@ -21,16 +21,22 @@ async function getParentProfile(userId: string): Promise<{
   id: string;
   first_name: string;
   last_name: string;
+  promo_code: string | null;
 }> {
   const supabaseAdmin = await getAdmin();
   const parent = await supabaseAdmin
     .from("parent_profiles")
-    .select("id, first_name, last_name")
+    .select("id, first_name, last_name, promo_code")
     .eq("user_id", userId)
     .maybeSingle();
   if (parent.error) dbError(parent.error);
   if (!parent.data) throw new Error("Parent profile not found.");
-  return parent.data;
+  return {
+    id: parent.data.id,
+    first_name: parent.data.first_name,
+    last_name: parent.data.last_name,
+    promo_code: parent.data.promo_code ?? null,
+  };
 }
 
 async function assertOwnsAthlete(userId: string, athleteId: string) {
@@ -169,7 +175,12 @@ export const getParentSettings = createServerFn({ method: "GET" })
         const code = genCode(8);
         const ins = await supabaseAdmin
           .from("athlete_invite_codes")
-          .insert({ parent_id: parent.id, athlete_id: a.id, code })
+          .insert({
+            parent_id: parent.id,
+            athlete_id: a.id,
+            code,
+            promo_code: parent.promo_code,
+          })
           .select("code")
           .maybeSingle();
         if (!ins.error && ins.data) {
@@ -719,7 +730,12 @@ export const addAthlete = createServerFn({ method: "POST" })
       const code = genCode(8);
       const c = await supabaseAdmin
         .from("athlete_invite_codes")
-        .insert({ parent_id: parent.id, athlete_id: ins.data.id, code });
+        .insert({
+          parent_id: parent.id,
+          athlete_id: ins.data.id,
+          code,
+          promo_code: parent.promo_code,
+        });
       if (!c.error) break;
     }
 

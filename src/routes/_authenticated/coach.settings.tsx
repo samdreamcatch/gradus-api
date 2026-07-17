@@ -2,8 +2,21 @@ import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useSuspenseQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { LogOut, Mail, Palette, User, Dumbbell, Send, Link2 } from "lucide-react";
+import {
+  LogOut,
+  Mail,
+  Palette,
+  User,
+  Dumbbell,
+  Send,
+  Link2,
+  CreditCard,
+  Sparkles,
+  Building2,
+  Tag,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,6 +34,8 @@ import { CoachBottomNav } from "@/components/coach/bottom-nav";
 import { RosterSettingsSection } from "@/components/coach/roster-settings-section";
 import { EnterInviteCodeCard } from "@/components/coach/enter-invite-code-card";
 import { SegmentedToggle } from "@/components/plans/segmented-toggle";
+import { createCoachBillingPortalSession } from "@/lib/coach-checkout.functions";
+import { getStripeEnvironment } from "@/lib/stripe";
 
 import {
   SettingsGroup,
@@ -82,6 +97,12 @@ function SettingsPage() {
           </SettingsList>
         </SettingsGroup>
 
+
+        <SettingsGroup label="Plan">
+          <SettingsList>
+            <PlanSection profile={data.profile} />
+          </SettingsList>
+        </SettingsGroup>
 
         <SettingsGroup label="Preferences">
           <SettingsList>
@@ -385,6 +406,158 @@ function ConnectionsDisclosure() {
     </SettingsDisclosure>
   );
 }
+
+const TIER_LABEL: Record<"coach" | "coach_pro", string> = {
+  coach: "Coach plan",
+  coach_pro: "Coach Pro plan",
+};
+
+function formatShortDate(iso: string | null): string | null {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+}
+
+function PlanSection({
+  profile,
+}: {
+  profile: {
+    entitlement: "pending" | "paid" | "club_covered" | "promo_free";
+    subscriptionTier: "coach" | "coach_pro" | null;
+    subscriptionStatus: string | null;
+    trialEndsAt: string | null;
+    currentPeriodEnd: string | null;
+    hasStripeCustomer: boolean;
+    organizationName: string | null;
+    promoCode: string | null;
+    promoLabel: string | null;
+    promoPercentOff: number;
+  };
+}) {
+  const navigate = useNavigate();
+  const portal = useServerFn(createCoachBillingPortalSession);
+  const [openingPortal, setOpeningPortal] = useState(false);
+
+  const openPortal = async () => {
+    setOpeningPortal(true);
+    try {
+      const res = await portal({
+        data: {
+          environment: getStripeEnvironment(),
+          returnUrl: window.location.href,
+        },
+      });
+      if ("error" in res) {
+        toast.error(res.error);
+        return;
+      }
+      window.open(res.url, "_blank", "noopener,noreferrer");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Couldn't open billing portal");
+    } finally {
+      setOpeningPortal(false);
+    }
+  };
+
+  const promoRow =
+    profile.promoCode && profile.promoPercentOff > 0 ? (
+      <SettingsRow
+        icon={<Tag className="size-4" />}
+        label={`Promo: ${profile.promoLabel ?? profile.promoCode}`}
+        description={`${profile.promoPercentOff}% off every renewal — code ${profile.promoCode}`}
+      />
+    ) : null;
+
+  // Club-covered coaches
+  if (profile.entitlement === "club_covered") {
+    return (
+      <>
+        <SettingsRow
+          icon={<Building2 className="size-4" />}
+          label="Club plan"
+          value={profile.organizationName ?? "Club"}
+          description="Your club covers your subscription. Manage the club link under Coaching."
+        />
+        {promoRow}
+      </>
+    );
+  }
+
+  // Complimentary access
+  if (profile.entitlement === "promo_free") {
+    return (
+      <>
+        <SettingsRow
+          icon={<Sparkles className="size-4" />}
+          label="Complimentary access"
+          description="Your account is on the house — no card required."
+        />
+        {promoRow}
+      </>
+    );
+  }
+
+  // Paid — coach or coach pro
+  if (profile.entitlement === "paid" && profile.subscriptionTier) {
+    const status = profile.subscriptionStatus;
+    const trialEnd = formatShortDate(profile.trialEndsAt);
+    const periodEnd = formatShortDate(profile.currentPeriodEnd);
+
+    let description: string | undefined;
+    if (status === "trialing" && trialEnd) {
+      description = `Free trial — your card is charged on ${trialEnd}.`;
+    } else if (status === "past_due") {
+      description = "Payment failed — update your card in the billing portal.";
+    } else if (status === "canceled" && periodEnd) {
+      description = `Ends ${periodEnd}. Reactivate anytime.`;
+    } else if (status === "active" && periodEnd) {
+      description = `Renews ${periodEnd}.`;
+    }
+
+    return (
+      <>
+        <SettingsRow
+          icon={<CreditCard className="size-4" />}
+          label={TIER_LABEL[profile.subscriptionTier]}
+          value={
+            status === "trialing" ? "Trial" : status === "past_due" ? "Payment failed" : undefined
+          }
+          description={description}
+        />
+        {promoRow}
+        <SettingsButtonRow
+          icon={<CreditCard className="size-4" />}
+          label={openingPortal ? "Opening billing portal…" : "Manage subscription"}
+          description="Change card, cancel, or download invoices."
+          onClick={() => void openPortal()}
+          disabled={openingPortal || !profile.hasStripeCustomer}
+        />
+      </>
+    );
+  }
+
+  // No plan yet — pending. Show CTA to choose a plan and (via existing
+  // Connections disclosure above) join a club.
+  return (
+    <>
+      <SettingsRow
+        icon={<CreditCard className="size-4" />}
+        label="No plan yet"
+        description="Pick a Coach or Coach Pro plan to keep coaching after your 90-day trial."
+      />
+      {promoRow}
+      <SettingsButtonRow
+        icon={<Sparkles className="size-4" />}
+        label="Choose a plan"
+        tone="accent"
+        onClick={() => navigate({ to: "/coach/paywall" })}
+      />
+    </>
+  );
+}
+
+
 
 
 function SignOutRow() {
