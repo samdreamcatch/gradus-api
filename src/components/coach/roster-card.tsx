@@ -100,7 +100,7 @@ export function RosterCard({
         </DropdownMenu>
       </div>
 
-      <div className="mt-2">
+      <div className="mt-2 flex flex-wrap items-center gap-1.5">
         {athlete.slots.length === 0 ? (
           <span className="text-xs text-text-tertiary">No schedule</span>
         ) : (
@@ -118,7 +118,22 @@ export function RosterCard({
             ))}
           </ul>
         )}
+        {athlete.otherCoachCount > 0 ? (
+          <span
+            className="rounded-pill border border-divider bg-elevated px-2 py-0.5 text-[11px] font-medium text-text-secondary"
+            title={
+              athlete.otherCoachCount === 1
+                ? `Also coached by ${athlete.otherCoachLastName}`
+                : `Also coached by ${athlete.otherCoachCount} other coaches`
+            }
+          >
+            {athlete.otherCoachCount === 1 && athlete.otherCoachLastName
+              ? `+ ${athlete.otherCoachLastName}`
+              : `+${athlete.otherCoachCount} coaches`}
+          </span>
+        ) : null}
       </div>
+
 
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>

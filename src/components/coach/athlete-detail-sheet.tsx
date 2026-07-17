@@ -11,12 +11,15 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { PlanCard } from "@/components/plans/plan-card";
+import { AlsoCoachedByList } from "@/components/coach/also-coached-by-list";
+import { OtherCoachPlansSheet } from "@/components/coach/other-coach-plans-sheet";
 import { cn } from "@/lib/utils";
 import {
   getCoachAthleteDetail,
   getCoachAthleteAiSummary,
   type Verdict,
 } from "@/lib/coach-athlete-detail.functions";
+
 
 export function AthleteDetailSheet({
   athleteId,
@@ -46,6 +49,7 @@ export function AthleteDetailSheet({
 function AthleteDetailBody({ athleteId }: { athleteId: string }) {
   const fetchDetail = useServerFn(getCoachAthleteDetail);
   const fetchSummary = useServerFn(getCoachAthleteAiSummary);
+  const [openOtherCoachId, setOpenOtherCoachId] = useState<string | null>(null);
 
   const detail = useQuery({
     queryKey: ["coach", "athlete-detail", athleteId],
@@ -59,6 +63,7 @@ function AthleteDetailBody({ athleteId }: { athleteId: string }) {
     staleTime: 5 * 60_000,
     retry: false,
   });
+
 
   // Auto-run AI summary once we know there's at least some signal.
   useEffect(() => {
@@ -227,9 +232,26 @@ function AthleteDetailBody({ athleteId }: { athleteId: string }) {
           <PlansList plans={d.plans} />
         )}
       </section>
+
+      {/* Also coached by */}
+      <AlsoCoachedByList
+        coaches={d.otherCoaches}
+        onOpenCoach={setOpenOtherCoachId}
+      />
+
+      <OtherCoachPlansSheet
+        coach={
+          d.otherCoaches.find((c) => c.coachId === openOtherCoachId) ?? null
+        }
+        athleteFirstName={d.firstName}
+        onOpenChange={(v) => {
+          if (!v) setOpenOtherCoachId(null);
+        }}
+      />
     </div>
   );
 }
+
 
 function formatSportList(labels: string[]): string {
   if (labels.length === 0) return "";

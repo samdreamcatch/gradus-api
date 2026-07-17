@@ -45,6 +45,36 @@ export interface CoachedSportDTO {
   label: string;
 }
 
+export interface OtherCoachMoveDTO {
+  position: number;
+  name: string;
+  description: string;
+  cue: string;
+  why: string;
+  targetKind: "reps" | "mins";
+  targetValue: number;
+}
+
+export interface OtherCoachPlanDTO {
+  planId: string;
+  title: string;
+  status: PlanStatus;
+  updatedAt: string;
+  sessionsLast30d: number;
+  notes: string;
+  moves: OtherCoachMoveDTO[];
+}
+
+export interface OtherCoachDTO {
+  coachId: string;
+  firstName: string;
+  lastName: string;
+  sports: CoachedSportDTO[];
+  activeCount: number;
+  benchedCount: number;
+  plans: OtherCoachPlanDTO[];
+}
+
 export interface CoachAthleteDetailDTO {
   athleteId: string;
   firstName: string;
@@ -59,7 +89,9 @@ export interface CoachAthleteDetailDTO {
   activity: AthleteActivityCountsDTO;
   hasAnySignal: boolean;
   windowDays: number;
+  otherCoaches: OtherCoachDTO[];
 }
+
 
 
 type SlotRow = {
@@ -384,6 +416,127 @@ export const getCoachAthleteDetail = createServerFn({ method: "GET" })
     // Messages still feed the AI summary; gate auto-run on either signal.
     const hasAnySignal = sessions30d.length > 0 || msgCount > 0;
 
+    // ---- Other coaches on this athlete ----
+    // Coaches on this athlete's roster besides me. We surface their
+    // active/benched plans (title, notes, moves) so this coach can coordinate.
+    const otherLinksRes = await supabaseAdmin
+      .from("coach_athletes")
+      .select("coach_id, coach_profiles!inner(id, first_name, last_name)")
+      .eq("athlete_id", data.athleteId)
+      .neq("coach_id", coachId);
+    if (otherLinksRes.error) dbError(otherLinksRes.error);
+    type OtherLink = {
+      coach_id: string;
+      coach_profiles: { id: string; first_name: string; last_name: string };
+    };
+    const otherLinks = (otherLinksRes.data ?? []) as unknown as OtherLink[];
+    const otherCoachIds = otherLinks.map((l) => l.coach_id);
+
+    const otherCoaches: OtherCoachDTO[] = [];
+    if (otherCoachIds.length > 0) {
+      const [otherPlansRes, otherSportsRes] = await Promise.all([
+        supabaseAdmin
+          .from("plans")
+          .select("id, coach_id, title, status, updated_at, notes")
+          .eq("athlete_id", data.athleteId)
+          .eq("kind", "plan")
+          .in("coach_id", otherCoachIds)
+          .in("status", ["active", "benched"])
+          .order("updated_at", { ascending: false }),
+        supabaseAdmin
+          .from("coach_athlete_sports")
+          .select("coach_id, sport")
+          .eq("athlete_id", data.athleteId)
+          .in("coach_id", otherCoachIds),
+      ]);
+      if (otherPlansRes.error) dbError(otherPlansRes.error);
+      if (otherSportsRes.error) dbError(otherSportsRes.error);
+
+      const otherPlanRows = otherPlansRes.data ?? [];
+      const otherPlanIds = otherPlanRows.map((p) => p.id as string);
+
+      let movesByPlan = new Map<string, OtherCoachMoveDTO[]>();
+      if (otherPlanIds.length > 0) {
+        const movesRes = await supabaseAdmin
+          .from("plan_moves")
+          .select("plan_id, position, name, description, cue, why, target_kind, target_value")
+          .in("plan_id", otherPlanIds)
+          .order("position", { ascending: true });
+        if (movesRes.error) dbError(movesRes.error);
+        for (const m of movesRes.data ?? []) {
+          const arr = movesByPlan.get(m.plan_id as string) ?? [];
+          arr.push({
+            position: m.position as number,
+            name: (m.name as string) ?? "",
+            description: (m.description as string) ?? "",
+            cue: (m.cue as string) ?? "",
+            why: (m.why as string) ?? "",
+            targetKind: (m.target_kind as "reps" | "mins") ?? "reps",
+            targetValue: (m.target_value as number) ?? 0,
+          });
+          movesByPlan.set(m.plan_id as string, arr);
+        }
+      }
+
+      // Session counts per plan (window already 30d)
+      const sessionsByPlan = new Map<string, number>();
+      for (const s of sessions30d) {
+        sessionsByPlan.set(s.plan_id, (sessionsByPlan.get(s.plan_id) ?? 0) + 1);
+      }
+
+      // Sports per coach for this athlete
+      const sportsByCoach = new Map<string, string[]>();
+      for (const r of otherSportsRes.data ?? []) {
+        const arr = sportsByCoach.get(r.coach_id as string) ?? [];
+        arr.push(r.sport as string);
+        sportsByCoach.set(r.coach_id as string, arr);
+      }
+
+      // Build per-coach objects
+      const plansByCoach = new Map<string, OtherCoachPlanDTO[]>();
+      for (const p of otherPlanRows) {
+        const arr = plansByCoach.get(p.coach_id as string) ?? [];
+        arr.push({
+          planId: p.id as string,
+          title: (p.title as string) || "Untitled plan",
+          status: p.status as PlanStatus,
+          updatedAt: p.updated_at as string,
+          sessionsLast30d: sessionsByPlan.get(p.id as string) ?? 0,
+          notes: (p.notes as string) ?? "",
+          moves: movesByPlan.get(p.id as string) ?? [],
+        });
+        plansByCoach.set(p.coach_id as string, arr);
+      }
+
+      for (const link of otherLinks) {
+        const cid = link.coach_id;
+        const cplans = plansByCoach.get(cid) ?? [];
+        if (cplans.length === 0) continue; // hide coaches with no active/benched plans
+        // Sort: active first (by updatedAt desc), then benched (by updatedAt desc)
+        cplans.sort((a, b) => {
+          if (a.status !== b.status) return a.status === "active" ? -1 : 1;
+          return b.updatedAt.localeCompare(a.updatedAt);
+        });
+        const sports = Array.from(new Set(sportsByCoach.get(cid) ?? [])).sort();
+        otherCoaches.push({
+          coachId: cid,
+          firstName: link.coach_profiles.first_name,
+          lastName: link.coach_profiles.last_name,
+          sports: sports.map((s) => ({ key: s, label: sportLabel(s) })),
+          activeCount: cplans.filter((p) => p.status === "active").length,
+          benchedCount: cplans.filter((p) => p.status !== "active").length,
+          plans: cplans,
+        });
+      }
+
+      // Busiest coaches (most recently updated active plan) first
+      otherCoaches.sort((a, b) => {
+        const au = a.plans[0]?.updatedAt ?? "";
+        const bu = b.plans[0]?.updatedAt ?? "";
+        return bu.localeCompare(au);
+      });
+    }
+
     return {
       athleteId: data.athleteId,
       firstName: athlete.first_name,
@@ -405,8 +558,10 @@ export const getCoachAthleteDetail = createServerFn({ method: "GET" })
       },
       hasAnySignal,
       windowDays: WINDOW_DAYS,
+      otherCoaches,
     };
   });
+
 
 
 // --- AI summary ---

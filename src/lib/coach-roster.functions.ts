@@ -27,7 +27,12 @@ export type RosterAthlete = {
   parentLastName: string | null;
   selfManaged: boolean;
   slots: RosterSlot[];
+  // Count of OTHER coaches on this athlete's roster (excluding the viewer).
+  otherCoachCount: number;
+  // When N=1, the single other coach's last name for the "+ D. Wallace" chip.
+  otherCoachLastName: string | null;
 };
+
 
 
 export type CoachRoster = {
@@ -71,7 +76,7 @@ export const getCoachRoster = createServerFn({ method: "GET" })
 
     const athleteIds = rows.map((r) => r.athlete_id as string);
 
-    const [sportsRes, slotsRes] = await Promise.all([
+    const [sportsRes, slotsRes, otherLinksRes] = await Promise.all([
       supabaseAdmin
         .from("coach_athlete_sports")
         .select("athlete_id, sport")
@@ -82,9 +87,16 @@ export const getCoachRoster = createServerFn({ method: "GET" })
         .select("id, athlete_id, day_of_week, start_minute, end_minute")
         .eq("coach_id", coachId)
         .in("athlete_id", athleteIds),
+      supabaseAdmin
+        .from("coach_athletes")
+        .select("athlete_id, coach_profiles!inner(last_name)")
+        .in("athlete_id", athleteIds)
+        .neq("coach_id", coachId),
     ]);
     if (sportsRes.error) dbError(sportsRes.error);
     if (slotsRes.error) dbError(slotsRes.error);
+    if (otherLinksRes.error) dbError(otherLinksRes.error);
+
 
     const slotIds = (slotsRes.data ?? []).map((s) => s.id as string);
     const overridesRes = slotIds.length
@@ -140,6 +152,15 @@ export const getCoachRoster = createServerFn({ method: "GET" })
       );
     }
 
+    // Group other-coach links per athlete.
+    type OtherLinkRow = { athlete_id: string; coach_profiles: { last_name: string } };
+    const otherByAthlete = new Map<string, string[]>();
+    for (const l of (otherLinksRes.data ?? []) as unknown as OtherLinkRow[]) {
+      const arr = otherByAthlete.get(l.athlete_id) ?? [];
+      arr.push(l.coach_profiles.last_name);
+      otherByAthlete.set(l.athlete_id, arr);
+    }
+
     const result: RosterAthlete[] = rows.map((r) => {
       const a = r.athletes as unknown as {
         id: string;
@@ -148,6 +169,7 @@ export const getCoachRoster = createServerFn({ method: "GET" })
         self_managed: boolean | null;
         parent_profiles: { first_name: string; last_name: string } | null;
       };
+      const others = otherByAthlete.get(a.id) ?? [];
       return {
         athleteId: a.id,
         firstName: a.first_name,
@@ -157,6 +179,8 @@ export const getCoachRoster = createServerFn({ method: "GET" })
         parentLastName: a.parent_profiles?.last_name ?? null,
         selfManaged: a.self_managed === true,
         slots: slotsByAthlete.get(a.id) ?? [],
+        otherCoachCount: others.length,
+        otherCoachLastName: others.length === 1 ? others[0] : null,
       };
     });
 
@@ -165,6 +189,7 @@ export const getCoachRoster = createServerFn({ method: "GET" })
       (a, b) =>
         a.firstName.localeCompare(b.firstName) || a.lastName.localeCompare(b.lastName),
     );
+
 
     return { coachSports, athletes: result };
   });
