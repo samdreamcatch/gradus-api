@@ -154,7 +154,16 @@ export const updatePromoCode = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const patch: Record<string, unknown> = {};
+    const patch: {
+      label?: string;
+      notes?: string | null;
+      active?: boolean;
+      percent_off?: number;
+      stripe_coupon_id_sandbox?: string | null;
+      stripe_promo_id_sandbox?: string | null;
+      stripe_coupon_id_live?: string | null;
+      stripe_promo_id_live?: string | null;
+    } = {};
     if (data.label !== undefined) patch.label = data.label;
     if (data.notes !== undefined) patch.notes = data.notes;
     if (data.active !== undefined) patch.active = data.active;
