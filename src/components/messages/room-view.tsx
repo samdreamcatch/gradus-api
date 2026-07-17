@@ -200,7 +200,7 @@ export function RoomView({ roomId, viewerRole }: { roomId: string; viewerRole?: 
     <div className="flex h-[calc(100dvh-180px)] flex-col">
       <ConversationHeader
         roomId={roomId}
-        others={room.participants.filter((p) => p.role !== room.myRole)}
+        others={room.participants.filter((p) => p.userId !== room.myUserId)}
       />
       <div ref={scrollerRef} className="flex-1 overflow-y-auto">
         <div className="space-y-5">
