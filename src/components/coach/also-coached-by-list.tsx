@@ -75,7 +75,7 @@ export function AlsoCoachedByList({
                 locked ? (
                   <div className="flex shrink-0 items-center gap-2">
                     <span className="rounded-full bg-elevated px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-text-secondary">
-                      PRO & CLUB
+                      CLUB
                     </span>
                     <Lock className="size-4 text-text-tertiary" aria-hidden />
                   </div>
