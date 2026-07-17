@@ -100,9 +100,7 @@ function SettingsPage() {
 
 
         <SettingsGroup label="Plan">
-          <SettingsList>
-            <PlanSection profile={data.profile} />
-          </SettingsList>
+          <PlanSection profile={data.profile} />
         </SettingsGroup>
 
         <SettingsGroup label="Preferences">
