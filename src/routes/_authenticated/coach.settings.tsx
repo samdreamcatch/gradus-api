@@ -33,6 +33,7 @@ import { InviteCard } from "@/components/onboarding/invite-card";
 import { CoachBottomNav } from "@/components/coach/bottom-nav";
 import { RosterSettingsSection } from "@/components/coach/roster-settings-section";
 import { EnterInviteCodeCard } from "@/components/coach/enter-invite-code-card";
+import { JoinClubSheet } from "@/components/coach/join-club-sheet";
 import { SegmentedToggle } from "@/components/plans/segmented-toggle";
 import { createCoachBillingPortalSession } from "@/lib/coach-checkout.functions";
 import { getStripeEnvironment } from "@/lib/stripe";
