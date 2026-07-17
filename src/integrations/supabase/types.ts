@@ -1606,6 +1606,8 @@ export type Database = {
           active: boolean
           code: string
           created_at: string
+          duration: string
+          duration_in_months: number | null
           label: string
           notes: string | null
           percent_off: number
@@ -1619,6 +1621,8 @@ export type Database = {
           active?: boolean
           code: string
           created_at?: string
+          duration?: string
+          duration_in_months?: number | null
           label: string
           notes?: string | null
           percent_off?: number
@@ -1632,6 +1636,8 @@ export type Database = {
           active?: boolean
           code?: string
           created_at?: string
+          duration?: string
+          duration_in_months?: number | null
           label?: string
           notes?: string | null
           percent_off?: number

@@ -32,16 +32,26 @@ export const validatePromoCode = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: row, error } = await context.supabase
       .from("promo_codes")
-      .select("code, label, active, percent_off")
+      .select("code, label, active, percent_off, duration, duration_in_months")
       .eq("code", data.code)
       .maybeSingle();
     if (error) dbError(error);
     if (!row || !row.active)
-      return { valid: false as const, label: null, percentOff: 0 };
+      return {
+        valid: false as const,
+        label: null,
+        percentOff: 0,
+        duration: "forever" as const,
+        durationInMonths: null,
+      };
     return {
       valid: true as const,
       label: row.label as string,
       percentOff: (row.percent_off as number | null) ?? 0,
+      duration: ((row.duration as string | null) ?? "forever") as
+        | "forever"
+        | "repeating",
+      durationInMonths: (row.duration_in_months as number | null) ?? null,
     };
   });
 
@@ -98,7 +108,7 @@ export const listPromoCodes = createServerFn({ method: "GET" })
     const { data, error } = await supabaseAdmin
       .from("promo_codes")
       .select(
-        "code, label, active, notes, percent_off, stripe_promo_id_sandbox, stripe_promo_id_live, created_at",
+        "code, label, active, notes, percent_off, duration, duration_in_months, stripe_promo_id_sandbox, stripe_promo_id_live, created_at",
       )
       .order("created_at", { ascending: false });
     if (error) dbError(error);
@@ -213,7 +223,7 @@ export const syncPromoCodeToStripe = createServerFn({ method: "POST" })
     const { data: row, error: readErr } = await supabaseAdmin
       .from("promo_codes")
       .select(
-        "code, label, percent_off, stripe_coupon_id_sandbox, stripe_promo_id_sandbox, stripe_coupon_id_live, stripe_promo_id_live",
+        "code, label, percent_off, duration, duration_in_months, stripe_coupon_id_sandbox, stripe_promo_id_sandbox, stripe_coupon_id_live, stripe_promo_id_live",
       )
       .eq("code", data.code)
       .maybeSingle();
@@ -221,6 +231,14 @@ export const syncPromoCodeToStripe = createServerFn({ method: "POST" })
     if (!row) throw new Error("Promo code not found.");
     if (!row.percent_off || row.percent_off <= 0) {
       throw new Error("Set a percent_off value before syncing to Stripe.");
+    }
+
+    const duration = ((row.duration as string | null) ?? "forever") as
+      | "forever"
+      | "repeating";
+    const durationMonths = row.duration_in_months as number | null;
+    if (duration === "repeating" && (!durationMonths || durationMonths <= 0)) {
+      throw new Error("Repeating codes require duration_in_months > 0.");
     }
 
     const existingCoupon =
@@ -238,11 +256,15 @@ export const syncPromoCodeToStripe = createServerFn({ method: "POST" })
 
     try {
       const stripe = createStripeClient(env);
-      // 1. Coupon (lifetime percent off).
+      const durationLabel =
+        duration === "repeating"
+          ? `${row.percent_off}% off for ${durationMonths} month${durationMonths === 1 ? "" : "s"}`
+          : `${row.percent_off}% off forever`;
       const coupon = await stripe.coupons.create({
         percent_off: row.percent_off,
-        duration: "forever",
-        name: `${row.label} — ${row.percent_off}% off forever`,
+        duration,
+        ...(duration === "repeating" && { duration_in_months: durationMonths! }),
+        name: `${row.label} — ${durationLabel}`,
         metadata: { gradus_code: row.code },
       });
       // 2. Promotion code (the human-readable label attached at checkout).

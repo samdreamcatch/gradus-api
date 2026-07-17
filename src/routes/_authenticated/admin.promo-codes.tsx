@@ -230,6 +230,11 @@ function PromoCodesPage() {
                       </td>
                       <td className="px-3 py-3 text-text-primary">
                         <div>{row.label}</div>
+                        <div className="text-xs text-text-tertiary">
+                          {row.duration === "repeating"
+                            ? `${row.duration_in_months ?? "?"} mo repeating`
+                            : "forever"}
+                        </div>
                         {row.notes && (
                           <div className="text-xs text-text-tertiary line-clamp-1">{row.notes}</div>
                         )}
