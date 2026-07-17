@@ -320,8 +320,9 @@ export const joinOrganization = createServerFn({ method: "POST" })
     if (coach.error) dbError(coach.error);
     if (!coach.data) return { ok: false, error: "Coach profile missing." };
 
-    // 2. Resolve + validate the code.
-    const lookup = await supabase
+    // 2. Resolve + validate the code (admin-read only).
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const lookup = await supabaseAdmin
       .from("organization_invite_codes")
       .select("organization_id, active, organizations!inner(id, name, active)")
       .eq("code", data.code)
