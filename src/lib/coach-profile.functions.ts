@@ -20,6 +20,14 @@ export interface CoachProfileDTO {
   entitlement: CoachEntitlement;
   organizationId: string | null;
   organizationName: string | null;
+  subscriptionTier: "coach" | "coach_pro" | null;
+  subscriptionStatus: string | null;
+  trialEndsAt: string | null;
+  currentPeriodEnd: string | null;
+  hasStripeCustomer: boolean;
+  promoCode: string | null;
+  promoLabel: string | null;
+  promoPercentOff: number;
 }
 
 export interface CoachLevelDTO {
