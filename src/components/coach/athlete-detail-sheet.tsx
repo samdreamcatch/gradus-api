@@ -19,6 +19,8 @@ import {
   getCoachAthleteAiSummary,
   type Verdict,
 } from "@/lib/coach-athlete-detail.functions";
+import { useCoachProfile } from "@/hooks/use-coach-profile";
+
 
 
 export function AthleteDetailSheet({
