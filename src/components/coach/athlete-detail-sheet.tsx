@@ -232,9 +232,26 @@ function AthleteDetailBody({ athleteId }: { athleteId: string }) {
           <PlansList plans={d.plans} />
         )}
       </section>
+
+      {/* Also coached by */}
+      <AlsoCoachedByList
+        coaches={d.otherCoaches}
+        onOpenCoach={setOpenOtherCoachId}
+      />
+
+      <OtherCoachPlansSheet
+        coach={
+          d.otherCoaches.find((c) => c.coachId === openOtherCoachId) ?? null
+        }
+        athleteFirstName={d.firstName}
+        onOpenChange={(v) => {
+          if (!v) setOpenOtherCoachId(null);
+        }}
+      />
     </div>
   );
 }
+
 
 function formatSportList(labels: string[]): string {
   if (labels.length === 0) return "";
