@@ -76,8 +76,9 @@ export const verifyOrgCodeForOrg = createServerFn({ method: "POST" })
     z.object({ orgId: z.string().uuid(), code: codeSchema }).parse(input),
   )
   .handler(async ({ data, context }) => {
-    const supabase = context.supabase as Client;
-    const { data: row, error } = await supabase
+    void context;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row, error } = await supabaseAdmin
       .from("organization_invite_codes")
       .select("organization_id, active, organizations!inner(id, name, active)")
       .eq("code", data.code)
