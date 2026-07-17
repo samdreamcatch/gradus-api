@@ -705,12 +705,13 @@ export const getOrCreateParentInviteCode = createServerFn({ method: "GET" })
 
     const parent = await supabaseAdmin
       .from("parent_profiles")
-      .select("id")
+      .select("id, promo_code")
       .eq("user_id", userId)
       .maybeSingle();
     if (parent.error) dbError(parent.error);
     if (!parent.data) throw new Error("Parent profile not found.");
     const parentId = parent.data.id;
+    const inviterPromo = parent.data.promo_code ?? null;
 
     const existing = await supabaseAdmin
       .from("parent_invite_codes")
@@ -724,7 +725,7 @@ export const getOrCreateParentInviteCode = createServerFn({ method: "GET" })
       const code = genCode(8);
       const ins = await supabaseAdmin
         .from("parent_invite_codes")
-        .insert({ parent_id: parentId, code })
+        .insert({ parent_id: parentId, code, promo_code: inviterPromo })
         .select("code")
         .maybeSingle();
       if (!ins.error && ins.data) return { code: ins.data.code };
