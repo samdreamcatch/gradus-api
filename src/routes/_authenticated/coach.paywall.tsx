@@ -4,10 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Sparkles, Building2, Check, ArrowLeft } from "lucide-react";
-import {
-  EmbeddedCheckoutProvider,
-  EmbeddedCheckout,
-} from "@stripe/react-stripe-js";
+import { EmbeddedCheckoutProvider, EmbeddedCheckout } from "@stripe/react-stripe-js";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { coachProfileQueryOptions } from "@/hooks/use-coach-profile";
@@ -21,11 +18,17 @@ import { isCoachPaywallEnabled, isCoachProAvailable } from "@/lib/paywall-flag";
 type Tier = "coach" | "coach_pro";
 type Interval = "month" | "year";
 
-const PRICE_MAP: Record<Tier, Record<Interval, {
-  priceId: "coach_monthly" | "coach_yearly" | "coach_pro_monthly" | "coach_pro_yearly";
-  monthlyEquivalent: number;
-  billed: string;
-}>> = {
+const PRICE_MAP: Record<
+  Tier,
+  Record<
+    Interval,
+    {
+      priceId: "coach_monthly" | "coach_yearly" | "coach_pro_monthly" | "coach_pro_yearly";
+      monthlyEquivalent: number;
+      billed: string;
+    }
+  >
+> = {
   coach: {
     month: { priceId: "coach_monthly", monthlyEquivalent: 40, billed: "$40/mo, billed monthly" },
     year: { priceId: "coach_yearly", monthlyEquivalent: 34, billed: "$408/yr — save 15%" },
@@ -37,19 +40,8 @@ const PRICE_MAP: Record<Tier, Record<Interval, {
 };
 
 const FEATURES: Record<Tier, string[]> = {
-  coach: [
-    "Full coaching workspace",
-    "Roster, plans, and messaging",
-    "Athlete & parent portals",
-    "Up to 25 athletes",
-  ],
-  coach_pro: [
-    "Everything in Coach",
-    "Advanced scheduling",
-    "Multi-coach visibility",
-    "Up to 75 athletes",
-    "Priority support",
-  ],
+  coach: ["Full coaching workspace", "Roster, plans, and messaging", "Athlete & parent portals", "Up to 5 athletes"],
+  coach_pro: ["Everything in Coach", "Multi-sport", "Advanced scheduling", "Up to 50 athletes", "Priority support"],
 };
 
 export const Route = createFileRoute("/_authenticated/coach/paywall")({
@@ -60,7 +52,7 @@ export const Route = createFileRoute("/_authenticated/coach/paywall")({
   beforeLoad: () => {
     // Paywall kill-switch: while disabled, this URL is dead — bounce back
     // into the app. Founding coaches are grandfathered in via onboarding.
-    
+
     if (!isCoachPaywallEnabled()) {
       throw redirect({ to: "/coach/roster" });
     }
@@ -92,10 +84,7 @@ function PaywallPage() {
     return () => window.clearInterval(iv);
   }, [checkoutStatus, qc]);
 
-  const isEntitled =
-    entitlement === "paid" ||
-    entitlement === "promo_free" ||
-    entitlement === "club_covered";
+  const isEntitled = entitlement === "paid" || entitlement === "promo_free" || entitlement === "club_covered";
 
   useEffect(() => {
     if (isEntitled) navigate({ to: "/coach/roster", replace: true });
@@ -107,7 +96,6 @@ function PaywallPage() {
     await supabase.auth.signOut();
     navigate({ to: "/auth", replace: true });
   };
-
 
   const startCheckout = useCallback(
     async (tier: Tier) => {
@@ -140,13 +128,7 @@ function PaywallPage() {
   // "Upgrade to Coach Pro" in settings). Fires once when Coach Pro is
   // available and no checkout session is already in flight.
   useEffect(() => {
-    if (
-      preselectedTier === "coach_pro" &&
-      isCoachProAvailable() &&
-      !clientSecret &&
-      !loading &&
-      !isEntitled
-    ) {
+    if (preselectedTier === "coach_pro" && isCoachProAvailable() && !clientSecret && !loading && !isEntitled) {
       void startCheckout("coach_pro");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -158,7 +140,6 @@ function PaywallPage() {
   );
 
   if (isEntitled) return null;
-
 
   if (clientSecret && options) {
     return (
@@ -192,12 +173,9 @@ function PaywallPage() {
         <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-full bg-accent/15 text-accent-ink">
           <Sparkles className="h-5 w-5" />
         </div>
-        <h1 className="text-center font-display text-h2 text-text-primary">
-          Get your first 3 months free
-        </h1>
+        <h1 className="text-center font-display text-h2 text-text-primary">Get your first 3 months free</h1>
         <p className="mt-1.5 max-w-md text-center text-sm text-text-secondary">
-          Pick a plan to activate your workspace. You won't be charged until your
-          trial ends — cancel anytime.
+          Pick a plan to activate your workspace. You won't be charged until your trial ends — cancel anytime.
         </p>
 
         <div className="mt-4 inline-flex rounded-full border border-divider bg-elevated p-1 text-sm">
@@ -208,15 +186,11 @@ function PaywallPage() {
               onClick={() => setInterval(iv)}
               className={cn(
                 "rounded-full px-4 py-1.5 press-soft",
-                interval === iv
-                  ? "bg-card text-text-primary shadow-sm"
-                  : "text-text-secondary",
+                interval === iv ? "bg-card text-text-primary shadow-sm" : "text-text-secondary",
               )}
             >
               {iv === "month" ? "Monthly" : "Yearly"}
-              {iv === "year" && (
-                <span className="ml-1 text-xs text-accent-ink">save 15%</span>
-              )}
+              {iv === "year" && <span className="ml-1 text-xs text-accent-ink">save 15%</span>}
             </button>
           ))}
         </div>
@@ -230,15 +204,11 @@ function PaywallPage() {
                 key={tier}
                 className={cn(
                   "flex flex-col rounded-2xl border p-3 shadow-card sm:p-4",
-                  isPro
-                    ? "border-accent/60 bg-card"
-                    : "border-divider bg-card",
+                  isPro ? "border-accent/60 bg-card" : "border-divider bg-card",
                 )}
               >
                 <div className="flex items-baseline justify-between gap-1">
-                  <h2 className="font-display text-lg text-text-primary sm:text-h3">
-                    {isPro ? "Coach Pro" : "Coach"}
-                  </h2>
+                  <h2 className="font-display text-lg text-text-primary sm:text-h3">{isPro ? "Coach Pro" : "Coach"}</h2>
                   {isPro && (
                     <span className="rounded-full bg-accent/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-accent-ink sm:text-[10px] sm:tracking-widest">
                       SOON
@@ -268,11 +238,7 @@ function PaywallPage() {
                   disabled={loading || isPro}
                   onClick={() => startCheckout(tier)}
                 >
-                  {isPro
-                    ? "Coming soon"
-                    : loading && selectedTier === tier
-                    ? "Starting…"
-                    : "Start free trial"}
+                  {isPro ? "Coming soon" : loading && selectedTier === tier ? "Starting…" : "Start free trial"}
                 </Button>
               </div>
             );
@@ -283,17 +249,11 @@ function PaywallPage() {
           <div className="flex items-start gap-3">
             <Building2 className="mt-0.5 h-5 w-5 shrink-0 text-text-secondary" />
             <div className="text-sm">
-              <p className="font-semibold text-text-primary">
-                Joining through a club?
-              </p>
+              <p className="font-semibold text-text-primary">Joining through a club?</p>
               <p className="mt-1 text-text-secondary">
-                If your academy or association is a Gradus partner, they can
-                cover your subscription.
+                If your academy or association is a Gradus partner, they can cover your subscription.
               </p>
-              <Link
-                to="/coach/settings"
-                className="mt-2 inline-block text-accent-ink underline underline-offset-2"
-              >
+              <Link to="/coach/settings" className="mt-2 inline-block text-accent-ink underline underline-offset-2">
                 Enter club code in Settings →
               </Link>
             </div>
