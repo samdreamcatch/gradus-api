@@ -43,13 +43,11 @@ async function ensureProfile(
   userId: string,
   meta?: Record<string, unknown> | null,
 ) {
-  const selectCols =
-    "id, first_name, last_name, onboarded_at, entitlement, organization_id, " +
-    "subscription_tier, subscription_status, trial_ends_at, current_period_end, " +
-    "stripe_customer_id, promo_code";
   const existing = await supabase
     .from("coach_profiles")
-    .select(selectCols)
+    .select(
+      "id, first_name, last_name, onboarded_at, entitlement, organization_id, subscription_tier, subscription_status, trial_ends_at, current_period_end, stripe_customer_id, promo_code",
+    )
     .eq("user_id", userId)
     .maybeSingle();
   if (existing.error) dbError(existing.error);
@@ -82,7 +80,9 @@ async function ensureProfile(
   const created = await supabase
     .from("coach_profiles")
     .insert({ user_id: userId, first_name: firstName, last_name: lastName })
-    .select(selectCols)
+    .select(
+      "id, first_name, last_name, onboarded_at, entitlement, organization_id, subscription_tier, subscription_status, trial_ends_at, current_period_end, stripe_customer_id, promo_code",
+    )
     .single();
   if (created.error) dbError(created.error);
   return created.data;
