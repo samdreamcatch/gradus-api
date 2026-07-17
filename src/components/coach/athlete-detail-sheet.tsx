@@ -54,8 +54,7 @@ function AthleteDetailBody({ athleteId }: { athleteId: string }) {
   const [openOtherCoachId, setOpenOtherCoachId] = useState<string | null>(null);
   const profile = useCoachProfile();
   const effectiveTier = profile.data?.profile.effectiveTier;
-  const canViewOtherCoachPlans =
-    effectiveTier === "coach_pro" || effectiveTier === "club";
+  const canViewOtherCoachPlans = effectiveTier === "club";
 
 
   const detail = useQuery({
