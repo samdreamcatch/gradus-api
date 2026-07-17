@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { MoreVertical, UserMinus } from "lucide-react";
+import { MoreVertical, UserMinus, Users } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -120,13 +120,14 @@ export function RosterCard({
         )}
         {athlete.otherCoachCount > 0 ? (
           <span
-            className="rounded-pill border border-divider bg-elevated px-2 py-0.5 text-[11px] font-medium text-text-secondary"
+            className="inline-flex items-center gap-1 rounded-pill border border-secondary-accent/30 bg-secondary-accent-wash px-2 py-0.5 text-[11px] font-medium text-secondary-accent-ink"
             title={
               athlete.otherCoachCount === 1
                 ? `Also coached by ${athlete.otherCoachLastName}`
                 : `Also coached by ${athlete.otherCoachCount} other coaches`
             }
           >
+            <Users className="-ml-0.5 size-3" aria-hidden />
             {athlete.otherCoachCount === 1 && athlete.otherCoachLastName
               ? `+ ${athlete.otherCoachLastName}`
               : `+${athlete.otherCoachCount} coaches`}
