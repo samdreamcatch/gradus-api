@@ -85,7 +85,13 @@ export function AddCoachByCodeCard({ athletes }: { athletes: Athlete[] }) {
       qc.invalidateQueries({ queryKey: ["parent-settings"] });
       reset();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't link coach");
+      const { isRosterFullError } = await import("@/lib/roster-limits");
+      if (isRosterFullError(err)) {
+        toast.error("That coach's roster is full right now. Ask them to make room and try again.");
+      } else {
+        toast.error(err instanceof Error ? err.message : "Couldn't link coach");
+      }
+
     } finally {
       setSaving(false);
     }
