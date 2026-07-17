@@ -244,11 +244,12 @@ export const completeOnboarding = createServerFn({ method: "POST" })
     // entitlement (e.g. club_covered) is preserved.
     const founding =
       !isCoachPaywallEnabled() && profile.entitlement === "pending" && !profile.promo_code;
-    const patch: Record<string, unknown> = { onboarded_at: new Date().toISOString() };
-    if (founding) {
-      patch.entitlement = "promo_free";
-      patch.promo_code = FOUNDING_COACH_PROMO_CODE;
-    }
+    const patch = {
+      onboarded_at: new Date().toISOString(),
+      ...(founding
+        ? { entitlement: "promo_free", promo_code: FOUNDING_COACH_PROMO_CODE }
+        : {}),
+    };
     const { error } = await supabase
       .from("coach_profiles")
       .update(patch)
