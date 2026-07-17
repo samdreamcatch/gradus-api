@@ -220,7 +220,8 @@ export const claimOrganizationInviteCode = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const supabase = context.supabase as Client;
 
-    const lookup = await supabase
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const lookup = await supabaseAdmin
       .from("organization_invite_codes")
       .select("organization_id, active, organizations!inner(id, name, active)")
       .eq("code", data.code)
