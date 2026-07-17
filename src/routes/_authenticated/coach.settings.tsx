@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -100,9 +101,7 @@ function SettingsPage() {
 
 
         <SettingsGroup label="Plan">
-          <SettingsList>
-            <PlanSection profile={data.profile} />
-          </SettingsList>
+          <PlanSection profile={data.profile} />
         </SettingsGroup>
 
         <SettingsGroup label="Preferences">
@@ -496,28 +495,24 @@ function PlanSection({
   // Club-covered coaches
   if (profile.entitlement === "club_covered") {
     return (
-      <>
-        <SettingsRow
-          icon={<Building2 className="size-4" />}
-          label={profile.organizationName ?? "Club plan"}
-          description="Club plan · your club covers your subscription."
-        />
-        {promoRow}
-      </>
+      <PlanSummaryCard
+        icon={<Building2 className="size-4" />}
+        label={profile.organizationName ?? "Club plan"}
+        description="Club plan · your club covers your subscription."
+        extras={promoRow ? <SettingsList>{promoRow}</SettingsList> : null}
+      />
     );
   }
 
   // Complimentary access
   if (profile.entitlement === "promo_free") {
     return (
-      <>
-        <SettingsRow
-          icon={<Sparkles className="size-4" />}
-          label="Complimentary access"
-          description="Your account is on the house — no card required."
-        />
-        {promoRow}
-      </>
+      <PlanSummaryCard
+        icon={<Sparkles className="size-4" />}
+        label="Complimentary access"
+        description="Your account is on the house — no card required."
+        extras={promoRow ? <SettingsList>{promoRow}</SettingsList> : null}
+      />
     );
   }
 
@@ -538,48 +533,113 @@ function PlanSection({
       description = `Renews ${periodEnd}.`;
     }
 
+    const statusPill =
+      status === "trialing"
+        ? { label: "Trial", tone: "accent" as const }
+        : status === "past_due"
+          ? { label: "Payment failed", tone: "destructive" as const }
+          : status === "canceled"
+            ? { label: "Canceling", tone: "muted" as const }
+            : status === "active"
+              ? { label: "Active", tone: "accent" as const }
+              : null;
+
     return (
       <>
-        <SettingsRow
+        <PlanSummaryCard
           icon={<CreditCard className="size-4" />}
           label={TIER_LABEL[profile.subscriptionTier]}
-          value={
-            status === "trialing" ? "Trial" : status === "past_due" ? "Payment failed" : undefined
-          }
           description={description}
+          status={statusPill}
         />
-        {promoRow}
-        <SettingsButtonRow
-          icon={<CreditCard className="size-4" />}
-          label={openingPortal ? "Opening billing portal…" : "Manage subscription"}
-          description="Change card, cancel, or download invoices."
-          onClick={() => void openPortal()}
-          disabled={openingPortal || !profile.hasStripeCustomer}
-        />
-        {joinClubRow}
+        <SettingsList className="mt-3">
+          {promoRow}
+          <SettingsButtonRow
+            icon={<CreditCard className="size-4" />}
+            label={openingPortal ? "Opening billing portal…" : "Manage subscription"}
+            description="Change card, cancel, or download invoices."
+            onClick={() => void openPortal()}
+            disabled={openingPortal || !profile.hasStripeCustomer}
+          />
+          {joinClubRow}
+        </SettingsList>
         {joinSheet}
       </>
     );
   }
 
-  // No plan yet — pending. Show CTA to choose a plan and (via existing
-  // Connections disclosure above) join a club.
+  // No plan yet — pending.
   return (
     <>
-      <SettingsRow
+      <PlanSummaryCard
         icon={<CreditCard className="size-4" />}
         label="No plan yet"
         description="Pick a Coach or Coach Pro plan to keep coaching after your 90-day trial."
       />
-      {promoRow}
-      <SettingsButtonRow
-        icon={<Sparkles className="size-4" />}
-        label="Choose a plan"
-        tone="accent"
-        onClick={() => navigate({ to: "/coach/paywall" })}
-      />
-      {joinClubRow}
+      <SettingsList className="mt-3">
+        {promoRow}
+        <SettingsButtonRow
+          icon={<Sparkles className="size-4" />}
+          label="Choose a plan"
+          tone="accent"
+          onClick={() => navigate({ to: "/coach/paywall" })}
+        />
+        {joinClubRow}
+      </SettingsList>
       {joinSheet}
+    </>
+  );
+}
+
+function PlanSummaryCard({
+  icon,
+  label,
+  description,
+  status,
+  extras,
+}: {
+  icon: React.ReactNode;
+  label: React.ReactNode;
+  description?: React.ReactNode;
+  status?: { label: string; tone: "accent" | "destructive" | "muted" } | null;
+  extras?: React.ReactNode;
+}) {
+  const toneClass =
+    status?.tone === "destructive"
+      ? "bg-destructive/10 text-destructive"
+      : status?.tone === "muted"
+        ? "bg-elevated text-text-secondary"
+        : "bg-accent/10 text-accent-ink";
+  return (
+    <>
+      <div className="rounded-2xl border border-divider bg-elevated/60 px-4 py-4 backdrop-blur-sm">
+        <div className="flex items-start gap-3">
+          <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-accent/10 text-accent-ink">
+            {icon}
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <div className="truncate font-display text-base text-text-primary">
+                {label}
+              </div>
+              {status && (
+                <span
+                  className={cn(
+                    "shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest",
+                    toneClass,
+                  )}
+                >
+                  {status.label}
+                </span>
+              )}
+            </div>
+            {description && (
+              <p className="mt-1 text-xs text-text-secondary">{description}</p>
+            )}
+          </div>
+        </div>
+      </div>
+      {extras}
     </>
   );
 }
