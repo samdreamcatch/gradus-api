@@ -475,9 +475,8 @@ function PlanSection({
       <>
         <SettingsRow
           icon={<Building2 className="size-4" />}
-          label="Club plan"
-          value={profile.organizationName ?? "Club"}
-          description="Your club covers your subscription."
+          label={profile.organizationName ?? "Club plan"}
+          description="Club plan · your club covers your subscription."
         />
         {promoRow}
       </>
