@@ -248,7 +248,6 @@ export const claimOrganizationInviteCode = createServerFn({ method: "POST" })
     // Stamp the coach's sync cursor so future org content updates apply
     // incrementally. We fetch the current org version via admin to avoid
     // depending on the coach's read policy on that column.
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const versionRow = await supabaseAdmin
       .from("organizations")
       .select("content_version")
