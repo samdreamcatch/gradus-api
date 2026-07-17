@@ -15,7 +15,7 @@ export function UpgradeToProRow() {
 
   const description = available
     ? "$70/mo or $59.50/mo billed yearly — save 15%."
-    : "Coming soon — advanced scheduling, multi-coach visibility, up to 75 athletes.";
+    : "Coming soon — advanced scheduling, multi-coach visibility, up to 50 athletes.";
 
   return (
     <SettingsButtonRow
