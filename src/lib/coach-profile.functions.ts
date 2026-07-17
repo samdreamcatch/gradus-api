@@ -49,8 +49,8 @@ export function computeEffectiveTier(input: {
 
 export function athleteLimitForTier(tier: CoachEffectiveTier): number | null {
   if (tier === "club") return null;
-  if (tier === "coach_pro") return 75;
-  return 25;
+  if (tier === "coach_pro") return 50;
+  return 5;
 }
 
 
