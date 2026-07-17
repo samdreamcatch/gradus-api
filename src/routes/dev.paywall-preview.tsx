@@ -224,6 +224,13 @@ function PaywallPreview() {
           )}
           aria-disabled={tiersDisabled}
         >
+          {(Object.keys(PRICE_MAP) as Tier[]).map((tier) => {
+            const price = PRICE_MAP[tier][interval];
+            const isPro = tier === "coach_pro";
+            const coachFoundingActive = tier === "coach" && isFoundingCoach;
+            const promoAppliesHere = isPro && promoApplied != null;
+
+
 
             return (
               <div
