@@ -29,13 +29,16 @@ import {
  */
 export function EnterInviteCodeCard({ onSuccess }: { onSuccess?: () => void } = {}) {
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const resolveFn = useServerFn(resolveInviteCode);
   const previewAdultFn = useServerFn(getAdultAthleteByInviteCode);
   const claimParentFn = useServerFn(claimParentInvite);
   const claimAdultFn = useServerFn(claimAdultAthleteInvite);
+  const { data: coachProfile } = useQuery(coachProfileQueryOptions);
 
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
+
 
   const codeValid = /^[A-Z2-9]{8}$/.test(code.trim().toUpperCase());
 
