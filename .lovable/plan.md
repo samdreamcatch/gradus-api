@@ -1,59 +1,53 @@
 ## Goal
 
-Bypass the coach paywall entirely until we're ready to enable billing. Anyone who signs up during this window becomes a **Founding Coach** — free forever, never billed, even after the paywall goes live for future signups.
+Founding Coach = the **Coach** plan, free for life. They see everything a paid Coach sees, including an "Upgrade to Coach Pro" affordance — shown today in a disabled "Coming soon" state. When Coach Pro ships, it's priced and structured identically for everyone; the `FOUNDING_COACH` grandfathering only covers Coach.
 
-## Approach
+## Context
 
-Add a single env flag `VITE_COACH_PAYWALL_ENABLED` (default `false`). While the flag is off:
+- Coach Pro is currently a "Coming soon" tile in `src/routes/_authenticated/coach.paywall.tsx` (button disabled, `SOON` badge). No Coach Pro price is purchasable yet.
+- Nothing in the app gates features by `subscriptionTier` today, so Coach vs Coach Pro is a label on the subscription. Founding Coach maps to the Coach label.
+- Paid Coach block in `src/routes/_authenticated/coach.settings.tsx` (~lines 538–587) has no "Upgrade to Coach Pro" row. Founding Coach block (~lines 510–523) only shows `Join a club`.
+- One shared upgrade component in both blocks keeps them in sync when Coach Pro ships.
 
-### 1. Route guard — `src/routes/_authenticated/coach.tsx`
-Drop the paywall redirect. Onboarding redirect stays. An onboarded coach with any entitlement value goes straight into the app.
+## Changes
 
-### 2. Onboarding completion — `src/lib/coach-profile.functions.ts`
-In `completeOnboarding`, when the flag is off, also set:
-- `entitlement = 'promo_free'` (already in the `ENTITLED` set — no schema change needed)
-- `promo_code = 'FOUNDING_COACH'`
+### 1. Shared `UpgradeToProRow` component
 
-`promo_free` + `FOUNDING_COACH` is the durable marker of the cohort. Nothing later reads the env flag to decide access — once stamped, they're free forever regardless of whether the paywall gets turned on for new signups.
+New file `src/components/coach/upgrade-to-pro-row.tsx` wrapping `SettingsButtonRow`:
 
-Add a one-time backfill in `ensureProfile`: any existing coach still on `entitlement = 'pending'` gets upgraded to `promo_free` + `FOUNDING_COACH` on their next profile read.
+- Icon `Sparkles`, tone `accent`, label `Upgrade to Coach Pro`.
+- Always visible. While Coach Pro is not purchasable, the row is disabled with description `"Coming soon — advanced scheduling, multi-coach visibility, up to 75 athletes."` and a `SOON` chip on the right.
+- Once Coach Pro is live (new flag `isCoachProAvailable()` in `src/lib/paywall-flag.ts`, reading `VITE_COACH_PRO_ENABLED`), the row enables, the chip drops, description becomes `"$70/mo or $59.50/mo billed yearly — save 15%."`, and clicking navigates to `/coach/paywall?tier=coach_pro`.
+- Behavior identical regardless of caller.
 
-### 3. Paywall route — `src/routes/_authenticated/coach.paywall.tsx`
-When flag is off, silent redirect to `/coach/roster`. No UI. (Chosen because we never shipped a build with this URL.)
+### 2. Founding Coach block in `coach.settings.tsx`
 
-### 4. Settings plan card — `src/routes/_authenticated/coach.settings.tsx`
-When the coach's `promo_code = 'FOUNDING_COACH'`, show:
-- Plan name: **Founding Coach**
-- Status pill: **Free — lifetime**
-- Description: short line thanking them for being early
-- **Hide** all billing CTAs: no "Manage billing", no upgrade buttons, no billing-portal link
-- **Keep** the "Join a club" flow — a founding coach can still become part of a Gradus club just like an individual paid coach can, at which point their org relationship takes over the same way it does today
+Update the `profile.promoCode === "FOUNDING_COACH"` branch (~lines 510–523):
 
-The billing-portal button, past-due banner, and every other paid-subscription surface remain in the codebase and continue to work for anyone whose `promo_code` is NOT `FOUNDING_COACH`. Founding coaches simply never see them.
+- `PlanSummaryCard` label: `Founding Coach`.
+- Description keeps the current "Thank you for being here early." copy.
+- Status pill: `COACH · FREE` (single accent pill) — this is the Coach plan, on the house.
+- `SettingsList` under the card, in order: `UpgradeToProRow`, then `joinClubRow`.
 
-### 5. Migration
-Add a `FOUNDING_COACH` row to `promo_codes` (label "Founding Coach", `percent_off = 100`, `active = true`) so the cohort is queryable and consistent with how other promo codes are represented.
+### 3. Paid Coach block in `coach.settings.tsx`
 
-### 6. Env
-`VITE_COACH_PAYWALL_ENABLED=false` in `.env` and `.env.development`.
+In the `entitlement === "paid" && subscriptionTier === "coach"` case (~lines 538–587), insert `UpgradeToProRow` above `Manage subscription`. `coach_pro` subscribers don't see it. Same component as Founding Coaches.
 
-## What is NOT changed (payments infra preserved)
+### 4. Paywall route accepts a preselected tier
 
-Nothing about Stripe is deleted or refactored:
-- `src/lib/stripe.ts`, `stripe.server.ts`, `coach-checkout.functions.ts`
-- Webhook route `/api/public/payments/webhook`
-- `coach_profiles` billing columns (`stripe_customer_id`, `subscription_tier`, `subscription_status`, `trial_ends_at`, `current_period_end`)
-- Price catalog (`coach_monthly` / `coach_yearly` / `coach_pro_*`)
-- Billing portal, past-due banner, checkout embed
-- The paywall page's pricing UI (it still exists in the file; it's just gated behind the flag)
+In `src/routes/_authenticated/coach.paywall.tsx`:
 
-Re-enabling: set `VITE_COACH_PAYWALL_ENABLED=true` and redeploy. New coaches will go through checkout again. Founding coaches already stamped stay free forever because access is decided by `entitlement`, not by the flag.
+- Extend `validateSearch` to also parse `tier` (via `fallback` from `@tanstack/zod-adapter`, no closed enum).
+- When `tier === "coach_pro"` and Coach Pro is available, auto-open Coach Pro checkout.
+- Pricing/purchase flow unchanged — everyone pays the same for Coach Pro, Founding Coaches included.
 
-## Files touched
+### 5. No pricing/DB changes
 
-- `src/routes/_authenticated/coach.tsx` — remove paywall redirect when flag off
-- `src/routes/_authenticated/coach.paywall.tsx` — redirect to `/coach/roster` when flag off
-- `src/routes/_authenticated/coach.settings.tsx` — Founding Coach plan card, hide billing CTAs when `promo_code = 'FOUNDING_COACH'`
-- `src/lib/coach-profile.functions.ts` — auto-stamp Founding Coach in `completeOnboarding`; backfill in `ensureProfile`
-- one migration inserting the `FOUNDING_COACH` promo_codes row
-- `.env`, `.env.development` — add `VITE_COACH_PAYWALL_ENABLED=false`
+- `FOUNDING_COACH` promo unchanged (100% off, applied at signup, covers the Coach plan).
+- When a Founding Coach upgrades to Coach Pro, they check out at the standard Coach Pro price via existing `coach-checkout.functions.ts`; the webhook flips their `subscription_tier` to `coach_pro`. The promo does not carry over.
+
+## Technical notes
+
+- Files touched: `src/routes/_authenticated/coach.settings.tsx`, `src/routes/_authenticated/coach.paywall.tsx`, `src/lib/paywall-flag.ts`, new `src/components/coach/upgrade-to-pro-row.tsx`.
+- No database migration.
+- No changes to `coach-checkout.functions.ts` — it already accepts `coach_pro_monthly` / `coach_pro_yearly`.

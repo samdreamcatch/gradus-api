@@ -17,3 +17,11 @@ export const FOUNDING_COACH_PROMO_CODE = "FOUNDING_COACH";
 export function isCoachPaywallEnabled(): boolean {
   return import.meta.env.VITE_COACH_PAYWALL_ENABLED === "true";
 }
+
+/**
+ * Coach Pro availability flag. While false, the "Upgrade to Coach Pro"
+ * affordance in settings is shown in a disabled "Coming soon" state.
+ */
+export function isCoachProAvailable(): boolean {
+  return import.meta.env.VITE_COACH_PRO_ENABLED === "true";
+}

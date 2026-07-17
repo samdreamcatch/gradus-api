@@ -35,6 +35,7 @@ import { CoachBottomNav } from "@/components/coach/bottom-nav";
 import { RosterSettingsSection } from "@/components/coach/roster-settings-section";
 import { EnterInviteCodeCard } from "@/components/coach/enter-invite-code-card";
 import { JoinClubSheet } from "@/components/coach/join-club-sheet";
+import { UpgradeToProRow } from "@/components/coach/upgrade-to-pro-row";
 import { SegmentedToggle } from "@/components/plans/segmented-toggle";
 import { createCoachBillingPortalSession } from "@/lib/coach-checkout.functions";
 import { getStripeEnvironment } from "@/lib/stripe";
@@ -514,9 +515,12 @@ function PlanSection({
           icon={<Sparkles className="size-4" />}
           label="Founding Coach"
           description="Thank you for being here early."
-          status={{ label: "FREE", tone: "accent" }}
+          status={{ label: "Coach · Free", tone: "accent" }}
         />
-        <SettingsList className="mt-3">{joinClubRow}</SettingsList>
+        <SettingsList className="mt-3">
+          <UpgradeToProRow />
+          {joinClubRow}
+        </SettingsList>
         {joinSheet}
       </>
     );
@@ -572,6 +576,7 @@ function PlanSection({
         />
         <SettingsList className="mt-3">
           {promoRow}
+          {profile.subscriptionTier === "coach" && <UpgradeToProRow />}
           <SettingsButtonRow
             icon={<CreditCard className="size-4" />}
             label={openingPortal ? "Opening billing portal…" : "Manage subscription"}

@@ -16,7 +16,7 @@ import { startCoachCheckout } from "@/lib/coach-checkout.functions";
 import { getStripe, getStripeEnvironment } from "@/lib/stripe";
 import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
 import { supabase } from "@/integrations/supabase/client";
-import { isCoachPaywallEnabled } from "@/lib/paywall-flag";
+import { isCoachPaywallEnabled, isCoachProAvailable } from "@/lib/paywall-flag";
 
 type Tier = "coach" | "coach_pro";
 type Interval = "month" | "year";
@@ -55,6 +55,7 @@ const FEATURES: Record<Tier, string[]> = {
 export const Route = createFileRoute("/_authenticated/coach/paywall")({
   validateSearch: (search: Record<string, unknown>) => ({
     checkout: typeof search.checkout === "string" ? search.checkout : undefined,
+    tier: typeof search.tier === "string" ? search.tier : undefined,
   }),
   beforeLoad: () => {
     // Paywall kill-switch: while disabled, this URL is dead — bounce back
@@ -73,7 +74,7 @@ function PaywallPage() {
   const qc = useQueryClient();
   const clearOrg = useServerFn(clearOrganizationLink);
   const checkoutFn = useServerFn(startCoachCheckout);
-  const { checkout: checkoutStatus } = Route.useSearch();
+  const { checkout: checkoutStatus, tier: preselectedTier } = Route.useSearch();
 
   const [interval, setInterval] = useState<Interval>("year");
   const [selectedTier, setSelectedTier] = useState<Tier | null>(null);
@@ -134,6 +135,22 @@ function PaywallPage() {
     },
     [checkoutFn, interval],
   );
+
+  // Auto-open checkout for a preselected tier (e.g. arrived from
+  // "Upgrade to Coach Pro" in settings). Fires once when Coach Pro is
+  // available and no checkout session is already in flight.
+  useEffect(() => {
+    if (
+      preselectedTier === "coach_pro" &&
+      isCoachProAvailable() &&
+      !clientSecret &&
+      !loading &&
+      !isEntitled
+    ) {
+      void startCheckout("coach_pro");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [preselectedTier]);
 
   const options = useMemo(
     () => (clientSecret ? { fetchClientSecret: async () => clientSecret } : null),
