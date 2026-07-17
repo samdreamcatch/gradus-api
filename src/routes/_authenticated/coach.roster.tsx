@@ -30,6 +30,8 @@ import {
   getRosterPracticeSummaries,
   type AthletePracticeSummary,
 } from "@/lib/coach-schedule.functions";
+import { coachProfileQueryOptions } from "@/hooks/use-coach-profile";
+
 
 type RosterTab = "athletes" | "schedule";
 
