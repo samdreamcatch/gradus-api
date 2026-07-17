@@ -450,6 +450,7 @@ function Composer({
               </div>
             </PopoverContent>
           </Popover>
+          ) : null}
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
