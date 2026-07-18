@@ -170,6 +170,8 @@ export function DevTools() {
 
   const steps = session.role ? ONBOARDING_STEPS[session.role] : [];
 
+  if (hideOnAdmin) return null;
+
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
