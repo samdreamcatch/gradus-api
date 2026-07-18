@@ -156,7 +156,7 @@ function PaywallPage() {
     if (isEntitled) return;
     if (profilePromoCode !== "WELCOME_BACK") return;
     if (promo.status !== "idle") return;
-    welcomeBackAutoAppliedRef.done = true;
+    welcomeBackAutoAppliedRef.current = true;
     setPromoInput("WELCOME_BACK");
     setPromoOpen(true);
     setPromo({ status: "validating" });
