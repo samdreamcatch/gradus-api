@@ -117,7 +117,7 @@ export function SportMultiselect({
                 {[...SPORTS].sort((a, b) => {
                   if (a.key === "strength_conditioning") return -1;
                   if (b.key === "strength_conditioning") return 1;
-                  return 0;
+                  return a.label.localeCompare(b.label);
                 }).map((s) => {
                   const sel = isSelected(s.key);
                   const locked = isLocked(s.key);
