@@ -58,18 +58,15 @@ export function AlsoCoachedByList({
                     ))}
                   </div>
                 ) : null}
-                <p
-                  className={cn(
-                    "mt-1 font-hand text-[15px]",
-                    interactive ? "text-text-secondary" : "text-text-tertiary",
-                  )}
-                >
-                  {hasPlans
-                    ? locked
-                      ? "Upgrade to see plans"
-                      : coachMeta(c)
-                    : "No shared plans yet"}
-                </p>
+                {hasPlans && !locked ? (
+                  <p className="mt-1 font-hand text-[15px] text-text-secondary">
+                    {coachMeta(c)}
+                  </p>
+                ) : !hasPlans ? (
+                  <p className="mt-1 font-hand text-[15px] text-text-tertiary">
+                    No shared plans yet
+                  </p>
+                ) : null}
               </div>
               {hasPlans ? (
                 locked ? (
