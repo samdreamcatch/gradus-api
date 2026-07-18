@@ -69,10 +69,10 @@ function ParentResourcesPage() {
   const [openResource, setOpenResource] = useState<ResourceDTO | null>(null);
 
   const filtered = useMemo(() => {
-    if (!activeSport) return [];
+    if (!activeSport) return [] as ResourceDTO[];
     const q = search.trim().toLowerCase();
     return resources
-      .filter((r) => r.sport === activeSport)
+      .filter((r) => r.sports.includes(activeSport))
       .filter(
         (r) =>
           !q ||
@@ -80,6 +80,9 @@ function ParentResourcesPage() {
           r.description.toLowerCase().includes(q),
       );
   }, [resources, activeSport, search]);
+
+  const coachItems = filtered.filter((r) => r.source === "coach");
+  const libraryItems = filtered.filter((r) => r.source === "library");
 
   return (
     <div className="mx-auto max-w-2xl px-4 pt-6 pb-24">
