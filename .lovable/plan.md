@@ -1,23 +1,48 @@
-## What went wrong
+## Goal
+When a coach who was on a Club plan (and never entered a card) leaves the club, automatically grant them a `WELCOME_BACK` code — 3 months free of **Coach Pro**, card required, auto-converts to $70/mo. Same mechanics as `WILSON` / `PRACTICE`.
 
-From onboarding step 1 (sport picker), the "Choose Coach Pro for more sports →" link goes to `/coach/paywall?tier=coach_pro`. On the paywall, a `useEffect` auto-fires `handleTierAction("coach_pro")` whenever `preselectedTier === "coach_pro"`.
+## Current-state facts (verified)
+- `clearOrganizationLink` (src/lib/coach-org.functions.ts:498) sets `organization_id = NULL` and flips `entitlement` from `club_covered` → `pending`. The coach immediately hits `/coach/paywall`. No Stripe customer, no card, no charge if they never paid before.
+- `promo_codes` today: `FOUNDING_COACH` (forever), `WILSON`, `PRACTICE` (both 3-month repeating, 100% off, Coach Pro only per notes).
+- `coach_profiles.promo_code` already exists (src/lib/coach-profile.functions.ts:73) and is read by the paywall.
+- Tier restriction is not a DB column today — it's enforced in checkout logic (`coach-checkout.functions.ts`) and copy in `notes`.
 
-For a coach who already has an active Stripe sub (you), `handleTierAction` calls `switchTier` — which calls `changeCoachSubscription` immediately, with prorated charge, no confirmation. That's why clicking the link inside the sport picker "auto-switched" you to Coach Pro.
+## Changes
 
-For a brand-new coach it would auto-open embedded checkout — also surprising, but at least gated by the Stripe payment step. For an entitled coach, there's no gate at all.
+### 1. Seed the `WELCOME_BACK` promo code (migration)
+Insert a row identical in shape to `WILSON`:
+- `code = 'WELCOME_BACK'`
+- `label = 'Welcome back — 3 months free of Coach Pro'`
+- `notes = 'Auto-granted when a coach leaves a club plan. Coach Pro only. Card required, auto-converts to $70/mo.'`
+- `duration = 'repeating'`, `duration_in_months = 3`, `percent_off = 100`, `active = true`
 
-## Fix
+Then run the existing admin "sync coupons to Stripe" flow so `stripe_coupon_id_sandbox` / `stripe_promo_id_sandbox` populate (same as WILSON did).
 
-1. **Remove the auto-trigger `useEffect` in `src/routes/_authenticated/coach.paywall.tsx`** (the block at lines 243–254 plus its `preselectedActionStartedRef`). Landing on `/coach/paywall?tier=coach_pro` should never execute a subscription change or open checkout on its own.
+### 2. Auto-stash the code on leave (server-fn edit)
+In `clearOrganizationLink` (src/lib/coach-org.functions.ts:498), when the coach was `club_covered` and has no `stripe_customer_id` (i.e. never paid before), also set:
+```
+promo_code = 'WELCOME_BACK'
+```
+Guardrails:
+- Only stash if `promo_code` is currently NULL (don't overwrite an existing personal code).
+- Only stash if `stripe_customer_id` is NULL (returning ex-paid coaches don't get a fresh 3 months).
+- Confirm code is `active = true` in `promo_codes` before stashing (skip silently if disabled).
 
-2. **Keep `?tier=coach_pro` as a visual preselect only**:
-   - Scroll/highlight the Coach Pro card (already visually distinguished by `selectedTier`/`preselectedTier` styling — verify it reads `preselectedTier` for the highlight, not just for the auto-action).
-   - The coach still has to click the tier's "Upgrade" / "Switch to Coach Pro" button to commit. That path already runs `handleTierAction` → `switchTier` (entitled) or `startCheckout` (new), so no other logic changes.
+### 3. Paywall behavior (already works)
+The paywall already reads `profile.promo_code` and pre-fills it. Verify:
+- The pre-filled code shows the "3 months free of Coach Pro" label.
+- The Coach tier is greyed out (WELCOME_BACK is Coach Pro only, matching WILSON handling).
+- Coach can clear the code and pay normally if they'd rather skip the freebie.
 
-3. **Undo path for this incident**: no code change needed — the paywall already offers "Switch to Coach" for entitled Pro coaches (calls `changeCoachSubscription`, issues a prorated refund). I'll call that out in the follow-up message so you can revert your account with one click.
+No new UI is needed if the WILSON pre-fill path already covers this. Confirmed during build; add a small "Welcome back — enjoy 3 months on us" banner above the tier picker only if the existing pre-fill has no visible affordance.
 
-## Files touched
+### 4. Checkout enforcement (verify, likely no change)
+`startCoachCheckout` already restricts WILSON/PRACTICE to `coach_pro`. Confirm the same Coach-Pro-only gate applies to WELCOME_BACK (it will if the gate keys off `duration = repeating` + notes, or we add WELCOME_BACK to the same allow-list).
 
-- `src/routes/_authenticated/coach.paywall.tsx` — delete the auto-run effect and the `preselectedActionStartedRef` it relies on; leave `preselectedTier` wired to the visual highlight.
+## Explicitly out of scope
+- No change to what happens when a **paid** coach (had a card, paid individually, then joined a club, then left) leaves — they've already used their intro path. If you want that flow later, we'd add a separate branch.
+- No email notification about the freebie (can add later).
+- No change to club rejoin flow.
 
-No changes to server functions, Stripe, or the onboarding route.
+## Answer to your original question, restated
+Today: leaving the club drops entitlement to `pending`; the coach lands on the paywall with nothing charged. After this change: they land on the paywall with `WELCOME_BACK` pre-applied, Coach Pro selected, card required, first 3 months at $0, then $70/mo.
