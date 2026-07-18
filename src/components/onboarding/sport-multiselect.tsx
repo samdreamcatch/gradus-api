@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, ChevronDown, Lock, Plus, X } from "lucide-react";
+import { Check, ChevronDown, Plus, X } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
