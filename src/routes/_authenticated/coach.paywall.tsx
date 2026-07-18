@@ -89,6 +89,7 @@ function PaywallPage() {
   const claimClub = useServerFn(claimOrganizationInviteCode);
   const recordLead = useServerFn(recordSilentClubLead);
   const checkoutFn = useServerFn(startCoachCheckout);
+  const changeSubFn = useServerFn(changeCoachSubscription);
   const validateCode = useServerFn(validatePromoCode);
   const { checkout: checkoutStatus, tier: preselectedTier } = Route.useSearch();
 
