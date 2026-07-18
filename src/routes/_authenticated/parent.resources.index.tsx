@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { BookmarkPlus, Check, ChevronDown, Loader2, Search, Sparkles, Trash2 } from "lucide-react";
+import { BookmarkPlus, Check, ChevronDown, ExternalLink, FileText, Image as ImageIcon, Link as LinkIcon, Loader2, Search, Sparkles, Trash2 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { AnswerMarkdown } from "@/components/parent/answer-markdown";
 
@@ -69,10 +69,10 @@ function ParentResourcesPage() {
   const [openResource, setOpenResource] = useState<ResourceDTO | null>(null);
 
   const filtered = useMemo(() => {
-    if (!activeSport) return [];
+    if (!activeSport) return [] as ResourceDTO[];
     const q = search.trim().toLowerCase();
     return resources
-      .filter((r) => r.sport === activeSport)
+      .filter((r) => r.sports.includes(activeSport))
       .filter(
         (r) =>
           !q ||
@@ -80,6 +80,9 @@ function ParentResourcesPage() {
           r.description.toLowerCase().includes(q),
       );
   }, [resources, activeSport, search]);
+
+  const coachItems = filtered.filter((r) => r.source === "coach");
+  const libraryItems = filtered.filter((r) => r.source === "library");
 
   return (
     <div className="mx-auto max-w-2xl px-4 pt-6 pb-24">
@@ -159,24 +162,30 @@ function ParentResourcesPage() {
                   </p>
                 </div>
               ) : (
-                <ul className="divide-y divide-divider rounded-2xl border border-divider bg-card">
-                  {filtered.map((r) => (
-                    <li key={r.id}>
-                      <button
-                        type="button"
-                        onClick={() => setOpenResource(r)}
-                        className="flex w-full items-start gap-3 px-4 py-3 text-left transition hover:bg-accent/5 focus-visible:outline-none focus-visible:bg-accent/10"
-                      >
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-bold text-text-primary">
-                            {r.title.split(":")[0]}
-                          </p>
-
-                        </div>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
+                <div className="space-y-5">
+                  {coachItems.length > 0 ? (
+                    <div className="space-y-2">
+                      <p className="px-1 text-[11px] font-bold uppercase tracking-wide text-text-secondary">
+                        From your coaches
+                      </p>
+                      <ResourceList
+                        rows={coachItems}
+                        onOpen={setOpenResource}
+                        showCoach
+                      />
+                    </div>
+                  ) : null}
+                  {libraryItems.length > 0 ? (
+                    <div className="space-y-2">
+                      {coachItems.length > 0 ? (
+                        <p className="px-1 text-[11px] font-bold uppercase tracking-wide text-text-secondary">
+                          Gradus library
+                        </p>
+                      ) : null}
+                      <ResourceList rows={libraryItems} onOpen={setOpenResource} />
+                    </div>
+                  ) : null}
+                </div>
               )}
             </section>
           )}
@@ -423,6 +432,50 @@ function SavedAnswersList({ sport }: { sport: string }) {
   );
 }
 
+function KindIcon({ kind }: { kind: ResourceDTO["kind"] }) {
+  if (kind === "image") return <ImageIcon className="h-4 w-4" aria-hidden />;
+  if (kind === "link") return <LinkIcon className="h-4 w-4" aria-hidden />;
+  return <FileText className="h-4 w-4" aria-hidden />;
+}
+
+function ResourceList({
+  rows,
+  onOpen,
+  showCoach = false,
+}: {
+  rows: ResourceDTO[];
+  onOpen: (r: ResourceDTO) => void;
+  showCoach?: boolean;
+}) {
+  return (
+    <ul className="divide-y divide-divider rounded-2xl border border-divider bg-card">
+      {rows.map((r) => (
+        <li key={r.id}>
+          <button
+            type="button"
+            onClick={() => onOpen(r)}
+            className="flex w-full items-start gap-3 px-4 py-3 text-left transition hover:bg-accent/5 focus-visible:outline-none focus-visible:bg-accent/10"
+          >
+            <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-elevated text-text-secondary">
+              <KindIcon kind={r.kind} />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-bold text-text-primary">
+                {r.title.split(":")[0]}
+              </p>
+              {showCoach && r.coachName ? (
+                <p className="mt-0.5 truncate text-xs text-text-secondary">
+                  Shared by Coach {r.coachName}
+                </p>
+              ) : null}
+            </div>
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 function ResourceSheet({
   resource,
   onClose,
@@ -438,6 +491,8 @@ function ResourceSheet({
     staleTime: 60_000,
   });
 
+  const kind = resource?.kind ?? "pdf";
+
   return (
     <Sheet open={!!resource} onOpenChange={(o) => !o && onClose()}>
       <SheetContent
@@ -449,23 +504,48 @@ function ResourceSheet({
           {resource?.description ? (
             <p className="text-sm text-text-secondary">{resource.description}</p>
           ) : null}
+          {resource?.coachName ? (
+            <p className="text-xs text-text-secondary">
+              Shared by Coach {resource.coachName}
+            </p>
+          ) : null}
         </SheetHeader>
         <div className="h-[calc(92vh-96px)] border-t border-divider bg-card">
           {isLoading ? (
             <div className="flex h-full items-center justify-center text-sm text-text-secondary">
-              Loading PDF…
+              Loading…
             </div>
           ) : error ? (
             <div className="flex h-full items-center justify-center p-6 text-sm text-destructive">
-              Couldn&apos;t load PDF: {(error as Error).message}
+              Couldn&apos;t load: {(error as Error).message}
             </div>
           ) : data ? (
-            <iframe
-              key={data.url}
-              src={data.url}
-              title={resource?.title}
-              className="h-full w-full"
-            />
+            kind === "link" ? (
+              <div className="flex h-full flex-col items-center justify-center gap-4 p-6 text-center">
+                <p className="text-sm text-text-secondary break-all">{data.url}</p>
+                <Button asChild className="rounded-full">
+                  <a href={data.url} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="h-4 w-4" aria-hidden />
+                    Open link
+                  </a>
+                </Button>
+              </div>
+            ) : kind === "image" ? (
+              <div className="h-full overflow-auto bg-elevated">
+                <img
+                  src={data.url}
+                  alt={resource?.title ?? ""}
+                  className="mx-auto max-h-full w-auto"
+                />
+              </div>
+            ) : (
+              <iframe
+                key={data.url}
+                src={data.url}
+                title={resource?.title}
+                className="h-full w-full"
+              />
+            )
           ) : null}
         </div>
       </SheetContent>
