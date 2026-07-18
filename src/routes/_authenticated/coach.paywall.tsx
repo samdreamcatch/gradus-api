@@ -305,7 +305,7 @@ function PaywallPage() {
           {isEntitled ? "Manage your plan" : "Activate your workspace"}
         </h1>
         <p className="mt-1.5 max-w-md text-center text-sm text-text-secondary">
-          {isEntitled ? "Change tier, join a club, or apply a promo." : "Pick a plan to get started. Cancel anytime."}
+          {isEntitled ? "Change tier or apply a promo." : "Pick a plan to get started. Cancel anytime."}
         </p>
 
         {isEntitled && (
