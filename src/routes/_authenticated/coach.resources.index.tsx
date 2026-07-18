@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Lock, Plus, Search } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 
 import { CoachBottomNav } from "@/components/coach/bottom-nav";
 import { PageTitle } from "@/components/page-title";
@@ -15,11 +15,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 import { UploadResourceSheet } from "@/components/coach/upload-resource-sheet";
 import {
