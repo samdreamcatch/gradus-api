@@ -1,7 +1,7 @@
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Sparkles, Building2, Check, ArrowLeft, Tag, Loader2 } from "lucide-react";
 import { EmbeddedCheckoutProvider, EmbeddedCheckout } from "@stripe/react-stripe-js";
@@ -145,6 +145,38 @@ function PaywallPage() {
     // Otherwise: entitled coaches don't need the paywall.
     navigate({ to: onboardedAt ? "/coach/roster" : "/coach/onboarding", replace: true });
   }, [isEntitled, isFoundingCoach, isUpgradeIntent, manageIntent, onboardedAt, navigate]);
+
+  // Auto-apply WELCOME_BACK when the coach was granted it on leaving a club.
+  // Pre-fills the promo input, opens the section, and validates in the
+  // background so Coach Pro shows the 3-months-free discount immediately.
+  const welcomeBackAutoAppliedRef = useRef(false);
+  useEffect(() => {
+    if (welcomeBackAutoAppliedRef.current) return;
+
+    if (isEntitled) return;
+    if (profilePromoCode !== "WELCOME_BACK") return;
+    if (promo.status !== "idle") return;
+    welcomeBackAutoAppliedRef.current = true;
+    setPromoInput("WELCOME_BACK");
+    setPromoOpen(true);
+    setPromo({ status: "validating" });
+    validateCode({ data: { code: "WELCOME_BACK" } })
+      .then((res) => {
+        if (!res.valid || res.duration !== "repeating") {
+          setPromo({ status: "idle" });
+          return;
+        }
+        setPromo({
+          status: "valid",
+          code: "WELCOME_BACK",
+          label: res.label ?? "WELCOME_BACK",
+          duration: res.duration,
+          durationInMonths: res.durationInMonths,
+        });
+      })
+      .catch(() => setPromo({ status: "idle" }));
+  }, [isEntitled, profilePromoCode, promo.status, welcomeBackAutoAppliedRef]);
+
 
 
   const handleSignOut = async () => {
