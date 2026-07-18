@@ -1,61 +1,39 @@
 ## Goal
 
-Make `/coach/paywall` the first onboarding step. Coaches choose their path there (Club code, Coach, or Coach Pro — with monthly/annual toggle) *before* they see the profile / sports / levels / hours / invite / review flow. Payment still happens at the paywall step (Stripe checkout for Coach / Coach Pro, code claim for Club, free-forever for founding coaches).
-
-Once a tier is selected, downstream onboarding gates behave correctly (e.g. sport picker cap becomes 1 for Coach, unlimited for Coach Pro / Club) — no more mismatch between the tier and the sports UI.
+Replace the "Enter club code" inline input on `/coach/paywall` with the same search-first flow we already use in Settings' "Join a club" sheet — so a new coach types their club's name, picks it from search results, then enters the invite code. If the club isn't found, we silently capture what they typed as a bizdev lead.
 
 ## Changes
 
-### 1. Redirect unonboarded coaches to `/coach/paywall` first
-File: `src/routes/_authenticated/coach.onboarding.tsx`
+### 1. `src/routes/_authenticated/coach.paywall.tsx` — swap the club section
 
-Add an effect: if `data.profile.onboardedAt` is null AND the coach has no active entitlement path yet (no `organization_id`, no `subscription_tier`, no active founding-coach free grant, `entitlement !== 'paid'` and `entitlement !== 'club_covered'`), `navigate({ to: '/coach/paywall' })`. This is the same gate the paywall already uses in reverse, just applied at onboarding entry.
+Keep the outer bordered card (icon + "Joining through a club?" + description) exactly as-is. Replace the collapsed `Enter club code →` button and the inline `Input` + Cancel/Join buttons with the same body used inside `JoinClubSheet`:
 
-Result: fresh coaches land on the paywall before they ever see "Step 1 of 6".
+- `OrgSearchCombobox` (from `src/components/onboarding/org-search-combobox.tsx`) with `onNotListed` wired to `recordSilentClubLead({ source: "not_listed", typedQuery })` — identical to the sheet's `handleNotListed`. Toast + collapse back on success.
+- Once an org is picked: show the accent `Chip` with the org name and a "Change" button, then `OrgCodeField` for the invite code.
+- Join button uses `claimOrganizationInviteCode` (the paywall's existing server fn), not `joinOrganization` — the paywall runs pre-entitlement, so there is no active Stripe subscription to cancel and the cancellation-note branch does not apply.
+- On success: reuse the paywall's current post-claim flow (invalidate `coachProfileQueryOptions`; the existing entitlement `useEffect` handles the redirect to `/coach/onboarding`).
 
-### 2. Drop the "path" step from onboarding
-Same file.
+Because this replaces the collapsed/expanded inline UI, drop the `clubOpen` state and any now-unused imports (`Input`, the inline Cancel button branch). Keep the "individual plans grey out when a club is picked" behavior — trigger it off the org-selected state instead of `clubInput`.
 
-- Remove `"path"` from `stepOrder` → new order: `["profile", "levels", "hours", "invite", "review"]` (5 steps).
-- Remove the `CoachPathChoice` render block and its `canContinue` / `handleContinue` branches.
-- Remove `pathValue` state and the `?org=` / `?promo=` seeding that fed it (paywall now owns those inputs — `/coach/paywall?org=...&promo=...` already accepts them via `savePendingPromoCode` + `claimOrganizationInviteCode`).
-- Delete the now-unused `CoachPathChoice` import (and the file if nothing else imports it — quick grep first).
-- `handleFinish` no longer needs to branch on `pathValue.path`: after `complete.mutateAsync()` succeeds, coaches are already entitled (they came from paywall), so route straight to `/coach/roster`.
+### 2. `src/components/onboarding/org-search-combobox.tsx` — reuse as-is
 
-### 3. Update paywall so it flows *into* onboarding on success
-File: `src/routes/_authenticated/coach.paywall.tsx`
+No changes. It already renders a search input, shows matches from `searchOrganizations`, and exposes `onNotListed(typedQuery)` when the coach clicks the "Not listed? Tell us" affordance — which is exactly the bizdev capture path.
 
-Today the paywall redirects entitled coaches to `/coach/roster`. Change the post-success redirect (Stripe return, club-code claim, founding-coach free path) to:
+### 3. Bizdev lead capture — already wired
 
-- If `data.profile.onboardedAt` is null → `navigate({ to: '/coach/onboarding' })`
-- Else → `navigate({ to: '/coach/roster' })` (current behavior for returning coaches managing subscriptions)
-
-The existing `useEffect` that watches entitlement transitions after Stripe returns keeps working — it just points to onboarding first when appropriate.
-
-### 4. Make the sports picker cap follow the chosen tier
-File: `src/routes/_authenticated/coach.onboarding.tsx`
-
-Right now `SportMultiselect` is passed `maxPrimarySports={1}` unconditionally. Compute it from `effectiveTier` on the profile:
-
-- `coach` → `maxPrimarySports={1}` (plus Strength & Conditioning, already handled in `SportMultiselect`)
-- `coach_pro` / `club` → omit the prop (unlimited)
-
-This resolves the concern the user raised: sport selection is only gated *after* the tier is known, and Coach tier's 1-sport cap becomes accurate rather than presumptive.
-
-### 5. Update the paywall preview to match
-Nothing to build here — `/dev/paywall-preview` is already the design source and `/coach/paywall` was previously wired to mirror it. Just confirm both still render the same layout after the redirect changes.
+`recordSilentClubLead` in `src/lib/coach-org.functions.ts` writes to `organization_leads` with `source: "not_listed"` and the raw typed query. No new server function or migration needed.
 
 ## Out of scope
 
-- No pricing changes.
-- No changes to Stripe checkout, coupon logic, or the founding-coach free path.
-- No changes to the club search / invite lead capture flow.
-- Progress bar copy stays "Step N of 5" — paywall is its own screen, not counted as a step.
+- No changes to `JoinClubSheet` itself — the Settings path stays exactly as it is.
+- No changes to `joinOrganization` / `claimOrganizationInviteCode` semantics.
+- No pricing, plan tier, or founding-coach path changes.
+- No changes to the "greyed out individual plans when a club is chosen" visual — just wire it to the new org-selected state.
 
 ## Testing
 
-With David Wallace reset (already done):
-1. Sign in as David → should land on `/coach/paywall` (not `/coach/onboarding`).
-2. Enter code `WILSON` → Coach Pro checkout → complete with test card → returns to `/coach/onboarding` at Step 1 (profile), with sports picker unlimited (Coach Pro tier).
-3. Sign in as a fresh coach, pick "Coach" tier ($30/mo) → complete checkout → onboarding sport picker caps at 1 primary + S&C.
-4. Sign in as a fresh coach, enter a club code → onboarding starts at profile, unlimited sports, `handleFinish` routes to `/coach/roster`.
+1. Sign in as a fresh coach → land on `/coach/paywall`.
+2. In the club card, type a partial club name → results appear from `searchOrganizations`.
+3. Pick the club → chip appears, code field renders, individual plan cards grey out.
+4. Enter a valid invite code → Join succeeds → redirected into onboarding.
+5. Type a name that doesn't match → "Not listed" affordance → click it → toast confirms, `organization_leads` row inserted with the typed query, card collapses back.

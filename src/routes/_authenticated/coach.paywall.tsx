@@ -7,11 +7,13 @@ import { Sparkles, Building2, Check, ArrowLeft, Tag, Loader2 } from "lucide-reac
 import { EmbeddedCheckoutProvider, EmbeddedCheckout } from "@stripe/react-stripe-js";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Chip } from "@/components/ui/chip";
 import { cn } from "@/lib/utils";
 import { coachProfileQueryOptions } from "@/hooks/use-coach-profile";
 import {
   claimOrganizationInviteCode,
   clearOrganizationLink,
+  recordSilentClubLead,
 } from "@/lib/coach-org.functions";
 import { startCoachCheckout } from "@/lib/coach-checkout.functions";
 import { validatePromoCode } from "@/lib/promo-codes.functions";
@@ -19,6 +21,11 @@ import { getStripe, getStripeEnvironment } from "@/lib/stripe";
 import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
 import { supabase } from "@/integrations/supabase/client";
 import { FOUNDING_COACH_PROMO_CODE, isCoachPaywallEnabled } from "@/lib/paywall-flag";
+import {
+  OrgSearchCombobox,
+  type OrgOption,
+} from "@/components/onboarding/org-search-combobox";
+import { OrgCodeField } from "@/components/onboarding/org-code-field";
 
 type Tier = "coach" | "coach_pro";
 type Interval = "month" | "year";
@@ -80,6 +87,7 @@ function PaywallPage() {
   const qc = useQueryClient();
   const clearOrg = useServerFn(clearOrganizationLink);
   const claimClub = useServerFn(claimOrganizationInviteCode);
+  const recordLead = useServerFn(recordSilentClubLead);
   const checkoutFn = useServerFn(startCoachCheckout);
   const validateCode = useServerFn(validatePromoCode);
   const { checkout: checkoutStatus, tier: preselectedTier } = Route.useSearch();
@@ -93,10 +101,11 @@ function PaywallPage() {
   const [promoInput, setPromoInput] = useState("");
   const [promo, setPromo] = useState<PromoState>({ status: "idle" });
 
-  const [clubOpen, setClubOpen] = useState(false);
-  const [clubInput, setClubInput] = useState("");
+  const [clubOrg, setClubOrg] = useState<OrgOption | null>(null);
+  const [clubCode, setClubCode] = useState("");
+  const [clubCodeVerified, setClubCodeVerified] = useState(false);
   const [claimingClub, setClaimingClub] = useState(false);
-  const tiersDisabled = clubInput.trim().length > 0;
+  const tiersDisabled = clubOrg !== null;
 
   const entitlement = data?.profile.entitlement ?? "pending";
   const profilePromoCode = data?.profile.promoCode ?? null;
@@ -205,18 +214,43 @@ function PaywallPage() {
   };
 
   const joinClub = async () => {
-    const code = clubInput.trim().toUpperCase();
+    if (!clubOrg || !clubCodeVerified) return;
+    const code = clubCode.trim().toUpperCase();
     if (!code) return;
     setClaimingClub(true);
     try {
       await claimClub({ data: { code } });
       await qc.invalidateQueries({ queryKey: ["coach-profile"] });
-      toast.success("Joined club — your subscription is covered.");
+      toast.success(`Joined ${clubOrg.name} — your subscription is covered.`);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "That code isn't recognized.");
     } finally {
       setClaimingClub(false);
     }
+  };
+
+  const handleNotListed = async (typedQuery: string) => {
+    try {
+      await recordLead({
+        data: {
+          source: "not_listed",
+          typedQuery: typedQuery || undefined,
+        },
+      });
+    } catch {
+      /* silent — lead capture must never block the coach */
+    }
+    toast.success(
+      typedQuery
+        ? `Thanks — we'll reach out to "${typedQuery}".`
+        : "Thanks — we'll be in touch.",
+    );
+  };
+
+  const resetClub = () => {
+    setClubOrg(null);
+    setClubCode("");
+    setClubCodeVerified(false);
   };
 
   const options = useMemo(
@@ -269,7 +303,7 @@ function PaywallPage() {
           Pick a plan to get started. Cancel anytime.
         </p>
 
-        {/* 1. Club code */}
+        {/* 1. Club search + code */}
         <div className="mt-5 w-full rounded-xl border border-divider bg-elevated p-3">
           <div className="flex items-start gap-3">
             <Building2 className="mt-0.5 h-5 w-5 shrink-0 text-text-secondary" />
@@ -278,56 +312,63 @@ function PaywallPage() {
               <p className="mt-1 text-text-secondary">
                 If your academy or association is a Gradus partner, they can cover your subscription.
               </p>
-              {!clubOpen ? (
-                <button
-                  type="button"
-                  onClick={() => setClubOpen(true)}
-                  className="mt-2 inline-block text-accent-ink underline underline-offset-2"
-                >
-                  Enter club code →
-                </button>
-              ) : (
-                <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-start">
-                  <Input
-                    value={clubInput}
-                    onChange={(e) => setClubInput(e.target.value.toUpperCase().slice(0, 32))}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        void joinClub();
-                      }
+              <div className="mt-3 space-y-3">
+                {!clubOrg && (
+                  <OrgSearchCombobox
+                    selected={null}
+                    onSelect={(o) => {
+                      setClubOrg(o);
+                      setClubCode("");
+                      setClubCodeVerified(false);
                     }}
-                    placeholder="Club code"
-                    className="font-mono uppercase tracking-widest sm:flex-1"
-                    autoComplete="off"
-                    spellCheck={false}
+                    onNotListed={(q) => void handleNotListed(q)}
                   />
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => {
-                        setClubOpen(false);
-                        setClubInput("");
+                )}
+                {clubOrg && (
+                  <>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Chip tone="accent" size="small" caseSensitive>
+                        <Building2 className="h-3.5 w-3.5" />
+                        {clubOrg.name}
+                      </Chip>
+                      <button
+                        type="button"
+                        onClick={resetClub}
+                        className="text-xs text-text-tertiary underline-offset-2 hover:text-text-secondary hover:underline"
+                      >
+                        Change
+                      </button>
+                    </div>
+                    <OrgCodeField
+                      orgId={clubOrg.id}
+                      orgName={clubOrg.name}
+                      value={clubCode}
+                      onChange={(next, ok) => {
+                        setClubCode(next);
+                        setClubCodeVerified(ok);
                       }}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      onClick={joinClub}
-                      disabled={claimingClub || !clubInput.trim()}
-                    >
-                      {claimingClub ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Join"}
-                    </Button>
-                  </div>
-                </div>
-              )}
+                    />
+                    <div className="flex justify-end">
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={joinClub}
+                        disabled={claimingClub || !clubCodeVerified}
+                      >
+                        {claimingClub ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          `Join ${clubOrg.name}`
+                        )}
+                      </Button>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </div>
+
 
         {/* 2. Promo code CTA */}
         <div className="mt-4 w-full">
