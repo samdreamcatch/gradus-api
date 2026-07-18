@@ -39,6 +39,13 @@ interface Props {
   onAddCustom: (label: string) => { status: "added" | "selected-existing"; label: string };
   onRemoveCustom: (key: string) => void;
   allowCustom?: boolean;
+  /**
+   * Cap on primary sports the coach can pick. `strength_conditioning` (and any
+   * key in `alwaysAllowedSecondary`) is exempt. When the cap is reached,
+   * unselected non-exempt sports appear locked with an inline upgrade CTA.
+   */
+  maxPrimarySports?: number;
+  alwaysAllowedSecondary?: string[];
 }
 
 export function SportMultiselect({
@@ -48,12 +55,25 @@ export function SportMultiselect({
   onAddCustom,
   onRemoveCustom,
   allowCustom = true,
+  maxPrimarySports,
+  alwaysAllowedSecondary = DEFAULT_ALWAYS_ALLOWED_SECONDARY,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [customInput, setCustomInput] = useState("");
   const [hint, setHint] = useState<string | null>(null);
 
   const isSelected = (key: string) => selected.some((s) => s.key === key);
+  const isSecondaryOnly = (key: string) => alwaysAllowedSecondary.includes(key);
+  const primaryCount = selected.filter((s) => !isSecondaryOnly(s.key)).length;
+  const atCap =
+    typeof maxPrimarySports === "number" && primaryCount >= maxPrimarySports;
+  // Locked = would exceed the primary cap if added. Already-selected sports
+  // stay clickable so they can be removed.
+  const isLocked = (key: string) =>
+    atCap && !isSelected(key) && !isSecondaryOnly(key);
+  // Custom sports always count as primary; hide the input entirely when capped.
+  const showCustom = allowCustom && !atCap;
+
 
   const handleAdd = () => {
     const label = customInput.trim();
