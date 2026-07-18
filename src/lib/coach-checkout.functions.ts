@@ -52,27 +52,6 @@ export const startCoachCheckout = createServerFn({ method: "POST" })
       } = await supabase.auth.getUser();
       const email = user?.email ?? undefined;
 
-      // Duplicate guard: if this coach already has an active-ish subscription
-      // in Stripe, do NOT open a new checkout — direct them to use the
-      // tier-switch path (changeCoachSubscription) instead. This prevents the
-      // "two active subs on one customer" bug from any code path.
-      if (profile?.stripe_customer_id) {
-        const existing = await stripe.subscriptions.list({
-          customer: profile.stripe_customer_id,
-          status: "all",
-          limit: 20,
-        });
-        const activeish = existing.data.find((s) =>
-          ["active", "trialing", "past_due"].includes(s.status),
-        );
-        if (activeish) {
-          return {
-            error:
-              "You already have an active subscription. Use “Switch plan” instead of starting a new checkout.",
-          };
-        }
-      }
-
       // Resolve or create a Stripe customer scoped by userId metadata.
       let customerId = profile?.stripe_customer_id ?? undefined;
       if (!customerId) {
@@ -88,6 +67,33 @@ export const startCoachCheckout = createServerFn({ method: "POST" })
             metadata: { userId },
           });
           customerId = created.id;
+        }
+      }
+
+      if (customerId && profile && profile.stripe_customer_id !== customerId) {
+        await supabase
+          .from("coach_profiles")
+          .update({ stripe_customer_id: customerId, subscription_environment: env })
+          .eq("id", profile.id);
+      }
+
+      // Duplicate guard: after customer resolution, if this coach already has
+      // an active-ish subscription in Stripe, do NOT open a new checkout —
+      // direct them to use the tier-switch path instead.
+      if (customerId) {
+        const existing = await stripe.subscriptions.list({
+          customer: customerId,
+          status: "all",
+          limit: 20,
+        });
+        const activeish = existing.data.find((s) =>
+          ["active", "trialing", "past_due"].includes(s.status),
+        );
+        if (activeish) {
+          return {
+            error:
+              "You already have an active subscription. Use “Switch plan” instead of starting a new checkout.",
+          };
         }
       }
 
@@ -240,6 +246,20 @@ export const createCoachBillingPortalSession = createServerFn({ method: "POST" }
         : data.environment;
     try {
       const stripe = createStripeClient(env);
+      const subscriptions = await stripe.subscriptions.list({
+        customer: profile.stripe_customer_id,
+        status: "all",
+        limit: 20,
+      });
+      const activeish = subscriptions.data.filter((sub) =>
+        ["active", "trialing", "past_due"].includes(sub.status),
+      );
+      if (activeish.length > 1) {
+        return {
+          error:
+            "We found more than one active subscription on this account. Please contact support before managing billing.",
+        };
+      }
       const portal = await stripe.billingPortal.sessions.create({
         customer: profile.stripe_customer_id,
         return_url: data.returnUrl,

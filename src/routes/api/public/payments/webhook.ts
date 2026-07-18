@@ -49,11 +49,30 @@ async function syncSubscription(subscription: any, env: StripeEnv) {
   // Preserve club_covered / promo_free entitlements — don't overwrite them.
   const { data: existing } = await supabase
     .from("coach_profiles")
-    .select("entitlement")
+    .select("entitlement, stripe_subscription_id, subscription_status, subscription_tier")
     .eq("user_id", userId)
     .maybeSingle();
   const currentEnt = (existing as any)?.entitlement as string | undefined;
   const preserve = currentEnt === "club_covered" || currentEnt === "promo_free";
+  const currentSubId = (existing as any)?.stripe_subscription_id as string | undefined;
+  const currentStatus = (existing as any)?.subscription_status as string | undefined;
+  const currentTier = (existing as any)?.subscription_tier as string | undefined;
+  const currentIsActive = isActive(currentStatus);
+  const incomingIsActive = isActive(subscription.status);
+  const tierRank: Record<string, number> = { coach: 1, coach_pro: 2 };
+
+  // If historical duplicate subscriptions emit webhooks, don't let an older
+  // lower-tier subscription overwrite the active subscription we already track.
+  if (currentSubId && currentSubId !== subscription.id) {
+    if (currentIsActive && !incomingIsActive) return;
+    if (
+      currentIsActive &&
+      incomingIsActive &&
+      (tierRank[tier ?? ""] ?? 0) <= (tierRank[currentTier ?? ""] ?? 0)
+    ) {
+      return;
+    }
+  }
 
   const nextEnt = preserve
     ? currentEnt
@@ -88,11 +107,13 @@ async function handleSubscriptionDeleted(subscription: any, _env: StripeEnv) {
 
   const { data: existing } = await supabase
     .from("coach_profiles")
-    .select("entitlement")
+    .select("entitlement, stripe_subscription_id")
     .eq("user_id", userId)
     .maybeSingle();
   const currentEnt = (existing as any)?.entitlement as string | undefined;
   const preserve = currentEnt === "club_covered" || currentEnt === "promo_free";
+  const currentSubId = (existing as any)?.stripe_subscription_id as string | undefined;
+  if (currentSubId && currentSubId !== subscription.id) return;
 
   await supabase
     .from("coach_profiles")
