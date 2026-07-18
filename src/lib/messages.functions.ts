@@ -229,14 +229,14 @@ export const getRoom = createServerFn({ method: "GET" })
     }
 
     const planIds = Array.from(new Set(rows.map((m) => m.plan_id).filter(Boolean) as string[]));
-    const plansById = new Map<string, { id: string; title: string }>();
+    const plansById = new Map<string, { id: string; title: string; coachId: string | null }>();
     if (planIds.length > 0) {
       const { data: planRows } = await supabaseAdmin
         .from("plans")
-        .select("id, title")
+        .select("id, title, coach_id")
         .in("id", planIds);
       for (const p of planRows ?? []) {
-        plansById.set(p.id, { id: p.id, title: p.title || "Untitled plan" });
+        plansById.set(p.id, { id: p.id, title: p.title || "Untitled plan", coachId: p.coach_id ?? null });
       }
     }
 
