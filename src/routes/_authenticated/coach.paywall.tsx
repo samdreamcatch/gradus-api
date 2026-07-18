@@ -1,7 +1,7 @@
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Sparkles, Building2, Check, ArrowLeft, Tag, Loader2 } from "lucide-react";
 import { EmbeddedCheckoutProvider, EmbeddedCheckout } from "@stripe/react-stripe-js";
@@ -106,6 +106,7 @@ function PaywallPage() {
   const [clubCode, setClubCode] = useState("");
   const [clubCodeVerified, setClubCodeVerified] = useState(false);
   const [claimingClub, setClaimingClub] = useState(false);
+  const preselectedActionStartedRef = useRef(false);
   const tiersDisabled = clubOrg !== null;
 
   const entitlement = data?.profile.entitlement ?? "pending";
@@ -234,7 +235,13 @@ function PaywallPage() {
   );
 
   useEffect(() => {
-    if (preselectedTier === "coach_pro" && !clientSecret && !loading) {
+    if (
+      preselectedTier === "coach_pro" &&
+      !clientSecret &&
+      !loading &&
+      !preselectedActionStartedRef.current
+    ) {
+      preselectedActionStartedRef.current = true;
       void handleTierAction("coach_pro");
     }
   }, [clientSecret, handleTierAction, loading, preselectedTier]);
