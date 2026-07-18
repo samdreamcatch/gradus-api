@@ -289,6 +289,7 @@ function SportsDisclosure({
             onToggle={(s) => toggleSport(s.key as SportKey)}
             onAddCustom={() => ({ status: "added", label: "" })}
             onRemoveCustom={() => {}}
+            maxPrimarySports={maxPrimarySports}
           />
         </div>
 
