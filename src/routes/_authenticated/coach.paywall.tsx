@@ -240,18 +240,12 @@ function PaywallPage() {
     [hasActiveSub, switchTier, startCheckout],
   );
 
-  useEffect(() => {
-    if (
-      preselectedTier === "coach_pro" &&
-      data?.profile &&
-      !clientSecret &&
-      !loading &&
-      !preselectedActionStartedRef.current
-    ) {
-      preselectedActionStartedRef.current = true;
-      void handleTierAction("coach_pro");
-    }
-  }, [clientSecret, data?.profile, handleTierAction, loading, preselectedTier]);
+  // Note: `?tier=coach_pro` only preselects visually. We intentionally do NOT
+  // auto-trigger switchTier/startCheckout — that would silently change an
+  // entitled coach's Stripe subscription on page load. The coach must click
+  // the tier's action button to commit.
+
+
 
   const applyPromo = async () => {
     const code = promoInput.trim().toUpperCase();
