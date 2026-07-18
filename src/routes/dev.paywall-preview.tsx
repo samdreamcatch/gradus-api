@@ -124,6 +124,8 @@ function PaywallPreview() {
     [isFoundingCoach, hasOrg],
   );
 
+  if (!allowed) return null;
+
   return (
     <div className="min-h-dvh">
       <PaymentTestModeBanner />
