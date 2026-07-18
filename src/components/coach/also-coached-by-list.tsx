@@ -24,6 +24,7 @@ export function AlsoCoachedByList({
   locked?: boolean;
 }) {
   if (coaches.length === 0) return null;
+  const navigate = useNavigate();
   return (
     <section>
       <h3 className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
