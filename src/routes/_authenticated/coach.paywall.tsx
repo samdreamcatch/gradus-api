@@ -87,6 +87,7 @@ function PaywallPage() {
   const qc = useQueryClient();
   const clearOrg = useServerFn(clearOrganizationLink);
   const claimClub = useServerFn(claimOrganizationInviteCode);
+  const recordLead = useServerFn(recordSilentClubLead);
   const checkoutFn = useServerFn(startCoachCheckout);
   const validateCode = useServerFn(validatePromoCode);
   const { checkout: checkoutStatus, tier: preselectedTier } = Route.useSearch();
@@ -100,10 +101,11 @@ function PaywallPage() {
   const [promoInput, setPromoInput] = useState("");
   const [promo, setPromo] = useState<PromoState>({ status: "idle" });
 
-  const [clubOpen, setClubOpen] = useState(false);
-  const [clubInput, setClubInput] = useState("");
+  const [clubOrg, setClubOrg] = useState<OrgOption | null>(null);
+  const [clubCode, setClubCode] = useState("");
+  const [clubCodeVerified, setClubCodeVerified] = useState(false);
   const [claimingClub, setClaimingClub] = useState(false);
-  const tiersDisabled = clubInput.trim().length > 0;
+  const tiersDisabled = clubOrg !== null;
 
   const entitlement = data?.profile.entitlement ?? "pending";
   const profilePromoCode = data?.profile.promoCode ?? null;
