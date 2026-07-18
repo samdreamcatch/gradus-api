@@ -115,12 +115,16 @@ function PaywallPage() {
   const isEntitled =
     entitlement === "paid" || entitlement === "promo_free" || entitlement === "club_covered";
 
+  const onboardedAt = data?.profile.onboardedAt ?? null;
+
   useEffect(() => {
     if (!isEntitled) return;
     if (isFoundingCoach && preselectedTier === "coach_pro") return;
     if (isFoundingCoach && !preselectedTier) return;
-    navigate({ to: "/coach/roster", replace: true });
-  }, [isEntitled, isFoundingCoach, preselectedTier, navigate]);
+    // Fresh coaches: after activating a plan, continue into onboarding.
+    // Returning coaches (already onboarded): go to the roster.
+    navigate({ to: onboardedAt ? "/coach/roster" : "/coach/onboarding", replace: true });
+  }, [isEntitled, isFoundingCoach, preselectedTier, onboardedAt, navigate]);
 
   const handleSignOut = async () => {
     await qc.cancelQueries();
