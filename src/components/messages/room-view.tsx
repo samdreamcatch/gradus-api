@@ -237,18 +237,35 @@ export function RoomView({ roomId, viewerRole }: { roomId: string; viewerRole?: 
 
                     ) : null}
                     {m.plan ? (
-                      <Link
-                        to={planHrefForRole(room.myRole, m.plan.id)}
-                        className={cn(
-                          "mb-1 inline-flex max-w-[78%] items-center gap-1.5 rounded-full bg-accent/15 px-2.5 py-1 text-caption font-black uppercase tracking-widest text-accent-ink ring-1 ring-accent/30 hover:bg-accent/25",
-                        )}
-                      >
-
-                        <ClipboardList className="size-3" />
-                        <span className="truncate normal-case tracking-normal text-xs font-bold">
-                          {m.plan.title}
-                        </span>
-                      </Link>
+                      room.myRole === "coach" &&
+                      m.plan.coachId &&
+                      room.myCoachId &&
+                      m.plan.coachId !== room.myCoachId ? (
+                        <button
+                          type="button"
+                          onClick={() => setOtherPlanId(m.plan!.id)}
+                          className={cn(
+                            "mb-1 inline-flex max-w-[78%] items-center gap-1.5 rounded-full bg-accent/15 px-2.5 py-1 text-caption font-black uppercase tracking-widest text-accent-ink ring-1 ring-accent/30 press",
+                          )}
+                        >
+                          <ClipboardList className="size-3" />
+                          <span className="truncate normal-case tracking-normal text-xs font-bold">
+                            {m.plan.title}
+                          </span>
+                        </button>
+                      ) : (
+                        <Link
+                          to={planHrefForRole(room.myRole, m.plan.id)}
+                          className={cn(
+                            "mb-1 inline-flex max-w-[78%] items-center gap-1.5 rounded-full bg-accent/15 px-2.5 py-1 text-caption font-black uppercase tracking-widest text-accent-ink ring-1 ring-accent/30 hover:bg-accent/25",
+                          )}
+                        >
+                          <ClipboardList className="size-3" />
+                          <span className="truncate normal-case tracking-normal text-xs font-bold">
+                            {m.plan.title}
+                          </span>
+                        </Link>
+                      )
                     ) : null}
                     <div
                       className={cn(
