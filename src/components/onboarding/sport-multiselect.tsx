@@ -176,7 +176,7 @@ export function SportMultiselect({
                         search={{ tier: "coach_pro" }}
                         className="font-semibold text-accent-ink underline"
                       >
-                        Upgrade to Coach Pro for more sports →
+                        Choose Coach Pro for more sports →
                       </Link>
                     </div>
                   </div>
