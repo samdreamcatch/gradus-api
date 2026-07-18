@@ -44,7 +44,7 @@ export type MessageDTO = {
   durationSeconds: number | null;
   createdAt: string;
   readBy: { userId: string; readAt: string }[];
-  plan: { id: string; title: string } | null;
+  plan: { id: string; title: string; coachId: string | null } | null;
 };
 
 export type RoomDetail = {
@@ -56,6 +56,8 @@ export type RoomDetail = {
     participants: RoomParticipant[];
     myRole: RoleInRoom;
     myUserId: string;
+    /** The viewer's coach profile id, when the viewer is a coach. */
+    myCoachId: string | null;
   };
   messages: MessageDTO[];
 };

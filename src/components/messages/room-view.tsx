@@ -15,6 +15,8 @@ import {
   type RoleInRoom,
   type RoomKind,
 } from "@/lib/messages.functions";
+import { getOtherCoachPlanForMessage } from "@/lib/coach-athlete-detail.functions";
+import { OtherCoachPlansSheet } from "@/components/coach/other-coach-plans-sheet";
 import { voiceTranscribe } from "@/lib/voice.functions";
 import { useVoiceCapture } from "@/hooks/use-voice-capture";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -122,6 +124,8 @@ export function RoomView({ roomId, viewerRole }: { roomId: string; viewerRole?: 
   const sendFn = useServerFn(sendMessage);
   const markRead = useServerFn(markRoomRead);
   const queryClient = useQueryClient();
+  const fetchOtherPlan = useServerFn(getOtherCoachPlanForMessage);
+  const [otherPlanId, setOtherPlanId] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["message-room", viewerRole ?? "default", roomId],
@@ -130,6 +134,12 @@ export function RoomView({ roomId, viewerRole }: { roomId: string; viewerRole?: 
 
   const messages: MessageDTO[] = useMemo(() => data?.messages ?? [], [data]);
   const room = data?.room;
+
+  const { data: otherPlanData } = useQuery({
+    queryKey: ["other-coach-plan-for-message", otherPlanId],
+    queryFn: () => fetchOtherPlan({ data: { planId: otherPlanId! } }),
+    enabled: !!otherPlanId,
+  });
 
   const scrollerRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
@@ -227,18 +237,35 @@ export function RoomView({ roomId, viewerRole }: { roomId: string; viewerRole?: 
 
                     ) : null}
                     {m.plan ? (
-                      <Link
-                        to={planHrefForRole(room.myRole, m.plan.id)}
-                        className={cn(
-                          "mb-1 inline-flex max-w-[78%] items-center gap-1.5 rounded-full bg-accent/15 px-2.5 py-1 text-caption font-black uppercase tracking-widest text-accent-ink ring-1 ring-accent/30 hover:bg-accent/25",
-                        )}
-                      >
-
-                        <ClipboardList className="size-3" />
-                        <span className="truncate normal-case tracking-normal text-xs font-bold">
-                          {m.plan.title}
-                        </span>
-                      </Link>
+                      room.myRole === "coach" &&
+                      m.plan.coachId &&
+                      room.myCoachId &&
+                      m.plan.coachId !== room.myCoachId ? (
+                        <button
+                          type="button"
+                          onClick={() => setOtherPlanId(m.plan!.id)}
+                          className={cn(
+                            "mb-1 inline-flex max-w-[78%] items-center gap-1.5 rounded-full bg-accent/15 px-2.5 py-1 text-caption font-black uppercase tracking-widest text-accent-ink ring-1 ring-accent/30 press",
+                          )}
+                        >
+                          <ClipboardList className="size-3" />
+                          <span className="truncate normal-case tracking-normal text-xs font-bold">
+                            {m.plan.title}
+                          </span>
+                        </button>
+                      ) : (
+                        <Link
+                          to={planHrefForRole(room.myRole, m.plan.id)}
+                          className={cn(
+                            "mb-1 inline-flex max-w-[78%] items-center gap-1.5 rounded-full bg-accent/15 px-2.5 py-1 text-caption font-black uppercase tracking-widest text-accent-ink ring-1 ring-accent/30 hover:bg-accent/25",
+                          )}
+                        >
+                          <ClipboardList className="size-3" />
+                          <span className="truncate normal-case tracking-normal text-xs font-bold">
+                            {m.plan.title}
+                          </span>
+                        </Link>
+                      )
                     ) : null}
                     <div
                       className={cn(
@@ -280,6 +307,13 @@ export function RoomView({ roomId, viewerRole }: { roomId: string; viewerRole?: 
         viewerRole={viewerRole}
         disabled={sendTextMutation.isPending}
         onSendText={(body, planId) => sendTextMutation.mutate({ body, planId })}
+      />
+      <OtherCoachPlansSheet
+        coach={otherPlanData?.coach ?? null}
+        athleteFirstName={otherPlanData?.athleteFirstName ?? ""}
+        onOpenChange={(open) => {
+          if (!open) setOtherPlanId(null);
+        }}
       />
     </div>
   );
