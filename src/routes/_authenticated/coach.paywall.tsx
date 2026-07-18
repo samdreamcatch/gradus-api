@@ -292,7 +292,7 @@ function PaywallPage() {
   const proCtaLabel =
     promo.status === "valid" && proMonths > 0
       ? `Start ${proMonths} month${proMonths === 1 ? "" : "s"} free`
-      : "Subscribe";
+      : "Upgrade";
 
   return (
     <div className="min-h-dvh">
