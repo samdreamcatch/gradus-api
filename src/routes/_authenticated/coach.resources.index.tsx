@@ -269,25 +269,8 @@ function UploadButton({
     );
   }
   return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          aria-label="Upload gated to Pro & Club"
-          className="flex h-8 shrink-0 items-center gap-1.5 rounded-full border border-divider bg-card px-3 text-xs font-bold text-text-tertiary"
-        >
-          <Lock className="h-3.5 w-3.5" aria-hidden />
-          Add
-        </button>
-      </PopoverTrigger>
-      <PopoverContent align="end" className="w-64">
-        <p className="text-xs font-bold uppercase tracking-wide text-text-secondary">
-          PRO & CLUB FEATURE
-        </p>
-        <p className="mt-1 text-sm text-text-primary">
-          Upgrade to publish custom PDFs, images, and links to your roster.
-        </p>
-      </PopoverContent>
-    </Popover>
+    <span className="inline-flex shrink-0 items-center rounded-full bg-elevated px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-text-secondary">
+      UPGRADE TO EDIT LIBRARY
+    </span>
   );
 }
