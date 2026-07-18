@@ -67,6 +67,17 @@ export const getOrCreateShareToken = createServerFn({ method: "POST" })
       .maybeSingle();
     if (coach && coach.id === plan.coach_id) authorized = true;
 
+    // Coaches who share the plan's athlete can also share the plan.
+    if (!authorized && coach && plan.athlete_id) {
+      const { data: link } = await supabase
+        .from("coach_athletes")
+        .select("coach_id")
+        .eq("coach_id", coach.id)
+        .eq("athlete_id", plan.athlete_id)
+        .maybeSingle();
+      if (link) authorized = true;
+    }
+
     if (!authorized && plan.athlete_id) {
       const { data: athlete } = await supabase
         .from("athletes")
