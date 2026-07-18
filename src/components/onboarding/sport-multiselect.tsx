@@ -114,7 +114,11 @@ export function SportMultiselect({
             <CommandList>
               <CommandEmpty>No sports.</CommandEmpty>
               <CommandGroup>
-                {SPORTS.map((s) => {
+                {[...SPORTS].sort((a, b) => {
+                  if (a.key === "strength_conditioning") return -1;
+                  if (b.key === "strength_conditioning") return 1;
+                  return 0;
+                }).map((s) => {
                   const sel = isSelected(s.key);
                   const locked = isLocked(s.key);
                   return (
