@@ -237,6 +237,7 @@ function PaywallPage() {
   useEffect(() => {
     if (
       preselectedTier === "coach_pro" &&
+      data?.profile &&
       !clientSecret &&
       !loading &&
       !preselectedActionStartedRef.current
@@ -244,7 +245,7 @@ function PaywallPage() {
       preselectedActionStartedRef.current = true;
       void handleTierAction("coach_pro");
     }
-  }, [clientSecret, handleTierAction, loading, preselectedTier]);
+  }, [clientSecret, data?.profile, handleTierAction, loading, preselectedTier]);
 
   const applyPromo = async () => {
     const code = promoInput.trim().toUpperCase();
