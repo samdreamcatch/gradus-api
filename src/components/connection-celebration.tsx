@@ -18,6 +18,7 @@ import {
   type CelebrationGroup,
   type CelebrationRole,
 } from "@/lib/connection-celebration.functions";
+import { useAuthReady } from "@/hooks/use-auth-ready";
 
 interface ConnectionCelebrationProps {
   role: Extract<CelebrationRole, "coach" | "parent" | "adult-athlete">;
@@ -34,11 +35,13 @@ export function ConnectionCelebration({ role }: ConnectionCelebrationProps) {
   const fetchPending = useServerFn(getPendingConnectionCelebrations);
   const ack = useServerFn(acknowledgeConnection);
 
+  const { user, isReady } = useAuthReady();
   const { data } = useQuery({
     queryKey: ["connection-celebrations", role],
     queryFn: () => fetchPending(),
     staleTime: 0,
     refetchOnWindowFocus: false,
+    enabled: isReady && !!user,
   });
 
   const ackMutation = useMutation({
