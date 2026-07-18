@@ -1,43 +1,22 @@
-# Align /coach/resources with /parent/resources
+## Problem
 
-## Goal
-`/coach/resources` should be visually and structurally identical to `/parent/resources` — same header, segmented toggle, sport select, search input, grouped `ResourceList`, `ResourceSheet`, and empty states. The coach-only capability (uploads) becomes a small, unobtrusive affordance layered on top rather than a distinct layout.
+`/dev/paywall-preview` gates on `import.meta.env.DEV`, which is only true during local `vite dev`. In the Lovable preview build (Vite runs in production mode), `DEV` is `false`, so `beforeLoad` throws `redirect({ to: "/" })`. That bounces to `/coach` → auth guard → `/login`, which is exactly what you're seeing.
 
-## What changes
+The existing `DevToolsMount` already solves this same problem for the DEV button by additionally allowing preview hostnames (`id-preview--*.lovable.app`, `*.lovableproject.com`, `localhost`).
 
-### 1. Rewrite `src/routes/_authenticated/coach.resources.index.tsx`
-Copy the structure of `parent.resources.index.tsx` verbatim (same JSX shell, same class names, same components, same order):
+## Fix
 
-- `PageTitle "Resources"`
-- `FilterBar` with `SegmentedToggle` — options: **Library**, **Ask Gradus**, **Saved** (same three tabs as parent). Sport `Select` appears only when `sports.length > 1`, styled identically (`h-8 rounded-full ... text-xs font-bold`).
-- Library view: same `Search` input, same grouped rendering — "From your coaches" (the coach's own uploads) above "Gradus library", both rendered by the shared `ResourceList` sub-component and opened via the shared `ResourceSheet`.
-- Ask Gradus and Saved views: reuse `AskGradusCard` and `SavedAnswersList` — extract them from `parent.resources.index.tsx` to keep parity.
-- Same empty states, same loading copy, same `mx-auto max-w-2xl px-4 pt-6 pb-24` shell.
-- Bottom nav swapped to `CoachBottomNav`.
+1. Add a small shared helper `isDevOrPreviewHost()` in `src/lib/paywall-flag.ts` (or a new `src/lib/preview-env.ts`) that returns true when:
+   - `import.meta.env.DEV` is true, OR
+   - `window.location.hostname` starts with `id-preview--`, ends with `.lovableproject.com`, or is `localhost` / `127.0.0.1`.
+   - SSR-safe: if `window` is undefined, fall back to `import.meta.env.DEV`.
 
-### 2. Extract shared sub-components
-Move `AskGradusCard`, `SavedAnswersList`, `ResourceList`, `ResourceSheet`, and `KindIcon` out of `parent.resources.index.tsx` into a new `src/components/resources/` module so both pages import the exact same code. Parent page becomes a thin wrapper; coach page imports the same primitives. This guarantees visual parity going forward.
+2. Update `src/routes/dev.paywall-preview.tsx`:
+   - Replace the `beforeLoad` DEV check with the new helper.
+   - Since `beforeLoad` can run during SSR (no `window`), do the hostname check inside the component with a `useEffect` + state gate instead — mirror the `PreviewOnlyDevTools` pattern: render nothing until the client confirms it's a preview/dev host, then render the preview UI. Keep a `beforeLoad` guard that only redirects when we're certain we're on production (`import.meta.env.PROD` AND no `window`, i.e. SSR of prod). Simpler: remove `beforeLoad` entirely and do the gate client-side in the component, redirecting via `useNavigate` on prod hosts.
 
-### 3. Unify the data shape
-Extend `listCoachResources` in `src/lib/coach-resources.functions.ts` to return the same `ResourceDTO[]` shape as `getParentResources` (single `resources` array with `source: 'coach' | 'library'`), so the coach page can feed the shared `ResourceList` with no branching. Keep `canUpload` and `effectiveTier` on the DTO for the upload affordance.
+3. No changes to any other route, no auth changes, no changes to `/coach/*`. This is preview-only and won't affect production hosts (`gradus.training`, `gradustraining.lovable.app`).
 
-### 4. Subtle upload affordance (coach-only)
-Instead of the current large dashed "Add a resource" card, add a small **+ icon button** at the right edge of the `FilterBar` row (aligned with the segmented toggle), sized to match the sport Select pill (`h-8 rounded-full`, `bg-card border border-divider`, accent icon).
+## Result
 
-- **Pro / Club:** button is enabled and opens `UploadResourceSheet`. Also render a small trailing "Delete" affordance on the coach's own rows inside `ResourceList` (only when the row is `source: 'coach'` **and** the viewer is the owning coach — pass an `onDelete` prop).
-- **Coach (free):** button renders in a locked/disabled state with a `Lock` icon and a small "Pro & Club" pill in a `Popover` explaining the gate — reuses the same pattern as `also-coached-by-list`'s locked state. No large upsell card on the page.
-
-Everything else on the coach page looks pixel-identical to the parent page.
-
-## Technical details
-
-- New files: `src/components/resources/ask-gradus-card.tsx`, `saved-answers-list.tsx`, `resource-list.tsx`, `resource-sheet.tsx`, `kind-icon.tsx` (moved from parent route). No behavior change for the parent route.
-- `src/lib/coach-resources.functions.ts`: reshape `CoachResourcesDTO.resources` to match `ResourceDTO` (add `source`, `sports[]`, `coachName`, `externalUrl`); keep `canUpload` and `effectiveTier`.
-- `src/routes/_authenticated/coach.resources.index.tsx`: full rewrite based on parent route.
-- `src/components/coach/upload-resource-sheet.tsx`: no changes.
-- No database, RLS, or server-fn security changes.
-
-## Out of scope
-- No changes to Ask Gradus or Saved Answers behavior.
-- No changes to storage policies or upload validation.
-- No changes to the parent route's UX (only refactor of internal imports).
+`/dev/paywall-preview` loads directly in the Lovable preview iframe without triggering the auth redirect chain, while still being blocked on the published production domain.

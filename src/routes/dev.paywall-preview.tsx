@@ -1,5 +1,5 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
 import { Sparkles, Building2, Check, Tag, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,13 +47,25 @@ const FEATURES: Record<Tier, string[]> = {
 };
 
 export const Route = createFileRoute("/dev/paywall-preview")({
-  beforeLoad: () => {
-    if (!import.meta.env.DEV) throw redirect({ to: "/" });
-  },
   component: PaywallPreview,
 });
 
 function PaywallPreview() {
+  const navigate = useNavigate();
+  const [allowed, setAllowed] = useState(false);
+
+  useEffect(() => {
+    const host = window.location.hostname;
+    const isPreview =
+      import.meta.env.DEV ||
+      host.startsWith("id-preview--") ||
+      host.endsWith(".lovableproject.com") ||
+      host === "localhost" ||
+      host === "127.0.0.1";
+    if (isPreview) setAllowed(true);
+    else void navigate({ to: "/" });
+  }, [navigate]);
+
   const [interval, setInterval] = useState<Interval>("year");
   const [isFoundingCoach, setIsFoundingCoach] = useState(false);
   const [hasOrg, setHasOrg] = useState(false);
@@ -111,6 +123,8 @@ function PaywallPreview() {
     ),
     [isFoundingCoach, hasOrg],
   );
+
+  if (!allowed) return null;
 
   return (
     <div className="min-h-dvh">
