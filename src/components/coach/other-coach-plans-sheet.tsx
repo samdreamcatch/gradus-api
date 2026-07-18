@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, MessageCircle } from "lucide-react";
+import { MessageCoachAboutPlanDialog } from "@/components/plans/message-coach-about-plan-dialog";
 import {
   Sheet,
   SheetContent,
