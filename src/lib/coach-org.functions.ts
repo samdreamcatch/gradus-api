@@ -501,20 +501,43 @@ export const clearOrganizationLink = createServerFn({ method: "POST" })
     const supabase = context.supabase as Client;
     const coach = await supabase
       .from("coach_profiles")
-      .select("id, entitlement")
+      .select("id, entitlement, promo_code, stripe_customer_id")
       .eq("user_id", context.userId)
       .maybeSingle();
     if (coach.error) dbError(coach.error);
     if (!coach.data) throw new Error("Coach profile missing.");
-    const nextEntitlement =
-      coach.data.entitlement === "club_covered" ? "pending" : coach.data.entitlement;
+    const wasClubCovered = coach.data.entitlement === "club_covered";
+    const nextEntitlement = wasClubCovered ? "pending" : coach.data.entitlement;
+
+    // Auto-grant WELCOME_BACK to coaches who leave a club plan without ever
+    // having paid (no Stripe customer) and no existing personal promo code.
+    // The paywall pre-fills it; Coach Pro only, card required, 3 months free.
+    let stashPromo: string | null = null;
+    if (
+      wasClubCovered &&
+      !coach.data.promo_code &&
+      !coach.data.stripe_customer_id
+    ) {
+      const promo = await supabase
+        .from("promo_codes")
+        .select("code, active")
+        .eq("code", "WELCOME_BACK")
+        .maybeSingle();
+      if (promo.data?.active) stashPromo = "WELCOME_BACK";
+    }
+
     const upd = await supabase
       .from("coach_profiles")
-      .update({ organization_id: null, entitlement: nextEntitlement })
+      .update({
+        organization_id: null,
+        entitlement: nextEntitlement,
+        ...(stashPromo && { promo_code: stashPromo }),
+      })
       .eq("id", coach.data.id);
     if (upd.error) dbError(upd.error);
-    return { ok: true };
+    return { ok: true, welcomeBackGranted: stashPromo === "WELCOME_BACK" };
   });
+
 
 // ---------- Admin CRUD ----------
 
