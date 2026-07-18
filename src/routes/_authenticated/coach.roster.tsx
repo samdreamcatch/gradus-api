@@ -203,24 +203,21 @@ function RosterPage() {
           <FirstPlanBanner />
 
           {rosterFull ? (
-            <div className="mt-3 rounded-lg border border-divider bg-elevated p-3">
+            <div className="mt-3 flex items-center justify-between gap-3 rounded-lg border border-divider bg-elevated px-3 py-2">
               <div className="text-sm font-bold text-text-primary">
                 Your athlete roster is full — {athletes.length} / {athleteLimit}
               </div>
-              <div className="mt-2 flex items-center justify-end gap-3">
-
-                <Button
-                  size="sm"
-                  variant={coachProAvailable ? "default" : "outline"}
-                  disabled={!coachProAvailable}
-                  onClick={() =>
-                    navigate({ to: "/coach/paywall", search: { tier: "coach_pro" } })
-                  }
-                  className="shrink-0"
-                >
-                  {coachProAvailable ? "Upgrade" : "Upgrade · Soon"}
-                </Button>
-              </div>
+              <Button
+                size="sm"
+                variant={coachProAvailable ? "default" : "outline"}
+                disabled={!coachProAvailable}
+                onClick={() =>
+                  navigate({ to: "/coach/paywall", search: { tier: "coach_pro" } })
+                }
+                className="shrink-0"
+              >
+                {coachProAvailable ? "Upgrade" : "Upgrade · Soon"}
+              </Button>
             </div>
           ) : null}
 
