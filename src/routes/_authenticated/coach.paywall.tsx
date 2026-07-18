@@ -389,6 +389,8 @@ function PaywallPage() {
             </div>
           </div>
         </div>
+        )}
+
 
 
         {/* 2. Promo code CTA */}
