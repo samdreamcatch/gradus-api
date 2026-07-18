@@ -161,7 +161,28 @@ export function SportMultiselect({
                   );
                 })}
               </CommandGroup>
-              {allowCustom && (
+              {atCap && (
+                <>
+                  <CommandSeparator />
+                  <div className="flex items-start gap-2 px-3 py-2.5 text-xs text-text-secondary">
+                    <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                    <div className="space-y-1">
+                      <p>
+                        Coach plan includes one sport (plus Strength &
+                        Conditioning).
+                      </p>
+                      <Link
+                        to="/coach/paywall"
+                        search={{ tier: "coach_pro" }}
+                        className="font-semibold text-accent-ink underline"
+                      >
+                        Upgrade to Coach Pro for more sports →
+                      </Link>
+                    </div>
+                  </div>
+                </>
+              )}
+              {showCustom && (
                 <>
                   <CommandSeparator />
                   <div className="p-2">
