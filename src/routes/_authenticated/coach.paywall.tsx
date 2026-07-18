@@ -124,16 +124,21 @@ function PaywallPage() {
   const isEntitled =
     entitlement === "paid" || entitlement === "promo_free" || entitlement === "club_covered";
 
+  const currentTier = data?.profile.effectiveTier ?? null;
+  // Explicit upgrade intent: coach clicked an "Upgrade" affordance elsewhere.
+  const isUpgradeIntent = Boolean(preselectedTier);
+
   const onboardedAt = data?.profile.onboardedAt ?? null;
 
   useEffect(() => {
     if (!isEntitled) return;
-    if (isFoundingCoach && preselectedTier === "coach_pro") return;
-    if (isFoundingCoach && !preselectedTier) return;
-    // Fresh coaches: after activating a plan, continue into onboarding.
-    // Returning coaches (already onboarded): go to the roster.
+    // Founding coaches stay to browse Coach Pro upgrade.
+    if (isFoundingCoach) return;
+    // Any coach who explicitly clicked "Upgrade" stays on the paywall.
+    if (isUpgradeIntent) return;
+    // Otherwise: entitled coaches don't need the paywall.
     navigate({ to: onboardedAt ? "/coach/roster" : "/coach/onboarding", replace: true });
-  }, [isEntitled, isFoundingCoach, preselectedTier, onboardedAt, navigate]);
+  }, [isEntitled, isFoundingCoach, isUpgradeIntent, onboardedAt, navigate]);
 
   const handleSignOut = async () => {
     await qc.cancelQueries();
