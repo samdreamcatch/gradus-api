@@ -163,10 +163,10 @@ function JoinClubBody({
 
   const cancellationNote = hasPaidSubscription
     ? paidInterval === "year"
-      ? "Your annual Coach plan will be canceled immediately and you'll be refunded for the unused months."
+      ? "Your annual individual billing plan will be canceled immediately and you'll be refunded for the unused months."
       : paidInterval === "month"
-        ? "Your Coach plan will be canceled at the end of the current month — no future charges."
-        : "Your Coach plan will be canceled automatically. Monthly plans stop renewing at the end of the current cycle; annual plans get a prorated refund for unused months."
+        ? "Your individual billing plan will be canceled at the end of the current month — no future charges."
+        : "Your individual billing plan will be canceled automatically. Monthly plans stop renewing at the end of the current cycle; annual plans get a prorated refund for unused months."
     : null;
 
   return (
