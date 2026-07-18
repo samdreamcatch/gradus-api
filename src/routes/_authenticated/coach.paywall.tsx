@@ -146,6 +146,37 @@ function PaywallPage() {
     navigate({ to: onboardedAt ? "/coach/roster" : "/coach/onboarding", replace: true });
   }, [isEntitled, isFoundingCoach, isUpgradeIntent, manageIntent, onboardedAt, navigate]);
 
+  // Auto-apply WELCOME_BACK when the coach was granted it on leaving a club.
+  // Pre-fills the promo input, opens the section, and validates in the
+  // background so Coach Pro shows the 3-months-free discount immediately.
+  const welcomeBackAutoAppliedRef = useState({ done: false })[0];
+  useEffect(() => {
+    if (welcomeBackAutoAppliedRef.done) return;
+    if (isEntitled) return;
+    if (profilePromoCode !== "WELCOME_BACK") return;
+    if (promo.status !== "idle") return;
+    welcomeBackAutoAppliedRef.done = true;
+    setPromoInput("WELCOME_BACK");
+    setPromoOpen(true);
+    setPromo({ status: "validating" });
+    validateCode({ data: { code: "WELCOME_BACK" } })
+      .then((res) => {
+        if (!res.valid || res.duration !== "repeating") {
+          setPromo({ status: "idle" });
+          return;
+        }
+        setPromo({
+          status: "valid",
+          code: "WELCOME_BACK",
+          label: res.label ?? "WELCOME_BACK",
+          duration: res.duration,
+          durationInMonths: res.durationInMonths,
+        });
+      })
+      .catch(() => setPromo({ status: "idle" }));
+  }, [isEntitled, profilePromoCode, promo.status, welcomeBackAutoAppliedRef]);
+
+
 
   const handleSignOut = async () => {
     await qc.cancelQueries();
