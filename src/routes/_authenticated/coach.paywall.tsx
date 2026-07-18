@@ -7,11 +7,13 @@ import { Sparkles, Building2, Check, ArrowLeft, Tag, Loader2 } from "lucide-reac
 import { EmbeddedCheckoutProvider, EmbeddedCheckout } from "@stripe/react-stripe-js";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Chip } from "@/components/ui/chip";
 import { cn } from "@/lib/utils";
 import { coachProfileQueryOptions } from "@/hooks/use-coach-profile";
 import {
   claimOrganizationInviteCode,
   clearOrganizationLink,
+  recordSilentClubLead,
 } from "@/lib/coach-org.functions";
 import { startCoachCheckout } from "@/lib/coach-checkout.functions";
 import { validatePromoCode } from "@/lib/promo-codes.functions";
@@ -19,6 +21,11 @@ import { getStripe, getStripeEnvironment } from "@/lib/stripe";
 import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
 import { supabase } from "@/integrations/supabase/client";
 import { FOUNDING_COACH_PROMO_CODE, isCoachPaywallEnabled } from "@/lib/paywall-flag";
+import {
+  OrgSearchCombobox,
+  type OrgOption,
+} from "@/components/onboarding/org-search-combobox";
+import { OrgCodeField } from "@/components/onboarding/org-code-field";
 
 type Tier = "coach" | "coach_pro";
 type Interval = "month" | "year";
