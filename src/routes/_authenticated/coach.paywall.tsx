@@ -15,7 +15,7 @@ import {
   clearOrganizationLink,
   recordSilentClubLead,
 } from "@/lib/coach-org.functions";
-import { startCoachCheckout } from "@/lib/coach-checkout.functions";
+import { startCoachCheckout, changeCoachSubscription } from "@/lib/coach-checkout.functions";
 import { validatePromoCode } from "@/lib/promo-codes.functions";
 import { getStripe, getStripeEnvironment } from "@/lib/stripe";
 import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
