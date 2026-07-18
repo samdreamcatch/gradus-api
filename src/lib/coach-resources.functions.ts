@@ -63,7 +63,13 @@ export const listCoachResources = createServerFn({ method: "GET" })
     const supabase = context.supabase as Client;
     const coach = await getCallerCoach(supabase, context.userId);
     if (!coach) {
-      return { sports: [], resources: [], canUpload: false, effectiveTier: "coach" };
+      return {
+        sports: [],
+        resources: [],
+        libraryResources: [],
+        canUpload: false,
+        effectiveTier: "coach",
+      };
     }
 
     const tier = computeTier(coach);
@@ -95,9 +101,31 @@ export const listCoachResources = createServerFn({ method: "GET" })
       createdAt: r.created_at,
     }));
 
+    let libraryResources: LibraryResourceDTO[] = [];
+    if (sports.length) {
+      const { data: libRows, error: libErr } = await supabase
+        .from("resources")
+        .select("id, sport, title, description, kind, external_url")
+        .is("coach_id", null)
+        .in("sport", sports)
+        .eq("published", true)
+        .order("display_order", { ascending: true })
+        .order("title", { ascending: true });
+      if (libErr) dbError(libErr);
+      libraryResources = (libRows ?? []).map((r) => ({
+        id: r.id,
+        sport: r.sport,
+        title: r.title,
+        description: r.description ?? "",
+        kind: (r.kind as CoachResourceKind) ?? "pdf",
+        externalUrl: r.external_url,
+      }));
+    }
+
     return {
       sports,
       resources,
+      libraryResources,
       canUpload: tier === "coach_pro" || tier === "club",
       effectiveTier: tier,
     };
