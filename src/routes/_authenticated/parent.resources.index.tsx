@@ -72,7 +72,7 @@ function ParentResourcesPage() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 pt-6 pb-24">
-      <PageTitle>Parent Resources</PageTitle>
+      <PageTitle>Parent & Athlete Resources</PageTitle>
 
       {sports.length > 0 ? (
         <FilterBar className="mt-4">
