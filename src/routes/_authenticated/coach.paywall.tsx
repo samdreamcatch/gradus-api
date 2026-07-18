@@ -72,7 +72,9 @@ export const Route = createFileRoute("/_authenticated/coach/paywall")({
   validateSearch: (search: Record<string, unknown>) => ({
     checkout: typeof search.checkout === "string" ? search.checkout : undefined,
     tier: typeof search.tier === "string" ? search.tier : undefined,
+    manage: search.manage === true || search.manage === "true" ? true : undefined,
   }),
+
   beforeLoad: () => {
     if (!isCoachPaywallEnabled()) {
       throw redirect({ to: "/coach/roster" });
@@ -91,7 +93,7 @@ function PaywallPage() {
   const checkoutFn = useServerFn(startCoachCheckout);
   const changeSubFn = useServerFn(changeCoachSubscription);
   const validateCode = useServerFn(validatePromoCode);
-  const { checkout: checkoutStatus, tier: preselectedTier } = Route.useSearch();
+  const { checkout: checkoutStatus, tier: preselectedTier, manage: manageIntent } = Route.useSearch();
 
   const [interval, setInterval] = useState<Interval>("year");
   const [selectedTier, setSelectedTier] = useState<Tier | null>(null);
@@ -138,9 +140,12 @@ function PaywallPage() {
     if (isFoundingCoach) return;
     // Any coach who explicitly clicked "Upgrade" stays on the paywall.
     if (isUpgradeIntent) return;
+    // Coach arrived from Settings → Change plan.
+    if (manageIntent) return;
     // Otherwise: entitled coaches don't need the paywall.
     navigate({ to: onboardedAt ? "/coach/roster" : "/coach/onboarding", replace: true });
-  }, [isEntitled, isFoundingCoach, isUpgradeIntent, onboardedAt, navigate]);
+  }, [isEntitled, isFoundingCoach, isUpgradeIntent, manageIntent, onboardedAt, navigate]);
+
 
   const handleSignOut = async () => {
     await qc.cancelQueries();
