@@ -15,6 +15,8 @@ import {
   type RoleInRoom,
   type RoomKind,
 } from "@/lib/messages.functions";
+import { getOtherCoachPlanForMessage } from "@/lib/coach-athlete-detail.functions";
+import { OtherCoachPlansSheet } from "@/components/coach/other-coach-plans-sheet";
 import { voiceTranscribe } from "@/lib/voice.functions";
 import { useVoiceCapture } from "@/hooks/use-voice-capture";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
