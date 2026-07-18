@@ -1,20 +1,16 @@
 import { useState } from "react";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
 import { getAdminOverview, searchUsers, setUserTestFlag, getDailyActiveUsers, getAdminReporting } from "@/lib/admin.functions";
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
-import { SettingsGroup, SettingsList, SettingsButtonRow } from "@/components/settings/primitives";
 import { Eyebrow } from "@/components/ui/eyebrow";
-import { Chip, chipClasses } from "@/components/ui/chip";
+import { Chip } from "@/components/ui/chip";
 import { Tag } from "@/components/ui/tag";
-
-import { LogOut } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 const searchSchema = z.object({
@@ -28,18 +24,10 @@ export const Route = createFileRoute("/_authenticated/admin/")({
 
 function AdminHome() {
   const { test: includeTest } = Route.useSearch();
-  const navigate = useNavigate();
   const overviewFn = useServerFn(getAdminOverview);
   const searchFn = useServerFn(searchUsers);
   const toggleFn = useServerFn(setUserTestFlag);
   const qc = useQueryClient();
-
-  const handleSignOut = async () => {
-    await qc.cancelQueries();
-    qc.clear();
-    await supabase.auth.signOut();
-    navigate({ to: "/login", replace: true });
-  };
 
   const toggleTest = async (userId: string, next: boolean) => {
     await toggleFn({ data: { userId, isTest: next } });
@@ -49,6 +37,7 @@ function AdminHome() {
       qc.invalidateQueries({ queryKey: ["admin-user", userId] }),
     ]);
   };
+
 
   const { data: overview, isLoading } = useQuery({
     queryKey: ["admin-overview", includeTest],
@@ -65,66 +54,7 @@ function AdminHome() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 space-y-10">
-      <header className="space-y-4">
-        <div className="space-y-1">
-          <Eyebrow size="small" tone="accent-ink">Internal</Eyebrow>
-          <h1 className="font-display text-h1 text-text-primary">Admin</h1>
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <Link
-            from={Route.fullPath}
-            search={{ test: !includeTest }}
-            className={chipClasses({ tone: "muted", selected: includeTest })}
-            title="Toggle test users"
-          >
-            {includeTest ? "Test users: on" : "Test users: hidden"}
-          </Link>
-          <Link
-            to="/admin/map"
-            search={{ test: includeTest }}
-            className={chipClasses({ tone: "accent" })}
-          >
-            Connection map →
-          </Link>
-          <Link
-            to="/admin/feedback"
-            search={{ type: "all", unresolved: false }}
-            className={chipClasses()}
-          >
-            Feedback →
-          </Link>
-          <Link
-            to="/admin/errors"
-            search={{ test: includeTest }}
-            className={chipClasses()}
-          >
-            Errors →
-          </Link>
-          <Link
-            to="/admin/promo-codes"
-            className={chipClasses()}
-          >
-            Promo codes →
-          </Link>
-          <Link
-            to="/admin/organizations"
-            className={chipClasses()}
-          >
-            Organizations →
-          </Link>
-          <Link
-            to="/admin/emails"
-            search={{ t: "signup" }}
-            className={chipClasses()}
-          >
-            Email copy →
-          </Link>
 
-
-
-
-        </div>
-      </header>
 
 
 
@@ -193,17 +123,6 @@ function AdminHome() {
 
 
       <DauChart includeTest={includeTest} />
-
-      <SettingsGroup>
-        <SettingsList>
-          <SettingsButtonRow
-            icon={<LogOut className="size-4" />}
-            label="Sign out"
-            tone="destructive"
-            onClick={handleSignOut}
-          />
-        </SettingsList>
-      </SettingsGroup>
 
 
 
