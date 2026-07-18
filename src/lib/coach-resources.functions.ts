@@ -20,10 +20,20 @@ export interface CoachResourceDTO {
   createdAt: string;
 }
 
+export interface LibraryResourceDTO {
+  id: string;
+  sport: string;
+  title: string;
+  description: string;
+  kind: CoachResourceKind;
+  externalUrl: string | null;
+}
+
 export interface CoachResourcesDTO {
   /** Sports the coach teaches (from coach_levels). */
   sports: string[];
   resources: CoachResourceDTO[];
+  libraryResources: LibraryResourceDTO[];
   canUpload: boolean;
   effectiveTier: "coach" | "coach_pro" | "club";
 }
