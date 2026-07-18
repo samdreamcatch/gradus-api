@@ -22,7 +22,6 @@ export function AlsoCoachedByList({
   onOpenCoach: (coachId: string) => void;
   locked?: boolean;
 }) {
-  const navigate = useNavigate();
   if (coaches.length === 0) return null;
   return (
     <section>
