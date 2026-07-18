@@ -492,14 +492,7 @@ function PlanSection({
     }
   };
 
-  const promoRow =
-    profile.promoCode && profile.promoPercentOff > 0 ? (
-      <SettingsRow
-        icon={<Tag className="size-4" />}
-        label={`Promo: ${profile.promoLabel ?? profile.promoCode}`}
-        description={`${profile.promoPercentOff}% off of Coach plans — code ${profile.promoCode}`}
-      />
-    ) : null;
+  const promoRow = null;
 
   // Club-covered coaches
   if (profile.entitlement === "club_covered") {
