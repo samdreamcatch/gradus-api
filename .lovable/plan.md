@@ -1,23 +1,37 @@
-# Fix roster-full upgrade card surface
+# Inline "Upgrade" button in roster-full card
 
-## Why it looks off
+Replace the full-width `<UpgradeToProRow />` block with a small inline `Button` aligned with the "Coach Pro raises this to 50 athletes." line.
 
-The card at `src/routes/_authenticated/coach.roster.tsx:204` uses the `paper-surface` utility:
-
-```tsx
-<div className="paper-surface mt-3 rounded-lg border border-divider p-3">
-```
-
-Per our design system memory, `paper-surface` is reserved for **the app background and bottom-sliding Sheets** — surfaces meant to read as "the page itself" (wash gradient + ruled lines + grain). Using it on a small inline card inside a page produces a rectangle that shows a slice of the page wash/ruling — in light mode this reads as a muddy, slightly-off panel that doesn't match sibling cards like `FirstPlanBanner` (which sit on `bg-card` / `bg-elevated`).
-
-It's not a bad color value — it's the wrong surface token for this role.
-
-## Change
-
-In `src/routes/_authenticated/coach.roster.tsx` line 204, replace `paper-surface` with `bg-elevated` so the card reads as a distinct notebook card on top of the page, consistent with other inline banners:
+## Change in `src/routes/_authenticated/coach.roster.tsx` (around lines 203–215)
 
 ```tsx
-<div className="mt-3 rounded-lg border border-divider bg-elevated p-3">
+{rosterFull ? (
+  <div className="mt-3 rounded-lg border border-divider bg-elevated p-3">
+    <div className="text-sm font-bold text-text-primary">
+      Your athlete roster is full — {athletes.length} / {athleteLimit}
+    </div>
+    <div className="mt-1 flex items-center justify-between gap-3">
+      <p className="text-xs text-text-secondary">
+        Coach Pro raises this to 50 athletes.
+      </p>
+      <Button
+        size="sm"
+        variant={coachProAvailable ? "default" : "outline"}
+        disabled={!coachProAvailable}
+        onClick={() =>
+          navigate({ to: "/coach/paywall", search: { tier: "coach_pro" } })
+        }
+        className="shrink-0"
+      >
+        {coachProAvailable ? "Upgrade" : "Upgrade · Soon"}
+      </Button>
+    </div>
+  </div>
+) : null}
 ```
 
-No other changes — border, spacing, typography, and the nested `UpgradeToProRow` stay as-is.
+- Drop the `<UpgradeToProRow />` import and its wrapper `<div className="mt-3">`.
+- Add imports: `Button` from `@/components/ui/button`, `isCoachProAvailable` from `@/lib/paywall-flag`, and `useNavigate` from `@tanstack/react-router` if not already present. Compute `const coachProAvailable = isCoachProAvailable();` and `const navigate = useNavigate();` in the component (reuse existing if already there).
+- Keeps the disabled/SOON semantics from `UpgradeToProRow` in a compact form. Detailed pricing copy is dropped — it lives on the paywall.
+
+No other call sites of `UpgradeToProRow` are affected.

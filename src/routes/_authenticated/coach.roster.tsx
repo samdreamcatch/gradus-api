@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import { UserPlus, Sparkles, Plus } from "lucide-react";
 import { queryOptions, useQuery, useSuspenseQuery } from "@tanstack/react-query";
-import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { CoachBottomNav } from "@/components/coach/bottom-nav";
 import { PageTitle } from "@/components/page-title";
 
@@ -31,7 +31,7 @@ import {
   type AthletePracticeSummary,
 } from "@/lib/coach-schedule.functions";
 import { coachProfileQueryOptions } from "@/hooks/use-coach-profile";
-import { UpgradeToProRow } from "@/components/coach/upgrade-to-pro-row";
+import { isCoachProAvailable } from "@/lib/paywall-flag";
 
 
 
@@ -93,6 +93,8 @@ function RosterPage() {
   const { data: coachProfile } = useQuery(coachProfileQueryOptions);
   const { athletes, coachSports } = roster;
   const router = useRouter();
+  const navigate = useNavigate();
+  const coachProAvailable = isCoachProAvailable();
   const [tab, setTab] = useState<RosterTab>("schedule");
   const [selectedSport, setSelectedSport] = useState<string | null>(null);
   const [selectedAthleteId, setSelectedAthleteId] = useState<string | null>(null);
@@ -205,11 +207,21 @@ function RosterPage() {
               <div className="text-sm font-bold text-text-primary">
                 Your athlete roster is full — {athletes.length} / {athleteLimit}
               </div>
-              <p className="mt-1 text-xs text-text-secondary">
-                Coach Pro raises this to 50 athletes.
-              </p>
-              <div className="mt-3">
-                <UpgradeToProRow />
+              <div className="mt-1 flex items-center justify-between gap-3">
+                <p className="text-xs text-text-secondary">
+                  Coach Pro raises this to 50 athletes.
+                </p>
+                <Button
+                  size="sm"
+                  variant={coachProAvailable ? "default" : "outline"}
+                  disabled={!coachProAvailable}
+                  onClick={() =>
+                    navigate({ to: "/coach/paywall", search: { tier: "coach_pro" } })
+                  }
+                  className="shrink-0"
+                >
+                  {coachProAvailable ? "Upgrade" : "Upgrade · Soon"}
+                </Button>
               </div>
             </div>
           ) : null}
