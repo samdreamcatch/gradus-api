@@ -207,10 +207,8 @@ function RosterPage() {
               <div className="text-sm font-bold text-text-primary">
                 Your athlete roster is full — {athletes.length} / {athleteLimit}
               </div>
-              <div className="mt-1 flex items-center justify-between gap-3">
-                <p className="text-xs text-text-secondary">
-                  Coach Pro raises this to 50 athletes.
-                </p>
+              <div className="mt-2 flex items-center justify-end gap-3">
+
                 <Button
                   size="sm"
                   variant={coachProAvailable ? "default" : "outline"}
