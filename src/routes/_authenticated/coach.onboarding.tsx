@@ -22,31 +22,17 @@ import {
 } from "@/hooks/use-coach-profile";
 
 import { claimParentInvite } from "@/lib/parent-signup.functions";
-import { claimOrganizationInviteCode } from "@/lib/coach-org.functions";
 
 import { InviteCard } from "@/components/onboarding/invite-card";
 
-import { CoachPathChoice, type CoachPathValue } from "@/components/onboarding/coach-path-choice";
-import { savePendingPromoCode } from "@/lib/pending-promo-code";
 import { CoachBottomNav } from "@/components/coach/bottom-nav";
+import { isCoachPaywallEnabled } from "@/lib/paywall-flag";
 
 import { useQuery } from "@tanstack/react-query";
-import { z } from "zod";
 
 const PENDING_INVITE_KEY = "gradus.pendingParentInvite";
 
-const searchSchema = z.object({
-  org: z
-    .string()
-    .trim()
-    .toUpperCase()
-    .regex(/^[A-Z2-9]{8}$/)
-    .optional(),
-  promo: z.string().trim().toUpperCase().max(32).optional(),
-});
-
 export const Route = createFileRoute("/_authenticated/coach/onboarding")({
-  validateSearch: (s) => searchSchema.parse(s),
   component: OnboardingPage,
 });
 
@@ -68,11 +54,27 @@ function prettify(s: string) {
 function OnboardingPage() {
   const { data, isLoading, error } = useQuery(coachProfileQueryOptions);
   const navigate = useNavigate();
-  const search = Route.useSearch();
+
+  const entitlement = data?.profile.entitlement;
+  const onboardedAt = data?.profile.onboardedAt;
 
   useEffect(() => {
-    if (data?.profile.onboardedAt) navigate({ to: "/coach" });
-  }, [data?.profile.onboardedAt, navigate]);
+    if (onboardedAt) {
+      navigate({ to: "/coach" });
+      return;
+    }
+    // Coaches must select a plan (or claim a club code / founding-coach free
+    // grant) before completing onboarding.
+    if (
+      isCoachPaywallEnabled() &&
+      entitlement &&
+      entitlement !== "paid" &&
+      entitlement !== "promo_free" &&
+      entitlement !== "club_covered"
+    ) {
+      navigate({ to: "/coach/paywall", replace: true });
+    }
+  }, [onboardedAt, entitlement, navigate]);
 
   if (error) {
     return (
@@ -90,67 +92,23 @@ function OnboardingPage() {
       </div>
     );
   }
-  return <OnboardingForm data={data} initialOrg={search.org} initialPromo={search.promo} />;
+  return <OnboardingForm data={data} />;
 }
 
 type OnboardingData = NonNullable<ReturnType<typeof useCoachProfile>["data"]>;
 
-function OnboardingForm({
-  data,
-  initialOrg,
-  initialPromo,
-}: {
-  data: OnboardingData;
-  initialOrg?: string;
-  initialPromo?: string;
-}) {
+function OnboardingForm({ data }: { data: OnboardingData }) {
   const navigate = useNavigate();
 
   const needsName =
     !data.profile.firstName.trim() || !data.profile.lastName.trim();
 
-  const alreadyClub = data.profile.entitlement === "club_covered";
+  const effectiveTier = data.profile.effectiveTier;
+  const primarySportCap = effectiveTier === "coach" ? 1 : undefined;
 
   const [step, setStep] = useState(1);
   const [firstName, setFirstName] = useState(data.profile.firstName);
   const [lastName, setLastName] = useState(data.profile.lastName);
-  const [pathValue, setPathValue] = useState<CoachPathValue>(() => {
-    if (alreadyClub && data.profile.organizationName) {
-      return {
-        path: "club",
-        promoCode: "",
-        orgId: data.profile.organizationId ?? null,
-        orgName: data.profile.organizationName,
-        orgCity: null,
-        orgCode: "",
-        orgVerified: true,
-      };
-    }
-    if (initialOrg) {
-      // Coach arrived via `?org=CODE` — we don't know the org yet; they'll
-      // pick it in search and then re-enter the code. Keep the code prefilled
-      // so it's just one click after they pick their club.
-      return {
-        path: "club",
-        promoCode: "",
-        orgId: null,
-        orgName: null,
-        orgCity: null,
-        orgCode: initialOrg,
-        orgVerified: false,
-      };
-    }
-    return {
-      path: initialPromo ? "individual" : null,
-      promoCode: initialPromo ?? "",
-      orgId: null,
-      orgName: null,
-      orgCity: null,
-      orgCode: "",
-      orgVerified: false,
-    };
-  });
-  const promoCode = pathValue.promoCode;
 
 
 
@@ -299,21 +257,16 @@ function OnboardingForm({
     );
   };
 
-  type StepKind = "path" | "profile" | "sports" | "levels" | "hours" | "invite" | "review";
+  type StepKind = "profile" | "sports" | "levels" | "hours" | "invite" | "review";
   // Always collect name — pre-filled from OAuth metadata when available, but
   // coaches signing up via email have no name and we need it for their athletes.
   void needsName;
-  const stepOrder: StepKind[] = ["path", "profile", "levels", "hours", "invite", "review"];
+  const stepOrder: StepKind[] = ["profile", "levels", "hours", "invite", "review"];
   const totalSteps = stepOrder.length;
   const currentKind = stepOrder[step - 1];
   const isLastStep = step === totalSteps;
 
   const canContinue = (() => {
-    if (currentKind === "path") {
-      if (pathValue.path === "individual") return true; // promo optional
-      if (pathValue.path === "club") return pathValue.orgVerified;
-      return false;
-    }
     if (currentKind === "profile")
       return (
         firstName.trim().length > 0 &&
@@ -334,13 +287,8 @@ function OnboardingForm({
     return true;
   })();
 
-  const claimOrg = useServerFn(claimOrganizationInviteCode);
-
   const handleContinue = async () => {
     try {
-      if (currentKind === "path" && pathValue.path === "club" && !alreadyClub) {
-        await claimOrg({ data: { code: pathValue.orgCode } });
-      }
       if (currentKind === "profile") {
         await saveProfile.mutateAsync({
           firstName: firstName.trim(),
@@ -367,9 +315,6 @@ function OnboardingForm({
       toast.error(err instanceof Error ? err.message : "Couldn't finish");
       return;
     }
-    // Stash any typed promo code; the `_authenticated` layout auto-applies it
-    // on the next authed page load (see src/routes/_authenticated.tsx).
-    if (promoCode.trim()) savePendingPromoCode(promoCode);
     let pendingInvite: string | null = null;
     try {
       pendingInvite = localStorage.getItem(PENDING_INVITE_KEY);
@@ -395,13 +340,9 @@ function OnboardingForm({
         }
       }
     }
-    // Route based on entitlement: club coaches straight into the app,
-    // individuals to the paywall until Stripe checkout completes.
-    if (pathValue.path === "club") {
-      navigate({ to: "/coach/roster" });
-    } else {
-      navigate({ to: "/coach/paywall" });
-    }
+    // Coach already selected & activated their plan at /coach/paywall before
+    // reaching onboarding, so head straight into the app.
+    navigate({ to: "/coach/roster" });
   };
 
   const busy = saveProfile.isPending || saveLevels.isPending || complete.isPending;
@@ -427,14 +368,7 @@ function OnboardingForm({
           </div>
         </div>
 
-        {currentKind === "path" && (
-          <Step
-            title="How are you joining Gradus?"
-            subtitle="Pick the option that fits — you can change this later in Settings."
-          >
-            <CoachPathChoice value={pathValue} onChange={setPathValue} />
-          </Step>
-        )}
+
 
         {currentKind === "profile" && (
           <Step
@@ -470,7 +404,7 @@ function OnboardingForm({
                   onToggle={toggleSport}
                   onAddCustom={addCustomSport}
                   onRemoveCustom={removeCustomSport}
-                  maxPrimarySports={1}
+                  maxPrimarySports={primarySportCap}
                 />
               </div>
             </div>
@@ -485,7 +419,7 @@ function OnboardingForm({
               onToggle={toggleSport}
               onAddCustom={addCustomSport}
               onRemoveCustom={removeCustomSport}
-              maxPrimarySports={1}
+              maxPrimarySports={primarySportCap}
             />
           </Step>
         )}
