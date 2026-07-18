@@ -2,21 +2,12 @@ import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  FileText,
-  Image as ImageIcon,
-  Link as LinkIcon,
-  Lock,
-  Plus,
-  Trash2,
-} from "lucide-react";
+import { Lock, Plus, Search } from "lucide-react";
 
 import { CoachBottomNav } from "@/components/coach/bottom-nav";
 import { PageTitle } from "@/components/page-title";
-import { FilterBar } from "@/components/plans/filter-bar";
 import { SegmentedToggle } from "@/components/plans/segmented-toggle";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { FilterBar } from "@/components/plans/filter-bar";
 import {
   Select,
   SelectContent,
@@ -24,14 +15,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Input } from "@/components/ui/input";
 import { UploadResourceSheet } from "@/components/coach/upload-resource-sheet";
-import { getSport, type SportKey } from "@/lib/coach-sports";
+import {
+  AskGradusCard,
+  ResourceList,
+  ResourceSheet,
+  SavedAnswersList,
+  sportLabel,
+  type ResourceDTO,
+} from "@/components/resources/shared";
 import {
   deleteCoachResource,
   listCoachResources,
-  type CoachResourceDTO,
-  type CoachResourceKind,
-  type LibraryResourceDTO,
 } from "@/lib/coach-resources.functions";
 
 export const Route = createFileRoute("/_authenticated/coach/resources/")({
@@ -50,16 +51,6 @@ export const Route = createFileRoute("/_authenticated/coach/resources/")({
   ),
 });
 
-function sportLabel(s: string) {
-  return getSport(s as SportKey)?.label ?? s;
-}
-
-function KindIcon({ kind }: { kind: CoachResourceKind }) {
-  if (kind === "image") return <ImageIcon className="h-4 w-4" aria-hidden />;
-  if (kind === "link") return <LinkIcon className="h-4 w-4" aria-hidden />;
-  return <FileText className="h-4 w-4" aria-hidden />;
-}
-
 function CoachResourcesPage() {
   const fetchFn = useServerFn(listCoachResources);
   const { data, isLoading } = useQuery({
@@ -67,96 +58,184 @@ function CoachResourcesPage() {
     queryFn: () => fetchFn(),
   });
 
+  const qc = useQueryClient();
+  const del = useServerFn(deleteCoachResource);
+  const remove = useMutation({
+    mutationFn: (id: string) => del({ data: { id } }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["coach-resources"] }),
+  });
+
   const sports = data?.sports ?? [];
+  const canUpload = data?.canUpload ?? false;
+
+  const resources: ResourceDTO[] = useMemo(() => {
+    const own: ResourceDTO[] = (data?.resources ?? []).map((r) => ({
+      id: r.id,
+      sport: r.sports[0] ?? "",
+      sports: r.sports,
+      title: r.title,
+      description: r.description,
+      kind: r.kind,
+      source: "coach",
+      externalUrl: r.externalUrl,
+      coachName: null,
+    }));
+    const lib: ResourceDTO[] = (data?.libraryResources ?? []).map((r) => ({
+      id: r.id,
+      sport: r.sport,
+      sports: [r.sport],
+      title: r.title,
+      description: r.description,
+      kind: r.kind,
+      source: "library",
+      externalUrl: r.externalUrl,
+      coachName: null,
+    }));
+    return [...own, ...lib];
+  }, [data]);
+
   const [selectedSport, setSelectedSport] = useState<string | null>(null);
   const activeSport = selectedSport ?? sports[0] ?? null;
+
+  const [view, setView] = useState<"ask" | "library" | "saved">("library");
   const [search, setSearch] = useState("");
+  const [openResource, setOpenResource] = useState<ResourceDTO | null>(null);
   const [uploadOpen, setUploadOpen] = useState(false);
-  const [view, setView] = useState<"yours" | "library">("yours");
 
-  const yours = useMemo(() => {
-    const rows = data?.resources ?? [];
+  const filtered = useMemo(() => {
+    if (!activeSport) return [] as ResourceDTO[];
     const q = search.trim().toLowerCase();
-    return rows.filter((r) => {
-      if (activeSport && !r.sports.includes(activeSport)) return false;
-      if (q && !r.title.toLowerCase().includes(q)) return false;
-      return true;
-    });
-  }, [data, activeSport, search]);
+    return resources
+      .filter((r) => r.sports.includes(activeSport))
+      .filter(
+        (r) =>
+          !q ||
+          r.title.toLowerCase().includes(q) ||
+          r.description.toLowerCase().includes(q),
+      );
+  }, [resources, activeSport, search]);
 
-  const library = useMemo(() => {
-    const rows = data?.libraryResources ?? [];
-    const q = search.trim().toLowerCase();
-    return rows.filter((r) => {
-      if (activeSport && r.sport !== activeSport) return false;
-      if (q && !r.title.toLowerCase().includes(q)) return false;
-      return true;
-    });
-  }, [data, activeSport, search]);
-
-  const canUpload = data?.canUpload ?? false;
+  const coachItems = filtered.filter((r) => r.source === "coach");
+  const libraryItems = filtered.filter((r) => r.source === "library");
 
   return (
     <div className="mx-auto max-w-2xl px-4 pt-6 pb-24">
       <PageTitle>Resources</PageTitle>
 
-      <FilterBar className="mt-4">
-        <SegmentedToggle
-          value={view}
-          onChange={setView}
-          options={[
-            { key: "yours", label: "Your uploads" },
-            { key: "library", label: "Gradus library" },
-          ]}
-        />
-        {sports.length > 1 ? (
-          <div className="mt-2.5">
-            <Select
-              value={activeSport ?? undefined}
-              onValueChange={(v) => setSelectedSport(v)}
-            >
-              <SelectTrigger className="h-10 rounded-2xl border-divider bg-card">
-                <SelectValue placeholder="Sport" />
-              </SelectTrigger>
-              <SelectContent>
-                {sports.map((s) => (
-                  <SelectItem key={s} value={s}>
-                    {sportLabel(s)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+      {sports.length > 0 ? (
+        <FilterBar className="mt-4">
+          <SegmentedToggle
+            value={view}
+            onChange={setView}
+            options={[
+              { key: "library", label: "Library" },
+              { key: "ask", label: "Ask Gradus" },
+              { key: "saved", label: "Saved" },
+            ]}
+          />
+          <div className="mt-2.5 flex items-center gap-2">
+            {sports.length > 1 ? (
+              <Select
+                value={activeSport ?? undefined}
+                onValueChange={(v) => setSelectedSport(v)}
+              >
+                <SelectTrigger
+                  className="h-8 flex-1 rounded-full border-divider bg-card px-3 text-xs font-bold text-text-primary shadow-none"
+                  aria-label="Sport"
+                >
+                  <SelectValue placeholder="Select sport" />
+                </SelectTrigger>
+                <SelectContent>
+                  {sports.map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {sportLabel(s)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <div className="flex-1" />
+            )}
+            <UploadButton
+              canUpload={canUpload}
+              onClick={() => setUploadOpen(true)}
+            />
           </div>
-        ) : null}
-      </FilterBar>
+        </FilterBar>
+      ) : null}
 
-      <div className="mt-4">
-        <UploadCta
-          canUpload={canUpload}
-          onClick={() => canUpload && setUploadOpen(true)}
-        />
-      </div>
+      {isLoading ? (
+        <p className="mt-8 py-5 text-center text-sm text-text-secondary">Loading…</p>
+      ) : sports.length === 0 ? (
+        <div className="mt-8 rounded-2xl border border-dashed border-divider bg-card p-8 text-center">
+          <p className="font-hand text-2xl text-text-secondary">
+            Add sports in Settings to see resources.
+          </p>
+        </div>
+      ) : (
+        <>
+          {view === "ask" ? (
+            <AskGradusCard sport={activeSport!} />
+          ) : view === "saved" ? (
+            <SavedAnswersList sport={activeSport!} />
+          ) : (
+            <section className="mt-5 space-y-3">
+              <div className="relative">
+                <Search
+                  className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-tertiary"
+                  aria-hidden
+                />
+                <Input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder={`Search ${sportLabel(activeSport!).toLowerCase()} library`}
+                  className="h-11 rounded-2xl border-divider bg-card pl-9 text-sm"
+                />
+              </div>
 
-      <div className="relative mt-4">
-        <Input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search resources"
-          className="h-11 rounded-2xl border-divider bg-card text-sm"
-        />
-      </div>
+              {filtered.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-divider bg-card p-8 text-center">
+                  <p className="font-hand text-2xl text-text-secondary">
+                    {search
+                      ? "No resources match that search."
+                      : `No ${sportLabel(activeSport!).toLowerCase()} resources yet.`}
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-5">
+                  {coachItems.length > 0 ? (
+                    <div className="space-y-2">
+                      <p className="px-1 text-[11px] font-bold uppercase tracking-wide text-text-secondary">
+                        Your uploads
+                      </p>
+                      <ResourceList
+                        rows={coachItems}
+                        onOpen={setOpenResource}
+                        onDelete={(r) => remove.mutate(r.id)}
+                      />
+                    </div>
+                  ) : null}
+                  {libraryItems.length > 0 ? (
+                    <div className="space-y-2">
+                      {coachItems.length > 0 ? (
+                        <p className="px-1 text-[11px] font-bold uppercase tracking-wide text-text-secondary">
+                          Gradus library
+                        </p>
+                      ) : null}
+                      <ResourceList rows={libraryItems} onOpen={setOpenResource} />
+                    </div>
+                  ) : null}
+                </div>
+              )}
+            </section>
+          )}
+        </>
+      )}
 
-      <section className="mt-4">
-        {isLoading ? (
-          <div className="rounded-2xl border border-divider bg-card p-6 text-sm text-text-secondary">
-            Loading…
-          </div>
-        ) : view === "yours" ? (
-          <YourUploads rows={yours} />
-        ) : (
-          <LibraryList rows={library} />
-        )}
-      </section>
+      <ResourceSheet
+        resource={openResource}
+        onClose={() => setOpenResource(null)}
+      />
 
       <UploadResourceSheet
         open={uploadOpen}
@@ -169,7 +248,7 @@ function CoachResourcesPage() {
   );
 }
 
-function UploadCta({
+function UploadButton({
   canUpload,
   onClick,
 }: {
@@ -181,133 +260,34 @@ function UploadCta({
       <button
         type="button"
         onClick={onClick}
-        className="press flex w-full items-center gap-3 rounded-2xl border-2 border-dashed border-accent/50 bg-card px-4 py-4 text-left"
+        aria-label="Add a resource"
+        className="press flex h-8 shrink-0 items-center gap-1.5 rounded-full bg-accent px-3 text-xs font-bold text-accent-foreground"
       >
-        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-accent text-accent-foreground">
-          <Plus className="h-5 w-5" aria-hidden />
-        </span>
-        <span className="flex-1">
-          <span className="block text-sm font-bold text-text-primary">
-            Add a resource
-          </span>
-          <span className="block text-xs text-text-secondary">
-            PDF, image, or link — visible to your connected roster
-          </span>
-        </span>
+        <Plus className="h-4 w-4" aria-hidden />
+        Add
       </button>
     );
   }
   return (
-    <div className="flex w-full items-center gap-3 rounded-2xl border border-divider bg-card px-4 py-4">
-      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-elevated text-text-tertiary">
-        <Lock className="h-5 w-5" aria-hidden />
-      </span>
-      <div className="flex-1">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-bold text-text-primary">
-            Add a resource
-          </span>
-          <span className="rounded-full bg-elevated px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-text-secondary">
-            Pro & Club
-          </span>
-        </div>
-        <p className="mt-0.5 text-xs text-text-secondary">
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          aria-label="Upload gated to Pro & Club"
+          className="flex h-8 shrink-0 items-center gap-1.5 rounded-full border border-divider bg-card px-3 text-xs font-bold text-text-tertiary"
+        >
+          <Lock className="h-3.5 w-3.5" aria-hidden />
+          Add
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-64">
+        <p className="text-xs font-bold uppercase tracking-wide text-text-secondary">
+          Pro &amp; Club
+        </p>
+        <p className="mt-1 text-sm text-text-primary">
           Upgrade to Coach Pro to publish PDFs, images, and links to your roster.
         </p>
-      </div>
-    </div>
-  );
-}
-
-function YourUploads({ rows }: { rows: CoachResourceDTO[] }) {
-  const qc = useQueryClient();
-  const del = useServerFn(deleteCoachResource);
-  const remove = useMutation({
-    mutationFn: (id: string) => del({ data: { id } }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["coach-resources"] }),
-  });
-
-  if (rows.length === 0) {
-    return (
-      <div className="rounded-2xl border border-dashed border-divider bg-card p-8 text-center">
-        <p className="font-hand text-2xl text-text-secondary">
-          No uploads yet.
-        </p>
-      </div>
-    );
-  }
-
-  return (
-    <ul className="divide-y divide-divider rounded-2xl border border-divider bg-card">
-      {rows.map((r) => (
-        <li key={r.id} className="flex items-start gap-3 px-4 py-3">
-          <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-elevated text-text-secondary">
-            <KindIcon kind={r.kind} />
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-bold text-text-primary">
-              {r.title}
-            </p>
-            {r.description ? (
-              <p className="mt-0.5 line-clamp-2 text-xs text-text-secondary">
-                {r.description}
-              </p>
-            ) : null}
-            {r.sports.length ? (
-              <p className="mt-1 text-[11px] uppercase tracking-wide text-text-tertiary">
-                {r.sports.map(sportLabel).join(" · ")}
-              </p>
-            ) : null}
-          </div>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            onClick={() => {
-              if (confirm("Remove this resource for your roster?")) {
-                remove.mutate(r.id);
-              }
-            }}
-            className="rounded-full text-text-secondary hover:text-destructive"
-            aria-label="Delete resource"
-          >
-            <Trash2 className="h-4 w-4" aria-hidden />
-          </Button>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-function LibraryList({ rows }: { rows: LibraryResourceDTO[] }) {
-  if (rows.length === 0) {
-    return (
-      <div className="rounded-2xl border border-dashed border-divider bg-card p-8 text-center">
-        <p className="font-hand text-2xl text-text-secondary">
-          No library items for this sport yet.
-        </p>
-      </div>
-    );
-  }
-  return (
-    <ul className="divide-y divide-divider rounded-2xl border border-divider bg-card">
-      {rows.map((r) => (
-        <li key={r.id} className="flex items-start gap-3 px-4 py-3">
-          <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-elevated text-text-secondary">
-            <KindIcon kind={r.kind} />
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-bold text-text-primary">
-              {r.title}
-            </p>
-            {r.description ? (
-              <p className="mt-0.5 line-clamp-2 text-xs text-text-secondary">
-                {r.description}
-              </p>
-            ) : null}
-          </div>
-        </li>
-      ))}
-    </ul>
+      </PopoverContent>
+    </Popover>
   );
 }

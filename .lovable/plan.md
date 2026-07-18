@@ -1,72 +1,43 @@
-## Coach Pro: upload resources for their roster
+# Align /coach/resources with /parent/resources
 
-Add a Resources tab to the coach bottom nav. All coaches see the same parent/athlete-facing library UI as a preview; Coach Pro and Club coaches can additionally upload PDFs, images, or external links tagged to one or more of the sports they coach. A coach's uploads are only visible to parents/athletes on that coach's roster (plus any other coaches sharing those athletes, so it looks consistent in the parent's Library).
+## Goal
+`/coach/resources` should be visually and structurally identical to `/parent/resources` — same header, segmented toggle, sport select, search input, grouped `ResourceList`, `ResourceSheet`, and empty states. The coach-only capability (uploads) becomes a small, unobtrusive affordance layered on top rather than a distinct layout.
 
-### Behavior
+## What changes
 
-- **Coach nav**: new "Resources" tab (BookOpen icon) at `/coach/resources`, placed between Plans and Messages.
-- **Free Coach tier**: sees the same three-tab layout parents/athletes see (Library / Ask Gradus / Saved), scoped to the sports they coach. An "Upload" row at the top of the Library shows a lock icon + "PRO & CLUB" pill (same treatment as `also-coached-by-list`). Tapping it opens a small explainer sheet with an upgrade CTA.
-- **Coach Pro & Club**: same layout, but the top of the Library shows an active "Upload resource" button. Opens a bottom sheet:
-  - Type: PDF file / Image / Link
-  - Title (required), short description (optional)
-  - Sport tags: multi-select constrained to their `coach_levels` sports
-  - File picker (PDF or jpg/png/webp, ≤20MB) OR URL field (validated `https://` only)
-  - Save → resource appears immediately in their preview and in every connected parent/athlete's Library under the tagged sports.
-- **Manage own uploads**: each row a coach owns shows an overflow with Edit and Delete. No admin overrides in this cut.
-- **Parent/athlete Library**: unchanged UI; a new "From your coaches" section appears above the existing sport-scoped library when at least one coach upload exists for the current sport. Existing global rows remain in the "General" section below.
-- **Empty states**: coach preview with no roster or no sports shows the existing "add an athlete / add a sport" empty state; upload button stays enabled but the save flow requires at least one tagged sport that the coach teaches.
+### 1. Rewrite `src/routes/_authenticated/coach.resources.index.tsx`
+Copy the structure of `parent.resources.index.tsx` verbatim (same JSX shell, same class names, same components, same order):
 
-### Technical
+- `PageTitle "Resources"`
+- `FilterBar` with `SegmentedToggle` — options: **Library**, **Ask Gradus**, **Saved** (same three tabs as parent). Sport `Select` appears only when `sports.length > 1`, styled identically (`h-8 rounded-full ... text-xs font-bold`).
+- Library view: same `Search` input, same grouped rendering — "From your coaches" (the coach's own uploads) above "Gradus library", both rendered by the shared `ResourceList` sub-component and opened via the shared `ResourceSheet`.
+- Ask Gradus and Saved views: reuse `AskGradusCard` and `SavedAnswersList` — extract them from `parent.resources.index.tsx` to keep parity.
+- Same empty states, same loading copy, same `mx-auto max-w-2xl px-4 pt-6 pb-24` shell.
+- Bottom nav swapped to `CoachBottomNav`.
 
-**Schema (single migration):**
+### 2. Extract shared sub-components
+Move `AskGradusCard`, `SavedAnswersList`, `ResourceList`, `ResourceSheet`, and `KindIcon` out of `parent.resources.index.tsx` into a new `src/components/resources/` module so both pages import the exact same code. Parent page becomes a thin wrapper; coach page imports the same primitives. This guarantees visual parity going forward.
 
-```text
-resources
-├── + coach_id uuid null references coach_profiles(id) on delete cascade
-├── + kind text not null default 'pdf' check (kind in ('pdf','image','link'))
-├── + external_url text null              -- required when kind='link'
-├── storage_path made nullable            -- null when kind='link'
-├── + updated_by uuid null                -- audit
-└── check: (kind='link' AND external_url IS NOT NULL AND storage_path IS NULL)
-        OR (kind IN ('pdf','image') AND storage_path IS NOT NULL AND external_url IS NULL)
+### 3. Unify the data shape
+Extend `listCoachResources` in `src/lib/coach-resources.functions.ts` to return the same `ResourceDTO[]` shape as `getParentResources` (single `resources` array with `source: 'coach' | 'library'`), so the coach page can feed the shared `ResourceList` with no branching. Keep `canUpload` and `effectiveTier` on the DTO for the upload affordance.
 
-resource_sports (new)                     -- multi-sport tagging replaces single `sport` for coach uploads
-├── resource_id uuid references resources on delete cascade
-├── sport text not null
-└── primary key (resource_id, sport)
-```
+### 4. Subtle upload affordance (coach-only)
+Instead of the current large dashed "Add a resource" card, add a small **+ icon button** at the right edge of the `FilterBar` row (aligned with the segmented toggle), sized to match the sport Select pill (`h-8 rounded-full`, `bg-card border border-divider`, accent icon).
 
-Backfill: for every existing `resources` row, insert `(id, sport)` into `resource_sports`. Keep `resources.sport` for now as the row's canonical primary sport (used by existing global/org rows and by the trigger check when `coach_id IS NULL`); read paths use `resource_sports` for filtering.
+- **Pro / Club:** button is enabled and opens `UploadResourceSheet`. Also render a small trailing "Delete" affordance on the coach's own rows inside `ResourceList` (only when the row is `source: 'coach'` **and** the viewer is the owning coach — pass an `onDelete` prop).
+- **Coach (free):** button renders in a locked/disabled state with a `Lock` icon and a small "Pro & Club" pill in a `Popover` explaining the gate — reuses the same pattern as `also-coached-by-list`'s locked state. No large upsell card on the page.
 
-**RLS on `resources`** (add alongside the existing parents-read policy):
+Everything else on the coach page looks pixel-identical to the parent page.
 
-- `SELECT` for coaches: `coach_id = <caller's coach_profiles.id>` (their own uploads, drafts included later if we add them).
-- `SELECT` for parents: extend existing `parent_has_athlete_in_sport(sport)` — new predicate `parent_has_coach_upload(resource_id)` that returns true when the resource has `coach_id` and the parent has an athlete rostered under that coach with a sport in `resource_sports` for the resource. Combined policy: `(published AND is_org_or_global AND parent_has_athlete_in_sport(sport)) OR parent_has_coach_upload(resource_id)`.
-- `SELECT` for athletes: mirror predicate `athlete_has_coach_upload(resource_id)` for the athlete's own coaches.
-- `INSERT / UPDATE / DELETE` for coaches: `coach_id = caller's coach id` AND `coach_effective_tier(coach_id) IN ('coach_pro','club')`. Enforced via WITH CHECK and a `BEFORE INSERT/UPDATE` trigger that also validates every `resource_sports.sport` is in the coach's `coach_levels`.
-- Grants: `SELECT/INSERT/UPDATE/DELETE ON resources TO authenticated`; `SELECT/INSERT/DELETE ON resource_sports TO authenticated`; `ALL TO service_role`.
+## Technical details
 
-**Storage**: reuse the existing private `resource-pdfs` bucket. Objects live under `coach/<coach_id>/<uuid>.<ext>`. Add `storage.objects` policies: owner-coach can insert/update/delete under their `coach/<id>/` prefix; signed URLs continue to be issued by `getResourceSignedUrl` (works for any authenticated caller whose `SELECT` on the parent `resources` row is allowed).
+- New files: `src/components/resources/ask-gradus-card.tsx`, `saved-answers-list.tsx`, `resource-list.tsx`, `resource-sheet.tsx`, `kind-icon.tsx` (moved from parent route). No behavior change for the parent route.
+- `src/lib/coach-resources.functions.ts`: reshape `CoachResourcesDTO.resources` to match `ResourceDTO` (add `source`, `sports[]`, `coachName`, `externalUrl`); keep `canUpload` and `effectiveTier`.
+- `src/routes/_authenticated/coach.resources.index.tsx`: full rewrite based on parent route.
+- `src/components/coach/upload-resource-sheet.tsx`: no changes.
+- No database, RLS, or server-fn security changes.
 
-**Server functions** (new file `src/lib/coach-resources.functions.ts`):
-
-- `listCoachResources()` — sports the coach teaches + resources they've uploaded (for preview management).
-- `createCoachResource({ kind, title, description, sports[], storagePath?, externalUrl? })` — gates on `coach_effective_tier` ∈ Pro/Club.
-- `updateCoachResource`, `deleteCoachResource`.
-- `createCoachResourceUploadUrl({ ext })` — returns signed upload URL scoped to `coach/<id>/<uuid>.<ext>`.
-
-Extend `parent-resources.functions.ts` and `athlete-resources.functions.ts` to return coach-upload rows alongside global ones, with a `source: 'coach' | 'library'` discriminant so the UI can render the "From your coaches" section.
-
-**Routes / components**:
-
-- `src/routes/_authenticated/coach.resources.index.tsx` — new page. Uses `PageTitle`, `SegmentedToggle`, `FilterBar`, existing `ResourceSheet` pattern from `parent.resources.index.tsx`.
-- `src/components/coach/upload-resource-sheet.tsx` — new bottom Sheet with the form (Input, Textarea, native file input styled per system, sport chips).
-- `src/components/coach/upload-resource-row.tsx` — the top-of-library row, uses the same locked-pill pattern as `also-coached-by-list.tsx` for free-tier coaches.
-- `src/components/coach/bottom-nav.tsx` — add Resources item.
-- `src/lib/paywall-flag.ts` gating helper reused for tier check; UI reads `effectiveTier` from the coach profile query.
-
-**Out of scope for this pass**: draft/publish state (uploads go live immediately), reordering, admin overrides, analytics on views. Ask Gradus and Saved tabs are Library-only surfaces here — no coach-authored answers.
-
-### Files touched
-
-New: `coach.resources.index.tsx`, `coach-resources.functions.ts`, `upload-resource-sheet.tsx`, `upload-resource-row.tsx`. Edited: `coach/bottom-nav.tsx`, `parent-resources.functions.ts`, `athlete-resources.functions.ts`, `parent.resources.index.tsx` (add "From your coaches" section), `athlete.resources.index.tsx` (same). One migration for schema + RLS + storage policies.
+## Out of scope
+- No changes to Ask Gradus or Saved Answers behavior.
+- No changes to storage policies or upload validation.
+- No changes to the parent route's UX (only refactor of internal imports).
