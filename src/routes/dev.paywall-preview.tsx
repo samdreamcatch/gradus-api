@@ -184,6 +184,109 @@ function PaywallPreview() {
           </div>
         </div>
 
+        <div className="mt-4 w-full">
+          {!promoOpen && !promoApplied ? (
+            <button
+              type="button"
+              onClick={() => setPromoOpen(true)}
+              className="press flex w-full items-center justify-between gap-3 rounded-xl border border-accent/40 bg-accent/10 px-4 py-3 text-left"
+            >
+              <span className="flex items-center gap-2.5">
+                <span className="flex h-8 w-8 items-center justify-center rounded-md bg-accent/20 text-accent-ink">
+                  <Tag className="h-4 w-4" />
+                </span>
+                <span className="flex flex-col">
+                  <span className="text-sm font-semibold text-text-primary">
+                    Have a promo code?
+                  </span>
+                  <span className="text-xs text-text-secondary">
+                    Unlock free months of Coach Pro
+                  </span>
+                </span>
+              </span>
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-accent-ink">
+                Apply
+              </span>
+            </button>
+          ) : (
+            <div className="rounded-xl border border-divider bg-elevated p-3">
+              {promoApplied ? (
+                <div className="flex items-center justify-between gap-2">
+                  <div className="text-sm">
+                    <p className="font-semibold text-text-primary">
+                      <span className="font-mono uppercase tracking-widest">
+                        {promoApplied.code}
+                      </span>{" "}
+                      applied
+                    </p>
+                    <p className="mt-0.5 text-xs text-text-secondary">
+                      3 months free — applies to Coach Pro. Card required, charges
+                      resume after free months.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPromoApplied(null);
+                      setPromoInput("");
+                    }}
+                    className="text-xs text-text-secondary underline underline-offset-2"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
+                  <div className="flex-1">
+                    <Input
+                      value={promoInput}
+                      onChange={(e) =>
+                        setPromoInput(e.target.value.toUpperCase().slice(0, 32))
+                      }
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          applyPromo();
+                        }
+                      }}
+                      placeholder="Promo code"
+                      className="font-mono uppercase tracking-widest"
+                      autoComplete="off"
+                      spellCheck={false}
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => {
+                        setPromoOpen(false);
+                        setPromoInput("");
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={applyPromo}
+                      disabled={validating || !promoInput.trim()}
+                    >
+                      {validating ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        "Apply"
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+
         <div
           className={cn(
             "mt-5 inline-flex rounded-full border border-divider bg-elevated p-1 text-sm transition-opacity",
@@ -314,107 +417,6 @@ function PaywallPreview() {
           })}
         </div>
 
-        <div className="mt-4 w-full">
-          {!promoOpen && !promoApplied ? (
-            <button
-              type="button"
-              onClick={() => setPromoOpen(true)}
-              className="press flex w-full items-center justify-between gap-3 rounded-xl border border-accent/40 bg-accent/10 px-4 py-3 text-left"
-            >
-              <span className="flex items-center gap-2.5">
-                <span className="flex h-8 w-8 items-center justify-center rounded-md bg-accent/20 text-accent-ink">
-                  <Tag className="h-4 w-4" />
-                </span>
-                <span className="flex flex-col">
-                  <span className="text-sm font-semibold text-text-primary">
-                    Have a promo code?
-                  </span>
-                  <span className="text-xs text-text-secondary">
-                    Unlock free months of Coach Pro
-                  </span>
-                </span>
-              </span>
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-accent-ink">
-                Apply
-              </span>
-            </button>
-          ) : (
-            <div className="rounded-xl border border-divider bg-elevated p-3">
-              {promoApplied ? (
-                <div className="flex items-center justify-between gap-2">
-                  <div className="text-sm">
-                    <p className="font-semibold text-text-primary">
-                      <span className="font-mono uppercase tracking-widest">
-                        {promoApplied.code}
-                      </span>{" "}
-                      applied
-                    </p>
-                    <p className="mt-0.5 text-xs text-text-secondary">
-                      3 months free — applies to Coach Pro. Card required, charges
-                      resume after free months.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setPromoApplied(null);
-                      setPromoInput("");
-                    }}
-                    className="text-xs text-text-secondary underline underline-offset-2"
-                  >
-                    Remove
-                  </button>
-                </div>
-              ) : (
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
-                  <div className="flex-1">
-                    <Input
-                      value={promoInput}
-                      onChange={(e) =>
-                        setPromoInput(e.target.value.toUpperCase().slice(0, 32))
-                      }
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          applyPromo();
-                        }
-                      }}
-                      placeholder="Promo code"
-                      className="font-mono uppercase tracking-widest"
-                      autoComplete="off"
-                      spellCheck={false}
-                    />
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => {
-                        setPromoOpen(false);
-                        setPromoInput("");
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      onClick={applyPromo}
-                      disabled={validating || !promoInput.trim()}
-                    >
-                      {validating ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        "Apply"
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
 
         {hasOrg && (
           <div className="mt-4 text-center">
