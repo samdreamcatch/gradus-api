@@ -619,6 +619,27 @@ function PaywallPage() {
           })}
         </div>
 
+        {isEntitled && (
+          <div className="mt-5 w-full text-center">
+            <Button
+              type="button"
+              variant="secondary"
+              className="w-full"
+              onClick={() =>
+                navigate({
+                  to: onboardedAt ? "/coach/roster" : "/coach/onboarding",
+                  replace: true,
+                })
+              }
+            >
+              Keep my current plan
+            </Button>
+            <p className="mt-1.5 text-xs text-text-tertiary">
+              No changes — return to your workspace.
+            </p>
+          </div>
+        )}
+
         {data?.profile.organizationId && (
           <div className="mt-4 text-center">
             <button

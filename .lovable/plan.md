@@ -1,39 +1,30 @@
-## Goal
+## Problem
 
-Replace the "Enter club code" inline input on `/coach/paywall` with the same search-first flow we already use in Settings' "Join a club" sheet — so a new coach types their club's name, picks it from search results, then enters the invite code. If the club isn't found, we silently capture what they typed as a bizdev lead.
+When an already-entitled coach lands on `/coach/paywall?tier=...` via an "Upgrade" affordance, the page shows the "Manage your plan" view but has no exit. The only way off is to actually buy a new plan — a coach who decides to stick with their current plan is stuck.
 
-## Changes
+## Fix
 
-### 1. `src/routes/_authenticated/coach.paywall.tsx` — swap the club section
+Add a "Keep my current plan" action to the "Manage your plan" view that returns the coach to where they belong:
+- If `onboardedAt` is null → `/coach/onboarding`
+- Otherwise → `/coach/roster`
 
-Keep the outer bordered card (icon + "Joining through a club?" + description) exactly as-is. Replace the collapsed `Enter club code →` button and the inline `Input` + Cancel/Join buttons with the same body used inside `JoinClubSheet`:
+### Where it appears
 
-- `OrgSearchCombobox` (from `src/components/onboarding/org-search-combobox.tsx`) with `onNotListed` wired to `recordSilentClubLead({ source: "not_listed", typedQuery })` — identical to the sheet's `handleNotListed`. Toast + collapse back on success.
-- Once an org is picked: show the accent `Chip` with the org name and a "Change" button, then `OrgCodeField` for the invite code.
-- Join button uses `claimOrganizationInviteCode` (the paywall's existing server fn), not `joinOrganization` — the paywall runs pre-entitlement, so there is no active Stripe subscription to cancel and the cancellation-note branch does not apply.
-- On success: reuse the paywall's current post-claim flow (invalidate `coachProfileQueryOptions`; the existing entitlement `useEffect` handles the redirect to `/coach/onboarding`).
+In `src/routes/_authenticated/coach.paywall.tsx`, inside the plan-picker render (not the embedded-checkout render), shown **only when** `isEntitled === true` and the coach isn't in the middle of Stripe checkout (`clientSecret` is null). Placed as a full-width secondary button beneath the tier cards, visually subordinate to the "Subscribe" CTAs so it doesn't compete with the upgrade path.
 
-Because this replaces the collapsed/expanded inline UI, drop the `clubOpen` state and any now-unused imports (`Input`, the inline Cancel button branch). Keep the "individual plans grey out when a club is picked" behavior — trigger it off the org-selected state instead of `clubInput`.
+Copy: "Keep my current plan" (button), with helper text underneath like "No changes — return to your workspace."
 
-### 2. `src/components/onboarding/org-search-combobox.tsx` — reuse as-is
+### Behaviour
 
-No changes. It already renders a search input, shows matches from `searchOrganizations`, and exposes `onNotListed(typedQuery)` when the coach clicks the "Not listed? Tell us" affordance — which is exactly the bizdev capture path.
+On click:
+1. Navigate with `replace: true` to `/coach/onboarding` or `/coach/roster` based on `onboardedAt`.
+2. No server calls, no entitlement mutation — the coach's existing plan is untouched.
 
-### 3. Bizdev lead capture — already wired
+## Files touched
 
-`recordSilentClubLead` in `src/lib/coach-org.functions.ts` writes to `organization_leads` with `source: "not_listed"` and the raw typed query. No new server function or migration needed.
+- `src/routes/_authenticated/coach.paywall.tsx` — add the "Keep my current plan" button in the entitled-view branch.
 
 ## Out of scope
 
-- No changes to `JoinClubSheet` itself — the Settings path stays exactly as it is.
-- No changes to `joinOrganization` / `claimOrganizationInviteCode` semantics.
-- No pricing, plan tier, or founding-coach path changes.
-- No changes to the "greyed out individual plans when a club is chosen" visual — just wire it to the new org-selected state.
-
-## Testing
-
-1. Sign in as a fresh coach → land on `/coach/paywall`.
-2. In the club card, type a partial club name → results appear from `searchOrganizations`.
-3. Pick the club → chip appears, code field renders, individual plan cards grey out.
-4. Enter a valid invite code → Join succeeds → redirected into onboarding.
-5. Type a name that doesn't match → "Not listed" affordance → click it → toast confirms, `organization_leads` row inserted with the typed query, card collapses back.
+- The unentitled/first-time flow (the redirect from onboarding to paywall for `pending` coaches) is unchanged — that gate is intentional.
+- No changes to Stripe, entitlement values, or the current-plan banner.
