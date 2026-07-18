@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, ChevronDown, Lock, Plus, X } from "lucide-react";
+import { Check, ChevronDown, Plus, X } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -161,8 +161,7 @@ export function SportMultiselect({
               {atCap && (
                 <>
                   <CommandSeparator />
-                  <div className="flex items-start gap-2 px-3 py-2.5 text-xs text-text-secondary">
-                    <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                  <div className="px-3 py-2.5 text-xs text-text-secondary">
                     <div className="space-y-1">
                       <p>
                         Coach plan includes one sport plus Strength &
