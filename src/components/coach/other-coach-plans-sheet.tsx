@@ -87,7 +87,11 @@ function Body({
       <ul className="space-y-3">
         {coach.plans.map((p) => (
           <li key={p.planId}>
-            <PlanCard plan={p} />
+            <PlanCard
+              plan={p}
+              otherCoachId={coach.coachId}
+              coachFirstName={coach.firstName}
+            />
           </li>
         ))}
       </ul>
