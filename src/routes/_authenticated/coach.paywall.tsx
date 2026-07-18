@@ -479,7 +479,7 @@ function PaywallPage() {
               onClick={() => setInterval(iv)}
               className={cn(
                 "rounded-full px-4 py-1.5 press-soft",
-                interval === iv ? "bg-card text-text-primary shadow-sm" : "text-text-secondary",
+                interval === iv ? "bg-popover text-text-primary shadow-sm" : "text-text-secondary",
               )}
             >
               {iv === "month" ? "Monthly" : "Yearly"}
