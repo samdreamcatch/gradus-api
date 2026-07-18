@@ -91,7 +91,11 @@ function SettingsPage() {
 
         <SettingsGroup label="Coaching">
           <SettingsList>
-            <SportsDisclosure levels={data.levels} summary={sportsSummary} />
+            <SportsDisclosure
+              levels={data.levels}
+              summary={sportsSummary}
+              effectiveTier={data.profile.effectiveTier}
+            />
             <RosterSettingsSection />
             <ConnectionsDisclosure />
 
