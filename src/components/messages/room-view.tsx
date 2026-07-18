@@ -124,6 +124,8 @@ export function RoomView({ roomId, viewerRole }: { roomId: string; viewerRole?: 
   const sendFn = useServerFn(sendMessage);
   const markRead = useServerFn(markRoomRead);
   const queryClient = useQueryClient();
+  const fetchOtherPlan = useServerFn(getOtherCoachPlanForMessage);
+  const [otherPlanId, setOtherPlanId] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["message-room", viewerRole ?? "default", roomId],
@@ -132,6 +134,12 @@ export function RoomView({ roomId, viewerRole }: { roomId: string; viewerRole?: 
 
   const messages: MessageDTO[] = useMemo(() => data?.messages ?? [], [data]);
   const room = data?.room;
+
+  const { data: otherPlanData } = useQuery({
+    queryKey: ["other-coach-plan-for-message", otherPlanId],
+    queryFn: () => fetchOtherPlan({ data: { planId: otherPlanId! } }),
+    enabled: !!otherPlanId,
+  });
 
   const scrollerRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
