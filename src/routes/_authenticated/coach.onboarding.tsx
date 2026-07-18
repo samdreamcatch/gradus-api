@@ -470,6 +470,7 @@ function OnboardingForm({
                   onToggle={toggleSport}
                   onAddCustom={addCustomSport}
                   onRemoveCustom={removeCustomSport}
+                  maxPrimarySports={1}
                 />
               </div>
             </div>
@@ -484,6 +485,7 @@ function OnboardingForm({
               onToggle={toggleSport}
               onAddCustom={addCustomSport}
               onRemoveCustom={removeCustomSport}
+              maxPrimarySports={1}
             />
           </Step>
         )}

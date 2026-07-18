@@ -91,7 +91,11 @@ function SettingsPage() {
 
         <SettingsGroup label="Coaching">
           <SettingsList>
-            <SportsDisclosure levels={data.levels} summary={sportsSummary} />
+            <SportsDisclosure
+              levels={data.levels}
+              summary={sportsSummary}
+              effectiveTier={data.profile.effectiveTier}
+            />
             <RosterSettingsSection />
             <ConnectionsDisclosure />
 
@@ -195,9 +199,11 @@ function NameDisclosure({
 function SportsDisclosure({
   levels,
   summary,
+  effectiveTier,
 }: {
   levels: LevelEntry[];
   summary: string;
+  effectiveTier: "coach" | "coach_pro" | "club";
 }) {
   const initialSports = useMemo(
     () => Array.from(new Set(levels.map((l) => l.sport))) as SportKey[],
@@ -206,6 +212,7 @@ function SportsDisclosure({
   const [sports, setSports] = useState<SportKey[]>(initialSports);
   const [entries, setEntries] = useState<LevelEntry[]>(levels);
   const save = useSaveCoachLevels();
+  const maxPrimarySports = effectiveTier === "coach" ? 1 : undefined;
 
   useEffect(() => {
     setSports(initialSports);
@@ -282,6 +289,7 @@ function SportsDisclosure({
             onToggle={(s) => toggleSport(s.key as SportKey)}
             onAddCustom={() => ({ status: "added", label: "" })}
             onRemoveCustom={() => {}}
+            maxPrimarySports={maxPrimarySports}
           />
         </div>
 

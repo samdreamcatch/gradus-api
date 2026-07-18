@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Check, ChevronDown, Plus, X } from "lucide-react";
+import { Check, ChevronDown, Lock, Plus, X } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -28,6 +29,9 @@ export function slugifySport(s: string): string {
     .replace(/^_|_$/g, "");
 }
 
+/** Sport keys that never count against the primary-sport cap. */
+const DEFAULT_ALWAYS_ALLOWED_SECONDARY = ["strength_conditioning"];
+
 interface Props {
   selected: SelectedSport[];
   customSports: SelectedSport[];
@@ -35,6 +39,13 @@ interface Props {
   onAddCustom: (label: string) => { status: "added" | "selected-existing"; label: string };
   onRemoveCustom: (key: string) => void;
   allowCustom?: boolean;
+  /**
+   * Cap on primary sports the coach can pick. `strength_conditioning` (and any
+   * key in `alwaysAllowedSecondary`) is exempt. When the cap is reached,
+   * unselected non-exempt sports appear locked with an inline upgrade CTA.
+   */
+  maxPrimarySports?: number;
+  alwaysAllowedSecondary?: string[];
 }
 
 export function SportMultiselect({
@@ -44,12 +55,25 @@ export function SportMultiselect({
   onAddCustom,
   onRemoveCustom,
   allowCustom = true,
+  maxPrimarySports,
+  alwaysAllowedSecondary = DEFAULT_ALWAYS_ALLOWED_SECONDARY,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [customInput, setCustomInput] = useState("");
   const [hint, setHint] = useState<string | null>(null);
 
   const isSelected = (key: string) => selected.some((s) => s.key === key);
+  const isSecondaryOnly = (key: string) => alwaysAllowedSecondary.includes(key);
+  const primaryCount = selected.filter((s) => !isSecondaryOnly(s.key)).length;
+  const atCap =
+    typeof maxPrimarySports === "number" && primaryCount >= maxPrimarySports;
+  // Locked = would exceed the primary cap if added. Already-selected sports
+  // stay clickable so they can be removed.
+  const isLocked = (key: string) =>
+    atCap && !isSelected(key) && !isSecondaryOnly(key);
+  // Custom sports always count as primary; hide the input entirely when capped.
+  const showCustom = allowCustom && !atCap;
+
 
   const handleAdd = () => {
     const label = customInput.trim();
@@ -92,15 +116,22 @@ export function SportMultiselect({
               <CommandGroup>
                 {SPORTS.map((s) => {
                   const sel = isSelected(s.key);
+                  const locked = isLocked(s.key);
                   return (
                     <CommandItem
                       key={s.key}
                       value={s.label}
-                      onSelect={() =>
-                        onToggle({ key: s.key, label: s.label, custom: false })
-                      }
+                      disabled={locked}
+                      onSelect={() => {
+                        if (locked) return;
+                        onToggle({ key: s.key, label: s.label, custom: false });
+                      }}
+                      className={cn(locked && "opacity-60")}
                     >
                       <span className="flex-1">{s.label}</span>
+                      {locked && !sel && (
+                        <Lock className="h-3.5 w-3.5 text-text-tertiary" />
+                      )}
                       {sel && <Check className="h-4 w-4 text-accent-ink" />}
                     </CommandItem>
                   );
@@ -130,7 +161,28 @@ export function SportMultiselect({
                   );
                 })}
               </CommandGroup>
-              {allowCustom && (
+              {atCap && (
+                <>
+                  <CommandSeparator />
+                  <div className="flex items-start gap-2 px-3 py-2.5 text-xs text-text-secondary">
+                    <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                    <div className="space-y-1">
+                      <p>
+                        Coach plan includes one sport (plus Strength &
+                        Conditioning).
+                      </p>
+                      <Link
+                        to="/coach/paywall"
+                        search={{ tier: "coach_pro" }}
+                        className="font-semibold text-accent-ink underline"
+                      >
+                        Upgrade to Coach Pro for more sports →
+                      </Link>
+                    </div>
+                  </div>
+                </>
+              )}
+              {showCustom && (
                 <>
                   <CommandSeparator />
                   <div className="p-2">
