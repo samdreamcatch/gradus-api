@@ -44,7 +44,7 @@ export type MessageDTO = {
   durationSeconds: number | null;
   createdAt: string;
   readBy: { userId: string; readAt: string }[];
-  plan: { id: string; title: string } | null;
+  plan: { id: string; title: string; coachId: string | null } | null;
 };
 
 export type RoomDetail = {
