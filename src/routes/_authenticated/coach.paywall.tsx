@@ -596,6 +596,10 @@ function PaywallPage() {
                   <div className="mt-4 inline-flex items-center justify-center gap-1 rounded-md border border-divider bg-elevated px-3 py-2 text-xs font-semibold text-text-primary sm:text-sm">
                     <Check className="h-4 w-4 text-accent-ink" /> Active
                   </div>
+                ) : isCurrentTier ? (
+                  <div className="mt-4 inline-flex items-center justify-center gap-1 rounded-md border border-divider bg-elevated px-3 py-2 text-xs font-semibold text-text-primary sm:text-sm">
+                    <Check className="h-4 w-4 text-accent-ink" /> Current plan
+                  </div>
                 ) : (
                   <Button
                     type="button"
