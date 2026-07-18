@@ -33,7 +33,6 @@ import { useQuery } from "@tanstack/react-query";
 const PENDING_INVITE_KEY = "gradus.pendingParentInvite";
 
 export const Route = createFileRoute("/_authenticated/coach/onboarding")({
-  validateSearch: (s) => searchSchema.parse(s),
   component: OnboardingPage,
 });
 
