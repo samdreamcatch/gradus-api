@@ -183,7 +183,7 @@ function PaywallPage() {
     await qc.cancelQueries();
     qc.clear();
     await supabase.auth.signOut();
-    navigate({ to: "/auth", replace: true });
+    navigate({ to: "/login", replace: true });
   };
 
   const subscriptionStatus = data?.profile.subscriptionStatus ?? null;
