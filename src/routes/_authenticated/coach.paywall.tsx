@@ -323,7 +323,8 @@ function PaywallPage() {
           </div>
         )}
 
-        {/* 1. Club search + code */}
+        {/* 1. Club search + code — only for un-entitled coaches; existing paid coaches are linked backend-side */}
+        {!isEntitled && (
         <div className="mt-5 w-full rounded-xl border border-divider bg-elevated p-3">
           <div className="flex items-start gap-3">
             <Building2 className="mt-0.5 h-5 w-5 shrink-0 text-text-secondary" />
@@ -388,6 +389,8 @@ function PaywallPage() {
             </div>
           </div>
         </div>
+        )}
+
 
 
         {/* 2. Promo code CTA */}
