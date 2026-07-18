@@ -54,66 +54,7 @@ function AdminHome() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 space-y-10">
-      <header className="space-y-4">
-        <div className="space-y-1">
-          <Eyebrow size="small" tone="accent-ink">Internal</Eyebrow>
-          <h1 className="font-display text-h1 text-text-primary">Admin</h1>
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <Link
-            from={Route.fullPath}
-            search={{ test: !includeTest }}
-            className={chipClasses({ tone: "muted", selected: includeTest })}
-            title="Toggle test users"
-          >
-            {includeTest ? "Test users: on" : "Test users: hidden"}
-          </Link>
-          <Link
-            to="/admin/map"
-            search={{ test: includeTest }}
-            className={chipClasses({ tone: "accent" })}
-          >
-            Connection map →
-          </Link>
-          <Link
-            to="/admin/feedback"
-            search={{ type: "all", unresolved: false }}
-            className={chipClasses()}
-          >
-            Feedback →
-          </Link>
-          <Link
-            to="/admin/errors"
-            search={{ test: includeTest }}
-            className={chipClasses()}
-          >
-            Errors →
-          </Link>
-          <Link
-            to="/admin/promo-codes"
-            className={chipClasses()}
-          >
-            Promo codes →
-          </Link>
-          <Link
-            to="/admin/organizations"
-            className={chipClasses()}
-          >
-            Organizations →
-          </Link>
-          <Link
-            to="/admin/emails"
-            search={{ t: "signup" }}
-            className={chipClasses()}
-          >
-            Email copy →
-          </Link>
 
-
-
-
-        </div>
-      </header>
 
 
 
