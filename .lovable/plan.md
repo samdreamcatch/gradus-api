@@ -1,42 +1,38 @@
-# Message another coach about their plan
+## Goal
 
-Add a per-plan "Message about this plan" button inside the "Also coaching {athlete}" sheet (visible to Club-tier coaches). Tapping it opens a composer that starts (or reuses) a direct coach↔coach conversation and sends the message tagged to that plan — matching the parent/athlete flow.
-
-## Scope
-
-- Entry point: each `PlanCard` inside `src/components/coach/other-coach-plans-sheet.tsx`.
-- Gated by the existing `canViewOtherCoachPlans` check in `athlete-detail-sheet.tsx` — no new tier logic (Club-only stays enforced by the parent sheet).
-- Reuse the existing coach↔coach DM plumbing (`ensureDirectRoom`, `sendMessage`, `direct_rooms`) and the visual pattern of `MessageCoachAboutPlanDialog`.
+When a coach taps a plan chip inside a message and the plan belongs to **another** coach (shared athlete, Club tier), open the same read-only bottom sheet used from the athlete profile — never the plan editor. Own plans keep navigating to the editor.
 
 ## Changes
 
-### 1. Shared composer component
-Refactor `src/components/plans/message-coach-about-plan-dialog.tsx` so the dialog UI is reusable across both flows without duplicating markup:
-- Keep the current parent/athlete signature and behavior working.
-- Add a discriminated `mode` prop:
-  - `mode: "athlete-room"` (current behavior) — uses `ensureRoom({ coachId, athleteId })`, sends with `planId`, navigates to `/parent|athlete|coach/messages/:roomId`.
-  - `mode: "coach-direct"` — uses `ensureDirectRoom({ kind: "coach_coach", otherCoachId })`, sends with `planId`, navigates to `/coach/messages/:roomId`.
-- Title/description adapt: "Message Coach {firstName}" + "Your message will be tagged to this plan."
-- Same plan chip + textarea + Send button styling.
+### 1. Extend message + room payloads (`src/lib/messages.functions.ts`)
+- `MessageDTO.plan` gains `coachId: string` (plan owner). Fetched alongside `title` in the existing `plansById` query (add `coach_id` to the select).
+- `RoomDTO` gains `myCoachId: string | null` — populated from the `me.coach.id` lookup that already happens in `getRoom`. Lets the client compare ownership without extra round-trips.
+- Update the `MessageDTO` / `RoomDTO` type exports so components consume the new fields.
 
-### 2. Allow plan tagging in coach↔coach DMs
-In `src/lib/messages.functions.ts` `sendMessage`, the current line
-`const planId = room.kind === "athlete" ? data.planId ?? null : null;`
-drops `planId` for direct rooms. Loosen it to also allow `planId` when `room.kind === "coach_coach"` (schema already has `messages.plan_id`, and `getRoom` already selects it). Parent/athlete direct rooms remain untagged.
+### 2. New read-only fetch: `getOtherCoachPlanForMessage`
+New server fn in `src/lib/coach-athlete-detail.functions.ts` (colocated with the existing other-coach DTOs). Input: `{ planId }`. Behavior:
+- `requireSupabaseAuth`; resolve caller's coach profile.
+- Load plan (`id, coach_id, athlete_id, title, notes, status, updated_at`); 404 if missing.
+- Authorize: caller must be Club tier (`coach_effective_tier(_coach_id) = 'club'`) AND share the plan's athlete via `coach_athletes`. Otherwise throw "Not allowed".
+- Load coach profile (first/last, sports via `coach_levels`), athlete first name, plan moves (position/name/description/cue/why/target_kind/target_value), and sessions-in-last-30d count — mirroring the shape built inside `getAthleteDetail` so we can reuse the existing card.
+- Return `{ coach: OtherCoachDTO (single-plan array), athleteFirstName }` so the existing `OtherCoachPlansSheet` renders it unchanged.
 
-### 3. Wire the button into the Also-Coached-By sheet
-In `src/components/coach/other-coach-plans-sheet.tsx`:
-- Add a footer row to each `PlanCard` with a subtle "Message about this plan" button (icon + label), styled with existing tokens (`bg-elevated`, `border-divider`, `press`).
-- Manage a local `activePlan: OtherCoachPlanDTO | null` state; clicking opens the composer with `otherCoachId = coach.coachId`, `planId`, `planTitle`, and `coachFirstName`.
-- Composer closes the plan drawer on success (navigation already leaves the sheet).
+### 3. Route the message plan chip (`src/components/messages/room-view.tsx`)
+Replace the current `<Link to={planHrefForRole(...)}>` chip render with a small branch:
+- If `room.myRole === 'coach'` AND `m.plan.coachId && m.plan.coachId !== room.myCoachId` → render a `<button>` that sets `openOtherCoachPlanId` state.
+- Otherwise → keep the existing `<Link>` (own plan → editor; parent/athlete viewers → their existing routes, no behavior change).
 
-## Non-goals
+Mount `<OtherCoachPlansSheet coach={data?.coach ?? null} athleteFirstName={data?.athleteFirstName ?? ''} onOpenChange={...} />` at the bottom of `RoomView`, driven by a `useQuery(['other-coach-plan', planId], getOtherCoachPlanForMessage)` gated on the open id. Reusing `OtherCoachPlansSheet` guarantees the "exact same style as from the athlete profile" — same header, same `PlanCard`, same `MoveRow`, same "Message about this plan" affordance.
 
-- No new database migration (uses existing `messages.plan_id` and `direct_rooms`).
-- No changes to how the DM thread renders the plan chip (that already works via `getRoom`'s `plan_id` selection).
-- No change to Coach/Pro tier gating — button is only reachable through the Club-gated sheet.
+### 4. Not changed
+- Editor route (`/coach/plans/$planId`) is untouched — still the destination for the coach's own plans.
+- Parent/athlete plan chips keep their current links.
+- `getPlan` server fn stays broadened (from previous fix) so any residual direct-URL navigation still resolves.
 
-## Technical notes
+## Files touched
 
-- `ensureDirectRoom` already enforces "must share a rostered athlete" — always true here, since the sheet is opened from a shared-athlete context.
-- `MessageCoachAboutPlanDialog` currently uses `Dialog`. Per overlay doctrine, plain `Dialog` is retired for new code — the refactored composer will migrate to `Sheet side="bottom"` with `paper-surface` so both call sites (parent/athlete and coach-to-coach) benefit consistently.
+- `src/lib/messages.functions.ts` — add `coach_id` to plan select, populate `plan.coachId` and `room.myCoachId`.
+- `src/lib/coach-athlete-detail.functions.ts` — add `getOtherCoachPlanForMessage` server fn.
+- `src/components/messages/room-view.tsx` — branch plan-chip render + mount sheet.
+
+No schema/RLS changes required (existing coach-shared-athlete policies already permit reads).
