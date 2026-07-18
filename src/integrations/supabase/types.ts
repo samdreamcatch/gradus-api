@@ -1649,47 +1649,89 @@ export type Database = {
         }
         Relationships: []
       }
+      resource_sports: {
+        Row: {
+          resource_id: string
+          sport: string
+        }
+        Insert: {
+          resource_id: string
+          sport: string
+        }
+        Update: {
+          resource_id?: string
+          sport?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resource_sports_resource_id_fkey"
+            columns: ["resource_id"]
+            isOneToOne: false
+            referencedRelation: "resources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       resources: {
         Row: {
+          coach_id: string | null
           created_at: string
           description: string
           display_order: number
+          external_url: string | null
           id: string
           is_org_template: boolean
+          kind: string
           organization_id: string | null
           published: boolean
           sport: string
-          storage_path: string
+          storage_path: string | null
           title: string
           updated_at: string
+          updated_by: string | null
         }
         Insert: {
+          coach_id?: string | null
           created_at?: string
           description?: string
           display_order?: number
+          external_url?: string | null
           id?: string
           is_org_template?: boolean
+          kind?: string
           organization_id?: string | null
           published?: boolean
           sport: string
-          storage_path: string
+          storage_path?: string | null
           title: string
           updated_at?: string
+          updated_by?: string | null
         }
         Update: {
+          coach_id?: string | null
           created_at?: string
           description?: string
           display_order?: number
+          external_url?: string | null
           id?: string
           is_org_template?: boolean
+          kind?: string
           organization_id?: string | null
           published?: boolean
           sport?: string
-          storage_path?: string
+          storage_path?: string | null
           title?: string
           updated_at?: string
+          updated_by?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "resources_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "coach_profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "resources_organization_id_fkey"
             columns: ["organization_id"]
@@ -1819,6 +1861,14 @@ export type Database = {
     }
     Functions: {
       activate_plan: { Args: { _plan_id: string }; Returns: undefined }
+      athlete_has_coach_upload: {
+        Args: { _resource_id: string }
+        Returns: boolean
+      }
+      caller_is_resource_owner: {
+        Args: { _coach_id: string }
+        Returns: boolean
+      }
       coach_effective_tier: { Args: { _coach_id: string }; Returns: string }
       coach_has_rostered_athlete_of_parent: {
         Args: { _parent_id: string }
@@ -1884,6 +1934,10 @@ export type Database = {
       }
       parent_has_athlete_in_sport: {
         Args: { _sport: string }
+        Returns: boolean
+      }
+      parent_has_coach_upload: {
+        Args: { _resource_id: string }
         Returns: boolean
       }
       read_email_batch: {
