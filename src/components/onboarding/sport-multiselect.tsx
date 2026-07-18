@@ -118,24 +118,17 @@ export function SportMultiselect({
                   if (a.key === "strength_conditioning") return -1;
                   if (b.key === "strength_conditioning") return 1;
                   return a.label.localeCompare(b.label);
-                }).map((s) => {
+                }).filter((s) => !isLocked(s.key)).map((s) => {
                   const sel = isSelected(s.key);
-                  const locked = isLocked(s.key);
                   return (
                     <CommandItem
                       key={s.key}
                       value={s.label}
-                      disabled={locked}
                       onSelect={() => {
-                        if (locked) return;
                         onToggle({ key: s.key, label: s.label, custom: false });
                       }}
-                      className={cn(locked && "opacity-60")}
                     >
                       <span className="flex-1">{s.label}</span>
-                      {locked && !sel && (
-                        <Lock className="h-3.5 w-3.5 text-text-tertiary" />
-                      )}
                       {sel && <Check className="h-4 w-4 text-accent-ink" />}
                     </CommandItem>
                   );
