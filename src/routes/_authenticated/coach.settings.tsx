@@ -594,7 +594,8 @@ function PlanSection({
                 ? "Switch to Coach or apply a promo."
                 : "Switch tier or apply a promo."
             }
-            onClick={() => navigate({ to: "/coach/paywall" })}
+            onClick={() => navigate({ to: "/coach/paywall", search: { manage: true } })}
+
           />
 
           {joinClubRow}
