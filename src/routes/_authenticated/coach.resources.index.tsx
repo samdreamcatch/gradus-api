@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Search } from "lucide-react";
@@ -250,6 +250,7 @@ function UploadButton({
   canUpload: boolean;
   onClick: () => void;
 }) {
+  const navigate = useNavigate();
   if (canUpload) {
     return (
       <button
@@ -264,8 +265,12 @@ function UploadButton({
     );
   }
   return (
-    <span className="inline-flex shrink-0 items-center rounded-full bg-elevated px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-text-secondary">
+    <button
+      type="button"
+      onClick={() => navigate({ to: "/coach/paywall", search: { tier: "coach_pro" } })}
+      className="press inline-flex shrink-0 items-center rounded-full bg-elevated px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-text-secondary"
+    >
       UPGRADE TO EDIT LIBRARY
-    </span>
+    </button>
   );
 }

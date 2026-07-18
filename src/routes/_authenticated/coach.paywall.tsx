@@ -124,16 +124,21 @@ function PaywallPage() {
   const isEntitled =
     entitlement === "paid" || entitlement === "promo_free" || entitlement === "club_covered";
 
+  const currentTier = data?.profile.effectiveTier ?? null;
+  // Explicit upgrade intent: coach clicked an "Upgrade" affordance elsewhere.
+  const isUpgradeIntent = Boolean(preselectedTier);
+
   const onboardedAt = data?.profile.onboardedAt ?? null;
 
   useEffect(() => {
     if (!isEntitled) return;
-    if (isFoundingCoach && preselectedTier === "coach_pro") return;
-    if (isFoundingCoach && !preselectedTier) return;
-    // Fresh coaches: after activating a plan, continue into onboarding.
-    // Returning coaches (already onboarded): go to the roster.
+    // Founding coaches stay to browse Coach Pro upgrade.
+    if (isFoundingCoach) return;
+    // Any coach who explicitly clicked "Upgrade" stays on the paywall.
+    if (isUpgradeIntent) return;
+    // Otherwise: entitled coaches don't need the paywall.
     navigate({ to: onboardedAt ? "/coach/roster" : "/coach/onboarding", replace: true });
-  }, [isEntitled, isFoundingCoach, preselectedTier, onboardedAt, navigate]);
+  }, [isEntitled, isFoundingCoach, isUpgradeIntent, onboardedAt, navigate]);
 
   const handleSignOut = async () => {
     await qc.cancelQueries();
@@ -297,11 +302,26 @@ function PaywallPage() {
           <Sparkles className="h-5 w-5" />
         </div>
         <h1 className="text-center font-display text-h2 text-text-primary">
-          Activate your workspace
+          {isEntitled ? "Manage your plan" : "Activate your workspace"}
         </h1>
         <p className="mt-1.5 max-w-md text-center text-sm text-text-secondary">
-          Pick a plan to get started. Cancel anytime.
+          {isEntitled ? "Change tier, join a club, or apply a promo." : "Pick a plan to get started. Cancel anytime."}
         </p>
+
+        {isEntitled && (
+          <div className="mt-4 w-full rounded-xl border border-accent/40 bg-accent/10 px-3 py-2 text-center text-sm">
+            <span className="text-text-secondary">Current plan: </span>
+            <span className="font-semibold text-text-primary">
+              {isFoundingCoach
+                ? "Founding Coach — free for life"
+                : currentTier === "club"
+                  ? `Club${data?.profile.organizationName ? ` — ${data.profile.organizationName}` : ""}`
+                  : currentTier === "coach_pro"
+                    ? "Coach Pro"
+                    : "Coach"}
+            </span>
+          </div>
+        )}
 
         {/* 1. Club search + code */}
         <div className="mt-5 w-full rounded-xl border border-divider bg-elevated p-3">
@@ -506,6 +526,7 @@ function PaywallPage() {
             const price = PRICE_MAP[tier][interval];
             const isPro = tier === "coach_pro";
             const coachFoundingActive = tier === "coach" && isFoundingCoach;
+            const isCurrentTier = isEntitled && !isFoundingCoach && currentTier === tier;
             const promoAppliesHere = isPro && promo.status === "valid";
 
             return (
@@ -513,18 +534,26 @@ function PaywallPage() {
                 key={tier}
                 className={cn(
                   "flex flex-col rounded-2xl border p-3 shadow-card sm:p-4",
-                  isPro ? "border-accent/60 bg-card" : "border-divider bg-card",
+                  isCurrentTier
+                    ? "border-accent bg-accent/5"
+                    : isPro
+                      ? "border-accent/60 bg-card"
+                      : "border-divider bg-card",
                 )}
               >
                 <div className="flex items-baseline justify-between gap-1">
                   <h2 className="font-display text-lg text-text-primary sm:text-h3">
                     {isPro ? "Coach Pro" : "Coach"}
                   </h2>
-                  {coachFoundingActive && (
+                  {coachFoundingActive ? (
                     <span className="rounded-full bg-accent/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-accent-ink sm:text-[10px] sm:tracking-widest">
                       FOUNDING
                     </span>
-                  )}
+                  ) : isCurrentTier ? (
+                    <span className="rounded-full bg-accent/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-accent-ink sm:text-[10px] sm:tracking-widest">
+                      CURRENT
+                    </span>
+                  ) : null}
                 </div>
 
                 {coachFoundingActive ? (
@@ -566,6 +595,10 @@ function PaywallPage() {
                 {coachFoundingActive ? (
                   <div className="mt-4 inline-flex items-center justify-center gap-1 rounded-md border border-divider bg-elevated px-3 py-2 text-xs font-semibold text-text-primary sm:text-sm">
                     <Check className="h-4 w-4 text-accent-ink" /> Active
+                  </div>
+                ) : isCurrentTier ? (
+                  <div className="mt-4 inline-flex items-center justify-center gap-1 rounded-md border border-divider bg-elevated px-3 py-2 text-xs font-semibold text-text-primary sm:text-sm">
+                    <Check className="h-4 w-4 text-accent-ink" /> Current plan
                   </div>
                 ) : (
                   <Button

@@ -1,4 +1,5 @@
 import { ChevronRight, Lock } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
 import type { OtherCoachDTO } from "@/lib/coach-athlete-detail.functions";
 
@@ -22,6 +23,7 @@ export function AlsoCoachedByList({
   onOpenCoach: (coachId: string) => void;
   locked?: boolean;
 }) {
+  const navigate = useNavigate();
   if (coaches.length === 0) return null;
   return (
     <section>
@@ -94,6 +96,15 @@ export function AlsoCoachedByList({
                   type="button"
                   onClick={() => onOpenCoach(c.coachId)}
                   className="press flex w-full items-center gap-3 rounded-2xl border border-divider bg-card p-3 pl-4 text-left shadow-card"
+                >
+                  {inner}
+                </button>
+              ) : locked && hasPlans ? (
+                <button
+                  type="button"
+                  onClick={() => navigate({ to: "/coach/paywall" })}
+                  className="press flex w-full items-center gap-3 rounded-2xl border border-dashed border-divider bg-card/40 p-3 pl-4 text-left"
+                  aria-label={`Upgrade to see Coach ${c.firstName} ${c.lastName}'s plans`}
                 >
                   {inner}
                 </button>
