@@ -1,20 +1,16 @@
 import { useState } from "react";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
 import { getAdminOverview, searchUsers, setUserTestFlag, getDailyActiveUsers, getAdminReporting } from "@/lib/admin.functions";
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
-import { SettingsGroup, SettingsList, SettingsButtonRow } from "@/components/settings/primitives";
 import { Eyebrow } from "@/components/ui/eyebrow";
-import { Chip, chipClasses } from "@/components/ui/chip";
+import { Chip } from "@/components/ui/chip";
 import { Tag } from "@/components/ui/tag";
-
-import { LogOut } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 const searchSchema = z.object({
