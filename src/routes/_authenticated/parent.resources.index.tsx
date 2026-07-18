@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { BookmarkPlus, Check, ChevronDown, Loader2, Search, Sparkles, Trash2 } from "lucide-react";
+import { BookmarkPlus, Check, ChevronDown, ExternalLink, FileText, Image as ImageIcon, Link as LinkIcon, Loader2, Search, Sparkles, Trash2 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { AnswerMarkdown } from "@/components/parent/answer-markdown";
 
