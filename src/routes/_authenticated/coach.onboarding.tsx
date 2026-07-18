@@ -54,11 +54,27 @@ function prettify(s: string) {
 function OnboardingPage() {
   const { data, isLoading, error } = useQuery(coachProfileQueryOptions);
   const navigate = useNavigate();
-  const search = Route.useSearch();
+
+  const entitlement = data?.profile.entitlement;
+  const onboardedAt = data?.profile.onboardedAt;
 
   useEffect(() => {
-    if (data?.profile.onboardedAt) navigate({ to: "/coach" });
-  }, [data?.profile.onboardedAt, navigate]);
+    if (onboardedAt) {
+      navigate({ to: "/coach" });
+      return;
+    }
+    // Coaches must select a plan (or claim a club code / founding-coach free
+    // grant) before completing onboarding.
+    if (
+      isCoachPaywallEnabled() &&
+      entitlement &&
+      entitlement !== "paid" &&
+      entitlement !== "promo_free" &&
+      entitlement !== "club_covered"
+    ) {
+      navigate({ to: "/coach/paywall", replace: true });
+    }
+  }, [onboardedAt, entitlement, navigate]);
 
   if (error) {
     return (
@@ -76,67 +92,23 @@ function OnboardingPage() {
       </div>
     );
   }
-  return <OnboardingForm data={data} initialOrg={search.org} initialPromo={search.promo} />;
+  return <OnboardingForm data={data} />;
 }
 
 type OnboardingData = NonNullable<ReturnType<typeof useCoachProfile>["data"]>;
 
-function OnboardingForm({
-  data,
-  initialOrg,
-  initialPromo,
-}: {
-  data: OnboardingData;
-  initialOrg?: string;
-  initialPromo?: string;
-}) {
+function OnboardingForm({ data }: { data: OnboardingData }) {
   const navigate = useNavigate();
 
   const needsName =
     !data.profile.firstName.trim() || !data.profile.lastName.trim();
 
-  const alreadyClub = data.profile.entitlement === "club_covered";
+  const effectiveTier = data.profile.effectiveTier;
+  const primarySportCap = effectiveTier === "coach" ? 1 : undefined;
 
   const [step, setStep] = useState(1);
   const [firstName, setFirstName] = useState(data.profile.firstName);
   const [lastName, setLastName] = useState(data.profile.lastName);
-  const [pathValue, setPathValue] = useState<CoachPathValue>(() => {
-    if (alreadyClub && data.profile.organizationName) {
-      return {
-        path: "club",
-        promoCode: "",
-        orgId: data.profile.organizationId ?? null,
-        orgName: data.profile.organizationName,
-        orgCity: null,
-        orgCode: "",
-        orgVerified: true,
-      };
-    }
-    if (initialOrg) {
-      // Coach arrived via `?org=CODE` — we don't know the org yet; they'll
-      // pick it in search and then re-enter the code. Keep the code prefilled
-      // so it's just one click after they pick their club.
-      return {
-        path: "club",
-        promoCode: "",
-        orgId: null,
-        orgName: null,
-        orgCity: null,
-        orgCode: initialOrg,
-        orgVerified: false,
-      };
-    }
-    return {
-      path: initialPromo ? "individual" : null,
-      promoCode: initialPromo ?? "",
-      orgId: null,
-      orgName: null,
-      orgCity: null,
-      orgCode: "",
-      orgVerified: false,
-    };
-  });
-  const promoCode = pathValue.promoCode;
 
 
 
