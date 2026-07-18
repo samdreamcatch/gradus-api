@@ -34,11 +34,13 @@ export function ConnectionCelebration({ role }: ConnectionCelebrationProps) {
   const fetchPending = useServerFn(getPendingConnectionCelebrations);
   const ack = useServerFn(acknowledgeConnection);
 
+  const { user, isReady } = useAuthReady();
   const { data } = useQuery({
     queryKey: ["connection-celebrations", role],
     queryFn: () => fetchPending(),
     staleTime: 0,
     refetchOnWindowFocus: false,
+    enabled: isReady && !!user,
   });
 
   const ackMutation = useMutation({
