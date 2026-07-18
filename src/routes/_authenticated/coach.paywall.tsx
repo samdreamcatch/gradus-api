@@ -302,11 +302,26 @@ function PaywallPage() {
           <Sparkles className="h-5 w-5" />
         </div>
         <h1 className="text-center font-display text-h2 text-text-primary">
-          Activate your workspace
+          {isEntitled ? "Manage your plan" : "Activate your workspace"}
         </h1>
         <p className="mt-1.5 max-w-md text-center text-sm text-text-secondary">
-          Pick a plan to get started. Cancel anytime.
+          {isEntitled ? "Change tier, join a club, or apply a promo." : "Pick a plan to get started. Cancel anytime."}
         </p>
+
+        {isEntitled && (
+          <div className="mt-4 w-full rounded-xl border border-accent/40 bg-accent/10 px-3 py-2 text-center text-sm">
+            <span className="text-text-secondary">Current plan: </span>
+            <span className="font-semibold text-text-primary">
+              {isFoundingCoach
+                ? "Founding Coach — free for life"
+                : currentTier === "club"
+                  ? `Club${data?.profile.organizationName ? ` — ${data.profile.organizationName}` : ""}`
+                  : currentTier === "coach_pro"
+                    ? "Coach Pro"
+                    : "Coach"}
+            </span>
+          </div>
+        )}
 
         {/* 1. Club search + code */}
         <div className="mt-5 w-full rounded-xl border border-divider bg-elevated p-3">
