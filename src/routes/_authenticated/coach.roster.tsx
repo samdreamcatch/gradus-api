@@ -201,7 +201,7 @@ function RosterPage() {
           <FirstPlanBanner />
 
           {rosterFull ? (
-            <div className="paper-surface mt-3 rounded-lg border border-divider p-3">
+            <div className="mt-3 rounded-lg border border-divider bg-elevated p-3">
               <div className="text-sm font-bold text-text-primary">
                 Your athlete roster is full — {athletes.length} / {athleteLimit}
               </div>
