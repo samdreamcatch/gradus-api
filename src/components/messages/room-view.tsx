@@ -308,6 +308,13 @@ export function RoomView({ roomId, viewerRole }: { roomId: string; viewerRole?: 
         disabled={sendTextMutation.isPending}
         onSendText={(body, planId) => sendTextMutation.mutate({ body, planId })}
       />
+      <OtherCoachPlansSheet
+        coach={otherPlanData?.coach ?? null}
+        athleteFirstName={otherPlanData?.athleteFirstName ?? ""}
+        onOpenChange={(open) => {
+          if (!open) setOtherPlanId(null);
+        }}
+      />
     </div>
   );
 }
