@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
-import { Sparkles } from "lucide-react";
+
 import { SettingsButtonRow } from "@/components/settings/primitives";
 import { isCoachProAvailable } from "@/lib/paywall-flag";
 
@@ -19,7 +19,7 @@ export function UpgradeToProRow() {
 
   return (
     <SettingsButtonRow
-      icon={<Sparkles className="size-4" />}
+      
       label="Upgrade to Coach Pro"
       description={description}
       tone="accent"
