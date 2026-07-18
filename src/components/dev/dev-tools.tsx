@@ -2,7 +2,7 @@
 // `import.meta.env.DEV` at the mount site in __root.tsx, so this file and
 // everything it imports tree-shakes out of production builds.
 import { useEffect, useState } from "react";
-import { useNavigate, useRouter } from "@tanstack/react-router";
+import { useNavigate, useRouter, useRouterState } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { Wrench, LogIn, RotateCcw, Check, Ticket } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -50,6 +50,7 @@ async function detectRole(userId: string): Promise<DevRole | null> {
 }
 
 export function DevTools() {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
@@ -58,6 +59,8 @@ export function DevTools() {
     userId: null,
     role: null,
   });
+
+  const hideOnAdmin = pathname === "/admin" || pathname.startsWith("/admin/");
   const navigate = useNavigate();
   const router = useRouter();
   const queryClient = useQueryClient();
