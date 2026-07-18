@@ -1,4 +1,5 @@
 import { ChevronRight, Lock } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
 import type { OtherCoachDTO } from "@/lib/coach-athlete-detail.functions";
 
