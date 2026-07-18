@@ -124,17 +124,6 @@ function AdminHome() {
 
       <DauChart includeTest={includeTest} />
 
-      <SettingsGroup>
-        <SettingsList>
-          <SettingsButtonRow
-            icon={<LogOut className="size-4" />}
-            label="Sign out"
-            tone="destructive"
-            onClick={handleSignOut}
-          />
-        </SettingsList>
-      </SettingsGroup>
-
 
 
 
