@@ -93,7 +93,7 @@ function PaywallPage() {
   const checkoutFn = useServerFn(startCoachCheckout);
   const changeSubFn = useServerFn(changeCoachSubscription);
   const validateCode = useServerFn(validatePromoCode);
-  const { checkout: checkoutStatus, tier: preselectedTier } = Route.useSearch();
+  const { checkout: checkoutStatus, tier: preselectedTier, manage: manageIntent } = Route.useSearch();
 
   const [interval, setInterval] = useState<Interval>("year");
   const [selectedTier, setSelectedTier] = useState<Tier | null>(null);
