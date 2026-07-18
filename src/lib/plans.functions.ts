@@ -280,12 +280,23 @@ export const getPlan = createServerFn({ method: "POST" })
 
     const { data: plan, error } = await supabase
       .from("plans")
-      .select("id, title, notes, kind, status, athlete_id, updated_at, voice_transcript")
+      .select("id, title, notes, kind, status, athlete_id, updated_at, voice_transcript, coach_id")
       .eq("id", data.id)
-      .eq("coach_id", coachId)
       .maybeSingle();
     if (error) dbError(error);
     if (!plan) throw new Error("Plan not found");
+
+    // Allow: (a) owner coach, or (b) another coach who shares this athlete.
+    if (plan.coach_id !== coachId) {
+      if (!plan.athlete_id) throw new Error("Plan not found");
+      const { data: shared } = await supabase
+        .from("coach_athletes")
+        .select("coach_id")
+        .eq("coach_id", coachId)
+        .eq("athlete_id", plan.athlete_id)
+        .maybeSingle();
+      if (!shared) throw new Error("Plan not found");
+    }
 
     const { data: moves, error: movesErr } = await supabase
       .from("plan_moves")
