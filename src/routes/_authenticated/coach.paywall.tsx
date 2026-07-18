@@ -15,7 +15,7 @@ import {
   clearOrganizationLink,
   recordSilentClubLead,
 } from "@/lib/coach-org.functions";
-import { startCoachCheckout } from "@/lib/coach-checkout.functions";
+import { startCoachCheckout, changeCoachSubscription } from "@/lib/coach-checkout.functions";
 import { validatePromoCode } from "@/lib/promo-codes.functions";
 import { getStripe, getStripeEnvironment } from "@/lib/stripe";
 import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
@@ -89,6 +89,7 @@ function PaywallPage() {
   const claimClub = useServerFn(claimOrganizationInviteCode);
   const recordLead = useServerFn(recordSilentClubLead);
   const checkoutFn = useServerFn(startCoachCheckout);
+  const changeSubFn = useServerFn(changeCoachSubscription);
   const validateCode = useServerFn(validatePromoCode);
   const { checkout: checkoutStatus, tier: preselectedTier } = Route.useSearch();
 
@@ -147,6 +148,51 @@ function PaywallPage() {
     navigate({ to: "/auth", replace: true });
   };
 
+  const subscriptionStatus = data?.profile.subscriptionStatus ?? null;
+  const hasActiveSub =
+    entitlement === "paid" &&
+    !!data?.profile.hasStripeCustomer &&
+    ["active", "trialing", "past_due"].includes(subscriptionStatus ?? "");
+
+  const switchTier = useCallback(
+    async (tier: Tier) => {
+      setLoading(true);
+      setSelectedTier(tier);
+      try {
+        const env = getStripeEnvironment();
+        const result = await changeSubFn({
+          data: {
+            priceId: PRICE_MAP[tier][interval].priceId,
+            environment: env,
+          },
+        });
+        if ("error" in result) throw new Error(result.error);
+        if (result.noop) {
+          toast.message("You're already on that plan.");
+        } else if ((result.refundedCents ?? 0) > 0) {
+          toast.success(
+            `Switched to ${tier === "coach_pro" ? "Coach Pro" : "Coach"}. Prorated refund issued to your card.`,
+          );
+        } else if ((result.chargedCents ?? 0) > 0) {
+          toast.success(
+            `Switched to ${tier === "coach_pro" ? "Coach Pro" : "Coach"}. Prorated difference charged today; renewal date unchanged.`,
+          );
+        } else {
+          toast.success(
+            `Switched to ${tier === "coach_pro" ? "Coach Pro" : "Coach"}.`,
+          );
+        }
+        await qc.invalidateQueries({ queryKey: ["coach-profile"] });
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Couldn't switch plans");
+      } finally {
+        setLoading(false);
+        setSelectedTier(null);
+      }
+    },
+    [changeSubFn, interval, qc],
+  );
+
   const startCheckout = useCallback(
     async (tier: Tier) => {
       const promoCode = promo.status === "valid" ? promo.code : undefined;
@@ -178,6 +224,13 @@ function PaywallPage() {
       }
     },
     [checkoutFn, interval, promo],
+  );
+
+  // Unified entry: if the coach already has a Stripe sub, swap it in place
+  // (prorated). Otherwise open embedded checkout for a new sub.
+  const handleTierAction = useCallback(
+    (tier: Tier) => (hasActiveSub ? switchTier(tier) : startCheckout(tier)),
+    [hasActiveSub, switchTier, startCheckout],
   );
 
   useEffect(() => {
@@ -608,13 +661,19 @@ function PaywallPage() {
                     type="button"
                     className="mt-4 w-full text-xs sm:text-sm"
                     disabled={loading || tiersDisabled}
-                    onClick={() => startCheckout(tier)}
+                    onClick={() => handleTierAction(tier)}
                   >
                     {loading && selectedTier === tier
-                      ? "Starting…"
-                      : isPro
-                        ? proCtaLabel
-                        : "Upgrade"}
+                      ? hasActiveSub
+                        ? "Switching…"
+                        : "Starting…"
+                      : hasActiveSub
+                        ? isPro
+                          ? "Upgrade to Coach Pro"
+                          : "Switch to Coach"
+                        : isPro
+                          ? proCtaLabel
+                          : "Upgrade"}
                   </Button>
                 )}
               </div>
