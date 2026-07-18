@@ -99,15 +99,6 @@ export function AlsoCoachedByList({
                 >
                   {inner}
                 </button>
-              ) : locked && hasPlans ? (
-                <button
-                  type="button"
-                  onClick={() => navigate({ to: "/coach/paywall" })}
-                  className="press flex w-full items-center gap-3 rounded-2xl border border-dashed border-divider bg-card/40 p-3 pl-4 text-left"
-                  aria-label={`Upgrade to see Coach ${c.firstName} ${c.lastName}'s plans`}
-                >
-                  {inner}
-                </button>
               ) : (
                 <div className="flex w-full items-center gap-3 rounded-2xl border border-dashed border-divider bg-card/40 p-3 pl-4 text-left">
                   {inner}
