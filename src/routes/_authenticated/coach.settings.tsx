@@ -17,6 +17,7 @@ import {
   Sparkles,
   Building2,
   Tag,
+  ArrowLeftRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -579,9 +580,19 @@ function PlanSection({
           {promoRow}
           {profile.subscriptionTier === "coach" && <UpgradeToProRow />}
           <SettingsButtonRow
+            icon={<ArrowLeftRight className="size-4" />}
+            label="Change plan"
+            description={
+              profile.subscriptionTier === "coach_pro"
+                ? "Switch to Coach or apply a promo."
+                : "Switch tier or apply a promo."
+            }
+            onClick={() => navigate({ to: "/coach/paywall" })}
+          />
+          <SettingsButtonRow
             icon={<CreditCard className="size-4" />}
-            label={openingPortal ? "Opening billing portal…" : "Manage subscription"}
-            description="Change card, cancel, or download invoices."
+            label={openingPortal ? "Opening billing portal…" : "Manage billing"}
+            description="Change card or download invoices."
             onClick={() => void openPortal()}
             disabled={openingPortal || !profile.hasStripeCustomer}
           />
