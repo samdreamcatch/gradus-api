@@ -162,24 +162,30 @@ function ParentResourcesPage() {
                   </p>
                 </div>
               ) : (
-                <ul className="divide-y divide-divider rounded-2xl border border-divider bg-card">
-                  {filtered.map((r) => (
-                    <li key={r.id}>
-                      <button
-                        type="button"
-                        onClick={() => setOpenResource(r)}
-                        className="flex w-full items-start gap-3 px-4 py-3 text-left transition hover:bg-accent/5 focus-visible:outline-none focus-visible:bg-accent/10"
-                      >
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-bold text-text-primary">
-                            {r.title.split(":")[0]}
-                          </p>
-
-                        </div>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
+                <div className="space-y-5">
+                  {coachItems.length > 0 ? (
+                    <div className="space-y-2">
+                      <p className="px-1 text-[11px] font-bold uppercase tracking-wide text-text-secondary">
+                        From your coaches
+                      </p>
+                      <ResourceList
+                        rows={coachItems}
+                        onOpen={setOpenResource}
+                        showCoach
+                      />
+                    </div>
+                  ) : null}
+                  {libraryItems.length > 0 ? (
+                    <div className="space-y-2">
+                      {coachItems.length > 0 ? (
+                        <p className="px-1 text-[11px] font-bold uppercase tracking-wide text-text-secondary">
+                          Gradus library
+                        </p>
+                      ) : null}
+                      <ResourceList rows={libraryItems} onOpen={setOpenResource} />
+                    </div>
+                  ) : null}
+                </div>
               )}
             </section>
           )}
