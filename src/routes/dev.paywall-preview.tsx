@@ -47,9 +47,6 @@ const FEATURES: Record<Tier, string[]> = {
 };
 
 export const Route = createFileRoute("/dev/paywall-preview")({
-  beforeLoad: () => {
-    if (!import.meta.env.DEV) throw redirect({ to: "/" });
-  },
   component: PaywallPreview,
 });
 
