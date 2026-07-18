@@ -250,6 +250,7 @@ function UploadButton({
   canUpload: boolean;
   onClick: () => void;
 }) {
+  const navigate = useNavigate();
   if (canUpload) {
     return (
       <button
@@ -263,7 +264,6 @@ function UploadButton({
       </button>
     );
   }
-  const navigate = useNavigate();
   return (
     <button
       type="button"
