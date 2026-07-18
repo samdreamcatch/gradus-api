@@ -93,6 +93,8 @@ function RosterPage() {
   const { data: coachProfile } = useQuery(coachProfileQueryOptions);
   const { athletes, coachSports } = roster;
   const router = useRouter();
+  const navigate = useNavigate();
+  const coachProAvailable = isCoachProAvailable();
   const [tab, setTab] = useState<RosterTab>("schedule");
   const [selectedSport, setSelectedSport] = useState<string | null>(null);
   const [selectedAthleteId, setSelectedAthleteId] = useState<string | null>(null);
