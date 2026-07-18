@@ -263,6 +263,16 @@ export const getRoom = createServerFn({ method: "GET" })
       }),
     );
 
+    let myCoachId: string | null = null;
+    if (myRoleByRoom.get(room.id) === "coach") {
+      const { data: cp } = await supabaseAdmin
+        .from("coach_profiles")
+        .select("id")
+        .eq("user_id", userId)
+        .maybeSingle();
+      myCoachId = cp?.id ?? null;
+    }
+
     return {
       room: {
         id: room.id,
@@ -272,6 +282,7 @@ export const getRoom = createServerFn({ method: "GET" })
         participants,
         myRole: myRoleByRoom.get(room.id)!,
         myUserId: userId,
+        myCoachId,
       },
       messages,
     };
