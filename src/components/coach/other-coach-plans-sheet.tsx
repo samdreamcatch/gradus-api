@@ -111,7 +111,16 @@ function StatusPill({ status }: { status: "active" | "benched" }) {
   );
 }
 
-function PlanCard({ plan }: { plan: OtherCoachPlanDTO }) {
+function PlanCard({
+  plan,
+  otherCoachId,
+  coachFirstName,
+}: {
+  plan: OtherCoachPlanDTO;
+  otherCoachId: string;
+  coachFirstName: string;
+}) {
+  const [messageOpen, setMessageOpen] = useState(false);
   return (
     <div className="overflow-hidden rounded-2xl border border-divider bg-card shadow-card">
       <div className="border-b border-divider/60 p-4">
@@ -147,6 +156,27 @@ function PlanCard({ plan }: { plan: OtherCoachPlanDTO }) {
           </div>
         )}
       </div>
+
+      <div className="border-t border-divider/60 p-3">
+        <button
+          type="button"
+          onClick={() => setMessageOpen(true)}
+          className="press inline-flex w-full items-center justify-center gap-2 rounded-xl border border-divider bg-elevated px-3 py-2 text-sm font-semibold text-text-primary"
+        >
+          <MessageCircle className="size-4" />
+          Message about this plan
+        </button>
+      </div>
+
+      <MessageCoachAboutPlanDialog
+        mode="coach-direct"
+        open={messageOpen}
+        onOpenChange={setMessageOpen}
+        otherCoachId={otherCoachId}
+        coachFirstName={coachFirstName}
+        planId={plan.planId}
+        planTitle={plan.title}
+      />
     </div>
   );
 }
