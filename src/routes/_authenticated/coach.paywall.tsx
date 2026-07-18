@@ -526,6 +526,7 @@ function PaywallPage() {
             const price = PRICE_MAP[tier][interval];
             const isPro = tier === "coach_pro";
             const coachFoundingActive = tier === "coach" && isFoundingCoach;
+            const isCurrentTier = isEntitled && !isFoundingCoach && currentTier === tier;
             const promoAppliesHere = isPro && promo.status === "valid";
 
             return (
@@ -533,18 +534,26 @@ function PaywallPage() {
                 key={tier}
                 className={cn(
                   "flex flex-col rounded-2xl border p-3 shadow-card sm:p-4",
-                  isPro ? "border-accent/60 bg-card" : "border-divider bg-card",
+                  isCurrentTier
+                    ? "border-accent bg-accent/5"
+                    : isPro
+                      ? "border-accent/60 bg-card"
+                      : "border-divider bg-card",
                 )}
               >
                 <div className="flex items-baseline justify-between gap-1">
                   <h2 className="font-display text-lg text-text-primary sm:text-h3">
                     {isPro ? "Coach Pro" : "Coach"}
                   </h2>
-                  {coachFoundingActive && (
+                  {coachFoundingActive ? (
                     <span className="rounded-full bg-accent/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-accent-ink sm:text-[10px] sm:tracking-widest">
                       FOUNDING
                     </span>
-                  )}
+                  ) : isCurrentTier ? (
+                    <span className="rounded-full bg-accent/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-accent-ink sm:text-[10px] sm:tracking-widest">
+                      CURRENT
+                    </span>
+                  ) : null}
                 </div>
 
                 {coachFoundingActive ? (
