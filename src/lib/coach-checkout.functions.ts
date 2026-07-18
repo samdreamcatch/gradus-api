@@ -70,7 +70,7 @@ export const startCoachCheckout = createServerFn({ method: "POST" })
         }
       }
 
-      if (customerId && profile?.stripe_customer_id !== customerId) {
+      if (customerId && profile && profile.stripe_customer_id !== customerId) {
         await supabase
           .from("coach_profiles")
           .update({ stripe_customer_id: customerId, subscription_environment: env })
