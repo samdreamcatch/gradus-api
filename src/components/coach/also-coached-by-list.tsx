@@ -23,8 +23,8 @@ export function AlsoCoachedByList({
   onOpenCoach: (coachId: string) => void;
   locked?: boolean;
 }) {
-  if (coaches.length === 0) return null;
   const navigate = useNavigate();
+  if (coaches.length === 0) return null;
   return (
     <section>
       <h3 className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
