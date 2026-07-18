@@ -140,9 +140,12 @@ function PaywallPage() {
     if (isFoundingCoach) return;
     // Any coach who explicitly clicked "Upgrade" stays on the paywall.
     if (isUpgradeIntent) return;
+    // Coach arrived from Settings → Change plan.
+    if (manageIntent) return;
     // Otherwise: entitled coaches don't need the paywall.
     navigate({ to: onboardedAt ? "/coach/roster" : "/coach/onboarding", replace: true });
-  }, [isEntitled, isFoundingCoach, isUpgradeIntent, onboardedAt, navigate]);
+  }, [isEntitled, isFoundingCoach, isUpgradeIntent, manageIntent, onboardedAt, navigate]);
+
 
   const handleSignOut = async () => {
     await qc.cancelQueries();
