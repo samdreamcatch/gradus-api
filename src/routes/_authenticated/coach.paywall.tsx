@@ -235,10 +235,9 @@ function PaywallPage() {
 
   useEffect(() => {
     if (preselectedTier === "coach_pro" && !clientSecret && !loading) {
-      void startCheckout("coach_pro");
+      void handleTierAction("coach_pro");
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [preselectedTier]);
+  }, [clientSecret, handleTierAction, loading, preselectedTier]);
 
   const applyPromo = async () => {
     const code = promoInput.trim().toUpperCase();
