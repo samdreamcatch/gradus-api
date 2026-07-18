@@ -263,9 +263,14 @@ function UploadButton({
       </button>
     );
   }
+  const navigate = useNavigate();
   return (
-    <span className="inline-flex shrink-0 items-center rounded-full bg-elevated px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-text-secondary">
+    <button
+      type="button"
+      onClick={() => navigate({ to: "/coach/paywall", search: { tier: "coach_pro" } })}
+      className="press inline-flex shrink-0 items-center rounded-full bg-elevated px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-text-secondary"
+    >
       UPGRADE TO EDIT LIBRARY
-    </span>
+    </button>
   );
 }
