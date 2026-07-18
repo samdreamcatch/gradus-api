@@ -766,3 +766,138 @@ Provide a single-sentence rationale that cites a specific data point (a session 
       throw new Error("Could not generate summary. Please try again later.");
     }
   });
+
+// --- Read-only view of a single plan owned by another coach ---
+// Used from message threads: when a coach taps a plan chip tagged to a plan
+// they don't own, we show the same bottom-sheet card used from the athlete
+// profile instead of opening the plan editor.
+
+export interface OtherCoachPlanForMessageDTO {
+  coach: OtherCoachDTO;
+  athleteFirstName: string;
+}
+
+export const getOtherCoachPlanForMessage = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ planId: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ context, data }): Promise<OtherCoachPlanForMessageDTO> => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const viewerCoachId = await getCoachId(context.userId);
+    if (!viewerCoachId) throw new Error("Coach profile not found");
+
+    const { data: plan, error: planErr } = await supabaseAdmin
+      .from("plans")
+      .select("id, coach_id, athlete_id, title, notes, status, updated_at, kind")
+      .eq("id", data.planId)
+      .maybeSingle();
+    if (planErr) dbError(planErr);
+    if (!plan || plan.kind !== "plan" || !plan.athlete_id || !plan.coach_id) {
+      throw new Error("Plan not found");
+    }
+    if (plan.coach_id === viewerCoachId) {
+      throw new Error("This plan belongs to you — open the editor instead.");
+    }
+
+    // Both coaches must be linked to the athlete.
+    const [linkMineRes, linkOwnerRes] = await Promise.all([
+      supabaseAdmin
+        .from("coach_athletes")
+        .select("athlete_id")
+        .eq("coach_id", viewerCoachId)
+        .eq("athlete_id", plan.athlete_id)
+        .maybeSingle(),
+      supabaseAdmin
+        .from("coach_athletes")
+        .select("athlete_id")
+        .eq("coach_id", plan.coach_id)
+        .eq("athlete_id", plan.athlete_id)
+        .maybeSingle(),
+    ]);
+    if (linkMineRes.error) dbError(linkMineRes.error);
+    if (linkOwnerRes.error) dbError(linkOwnerRes.error);
+    if (!linkMineRes.data || !linkOwnerRes.data) {
+      throw new Error("Not allowed to view this plan.");
+    }
+
+    // Club-tier gate mirrors the athlete-profile experience.
+    const { data: tierData, error: tierErr } = await supabaseAdmin.rpc(
+      "coach_effective_tier",
+      { _coach_id: viewerCoachId },
+    );
+    if (tierErr) dbError(tierErr);
+    if (tierData !== "club") {
+      throw new Error("Viewing another coach's plans requires the Club plan.");
+    }
+
+    const since = new Date(Date.now() - WINDOW_DAYS * 86400_000).toISOString();
+
+    const [coachRes, athleteRes, movesRes, sportsRes, sessionsRes] = await Promise.all([
+      supabaseAdmin
+        .from("coach_profiles")
+        .select("id, first_name, last_name")
+        .eq("id", plan.coach_id)
+        .single(),
+      supabaseAdmin
+        .from("athletes")
+        .select("first_name")
+        .eq("id", plan.athlete_id)
+        .single(),
+      supabaseAdmin
+        .from("plan_moves")
+        .select("position, name, description, cue, why, target_kind, target_value")
+        .eq("plan_id", plan.id)
+        .order("position", { ascending: true }),
+      supabaseAdmin
+        .from("coach_athlete_sports")
+        .select("sport")
+        .eq("coach_id", plan.coach_id)
+        .eq("athlete_id", plan.athlete_id),
+      supabaseAdmin
+        .from("plan_sessions")
+        .select("id", { count: "exact", head: true })
+        .eq("plan_id", plan.id)
+        .gte("logged_at", since),
+    ]);
+    if (coachRes.error) dbError(coachRes.error);
+    if (athleteRes.error) dbError(athleteRes.error);
+    if (movesRes.error) dbError(movesRes.error);
+    if (sportsRes.error) dbError(sportsRes.error);
+    if (sessionsRes.error) dbError(sessionsRes.error);
+
+    const moves: OtherCoachMoveDTO[] = (movesRes.data ?? []).map((m) => ({
+      position: (m.position as number) ?? 0,
+      name: (m.name as string) ?? "",
+      description: (m.description as string) ?? "",
+      cue: (m.cue as string) ?? "",
+      why: (m.why as string) ?? "",
+      targetKind: (m.target_kind as "reps" | "mins") ?? "reps",
+      targetValue: (m.target_value as number) ?? 0,
+    }));
+
+    const sports = Array.from(new Set((sportsRes.data ?? []).map((r) => r.sport as string))).sort();
+
+    const planDTO: OtherCoachPlanDTO = {
+      planId: plan.id as string,
+      title: (plan.title as string) || "Untitled plan",
+      status: plan.status as PlanStatus,
+      updatedAt: plan.updated_at as string,
+      sessionsLast30d: sessionsRes.count ?? 0,
+      notes: (plan.notes as string) ?? "",
+      moves,
+    };
+
+    return {
+      coach: {
+        coachId: coachRes.data!.id,
+        firstName: coachRes.data!.first_name,
+        lastName: coachRes.data!.last_name,
+        sports: sports.map((s) => ({ key: s, label: sportLabel(s) })),
+        activeCount: plan.status === "active" ? 1 : 0,
+        benchedCount: plan.status === "active" ? 0 : 1,
+        plans: [planDTO],
+      },
+      athleteFirstName: athleteRes.data!.first_name,
+    };
+  });
