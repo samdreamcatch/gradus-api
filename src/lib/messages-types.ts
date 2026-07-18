@@ -56,6 +56,8 @@ export type RoomDetail = {
     participants: RoomParticipant[];
     myRole: RoleInRoom;
     myUserId: string;
+    /** The viewer's coach profile id, when the viewer is a coach. */
+    myCoachId: string | null;
   };
   messages: MessageDTO[];
 };
