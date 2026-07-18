@@ -116,15 +116,22 @@ export function SportMultiselect({
               <CommandGroup>
                 {SPORTS.map((s) => {
                   const sel = isSelected(s.key);
+                  const locked = isLocked(s.key);
                   return (
                     <CommandItem
                       key={s.key}
                       value={s.label}
-                      onSelect={() =>
-                        onToggle({ key: s.key, label: s.label, custom: false })
-                      }
+                      disabled={locked}
+                      onSelect={() => {
+                        if (locked) return;
+                        onToggle({ key: s.key, label: s.label, custom: false });
+                      }}
+                      className={cn(locked && "opacity-60")}
                     >
                       <span className="flex-1">{s.label}</span>
+                      {locked && !sel && (
+                        <Lock className="h-3.5 w-3.5 text-text-tertiary" />
+                      )}
                       {sel && <Check className="h-4 w-4 text-accent-ink" />}
                     </CommandItem>
                   );
