@@ -24,18 +24,10 @@ export const Route = createFileRoute("/_authenticated/admin/")({
 
 function AdminHome() {
   const { test: includeTest } = Route.useSearch();
-  const navigate = useNavigate();
   const overviewFn = useServerFn(getAdminOverview);
   const searchFn = useServerFn(searchUsers);
   const toggleFn = useServerFn(setUserTestFlag);
   const qc = useQueryClient();
-
-  const handleSignOut = async () => {
-    await qc.cancelQueries();
-    qc.clear();
-    await supabase.auth.signOut();
-    navigate({ to: "/login", replace: true });
-  };
 
   const toggleTest = async (userId: string, next: boolean) => {
     await toggleFn({ data: { userId, isTest: next } });
@@ -45,6 +37,7 @@ function AdminHome() {
       qc.invalidateQueries({ queryKey: ["admin-user", userId] }),
     ]);
   };
+
 
   const { data: overview, isLoading } = useQuery({
     queryKey: ["admin-overview", includeTest],
