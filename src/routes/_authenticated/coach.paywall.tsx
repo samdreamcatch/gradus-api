@@ -149,9 +149,10 @@ function PaywallPage() {
   // Auto-apply WELCOME_BACK when the coach was granted it on leaving a club.
   // Pre-fills the promo input, opens the section, and validates in the
   // background so Coach Pro shows the 3-months-free discount immediately.
-  const welcomeBackAutoAppliedRef = useState({ done: false })[0];
+  const welcomeBackAutoAppliedRef = useRef(false);
   useEffect(() => {
-    if (welcomeBackAutoAppliedRef.done) return;
+    if (welcomeBackAutoAppliedRef.current) return;
+
     if (isEntitled) return;
     if (profilePromoCode !== "WELCOME_BACK") return;
     if (promo.status !== "idle") return;
