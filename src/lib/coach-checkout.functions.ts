@@ -249,3 +249,222 @@ export const createCoachBillingPortalSession = createServerFn({ method: "POST" }
       return { error: getStripeErrorMessage(error) };
     }
   });
+
+type ChangeSubscriptionResult =
+  | {
+      ok: true;
+      /** True if the sub was already on the target price — nothing changed. */
+      noop?: boolean;
+      /** Cents charged to the card immediately (upgrade proration). 0 if none. */
+      chargedCents?: number;
+      /** Cents refunded to the card (downgrade proration). 0 if none. */
+      refundedCents?: number;
+      currency?: string;
+      newTier: "coach" | "coach_pro";
+    }
+  | { error: string };
+
+/**
+ * Swap the coach's existing subscription to a different tier/interval price,
+ * with immediate proration. Upgrades → prorated charge; downgrades → prorated
+ * cash refund to the card. Billing anchor is preserved.
+ *
+ * This is the ONLY code path for a coach who already has a Stripe subscription
+ * to change plans. Never start a second checkout session for them.
+ */
+export const changeCoachSubscription = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        priceId: z.enum([
+          "coach_monthly",
+          "coach_yearly",
+          "coach_pro_monthly",
+          "coach_pro_yearly",
+        ]),
+        environment: z.enum(["sandbox", "live"]),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }): Promise<ChangeSubscriptionResult> => {
+    const { userId, supabase } = context;
+    const { data: profile } = await supabase
+      .from("coach_profiles")
+      .select(
+        "stripe_customer_id, stripe_subscription_id, subscription_environment",
+      )
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (!profile?.stripe_customer_id) {
+      return { error: "No subscription on file yet." };
+    }
+
+    const env: StripeEnv =
+      (profile.subscription_environment as StripeEnv | null) === "live" ||
+      (profile.subscription_environment as StripeEnv | null) === "sandbox"
+        ? (profile.subscription_environment as StripeEnv)
+        : data.environment;
+
+    const newTier: "coach" | "coach_pro" =
+      data.priceId === "coach_pro_monthly" || data.priceId === "coach_pro_yearly"
+        ? "coach_pro"
+        : "coach";
+
+    try {
+      const stripe = createStripeClient(env);
+
+      // Resolve the target price via lookup_key (stable across sandbox/live).
+      const prices = await stripe.prices.list({ lookup_keys: [data.priceId] });
+      if (!prices.data.length) return { error: "Target price not found." };
+      const newPrice = prices.data[0];
+
+      // Find the active-ish subscription. Prefer the one we've stored; else
+      // pick the first live one on the customer (self-heal from bad state).
+      let sub: any = null;
+      if (profile.stripe_subscription_id) {
+        try {
+          sub = await stripe.subscriptions.retrieve(profile.stripe_subscription_id);
+        } catch {
+          sub = null;
+        }
+      }
+      if (!sub || !["active", "trialing", "past_due"].includes(sub.status)) {
+        const list = await stripe.subscriptions.list({
+          customer: profile.stripe_customer_id,
+          status: "all",
+          limit: 20,
+        });
+        sub =
+          list.data.find((s) =>
+            ["active", "trialing", "past_due"].includes(s.status),
+          ) ?? null;
+      }
+      if (!sub) return { error: "No active subscription to switch." };
+
+      const item = sub.items?.data?.[0];
+      if (!item) return { error: "Subscription has no line item to switch." };
+
+      // No-op if already on target price.
+      if (item.price?.id === newPrice.id) {
+        return { ok: true, noop: true, newTier };
+      }
+
+      // Swap the price in place. `always_invoice` bills the prorated diff now
+      // (upgrade) or generates a credit invoice (downgrade). Cycle anchor
+      // preserved by default.
+      const updated: any = await stripe.subscriptions.update(sub.id, {
+        items: [{ id: item.id, price: newPrice.id }],
+        proration_behavior: "always_invoice",
+        payment_behavior: "error_if_incomplete",
+      });
+
+      // Find the invoice Stripe just created for this proration and act on it.
+      let chargedCents = 0;
+      let refundedCents = 0;
+      let currency: string | undefined;
+
+      const latestInvoiceId =
+        typeof updated.latest_invoice === "string"
+          ? updated.latest_invoice
+          : updated.latest_invoice?.id;
+
+      if (latestInvoiceId) {
+        const invoice: any = await stripe.invoices.retrieve(latestInvoiceId);
+        currency = invoice.currency;
+
+        if ((invoice.amount_paid ?? 0) > 0) {
+          chargedCents = invoice.amount_paid;
+        }
+
+        // Downgrade: Stripe issues a credit note / negative invoice that lands
+        // as customer balance credit. Convert that credit to a cash refund on
+        // the most recent paid upgrade-tier charge, capped at what was
+        // actually collected on that charge.
+        //
+        // `invoice.total` is negative for a credit invoice. `amount_remaining`
+        // may be 0 with the credit posted to the customer balance instead.
+        const creditCents = Math.max(
+          0,
+          -(invoice.total ?? 0),
+          -((invoice.subtotal ?? 0) - (invoice.tax ?? 0)),
+        );
+
+        if (creditCents > 0) {
+          // Find the last successful charge on this customer to refund against.
+          const charges = await stripe.charges.list({
+            customer: profile.stripe_customer_id,
+            limit: 10,
+          });
+          const refundableCharge = charges.data.find(
+            (c) => c.paid && !c.refunded && (c.amount_captured ?? c.amount) > 0,
+          );
+          if (refundableCharge) {
+            const available =
+              (refundableCharge.amount_captured ?? refundableCharge.amount) -
+              (refundableCharge.amount_refunded ?? 0);
+            const refundAmount = Math.min(creditCents, available);
+            if (refundAmount > 0) {
+              try {
+                await stripe.refunds.create({
+                  charge: refundableCharge.id,
+                  amount: refundAmount,
+                });
+                refundedCents = refundAmount;
+
+                // Zero out the corresponding customer balance credit so the
+                // coach doesn't get the refund twice (once as cash, once as
+                // future-invoice credit).
+                try {
+                  const fresh: any = await stripe.customers.retrieve(
+                    profile.stripe_customer_id,
+                  );
+                  const balance = fresh?.balance ?? 0;
+                  // Stripe balance: negative = credit owed to customer.
+                  if (balance < 0) {
+                    const zeroOut = Math.min(refundAmount, -balance);
+                    if (zeroOut > 0) {
+                      await stripe.customers.createBalanceTransaction(
+                        profile.stripe_customer_id,
+                        {
+                          amount: zeroOut, // positive charges back against the credit
+                          currency: invoice.currency,
+                          description:
+                            "Offset for cash refund on tier downgrade",
+                        },
+                      );
+                    }
+                  }
+                } catch (e) {
+                  console.warn("Balance offset failed (non-fatal):", e);
+                }
+              } catch (e) {
+                console.warn("Refund creation failed (non-fatal):", e);
+              }
+            }
+          }
+        }
+      }
+
+      // Persist tier immediately for snappy UI; webhook will confirm/refine.
+      await supabase
+        .from("coach_profiles")
+        .update({
+          subscription_tier: newTier,
+          stripe_subscription_id: sub.id,
+        })
+        .eq("user_id", userId);
+
+      return {
+        ok: true,
+        chargedCents,
+        refundedCents,
+        currency,
+        newTier,
+      };
+    } catch (error) {
+      return { error: getStripeErrorMessage(error) };
+    }
+  });
+
