@@ -404,7 +404,7 @@ function OnboardingForm({ data }: { data: OnboardingData }) {
                   onToggle={toggleSport}
                   onAddCustom={addCustomSport}
                   onRemoveCustom={removeCustomSport}
-                  maxPrimarySports={1}
+                  maxPrimarySports={primarySportCap}
                 />
               </div>
             </div>
