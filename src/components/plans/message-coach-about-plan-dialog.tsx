@@ -11,38 +11,56 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { ensureRoom, sendMessage } from "@/lib/messages.functions";
+import {
+  ensureRoom,
+  ensureDirectRoom,
+  sendMessage,
+} from "@/lib/messages.functions";
 
-type Props = {
+type CommonProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  coachId: string;
-  athleteId: string;
   coachFirstName: string;
   planId: string;
   planTitle: string;
-  /** Where to navigate after sending (role-aware). */
+};
+
+type AthleteRoomProps = CommonProps & {
+  mode?: "athlete-room";
+  coachId: string;
+  athleteId: string;
   messagesBasePath: "/athlete/messages" | "/parent/messages" | "/coach/messages";
 };
 
-export function MessageCoachAboutPlanDialog({
-  open,
-  onOpenChange,
-  coachId,
-  athleteId,
-  coachFirstName,
-  planId,
-  planTitle,
-  messagesBasePath,
-}: Props) {
+type CoachDirectProps = CommonProps & {
+  mode: "coach-direct";
+  otherCoachId: string;
+};
+
+type Props = AthleteRoomProps | CoachDirectProps;
+
+export function MessageCoachAboutPlanDialog(props: Props) {
+  const { open, onOpenChange, coachFirstName, planId, planTitle } = props;
   const [body, setBody] = useState("");
   const ensureRoomFn = useServerFn(ensureRoom);
+  const ensureDirectRoomFn = useServerFn(ensureDirectRoom);
   const sendMessageFn = useServerFn(sendMessage);
   const navigate = useNavigate();
 
   const mutation = useMutation({
     mutationFn: async (text: string) => {
-      const { id: roomId } = await ensureRoomFn({ data: { coachId, athleteId } });
+      let roomId: string;
+      if (props.mode === "coach-direct") {
+        const res = await ensureDirectRoomFn({
+          data: { kind: "coach_coach", otherCoachId: props.otherCoachId },
+        });
+        roomId = res.id;
+      } else {
+        const res = await ensureRoomFn({
+          data: { coachId: props.coachId, athleteId: props.athleteId },
+        });
+        roomId = res.id;
+      }
       const result = await sendMessageFn({
         data: { roomId, kind: "text", body: text, planId },
       });
@@ -55,7 +73,9 @@ export function MessageCoachAboutPlanDialog({
     onSuccess: (roomId) => {
       setBody("");
       onOpenChange(false);
-      navigate({ to: `${messagesBasePath}/${roomId}` });
+      const base =
+        props.mode === "coach-direct" ? "/coach/messages" : props.messagesBasePath;
+      navigate({ to: `${base}/${roomId}` });
     },
     onError: (e) => {
       toast("Couldn't send message", {

@@ -332,8 +332,11 @@ export const sendMessage = createServerFn({ method: "POST" })
       }
     }
 
-    // Plan tagging only makes sense in athlete-scoped rooms.
-    const planId = room.kind === "athlete" ? data.planId ?? null : null;
+    // Plan tagging works in athlete-scoped rooms and coach↔coach direct rooms.
+    const planId =
+      room.kind === "athlete" || room.kind === "coach_coach"
+        ? data.planId ?? null
+        : null;
 
     let audioPath: string | null = null;
     let duration: number | null = null;
