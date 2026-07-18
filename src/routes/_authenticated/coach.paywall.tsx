@@ -189,6 +189,7 @@ function PaywallPage() {
           );
         }
         await qc.invalidateQueries({ queryKey: ["coach-profile"] });
+        navigate({ to: "/coach/roster" });
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "Couldn't switch plans");
       } finally {
@@ -196,7 +197,7 @@ function PaywallPage() {
         setSelectedTier(null);
       }
     },
-    [changeSubFn, interval, qc],
+    [changeSubFn, interval, qc, navigate],
   );
 
   const startCheckout = useCallback(
