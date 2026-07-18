@@ -43,7 +43,7 @@ export const startCoachCheckout = createServerFn({ method: "POST" })
       // Look up email + existing customer id + promo code from coach profile.
       const { data: profile } = await supabase
         .from("coach_profiles")
-        .select("id, stripe_customer_id, promo_code")
+        .select("id, stripe_customer_id, stripe_subscription_id, subscription_status, promo_code")
         .eq("user_id", userId)
         .maybeSingle();
 
@@ -51,6 +51,27 @@ export const startCoachCheckout = createServerFn({ method: "POST" })
         data: { user },
       } = await supabase.auth.getUser();
       const email = user?.email ?? undefined;
+
+      // Duplicate guard: if this coach already has an active-ish subscription
+      // in Stripe, do NOT open a new checkout — direct them to use the
+      // tier-switch path (changeCoachSubscription) instead. This prevents the
+      // "two active subs on one customer" bug from any code path.
+      if (profile?.stripe_customer_id) {
+        const existing = await stripe.subscriptions.list({
+          customer: profile.stripe_customer_id,
+          status: "all",
+          limit: 20,
+        });
+        const activeish = existing.data.find((s) =>
+          ["active", "trialing", "past_due"].includes(s.status),
+        );
+        if (activeish) {
+          return {
+            error:
+              "You already have an active subscription. Use “Switch plan” instead of starting a new checkout.",
+          };
+        }
+      }
 
       // Resolve or create a Stripe customer scoped by userId metadata.
       let customerId = profile?.stripe_customer_id ?? undefined;
@@ -69,6 +90,7 @@ export const startCoachCheckout = createServerFn({ method: "POST" })
           customerId = created.id;
         }
       }
+
 
       // Resolve human-readable price id to the Stripe price.
       const prices = await stripe.prices.list({ lookup_keys: [data.priceId] });
