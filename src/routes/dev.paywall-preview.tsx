@@ -51,6 +51,21 @@ export const Route = createFileRoute("/dev/paywall-preview")({
 });
 
 function PaywallPreview() {
+  const navigate = useNavigate();
+  const [allowed, setAllowed] = useState(false);
+
+  useEffect(() => {
+    const host = window.location.hostname;
+    const isPreview =
+      import.meta.env.DEV ||
+      host.startsWith("id-preview--") ||
+      host.endsWith(".lovableproject.com") ||
+      host === "localhost" ||
+      host === "127.0.0.1";
+    if (isPreview) setAllowed(true);
+    else void navigate({ to: "/" });
+  }, [navigate]);
+
   const [interval, setInterval] = useState<Interval>("year");
   const [isFoundingCoach, setIsFoundingCoach] = useState(false);
   const [hasOrg, setHasOrg] = useState(false);
