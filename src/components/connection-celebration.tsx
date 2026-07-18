@@ -18,6 +18,7 @@ import {
   type CelebrationGroup,
   type CelebrationRole,
 } from "@/lib/connection-celebration.functions";
+import { useAuthReady } from "@/hooks/use-auth-ready";
 
 interface ConnectionCelebrationProps {
   role: Extract<CelebrationRole, "coach" | "parent" | "adult-athlete">;
