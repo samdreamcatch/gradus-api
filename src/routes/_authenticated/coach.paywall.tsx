@@ -661,13 +661,19 @@ function PaywallPage() {
                     type="button"
                     className="mt-4 w-full text-xs sm:text-sm"
                     disabled={loading || tiersDisabled}
-                    onClick={() => startCheckout(tier)}
+                    onClick={() => handleTierAction(tier)}
                   >
                     {loading && selectedTier === tier
-                      ? "Starting…"
-                      : isPro
-                        ? proCtaLabel
-                        : "Upgrade"}
+                      ? hasActiveSub
+                        ? "Switching…"
+                        : "Starting…"
+                      : hasActiveSub
+                        ? isPro
+                          ? "Upgrade to Coach Pro"
+                          : "Switch to Coach"
+                        : isPro
+                          ? proCtaLabel
+                          : "Upgrade"}
                   </Button>
                 )}
               </div>
