@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Check, ChevronDown, Plus, X } from "lucide-react";
+import { Check, ChevronDown, Lock, Plus, X } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -27,6 +28,9 @@ export function slugifySport(s: string): string {
     .replace(/[^a-z0-9]+/g, "_")
     .replace(/^_|_$/g, "");
 }
+
+/** Sport keys that never count against the primary-sport cap. */
+const DEFAULT_ALWAYS_ALLOWED_SECONDARY = ["strength_conditioning"];
 
 interface Props {
   selected: SelectedSport[];
