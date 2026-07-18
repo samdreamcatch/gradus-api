@@ -303,7 +303,7 @@ function PaywallPage() {
           Pick a plan to get started. Cancel anytime.
         </p>
 
-        {/* 1. Club code */}
+        {/* 1. Club search + code */}
         <div className="mt-5 w-full rounded-xl border border-divider bg-elevated p-3">
           <div className="flex items-start gap-3">
             <Building2 className="mt-0.5 h-5 w-5 shrink-0 text-text-secondary" />
@@ -312,56 +312,63 @@ function PaywallPage() {
               <p className="mt-1 text-text-secondary">
                 If your academy or association is a Gradus partner, they can cover your subscription.
               </p>
-              {!clubOpen ? (
-                <button
-                  type="button"
-                  onClick={() => setClubOpen(true)}
-                  className="mt-2 inline-block text-accent-ink underline underline-offset-2"
-                >
-                  Enter club code →
-                </button>
-              ) : (
-                <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-start">
-                  <Input
-                    value={clubInput}
-                    onChange={(e) => setClubInput(e.target.value.toUpperCase().slice(0, 32))}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        void joinClub();
-                      }
+              <div className="mt-3 space-y-3">
+                {!clubOrg && (
+                  <OrgSearchCombobox
+                    selected={null}
+                    onSelect={(o) => {
+                      setClubOrg(o);
+                      setClubCode("");
+                      setClubCodeVerified(false);
                     }}
-                    placeholder="Club code"
-                    className="font-mono uppercase tracking-widest sm:flex-1"
-                    autoComplete="off"
-                    spellCheck={false}
+                    onNotListed={(q) => void handleNotListed(q)}
                   />
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => {
-                        setClubOpen(false);
-                        setClubInput("");
+                )}
+                {clubOrg && (
+                  <>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Chip tone="accent" size="small" caseSensitive>
+                        <Building2 className="h-3.5 w-3.5" />
+                        {clubOrg.name}
+                      </Chip>
+                      <button
+                        type="button"
+                        onClick={resetClub}
+                        className="text-xs text-text-tertiary underline-offset-2 hover:text-text-secondary hover:underline"
+                      >
+                        Change
+                      </button>
+                    </div>
+                    <OrgCodeField
+                      orgId={clubOrg.id}
+                      orgName={clubOrg.name}
+                      value={clubCode}
+                      onChange={(next, ok) => {
+                        setClubCode(next);
+                        setClubCodeVerified(ok);
                       }}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      onClick={joinClub}
-                      disabled={claimingClub || !clubInput.trim()}
-                    >
-                      {claimingClub ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Join"}
-                    </Button>
-                  </div>
-                </div>
-              )}
+                    />
+                    <div className="flex justify-end">
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={joinClub}
+                        disabled={claimingClub || !clubCodeVerified}
+                      >
+                        {claimingClub ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          `Join ${clubOrg.name}`
+                        )}
+                      </Button>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </div>
+
 
         {/* 2. Promo code CTA */}
         <div className="mt-4 w-full">
