@@ -580,6 +580,13 @@ function PlanSection({
           {promoRow}
           {profile.subscriptionTier === "coach" && <UpgradeToProRow />}
           <SettingsButtonRow
+            icon={<CreditCard className="size-4" />}
+            label={openingPortal ? "Opening billing portal…" : "Manage billing"}
+            description="Change card or download invoices."
+            onClick={() => void openPortal()}
+            disabled={openingPortal || !profile.hasStripeCustomer}
+          />
+          <SettingsButtonRow
             icon={<ArrowLeftRight className="size-4" />}
             label="Change plan"
             description={
@@ -589,13 +596,7 @@ function PlanSection({
             }
             onClick={() => navigate({ to: "/coach/paywall" })}
           />
-          <SettingsButtonRow
-            icon={<CreditCard className="size-4" />}
-            label={openingPortal ? "Opening billing portal…" : "Manage billing"}
-            description="Change card or download invoices."
-            onClick={() => void openPortal()}
-            disabled={openingPortal || !profile.hasStripeCustomer}
-          />
+
           {joinClubRow}
         </SettingsList>
         {joinSheet}
