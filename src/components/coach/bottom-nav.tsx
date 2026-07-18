@@ -20,6 +20,7 @@ export function CoachBottomNav() {
   const ITEMS: Item[] = [
     { label: "Roster", icon: Users, to: "/coach/roster", matchPrefix: "/coach/roster" },
     { label: "Plans", icon: ClipboardList, to: "/coach/plans" },
+    { label: "Resources", icon: BookOpen, to: "/coach/resources", matchPrefix: "/coach/resources" },
     { label: "Messages", icon: MessageSquare, to: "/coach/messages", matchPrefix: "/coach/messages", unreadCount: unread },
     { label: "Settings", icon: Settings, to: "/coach/settings", matchPrefix: "/coach/settings" },
   ];
