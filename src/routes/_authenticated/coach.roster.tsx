@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import { UserPlus, Sparkles, Plus } from "lucide-react";
 import { queryOptions, useQuery, useSuspenseQuery } from "@tanstack/react-query";
-import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { CoachBottomNav } from "@/components/coach/bottom-nav";
 import { PageTitle } from "@/components/page-title";
 
