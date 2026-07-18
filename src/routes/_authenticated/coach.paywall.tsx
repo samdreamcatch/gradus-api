@@ -108,7 +108,7 @@ function PaywallPage() {
   const [clubCode, setClubCode] = useState("");
   const [clubCodeVerified, setClubCodeVerified] = useState(false);
   const [claimingClub, setClaimingClub] = useState(false);
-  const preselectedActionStartedRef = useRef(false);
+  
   const tiersDisabled = clubOrg !== null;
 
   const entitlement = data?.profile.entitlement ?? "pending";
