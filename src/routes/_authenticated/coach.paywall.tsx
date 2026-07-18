@@ -1,4 +1,4 @@
-import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -9,7 +9,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { coachProfileQueryOptions } from "@/hooks/use-coach-profile";
-import { clearOrganizationLink } from "@/lib/coach-org.functions";
+import {
+  claimOrganizationInviteCode,
+  clearOrganizationLink,
+} from "@/lib/coach-org.functions";
 import { startCoachCheckout } from "@/lib/coach-checkout.functions";
 import { validatePromoCode } from "@/lib/promo-codes.functions";
 import { getStripe, getStripeEnvironment } from "@/lib/stripe";
@@ -76,6 +79,7 @@ function PaywallPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const clearOrg = useServerFn(clearOrganizationLink);
+  const claimClub = useServerFn(claimOrganizationInviteCode);
   const checkoutFn = useServerFn(startCoachCheckout);
   const validateCode = useServerFn(validatePromoCode);
   const { checkout: checkoutStatus, tier: preselectedTier } = Route.useSearch();
@@ -88,6 +92,11 @@ function PaywallPage() {
   const [promoOpen, setPromoOpen] = useState(false);
   const [promoInput, setPromoInput] = useState("");
   const [promo, setPromo] = useState<PromoState>({ status: "idle" });
+
+  const [clubOpen, setClubOpen] = useState(false);
+  const [clubInput, setClubInput] = useState("");
+  const [claimingClub, setClaimingClub] = useState(false);
+  const tiersDisabled = clubInput.trim().length > 0;
 
   const entitlement = data?.profile.entitlement ?? "pending";
   const profilePromoCode = data?.profile.promoCode ?? null;
@@ -106,17 +115,10 @@ function PaywallPage() {
   const isEntitled =
     entitlement === "paid" || entitlement === "promo_free" || entitlement === "club_covered";
 
-  // Founding coaches (entitled via promo_free + FOUNDING_COACH) can still land
-  // here to buy Coach Pro. Only redirect when there is no explicit intent to
-  // upgrade. Anyone else who is entitled bounces back into the app.
   useEffect(() => {
     if (!isEntitled) return;
     if (isFoundingCoach && preselectedTier === "coach_pro") return;
-    if (isFoundingCoach && !preselectedTier) {
-      // Founding coach opened /coach/paywall directly — keep them here so
-      // they can see their "Free — Founding" state and optionally upgrade.
-      return;
-    }
+    if (isFoundingCoach && !preselectedTier) return;
     navigate({ to: "/coach/roster", replace: true });
   }, [isEntitled, isFoundingCoach, preselectedTier, navigate]);
 
@@ -129,7 +131,6 @@ function PaywallPage() {
 
   const startCheckout = useCallback(
     async (tier: Tier) => {
-      // Guardrails: promo code (if applied) is Pro-only.
       const promoCode = promo.status === "valid" ? promo.code : undefined;
       if (promoCode && tier !== "coach_pro") {
         toast.error("That promo code only applies to Coach Pro.");
@@ -161,7 +162,6 @@ function PaywallPage() {
     [checkoutFn, interval, promo],
   );
 
-  // Auto-open Coach Pro checkout when arriving from "Upgrade to Coach Pro".
   useEffect(() => {
     if (preselectedTier === "coach_pro" && !clientSecret && !loading) {
       void startCheckout("coach_pro");
@@ -180,10 +180,7 @@ function PaywallPage() {
         return;
       }
       if (res.duration !== "repeating") {
-        setPromo({
-          status: "invalid",
-          message: "That code isn't redeemable at checkout.",
-        });
+        setPromo({ status: "invalid", message: "That code isn't redeemable at checkout." });
         return;
       }
       setPromo({
@@ -201,6 +198,21 @@ function PaywallPage() {
   const clearPromo = () => {
     setPromoInput("");
     setPromo({ status: "idle" });
+  };
+
+  const joinClub = async () => {
+    const code = clubInput.trim().toUpperCase();
+    if (!code) return;
+    setClaimingClub(true);
+    try {
+      await claimClub({ data: { code } });
+      await qc.invalidateQueries({ queryKey: ["coach-profile"] });
+      toast.success("Joined club — your subscription is covered.");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "That code isn't recognized.");
+    } finally {
+      setClaimingClub(false);
+    }
   };
 
   const options = useMemo(
@@ -253,121 +265,86 @@ function PaywallPage() {
           Pick a plan to get started. Cancel anytime.
         </p>
 
-        <div className="mt-4 inline-flex rounded-full border border-divider bg-elevated p-1 text-sm">
-          {(["month", "year"] as const).map((iv) => (
-            <button
-              key={iv}
-              type="button"
-              onClick={() => setInterval(iv)}
-              className={cn(
-                "rounded-full px-4 py-1.5 press-soft",
-                interval === iv ? "bg-card text-text-primary shadow-sm" : "text-text-secondary",
-              )}
-            >
-              {iv === "month" ? "Monthly" : "Yearly"}
-              {iv === "year" && <span className="ml-1 text-xs text-accent-ink">save 15%</span>}
-            </button>
-          ))}
-        </div>
-
-        <div className="mt-4 grid w-full grid-cols-2 gap-3">
-          {(Object.keys(PRICE_MAP) as Tier[]).map((tier) => {
-            const price = PRICE_MAP[tier][interval];
-            const isPro = tier === "coach_pro";
-            const coachFoundingActive = tier === "coach" && isFoundingCoach;
-            const promoAppliesHere = isPro && promo.status === "valid";
-
-            return (
-              <div
-                key={tier}
-                className={cn(
-                  "flex flex-col rounded-2xl border p-3 shadow-card sm:p-4",
-                  isPro ? "border-accent/60 bg-card" : "border-divider bg-card",
-                )}
-              >
-                <div className="flex items-baseline justify-between gap-1">
-                  <h2 className="font-display text-lg text-text-primary sm:text-h3">
-                    {isPro ? "Coach Pro" : "Coach"}
-                  </h2>
-                  {coachFoundingActive && (
-                    <span className="rounded-full bg-accent/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-accent-ink sm:text-[10px] sm:tracking-widest">
-                      FOUNDING
-                    </span>
-                  )}
-                </div>
-
-                {coachFoundingActive ? (
-                  <>
-                    <div className="mt-2 flex items-baseline gap-1">
-                      <span className="font-display text-2xl text-text-primary sm:text-4xl">
-                        Free
-                      </span>
-                    </div>
-                    <p className="mt-1 text-[11px] text-text-tertiary sm:text-xs">
-                      Yours for being here early.
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <div className="mt-2 flex items-baseline gap-1">
-                      <span className="font-display text-2xl text-text-primary tabular-nums sm:text-4xl">
-                        ${price.monthlyEquivalent}
-                      </span>
-                      <span className="text-xs text-text-secondary sm:text-sm">/ mo</span>
-                    </div>
-                    <p className="mt-1 text-[11px] text-text-tertiary sm:text-xs">{price.billed}</p>
-                  </>
-                )}
-
-                {promoAppliesHere && proMonths > 0 && (
-                  <p className="mt-2 inline-flex items-center gap-1 rounded-md bg-accent/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-accent-ink sm:text-[11px]">
-                    <Tag className="h-3 w-3" /> {proMonths} months free · then ${price.monthlyEquivalent}/mo
-                  </p>
-                )}
-
-                <ul className="mt-3 space-y-1.5 text-xs text-text-secondary sm:text-sm">
-                  {FEATURES[tier].map((f) => (
-                    <li key={f} className="flex items-start gap-1.5">
-                      <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-accent-ink sm:h-4 sm:w-4" />
-                      <span>{f}</span>
-                    </li>
-                  ))}
-                </ul>
-
-                {coachFoundingActive ? (
-                  <div className="mt-4 inline-flex items-center justify-center gap-1 rounded-md border border-divider bg-elevated px-3 py-2 text-xs font-semibold text-text-primary sm:text-sm">
-                    <Check className="h-4 w-4 text-accent-ink" /> Active
+        {/* 1. Club code */}
+        <div className="mt-5 w-full rounded-xl border border-divider bg-elevated p-3">
+          <div className="flex items-start gap-3">
+            <Building2 className="mt-0.5 h-5 w-5 shrink-0 text-text-secondary" />
+            <div className="flex-1 text-sm">
+              <p className="font-semibold text-text-primary">Joining through a club?</p>
+              <p className="mt-1 text-text-secondary">
+                If your academy or association is a Gradus partner, they can cover your subscription.
+              </p>
+              {!clubOpen ? (
+                <button
+                  type="button"
+                  onClick={() => setClubOpen(true)}
+                  className="mt-2 inline-block text-accent-ink underline underline-offset-2"
+                >
+                  Enter club code →
+                </button>
+              ) : (
+                <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-start">
+                  <Input
+                    value={clubInput}
+                    onChange={(e) => setClubInput(e.target.value.toUpperCase().slice(0, 32))}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        void joinClub();
+                      }
+                    }}
+                    placeholder="Club code"
+                    className="font-mono uppercase tracking-widest sm:flex-1"
+                    autoComplete="off"
+                    spellCheck={false}
+                  />
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => {
+                        setClubOpen(false);
+                        setClubInput("");
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={joinClub}
+                      disabled={claimingClub || !clubInput.trim()}
+                    >
+                      {claimingClub ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Join"}
+                    </Button>
                   </div>
-                ) : (
-                  <Button
-                    type="button"
-                    className="mt-4 w-full text-xs sm:text-sm"
-                    disabled={loading}
-                    onClick={() => startCheckout(tier)}
-                  >
-                    {loading && selectedTier === tier
-                      ? "Starting…"
-                      : isPro
-                        ? proCtaLabel
-                        : "Subscribe"}
-                  </Button>
-                )}
-              </div>
-            );
-          })}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
-        {/* Promo code — only meaningful for Coach Pro. Hidden for founding
-            coaches with Coach already free (they'd rarely need a Pro trial
-            code, but still allowed if they open it). */}
+        {/* 2. Promo code CTA */}
         <div className="mt-4 w-full">
           {!promoOpen && promo.status !== "valid" ? (
             <button
               type="button"
               onClick={() => setPromoOpen(true)}
-              className="mx-auto flex items-center gap-1.5 text-xs text-text-secondary underline-offset-2 hover:underline"
+              className="press flex w-full items-center justify-between gap-3 rounded-xl border border-accent/40 bg-accent/10 px-4 py-3 text-left"
             >
-              <Tag className="h-3.5 w-3.5" /> Have a promo code?
+              <span className="flex items-center gap-2.5">
+                <span className="flex h-8 w-8 items-center justify-center rounded-md bg-accent/20 text-accent-ink">
+                  <Tag className="h-4 w-4" />
+                </span>
+                <span className="flex flex-col">
+                  <span className="text-sm font-semibold text-text-primary">Have a promo code?</span>
+                  <span className="text-xs text-text-secondary">Unlock free months of Coach Pro</span>
+                </span>
+              </span>
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-accent-ink">
+                Apply
+              </span>
             </button>
           ) : (
             <div className="rounded-xl border border-divider bg-elevated p-3">
@@ -375,12 +352,10 @@ function PaywallPage() {
                 <div className="flex items-center justify-between gap-2">
                   <div className="text-sm">
                     <p className="font-semibold text-text-primary">
-                      <span className="font-mono uppercase tracking-widest">{promo.code}</span>{" "}
-                      applied
+                      <span className="font-mono uppercase tracking-widest">{promo.code}</span> applied
                     </p>
                     <p className="mt-0.5 text-xs text-text-secondary">
-                      {promo.label} — applies to Coach Pro. Card required, charges resume after
-                      free months.
+                      {promo.label} — applies to Coach Pro. Card required, charges resume after free months.
                     </p>
                   </div>
                   <button
@@ -396,9 +371,7 @@ function PaywallPage() {
                   <div className="flex-1">
                     <Input
                       value={promoInput}
-                      onChange={(e) =>
-                        setPromoInput(e.target.value.toUpperCase().slice(0, 32))
-                      }
+                      onChange={(e) => setPromoInput(e.target.value.toUpperCase().slice(0, 32))}
                       onKeyDown={(e) => {
                         if (e.key === "Enter") {
                           e.preventDefault();
@@ -446,19 +419,126 @@ function PaywallPage() {
           )}
         </div>
 
-        <div className="mt-5 w-full rounded-xl border border-divider bg-elevated p-3">
-          <div className="flex items-start gap-3">
-            <Building2 className="mt-0.5 h-5 w-5 shrink-0 text-text-secondary" />
-            <div className="text-sm">
-              <p className="font-semibold text-text-primary">Joining through a club?</p>
-              <p className="mt-1 text-text-secondary">
-                If your academy or association is a Gradus partner, they can cover your subscription.
-              </p>
-              <Link to="/coach/settings" className="mt-2 inline-block text-accent-ink underline underline-offset-2">
-                Enter club code in Settings →
-              </Link>
-            </div>
-          </div>
+        {/* 3. Interval toggle */}
+        <div
+          className={cn(
+            "mt-5 inline-flex rounded-full border border-divider bg-elevated p-1 text-sm transition-opacity",
+            tiersDisabled && "pointer-events-none opacity-50",
+          )}
+          aria-disabled={tiersDisabled}
+        >
+          {(["month", "year"] as const).map((iv) => (
+            <button
+              key={iv}
+              type="button"
+              onClick={() => setInterval(iv)}
+              className={cn(
+                "rounded-full px-4 py-1.5 press-soft",
+                interval === iv ? "bg-card text-text-primary shadow-sm" : "text-text-secondary",
+              )}
+            >
+              {iv === "month" ? "Monthly" : "Yearly"}
+              {iv === "year" && <span className="ml-1 text-xs text-accent-ink">save 15%</span>}
+            </button>
+          ))}
+        </div>
+
+        {tiersDisabled && (
+          <p className="mt-2 text-center text-xs text-text-tertiary">
+            Individual plans unavailable while a club code is entered.
+          </p>
+        )}
+
+        {/* 4. Tier cards */}
+        <div
+          className={cn(
+            "mt-4 grid w-full grid-cols-2 gap-3 transition-opacity",
+            tiersDisabled && "pointer-events-none opacity-50",
+          )}
+          aria-disabled={tiersDisabled}
+        >
+          {(Object.keys(PRICE_MAP) as Tier[]).map((tier) => {
+            const price = PRICE_MAP[tier][interval];
+            const isPro = tier === "coach_pro";
+            const coachFoundingActive = tier === "coach" && isFoundingCoach;
+            const promoAppliesHere = isPro && promo.status === "valid";
+
+            return (
+              <div
+                key={tier}
+                className={cn(
+                  "flex flex-col rounded-2xl border p-3 shadow-card sm:p-4",
+                  isPro ? "border-accent/60 bg-card" : "border-divider bg-card",
+                )}
+              >
+                <div className="flex items-baseline justify-between gap-1">
+                  <h2 className="font-display text-lg text-text-primary sm:text-h3">
+                    {isPro ? "Coach Pro" : "Coach"}
+                  </h2>
+                  {coachFoundingActive && (
+                    <span className="rounded-full bg-accent/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-accent-ink sm:text-[10px] sm:tracking-widest">
+                      FOUNDING
+                    </span>
+                  )}
+                </div>
+
+                {coachFoundingActive ? (
+                  <>
+                    <div className="mt-2 flex items-baseline gap-1">
+                      <span className="font-display text-2xl text-text-primary sm:text-4xl">Free</span>
+                    </div>
+                    <p className="mt-1 text-[11px] text-text-tertiary sm:text-xs">
+                      Yours for being here early.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <div className="mt-2 flex items-baseline gap-1">
+                      <span className="font-display text-2xl text-text-primary tabular-nums sm:text-4xl">
+                        ${price.monthlyEquivalent}
+                      </span>
+                      <span className="text-xs text-text-secondary sm:text-sm">/ mo</span>
+                    </div>
+                    <p className="mt-1 text-[11px] text-text-tertiary sm:text-xs">{price.billed}</p>
+                  </>
+                )}
+
+                {promoAppliesHere && proMonths > 0 && (
+                  <p className="mt-2 inline-flex items-center gap-1 rounded-md bg-accent/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-accent-ink sm:text-[11px]">
+                    <Tag className="h-3 w-3" /> {proMonths} months free · then ${price.monthlyEquivalent}/mo
+                  </p>
+                )}
+
+                <ul className="mt-3 space-y-1.5 text-xs text-text-secondary sm:text-sm">
+                  {FEATURES[tier].map((f) => (
+                    <li key={f} className="flex items-start gap-1.5">
+                      <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-accent-ink sm:h-4 sm:w-4" />
+                      <span>{f}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                {coachFoundingActive ? (
+                  <div className="mt-4 inline-flex items-center justify-center gap-1 rounded-md border border-divider bg-elevated px-3 py-2 text-xs font-semibold text-text-primary sm:text-sm">
+                    <Check className="h-4 w-4 text-accent-ink" /> Active
+                  </div>
+                ) : (
+                  <Button
+                    type="button"
+                    className="mt-4 w-full text-xs sm:text-sm"
+                    disabled={loading || tiersDisabled}
+                    onClick={() => startCheckout(tier)}
+                  >
+                    {loading && selectedTier === tier
+                      ? "Starting…"
+                      : isPro
+                        ? proCtaLabel
+                        : "Subscribe"}
+                  </Button>
+                )}
+              </div>
+            );
+          })}
         </div>
 
         {data?.profile.organizationId && (
