@@ -214,18 +214,43 @@ function PaywallPage() {
   };
 
   const joinClub = async () => {
-    const code = clubInput.trim().toUpperCase();
+    if (!clubOrg || !clubCodeVerified) return;
+    const code = clubCode.trim().toUpperCase();
     if (!code) return;
     setClaimingClub(true);
     try {
       await claimClub({ data: { code } });
       await qc.invalidateQueries({ queryKey: ["coach-profile"] });
-      toast.success("Joined club — your subscription is covered.");
+      toast.success(`Joined ${clubOrg.name} — your subscription is covered.`);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "That code isn't recognized.");
     } finally {
       setClaimingClub(false);
     }
+  };
+
+  const handleNotListed = async (typedQuery: string) => {
+    try {
+      await recordLead({
+        data: {
+          source: "not_listed",
+          typedQuery: typedQuery || undefined,
+        },
+      });
+    } catch {
+      /* silent — lead capture must never block the coach */
+    }
+    toast.success(
+      typedQuery
+        ? `Thanks — we'll reach out to "${typedQuery}".`
+        : "Thanks — we'll be in touch.",
+    );
+  };
+
+  const resetClub = () => {
+    setClubOrg(null);
+    setClubCode("");
+    setClubCodeVerified(false);
   };
 
   const options = useMemo(
