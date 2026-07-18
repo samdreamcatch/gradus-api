@@ -489,7 +489,7 @@ function PlanSection({
       <SettingsRow
         icon={<Tag className="size-4" />}
         label={`Promo: ${profile.promoLabel ?? profile.promoCode}`}
-        description={`${profile.promoPercentOff}% off every renewal — code ${profile.promoCode}`}
+        description={`${profile.promoPercentOff}% off of Coach plans — code ${profile.promoCode}`}
       />
     ) : null;
 
