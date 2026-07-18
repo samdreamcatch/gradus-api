@@ -282,10 +282,10 @@ function UploadButton({
       </PopoverTrigger>
       <PopoverContent align="end" className="w-64">
         <p className="text-xs font-bold uppercase tracking-wide text-text-secondary">
-          Pro &amp; Club
+          PRO & CLUB FEATURE
         </p>
         <p className="mt-1 text-sm text-text-primary">
-          Upgrade to Coach Pro to publish PDFs, images, and links to your roster.
+          Upgrade to publish custom PDFs, images, and links to your roster.
         </p>
       </PopoverContent>
     </Popover>
