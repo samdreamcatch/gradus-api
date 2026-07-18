@@ -611,7 +611,7 @@ function PaywallPage() {
                       ? "Starting…"
                       : isPro
                         ? proCtaLabel
-                        : "Subscribe"}
+                        : "Upgrade"}
                   </Button>
                 )}
               </div>
