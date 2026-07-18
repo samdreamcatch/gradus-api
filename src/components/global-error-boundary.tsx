@@ -17,8 +17,9 @@ interface State {
 export class GlobalErrorBoundary extends Component<Props, State> {
   state: State = { hasError: false }
 
-  static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, message: error.message }
+  static getDerivedStateFromError(error: unknown): State {
+    const message = error instanceof Error ? error.message : typeof error === 'string' ? error : 'Unknown error'
+    return { hasError: true, message }
   }
 
   componentDidCatch(error: Error, info: ErrorInfo): void {

@@ -38,7 +38,7 @@ function AdminHome() {
     await qc.cancelQueries();
     qc.clear();
     await supabase.auth.signOut();
-    navigate({ to: "/auth", replace: true });
+    navigate({ to: "/login", replace: true });
   };
 
   const toggleTest = async (userId: string, next: boolean) => {
