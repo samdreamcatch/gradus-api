@@ -578,7 +578,7 @@ function PlanSection({
         />
         <SettingsList className="mt-3">
           {promoRow}
-          {profile.subscriptionTier === "coach" && <UpgradeToProRow />}
+          
           <SettingsButtonRow
             icon={<CreditCard className="size-4" />}
             label={openingPortal ? "Opening billing portal…" : "Manage billing"}
