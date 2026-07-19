@@ -228,7 +228,7 @@ function AdminUsersPage() {
                   onClick={(e) => {
                     e.preventDefault();
                     const next = selected
-                      ? search.types.filter((x) => x !== t)
+                      ? search.types.filter((x: string) => x !== t)
                       : [...search.types, t];
                     setSearch({ types: next });
                   }}
@@ -254,7 +254,7 @@ function AdminUsersPage() {
                   onClick={(e) => {
                     e.preventDefault();
                     const next = selected
-                      ? search.plans.filter((x) => x !== p)
+                      ? search.plans.filter((x: string) => x !== p)
                       : [...search.plans, p];
                     setSearch({ plans: next });
                   }}
