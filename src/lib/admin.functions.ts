@@ -685,7 +685,7 @@ export const getDailyActiveUsers = createServerFn({ method: "POST" })
     const sinceISO = since.toISOString();
 
     // Gather activity signals
-    const [messages, sessions, wrapUps] = await Promise.all([
+    const [messages, sessions, wrapUps, plansCreated, resourcesCreated] = await Promise.all([
       supabaseAdmin
         .from("messages")
         .select("sender_user_id, created_at")
@@ -701,19 +701,41 @@ export const getDailyActiveUsers = createServerFn({ method: "POST" })
         .select("coach_id, created_at")
         .gte("created_at", sinceISO)
         .limit(50000),
+      supabaseAdmin
+        .from("plans")
+        .select("coach_id, created_at")
+        .gte("created_at", sinceISO)
+        .limit(50000),
+      supabaseAdmin
+        .from("resources")
+        .select("coach_id, created_at")
+        .gte("created_at", sinceISO)
+        .not("coach_id", "is", null)
+        .limit(50000),
     ]);
+
 
     if (messages.error) dbError(messages.error);
     if (sessions.error) dbError(sessions.error);
     if (wrapUps.error) dbError(wrapUps.error);
+    if (plansCreated.error) dbError(plansCreated.error);
+    if (resourcesCreated.error) dbError(resourcesCreated.error);
+
 
     // Resolve athlete_id -> user_id, coach_id -> user_id
     const athleteIds = Array.from(
       new Set((sessions.data ?? []).map((s) => s.athlete_id).filter(Boolean) as string[]),
     );
     const coachIds = Array.from(
-      new Set((wrapUps.data ?? []).map((w) => w.coach_id).filter(Boolean) as string[]),
+      new Set(
+        [
+          ...((wrapUps.data ?? []).map((w) => w.coach_id)),
+          ...((plansCreated.data ?? []).map((p) => p.coach_id)),
+          ...((resourcesCreated.data ?? []).map((r) => r.coach_id)),
+        ].filter(Boolean) as string[],
+      ),
     );
+
 
     const athleteUserMap = new Map<string, string>();
     const testUsers = new Set<string>();
@@ -792,6 +814,13 @@ export const getDailyActiveUsers = createServerFn({ method: "POST" })
     for (const w of wrapUps.data ?? []) {
       addActivity(coachUserMap.get(w.coach_id), w.created_at);
     }
+    for (const p of plansCreated.data ?? []) {
+      if (p.coach_id) addActivity(coachUserMap.get(p.coach_id), p.created_at);
+    }
+    for (const r of resourcesCreated.data ?? []) {
+      if (r.coach_id) addActivity(coachUserMap.get(r.coach_id), r.created_at);
+    }
+
 
 
     // Emit a row per day in the window (zero-fill)
