@@ -221,6 +221,22 @@ function OrgsTab() {
               </div>
             </div>
           </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="new-code">Active code (optional)</Label>
+              <Input
+                id="new-code"
+                value={code}
+                onChange={(e) => setCodeInput(e.target.value.toUpperCase())}
+                placeholder="WILSON — 4–16 letters or numbers. Leave blank to auto-generate."
+                maxLength={16}
+                className="font-mono uppercase tracking-widest"
+              />
+              <p className="text-[11px] text-text-tertiary">
+                Codes must be unique across all organizations. Leave blank for a random 8-character code.
+              </p>
+            </div>
+          </div>
           <div className="space-y-1.5">
             <Label htmlFor="new-notes">Notes (optional)</Label>
             <Textarea
