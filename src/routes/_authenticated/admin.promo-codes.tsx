@@ -182,7 +182,7 @@ function PromoCodesPage() {
   } catch {
     currentEnv = null;
   }
-  const envLabel = currentEnv === "live" ? "Live" : currentEnv === "sandbox" ? "Test" : "Not configured";
+  const envLabel = currentEnv === "live" ? "Production env" : currentEnv === "sandbox" ? "Development env" : "Not configured";
   const envColorClass =
     currentEnv === "live"
       ? "bg-pen-pink-wash text-pen-pink-ink"
@@ -241,8 +241,9 @@ function PromoCodesPage() {
             Promo codes do two things: track who signed up with them, and (optionally) discount checkout by a set %.
           </p>
           <p>
-            Any code with a discount has to be created in Stripe once for <strong className="text-text-primary">test</strong> (preview) and once for <strong className="text-text-primary">live</strong> (published site) before checkout can apply it. The Stripe column shows where each code is ready.
+            Any code with a discount has to be created in Stripe once for <strong className="text-text-primary">development env</strong> (preview) and once for <strong className="text-text-primary">production env</strong> (published site) before checkout can apply it. The Stripe column shows where each code is ready.
           </p>
+
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pt-1 text-xs text-text-tertiary">
             <span className="inline-flex items-center gap-1.5">
               <span className="h-2 w-2 rounded-full bg-pen-tennis" /> ready in that environment
@@ -587,25 +588,26 @@ function PromoCodesPage() {
                           }
                           const mintedHere =
                             currentEnv === "live" ? mintedLive : mintedSandbox;
-                          const otherEnvLabel = currentEnv === "live" ? "test" : "live";
+                          const otherEnvLabel = currentEnv === "live" ? "development env" : "production env";
                           const mintedOther =
                             currentEnv === "live" ? mintedSandbox : mintedLive;
                           let statusLabel = "Not created yet";
                           let dotClass = "bg-divider";
                           let toneClass = "text-text-tertiary";
                           if (mintedSandbox && mintedLive) {
-                            statusLabel = "Ready in test & live";
+                            statusLabel = "Ready in development & production env";
                             dotClass = "bg-pen-tennis";
                             toneClass = "text-text-primary";
                           } else if (mintedSandbox) {
-                            statusLabel = "Ready in test only";
+                            statusLabel = "Ready in development env only";
                             dotClass = "bg-pen-orange";
                             toneClass = "text-text-primary";
                           } else if (mintedLive) {
-                            statusLabel = "Ready in live only";
+                            statusLabel = "Ready in production env only";
                             dotClass = "bg-pen-orange";
                             toneClass = "text-text-primary";
                           }
+
                           return (
                             <div className="space-y-1.5">
                               <div className={`flex items-center gap-1.5 ${toneClass}`}>
@@ -770,7 +772,7 @@ function PromoCodeDetailSheet({
               </div>
               <div>
                 <dt className="text-xs uppercase tracking-wide text-text-tertiary">
-                  Test Stripe
+                  Development env Stripe
                 </dt>
                 <dd className="text-text-primary">
                   {row.stripe_promo_id_sandbox ? "Minted" : "Not yet"}
@@ -778,12 +780,13 @@ function PromoCodeDetailSheet({
               </div>
               <div>
                 <dt className="text-xs uppercase tracking-wide text-text-tertiary">
-                  Live Stripe
+                  Production env Stripe
                 </dt>
                 <dd className="text-text-primary">
                   {row.stripe_promo_id_live ? "Minted" : "Not yet"}
                 </dd>
               </div>
+
             </dl>
 
             <section className="space-y-3">
@@ -838,9 +841,10 @@ function PromoCodeDetailSheet({
                                 {u.source === "stash"
                                   ? "stash"
                                   : u.source === "admin_active"
-                                    ? `live${u.environment ? ` · ${u.environment}` : ""}`
+                                    ? `active${u.environment === "live" ? " · production env" : u.environment === "sandbox" ? " · development env" : ""}`
                                     : "next"}
                               </Tag>
+
                             </li>
                           ))}
                         </ul>
