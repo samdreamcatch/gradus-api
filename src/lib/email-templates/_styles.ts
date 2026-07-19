@@ -43,13 +43,6 @@ export const container: React.CSSProperties = {
   backgroundColor: colors.paper,
 }
 
-export const container: React.CSSProperties = {
-  width: '100%',
-  maxWidth: '640px',
-  margin: '0 auto',
-  padding: '0',
-  backgroundColor: colors.paper,
-}
 
 // Outer lighter-grey band that wraps the cream paper card, giving the
 // "page-on-page" feel from the founder Welcome email.
