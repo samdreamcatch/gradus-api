@@ -1021,6 +1021,9 @@ export const getAdminReporting = createServerFn({ method: "POST" })
         active30: active.athlete30.size,
       },
     };
+  });
+
+
 
 // =====================================================================
 // Unified admin Users table: fetch, reset password, soft delete, org
