@@ -121,6 +121,8 @@ function SettingsPage() {
           </SettingsList>
         </SettingsGroup>
 
+        <AccountSecuritySection />
+
         <SettingsGroup>
           <SettingsList>
             <InstallAppRow />
