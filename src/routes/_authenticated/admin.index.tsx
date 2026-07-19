@@ -72,6 +72,7 @@ import {
   adminRemovePromoCode,
   listActivePromoCodes,
   setUserTestFlag,
+  deleteTestUser,
 } from "@/lib/admin.functions";
 
 const searchSchema = z.object({
