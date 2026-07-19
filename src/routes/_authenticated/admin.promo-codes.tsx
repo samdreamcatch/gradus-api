@@ -43,9 +43,26 @@ function PromoCodesPage() {
   const [label, setLabel] = useState("");
   const [notes, setNotes] = useState("");
   const [percentOff, setPercentOff] = useState(0);
+  const [duration, setDuration] = useState<"forever" | "repeating">("forever");
+  const [durationInMonths, setDurationInMonths] = useState<number>(3);
+  const [cardRequired, setCardRequired] = useState(true);
+  const [appliesToPlans, setAppliesToPlans] = useState<("coach" | "coach_pro")[]>([
+    "coach",
+    "coach_pro",
+  ]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [syncingCode, setSyncingCode] = useState<string | null>(null);
+
+  const togglePlanInNew = (plan: "coach" | "coach_pro") => {
+    setAppliesToPlans((prev) => {
+      if (prev.includes(plan)) {
+        const next = prev.filter((p) => p !== plan);
+        return next.length ? next : prev; // must keep at least one
+      }
+      return [...prev, plan];
+    });
+  };
 
   const handleCreate = async (e: FormEvent) => {
     e.preventDefault();
@@ -59,12 +76,20 @@ function PromoCodesPage() {
           notes: notes.trim() || null,
           percentOff,
           active: true,
+          duration,
+          durationInMonths: duration === "repeating" ? durationInMonths : null,
+          cardRequired,
+          appliesToPlans,
         },
       });
       setCode("");
       setLabel("");
       setNotes("");
       setPercentOff(0);
+      setDuration("forever");
+      setDurationInMonths(3);
+      setCardRequired(true);
+      setAppliesToPlans(["coach", "coach_pro"]);
       toast.success("Promo code created");
       await Promise.all([
         qc.invalidateQueries({ queryKey: ["admin-promo-codes"] }),
@@ -86,14 +111,31 @@ function PromoCodesPage() {
     }
   };
 
-  const updatePercent = async (c: string, next: number) => {
+  const updateField = async (
+    c: string,
+    patch: {
+      label?: string;
+      notes?: string | null;
+      percentOff?: number;
+      active?: boolean;
+      duration?: "forever" | "repeating";
+      durationInMonths?: number | null;
+      cardRequired?: boolean;
+      appliesToPlans?: ("coach" | "coach_pro")[];
+    },
+  ) => {
     try {
-      await update({ data: { code: c, percentOff: next } });
+      await update({ data: { code: c, ...patch } });
       await qc.invalidateQueries({ queryKey: ["admin-promo-codes"] });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Update failed");
     }
   };
+
+  const updatePercent = (c: string, next: number) =>
+    updateField(c, { percentOff: next });
+
+
 
   const handleSync = async (c: string) => {
     setSyncingCode(c);
@@ -190,6 +232,85 @@ function PromoCodesPage() {
               rows={2}
             />
           </div>
+
+          <div className="space-y-1.5 sm:col-span-2 grid gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label>Duration</Label>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={duration === "forever" ? "default" : "secondary"}
+                  onClick={() => setDuration("forever")}
+                >
+                  Forever
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={duration === "repeating" ? "default" : "secondary"}
+                  onClick={() => setDuration("repeating")}
+                >
+                  Repeating
+                </Button>
+                {duration === "repeating" && (
+                  <Input
+                    type="number"
+                    min={1}
+                    max={60}
+                    step={1}
+                    value={durationInMonths}
+                    onChange={(e) => {
+                      const n = Number(e.target.value);
+                      setDurationInMonths(
+                        Number.isFinite(n) ? Math.min(60, Math.max(1, Math.round(n))) : 1,
+                      );
+                    }}
+                    className="h-8 w-20 text-right font-mono text-xs"
+                    aria-label="Months"
+                  />
+                )}
+                <span className="text-xs text-text-tertiary self-center">
+                  {duration === "repeating" ? "months" : ""}
+                </span>
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Applies to</Label>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={appliesToPlans.includes("coach") ? "default" : "secondary"}
+                  onClick={() => togglePlanInNew("coach")}
+                >
+                  Coach
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={appliesToPlans.includes("coach_pro") ? "default" : "secondary"}
+                  onClick={() => togglePlanInNew("coach_pro")}
+                >
+                  Coach Pro
+                </Button>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 sm:col-span-2">
+              <Switch
+                id="new-card-required"
+                checked={cardRequired}
+                onCheckedChange={(v) => setCardRequired(v === true)}
+              />
+              <Label htmlFor="new-card-required" className="cursor-pointer">
+                Card required at checkout
+              </Label>
+              <span className="text-xs text-text-tertiary">
+                Off = 100% off codes can start without a card on file.
+              </span>
+            </div>
+          </div>
+
           {error && <p className="sm:col-span-2 text-sm text-destructive">{error}</p>}
           <div className="sm:col-span-2">
             <Button type="submit" disabled={busy || !code.trim() || !label.trim()}>
@@ -230,15 +351,107 @@ function PromoCodesPage() {
                       </td>
                       <td className="px-3 py-3 text-text-primary">
                         <div>{row.label}</div>
-                        <div className="text-xs text-text-tertiary">
-                          {row.duration === "repeating"
-                            ? `${row.duration_in_months ?? "?"} mo repeating`
-                            : "forever"}
+                        <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[11px]">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={row.duration === "forever" ? "default" : "secondary"}
+                            className="h-6 px-2 text-[11px]"
+                            onClick={() =>
+                              void updateField(row.code, {
+                                duration: "forever",
+                                durationInMonths: null,
+                              })
+                            }
+                          >
+                            Forever
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={row.duration === "repeating" ? "default" : "secondary"}
+                            className="h-6 px-2 text-[11px]"
+                            onClick={() =>
+                              void updateField(row.code, {
+                                duration: "repeating",
+                                durationInMonths: row.duration_in_months ?? 3,
+                              })
+                            }
+                          >
+                            Repeating
+                          </Button>
+                          {row.duration === "repeating" && (
+                            <Input
+                              type="number"
+                              min={1}
+                              max={60}
+                              step={1}
+                              defaultValue={row.duration_in_months ?? 3}
+                              onBlur={(e) => {
+                                const n = Number(e.target.value);
+                                const clamped = Number.isFinite(n)
+                                  ? Math.min(60, Math.max(1, Math.round(n)))
+                                  : 1;
+                                if (clamped !== (row.duration_in_months ?? 0)) {
+                                  void updateField(row.code, {
+                                    durationInMonths: clamped,
+                                  });
+                                }
+                              }}
+                              className="h-6 w-14 text-right font-mono text-[11px]"
+                              aria-label={`Months for ${row.code}`}
+                            />
+                          )}
+                          <span className="text-text-tertiary">
+                            {row.duration === "repeating" ? "mo" : ""}
+                          </span>
+                        </div>
+                        <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px]">
+                          {(["coach", "coach_pro"] as const).map((plan) => {
+                            const current = (row.applies_to_plans ?? []) as string[];
+                            const on = current.includes(plan);
+                            return (
+                              <Button
+                                key={plan}
+                                type="button"
+                                size="sm"
+                                variant={on ? "default" : "secondary"}
+                                className="h-6 px-2 text-[11px]"
+                                onClick={() => {
+                                  const next = on
+                                    ? current.filter((p) => p !== plan)
+                                    : [...current, plan];
+                                  if (!next.length) {
+                                    toast.error("At least one plan is required");
+                                    return;
+                                  }
+                                  void updateField(row.code, {
+                                    appliesToPlans: next as ("coach" | "coach_pro")[],
+                                  });
+                                }}
+                              >
+                                {plan === "coach_pro" ? "Coach Pro" : "Coach"}
+                              </Button>
+                            );
+                          })}
+                          <label className="ml-2 inline-flex items-center gap-1.5 text-text-secondary">
+                            <Switch
+                              checked={row.card_required !== false}
+                              onCheckedChange={(v) =>
+                                void updateField(row.code, { cardRequired: v === true })
+                              }
+                              aria-label={`Card required for ${row.code}`}
+                            />
+                            Card
+                          </label>
                         </div>
                         {row.notes && (
-                          <div className="text-xs text-text-tertiary line-clamp-1">{row.notes}</div>
+                          <div className="mt-1 text-xs text-text-tertiary line-clamp-1">
+                            {row.notes}
+                          </div>
                         )}
                       </td>
+
                       <td className="px-3 py-3 text-right">
                         <Input
                           type="number"

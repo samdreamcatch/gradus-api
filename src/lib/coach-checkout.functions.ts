@@ -121,11 +121,14 @@ export const startCoachCheckout = createServerFn({ method: "POST" })
         "@/integrations/supabase/client.server"
       );
 
+      const tier: "coach" | "coach_pro" = isProPrice ? "coach_pro" : "coach";
+      let cardRequiredForPromo = true;
+
       if (data.promoCode) {
         const typed = await supabaseAdmin
           .from("promo_codes")
           .select(
-            "code, active, percent_off, duration, duration_in_months, stripe_promo_id_sandbox, stripe_promo_id_live",
+            "code, active, percent_off, duration, duration_in_months, card_required, applies_to_plans, stripe_promo_id_sandbox, stripe_promo_id_live",
           )
           .eq("code", data.promoCode)
           .maybeSingle();
@@ -139,8 +142,15 @@ export const startCoachCheckout = createServerFn({ method: "POST" })
               "This code isn't redeemable at checkout — it's already applied to your account.",
           };
         }
-        if (!isProPrice) {
-          return { error: "This code only applies to Coach Pro." };
+        const allowed = (row.applies_to_plans ?? ["coach", "coach_pro"]) as string[];
+        if (!allowed.includes(tier)) {
+          const label =
+            allowed.length === 1
+              ? allowed[0] === "coach_pro"
+                ? "Coach Pro"
+                : "Coach"
+              : allowed.join(", ");
+          return { error: `This code only applies to ${label}.` };
         }
         const id =
           env === "sandbox"
@@ -153,11 +163,12 @@ export const startCoachCheckout = createServerFn({ method: "POST" })
         }
         discountPromoId = id;
         promoCodeToPersist = row.code;
+        cardRequiredForPromo = row.card_required !== false;
       } else if (profile?.promo_code) {
         const promoLookup = await supabaseAdmin
           .from("promo_codes")
           .select(
-            "code, active, percent_off, duration, stripe_promo_id_sandbox, stripe_promo_id_live",
+            "code, active, percent_off, duration, card_required, applies_to_plans, stripe_promo_id_sandbox, stripe_promo_id_live",
           )
           .eq("code", profile.promo_code)
           .maybeSingle();
@@ -168,15 +179,20 @@ export const startCoachCheckout = createServerFn({ method: "POST" })
           (promo.percent_off ?? 0) > 0 &&
           (promo.duration ?? "forever") === "forever"
         ) {
-          const id =
-            env === "sandbox"
-              ? promo.stripe_promo_id_sandbox
-              : promo.stripe_promo_id_live;
-          if (id) discountPromoId = id;
-          else {
-            console.warn(
-              `Promo ${profile.promo_code} not yet minted in ${env}; falling back to full price.`,
-            );
+          const allowed = (promo.applies_to_plans ?? ["coach", "coach_pro"]) as string[];
+          if (allowed.includes(tier)) {
+            const id =
+              env === "sandbox"
+                ? promo.stripe_promo_id_sandbox
+                : promo.stripe_promo_id_live;
+            if (id) {
+              discountPromoId = id;
+              cardRequiredForPromo = promo.card_required !== false;
+            } else {
+              console.warn(
+                `Promo ${profile.promo_code} not yet minted in ${env}; falling back to full price.`,
+              );
+            }
           }
         }
       }
@@ -193,6 +209,7 @@ export const startCoachCheckout = createServerFn({ method: "POST" })
         metadata: { userId },
         ...(discountPromoId && {
           discounts: [{ promotion_code: discountPromoId }],
+          payment_method_collection: cardRequiredForPromo ? "always" : "if_required",
         }),
       });
 
