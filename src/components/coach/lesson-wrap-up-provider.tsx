@@ -262,6 +262,15 @@ export function LessonWrapUpProvider() {
                 <Button
                   size="sm"
                   variant="ghost"
+                  className="h-8 px-2 text-xs font-bold text-text-secondary"
+                  onClick={() => handleDidNotHappen(p)}
+                  disabled={recordMutation.isPending}
+                >
+                  Didn't happen
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
                   className="h-8 px-2 text-xs font-bold"
                   onClick={() => handleRedeploy(p)}
                   disabled={recordMutation.isPending}
