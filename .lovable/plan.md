@@ -1,42 +1,60 @@
-Rewrite the confusing header copy on `/admin/promo-codes` and reduce the friction of getting a code "ready" in Stripe, so an admin doesn't have to know what "minted per env" means.
+## Goal
 
-### 1. Rewrite the header copy (plain English)
+Replace the split "Coaches / Parents / Athletes" list views with a single unified **Users** table at `/admin/users` — spreadsheet-style with filter, sort, per-column search, and inline admin actions.
 
-Replace the current one-liner with two short lines and a tiny legend, still in `src/routes/_authenticated/admin.promo-codes.tsx`:
+## New route
 
-- Line 1: "Promo codes do two things: track who signed up with them, and (optionally) discount checkout by a set %."
-- Line 2: "Any code with a discount has to be created in Stripe once for **test** (preview) and once for **live** (published site) before checkout can apply it. The Stripe column shows where each code is ready."
+`src/routes/_authenticated/admin.users.tsx` — table view. The existing summary chips (Total, New/7d, Onboarded, With athletes, Active plans, etc.) move above the table as stat cards. `admin.list.$kind.tsx` stays temporarily; retired once parity is confirmed.
 
-Legend chips right under it:
-- green dot = ready in this environment
-- gray dash = not created yet — click **Sync** on that row
+## Columns
 
-Show the current environment ("You're viewing: **Test**" / "**Live**") as a small pill so it's obvious which environment a Sync click will affect.
+| Column | Source | Sort | Filter |
+|---|---|---|---|
+| Name | coach/parent/athlete profile | ✓ | text |
+| Email | auth.users.email | ✓ | text |
+| User type | derived: coach / internal admin / org admin / youth athlete / adult athlete / parent | ✓ | multi-select |
+| Last login | auth.users.last_sign_in_at | ✓ | — |
+| Plan | coach_profiles → `coach_effective_tier()` (coach / coach_pro / club / founding); blank for non-coaches | ✓ | multi-select |
+| Internal admin | `user_roles.role = 'admin'` | ✓ | y/n |
+| Test user | profile.is_test | ✓ | y/n |
+| Org admin | `user_roles.role = 'org_admin'` (or `organizations.admin_user_id`) | ✓ | y/n |
+| Organization | joined org name — **editable** combobox | — | multi-select |
+| Promo codes | chips — **editable** popover (add/remove) | — | text |
+| Actions | Reset password, Soft delete | — | — |
 
-### 2. Replace the raw `sandbox: — / live: —` cell with a status pill
+Row click → existing `/admin/users/$userId`.
 
-In the "Stripe" column of each row (`admin.promo-codes.tsx`, ~line 475), show one of three states with the same words used in the header:
+## Interactions
 
-- **Ready in test & live** (green) — both minted
-- **Ready in test only** / **Ready in live only** (amber) — one env done
-- **Not created yet** (gray) — neither env done, or percent_off is 0 so no minting needed → show "Attribution only"
+- **Header**: global search (name/email), user-type multi-select, plan multi-select, admin/test/org-admin y/n toggles, "has org" filter. Sort by column click. Cursor pagination (100/page).
+- **Reset password**: confirm dialog → server fn (a) sends the standard Supabase recovery email to the user AND (b) returns a recovery link the admin can copy to clipboard. Toast confirms both.
+- **Soft delete**: destructive AlertDialog (admin types the user's email to confirm) → server fn sets `deleted_at = now()` on the profile row, disables the auth user via `supabase.auth.admin.updateUserById(id, { ban_duration: '876000h' })` (100 years) so they can no longer sign in, and revokes sessions. Data is preserved for audit. A "Restore" action appears on soft-deleted rows. Requires a new `deleted_at timestamptz` column on `coach_profiles`, `parent_profiles`, and `athletes` (migration).
+- **Edit promo codes**: chip-input popover; server fn validates against `promo_codes` and writes to a new `user_applied_promo_codes(user_id, promo_code_id, scope, applied_by, created_at)` table with unique `(user_id, promo_code_id, scope)`. `scope` is `'next_checkout'` (default) or `'active_now'`. When admin picks **"Apply to current subscription now"**: server fn attaches the corresponding Stripe coupon to the user's active subscription in the current env via `stripe.subscriptions.update({ discounts: [{ coupon }] })`, using `createStripeClient(env)` from `@/lib/stripe.server`. When admin picks **"Apply to next checkout"** (default): code is stashed on profile and picked up by the existing coach-checkout flow. Removing a chip: for `active_now`, removes the coupon from the live subscription; for `next_checkout`, just clears the stash.
+- **Tag org**: reuses `OrgSearchCombobox`; server fn sets/clears `coach_profiles.organization_id`. Setting an org promotes the coach to the club tier via existing `coach_effective_tier` path; unsetting triggers the existing "leaves club" logic (stashes `WELCOME_BACK`).
 
-Keep the row's **Sync (current env)** button, but relabel it based on state:
-- Not synced in this env → "Create in test" / "Create in live"
-- Already synced in this env → "Re-sync in test" (secondary, less prominent)
+## Server work (`src/lib/admin.functions.ts`)
 
-### 3. Add a top-of-table "Sync all unminted in test/live" button
+All new fns use `requireSupabaseAuth` + `has_role(_, 'admin')` gate, then `supabaseAdmin` inside handler:
 
-Above the table, add one button: **"Create X unsynced codes in test"** (label swaps to "in live" when viewing the live admin). It iterates through rows where the current env is missing a Stripe ID and syncs them one after another, showing progress in a toast. This turns the two-trip workflow into two single clicks (one in preview, one in live) instead of one click per row per env.
+- `listAllUsers({ search, types, plans, isAdmin, isTest, isOrgAdmin, hasOrg, includeDeleted, sort, dir, cursor })` — joins `auth.users`, `user_roles`, `coach_profiles`, `parent_profiles`, `athletes`, orgs.
+- `adminResetUserPassword({ userId })` — returns `{ recoveryLink }` and enqueues the email.
+- `adminSoftDeleteUser({ userId, confirmEmail })` / `adminRestoreUser({ userId })`.
+- `adminSetUserOrg({ userId, organizationId | null })`.
+- `adminApplyPromoCode({ userId, code, scope: 'next_checkout' | 'active_now', env })`.
+- `adminRemovePromoCode({ userId, promoCodeId, env })`.
 
-No new server functions needed — it just calls the existing `syncPromoCodeToStripe` server function in a loop.
+## Migration
 
-### Scope
+- Add `deleted_at timestamptz null` to `coach_profiles`, `parent_profiles`, `athletes`.
+- Create `public.user_applied_promo_codes` with GRANTs + RLS (admin-only via `has_role`).
+- Update existing RLS on profile tables to filter `deleted_at IS NULL` for non-admin reads.
 
-- Frontend-only changes in `src/routes/_authenticated/admin.promo-codes.tsx`.
-- No database, no Stripe/webhook, no server-function changes.
-- No changes to the "New code" form or the table's other columns.
+## Design
 
-### Out of scope (call out explicitly)
+Sticky-header table on `bg-card` with `border-divider`, ruled rows, mirroring `admin.promo-codes.tsx`. `Chip` toggles + `Input` + `Popover` multi-selects for filters. Destructive actions in `AlertDialog`. No hover styles — press feedback per the design memory.
 
-- Auto-syncing on create. Tempting, but silently creating things in Stripe from a preview environment can produce surprises (e.g. a typo'd code minted in live). Keeping Sync explicit, just making the intent obvious, is safer.
+## Out of scope
+
+- Impersonation (already at `/admin/impersonation`).
+- Bulk row actions.
+- CSV export (easy add later — flag if you want it in v1).
