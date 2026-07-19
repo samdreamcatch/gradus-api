@@ -108,12 +108,14 @@ export const listPromoCodes = createServerFn({ method: "GET" })
     const { data, error } = await supabaseAdmin
       .from("promo_codes")
       .select(
-        "code, label, active, notes, percent_off, duration, duration_in_months, stripe_promo_id_sandbox, stripe_promo_id_live, created_at",
+        "code, label, active, notes, percent_off, duration, duration_in_months, card_required, applies_to_plans, stripe_promo_id_sandbox, stripe_promo_id_live, created_at",
       )
       .order("created_at", { ascending: false });
     if (error) dbError(error);
     return { codes: data ?? [] };
   });
+
+const planTierSchema = z.enum(["coach", "coach_pro"]);
 
 /** Admin: create a new promo code. */
 export const createPromoCode = createServerFn({ method: "POST" })
@@ -128,7 +130,15 @@ export const createPromoCode = createServerFn({ method: "POST" })
         notes: z.string().trim().max(500).optional().nullable(),
         percentOff: z.number().int().min(0).max(100).default(0),
         active: z.boolean().optional().default(true),
+        duration: z.enum(["forever", "repeating"]).optional().default("forever"),
+        durationInMonths: z.number().int().min(1).max(60).nullable().optional(),
+        cardRequired: z.boolean().optional().default(true),
+        appliesToPlans: z.array(planTierSchema).min(1).optional().default(["coach", "coach_pro"]),
       })
+      .refine(
+        (v) => v.duration === "forever" || (v.durationInMonths ?? 0) > 0,
+        { message: "Repeating codes need a months value.", path: ["durationInMonths"] },
+      )
       .parse(input),
   )
   .handler(async ({ data, context }) => {
@@ -140,13 +150,17 @@ export const createPromoCode = createServerFn({ method: "POST" })
       notes: data.notes ?? null,
       percent_off: data.percentOff,
       active: data.active,
+      duration: data.duration,
+      duration_in_months: data.duration === "repeating" ? data.durationInMonths ?? null : null,
+      card_required: data.cardRequired,
+      applies_to_plans: data.appliesToPlans,
     });
     if (error) dbError(error);
     return { ok: true };
   });
 
-/** Admin: update label/notes/active/percent_off on an existing promo code
- *  (code itself immutable). Changing percent_off invalidates any minted
+/** Admin: update editable fields on an existing promo code (code itself
+ *  immutable). Changing percent_off/duration/months invalidates any minted
  *  Stripe coupon — they get cleared here so the next sync re-mints. */
 export const updatePromoCode = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -158,28 +172,38 @@ export const updatePromoCode = createServerFn({ method: "POST" })
         notes: z.string().trim().max(500).nullable().optional(),
         percentOff: z.number().int().min(0).max(100).optional(),
         active: z.boolean().optional(),
+        duration: z.enum(["forever", "repeating"]).optional(),
+        durationInMonths: z.number().int().min(1).max(60).nullable().optional(),
+        cardRequired: z.boolean().optional(),
+        appliesToPlans: z.array(planTierSchema).min(1).optional(),
       })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const patch: {
-      label?: string;
-      notes?: string | null;
-      active?: boolean;
-      percent_off?: number;
-      stripe_coupon_id_sandbox?: string | null;
-      stripe_promo_id_sandbox?: string | null;
-      stripe_coupon_id_live?: string | null;
-      stripe_promo_id_live?: string | null;
-    } = {};
+    const patch: Record<string, unknown> = {};
     if (data.label !== undefined) patch.label = data.label;
     if (data.notes !== undefined) patch.notes = data.notes;
     if (data.active !== undefined) patch.active = data.active;
+    if (data.cardRequired !== undefined) patch.card_required = data.cardRequired;
+    if (data.appliesToPlans !== undefined) patch.applies_to_plans = data.appliesToPlans;
+
+    let couponInvalidated = false;
     if (data.percentOff !== undefined) {
       patch.percent_off = data.percentOff;
-      // percent_off change means any minted Stripe coupon is now stale.
+      couponInvalidated = true;
+    }
+    if (data.duration !== undefined) {
+      patch.duration = data.duration;
+      if (data.duration === "forever") patch.duration_in_months = null;
+      couponInvalidated = true;
+    }
+    if (data.durationInMonths !== undefined) {
+      patch.duration_in_months = data.durationInMonths;
+      couponInvalidated = true;
+    }
+    if (couponInvalidated) {
       patch.stripe_coupon_id_sandbox = null;
       patch.stripe_promo_id_sandbox = null;
       patch.stripe_coupon_id_live = null;
@@ -194,6 +218,7 @@ export const updatePromoCode = createServerFn({ method: "POST" })
     if (error) dbError(error);
     return { ok: true };
   });
+
 
 /**
  * Admin: idempotently mint (or re-mint) a Stripe Coupon + Promotion Code for
