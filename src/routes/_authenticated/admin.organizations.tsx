@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -11,6 +11,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
+import {
   createOrganization,
   getOrganizationStats,
   listOrganizations,
@@ -18,6 +25,19 @@ import {
   setOrganizationInviteCode,
   updateOrganization,
 } from "@/lib/coach-org.functions";
+
+type OrgRow = {
+  id: string;
+  name: string;
+  slug: string;
+  active: boolean;
+  notes: string | null;
+  city: string | null;
+  region: string | null;
+  logoUrl: string | null;
+  isListed: boolean;
+  activeCode: string | null;
+};
 
 export const Route = createFileRoute("/_authenticated/admin/organizations")({
   component: OrganizationsPage,
@@ -76,6 +96,7 @@ function OrgsTab() {
   const [code, setCodeInput] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [editingOrg, setEditingOrg] = useState<OrgRow | null>(null);
 
   const handleCreate = async (e: FormEvent) => {
     e.preventDefault();
@@ -276,7 +297,13 @@ function OrgsTab() {
                 {orgs.map((o) => (
                   <tr key={o.id} className="hover:bg-elevated">
                     <td className="px-5 py-3">
-                      <div className="font-semibold text-text-primary">{o.name}</div>
+                      <button
+                        type="button"
+                        onClick={() => setEditingOrg(o as OrgRow)}
+                        className="text-left font-semibold text-text-primary underline-offset-2 hover:underline"
+                      >
+                        {o.name}
+                      </button>
                       {(o.city || o.region) && (
                         <div className="text-xs text-text-secondary">
                           {[o.city, o.region].filter(Boolean).join(", ")}
@@ -346,7 +373,172 @@ function OrgsTab() {
           </div>
         )}
       </section>
+
+      <EditOrgSheet
+        org={editingOrg}
+        onOpenChange={(open) => !open && setEditingOrg(null)}
+        onSaved={async () => {
+          await qc.invalidateQueries({ queryKey: ["admin-organizations"] });
+        }}
+      />
     </>
   );
 }
+
+/* ---------- Edit organization sheet ---------- */
+
+function EditOrgSheet({
+  org,
+  onOpenChange,
+  onSaved,
+}: {
+  org: OrgRow | null;
+  onOpenChange: (open: boolean) => void;
+  onSaved: () => Promise<void> | void;
+}) {
+  const update = useServerFn(updateOrganization);
+  const [name, setName] = useState("");
+  const [city, setCity] = useState("");
+  const [region, setRegion] = useState("");
+  const [logoUrl, setLogoUrl] = useState("");
+  const [notes, setNotes] = useState("");
+  const [active, setActive] = useState(true);
+  const [isListed, setIsListed] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!org) return;
+    setName(org.name);
+    setCity(org.city ?? "");
+    setRegion(org.region ?? "");
+    setLogoUrl(org.logoUrl ?? "");
+    setNotes(org.notes ?? "");
+    setActive(org.active);
+    setIsListed(org.isListed);
+    setError(null);
+  }, [org]);
+
+  const handleSave = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!org) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await update({
+        data: {
+          id: org.id,
+          name: name.trim(),
+          city: city.trim() || null,
+          region: region.trim() || null,
+          logoUrl: logoUrl.trim() || null,
+          notes: notes.trim() || null,
+          active,
+          isListed,
+        },
+      });
+      toast.success("Saved");
+      await onSaved();
+      onOpenChange(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Save failed");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Sheet open={!!org} onOpenChange={onOpenChange}>
+      <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto">
+        <SheetHeader>
+          <SheetTitle>Edit organization</SheetTitle>
+          {org && (
+            <SheetDescription>/{org.slug}</SheetDescription>
+          )}
+        </SheetHeader>
+        <form onSubmit={handleSave} className="mt-6 space-y-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="edit-name">Name</Label>
+            <Input
+              id="edit-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              maxLength={120}
+              required
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="edit-city">City</Label>
+              <Input
+                id="edit-city"
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                maxLength={120}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="edit-region">Region</Label>
+              <Input
+                id="edit-region"
+                value={region}
+                onChange={(e) => setRegion(e.target.value)}
+                maxLength={120}
+              />
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="edit-logo">Logo URL</Label>
+            <Input
+              id="edit-logo"
+              value={logoUrl}
+              onChange={(e) => setLogoUrl(e.target.value)}
+              placeholder="https://…"
+              maxLength={500}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="edit-notes">Notes</Label>
+            <Textarea
+              id="edit-notes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              maxLength={500}
+              rows={5}
+            />
+          </div>
+          <div className="flex items-center justify-between rounded-lg border border-divider p-3">
+            <div>
+              <div className="text-sm font-medium text-text-primary">Listed in search</div>
+              <div className="text-xs text-text-secondary">Coaches can find this org in the join flow.</div>
+            </div>
+            <Switch checked={isListed} onCheckedChange={(v) => setIsListed(v === true)} />
+          </div>
+          <div className="flex items-center justify-between rounded-lg border border-divider p-3">
+            <div>
+              <div className="text-sm font-medium text-text-primary">Active</div>
+              <div className="text-xs text-text-secondary">Inactive orgs stop accepting new joins.</div>
+            </div>
+            <Switch checked={active} onCheckedChange={(v) => setActive(v === true)} />
+          </div>
+          {error && <p className="text-sm text-destructive">{error}</p>}
+          <div className="flex justify-end gap-2 pt-2">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => onOpenChange(false)}
+              disabled={busy}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={busy || !name.trim()}>
+              {busy ? "Saving…" : "Save changes"}
+            </Button>
+          </div>
+        </form>
+      </SheetContent>
+    </Sheet>
+  );
+}
+
 
