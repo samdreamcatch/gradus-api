@@ -220,7 +220,7 @@ export function LessonWrapUpProvider() {
                   Lesson didn't happen
                 </Button>
                 <AlertDialogCancel onClick={handleDismissModal}>
-                  Not now
+                  Not now - remind me later
                 </AlertDialogCancel>
                 <Button
                   variant="outline"
