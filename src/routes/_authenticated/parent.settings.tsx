@@ -198,6 +198,8 @@ function ParentSettingsPage() {
               </SettingsList>
             </SettingsGroup>
 
+            <AccountSecuritySection />
+
             <SettingsGroup>
               <SettingsList>
                 <InstallAppRow />
