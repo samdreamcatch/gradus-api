@@ -307,10 +307,19 @@ function OrgsTab() {
                         )}
                         <button
                           type="button"
+                          onClick={() => void editCode(o.id, o.activeCode)}
+                          className="rounded p-1 text-text-tertiary hover:bg-elevated hover:text-text-primary"
+                          aria-label="Set custom code"
+                          title="Set custom code"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          type="button"
                           onClick={() => void rotateCode(o.id)}
                           className="rounded p-1 text-text-tertiary hover:bg-elevated hover:text-text-primary"
                           aria-label="Rotate code"
-                          title="Rotate code"
+                          title="Rotate to a random code"
                         >
                           <RefreshCw className="h-3.5 w-3.5" />
                         </button>
