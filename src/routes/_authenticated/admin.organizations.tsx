@@ -96,6 +96,7 @@ function OrgsTab() {
   const [code, setCodeInput] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [editingOrg, setEditingOrg] = useState<OrgRow | null>(null);
 
   const handleCreate = async (e: FormEvent) => {
     e.preventDefault();
