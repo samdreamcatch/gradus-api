@@ -54,25 +54,16 @@ export const pageInnerBottom: React.CSSProperties = {
   textAlign: 'center' as const,
 }
 
-// Wordmark = large serif "Gradus" with a lime highlighter stripe behind it.
-// The linear-gradient background renders reliably in Gmail/Apple Mail/Outlook.
-export const wordmark: React.CSSProperties = {
+// Wordmark image — centered Gradus logo (dark ink + lime pen-highlight
+// stripe). The source PNG is transparent so the paper card shows through.
+export const wordmarkImg: React.CSSProperties = {
   display: 'block',
-  textAlign: 'center' as const,
-  fontFamily: fonts.display,
-  fontSize: '44px',
-  fontWeight: 700,
-  letterSpacing: '-0.02em',
-  color: colors.ink,
-  margin: '0 auto 24px',
-  padding: '0',
+  margin: '0 auto 20px',
+  height: 'auto',
+  maxWidth: '200px',
+  width: '100%',
 }
 
-// Span placed INSIDE the wordmark <Text> to carry the highlight stripe.
-export const wordmarkHighlight: React.CSSProperties = {
-  backgroundImage: `linear-gradient(180deg, transparent 0%, transparent 52%, ${colors.penFill} 52%, ${colors.penFill} 90%, transparent 90%)`,
-  padding: '0 6px',
-}
 
 // Full-width hairline that sits under the wordmark.
 export const topRule: React.CSSProperties = {
