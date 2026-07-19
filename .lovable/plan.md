@@ -1,30 +1,59 @@
-# Use the real Gradus logo in email headers (transparent PNGs)
+## Goal
 
-## Assets provided
-- `user-uploads://gradus-logo-light_2.png` — dark navy wordmark + lime stripe on a light-slate background.
-- `user-uploads://gradus-logo-dark_2.png` — cream wordmark + teal stripe on a near-black background.
+Give every signed-in user (coach, parent, athlete) a consistent way to:
+- Send themselves a password reset email
+- Send themselves a magic link (useful if they forget their password on another device)
+- Change their email address (with Supabase's default double-confirm)
 
-Both will be background-removed so the paper card shows through behind the wordmark.
+Reauthentication is not a standalone action — it's requested just-in-time by Supabase when required (e.g. during email change), and we handle its prompt inline.
 
-## Current state (verified)
-`src/lib/email-templates/_layout.tsx` renders the wordmark as a `<Text>` with a CSS `linear-gradient` highlighter stripe (`wordmark` / `wordmarkHighlight` in `src/lib/email-templates/_styles.ts`). No logo image file exists in the repo. Email `Body` background is always `#ffffff`; the inner paper card is `#F1F3F7` (cream-grey) — the light (dark-ink) wordmark is the correct default there.
+Zero impact to signup / onboarding: no route guards change, no auth config change, no email template change (existing recovery, magic-link, and email-change templates already ship).
 
-## Plan
+## What's built
 
-1. **Background-remove both variants** with `imagegen--edit_image` (`transparent_background: true`), writing intermediates to `/tmp/`:
-   - light → `/tmp/email-wordmark-light.png`
-   - dark → `/tmp/email-wordmark-dark.png`
-   The prompt preserves the wordmark and lime/teal highlighter stripe exactly — only the outer rectangle background is removed.
-2. **Upload both as CDN assets** via `lovable-assets create --file /tmp/... --filename ...`, writing pointers to:
-   - `src/assets/email-wordmark-light.png.asset.json`
-   - `src/assets/email-wordmark-dark.png.asset.json`
-3. **Update `src/lib/email-templates/_layout.tsx`**:
-   - Replace the text wordmark `<Text>` with a React Email `<Img>` sourcing the **light** (dark-ink) CDN URL — it reads correctly on the light-slate paper card in every inbox.
-   - Display ~200px wide (source is 1200px — retina-safe), auto height, `display: block; margin: 0 auto`, `alt="Gradus"`.
-   - Keep the existing `topRule` hairline and `pageInner` padding wrapper untouched.
-4. **Retire dead styles** in `src/lib/email-templates/_styles.ts`: remove `wordmark` and `wordmarkHighlight` (only referenced by the old header). Leave everything else alone.
-5. **Register the dark variant but do not wire a dark-mode swap now**. Email client `prefers-color-scheme` support is inconsistent (Outlook web/desktop ignore it; Gmail is partial), and the paper card stays light in every client, so the light wordmark is correct by default. Keep the dark asset available for a future full dark-mode email theme.
-6. **Verify** by rendering an existing template through the transactional preview route (`/lovable/email/transactional/preview`) or the admin email tools and confirming the transparent wordmark sits cleanly on the paper card with the stripe intact and no white halo.
+### 1. New shared component: `src/components/settings/AccountSecuritySection.tsx`
 
-## Notes
-- Background removal can sometimes clip anti-aliased edges of a serif letter or leave a faint fringe on a saturated stripe. If either PNG looks off in the preview, I'll rerun the edit with a tightened prompt or fall back to the solid-background versions.
+Rendered inside a `Card` (matches the existing settings look). Contains four rows using the existing settings row pattern:
+
+- **Reset password** — button opens a small inline confirm; on confirm calls `supabase.auth.resetPasswordForEmail(email, { redirectTo: \`${window.location.origin}/reset-password\` })`. Toast: "Reset link sent to {email}". Uses existing `/reset-password` route — no new route needed.
+- **Send magic link** — calls `supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: window.location.origin, shouldCreateUser: false } })`. Toast: "Magic link sent to {email}". `shouldCreateUser:false` prevents accidental new-account creation.
+- **Change email** — opens a `Sheet` (bottom on mobile, side on desktop, per overlay doctrine) with:
+  - Current email (read-only)
+  - New email input + confirm input
+  - Submit calls `supabase.auth.updateUser({ email: newEmail })`.
+  - If Supabase returns `reauthentication_needed` (AuthApiError code), we call `supabase.auth.reauthenticate()`, show a nonce input, then retry `updateUser({ email, nonce })`.
+  - Success toast: "Check both inboxes to confirm the change."
+- **Rate-limit / error handling**: catches `over_email_send_rate_limit` and surfaces a friendly toast; all other errors surfaced via existing `toast.error`.
+
+All three email actions read the current email from the existing `useCurrentUserEmail()` hook — no server function needed; these Supabase auth calls run client-side using the browser client.
+
+### 2. Wire the section into all three settings pages
+
+Add `<AccountSecuritySection />` to:
+- `src/routes/_authenticated/coach.settings.tsx` — above the existing "Sign out" row
+- `src/routes/_authenticated/parent.settings.tsx` — above the existing "Sign out" row
+- `src/routes/_authenticated/athlete.settings.tsx` — above the existing "Sign out" row
+
+Same component, same order in all three so users get a consistent experience.
+
+### 3. No changes to
+
+- `/reset-password` route (already exists and handles the recovery link).
+- Auth email templates (signup, recovery, magic-link, email-change, reauthentication are all already scaffolded).
+- Supabase auth config (double-confirm email change is already the default).
+- Signup / onboarding flows.
+- Route guards.
+
+## Technical notes
+
+- All calls use `supabase` from `@/integrations/supabase/client` — browser only, respects the current session.
+- Reauthentication path uses Supabase's built-in `reauthenticate()` + `nonce` pattern; the existing `reauthentication` email template renders the code.
+- Change-email double confirm: Supabase sends `email_change` messages to both old and new addresses; the change only takes effect once both confirm — no code needed on our side for that logic.
+- `resetPasswordForEmail` `redirectTo` points to the existing `/reset-password` page, which already calls `supabase.auth.updateUser({ password })` on submit.
+- If a user hits GoTrue's hourly `over_email_send_rate_limit`, the toast tells them to try again in a bit; raising the limit is a separate admin action (`supabase--configure_auth` with `rate_limit_email_sent`), not part of this plan.
+
+## Out of scope
+
+- Delete account (separate flow, not requested).
+- Standalone "Reauthenticate now" button (per your answer, just-in-time only).
+- 2FA / MFA enrollment (not requested).

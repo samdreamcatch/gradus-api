@@ -22,6 +22,7 @@ import { SportChip } from "@/components/onboarding/sport-chip";
 import { useCurrentUserEmail } from "@/hooks/use-current-user-email";
 import { FeedbackSettingsRow } from "@/components/feedback/feedback-fab";
 import { InstallAppRow } from "@/components/settings/install-app-row";
+import { AccountSecuritySection } from "@/components/settings/account-security-section";
 import {
   getAthleteSettings,
   updateAthleteSelf,
@@ -141,6 +142,8 @@ function AthleteSettingsPage() {
                 />
               </SettingsList>
             </SettingsGroup>
+
+            <AccountSecuritySection />
 
             <SettingsGroup>
               <SettingsList>

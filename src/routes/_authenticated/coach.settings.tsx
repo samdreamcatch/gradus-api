@@ -53,6 +53,7 @@ import { ThemeSelect } from "@/components/settings/theme-select";
 import { useCurrentUserEmail } from "@/hooks/use-current-user-email";
 import { FeedbackSettingsRow } from "@/components/feedback/feedback-fab";
 import { InstallAppRow } from "@/components/settings/install-app-row";
+import { AccountSecuritySection } from "@/components/settings/account-security-section";
 
 export const Route = createFileRoute("/_authenticated/coach/settings")({
   loader: ({ context }) => {
@@ -119,6 +120,8 @@ function SettingsPage() {
             />
           </SettingsList>
         </SettingsGroup>
+
+        <AccountSecuritySection />
 
         <SettingsGroup>
           <SettingsList>
