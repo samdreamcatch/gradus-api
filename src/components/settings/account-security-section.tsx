@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { KeyRound, Mail, AtSign, Loader2, Wand2 } from "lucide-react";
+import { KeyRound, AtSign, Loader2, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentUserEmail } from "@/hooks/use-current-user-email";
