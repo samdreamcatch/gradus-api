@@ -42,16 +42,21 @@ export const EmailChangeEmail = ({ siteName, oldEmail, email, newEmail, confirma
       <Head />
       <Preview>{renderTemplateString(c.preview, vars)}</Preview>
       <Body style={main}>
-        <Container style={container}>
-          <Header />
-          <Text style={eyebrow}>{renderTemplateString(c.eyebrow, vars)}</Text>
-          <Heading style={h1}>{renderTemplateString(c.heading, vars)}</Heading>
-          <Text style={text}>{parse(renderTemplateString(c.body, vars), parser)}</Text>
-          <div style={buttonWrap}><Button style={button} href={confirmationUrl}>{renderTemplateString(c.ctaLabel, vars)}</Button></div>
-          <Hr style={divider} />
-          <Text style={{ ...footer, color: colors.inkSoft }}>{parse(renderTemplateString(c.footer, vars))}</Text>
-        </Container>
+        <PageShell>
+          <Container style={container}>
+            <Header />
+            <PageInner>
+              <Text style={eyebrow}>{renderTemplateString(c.eyebrow, vars)}</Text>
+              <Heading style={h1}>{renderTemplateString(c.heading, vars)}</Heading>
+              <Text style={text}>{parse(renderTemplateString(c.body, vars), parser)}</Text>
+              <div style={buttonWrap}><Button style={button} href={confirmationUrl}>{renderTemplateString(c.ctaLabel, vars)}</Button></div>
+              <Hr style={divider} />
+              <Text style={{ ...footer, color: colors.inkSoft }}>{parse(renderTemplateString(c.footer, vars))}</Text>
+            </PageInner>
+          </Container>
+        </PageShell>
       </Body>
+
     </Html>
   );
 };
