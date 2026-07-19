@@ -254,21 +254,24 @@ function PromoCodesPage() {
                   Repeating
                 </Button>
                 {duration === "repeating" && (
-                  <Input
-                    type="number"
-                    min={1}
-                    max={60}
-                    step={1}
-                    value={durationInMonths}
-                    onChange={(e) => {
-                      const n = Number(e.target.value);
-                      setDurationInMonths(
-                        Number.isFinite(n) ? Math.min(60, Math.max(1, Math.round(n))) : 1,
-                      );
-                    }}
-                    className="h-8 w-20 text-right font-mono text-xs"
-                    aria-label="Months"
-                  />
+                  <>
+                    <span className="text-xs text-text-tertiary self-center">for</span>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={60}
+                      step={1}
+                      value={durationInMonths}
+                      onChange={(e) => {
+                        const n = Number(e.target.value);
+                        setDurationInMonths(
+                          Number.isFinite(n) ? Math.min(60, Math.max(1, Math.round(n))) : 1,
+                        );
+                      }}
+                      className="h-8 w-20 text-right font-mono text-xs"
+                      aria-label="Months"
+                    />
+                  </>
                 )}
                 <span className="text-xs text-text-tertiary self-center">
                   {duration === "repeating" ? "months" : ""}
