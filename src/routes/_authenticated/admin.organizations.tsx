@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -11,6 +11,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
+import {
   createOrganization,
   getOrganizationStats,
   listOrganizations,
@@ -18,6 +25,19 @@ import {
   setOrganizationInviteCode,
   updateOrganization,
 } from "@/lib/coach-org.functions";
+
+type OrgRow = {
+  id: string;
+  name: string;
+  slug: string;
+  active: boolean;
+  notes: string | null;
+  city: string | null;
+  region: string | null;
+  logoUrl: string | null;
+  isListed: boolean;
+  activeCode: string | null;
+};
 
 export const Route = createFileRoute("/_authenticated/admin/organizations")({
   component: OrganizationsPage,
