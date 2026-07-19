@@ -619,6 +619,15 @@ function RowActions({
               Soft delete
             </DropdownMenuItem>
           )}
+          {isTest && !isDeleted && (
+            <DropdownMenuItem
+              onClick={() => setConfirmHardDelete(true)}
+              className="text-destructive"
+            >
+              <Trash2 className="size-4 mr-2" />
+              Hard delete (test user)
+            </DropdownMenuItem>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
 
@@ -630,6 +639,36 @@ function RowActions({
         expectedEmail={email}
         onDone={onDone}
       />
+
+      <AlertDialog open={confirmHardDelete} onOpenChange={setConfirmHardDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Permanently delete this test user?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This removes the auth user and their profile rows. The email
+              address will be freed up for reuse. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground"
+              onClick={async () => {
+                try {
+                  await hardDeleteFn({ data: { userId } });
+                  toast.success("Test user permanently deleted");
+                  setConfirmHardDelete(false);
+                  onDone();
+                } catch (e) {
+                  toast.error((e as Error).message);
+                }
+              }}
+            >
+              Hard delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
