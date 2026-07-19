@@ -124,6 +124,18 @@ export function LessonWrapUpProvider() {
     if (pending.length <= 1) setListOpen(false);
   }
 
+  function handleDidNotHappen(wrapUp: PendingWrapUp) {
+    recordMutation.mutate({
+      data: {
+        athleteId: wrapUp.athleteId,
+        lessonDate: wrapUp.lessonDate,
+        action: "did_not_happen",
+      },
+    });
+    setModalFor(null);
+    if (pending.length <= 1) setListOpen(false);
+  }
+
   function handleDismissModal() {
     // Don't write a dismissal row — banner should persist until the coach acts.
     setModalFor(null);
