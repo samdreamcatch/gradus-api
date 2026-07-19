@@ -2,7 +2,7 @@ import * as React from "react";
 import { Body, Button, Container, Head, Heading, Hr, Html, Preview, Text } from "@react-email/components";
 import parse from "html-react-parser";
 import { button, container, divider, eyebrow, footer, h1, main, sign, text, buttonWrap } from "./_styles";
-import { Header } from "./_layout";
+import { Header, PageInner, PageShell } from "./_layout";
 import { resolveCopy, renderTemplateString } from "./copy-schema";
 
 interface InviteEmailProps {
