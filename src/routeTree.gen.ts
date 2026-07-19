@@ -25,10 +25,12 @@ import { Route as ICodeRouteImport } from './routes/i.$code'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as DevPaywallPreviewRouteImport } from './routes/dev.paywall-preview'
 import { Route as AuthenticatedParentRouteImport } from './routes/_authenticated/parent'
+import { Route as AuthenticatedOrgAdminRouteImport } from './routes/_authenticated/org-admin'
 import { Route as AuthenticatedCoachRouteImport } from './routes/_authenticated/coach'
 import { Route as AuthenticatedAthleteRouteImport } from './routes/_authenticated/athlete'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedParentIndexRouteImport } from './routes/_authenticated/parent.index'
+import { Route as AuthenticatedOrgAdminIndexRouteImport } from './routes/_authenticated/org-admin.index'
 import { Route as AuthenticatedCoachIndexRouteImport } from './routes/_authenticated/coach.index'
 import { Route as AuthenticatedAthleteIndexRouteImport } from './routes/_authenticated/athlete.index'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
@@ -165,6 +167,11 @@ const AuthenticatedParentRoute = AuthenticatedParentRouteImport.update({
   path: '/parent',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedOrgAdminRoute = AuthenticatedOrgAdminRouteImport.update({
+  id: '/org-admin',
+  path: '/org-admin',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedCoachRoute = AuthenticatedCoachRouteImport.update({
   id: '/coach',
   path: '/coach',
@@ -185,6 +192,12 @@ const AuthenticatedParentIndexRoute =
     id: '/',
     path: '/',
     getParentRoute: () => AuthenticatedParentRoute,
+  } as any)
+const AuthenticatedOrgAdminIndexRoute =
+  AuthenticatedOrgAdminIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedOrgAdminRoute,
   } as any)
 const AuthenticatedCoachIndexRoute = AuthenticatedCoachIndexRouteImport.update({
   id: '/',
@@ -519,6 +532,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/athlete': typeof AuthenticatedAthleteRouteWithChildren
   '/coach': typeof AuthenticatedCoachRouteWithChildren
+  '/org-admin': typeof AuthenticatedOrgAdminRouteWithChildren
   '/parent': typeof AuthenticatedParentRouteWithChildren
   '/dev/paywall-preview': typeof DevPaywallPreviewRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
@@ -559,6 +573,7 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/athlete/': typeof AuthenticatedAthleteIndexRoute
   '/coach/': typeof AuthenticatedCoachIndexRoute
+  '/org-admin/': typeof AuthenticatedOrgAdminIndexRoute
   '/parent/': typeof AuthenticatedParentIndexRoute
   '/admin/errors/$id': typeof AuthenticatedAdminErrorsIdRoute
   '/admin/list/$kind': typeof AuthenticatedAdminListKindRoute
@@ -631,6 +646,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/athlete': typeof AuthenticatedAthleteIndexRoute
   '/coach': typeof AuthenticatedCoachIndexRoute
+  '/org-admin': typeof AuthenticatedOrgAdminIndexRoute
   '/parent': typeof AuthenticatedParentIndexRoute
   '/admin/errors/$id': typeof AuthenticatedAdminErrorsIdRoute
   '/admin/list/$kind': typeof AuthenticatedAdminListKindRoute
@@ -670,6 +686,7 @@ export interface FileRoutesById {
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/_authenticated/athlete': typeof AuthenticatedAthleteRouteWithChildren
   '/_authenticated/coach': typeof AuthenticatedCoachRouteWithChildren
+  '/_authenticated/org-admin': typeof AuthenticatedOrgAdminRouteWithChildren
   '/_authenticated/parent': typeof AuthenticatedParentRouteWithChildren
   '/dev/paywall-preview': typeof DevPaywallPreviewRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
@@ -710,6 +727,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/athlete/': typeof AuthenticatedAthleteIndexRoute
   '/_authenticated/coach/': typeof AuthenticatedCoachIndexRoute
+  '/_authenticated/org-admin/': typeof AuthenticatedOrgAdminIndexRoute
   '/_authenticated/parent/': typeof AuthenticatedParentIndexRoute
   '/_authenticated/admin/errors/$id': typeof AuthenticatedAdminErrorsIdRoute
   '/_authenticated/admin/list/$kind': typeof AuthenticatedAdminListKindRoute
@@ -749,6 +767,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/athlete'
     | '/coach'
+    | '/org-admin'
     | '/parent'
     | '/dev/paywall-preview'
     | '/email/unsubscribe'
@@ -789,6 +808,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/athlete/'
     | '/coach/'
+    | '/org-admin/'
     | '/parent/'
     | '/admin/errors/$id'
     | '/admin/list/$kind'
@@ -861,6 +881,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/athlete'
     | '/coach'
+    | '/org-admin'
     | '/parent'
     | '/admin/errors/$id'
     | '/admin/list/$kind'
@@ -899,6 +920,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin'
     | '/_authenticated/athlete'
     | '/_authenticated/coach'
+    | '/_authenticated/org-admin'
     | '/_authenticated/parent'
     | '/dev/paywall-preview'
     | '/email/unsubscribe'
@@ -939,6 +961,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/'
     | '/_authenticated/athlete/'
     | '/_authenticated/coach/'
+    | '/_authenticated/org-admin/'
     | '/_authenticated/parent/'
     | '/_authenticated/admin/errors/$id'
     | '/_authenticated/admin/list/$kind'
@@ -1106,6 +1129,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedParentRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/org-admin': {
+      id: '/_authenticated/org-admin'
+      path: '/org-admin'
+      fullPath: '/org-admin'
+      preLoaderRoute: typeof AuthenticatedOrgAdminRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/coach': {
       id: '/_authenticated/coach'
       path: '/coach'
@@ -1133,6 +1163,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/parent/'
       preLoaderRoute: typeof AuthenticatedParentIndexRouteImport
       parentRoute: typeof AuthenticatedParentRoute
+    }
+    '/_authenticated/org-admin/': {
+      id: '/_authenticated/org-admin/'
+      path: '/'
+      fullPath: '/org-admin/'
+      preLoaderRoute: typeof AuthenticatedOrgAdminIndexRouteImport
+      parentRoute: typeof AuthenticatedOrgAdminRoute
     }
     '/_authenticated/coach/': {
       id: '/_authenticated/coach/'
@@ -1658,6 +1695,19 @@ const AuthenticatedCoachRouteChildren: AuthenticatedCoachRouteChildren = {
 const AuthenticatedCoachRouteWithChildren =
   AuthenticatedCoachRoute._addFileChildren(AuthenticatedCoachRouteChildren)
 
+interface AuthenticatedOrgAdminRouteChildren {
+  AuthenticatedOrgAdminIndexRoute: typeof AuthenticatedOrgAdminIndexRoute
+}
+
+const AuthenticatedOrgAdminRouteChildren: AuthenticatedOrgAdminRouteChildren = {
+  AuthenticatedOrgAdminIndexRoute: AuthenticatedOrgAdminIndexRoute,
+}
+
+const AuthenticatedOrgAdminRouteWithChildren =
+  AuthenticatedOrgAdminRoute._addFileChildren(
+    AuthenticatedOrgAdminRouteChildren,
+  )
+
 interface AuthenticatedParentRouteChildren {
   AuthenticatedParentSettingsRoute: typeof AuthenticatedParentSettingsRoute
   AuthenticatedParentIndexRoute: typeof AuthenticatedParentIndexRoute
@@ -1687,6 +1737,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
   AuthenticatedAthleteRoute: typeof AuthenticatedAthleteRouteWithChildren
   AuthenticatedCoachRoute: typeof AuthenticatedCoachRouteWithChildren
+  AuthenticatedOrgAdminRoute: typeof AuthenticatedOrgAdminRouteWithChildren
   AuthenticatedParentRoute: typeof AuthenticatedParentRouteWithChildren
 }
 
@@ -1694,6 +1745,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
   AuthenticatedAthleteRoute: AuthenticatedAthleteRouteWithChildren,
   AuthenticatedCoachRoute: AuthenticatedCoachRouteWithChildren,
+  AuthenticatedOrgAdminRoute: AuthenticatedOrgAdminRouteWithChildren,
   AuthenticatedParentRoute: AuthenticatedParentRouteWithChildren,
 }
 
