@@ -727,8 +727,15 @@ export const getDailyActiveUsers = createServerFn({ method: "POST" })
       new Set((sessions.data ?? []).map((s) => s.athlete_id).filter(Boolean) as string[]),
     );
     const coachIds = Array.from(
-      new Set((wrapUps.data ?? []).map((w) => w.coach_id).filter(Boolean) as string[]),
+      new Set(
+        [
+          ...((wrapUps.data ?? []).map((w) => w.coach_id)),
+          ...((plansCreated.data ?? []).map((p) => p.coach_id)),
+          ...((resourcesCreated.data ?? []).map((r) => r.coach_id)),
+        ].filter(Boolean) as string[],
+      ),
     );
+
 
     const athleteUserMap = new Map<string, string>();
     const testUsers = new Set<string>();
