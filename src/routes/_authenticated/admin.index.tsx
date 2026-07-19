@@ -422,6 +422,7 @@ function AdminUsersPage() {
                         userId={r.userId}
                         userType={r.userType}
                         isDeleted={!!r.softDeletedAt}
+                        isTest={r.isTest}
                         onOpenManage={() => setActiveUserId(r.userId)}
                         onDone={invalidate}
                         email={r.email ?? ""}
