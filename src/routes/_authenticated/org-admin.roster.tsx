@@ -81,7 +81,7 @@ function OrgRosterPage() {
 
   return (
     <div className="p-4 md:p-6 space-y-6 max-w-5xl">
-      <PageTitle title={`${orgName} — Roster`} description="Manage coaches and invites" />
+      <PageTitle subtitle="Manage coaches and invites">{`${orgName} — Roster`}</PageTitle>
 
       <Card>
         <CardHeader>
