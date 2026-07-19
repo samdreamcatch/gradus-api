@@ -241,8 +241,9 @@ function PromoCodesPage() {
             Promo codes do two things: track who signed up with them, and (optionally) discount checkout by a set %.
           </p>
           <p>
-            Any code with a discount has to be created in Stripe once for <strong className="text-text-primary">test</strong> (preview) and once for <strong className="text-text-primary">live</strong> (published site) before checkout can apply it. The Stripe column shows where each code is ready.
+            Any code with a discount has to be created in Stripe once for <strong className="text-text-primary">development env</strong> (preview) and once for <strong className="text-text-primary">production env</strong> (published site) before checkout can apply it. The Stripe column shows where each code is ready.
           </p>
+
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pt-1 text-xs text-text-tertiary">
             <span className="inline-flex items-center gap-1.5">
               <span className="h-2 w-2 rounded-full bg-pen-tennis" /> ready in that environment
