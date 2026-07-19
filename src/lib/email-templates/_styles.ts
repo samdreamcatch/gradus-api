@@ -43,10 +43,27 @@ export const container: React.CSSProperties = {
   backgroundColor: colors.paper,
 }
 
+export const container: React.CSSProperties = {
+  width: '100%',
+  maxWidth: '640px',
+  margin: '0 auto',
+  padding: '0',
+  backgroundColor: colors.paper,
+}
+
+// Outer lighter-grey band that wraps the cream paper card, giving the
+// "page-on-page" feel from the founder Welcome email.
+export const outerBand: React.CSSProperties = {
+  backgroundColor: '#EDEEF2',
+  padding: '24px 20px',
+  width: '100%',
+}
+
 // Inner padding wrapper for the "paper" content above the dark callout.
 export const pageInner: React.CSSProperties = {
-  padding: '40px 44px 8px',
+  padding: '24px 44px 8px',
 }
+
 
 // Inner padding wrapper for content BELOW a dark callout (CTA + footer area).
 export const pageInnerBottom: React.CSSProperties = {
