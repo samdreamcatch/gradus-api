@@ -1,30 +1,32 @@
-## Goal
+## Change
 
-In the admin panel, replace Stripe environment labels ("test", "sandbox", "live") with **"development env"** and **"production env"** wherever we're showing the user which Stripe environment they're in. Leave unrelated uses of the words alone (test-user flag, "live" meaning "applied to active subscription", route search params).
+Rework the paywall tier-card button labels in `src/routes/_authenticated/coach.paywall.tsx` (~lines 699–716).
 
-## Scope of change (labels only, no logic)
+**New label rules:**
 
-All edits are copy-only in `src/routes/_authenticated/admin.promo-codes.tsx`. Internal identifiers (`"sandbox"`, `"live"`, column names `stripe_promo_id_sandbox` / `_live`) stay as-is — only visible strings change.
+- Base label on both Coach and Coach Pro cards: **"Continue"** — replaces every current "Upgrade", "Upgrade to Coach Pro", and "Switch to Coach" variant. Applies whether or not the coach has an active subscription.
+- Coach Pro card, when a valid promo with `durationInMonths > 0` is applied: keep **"Start N month(s) free"** (unchanged from `proCtaLabel`).
+- Loading state: keep the existing spinner-style copy but simplify — use **"Starting…"** in all cases (drops the `hasActiveSub ? "Switching…" : "Starting…"` split, since the button itself no longer distinguishes new vs. switch).
 
-### admin.promo-codes.tsx
+**Result:**
 
-- Header banner (line ~244): "…created in Stripe once for **development env** (preview) and once for **production env** (published site)…"
-- Environment badge / `envLabel` (line ~185): show "Development env" / "Production env" / "Not configured".
-- Sync status pills (lines ~597–605):
-  - "Ready in development & production env"
-  - "Ready in development env only"
-  - "Ready in production env only"
-- `otherEnvLabel` and button copy (lines ~590, ~610–618): "Re-sync in development env" / "Create in production env", plus the "Still needs …: open this page on the … site" hint.
-- Detail sheet field labels (lines ~773, ~781): "Development env Stripe" / "Production env Stripe".
-- User-list source tag (line ~841): when `source === "admin_active"`, show `active · development env` / `active · production env` instead of `live · sandbox`.
+```
+No sub, no promo   → Coach: "Continue"   Coach Pro: "Continue"
+No sub, promo      → Coach: "Continue"   Coach Pro: "Start 3 months free"
+Active sub switch  → Coach: "Continue"   Coach Pro: "Continue"   (or promo label on Pro)
+Current tier       → "Current plan" pill (unchanged)
+Founding coach     → "Active" pill on Coach card (unchanged)
+```
 
-## Deliberately NOT changed
+## Scope
 
-- **Test-user flag** (`isTest`, "Only test users", "Mark as test user", `admin.list.$kind`, `admin.index`, `admin.map`, `admin.reporting`, `admin.errors`, `admin.feedback`, `admin.activity`, `admin.users.$userId`) — different concept (QA accounts), not a Stripe env.
-- **`c.scope === "active_now" ? "live" : "next"`** in `admin.index.tsx` line 404 — "live" here means "applied to the active subscription", not a Stripe env. Unrelated to this rename.
-- Route `search={{ test: false }}` params and Zod schema keys — URL contract, not display copy.
-- Server code, DB column names, and Stripe API values — unaffected.
+- Single file: `src/routes/_authenticated/coach.paywall.tsx`.
+- No changes to `handleTierAction`, entitlement logic, promo logic, or any other affordance (Manage billing button, current-plan banner, etc.).
+- No DB, server-fn, or Stripe changes.
 
 ## Verification
 
-Typecheck after the edits and eyeball the promo-codes page (banner, env pill, table Stripe column, detail sheet).
+- Sign in as an unentitled coach (or admin without a sub) — both cards read "Continue".
+- Apply promo `WILSON` — Coach Pro card reads "Start 3 months free"; Coach card still reads "Continue".
+- Sign in as a coach on Coach tier, open paywall with `?manage=true` — Coach card shows "Current plan" pill; Coach Pro card reads "Continue".
+- Click a card — button shows "Starting…" while Stripe session is created.

@@ -703,16 +703,10 @@ function PaywallPage() {
                     onClick={() => handleTierAction(tier)}
                   >
                     {loading && selectedTier === tier
-                      ? hasActiveSub
-                        ? "Switching…"
-                        : "Starting…"
-                      : hasActiveSub
-                        ? isPro
-                          ? "Upgrade to Coach Pro"
-                          : "Switch to Coach"
-                        : isPro
-                          ? proCtaLabel
-                          : "Upgrade"}
+                      ? "Starting…"
+                      : isPro
+                        ? proCtaLabel
+                        : "Continue"}
                   </Button>
                 )}
               </div>
