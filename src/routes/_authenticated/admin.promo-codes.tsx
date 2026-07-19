@@ -232,6 +232,85 @@ function PromoCodesPage() {
               rows={2}
             />
           </div>
+
+          <div className="space-y-1.5 sm:col-span-2 grid gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label>Duration</Label>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={duration === "forever" ? "default" : "secondary"}
+                  onClick={() => setDuration("forever")}
+                >
+                  Forever
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={duration === "repeating" ? "default" : "secondary"}
+                  onClick={() => setDuration("repeating")}
+                >
+                  Repeating
+                </Button>
+                {duration === "repeating" && (
+                  <Input
+                    type="number"
+                    min={1}
+                    max={60}
+                    step={1}
+                    value={durationInMonths}
+                    onChange={(e) => {
+                      const n = Number(e.target.value);
+                      setDurationInMonths(
+                        Number.isFinite(n) ? Math.min(60, Math.max(1, Math.round(n))) : 1,
+                      );
+                    }}
+                    className="h-8 w-20 text-right font-mono text-xs"
+                    aria-label="Months"
+                  />
+                )}
+                <span className="text-xs text-text-tertiary self-center">
+                  {duration === "repeating" ? "months" : ""}
+                </span>
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Applies to</Label>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={appliesToPlans.includes("coach") ? "default" : "secondary"}
+                  onClick={() => togglePlanInNew("coach")}
+                >
+                  Coach
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={appliesToPlans.includes("coach_pro") ? "default" : "secondary"}
+                  onClick={() => togglePlanInNew("coach_pro")}
+                >
+                  Coach Pro
+                </Button>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 sm:col-span-2">
+              <Switch
+                id="new-card-required"
+                checked={cardRequired}
+                onCheckedChange={(v) => setCardRequired(v === true)}
+              />
+              <Label htmlFor="new-card-required" className="cursor-pointer">
+                Card required at checkout
+              </Label>
+              <span className="text-xs text-text-tertiary">
+                Off = 100% off codes can start without a card on file.
+              </span>
+            </div>
+          </div>
+
           {error && <p className="sm:col-span-2 text-sm text-destructive">{error}</p>}
           <div className="sm:col-span-2">
             <Button type="submit" disabled={busy || !code.trim() || !label.trim()}>
