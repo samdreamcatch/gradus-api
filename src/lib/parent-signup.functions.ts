@@ -344,10 +344,7 @@ export const getMyRole = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const userId = context.userId;
-    // Use the admin client + explicit user_id filters so RLS edge cases or a
-    // future grant change can never make a profile lookup silently return
-    // null and mis-route the user.
-    const [coach, parent, athlete] = await Promise.all([
+    const [coach, parent, athlete, orgAdmin] = await Promise.all([
       supabaseAdmin
         .from("coach_profiles")
         .select("id, onboarded_at")
@@ -364,18 +361,24 @@ export const getMyRole = createServerFn({ method: "GET" })
         .eq("user_id", userId)
         .limit(1)
         .maybeSingle(),
+      supabaseAdmin
+        .from("org_admins")
+        .select("id")
+        .eq("user_id", userId)
+        .limit(1)
+        .maybeSingle(),
     ]);
     if (coach.error) dbError(coach.error);
     if (parent.error) dbError(parent.error);
     if (athlete.error) dbError(athlete.error);
+    if (orgAdmin.error) dbError(orgAdmin.error);
 
-    // A coach_profiles row with no onboarded_at is a stub (user briefly hit
-    // the coach wizard and bailed). Never treat that as the user's real role
-    // if they have a meaningful parent or athlete record.
     if (coach.data?.onboarded_at) return { role: "coach" as const };
     if (parent.data) return { role: "parent" as const };
     if (athlete.data) return { role: "athlete" as const };
     if (coach.data) return { role: "coach" as const };
+    // Pure org admin (no coach profile) — the club purchaser or a delegated director.
+    if (orgAdmin.data) return { role: "org_admin" as const };
     return { role: null };
   });
 

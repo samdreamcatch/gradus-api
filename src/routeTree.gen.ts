@@ -25,10 +25,12 @@ import { Route as ICodeRouteImport } from './routes/i.$code'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as DevPaywallPreviewRouteImport } from './routes/dev.paywall-preview'
 import { Route as AuthenticatedParentRouteImport } from './routes/_authenticated/parent'
+import { Route as AuthenticatedOrgAdminRouteImport } from './routes/_authenticated/org-admin'
 import { Route as AuthenticatedCoachRouteImport } from './routes/_authenticated/coach'
 import { Route as AuthenticatedAthleteRouteImport } from './routes/_authenticated/athlete'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedParentIndexRouteImport } from './routes/_authenticated/parent.index'
+import { Route as AuthenticatedOrgAdminIndexRouteImport } from './routes/_authenticated/org-admin.index'
 import { Route as AuthenticatedCoachIndexRouteImport } from './routes/_authenticated/coach.index'
 import { Route as AuthenticatedAthleteIndexRouteImport } from './routes/_authenticated/athlete.index'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
@@ -40,6 +42,12 @@ import { Route as SignupAthleteAdultRouteImport } from './routes/signup.athlete.
 import { Route as SignupAthleteAccountRouteImport } from './routes/signup.athlete.account'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as AuthenticatedParentSettingsRouteImport } from './routes/_authenticated/parent.settings'
+import { Route as AuthenticatedOrgAdminTemplatesRouteImport } from './routes/_authenticated/org-admin.templates'
+import { Route as AuthenticatedOrgAdminSettingsRouteImport } from './routes/_authenticated/org-admin.settings'
+import { Route as AuthenticatedOrgAdminRosterRouteImport } from './routes/_authenticated/org-admin.roster'
+import { Route as AuthenticatedOrgAdminResourcesRouteImport } from './routes/_authenticated/org-admin.resources'
+import { Route as AuthenticatedOrgAdminMovesRouteImport } from './routes/_authenticated/org-admin.moves'
+import { Route as AuthenticatedOrgAdminCalendarRouteImport } from './routes/_authenticated/org-admin.calendar'
 import { Route as AuthenticatedCoachSettingsRouteImport } from './routes/_authenticated/coach.settings'
 import { Route as AuthenticatedCoachRosterRouteImport } from './routes/_authenticated/coach.roster'
 import { Route as AuthenticatedCoachPlansRouteImport } from './routes/_authenticated/coach.plans'
@@ -165,6 +173,11 @@ const AuthenticatedParentRoute = AuthenticatedParentRouteImport.update({
   path: '/parent',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedOrgAdminRoute = AuthenticatedOrgAdminRouteImport.update({
+  id: '/org-admin',
+  path: '/org-admin',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedCoachRoute = AuthenticatedCoachRouteImport.update({
   id: '/coach',
   path: '/coach',
@@ -185,6 +198,12 @@ const AuthenticatedParentIndexRoute =
     id: '/',
     path: '/',
     getParentRoute: () => AuthenticatedParentRoute,
+  } as any)
+const AuthenticatedOrgAdminIndexRoute =
+  AuthenticatedOrgAdminIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedOrgAdminRoute,
   } as any)
 const AuthenticatedCoachIndexRoute = AuthenticatedCoachIndexRouteImport.update({
   id: '/',
@@ -242,6 +261,42 @@ const AuthenticatedParentSettingsRoute =
     id: '/settings',
     path: '/settings',
     getParentRoute: () => AuthenticatedParentRoute,
+  } as any)
+const AuthenticatedOrgAdminTemplatesRoute =
+  AuthenticatedOrgAdminTemplatesRouteImport.update({
+    id: '/templates',
+    path: '/templates',
+    getParentRoute: () => AuthenticatedOrgAdminRoute,
+  } as any)
+const AuthenticatedOrgAdminSettingsRoute =
+  AuthenticatedOrgAdminSettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => AuthenticatedOrgAdminRoute,
+  } as any)
+const AuthenticatedOrgAdminRosterRoute =
+  AuthenticatedOrgAdminRosterRouteImport.update({
+    id: '/roster',
+    path: '/roster',
+    getParentRoute: () => AuthenticatedOrgAdminRoute,
+  } as any)
+const AuthenticatedOrgAdminResourcesRoute =
+  AuthenticatedOrgAdminResourcesRouteImport.update({
+    id: '/resources',
+    path: '/resources',
+    getParentRoute: () => AuthenticatedOrgAdminRoute,
+  } as any)
+const AuthenticatedOrgAdminMovesRoute =
+  AuthenticatedOrgAdminMovesRouteImport.update({
+    id: '/moves',
+    path: '/moves',
+    getParentRoute: () => AuthenticatedOrgAdminRoute,
+  } as any)
+const AuthenticatedOrgAdminCalendarRoute =
+  AuthenticatedOrgAdminCalendarRouteImport.update({
+    id: '/calendar',
+    path: '/calendar',
+    getParentRoute: () => AuthenticatedOrgAdminRoute,
   } as any)
 const AuthenticatedCoachSettingsRoute =
   AuthenticatedCoachSettingsRouteImport.update({
@@ -519,6 +574,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/athlete': typeof AuthenticatedAthleteRouteWithChildren
   '/coach': typeof AuthenticatedCoachRouteWithChildren
+  '/org-admin': typeof AuthenticatedOrgAdminRouteWithChildren
   '/parent': typeof AuthenticatedParentRouteWithChildren
   '/dev/paywall-preview': typeof DevPaywallPreviewRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
@@ -548,6 +604,12 @@ export interface FileRoutesByFullPath {
   '/coach/plans': typeof AuthenticatedCoachPlansRouteWithChildren
   '/coach/roster': typeof AuthenticatedCoachRosterRoute
   '/coach/settings': typeof AuthenticatedCoachSettingsRoute
+  '/org-admin/calendar': typeof AuthenticatedOrgAdminCalendarRoute
+  '/org-admin/moves': typeof AuthenticatedOrgAdminMovesRoute
+  '/org-admin/resources': typeof AuthenticatedOrgAdminResourcesRoute
+  '/org-admin/roster': typeof AuthenticatedOrgAdminRosterRoute
+  '/org-admin/settings': typeof AuthenticatedOrgAdminSettingsRoute
+  '/org-admin/templates': typeof AuthenticatedOrgAdminTemplatesRoute
   '/parent/settings': typeof AuthenticatedParentSettingsRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/signup/athlete/account': typeof SignupAthleteAccountRoute
@@ -559,6 +621,7 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/athlete/': typeof AuthenticatedAthleteIndexRoute
   '/coach/': typeof AuthenticatedCoachIndexRoute
+  '/org-admin/': typeof AuthenticatedOrgAdminIndexRoute
   '/parent/': typeof AuthenticatedParentIndexRoute
   '/admin/errors/$id': typeof AuthenticatedAdminErrorsIdRoute
   '/admin/list/$kind': typeof AuthenticatedAdminListKindRoute
@@ -620,6 +683,12 @@ export interface FileRoutesByTo {
   '/coach/paywall': typeof AuthenticatedCoachPaywallRoute
   '/coach/roster': typeof AuthenticatedCoachRosterRoute
   '/coach/settings': typeof AuthenticatedCoachSettingsRoute
+  '/org-admin/calendar': typeof AuthenticatedOrgAdminCalendarRoute
+  '/org-admin/moves': typeof AuthenticatedOrgAdminMovesRoute
+  '/org-admin/resources': typeof AuthenticatedOrgAdminResourcesRoute
+  '/org-admin/roster': typeof AuthenticatedOrgAdminRosterRoute
+  '/org-admin/settings': typeof AuthenticatedOrgAdminSettingsRoute
+  '/org-admin/templates': typeof AuthenticatedOrgAdminTemplatesRoute
   '/parent/settings': typeof AuthenticatedParentSettingsRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/signup/athlete/account': typeof SignupAthleteAccountRoute
@@ -631,6 +700,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/athlete': typeof AuthenticatedAthleteIndexRoute
   '/coach': typeof AuthenticatedCoachIndexRoute
+  '/org-admin': typeof AuthenticatedOrgAdminIndexRoute
   '/parent': typeof AuthenticatedParentIndexRoute
   '/admin/errors/$id': typeof AuthenticatedAdminErrorsIdRoute
   '/admin/list/$kind': typeof AuthenticatedAdminListKindRoute
@@ -670,6 +740,7 @@ export interface FileRoutesById {
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/_authenticated/athlete': typeof AuthenticatedAthleteRouteWithChildren
   '/_authenticated/coach': typeof AuthenticatedCoachRouteWithChildren
+  '/_authenticated/org-admin': typeof AuthenticatedOrgAdminRouteWithChildren
   '/_authenticated/parent': typeof AuthenticatedParentRouteWithChildren
   '/dev/paywall-preview': typeof DevPaywallPreviewRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
@@ -699,6 +770,12 @@ export interface FileRoutesById {
   '/_authenticated/coach/plans': typeof AuthenticatedCoachPlansRouteWithChildren
   '/_authenticated/coach/roster': typeof AuthenticatedCoachRosterRoute
   '/_authenticated/coach/settings': typeof AuthenticatedCoachSettingsRoute
+  '/_authenticated/org-admin/calendar': typeof AuthenticatedOrgAdminCalendarRoute
+  '/_authenticated/org-admin/moves': typeof AuthenticatedOrgAdminMovesRoute
+  '/_authenticated/org-admin/resources': typeof AuthenticatedOrgAdminResourcesRoute
+  '/_authenticated/org-admin/roster': typeof AuthenticatedOrgAdminRosterRoute
+  '/_authenticated/org-admin/settings': typeof AuthenticatedOrgAdminSettingsRoute
+  '/_authenticated/org-admin/templates': typeof AuthenticatedOrgAdminTemplatesRoute
   '/_authenticated/parent/settings': typeof AuthenticatedParentSettingsRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/signup/athlete/account': typeof SignupAthleteAccountRoute
@@ -710,6 +787,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/athlete/': typeof AuthenticatedAthleteIndexRoute
   '/_authenticated/coach/': typeof AuthenticatedCoachIndexRoute
+  '/_authenticated/org-admin/': typeof AuthenticatedOrgAdminIndexRoute
   '/_authenticated/parent/': typeof AuthenticatedParentIndexRoute
   '/_authenticated/admin/errors/$id': typeof AuthenticatedAdminErrorsIdRoute
   '/_authenticated/admin/list/$kind': typeof AuthenticatedAdminListKindRoute
@@ -749,6 +827,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/athlete'
     | '/coach'
+    | '/org-admin'
     | '/parent'
     | '/dev/paywall-preview'
     | '/email/unsubscribe'
@@ -778,6 +857,12 @@ export interface FileRouteTypes {
     | '/coach/plans'
     | '/coach/roster'
     | '/coach/settings'
+    | '/org-admin/calendar'
+    | '/org-admin/moves'
+    | '/org-admin/resources'
+    | '/org-admin/roster'
+    | '/org-admin/settings'
+    | '/org-admin/templates'
     | '/parent/settings'
     | '/lovable/email/suppression'
     | '/signup/athlete/account'
@@ -789,6 +874,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/athlete/'
     | '/coach/'
+    | '/org-admin/'
     | '/parent/'
     | '/admin/errors/$id'
     | '/admin/list/$kind'
@@ -850,6 +936,12 @@ export interface FileRouteTypes {
     | '/coach/paywall'
     | '/coach/roster'
     | '/coach/settings'
+    | '/org-admin/calendar'
+    | '/org-admin/moves'
+    | '/org-admin/resources'
+    | '/org-admin/roster'
+    | '/org-admin/settings'
+    | '/org-admin/templates'
     | '/parent/settings'
     | '/lovable/email/suppression'
     | '/signup/athlete/account'
@@ -861,6 +953,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/athlete'
     | '/coach'
+    | '/org-admin'
     | '/parent'
     | '/admin/errors/$id'
     | '/admin/list/$kind'
@@ -899,6 +992,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin'
     | '/_authenticated/athlete'
     | '/_authenticated/coach'
+    | '/_authenticated/org-admin'
     | '/_authenticated/parent'
     | '/dev/paywall-preview'
     | '/email/unsubscribe'
@@ -928,6 +1022,12 @@ export interface FileRouteTypes {
     | '/_authenticated/coach/plans'
     | '/_authenticated/coach/roster'
     | '/_authenticated/coach/settings'
+    | '/_authenticated/org-admin/calendar'
+    | '/_authenticated/org-admin/moves'
+    | '/_authenticated/org-admin/resources'
+    | '/_authenticated/org-admin/roster'
+    | '/_authenticated/org-admin/settings'
+    | '/_authenticated/org-admin/templates'
     | '/_authenticated/parent/settings'
     | '/lovable/email/suppression'
     | '/signup/athlete/account'
@@ -939,6 +1039,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/'
     | '/_authenticated/athlete/'
     | '/_authenticated/coach/'
+    | '/_authenticated/org-admin/'
     | '/_authenticated/parent/'
     | '/_authenticated/admin/errors/$id'
     | '/_authenticated/admin/list/$kind'
@@ -1106,6 +1207,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedParentRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/org-admin': {
+      id: '/_authenticated/org-admin'
+      path: '/org-admin'
+      fullPath: '/org-admin'
+      preLoaderRoute: typeof AuthenticatedOrgAdminRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/coach': {
       id: '/_authenticated/coach'
       path: '/coach'
@@ -1133,6 +1241,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/parent/'
       preLoaderRoute: typeof AuthenticatedParentIndexRouteImport
       parentRoute: typeof AuthenticatedParentRoute
+    }
+    '/_authenticated/org-admin/': {
+      id: '/_authenticated/org-admin/'
+      path: '/'
+      fullPath: '/org-admin/'
+      preLoaderRoute: typeof AuthenticatedOrgAdminIndexRouteImport
+      parentRoute: typeof AuthenticatedOrgAdminRoute
     }
     '/_authenticated/coach/': {
       id: '/_authenticated/coach/'
@@ -1210,6 +1325,48 @@ declare module '@tanstack/react-router' {
       fullPath: '/parent/settings'
       preLoaderRoute: typeof AuthenticatedParentSettingsRouteImport
       parentRoute: typeof AuthenticatedParentRoute
+    }
+    '/_authenticated/org-admin/templates': {
+      id: '/_authenticated/org-admin/templates'
+      path: '/templates'
+      fullPath: '/org-admin/templates'
+      preLoaderRoute: typeof AuthenticatedOrgAdminTemplatesRouteImport
+      parentRoute: typeof AuthenticatedOrgAdminRoute
+    }
+    '/_authenticated/org-admin/settings': {
+      id: '/_authenticated/org-admin/settings'
+      path: '/settings'
+      fullPath: '/org-admin/settings'
+      preLoaderRoute: typeof AuthenticatedOrgAdminSettingsRouteImport
+      parentRoute: typeof AuthenticatedOrgAdminRoute
+    }
+    '/_authenticated/org-admin/roster': {
+      id: '/_authenticated/org-admin/roster'
+      path: '/roster'
+      fullPath: '/org-admin/roster'
+      preLoaderRoute: typeof AuthenticatedOrgAdminRosterRouteImport
+      parentRoute: typeof AuthenticatedOrgAdminRoute
+    }
+    '/_authenticated/org-admin/resources': {
+      id: '/_authenticated/org-admin/resources'
+      path: '/resources'
+      fullPath: '/org-admin/resources'
+      preLoaderRoute: typeof AuthenticatedOrgAdminResourcesRouteImport
+      parentRoute: typeof AuthenticatedOrgAdminRoute
+    }
+    '/_authenticated/org-admin/moves': {
+      id: '/_authenticated/org-admin/moves'
+      path: '/moves'
+      fullPath: '/org-admin/moves'
+      preLoaderRoute: typeof AuthenticatedOrgAdminMovesRouteImport
+      parentRoute: typeof AuthenticatedOrgAdminRoute
+    }
+    '/_authenticated/org-admin/calendar': {
+      id: '/_authenticated/org-admin/calendar'
+      path: '/calendar'
+      fullPath: '/org-admin/calendar'
+      preLoaderRoute: typeof AuthenticatedOrgAdminCalendarRouteImport
+      parentRoute: typeof AuthenticatedOrgAdminRoute
     }
     '/_authenticated/coach/settings': {
       id: '/_authenticated/coach/settings'
@@ -1658,6 +1815,31 @@ const AuthenticatedCoachRouteChildren: AuthenticatedCoachRouteChildren = {
 const AuthenticatedCoachRouteWithChildren =
   AuthenticatedCoachRoute._addFileChildren(AuthenticatedCoachRouteChildren)
 
+interface AuthenticatedOrgAdminRouteChildren {
+  AuthenticatedOrgAdminCalendarRoute: typeof AuthenticatedOrgAdminCalendarRoute
+  AuthenticatedOrgAdminMovesRoute: typeof AuthenticatedOrgAdminMovesRoute
+  AuthenticatedOrgAdminResourcesRoute: typeof AuthenticatedOrgAdminResourcesRoute
+  AuthenticatedOrgAdminRosterRoute: typeof AuthenticatedOrgAdminRosterRoute
+  AuthenticatedOrgAdminSettingsRoute: typeof AuthenticatedOrgAdminSettingsRoute
+  AuthenticatedOrgAdminTemplatesRoute: typeof AuthenticatedOrgAdminTemplatesRoute
+  AuthenticatedOrgAdminIndexRoute: typeof AuthenticatedOrgAdminIndexRoute
+}
+
+const AuthenticatedOrgAdminRouteChildren: AuthenticatedOrgAdminRouteChildren = {
+  AuthenticatedOrgAdminCalendarRoute: AuthenticatedOrgAdminCalendarRoute,
+  AuthenticatedOrgAdminMovesRoute: AuthenticatedOrgAdminMovesRoute,
+  AuthenticatedOrgAdminResourcesRoute: AuthenticatedOrgAdminResourcesRoute,
+  AuthenticatedOrgAdminRosterRoute: AuthenticatedOrgAdminRosterRoute,
+  AuthenticatedOrgAdminSettingsRoute: AuthenticatedOrgAdminSettingsRoute,
+  AuthenticatedOrgAdminTemplatesRoute: AuthenticatedOrgAdminTemplatesRoute,
+  AuthenticatedOrgAdminIndexRoute: AuthenticatedOrgAdminIndexRoute,
+}
+
+const AuthenticatedOrgAdminRouteWithChildren =
+  AuthenticatedOrgAdminRoute._addFileChildren(
+    AuthenticatedOrgAdminRouteChildren,
+  )
+
 interface AuthenticatedParentRouteChildren {
   AuthenticatedParentSettingsRoute: typeof AuthenticatedParentSettingsRoute
   AuthenticatedParentIndexRoute: typeof AuthenticatedParentIndexRoute
@@ -1687,6 +1869,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
   AuthenticatedAthleteRoute: typeof AuthenticatedAthleteRouteWithChildren
   AuthenticatedCoachRoute: typeof AuthenticatedCoachRouteWithChildren
+  AuthenticatedOrgAdminRoute: typeof AuthenticatedOrgAdminRouteWithChildren
   AuthenticatedParentRoute: typeof AuthenticatedParentRouteWithChildren
 }
 
@@ -1694,6 +1877,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
   AuthenticatedAthleteRoute: AuthenticatedAthleteRouteWithChildren,
   AuthenticatedCoachRoute: AuthenticatedCoachRouteWithChildren,
+  AuthenticatedOrgAdminRoute: AuthenticatedOrgAdminRouteWithChildren,
   AuthenticatedParentRoute: AuthenticatedParentRouteWithChildren,
 }
 
