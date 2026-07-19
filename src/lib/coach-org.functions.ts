@@ -18,6 +18,13 @@ const codeSchema = z
   .transform((s) => s.toUpperCase())
   .pipe(z.string().regex(/^[A-Z2-9]{8}$/, "Codes are 8 characters"));
 
+// Admin-authored codes are more permissive: 4–16 uppercase letters or digits.
+const customCodeSchema = z
+  .string()
+  .trim()
+  .transform((s) => s.toUpperCase())
+  .pipe(z.string().regex(/^[A-Z0-9]{4,16}$/, "Use 4–16 letters or numbers"));
+
 // Crockford-style alphabet minus lookalikes (matches coach invite codes).
 const ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
 function generateCode(): string {
