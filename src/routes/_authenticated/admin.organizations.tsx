@@ -146,6 +146,27 @@ function OrgsTab() {
     }
   };
 
+  const editCode = async (id: string, currentCode: string | null) => {
+    const input = window.prompt(
+      "Set a custom active code (4–16 letters or numbers). This deactivates the current code.",
+      currentCode ?? "",
+    );
+    if (input === null) return;
+    const next = input.trim().toUpperCase();
+    if (!next) return;
+    if (!/^[A-Z0-9]{4,16}$/.test(next)) {
+      toast.error("Code must be 4–16 letters or numbers.");
+      return;
+    }
+    try {
+      const res = await setCode({ data: { organizationId: id, code: next } });
+      toast.success(`Active code: ${res.code}`);
+      await qc.invalidateQueries({ queryKey: ["admin-organizations"] });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not set code");
+    }
+  };
+
   const copy = async (code: string) => {
     try {
       await navigator.clipboard.writeText(code);
