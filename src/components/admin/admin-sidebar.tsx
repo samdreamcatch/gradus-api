@@ -33,20 +33,20 @@ type Group = { label: string; items: Item[] };
 
 const GROUPS: Group[] = [
   {
-    label: "Membership",
-    items: [
-      { to: "/admin", label: "Users", icon: Users, exact: true },
-      { to: "/admin/map", label: "Connection map", icon: Network },
-      { to: "/admin/promo-codes", label: "Promo codes", icon: Ticket },
-      { to: "/admin/leads", label: "Waitlist & leads", icon: UserPlus },
-      { to: "/admin/impersonation", label: "Impersonation", icon: UserCheck },
-    ],
-  },
-  {
     label: "Reporting",
     items: [
       { to: "/admin/reporting", label: "Overview", icon: BarChart3 },
       { to: "/admin/activity", label: "Activity log", icon: History },
+    ],
+  },
+  {
+    label: "Membership",
+    items: [
+      { to: "/admin/users", label: "Users", icon: Users },
+      { to: "/admin/map", label: "Connection map", icon: Network },
+      { to: "/admin/promo-codes", label: "Promo codes", icon: Ticket },
+      { to: "/admin/leads", label: "Waitlist & leads", icon: UserPlus },
+      { to: "/admin/impersonation", label: "Impersonation", icon: UserCheck },
     ],
   },
   {
@@ -71,6 +71,7 @@ const GROUPS: Group[] = [
     ],
   },
 ];
+
 
 export function AdminSidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
