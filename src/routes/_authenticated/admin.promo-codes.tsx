@@ -351,15 +351,107 @@ function PromoCodesPage() {
                       </td>
                       <td className="px-3 py-3 text-text-primary">
                         <div>{row.label}</div>
-                        <div className="text-xs text-text-tertiary">
-                          {row.duration === "repeating"
-                            ? `${row.duration_in_months ?? "?"} mo repeating`
-                            : "forever"}
+                        <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[11px]">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={row.duration === "forever" ? "default" : "secondary"}
+                            className="h-6 px-2 text-[11px]"
+                            onClick={() =>
+                              void updateField(row.code, {
+                                duration: "forever",
+                                durationInMonths: null,
+                              })
+                            }
+                          >
+                            Forever
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={row.duration === "repeating" ? "default" : "secondary"}
+                            className="h-6 px-2 text-[11px]"
+                            onClick={() =>
+                              void updateField(row.code, {
+                                duration: "repeating",
+                                durationInMonths: row.duration_in_months ?? 3,
+                              })
+                            }
+                          >
+                            Repeating
+                          </Button>
+                          {row.duration === "repeating" && (
+                            <Input
+                              type="number"
+                              min={1}
+                              max={60}
+                              step={1}
+                              defaultValue={row.duration_in_months ?? 3}
+                              onBlur={(e) => {
+                                const n = Number(e.target.value);
+                                const clamped = Number.isFinite(n)
+                                  ? Math.min(60, Math.max(1, Math.round(n)))
+                                  : 1;
+                                if (clamped !== (row.duration_in_months ?? 0)) {
+                                  void updateField(row.code, {
+                                    durationInMonths: clamped,
+                                  });
+                                }
+                              }}
+                              className="h-6 w-14 text-right font-mono text-[11px]"
+                              aria-label={`Months for ${row.code}`}
+                            />
+                          )}
+                          <span className="text-text-tertiary">
+                            {row.duration === "repeating" ? "mo" : ""}
+                          </span>
+                        </div>
+                        <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px]">
+                          {(["coach", "coach_pro"] as const).map((plan) => {
+                            const current = (row.applies_to_plans ?? []) as string[];
+                            const on = current.includes(plan);
+                            return (
+                              <Button
+                                key={plan}
+                                type="button"
+                                size="sm"
+                                variant={on ? "default" : "secondary"}
+                                className="h-6 px-2 text-[11px]"
+                                onClick={() => {
+                                  const next = on
+                                    ? current.filter((p) => p !== plan)
+                                    : [...current, plan];
+                                  if (!next.length) {
+                                    toast.error("At least one plan is required");
+                                    return;
+                                  }
+                                  void updateField(row.code, {
+                                    appliesToPlans: next as ("coach" | "coach_pro")[],
+                                  });
+                                }}
+                              >
+                                {plan === "coach_pro" ? "Coach Pro" : "Coach"}
+                              </Button>
+                            );
+                          })}
+                          <label className="ml-2 inline-flex items-center gap-1.5 text-text-secondary">
+                            <Switch
+                              checked={row.card_required !== false}
+                              onCheckedChange={(v) =>
+                                void updateField(row.code, { cardRequired: v === true })
+                              }
+                              aria-label={`Card required for ${row.code}`}
+                            />
+                            Card
+                          </label>
                         </div>
                         {row.notes && (
-                          <div className="text-xs text-text-tertiary line-clamp-1">{row.notes}</div>
+                          <div className="mt-1 text-xs text-text-tertiary line-clamp-1">
+                            {row.notes}
+                          </div>
                         )}
                       </td>
+
                       <td className="px-3 py-3 text-right">
                         <Input
                           type="number"
