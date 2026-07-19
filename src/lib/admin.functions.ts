@@ -685,7 +685,7 @@ export const getDailyActiveUsers = createServerFn({ method: "POST" })
     const sinceISO = since.toISOString();
 
     // Gather activity signals
-    const [messages, sessions, wrapUps] = await Promise.all([
+    const [messages, sessions, wrapUps, plansCreated, resourcesCreated] = await Promise.all([
       supabaseAdmin
         .from("messages")
         .select("sender_user_id, created_at")
@@ -701,7 +701,19 @@ export const getDailyActiveUsers = createServerFn({ method: "POST" })
         .select("coach_id, created_at")
         .gte("created_at", sinceISO)
         .limit(50000),
+      supabaseAdmin
+        .from("plans")
+        .select("coach_id, created_at")
+        .gte("created_at", sinceISO)
+        .limit(50000),
+      supabaseAdmin
+        .from("resources")
+        .select("coach_id, created_at")
+        .gte("created_at", sinceISO)
+        .not("coach_id", "is", null)
+        .limit(50000),
     ]);
+
 
     if (messages.error) dbError(messages.error);
     if (sessions.error) dbError(sessions.error);
