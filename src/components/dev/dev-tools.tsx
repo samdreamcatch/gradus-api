@@ -38,14 +38,16 @@ type ActiveSession = {
 };
 
 async function detectRole(userId: string): Promise<DevRole | null> {
-  const [coach, parent, athlete] = await Promise.all([
+  const [coach, parent, athlete, orgAdmin] = await Promise.all([
     supabase.from("coach_profiles").select("id").eq("user_id", userId).maybeSingle(),
     supabase.from("parent_profiles").select("id").eq("user_id", userId).maybeSingle(),
     supabase.from("athletes").select("id").eq("user_id", userId).maybeSingle(),
+    supabase.from("org_admins").select("id").eq("user_id", userId).maybeSingle(),
   ]);
   if (coach.data) return "coach";
   if (parent.data) return "parent";
   if (athlete.data) return "athlete";
+  if (orgAdmin.data) return "org_admin";
   return null;
 }
 
