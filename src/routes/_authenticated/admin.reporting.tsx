@@ -138,8 +138,9 @@ function DauChart({ includeTest }: { includeTest: boolean }) {
         <div>
           <h3 className="font-display text-h3 text-text-primary">Daily active users</h3>
           <p className="text-xs text-text-secondary">
-            Last 30 days · unique users who sent a message, logged a session, or saved a lesson wrap-up.
+            Last 30 days · unique users who sent a message, logged a session, saved a lesson wrap-up, created a plan, or uploaded a resource.
           </p>
+
         </div>
         <div className="text-right text-xs text-text-secondary shrink-0">
           <p><span className="font-mono text-text-primary">{peak}</span> peak</p>
