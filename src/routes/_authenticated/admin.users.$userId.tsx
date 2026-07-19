@@ -27,7 +27,7 @@ function UserDetail() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-10 space-y-6">
-      <Link to="/admin" className="text-sm text-accent-ink underline-offset-4 hover:underline">
+      <Link to="/admin/users" className="text-sm text-accent-ink underline-offset-4 hover:underline">
         ← Back to admin
       </Link>
 
