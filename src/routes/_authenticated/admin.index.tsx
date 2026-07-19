@@ -164,8 +164,9 @@ function AdminUsersPage() {
 
   const [localQuery, setLocalQuery] = useState(search.q);
 
-  const setSearch = (patch: Partial<typeof search>) =>
-    navigate({ search: (prev) => ({ ...prev, ...patch }) });
+  const setSearch = (patch: Partial<z.infer<typeof searchSchema>>) =>
+    navigate({ search: (prev: z.infer<typeof searchSchema>) => ({ ...prev, ...patch }) });
+
 
   const invalidate = () =>
     qc.invalidateQueries({ queryKey: ["admin-users"] });
