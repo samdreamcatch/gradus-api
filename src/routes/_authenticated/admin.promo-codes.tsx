@@ -841,9 +841,10 @@ function PromoCodeDetailSheet({
                                 {u.source === "stash"
                                   ? "stash"
                                   : u.source === "admin_active"
-                                    ? `live${u.environment ? ` · ${u.environment}` : ""}`
+                                    ? `active${u.environment === "live" ? " · production env" : u.environment === "sandbox" ? " · development env" : ""}`
                                     : "next"}
                               </Tag>
+
                             </li>
                           ))}
                         </ul>
