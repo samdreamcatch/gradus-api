@@ -177,13 +177,14 @@ export const removeCoachFromOrg = createServerFn({ method: "POST" })
     if (coach.error) dbError(coach.error);
     if (!coach.data) throw new Error("Coach not in this organization");
 
-    // Detach + revert entitlement; stash WELCOME_BACK promo (existing flow).
+    // Detach + revert entitlement; stash WELCOME_BACK promo (matches
+    // leaveOrganization flow — Coach Pro paywall auto-applies it).
     const upd = await supabaseAdmin
       .from("coach_profiles")
       .update({
         organization_id: null,
-        entitlement: "unpaid",
-        pending_promo_code: "WELCOME_BACK",
+        entitlement: "pending",
+        promo_code: "WELCOME_BACK",
       })
       .eq("id", coach.data.id);
     if (upd.error) dbError(upd.error);
