@@ -143,6 +143,8 @@ function AthleteSettingsPage() {
               </SettingsList>
             </SettingsGroup>
 
+            <AccountSecuritySection />
+
             <SettingsGroup>
               <SettingsList>
                 <InstallAppRow />
