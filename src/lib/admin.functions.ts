@@ -814,6 +814,13 @@ export const getDailyActiveUsers = createServerFn({ method: "POST" })
     for (const w of wrapUps.data ?? []) {
       addActivity(coachUserMap.get(w.coach_id), w.created_at);
     }
+    for (const p of plansCreated.data ?? []) {
+      if (p.coach_id) addActivity(coachUserMap.get(p.coach_id), p.created_at);
+    }
+    for (const r of resourcesCreated.data ?? []) {
+      if (r.coach_id) addActivity(coachUserMap.get(r.coach_id), r.created_at);
+    }
+
 
 
     // Emit a row per day in the window (zero-fill)
