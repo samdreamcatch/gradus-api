@@ -1,56 +1,35 @@
-## Problems
+## Fixes to the lesson wrap-up modal
 
-Comparing the founder "Welcome to Gradus" email (target) to the current auth emails (signup, magic link, recovery, invite, email change, reauth):
+### 1. "Edit plan" button color
 
-1. **Excess vertical space** above the wordmark, between the wordmark and hairline, and between the hairline and heading.
-2. **Missing horizontal padding** — eyebrow, heading, body, CTA all sit flush against the cream card edge.
-3. **Missing outer lighter-grey band** — the Welcome email shows a soft lighter-grey layer surrounding the cream paper card. Auth emails jump straight from white body to the cream card with no in-between band.
+Currently the primary "Edit plan" action renders as `AlertDialogAction`, which uses the destructive/primary emphasis reserved for confirming destructive intent. Editing a plan is constructive.
 
-Root causes:
-- #2: only `Header` and the bottom footer block are wrapped in `PageInner`. All other content renders as a direct child of `<Container>` and inherits no side padding.
-- #3: `main` (body) is `#ffffff` and `container` is the cream `#F1F3F7`. No intermediate wrapper exists.
+- Change "Edit plan" from `AlertDialogAction` to a standard primary `Button` (default variant), matching the non-destructive tone used elsewhere for "save/continue" style actions.
+- Keep "Re-deploy" as `variant="outline"` and "Not now" as `AlertDialogCancel`.
+- Same treatment in the multi-pending list drawer (the per-row "Edit" button already uses `Button`, so no change there).
 
-## Fix
+### 2. Track whether the lesson happened
 
-All edits stay in shared layout files so every auth template picks them up automatically.
+Add a fourth outcome so the coach can record that the lesson did not take place, and store it alongside the existing wrap-up actions.
 
-### 1. `src/lib/email-templates/_styles.ts` — tighten header rhythm + add outer band
+**Language:** add a button labeled **"Didn't happen"** (with a short helper tooltip/subtext: "Mark this lesson as canceled or no-show"). This avoids blame-laden words like "no-show" as the primary label while still being unambiguous.
 
-- `pageInner`: `padding: '40px 44px 8px'` → `'24px 44px 8px'`
-- `wordmarkImg`: `margin: '0 auto 20px'` → `'0 auto 10px'`
-- `topRule`: `margin: '0 0 36px'` → `'0 0 20px'`
-- `eyebrow`: `margin: '0 0 16px'` → `'0 0 10px'`
-- `h1`: `margin: '0 0 28px'` → `'0 0 20px'`
-- Add a new `outerBand` style: `backgroundColor: '#EDEEF2'` (lighter than `#F1F3F7`, slightly darker than white), `padding: '24px 20px'`, `width: '100%'` — this is the softer surrounding layer.
-- Keep `container` cream `#F1F3F7`, but drop its own outer margin so the band controls spacing.
+**Data model:**
+- Extend the `lesson_wrap_ups.action` CHECK constraint and the Zod enum from `('edited', 'redeployed', 'dismissed')` to `('edited', 'redeployed', 'dismissed', 'did_not_happen')`.
+- No new table — this keeps a single row per (coach, athlete, lesson_date) and preserves the existing unique constraint that already prevents the banner from re-prompting.
+- Record via the same `recordLessonWrapUp` server fn.
 
-### 2. `src/lib/email-templates/_layout.tsx` — export a `PageShell` wrapper
+**UI placement in the modal:**
+- Footer, left side (before "Not now"): a subtle `variant="ghost"` button "Didn't happen".
+- Clicking it writes `action: 'did_not_happen'` and closes the modal + banner (same flow as re-deploy — no navigation).
+- In the multi-pending list drawer, add a matching small ghost "Didn't happen" button per row, left of "Re-deploy".
 
-Add and export a small `PageShell` component that renders the outer band around its children:
+### Files touched
 
-```
-export const PageShell = ({ children }) => (
-  <div style={outerBand}>{children}</div>
-);
-```
+- `src/components/coach/lesson-wrap-up-provider.tsx` — swap `AlertDialogAction` for `Button`, add "Didn't happen" handler + button in modal and list drawer.
+- `src/lib/lesson-wrap-ups.functions.ts` — extend Zod enum, add `WrapUpAction` type entry.
+- New migration — drop and recreate the `action` CHECK to include `'did_not_happen'`.
 
-### 3. Wrap each auth template's `<Container>` in `<PageShell>` and body content in `<PageInner>`
+### Out of scope
 
-For each of `signup.tsx`, `magic-link.tsx`, `recovery.tsx`, `invite.tsx`, `email-change.tsx`, `reauthentication.tsx`:
-
-```
-<Body style={main}>
-  <PageShell>
-    <Container style={container}>
-      <Header />
-      <PageInner>
-        {/* existing eyebrow, heading, body, button, fallback link, sign-off, divider, footer */}
-      </PageInner>
-    </Container>
-  </PageShell>
-</Body>
-```
-
-`Header` keeps its own `pageInner` wrapper + full-width `Hr`, so the hairline still spans the cream card edge-to-edge like the Welcome email.
-
-No copy, image, color-token, font, or business-logic changes. After the edit, preview each of the six templates at `/admin/emails` to confirm the header rhythm, side padding on body content, and the outer lighter-grey band all match the Welcome screenshot.
+- Reporting/analytics surfaces for the new "didn't happen" data (data will be captured now; surfacing in admin/reporting can be a follow-up).
