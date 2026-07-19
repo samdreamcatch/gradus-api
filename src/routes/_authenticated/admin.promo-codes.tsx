@@ -388,7 +388,23 @@ function PromoCodesPage() {
       </section>
 
       <section className="rounded-2xl border border-divider bg-card overflow-hidden">
-        <h2 className="font-display text-h3 text-text-primary px-5 pt-4">All codes</h2>
+        <div className="flex flex-wrap items-center justify-between gap-3 px-5 pt-4">
+          <h2 className="font-display text-h3 text-text-primary">All codes</h2>
+          {currentEnv && unsyncedInCurrentEnv.length > 0 && (
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              disabled={bulkSyncing}
+              onClick={() => void handleBulkSync()}
+            >
+              {bulkSyncing
+                ? `Creating in ${envLabel.toLowerCase()}…`
+                : `Create ${unsyncedInCurrentEnv.length} unsynced code${unsyncedInCurrentEnv.length === 1 ? "" : "s"} in ${envLabel.toLowerCase()}`}
+            </Button>
+          )}
+        </div>
+
         {codes.length === 0 ? (
           <p className="px-5 py-6 text-sm text-text-secondary">No codes yet.</p>
         ) : (
