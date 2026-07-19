@@ -436,9 +436,16 @@ function PromoCodesPage() {
                       <td className="px-5 py-3 font-mono uppercase tracking-widest text-text-primary">
                         {row.code}
                       </td>
-                      <td className="px-3 py-3 text-text-primary">
+                      <td className="px-3 py-3 text-text-primary align-top">
                         <div>{row.label}</div>
-                        <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[11px]">
+                        {row.notes && (
+                          <div className="mt-1 text-xs text-text-tertiary whitespace-pre-wrap break-words max-w-xs">
+                            {row.notes}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-3 py-3 align-top">
+                        <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
                           <Button
                             type="button"
                             size="sm"
@@ -468,32 +475,34 @@ function PromoCodesPage() {
                             Repeating
                           </Button>
                           {row.duration === "repeating" && (
-                            <Input
-                              type="number"
-                              min={1}
-                              max={60}
-                              step={1}
-                              defaultValue={row.duration_in_months ?? 3}
-                              onBlur={(e) => {
-                                const n = Number(e.target.value);
-                                const clamped = Number.isFinite(n)
-                                  ? Math.min(60, Math.max(1, Math.round(n)))
-                                  : 1;
-                                if (clamped !== (row.duration_in_months ?? 0)) {
-                                  void updateField(row.code, {
-                                    durationInMonths: clamped,
-                                  });
-                                }
-                              }}
-                              className="h-6 w-14 text-right font-mono text-[11px]"
-                              aria-label={`Months for ${row.code}`}
-                            />
+                            <>
+                              <Input
+                                type="number"
+                                min={1}
+                                max={60}
+                                step={1}
+                                defaultValue={row.duration_in_months ?? 3}
+                                onBlur={(e) => {
+                                  const n = Number(e.target.value);
+                                  const clamped = Number.isFinite(n)
+                                    ? Math.min(60, Math.max(1, Math.round(n)))
+                                    : 1;
+                                  if (clamped !== (row.duration_in_months ?? 0)) {
+                                    void updateField(row.code, {
+                                      durationInMonths: clamped,
+                                    });
+                                  }
+                                }}
+                                className="h-6 w-14 text-right font-mono text-[11px]"
+                                aria-label={`Months for ${row.code}`}
+                              />
+                              <span className="text-text-tertiary">mo</span>
+                            </>
                           )}
-                          <span className="text-text-tertiary">
-                            {row.duration === "repeating" ? "mo" : ""}
-                          </span>
                         </div>
-                        <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px]">
+                      </td>
+                      <td className="px-3 py-3 align-top">
+                        <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
                           {(["coach", "coach_pro"] as const).map((plan) => {
                             const current = (row.applies_to_plans ?? []) as string[];
                             const on = current.includes(plan);
@@ -521,23 +530,18 @@ function PromoCodesPage() {
                               </Button>
                             );
                           })}
-                          <label className="ml-2 inline-flex items-center gap-1.5 text-text-secondary">
-                            <Switch
-                              checked={row.card_required !== false}
-                              onCheckedChange={(v) =>
-                                void updateField(row.code, { cardRequired: v === true })
-                              }
-                              aria-label={`Card required for ${row.code}`}
-                            />
-                            Card
-                          </label>
                         </div>
-                        {row.notes && (
-                          <div className="mt-1 text-xs text-text-tertiary whitespace-pre-wrap break-words">
-                            {row.notes}
-                          </div>
-                        )}
                       </td>
+                      <td className="px-3 py-3 align-top text-center">
+                        <Switch
+                          checked={row.card_required !== false}
+                          onCheckedChange={(v) =>
+                            void updateField(row.code, { cardRequired: v === true })
+                          }
+                          aria-label={`Card required for ${row.code}`}
+                        />
+                      </td>
+
 
                       <td className="px-3 py-3 text-right">
                         <Input
