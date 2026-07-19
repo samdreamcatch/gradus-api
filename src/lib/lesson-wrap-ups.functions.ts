@@ -15,7 +15,7 @@ export type PendingWrapUp = {
   activePlanId: string | null;
 };
 
-export type WrapUpAction = "edited" | "redeployed" | "dismissed";
+export type WrapUpAction = "edited" | "redeployed" | "dismissed" | "did_not_happen";
 
 async function getCoachIdOrNull(supabase: Client, userId: string): Promise<string | null> {
   const { data, error } = await supabase
