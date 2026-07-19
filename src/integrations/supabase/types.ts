@@ -1202,6 +1202,139 @@ export type Database = {
           },
         ]
       }
+      org_admin_actions: {
+        Row: {
+          action: string
+          actor_user_id: string
+          created_at: string
+          id: string
+          organization_id: string
+          payload: Json
+          target_coach_id: string | null
+        }
+        Insert: {
+          action: string
+          actor_user_id: string
+          created_at?: string
+          id?: string
+          organization_id: string
+          payload?: Json
+          target_coach_id?: string | null
+        }
+        Update: {
+          action?: string
+          actor_user_id?: string
+          created_at?: string
+          id?: string
+          organization_id?: string
+          payload?: Json
+          target_coach_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_admin_actions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_admin_actions_target_coach_id_fkey"
+            columns: ["target_coach_id"]
+            isOneToOne: false
+            referencedRelation: "coach_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_admins: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          organization_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          organization_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          organization_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_admins_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_coach_invites: {
+        Row: {
+          accepted_at: string | null
+          accepted_user_id: string | null
+          created_at: string
+          email: string | null
+          expires_at: string
+          id: string
+          invite_code: string
+          invite_token: string
+          invited_by: string | null
+          organization_id: string
+          phone: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          accepted_user_id?: string | null
+          created_at?: string
+          email?: string | null
+          expires_at?: string
+          id?: string
+          invite_code: string
+          invite_token: string
+          invited_by?: string | null
+          organization_id: string
+          phone?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          accepted_user_id?: string | null
+          created_at?: string
+          email?: string | null
+          expires_at?: string
+          id?: string
+          invite_code?: string
+          invite_token?: string
+          invited_by?: string | null
+          organization_id?: string
+          phone?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_coach_invites_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organization_invite_codes: {
         Row: {
           active: boolean
@@ -2026,6 +2159,10 @@ export type Database = {
         }[]
       }
       get_shared_plan: { Args: { _token: string }; Returns: Json }
+      has_org_admin: {
+        Args: { _org_id: string; _user_id: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -2034,6 +2171,7 @@ export type Database = {
         Returns: boolean
       }
       import_shared_plan: { Args: { _token: string }; Returns: string }
+      is_any_org_admin: { Args: { _user_id: string }; Returns: boolean }
       is_direct_room_participant: {
         Args: { _direct_room_id: string; _user_id: string }
         Returns: boolean
