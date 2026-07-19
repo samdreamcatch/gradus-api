@@ -212,7 +212,7 @@ export function LessonWrapUpProvider() {
               </AlertDialogHeader>
               <AlertDialogFooter className="gap-2 sm:gap-2">
                 <Button
-                  variant="ghost"
+                  variant="outline"
                   onClick={() => handleDidNotHappen(modalFor)}
                   disabled={recordMutation.isPending}
                   className="sm:mr-auto"
