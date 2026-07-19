@@ -53,6 +53,8 @@ function PromoCodesPage() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [syncingCode, setSyncingCode] = useState<string | null>(null);
+  const [bulkSyncing, setBulkSyncing] = useState(false);
+
 
   const togglePlanInNew = (plan: "coach" | "coach_pro") => {
     setAppliesToPlans((prev) => {
@@ -160,9 +162,53 @@ function PromoCodesPage() {
   const codes = codesData?.codes ?? [];
   const tally = statsData?.stats ?? {};
 
+  let currentEnv: "sandbox" | "live" | null = null;
+  try {
+    currentEnv = getStripeEnvironment();
+  } catch {
+    currentEnv = null;
+  }
+  const envLabel = currentEnv === "live" ? "Live" : currentEnv === "sandbox" ? "Test" : "Not configured";
+  const envColorClass =
+    currentEnv === "live"
+      ? "bg-pen-pink-wash text-pen-pink-ink"
+      : currentEnv === "sandbox"
+        ? "bg-pen-pool-wash text-pen-pool-ink"
+        : "bg-elevated text-text-tertiary";
+
+  const unsyncedInCurrentEnv = currentEnv
+    ? codes.filter(
+        (r) =>
+          (r.percent_off ?? 0) > 0 &&
+          !(currentEnv === "live" ? r.stripe_promo_id_live : r.stripe_promo_id_sandbox),
+      )
+    : [];
+
+
+
+  const handleBulkSync = async () => {
+    if (!currentEnv || unsyncedInCurrentEnv.length === 0) return;
+    setBulkSyncing(true);
+    let ok = 0;
+    let fail = 0;
+    for (const row of unsyncedInCurrentEnv) {
+      try {
+        const res = await sync({ data: { code: row.code, environment: currentEnv } });
+        if ("error" in res && res.error) fail++;
+        else ok++;
+      } catch {
+        fail++;
+      }
+    }
+    setBulkSyncing(false);
+    await qc.invalidateQueries({ queryKey: ["admin-promo-codes"] });
+    if (fail === 0) toast.success(`Created ${ok} code${ok === 1 ? "" : "s"} in ${envLabel.toLowerCase()}`);
+    else toast.error(`${ok} created, ${fail} failed in ${envLabel.toLowerCase()}`);
+  };
+
   return (
     <div className="mx-auto max-w-5xl px-4 py-10 space-y-8">
-      <header className="space-y-2">
+      <header className="space-y-3">
         <Link
           to="/admin"
           search={{ test: false }}
@@ -170,12 +216,30 @@ function PromoCodesPage() {
         >
           ← Admin
         </Link>
-        <h1 className="font-display text-h1 text-text-primary">Promo codes</h1>
-        <p className="text-sm text-text-secondary">
-          Track attribution and apply lifetime percent discounts at Stripe checkout. Codes with a
-          non-zero <span className="font-mono">percent_off</span> need to be minted per env — hit Sync sandbox / live per row.
-        </p>
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="font-display text-h1 text-text-primary">Promo codes</h1>
+          <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider ${envColorClass}`}>
+            You're viewing: {envLabel}
+          </span>
+        </div>
+        <div className="space-y-1.5 text-sm text-text-secondary max-w-3xl">
+          <p>
+            Promo codes do two things: track who signed up with them, and (optionally) discount checkout by a set %.
+          </p>
+          <p>
+            Any code with a discount has to be created in Stripe once for <strong className="text-text-primary">test</strong> (preview) and once for <strong className="text-text-primary">live</strong> (published site) before checkout can apply it. The Stripe column shows where each code is ready.
+          </p>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pt-1 text-xs text-text-tertiary">
+            <span className="inline-flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-pen-tennis" /> ready in that environment
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-divider" /> not created yet — click Sync on that row
+            </span>
+          </div>
+        </div>
       </header>
+
 
       <section className="rounded-2xl border border-divider bg-card p-5">
         <h2 className="font-display text-h3 text-text-primary mb-4">New code</h2>
@@ -324,7 +388,23 @@ function PromoCodesPage() {
       </section>
 
       <section className="rounded-2xl border border-divider bg-card overflow-hidden">
-        <h2 className="font-display text-h3 text-text-primary px-5 pt-4">All codes</h2>
+        <div className="flex flex-wrap items-center justify-between gap-3 px-5 pt-4">
+          <h2 className="font-display text-h3 text-text-primary">All codes</h2>
+          {currentEnv && unsyncedInCurrentEnv.length > 0 && (
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              disabled={bulkSyncing}
+              onClick={() => void handleBulkSync()}
+            >
+              {bulkSyncing
+                ? `Creating in ${envLabel.toLowerCase()}…`
+                : `Create ${unsyncedInCurrentEnv.length} unsynced code${unsyncedInCurrentEnv.length === 1 ? "" : "s"} in ${envLabel.toLowerCase()}`}
+            </Button>
+          )}
+        </div>
+
         {codes.length === 0 ? (
           <p className="px-5 py-6 text-sm text-text-secondary">No codes yet.</p>
         ) : (
@@ -476,36 +556,70 @@ function PromoCodesPage() {
                         />
                       </td>
                       <td className="px-3 py-3 text-xs">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <span
-                              className={
-                                mintedSandbox ? "text-text-primary" : "text-text-tertiary"
-                              }
-                            >
-                              sandbox: {mintedSandbox ? "minted" : "—"}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span
-                              className={mintedLive ? "text-text-primary" : "text-text-tertiary"}
-                            >
-                              live: {mintedLive ? "minted" : "—"}
-                            </span>
-                          </div>
-                          <Button
-                            size="sm"
-                            variant="secondary"
-                            className="h-6 px-2 text-[11px]"
-                            disabled={
-                              syncingCode === row.code || !row.percent_off || row.percent_off <= 0
-                            }
-                            onClick={() => void handleSync(row.code)}
-                          >
-                            {syncingCode === row.code ? "Syncing…" : "Sync (current env)"}
-                          </Button>
-                        </div>
+                        {(() => {
+                          const hasDiscount = (row.percent_off ?? 0) > 0;
+                          if (!hasDiscount) {
+                            return (
+                              <div className="text-text-tertiary">Attribution only</div>
+                            );
+                          }
+                          const mintedHere =
+                            currentEnv === "live" ? mintedLive : mintedSandbox;
+                          const otherEnvLabel = currentEnv === "live" ? "test" : "live";
+                          const mintedOther =
+                            currentEnv === "live" ? mintedSandbox : mintedLive;
+                          let statusLabel = "Not created yet";
+                          let dotClass = "bg-divider";
+                          let toneClass = "text-text-tertiary";
+                          if (mintedSandbox && mintedLive) {
+                            statusLabel = "Ready in test & live";
+                            dotClass = "bg-pen-tennis";
+                            toneClass = "text-text-primary";
+                          } else if (mintedSandbox) {
+                            statusLabel = "Ready in test only";
+                            dotClass = "bg-pen-orange";
+                            toneClass = "text-text-primary";
+                          } else if (mintedLive) {
+                            statusLabel = "Ready in live only";
+                            dotClass = "bg-pen-orange";
+                            toneClass = "text-text-primary";
+                          }
+                          return (
+                            <div className="space-y-1.5">
+                              <div className={`flex items-center gap-1.5 ${toneClass}`}>
+                                <span className={`h-2 w-2 rounded-full ${dotClass}`} />
+                                <span>{statusLabel}</span>
+                              </div>
+                              {currentEnv && (
+                                <Button
+                                  size="sm"
+                                  variant={mintedHere ? "ghost" : "secondary"}
+                                  className="h-6 px-2 text-[11px]"
+                                  disabled={syncingCode === row.code}
+                                  onClick={() => void handleSync(row.code)}
+                                  title={
+                                    mintedHere
+                                      ? `Already created in ${envLabel.toLowerCase()}. Also needs creating in ${otherEnvLabel}? Open this page on the ${otherEnvLabel} site.`
+                                      : `Creates this code in Stripe ${envLabel.toLowerCase()}.`
+                                  }
+                                >
+                                  {syncingCode === row.code
+                                    ? "Working…"
+                                    : mintedHere
+                                      ? `Re-sync in ${envLabel.toLowerCase()}`
+                                      : `Create in ${envLabel.toLowerCase()}`}
+                                </Button>
+                              )}
+                              {currentEnv && !mintedOther && (
+                                <div className="text-[11px] text-text-tertiary">
+                                  Still needs {otherEnvLabel}: open this page on the {otherEnvLabel} site.
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </td>
+
                       <td className="px-3 py-3 text-right font-mono text-text-secondary">{s.parents}</td>
                       <td className="px-3 py-3 text-right font-mono text-text-secondary">{s.coaches}</td>
                       <td className="px-3 py-3 text-right font-mono text-text-secondary">{s.athletes}</td>
