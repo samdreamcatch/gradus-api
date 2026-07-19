@@ -384,7 +384,7 @@ function PaywallPage() {
   const proCtaLabel =
     promo.status === "valid" && proMonths > 0
       ? `Start ${proMonths} month${proMonths === 1 ? "" : "s"} free`
-      : "Upgrade";
+      : "Continue";
 
   return (
     <div className="min-h-dvh">
