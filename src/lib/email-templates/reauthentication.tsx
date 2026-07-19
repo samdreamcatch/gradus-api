@@ -18,16 +18,21 @@ export const ReauthenticationEmail = ({ token, copyOverrides }: Reauthentication
       <Head />
       <Preview>{renderTemplateString(c.preview, vars)}</Preview>
       <Body style={main}>
-        <Container style={container}>
-          <Header />
-          <Text style={eyebrow}>{renderTemplateString(c.eyebrow, vars)}</Text>
-          <Heading style={h1}>{renderTemplateString(c.heading, vars)}</Heading>
-          <Text style={text}>{parse(renderTemplateString(c.body, vars))}</Text>
-          <Text style={code}>{token}</Text>
-          <Hr style={divider} />
-          <Text style={footer}>{parse(renderTemplateString(c.footer, vars))}</Text>
-        </Container>
+        <PageShell>
+          <Container style={container}>
+            <Header />
+            <PageInner>
+              <Text style={eyebrow}>{renderTemplateString(c.eyebrow, vars)}</Text>
+              <Heading style={h1}>{renderTemplateString(c.heading, vars)}</Heading>
+              <Text style={text}>{parse(renderTemplateString(c.body, vars))}</Text>
+              <Text style={code}>{token}</Text>
+              <Hr style={divider} />
+              <Text style={footer}>{parse(renderTemplateString(c.footer, vars))}</Text>
+            </PageInner>
+          </Container>
+        </PageShell>
       </Body>
+
     </Html>
   );
 };
