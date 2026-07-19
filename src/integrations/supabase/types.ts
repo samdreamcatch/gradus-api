@@ -1604,6 +1604,8 @@ export type Database = {
       promo_codes: {
         Row: {
           active: boolean
+          applies_to_plans: string[]
+          card_required: boolean
           code: string
           created_at: string
           duration: string
@@ -1619,6 +1621,8 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          applies_to_plans?: string[]
+          card_required?: boolean
           code: string
           created_at?: string
           duration?: string
@@ -1634,6 +1638,8 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          applies_to_plans?: string[]
+          card_required?: boolean
           code?: string
           created_at?: string
           duration?: string
