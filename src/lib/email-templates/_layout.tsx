@@ -29,3 +29,8 @@ export const PageInner: React.FC<{ children: React.ReactNode }> = ({ children })
 export const PageInnerBottom: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <div style={pageInnerBottom}>{children}</div>
 );
+
+export const PageShell: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <div style={outerBand}>{children}</div>
+);
+
