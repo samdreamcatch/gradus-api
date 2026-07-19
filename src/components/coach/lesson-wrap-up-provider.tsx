@@ -6,7 +6,6 @@ import { Timer, X } from "lucide-react";
 import { toast } from "sonner";
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -125,6 +124,18 @@ export function LessonWrapUpProvider() {
     if (pending.length <= 1) setListOpen(false);
   }
 
+  function handleDidNotHappen(wrapUp: PendingWrapUp) {
+    recordMutation.mutate({
+      data: {
+        athleteId: wrapUp.athleteId,
+        lessonDate: wrapUp.lessonDate,
+        action: "did_not_happen",
+      },
+    });
+    setModalFor(null);
+    if (pending.length <= 1) setListOpen(false);
+  }
+
   function handleDismissModal() {
     // Don't write a dismissal row — banner should persist until the coach acts.
     setModalFor(null);
@@ -200,10 +211,15 @@ export function LessonWrapUpProvider() {
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter className="gap-2 sm:gap-2">
-                <AlertDialogCancel
-                  onClick={handleDismissModal}
+                <Button
+                  variant="ghost"
+                  onClick={() => handleDidNotHappen(modalFor)}
+                  disabled={recordMutation.isPending}
                   className="sm:mr-auto"
                 >
+                  Didn't happen
+                </Button>
+                <AlertDialogCancel onClick={handleDismissModal}>
                   Not now
                 </AlertDialogCancel>
                 <Button
@@ -213,12 +229,12 @@ export function LessonWrapUpProvider() {
                 >
                   Re-deploy
                 </Button>
-                <AlertDialogAction
+                <Button
                   onClick={() => handleEdit(modalFor)}
                   disabled={recordMutation.isPending || createPlanMutation.isPending}
                 >
                   Edit plan
-                </AlertDialogAction>
+                </Button>
               </AlertDialogFooter>
             </>
           ) : null}
@@ -243,6 +259,15 @@ export function LessonWrapUpProvider() {
                     Ended {formatTime(p.lessonEndMinute)}
                   </div>
                 </div>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-8 px-2 text-xs font-bold text-text-secondary"
+                  onClick={() => handleDidNotHappen(p)}
+                  disabled={recordMutation.isPending}
+                >
+                  Didn't happen
+                </Button>
                 <Button
                   size="sm"
                   variant="ghost"
