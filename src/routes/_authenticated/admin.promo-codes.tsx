@@ -182,7 +182,7 @@ function PromoCodesPage() {
   } catch {
     currentEnv = null;
   }
-  const envLabel = currentEnv === "live" ? "Live" : currentEnv === "sandbox" ? "Test" : "Not configured";
+  const envLabel = currentEnv === "live" ? "Production env" : currentEnv === "sandbox" ? "Development env" : "Not configured";
   const envColorClass =
     currentEnv === "live"
       ? "bg-pen-pink-wash text-pen-pink-ink"
