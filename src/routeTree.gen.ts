@@ -42,6 +42,12 @@ import { Route as SignupAthleteAdultRouteImport } from './routes/signup.athlete.
 import { Route as SignupAthleteAccountRouteImport } from './routes/signup.athlete.account'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as AuthenticatedParentSettingsRouteImport } from './routes/_authenticated/parent.settings'
+import { Route as AuthenticatedOrgAdminTemplatesRouteImport } from './routes/_authenticated/org-admin.templates'
+import { Route as AuthenticatedOrgAdminSettingsRouteImport } from './routes/_authenticated/org-admin.settings'
+import { Route as AuthenticatedOrgAdminRosterRouteImport } from './routes/_authenticated/org-admin.roster'
+import { Route as AuthenticatedOrgAdminResourcesRouteImport } from './routes/_authenticated/org-admin.resources'
+import { Route as AuthenticatedOrgAdminMovesRouteImport } from './routes/_authenticated/org-admin.moves'
+import { Route as AuthenticatedOrgAdminCalendarRouteImport } from './routes/_authenticated/org-admin.calendar'
 import { Route as AuthenticatedCoachSettingsRouteImport } from './routes/_authenticated/coach.settings'
 import { Route as AuthenticatedCoachRosterRouteImport } from './routes/_authenticated/coach.roster'
 import { Route as AuthenticatedCoachPlansRouteImport } from './routes/_authenticated/coach.plans'
@@ -255,6 +261,42 @@ const AuthenticatedParentSettingsRoute =
     id: '/settings',
     path: '/settings',
     getParentRoute: () => AuthenticatedParentRoute,
+  } as any)
+const AuthenticatedOrgAdminTemplatesRoute =
+  AuthenticatedOrgAdminTemplatesRouteImport.update({
+    id: '/templates',
+    path: '/templates',
+    getParentRoute: () => AuthenticatedOrgAdminRoute,
+  } as any)
+const AuthenticatedOrgAdminSettingsRoute =
+  AuthenticatedOrgAdminSettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => AuthenticatedOrgAdminRoute,
+  } as any)
+const AuthenticatedOrgAdminRosterRoute =
+  AuthenticatedOrgAdminRosterRouteImport.update({
+    id: '/roster',
+    path: '/roster',
+    getParentRoute: () => AuthenticatedOrgAdminRoute,
+  } as any)
+const AuthenticatedOrgAdminResourcesRoute =
+  AuthenticatedOrgAdminResourcesRouteImport.update({
+    id: '/resources',
+    path: '/resources',
+    getParentRoute: () => AuthenticatedOrgAdminRoute,
+  } as any)
+const AuthenticatedOrgAdminMovesRoute =
+  AuthenticatedOrgAdminMovesRouteImport.update({
+    id: '/moves',
+    path: '/moves',
+    getParentRoute: () => AuthenticatedOrgAdminRoute,
+  } as any)
+const AuthenticatedOrgAdminCalendarRoute =
+  AuthenticatedOrgAdminCalendarRouteImport.update({
+    id: '/calendar',
+    path: '/calendar',
+    getParentRoute: () => AuthenticatedOrgAdminRoute,
   } as any)
 const AuthenticatedCoachSettingsRoute =
   AuthenticatedCoachSettingsRouteImport.update({
@@ -562,6 +604,12 @@ export interface FileRoutesByFullPath {
   '/coach/plans': typeof AuthenticatedCoachPlansRouteWithChildren
   '/coach/roster': typeof AuthenticatedCoachRosterRoute
   '/coach/settings': typeof AuthenticatedCoachSettingsRoute
+  '/org-admin/calendar': typeof AuthenticatedOrgAdminCalendarRoute
+  '/org-admin/moves': typeof AuthenticatedOrgAdminMovesRoute
+  '/org-admin/resources': typeof AuthenticatedOrgAdminResourcesRoute
+  '/org-admin/roster': typeof AuthenticatedOrgAdminRosterRoute
+  '/org-admin/settings': typeof AuthenticatedOrgAdminSettingsRoute
+  '/org-admin/templates': typeof AuthenticatedOrgAdminTemplatesRoute
   '/parent/settings': typeof AuthenticatedParentSettingsRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/signup/athlete/account': typeof SignupAthleteAccountRoute
@@ -635,6 +683,12 @@ export interface FileRoutesByTo {
   '/coach/paywall': typeof AuthenticatedCoachPaywallRoute
   '/coach/roster': typeof AuthenticatedCoachRosterRoute
   '/coach/settings': typeof AuthenticatedCoachSettingsRoute
+  '/org-admin/calendar': typeof AuthenticatedOrgAdminCalendarRoute
+  '/org-admin/moves': typeof AuthenticatedOrgAdminMovesRoute
+  '/org-admin/resources': typeof AuthenticatedOrgAdminResourcesRoute
+  '/org-admin/roster': typeof AuthenticatedOrgAdminRosterRoute
+  '/org-admin/settings': typeof AuthenticatedOrgAdminSettingsRoute
+  '/org-admin/templates': typeof AuthenticatedOrgAdminTemplatesRoute
   '/parent/settings': typeof AuthenticatedParentSettingsRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/signup/athlete/account': typeof SignupAthleteAccountRoute
@@ -716,6 +770,12 @@ export interface FileRoutesById {
   '/_authenticated/coach/plans': typeof AuthenticatedCoachPlansRouteWithChildren
   '/_authenticated/coach/roster': typeof AuthenticatedCoachRosterRoute
   '/_authenticated/coach/settings': typeof AuthenticatedCoachSettingsRoute
+  '/_authenticated/org-admin/calendar': typeof AuthenticatedOrgAdminCalendarRoute
+  '/_authenticated/org-admin/moves': typeof AuthenticatedOrgAdminMovesRoute
+  '/_authenticated/org-admin/resources': typeof AuthenticatedOrgAdminResourcesRoute
+  '/_authenticated/org-admin/roster': typeof AuthenticatedOrgAdminRosterRoute
+  '/_authenticated/org-admin/settings': typeof AuthenticatedOrgAdminSettingsRoute
+  '/_authenticated/org-admin/templates': typeof AuthenticatedOrgAdminTemplatesRoute
   '/_authenticated/parent/settings': typeof AuthenticatedParentSettingsRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/signup/athlete/account': typeof SignupAthleteAccountRoute
@@ -797,6 +857,12 @@ export interface FileRouteTypes {
     | '/coach/plans'
     | '/coach/roster'
     | '/coach/settings'
+    | '/org-admin/calendar'
+    | '/org-admin/moves'
+    | '/org-admin/resources'
+    | '/org-admin/roster'
+    | '/org-admin/settings'
+    | '/org-admin/templates'
     | '/parent/settings'
     | '/lovable/email/suppression'
     | '/signup/athlete/account'
@@ -870,6 +936,12 @@ export interface FileRouteTypes {
     | '/coach/paywall'
     | '/coach/roster'
     | '/coach/settings'
+    | '/org-admin/calendar'
+    | '/org-admin/moves'
+    | '/org-admin/resources'
+    | '/org-admin/roster'
+    | '/org-admin/settings'
+    | '/org-admin/templates'
     | '/parent/settings'
     | '/lovable/email/suppression'
     | '/signup/athlete/account'
@@ -950,6 +1022,12 @@ export interface FileRouteTypes {
     | '/_authenticated/coach/plans'
     | '/_authenticated/coach/roster'
     | '/_authenticated/coach/settings'
+    | '/_authenticated/org-admin/calendar'
+    | '/_authenticated/org-admin/moves'
+    | '/_authenticated/org-admin/resources'
+    | '/_authenticated/org-admin/roster'
+    | '/_authenticated/org-admin/settings'
+    | '/_authenticated/org-admin/templates'
     | '/_authenticated/parent/settings'
     | '/lovable/email/suppression'
     | '/signup/athlete/account'
@@ -1247,6 +1325,48 @@ declare module '@tanstack/react-router' {
       fullPath: '/parent/settings'
       preLoaderRoute: typeof AuthenticatedParentSettingsRouteImport
       parentRoute: typeof AuthenticatedParentRoute
+    }
+    '/_authenticated/org-admin/templates': {
+      id: '/_authenticated/org-admin/templates'
+      path: '/templates'
+      fullPath: '/org-admin/templates'
+      preLoaderRoute: typeof AuthenticatedOrgAdminTemplatesRouteImport
+      parentRoute: typeof AuthenticatedOrgAdminRoute
+    }
+    '/_authenticated/org-admin/settings': {
+      id: '/_authenticated/org-admin/settings'
+      path: '/settings'
+      fullPath: '/org-admin/settings'
+      preLoaderRoute: typeof AuthenticatedOrgAdminSettingsRouteImport
+      parentRoute: typeof AuthenticatedOrgAdminRoute
+    }
+    '/_authenticated/org-admin/roster': {
+      id: '/_authenticated/org-admin/roster'
+      path: '/roster'
+      fullPath: '/org-admin/roster'
+      preLoaderRoute: typeof AuthenticatedOrgAdminRosterRouteImport
+      parentRoute: typeof AuthenticatedOrgAdminRoute
+    }
+    '/_authenticated/org-admin/resources': {
+      id: '/_authenticated/org-admin/resources'
+      path: '/resources'
+      fullPath: '/org-admin/resources'
+      preLoaderRoute: typeof AuthenticatedOrgAdminResourcesRouteImport
+      parentRoute: typeof AuthenticatedOrgAdminRoute
+    }
+    '/_authenticated/org-admin/moves': {
+      id: '/_authenticated/org-admin/moves'
+      path: '/moves'
+      fullPath: '/org-admin/moves'
+      preLoaderRoute: typeof AuthenticatedOrgAdminMovesRouteImport
+      parentRoute: typeof AuthenticatedOrgAdminRoute
+    }
+    '/_authenticated/org-admin/calendar': {
+      id: '/_authenticated/org-admin/calendar'
+      path: '/calendar'
+      fullPath: '/org-admin/calendar'
+      preLoaderRoute: typeof AuthenticatedOrgAdminCalendarRouteImport
+      parentRoute: typeof AuthenticatedOrgAdminRoute
     }
     '/_authenticated/coach/settings': {
       id: '/_authenticated/coach/settings'
@@ -1696,10 +1816,22 @@ const AuthenticatedCoachRouteWithChildren =
   AuthenticatedCoachRoute._addFileChildren(AuthenticatedCoachRouteChildren)
 
 interface AuthenticatedOrgAdminRouteChildren {
+  AuthenticatedOrgAdminCalendarRoute: typeof AuthenticatedOrgAdminCalendarRoute
+  AuthenticatedOrgAdminMovesRoute: typeof AuthenticatedOrgAdminMovesRoute
+  AuthenticatedOrgAdminResourcesRoute: typeof AuthenticatedOrgAdminResourcesRoute
+  AuthenticatedOrgAdminRosterRoute: typeof AuthenticatedOrgAdminRosterRoute
+  AuthenticatedOrgAdminSettingsRoute: typeof AuthenticatedOrgAdminSettingsRoute
+  AuthenticatedOrgAdminTemplatesRoute: typeof AuthenticatedOrgAdminTemplatesRoute
   AuthenticatedOrgAdminIndexRoute: typeof AuthenticatedOrgAdminIndexRoute
 }
 
 const AuthenticatedOrgAdminRouteChildren: AuthenticatedOrgAdminRouteChildren = {
+  AuthenticatedOrgAdminCalendarRoute: AuthenticatedOrgAdminCalendarRoute,
+  AuthenticatedOrgAdminMovesRoute: AuthenticatedOrgAdminMovesRoute,
+  AuthenticatedOrgAdminResourcesRoute: AuthenticatedOrgAdminResourcesRoute,
+  AuthenticatedOrgAdminRosterRoute: AuthenticatedOrgAdminRosterRoute,
+  AuthenticatedOrgAdminSettingsRoute: AuthenticatedOrgAdminSettingsRoute,
+  AuthenticatedOrgAdminTemplatesRoute: AuthenticatedOrgAdminTemplatesRoute,
   AuthenticatedOrgAdminIndexRoute: AuthenticatedOrgAdminIndexRoute,
 }
 
