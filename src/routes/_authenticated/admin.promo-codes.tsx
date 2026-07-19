@@ -588,25 +588,26 @@ function PromoCodesPage() {
                           }
                           const mintedHere =
                             currentEnv === "live" ? mintedLive : mintedSandbox;
-                          const otherEnvLabel = currentEnv === "live" ? "test" : "live";
+                          const otherEnvLabel = currentEnv === "live" ? "development env" : "production env";
                           const mintedOther =
                             currentEnv === "live" ? mintedSandbox : mintedLive;
                           let statusLabel = "Not created yet";
                           let dotClass = "bg-divider";
                           let toneClass = "text-text-tertiary";
                           if (mintedSandbox && mintedLive) {
-                            statusLabel = "Ready in test & live";
+                            statusLabel = "Ready in development & production env";
                             dotClass = "bg-pen-tennis";
                             toneClass = "text-text-primary";
                           } else if (mintedSandbox) {
-                            statusLabel = "Ready in test only";
+                            statusLabel = "Ready in development env only";
                             dotClass = "bg-pen-orange";
                             toneClass = "text-text-primary";
                           } else if (mintedLive) {
-                            statusLabel = "Ready in live only";
+                            statusLabel = "Ready in production env only";
                             dotClass = "bg-pen-orange";
                             toneClass = "text-text-primary";
                           }
+
                           return (
                             <div className="space-y-1.5">
                               <div className={`flex items-center gap-1.5 ${toneClass}`}>
