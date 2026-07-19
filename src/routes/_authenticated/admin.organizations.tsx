@@ -57,6 +57,7 @@ function OrgsTab() {
   const create = useServerFn(createOrganization);
   const update = useServerFn(updateOrganization);
   const rotate = useServerFn(rotateOrganizationInviteCode);
+  const setCode = useServerFn(setOrganizationInviteCode);
   const qc = useQueryClient();
 
   const { data: orgsData } = useQuery({
@@ -72,6 +73,7 @@ function OrgsTab() {
   const [city, setCity] = useState("");
   const [region, setRegion] = useState("");
   const [notes, setNotes] = useState("");
+  const [code, setCodeInput] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -80,11 +82,19 @@ function OrgsTab() {
     setError(null);
     setBusy(true);
     try {
+      const trimmedCode = code.trim().toUpperCase();
+      if (trimmedCode && !/^[A-Z0-9]{4,16}$/.test(trimmedCode)) {
+        throw new Error("Code must be 4–16 letters or numbers.");
+      }
       const res = await create({
-        data: { name: name.trim(), notes: notes.trim() || null },
+        data: {
+          name: name.trim(),
+          notes: notes.trim() || null,
+          ...(trimmedCode ? { code: trimmedCode } : {}),
+        },
       });
       // If city/region were provided, patch them in a follow-up update since
-      // create only accepts name/notes today.
+      // create only accepts name/notes/code today.
       if (city.trim() || region.trim()) {
         await update({
           data: {
@@ -98,6 +108,7 @@ function OrgsTab() {
       setCity("");
       setRegion("");
       setNotes("");
+      setCodeInput("");
       toast.success(`Created — code ${res.code}`);
       await qc.invalidateQueries({ queryKey: ["admin-organizations"] });
     } catch (err) {
