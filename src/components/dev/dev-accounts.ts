@@ -2,7 +2,7 @@
 // DevTools account switcher. Password comes from VITE_DEV_SEED_PASSWORD
 // (set in .env). Never hardcode passwords here.
 
-export type DevRole = "coach" | "parent" | "athlete";
+export type DevRole = "coach" | "parent" | "athlete" | "org_admin";
 
 export type DevAccount = {
   email: string;
@@ -30,6 +30,13 @@ export const DEV_ACCOUNTS: DevAccount[] = [
     home: "/coach",
   },
 
+  {
+    email: "orgadmin@test.dev",
+    label: "Buddy Garrity",
+    role: "org_admin",
+    note: "Org admin — Test Club",
+    home: "/org-admin",
+  },
   {
     email: "parent@test.dev",
     label: "Parent of Jamie Gilmore",
@@ -84,4 +91,5 @@ export const ONBOARDING_STEPS: Record<DevRole, { label: string; to: string }[]> 
     // with VALIDATE_SEARCH, so the dev stepper only links to code entry.
     { label: "1. Athlete invite (enter code)", to: "/signup/athlete" },
   ],
+  org_admin: [],
 };
