@@ -923,7 +923,7 @@ export const getAdminReporting = createServerFn({ method: "POST" })
     const visibleCoaches = excludeTest ? coachList.filter((c) => !c.is_test) : coachList;
     const visibleParents = excludeTest ? parentList.filter((p) => !p.is_test) : parentList;
     const visibleAthletes = athleteList.filter(
-      (a) => !a.parent_id || !isExcludedParent(a.parent_id),
+      (a) => !(excludeTest && (a.is_test || (a.parent_id && isExcludedParent(a.parent_id)))),
     );
 
     // 7d new
