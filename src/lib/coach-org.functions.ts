@@ -18,6 +18,13 @@ const codeSchema = z
   .transform((s) => s.toUpperCase())
   .pipe(z.string().regex(/^[A-Z2-9]{8}$/, "Codes are 8 characters"));
 
+// Admin-authored codes are more permissive: 4–16 uppercase letters or digits.
+const customCodeSchema = z
+  .string()
+  .trim()
+  .transform((s) => s.toUpperCase())
+  .pipe(z.string().regex(/^[A-Z0-9]{4,16}$/, "Use 4–16 letters or numbers"));
+
 // Crockford-style alphabet minus lookalikes (matches coach invite codes).
 const ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
 function generateCode(): string {
@@ -591,6 +598,7 @@ export const createOrganization = createServerFn({ method: "POST" })
       .object({
         name: z.string().trim().min(1).max(120),
         notes: z.string().trim().max(500).nullable().optional(),
+        code: customCodeSchema.optional(),
       })
       .parse(input),
   )
@@ -619,7 +627,20 @@ export const createOrganization = createServerFn({ method: "POST" })
       .single();
     if (insertOrg.error) dbError(insertOrg.error);
 
-    // Mint one active invite code alongside the org.
+    // If admin supplied a custom code, use it; otherwise mint a random one.
+    if (data.code) {
+      const ins = await supabaseAdmin
+        .from("organization_invite_codes")
+        .insert({ organization_id: insertOrg.data.id, code: data.code });
+      if (ins.error) {
+        if (ins.error.code === "23505") {
+          throw new Error("That code is already in use — pick another.");
+        }
+        dbError(ins.error);
+      }
+      return { id: insertOrg.data.id, code: data.code };
+    }
+
     for (let attempt = 0; attempt < 12; attempt++) {
       const code = generateCode();
       const ins = await supabaseAdmin
@@ -701,6 +722,57 @@ export const rotateOrganizationInviteCode = createServerFn({ method: "POST" })
       if (ins.error.code !== "23505") dbError(ins.error);
     }
     throw new Error("Could not generate a unique invite code");
+  });
+
+/** Admin: set a specific (custom) active invite code for an organization. */
+export const setOrganizationInviteCode = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        organizationId: z.string().uuid(),
+        code: customCodeSchema,
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Reject if another org already owns this code.
+    const existing = await supabaseAdmin
+      .from("organization_invite_codes")
+      .select("organization_id")
+      .eq("code", data.code)
+      .maybeSingle();
+    if (existing.error) dbError(existing.error);
+    if (existing.data && existing.data.organization_id !== data.organizationId) {
+      throw new Error("That code is already in use — pick another.");
+    }
+
+    // Deactivate any current active codes for this org.
+    const deact = await supabaseAdmin
+      .from("organization_invite_codes")
+      .update({ active: false })
+      .eq("organization_id", data.organizationId)
+      .eq("active", true);
+    if (deact.error) dbError(deact.error);
+
+    // If the code already exists for this org, re-activate it; else insert.
+    if (existing.data && existing.data.organization_id === data.organizationId) {
+      const up = await supabaseAdmin
+        .from("organization_invite_codes")
+        .update({ active: true })
+        .eq("organization_id", data.organizationId)
+        .eq("code", data.code);
+      if (up.error) dbError(up.error);
+    } else {
+      const ins = await supabaseAdmin
+        .from("organization_invite_codes")
+        .insert({ organization_id: data.organizationId, code: data.code });
+      if (ins.error) dbError(ins.error);
+    }
+    return { code: data.code };
   });
 
 export const getOrganizationStats = createServerFn({ method: "GET" })

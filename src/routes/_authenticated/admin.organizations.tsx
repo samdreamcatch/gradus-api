@@ -3,7 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { RefreshCw, Copy } from "lucide-react";
+import { RefreshCw, Copy, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,6 +15,7 @@ import {
   getOrganizationStats,
   listOrganizations,
   rotateOrganizationInviteCode,
+  setOrganizationInviteCode,
   updateOrganization,
 } from "@/lib/coach-org.functions";
 
@@ -56,6 +57,7 @@ function OrgsTab() {
   const create = useServerFn(createOrganization);
   const update = useServerFn(updateOrganization);
   const rotate = useServerFn(rotateOrganizationInviteCode);
+  const setCode = useServerFn(setOrganizationInviteCode);
   const qc = useQueryClient();
 
   const { data: orgsData } = useQuery({
@@ -71,6 +73,7 @@ function OrgsTab() {
   const [city, setCity] = useState("");
   const [region, setRegion] = useState("");
   const [notes, setNotes] = useState("");
+  const [code, setCodeInput] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -79,11 +82,19 @@ function OrgsTab() {
     setError(null);
     setBusy(true);
     try {
+      const trimmedCode = code.trim().toUpperCase();
+      if (trimmedCode && !/^[A-Z0-9]{4,16}$/.test(trimmedCode)) {
+        throw new Error("Code must be 4–16 letters or numbers.");
+      }
       const res = await create({
-        data: { name: name.trim(), notes: notes.trim() || null },
+        data: {
+          name: name.trim(),
+          notes: notes.trim() || null,
+          ...(trimmedCode ? { code: trimmedCode } : {}),
+        },
       });
       // If city/region were provided, patch them in a follow-up update since
-      // create only accepts name/notes today.
+      // create only accepts name/notes/code today.
       if (city.trim() || region.trim()) {
         await update({
           data: {
@@ -97,6 +108,7 @@ function OrgsTab() {
       setCity("");
       setRegion("");
       setNotes("");
+      setCodeInput("");
       toast.success(`Created — code ${res.code}`);
       await qc.invalidateQueries({ queryKey: ["admin-organizations"] });
     } catch (err) {
@@ -131,6 +143,27 @@ function OrgsTab() {
       await qc.invalidateQueries({ queryKey: ["admin-organizations"] });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Rotate failed");
+    }
+  };
+
+  const editCode = async (id: string, currentCode: string | null) => {
+    const input = window.prompt(
+      "Set a custom active code (4–16 letters or numbers). This deactivates the current code.",
+      currentCode ?? "",
+    );
+    if (input === null) return;
+    const next = input.trim().toUpperCase();
+    if (!next) return;
+    if (!/^[A-Z0-9]{4,16}$/.test(next)) {
+      toast.error("Code must be 4–16 letters or numbers.");
+      return;
+    }
+    try {
+      const res = await setCode({ data: { organizationId: id, code: next } });
+      toast.success(`Active code: ${res.code}`);
+      await qc.invalidateQueries({ queryKey: ["admin-organizations"] });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not set code");
     }
   };
 
@@ -186,6 +219,22 @@ function OrgsTab() {
                   maxLength={120}
                 />
               </div>
+            </div>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="new-code">Active code (optional)</Label>
+              <Input
+                id="new-code"
+                value={code}
+                onChange={(e) => setCodeInput(e.target.value.toUpperCase())}
+                placeholder="WILSON — 4–16 letters or numbers. Leave blank to auto-generate."
+                maxLength={16}
+                className="font-mono uppercase tracking-widest"
+              />
+              <p className="text-[11px] text-text-tertiary">
+                Codes must be unique across all organizations. Leave blank for a random 8-character code.
+              </p>
             </div>
           </div>
           <div className="space-y-1.5">
@@ -258,10 +307,19 @@ function OrgsTab() {
                         )}
                         <button
                           type="button"
+                          onClick={() => void editCode(o.id, o.activeCode)}
+                          className="rounded p-1 text-text-tertiary hover:bg-elevated hover:text-text-primary"
+                          aria-label="Set custom code"
+                          title="Set custom code"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          type="button"
                           onClick={() => void rotateCode(o.id)}
                           className="rounded p-1 text-text-tertiary hover:bg-elevated hover:text-text-primary"
                           aria-label="Rotate code"
-                          title="Rotate code"
+                          title="Rotate to a random code"
                         >
                           <RefreshCw className="h-3.5 w-3.5" />
                         </button>
