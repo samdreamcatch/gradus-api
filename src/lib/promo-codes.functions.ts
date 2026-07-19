@@ -384,3 +384,191 @@ export const getPromoCodeStats = createServerFn({ method: "GET" })
 
     return { stats: tally };
   });
+
+export type PromoCodeUser = {
+  userId: string;
+  kind: "coach" | "parent" | "athlete";
+  name: string;
+  email: string | null;
+  source: "stash" | "admin_next" | "admin_active";
+  environment: "sandbox" | "live" | null;
+};
+
+/** List every user that has a promo code attached (stashed on profile or admin-applied). */
+export const listPromoCodeUsers = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ code: codeSchema }).parse(input),
+  )
+  .handler(async ({ data, context }): Promise<{ users: PromoCodeUser[] }> => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import(
+      "@/integrations/supabase/client.server"
+    );
+    const code = data.code;
+
+    const [coaches, parents, athletes, applied] = await Promise.all([
+      supabaseAdmin
+        .from("coach_profiles")
+        .select("user_id, first_name, last_name")
+        .eq("promo_code", code),
+      supabaseAdmin
+        .from("parent_profiles")
+        .select("user_id, first_name, last_name")
+        .eq("promo_code", code),
+      supabaseAdmin
+        .from("athletes")
+        .select("user_id, first_name, last_name")
+        .eq("promo_code", code)
+        .not("user_id", "is", null),
+      supabaseAdmin
+        .from("user_applied_promo_codes")
+        .select("user_id, scope, environment")
+        .eq("code", code),
+    ]);
+    if (coaches.error) dbError(coaches.error);
+    if (parents.error) dbError(parents.error);
+    if (athletes.error) dbError(athletes.error);
+    if (applied.error) dbError(applied.error);
+
+    // Collect all user ids to look up emails from auth.
+    const allIds = new Set<string>();
+    coaches.data?.forEach((r) => r.user_id && allIds.add(r.user_id));
+    parents.data?.forEach((r) => r.user_id && allIds.add(r.user_id));
+    athletes.data?.forEach((r) => r.user_id && allIds.add(r.user_id));
+    applied.data?.forEach((r) => r.user_id && allIds.add(r.user_id));
+
+    // Emails via auth admin (paginate up to 1000 — matches admin users page).
+    const emailByUser = new Map<string, string | null>();
+    if (allIds.size > 0) {
+      const list = await supabaseAdmin.auth.admin.listUsers({
+        perPage: 1000,
+        page: 1,
+      });
+      if (!list.error) {
+        for (const u of list.data.users) {
+          if (allIds.has(u.id)) emailByUser.set(u.id, u.email ?? null);
+        }
+      }
+    }
+
+    // Fetch names for admin-applied users whose profile has no stash.
+    const knownProfiles = new Map<
+      string,
+      { kind: "coach" | "parent" | "athlete"; name: string }
+    >();
+    for (const c of coaches.data ?? []) {
+      knownProfiles.set(c.user_id, {
+        kind: "coach",
+        name: `${c.first_name ?? ""} ${c.last_name ?? ""}`.trim() || "(coach)",
+      });
+    }
+    for (const p of parents.data ?? []) {
+      knownProfiles.set(p.user_id, {
+        kind: "parent",
+        name:
+          `${p.first_name ?? ""} ${p.last_name ?? ""}`.trim() || "(parent)",
+      });
+    }
+    for (const a of athletes.data ?? []) {
+      if (a.user_id)
+        knownProfiles.set(a.user_id, {
+          kind: "athlete",
+          name:
+            `${a.first_name ?? ""} ${a.last_name ?? ""}`.trim() ||
+            "(athlete)",
+        });
+    }
+
+    const missingIds = (applied.data ?? [])
+      .map((r) => r.user_id)
+      .filter((id): id is string => !!id && !knownProfiles.has(id));
+
+    if (missingIds.length > 0) {
+      const [mc, mp, ma] = await Promise.all([
+        supabaseAdmin
+          .from("coach_profiles")
+          .select("user_id, first_name, last_name")
+          .in("user_id", missingIds),
+        supabaseAdmin
+          .from("parent_profiles")
+          .select("user_id, first_name, last_name")
+          .in("user_id", missingIds),
+        supabaseAdmin
+          .from("athletes")
+          .select("user_id, first_name, last_name")
+          .in("user_id", missingIds)
+          .not("user_id", "is", null),
+      ]);
+      for (const c of mc.data ?? []) {
+        knownProfiles.set(c.user_id, {
+          kind: "coach",
+          name:
+            `${c.first_name ?? ""} ${c.last_name ?? ""}`.trim() || "(coach)",
+        });
+      }
+      for (const p of mp.data ?? []) {
+        knownProfiles.set(p.user_id, {
+          kind: "parent",
+          name:
+            `${p.first_name ?? ""} ${p.last_name ?? ""}`.trim() || "(parent)",
+        });
+      }
+      for (const a of ma.data ?? []) {
+        if (a.user_id)
+          knownProfiles.set(a.user_id, {
+            kind: "athlete",
+            name:
+              `${a.first_name ?? ""} ${a.last_name ?? ""}`.trim() ||
+              "(athlete)",
+          });
+      }
+    }
+
+    const seen = new Set<string>();
+    const users: PromoCodeUser[] = [];
+
+    // Stashed on profile.
+    for (const [userId, prof] of knownProfiles) {
+      // Only mark as "stash" if the profile actually has the code stashed.
+      const stashed =
+        (prof.kind === "coach" &&
+          coaches.data?.some((c) => c.user_id === userId)) ||
+        (prof.kind === "parent" &&
+          parents.data?.some((p) => p.user_id === userId)) ||
+        (prof.kind === "athlete" &&
+          athletes.data?.some((a) => a.user_id === userId));
+      if (!stashed) continue;
+      const key = `${userId}:stash`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      users.push({
+        userId,
+        kind: prof.kind,
+        name: prof.name,
+        email: emailByUser.get(userId) ?? null,
+        source: "stash",
+        environment: null,
+      });
+    }
+
+    // Admin-applied.
+    for (const r of applied.data ?? []) {
+      const prof = knownProfiles.get(r.user_id);
+      const key = `${r.user_id}:${r.scope}:${r.environment ?? ""}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      users.push({
+        userId: r.user_id,
+        kind: prof?.kind ?? "coach",
+        name: prof?.name ?? "(unknown)",
+        email: emailByUser.get(r.user_id) ?? null,
+        source: r.scope === "active_now" ? "admin_active" : "admin_next",
+        environment: (r.environment as "sandbox" | "live" | null) ?? null,
+      });
+    }
+
+    users.sort((a, b) => a.name.localeCompare(b.name));
+    return { users };
+  });
+
