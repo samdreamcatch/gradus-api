@@ -10,13 +10,24 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { Tag } from "@/components/ui/tag";
+import { Link as RouterLink } from "@tanstack/react-router";
+import {
   listPromoCodes,
   createPromoCode,
   updatePromoCode,
   getPromoCodeStats,
   syncPromoCodeToStripe,
+  listPromoCodeUsers,
 } from "@/lib/promo-codes.functions";
 import { getStripeEnvironment } from "@/lib/stripe";
+
 
 export const Route = createFileRoute("/_authenticated/admin/promo-codes")({
   component: PromoCodesPage,
