@@ -53,6 +53,8 @@ function PromoCodesPage() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [syncingCode, setSyncingCode] = useState<string | null>(null);
+  const [bulkSyncing, setBulkSyncing] = useState(false);
+
 
   const togglePlanInNew = (plan: "coach" | "coach_pro") => {
     setAppliesToPlans((prev) => {
