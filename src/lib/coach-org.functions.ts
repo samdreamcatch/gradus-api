@@ -598,6 +598,7 @@ export const createOrganization = createServerFn({ method: "POST" })
       .object({
         name: z.string().trim().min(1).max(120),
         notes: z.string().trim().max(500).nullable().optional(),
+        code: customCodeSchema.optional(),
       })
       .parse(input),
   )
@@ -626,7 +627,20 @@ export const createOrganization = createServerFn({ method: "POST" })
       .single();
     if (insertOrg.error) dbError(insertOrg.error);
 
-    // Mint one active invite code alongside the org.
+    // If admin supplied a custom code, use it; otherwise mint a random one.
+    if (data.code) {
+      const ins = await supabaseAdmin
+        .from("organization_invite_codes")
+        .insert({ organization_id: insertOrg.data.id, code: data.code });
+      if (ins.error) {
+        if (ins.error.code === "23505") {
+          throw new Error("That code is already in use — pick another.");
+        }
+        dbError(ins.error);
+      }
+      return { id: insertOrg.data.id, code: data.code };
+    }
+
     for (let attempt = 0; attempt < 12; attempt++) {
       const code = generateCode();
       const ins = await supabaseAdmin
