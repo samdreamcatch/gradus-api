@@ -433,17 +433,17 @@ function PromoCodesPage() {
                   const mintedLive = Boolean(row.stripe_promo_id_live);
                   return (
                     <tr key={row.code} className="hover:bg-elevated align-top">
-                      <td className="px-5 py-3 font-mono uppercase tracking-widest text-text-primary">
-                        {row.code}
+                      <td className="px-5 py-3">
+                        <button
+                          type="button"
+                          onClick={() => setDetailCode(row.code)}
+                          className="font-mono uppercase tracking-widest text-text-primary underline-offset-4 hover:underline focus:outline-none focus:ring-2 focus:ring-accent rounded"
+                          title="Open details"
+                        >
+                          {row.code}
+                        </button>
                       </td>
-                      <td className="px-3 py-3 text-text-primary align-top">
-                        <div>{row.label}</div>
-                        {row.notes && (
-                          <div className="mt-1 text-xs text-text-tertiary whitespace-pre-wrap break-words max-w-xs">
-                            {row.notes}
-                          </div>
-                        )}
-                      </td>
+
                       <td className="px-3 py-3 align-top">
                         <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
                           <Button
