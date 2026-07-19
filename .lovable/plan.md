@@ -1,59 +1,56 @@
-## Goal
+## Problems
 
-Give every signed-in user (coach, parent, athlete) a consistent way to:
-- Send themselves a password reset email
-- Send themselves a magic link (useful if they forget their password on another device)
-- Change their email address (with Supabase's default double-confirm)
+Comparing the founder "Welcome to Gradus" email (target) to the current auth emails (signup, magic link, recovery, invite, email change, reauth):
 
-Reauthentication is not a standalone action — it's requested just-in-time by Supabase when required (e.g. during email change), and we handle its prompt inline.
+1. **Excess vertical space** above the wordmark, between the wordmark and hairline, and between the hairline and heading.
+2. **Missing horizontal padding** — eyebrow, heading, body, CTA all sit flush against the cream card edge.
+3. **Missing outer lighter-grey band** — the Welcome email shows a soft lighter-grey layer surrounding the cream paper card. Auth emails jump straight from white body to the cream card with no in-between band.
 
-Zero impact to signup / onboarding: no route guards change, no auth config change, no email template change (existing recovery, magic-link, and email-change templates already ship).
+Root causes:
+- #2: only `Header` and the bottom footer block are wrapped in `PageInner`. All other content renders as a direct child of `<Container>` and inherits no side padding.
+- #3: `main` (body) is `#ffffff` and `container` is the cream `#F1F3F7`. No intermediate wrapper exists.
 
-## What's built
+## Fix
 
-### 1. New shared component: `src/components/settings/AccountSecuritySection.tsx`
+All edits stay in shared layout files so every auth template picks them up automatically.
 
-Rendered inside a `Card` (matches the existing settings look). Contains four rows using the existing settings row pattern:
+### 1. `src/lib/email-templates/_styles.ts` — tighten header rhythm + add outer band
 
-- **Reset password** — button opens a small inline confirm; on confirm calls `supabase.auth.resetPasswordForEmail(email, { redirectTo: \`${window.location.origin}/reset-password\` })`. Toast: "Reset link sent to {email}". Uses existing `/reset-password` route — no new route needed.
-- **Send magic link** — calls `supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: window.location.origin, shouldCreateUser: false } })`. Toast: "Magic link sent to {email}". `shouldCreateUser:false` prevents accidental new-account creation.
-- **Change email** — opens a `Sheet` (bottom on mobile, side on desktop, per overlay doctrine) with:
-  - Current email (read-only)
-  - New email input + confirm input
-  - Submit calls `supabase.auth.updateUser({ email: newEmail })`.
-  - If Supabase returns `reauthentication_needed` (AuthApiError code), we call `supabase.auth.reauthenticate()`, show a nonce input, then retry `updateUser({ email, nonce })`.
-  - Success toast: "Check both inboxes to confirm the change."
-- **Rate-limit / error handling**: catches `over_email_send_rate_limit` and surfaces a friendly toast; all other errors surfaced via existing `toast.error`.
+- `pageInner`: `padding: '40px 44px 8px'` → `'24px 44px 8px'`
+- `wordmarkImg`: `margin: '0 auto 20px'` → `'0 auto 10px'`
+- `topRule`: `margin: '0 0 36px'` → `'0 0 20px'`
+- `eyebrow`: `margin: '0 0 16px'` → `'0 0 10px'`
+- `h1`: `margin: '0 0 28px'` → `'0 0 20px'`
+- Add a new `outerBand` style: `backgroundColor: '#EDEEF2'` (lighter than `#F1F3F7`, slightly darker than white), `padding: '24px 20px'`, `width: '100%'` — this is the softer surrounding layer.
+- Keep `container` cream `#F1F3F7`, but drop its own outer margin so the band controls spacing.
 
-All three email actions read the current email from the existing `useCurrentUserEmail()` hook — no server function needed; these Supabase auth calls run client-side using the browser client.
+### 2. `src/lib/email-templates/_layout.tsx` — export a `PageShell` wrapper
 
-### 2. Wire the section into all three settings pages
+Add and export a small `PageShell` component that renders the outer band around its children:
 
-Add `<AccountSecuritySection />` to:
-- `src/routes/_authenticated/coach.settings.tsx` — above the existing "Sign out" row
-- `src/routes/_authenticated/parent.settings.tsx` — above the existing "Sign out" row
-- `src/routes/_authenticated/athlete.settings.tsx` — above the existing "Sign out" row
+```
+export const PageShell = ({ children }) => (
+  <div style={outerBand}>{children}</div>
+);
+```
 
-Same component, same order in all three so users get a consistent experience.
+### 3. Wrap each auth template's `<Container>` in `<PageShell>` and body content in `<PageInner>`
 
-### 3. No changes to
+For each of `signup.tsx`, `magic-link.tsx`, `recovery.tsx`, `invite.tsx`, `email-change.tsx`, `reauthentication.tsx`:
 
-- `/reset-password` route (already exists and handles the recovery link).
-- Auth email templates (signup, recovery, magic-link, email-change, reauthentication are all already scaffolded).
-- Supabase auth config (double-confirm email change is already the default).
-- Signup / onboarding flows.
-- Route guards.
+```
+<Body style={main}>
+  <PageShell>
+    <Container style={container}>
+      <Header />
+      <PageInner>
+        {/* existing eyebrow, heading, body, button, fallback link, sign-off, divider, footer */}
+      </PageInner>
+    </Container>
+  </PageShell>
+</Body>
+```
 
-## Technical notes
+`Header` keeps its own `pageInner` wrapper + full-width `Hr`, so the hairline still spans the cream card edge-to-edge like the Welcome email.
 
-- All calls use `supabase` from `@/integrations/supabase/client` — browser only, respects the current session.
-- Reauthentication path uses Supabase's built-in `reauthenticate()` + `nonce` pattern; the existing `reauthentication` email template renders the code.
-- Change-email double confirm: Supabase sends `email_change` messages to both old and new addresses; the change only takes effect once both confirm — no code needed on our side for that logic.
-- `resetPasswordForEmail` `redirectTo` points to the existing `/reset-password` page, which already calls `supabase.auth.updateUser({ password })` on submit.
-- If a user hits GoTrue's hourly `over_email_send_rate_limit`, the toast tells them to try again in a bit; raising the limit is a separate admin action (`supabase--configure_auth` with `rate_limit_email_sent`), not part of this plan.
-
-## Out of scope
-
-- Delete account (separate flow, not requested).
-- Standalone "Reauthenticate now" button (per your answer, just-in-time only).
-- 2FA / MFA enrollment (not requested).
+No copy, image, color-token, font, or business-logic changes. After the edit, preview each of the six templates at `/admin/emails` to confirm the header rhythm, side padding on body content, and the outer lighter-grey band all match the Welcome screenshot.
