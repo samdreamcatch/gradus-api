@@ -211,10 +211,15 @@ export function LessonWrapUpProvider() {
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter className="gap-2 sm:gap-2">
-                <AlertDialogCancel
-                  onClick={handleDismissModal}
+                <Button
+                  variant="ghost"
+                  onClick={() => handleDidNotHappen(modalFor)}
+                  disabled={recordMutation.isPending}
                   className="sm:mr-auto"
                 >
+                  Didn't happen
+                </Button>
+                <AlertDialogCancel onClick={handleDismissModal}>
                   Not now
                 </AlertDialogCancel>
                 <Button
@@ -224,12 +229,12 @@ export function LessonWrapUpProvider() {
                 >
                   Re-deploy
                 </Button>
-                <AlertDialogAction
+                <Button
                   onClick={() => handleEdit(modalFor)}
                   disabled={recordMutation.isPending || createPlanMutation.isPending}
                 >
                   Edit plan
-                </AlertDialogAction>
+                </Button>
               </AlertDialogFooter>
             </>
           ) : null}
