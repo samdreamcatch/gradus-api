@@ -297,7 +297,13 @@ function OrgsTab() {
                 {orgs.map((o) => (
                   <tr key={o.id} className="hover:bg-elevated">
                     <td className="px-5 py-3">
-                      <div className="font-semibold text-text-primary">{o.name}</div>
+                      <button
+                        type="button"
+                        onClick={() => setEditingOrg(o as OrgRow)}
+                        className="text-left font-semibold text-text-primary underline-offset-2 hover:underline"
+                      >
+                        {o.name}
+                      </button>
                       {(o.city || o.region) && (
                         <div className="text-xs text-text-secondary">
                           {[o.city, o.region].filter(Boolean).join(", ")}
