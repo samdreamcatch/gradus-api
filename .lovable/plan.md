@@ -1,29 +1,30 @@
-## What changes on `/admin/promo-codes`
+## Goal
 
-- Remove the **Label** column from the table.
-- Make each row's **code cell** the click target (keeps existing inline toggles for Duration/Plans/Card/%/Stripe/Active clickable without conflict).
-- Clicking a code opens a **right-side Sheet** (existing overlay doctrine) showing:
-  - Code (mono), label as title, notes wrapped underneath.
-  - Duration + plans + card-required + % off, read-only summary.
-  - Stripe status pill for both test and live environments.
-  - **Users who applied this code** — grouped by Coaches / Parents / Athletes, each with name + email, linking to the existing `/admin/users/$userId` detail page.
+In the admin panel, replace Stripe environment labels ("test", "sandbox", "live") with **"development env"** and **"production env"** wherever we're showing the user which Stripe environment they're in. Leave unrelated uses of the words alone (test-user flag, "live" meaning "applied to active subscription", route search params).
 
-## New server function
+## Scope of change (labels only, no logic)
 
-`listPromoCodeUsers({ code })` in `src/lib/promo-codes.functions.ts`:
-- Admin-gated (reuses `assertAdmin` pattern).
-- Unions two sources:
-  1. Profile stash — rows from `coach_profiles`, `parent_profiles`, `athletes` where `promo_code = code`.
-  2. Admin-applied — rows from `user_applied_promo_codes` where `code = code`, joined back to whichever profile owns that `user_id`.
-- Returns `{ users: { userId, kind, name, email, source: "stash" | "admin_next" | "admin_active", environment?: "sandbox" | "live" }[] }`.
+All edits are copy-only in `src/routes/_authenticated/admin.promo-codes.tsx`. Internal identifiers (`"sandbox"`, `"live"`, column names `stripe_promo_id_sandbox` / `_live`) stay as-is — only visible strings change.
 
-## Frontend
+### admin.promo-codes.tsx
 
-- New `PromoCodeDetailSheet` component inside `admin.promo-codes.tsx`.
-- Fetched lazily via `useQuery(["admin-promo-code-users", code], enabled: !!openCode)`.
-- Existing `getPromoCodeStats` counts stay visible on the row (P/C/A columns) — no change.
+- Header banner (line ~244): "…created in Stripe once for **development env** (preview) and once for **production env** (published site)…"
+- Environment badge / `envLabel` (line ~185): show "Development env" / "Production env" / "Not configured".
+- Sync status pills (lines ~597–605):
+  - "Ready in development & production env"
+  - "Ready in development env only"
+  - "Ready in production env only"
+- `otherEnvLabel` and button copy (lines ~590, ~610–618): "Re-sync in development env" / "Create in production env", plus the "Still needs …: open this page on the … site" hint.
+- Detail sheet field labels (lines ~773, ~781): "Development env Stripe" / "Production env Stripe".
+- User-list source tag (line ~841): when `source === "admin_active"`, show `active · development env` / `active · production env` instead of `live · sandbox`.
 
-## Out of scope
+## Deliberately NOT changed
 
-- No schema changes.
-- Inline edit controls in the table stay where they are; the sheet is read-only for now.
+- **Test-user flag** (`isTest`, "Only test users", "Mark as test user", `admin.list.$kind`, `admin.index`, `admin.map`, `admin.reporting`, `admin.errors`, `admin.feedback`, `admin.activity`, `admin.users.$userId`) — different concept (QA accounts), not a Stripe env.
+- **`c.scope === "active_now" ? "live" : "next"`** in `admin.index.tsx` line 404 — "live" here means "applied to the active subscription", not a Stripe env. Unrelated to this rename.
+- Route `search={{ test: false }}` params and Zod schema keys — URL contract, not display copy.
+- Server code, DB column names, and Stripe API values — unaffected.
+
+## Verification
+
+Typecheck after the edits and eyeball the promo-codes page (banner, env pill, table Stripe column, detail sheet).
