@@ -126,7 +126,7 @@ export const recordLessonWrapUp = createServerFn({ method: "POST" })
       .object({
         athleteId: z.string().uuid(),
         lessonDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-        action: z.enum(["edited", "redeployed", "dismissed"]),
+        action: z.enum(["edited", "redeployed", "dismissed", "did_not_happen"]),
       })
       .parse(input),
   )
