@@ -217,7 +217,7 @@ export function LessonWrapUpProvider() {
                   disabled={recordMutation.isPending}
                   className="sm:mr-auto"
                 >
-                  Didn't happen
+                  Lesson didn't happen
                 </Button>
                 <AlertDialogCancel onClick={handleDismissModal}>
                   Not now
@@ -266,7 +266,7 @@ export function LessonWrapUpProvider() {
                   onClick={() => handleDidNotHappen(p)}
                   disabled={recordMutation.isPending}
                 >
-                  Didn't happen
+                  Lesson didn't happen
                 </Button>
                 <Button
                   size="sm"
