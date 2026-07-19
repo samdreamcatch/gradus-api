@@ -184,7 +184,8 @@ function PromoCodesPage() {
       )
     : [];
 
-  const [bulkSyncing, setBulkSyncing] = useState(false);
+
+
   const handleBulkSync = async () => {
     if (!currentEnv || unsyncedInCurrentEnv.length === 0) return;
     setBulkSyncing(true);
