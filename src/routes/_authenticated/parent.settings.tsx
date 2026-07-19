@@ -54,6 +54,7 @@ import { ThemeSelect } from "@/components/settings/theme-select";
 import { useCurrentUserEmail } from "@/hooks/use-current-user-email";
 import { FeedbackSettingsRow } from "@/components/feedback/feedback-fab";
 import { InstallAppRow } from "@/components/settings/install-app-row";
+import { AccountSecuritySection } from "@/components/settings/account-security-section";
 import {
   getParentSettings,
   updateParentProfile,
