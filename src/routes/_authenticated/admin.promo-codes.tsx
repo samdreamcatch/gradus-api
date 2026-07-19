@@ -413,7 +413,7 @@ function PromoCodesPage() {
               <thead>
                 <tr className="border-b border-divider text-left text-text-tertiary">
                   <Eyebrow as="th" size="caption" tone="tertiary" weight="normal" tracking="wide" className="px-5 py-3">Code</Eyebrow>
-                  <Eyebrow as="th" size="caption" tone="tertiary" weight="normal" tracking="wide" className="px-3 py-3">Label</Eyebrow>
+                  <Eyebrow as="th" size="caption" tone="tertiary" weight="normal" tracking="wide" className="px-3 py-3">Details</Eyebrow>
                   <Eyebrow as="th" size="caption" tone="tertiary" weight="normal" tracking="wide" className="px-3 py-3">Duration</Eyebrow>
                   <Eyebrow as="th" size="caption" tone="tertiary" weight="normal" tracking="wide" className="px-3 py-3">Plans</Eyebrow>
                   <Eyebrow as="th" size="caption" tone="tertiary" weight="normal" tracking="wide" className="px-3 py-3 text-center">Card</Eyebrow>
