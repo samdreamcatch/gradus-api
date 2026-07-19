@@ -2,6 +2,11 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { dbError } from "./db-error";
+import {
+  type StripeEnv,
+  createStripeClient,
+  getStripeErrorMessage,
+} from "@/lib/stripe.server";
 
 /** Throws if the caller is not an admin. */
 async function assertAdmin(context: { userId: string; supabase: any }) {
@@ -1017,4 +1022,597 @@ export const getAdminReporting = createServerFn({ method: "POST" })
       },
     };
   });
+
+
+
+// =====================================================================
+// Unified admin Users table: fetch, reset password, soft delete, org
+// linkage, org-admin flag, and promo code attach/remove.
+// =====================================================================
+
+const envSchema = z.enum(["sandbox", "live"]);
+
+type UserRow = {
+  userId: string;
+  email: string | null;
+  name: string;
+  createdAt: string;
+  lastSignInAt: string | null;
+  userType: string;
+  planTier: string | null;
+  isAdmin: boolean;
+  isTest: boolean;
+  isOrgAdmin: boolean;
+  organizationId: string | null;
+  organizationName: string | null;
+  appliedCodes: Array<{
+    id: string;
+    code: string;
+    scope: "next_checkout" | "active_now";
+    environment: string | null;
+  }>;
+  stashedPromoCode: string | null;
+  softDeletedAt: string | null;
+};
+
+export const listAllUsers = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        search: z.string().optional().default(""),
+        types: z.array(z.string()).optional().default([]),
+        plans: z.array(z.string()).optional().default([]),
+        onlyAdmin: z.boolean().optional().default(false),
+        onlyOrgAdmin: z.boolean().optional().default(false),
+        onlyTest: z.boolean().optional().default(false),
+        hideTest: z.boolean().optional().default(true),
+        includeDeleted: z.boolean().optional().default(false),
+      })
+      .parse(input ?? {}),
+  )
+  .handler(async ({ data, context }): Promise<{ rows: UserRow[] }> => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import(
+      "@/integrations/supabase/client.server"
+    );
+
+    // 1. Auth users (email + last sign-in). Paginated; grab a large page.
+    const authList = await supabaseAdmin.auth.admin.listUsers({
+      perPage: 1000,
+      page: 1,
+    });
+    if (authList.error) throw new Error(authList.error.message);
+    const authUsers = authList.data.users;
+
+    // 2. Profiles + roles + org membership.
+    const [coaches, parents, athletes, roles, orgs, softDeleted, applied] =
+      await Promise.all([
+        supabaseAdmin
+          .from("coach_profiles")
+          .select(
+            "user_id, first_name, last_name, is_test, organization_id, subscription_tier, entitlement, is_org_admin, promo_code",
+          ),
+        supabaseAdmin
+          .from("parent_profiles")
+          .select("user_id, first_name, last_name, is_test, promo_code"),
+        supabaseAdmin
+          .from("athletes")
+          .select(
+            "user_id, first_name, last_name, is_test, self_managed, promo_code",
+          )
+          .not("user_id", "is", null),
+        supabaseAdmin.from("user_roles").select("user_id, role"),
+        supabaseAdmin.from("organizations").select("id, name"),
+        supabaseAdmin
+          .from("soft_deleted_users")
+          .select("user_id, deleted_at"),
+        supabaseAdmin
+          .from("user_applied_promo_codes")
+          .select("id, user_id, code, scope, environment"),
+      ]);
+    for (const r of [
+      coaches,
+      parents,
+      athletes,
+      roles,
+      orgs,
+      softDeleted,
+      applied,
+    ]) {
+      if (r.error) dbError(r.error);
+    }
+
+    const coachByUser = new Map(
+      (coaches.data ?? []).map((c) => [c.user_id, c]),
+    );
+    const parentByUser = new Map(
+      (parents.data ?? []).map((p) => [p.user_id, p]),
+    );
+    const athleteByUser = new Map(
+      (athletes.data ?? [])
+        .filter((a) => a.user_id)
+        .map((a) => [a.user_id as string, a]),
+    );
+    const adminRoles = new Set(
+      (roles.data ?? [])
+        .filter((r) => r.role === "admin")
+        .map((r) => r.user_id),
+    );
+    const orgById = new Map((orgs.data ?? []).map((o) => [o.id, o.name]));
+    const deletedByUser = new Map(
+      (softDeleted.data ?? []).map((s) => [s.user_id, s.deleted_at]),
+    );
+    const appliedByUser = new Map<string, UserRow["appliedCodes"]>();
+    for (const a of applied.data ?? []) {
+      const list = appliedByUser.get(a.user_id) ?? [];
+      list.push({
+        id: a.id,
+        code: a.code,
+        scope: a.scope as "next_checkout" | "active_now",
+        environment: a.environment,
+      });
+      appliedByUser.set(a.user_id, list);
+    }
+
+    // 3. Build unified rows.
+    const rows: UserRow[] = authUsers.map((u) => {
+      const coach = coachByUser.get(u.id);
+      const parent = parentByUser.get(u.id);
+      const athlete = athleteByUser.get(u.id);
+      let userType = "unknown";
+      let name = u.email ?? "(no email)";
+      let planTier: string | null = null;
+      let organizationId: string | null = null;
+      let organizationName: string | null = null;
+      let isTest = false;
+      let isOrgAdmin = false;
+      let stashedPromoCode: string | null = null;
+
+      if (adminRoles.has(u.id) && !coach && !parent && !athlete) {
+        userType = "internal_admin";
+      }
+      if (coach) {
+        userType = "coach";
+        name =
+          `${coach.first_name ?? ""} ${coach.last_name ?? ""}`.trim() || name;
+        isTest = isTest || !!coach.is_test;
+        organizationId = coach.organization_id;
+        organizationName = organizationId
+          ? (orgById.get(organizationId) ?? null)
+          : null;
+        isOrgAdmin = !!coach.is_org_admin;
+        stashedPromoCode = coach.promo_code ?? null;
+        if (coach.entitlement === "club_covered") planTier = "club";
+        else if (coach.subscription_tier === "coach_pro") planTier = "coach_pro";
+        else planTier = "coach";
+      } else if (parent) {
+        userType = "parent";
+        name =
+          `${parent.first_name ?? ""} ${parent.last_name ?? ""}`.trim() || name;
+        isTest = isTest || !!parent.is_test;
+        stashedPromoCode = parent.promo_code ?? null;
+      } else if (athlete) {
+        userType = athlete.self_managed ? "adult_athlete" : "youth_athlete";
+        name =
+          `${athlete.first_name ?? ""} ${athlete.last_name ?? ""}`.trim() ||
+          name;
+        isTest = isTest || !!athlete.is_test;
+        stashedPromoCode = athlete.promo_code ?? null;
+      }
+
+      return {
+        userId: u.id,
+        email: u.email ?? null,
+        name,
+        createdAt: u.created_at ?? new Date().toISOString(),
+        lastSignInAt: u.last_sign_in_at ?? null,
+        userType,
+        planTier,
+        isAdmin: adminRoles.has(u.id),
+        isTest,
+        isOrgAdmin,
+        organizationId,
+        organizationName,
+        appliedCodes: appliedByUser.get(u.id) ?? [],
+        stashedPromoCode,
+        softDeletedAt: deletedByUser.get(u.id) ?? null,
+      };
+    });
+
+    // 4. Filter.
+    const q = data.search.trim().toLowerCase();
+    const filtered = rows.filter((r) => {
+      if (!data.includeDeleted && r.softDeletedAt) return false;
+      if (data.hideTest && !data.onlyTest && r.isTest) return false;
+      if (data.onlyTest && !r.isTest) return false;
+      if (data.onlyAdmin && !r.isAdmin) return false;
+      if (data.onlyOrgAdmin && !r.isOrgAdmin) return false;
+      if (data.types.length && !data.types.includes(r.userType)) return false;
+      if (
+        data.plans.length &&
+        (r.planTier == null || !data.plans.includes(r.planTier))
+      )
+        return false;
+      if (q) {
+        const haystack =
+          `${r.name} ${r.email ?? ""} ${r.organizationName ?? ""}`.toLowerCase();
+        if (!haystack.includes(q)) return false;
+      }
+      return true;
+    });
+
+    return { rows: filtered };
+  });
+
+/** Reset a user's password: send Supabase recovery email AND return copyable link. */
+export const adminResetPassword = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ userId: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import(
+      "@/integrations/supabase/client.server"
+    );
+    const { data: userInfo, error: getErr } =
+      await supabaseAdmin.auth.admin.getUserById(data.userId);
+    if (getErr) throw new Error(getErr.message);
+    const email = userInfo?.user?.email;
+    if (!email) throw new Error("User has no email on file.");
+
+    // (a) Email the standard recovery link via GoTrue.
+    const { error: emailErr } = await supabaseAdmin.auth.resetPasswordForEmail(
+      email,
+    );
+    if (emailErr) throw new Error(emailErr.message);
+
+    // (b) Also mint an admin-visible recovery link to copy.
+    const { data: linkData, error: linkErr } =
+      await supabaseAdmin.auth.admin.generateLink({
+        type: "recovery",
+        email,
+      });
+    if (linkErr) throw new Error(linkErr.message);
+
+    return {
+      ok: true,
+      email,
+      recoveryLink: linkData?.properties?.action_link ?? null,
+    };
+  });
+
+/** Soft-delete: ban the auth user (100 years) and mark deletion in soft_deleted_users. */
+export const adminSoftDeleteUser = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        userId: z.string().uuid(),
+        confirmEmail: z.string().email(),
+        reason: z.string().optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    if (data.userId === context.userId) {
+      throw new Error("You cannot soft-delete your own account.");
+    }
+    const { supabaseAdmin } = await import(
+      "@/integrations/supabase/client.server"
+    );
+    const { data: userInfo, error: getErr } =
+      await supabaseAdmin.auth.admin.getUserById(data.userId);
+    if (getErr) throw new Error(getErr.message);
+    if (
+      (userInfo?.user?.email ?? "").toLowerCase() !==
+      data.confirmEmail.toLowerCase()
+    ) {
+      throw new Error("Confirmation email did not match.");
+    }
+
+    // Ban the user for 100 years (876000h). Supabase Auth admin API accepts this.
+    const { error: banErr } = await supabaseAdmin.auth.admin.updateUserById(
+      data.userId,
+      { ban_duration: "876000h" as unknown as string },
+    );
+    if (banErr) throw new Error(banErr.message);
+
+    // Record the soft delete.
+    const { error: insErr } = await supabaseAdmin
+      .from("soft_deleted_users")
+      .upsert({
+        user_id: data.userId,
+        deleted_by: context.userId,
+        deleted_at: new Date().toISOString(),
+        reason: data.reason ?? null,
+      });
+    if (insErr) dbError(insErr);
+
+    return { ok: true };
+  });
+
+export const adminRestoreUser = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ userId: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import(
+      "@/integrations/supabase/client.server"
+    );
+    const { error: unbanErr } = await supabaseAdmin.auth.admin.updateUserById(
+      data.userId,
+      { ban_duration: "none" as unknown as string },
+    );
+    if (unbanErr) throw new Error(unbanErr.message);
+    const { error: delErr } = await supabaseAdmin
+      .from("soft_deleted_users")
+      .delete()
+      .eq("user_id", data.userId);
+    if (delErr) dbError(delErr);
+    return { ok: true };
+  });
+
+/** Set/clear the coach's organization. */
+export const adminSetUserOrg = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        userId: z.string().uuid(),
+        organizationId: z.string().uuid().nullable(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import(
+      "@/integrations/supabase/client.server"
+    );
+    // Only coaches have an org column today.
+    const { data: coach, error: cErr } = await supabaseAdmin
+      .from("coach_profiles")
+      .select("id, entitlement, organization_id")
+      .eq("user_id", data.userId)
+      .maybeSingle();
+    if (cErr) dbError(cErr);
+    if (!coach) throw new Error("User is not a coach; can't attach an org.");
+
+    const nextEntitlement =
+      data.organizationId != null
+        ? "club_covered"
+        : coach.entitlement === "club_covered"
+          ? "pending"
+          : coach.entitlement;
+
+    const { error: uErr } = await supabaseAdmin
+      .from("coach_profiles")
+      .update({
+        organization_id: data.organizationId,
+        entitlement: nextEntitlement,
+      })
+      .eq("id", coach.id);
+    if (uErr) dbError(uErr);
+    return { ok: true };
+  });
+
+/** Toggle the "is organization admin" flag on a coach. */
+export const adminSetOrgAdmin = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({ userId: z.string().uuid(), isOrgAdmin: z.boolean() })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import(
+      "@/integrations/supabase/client.server"
+    );
+    const { error } = await supabaseAdmin
+      .from("coach_profiles")
+      .update({ is_org_admin: data.isOrgAdmin })
+      .eq("user_id", data.userId);
+    if (error) dbError(error);
+    return { ok: true };
+  });
+
+/**
+ * Apply a promo code to a user.
+ * - scope=next_checkout: also stash on the profile so existing checkout paths pick it up.
+ * - scope=active_now: attach the Stripe coupon to the user's active subscription in the given env.
+ */
+export const adminApplyPromoCode = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        userId: z.string().uuid(),
+        code: z.string().min(1).max(32),
+        scope: z.enum(["next_checkout", "active_now"]),
+        environment: envSchema.optional(),
+      })
+      .parse(input),
+  )
+  .handler(
+    async ({
+      data,
+      context,
+    }): Promise<{ ok: true } | { ok: false; error: string }> => {
+      await assertAdmin(context);
+      const code = data.code.toUpperCase();
+      const { supabaseAdmin } = await import(
+        "@/integrations/supabase/client.server"
+      );
+
+      const { data: promo, error: pErr } = await supabaseAdmin
+        .from("promo_codes")
+        .select(
+          "code, active, stripe_coupon_id_sandbox, stripe_coupon_id_live",
+        )
+        .eq("code", code)
+        .maybeSingle();
+      if (pErr) dbError(pErr);
+      if (!promo || !promo.active) {
+        return { ok: false, error: `Promo code ${code} is not active.` };
+      }
+
+      let stripeSubscriptionId: string | null = null;
+
+      if (data.scope === "active_now") {
+        const env = data.environment;
+        if (!env) {
+          return {
+            ok: false,
+            error: "Environment (sandbox/live) is required for active_now.",
+          };
+        }
+        const couponId =
+          env === "sandbox"
+            ? promo.stripe_coupon_id_sandbox
+            : promo.stripe_coupon_id_live;
+        if (!couponId) {
+          return {
+            ok: false,
+            error: `Promo code ${code} isn't synced to ${env} Stripe yet.`,
+          };
+        }
+        const { data: coach, error: cErr } = await supabaseAdmin
+          .from("coach_profiles")
+          .select("stripe_customer_id")
+          .eq("user_id", data.userId)
+          .maybeSingle();
+        if (cErr) dbError(cErr);
+        if (!coach?.stripe_customer_id) {
+          return {
+            ok: false,
+            error: "User has no active Stripe customer.",
+          };
+        }
+        try {
+          const stripe = createStripeClient(env as StripeEnv);
+          const list = await stripe.subscriptions.list({
+            customer: coach.stripe_customer_id,
+            status: "all",
+            limit: 10,
+          });
+          const sub = list.data
+            .filter((s) =>
+              ["active", "trialing", "past_due"].includes(s.status),
+            )
+            .sort((a, b) => (b.created ?? 0) - (a.created ?? 0))[0];
+          if (!sub) {
+            return { ok: false, error: "No active subscription found." };
+          }
+          await stripe.subscriptions.update(sub.id, {
+            discounts: [{ coupon: couponId }],
+          });
+          stripeSubscriptionId = sub.id;
+        } catch (err) {
+          return { ok: false, error: getStripeErrorMessage(err) };
+        }
+      } else {
+        // Stash on the coach profile (existing checkout path picks this up).
+        await supabaseAdmin
+          .from("coach_profiles")
+          .update({ promo_code: code })
+          .eq("user_id", data.userId);
+      }
+
+      const { error: upErr } = await supabaseAdmin
+        .from("user_applied_promo_codes")
+        .upsert(
+          {
+            user_id: data.userId,
+            code,
+            scope: data.scope,
+            environment: data.environment ?? null,
+            stripe_subscription_id: stripeSubscriptionId,
+            applied_by: context.userId,
+          },
+          { onConflict: "user_id,code,scope" },
+        );
+      if (upErr) dbError(upErr);
+
+      return { ok: true };
+    },
+  );
+
+/** Remove an applied promo code. For active_now, also strips it from the Stripe subscription. */
+export const adminRemovePromoCode = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ id: z.string().uuid() }).parse(input),
+  )
+  .handler(
+    async ({
+      data,
+      context,
+    }): Promise<{ ok: true } | { ok: false; error: string }> => {
+      await assertAdmin(context);
+      const { supabaseAdmin } = await import(
+        "@/integrations/supabase/client.server"
+      );
+      const { data: row, error: rErr } = await supabaseAdmin
+        .from("user_applied_promo_codes")
+        .select("id, user_id, code, scope, environment, stripe_subscription_id")
+        .eq("id", data.id)
+        .maybeSingle();
+      if (rErr) dbError(rErr);
+      if (!row) return { ok: false, error: "Applied code not found." };
+
+      if (row.scope === "active_now" && row.stripe_subscription_id && row.environment) {
+        try {
+          const stripe = createStripeClient(row.environment as StripeEnv);
+          await stripe.subscriptions.update(row.stripe_subscription_id, {
+            discounts: [],
+          });
+        } catch (err) {
+          return { ok: false, error: getStripeErrorMessage(err) };
+        }
+      } else if (row.scope === "next_checkout") {
+        // Clear the profile stash if it matches.
+        const { data: coach } = await supabaseAdmin
+          .from("coach_profiles")
+          .select("id, promo_code")
+          .eq("user_id", row.user_id)
+          .maybeSingle();
+        if (coach && coach.promo_code === row.code) {
+          await supabaseAdmin
+            .from("coach_profiles")
+            .update({ promo_code: null })
+            .eq("id", coach.id);
+        }
+      }
+
+      const { error: dErr } = await supabaseAdmin
+        .from("user_applied_promo_codes")
+        .delete()
+        .eq("id", data.id);
+      if (dErr) dbError(dErr);
+      return { ok: true };
+    },
+  );
+
+/** Simple picker source for the promo code combobox in the users page. */
+export const listActivePromoCodes = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import(
+      "@/integrations/supabase/client.server"
+    );
+    const { data, error } = await supabaseAdmin
+      .from("promo_codes")
+      .select("code, label, percent_off, duration, duration_in_months, applies_to_plans")
+      .eq("active", true)
+      .order("code", { ascending: true });
+    if (error) dbError(error);
+    return { codes: data ?? [] };
+  });
+
 

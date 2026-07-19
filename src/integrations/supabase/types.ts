@@ -507,6 +507,7 @@ export type Database = {
           entitlement: string
           first_name: string
           id: string
+          is_org_admin: boolean
           is_test: boolean
           last_name: string
           last_seen_at: string | null
@@ -529,6 +530,7 @@ export type Database = {
           entitlement?: string
           first_name?: string
           id?: string
+          is_org_admin?: boolean
           is_test?: boolean
           last_name?: string
           last_seen_at?: string | null
@@ -551,6 +553,7 @@ export type Database = {
           entitlement?: string
           first_name?: string
           id?: string
+          is_org_admin?: boolean
           is_test?: boolean
           last_name?: string
           last_seen_at?: string | null
@@ -1786,6 +1789,27 @@ export type Database = {
         }
         Relationships: []
       }
+      soft_deleted_users: {
+        Row: {
+          deleted_at: string
+          deleted_by: string | null
+          reason: string | null
+          user_id: string
+        }
+        Insert: {
+          deleted_at?: string
+          deleted_by?: string | null
+          reason?: string | null
+          user_id: string
+        }
+        Update: {
+          deleted_at?: string
+          deleted_by?: string | null
+          reason?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       suppressed_emails: {
         Row: {
           created_at: string
@@ -1839,6 +1863,47 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      user_applied_promo_codes: {
+        Row: {
+          applied_by: string | null
+          code: string
+          created_at: string
+          environment: string | null
+          id: string
+          scope: string
+          stripe_subscription_id: string | null
+          user_id: string
+        }
+        Insert: {
+          applied_by?: string | null
+          code: string
+          created_at?: string
+          environment?: string | null
+          id?: string
+          scope: string
+          stripe_subscription_id?: string | null
+          user_id: string
+        }
+        Update: {
+          applied_by?: string | null
+          code?: string
+          created_at?: string
+          environment?: string | null
+          id?: string
+          scope?: string
+          stripe_subscription_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_applied_promo_codes_code_fkey"
+            columns: ["code"]
+            isOneToOne: false
+            referencedRelation: "promo_codes"
+            referencedColumns: ["code"]
+          },
+        ]
       }
       user_roles: {
         Row: {
