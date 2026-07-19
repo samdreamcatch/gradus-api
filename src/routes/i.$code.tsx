@@ -34,7 +34,7 @@ export const Route = createFileRoute("/i/$code")({
   component: InviteEntryPage,
 });
 
-type Role = "coach" | "parent" | "athlete" | null;
+type Role = "coach" | "parent" | "athlete" | "org_admin" | null;
 type Stage =
   | { kind: "loading" }
   | { kind: "invalid"; message: string }
