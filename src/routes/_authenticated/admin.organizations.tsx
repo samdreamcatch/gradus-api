@@ -232,9 +232,6 @@ function OrgsTab() {
                 maxLength={16}
                 className="font-mono uppercase tracking-widest"
               />
-              <p className="text-[11px] text-text-tertiary">
-                Codes must be unique across all organizations. Leave blank for a random 8-character code.
-              </p>
             </div>
           </div>
           <div className="space-y-1.5">
