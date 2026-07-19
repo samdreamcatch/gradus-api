@@ -43,9 +43,26 @@ function PromoCodesPage() {
   const [label, setLabel] = useState("");
   const [notes, setNotes] = useState("");
   const [percentOff, setPercentOff] = useState(0);
+  const [duration, setDuration] = useState<"forever" | "repeating">("forever");
+  const [durationInMonths, setDurationInMonths] = useState<number>(3);
+  const [cardRequired, setCardRequired] = useState(true);
+  const [appliesToPlans, setAppliesToPlans] = useState<("coach" | "coach_pro")[]>([
+    "coach",
+    "coach_pro",
+  ]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [syncingCode, setSyncingCode] = useState<string | null>(null);
+
+  const togglePlanInNew = (plan: "coach" | "coach_pro") => {
+    setAppliesToPlans((prev) => {
+      if (prev.includes(plan)) {
+        const next = prev.filter((p) => p !== plan);
+        return next.length ? next : prev; // must keep at least one
+      }
+      return [...prev, plan];
+    });
+  };
 
   const handleCreate = async (e: FormEvent) => {
     e.preventDefault();
@@ -59,12 +76,20 @@ function PromoCodesPage() {
           notes: notes.trim() || null,
           percentOff,
           active: true,
+          duration,
+          durationInMonths: duration === "repeating" ? durationInMonths : null,
+          cardRequired,
+          appliesToPlans,
         },
       });
       setCode("");
       setLabel("");
       setNotes("");
       setPercentOff(0);
+      setDuration("forever");
+      setDurationInMonths(3);
+      setCardRequired(true);
+      setAppliesToPlans(["coach", "coach_pro"]);
       toast.success("Promo code created");
       await Promise.all([
         qc.invalidateQueries({ queryKey: ["admin-promo-codes"] }),
@@ -86,14 +111,21 @@ function PromoCodesPage() {
     }
   };
 
-  const updatePercent = async (c: string, next: number) => {
+  const updateField = async (
+    c: string,
+    patch: Parameters<typeof update>[0]["data"],
+  ) => {
     try {
-      await update({ data: { code: c, percentOff: next } });
+      await update({ data: { code: c, ...patch } });
       await qc.invalidateQueries({ queryKey: ["admin-promo-codes"] });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Update failed");
     }
   };
+
+  const updatePercent = (c: string, next: number) =>
+    updateField(c, { code: c, percentOff: next });
+
 
   const handleSync = async (c: string) => {
     setSyncingCode(c);
