@@ -880,7 +880,7 @@ export const getAdminReporting = createServerFn({ method: "POST" })
         .select("id, user_id, is_test, coach_id, created_at"),
       supabaseAdmin
         .from("athletes")
-        .select("id, user_id, parent_id, created_at"),
+        .select("id, user_id, parent_id, created_at, is_test"),
       supabaseAdmin.from("coach_athletes").select("coach_id, athlete_id"),
       supabaseAdmin
         .from("plans")
@@ -923,7 +923,7 @@ export const getAdminReporting = createServerFn({ method: "POST" })
     const visibleCoaches = excludeTest ? coachList.filter((c) => !c.is_test) : coachList;
     const visibleParents = excludeTest ? parentList.filter((p) => !p.is_test) : parentList;
     const visibleAthletes = athleteList.filter(
-      (a) => !a.parent_id || !isExcludedParent(a.parent_id),
+      (a) => !(excludeTest && (a.is_test || (a.parent_id && isExcludedParent(a.parent_id)))),
     );
 
     // 7d new
