@@ -772,7 +772,7 @@ function PromoCodeDetailSheet({
               </div>
               <div>
                 <dt className="text-xs uppercase tracking-wide text-text-tertiary">
-                  Test Stripe
+                  Development env Stripe
                 </dt>
                 <dd className="text-text-primary">
                   {row.stripe_promo_id_sandbox ? "Minted" : "Not yet"}
@@ -780,12 +780,13 @@ function PromoCodeDetailSheet({
               </div>
               <div>
                 <dt className="text-xs uppercase tracking-wide text-text-tertiary">
-                  Live Stripe
+                  Production env Stripe
                 </dt>
                 <dd className="text-text-primary">
                   {row.stripe_promo_id_live ? "Minted" : "Not yet"}
                 </dd>
               </div>
+
             </dl>
 
             <section className="space-y-3">
