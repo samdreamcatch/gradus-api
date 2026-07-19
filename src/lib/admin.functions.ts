@@ -718,6 +718,9 @@ export const getDailyActiveUsers = createServerFn({ method: "POST" })
     if (messages.error) dbError(messages.error);
     if (sessions.error) dbError(sessions.error);
     if (wrapUps.error) dbError(wrapUps.error);
+    if (plansCreated.error) dbError(plansCreated.error);
+    if (resourcesCreated.error) dbError(resourcesCreated.error);
+
 
     // Resolve athlete_id -> user_id, coach_id -> user_id
     const athleteIds = Array.from(
