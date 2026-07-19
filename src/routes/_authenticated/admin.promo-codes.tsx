@@ -113,7 +113,16 @@ function PromoCodesPage() {
 
   const updateField = async (
     c: string,
-    patch: Parameters<typeof update>[0]["data"],
+    patch: {
+      label?: string;
+      notes?: string | null;
+      percentOff?: number;
+      active?: boolean;
+      duration?: "forever" | "repeating";
+      durationInMonths?: number | null;
+      cardRequired?: boolean;
+      appliesToPlans?: ("coach" | "coach_pro")[];
+    },
   ) => {
     try {
       await update({ data: { code: c, ...patch } });
@@ -124,7 +133,8 @@ function PromoCodesPage() {
   };
 
   const updatePercent = (c: string, next: number) =>
-    updateField(c, { code: c, percentOff: next });
+    updateField(c, { percentOff: next });
+
 
 
   const handleSync = async (c: string) => {
