@@ -414,6 +414,9 @@ function PromoCodesPage() {
                 <tr className="border-b border-divider text-left text-text-tertiary">
                   <Eyebrow as="th" size="caption" tone="tertiary" weight="normal" tracking="wide" className="px-5 py-3">Code</Eyebrow>
                   <Eyebrow as="th" size="caption" tone="tertiary" weight="normal" tracking="wide" className="px-3 py-3">Label</Eyebrow>
+                  <Eyebrow as="th" size="caption" tone="tertiary" weight="normal" tracking="wide" className="px-3 py-3">Duration</Eyebrow>
+                  <Eyebrow as="th" size="caption" tone="tertiary" weight="normal" tracking="wide" className="px-3 py-3">Plans</Eyebrow>
+                  <Eyebrow as="th" size="caption" tone="tertiary" weight="normal" tracking="wide" className="px-3 py-3 text-center">Card</Eyebrow>
                   <Eyebrow as="th" size="caption" tone="tertiary" weight="normal" tracking="wide" className="px-3 py-3 text-right">% off</Eyebrow>
                   <Eyebrow as="th" size="caption" tone="tertiary" weight="normal" tracking="wide" className="px-3 py-3">Stripe</Eyebrow>
                   <Eyebrow as="th" size="caption" tone="tertiary" weight="normal" tracking="wide" className="px-3 py-3 text-right">P</Eyebrow>
@@ -422,6 +425,7 @@ function PromoCodesPage() {
                   <Eyebrow as="th" size="caption" tone="tertiary" weight="normal" tracking="wide" className="px-5 py-3 text-right">Active</Eyebrow>
                 </tr>
               </thead>
+
               <tbody className="divide-y divide-divider">
                 {codes.map((row) => {
                   const s = tally[row.code] ?? { parents: 0, coaches: 0, athletes: 0 };
