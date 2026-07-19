@@ -32,11 +32,22 @@ export const EMAIL_COPY_SCHEMA: Record<string, TemplateCopy> = {
     category: "Auth",
     description: "Sent when a new user creates an account. Confirms their email address.",
     slots: [
-      { key: "preview", label: "Inbox preview", kind: "text", help: "Short line shown in the inbox list next to the subject." },
+      {
+        key: "preview",
+        label: "Inbox preview",
+        kind: "text",
+        help: "Short line shown in the inbox list next to the subject.",
+      },
       { key: "subject", label: "Subject line", kind: "text" },
       { key: "eyebrow", label: "Small caps eyebrow", kind: "text" },
       { key: "heading", label: "Big headline", kind: "text" },
-      { key: "body", label: "Main paragraph", kind: "textarea", variables: AUTH_VARS, help: "Supports {siteName}, {siteUrl}, {recipient}. Wrap emphasis with <strong>." },
+      {
+        key: "body",
+        label: "Main paragraph",
+        kind: "textarea",
+        variables: AUTH_VARS,
+        help: "Supports {siteName}, {siteUrl}, {recipient}. Wrap emphasis with <strong>.",
+      },
       { key: "ctaLabel", label: "Button label", kind: "text" },
       { key: "fallbackHelp", label: "Button-not-working help", kind: "text" },
       { key: "signOff", label: "Handwritten sign-off", kind: "text" },
@@ -46,8 +57,8 @@ export const EMAIL_COPY_SCHEMA: Record<string, TemplateCopy> = {
       preview: "Confirm your email to start training with Gradus",
       subject: "Confirm your email",
       eyebrow: "Confirm your email",
-      heading: "One quick step to get started.",
-      body: "Thanks for signing up for <strong>{siteName}</strong>. Confirm <strong>{recipient}</strong> so we can save your progress and connect you to your coach.",
+      heading: "Secure your Gradus account.",
+      body: "Thanks for signing up for <strong>Gradus</strong>. Confirm <strong>{recipient}</strong> so we can keep your training progress secure and help you reset your password if you ever get locked out.",
       ctaLabel: "Verify my email",
       fallbackHelp: "Button not working? Paste this link into your browser:",
       signOff: "— The Gradus team",
@@ -72,7 +83,7 @@ export const EMAIL_COPY_SCHEMA: Record<string, TemplateCopy> = {
       preview: "You've been invited to join Gradus",
       subject: "You've been invited",
       eyebrow: "You're invited",
-      heading: "Join your coach on Gradus.",
+      heading: "Start training with Gradus.",
       body: "You've been invited to join <strong>{siteName}</strong>. Accept the invitation to create your account and start training together.",
       ctaLabel: "Accept invitation",
       signOff: "— The Gradus team",
@@ -126,7 +137,8 @@ export const EMAIL_COPY_SCHEMA: Record<string, TemplateCopy> = {
       body: "We received a request to reset your password for <strong>{siteName}</strong>. Choose a new one with the button below.",
       ctaLabel: "Choose a new password",
       fallbackHelp: "Or paste this URL into your browser:",
-      footer: "If you didn't request a password reset, you can safely ignore this email — your password will stay the same.",
+      footer:
+        "If you didn't request a password reset, you can safely ignore this email — your password will stay the same.",
     },
   },
   email_change: {
@@ -176,10 +188,7 @@ export const EMAIL_COPY_SCHEMA: Record<string, TemplateCopy> = {
 };
 
 /** Substitute {variable} placeholders. Unknown variables render as literal text. */
-export function renderTemplateString(
-  template: string,
-  values: Record<string, string | null | undefined>,
-): string {
+export function renderTemplateString(template: string, values: Record<string, string | null | undefined>): string {
   return template.replace(/\{(\w+)\}/g, (match, key) => {
     const v = values[key];
     return v == null ? match : String(v);
@@ -187,10 +196,7 @@ export function renderTemplateString(
 }
 
 /** Merge overrides over the schema defaults for a template. */
-export function resolveCopy(
-  templateName: string,
-  overrides: Record<string, string> = {},
-): Record<string, string> {
+export function resolveCopy(templateName: string, overrides: Record<string, string> = {}): Record<string, string> {
   const schema = EMAIL_COPY_SCHEMA[templateName];
   if (!schema) return { ...overrides };
   return { ...schema.defaults, ...overrides };
