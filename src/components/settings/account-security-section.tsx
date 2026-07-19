@@ -199,10 +199,9 @@ function ChangeEmailBody({
     if (!emailOk || sameAsCurrent) return;
     setSubmitting(true);
     try {
-      const { error } = await supabase.auth.updateUser(
-        { email: trimmedNew },
-        usingNonce ? { nonce: usingNonce } : undefined,
-      );
+      const payload: { email: string; nonce?: string } = { email: trimmedNew };
+      if (usingNonce) payload.nonce = usingNonce;
+      const { error } = await supabase.auth.updateUser(payload);
       if (error) {
         // Supabase asks for reauth on sensitive changes on some projects.
         const code = (error as { code?: string }).code ?? "";
