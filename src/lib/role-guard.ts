@@ -2,7 +2,7 @@ import { queryOptions, type QueryClient } from "@tanstack/react-query";
 import { redirect } from "@tanstack/react-router";
 import { getMyRole } from "@/lib/parent-signup.functions";
 
-export type AppRole = "coach" | "parent" | "athlete";
+export type AppRole = "coach" | "parent" | "athlete" | "org_admin";
 
 export const myRoleQueryOptions = queryOptions({
   queryKey: ["my-role"],
@@ -14,6 +14,7 @@ const ROLE_HOME: Record<AppRole, string> = {
   coach: "/coach",
   parent: "/parent/plans",
   athlete: "/athlete/plans",
+  org_admin: "/org-admin",
 };
 
 /**
@@ -25,7 +26,7 @@ export async function requireRole(expected: AppRole, queryClient: QueryClient) {
   let role: AppRole | null = null;
   try {
     const data = await queryClient.ensureQueryData(myRoleQueryOptions);
-    role = data.role;
+    role = data.role as AppRole | null;
   } catch {
     // If role lookup fails, don't block — let downstream loaders handle it.
     return;

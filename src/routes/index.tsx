@@ -13,6 +13,7 @@ export const Route = createFileRoute("/")({
       if (role === "parent") throw redirect({ to: "/parent/plans" });
       if (role === "coach") throw redirect({ to: "/coach" });
       if (role === "athlete") throw redirect({ to: "/athlete" });
+      if (role === "org_admin") throw redirect({ to: "/org-admin" });
     } catch (e) {
       if (isRedirect(e)) throw e;
       // Otherwise: show picker (e.g. role lookup failed).
