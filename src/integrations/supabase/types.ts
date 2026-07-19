@@ -301,6 +301,60 @@ export type Database = {
           },
         ]
       }
+      billing_events: {
+        Row: {
+          amount_cents: number | null
+          created_at: string
+          currency: string | null
+          environment: string
+          event_type: string
+          id: string
+          payload: Json
+          period_end: string | null
+          period_start: string | null
+          status: string | null
+          stripe_customer_id: string | null
+          stripe_event_id: string
+          stripe_invoice_id: string | null
+          stripe_subscription_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          amount_cents?: number | null
+          created_at?: string
+          currency?: string | null
+          environment?: string
+          event_type: string
+          id?: string
+          payload?: Json
+          period_end?: string | null
+          period_start?: string | null
+          status?: string | null
+          stripe_customer_id?: string | null
+          stripe_event_id: string
+          stripe_invoice_id?: string | null
+          stripe_subscription_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          amount_cents?: number | null
+          created_at?: string
+          currency?: string | null
+          environment?: string
+          event_type?: string
+          id?: string
+          payload?: Json
+          period_end?: string | null
+          period_start?: string | null
+          status?: string | null
+          stripe_customer_id?: string | null
+          stripe_event_id?: string
+          stripe_invoice_id?: string | null
+          stripe_subscription_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       client_errors: {
         Row: {
           created_at: string
