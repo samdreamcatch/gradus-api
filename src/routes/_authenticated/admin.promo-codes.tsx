@@ -660,6 +660,200 @@ function PromoCodesPage() {
           </div>
         )}
       </section>
+
+      <PromoCodeDetailSheet
+        code={detailCode}
+        row={codes.find((c) => c.code === detailCode) ?? null}
+        onOpenChange={(o) => !o && setDetailCode(null)}
+      />
     </div>
   );
 }
+
+function PromoCodeDetailSheet({
+  code,
+  row,
+  onOpenChange,
+}: {
+  code: string | null;
+  row:
+    | {
+        code: string;
+        label: string;
+        notes: string | null;
+        percent_off: number | null;
+        duration: string;
+        duration_in_months: number | null;
+        card_required: boolean | null;
+        applies_to_plans: string[] | null;
+        active: boolean;
+        stripe_promo_id_sandbox: string | null;
+        stripe_promo_id_live: string | null;
+      }
+    | null;
+  onOpenChange: (o: boolean) => void;
+}) {
+  const usersFn = useServerFn(listPromoCodeUsers);
+  const usersQuery = useQuery({
+    queryKey: ["admin-promo-code-users", code],
+    queryFn: () => usersFn({ data: { code: code! } }),
+    enabled: !!code,
+  });
+
+  const users = usersQuery.data?.users ?? [];
+  const grouped = {
+    coach: users.filter((u) => u.kind === "coach"),
+    parent: users.filter((u) => u.kind === "parent"),
+    athlete: users.filter((u) => u.kind === "athlete"),
+  };
+
+  return (
+    <Sheet open={!!code} onOpenChange={onOpenChange}>
+      <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto">
+        <SheetHeader>
+          <SheetTitle className="font-mono uppercase tracking-widest">
+            {code}
+          </SheetTitle>
+          {row && (
+            <SheetDescription className="text-text-primary">
+              {row.label}
+            </SheetDescription>
+          )}
+        </SheetHeader>
+
+        {row && (
+          <div className="mt-6 space-y-6">
+            {row.notes && (
+              <p className="text-sm text-text-secondary whitespace-pre-wrap break-words">
+                {row.notes}
+              </p>
+            )}
+
+            <dl className="grid grid-cols-2 gap-3 text-sm">
+              <div>
+                <dt className="text-xs uppercase tracking-wide text-text-tertiary">
+                  Discount
+                </dt>
+                <dd className="text-text-primary">
+                  {(row.percent_off ?? 0) > 0
+                    ? `${row.percent_off}% off`
+                    : "Attribution only"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs uppercase tracking-wide text-text-tertiary">
+                  Duration
+                </dt>
+                <dd className="text-text-primary">
+                  {row.duration === "repeating"
+                    ? `${row.duration_in_months ?? 0} months`
+                    : "Forever"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs uppercase tracking-wide text-text-tertiary">
+                  Applies to
+                </dt>
+                <dd className="text-text-primary">
+                  {(row.applies_to_plans ?? [])
+                    .map((p) => (p === "coach_pro" ? "Coach Pro" : "Coach"))
+                    .join(", ") || "—"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs uppercase tracking-wide text-text-tertiary">
+                  Card required
+                </dt>
+                <dd className="text-text-primary">
+                  {row.card_required === false ? "No" : "Yes"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs uppercase tracking-wide text-text-tertiary">
+                  Test Stripe
+                </dt>
+                <dd className="text-text-primary">
+                  {row.stripe_promo_id_sandbox ? "Minted" : "Not yet"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs uppercase tracking-wide text-text-tertiary">
+                  Live Stripe
+                </dt>
+                <dd className="text-text-primary">
+                  {row.stripe_promo_id_live ? "Minted" : "Not yet"}
+                </dd>
+              </div>
+            </dl>
+
+            <section className="space-y-3">
+              <h3 className="text-sm font-semibold text-text-primary">
+                Users with this code
+                <span className="ml-2 text-xs text-text-tertiary">
+                  ({users.length})
+                </span>
+              </h3>
+
+              {usersQuery.isLoading ? (
+                <p className="text-xs text-text-tertiary">Loading…</p>
+              ) : users.length === 0 ? (
+                <p className="text-xs text-text-tertiary">
+                  No users have this code applied yet.
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  {(["coach", "parent", "athlete"] as const).map((kind) => {
+                    const list = grouped[kind];
+                    if (list.length === 0) return null;
+                    const heading =
+                      kind === "coach"
+                        ? "Coaches"
+                        : kind === "parent"
+                          ? "Parents"
+                          : "Athletes";
+                    return (
+                      <div key={kind}>
+                        <p className="text-xs uppercase tracking-wide text-text-tertiary mb-1">
+                          {heading} ({list.length})
+                        </p>
+                        <ul className="divide-y divide-divider rounded-md border border-divider">
+                          {list.map((u, i) => (
+                            <li
+                              key={`${u.userId}-${u.source}-${u.environment ?? ""}-${i}`}
+                              className="flex items-center justify-between gap-3 px-3 py-2"
+                            >
+                              <RouterLink
+                                to="/admin/users/$userId"
+                                params={{ userId: u.userId }}
+                                className="min-w-0 flex-1"
+                              >
+                                <p className="truncate text-sm font-medium text-text-primary">
+                                  {u.name}
+                                </p>
+                                <p className="truncate text-xs text-text-secondary">
+                                  {u.email ?? "—"}
+                                </p>
+                              </RouterLink>
+                              <Tag className="shrink-0">
+                                {u.source === "stash"
+                                  ? "stash"
+                                  : u.source === "admin_active"
+                                    ? `live${u.environment ? ` · ${u.environment}` : ""}`
+                                    : "next"}
+                              </Tag>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
+          </div>
+        )}
+      </SheetContent>
+    </Sheet>
+  );
+}
+
