@@ -446,7 +446,7 @@ function PromoCodesPage() {
                           </label>
                         </div>
                         {row.notes && (
-                          <div className="mt-1 text-xs text-text-tertiary line-clamp-1">
+                          <div className="mt-1 text-xs text-text-tertiary whitespace-pre-wrap break-words">
                             {row.notes}
                           </div>
                         )}
