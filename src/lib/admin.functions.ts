@@ -880,7 +880,7 @@ export const getAdminReporting = createServerFn({ method: "POST" })
         .select("id, user_id, is_test, coach_id, created_at"),
       supabaseAdmin
         .from("athletes")
-        .select("id, user_id, parent_id, created_at"),
+        .select("id, user_id, parent_id, created_at, is_test"),
       supabaseAdmin.from("coach_athletes").select("coach_id, athlete_id"),
       supabaseAdmin
         .from("plans")
