@@ -43,10 +43,20 @@ export const container: React.CSSProperties = {
   backgroundColor: colors.paper,
 }
 
+
+// Outer lighter-grey band that wraps the cream paper card, giving the
+// "page-on-page" feel from the founder Welcome email.
+export const outerBand: React.CSSProperties = {
+  backgroundColor: '#EDEEF2',
+  padding: '24px 20px',
+  width: '100%',
+}
+
 // Inner padding wrapper for the "paper" content above the dark callout.
 export const pageInner: React.CSSProperties = {
-  padding: '40px 44px 8px',
+  padding: '24px 44px 8px',
 }
+
 
 // Inner padding wrapper for content BELOW a dark callout (CTA + footer area).
 export const pageInnerBottom: React.CSSProperties = {
@@ -58,7 +68,7 @@ export const pageInnerBottom: React.CSSProperties = {
 // stripe). The source PNG is transparent so the paper card shows through.
 export const wordmarkImg: React.CSSProperties = {
   display: 'block',
-  margin: '0 auto 20px',
+  margin: '0 auto 10px',
   height: 'auto',
   maxWidth: '200px',
   width: '100%',
@@ -69,7 +79,7 @@ export const wordmarkImg: React.CSSProperties = {
 export const topRule: React.CSSProperties = {
   border: 'none',
   borderTop: `1px solid ${colors.ink}`,
-  margin: '0 0 36px',
+  margin: '0 0 20px',
   opacity: 0.9,
 }
 
@@ -80,7 +90,7 @@ export const eyebrow: React.CSSProperties = {
   letterSpacing: '0.14em',
   textTransform: 'uppercase',
   color: colors.meta,
-  margin: '0 0 16px',
+  margin: '0 0 10px',
 }
 
 export const h1: React.CSSProperties = {
@@ -90,8 +100,9 @@ export const h1: React.CSSProperties = {
   lineHeight: 1.08,
   letterSpacing: '-0.02em',
   color: colors.ink,
-  margin: '0 0 28px',
+  margin: '0 0 20px',
 }
+
 
 export const text: React.CSSProperties = {
   fontFamily: fonts.body,

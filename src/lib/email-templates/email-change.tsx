@@ -2,7 +2,7 @@ import * as React from "react";
 import { Body, Button, Container, Head, Heading, Hr, Html, Preview, Text } from "@react-email/components";
 import parse, { domToReact, type HTMLReactParserOptions, type DOMNode } from "html-react-parser";
 import { button, container, divider, eyebrow, footer, h1, link, main, text, colors, buttonWrap } from "./_styles";
-import { Header } from "./_layout";
+import { Header, PageInner, PageShell } from "./_layout";
 import { resolveCopy, renderTemplateString } from "./copy-schema";
 
 interface EmailChangeEmailProps {
@@ -42,16 +42,21 @@ export const EmailChangeEmail = ({ siteName, oldEmail, email, newEmail, confirma
       <Head />
       <Preview>{renderTemplateString(c.preview, vars)}</Preview>
       <Body style={main}>
-        <Container style={container}>
-          <Header />
-          <Text style={eyebrow}>{renderTemplateString(c.eyebrow, vars)}</Text>
-          <Heading style={h1}>{renderTemplateString(c.heading, vars)}</Heading>
-          <Text style={text}>{parse(renderTemplateString(c.body, vars), parser)}</Text>
-          <div style={buttonWrap}><Button style={button} href={confirmationUrl}>{renderTemplateString(c.ctaLabel, vars)}</Button></div>
-          <Hr style={divider} />
-          <Text style={{ ...footer, color: colors.inkSoft }}>{parse(renderTemplateString(c.footer, vars))}</Text>
-        </Container>
+        <PageShell>
+          <Container style={container}>
+            <Header />
+            <PageInner>
+              <Text style={eyebrow}>{renderTemplateString(c.eyebrow, vars)}</Text>
+              <Heading style={h1}>{renderTemplateString(c.heading, vars)}</Heading>
+              <Text style={text}>{parse(renderTemplateString(c.body, vars), parser)}</Text>
+              <div style={buttonWrap}><Button style={button} href={confirmationUrl}>{renderTemplateString(c.ctaLabel, vars)}</Button></div>
+              <Hr style={divider} />
+              <Text style={{ ...footer, color: colors.inkSoft }}>{parse(renderTemplateString(c.footer, vars))}</Text>
+            </PageInner>
+          </Container>
+        </PageShell>
       </Body>
+
     </Html>
   );
 };
