@@ -515,6 +515,7 @@ function RowActions({
   userId,
   userType,
   isDeleted,
+  isTest,
   email,
   onOpenManage,
   onDone,
@@ -522,6 +523,7 @@ function RowActions({
   userId: string;
   userType: string;
   isDeleted: boolean;
+  isTest: boolean;
   email: string;
   onOpenManage: () => void;
   onDone: () => void;
@@ -529,7 +531,9 @@ function RowActions({
   const resetFn = useServerFn(adminResetPassword);
   const restoreFn = useServerFn(adminRestoreUser);
   const toggleTestFn = useServerFn(setUserTestFlag);
+  const hardDeleteFn = useServerFn(deleteTestUser);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [confirmHardDelete, setConfirmHardDelete] = useState(false);
 
   const reset = useMutation({
     mutationFn: () => resetFn({ data: { userId } }),
