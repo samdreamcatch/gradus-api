@@ -1,25 +1,18 @@
-## Add "Buddy Garrity" org-admin test user to the dev panel
+## Reset Leon Gillespie's athlete invite
 
-### What gets built
+Leon's existing invite code `Z8TGQJF5` (parent: Mariah.Slone+1@gmail.com) has never been used but expired on 2026-07-07. Since the code was never claimed, the simplest reset is to extend its expiration another 30 days rather than rotate to a new code.
 
-1. **Seed migration** (idempotent):
-   - Insert auth user `orgadmin@test.dev` with password `VITE_DEV_SEED_PASSWORD` (matches other seeded accounts). Skip if already present.
-   - Look up the existing **Test Club** organization by name; do not create a new org.
-   - Insert an `org_admins` row linking the new user to Test Club.
+### Change
+Run a single data update against `public.athlete_invite_codes` for `athlete_id = b4e3c8d9-50cd-4e64-b5de-94ccf116febd`:
+- `expires_at = now() + interval '30 days'`
+- `used_at = NULL` (defensive, already null)
+- `claimed_at = NULL`, `claimed_by = NULL` (defensive)
 
-2. **`src/lib/parent-signup.functions.ts`** — extend `getMyRole` to check `org_admins` (via `is_any_org_admin`) and return `"org_admin"` when matched. Without this, the root `/` redirect and role guard won't route Buddy into `/org-admin`.
+### What you'll get back
+- Code: `Z8TGQJF5`
+- Invite link: `https://gradus.training/i/Z8TGQJF5`
 
-3. **`src/components/dev/dev-accounts.ts`**:
-   - Add `"org_admin"` to the `DevRole` union.
-   - Add `ONBOARDING_STEPS.org_admin = []` (no onboarding flow).
-   - Append a new `DevAccount`:
-     ```
-     { email: "orgadmin@test.dev", label: "Buddy Garrity",
-       role: "org_admin", note: "Org admin — Test Club", home: "/org-admin" }
-     ```
+This works in the live app immediately — no publish, no code changes.
 
-4. **`src/components/dev/dev-tools.tsx`** — if the switcher UI groups accounts by role or filters on the `DevRole` union, add an "Org admin" section so Buddy renders. (Quick read to confirm before editing; no visible change if it already iterates generically.)
-
-### Not in scope
-- No new organization, no Stripe, no email, no changes to the `/org-admin` UI itself.
-- Coach linking (Tami / David already sit in Test Club per prior seeds) — untouched.
+### Alternative (only if you'd prefer a fresh code)
+Delete the current row and let a new one regenerate on next parent-side view. Say the word and I'll do that instead.
