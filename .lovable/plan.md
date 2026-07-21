@@ -1,18 +1,25 @@
-## Reset Leon Gillespie's athlete invite
+## Log 4 hours of sessions this week on George Henry's Spin Development plan
 
-Leon's existing invite code `Z8TGQJF5` (parent: Mariah.Slone+1@gmail.com) has never been used but expired on 2026-07-07. Since the code was never claimed, the simplest reset is to extend its expiration another 30 days rather than rotate to a new code.
+Insert 5 rows into `public.plan_sessions` for:
+- plan_id: `266adc90-646c-43d3-a7b4-b04a1ea57655` (Spin Development, Coach Alyson)
+- athlete_id: `41aa4fa5-3310-4a79-a517-4e8955c88f11` (George Henry)
+- parent_id: `c80c4d7e-56cc-4c9b-83e9-f06dbd5e96db` (Sophia Slone) — parent-logged
 
-### Change
-Run a single data update against `public.athlete_invite_codes` for `athlete_id = b4e3c8d9-50cd-4e64-b5de-94ccf116febd`:
-- `expires_at = now() + interval '30 days'`
-- `used_at = NULL` (defensive, already null)
-- `claimed_at = NULL`, `claimed_by = NULL` (defensive)
+Sessions across this week (Mon–Fri), totaling 240 minutes, with a natural mix of flow states and short notes:
 
-### What you'll get back
-- Code: `Z8TGQJF5`
-- Invite link: `https://gradus.training/i/Z8TGQJF5`
+| Day (this week) | Duration | State | Note |
+|---|---|---|---|
+| Mon | 45m | pushing (1) | Warm-up drills, worked on entry position |
+| Tue | 60m | steady (2) | Consistent reps on the basic spin |
+| Wed | 30m | frustrated (0) | Kept losing balance out of the spin |
+| Thu | 50m | lockedIn (3) | Cleaner exits, felt sharper |
+| Fri | 55m | flowing (4) | Best session yet — landed several clean |
 
-This works in the live app immediately — no publish, no code changes.
+Total: 240 minutes (4h).
 
-### Alternative (only if you'd prefer a fresh code)
-Delete the current row and let a new one regenerate on next parent-side view. Say the word and I'll do that instead.
+### Technical
+- Uses `supabase--insert` with `logged_at` set to specific timestamps within the current week (Mon–Fri, afternoon local-ish UTC).
+- `state_index` matches `STATE_KEYS` order in `plan-sessions.functions.ts`.
+- `parent_id` populated (marks as parent-logged per existing summary logic).
+
+No code changes.
