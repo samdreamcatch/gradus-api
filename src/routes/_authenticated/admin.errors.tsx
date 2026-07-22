@@ -131,6 +131,43 @@ function GroupCard({ group }: { group: any }) {
         )}
       </div>
 
+      {(group.users?.length > 0 || group.anonCount > 0) && (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {group.users?.slice(0, 8).map((u: any) => {
+            const label = u.name || u.email || u.userId.slice(0, 8)
+            const title = [u.email, u.role, `${u.count}×`].filter(Boolean).join(' · ')
+            return (
+              <span
+                key={u.userId}
+                title={title}
+                className="inline-flex items-center gap-1 rounded-full bg-elevated px-2 py-0.5 text-[11px] text-text-secondary"
+              >
+                <span className="truncate max-w-[160px]">{label}</span>
+                {u.role && (
+                  <span className="text-[10px] uppercase tracking-wider text-text-tertiary">
+                    {u.role}
+                  </span>
+                )}
+                {u.count > 1 && (
+                  <span className="text-[10px] font-bold text-text-tertiary">×{u.count}</span>
+                )}
+              </span>
+            )
+          })}
+          {group.users?.length > 8 && (
+            <span className="inline-flex items-center rounded-full bg-elevated px-2 py-0.5 text-[11px] text-text-tertiary">
+              +{group.users.length - 8} more
+            </span>
+          )}
+          {group.anonCount > 0 && (
+            <span className="inline-flex items-center rounded-full bg-elevated px-2 py-0.5 text-[11px] text-text-tertiary">
+              {group.anonCount} anon
+            </span>
+          )}
+        </div>
+      )}
+
+
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <Chip
           as="button"

@@ -181,7 +181,7 @@ export const listAdminErrorGroups = createServerFn({ method: 'POST' })
 
     const { data: rows, error } = await supabaseAdmin
       .from('client_errors')
-      .select('id,source,message,route,user_id,user_role,created_at')
+      .select('id,source,message,route,user_id,user_email,user_name,user_role,created_at')
       .order('created_at', { ascending: false })
       .limit(data.limit)
     if (error) dbError(error)
@@ -202,6 +202,7 @@ export const listAdminErrorGroups = createServerFn({ method: 'POST' })
       }
     }
 
+    type UserRef = { userId: string; name: string | null; email: string | null; role: string | null; count: number; lastSeen: string }
     type Group = {
       signature: string
       source: string
@@ -210,7 +211,8 @@ export const listAdminErrorGroups = createServerFn({ method: 'POST' })
       lastSeen: string
       firstSeen: string
       routes: Set<string>
-      users: Set<string>
+      users: Map<string, UserRef>
+      anonCount: number
       latestId: string
     }
 
@@ -228,7 +230,8 @@ export const listAdminErrorGroups = createServerFn({ method: 'POST' })
           lastSeen: r.created_at,
           firstSeen: r.created_at,
           routes: new Set(),
-          users: new Set(),
+          users: new Map(),
+          anonCount: 0,
           latestId: r.id,
         }
         groups.set(sig, g)
@@ -241,7 +244,27 @@ export const listAdminErrorGroups = createServerFn({ method: 'POST' })
       }
       if (r.created_at < g.firstSeen) g.firstSeen = r.created_at
       if (r.route) g.routes.add(r.route)
-      if (r.user_id) g.users.add(r.user_id)
+      if (r.user_id) {
+        const existing = g.users.get(r.user_id)
+        if (existing) {
+          existing.count += 1
+          if (r.created_at > existing.lastSeen) existing.lastSeen = r.created_at
+          if (!existing.name && r.user_name) existing.name = r.user_name
+          if (!existing.email && r.user_email) existing.email = r.user_email
+          if (!existing.role && r.user_role) existing.role = r.user_role
+        } else {
+          g.users.set(r.user_id, {
+            userId: r.user_id,
+            name: r.user_name ?? null,
+            email: r.user_email ?? null,
+            role: r.user_role ?? null,
+            count: 1,
+            lastSeen: r.created_at,
+          })
+        }
+      } else {
+        g.anonCount += 1
+      }
     }
 
     // Fetch cached explanations for all signatures present.
@@ -262,6 +285,10 @@ export const listAdminErrorGroups = createServerFn({ method: 'POST' })
         sampleMessage: g.sampleMessage,
         count: g.count,
         uniqueUsers: g.users.size,
+        anonCount: g.anonCount,
+        users: Array.from(g.users.values()).sort((a, b) =>
+          a.lastSeen < b.lastSeen ? 1 : -1,
+        ),
         lastSeen: g.lastSeen,
         firstSeen: g.firstSeen,
         routes: Array.from(g.routes).slice(0, 5),
@@ -272,6 +299,7 @@ export const listAdminErrorGroups = createServerFn({ method: 'POST' })
 
     return { groups: items, totalOccurrences: filtered.length }
   })
+
 
 /**
  * Generate (or return cached) a plain-English AI explanation for one error group.
