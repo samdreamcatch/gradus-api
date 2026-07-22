@@ -265,7 +265,7 @@ function PaywallPage() {
       setSelectedTier(tier);
       try {
         const env = getStripeEnvironment();
-        const returnUrl = `${window.location.origin}/coach/paywall?checkout=return`;
+        const returnUrl = `${window.location.origin}/coach/paywall?checkout=return&session_id={CHECKOUT_SESSION_ID}`;
         const result = await checkoutFn({
           data: {
             priceId: PRICE_MAP[tier][interval].priceId,
