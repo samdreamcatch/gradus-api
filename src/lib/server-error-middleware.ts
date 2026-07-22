@@ -31,8 +31,13 @@ export const withServerErrorLogging = createMiddleware({ type: 'function' }).ser
           (context as any)?.claims?.sub ??
           null
         let route: string | null = null
+        let environment: 'production' | 'preview' = 'production'
         try {
           route = getRequestHeader('referer') ?? null
+          const host = getRequestHeader('host') ?? ''
+          if (host.includes('id-preview') || host.includes('-dev.lovable.app')) {
+            environment = 'preview'
+          }
         } catch {
           // ignore
         }
@@ -43,6 +48,7 @@ export const withServerErrorLogging = createMiddleware({ type: 'function' }).ser
           route,
           userId,
           metadata: { name: e?.name },
+          environment,
         })
       } catch {
         // never let logging mask the original error
