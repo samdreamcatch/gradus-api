@@ -1,19 +1,10 @@
 // Server-only error logging helper.
-// Inserts a row into client_errors and enqueues an alert email
-// to the configured admin recipients on every occurrence.
-//
-// MVP: no dedup, no grouping. One row + one email per occurrence.
+// Inserts a row into client_errors. Per-error alert emails are DISABLED — an
+// hourly digest job at /api/public/hooks/error-digest reads production errors
+// and emails a single summary to admins.
 
-import * as React from 'react'
-import { render } from '@react-email/components'
 import { createClient } from '@supabase/supabase-js'
-import { ErrorAlertEmail } from './email-templates/error-alert'
 
-const ALERT_RECIPIENTS = ['mariah@gradussports.com', 'alyson@gradussports.com']
-const SITE_NAME = 'gradussportsapp'
-const SENDER_DOMAIN = 'support.gradussports.com'
-const FROM_DOMAIN = 'support.gradussports.com'
-const ROOT_DOMAIN = 'gradus.training'
 
 export type ErrorLogInput = {
   source: 'client' | 'server'
