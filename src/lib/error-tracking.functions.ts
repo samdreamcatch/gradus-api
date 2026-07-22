@@ -80,6 +80,16 @@ export const reportClientError = createServerFn({ method: 'POST' })
       // best-effort only
     }
 
+    let environment: 'production' | 'preview' = 'production'
+    try {
+      const host = getRequestHeader('host') ?? ''
+      if (host.includes('id-preview') || host.includes('-dev.lovable.app')) {
+        environment = 'preview'
+      }
+    } catch {
+      // best-effort
+    }
+
     const { logError } = await import('./error-tracking.server')
     await logError({
       source: 'client',
@@ -89,6 +99,7 @@ export const reportClientError = createServerFn({ method: 'POST' })
       userId,
       userAgent: data.userAgent ?? null,
       metadata: data.metadata,
+      environment,
     })
     return { ok: true }
   })

@@ -84,6 +84,7 @@ import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/e
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
+import { Route as ApiPublicHooksErrorDigestRouteImport } from './routes/api/public/hooks/error-digest'
 import { Route as AuthenticatedParentPlansPlanIdRouteImport } from './routes/_authenticated/parent.plans.$planId'
 import { Route as AuthenticatedParentMessagesRoomIdRouteImport } from './routes/_authenticated/parent.messages.$roomId'
 import { Route as AuthenticatedCoachPlansPlanIdRouteImport } from './routes/_authenticated/coach.plans.$planId'
@@ -509,6 +510,12 @@ const ApiPublicPaymentsWebhookRoute =
     path: '/api/public/payments/webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksErrorDigestRoute =
+  ApiPublicHooksErrorDigestRouteImport.update({
+    id: '/api/public/hooks/error-digest',
+    path: '/api/public/hooks/error-digest',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedParentPlansPlanIdRoute =
   AuthenticatedParentPlansPlanIdRouteImport.update({
     id: '/plans/$planId',
@@ -632,6 +639,7 @@ export interface FileRoutesByFullPath {
   '/coach/plans/$planId': typeof AuthenticatedCoachPlansPlanIdRoute
   '/parent/messages/$roomId': typeof AuthenticatedParentMessagesRoomIdRoute
   '/parent/plans/$planId': typeof AuthenticatedParentPlansPlanIdRoute
+  '/api/public/hooks/error-digest': typeof ApiPublicHooksErrorDigestRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -711,6 +719,7 @@ export interface FileRoutesByTo {
   '/coach/plans/$planId': typeof AuthenticatedCoachPlansPlanIdRoute
   '/parent/messages/$roomId': typeof AuthenticatedParentMessagesRoomIdRoute
   '/parent/plans/$planId': typeof AuthenticatedParentPlansPlanIdRoute
+  '/api/public/hooks/error-digest': typeof ApiPublicHooksErrorDigestRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -798,6 +807,7 @@ export interface FileRoutesById {
   '/_authenticated/coach/plans/$planId': typeof AuthenticatedCoachPlansPlanIdRoute
   '/_authenticated/parent/messages/$roomId': typeof AuthenticatedParentMessagesRoomIdRoute
   '/_authenticated/parent/plans/$planId': typeof AuthenticatedParentPlansPlanIdRoute
+  '/api/public/hooks/error-digest': typeof ApiPublicHooksErrorDigestRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -885,6 +895,7 @@ export interface FileRouteTypes {
     | '/coach/plans/$planId'
     | '/parent/messages/$roomId'
     | '/parent/plans/$planId'
+    | '/api/public/hooks/error-digest'
     | '/api/public/payments/webhook'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -964,6 +975,7 @@ export interface FileRouteTypes {
     | '/coach/plans/$planId'
     | '/parent/messages/$roomId'
     | '/parent/plans/$planId'
+    | '/api/public/hooks/error-digest'
     | '/api/public/payments/webhook'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -1050,6 +1062,7 @@ export interface FileRouteTypes {
     | '/_authenticated/coach/plans/$planId'
     | '/_authenticated/parent/messages/$roomId'
     | '/_authenticated/parent/plans/$planId'
+    | '/api/public/hooks/error-digest'
     | '/api/public/payments/webhook'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -1085,6 +1098,7 @@ export interface RootRouteChildren {
   SignupCoachRoute: typeof SignupCoachRoute
   SignupParentRoute: typeof SignupParentRouteWithChildren
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
+  ApiPublicHooksErrorDigestRoute: typeof ApiPublicHooksErrorDigestRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
@@ -1620,6 +1634,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPaymentsWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/error-digest': {
+      id: '/api/public/hooks/error-digest'
+      path: '/api/public/hooks/error-digest'
+      fullPath: '/api/public/hooks/error-digest'
+      preLoaderRoute: typeof ApiPublicHooksErrorDigestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/parent/plans/$planId': {
       id: '/_authenticated/parent/plans/$planId'
       path: '/plans/$planId'
@@ -1934,6 +1955,7 @@ const rootRouteChildren: RootRouteChildren = {
   SignupCoachRoute: SignupCoachRoute,
   SignupParentRoute: SignupParentRouteWithChildren,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
+  ApiPublicHooksErrorDigestRoute: ApiPublicHooksErrorDigestRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
