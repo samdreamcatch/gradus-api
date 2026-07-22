@@ -43,7 +43,9 @@ export const startCoachCheckout = createServerFn({ method: "POST" })
       // Look up email + existing customer id + promo code from coach profile.
       const { data: profile } = await supabase
         .from("coach_profiles")
-        .select("id, stripe_customer_id, stripe_subscription_id, subscription_status, promo_code")
+        .select(
+          "id, stripe_customer_id, stripe_subscription_id, subscription_status, promo_code, founding_coach, founding_pro_trial_used",
+        )
         .eq("user_id", userId)
         .maybeSingle();
 
@@ -197,6 +199,17 @@ export const startCoachCheckout = createServerFn({ method: "POST" })
         }
       }
 
+      // Founding-coach one-time 1-month Coach Pro trial. Only fires when
+      // no other promo code is being redeemed at checkout (typed codes and
+      // profile-attached forever codes win) and the coach hasn't used the
+      // trial before. Card is not collected — Stripe will attempt the first
+      // real charge after 30 days.
+      const useFoundingProTrial =
+        !discountPromoId &&
+        isProPrice &&
+        Boolean(profile?.founding_coach) &&
+        !profile?.founding_pro_trial_used;
+
       const session = await stripe.checkout.sessions.create({
         line_items: [{ price: stripePrice.id, quantity: 1 }],
         mode: "subscription",
@@ -205,22 +218,37 @@ export const startCoachCheckout = createServerFn({ method: "POST" })
         customer: customerId,
         subscription_data: {
           metadata: { userId },
+          ...(useFoundingProTrial && { trial_period_days: 30 }),
         },
         metadata: { userId },
         ...(discountPromoId && {
           discounts: [{ promotion_code: discountPromoId }],
           payment_method_collection: cardRequiredForPromo ? "always" : "if_required",
         }),
+        ...(useFoundingProTrial && !discountPromoId && {
+          payment_method_collection: "if_required",
+        }),
       });
 
       // Persist the promo attribution onto the profile only if it's empty —
-      // never overwrite an earlier code (e.g. FOUNDING_COACH).
+      // never overwrite an earlier code (e.g. WELCOME_BACK).
       if (promoCodeToPersist && profile && !profile.promo_code) {
         await supabase
           .from("coach_profiles")
           .update({ promo_code: promoCodeToPersist })
           .eq("id", profile.id)
           .is("promo_code", null);
+      }
+
+      // Mark the founding Pro trial as used so it can't be reused later.
+      if (useFoundingProTrial && profile) {
+        await supabase
+          .from("coach_profiles")
+          .update({
+            founding_pro_trial_used: true,
+            founding_pro_trial_started_at: new Date().toISOString(),
+          })
+          .eq("id", profile.id);
       }
 
       return { clientSecret: session.client_secret ?? "" };

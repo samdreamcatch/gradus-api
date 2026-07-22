@@ -446,6 +446,7 @@ function PlanSection({
     promoCode: string | null;
     promoLabel: string | null;
     promoPercentOff: number;
+    foundingCoach: boolean;
   };
 }) {
   const navigate = useNavigate();
@@ -510,10 +511,10 @@ function PlanSection({
     );
   }
 
-  // Founding Coach — lifetime-free grandfather cohort (pre-billing signups).
-  // Reads promo_code, not the env flag, so these coaches stay free even
-  // after the paywall is switched on for future signups.
-  if (profile.promoCode === "FOUNDING_COACH") {
+  // Founding Coach — lifetime-free grandfather cohort. Reads the profile
+  // `foundingCoach` flag so it stays authoritative regardless of any promo
+  // code the coach also has attached.
+  if (profile.foundingCoach) {
     return (
       <>
         <PlanSummaryCard

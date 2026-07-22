@@ -563,6 +563,9 @@ export type Database = {
           current_period_end: string | null
           entitlement: string
           first_name: string
+          founding_coach: boolean
+          founding_pro_trial_started_at: string | null
+          founding_pro_trial_used: boolean
           id: string
           is_org_admin: boolean
           is_test: boolean
@@ -586,6 +589,9 @@ export type Database = {
           current_period_end?: string | null
           entitlement?: string
           first_name?: string
+          founding_coach?: boolean
+          founding_pro_trial_started_at?: string | null
+          founding_pro_trial_used?: boolean
           id?: string
           is_org_admin?: boolean
           is_test?: boolean
@@ -609,6 +615,9 @@ export type Database = {
           current_period_end?: string | null
           entitlement?: string
           first_name?: string
+          founding_coach?: boolean
+          founding_pro_trial_started_at?: string | null
+          founding_pro_trial_used?: boolean
           id?: string
           is_org_admin?: boolean
           is_test?: boolean

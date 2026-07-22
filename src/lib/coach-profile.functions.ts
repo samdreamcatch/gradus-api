@@ -5,7 +5,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
 
 import { dbError } from "./db-error";
-import { FOUNDING_COACH_PROMO_CODE, isCoachPaywallEnabled } from "./paywall-flag";
+import { isFoundingCoachWindowOpen } from "./paywall-flag";
 
 export type CoachEntitlement =
   | "pending"
@@ -35,6 +35,8 @@ export interface CoachProfileDTO {
   /** null = unlimited (club). */
   athleteLimit: number | null;
   athleteCount: number;
+  foundingCoach: boolean;
+  foundingProTrialUsed: boolean;
 }
 
 /** Mirrors public.coach_effective_tier() in the DB — DB is authoritative. */
@@ -70,27 +72,29 @@ async function ensureProfile(
   const existing = await supabase
     .from("coach_profiles")
     .select(
-      "id, first_name, last_name, onboarded_at, entitlement, organization_id, subscription_tier, subscription_status, trial_ends_at, current_period_end, stripe_customer_id, promo_code",
+      "id, first_name, last_name, onboarded_at, entitlement, organization_id, subscription_tier, subscription_status, trial_ends_at, current_period_end, stripe_customer_id, promo_code, founding_coach, founding_pro_trial_used",
     )
     .eq("user_id", userId)
     .maybeSingle();
   if (existing.error) dbError(existing.error);
   if (existing.data) {
-    // Founding Coach backfill: while the paywall is disabled, any onboarded
-    // coach still on `pending` (from before the kill-switch shipped) gets
-    // lazily upgraded to lifetime-free on their next profile read.
+    // Founding Coach backfill: while the founding window is open, any
+    // onboarded coach that hasn't been stamped yet (and has no paid
+    // subscription / club) gets lazily upgraded to lifetime-free.
     if (
-      !isCoachPaywallEnabled() &&
+      isFoundingCoachWindowOpen() &&
       existing.data.onboarded_at &&
+      !existing.data.founding_coach &&
       existing.data.entitlement === "pending" &&
-      !existing.data.promo_code
+      !existing.data.stripe_customer_id &&
+      !existing.data.organization_id
     ) {
       const upd = await supabase
         .from("coach_profiles")
-        .update({ entitlement: "promo_free", promo_code: FOUNDING_COACH_PROMO_CODE })
+        .update({ entitlement: "promo_free", founding_coach: true })
         .eq("id", existing.data.id)
         .select(
-          "id, first_name, last_name, onboarded_at, entitlement, organization_id, subscription_tier, subscription_status, trial_ends_at, current_period_end, stripe_customer_id, promo_code",
+          "id, first_name, last_name, onboarded_at, entitlement, organization_id, subscription_tier, subscription_status, trial_ends_at, current_period_end, stripe_customer_id, promo_code, founding_coach, founding_pro_trial_used",
         )
         .single();
       if (upd.error) dbError(upd.error);
@@ -125,9 +129,14 @@ async function ensureProfile(
 
   const created = await supabase
     .from("coach_profiles")
-    .insert({ user_id: userId, first_name: firstName, last_name: lastName })
+    .insert({
+      user_id: userId,
+      first_name: firstName,
+      last_name: lastName,
+      founding_coach: isFoundingCoachWindowOpen(),
+    })
     .select(
-      "id, first_name, last_name, onboarded_at, entitlement, organization_id, subscription_tier, subscription_status, trial_ends_at, current_period_end, stripe_customer_id, promo_code",
+      "id, first_name, last_name, onboarded_at, entitlement, organization_id, subscription_tier, subscription_status, trial_ends_at, current_period_end, stripe_customer_id, promo_code, founding_coach, founding_pro_trial_used",
     )
     .single();
   if (created.error) dbError(created.error);
@@ -200,6 +209,8 @@ export const getCoachProfile = createServerFn({ method: "GET" })
         effectiveTier,
         athleteLimit,
         athleteCount,
+        foundingCoach: Boolean(profile.founding_coach),
+        foundingProTrialUsed: Boolean(profile.founding_pro_trial_used),
       } as CoachProfileDTO,
       levels: (levels.data ?? []).map((r) => ({
         sport: r.sport,
@@ -279,15 +290,15 @@ export const completeOnboarding = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     const supabase = context.supabase as Client;
     const profile = await ensureProfile(supabase, context.userId, (context.claims as { user_metadata?: Record<string, unknown> }).user_metadata);
-    // Founding Coach grandfathering: while the paywall is disabled, stamp
-    // the coach as lifetime-free at onboarding completion. Existing
-    // entitlement (e.g. club_covered) is preserved.
+    // Founding Coach grandfathering: while the founding window is open,
+    // stamp new coaches as founding + complimentary at onboarding completion.
+    // Existing paid/club entitlement is preserved.
     const founding =
-      !isCoachPaywallEnabled() && profile.entitlement === "pending" && !profile.promo_code;
+      isFoundingCoachWindowOpen() && profile.entitlement === "pending" && !profile.founding_coach;
     const patch = {
       onboarded_at: new Date().toISOString(),
       ...(founding
-        ? { entitlement: "promo_free", promo_code: FOUNDING_COACH_PROMO_CODE }
+        ? { entitlement: "promo_free" as const, founding_coach: true }
         : {}),
     };
     const { error } = await supabase

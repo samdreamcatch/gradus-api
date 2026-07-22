@@ -20,7 +20,7 @@ import { validatePromoCode } from "@/lib/promo-codes.functions";
 import { getStripe, getStripeEnvironment } from "@/lib/stripe";
 import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
 import { supabase } from "@/integrations/supabase/client";
-import { FOUNDING_COACH_PROMO_CODE, isCoachPaywallEnabled } from "@/lib/paywall-flag";
+import { isCoachPaywallEnabled } from "@/lib/paywall-flag";
 import {
   OrgSearchCombobox,
   type OrgOption,
@@ -113,8 +113,8 @@ function PaywallPage() {
 
   const entitlement = data?.profile.entitlement ?? "pending";
   const profilePromoCode = data?.profile.promoCode ?? null;
-  const isFoundingCoach =
-    entitlement === "promo_free" && profilePromoCode === FOUNDING_COACH_PROMO_CODE;
+  const isFoundingCoach = Boolean(data?.profile.foundingCoach);
+  const foundingProTrialUsed = Boolean(data?.profile.foundingProTrialUsed);
 
   // Poll for entitlement flip after returning from Stripe.
   useEffect(() => {
@@ -380,9 +380,13 @@ function PaywallPage() {
     );
   }
 
-  const proMonths = promo.status === "valid" ? promo.durationInMonths ?? 0 : 0;
+  const proPromoMonths = promo.status === "valid" ? promo.durationInMonths ?? 0 : 0;
+  // Founding coaches get a one-time 1-month Pro trial (no card, no promo needed).
+  const foundingProTrialAvailable =
+    isFoundingCoach && !foundingProTrialUsed && promo.status !== "valid";
+  const proMonths = proPromoMonths > 0 ? proPromoMonths : foundingProTrialAvailable ? 1 : 0;
   const proCtaLabel =
-    promo.status === "valid" && proMonths > 0
+    proMonths > 0
       ? `Start ${proMonths} month${proMonths === 1 ? "" : "s"} free`
       : "Continue";
 
@@ -623,6 +627,7 @@ function PaywallPage() {
             const coachFoundingActive = tier === "coach" && isFoundingCoach;
             const isCurrentTier = isEntitled && !isFoundingCoach && currentTier === tier;
             const promoAppliesHere = isPro && promo.status === "valid";
+            const foundingTrialHere = isPro && foundingProTrialAvailable && !promoAppliesHere;
 
             return (
               <div
@@ -672,9 +677,14 @@ function PaywallPage() {
                   </>
                 )}
 
-                {promoAppliesHere && proMonths > 0 && (
+                {promoAppliesHere && proPromoMonths > 0 && (
                   <p className="mt-2 inline-flex items-center gap-1 rounded-md bg-accent/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-accent-ink sm:text-[11px]">
-                    <Tag className="h-3 w-3" /> {proMonths} months free · then ${price.monthlyEquivalent}/mo
+                    <Tag className="h-3 w-3" /> {proPromoMonths} months free · then ${price.monthlyEquivalent}/mo
+                  </p>
+                )}
+                {foundingTrialHere && (
+                  <p className="mt-2 inline-flex items-center gap-1 rounded-md bg-accent/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-accent-ink sm:text-[11px]">
+                    <Sparkles className="h-3 w-3" /> Founding · 1 month free · no card today
                   </p>
                 )}
 
