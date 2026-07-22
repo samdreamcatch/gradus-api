@@ -358,6 +358,7 @@ export type Database = {
       client_errors: {
         Row: {
           created_at: string
+          environment: string
           id: string
           message: string
           metadata: Json
@@ -372,6 +373,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          environment?: string
           id?: string
           message: string
           metadata?: Json
@@ -386,6 +388,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          environment?: string
           id?: string
           message?: string
           metadata?: Json
