@@ -71,6 +71,7 @@ type PromoState =
 export const Route = createFileRoute("/_authenticated/coach/paywall")({
   validateSearch: (search: Record<string, unknown>) => ({
     checkout: typeof search.checkout === "string" ? search.checkout : undefined,
+    session_id: typeof search.session_id === "string" ? search.session_id : undefined,
     tier: typeof search.tier === "string" ? search.tier : undefined,
     manage: search.manage === true || search.manage === "true" ? true : undefined,
   }),
