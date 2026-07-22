@@ -123,14 +123,29 @@ function PaywallPage() {
   const isFoundingCoach = Boolean(data?.profile.foundingCoach);
   const foundingProTrialUsed = Boolean(data?.profile.foundingProTrialUsed);
 
-  // Poll for entitlement flip after returning from Stripe.
+  // When Stripe redirects back with a session id, synchronously verify the
+  // session so we don't have to wait for the webhook race. Then keep
+  // polling the profile query as a fallback in case sync propagation lags.
+  const verifiedRef = useRef(false);
   useEffect(() => {
     if (checkoutStatus !== "return") return;
+    if (returnedSessionId && !verifiedRef.current) {
+      verifiedRef.current = true;
+      verifyCheckoutFn({
+        data: { sessionId: returnedSessionId, environment: getStripeEnvironment() },
+      })
+        .catch(() => {
+          /* non-fatal — polling below will pick it up */
+        })
+        .finally(() => {
+          qc.invalidateQueries({ queryKey: ["coach-profile"] });
+        });
+    }
     const iv = window.setInterval(() => {
       qc.invalidateQueries({ queryKey: ["coach-profile"] });
     }, 2000);
     return () => window.clearInterval(iv);
-  }, [checkoutStatus, qc]);
+  }, [checkoutStatus, returnedSessionId, qc, verifyCheckoutFn]);
 
   const isEntitled =
     entitlement === "paid" || entitlement === "promo_free" || entitlement === "club_covered";
