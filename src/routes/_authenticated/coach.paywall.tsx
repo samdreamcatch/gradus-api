@@ -93,8 +93,14 @@ function PaywallPage() {
   const recordLead = useServerFn(recordSilentClubLead);
   const checkoutFn = useServerFn(startCoachCheckout);
   const changeSubFn = useServerFn(changeCoachSubscription);
+  const verifyCheckoutFn = useServerFn(verifyCheckoutSession);
   const validateCode = useServerFn(validatePromoCode);
-  const { checkout: checkoutStatus, tier: preselectedTier, manage: manageIntent } = Route.useSearch();
+  const {
+    checkout: checkoutStatus,
+    session_id: returnedSessionId,
+    tier: preselectedTier,
+    manage: manageIntent,
+  } = Route.useSearch();
 
   const [interval, setInterval] = useState<Interval>("year");
   const [selectedTier, setSelectedTier] = useState<Tier | null>(null);
