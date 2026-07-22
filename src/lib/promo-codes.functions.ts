@@ -302,7 +302,8 @@ export const syncPromoCodeToStripe = createServerFn({ method: "POST" })
         percent_off: row.percent_off,
         duration,
         ...(duration === "repeating" && { duration_in_months: durationMonths! }),
-        name: `${row.label} — ${durationLabel}`,
+        // Stripe coupon.name max length is 40 chars.
+        name: `${row.label} — ${durationLabel}`.slice(0, 40),
         metadata: { gradus_code: row.code },
       });
       // 2. Promotion code (the human-readable label attached at checkout).
