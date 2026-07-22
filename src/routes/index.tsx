@@ -3,12 +3,21 @@ import { ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Logo } from "@/components/logo";
 import { getMyRole } from "@/lib/parent-signup.functions";
+import { checkIsAdmin } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/")({
   beforeLoad: async () => {
     const { data } = await supabase.auth.getSession();
     if (!data.session) return;
     try {
+      // Internal admins take precedence — they may also be seeded as org
+      // admins for testing, but should land in the internal panel.
+      try {
+        const { isAdmin } = await checkIsAdmin();
+        if (isAdmin) throw redirect({ to: "/admin" });
+      } catch (e) {
+        if (isRedirect(e)) throw e;
+      }
       const { role } = await getMyRole();
       if (role === "parent") throw redirect({ to: "/parent/plans" });
       if (role === "coach") throw redirect({ to: "/coach" });
