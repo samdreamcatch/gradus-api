@@ -15,7 +15,7 @@ import {
   clearOrganizationLink,
   recordSilentClubLead,
 } from "@/lib/coach-org.functions";
-import { startCoachCheckout, changeCoachSubscription } from "@/lib/coach-checkout.functions";
+import { startCoachCheckout, changeCoachSubscription, verifyCheckoutSession } from "@/lib/coach-checkout.functions";
 import { validatePromoCode } from "@/lib/promo-codes.functions";
 import { getStripe, getStripeEnvironment } from "@/lib/stripe";
 import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
@@ -71,6 +71,7 @@ type PromoState =
 export const Route = createFileRoute("/_authenticated/coach/paywall")({
   validateSearch: (search: Record<string, unknown>) => ({
     checkout: typeof search.checkout === "string" ? search.checkout : undefined,
+    session_id: typeof search.session_id === "string" ? search.session_id : undefined,
     tier: typeof search.tier === "string" ? search.tier : undefined,
     manage: search.manage === true || search.manage === "true" ? true : undefined,
   }),
@@ -92,8 +93,14 @@ function PaywallPage() {
   const recordLead = useServerFn(recordSilentClubLead);
   const checkoutFn = useServerFn(startCoachCheckout);
   const changeSubFn = useServerFn(changeCoachSubscription);
+  const verifyCheckoutFn = useServerFn(verifyCheckoutSession);
   const validateCode = useServerFn(validatePromoCode);
-  const { checkout: checkoutStatus, tier: preselectedTier, manage: manageIntent } = Route.useSearch();
+  const {
+    checkout: checkoutStatus,
+    session_id: returnedSessionId,
+    tier: preselectedTier,
+    manage: manageIntent,
+  } = Route.useSearch();
 
   const [interval, setInterval] = useState<Interval>("year");
   const [selectedTier, setSelectedTier] = useState<Tier | null>(null);
@@ -116,14 +123,29 @@ function PaywallPage() {
   const isFoundingCoach = Boolean(data?.profile.foundingCoach);
   const foundingProTrialUsed = Boolean(data?.profile.foundingProTrialUsed);
 
-  // Poll for entitlement flip after returning from Stripe.
+  // When Stripe redirects back with a session id, synchronously verify the
+  // session so we don't have to wait for the webhook race. Then keep
+  // polling the profile query as a fallback in case sync propagation lags.
+  const verifiedRef = useRef(false);
   useEffect(() => {
     if (checkoutStatus !== "return") return;
+    if (returnedSessionId && !verifiedRef.current) {
+      verifiedRef.current = true;
+      verifyCheckoutFn({
+        data: { sessionId: returnedSessionId, environment: getStripeEnvironment() },
+      })
+        .catch(() => {
+          /* non-fatal — polling below will pick it up */
+        })
+        .finally(() => {
+          qc.invalidateQueries({ queryKey: ["coach-profile"] });
+        });
+    }
     const iv = window.setInterval(() => {
       qc.invalidateQueries({ queryKey: ["coach-profile"] });
     }, 2000);
     return () => window.clearInterval(iv);
-  }, [checkoutStatus, qc]);
+  }, [checkoutStatus, returnedSessionId, qc, verifyCheckoutFn]);
 
   const isEntitled =
     entitlement === "paid" || entitlement === "promo_free" || entitlement === "club_covered";
@@ -136,6 +158,13 @@ function PaywallPage() {
 
   useEffect(() => {
     if (!isEntitled) return;
+    // Returning from a Stripe checkout always exits the paywall on
+    // entitlement flip, regardless of any upgrade/manage intent that
+    // may have been set on the pre-checkout URL.
+    if (checkoutStatus === "return") {
+      navigate({ to: onboardedAt ? "/coach/roster" : "/coach/onboarding", replace: true });
+      return;
+    }
     // Founding coaches stay to browse Coach Pro upgrade.
     if (isFoundingCoach) return;
     // Any coach who explicitly clicked "Upgrade" stays on the paywall.
@@ -144,7 +173,7 @@ function PaywallPage() {
     if (manageIntent) return;
     // Otherwise: entitled coaches don't need the paywall.
     navigate({ to: onboardedAt ? "/coach/roster" : "/coach/onboarding", replace: true });
-  }, [isEntitled, isFoundingCoach, isUpgradeIntent, manageIntent, onboardedAt, navigate]);
+  }, [isEntitled, isFoundingCoach, isUpgradeIntent, manageIntent, checkoutStatus, onboardedAt, navigate]);
 
   // Auto-apply WELCOME_BACK when the coach was granted it on leaving a club.
   // Pre-fills the promo input, opens the section, and validates in the
@@ -243,7 +272,7 @@ function PaywallPage() {
       setSelectedTier(tier);
       try {
         const env = getStripeEnvironment();
-        const returnUrl = `${window.location.origin}/coach/paywall?checkout=return`;
+        const returnUrl = `${window.location.origin}/coach/paywall?checkout=return&session_id={CHECKOUT_SESSION_ID}`;
         const result = await checkoutFn({
           data: {
             priceId: PRICE_MAP[tier][interval].priceId,
@@ -375,6 +404,26 @@ function PaywallPage() {
               <EmbeddedCheckout />
             </EmbeddedCheckoutProvider>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Returning from Stripe checkout — show a processing state while we
+  // verify the session and wait for entitlement to flip. The redirect
+  // useEffect above navigates to /coach/roster the moment it flips.
+  if (checkoutStatus === "return" && !isEntitled) {
+    return (
+      <div className="min-h-dvh">
+        <PaymentTestModeBanner />
+        <div className="mx-auto flex max-w-md flex-col items-center px-4 py-16 text-center">
+          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-accent/15 text-accent-ink">
+            <Loader2 className="h-6 w-6 animate-spin" />
+          </div>
+          <h1 className="font-display text-h2 text-text-primary">Finishing up…</h1>
+          <p className="mt-2 text-sm text-text-secondary">
+            Confirming your subscription with Stripe. This usually takes a few seconds.
+          </p>
         </div>
       </div>
     );

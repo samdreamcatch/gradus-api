@@ -533,3 +533,66 @@ export const changeCoachSubscription = createServerFn({ method: "POST" })
     }
   });
 
+
+type VerifyCheckoutResult =
+  | { ok: true; status: string; entitled: boolean }
+  | { error: string };
+
+/**
+ * Called by the paywall when Stripe redirects the coach back with
+ * `?session_id={CHECKOUT_SESSION_ID}`. Synchronously fetches the session
+ * + subscription from Stripe and syncs it onto coach_profiles, so the
+ * paywall doesn't have to wait for the webhook to race in.
+ *
+ * Idempotent: uses the same sync helper as the webhook and only touches
+ * the caller's own profile (checked via userId in subscription.metadata).
+ */
+export const verifyCheckoutSession = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        sessionId: z.string().min(1).max(200),
+        environment: z.enum(["sandbox", "live"]),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }): Promise<VerifyCheckoutResult> => {
+    try {
+      const env = data.environment as StripeEnv;
+      const stripe = createStripeClient(env);
+      const session: any = await stripe.checkout.sessions.retrieve(
+        data.sessionId,
+        { expand: ["subscription", "subscription.items.data.price"] },
+      );
+
+      // Only accept sessions minted for this user.
+      if (session.metadata?.userId && session.metadata.userId !== context.userId) {
+        return { error: "Session does not belong to this account." };
+      }
+
+      const sub = session.subscription;
+      if (!sub || typeof sub === "string") {
+        // Payment not yet complete or subscription not attached yet.
+        return { ok: true, status: session.status ?? "open", entitled: false };
+      }
+
+      // Force userId into metadata in case Stripe returned a lean object.
+      if (!sub.metadata?.userId) {
+        sub.metadata = { ...(sub.metadata ?? {}), userId: context.userId };
+      }
+
+      const { syncCoachSubscription } = await import(
+        "@/lib/coach-subscription-sync.server"
+      );
+      const { supabaseAdmin } = await import(
+        "@/integrations/supabase/client.server"
+      );
+      await syncCoachSubscription(supabaseAdmin, sub, env);
+
+      const entitled = ["active", "trialing", "past_due"].includes(sub.status);
+      return { ok: true, status: sub.status, entitled };
+    } catch (error) {
+      return { error: getStripeErrorMessage(error) };
+    }
+  });
