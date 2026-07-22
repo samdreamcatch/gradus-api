@@ -737,7 +737,7 @@ function PaywallPage() {
                 })
               }
             >
-              Keep my current plan
+              No changes - return to my workspace
             </Button>
             <p className="mt-1.5 text-xs text-text-tertiary">
               No changes — return to your workspace.
