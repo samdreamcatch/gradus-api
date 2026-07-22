@@ -70,6 +70,7 @@ export function reportError(
   if (!isProductionHost()) return
   try {
     const { message, stack } = fmtError(error)
+    if (isIgnoredMessage(message)) return
     send({
       message,
       stack: stack ?? null,
