@@ -21,25 +21,47 @@ function read(): VisualViewportState {
   return { height: vv.height, offsetTop: vv.offsetTop, keyboardInset };
 }
 
+function isSame(a: VisualViewportState, b: VisualViewportState): boolean {
+  return (
+    a.height === b.height &&
+    a.offsetTop === b.offsetTop &&
+    a.keyboardInset === b.keyboardInset
+  );
+}
+
 export function useVisualViewport(): VisualViewportState {
   const [state, setState] = useState<VisualViewportState>(() => read());
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     const vv = window.visualViewport;
-    const handler = () => setState(read());
-    handler();
+    let frame = 0;
+    let disposed = false;
+
+    const schedule = () => {
+      if (disposed || frame) return;
+      frame = window.requestAnimationFrame(() => {
+        frame = 0;
+        if (disposed) return;
+        const next = read();
+        setState((prev) => (isSame(prev, next) ? prev : next));
+      });
+    };
+
+    schedule();
     if (vv) {
-      vv.addEventListener("resize", handler);
-      vv.addEventListener("scroll", handler);
+      vv.addEventListener("resize", schedule);
+      vv.addEventListener("scroll", schedule);
     }
-    window.addEventListener("resize", handler);
+    window.addEventListener("resize", schedule);
     return () => {
+      disposed = true;
+      if (frame) window.cancelAnimationFrame(frame);
       if (vv) {
-        vv.removeEventListener("resize", handler);
-        vv.removeEventListener("scroll", handler);
+        vv.removeEventListener("resize", schedule);
+        vv.removeEventListener("scroll", schedule);
       }
-      window.removeEventListener("resize", handler);
+      window.removeEventListener("resize", schedule);
     };
   }, []);
 
