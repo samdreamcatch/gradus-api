@@ -35,6 +35,17 @@ function fmtError(value: unknown): { message: string; stack?: string } {
   }
 }
 
+// Benign browser warnings we deliberately don't report. These fire as
+// window.onerror in some browsers but represent no user-visible failure.
+const IGNORED_MESSAGE_PATTERNS: RegExp[] = [
+  /ResizeObserver loop completed with undelivered notifications/i,
+  /ResizeObserver loop limit exceeded/i,
+]
+
+function isIgnoredMessage(message: string): boolean {
+  return IGNORED_MESSAGE_PATTERNS.some((re) => re.test(message))
+}
+
 function send(payload: {
   message: string
   stack?: string | null
