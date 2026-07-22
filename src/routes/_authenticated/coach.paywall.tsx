@@ -158,6 +158,13 @@ function PaywallPage() {
 
   useEffect(() => {
     if (!isEntitled) return;
+    // Returning from a Stripe checkout always exits the paywall on
+    // entitlement flip, regardless of any upgrade/manage intent that
+    // may have been set on the pre-checkout URL.
+    if (checkoutStatus === "return") {
+      navigate({ to: onboardedAt ? "/coach/roster" : "/coach/onboarding", replace: true });
+      return;
+    }
     // Founding coaches stay to browse Coach Pro upgrade.
     if (isFoundingCoach) return;
     // Any coach who explicitly clicked "Upgrade" stays on the paywall.
@@ -166,7 +173,7 @@ function PaywallPage() {
     if (manageIntent) return;
     // Otherwise: entitled coaches don't need the paywall.
     navigate({ to: onboardedAt ? "/coach/roster" : "/coach/onboarding", replace: true });
-  }, [isEntitled, isFoundingCoach, isUpgradeIntent, manageIntent, onboardedAt, navigate]);
+  }, [isEntitled, isFoundingCoach, isUpgradeIntent, manageIntent, checkoutStatus, onboardedAt, navigate]);
 
   // Auto-apply WELCOME_BACK when the coach was granted it on leaving a club.
   // Pre-fills the promo input, opens the section, and validates in the
