@@ -56,12 +56,6 @@ function describeUnknownError(error: unknown): Record<string, unknown> {
     details[key] = isSensitiveKey(key) ? '[redacted]' : safeDescribeValue(record[key])
   }
 
-  try {
-    details.serialized = JSON.stringify(record)
-  } catch {
-    details.serialized = String(error)
-  }
-
   return details
 }
 
