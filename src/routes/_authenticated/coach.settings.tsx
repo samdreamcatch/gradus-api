@@ -511,9 +511,78 @@ function PlanSection({
     );
   }
 
-  // Founding Coach — lifetime-free grandfather cohort. Reads the profile
-  // `foundingCoach` flag so it stays authoritative regardless of any promo
-  // code the coach also has attached.
+  // Paid — coach or coach pro. Checked before the founding-coach branch so
+  // a founding coach who has upgraded to Coach Pro sees their paid plan.
+  if (profile.entitlement === "paid" && profile.subscriptionTier) {
+    const status = profile.subscriptionStatus;
+    const trialEnd = formatShortDate(profile.trialEndsAt);
+    const periodEnd = formatShortDate(profile.currentPeriodEnd);
+
+    let description: string | undefined;
+    if (status === "trialing" && trialEnd) {
+      description = `Free trial — your card is charged on ${trialEnd}.`;
+    } else if (status === "past_due") {
+      description = "Payment failed — update your card in the billing portal.";
+    } else if (status === "canceled" && periodEnd) {
+      description = `Ends ${periodEnd}. Reactivate anytime.`;
+    } else if (status === "active" && periodEnd) {
+      description = `Renews ${periodEnd}.`;
+    }
+
+    const isFoundingPro =
+      profile.foundingCoach && profile.subscriptionTier === "coach_pro";
+    const statusPill = isFoundingPro
+      ? { label: "Founding · Pro", tone: "accent" as const }
+      : status === "trialing"
+        ? { label: "Trial", tone: "accent" as const }
+        : status === "past_due"
+          ? { label: "Payment failed", tone: "destructive" as const }
+          : status === "canceled"
+            ? { label: "Canceling", tone: "muted" as const }
+            : status === "active"
+              ? { label: "Active", tone: "accent" as const }
+              : null;
+
+    return (
+      <>
+        <PlanSummaryCard
+          icon={<CreditCard className="size-4" />}
+          label={TIER_LABEL[profile.subscriptionTier]}
+          description={description}
+          status={statusPill}
+        />
+        <SettingsList className="mt-3">
+          {promoRow}
+
+          <SettingsButtonRow
+            icon={<CreditCard className="size-4" />}
+            label={openingPortal ? "Opening billing portal…" : "Manage billing"}
+            description="Change card or download invoices."
+            onClick={() => void openPortal()}
+            disabled={openingPortal || !profile.hasStripeCustomer}
+          />
+          <SettingsButtonRow
+            icon={<ArrowLeftRight className="size-4" />}
+            label="Change plan"
+            description={
+              profile.subscriptionTier === "coach_pro"
+                ? "Switch to Coach or apply a promo."
+                : "Switch tier or apply a promo."
+            }
+            onClick={() => navigate({ to: "/coach/paywall", search: { manage: true } })}
+
+          />
+
+          {joinClubRow}
+        </SettingsList>
+        {joinSheet}
+      </>
+    );
+  }
+
+  // Founding Coach — lifetime-free grandfather cohort on the free Coach tier.
+  // Only shown when they don't already have a paid Coach Pro subscription
+  // (that case is handled above).
   if (profile.foundingCoach) {
     return (
       <>
@@ -544,70 +613,6 @@ function PlanSection({
     );
   }
 
-  // Paid — coach or coach pro
-  if (profile.entitlement === "paid" && profile.subscriptionTier) {
-    const status = profile.subscriptionStatus;
-    const trialEnd = formatShortDate(profile.trialEndsAt);
-    const periodEnd = formatShortDate(profile.currentPeriodEnd);
-
-    let description: string | undefined;
-    if (status === "trialing" && trialEnd) {
-      description = `Free trial — your card is charged on ${trialEnd}.`;
-    } else if (status === "past_due") {
-      description = "Payment failed — update your card in the billing portal.";
-    } else if (status === "canceled" && periodEnd) {
-      description = `Ends ${periodEnd}. Reactivate anytime.`;
-    } else if (status === "active" && periodEnd) {
-      description = `Renews ${periodEnd}.`;
-    }
-
-    const statusPill =
-      status === "trialing"
-        ? { label: "Trial", tone: "accent" as const }
-        : status === "past_due"
-          ? { label: "Payment failed", tone: "destructive" as const }
-          : status === "canceled"
-            ? { label: "Canceling", tone: "muted" as const }
-            : status === "active"
-              ? { label: "Active", tone: "accent" as const }
-              : null;
-
-    return (
-      <>
-        <PlanSummaryCard
-          icon={<CreditCard className="size-4" />}
-          label={TIER_LABEL[profile.subscriptionTier]}
-          description={description}
-          status={statusPill}
-        />
-        <SettingsList className="mt-3">
-          {promoRow}
-          
-          <SettingsButtonRow
-            icon={<CreditCard className="size-4" />}
-            label={openingPortal ? "Opening billing portal…" : "Manage billing"}
-            description="Change card or download invoices."
-            onClick={() => void openPortal()}
-            disabled={openingPortal || !profile.hasStripeCustomer}
-          />
-          <SettingsButtonRow
-            icon={<ArrowLeftRight className="size-4" />}
-            label="Change plan"
-            description={
-              profile.subscriptionTier === "coach_pro"
-                ? "Switch to Coach or apply a promo."
-                : "Switch tier or apply a promo."
-            }
-            onClick={() => navigate({ to: "/coach/paywall", search: { manage: true } })}
-
-          />
-
-          {joinClubRow}
-        </SettingsList>
-        {joinSheet}
-      </>
-    );
-  }
 
   // No plan yet — pending.
   return (
