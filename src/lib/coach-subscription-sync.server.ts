@@ -52,7 +52,6 @@ export async function syncCoachSubscription(
     .eq("user_id", userId)
     .maybeSingle();
   const currentEnt = (existing as any)?.entitlement as string | undefined;
-  const preserve = currentEnt === "club_covered" || currentEnt === "promo_free";
   const currentSubId = (existing as any)?.stripe_subscription_id as string | undefined;
   const currentStatus = (existing as any)?.subscription_status as string | undefined;
   const currentTier = (existing as any)?.subscription_tier as string | undefined;
@@ -71,6 +70,14 @@ export async function syncCoachSubscription(
     }
   }
 
+  // Entitlement resolution:
+  //  - An incoming ACTIVE subscription always wins → 'paid'. A founding
+  //    coach who upgrades to Coach Pro must not be left on 'promo_free'.
+  //  - Only preserve club_covered / promo_free when the incoming
+  //    subscription is not active (e.g. incomplete, canceled races).
+  const preserve =
+    !incomingIsActive &&
+    (currentEnt === "club_covered" || currentEnt === "promo_free");
   const nextEnt = preserve
     ? currentEnt
     : incomingIsActive
