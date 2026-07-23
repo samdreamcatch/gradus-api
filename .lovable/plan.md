@@ -1,21 +1,27 @@
-Confirmed context: until September 1, no coaches enter payment info. The Stripe checkout still creates a subscription for eligible coaches (founding coach or a promo code with `card_required = false`), but the subscription status is `trialing` rather than `active`. The `trialing` status is already treated as entitled in both the webhook and the paywall logic, so the plan still works.
+The onboarding route (`/coach/onboarding`) is showing the global error boundary immediately after a new coach signs up. I confirmed the user was created with a valid profile (`founding_coach: true`, `entitlement: pending`). The likely cause is a conflict between the `CoachLayout` using `useSuspenseQuery` for the coach profile while the onboarding route file uses `useQuery` for the same query, and the layout loader returns early for onboarding/paywall without priming the cache. When the onboarding page redirects to `/coach/paywall`, the unmount/remount cycle can throw an uncaught error to the root boundary.
 
-What currently happens
-- The Stripe `return_url` is `/coach/paywall?checkout=return`.
-- After the no-card checkout, Stripe sends the coach back to that URL.
-- The paywall polls the coach profile every 2 seconds until the webhook (or an optimistic server check) sets `entitlement` to `paid`, then it redirects to `/coach/roster`.
-- Right now, because the return page shows the full plan cards before entitlement is detected, it looks like the upgrade failed or looped back to the start.
+### Plan
 
-Proposed fix
-1. Update the Stripe `return_url` to include the checkout session ID: `/coach/paywall?checkout=return&session_id={CHECKOUT_SESSION_ID}`.
-2. Add a synchronous server function `verifyCheckoutSession` that, given the session ID, fetches the Stripe session and its subscription, and writes the subscription state to `coach_profiles` immediately. This works whether the subscription is `trialing` (no card) or `active` (card charged).
-3. Change the paywall return state so it shows only a clear "Processing your subscription…" spinner instead of the plan cards.
-4. On arrival at `?checkout=return`, call `verifyCheckoutSession` first, then poll the coach profile for a short grace period to catch any trailing webhook.
-5. As soon as entitlement is confirmed, redirect to `/coach/roster` (or `/coach/onboarding` if not onboarded).
-6. If verification fails or times out, show a helpful message with a "Return to workspace" button and a prompt to contact support.
-7. Keep the normal paywall browsing experience unchanged when coaches navigate there directly without a `checkout=return` parameter.
+1. **Capture the exact error**
+   - Add a route-level `errorComponent` to `/_authenticated/coach.onboarding.tsx` that logs the error message and stack to the console and renders a friendlier retry UI, so the next reproduction gives us the real error instead of the generic global fallback.
 
-Why this matters for the no-card period
-- Stripe still creates a `trialing` subscription for founding coaches and promo codes, which gives them the same `paid` entitlement as a card-paying coach.
-- The webhook may be delayed or may be delivered to a different environment (e.g., production URL while testing in preview). The synchronous verification ensures the coach gets immediate access without waiting for the webhook.
-- It removes the confusing "I paid / started the trial but I'm back on the paywall" experience before Sept 1.
+2. **Make `CoachLayout` safe for onboarding/paywall**
+   - Replace `useSuspenseQuery` in `PaymentIssueBanner` with `useQuery` (or `useSuspenseQuery` wrapped in a local error boundary) so the layout does not throw to the root boundary if the profile query fails or is still loading during the onboarding redirect.
+   - Keep the banner read-only; it only needs to show the past-due payment banner.
+
+3. **Prime the coach profile in the layout loader for onboarding/paywall**
+   - Update `coach.tsx` `beforeLoad` so it always calls `ensureQueryData(coachProfileQueryOptions)` before rendering, even when the path is `/coach/onboarding` or `/coach/paywall`. This removes the race where the layout queries and the onboarding page query run in parallel with different suspense semantics.
+
+4. **Simplify the onboarding landing experience**
+   - In `coach.onboarding.tsx`, make the redirect-to-paywall logic wait until the profile query has settled, and only redirect if the user is still on the onboarding route. Ensure the redirect uses `replace: true` so the back button stays usable.
+   - If the coach is a founding coach with `entitlement: pending`, let them stay on onboarding and finish the profile; the paywall step should be presented as the final step rather than an immediate navigation, so the user sees the form first.
+
+5. **Verify the fix**
+   - Create a fresh test coach account via the signup flow (or use the dev account switcher to simulate a newly-created coach with `entitlement: pending` and `onboarded_at: null`).
+   - Confirm the onboarding form renders without the global error boundary.
+   - Confirm the paywall step appears at the end of onboarding and the user can complete onboarding and land on `/coach/roster`.
+
+### Technical details
+- Files to edit: `src/routes/_authenticated/coach.tsx`, `src/routes/_authenticated/coach.onboarding.tsx`.
+- No database changes needed unless the reproduced error points to a missing column or DTO field (e.g., `onboardingStep` is referenced in the onboarding page but not present in the DTO; I will verify and add a local default if needed).
+- Keep the existing design system and styling; only change the data loading and redirect logic.

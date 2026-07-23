@@ -94,8 +94,9 @@ function getSnapshot(): State {
   return state;
 }
 
+const SERVER_SNAPSHOT: State = { status: "hidden", platform: "none", deferred: null };
 function getServerSnapshot(): State {
-  return { status: "hidden", platform: "none", deferred: null };
+  return SERVER_SNAPSHOT;
 }
 
 function initOnce() {
