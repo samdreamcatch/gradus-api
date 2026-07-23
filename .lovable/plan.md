@@ -1,15 +1,46 @@
-The onboarding crash immediately after signup appears to be caused by the role gate in `src/lib/role-guard.ts`. For a brand-new coach, the `coach_profiles` row is created lazily by the first `getCoachProfile` call, so `getMyRole()` can return `{ role: null }`. The server-fn wire format may serialize that null as an empty string. `requireRole` currently treats `!role` as "no role yet", but it does **not** treat an empty string the same way, so it falls through to `throw redirect({ to: ROLE_HOME[role] })` where `role` is `""` and `ROLE_HOME[""]` is `undefined`. That redirect-to-undefined is the `undefined` error repeatedly hitting the global error boundary during onboarding.
+# Grandfather founding coaches into multi-sport selection
 
-Plan
+## Problem
+The upcoming Coach / Coach Pro distinction caps basic coaches at **one primary sport** (plus Strength & Conditioning). Right now, founding coaches on the basic `Coach` tier compute `effectiveTier === "coach"`, so the UI would lock Lauren BOBO — a real founding coach with 3 sports — out of two of her existing sports the moment the update ships.
 
-1. Harden `src/lib/role-guard.ts`
-   - Normalize `data.role` so that `null` and `""` are both treated as "no role determined yet".
-   - Guard against an unknown role value by only redirecting when `ROLE_HOME[role]` is a real string.
-   - Keep the existing behavior where a missing role allows the flow to continue to the downstream profile creation (i.e., `coach.tsx` `beforeLoad` → `ensureQueryData(coachProfileQueryOptions)` → `ensureProfile` creates the row).
+## Current behavior
+The cap is applied only in the client UI, in two places:
+- `src/routes/_authenticated/coach.onboarding.tsx` (line 113): `const primarySportCap = effectiveTier === "coach" ? 1 : undefined;`
+- `src/routes/_authenticated/coach.settings.tsx` (line 219): `const maxPrimarySports = effectiveTier === "coach" ? 1 : undefined;`
 
-2. Verify with the existing Playwright reproduction
-   - Re-run the new-coach signup → onboarding path and confirm no "Something broke" / `undefined` error boundary hit.
-   - Confirm the URL ends on `/coach/paywall` for an un-onboarded new coach as expected.
-   - Check that existing coaches, parents, and athletes still pass their role gates unchanged.
+The server function `saveCoachLevels` does not enforce a sport cap; it replaces all rows with whatever the UI sends. So the gating is purely UI-side.
 
-No new pages or components are needed. This is a targeted guard fix in the role-guard utility.
+## Plan
+
+1. **Centralize the multi-sport cap rule** in a small helper in `src/lib/paywall-flag.ts`:
+   ```ts
+   export function maxPrimarySportsForCoach(profile: {
+     effectiveTier: CoachEffectiveTier;
+     foundingCoach: boolean;
+   }): number | undefined {
+     if (profile.foundingCoach) return undefined;
+     return profile.effectiveTier === "coach" ? 1 : undefined;
+   }
+   ```
+   - Founding coaches stay unlimited.
+   - Club and Coach Pro stay unlimited.
+   - New non-founding basic coaches remain capped at 1.
+
+2. **Update both cap call sites** to use the helper and pass `foundingCoach`:
+   - `src/routes/_authenticated/coach.onboarding.tsx`
+   - `src/routes/_authenticated/coach.settings.tsx`
+
+3. **Verify no other cap sites exist** by searching for `maxPrimarySports` / `primarySportCap` and confirm `saveCoachLevels` stays cap-agnostic.
+
+4. **Validation before deployment**:
+   - Confirm Lauren BOBO's `coach_profiles.founding_coach` is `true` and `coach_levels` includes dance, figure_skating, and strength_conditioning.
+   - Check the settings UI renders all three sports editable and the onboarding sport picker does not lock the non-S&C sports.
+
+## Why this is safe
+- No database schema or policy changes are required.
+- Existing coach_levels rows are untouched.
+- The server already accepts multi-sport saves; only the UI was preventing it.
+- Founding coaches remain on the `Coach` tier but are exempt from the single-sport limitation, matching the user's intent that they keep their existing capabilities.
+
+## After this
+If you want a clearer settings label for founding coaches (e.g., "Founding Coach · multi-sport included"), we can add that as a follow-up UI polish.
