@@ -129,16 +129,37 @@ function PaywallPage() {
   // When Stripe redirects back with a session id, synchronously verify the
   // session so we don't have to wait for the webhook race. Then keep
   // polling the profile query as a fallback in case sync propagation lags.
+  // Recovery: if `?checkout=return` is stripped but we stashed a session id
+  // in sessionStorage before opening checkout, pick it up and verify anyway.
   const verifiedRef = useRef(false);
   useEffect(() => {
-    if (checkoutStatus !== "return") return;
-    if (returnedSessionId && !verifiedRef.current) {
+    let sessionId = returnedSessionId ?? null;
+    let isReturn = checkoutStatus === "return";
+    if (!isReturn && typeof window !== "undefined") {
+      const stashed = window.sessionStorage.getItem("gradus.lastCheckoutSessionId");
+      if (stashed) {
+        sessionId = stashed;
+        isReturn = true;
+      }
+    }
+    if (!isReturn) return;
+
+    if (sessionId && !verifiedRef.current) {
       verifiedRef.current = true;
       verifyCheckoutFn({
-        data: { sessionId: returnedSessionId, environment: getStripeEnvironment() },
+        data: { sessionId, environment: getStripeEnvironment() },
       })
-        .catch(() => {
-          /* non-fatal — polling below will pick it up */
+        .then((res) => {
+          if (res && typeof res === "object" && "error" in res) {
+            setVerifyError((res as { error: string }).error);
+            return;
+          }
+          if (typeof window !== "undefined") {
+            window.sessionStorage.removeItem("gradus.lastCheckoutSessionId");
+          }
+        })
+        .catch((err) => {
+          setVerifyError(err instanceof Error ? err.message : "Couldn't confirm checkout");
         })
         .finally(() => {
           qc.invalidateQueries({ queryKey: ["coach-profile"] });
@@ -147,7 +168,18 @@ function PaywallPage() {
     const iv = window.setInterval(() => {
       qc.invalidateQueries({ queryKey: ["coach-profile"] });
     }, 2000);
-    return () => window.clearInterval(iv);
+    // Give up polling after 30s so the user isn't stuck on the spinner.
+    const timeout = window.setTimeout(() => {
+      window.clearInterval(iv);
+      setVerifyError((prev) =>
+        prev ??
+        "We couldn't confirm your subscription in time. If you completed payment, refresh in a moment — your plan should update.",
+      );
+    }, 30_000);
+    return () => {
+      window.clearInterval(iv);
+      window.clearTimeout(timeout);
+    };
   }, [checkoutStatus, returnedSessionId, qc, verifyCheckoutFn]);
 
   const isEntitled =
