@@ -1,0 +1,2 @@
+REVOKE SELECT (stripe_coupon_id_sandbox, stripe_coupon_id_live, stripe_promo_id_sandbox, stripe_promo_id_live) ON public.promo_codes FROM authenticated;
+REVOKE SELECT (stripe_coupon_id_sandbox, stripe_coupon_id_live, stripe_promo_id_sandbox, stripe_promo_id_live) ON public.promo_codes FROM anon;
