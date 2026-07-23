@@ -674,7 +674,11 @@ function PaywallPage() {
           {(Object.keys(PRICE_MAP) as Tier[]).map((tier) => {
             const price = PRICE_MAP[tier][interval];
             const isPro = tier === "coach_pro";
-            const coachFoundingActive = tier === "coach" && isFoundingCoach;
+            // Only mark Coach as "Active" for founding coaches who have
+            // already claimed entitlement. A brand-new founding coach
+            // (entitlement === "pending") needs the CTA to activate.
+            const coachFoundingActive = tier === "coach" && isFoundingCoach && isEntitled;
+            const coachFoundingClaim = tier === "coach" && isFoundingCoach && !isEntitled;
             const isCurrentTier = isEntitled && !isFoundingCoach && currentTier === tier;
             const promoAppliesHere = isPro && promo.status === "valid";
             const foundingTrialHere = isPro && foundingProTrialAvailable && !promoAppliesHere;
