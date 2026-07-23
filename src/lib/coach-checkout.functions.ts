@@ -607,7 +607,7 @@ export const verifyCheckoutSession = createServerFn({ method: "POST" })
         /* unique violation on duplicate verify is fine */
       }
 
-      const entitled = ["active", "trialing", "past_open", "past_due"].includes(sub.status);
+      const entitled = ["active", "trialing", "past_due"].includes(sub.status);
       return { ok: true, status: sub.status, entitled };
     } catch (error) {
       return { error: getStripeErrorMessage(error) };

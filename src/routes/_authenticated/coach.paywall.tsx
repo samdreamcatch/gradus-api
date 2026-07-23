@@ -193,6 +193,11 @@ function PaywallPage() {
 
   useEffect(() => {
     if (!isEntitled) return;
+    // Successful entitlement — clear any stashed checkout id so we don't
+    // re-verify on the next visit.
+    if (typeof window !== "undefined") {
+      window.sessionStorage.removeItem("gradus.lastCheckoutSessionId");
+    }
     // Returning from a Stripe checkout always exits the paywall on
     // entitlement flip, regardless of any upgrade/manage intent that
     // may have been set on the pre-checkout URL.
