@@ -66,7 +66,11 @@ function normalizeUnknownError(error: unknown): Error {
     const message = (error as { message?: unknown }).message
     return new Error(typeof message === 'string' ? message : 'Unknown error')
   }
-  return new Error('Unknown error')
+  if (error && typeof error === 'object') {
+    const name = error.constructor?.name ?? Object.prototype.toString.call(error)
+    return new Error(`Non-Error thrown: ${name}`)
+  }
+  return new Error(`Non-Error thrown: ${String(error)}`)
 }
 
 export class GlobalErrorBoundary extends Component<Props, State> {
@@ -77,11 +81,13 @@ export class GlobalErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: unknown, info: ErrorInfo): void {
+    const thrownValue = describeUnknownError(error)
+    console.error('[GlobalErrorBoundary]', thrownValue)
     reportError(normalizeUnknownError(error), {
       metadata: {
         type: 'react.errorBoundary',
         componentStack: info.componentStack,
-        thrownValue: describeUnknownError(error),
+        thrownValue,
       },
     })
   }
