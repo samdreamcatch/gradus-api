@@ -56,7 +56,6 @@ function OnboardingPage() {
   const { data, isLoading, error } = useQuery(coachProfileQueryOptions);
   const navigate = useNavigate();
 
-  const entitlement = data?.profile.entitlement;
   const onboardedAt = data?.profile.onboardedAt;
   const needsPaywall = Boolean(
     data &&
