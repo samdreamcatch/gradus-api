@@ -97,7 +97,9 @@ function SettingsPage() {
               levels={data.levels}
               summary={sportsSummary}
               effectiveTier={data.profile.effectiveTier}
+              foundingCoach={data.profile.foundingCoach}
             />
+
             <RosterSettingsSection />
             <ConnectionsDisclosure />
 
@@ -204,10 +206,12 @@ function SportsDisclosure({
   levels,
   summary,
   effectiveTier,
+  foundingCoach,
 }: {
   levels: LevelEntry[];
   summary: string;
   effectiveTier: "coach" | "coach_pro" | "club";
+  foundingCoach: boolean;
 }) {
   const initialSports = useMemo(
     () => Array.from(new Set(levels.map((l) => l.sport))) as SportKey[],
@@ -216,7 +220,7 @@ function SportsDisclosure({
   const [sports, setSports] = useState<SportKey[]>(initialSports);
   const [entries, setEntries] = useState<LevelEntry[]>(levels);
   const save = useSaveCoachLevels();
-  const maxPrimarySports = effectiveTier === "coach" ? 1 : undefined;
+  const maxPrimarySports = maxPrimarySportsForCoach({ effectiveTier, foundingCoach });
 
   useEffect(() => {
     setSports(initialSports);

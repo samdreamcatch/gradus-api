@@ -26,7 +26,7 @@ import { claimParentInvite } from "@/lib/parent-signup.functions";
 import { InviteCard } from "@/components/onboarding/invite-card";
 
 import { CoachBottomNav } from "@/components/coach/bottom-nav";
-import { isCoachPaywallEnabled } from "@/lib/paywall-flag";
+import { isCoachPaywallEnabled, maxPrimarySportsForCoach } from "@/lib/paywall-flag";
 
 import { useQuery } from "@tanstack/react-query";
 
@@ -110,7 +110,10 @@ function OnboardingForm({ data }: { data: OnboardingData }) {
     !data.profile.firstName.trim() || !data.profile.lastName.trim();
 
   const effectiveTier = data.profile.effectiveTier;
-  const primarySportCap = effectiveTier === "coach" ? 1 : undefined;
+  const primarySportCap = maxPrimarySportsForCoach({
+    effectiveTier,
+    foundingCoach: data.profile.foundingCoach,
+  });
 
   const [step, setStep] = useState(1);
   const [firstName, setFirstName] = useState(data.profile.firstName);
