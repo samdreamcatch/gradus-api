@@ -60,13 +60,11 @@ function CoachSignupPage() {
   const { invite, promo } = Route.useSearch();
   const navigate = useNavigate();
   const firstCoachDestination = isCoachPaywallEnabled() ? "/coach/paywall" : "/coach";
-  const signupReturnPath = `/signup/coach${new URLSearchParams({
+  const signupReturnSearch = new URLSearchParams({
     ...(invite ? { invite } : {}),
     ...(promo ? { promo } : {}),
-  }).toString() ? `?${new URLSearchParams({
-    ...(invite ? { invite } : {}),
-    ...(promo ? { promo } : {}),
-  }).toString()}` : ""}`;
+  }).toString();
+  const signupReturnPath = `/signup/coach${signupReturnSearch ? `?${signupReturnSearch}` : ""}`;
   const lookupParent = useServerFn(getParentByInviteCode);
   const lookupAdultAthlete = useServerFn(getAdultAthleteByInviteCode);
   const claim = useServerFn(claimParentInvite);
