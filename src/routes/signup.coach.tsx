@@ -60,6 +60,13 @@ function CoachSignupPage() {
   const { invite, promo } = Route.useSearch();
   const navigate = useNavigate();
   const firstCoachDestination = isCoachPaywallEnabled() ? "/coach/paywall" : "/coach";
+  const signupReturnPath = `/signup/coach${new URLSearchParams({
+    ...(invite ? { invite } : {}),
+    ...(promo ? { promo } : {}),
+  }).toString() ? `?${new URLSearchParams({
+    ...(invite ? { invite } : {}),
+    ...(promo ? { promo } : {}),
+  }).toString()}` : ""}`;
   const lookupParent = useServerFn(getParentByInviteCode);
   const lookupAdultAthlete = useServerFn(getAdultAthleteByInviteCode);
   const claim = useServerFn(claimParentInvite);
@@ -165,7 +172,7 @@ function CoachSignupPage() {
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}${firstCoachDestination}`,
+          emailRedirectTo: `${window.location.origin}${signupReturnPath}`,
           captchaToken: verifiedCaptchaToken,
         },
       });
@@ -185,7 +192,7 @@ function CoachSignupPage() {
       await verifyCaptcha({ data: { token: verifiedCaptchaToken } });
       stashPendingAccept();
       const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: `${window.location.origin}${firstCoachDestination}`,
+        redirect_uri: `${window.location.origin}${signupReturnPath}`,
       });
       if (result.error) throw result.error;
       if (!result.redirected) navigate({ to: firstCoachDestination, replace: true });
