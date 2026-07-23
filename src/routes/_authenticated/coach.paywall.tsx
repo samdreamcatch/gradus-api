@@ -107,6 +107,7 @@ function PaywallPage() {
   const [selectedTier, setSelectedTier] = useState<Tier | null>(null);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [claiming, setClaiming] = useState(false);
 
   const [promoOpen, setPromoOpen] = useState(false);
   const [promoInput, setPromoInput] = useState("");
