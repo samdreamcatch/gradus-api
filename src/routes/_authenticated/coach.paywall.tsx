@@ -769,6 +769,7 @@ function PaywallPage() {
                     disabled={loading || tiersDisabled}
                     onClick={async () => {
                       setLoading(true);
+                      setClaiming(true);
                       setSelectedTier(tier);
                       try {
                         const res = await claimFoundingFn();
@@ -780,6 +781,7 @@ function PaywallPage() {
                         });
                       } catch (err) {
                         toast.error(err instanceof Error ? err.message : "Couldn't activate Coach tier");
+                        setClaiming(false);
                       } finally {
                         setLoading(false);
                         setSelectedTier(null);
