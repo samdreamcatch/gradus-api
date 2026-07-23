@@ -165,7 +165,7 @@ function CoachSignupPage() {
         email,
         password,
         options: {
-          emailRedirectTo: window.location.origin + "/coach",
+          emailRedirectTo: `${window.location.origin}${firstCoachDestination}`,
           captchaToken: verifiedCaptchaToken,
         },
       });
@@ -185,7 +185,7 @@ function CoachSignupPage() {
       await verifyCaptcha({ data: { token: verifiedCaptchaToken } });
       stashPendingAccept();
       const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin + "/coach",
+        redirect_uri: `${window.location.origin}${firstCoachDestination}`,
       });
       if (result.error) throw result.error;
       if (!result.redirected) navigate({ to: firstCoachDestination, replace: true });
