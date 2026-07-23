@@ -40,6 +40,7 @@ import { UpgradeToProRow } from "@/components/coach/upgrade-to-pro-row";
 import { SegmentedToggle } from "@/components/plans/segmented-toggle";
 import { createCoachBillingPortalSession } from "@/lib/coach-checkout.functions";
 import { getStripeEnvironment } from "@/lib/stripe";
+import { maxPrimarySportsForCoach } from "@/lib/paywall-flag";
 
 import {
   SettingsGroup,
