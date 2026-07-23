@@ -1,46 +1,21 @@
-# Grandfather founding coaches into multi-sport selection
+I reproduced the crash in the onboarding flow and traced it to a non-Error object being caught by the GlobalErrorBoundary (the error reporter shows "Unknown error" and the React component stack points to `<MatchInnerImpl>`). This almost always means a TanStack Router `Redirect` object, a `Response` object, or a Promise rejection that was not normalized into an Error is being thrown inside the component tree during navigation.
 
-## Problem
-The upcoming Coach / Coach Pro distinction caps basic coaches at **one primary sport** (plus Strength & Conditioning). Right now, founding coaches on the basic `Coach` tier compute `effectiveTier === "coach"`, so the UI would lock Lauren BOBO — a real founding coach with 3 sports — out of two of her existing sports the moment the update ships.
+The live crash happened for a new coach (`testingthis@test.dev`) on `/coach/onboarding` immediately after signup/login. At that moment the profile had `entitlement: pending`, `founding_coach: true`, and `onboarded_at: null`. That combination triggers the `useEffect` redirect in `/coach/onboarding` to `/coach/paywall`. The redirect is happening during the React render cycle, and the `navigate` or route transition is throwing an object that the error boundary reports as "Unknown error".
 
-## Current behavior
-The cap is applied only in the client UI, in two places:
-- `src/routes/_authenticated/coach.onboarding.tsx` (line 113): `const primarySportCap = effectiveTier === "coach" ? 1 : undefined;`
-- `src/routes/_authenticated/coach.settings.tsx` (line 219): `const maxPrimarySports = effectiveTier === "coach" ? 1 : undefined;`
+### What I will change
 
-The server function `saveCoachLevels` does not enforce a sport cap; it replaces all rows with whatever the UI sends. So the gating is purely UI-side.
+1. **Stop redirecting from inside a component `useEffect` in `/coach/onboarding`.** Replace the paywall redirect with a `beforeLoad` check on the onboarding route itself. A `beforeLoad` redirect is the canonical TanStack Router way to short-circuit a route before it renders; it is never caught by a React error boundary.
 
-## Plan
+2. **Guard `OnboardingPage` against the old redirect path.** If the route still renders in any edge case (e.g. data loading race), render a loading/pending state instead of calling `navigate` from `useEffect`. This removes the class of bugs where `navigate` can throw or re-render while the component is still in an unstable state.
 
-1. **Centralize the multi-sport cap rule** in a small helper in `src/lib/paywall-flag.ts`:
-   ```ts
-   export function maxPrimarySportsForCoach(profile: {
-     effectiveTier: CoachEffectiveTier;
-     foundingCoach: boolean;
-   }): number | undefined {
-     if (profile.foundingCoach) return undefined;
-     return profile.effectiveTier === "coach" ? 1 : undefined;
-   }
-   ```
-   - Founding coaches stay unlimited.
-   - Club and Coach Pro stay unlimited.
-   - New non-founding basic coaches remain capped at 1.
+3. **Harden the `GlobalErrorBoundary` so it at least logs the actual non-Error object.** When the thrown value is a TanStack `Redirect`, `Response`, or other object, the boundary will serialize it (`JSON.stringify`, `toString`, or spread its keys) to a server-side debug log and to the console, so the next time this happens we can identify it in seconds instead of guessing.
 
-2. **Update both cap call sites** to use the helper and pass `foundingCoach`:
-   - `src/routes/_authenticated/coach.onboarding.tsx`
-   - `src/routes/_authenticated/coach.settings.tsx`
+4. **Audit `/coach/paywall` and `AuthedLayout` for parallel redirect races.** `AuthedLayout` runs promo/terms `useEffect` server calls on every authed route. While those are unlikely to be the primary trigger, I will verify they are not throwing or racing with the onboarding redirect. If necessary, I will defer those effects until the route is stable (e.g. skip them while the current path is `/coach/onboarding` and redirecting).
 
-3. **Verify no other cap sites exist** by searching for `maxPrimarySports` / `primarySportCap` and confirm `saveCoachLevels` stays cap-agnostic.
+### Verification
 
-4. **Validation before deployment**:
-   - Confirm Lauren BOBO's `coach_profiles.founding_coach` is `true` and `coach_levels` includes dance, figure_skating, and strength_conditioning.
-   - Check the settings UI renders all three sports editable and the onboarding sport picker does not lock the non-S&C sports.
+- Test the new-coach flow in the preview by signing up a fresh coach and confirming they land on `/coach/paywall` without seeing the error screen.
+- Re-run the "reset onboarding" dev flow that I used to reproduce the crash and confirm it no longer throws.
+- Confirm existing onboarded coaches still bypass the paywall and go straight to `/coach/roster`.
 
-## Why this is safe
-- No database schema or policy changes are required.
-- Existing coach_levels rows are untouched.
-- The server already accepts multi-sport saves; only the UI was preventing it.
-- Founding coaches remain on the `Coach` tier but are exempt from the single-sport limitation, matching the user's intent that they keep their existing capabilities.
-
-## After this
-If you want a clearer settings label for founding coaches (e.g., "Founding Coach · multi-sport included"), we can add that as a follow-up UI polish.
+This change is small and targeted; it keeps the existing paywall and founding-coach logic intact, but moves the routing decision out of the component render cycle so React can never catch it as a runtime error.
