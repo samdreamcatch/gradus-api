@@ -108,6 +108,7 @@ function PaywallPage() {
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [claiming, setClaiming] = useState(false);
+  const [verifyError, setVerifyError] = useState<string | null>(null);
 
   const [promoOpen, setPromoOpen] = useState(false);
   const [promoInput, setPromoInput] = useState("");
@@ -128,16 +129,37 @@ function PaywallPage() {
   // When Stripe redirects back with a session id, synchronously verify the
   // session so we don't have to wait for the webhook race. Then keep
   // polling the profile query as a fallback in case sync propagation lags.
+  // Recovery: if `?checkout=return` is stripped but we stashed a session id
+  // in sessionStorage before opening checkout, pick it up and verify anyway.
   const verifiedRef = useRef(false);
   useEffect(() => {
-    if (checkoutStatus !== "return") return;
-    if (returnedSessionId && !verifiedRef.current) {
+    let sessionId = returnedSessionId ?? null;
+    let isReturn = checkoutStatus === "return";
+    if (!isReturn && typeof window !== "undefined") {
+      const stashed = window.sessionStorage.getItem("gradus.lastCheckoutSessionId");
+      if (stashed) {
+        sessionId = stashed;
+        isReturn = true;
+      }
+    }
+    if (!isReturn) return;
+
+    if (sessionId && !verifiedRef.current) {
       verifiedRef.current = true;
       verifyCheckoutFn({
-        data: { sessionId: returnedSessionId, environment: getStripeEnvironment() },
+        data: { sessionId, environment: getStripeEnvironment() },
       })
-        .catch(() => {
-          /* non-fatal — polling below will pick it up */
+        .then((res) => {
+          if (res && typeof res === "object" && "error" in res) {
+            setVerifyError((res as { error: string }).error);
+            return;
+          }
+          if (typeof window !== "undefined") {
+            window.sessionStorage.removeItem("gradus.lastCheckoutSessionId");
+          }
+        })
+        .catch((err) => {
+          setVerifyError(err instanceof Error ? err.message : "Couldn't confirm checkout");
         })
         .finally(() => {
           qc.invalidateQueries({ queryKey: ["coach-profile"] });
@@ -146,7 +168,18 @@ function PaywallPage() {
     const iv = window.setInterval(() => {
       qc.invalidateQueries({ queryKey: ["coach-profile"] });
     }, 2000);
-    return () => window.clearInterval(iv);
+    // Give up polling after 30s so the user isn't stuck on the spinner.
+    const timeout = window.setTimeout(() => {
+      window.clearInterval(iv);
+      setVerifyError((prev) =>
+        prev ??
+        "We couldn't confirm your subscription in time. If you completed payment, refresh in a moment — your plan should update.",
+      );
+    }, 30_000);
+    return () => {
+      window.clearInterval(iv);
+      window.clearTimeout(timeout);
+    };
   }, [checkoutStatus, returnedSessionId, qc, verifyCheckoutFn]);
 
   const isEntitled =
@@ -160,6 +193,11 @@ function PaywallPage() {
 
   useEffect(() => {
     if (!isEntitled) return;
+    // Successful entitlement — clear any stashed checkout id so we don't
+    // re-verify on the next visit.
+    if (typeof window !== "undefined") {
+      window.sessionStorage.removeItem("gradus.lastCheckoutSessionId");
+    }
     // Returning from a Stripe checkout always exits the paywall on
     // entitlement flip, regardless of any upgrade/manage intent that
     // may have been set on the pre-checkout URL.
@@ -285,6 +323,9 @@ function PaywallPage() {
         });
         if ("error" in result) throw new Error(result.error);
         if (!result.clientSecret) throw new Error("No checkout session returned");
+        if (typeof window !== "undefined" && result.sessionId) {
+          window.sessionStorage.setItem("gradus.lastCheckoutSessionId", result.sessionId);
+        }
         setClientSecret(result.clientSecret);
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "Couldn't start checkout");
@@ -419,15 +460,50 @@ function PaywallPage() {
       <div className="min-h-dvh">
         <PaymentTestModeBanner />
         <div className="mx-auto flex max-w-md flex-col items-center px-4 py-16 text-center">
-          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-accent/15 text-accent-ink">
-            <Loader2 className="h-6 w-6 animate-spin" />
-          </div>
-          <h1 className="font-display text-h2 text-text-primary">Finishing up…</h1>
-          <p className="mt-2 text-sm text-text-secondary">
-            {claiming
-              ? "Activating your Coach workspace."
-              : "Confirming your subscription with Stripe. This usually takes a few seconds."}
-          </p>
+          {verifyError ? (
+            <>
+              <h1 className="font-display text-h2 text-text-primary">
+                We couldn't confirm your subscription
+              </h1>
+              <p className="mt-2 text-sm text-text-secondary">{verifyError}</p>
+              <div className="mt-6 flex flex-col gap-2 sm:flex-row">
+                <Button
+                  type="button"
+                  onClick={() => {
+                    verifiedRef.current = false;
+                    setVerifyError(null);
+                    qc.invalidateQueries({ queryKey: ["coach-profile"] });
+                  }}
+                >
+                  Try again
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    if (typeof window !== "undefined") {
+                      window.sessionStorage.removeItem("gradus.lastCheckoutSessionId");
+                    }
+                    navigate({ to: onboardedAt ? "/coach/roster" : "/coach/onboarding", replace: true });
+                  }}
+                >
+                  Back to workspace
+                </Button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-accent/15 text-accent-ink">
+                <Loader2 className="h-6 w-6 animate-spin" />
+              </div>
+              <h1 className="font-display text-h2 text-text-primary">Finishing up…</h1>
+              <p className="mt-2 text-sm text-text-secondary">
+                {claiming
+                  ? "Activating your Coach workspace."
+                  : "Confirming your subscription with Stripe. This usually takes a few seconds."}
+              </p>
+            </>
+          )}
         </div>
       </div>
     );

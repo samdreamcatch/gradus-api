@@ -72,7 +72,7 @@ async function ensureProfile(
   const existing = await supabase
     .from("coach_profiles")
     .select(
-      "id, first_name, last_name, onboarded_at, entitlement, organization_id, subscription_tier, subscription_status, trial_ends_at, current_period_end, stripe_customer_id, promo_code, founding_coach, founding_pro_trial_used",
+      "id, first_name, last_name, onboarded_at, entitlement, organization_id, subscription_tier, subscription_status, trial_ends_at, current_period_end, stripe_customer_id, stripe_subscription_id, promo_code, founding_coach, founding_pro_trial_used",
     )
     .eq("user_id", userId)
     .maybeSingle();
@@ -85,11 +85,16 @@ async function ensureProfile(
     const activelyPaid = ["active", "trialing", "past_due"].includes(
       (existing.data.subscription_status as string | null) ?? "",
     );
+    // Do NOT re-stamp promo_free if the coach already has a Stripe
+    // subscription id — they're mid-checkout or in an incomplete state
+    // and the sync path owns their entitlement.
+    const hasStripeSub = Boolean(existing.data.stripe_subscription_id);
     const needsFoundingStamp =
       isFoundingCoachWindowOpen() &&
       existing.data.onboarded_at &&
       !existing.data.organization_id &&
       !activelyPaid &&
+      !hasStripeSub &&
       (!existing.data.founding_coach || existing.data.entitlement === "pending");
     if (needsFoundingStamp) {
       const upd = await supabase
