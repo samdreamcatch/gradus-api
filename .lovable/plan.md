@@ -1,21 +1,38 @@
-I reproduced the crash in the onboarding flow and traced it to a non-Error object being caught by the GlobalErrorBoundary (the error reporter shows "Unknown error" and the React component stack points to `<MatchInnerImpl>`). This almost always means a TanStack Router `Redirect` object, a `Response` object, or a Promise rejection that was not normalized into an Error is being thrown inside the component tree during navigation.
+# Plan: Fix blank paywall after signup
 
-The live crash happened for a new coach (`testingthis@test.dev`) on `/coach/onboarding` immediately after signup/login. At that moment the profile had `entitlement: pending`, `founding_coach: true`, and `onboarded_at: null`. That combination triggers the `useEffect` redirect in `/coach/onboarding` to `/coach/paywall`. The redirect is happening during the React render cycle, and the `navigate` or route transition is throwing an object that the error boundary reports as "Unknown error".
+## What I know
 
-### What I will change
+- The blank paywall resolves on refresh, which means the component/UI can render correctly; the problem is the **transition from signup to the first authenticated route**.
+- The `_authenticated` layout uses `supabase.auth.getUser()` (server re-validation) in `beforeLoad`. After signup, the `AuthSync` effect in `__root.tsx` clears the entire query cache and calls `router.invalidate()` on `SIGNED_IN`.
+- This combination creates a race: the auth gate can briefly see no authenticated user, redirect to `/login`, and the login page redirects back to `/coach/paywall` — all while the router is transitioning, which can leave the user looking at a blank screen.
+- `coach.paywall.tsx` does not have a `pendingComponent` or `beforeLoad` that handles this transition.
 
-1. **Stop redirecting from inside a component `useEffect` in `/coach/onboarding`.** Replace the paywall redirect with a `beforeLoad` check on the onboarding route itself. A `beforeLoad` redirect is the canonical TanStack Router way to short-circuit a route before it renders; it is never caught by a React error boundary.
+## What I will do
 
-2. **Guard `OnboardingPage` against the old redirect path.** If the route still renders in any edge case (e.g. data loading race), render a loading/pending state instead of calling `navigate` from `useEffect`. This removes the class of bugs where `navigate` can throw or re-render while the component is still in an unstable state.
+1. **Stabilize the auth state after signup**
+   - In `src/routes/signup.coach.tsx`, after `supabase.auth.signUp()` succeeds, wait for `supabase.auth.getUser()` to confirm the session is validated before navigating to `/coach/paywall`.
+   - For the OAuth path, ensure the post-callback effect also waits for a validated session before redirecting.
 
-3. **Harden the `GlobalErrorBoundary` so it at least logs the actual non-Error object.** When the thrown value is a TanStack `Redirect`, `Response`, or other object, the boundary will serialize it (`JSON.stringify`, `toString`, or spread its keys) to a server-side debug log and to the console, so the next time this happens we can identify it in seconds instead of guessing.
+2. **Reduce the `AuthSync` disruption on `SIGNED_IN`**
+   - In `src/routes/__root.tsx`, stop clearing the entire query cache on `SIGNED_IN`. Use `queryClient.invalidateQueries()` instead, or only invalidate the queries that depend on auth identity.
+   - Keep the cache clear for `SIGNED_OUT` in the sign-out handler, but remove the `SIGNED_IN` cache clear from the global `AuthSync` listener.
 
-4. **Audit `/coach/paywall` and `AuthedLayout` for parallel redirect races.** `AuthedLayout` runs promo/terms `useEffect` server calls on every authed route. While those are unlikely to be the primary trigger, I will verify they are not throwing or racing with the onboarding redirect. If necessary, I will defer those effects until the route is stable (e.g. skip them while the current path is `/coach/onboarding` and redirecting).
+3. **Harden the paywall route against auth transitions**
+   - Add a `beforeLoad` to `src/routes/_authenticated/coach.paywall.tsx` that fetches the coach profile via `ensureQueryData` and waits for auth to be stable before rendering.
+   - Add a `pendingComponent` to the paywall route that shows a themed loading state (not a blank page) while the auth gate and profile load.
 
-### Verification
+4. **Add defensive logging**
+   - Add temporary, clearly labeled `console.log` statements in `signup.coach.tsx`, `_authenticated.tsx`, and `coach.paywall.tsx` so the exact sequence can be verified in the browser after the fix.
 
-- Test the new-coach flow in the preview by signing up a fresh coach and confirming they land on `/coach/paywall` without seeing the error screen.
-- Re-run the "reset onboarding" dev flow that I used to reproduce the crash and confirm it no longer throws.
-- Confirm existing onboarded coaches still bypass the paywall and go straight to `/coach/roster`.
+5. **Verify end-to-end**
+   - Run a new coach signup flow in the local dev server using the dev account switcher and a fresh test account to confirm the paywall renders on the first navigation without requiring a refresh.
+   - Confirm that existing coaches can still reach `/coach/paywall` from Settings and that the route still respects the current plan.
 
-This change is small and targeted; it keeps the existing paywall and founding-coach logic intact, but moves the routing decision out of the component render cycle so React can never catch it as a runtime error.
+## Out of scope
+
+- No changes to Stripe pricing, promo codes, or subscription logic.
+- No redesign of the paywall UI beyond the loading/fallback state.
+
+## Questions
+
+Do you want me to proceed with this plan, or do you want to pair down the scope (e.g. only fix `AuthSync` first, or only add the signup wait)?

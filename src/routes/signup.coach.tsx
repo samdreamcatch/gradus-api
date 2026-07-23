@@ -166,7 +166,7 @@ function CoachSignupPage() {
     setLoading(true);
     try {
       stashPendingAccept();
-      const { error } = await supabase.auth.signUp({
+      const { data: signUpData, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -175,6 +175,20 @@ function CoachSignupPage() {
         },
       });
       if (error) throw error;
+      // If email confirmation is required, no session exists yet.
+      if (!signUpData.session) {
+        toast.success("Check your email to confirm your account.");
+        return;
+      }
+      // Wait for the auth client to fully hydrate the session before
+      // navigating into `_authenticated`. Its `beforeLoad` calls
+      // `supabase.auth.getUser()` — navigating before the session is
+      // ready causes an immediate redirect to /login and a blank flash.
+      for (let i = 0; i < 20; i += 1) {
+        const { data } = await supabase.auth.getUser();
+        if (data.user) break;
+        await new Promise((r) => setTimeout(r, 100));
+      }
       navigate({ to: firstCoachDestination, replace: true });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");
