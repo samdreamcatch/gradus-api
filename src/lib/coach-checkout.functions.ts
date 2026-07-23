@@ -651,3 +651,75 @@ export const claimFoundingCoachTier = createServerFn({ method: "POST" })
     if (error) return { error: error.message };
     return { ok: true };
   });
+
+/**
+ * Founding-coach downgrade: cancel any active Coach Pro subscription and
+ * restore the free founding Coach tier without proration/refund logic
+ * running through changeCoachSubscription (which would try to swap to a
+ * paid Coach price). Safe if no active sub exists.
+ */
+export const restoreFoundingCoachTier = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ environment: z.enum(["sandbox", "live"]) }).parse(input),
+  )
+  .handler(async ({ data, context }): Promise<{ ok: true } | { error: string }> => {
+    const { userId, supabase } = context;
+    const { data: profile } = await supabase
+      .from("coach_profiles")
+      .select(
+        "id, founding_coach, organization_id, stripe_customer_id, stripe_subscription_id, subscription_environment",
+      )
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (!profile) return { error: "Coach profile not found." };
+    if (!profile.founding_coach) {
+      return { error: "This account isn't a founding coach." };
+    }
+    if (profile.organization_id) {
+      return { error: "You're on a club plan. Leave the club before switching tiers." };
+    }
+
+    const env: StripeEnv =
+      (profile.subscription_environment as StripeEnv | null) === "live" ||
+      (profile.subscription_environment as StripeEnv | null) === "sandbox"
+        ? (profile.subscription_environment as StripeEnv)
+        : data.environment;
+
+    // Cancel any active-ish subscription on this customer immediately.
+    if (profile.stripe_customer_id) {
+      try {
+        const stripe = createStripeClient(env);
+        const list = await stripe.subscriptions.list({
+          customer: profile.stripe_customer_id,
+          status: "all",
+          limit: 20,
+        });
+        for (const sub of list.data) {
+          if (["active", "trialing", "past_due"].includes(sub.status)) {
+            try {
+              await stripe.subscriptions.cancel(sub.id);
+            } catch (e) {
+              console.warn("restoreFoundingCoachTier: cancel failed", sub.id, e);
+            }
+          }
+        }
+      } catch (error) {
+        return { error: getStripeErrorMessage(error) };
+      }
+    }
+
+    const { error } = await supabase
+      .from("coach_profiles")
+      .update({
+        entitlement: "promo_free",
+        subscription_tier: null,
+        subscription_status: "canceled",
+        stripe_subscription_id: null,
+        trial_ends_at: null,
+        current_period_end: null,
+      })
+      .eq("id", profile.id);
+    if (error) return { error: error.message };
+    return { ok: true };
+  });

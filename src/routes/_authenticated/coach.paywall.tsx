@@ -15,7 +15,7 @@ import {
   clearOrganizationLink,
   recordSilentClubLead,
 } from "@/lib/coach-org.functions";
-import { startCoachCheckout, changeCoachSubscription, verifyCheckoutSession, claimFoundingCoachTier } from "@/lib/coach-checkout.functions";
+import { startCoachCheckout, changeCoachSubscription, verifyCheckoutSession, claimFoundingCoachTier, restoreFoundingCoachTier } from "@/lib/coach-checkout.functions";
 import { validatePromoCode } from "@/lib/promo-codes.functions";
 import { getStripe, getStripeEnvironment } from "@/lib/stripe";
 import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
@@ -95,6 +95,7 @@ function PaywallPage() {
   const changeSubFn = useServerFn(changeCoachSubscription);
   const verifyCheckoutFn = useServerFn(verifyCheckoutSession);
   const claimFoundingFn = useServerFn(claimFoundingCoachTier);
+  const restoreFoundingFn = useServerFn(restoreFoundingCoachTier);
   const validateCode = useServerFn(validatePromoCode);
   const {
     checkout: checkoutStatus,
@@ -539,13 +540,15 @@ function PaywallPage() {
           <div className="mt-4 w-full rounded-xl border border-accent/40 bg-accent/10 px-3 py-2 text-center text-sm">
             <span className="text-text-secondary">Current plan: </span>
             <span className="font-semibold text-text-primary">
-              {isFoundingCoach
-                ? "Founding Coach — free for life"
-                : currentTier === "club"
-                  ? `Club${data?.profile.organizationName ? ` — ${data.profile.organizationName}` : ""}`
-                  : currentTier === "coach_pro"
-                    ? "Coach Pro"
-                    : "Coach"}
+              {currentTier === "club"
+                ? `Club${data?.profile.organizationName ? ` — ${data.profile.organizationName}` : ""}`
+                : entitlement === "paid" && data?.profile.subscriptionTier === "coach_pro"
+                  ? isFoundingCoach ? "Founding Coach Pro" : "Coach Pro"
+                  : entitlement === "paid" && data?.profile.subscriptionTier === "coach"
+                    ? isFoundingCoach ? "Founding Coach" : "Coach"
+                    : isFoundingCoach
+                      ? "Founding Coach — free for life"
+                      : currentTier === "coach_pro" ? "Coach Pro" : "Coach"}
             </span>
           </div>
         )}
@@ -755,14 +758,20 @@ function PaywallPage() {
           {(Object.keys(PRICE_MAP) as Tier[]).map((tier) => {
             const price = PRICE_MAP[tier][interval];
             const isPro = tier === "coach_pro";
-            // Only mark Coach as "Active" for founding coaches who have
-            // already claimed entitlement. A brand-new founding coach
-            // (entitlement === "pending") needs the CTA to activate.
-            const coachFoundingActive = tier === "coach" && isFoundingCoach && isEntitled;
+            const paidTier =
+              entitlement === "paid" ? data?.profile.subscriptionTier ?? null : null;
+            const foundingOnPaidPro =
+              isFoundingCoach && paidTier === "coach_pro";
+            // Founding coach on the free tier (no active paid subscription).
+            const coachFoundingActive =
+              tier === "coach" && isFoundingCoach && isEntitled && !foundingOnPaidPro;
             const coachFoundingClaim = tier === "coach" && isFoundingCoach && !isEntitled;
-            const isCurrentTier = isEntitled && !isFoundingCoach && currentTier === tier;
+            // Founding coach on paid Coach Pro who could switch back to free Coach.
+            const coachFoundingRestore = tier === "coach" && foundingOnPaidPro;
+            const isCurrentTier = paidTier === tier;
             const promoAppliesHere = isPro && promo.status === "valid";
             const foundingTrialHere = isPro && foundingProTrialAvailable && !promoAppliesHere;
+
 
             return (
               <div
@@ -867,6 +876,33 @@ function PaywallPage() {
                     }}
                   >
                     {loading && selectedTier === tier ? "Activating…" : "Continue"}
+                  </Button>
+                ) : coachFoundingRestore ? (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    className="mt-4 w-full text-xs sm:text-sm"
+                    disabled={loading || tiersDisabled}
+                    onClick={async () => {
+                      setLoading(true);
+                      setSelectedTier(tier);
+                      try {
+                        const res = await restoreFoundingFn({
+                          data: { environment: getStripeEnvironment() },
+                        });
+                        if ("error" in res) throw new Error(res.error);
+                        await qc.invalidateQueries({ queryKey: ["coach-profile"] });
+                        toast.success("Switched to your free Founding Coach plan.");
+                        navigate({ to: "/coach/roster" });
+                      } catch (err) {
+                        toast.error(err instanceof Error ? err.message : "Couldn't switch plans");
+                      } finally {
+                        setLoading(false);
+                        setSelectedTier(null);
+                      }
+                    }}
+                  >
+                    {loading && selectedTier === tier ? "Switching…" : "Switch to free Coach"}
                   </Button>
                 ) : (
                   <Button
