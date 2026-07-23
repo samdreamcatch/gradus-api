@@ -81,8 +81,29 @@ export const Route = createFileRoute("/_authenticated/coach/paywall")({
       throw redirect({ to: "/coach/roster" });
     }
   },
+  // Prime the coach profile before rendering so the paywall never mounts
+  // with a null/undefined profile mid-auth-transition. `ensureQueryData`
+  // returns the cached value if it's fresh — cheap on repeat visits.
+  loader: ({ context }) => {
+    context.queryClient.ensureQueryData(coachProfileQueryOptions);
+  },
+  pendingMs: 0,
+  pendingComponent: PaywallPending,
   component: PaywallPage,
 });
+
+function PaywallPending() {
+  return (
+    <div className="flex min-h-dvh items-center justify-center px-4 py-12">
+      <div className="flex flex-col items-center text-center">
+        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-accent/15 text-accent-ink">
+          <Loader2 className="h-6 w-6 animate-spin" />
+        </div>
+        <p className="font-display text-h3 text-text-primary">Loading your plan…</p>
+      </div>
+    </div>
+  );
+}
 
 function PaywallPage() {
   const {
