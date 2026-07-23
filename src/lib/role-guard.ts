@@ -26,11 +26,15 @@ export async function requireRole(expected: AppRole, queryClient: QueryClient) {
   let role: AppRole | null = null;
   try {
     const data = await queryClient.ensureQueryData(myRoleQueryOptions);
-    role = data.role as AppRole | null;
+    // The server may serialize null as an empty string over the wire, so
+    // normalize it back to null before comparing.
+    role = data.role ? (data.role as AppRole) : null;
   } catch {
     // If role lookup fails, don't block — let downstream loaders handle it.
     return;
   }
   if (!role || role === expected) return;
-  throw redirect({ to: ROLE_HOME[role] });
+  const home = ROLE_HOME[role];
+  if (!home) return;
+  throw redirect({ to: home });
 }
