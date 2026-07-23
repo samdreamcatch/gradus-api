@@ -42,11 +42,22 @@ function NotFoundComponent() {
   );
 }
 
-function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
-  console.error(error);
+function normalizeUnknownError(error: unknown): Error {
+  if (error instanceof Error) return error;
+  if (typeof error === "string") return new Error(error);
+  if (error && typeof error === "object" && "message" in error) {
+    const message = (error as { message?: unknown }).message;
+    return new Error(typeof message === "string" ? message : "Something went wrong.");
+  }
+  return new Error("Something went wrong.");
+}
+
+function ErrorComponent({ error, reset }: { error: unknown; reset: () => void }) {
+  const normalizedError = normalizeUnknownError(error);
+  console.error(error ?? normalizedError);
   useEffect(() => {
-    reportError(error, { metadata: { type: 'router.errorComponent' } });
-  }, [error]);
+    reportError(normalizedError, { metadata: { type: 'router.errorComponent' } });
+  }, [normalizedError]);
   const router = useRouter();
   // In production, hide raw error messages — they can leak internal
   // schema names, constraint identifiers, or stack details. Developers
@@ -57,7 +68,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
       <div className="max-w-md text-center">
         <h1 className="text-xl font-semibold">This page didn't load</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          {showDetail ? error.message : "Something went wrong. Please try again."}
+          {showDetail ? normalizedError.message : "Something went wrong. Please try again."}
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button

@@ -31,6 +31,7 @@ import { isCoachPaywallEnabled } from "@/lib/paywall-flag";
 import { useQuery } from "@tanstack/react-query";
 
 const PENDING_INVITE_KEY = "gradus.pendingParentInvite";
+const ENTITLED = new Set(["paid", "promo_free", "club_covered"]);
 
 export const Route = createFileRoute("/_authenticated/coach/onboarding")({
   component: OnboardingPage,
@@ -55,8 +56,12 @@ function OnboardingPage() {
   const { data, isLoading, error } = useQuery(coachProfileQueryOptions);
   const navigate = useNavigate();
 
-  const entitlement = data?.profile.entitlement;
   const onboardedAt = data?.profile.onboardedAt;
+  const needsPaywall = Boolean(
+    data &&
+      isCoachPaywallEnabled() &&
+      !ENTITLED.has(data.profile.entitlement),
+  );
 
   useEffect(() => {
     if (onboardedAt) {
@@ -65,16 +70,10 @@ function OnboardingPage() {
     }
     // Coaches must select a plan (or claim a club code / founding-coach free
     // grant) before completing onboarding.
-    if (
-      isCoachPaywallEnabled() &&
-      entitlement &&
-      entitlement !== "paid" &&
-      entitlement !== "promo_free" &&
-      entitlement !== "club_covered"
-    ) {
+    if (needsPaywall) {
       navigate({ to: "/coach/paywall", replace: true });
     }
-  }, [onboardedAt, entitlement, navigate]);
+  }, [onboardedAt, needsPaywall, navigate]);
 
   if (error) {
     return (
@@ -89,6 +88,13 @@ function OnboardingPage() {
     return (
       <div className="flex min-h-dvh items-center justify-center text-sm text-text-secondary">
         Loading…
+      </div>
+    );
+  }
+  if (onboardedAt || needsPaywall) {
+    return (
+      <div className="flex min-h-dvh items-center justify-center text-sm text-text-secondary">
+        Finishing up…
       </div>
     );
   }

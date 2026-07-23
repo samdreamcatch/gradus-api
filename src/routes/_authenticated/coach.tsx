@@ -1,5 +1,5 @@
 import { createFileRoute, Outlet, redirect, isRedirect, useNavigate } from "@tanstack/react-router";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { AlertTriangle } from "lucide-react";
@@ -70,10 +70,11 @@ function CoachLayout() {
  */
 function PaymentIssueBanner() {
   const navigate = useNavigate();
-  const { data } = useSuspenseQuery(coachProfileQueryOptions);
+  const { data, isLoading, error } = useQuery(coachProfileQueryOptions);
   const portal = useServerFn(createCoachBillingPortalSession);
   const [busy, setBusy] = useState(false);
 
+  if (isLoading || error || !data) return null;
   if (data.profile.subscriptionStatus !== "past_due") return null;
 
   const openPortal = async () => {
