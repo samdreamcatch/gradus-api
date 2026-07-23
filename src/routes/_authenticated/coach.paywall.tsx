@@ -539,13 +539,15 @@ function PaywallPage() {
           <div className="mt-4 w-full rounded-xl border border-accent/40 bg-accent/10 px-3 py-2 text-center text-sm">
             <span className="text-text-secondary">Current plan: </span>
             <span className="font-semibold text-text-primary">
-              {isFoundingCoach
-                ? "Founding Coach — free for life"
-                : currentTier === "club"
-                  ? `Club${data?.profile.organizationName ? ` — ${data.profile.organizationName}` : ""}`
-                  : currentTier === "coach_pro"
-                    ? "Coach Pro"
-                    : "Coach"}
+              {currentTier === "club"
+                ? `Club${data?.profile.organizationName ? ` — ${data.profile.organizationName}` : ""}`
+                : entitlement === "paid" && data?.profile.subscriptionTier === "coach_pro"
+                  ? isFoundingCoach ? "Founding Coach Pro" : "Coach Pro"
+                  : entitlement === "paid" && data?.profile.subscriptionTier === "coach"
+                    ? isFoundingCoach ? "Founding Coach" : "Coach"
+                    : isFoundingCoach
+                      ? "Founding Coach — free for life"
+                      : currentTier === "coach_pro" ? "Coach Pro" : "Coach"}
             </span>
           </div>
         )}
