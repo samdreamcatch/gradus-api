@@ -758,14 +758,20 @@ function PaywallPage() {
           {(Object.keys(PRICE_MAP) as Tier[]).map((tier) => {
             const price = PRICE_MAP[tier][interval];
             const isPro = tier === "coach_pro";
-            // Only mark Coach as "Active" for founding coaches who have
-            // already claimed entitlement. A brand-new founding coach
-            // (entitlement === "pending") needs the CTA to activate.
-            const coachFoundingActive = tier === "coach" && isFoundingCoach && isEntitled;
+            const paidTier =
+              entitlement === "paid" ? data?.profile.subscriptionTier ?? null : null;
+            const foundingOnPaidPro =
+              isFoundingCoach && paidTier === "coach_pro";
+            // Founding coach on the free tier (no active paid subscription).
+            const coachFoundingActive =
+              tier === "coach" && isFoundingCoach && isEntitled && !foundingOnPaidPro;
             const coachFoundingClaim = tier === "coach" && isFoundingCoach && !isEntitled;
-            const isCurrentTier = isEntitled && !isFoundingCoach && currentTier === tier;
+            // Founding coach on paid Coach Pro who could switch back to free Coach.
+            const coachFoundingRestore = tier === "coach" && foundingOnPaidPro;
+            const isCurrentTier = paidTier === tier;
             const promoAppliesHere = isPro && promo.status === "valid";
             const foundingTrialHere = isPro && foundingProTrialAvailable && !promoAppliesHere;
+
 
             return (
               <div
