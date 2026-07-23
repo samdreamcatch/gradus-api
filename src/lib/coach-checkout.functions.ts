@@ -596,3 +596,41 @@ export const verifyCheckoutSession = createServerFn({ method: "POST" })
       return { error: getStripeErrorMessage(error) };
     }
   });
+
+/**
+ * Founding-coach free-Coach-tier claim. Grants entitlement without touching
+ * Stripe so a brand-new coach can proceed through onboarding without a
+ * checkout session. Idempotent — safe to call repeatedly.
+ */
+export const claimFoundingCoachTier = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<{ ok: true } | { error: string }> => {
+    const { userId, supabase } = context;
+    const { data: profile, error: readErr } = await supabase
+      .from("coach_profiles")
+      .select("id, founding_coach, entitlement, organization_id")
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (readErr) return { error: readErr.message };
+    if (!profile) return { error: "Coach profile not found." };
+    if (!profile.founding_coach) {
+      return { error: "This account isn't a founding coach." };
+    }
+    if (profile.organization_id) {
+      // Already covered by a club — no change needed.
+      return { ok: true };
+    }
+    if (
+      profile.entitlement === "promo_free" ||
+      profile.entitlement === "paid" ||
+      profile.entitlement === "club_covered"
+    ) {
+      return { ok: true };
+    }
+    const { error } = await supabase
+      .from("coach_profiles")
+      .update({ entitlement: "promo_free" })
+      .eq("id", profile.id);
+    if (error) return { error: error.message };
+    return { ok: true };
+  });
