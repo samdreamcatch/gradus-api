@@ -29,7 +29,7 @@ const inputSchema = z.object({
     .transform((v) => (v ? v : undefined)),
 });
 
-type CheckoutSessionResult = { clientSecret: string } | { error: string };
+type CheckoutSessionResult = { clientSecret: string; sessionId: string } | { error: string };
 
 export const startCoachCheckout = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
