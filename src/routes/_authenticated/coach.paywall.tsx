@@ -455,15 +455,50 @@ function PaywallPage() {
       <div className="min-h-dvh">
         <PaymentTestModeBanner />
         <div className="mx-auto flex max-w-md flex-col items-center px-4 py-16 text-center">
-          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-accent/15 text-accent-ink">
-            <Loader2 className="h-6 w-6 animate-spin" />
-          </div>
-          <h1 className="font-display text-h2 text-text-primary">Finishing up…</h1>
-          <p className="mt-2 text-sm text-text-secondary">
-            {claiming
-              ? "Activating your Coach workspace."
-              : "Confirming your subscription with Stripe. This usually takes a few seconds."}
-          </p>
+          {verifyError ? (
+            <>
+              <h1 className="font-display text-h2 text-text-primary">
+                We couldn't confirm your subscription
+              </h1>
+              <p className="mt-2 text-sm text-text-secondary">{verifyError}</p>
+              <div className="mt-6 flex flex-col gap-2 sm:flex-row">
+                <Button
+                  type="button"
+                  onClick={() => {
+                    verifiedRef.current = false;
+                    setVerifyError(null);
+                    qc.invalidateQueries({ queryKey: ["coach-profile"] });
+                  }}
+                >
+                  Try again
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    if (typeof window !== "undefined") {
+                      window.sessionStorage.removeItem("gradus.lastCheckoutSessionId");
+                    }
+                    navigate({ to: onboardedAt ? "/coach/roster" : "/coach/onboarding", replace: true });
+                  }}
+                >
+                  Back to workspace
+                </Button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-accent/15 text-accent-ink">
+                <Loader2 className="h-6 w-6 animate-spin" />
+              </div>
+              <h1 className="font-display text-h2 text-text-primary">Finishing up…</h1>
+              <p className="mt-2 text-sm text-text-secondary">
+                {claiming
+                  ? "Activating your Coach workspace."
+                  : "Confirming your subscription with Stripe. This usually takes a few seconds."}
+              </p>
+            </>
+          )}
         </div>
       </div>
     );
