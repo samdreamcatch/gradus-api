@@ -79,19 +79,25 @@ async function ensureProfile(
   if (existing.error) dbError(existing.error);
   if (existing.data) {
     // Founding Coach backfill: while the founding window is open, any
-    // onboarded coach that hasn't been stamped yet (and has no paid
-    // subscription / club) gets lazily upgraded to lifetime-free.
-    if (
+    // onboarded coach that isn't actively on a paid sub or in a club gets
+    // lazily stamped as founding + lifetime-free. This runs regardless of
+    // any prior entitlement value so returning coaches also benefit.
+    const activelyPaid = ["active", "trialing", "past_due"].includes(
+      (existing.data.subscription_status as string | null) ?? "",
+    );
+    const needsFoundingStamp =
       isFoundingCoachWindowOpen() &&
       existing.data.onboarded_at &&
-      !existing.data.founding_coach &&
-      existing.data.entitlement === "pending" &&
-      !existing.data.stripe_customer_id &&
-      !existing.data.organization_id
-    ) {
+      !existing.data.organization_id &&
+      !activelyPaid &&
+      (!existing.data.founding_coach || existing.data.entitlement === "pending");
+    if (needsFoundingStamp) {
       const upd = await supabase
         .from("coach_profiles")
-        .update({ entitlement: "promo_free", founding_coach: true })
+        .update({
+          entitlement: "promo_free",
+          founding_coach: true,
+        })
         .eq("id", existing.data.id)
         .select(
           "id, first_name, last_name, onboarded_at, entitlement, organization_id, subscription_tier, subscription_status, trial_ends_at, current_period_end, stripe_customer_id, promo_code, founding_coach, founding_pro_trial_used",
@@ -291,10 +297,11 @@ export const completeOnboarding = createServerFn({ method: "POST" })
     const supabase = context.supabase as Client;
     const profile = await ensureProfile(supabase, context.userId, (context.claims as { user_metadata?: Record<string, unknown> }).user_metadata);
     // Founding Coach grandfathering: while the founding window is open,
-    // stamp new coaches as founding + complimentary at onboarding completion.
+    // stamp coaches finishing onboarding as founding + complimentary.
     // Existing paid/club entitlement is preserved.
-    const founding =
-      isFoundingCoachWindowOpen() && profile.entitlement === "pending" && !profile.founding_coach;
+    const preserve =
+      profile.entitlement === "paid" || profile.entitlement === "club_covered";
+    const founding = isFoundingCoachWindowOpen() && !preserve;
     const patch = {
       onboarded_at: new Date().toISOString(),
       ...(founding
