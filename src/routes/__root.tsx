@@ -172,8 +172,14 @@ function AuthSync() {
       if (event !== "SIGNED_OUT" && event !== "SIGNED_IN" && event !== "USER_UPDATED") {
         return;
       }
-      if (event === "SIGNED_OUT" || event === "SIGNED_IN" || event === "USER_UPDATED") {
+      // Only wipe the cache on sign-out. On SIGNED_IN / USER_UPDATED we
+      // invalidate instead — clearing mid-navigation drops in-flight queries
+      // (e.g. the paywall's coach profile query right after signup) and can
+      // leave the user on a blank screen until they refresh.
+      if (event === "SIGNED_OUT") {
         queryClient.clear();
+      } else {
+        queryClient.invalidateQueries();
       }
       router.invalidate();
     });
