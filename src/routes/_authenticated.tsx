@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { createFileRoute, Outlet, redirect, useRouterState } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { LessonWrapUpProvider } from "@/components/coach/lesson-wrap-up-provider";
 import { ActiveSessionProvider } from "@/lib/active-session-store";
@@ -18,6 +19,8 @@ const MAX_TERMS_ATTEMPTS = 5;
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
+  pendingMs: 0,
+  pendingComponent: AuthPending,
   beforeLoad: async ({ location }) => {
     const { data, error } = await supabase.auth.getUser();
     if (error || !data.user) {
@@ -27,6 +30,19 @@ export const Route = createFileRoute("/_authenticated")({
   },
   component: AuthedLayout,
 });
+
+function AuthPending() {
+  return (
+    <div className="flex min-h-dvh items-center justify-center px-4 py-12">
+      <div className="flex flex-col items-center text-center">
+        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-accent/15 text-accent-ink">
+          <Loader2 className="h-6 w-6 animate-spin" />
+        </div>
+        <p className="font-display text-h3 text-text-primary">Loading Gradus…</p>
+      </div>
+    </div>
+  );
+}
 
 function AuthedLayout() {
   const { user } = Route.useRouteContext();

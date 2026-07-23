@@ -27,6 +27,7 @@ import {
   clearPendingTermsAccept,
 } from "@/lib/terms";
 import { savePendingPromoCode, clearPendingPromoCode } from "@/lib/pending-promo-code";
+import { isCoachPaywallEnabled } from "@/lib/paywall-flag";
 
 
 const PENDING_INVITE_KEY = "gradus.pendingParentInvite";
@@ -58,6 +59,12 @@ type PendingAction = "email" | "google";
 function CoachSignupPage() {
   const { invite, promo } = Route.useSearch();
   const navigate = useNavigate();
+  const firstCoachDestination = isCoachPaywallEnabled() ? "/coach/paywall" : "/coach";
+  const signupReturnSearch = new URLSearchParams({
+    ...(invite ? { invite } : {}),
+    ...(promo ? { promo } : {}),
+  }).toString();
+  const signupReturnPath = `/signup/coach${signupReturnSearch ? `?${signupReturnSearch}` : ""}`;
   const lookupParent = useServerFn(getParentByInviteCode);
   const lookupAdultAthlete = useServerFn(getAdultAthleteByInviteCode);
   const claim = useServerFn(claimParentInvite);
@@ -93,7 +100,7 @@ function CoachSignupPage() {
       const { data } = await supabase.auth.getSession();
       if (!data.session) return;
       if (!invite) {
-        navigate({ to: "/coach" });
+        navigate({ to: firstCoachDestination, replace: true });
         return;
       }
       // Try parent invite first; fall back to adult-athlete invite.
@@ -117,13 +124,13 @@ function CoachSignupPage() {
       } catch (e) {
         if (!cancelled) toast.error(e instanceof Error ? e.message : "Couldn't claim invite");
       } finally {
-        if (!cancelled) navigate({ to: "/coach" });
+        if (!cancelled) navigate({ to: firstCoachDestination, replace: true });
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [invite, claim, claimAdultAthlete, navigate]);
+  }, [invite, claim, claimAdultAthlete, firstCoachDestination, navigate]);
 
   const { data: parent } = useQuery({
     queryKey: ["parent-by-invite-code", invite ?? null],
@@ -163,12 +170,12 @@ function CoachSignupPage() {
         email,
         password,
         options: {
-          emailRedirectTo: window.location.origin + "/coach",
+          emailRedirectTo: `${window.location.origin}${signupReturnPath}`,
           captchaToken: verifiedCaptchaToken,
         },
       });
       if (error) throw error;
-      navigate({ to: "/coach" });
+      navigate({ to: firstCoachDestination, replace: true });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");
       resetCaptcha();
@@ -183,10 +190,10 @@ function CoachSignupPage() {
       await verifyCaptcha({ data: { token: verifiedCaptchaToken } });
       stashPendingAccept();
       const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin + "/coach",
+        redirect_uri: `${window.location.origin}${signupReturnPath}`,
       });
       if (result.error) throw result.error;
-      if (!result.redirected) navigate({ to: "/coach" });
+      if (!result.redirected) navigate({ to: firstCoachDestination, replace: true });
     } catch (e) {
       // OAuth cancelled / popup blocked / provider error — clear any stash
       // so it can't cross-apply to another account signed in later.
