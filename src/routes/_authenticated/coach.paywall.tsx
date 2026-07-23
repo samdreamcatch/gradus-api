@@ -95,6 +95,7 @@ function PaywallPage() {
   const changeSubFn = useServerFn(changeCoachSubscription);
   const verifyCheckoutFn = useServerFn(verifyCheckoutSession);
   const claimFoundingFn = useServerFn(claimFoundingCoachTier);
+  const restoreFoundingFn = useServerFn(restoreFoundingCoachTier);
   const validateCode = useServerFn(validatePromoCode);
   const {
     checkout: checkoutStatus,
