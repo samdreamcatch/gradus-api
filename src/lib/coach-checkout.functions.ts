@@ -590,7 +590,24 @@ export const verifyCheckoutSession = createServerFn({ method: "POST" })
       );
       await syncCoachSubscription(supabaseAdmin, sub, env);
 
-      const entitled = ["active", "trialing", "past_due"].includes(sub.status);
+      // Best-effort audit row so support can see the verify path fired.
+      try {
+        await supabaseAdmin.from("billing_events").insert({
+          user_id: context.userId,
+          stripe_event_id: `verify_${session.id}`,
+          event_type: "checkout.session.verified",
+          stripe_customer_id:
+            typeof sub.customer === "string" ? sub.customer : sub.customer?.id ?? null,
+          stripe_subscription_id: sub.id,
+          status: sub.status,
+          environment: env,
+          payload: { source: "verifyCheckoutSession" },
+        });
+      } catch {
+        /* unique violation on duplicate verify is fine */
+      }
+
+      const entitled = ["active", "trialing", "past_open", "past_due"].includes(sub.status);
       return { ok: true, status: sub.status, entitled };
     } catch (error) {
       return { error: getStripeErrorMessage(error) };
