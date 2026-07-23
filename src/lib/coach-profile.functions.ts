@@ -160,6 +160,16 @@ export const getCoachProfile = createServerFn({ method: "GET" })
     const supabase = context.supabase as Client;
     const profile = await ensureProfile(supabase, context.userId, (context.claims as { user_metadata?: Record<string, unknown> }).user_metadata);
 
+    const promoLookup = async () => {
+      if (!profile.promo_code) return { data: null, error: null } as const;
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      return supabaseAdmin
+        .from("promo_codes")
+        .select("label, percent_off, active")
+        .eq("code", profile.promo_code)
+        .maybeSingle();
+    };
+
     const [levels, org, promo] = await Promise.all([
       supabase
         .from("coach_levels")
@@ -172,17 +182,12 @@ export const getCoachProfile = createServerFn({ method: "GET" })
             .eq("id", profile.organization_id)
             .maybeSingle()
         : Promise.resolve({ data: null, error: null } as const),
-      profile.promo_code
-        ? supabase
-            .from("promo_codes")
-            .select("label, percent_off, active")
-            .eq("code", profile.promo_code)
-            .maybeSingle()
-        : Promise.resolve({ data: null, error: null } as const),
+      promoLookup(),
     ]);
     if (levels.error) dbError(levels.error);
     if (org.error) dbError(org.error);
     if (promo.error) dbError(promo.error);
+
 
     const promoActive = promo.data?.active !== false;
 
