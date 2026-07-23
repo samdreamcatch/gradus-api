@@ -251,7 +251,7 @@ export const startCoachCheckout = createServerFn({ method: "POST" })
           .eq("id", profile.id);
       }
 
-      return { clientSecret: session.client_secret ?? "" };
+      return { clientSecret: session.client_secret ?? "", sessionId: session.id };
     } catch (error) {
       return { error: getStripeErrorMessage(error) };
     }

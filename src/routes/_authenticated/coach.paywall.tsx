@@ -318,6 +318,9 @@ function PaywallPage() {
         });
         if ("error" in result) throw new Error(result.error);
         if (!result.clientSecret) throw new Error("No checkout session returned");
+        if (typeof window !== "undefined" && result.sessionId) {
+          window.sessionStorage.setItem("gradus.lastCheckoutSessionId", result.sessionId);
+        }
         setClientSecret(result.clientSecret);
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "Couldn't start checkout");
