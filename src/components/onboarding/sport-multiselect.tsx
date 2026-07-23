@@ -8,14 +8,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandItem,
-  CommandList,
-  CommandSeparator,
-} from "@/components/ui/command";
 import { cn } from "@/lib/utils";
 import { SPORTS } from "@/lib/coach-sports";
 
@@ -73,7 +65,13 @@ export function SportMultiselect({
     atCap && !isSelected(key) && !isSecondaryOnly(key);
   // Custom sports always count as primary; hide the input entirely when capped.
   const showCustom = allowCustom && !atCap;
-
+  const availableSports = [...SPORTS]
+    .sort((a, b) => {
+      if (a.key === "strength_conditioning") return -1;
+      if (b.key === "strength_conditioning") return 1;
+      return a.label.localeCompare(b.label);
+    })
+    .filter((s) => !isLocked(s.key));
 
   const handleAdd = () => {
     const label = customInput.trim();
@@ -110,57 +108,58 @@ export function SportMultiselect({
           align="start"
           className="w-[--radix-popover-trigger-width] min-w-[280px] p-0"
         >
-          <Command>
-            <CommandList>
-              <CommandEmpty>No sports.</CommandEmpty>
-              <CommandGroup>
-                {[...SPORTS].sort((a, b) => {
-                  if (a.key === "strength_conditioning") return -1;
-                  if (b.key === "strength_conditioning") return 1;
-                  return a.label.localeCompare(b.label);
-                }).filter((s) => !isLocked(s.key)).map((s) => {
-                  const sel = isSelected(s.key);
-                  return (
-                    <CommandItem
-                      key={s.key}
-                      value={s.label}
-                      onSelect={() => {
-                        onToggle({ key: s.key, label: s.label, custom: false });
-                      }}
+          <div className="max-h-80 overflow-y-auto py-1" role="listbox" aria-label="Sports">
+            {availableSports.length === 0 && customSports.length === 0 && (
+              <p className="px-3 py-6 text-center text-sm text-text-secondary">No sports.</p>
+            )}
+            <div className="p-1">
+              {availableSports.map((s) => {
+                const sel = isSelected(s.key);
+                return (
+                  <button
+                    key={s.key}
+                    type="button"
+                    role="option"
+                    aria-selected={sel}
+                    className="press-soft flex w-full items-center gap-2 rounded-sm px-2 py-2 text-left text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
+                    onClick={() => {
+                      onToggle({ key: s.key, label: s.label, custom: false });
+                    }}
+                  >
+                    <span className="flex-1">{s.label}</span>
+                    {sel && <Check className="h-4 w-4 text-accent-ink" />}
+                  </button>
+                );
+              })}
+              {customSports.map((s) => {
+                const sel = isSelected(s.key);
+                return (
+                  <div key={s.key} className="flex items-center gap-1 rounded-sm px-2 py-1">
+                    <button
+                      type="button"
+                      role="option"
+                      aria-selected={sel}
+                      className="press-soft flex flex-1 items-center gap-2 rounded-sm py-1 text-left text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
+                      onClick={() => onToggle(s)}
                     >
                       <span className="flex-1">{s.label}</span>
                       {sel && <Check className="h-4 w-4 text-accent-ink" />}
-                    </CommandItem>
-                  );
-                })}
-                {customSports.map((s) => {
-                  const sel = isSelected(s.key);
-                  return (
-                    <CommandItem
-                      key={s.key}
-                      value={s.label}
-                      onSelect={() => onToggle(s)}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onRemoveCustom(s.key)}
+                      className="press-soft rounded p-1 text-text-tertiary focus:outline-none focus:ring-2 focus:ring-accent"
+                      aria-label={`Remove ${s.label}`}
                     >
-                      <span className="flex-1">{s.label}</span>
-                      {sel && <Check className="h-4 w-4 text-accent-ink" />}
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onRemoveCustom(s.key);
-                        }}
-                        className="ml-2 rounded p-0.5 text-text-tertiary hover:bg-divider hover:text-text-primary"
-                        aria-label={`Remove ${s.label}`}
-                      >
-                        <X className="h-3.5 w-3.5" />
-                      </button>
-                    </CommandItem>
-                  );
-                })}
-              </CommandGroup>
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
               {atCap && (
                 <>
-                  <CommandSeparator />
+                  <div className="my-1 border-t border-divider" />
                   <div className="px-3 py-2.5 text-xs text-text-secondary">
                     <div className="space-y-1">
                       <p>
@@ -180,7 +179,7 @@ export function SportMultiselect({
               )}
               {showCustom && (
                 <>
-                  <CommandSeparator />
+                  <div className="my-1 border-t border-divider" />
                   <div className="p-2">
                     <p className="px-2 pb-1.5 text-xs font-semibold uppercase tracking-wider text-text-secondary">
                       Custom
@@ -217,8 +216,7 @@ export function SportMultiselect({
                   </div>
                 </>
               )}
-            </CommandList>
-          </Command>
+          </div>
         </PopoverContent>
       </Popover>
 

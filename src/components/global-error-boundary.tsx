@@ -14,16 +14,25 @@ interface State {
   message?: string
 }
 
+function normalizeUnknownError(error: unknown): Error {
+  if (error instanceof Error) return error
+  if (typeof error === 'string') return new Error(error)
+  if (error && typeof error === 'object' && 'message' in error) {
+    const message = (error as { message?: unknown }).message
+    return new Error(typeof message === 'string' ? message : 'Unknown error')
+  }
+  return new Error('Unknown error')
+}
+
 export class GlobalErrorBoundary extends Component<Props, State> {
   state: State = { hasError: false }
 
   static getDerivedStateFromError(error: unknown): State {
-    const message = error instanceof Error ? error.message : typeof error === 'string' ? error : 'Unknown error'
-    return { hasError: true, message }
+    return { hasError: true, message: normalizeUnknownError(error).message }
   }
 
-  componentDidCatch(error: Error, info: ErrorInfo): void {
-    reportError(error, {
+  componentDidCatch(error: unknown, info: ErrorInfo): void {
+    reportError(normalizeUnknownError(error), {
       metadata: { type: 'react.errorBoundary', componentStack: info.componentStack },
     })
   }
