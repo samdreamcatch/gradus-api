@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -34,6 +34,15 @@ const PENDING_INVITE_KEY = "gradus.pendingParentInvite";
 const ENTITLED = new Set(["paid", "promo_free", "club_covered"]);
 
 export const Route = createFileRoute("/_authenticated/coach/onboarding")({
+  beforeLoad: async ({ context }) => {
+    const data = await context.queryClient.ensureQueryData(coachProfileQueryOptions);
+    if (data.profile.onboardedAt) {
+      throw redirect({ to: "/coach" });
+    }
+    if (isCoachPaywallEnabled() && !ENTITLED.has(data.profile.entitlement)) {
+      throw redirect({ to: "/coach/paywall", replace: true });
+    }
+  },
   component: OnboardingPage,
 });
 
@@ -54,7 +63,6 @@ function prettify(s: string) {
 
 function OnboardingPage() {
   const { data, isLoading, error } = useQuery(coachProfileQueryOptions);
-  const navigate = useNavigate();
 
   const onboardedAt = data?.profile.onboardedAt;
   const needsPaywall = Boolean(
@@ -62,18 +70,6 @@ function OnboardingPage() {
       isCoachPaywallEnabled() &&
       !ENTITLED.has(data.profile.entitlement),
   );
-
-  useEffect(() => {
-    if (onboardedAt) {
-      navigate({ to: "/coach" });
-      return;
-    }
-    // Coaches must select a plan (or claim a club code / founding-coach free
-    // grant) before completing onboarding.
-    if (needsPaywall) {
-      navigate({ to: "/coach/paywall", replace: true });
-    }
-  }, [onboardedAt, needsPaywall, navigate]);
 
   if (error) {
     return (

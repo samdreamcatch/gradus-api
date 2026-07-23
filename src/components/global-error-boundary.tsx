@@ -14,6 +14,57 @@ interface State {
   message?: string
 }
 
+function isSensitiveKey(key: string): boolean {
+  return /token|authorization|cookie|password|secret|key/i.test(key)
+}
+
+function safeDescribeValue(value: unknown): unknown {
+  if (value == null) return value
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+    return value
+  }
+  if (Array.isArray(value)) return `[array:${value.length}]`
+  if (typeof value === 'object') return '[object]'
+  return typeof value
+}
+
+function describeUnknownError(error: unknown): Record<string, unknown> {
+  if (error instanceof Error) {
+    return { name: error.name, message: error.message, stack: error.stack }
+  }
+
+  if (typeof Response !== 'undefined' && error instanceof Response) {
+    return {
+      type: 'Response',
+      status: error.status,
+      statusText: error.statusText,
+      url: error.url,
+    }
+  }
+
+  if (!error || typeof error !== 'object') {
+    return { type: typeof error, value: String(error) }
+  }
+
+  const record = error as Record<string, unknown>
+  const details: Record<string, unknown> = {
+    type: Object.prototype.toString.call(error),
+    constructorName: error.constructor?.name,
+  }
+
+  for (const key of Object.keys(record).slice(0, 20)) {
+    details[key] = isSensitiveKey(key) ? '[redacted]' : safeDescribeValue(record[key])
+  }
+
+  try {
+    details.serialized = JSON.stringify(record)
+  } catch {
+    details.serialized = String(error)
+  }
+
+  return details
+}
+
 function normalizeUnknownError(error: unknown): Error {
   if (error instanceof Error) return error
   if (typeof error === 'string') return new Error(error)
@@ -33,7 +84,11 @@ export class GlobalErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: unknown, info: ErrorInfo): void {
     reportError(normalizeUnknownError(error), {
-      metadata: { type: 'react.errorBoundary', componentStack: info.componentStack },
+      metadata: {
+        type: 'react.errorBoundary',
+        componentStack: info.componentStack,
+        thrownValue: describeUnknownError(error),
+      },
     })
   }
 
