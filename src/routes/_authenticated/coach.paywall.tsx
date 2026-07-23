@@ -877,6 +877,33 @@ function PaywallPage() {
                   >
                     {loading && selectedTier === tier ? "Activating…" : "Continue"}
                   </Button>
+                ) : coachFoundingRestore ? (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    className="mt-4 w-full text-xs sm:text-sm"
+                    disabled={loading || tiersDisabled}
+                    onClick={async () => {
+                      setLoading(true);
+                      setSelectedTier(tier);
+                      try {
+                        const res = await restoreFoundingFn({
+                          data: { environment: getStripeEnvironment() },
+                        });
+                        if ("error" in res) throw new Error(res.error);
+                        await qc.invalidateQueries({ queryKey: ["coach-profile"] });
+                        toast.success("Switched to your free Founding Coach plan.");
+                        navigate({ to: "/coach/roster" });
+                      } catch (err) {
+                        toast.error(err instanceof Error ? err.message : "Couldn't switch plans");
+                      } finally {
+                        setLoading(false);
+                        setSelectedTier(null);
+                      }
+                    }}
+                  >
+                    {loading && selectedTier === tier ? "Switching…" : "Switch to free Coach"}
+                  </Button>
                 ) : (
                   <Button
                     type="button"
