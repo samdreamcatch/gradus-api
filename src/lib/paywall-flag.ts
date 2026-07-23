@@ -34,3 +34,17 @@ export function isCoachPaywallEnabled(): boolean {
 export function isCoachProAvailable(): boolean {
   return import.meta.env.VITE_COACH_PRO_ENABLED === "true";
 }
+
+/**
+ * Cap on primary sports (Strength & Conditioning is always exempt).
+ * Founding coaches are grandfathered into unlimited sports even on the
+ * basic Coach tier, so their existing multi-sport setups keep working
+ * when the Coach / Coach Pro distinction ships.
+ */
+export function maxPrimarySportsForCoach(profile: {
+  effectiveTier: "coach" | "coach_pro" | "club";
+  foundingCoach: boolean;
+}): number | undefined {
+  if (profile.foundingCoach) return undefined;
+  return profile.effectiveTier === "coach" ? 1 : undefined;
+}
