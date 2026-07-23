@@ -92,7 +92,7 @@ export const resolveInviteCode = createServerFn({ method: "POST" })
     if (parent.data) return { kind: "parent" as const, valid: true };
     if (adultAthlete.data) return { kind: "adult-athlete" as const, valid: true };
     if (athlete.data) {
-      const expired = new Date(athlete.data.expires_at) < new Date();
+      const expired = athlete.data.expires_at ? new Date(athlete.data.expires_at) < new Date() : false;
       return {
         kind: "athlete" as const,
         valid: !athlete.data.used_at && !expired,

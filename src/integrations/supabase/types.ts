@@ -111,7 +111,7 @@ export type Database = {
           claimed_by: string | null
           code: string
           created_at: string
-          expires_at: string
+          expires_at: string | null
           id: string
           parent_id: string
           promo_code: string | null
@@ -124,7 +124,7 @@ export type Database = {
           claimed_by?: string | null
           code: string
           created_at?: string
-          expires_at?: string
+          expires_at?: string | null
           id?: string
           parent_id: string
           promo_code?: string | null
@@ -137,7 +137,7 @@ export type Database = {
           claimed_by?: string | null
           code?: string
           created_at?: string
-          expires_at?: string
+          expires_at?: string | null
           id?: string
           parent_id?: string
           promo_code?: string | null

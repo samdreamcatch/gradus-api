@@ -69,9 +69,10 @@ export const getAthleteInviteSummary = createServerFn({ method: "POST" })
     if (codeRow.error) dbError(codeRow.error);
     if (!codeRow.data) throw new Error("That code isn't valid. Double-check with your parent.");
     if (codeRow.data.used_at) throw new Error("This code has already been used.");
-    if (new Date(codeRow.data.expires_at) < new Date()) {
+    if (codeRow.data.expires_at && new Date(codeRow.data.expires_at) < new Date()) {
       throw new Error("This code has expired. Ask your parent for a new one.");
     }
+
 
 
     const athlete = await supabaseAdmin
@@ -145,9 +146,10 @@ export const claimAthleteInvite = createServerFn({ method: "POST" })
       .maybeSingle();
     if (codeRow.error) dbError(codeRow.error);
     if (!codeRow.data) throw new Error("That code isn't valid.");
-    if (new Date(codeRow.data.expires_at) < new Date()) {
+    if (codeRow.data.expires_at && new Date(codeRow.data.expires_at) < new Date()) {
       throw new Error("This code has expired.");
     }
+
     if (codeRow.data.used_at && codeRow.data.claimed_by !== userId) {
       throw new Error("This code has already been used.");
     }
@@ -284,9 +286,10 @@ export const signupAthleteWithUsername = createServerFn({ method: "POST" })
     if (codeRow.error) dbError(codeRow.error);
     if (!codeRow.data) throw new Error("That code isn't valid.");
     if (codeRow.data.used_at) throw new Error("This code has already been used.");
-    if (new Date(codeRow.data.expires_at) < new Date()) {
+    if (codeRow.data.expires_at && new Date(codeRow.data.expires_at) < new Date()) {
       throw new Error("This code has expired. Ask your parent for a new one.");
     }
+
 
     const athleteId = codeRow.data.athlete_id as string;
 
