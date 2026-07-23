@@ -414,7 +414,7 @@ function PaywallPage() {
   // Returning from Stripe checkout — show a processing state while we
   // verify the session and wait for entitlement to flip. The redirect
   // useEffect above navigates to /coach/roster the moment it flips.
-  if (checkoutStatus === "return" && !isEntitled) {
+  if (claiming || (checkoutStatus === "return" && !isEntitled)) {
     return (
       <div className="min-h-dvh">
         <PaymentTestModeBanner />
@@ -424,7 +424,9 @@ function PaywallPage() {
           </div>
           <h1 className="font-display text-h2 text-text-primary">Finishing up…</h1>
           <p className="mt-2 text-sm text-text-secondary">
-            Confirming your subscription with Stripe. This usually takes a few seconds.
+            {claiming
+              ? "Activating your Coach workspace."
+              : "Confirming your subscription with Stripe. This usually takes a few seconds."}
           </p>
         </div>
       </div>
