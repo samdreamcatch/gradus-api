@@ -85,7 +85,17 @@ export const Route = createFileRoute("/_authenticated/coach/paywall")({
 });
 
 function PaywallPage() {
-  const { data } = useQuery(coachProfileQueryOptions);
+  const {
+    data,
+    error: profileError,
+    isPending: profilePending,
+    isFetching: profileFetching,
+    refetch: refetchProfile,
+  } = useQuery({
+    ...coachProfileQueryOptions,
+    retry: (failureCount) => failureCount < 3,
+    retryDelay: 750,
+  });
   const navigate = useNavigate();
   const qc = useQueryClient();
   const clearOrg = useServerFn(clearOrganizationLink);
@@ -427,6 +437,48 @@ function PaywallPage() {
     () => (clientSecret ? { fetchClientSecret: async () => clientSecret } : null),
     [clientSecret],
   );
+
+  if (!data && profileError) {
+    return (
+      <div className="min-h-dvh">
+        <PaymentTestModeBanner />
+        <div className="mx-auto flex max-w-md flex-col items-center px-4 py-16 text-center">
+          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-accent/15 text-accent-ink">
+            <Sparkles className="h-6 w-6" />
+          </div>
+          <h1 className="font-display text-h2 text-text-primary">We couldn't load your plan</h1>
+          <p className="mt-2 text-sm text-text-secondary">
+            Your account was created, but the plan screen needs another moment to sync.
+          </p>
+          <div className="mt-6 flex flex-col gap-2 sm:flex-row">
+            <Button type="button" onClick={() => void refetchProfile()} disabled={profileFetching}>
+              {profileFetching ? <Loader2 className="h-4 w-4 animate-spin" /> : "Try again"}
+            </Button>
+            <Button type="button" variant="outline" onClick={handleSignOut}>
+              Sign out
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!data || profilePending) {
+    return (
+      <div className="min-h-dvh">
+        <PaymentTestModeBanner />
+        <div className="mx-auto flex max-w-md flex-col items-center px-4 py-16 text-center">
+          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-accent/15 text-accent-ink">
+            <Loader2 className="h-6 w-6 animate-spin" />
+          </div>
+          <h1 className="font-display text-h2 text-text-primary">Loading your plan…</h1>
+          <p className="mt-2 text-sm text-text-secondary">
+            Setting up your Coach workspace.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (clientSecret && options) {
     return (
