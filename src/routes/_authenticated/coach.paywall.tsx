@@ -453,9 +453,11 @@ function PaywallPage() {
   }
 
   // Returning from Stripe checkout — show a processing state while we
-  // verify the session and wait for entitlement to flip. The redirect
-  // useEffect above navigates to /coach/roster the moment it flips.
-  if (claiming || (checkoutStatus === "return" && !isEntitled)) {
+  // verify the session and wait for entitlement to flip. Keep the spinner
+  // up through the entitlement flip AND the navigation transition so the
+  // paywall never flashes back into view between "return" and /coach/roster.
+  // The redirect useEffect above navigates the moment entitlement flips.
+  if (claiming || checkoutStatus === "return") {
     return (
       <div className="min-h-dvh">
         <PaymentTestModeBanner />
