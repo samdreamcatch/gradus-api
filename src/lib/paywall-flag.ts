@@ -36,15 +36,25 @@ export function isCoachProAvailable(): boolean {
 }
 
 /**
- * Cap on primary sports (Strength & Conditioning is always exempt).
- * Founding coaches are grandfathered into unlimited sports even on the
- * basic Coach tier, so their existing multi-sport setups keep working
- * when the Coach / Coach Pro distinction ships.
+ * Cap on primary sports (Strength & Conditioning is always exempt and never
+ * counts toward the cap — the SportMultiselect enforces that via
+ * `alwaysAllowedSecondary`).
+ *
+ * Rule:
+ * - Coach Pro / Club: unlimited.
+ * - Basic Coach: 1 primary sport.
+ * - Grandfather clause: founding coaches who already have >1 saved primary
+ *   sport (again, excluding S&C) keep unlimited — their existing multi-sport
+ *   setup shouldn't break when the Coach / Coach Pro distinction ships. New
+ *   founding coaches with 0 or 1 saved primary sport get the normal cap.
  */
 export function maxPrimarySportsForCoach(profile: {
   effectiveTier: "coach" | "coach_pro" | "club";
   foundingCoach: boolean;
+  /** Distinct primary sports already saved (excluding S&C). */
+  distinctPrimarySportCount: number;
 }): number | undefined {
-  if (profile.foundingCoach) return undefined;
-  return profile.effectiveTier === "coach" ? 1 : undefined;
+  if (profile.effectiveTier !== "coach") return undefined;
+  if (profile.foundingCoach && profile.distinctPrimarySportCount > 1) return undefined;
+  return 1;
 }
