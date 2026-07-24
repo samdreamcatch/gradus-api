@@ -221,7 +221,14 @@ function SportsDisclosure({
   const [sports, setSports] = useState<SportKey[]>(initialSports);
   const [entries, setEntries] = useState<LevelEntry[]>(levels);
   const save = useSaveCoachLevels();
-  const maxPrimarySports = maxPrimarySportsForCoach({ effectiveTier, foundingCoach });
+  const distinctPrimarySportCount = useMemo(
+    () =>
+      new Set(
+        levels.map((l) => l.sport).filter((s) => s !== "strength_conditioning"),
+      ).size,
+    [levels],
+  );
+  const maxPrimarySports = maxPrimarySportsForCoach({ effectiveTier, foundingCoach, distinctPrimarySportCount });
 
   useEffect(() => {
     setSports(initialSports);
