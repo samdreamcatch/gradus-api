@@ -106,9 +106,19 @@ function OnboardingForm({ data }: { data: OnboardingData }) {
     !data.profile.firstName.trim() || !data.profile.lastName.trim();
 
   const effectiveTier = data.profile.effectiveTier;
+  const distinctPrimarySportCount = useMemo(
+    () =>
+      new Set(
+        data.levels
+          .map((l) => l.sport)
+          .filter((s) => s !== "strength_conditioning"),
+      ).size,
+    [data.levels],
+  );
   const primarySportCap = maxPrimarySportsForCoach({
     effectiveTier,
     foundingCoach: data.profile.foundingCoach,
+    distinctPrimarySportCount,
   });
 
   const [step, setStep] = useState(1);
