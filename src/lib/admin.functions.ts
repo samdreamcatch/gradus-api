@@ -684,141 +684,23 @@ export const getDailyActiveUsers = createServerFn({ method: "POST" })
     const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
     const sinceISO = since.toISOString();
 
-    // Gather activity signals
-    const [messages, sessions, wrapUps, plansCreated, resourcesCreated] = await Promise.all([
-      supabaseAdmin
-        .from("messages")
-        .select("sender_user_id, created_at")
-        .gte("created_at", sinceISO)
-        .limit(50000),
-      supabaseAdmin
-        .from("plan_sessions")
-        .select("athlete_id, parent_id, logged_at")
-        .gte("logged_at", sinceISO)
-        .limit(50000),
-      supabaseAdmin
-        .from("lesson_wrap_ups")
-        .select("coach_id, created_at")
-        .gte("created_at", sinceISO)
-        .limit(50000),
-      supabaseAdmin
-        .from("plans")
-        .select("coach_id, created_at")
-        .gte("created_at", sinceISO)
-        .limit(50000),
-      supabaseAdmin
-        .from("resources")
-        .select("coach_id, created_at")
-        .gte("created_at", sinceISO)
-        .not("coach_id", "is", null)
-        .limit(50000),
-    ]);
-
-
-    if (messages.error) dbError(messages.error);
-    if (sessions.error) dbError(sessions.error);
-    if (wrapUps.error) dbError(wrapUps.error);
-    if (plansCreated.error) dbError(plansCreated.error);
-    if (resourcesCreated.error) dbError(resourcesCreated.error);
-
-
-    // Resolve athlete_id -> user_id, coach_id -> user_id
-    const athleteIds = Array.from(
-      new Set((sessions.data ?? []).map((s) => s.athlete_id).filter(Boolean) as string[]),
-    );
-    const coachIds = Array.from(
-      new Set(
-        [
-          ...((wrapUps.data ?? []).map((w) => w.coach_id)),
-          ...((plansCreated.data ?? []).map((p) => p.coach_id)),
-          ...((resourcesCreated.data ?? []).map((r) => r.coach_id)),
-        ].filter(Boolean) as string[],
-      ),
-    );
-
-
-    const athleteUserMap = new Map<string, string>();
-    const testUsers = new Set<string>();
-
-    if (athleteIds.length > 0) {
-      const { data: aRows } = await supabaseAdmin
-        .from("athletes")
-        .select("id, user_id")
-        .in("id", athleteIds);
-      for (const a of aRows ?? []) {
-        if (a.user_id) athleteUserMap.set(a.id, a.user_id);
-      }
-    }
-
-    // For excluding test users: load test user_ids from coach + parent profiles
-    if (!data.includeTest) {
-      const [{ data: testCoaches }, { data: testParents }] = await Promise.all([
-        supabaseAdmin.from("coach_profiles").select("user_id").eq("is_test", true),
-        supabaseAdmin.from("parent_profiles").select("user_id").eq("is_test", true),
-      ]);
-      for (const r of testCoaches ?? []) if (r.user_id) testUsers.add(r.user_id);
-      for (const r of testParents ?? []) if (r.user_id) testUsers.add(r.user_id);
-    }
-
-    // Map coach_profile.id -> user_id for wrap-up signals
-    const coachUserMap = new Map<string, string>();
-    if (coachIds.length > 0) {
-      const { data: cRows } = await supabaseAdmin
-        .from("coach_profiles")
-        .select("id, user_id")
-        .in("id", coachIds);
-      for (const c of cRows ?? []) {
-        if (c.user_id) coachUserMap.set(c.id, c.user_id);
-      }
-    }
+    const { loadActivityEvents } = await import("@/lib/admin-activity.server");
+    const events = await loadActivityEvents(supabaseAdmin, sinceISO, data.includeTest);
 
     // Build day buckets keyed by UTC date
     const buckets = new Map<string, Set<string>>();
     const dayKey = (d: Date | string) => new Date(d).toISOString().slice(0, 10);
     const startKey = dayKey(since);
 
-    const addActivity = (userId: string | null | undefined, when: string | null | undefined) => {
-      if (!userId || !when) return;
-      if (!data.includeTest && testUsers.has(userId)) return;
-      const k = dayKey(when);
-      if (k < startKey) return;
+    for (const e of events) {
+      const k = dayKey(e.at);
+      if (k < startKey) continue;
       let s = buckets.get(k);
       if (!s) {
         s = new Set();
         buckets.set(k, s);
       }
-      s.add(userId);
-    };
-
-    // Resolve parent_profile.id -> user_id for plan_session parent loggers
-    const parentProfileIds = Array.from(
-      new Set((sessions.data ?? []).map((s) => s.parent_id).filter(Boolean) as string[]),
-    );
-    const parentUserMap = new Map<string, string>();
-    if (parentProfileIds.length > 0) {
-      const { data: pRows } = await supabaseAdmin
-        .from("parent_profiles")
-        .select("id, user_id")
-        .in("id", parentProfileIds);
-      for (const p of pRows ?? []) {
-        if (p.user_id) parentUserMap.set(p.id, p.user_id);
-      }
-    }
-
-    for (const m of messages.data ?? []) addActivity(m.sender_user_id, m.created_at);
-    for (const s of sessions.data ?? []) {
-      // Parents often log on behalf of athletes; count whoever logged it.
-      if (s.parent_id) addActivity(parentUserMap.get(s.parent_id), s.logged_at);
-      else addActivity(athleteUserMap.get(s.athlete_id), s.logged_at);
-    }
-    for (const w of wrapUps.data ?? []) {
-      addActivity(coachUserMap.get(w.coach_id), w.created_at);
-    }
-    for (const p of plansCreated.data ?? []) {
-      if (p.coach_id) addActivity(coachUserMap.get(p.coach_id), p.created_at);
-    }
-    for (const r of resourcesCreated.data ?? []) {
-      if (r.coach_id) addActivity(coachUserMap.get(r.coach_id), r.created_at);
+      s.add(e.userId);
     }
 
 
