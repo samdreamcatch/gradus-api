@@ -1527,3 +1527,244 @@ export const listActivePromoCodes = createServerFn({ method: "GET" })
   });
 
 
+
+// =====================================================================
+// Drill-downs: who was active, plan detail, and session logs.
+// =====================================================================
+
+const ACTIVE_ROLES = ["all", "coaches", "parents", "athletes"] as const;
+
+/** Who was active in a window (or on a single UTC day). */
+export const getAdminActiveUsers = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        role: z.enum(ACTIVE_ROLES).optional().default("all"),
+        days: z.number().int().min(1).max(90).optional().default(7),
+        date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+        includeTest: z.boolean().optional().default(false),
+      })
+      .parse(input ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { loadActivityEvents, ACTIVITY_LABELS } = await import(
+      "@/lib/admin-activity.server"
+    );
+
+    const sinceISO = data.date
+      ? new Date(`${data.date}T00:00:00.000Z`).toISOString()
+      : new Date(Date.now() - data.days * 24 * 60 * 60 * 1000).toISOString();
+
+    let events = await loadActivityEvents(supabaseAdmin, sinceISO, data.includeTest);
+    if (data.date) {
+      events = events.filter((e) => new Date(e.at).toISOString().slice(0, 10) === data.date);
+    }
+
+    const byUser = new Map<string, { last: string; count: number; kinds: Set<string> }>();
+    for (const e of events) {
+      const cur = byUser.get(e.userId);
+      if (!cur) byUser.set(e.userId, { last: e.at, count: 1, kinds: new Set([e.kind]) });
+      else {
+        cur.count += 1;
+        cur.kinds.add(e.kind);
+        if (e.at > cur.last) cur.last = e.at;
+      }
+    }
+
+    const userIds = [...byUser.keys()];
+    if (userIds.length === 0) return { rows: [] as any[] };
+
+    const [coaches, parents, athletes, usersData] = await Promise.all([
+      supabaseAdmin
+        .from("coach_profiles")
+        .select("user_id, first_name, last_name, is_test")
+        .in("user_id", userIds),
+      supabaseAdmin
+        .from("parent_profiles")
+        .select("user_id, first_name, last_name, is_test")
+        .in("user_id", userIds),
+      supabaseAdmin
+        .from("athletes")
+        .select("user_id, first_name, last_name, is_test")
+        .in("user_id", userIds),
+      supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 }),
+    ]);
+
+    const emails = new Map<string, string>();
+    for (const u of usersData.data?.users ?? []) {
+      if (u.id && u.email) emails.set(u.id, u.email);
+    }
+
+    const identity = new Map<
+      string,
+      { role: "coach" | "parent" | "athlete"; name: string; isTest: boolean }
+    >();
+    const name = (f?: string | null, l?: string | null) =>
+      `${f ?? ""} ${l ?? ""}`.trim() || "(no name)";
+    for (const a of athletes.data ?? [])
+      if (a.user_id)
+        identity.set(a.user_id, {
+          role: "athlete",
+          name: name(a.first_name, a.last_name),
+          isTest: !!a.is_test,
+        });
+    for (const p of parents.data ?? [])
+      if (p.user_id)
+        identity.set(p.user_id, {
+          role: "parent",
+          name: name(p.first_name, p.last_name),
+          isTest: !!p.is_test,
+        });
+    for (const c of coaches.data ?? [])
+      if (c.user_id)
+        identity.set(c.user_id, {
+          role: "coach",
+          name: name(c.first_name, c.last_name),
+          isTest: !!c.is_test,
+        });
+
+    const wanted =
+      data.role === "coaches"
+        ? "coach"
+        : data.role === "parents"
+          ? "parent"
+          : data.role === "athletes"
+            ? "athlete"
+            : null;
+
+    const rows = userIds
+      .map((uid) => {
+        const info = byUser.get(uid)!;
+        const who = identity.get(uid);
+        return {
+          userId: uid,
+          name: who?.name ?? "(unknown user)",
+          email: emails.get(uid) ?? null,
+          role: who?.role ?? "unknown",
+          isTest: who?.isTest ?? false,
+          lastActiveAt: info.last,
+          eventCount: info.count,
+          activities: [...info.kinds].map(
+            (k) => ACTIVITY_LABELS[k as keyof typeof ACTIVITY_LABELS] ?? k,
+          ),
+        };
+      })
+      .filter((r) => (wanted ? r.role === wanted : true))
+      .filter((r) => (data.includeTest ? true : !r.isTest))
+      .sort((a, b) => (a.lastActiveAt < b.lastActiveAt ? 1 : -1));
+
+    return { rows };
+  });
+
+/** Full plan record for admin inspection, including logged sessions. */
+export const getAdminPlanDetail = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ planId: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: plan, error } = await supabaseAdmin
+      .from("plans")
+      .select(
+        "id, kind, title, notes, status, created_at, updated_at, share_token, shared_at, coach_id, athlete_id, coach_profiles(first_name, last_name, user_id), athletes(first_name, last_name)",
+      )
+      .eq("id", data.planId)
+      .maybeSingle();
+    if (error) dbError(error);
+    if (!plan) throw new Error("Plan not found");
+
+    const [moves, sessions] = await Promise.all([
+      supabaseAdmin
+        .from("plan_moves")
+        .select("id, position, name, description, cue, why, target_kind, target_value")
+        .eq("plan_id", data.planId)
+        .order("position", { ascending: true }),
+      supabaseAdmin
+        .from("plan_sessions")
+        .select("id, state_index, note, duration_seconds, logged_at, parent_id, athlete_id")
+        .eq("plan_id", data.planId)
+        .order("logged_at", { ascending: false })
+        .limit(200),
+    ]);
+    if (moves.error) dbError(moves.error);
+    if (sessions.error) dbError(sessions.error);
+
+    const p = plan as any;
+    return {
+      plan: {
+        id: p.id,
+        kind: p.kind,
+        title: p.title,
+        notes: p.notes,
+        status: p.status,
+        createdAt: p.created_at,
+        updatedAt: p.updated_at,
+        shared: !!p.share_token,
+        sharedAt: p.shared_at,
+        coachName:
+          `${p.coach_profiles?.first_name ?? ""} ${p.coach_profiles?.last_name ?? ""}`.trim() ||
+          null,
+        coachUserId: p.coach_profiles?.user_id ?? null,
+        athleteName:
+          `${p.athletes?.first_name ?? ""} ${p.athletes?.last_name ?? ""}`.trim() || null,
+      },
+      moves: moves.data ?? [],
+      sessions: (sessions.data ?? []).map((s) => ({
+        id: s.id,
+        stateIndex: s.state_index,
+        note: s.note ?? "",
+        durationSeconds: s.duration_seconds ?? 0,
+        loggedAt: s.logged_at,
+        loggedBy: s.parent_id ? ("parent" as const) : ("athlete" as const),
+      })),
+    };
+  });
+
+/** Recent logged sessions across all athletes, with notes. */
+export const getAdminSessions = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        days: z.number().int().min(1).max(90).optional().default(7),
+        includeTest: z.boolean().optional().default(false),
+      })
+      .parse(input ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const sinceISO = new Date(Date.now() - data.days * 24 * 60 * 60 * 1000).toISOString();
+    const { data: rows, error } = await supabaseAdmin
+      .from("plan_sessions")
+      .select(
+        "id, plan_id, state_index, note, duration_seconds, logged_at, parent_id, athlete_id, plans(title), athletes(first_name, last_name, is_test)",
+      )
+      .gte("logged_at", sinceISO)
+      .order("logged_at", { ascending: false })
+      .limit(300);
+    if (error) dbError(error);
+
+    let mapped = (rows ?? []).map((s: any) => ({
+      id: s.id,
+      planId: s.plan_id as string,
+      planTitle: s.plans?.title ?? "(untitled plan)",
+      athleteName:
+        `${s.athletes?.first_name ?? ""} ${s.athletes?.last_name ?? ""}`.trim() || "(no athlete)",
+      stateIndex: s.state_index as number,
+      note: (s.note ?? "") as string,
+      durationSeconds: (s.duration_seconds ?? 0) as number,
+      loggedAt: s.logged_at as string,
+      loggedBy: s.parent_id ? ("parent" as const) : ("athlete" as const),
+      isTest: !!s.athletes?.is_test,
+    }));
+    if (!data.includeTest) mapped = mapped.filter((r) => !r.isTest);
+    return { rows: mapped };
+  });
