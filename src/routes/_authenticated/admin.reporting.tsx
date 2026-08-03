@@ -121,6 +121,48 @@ function Stat({ kind, label, value, sub, includeTest, filter = "all" }: { kind: 
   );
 }
 
+function ActiveStat({
+  role,
+  days,
+  label,
+  value,
+  includeTest,
+}: {
+  role: "coaches" | "parents" | "athletes";
+  days: number;
+  label: string;
+  value: number;
+  includeTest: boolean;
+}) {
+  return (
+    <Link
+      to="/admin/active"
+      search={{ role, days, test: includeTest }}
+      className="rounded-xl border border-divider bg-card px-3 py-2 transition hover:border-accent/50 hover:bg-elevated"
+    >
+      <div className="flex items-baseline justify-between gap-2">
+        <Eyebrow size="micro" tone="tertiary" weight="normal" tracking="wide" className="truncate">{label}</Eyebrow>
+        <p className="font-display text-h3 leading-none text-text-primary">{value}</p>
+      </div>
+    </Link>
+  );
+}
+
+function SessionsStat({ label, value, includeTest }: { label: string; value: number; includeTest: boolean }) {
+  return (
+    <Link
+      to="/admin/sessions"
+      search={{ days: 7, test: includeTest }}
+      className="rounded-xl border border-divider bg-card px-3 py-2 transition hover:border-accent/50 hover:bg-elevated"
+    >
+      <div className="flex items-baseline justify-between gap-2">
+        <Eyebrow size="micro" tone="tertiary" weight="normal" tracking="wide" className="truncate">{label}</Eyebrow>
+        <p className="font-display text-h3 leading-none text-text-primary">{value}</p>
+      </div>
+    </Link>
+  );
+}
+
 function DauChart({ includeTest }: { includeTest: boolean }) {
   const dauFn = useServerFn(getDailyActiveUsers);
   const { data, isLoading } = useQuery({
