@@ -12,6 +12,8 @@ import {
   wrapUntrusted,
 } from "./ai-prompt-safety";
 import type { SessionsByState } from "@/components/plans/flow-state-bars";
+import { STATE_LABELS } from "./session-states";
+
 
 
 type Client = SupabaseClient<Database>;
