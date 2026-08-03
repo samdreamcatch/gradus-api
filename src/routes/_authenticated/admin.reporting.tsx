@@ -70,8 +70,8 @@ function ReportingPanel({ includeTest }: { includeTest: boolean }) {
               <Stat kind="parents" filter="coach" label="Via coach code" value={data.parents.viaCoach} includeTest={includeTest} />
               <Stat kind="beta-signups" label="Beta (no coach)" value={data.parents.beta} includeTest={includeTest} />
               <Metric label="With athletes" value={data.parents.withAthletes} />
-              <Metric label="Active / 7d" value={data.parents.active7} />
-              <Metric label="Active / 30d" value={data.parents.active30} />
+              <ActiveStat role="parents" days={7} label="Active / 7d" value={data.parents.active7} includeTest={includeTest} />
+              <ActiveStat role="parents" days={30} label="Active / 30d" value={data.parents.active30} includeTest={includeTest} />
             </div>
           </TabsContent>
 
@@ -81,11 +81,12 @@ function ReportingPanel({ includeTest }: { includeTest: boolean }) {
               <Stat kind="athletes" label="New / 7d" value={data.athletes.new7} includeTest={includeTest} />
               <Metric label="With coach" value={data.athletes.withCoach} />
               <Stat kind="plans" filter="active" label="Active plans" value={data.athletes.activePlans} includeTest={includeTest} />
-              <Metric label="Sessions / 7d" value={data.athletes.sessions7} />
-              <Metric label="Active / 7d" value={data.athletes.active7} />
-              <Metric label="Active / 30d" value={data.athletes.active30} />
+              <SessionsStat label="Sessions / 7d" value={data.athletes.sessions7} includeTest={includeTest} />
+              <ActiveStat role="athletes" days={7} label="Active / 7d" value={data.athletes.active7} includeTest={includeTest} />
+              <ActiveStat role="athletes" days={30} label="Active / 30d" value={data.athletes.active30} includeTest={includeTest} />
             </div>
           </TabsContent>
+
         </Tabs>
       )}
     </section>
