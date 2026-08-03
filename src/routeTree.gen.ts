@@ -68,6 +68,7 @@ import { Route as AuthenticatedAdminEmailHealthRouteImport } from './routes/_aut
 import { Route as AuthenticatedAdminBillingRouteImport } from './routes/_authenticated/admin.billing'
 import { Route as AuthenticatedAdminAnnouncementsRouteImport } from './routes/_authenticated/admin.announcements'
 import { Route as AuthenticatedAdminActivityRouteImport } from './routes/_authenticated/admin.activity'
+import { Route as AuthenticatedAdminActiveRouteImport } from './routes/_authenticated/admin.active'
 import { Route as AuthenticatedParentResourcesIndexRouteImport } from './routes/_authenticated/parent.resources.index'
 import { Route as AuthenticatedParentPlansIndexRouteImport } from './routes/_authenticated/parent.plans.index'
 import { Route as AuthenticatedParentMessagesIndexRouteImport } from './routes/_authenticated/parent.messages.index'
@@ -416,6 +417,12 @@ const AuthenticatedAdminActivityRoute =
     path: '/activity',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminActiveRoute =
+  AuthenticatedAdminActiveRouteImport.update({
+    id: '/active',
+    path: '/active',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedParentResourcesIndexRoute =
   AuthenticatedParentResourcesIndexRouteImport.update({
     id: '/resources/',
@@ -591,6 +598,7 @@ export interface FileRoutesByFullPath {
   '/signup/athlete': typeof SignupAthleteRouteWithChildren
   '/signup/coach': typeof SignupCoachRoute
   '/signup/parent': typeof SignupParentRouteWithChildren
+  '/admin/active': typeof AuthenticatedAdminActiveRoute
   '/admin/activity': typeof AuthenticatedAdminActivityRoute
   '/admin/announcements': typeof AuthenticatedAdminAnnouncementsRoute
   '/admin/billing': typeof AuthenticatedAdminBillingRoute
@@ -672,6 +680,7 @@ export interface FileRoutesByTo {
   '/signup/athlete': typeof SignupAthleteRouteWithChildren
   '/signup/coach': typeof SignupCoachRoute
   '/signup/parent': typeof SignupParentRouteWithChildren
+  '/admin/active': typeof AuthenticatedAdminActiveRoute
   '/admin/activity': typeof AuthenticatedAdminActivityRoute
   '/admin/announcements': typeof AuthenticatedAdminAnnouncementsRoute
   '/admin/billing': typeof AuthenticatedAdminBillingRoute
@@ -759,6 +768,7 @@ export interface FileRoutesById {
   '/signup/athlete': typeof SignupAthleteRouteWithChildren
   '/signup/coach': typeof SignupCoachRoute
   '/signup/parent': typeof SignupParentRouteWithChildren
+  '/_authenticated/admin/active': typeof AuthenticatedAdminActiveRoute
   '/_authenticated/admin/activity': typeof AuthenticatedAdminActivityRoute
   '/_authenticated/admin/announcements': typeof AuthenticatedAdminAnnouncementsRoute
   '/_authenticated/admin/billing': typeof AuthenticatedAdminBillingRoute
@@ -847,6 +857,7 @@ export interface FileRouteTypes {
     | '/signup/athlete'
     | '/signup/coach'
     | '/signup/parent'
+    | '/admin/active'
     | '/admin/activity'
     | '/admin/announcements'
     | '/admin/billing'
@@ -928,6 +939,7 @@ export interface FileRouteTypes {
     | '/signup/athlete'
     | '/signup/coach'
     | '/signup/parent'
+    | '/admin/active'
     | '/admin/activity'
     | '/admin/announcements'
     | '/admin/billing'
@@ -1014,6 +1026,7 @@ export interface FileRouteTypes {
     | '/signup/athlete'
     | '/signup/coach'
     | '/signup/parent'
+    | '/_authenticated/admin/active'
     | '/_authenticated/admin/activity'
     | '/_authenticated/admin/announcements'
     | '/_authenticated/admin/billing'
@@ -1522,6 +1535,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminActivityRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/active': {
+      id: '/_authenticated/admin/active'
+      path: '/active'
+      fullPath: '/admin/active'
+      preLoaderRoute: typeof AuthenticatedAdminActiveRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/parent/resources/': {
       id: '/_authenticated/parent/resources/'
       path: '/resources'
@@ -1722,6 +1742,7 @@ const AuthenticatedAdminErrorsRouteWithChildren =
   )
 
 interface AuthenticatedAdminRouteChildren {
+  AuthenticatedAdminActiveRoute: typeof AuthenticatedAdminActiveRoute
   AuthenticatedAdminActivityRoute: typeof AuthenticatedAdminActivityRoute
   AuthenticatedAdminAnnouncementsRoute: typeof AuthenticatedAdminAnnouncementsRoute
   AuthenticatedAdminBillingRoute: typeof AuthenticatedAdminBillingRoute
@@ -1741,6 +1762,7 @@ interface AuthenticatedAdminRouteChildren {
 }
 
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
+  AuthenticatedAdminActiveRoute: AuthenticatedAdminActiveRoute,
   AuthenticatedAdminActivityRoute: AuthenticatedAdminActivityRoute,
   AuthenticatedAdminAnnouncementsRoute: AuthenticatedAdminAnnouncementsRoute,
   AuthenticatedAdminBillingRoute: AuthenticatedAdminBillingRoute,
