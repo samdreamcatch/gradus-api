@@ -164,6 +164,7 @@ function SessionsStat({ label, value, includeTest }: { label: string; value: num
 }
 
 function DauChart({ includeTest }: { includeTest: boolean }) {
+  const navigate = useNavigate();
   const dauFn = useServerFn(getDailyActiveUsers);
   const { data, isLoading } = useQuery({
     queryKey: ["admin-dau", includeTest],
@@ -175,13 +176,19 @@ function DauChart({ includeTest }: { includeTest: boolean }) {
   const total = series.reduce((s, p) => s + p.activeUsers, 0);
   const avg = series.length ? Math.round((total / series.length) * 10) / 10 : 0;
 
+  const openDay = (state: any) => {
+    const date = state?.activeLabel as string | undefined;
+    if (!date) return;
+    navigate({ to: "/admin/active", search: { role: "all", days: 1, date, test: includeTest } });
+  };
+
   return (
     <section className="rounded-xl border border-divider bg-card p-4">
       <div className="flex items-end justify-between gap-4 mb-3">
         <div>
           <h3 className="font-display text-h3 text-text-primary">Daily active users</h3>
           <p className="text-xs text-text-secondary">
-            Last 30 days · unique users who sent a message, logged a session, saved a lesson wrap-up, created a plan, or uploaded a resource.
+            Last 30 days · unique users who sent a message, logged a session, saved a lesson wrap-up, created a plan, or uploaded a resource. Click a day to see who.
           </p>
 
         </div>
@@ -195,7 +202,8 @@ function DauChart({ includeTest }: { includeTest: boolean }) {
           <p className="text-sm text-text-secondary">Loading…</p>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={series} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
+            <AreaChart data={series} margin={{ top: 8, right: 8, left: -16, bottom: 0 }} onClick={openDay} style={{ cursor: "pointer" }}>
+
               <defs>
                 <linearGradient id="dauFill" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="var(--accent)" stopOpacity={0.5} />
