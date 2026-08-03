@@ -36,6 +36,8 @@ const GROUPS: Group[] = [
     label: "Reporting",
     items: [
       { to: "/admin/reporting", label: "Overview", icon: BarChart3 },
+      { to: "/admin/active", label: "Active users", icon: UserCheck },
+      { to: "/admin/sessions", label: "Sessions", icon: ClipboardList },
       { to: "/admin/activity", label: "Activity log", icon: History },
     ],
   },
