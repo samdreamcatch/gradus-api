@@ -6,6 +6,7 @@ import {
   UserPlus,
   UserCheck,
   BarChart3,
+  ClipboardList,
   History,
   Building2,
   CreditCard,
