@@ -58,8 +58,8 @@ function ReportingPanel({ includeTest }: { includeTest: boolean }) {
               <Metric label="With athletes" value={data.coaches.withAthletes} />
               <Stat kind="plans" filter="active" label="Active plans" value={data.coaches.activePlans} includeTest={includeTest} />
               <Metric label="Templates" value={data.coaches.templates} />
-              <Metric label="Active / 7d" value={data.coaches.active7} />
-              <Metric label="Active / 30d" value={data.coaches.active30} />
+              <ActiveStat role="coaches" days={7} label="Active / 7d" value={data.coaches.active7} includeTest={includeTest} />
+              <ActiveStat role="coaches" days={30} label="Active / 30d" value={data.coaches.active30} includeTest={includeTest} />
             </div>
           </TabsContent>
 
