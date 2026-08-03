@@ -12,6 +12,8 @@ import {
   wrapUntrusted,
 } from "./ai-prompt-safety";
 import type { SessionsByState } from "@/components/plans/flow-state-bars";
+import { STATE_LABELS } from "./session-states";
+
 
 
 type Client = SupabaseClient<Database>;
@@ -179,13 +181,8 @@ export const submitAthletePlanSession = createServerFn({ method: "POST" })
 
 // --- AI summary of logged sessions for a single plan ---
 
-const STATE_LABELS = [
-  "Frustrated",
-  "Pushing",
-  "Steady",
-  "Locked in",
-  "Flowing",
-];
+// Mood labels are shared with the admin drill-downs (src/lib/session-states.ts).
+
 
 export interface PlanSessionsSummaryDTO {
   summary: string;

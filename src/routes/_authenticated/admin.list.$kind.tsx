@@ -172,7 +172,11 @@ function AdminList() {
               );
               return (
                 <li key={r.id}>
-                  {r.userId ? (
+                  {kind === "plans" ? (
+                    <Link to="/admin/plans/$planId" params={{ planId: r.id }}>
+                      {inner}
+                    </Link>
+                  ) : r.userId ? (
                     <Link to="/admin/users/$userId" params={{ userId: r.userId }}>
                       {inner}
                     </Link>
