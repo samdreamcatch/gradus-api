@@ -68,7 +68,21 @@ function AdminList() {
   const toggleFn = useServerFn(setUserTestFlag);
   const qc = useQueryClient();
 
-  if (!KINDS.includes(kind as Kind)) {
+  const isKnownKind = KINDS.includes(kind as Kind);
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["admin-list", kind, filter, includeTest],
+    queryFn: () => fn({ data: { kind: kind as Kind, filter, includeTest } }),
+    enabled: isKnownKind,
+  });
+
+  const toggleTest = useMutation({
+    mutationFn: ({ userId, isTest }: { userId: string; isTest: boolean }) =>
+      toggleFn({ data: { userId, isTest } }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-list", kind] }),
+  });
+
+  if (!isKnownKind) {
     return (
       <div className="mx-auto max-w-4xl px-4 py-10">
         <p className="text-sm text-destructive">Unknown list: {kind}</p>
@@ -77,16 +91,6 @@ function AdminList() {
   }
 
   const cfg = KIND_CONFIG[kind as Kind];
-  const { data, isLoading } = useQuery({
-    queryKey: ["admin-list", kind, filter, includeTest],
-    queryFn: () => fn({ data: { kind: kind as Kind, filter, includeTest } }),
-  });
-
-  const toggleTest = useMutation({
-    mutationFn: ({ userId, isTest }: { userId: string; isTest: boolean }) =>
-      toggleFn({ data: { userId, isTest } }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-list", kind] }),
-  });
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10 space-y-6">
