@@ -114,11 +114,12 @@ function LoginPage() {
     // the entire string as a path, so a redirect like "/parent/plans?x=1"
     // won't match any route and renders blank. Fall back to a full-page
     // navigation in that case.
-    if (prefix && search.redirect.startsWith(prefix)) {
-      if (search.redirect.includes("?") || search.redirect.includes("#")) {
-        window.location.assign(search.redirect);
+    const redirectTo = search.redirect ?? "";
+    if (prefix && redirectTo.startsWith(prefix)) {
+      if (redirectTo.includes("?") || redirectTo.includes("#")) {
+        window.location.assign(redirectTo);
       } else {
-        navigate({ to: search.redirect });
+        navigate({ to: redirectTo });
       }
     } else {
       navigate({ to: roleHome(role) });
