@@ -360,7 +360,7 @@ export const getCoachAthleteDetail = createServerFn({ method: "GET" })
     // Lesson minutes across all coaches in the window.
     const slots = (slotsRes.data ?? []) as SlotRow[];
     const slotIds = slots.map((s) => s.id);
-    let overridesBySlot = new Map<string, OverrideRow[]>();
+    const overridesBySlot = new Map<string, OverrideRow[]>();
     if (slotIds.length > 0) {
       const overridesRes = await supabaseAdmin
         .from("lesson_slot_overrides")
@@ -435,7 +435,7 @@ export const getCoachAthleteDetail = createServerFn({ method: "GET" })
       const otherPlanRows = otherPlansRes.data ?? [];
       const otherPlanIds = otherPlanRows.map((p) => p.id as string);
 
-      let movesByPlan = new Map<string, OtherCoachMoveDTO[]>();
+      const movesByPlan = new Map<string, OtherCoachMoveDTO[]>();
       if (otherPlanIds.length > 0) {
         const movesRes = await supabaseAdmin
           .from("plan_moves")
