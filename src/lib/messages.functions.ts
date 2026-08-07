@@ -499,7 +499,7 @@ export const ensureRoom = createServerFn({ method: "POST" })
 
     const isCoach = me.coach?.id === data.coachId;
     const isAthlete = me.athlete?.id === data.athleteId;
-    const isParent = !!me.parent
+    const isParent = me.parent
       ? (
           await supabaseAdmin
             .from("athletes")
