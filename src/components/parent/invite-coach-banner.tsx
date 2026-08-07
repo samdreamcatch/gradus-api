@@ -64,8 +64,8 @@ export function InviteCoachBanner() {
         {open && (
           <div className="mt-3 space-y-2 pb-2">
             <p className="text-xs text-text-secondary">
-              Tap share — when your coach signs up they'll be linked to your
-              athletes, sports, goals, and lesson times automatically.
+              Tap share — when your coach signs up they'll be linked to your athletes, sports,
+              goals, and lesson times automatically.
             </p>
             <ShareInviteButton
               url={url}
@@ -91,15 +91,19 @@ export function InviteCoachBanner() {
                 className="shrink-0"
               >
                 {codeCopied ? (
-                  <><Check className="size-4" aria-hidden /> Copied</>
+                  <>
+                    <Check className="size-4" aria-hidden /> Copied
+                  </>
                 ) : (
-                  <><Copy className="size-4" aria-hidden /> Copy code</>
+                  <>
+                    <Copy className="size-4" aria-hidden /> Copy code
+                  </>
                 )}
               </Button>
             </div>
             <p className="text-xs text-text-secondary">
-              Is your coach already on Gradus? They can paste this code on their roster
-              page to link up to you and your athlete.
+              Is your coach already on Gradus? They can paste this code on their roster page to link
+              up to you and your athlete.
             </p>
           </div>
         )}

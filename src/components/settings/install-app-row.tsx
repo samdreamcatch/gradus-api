@@ -27,9 +27,7 @@ export function InstallAppRow() {
       icon={<Download className="size-4" />}
       label="Install app"
       description={
-        platform === "ios"
-          ? "Add Gradus to your home screen"
-          : "Get the full-screen app experience"
+        platform === "ios" ? "Add Gradus to your home screen" : "Get the full-screen app experience"
       }
       onClick={handleClick}
     />

@@ -23,10 +23,7 @@ import { useCurrentUserEmail } from "@/hooks/use-current-user-email";
 import { FeedbackSettingsRow } from "@/components/feedback/feedback-fab";
 import { InstallAppRow } from "@/components/settings/install-app-row";
 import { AccountSecuritySection } from "@/components/settings/account-security-section";
-import {
-  getAthleteSettings,
-  updateAthleteSelf,
-} from "@/lib/athlete-settings.functions";
+import { getAthleteSettings, updateAthleteSelf } from "@/lib/athlete-settings.functions";
 import {
   getCoachOfferedSportsForAdult,
   linkAdultAthleteToCoach,
@@ -163,7 +160,12 @@ function AthleteSettingsPage() {
 function ProfileDisclosure({
   profile,
 }: {
-  profile: { firstName: string; lastName: string; birthdate: string | null; username: string | null };
+  profile: {
+    firstName: string;
+    lastName: string;
+    birthdate: string | null;
+    username: string | null;
+  };
 }) {
   const [firstName, setFirstName] = useState(profile.firstName);
   const [lastName, setLastName] = useState(profile.lastName);
@@ -200,27 +202,15 @@ function ProfileDisclosure({
       <div className="grid gap-3 sm:grid-cols-3">
         <div className="space-y-1.5">
           <Label className="text-xs">First name</Label>
-          <Input
-            value={firstName}
-            maxLength={80}
-            onChange={(e) => setFirstName(e.target.value)}
-          />
+          <Input value={firstName} maxLength={80} onChange={(e) => setFirstName(e.target.value)} />
         </div>
         <div className="space-y-1.5">
           <Label className="text-xs">Last name</Label>
-          <Input
-            value={lastName}
-            maxLength={80}
-            onChange={(e) => setLastName(e.target.value)}
-          />
+          <Input value={lastName} maxLength={80} onChange={(e) => setLastName(e.target.value)} />
         </div>
         <div className="space-y-1.5">
           <Label className="text-xs">Birthdate</Label>
-          <Input
-            type="date"
-            value={birthdate}
-            onChange={(e) => setBirthdate(e.target.value)}
-          />
+          <Input type="date" value={birthdate} onChange={(e) => setBirthdate(e.target.value)} />
         </div>
       </div>
       <div className="mt-3 flex justify-end">
@@ -256,9 +246,11 @@ function AdultCoachesSection({
 
   const [adding, setAdding] = useState(false);
   const [code, setCode] = useState("");
-  const [preview, setPreview] = useState<
-    { coachId: string; coachName: string; sports: string[] } | null
-  >(null);
+  const [preview, setPreview] = useState<{
+    coachId: string;
+    coachName: string;
+    sports: string[];
+  } | null>(null);
   const [selectedSports, setSelectedSports] = useState<string[]>([]);
   const [lookingUp, setLookingUp] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -269,8 +261,7 @@ function AdultCoachesSection({
   const [editSaving, setEditSaving] = useState(false);
   const [scheduleCoachId, setScheduleCoachId] = useState<string | null>(null);
 
-  const summary =
-    coaches.length === 0 ? "None linked" : `${coaches.length} linked`;
+  const summary = coaches.length === 0 ? "None linked" : `${coaches.length} linked`;
 
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["adult-athlete-coaches"] });
@@ -308,7 +299,6 @@ function AdultCoachesSection({
     onLinkCoachConsumed?.();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialLinkCoach]);
-
 
   const handleLink = async () => {
     if (!preview) return;
@@ -370,26 +360,17 @@ function AdultCoachesSection({
     }
   };
 
-  const toggle = (
-    sport: string,
-    list: string[],
-    setList: (l: string[]) => void,
-  ) => {
+  const toggle = (sport: string, list: string[], setList: (l: string[]) => void) => {
     setList(list.includes(sport) ? list.filter((s) => s !== sport) : [...list, sport]);
   };
 
   const codeValid = /^[A-Z2-9]{8}$/.test(code.trim().toUpperCase());
 
   return (
-    <SettingsDisclosure
-      icon={<UserPlus className="size-4" />}
-      label="Coaches"
-      value={summary}
-    >
+    <SettingsDisclosure icon={<UserPlus className="size-4" />} label="Coaches" value={summary}>
       {coaches.length === 0 ? (
         <p className="mb-3 text-sm text-text-tertiary">
-          No coaches linked yet. Ask your coach for their invite code, then
-          enter it below.
+          No coaches linked yet. Ask your coach for their invite code, then enter it below.
         </p>
       ) : (
         <div className="mb-3 space-y-2">
@@ -402,15 +383,11 @@ function AdultCoachesSection({
               >
                 <div className="flex items-center justify-between gap-2">
                   <div className="min-w-0">
-                    <div className="truncate text-sm font-medium">
-                      {c.coachName}
-                    </div>
+                    <div className="truncate text-sm font-medium">{c.coachName}</div>
                     <div className="truncate text-xs text-text-tertiary">
                       {c.sports.length === 0
                         ? "No sports set"
-                        : c.sports
-                            .map((s) => getSport(s)?.label ?? s)
-                            .join(", ")}
+                        : c.sports.map((s) => getSport(s)?.label ?? s).join(", ")}
                     </div>
                   </div>
                   <div className="flex shrink-0 flex-wrap justify-end gap-1">
@@ -427,9 +404,7 @@ function AdultCoachesSection({
                       size="sm"
                       variant="ghost"
                       onClick={() =>
-                        setScheduleCoachId(
-                          scheduleCoachId === c.coachId ? null : c.coachId,
-                        )
+                        setScheduleCoachId(scheduleCoachId === c.coachId ? null : c.coachId)
                       }
                     >
                       {scheduleCoachId === c.coachId ? "Close schedule" : "Schedule"}
@@ -456,9 +431,7 @@ function AdultCoachesSection({
                 )}
                 {isEditing && (
                   <div className="mt-3 space-y-2 border-t border-divider pt-3">
-                    <Label className="text-xs">
-                      Sports you do with {c.coachName}
-                    </Label>
+                    <Label className="text-xs">Sports you do with {c.coachName}</Label>
                     <div className="flex flex-wrap gap-2">
                       {editOptions.map((s) => {
                         const checked = editSports.includes(s);
@@ -549,9 +522,7 @@ function AdultCoachesSection({
                   <SportChip
                     key={s}
                     selected={checked}
-                    onClick={() =>
-                      toggle(s, selectedSports, setSelectedSports)
-                    }
+                    onClick={() => toggle(s, selectedSports, setSelectedSports)}
                   >
                     {getSport(s)?.label ?? s}
                   </SportChip>
@@ -565,19 +536,10 @@ function AdultCoachesSection({
             )}
           </div>
           <div className="flex justify-end gap-2">
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={resetLinkForm}
-              disabled={saving}
-            >
+            <Button size="sm" variant="ghost" onClick={resetLinkForm} disabled={saving}>
               Cancel
             </Button>
-            <Button
-              size="sm"
-              onClick={handleLink}
-              disabled={saving || selectedSports.length === 0}
-            >
+            <Button size="sm" onClick={handleLink} disabled={saving || selectedSports.length === 0}>
               {saving ? "Linking…" : "Link coach"}
             </Button>
           </div>
@@ -621,16 +583,17 @@ function CoachScheduleEditor({
   });
 
   const coach = data?.coaches.find((c) => c.coachId === coachId);
-  const initial: Slot[] = coach && coach.slots.length > 0
-    ? coach.slots.map((s) => ({
-        dayOfWeek: s.dayOfWeek,
-        startMinute: s.startMinute,
-        endMinute: s.endMinute,
-        frequency: s.frequency,
-        weeksOfMonth: s.weeksOfMonth,
-        startsOn: s.startsOn ? new Date(s.startsOn + "T00:00:00") : null,
-      }))
-    : [emptySlot()];
+  const initial: Slot[] =
+    coach && coach.slots.length > 0
+      ? coach.slots.map((s) => ({
+          dayOfWeek: s.dayOfWeek,
+          startMinute: s.startMinute,
+          endMinute: s.endMinute,
+          frequency: s.frequency,
+          weeksOfMonth: s.weeksOfMonth,
+          startsOn: s.startsOn ? new Date(s.startsOn + "T00:00:00") : null,
+        }))
+      : [emptySlot()];
 
   const [slots, setSlots] = useState<Slot[]>(initial);
   const [saving, setSaving] = useState(false);
@@ -660,8 +623,7 @@ function CoachScheduleEditor({
         s.frequency === "weekly" || s.frequency === "biweekly"
           ? []
           : [...s.weeksOfMonth].sort((a, b) => a - b),
-      startsOn:
-        s.frequency === "biweekly" && s.startsOn ? toISODate(s.startsOn) : null,
+      startsOn: s.frequency === "biweekly" && s.startsOn ? toISODate(s.startsOn) : null,
     }));
     setSaving(true);
     try {
@@ -692,4 +654,3 @@ function CoachScheduleEditor({
     </div>
   );
 }
-

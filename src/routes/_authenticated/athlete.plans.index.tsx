@@ -187,7 +187,6 @@ function AthletePlansPage() {
         </div>
       )}
 
-
       <AthleteBottomNav />
     </div>
   );
@@ -216,8 +215,7 @@ function AthleteGoalsView() {
   });
 
   const goalMutation = useMutation({
-    mutationFn: (vars: { sport: string; longTermGoal: string }) =>
-      updateGoal({ data: vars }),
+    mutationFn: (vars: { sport: string; longTermGoal: string }) => updateGoal({ data: vars }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["athlete-goals-dashboard"] });
       queryClient.invalidateQueries({ queryKey: ["parent-goals-dashboard"] });
@@ -232,18 +230,12 @@ function AthleteGoalsView() {
   });
 
   if (isLoading) {
-    return (
-      <p className="mt-5 py-5 text-center text-sm text-text-secondary">
-        Loading goals…
-      </p>
-    );
+    return <p className="mt-5 py-5 text-center text-sm text-text-secondary">Loading goals…</p>;
   }
   if (!data) {
     return (
       <div className="mt-5 rounded-2xl border border-dashed border-divider bg-card p-8 text-center">
-        <p className="font-hand text-2xl text-text-secondary">
-          No goals set yet.
-        </p>
+        <p className="font-hand text-2xl text-text-secondary">No goals set yet.</p>
       </div>
     );
   }
@@ -251,9 +243,7 @@ function AthleteGoalsView() {
     <div className="mt-5 space-y-4">
       {data.sports.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-divider bg-card p-8 text-center">
-          <p className="font-hand text-2xl text-text-secondary">
-            No goals set yet.
-          </p>
+          <p className="font-hand text-2xl text-text-secondary">No goals set yet.</p>
         </div>
       ) : (
         data.sports.map((g) => (

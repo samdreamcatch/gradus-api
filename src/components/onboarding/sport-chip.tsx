@@ -15,13 +15,7 @@ interface SportChipProps {
  */
 export function SportChip({ selected, onClick, children, disabled }: SportChipProps) {
   return (
-    <Chip
-      as="button"
-      caseSensitive
-      selected={selected}
-      onClick={onClick}
-      disabled={disabled}
-    >
+    <Chip as="button" caseSensitive selected={selected} onClick={onClick} disabled={disabled}>
       {children}
     </Chip>
   );

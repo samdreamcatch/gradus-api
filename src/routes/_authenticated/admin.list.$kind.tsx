@@ -8,7 +8,6 @@ import { Eyebrow } from "@/components/ui/eyebrow";
 import { Chip, chipClasses } from "@/components/ui/chip";
 import { Tag } from "@/components/ui/tag";
 
-
 const KIND_CONFIG = {
   coaches: {
     title: "Coaches",
@@ -96,7 +95,9 @@ function AdminList() {
       </Link>
 
       <header className="space-y-1">
-        <Eyebrow size="small" tone="accent-ink">Admin</Eyebrow>
+        <Eyebrow size="small" tone="accent-ink">
+          Admin
+        </Eyebrow>
         <h1 className="font-display text-h1 text-text-primary">{cfg.title}</h1>
         {data && (
           <p className="text-sm text-text-secondary">
@@ -107,21 +108,24 @@ function AdminList() {
       </header>
 
       <div className="flex flex-wrap items-center gap-2">
-        {cfg.filters.length > 1 && cfg.filters.map((f) => (
-          <Link
-            key={f.value}
-            from={Route.fullPath}
-            search={(prev: any) => ({ ...prev, filter: f.value })}
-            className={chipClasses({ tone: "muted", weight: "medium", selected: filter === f.value })}
-          >
-            {f.label}
-          </Link>
-        ))}
+        {cfg.filters.length > 1 &&
+          cfg.filters.map((f) => (
+            <Link
+              key={f.value}
+              from={Route.fullPath}
+              search={(prev: any) => ({ ...prev, filter: f.value })}
+              className={chipClasses({
+                tone: "muted",
+                weight: "medium",
+                selected: filter === f.value,
+              })}
+            >
+              {f.label}
+            </Link>
+          ))}
       </div>
 
-
       <div className="rounded-xl border border-divider bg-card">
-
         {isLoading ? (
           <p className="p-4 text-sm text-text-secondary">Loading…</p>
         ) : (data?.rows ?? []).length === 0 ? (
@@ -131,22 +135,18 @@ function AdminList() {
             {data!.rows.map((r) => {
               const inner = (
                 <div className="flex items-center justify-between gap-4 px-4 py-3 hover:bg-elevated">
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-text-primary">
-                    {r.name}
-                    {(r as any).isTest && (
-                      <Tag className="ml-2">test</Tag>
-                    )}
-
-                  </p>
-                  {r.email && <p className="truncate text-xs text-text-secondary">{r.email}</p>}
-                </div>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-text-primary">
+                      {r.name}
+                      {(r as any).isTest && <Tag className="ml-2">test</Tag>}
+                    </p>
+                    {r.email && <p className="truncate text-xs text-text-secondary">{r.email}</p>}
+                  </div>
                   <div className="shrink-0 flex items-center gap-3">
                     {r.userId && (
                       <Chip
                         as="button"
                         size="micro"
-
                         mono
                         selected={(r as any).isTest}
                         onClick={(e) => {
@@ -199,7 +199,6 @@ function AdminList() {
           {includeTest ? "Test users: on" : "Test users: hidden"}
         </Link>
       </div>
-
     </div>
   );
 }

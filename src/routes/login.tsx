@@ -18,10 +18,7 @@ import { clearPendingPromoCode } from "@/lib/pending-promo-code";
 export const Route = createFileRoute("/login")({
   validateSearch: (s: Record<string, unknown>) => {
     const raw = typeof s.redirect === "string" ? s.redirect : "";
-    const isSafe =
-      raw.startsWith("/") &&
-      !raw.startsWith("//") &&
-      !raw.startsWith("/login");
+    const isSafe = raw.startsWith("/") && !raw.startsWith("//") && !raw.startsWith("/login");
     return { redirect: isSafe ? raw : "" };
   },
   component: LoginPage,
@@ -128,7 +125,6 @@ function LoginPage() {
     }
   };
 
-
   // If the session resolves and the user is already signed in, route them
   // away from /login. Done in an effect (not beforeLoad) so we don't
   // redirect during the brief hydration window.
@@ -148,7 +144,6 @@ function LoginPage() {
       navigate({ to: "/" });
     }
   };
-
 
   const handleEmail = async (e: FormEvent) => {
     e.preventDefault();
@@ -217,7 +212,6 @@ function LoginPage() {
     <div className="relative flex min-h-dvh items-center justify-center overflow-hidden px-4 py-12">
       <SportsPoster fill opacity={0.08} />
       <div className="relative w-full max-w-md rounded-2xl bg-card p-8 shadow-card">
-
         <div className="mb-8 text-center">
           <p className="text-xs font-bold uppercase tracking-widest text-accent-ink">
             Welcome back to
@@ -291,7 +285,10 @@ function LoginPage() {
         </form>
 
         <p className="mt-6 text-center text-sm text-text-secondary">
-          <Link to="/forgot-password" className="font-semibold text-accent-ink underline-offset-4 hover:underline">
+          <Link
+            to="/forgot-password"
+            className="font-semibold text-accent-ink underline-offset-4 hover:underline"
+          >
             Forgot password?
           </Link>
         </p>

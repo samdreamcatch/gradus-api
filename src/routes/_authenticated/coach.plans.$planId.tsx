@@ -53,9 +53,6 @@ import {
 import { ShareToSocialsButton } from "@/components/plans/share-to-socials-button";
 import { getOrCreateShareToken } from "@/lib/plan-share.functions";
 
-
-
-
 import {
   listMoves,
   upsertMove,
@@ -77,7 +74,6 @@ const TEMPLATE_OPTION = "Save as Template";
 const SITE_ORIGIN = "https://gradus.training";
 
 export const Route = createFileRoute("/_authenticated/coach/plans/$planId")({
-
   component: PlanEditorSheet,
   validateSearch: (search: Record<string, unknown>) => ({
     from: search.from === "plus" ? ("plus" as const) : undefined,
@@ -97,7 +93,6 @@ function PlanEditorSheet() {
   const navigate = useNavigate();
   const close = () => navigate({ to: "/coach/plans" });
 
-
   // Defensive: if someone hits /coach/plans/new directly, bounce back.
   if (planId === "new") {
     close();
@@ -105,7 +100,12 @@ function PlanEditorSheet() {
   }
 
   return (
-    <Sheet open onOpenChange={(v) => { if (!v) close(); }}>
+    <Sheet
+      open
+      onOpenChange={(v) => {
+        if (!v) close();
+      }}
+    >
       <SheetContent
         side="bottom"
         className="paper-surface max-h-[92dvh] overflow-y-auto border-t border-divider shadow-page"
@@ -115,8 +115,15 @@ function PlanEditorSheet() {
     </Sheet>
   );
 }
-function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: () => void; from?: "plus" }) {
-
+function PlanEditorBody({
+  planId,
+  onClose,
+  from,
+}: {
+  planId: string;
+  onClose: () => void;
+  from?: "plus";
+}) {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const fetchPlan = useServerFn(getPlan);
@@ -131,8 +138,6 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
   const createPlanFn = useServerFn(createPlan);
   const getActivesFn = useServerFn(getAthleteActivePlans);
   const shareTokenFn = useServerFn(getOrCreateShareToken);
-
-
 
   const { data, isLoading } = useQuery({
     queryKey: ["plan", planId],
@@ -150,8 +155,12 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
   const [expandedMoves, setExpandedMoves] = useState<Record<string, boolean>>({});
   const [didInitExpansion, setDidInitExpansion] = useState(false);
   const [useTemplateOpen, setUseTemplateOpen] = useState(false);
-  const [pendingAssignment, setPendingAssignment] = useState<null | "public" | "template" | "athlete">(null);
-  const [activeConflicts, setActiveConflicts] = useState<{ id: string; title: string }[] | null>(null);
+  const [pendingAssignment, setPendingAssignment] = useState<
+    null | "public" | "template" | "athlete"
+  >(null);
+  const [activeConflicts, setActiveConflicts] = useState<{ id: string; title: string }[] | null>(
+    null,
+  );
   const [chosenReplaceId, setChosenReplaceId] = useState<string | null>(null);
 
   const [touched, setTouched] = useState<VoiceTouchedSnapshot>(
@@ -182,22 +191,15 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
     if (touched.newMoveIds.includes(moveId)) return true;
     return touched.moves[moveId]?.includes(field) ?? false;
   };
-  const planSource = (key: "title" | "athleteId" | "notes") =>
-    touched.sources?.plan?.[key]?.quote;
-  const moveSource = (
-    moveId: string,
-    field: "name" | "description" | "cue" | "why" | "target",
-  ) => touched.sources?.moves?.[moveId]?.[field]?.quote;
+  const planSource = (key: "title" | "athleteId" | "notes") => touched.sources?.plan?.[key]?.quote;
+  const moveSource = (moveId: string, field: "name" | "description" | "cue" | "why" | "target") =>
+    touched.sources?.moves?.[moveId]?.[field]?.quote;
 
-
-  const clearAllTouched = () =>
-    setTouched({ plan: {}, moves: {}, newMoveIds: [] });
+  const clearAllTouched = () => setTouched({ plan: {}, moves: {}, newMoveIds: [] });
   const touchedCount =
     Object.keys(touched.plan).length +
     Object.keys(touched.moves).length +
     touched.newMoveIds.length;
-
-
 
   const useTemplate = useMutation({
     mutationFn: createPlanFn,
@@ -208,7 +210,6 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
     },
     onError: (e: Error) => toast.error(e.message),
   });
-
 
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["plan", planId] });
@@ -288,14 +289,13 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
     queryFn: () => fetchPlanSessions({ data: { planId: plan!.id } }),
     enabled: !!plan?.id,
   });
-  const loggedSessions =
-    sessionsQuery.data?.sessionsByState ?? {
-      frustrated: 0,
-      pushing: 0,
-      steady: 0,
-      lockedIn: 0,
-      flowing: 0,
-    };
+  const loggedSessions = sessionsQuery.data?.sessionsByState ?? {
+    frustrated: 0,
+    pushing: 0,
+    steady: 0,
+    lockedIn: 0,
+    flowing: 0,
+  };
   const loggedSessionsTotal = sessionsQuery.data?.sessionsTotal ?? 0;
 
   const fetchPlanSessionsSummary = useServerFn(getPlanSessionsSummary);
@@ -312,14 +312,14 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
   const assignmentMode: "athlete" | "public" | "template" | null = isTemplate
     ? "template"
     : pendingAssignment === "athlete"
-    ? "athlete"
-    : pendingAssignment === "public"
-    ? "public"
-    : pendingAssignment === "template"
-    ? "template"
-    : plan?.athleteId
-    ? "athlete"
-    : null;
+      ? "athlete"
+      : pendingAssignment === "public"
+        ? "public"
+        : pendingAssignment === "template"
+          ? "template"
+          : plan?.athleteId
+            ? "athlete"
+            : null;
 
   // Prefetch share token so "Publish & Share" can invoke navigator.share
   // synchronously in the click handler (needed for iOS Safari user activation).
@@ -332,16 +332,10 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
   });
 
   if (isLoading || !plan) {
-    return (
-      <div className="py-8 text-center text-sm text-text-secondary">Loading…</div>
-    );
+    return <div className="py-8 text-center text-sm text-text-secondary">Loading…</div>;
   }
 
-
-
-
-  const toggleMove = (id: string) =>
-    setExpandedMoves((prev) => ({ ...prev, [id]: !prev[id] }));
+  const toggleMove = (id: string) => setExpandedMoves((prev) => ({ ...prev, [id]: !prev[id] }));
 
   const commit = async <K extends string>(field: K, fn: () => Promise<unknown>) => {
     setSavingField(field);
@@ -399,8 +393,6 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
     void openConflictDialog();
   };
 
-
-
   const saveTemplate = () => {
     if (!plan.title.trim()) {
       toast.error("Give the template a title.");
@@ -456,7 +448,6 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
     });
   };
 
-
   const reorder = (from: number, to: number) => {
     if (to < 0 || to >= plan.moves.length || from === to) return;
     const ids = plan.moves.map((m) => m.id);
@@ -488,7 +479,10 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
                       transcript: r.touched.transcript ?? prev.transcript,
                       sources: {
                         plan: { ...(prev.sources?.plan ?? {}), ...(r.touched.sources?.plan ?? {}) },
-                        moves: { ...(prev.sources?.moves ?? {}), ...(r.touched.sources?.moves ?? {}) },
+                        moves: {
+                          ...(prev.sources?.moves ?? {}),
+                          ...(r.touched.sources?.moves ?? {}),
+                        },
                       },
                     }))
                   }
@@ -501,7 +495,7 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
                   className="shrink-0"
                 />
               ) : null}
-          </div>
+            </div>
           ) : null}
           <SheetTitle asChild>
             <div className="order-2 min-w-0 sm:order-1">
@@ -516,7 +510,6 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
                 saving={savingField === "title"}
                 highlighted={!!touched.plan.title}
                 sourceQuote={planSource("title")}
-
                 onCommit={(v) => {
                   clearPlanTouch("title");
                   return commit("title", () =>
@@ -546,9 +539,7 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
         </div>
       ) : null}
 
-
       <div className="mt-5 space-y-5 pb-2">
-
         {/* Assignment — compact */}
         <div className="rounded-lg border border-divider bg-card px-3 py-2">
           {isTemplate ? (
@@ -570,16 +561,12 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
                 assignmentMode === "public"
                   ? PUBLIC_OPTION
                   : assignmentMode === "template"
-                  ? TEMPLATE_OPTION
-                  : plan.athleteId
-                  ? athletes.find((a) => a.id === plan.athleteId)?.name ?? ""
-                  : ""
+                    ? TEMPLATE_OPTION
+                    : plan.athleteId
+                      ? (athletes.find((a) => a.id === plan.athleteId)?.name ?? "")
+                      : ""
               }
-              options={[
-                PUBLIC_OPTION,
-                TEMPLATE_OPTION,
-                ...athletes.map((a) => a.name),
-              ]}
+              options={[PUBLIC_OPTION, TEMPLATE_OPTION, ...athletes.map((a) => a.name)]}
               dividerAfter={[TEMPLATE_OPTION]}
               allowFreeText={false}
               placeholder="Public, template, or athlete"
@@ -642,10 +629,6 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
           ) : null}
         </div>
 
-
-
-
-
         {plan.status === "active" ? (
           <div className="space-y-3">
             {/* Logged instances bar chart */}
@@ -675,7 +658,8 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
                 </div>
                 {loggedSessionsTotal === 0 ? (
                   <p className="text-xs text-text-tertiary">
-                    No sessions logged yet. A summary will appear once {plan.athleteName?.split(" ")[0] ?? "your athlete"} starts logging practice.
+                    No sessions logged yet. A summary will appear once{" "}
+                    {plan.athleteName?.split(" ")[0] ?? "your athlete"} starts logging practice.
                   </p>
                 ) : summaryQuery.isLoading ? (
                   <div className="space-y-1.5" aria-hidden>
@@ -693,17 +677,9 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
                   </p>
                 )}
               </div>
-
             </div>
-
-
-
           </div>
         ) : null}
-
-
-
-
 
         {/* Moves */}
         <div className="mb-3 mt-2 flex items-end justify-between">
@@ -866,9 +842,7 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
                       <LibrarySyncStrip planMove={m} onSynced={invalidate} />
                     )}
 
-
                     <div className="flex items-center justify-between border-t border-divider/60 pt-3">
-
                       <div className="flex items-center gap-1">
                         <button
                           type="button"
@@ -906,9 +880,6 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
           })}
         </ul>
 
-
-
-
         <Button
           type="button"
           variant="outline"
@@ -929,7 +900,6 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
             saving={savingField === "notes"}
             highlighted={!!touched.plan.notes}
             sourceQuote={planSource("notes")}
-
             onCommit={(v) => {
               clearPlanTouch("notes");
               return commit("notes", () =>
@@ -944,14 +914,9 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
             <summary className="cursor-pointer select-none text-muted-foreground">
               What you dictated
             </summary>
-            <p className="mt-3 whitespace-pre-wrap text-foreground">
-              {plan.voiceTranscript}
-            </p>
+            <p className="mt-3 whitespace-pre-wrap text-foreground">{plan.voiceTranscript}</p>
           </details>
         ) : null}
-
-
-
 
         <div className="sticky bottom-0 -mx-6 mt-4 flex items-center justify-between gap-3 border-t border-divider bg-popover px-6 pt-3 pb-[max(env(safe-area-inset-bottom),0.75rem)]">
           {plan.status === "active" ? (
@@ -1024,7 +989,6 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
                 );
               }}
             />
-
           ) : (
             <Button
               type="button"
@@ -1040,7 +1004,6 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
               {plan.status === "active" ? "Update & Share" : "Activate & Share"}
             </Button>
           )}
-
         </div>
       </div>
 
@@ -1063,9 +1026,7 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete "{plan.title || "this plan"}"?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This can't be undone.
-            </AlertDialogDescription>
+            <AlertDialogDescription>This can't be undone.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
@@ -1084,7 +1045,12 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
 
       <AlertDialog
         open={!!activeConflicts}
-        onOpenChange={(v) => { if (!v) { setActiveConflicts(null); setChosenReplaceId(null); } }}
+        onOpenChange={(v) => {
+          if (!v) {
+            setActiveConflicts(null);
+            setChosenReplaceId(null);
+          }
+        }}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -1092,14 +1058,16 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
               <>
                 <AlertDialogTitle>Athlete already has two active plans</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Athlete already has two active plans to work on before they next see you. Choose a plan to bench.
+                  Athlete already has two active plans to work on before they next see you. Choose a
+                  plan to bench.
                 </AlertDialogDescription>
               </>
             ) : (
               <>
                 <AlertDialogTitle>Replace existing active plan?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Athlete already has an active plan from you. Do you want to replace it with this one?
+                  Athlete already has an active plan from you. Do you want to replace it with this
+                  one?
                 </AlertDialogDescription>
               </>
             )}
@@ -1126,7 +1094,8 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
             </div>
           ) : activeConflicts && activeConflicts.length === 1 ? (
             <p className="text-sm text-text-secondary">
-              Replacing will bench "{activeConflicts[0].title || "Untitled plan"}". Or keep both active.
+              Replacing will bench "{activeConflicts[0].title || "Untitled plan"}". Or keep both
+              active.
             </p>
           ) : null}
           <AlertDialogFooter className="flex-col gap-2 sm:flex-col sm:space-x-0">
@@ -1180,13 +1149,10 @@ function PlanEditorBody({ planId, onClose, from }: { planId: string; onClose: ()
                 </AlertDialogAction>
               </>
             )}
-            
           </AlertDialogFooter>
-
         </AlertDialogContent>
       </AlertDialog>
     </>
-
   );
 }
 
@@ -1257,7 +1223,6 @@ function PlanMoveTarget({
   );
 }
 
-
 function MovePicker({
   open,
   onOpenChange,
@@ -1302,13 +1267,14 @@ function MovePicker({
 
   const count = Object.keys(selected).length;
 
-  const [nameConflict, setNameConflict] = useState<
-    | { existingMoveId: string; existingName: string; attemptedName: string }
-    | null
+  const [nameConflict, setNameConflict] = useState<{
+    existingMoveId: string;
+    existingName: string;
+    attemptedName: string;
+  } | null>(null);
+  const [lastCreateInput, setLastCreateInput] = useState<
+    Parameters<NonNullable<React.ComponentProps<typeof NewMoveForm>["onCreate"]>>[0] | null
   >(null);
-  const [lastCreateInput, setLastCreateInput] = useState<Parameters<
-    NonNullable<React.ComponentProps<typeof NewMoveForm>["onCreate"]>
-  >[0] | null>(null);
 
   const upsertMutation = useMutation({
     mutationFn: upsertFn,
@@ -1332,126 +1298,121 @@ function MovePicker({
 
   return (
     <>
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent
-        side="bottom"
-        className="paper-surface flex flex-col"
-        style={{
-          bottom: vv.keyboardInset,
-          maxHeight: Math.round(vv.height * 0.85),
-        }}
-      >
-        <SheetHeader>
-          <SheetTitle className="font-display text-2xl">
-            {mode === "pick" ? "Add moves" : "New move"}
-          </SheetTitle>
-        </SheetHeader>
+      <Sheet open={open} onOpenChange={onOpenChange}>
+        <SheetContent
+          side="bottom"
+          className="paper-surface flex flex-col"
+          style={{
+            bottom: vv.keyboardInset,
+            maxHeight: Math.round(vv.height * 0.85),
+          }}
+        >
+          <SheetHeader>
+            <SheetTitle className="font-display text-2xl">
+              {mode === "pick" ? "Add moves" : "New move"}
+            </SheetTitle>
+          </SheetHeader>
 
-        {mode === "pick" ? (
-          <>
-            <div className="mt-3 flex items-center gap-2">
-              <div className="relative flex-1">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-tertiary" />
-                <Input
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search moves"
-                  className="h-9 pl-9"
-                />
+          {mode === "pick" ? (
+            <>
+              <div className="mt-3 flex items-center gap-2">
+                <div className="relative flex-1">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-tertiary" />
+                  <Input
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder="Search moves"
+                    className="h-9 pl-9"
+                  />
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setMode("create")}
+                  className="h-9 gap-1"
+                >
+                  <Plus className="h-4 w-4" /> New
+                </Button>
               </div>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setMode("create")}
-                className="h-9 gap-1"
-              >
-                <Plus className="h-4 w-4" /> New
-              </Button>
-            </div>
-            <ul className="mt-3 flex-1 divide-y divide-divider overflow-y-auto">
-              {filtered.map((m) => {
-                const isSel = !!selected[m.id];
-                return (
-                  <li key={m.id}>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setSelected((prev) => {
-                          const next = { ...prev };
-                          if (next[m.id]) delete next[m.id];
-                          else next[m.id] = m;
-                          return next;
-                        })
-                      }
-                      className={cn(
-                        "flex w-full items-start gap-3 py-2.5 text-left transition",
-                        isSel && "bg-accent/10",
-                      )}
-                    >
-                      <div
+              <ul className="mt-3 flex-1 divide-y divide-divider overflow-y-auto">
+                {filtered.map((m) => {
+                  const isSel = !!selected[m.id];
+                  return (
+                    <li key={m.id}>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setSelected((prev) => {
+                            const next = { ...prev };
+                            if (next[m.id]) delete next[m.id];
+                            else next[m.id] = m;
+                            return next;
+                          })
+                        }
                         className={cn(
-                          "mt-1 flex h-4 w-4 shrink-0 items-center justify-center rounded border",
-                          isSel ? "border-accent bg-accent" : "border-divider",
+                          "flex w-full items-start gap-3 py-2.5 text-left transition",
+                          isSel && "bg-accent/10",
                         )}
                       >
-                        {isSel ? <span className="text-[10px] font-black text-accent-foreground">✓</span> : null}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-bold text-text-primary">
-                          {m.name}
-                        </p>
-                        <Eyebrow size="caption" tone="tertiary">
-                          {m.category} ·{" "}
-                          {m.defaultTargetKind === "mins"
-                            ? `${m.defaultTargetValue} mins`
-                            : `${m.defaultTargetValue} reps`}
-                        </Eyebrow>
-                      </div>
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-            <div className="mt-3 flex items-center justify-between gap-3 border-t border-divider pt-3">
-              <span className="text-xs font-bold text-text-secondary">
-                {count} selected
-              </span>
-              <Button
-                onClick={() => onAdd(Object.values(selected))}
-                disabled={count === 0}
-              >
-                Add {count > 0 ? count : ""}
-              </Button>
-            </div>
-          </>
-        ) : (
-          <NewMoveForm
-            existingMoves={moves}
-            saving={upsertMutation.isPending}
-            onCancel={() => setMode("pick")}
-            onUseExisting={(m) => onAdd([m])}
-            onCreate={(input) => {
-              setLastCreateInput(input);
-              upsertMutation.mutate({ data: input });
-            }}
-          />
-        )}
-      </SheetContent>
-    </Sheet>
-    <NameConflictDialog
-      open={!!nameConflict}
-      attemptedName={nameConflict?.attemptedName ?? ""}
-      existingName={nameConflict?.existingName ?? ""}
-      busy={upsertMutation.isPending}
-      onOpenChange={(v: boolean) => !v && setNameConflict(null)}
-      onOverwrite={() => {
-        if (!nameConflict || !lastCreateInput) return;
-        upsertMutation.mutate({
-          data: { ...lastCreateInput, overwriteMoveId: nameConflict.existingMoveId },
-        });
-        setNameConflict(null);
-      }}
-    />
+                        <div
+                          className={cn(
+                            "mt-1 flex h-4 w-4 shrink-0 items-center justify-center rounded border",
+                            isSel ? "border-accent bg-accent" : "border-divider",
+                          )}
+                        >
+                          {isSel ? (
+                            <span className="text-[10px] font-black text-accent-foreground">✓</span>
+                          ) : null}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-bold text-text-primary">{m.name}</p>
+                          <Eyebrow size="caption" tone="tertiary">
+                            {m.category} ·{" "}
+                            {m.defaultTargetKind === "mins"
+                              ? `${m.defaultTargetValue} mins`
+                              : `${m.defaultTargetValue} reps`}
+                          </Eyebrow>
+                        </div>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+              <div className="mt-3 flex items-center justify-between gap-3 border-t border-divider pt-3">
+                <span className="text-xs font-bold text-text-secondary">{count} selected</span>
+                <Button onClick={() => onAdd(Object.values(selected))} disabled={count === 0}>
+                  Add {count > 0 ? count : ""}
+                </Button>
+              </div>
+            </>
+          ) : (
+            <NewMoveForm
+              existingMoves={moves}
+              saving={upsertMutation.isPending}
+              onCancel={() => setMode("pick")}
+              onUseExisting={(m) => onAdd([m])}
+              onCreate={(input) => {
+                setLastCreateInput(input);
+                upsertMutation.mutate({ data: input });
+              }}
+            />
+          )}
+        </SheetContent>
+      </Sheet>
+      <NameConflictDialog
+        open={!!nameConflict}
+        attemptedName={nameConflict?.attemptedName ?? ""}
+        existingName={nameConflict?.existingName ?? ""}
+        busy={upsertMutation.isPending}
+        onOpenChange={(v: boolean) => !v && setNameConflict(null)}
+        onOverwrite={() => {
+          if (!nameConflict || !lastCreateInput) return;
+          upsertMutation.mutate({
+            data: { ...lastCreateInput, overwriteMoveId: nameConflict.existingMoveId },
+          });
+          setNameConflict(null);
+        }}
+      />
     </>
   );
 }
@@ -1538,9 +1499,7 @@ function NewMoveForm({
 
         {dupes.length > 0 ? (
           <div className="rounded-md border border-accent/50 bg-accent/10 p-3">
-            <p className="text-xs font-bold text-text-primary">
-              Already in your library?
-            </p>
+            <p className="text-xs font-bold text-text-primary">Already in your library?</p>
             <ul className="mt-2 divide-y divide-divider">
               {dupes.map((m) => (
                 <li key={m.id} className="flex items-center justify-between gap-2 py-1.5">
@@ -1574,14 +1533,16 @@ function NewMoveForm({
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <Eyebrow as="label" size="caption" tone="tertiary" weight="black" className="mb-1 block">
+            <Eyebrow
+              as="label"
+              size="caption"
+              tone="tertiary"
+              weight="black"
+              className="mb-1 block"
+            >
               Sport
             </Eyebrow>
-            <Input
-              value={sport}
-              onChange={(e) => setSport(e.target.value)}
-              list="np-sports"
-            />
+            <Input value={sport} onChange={(e) => setSport(e.target.value)} list="np-sports" />
             <datalist id="np-sports">
               {sportOptions.map((s) => (
                 <option key={s} value={s} />
@@ -1589,13 +1550,16 @@ function NewMoveForm({
             </datalist>
           </div>
           <div>
-            <Eyebrow as="label" size="caption" tone="tertiary" weight="black" className="mb-1 block">
+            <Eyebrow
+              as="label"
+              size="caption"
+              tone="tertiary"
+              weight="black"
+              className="mb-1 block"
+            >
               Category
             </Eyebrow>
-            <Input
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-            />
+            <Input value={category} onChange={(e) => setCategory(e.target.value)} />
           </div>
         </div>
 
@@ -1720,16 +1684,21 @@ function AddToLibrarySection({
     setCustomCategory("");
   }, [sport]);
 
-  const [conflict, setConflict] = useState<
-    | { existingMoveId: string; existingName: string; payload: { planMoveId: string; sport: string; category: string } }
-    | null
-  >(null);
+  const [conflict, setConflict] = useState<{
+    existingMoveId: string;
+    existingName: string;
+    payload: { planMoveId: string; sport: string; category: string };
+  } | null>(null);
 
   const mutation = useMutation({
     mutationFn: addFn,
     onSuccess: (res, variables) => {
       if (!res.ok) {
-        const payload = (variables?.data ?? {}) as { planMoveId: string; sport: string; category: string };
+        const payload = (variables?.data ?? {}) as {
+          planMoveId: string;
+          sport: string;
+          category: string;
+        };
         setConflict({
           existingMoveId: res.conflict.existingMoveId,
           existingName: res.conflict.name,
@@ -1794,9 +1763,7 @@ function AddToLibrarySection({
                 onChange={(e) => setSport(e.target.value)}
                 className="mt-1 block w-full rounded-md border border-divider bg-card px-2 py-2 text-sm text-text-primary focus:border-accent focus:outline-none"
               >
-                {sports.length === 0 ? (
-                  <option value="">No sports configured</option>
-                ) : null}
+                {sports.length === 0 ? <option value="">No sports configured</option> : null}
                 {sports.map((s) => (
                   <option key={s} value={s}>
                     {s}
@@ -1814,9 +1781,7 @@ function AddToLibrarySection({
                 className="mt-1 block w-full rounded-md border border-divider bg-card px-2 py-2 text-sm text-text-primary focus:border-accent focus:outline-none"
                 disabled={!sport || movesQuery.isLoading}
               >
-                <option value="">
-                  {movesQuery.isLoading ? "Loading…" : "Select a category…"}
-                </option>
+                <option value="">{movesQuery.isLoading ? "Loading…" : "Select a category…"}</option>
                 {categoryOptions.map((c) => (
                   <option key={c} value={c}>
                     {c}
@@ -1846,8 +1811,7 @@ function AddToLibrarySection({
               }
               onClick={(e) => {
                 e.preventDefault();
-                const finalCategory =
-                  category === "__other__" ? customCategory.trim() : category;
+                const finalCategory = category === "__other__" ? customCategory.trim() : category;
                 mutation.mutate({
                   data: {
                     planMoveId: planMove.id,
@@ -1881,9 +1845,7 @@ function AddToLibrarySection({
   );
 }
 
-function diffLibraryFields(
-  planMove: PlanMoveDTO,
-): { changed: string[]; libName: string } | null {
+function diffLibraryFields(planMove: PlanMoveDTO): { changed: string[]; libName: string } | null {
   const lib = planMove.libraryMove;
   if (!lib) return null;
   const changed: string[] = [];
@@ -1893,19 +1855,12 @@ function diffLibraryFields(
   if (planMove.cue.trim() !== lib.cue.trim()) changed.push("cue");
   if (planMove.why.trim() !== lib.why.trim()) changed.push("why");
   if (planMove.targetKind !== lib.defaultTargetKind) changed.push("target");
-  else if (Number(planMove.targetValue) !== Number(lib.defaultTargetValue))
-    changed.push("target");
+  else if (Number(planMove.targetValue) !== Number(lib.defaultTargetValue)) changed.push("target");
   if (changed.length === 0) return null;
   return { changed, libName: lib.name };
 }
 
-function LibrarySyncStrip({
-  planMove,
-  onSynced,
-}: {
-  planMove: PlanMoveDTO;
-  onSynced: () => void;
-}) {
+function LibrarySyncStrip({ planMove, onSynced }: { planMove: PlanMoveDTO; onSynced: () => void }) {
   const diff = diffLibraryFields(planMove);
   const [confirmUpdate, setConfirmUpdate] = useState(false);
   const [forkOpen, setForkOpen] = useState(false);
@@ -1913,7 +1868,6 @@ function LibrarySyncStrip({
   const [category, setCategory] = useState("");
   const [customCategory, setCustomCategory] = useState("");
   const [forkName, setForkName] = useState(planMove.name);
-
 
   const updateFn = useServerFn(updateLibraryMoveFromPlanMove);
   const forkFn = useServerFn(forkPlanMoveToLibrary);
@@ -1941,16 +1895,22 @@ function LibrarySyncStrip({
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const [forkConflict, setForkConflict] = useState<
-    | { existingMoveId: string; existingName: string; payload: { planMoveId: string; sport: string; category: string; name: string } }
-    | null
-  >(null);
+  const [forkConflict, setForkConflict] = useState<{
+    existingMoveId: string;
+    existingName: string;
+    payload: { planMoveId: string; sport: string; category: string; name: string };
+  } | null>(null);
 
   const forkMutation = useMutation({
     mutationFn: forkFn,
     onSuccess: (res, variables) => {
       if (!res.ok) {
-        const payload = (variables?.data ?? {}) as { planMoveId: string; sport: string; category: string; name: string };
+        const payload = (variables?.data ?? {}) as {
+          planMoveId: string;
+          sport: string;
+          category: string;
+          name: string;
+        };
         setForkConflict({
           existingMoveId: res.conflict.existingMoveId,
           existingName: res.conflict.name,
@@ -1977,9 +1937,7 @@ function LibrarySyncStrip({
 
   const categoryOptions = useMemo(() => {
     const all = movesQuery.data?.moves ?? [];
-    return Array.from(
-      new Set(all.filter((m) => m.sport === sport).map((m) => m.category)),
-    ).sort();
+    return Array.from(new Set(all.filter((m) => m.sport === sport).map((m) => m.category))).sort();
   }, [movesQuery.data, sport]);
 
   if (!diff) return null;
@@ -1995,20 +1953,10 @@ function LibrarySyncStrip({
           </Eyebrow>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            onClick={() => setConfirmUpdate(true)}
-          >
+          <Button type="button" size="sm" variant="outline" onClick={() => setConfirmUpdate(true)}>
             Update library
           </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="ghost"
-            onClick={() => setForkOpen(true)}
-          >
+          <Button type="button" size="sm" variant="ghost" onClick={() => setForkOpen(true)}>
             Save as new
           </Button>
         </div>
@@ -2022,9 +1970,8 @@ function LibrarySyncStrip({
           <AlertDialogHeader>
             <AlertDialogTitle>Update "{diff.libName}" in your library?</AlertDialogTitle>
             <AlertDialogDescription>
-              This overwrites {changedLabel} on the library move. Existing plans that
-              already use this move keep their current text — only future plans pick up
-              the new version.
+              This overwrites {changedLabel} on the library move. Existing plans that already use
+              this move keep their current text — only future plans pick up the new version.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -2042,16 +1989,13 @@ function LibrarySyncStrip({
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog
-        open={forkOpen}
-        onOpenChange={(v) => !forkMutation.isPending && setForkOpen(v)}
-      >
+      <AlertDialog open={forkOpen} onOpenChange={(v) => !forkMutation.isPending && setForkOpen(v)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Save as a new library move</AlertDialogTitle>
             <AlertDialogDescription>
-              Name it, then pick a sport and category so you can find it next time. The
-              original library move is left untouched.
+              Name it, then pick a sport and category so you can find it next time. The original
+              library move is left untouched.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="space-y-3 py-1">
@@ -2094,9 +2038,7 @@ function LibrarySyncStrip({
                 className="mt-1 block w-full rounded-md border border-divider bg-card px-2 py-2 text-sm text-text-primary focus:border-accent focus:outline-none"
                 disabled={!sport || movesQuery.isLoading}
               >
-                <option value="">
-                  {movesQuery.isLoading ? "Loading…" : "Select a category…"}
-                </option>
+                <option value="">{movesQuery.isLoading ? "Loading…" : "Select a category…"}</option>
                 {categoryOptions.map((c) => (
                   <option key={c} value={c}>
                     {c}
@@ -2127,8 +2069,7 @@ function LibrarySyncStrip({
               }
               onClick={(e) => {
                 e.preventDefault();
-                const finalCategory =
-                  category === "__other__" ? customCategory.trim() : category;
+                const finalCategory = category === "__other__" ? customCategory.trim() : category;
                 forkMutation.mutate({
                   data: {
                     planMoveId: planMove.id,
@@ -2148,7 +2089,6 @@ function LibrarySyncStrip({
       <NameConflictDialog
         open={!!forkConflict}
         attemptedName={forkName}
-
         existingName={forkConflict?.existingName ?? ""}
         busy={forkMutation.isPending}
         onOpenChange={(v) => !v && setForkConflict(null)}
@@ -2163,4 +2103,3 @@ function LibrarySyncStrip({
     </div>
   );
 }
-

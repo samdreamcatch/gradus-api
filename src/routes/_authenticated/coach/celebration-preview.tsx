@@ -25,9 +25,7 @@ function CelebrationPreview() {
 
   return (
     <div className="mx-auto max-w-md space-y-4 p-6">
-      <h1 className="font-display text-2xl font-black text-text-primary">
-        Celebration mockups
-      </h1>
+      <h1 className="font-display text-2xl font-black text-text-primary">Celebration mockups</h1>
       <p className="text-sm text-text-secondary">
         Three directions using the sports poster art directly, like the business card.
       </p>
@@ -54,10 +52,7 @@ function CelebrationPreview() {
           label="Direction 1 — Poster wallpaper wash"
           onClick={() => setDirection("v1")}
         />
-        <PreviewCard
-          label="Direction 2 — Poster header band"
-          onClick={() => setDirection("v2")}
-        />
+        <PreviewCard label="Direction 2 — Poster header band" onClick={() => setDirection("v2")} />
         <PreviewCard
           label="Direction 3 — Poster wash + highlighter pill"
           onClick={() => setDirection("v3")}

@@ -62,16 +62,8 @@ export const resolveInviteCode = createServerFn({ method: "POST" })
     }
 
     const [coach, parent, athlete, adultAthlete] = await Promise.all([
-      supabaseAdmin
-        .from("coach_invite_codes")
-        .select("code")
-        .eq("code", data.code)
-        .maybeSingle(),
-      supabaseAdmin
-        .from("parent_invite_codes")
-        .select("code")
-        .eq("code", data.code)
-        .maybeSingle(),
+      supabaseAdmin.from("coach_invite_codes").select("code").eq("code", data.code).maybeSingle(),
+      supabaseAdmin.from("parent_invite_codes").select("code").eq("code", data.code).maybeSingle(),
       supabaseAdmin
         .from("athlete_invite_codes")
         .select("code, used_at, expires_at")
@@ -92,7 +84,9 @@ export const resolveInviteCode = createServerFn({ method: "POST" })
     if (parent.data) return { kind: "parent" as const, valid: true };
     if (adultAthlete.data) return { kind: "adult-athlete" as const, valid: true };
     if (athlete.data) {
-      const expired = athlete.data.expires_at ? new Date(athlete.data.expires_at) < new Date() : false;
+      const expired = athlete.data.expires_at
+        ? new Date(athlete.data.expires_at) < new Date()
+        : false;
       return {
         kind: "athlete" as const,
         valid: !athlete.data.used_at && !expired,

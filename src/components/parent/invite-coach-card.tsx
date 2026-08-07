@@ -27,8 +27,7 @@ const COPY: Record<
   parent: {
     intro:
       "Tap share — when your coach signs up they'll be linked to your athletes, sports, goals, and lesson times automatically, or they can add the code directly in their settings.\u00a0",
-    shareText:
-      "Join me on Gradus so we can share practice plans and messages.",
+    shareText: "Join me on Gradus so we can share practice plans and messages.",
     codeAria: "Your parent invite code",
     alreadyOn:
       "Is your coach already on Gradus? They can paste this code on their roster page to link up to you and your athlete.",
@@ -36,8 +35,7 @@ const COPY: Record<
   "adult-athlete": {
     intro:
       "Tap share — when your coach signs up they'll be linked to you, your sports, goals, and lesson times automatically.",
-    shareText:
-      "Join me on Gradus so we can share practice plans and messages.",
+    shareText: "Join me on Gradus so we can share practice plans and messages.",
     codeAria: "Your athlete invite code",
     alreadyOn:
       "Is your coach already on Gradus? They can paste this code on their roster page to link up to you.",
@@ -56,9 +54,7 @@ export function InviteCoachCard({ audience = "parent" }: InviteCoachCardProps) {
   const adultAthleteFn = useServerFn(getOrCreateAdultAthleteInviteCode);
   const isAdultAthlete = audience === "adult-athlete";
   const { data, isLoading, error } = useQuery({
-    queryKey: isAdultAthlete
-      ? ["adult-athlete-invite-code"]
-      : ["parent-invite-code"],
+    queryKey: isAdultAthlete ? ["adult-athlete-invite-code"] : ["parent-invite-code"],
     queryFn: () => (isAdultAthlete ? adultAthleteFn() : parentFn()),
   });
 
@@ -85,9 +81,7 @@ export function InviteCoachCard({ audience = "parent" }: InviteCoachCardProps) {
 
   return (
     <div className="rounded-2xl bg-card p-6 shadow-card">
-      <h2 className="mt-2 font-display text-2xl text-text-primary">
-        Invite your coach
-      </h2>
+      <h2 className="mt-2 font-display text-2xl text-text-primary">Invite your coach</h2>
       <p className="mt-2 text-sm text-text-secondary">{copy.intro}</p>
 
       <div className="mt-5 space-y-3">
@@ -105,11 +99,7 @@ export function InviteCoachCard({ audience = "parent" }: InviteCoachCardProps) {
             aria-label={copy.codeAria}
             className="flex-1 rounded-md border border-divider bg-elevated px-4 py-3 text-center font-mono text-xl tracking-[0.25em] text-text-primary"
           >
-            {isLoading || !code ? (
-              <span className="text-text-tertiary">········</span>
-            ) : (
-              code
-            )}
+            {isLoading || !code ? <span className="text-text-tertiary">········</span> : code}
           </div>
           <Button
             type="button"
@@ -131,11 +121,7 @@ export function InviteCoachCard({ audience = "parent" }: InviteCoachCardProps) {
         </div>
       </div>
 
-      
-
-      {error && (
-        <p className="mt-3 text-xs text-destructive">{(error as Error).message}</p>
-      )}
+      {error && <p className="mt-3 text-xs text-destructive">{(error as Error).message}</p>}
     </div>
   );
 }

@@ -28,7 +28,6 @@ import {
 } from "@/lib/promo-codes.functions";
 import { getStripeEnvironment } from "@/lib/stripe";
 
-
 export const Route = createFileRoute("/_authenticated/admin/promo-codes")({
   component: PromoCodesPage,
 });
@@ -66,9 +65,6 @@ function PromoCodesPage() {
   const [syncingCode, setSyncingCode] = useState<string | null>(null);
   const [bulkSyncing, setBulkSyncing] = useState(false);
   const [detailCode, setDetailCode] = useState<string | null>(null);
-
-
-
 
   const togglePlanInNew = (plan: "coach" | "coach_pro") => {
     setAppliesToPlans((prev) => {
@@ -148,10 +144,7 @@ function PromoCodesPage() {
     }
   };
 
-  const updatePercent = (c: string, next: number) =>
-    updateField(c, { percentOff: next });
-
-
+  const updatePercent = (c: string, next: number) => updateField(c, { percentOff: next });
 
   const handleSync = async (c: string) => {
     setSyncingCode(c);
@@ -182,7 +175,12 @@ function PromoCodesPage() {
   } catch {
     currentEnv = null;
   }
-  const envLabel = currentEnv === "live" ? "Production env" : currentEnv === "sandbox" ? "Development env" : "Not configured";
+  const envLabel =
+    currentEnv === "live"
+      ? "Production env"
+      : currentEnv === "sandbox"
+        ? "Development env"
+        : "Not configured";
   const envColorClass =
     currentEnv === "live"
       ? "bg-pen-pink-wash text-pen-pink-ink"
@@ -197,8 +195,6 @@ function PromoCodesPage() {
           !(currentEnv === "live" ? r.stripe_promo_id_live : r.stripe_promo_id_sandbox),
       )
     : [];
-
-
 
   const handleBulkSync = async () => {
     if (!currentEnv || unsyncedInCurrentEnv.length === 0) return;
@@ -216,7 +212,8 @@ function PromoCodesPage() {
     }
     setBulkSyncing(false);
     await qc.invalidateQueries({ queryKey: ["admin-promo-codes"] });
-    if (fail === 0) toast.success(`Created ${ok} code${ok === 1 ? "" : "s"} in ${envLabel.toLowerCase()}`);
+    if (fail === 0)
+      toast.success(`Created ${ok} code${ok === 1 ? "" : "s"} in ${envLabel.toLowerCase()}`);
     else toast.error(`${ok} created, ${fail} failed in ${envLabel.toLowerCase()}`);
   };
 
@@ -232,16 +229,22 @@ function PromoCodesPage() {
         </Link>
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="font-display text-h1 text-text-primary">Promo codes</h1>
-          <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider ${envColorClass}`}>
+          <span
+            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider ${envColorClass}`}
+          >
             You're viewing: {envLabel}
           </span>
         </div>
         <div className="space-y-1.5 text-sm text-text-secondary max-w-3xl">
           <p>
-            Promo codes do two things: track who signed up with them, and (optionally) discount checkout by a set %.
+            Promo codes do two things: track who signed up with them, and (optionally) discount
+            checkout by a set %.
           </p>
           <p>
-            Any code with a discount has to be created in Stripe once for <strong className="text-text-primary">development env</strong> (preview) and once for <strong className="text-text-primary">production env</strong> (published site) before checkout can apply it. The Stripe column shows where each code is ready.
+            Any code with a discount has to be created in Stripe once for{" "}
+            <strong className="text-text-primary">development env</strong> (preview) and once for{" "}
+            <strong className="text-text-primary">production env</strong> (published site) before
+            checkout can apply it. The Stripe column shows where each code is ready.
           </p>
 
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pt-1 text-xs text-text-tertiary">
@@ -249,12 +252,12 @@ function PromoCodesPage() {
               <span className="h-2 w-2 rounded-full bg-pen-tennis" /> ready in that environment
             </span>
             <span className="inline-flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full bg-divider" /> not created yet — click Sync on that row
+              <span className="h-2 w-2 rounded-full bg-divider" /> not created yet — click Sync on
+              that row
             </span>
           </div>
         </div>
       </header>
-
 
       <section className="rounded-2xl border border-divider bg-card p-5">
         <h2 className="font-display text-h3 text-text-primary mb-4">New code</h2>
@@ -264,7 +267,14 @@ function PromoCodesPage() {
             <Input
               id="new-code"
               value={code}
-              onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9_-]/g, "").slice(0, 32))}
+              onChange={(e) =>
+                setCode(
+                  e.target.value
+                    .toUpperCase()
+                    .replace(/[^A-Z0-9_-]/g, "")
+                    .slice(0, 32),
+                )
+              }
               placeholder="JANESMITH"
               maxLength={32}
               className="font-mono uppercase tracking-widest"
@@ -427,17 +437,107 @@ function PromoCodesPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-divider text-left text-text-tertiary">
-                  <Eyebrow as="th" size="caption" tone="tertiary" weight="normal" tracking="wide" className="px-5 py-3">Code</Eyebrow>
-                  
-                  <Eyebrow as="th" size="caption" tone="tertiary" weight="normal" tracking="wide" className="px-3 py-3">Duration</Eyebrow>
-                  <Eyebrow as="th" size="caption" tone="tertiary" weight="normal" tracking="wide" className="px-3 py-3">Plans</Eyebrow>
-                  <Eyebrow as="th" size="caption" tone="tertiary" weight="normal" tracking="wide" className="px-3 py-3 text-center">Card</Eyebrow>
-                  <Eyebrow as="th" size="caption" tone="tertiary" weight="normal" tracking="wide" className="px-3 py-3 text-right">% off</Eyebrow>
-                  <Eyebrow as="th" size="caption" tone="tertiary" weight="normal" tracking="wide" className="px-3 py-3">Stripe</Eyebrow>
-                  <Eyebrow as="th" size="caption" tone="tertiary" weight="normal" tracking="wide" className="px-3 py-3 text-right">P</Eyebrow>
-                  <Eyebrow as="th" size="caption" tone="tertiary" weight="normal" tracking="wide" className="px-3 py-3 text-right">C</Eyebrow>
-                  <Eyebrow as="th" size="caption" tone="tertiary" weight="normal" tracking="wide" className="px-3 py-3 text-right">A</Eyebrow>
-                  <Eyebrow as="th" size="caption" tone="tertiary" weight="normal" tracking="wide" className="px-5 py-3 text-right">Active</Eyebrow>
+                  <Eyebrow
+                    as="th"
+                    size="caption"
+                    tone="tertiary"
+                    weight="normal"
+                    tracking="wide"
+                    className="px-5 py-3"
+                  >
+                    Code
+                  </Eyebrow>
+
+                  <Eyebrow
+                    as="th"
+                    size="caption"
+                    tone="tertiary"
+                    weight="normal"
+                    tracking="wide"
+                    className="px-3 py-3"
+                  >
+                    Duration
+                  </Eyebrow>
+                  <Eyebrow
+                    as="th"
+                    size="caption"
+                    tone="tertiary"
+                    weight="normal"
+                    tracking="wide"
+                    className="px-3 py-3"
+                  >
+                    Plans
+                  </Eyebrow>
+                  <Eyebrow
+                    as="th"
+                    size="caption"
+                    tone="tertiary"
+                    weight="normal"
+                    tracking="wide"
+                    className="px-3 py-3 text-center"
+                  >
+                    Card
+                  </Eyebrow>
+                  <Eyebrow
+                    as="th"
+                    size="caption"
+                    tone="tertiary"
+                    weight="normal"
+                    tracking="wide"
+                    className="px-3 py-3 text-right"
+                  >
+                    % off
+                  </Eyebrow>
+                  <Eyebrow
+                    as="th"
+                    size="caption"
+                    tone="tertiary"
+                    weight="normal"
+                    tracking="wide"
+                    className="px-3 py-3"
+                  >
+                    Stripe
+                  </Eyebrow>
+                  <Eyebrow
+                    as="th"
+                    size="caption"
+                    tone="tertiary"
+                    weight="normal"
+                    tracking="wide"
+                    className="px-3 py-3 text-right"
+                  >
+                    P
+                  </Eyebrow>
+                  <Eyebrow
+                    as="th"
+                    size="caption"
+                    tone="tertiary"
+                    weight="normal"
+                    tracking="wide"
+                    className="px-3 py-3 text-right"
+                  >
+                    C
+                  </Eyebrow>
+                  <Eyebrow
+                    as="th"
+                    size="caption"
+                    tone="tertiary"
+                    weight="normal"
+                    tracking="wide"
+                    className="px-3 py-3 text-right"
+                  >
+                    A
+                  </Eyebrow>
+                  <Eyebrow
+                    as="th"
+                    size="caption"
+                    tone="tertiary"
+                    weight="normal"
+                    tracking="wide"
+                    className="px-5 py-3 text-right"
+                  >
+                    Active
+                  </Eyebrow>
                 </tr>
               </thead>
 
@@ -557,7 +657,6 @@ function PromoCodesPage() {
                         />
                       </td>
 
-
                       <td className="px-3 py-3 text-right">
                         <Input
                           type="number"
@@ -582,15 +681,12 @@ function PromoCodesPage() {
                         {(() => {
                           const hasDiscount = (row.percent_off ?? 0) > 0;
                           if (!hasDiscount) {
-                            return (
-                              <div className="text-text-tertiary">Attribution only</div>
-                            );
+                            return <div className="text-text-tertiary">Attribution only</div>;
                           }
-                          const mintedHere =
-                            currentEnv === "live" ? mintedLive : mintedSandbox;
-                          const otherEnvLabel = currentEnv === "live" ? "development env" : "production env";
-                          const mintedOther =
-                            currentEnv === "live" ? mintedSandbox : mintedLive;
+                          const mintedHere = currentEnv === "live" ? mintedLive : mintedSandbox;
+                          const otherEnvLabel =
+                            currentEnv === "live" ? "development env" : "production env";
+                          const mintedOther = currentEnv === "live" ? mintedSandbox : mintedLive;
                           let statusLabel = "Not created yet";
                           let dotClass = "bg-divider";
                           let toneClass = "text-text-tertiary";
@@ -636,7 +732,8 @@ function PromoCodesPage() {
                               )}
                               {currentEnv && !mintedOther && (
                                 <div className="text-[11px] text-text-tertiary">
-                                  Still needs {otherEnvLabel}: open this page on the {otherEnvLabel} site.
+                                  Still needs {otherEnvLabel}: open this page on the {otherEnvLabel}{" "}
+                                  site.
                                 </div>
                               )}
                             </div>
@@ -644,9 +741,15 @@ function PromoCodesPage() {
                         })()}
                       </td>
 
-                      <td className="px-3 py-3 text-right font-mono text-text-secondary">{s.parents}</td>
-                      <td className="px-3 py-3 text-right font-mono text-text-secondary">{s.coaches}</td>
-                      <td className="px-3 py-3 text-right font-mono text-text-secondary">{s.athletes}</td>
+                      <td className="px-3 py-3 text-right font-mono text-text-secondary">
+                        {s.parents}
+                      </td>
+                      <td className="px-3 py-3 text-right font-mono text-text-secondary">
+                        {s.coaches}
+                      </td>
+                      <td className="px-3 py-3 text-right font-mono text-text-secondary">
+                        {s.athletes}
+                      </td>
                       <td className="px-5 py-3 text-right">
                         <Switch
                           checked={row.active}
@@ -678,21 +781,19 @@ function PromoCodeDetailSheet({
   onOpenChange,
 }: {
   code: string | null;
-  row:
-    | {
-        code: string;
-        label: string;
-        notes: string | null;
-        percent_off: number | null;
-        duration: string;
-        duration_in_months: number | null;
-        card_required: boolean | null;
-        applies_to_plans: string[] | null;
-        active: boolean;
-        stripe_promo_id_sandbox: string | null;
-        stripe_promo_id_live: string | null;
-      }
-    | null;
+  row: {
+    code: string;
+    label: string;
+    notes: string | null;
+    percent_off: number | null;
+    duration: string;
+    duration_in_months: number | null;
+    card_required: boolean | null;
+    applies_to_plans: string[] | null;
+    active: boolean;
+    stripe_promo_id_sandbox: string | null;
+    stripe_promo_id_live: string | null;
+  } | null;
   onOpenChange: (o: boolean) => void;
 }) {
   const usersFn = useServerFn(listPromoCodeUsers);
@@ -713,14 +814,8 @@ function PromoCodeDetailSheet({
     <Sheet open={!!code} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto">
         <SheetHeader>
-          <SheetTitle className="font-mono uppercase tracking-widest">
-            {code}
-          </SheetTitle>
-          {row && (
-            <SheetDescription className="text-text-primary">
-              {row.label}
-            </SheetDescription>
-          )}
+          <SheetTitle className="font-mono uppercase tracking-widest">{code}</SheetTitle>
+          {row && <SheetDescription className="text-text-primary">{row.label}</SheetDescription>}
         </SheetHeader>
 
         {row && (
@@ -733,19 +828,13 @@ function PromoCodeDetailSheet({
 
             <dl className="grid grid-cols-2 gap-3 text-sm">
               <div>
-                <dt className="text-xs uppercase tracking-wide text-text-tertiary">
-                  Discount
-                </dt>
+                <dt className="text-xs uppercase tracking-wide text-text-tertiary">Discount</dt>
                 <dd className="text-text-primary">
-                  {(row.percent_off ?? 0) > 0
-                    ? `${row.percent_off}% off`
-                    : "Attribution only"}
+                  {(row.percent_off ?? 0) > 0 ? `${row.percent_off}% off` : "Attribution only"}
                 </dd>
               </div>
               <div>
-                <dt className="text-xs uppercase tracking-wide text-text-tertiary">
-                  Duration
-                </dt>
+                <dt className="text-xs uppercase tracking-wide text-text-tertiary">Duration</dt>
                 <dd className="text-text-primary">
                   {row.duration === "repeating"
                     ? `${row.duration_in_months ?? 0} months`
@@ -753,9 +842,7 @@ function PromoCodeDetailSheet({
                 </dd>
               </div>
               <div>
-                <dt className="text-xs uppercase tracking-wide text-text-tertiary">
-                  Applies to
-                </dt>
+                <dt className="text-xs uppercase tracking-wide text-text-tertiary">Applies to</dt>
                 <dd className="text-text-primary">
                   {(row.applies_to_plans ?? [])
                     .map((p) => (p === "coach_pro" ? "Coach Pro" : "Coach"))
@@ -766,9 +853,7 @@ function PromoCodeDetailSheet({
                 <dt className="text-xs uppercase tracking-wide text-text-tertiary">
                   Card required
                 </dt>
-                <dd className="text-text-primary">
-                  {row.card_required === false ? "No" : "Yes"}
-                </dd>
+                <dd className="text-text-primary">{row.card_required === false ? "No" : "Yes"}</dd>
               </div>
               <div>
                 <dt className="text-xs uppercase tracking-wide text-text-tertiary">
@@ -786,34 +871,25 @@ function PromoCodeDetailSheet({
                   {row.stripe_promo_id_live ? "Minted" : "Not yet"}
                 </dd>
               </div>
-
             </dl>
 
             <section className="space-y-3">
               <h3 className="text-sm font-semibold text-text-primary">
                 Users with this code
-                <span className="ml-2 text-xs text-text-tertiary">
-                  ({users.length})
-                </span>
+                <span className="ml-2 text-xs text-text-tertiary">({users.length})</span>
               </h3>
 
               {usersQuery.isLoading ? (
                 <p className="text-xs text-text-tertiary">Loading…</p>
               ) : users.length === 0 ? (
-                <p className="text-xs text-text-tertiary">
-                  No users have this code applied yet.
-                </p>
+                <p className="text-xs text-text-tertiary">No users have this code applied yet.</p>
               ) : (
                 <div className="space-y-4">
                   {(["coach", "parent", "athlete"] as const).map((kind) => {
                     const list = grouped[kind];
                     if (list.length === 0) return null;
                     const heading =
-                      kind === "coach"
-                        ? "Coaches"
-                        : kind === "parent"
-                          ? "Parents"
-                          : "Athletes";
+                      kind === "coach" ? "Coaches" : kind === "parent" ? "Parents" : "Athletes";
                     return (
                       <div key={kind}>
                         <p className="text-xs uppercase tracking-wide text-text-tertiary mb-1">
@@ -844,7 +920,6 @@ function PromoCodeDetailSheet({
                                     ? `active${u.environment === "live" ? " · production env" : u.environment === "sandbox" ? " · development env" : ""}`
                                     : "next"}
                               </Tag>
-
                             </li>
                           ))}
                         </ul>
@@ -860,4 +935,3 @@ function PromoCodeDetailSheet({
     </Sheet>
   );
 }
-

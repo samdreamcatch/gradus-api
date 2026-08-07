@@ -41,9 +41,7 @@ export function AthleteGoalsForm({
           <Label>Sport with this coach</Label>
           <Select
             value={value.sport}
-            onValueChange={(v) =>
-              update({ sport: v, currentLevelKey: "", seasonGoalKey: "" })
-            }
+            onValueChange={(v) => update({ sport: v, currentLevelKey: "", seasonGoalKey: "" })}
           >
             <SelectTrigger>
               <SelectValue placeholder="Pick a sport" />

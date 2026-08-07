@@ -1,11 +1,16 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { ClipboardList, Users, MessageSquare, Settings, BookOpen, type LucideIcon } from "lucide-react";
+import {
+  ClipboardList,
+  Users,
+  MessageSquare,
+  Settings,
+  BookOpen,
+  type LucideIcon,
+} from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { useMessagesUnread } from "@/hooks/use-messages-unread";
-
-
 
 type Item = {
   label: string;
@@ -21,7 +26,13 @@ export function CoachBottomNav() {
     { label: "Roster", icon: Users, to: "/coach/roster", matchPrefix: "/coach/roster" },
     { label: "Plans", icon: ClipboardList, to: "/coach/plans" },
     { label: "Resources", icon: BookOpen, to: "/coach/resources", matchPrefix: "/coach/resources" },
-    { label: "Messages", icon: MessageSquare, to: "/coach/messages", matchPrefix: "/coach/messages", unreadCount: unread },
+    {
+      label: "Messages",
+      icon: MessageSquare,
+      to: "/coach/messages",
+      matchPrefix: "/coach/messages",
+      unreadCount: unread,
+    },
     { label: "Settings", icon: Settings, to: "/coach/settings", matchPrefix: "/coach/settings" },
   ];
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -53,7 +64,10 @@ export function CoachBottomNav() {
               )}
             >
               <span className="relative">
-                <Icon className={cn("h-[18px] w-[18px]", isActive && "text-accent-ink")} aria-hidden />
+                <Icon
+                  className={cn("h-[18px] w-[18px]", isActive && "text-accent-ink")}
+                  aria-hidden
+                />
                 {hasUnread ? (
                   <span
                     aria-label={`${item.unreadCount} unread`}
@@ -95,7 +109,6 @@ export function CoachBottomNav() {
               )}
             </li>
           );
-
         })}
       </ul>
     </nav>

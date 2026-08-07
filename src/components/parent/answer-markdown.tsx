@@ -2,29 +2,19 @@ import ReactMarkdown, { type Components } from "react-markdown";
 
 const components: Components = {
   p: ({ children }) => (
-    <p className="mb-3 text-sm leading-relaxed text-text-primary last:mb-0">
-      {children}
-    </p>
+    <p className="mb-3 text-sm leading-relaxed text-text-primary last:mb-0">{children}</p>
   ),
   h1: ({ children }) => (
-    <h3 className="mt-4 mb-2 text-base font-semibold text-text-primary first:mt-0">
-      {children}
-    </h3>
+    <h3 className="mt-4 mb-2 text-base font-semibold text-text-primary first:mt-0">{children}</h3>
   ),
   h2: ({ children }) => (
-    <h3 className="mt-4 mb-2 text-base font-semibold text-text-primary first:mt-0">
-      {children}
-    </h3>
+    <h3 className="mt-4 mb-2 text-base font-semibold text-text-primary first:mt-0">{children}</h3>
   ),
   h3: ({ children }) => (
-    <h4 className="mt-3 mb-1.5 text-sm font-semibold text-text-primary first:mt-0">
-      {children}
-    </h4>
+    <h4 className="mt-3 mb-1.5 text-sm font-semibold text-text-primary first:mt-0">{children}</h4>
   ),
   h4: ({ children }) => (
-    <h4 className="mt-3 mb-1.5 text-sm font-semibold text-text-primary first:mt-0">
-      {children}
-    </h4>
+    <h4 className="mt-3 mb-1.5 text-sm font-semibold text-text-primary first:mt-0">{children}</h4>
   ),
   ul: ({ children }) => (
     <ul className="mb-3 ml-4 list-disc space-y-1 text-sm leading-relaxed text-text-primary marker:text-text-tertiary last:mb-0">
@@ -37,9 +27,7 @@ const components: Components = {
     </ol>
   ),
   li: ({ children }) => <li className="pl-1">{children}</li>,
-  strong: ({ children }) => (
-    <strong className="font-semibold text-text-primary">{children}</strong>
-  ),
+  strong: ({ children }) => <strong className="font-semibold text-text-primary">{children}</strong>,
   em: ({ children }) => <em className="italic">{children}</em>,
   a: ({ href, children }) => (
     <a

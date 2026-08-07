@@ -51,13 +51,7 @@ export function OtherCoachPlansSheet({
   );
 }
 
-function Body({
-  coach,
-  athleteFirstName,
-}: {
-  coach: OtherCoachDTO;
-  athleteFirstName: string;
-}) {
+function Body({ coach, athleteFirstName }: { coach: OtherCoachDTO; athleteFirstName: string }) {
   const fullName = `${coach.firstName} ${coach.lastName}`.trim();
   return (
     <div className="space-y-5">
@@ -87,11 +81,7 @@ function Body({
       <ul className="space-y-3">
         {coach.plans.map((p) => (
           <li key={p.planId}>
-            <PlanCard
-              plan={p}
-              otherCoachId={coach.coachId}
-              coachFirstName={coach.firstName}
-            />
+            <PlanCard plan={p} otherCoachId={coach.coachId} coachFirstName={coach.firstName} />
           </li>
         ))}
       </ul>
@@ -223,9 +213,7 @@ function MoveRow({ move }: { move: OtherCoachMoveDTO }) {
       {open && hasBody ? (
         <div className="space-y-2 px-3 pb-3 text-[14px] leading-relaxed text-text-primary">
           {move.cue ? <p>{move.cue}</p> : null}
-          {move.description ? (
-            <p className="text-text-secondary">{move.description}</p>
-          ) : null}
+          {move.description ? <p className="text-text-secondary">{move.description}</p> : null}
           {move.why ? (
             <p className="rounded-lg border border-accent/30 bg-accent/10 px-3 py-2 text-[13px]">
               <span className="mr-1 text-[10px] font-black uppercase tracking-widest text-accent-ink">

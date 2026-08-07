@@ -211,7 +211,9 @@ export function ScheduleEditor({ slots, onChange }: ScheduleEditorProps) {
                     )}
                   >
                     <CalendarIcon className="mr-2 size-4" />
-                    {slot.startsOn ? format(slot.startsOn, "EEE, MMM d, yyyy") : "Pick a start date"}
+                    {slot.startsOn
+                      ? format(slot.startsOn, "EEE, MMM d, yyyy")
+                      : "Pick a start date"}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -272,13 +274,7 @@ export function ScheduleEditor({ slots, onChange }: ScheduleEditorProps) {
         </div>
       ))}
 
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        onClick={addSlot}
-        className="text-accent-ink"
-      >
+      <Button type="button" variant="ghost" size="sm" onClick={addSlot} className="text-accent-ink">
         <Plus className="size-4" /> Add another time
       </Button>
     </div>

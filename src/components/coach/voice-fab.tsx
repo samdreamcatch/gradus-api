@@ -36,7 +36,6 @@ export interface VoiceFabProps {
   className?: string;
 }
 
-
 const formatElapsed = (ms: number) => {
   const s = Math.floor(ms / 1000);
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
@@ -143,15 +142,9 @@ export function VoiceFab({
     state === "processing" ? (
       <Loader2 className={cn("animate-spin", variant === "fab" ? "h-7 w-7" : "h-5 w-5")} />
     ) : state === "recording" ? (
-      <Mic
-        className={cn(variant === "fab" ? "h-7 w-7" : "h-5 w-5")}
-        strokeWidth={2.5}
-      />
+      <Mic className={cn(variant === "fab" ? "h-7 w-7" : "h-5 w-5")} strokeWidth={2.5} />
     ) : (
-      <Mic
-        className={cn(variant === "fab" ? "h-7 w-7" : "h-5 w-5")}
-        strokeWidth={2.5}
-      />
+      <Mic className={cn(variant === "fab" ? "h-7 w-7" : "h-5 w-5")} strokeWidth={2.5} />
     );
 
   const button = (
@@ -197,9 +190,7 @@ export function VoiceFab({
               <div
                 className={cn(
                   "flex h-12 w-12 shrink-0 items-center justify-center rounded-full",
-                  state === "processing"
-                    ? "bg-elevated"
-                    : "bg-accent text-accent-foreground",
+                  state === "processing" ? "bg-elevated" : "bg-accent text-accent-foreground",
                 )}
                 style={
                   state === "recording"
@@ -270,7 +261,6 @@ export function VoiceFab({
                   </button>
                 </div>
               </div>
-
             ) : null}
 
             {elapsedMs > 165_000 && state === "recording" ? (
@@ -292,11 +282,7 @@ const CREATE_PROMPTS = [
   "Why you're assigning this now",
 ];
 
-const EDIT_PROMPTS = [
-  "Edits to a specific move",
-  "Add or remove a move",
-  "Update notes and cues ",
-];
+const EDIT_PROMPTS = ["Edits to a specific move", "Add or remove a move", "Update notes and cues "];
 
 function Waveform({ level }: { level: number }) {
   // 7 bars whose heights are a smoothed function of `level`

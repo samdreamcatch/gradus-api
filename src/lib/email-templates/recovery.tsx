@@ -1,7 +1,29 @@
 import * as React from "react";
-import { Body, Button, Container, Head, Heading, Hr, Html, Link, Preview, Text } from "@react-email/components";
+import {
+  Body,
+  Button,
+  Container,
+  Head,
+  Heading,
+  Hr,
+  Html,
+  Link,
+  Preview,
+  Text,
+} from "@react-email/components";
 import parse from "html-react-parser";
-import { button, container, divider, eyebrow, footer, h1, link, main, text, buttonWrap } from "./_styles";
+import {
+  button,
+  container,
+  divider,
+  eyebrow,
+  footer,
+  h1,
+  link,
+  main,
+  text,
+  buttonWrap,
+} from "./_styles";
 import { Header, PageInner, PageShell } from "./_layout";
 import { resolveCopy, renderTemplateString } from "./copy-schema";
 
@@ -13,7 +35,13 @@ interface RecoveryEmailProps {
   copyOverrides?: Record<string, string>;
 }
 
-export const RecoveryEmail = ({ siteName, confirmationUrl, siteUrl, recipient, copyOverrides }: RecoveryEmailProps) => {
+export const RecoveryEmail = ({
+  siteName,
+  confirmationUrl,
+  siteUrl,
+  recipient,
+  copyOverrides,
+}: RecoveryEmailProps) => {
   const c = resolveCopy("recovery", copyOverrides);
   const vars = { siteName, confirmationUrl, siteUrl: siteUrl ?? "", recipient: recipient ?? "" };
   return (
@@ -28,11 +56,17 @@ export const RecoveryEmail = ({ siteName, confirmationUrl, siteUrl, recipient, c
               <Text style={eyebrow}>{renderTemplateString(c.eyebrow, vars)}</Text>
               <Heading style={h1}>{renderTemplateString(c.heading, vars)}</Heading>
               <Text style={text}>{parse(renderTemplateString(c.body, vars))}</Text>
-              <div style={buttonWrap}><Button style={button} href={confirmationUrl}>{renderTemplateString(c.ctaLabel, vars)}</Button></div>
+              <div style={buttonWrap}>
+                <Button style={button} href={confirmationUrl}>
+                  {renderTemplateString(c.ctaLabel, vars)}
+                </Button>
+              </div>
               <Text style={{ ...text, marginTop: "28px", fontSize: "14px" }}>
                 {renderTemplateString(c.fallbackHelp, vars)}
                 <br />
-                <Link href={confirmationUrl} style={link}>{confirmationUrl}</Link>
+                <Link href={confirmationUrl} style={link}>
+                  {confirmationUrl}
+                </Link>
               </Text>
               <Hr style={divider} />
               <Text style={footer}>{parse(renderTemplateString(c.footer, vars))}</Text>
@@ -40,7 +74,6 @@ export const RecoveryEmail = ({ siteName, confirmationUrl, siteUrl, recipient, c
           </Container>
         </PageShell>
       </Body>
-
     </Html>
   );
 };

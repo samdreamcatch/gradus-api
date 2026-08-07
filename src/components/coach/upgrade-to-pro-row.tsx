@@ -19,7 +19,6 @@ export function UpgradeToProRow() {
 
   return (
     <SettingsButtonRow
-      
       label="Upgrade to Coach Pro"
       description={description}
       tone="accent"

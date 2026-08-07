@@ -54,12 +54,10 @@ function OrganizationsPage() {
         >
           ← Admin
         </Link>
-        <h1 className="font-display text-h1 text-text-primary">
-          Organizations
-        </h1>
+        <h1 className="font-display text-h1 text-text-primary">Organizations</h1>
         <p className="text-sm text-text-secondary">
-          Clubs, academies, and associations whose coaches skip individual
-          payment. Each org has a rotatable 8-character invite code.
+          Clubs, academies, and associations whose coaches skip individual payment. Each org has a
+          rotatable 8-character invite code.
         </p>
       </header>
 
@@ -69,7 +67,6 @@ function OrganizationsPage() {
 }
 
 /* ---------- Organizations tab ---------- */
-
 
 function OrgsTab() {
   const list = useServerFn(listOrganizations);
@@ -203,9 +200,7 @@ function OrgsTab() {
   return (
     <>
       <section className="rounded-2xl border border-divider bg-card p-5">
-        <h2 className="mb-4 font-display text-h3 text-text-primary">
-          New organization
-        </h2>
+        <h2 className="mb-4 font-display text-h3 text-text-primary">New organization</h2>
         <form onSubmit={handleCreate} className="grid gap-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
@@ -276,9 +271,7 @@ function OrgsTab() {
       </section>
 
       <section className="overflow-hidden rounded-2xl border border-divider bg-card">
-        <h2 className="px-5 pt-4 font-display text-h3 text-text-primary">
-          All organizations
-        </h2>
+        <h2 className="px-5 pt-4 font-display text-h3 text-text-primary">All organizations</h2>
         {orgs.length === 0 ? (
           <p className="px-5 py-6 text-sm text-text-secondary">None yet.</p>
         ) : (
@@ -286,11 +279,56 @@ function OrgsTab() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-divider text-left text-text-tertiary">
-                  <Eyebrow as="th" size="caption" tone="tertiary" weight="normal" tracking="wide" className="px-5 py-3">Name</Eyebrow>
-                  <Eyebrow as="th" size="caption" tone="tertiary" weight="normal" tracking="wide" className="px-3 py-3">Active code</Eyebrow>
-                  <Eyebrow as="th" size="caption" tone="tertiary" weight="normal" tracking="wide" className="px-3 py-3 text-right">Coaches</Eyebrow>
-                  <Eyebrow as="th" size="caption" tone="tertiary" weight="normal" tracking="wide" className="px-3 py-3 text-right">Listed</Eyebrow>
-                  <Eyebrow as="th" size="caption" tone="tertiary" weight="normal" tracking="wide" className="px-5 py-3 text-right">Active</Eyebrow>
+                  <Eyebrow
+                    as="th"
+                    size="caption"
+                    tone="tertiary"
+                    weight="normal"
+                    tracking="wide"
+                    className="px-5 py-3"
+                  >
+                    Name
+                  </Eyebrow>
+                  <Eyebrow
+                    as="th"
+                    size="caption"
+                    tone="tertiary"
+                    weight="normal"
+                    tracking="wide"
+                    className="px-3 py-3"
+                  >
+                    Active code
+                  </Eyebrow>
+                  <Eyebrow
+                    as="th"
+                    size="caption"
+                    tone="tertiary"
+                    weight="normal"
+                    tracking="wide"
+                    className="px-3 py-3 text-right"
+                  >
+                    Coaches
+                  </Eyebrow>
+                  <Eyebrow
+                    as="th"
+                    size="caption"
+                    tone="tertiary"
+                    weight="normal"
+                    tracking="wide"
+                    className="px-3 py-3 text-right"
+                  >
+                    Listed
+                  </Eyebrow>
+                  <Eyebrow
+                    as="th"
+                    size="caption"
+                    tone="tertiary"
+                    weight="normal"
+                    tracking="wide"
+                    className="px-5 py-3 text-right"
+                  >
+                    Active
+                  </Eyebrow>
                 </tr>
               </thead>
               <tbody className="divide-y divide-divider">
@@ -452,9 +490,7 @@ function EditOrgSheet({
       <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto">
         <SheetHeader>
           <SheetTitle>Edit organization</SheetTitle>
-          {org && (
-            <SheetDescription>/{org.slug}</SheetDescription>
-          )}
+          {org && <SheetDescription>/{org.slug}</SheetDescription>}
         </SheetHeader>
         <form onSubmit={handleSave} className="mt-6 space-y-4">
           <div className="space-y-1.5">
@@ -510,14 +546,18 @@ function EditOrgSheet({
           <div className="flex items-center justify-between rounded-lg border border-divider p-3">
             <div>
               <div className="text-sm font-medium text-text-primary">Listed in search</div>
-              <div className="text-xs text-text-secondary">Coaches can find this org in the join flow.</div>
+              <div className="text-xs text-text-secondary">
+                Coaches can find this org in the join flow.
+              </div>
             </div>
             <Switch checked={isListed} onCheckedChange={(v) => setIsListed(v === true)} />
           </div>
           <div className="flex items-center justify-between rounded-lg border border-divider p-3">
             <div>
               <div className="text-sm font-medium text-text-primary">Active</div>
-              <div className="text-xs text-text-secondary">Inactive orgs stop accepting new joins.</div>
+              <div className="text-xs text-text-secondary">
+                Inactive orgs stop accepting new joins.
+              </div>
             </div>
             <Switch checked={active} onCheckedChange={(v) => setActive(v === true)} />
           </div>
@@ -540,5 +580,3 @@ function EditOrgSheet({
     </Sheet>
   );
 }
-
-

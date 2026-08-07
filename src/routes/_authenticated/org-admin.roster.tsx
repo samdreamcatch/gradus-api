@@ -50,8 +50,7 @@ function OrgRosterPage() {
   const [phone, setPhone] = useState("");
 
   const createInvite = useMutation({
-    mutationFn: () =>
-      createInviteFn({ data: { organizationId: orgId!, email, phone } }),
+    mutationFn: () => createInviteFn({ data: { organizationId: orgId!, email, phone } }),
     onSuccess: (res) => {
       toast.success(`Invite created — code ${res.code}`);
       setEmail("");
@@ -62,14 +61,12 @@ function OrgRosterPage() {
   });
 
   const revokeInvite = useMutation({
-    mutationFn: (id: string) =>
-      revokeInviteFn({ data: { organizationId: orgId!, inviteId: id } }),
+    mutationFn: (id: string) => revokeInviteFn({ data: { organizationId: orgId!, inviteId: id } }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["org-invites", orgId] }),
   });
 
   const removeCoach = useMutation({
-    mutationFn: (coachId: string) =>
-      removeFn({ data: { organizationId: orgId!, coachId } }),
+    mutationFn: (coachId: string) => removeFn({ data: { organizationId: orgId!, coachId } }),
     onSuccess: () => {
       toast.success("Coach removed from org");
       qc.invalidateQueries({ queryKey: ["org-roster", orgId] });
@@ -132,18 +129,12 @@ function OrgRosterPage() {
                 <div key={inv.id} className="flex items-center justify-between py-2 text-sm">
                   <div className="min-w-0">
                     <p className="font-mono">{inv.code}</p>
-                    <p className="text-text-secondary truncate">
-                      {inv.email ?? inv.phone ?? "—"}
-                    </p>
+                    <p className="text-text-secondary truncate">{inv.email ?? inv.phone ?? "—"}</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge variant="outline">{inv.status}</Badge>
                     {inv.status === "pending" && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => revokeInvite.mutate(inv.id)}
-                      >
+                      <Button variant="ghost" size="sm" onClick={() => revokeInvite.mutate(inv.id)}>
                         Revoke
                       </Button>
                     )}

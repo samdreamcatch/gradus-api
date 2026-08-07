@@ -23,11 +23,14 @@ export const listEmailTemplates = createServerFn({ method: "GET" })
       .select("template_name, slot_key, value, updated_at, updated_by");
     if (error) dbError(error);
 
-    const byTemplate = new Map<string, {
-      overrides: Record<string, string>;
-      updatedAt: string | null;
-      updatedBy: string | null;
-    }>();
+    const byTemplate = new Map<
+      string,
+      {
+        overrides: Record<string, string>;
+        updatedAt: string | null;
+        updatedBy: string | null;
+      }
+    >();
     for (const row of (data ?? []) as Array<{
       template_name: string;
       slot_key: string;
@@ -96,11 +99,13 @@ export const getEmailTemplate = createServerFn({ method: "GET" })
 export const saveEmailOverride = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
-    z.object({
-      templateName: z.string(),
-      slotKey: z.string(),
-      value: z.string().max(5000),
-    }).parse(input),
+    z
+      .object({
+        templateName: z.string(),
+        slotKey: z.string(),
+        value: z.string().max(5000),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
@@ -111,18 +116,16 @@ export const saveEmailOverride = createServerFn({ method: "POST" })
     const nowIso = new Date().toISOString();
 
     // Upsert override
-    const { error: upsertError } = await context.supabase
-      .from("email_template_overrides")
-      .upsert(
-        {
-          template_name: data.templateName,
-          slot_key: data.slotKey,
-          value: data.value,
-          updated_by: context.userId,
-          updated_at: nowIso,
-        },
-        { onConflict: "template_name,slot_key" },
-      );
+    const { error: upsertError } = await context.supabase.from("email_template_overrides").upsert(
+      {
+        template_name: data.templateName,
+        slot_key: data.slotKey,
+        value: data.value,
+        updated_by: context.userId,
+        updated_at: nowIso,
+      },
+      { onConflict: "template_name,slot_key" },
+    );
     if (upsertError) dbError(upsertError);
 
     // Append audit history

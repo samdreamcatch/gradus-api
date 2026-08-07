@@ -36,10 +36,9 @@ export function NameConflictDialog({
             A move named &ldquo;{existingName}&rdquo; already exists
           </AlertDialogTitle>
           <AlertDialogDescription>
-            You already have a move named &ldquo;{existingName}&rdquo; in your
-            library. Two moves can&rsquo;t share a name. Either change the name
-            of &ldquo;{attemptedName}&rdquo;, or overwrite the existing move
-            with these details.
+            You already have a move named &ldquo;{existingName}&rdquo; in your library. Two moves
+            can&rsquo;t share a name. Either change the name of &ldquo;{attemptedName}&rdquo;, or
+            overwrite the existing move with these details.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

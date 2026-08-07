@@ -39,15 +39,10 @@ async function ensureCoachId(supabase: Client, userId: string): Promise<string> 
   return created.data.id;
 }
 
-async function insertUniqueCode(
-  supabase: Client,
-  coachId: string,
-): Promise<string> {
+async function insertUniqueCode(supabase: Client, coachId: string): Promise<string> {
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
     const code = generateCode();
-    const { error } = await supabase
-      .from("coach_invite_codes")
-      .insert({ coach_id: coachId, code });
+    const { error } = await supabase.from("coach_invite_codes").insert({ coach_id: coachId, code });
     if (!error) return code;
     // 23505 = unique_violation — collision on either coach_id or code.
     // If it's the coach_id, fall through; the caller re-reads.
@@ -63,10 +58,7 @@ async function insertUniqueCode(
   throw new Error("Could not generate a unique invite code");
 }
 
-async function updateUniqueCode(
-  supabase: Client,
-  coachId: string,
-): Promise<string> {
+async function updateUniqueCode(supabase: Client, coachId: string): Promise<string> {
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
     const code = generateCode();
     const { error } = await supabase

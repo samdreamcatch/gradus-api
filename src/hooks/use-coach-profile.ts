@@ -29,9 +29,8 @@ export function useSaveCoachLevels() {
   const fn = useServerFn(saveCoachLevels);
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: {
-      entries: { sport: string; levelKey: string; hoursPerWeek: number }[];
-    }) => fn({ data }),
+    mutationFn: (data: { entries: { sport: string; levelKey: string; hoursPerWeek: number }[] }) =>
+      fn({ data }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["coach-profile"] }),
   });
 }

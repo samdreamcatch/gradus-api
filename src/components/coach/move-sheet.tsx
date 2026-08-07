@@ -3,12 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Copy, Trash2, Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -60,7 +55,6 @@ export function MoveSheet({
           maxHeight: Math.round(vv.height * 0.9),
         }}
       >
-
         {open ? (
           <MoveSheetBody
             selection={selection!}
@@ -104,7 +98,7 @@ function MoveSheetBody({
     [moves],
   );
   const normalize = (s: string) => s.trim().toLowerCase().replace(/\s+/g, "_");
-  const currentSport = (existing?.sport ?? (selection === "new" ? undefined : "")) ?? "";
+  const currentSport = existing?.sport ?? (selection === "new" ? undefined : "") ?? "";
   const categoryOptions = useMemo(() => {
     const fromMoves = moves
       .filter((m) => (currentSport ? normalize(m.sport) === normalize(currentSport) : true))
@@ -114,7 +108,6 @@ function MoveSheetBody({
       .map((s) => s.category);
     return Array.from(new Set([...fromMoves, ...fromSeed].filter(Boolean))).sort();
   }, [moves, seedCategories, currentSport]);
-
 
   // Local draft for "new" mode (before first save)
   const [draft, setDraft] = useState<Partial<MoveDTO>>({
@@ -227,7 +220,6 @@ function MoveSheetBody({
     });
   }
 
-
   const duplicate = async () => {
     if (!existing) return;
     setSavingField("__dup");
@@ -266,13 +258,10 @@ function MoveSheetBody({
     archiveMutation.mutate({ data: { id: existing.id } });
   };
 
-
   return (
     <>
       <SheetHeader>
-        <SheetTitle className="font-display text-2xl">
-          {isNew ? "New move" : "Move"}
-        </SheetTitle>
+        <SheetTitle className="font-display text-2xl">{isNew ? "New move" : "Move"}</SheetTitle>
       </SheetHeader>
 
       <div className="mt-5 space-y-5">
@@ -339,7 +328,6 @@ function MoveSheetBody({
           saving={savingField === "cue"}
           onCommit={(v) => commitField("cue", v)}
         />
-
 
         {/* Why */}
         <MoveField
@@ -414,9 +402,7 @@ function MoveSheetBody({
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Archive "{existing?.name}"?</AlertDialogTitle>
-            <AlertDialogDescription>
-              You can recreate it later.
-            </AlertDialogDescription>
+            <AlertDialogDescription>You can recreate it later.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
@@ -483,7 +469,6 @@ function TargetEditor({
     setLocalKind(kind);
     setLocalValue(String(value));
   }, [kind, value]);
-
 
   const commit = () => {
     const n = Math.max(0, Math.min(10000, Number(localValue) || 0));
@@ -598,9 +583,7 @@ function AddToPlanAction({ moveId }: { moveId: string }) {
                 <li key={p.id}>
                   <button
                     type="button"
-                    onClick={() =>
-                      mutation.mutate({ data: { planId: p.id, moveId } })
-                    }
+                    onClick={() => mutation.mutate({ data: { planId: p.id, moveId } })}
                     disabled={mutation.isPending}
                     className="block w-full px-3 py-2.5 text-left transition hover:bg-elevated disabled:opacity-50"
                   >
@@ -608,9 +591,7 @@ function AddToPlanAction({ moveId }: { moveId: string }) {
                       {p.title || "Untitled plan"}
                     </p>
                     {p.athleteName ? (
-                      <p className="mt-0.5 text-xs text-text-tertiary">
-                        {p.athleteName}
-                      </p>
+                      <p className="mt-0.5 text-xs text-text-tertiary">{p.athleteName}</p>
                     ) : (
                       <p className="mt-0.5 text-xs text-text-tertiary">Unassigned</p>
                     )}

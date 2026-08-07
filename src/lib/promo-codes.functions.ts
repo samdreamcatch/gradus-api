@@ -1,11 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import {
-  createStripeClient,
-  getStripeErrorMessage,
-  type StripeEnv,
-} from "@/lib/stripe.server";
+import { createStripeClient, getStripeErrorMessage, type StripeEnv } from "@/lib/stripe.server";
 import { dbError } from "./db-error";
 
 const codeSchema = z
@@ -26,9 +22,7 @@ async function assertAdmin(context: { userId: string; supabase: any }) {
 /** Validate a code (any signed-in user). Returns { valid, label, percentOff }. */
 export const validatePromoCode = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z.object({ code: codeSchema }).parse(input),
-  )
+  .inputValidator((input: unknown) => z.object({ code: codeSchema }).parse(input))
   .handler(async ({ data, context }) => {
     const { data: row, error } = await context.supabase
       .from("promo_codes")
@@ -48,9 +42,7 @@ export const validatePromoCode = createServerFn({ method: "POST" })
       valid: true as const,
       label: row.label as string,
       percentOff: (row.percent_off as number | null) ?? 0,
-      duration: ((row.duration as string | null) ?? "forever") as
-        | "forever"
-        | "repeating",
+      duration: ((row.duration as string | null) ?? "forever") as "forever" | "repeating",
       durationInMonths: (row.duration_in_months as number | null) ?? null,
     };
   });
@@ -62,9 +54,7 @@ export const validatePromoCode = createServerFn({ method: "POST" })
  */
 export const applyPromoCodeToMyProfile = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z.object({ code: codeSchema.optional() }).parse(input ?? {}),
-  )
+  .inputValidator((input: unknown) => z.object({ code: codeSchema.optional() }).parse(input ?? {}))
   .handler(async ({ data, context }) => {
     if (!data.code) return { applied: false as const };
 
@@ -135,10 +125,10 @@ export const createPromoCode = createServerFn({ method: "POST" })
         cardRequired: z.boolean().optional().default(true),
         appliesToPlans: z.array(planTierSchema).min(1).optional().default(["coach", "coach_pro"]),
       })
-      .refine(
-        (v) => v.duration === "forever" || (v.durationInMonths ?? 0) > 0,
-        { message: "Repeating codes need a months value.", path: ["durationInMonths"] },
-      )
+      .refine((v) => v.duration === "forever" || (v.durationInMonths ?? 0) > 0, {
+        message: "Repeating codes need a months value.",
+        path: ["durationInMonths"],
+      })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
@@ -151,7 +141,7 @@ export const createPromoCode = createServerFn({ method: "POST" })
       percent_off: data.percentOff,
       active: data.active,
       duration: data.duration,
-      duration_in_months: data.duration === "repeating" ? data.durationInMonths ?? null : null,
+      duration_in_months: data.duration === "repeating" ? (data.durationInMonths ?? null) : null,
       card_required: data.cardRequired,
       applies_to_plans: data.appliesToPlans,
     });
@@ -223,15 +213,11 @@ export const updatePromoCode = createServerFn({ method: "POST" })
       patch.stripe_promo_id_live = null;
     }
     if (Object.keys(patch).length === 0) return { ok: true };
-    const { error } = await supabaseAdmin
-      .from("promo_codes")
-      .update(patch)
-      .eq("code", data.code);
+    const { error } = await supabaseAdmin.from("promo_codes").update(patch).eq("code", data.code);
 
     if (error) dbError(error);
     return { ok: true };
   });
-
 
 /**
  * Admin: idempotently mint (or re-mint) a Stripe Coupon + Promotion Code for
@@ -271,9 +257,7 @@ export const syncPromoCodeToStripe = createServerFn({ method: "POST" })
       throw new Error("Set a percent_off value before syncing to Stripe.");
     }
 
-    const duration = ((row.duration as string | null) ?? "forever") as
-      | "forever"
-      | "repeating";
+    const duration = ((row.duration as string | null) ?? "forever") as "forever" | "repeating";
     const durationMonths = row.duration_in_months as number | null;
     if (duration === "repeating" && (!durationMonths || durationMonths <= 0)) {
       throw new Error("Repeating codes require duration_in_months > 0.");
@@ -398,14 +382,10 @@ export type PromoCodeUser = {
 /** List every user that has a promo code attached (stashed on profile or admin-applied). */
 export const listPromoCodeUsers = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z.object({ code: codeSchema }).parse(input),
-  )
+  .inputValidator((input: unknown) => z.object({ code: codeSchema }).parse(input))
   .handler(async ({ data, context }): Promise<{ users: PromoCodeUser[] }> => {
     await assertAdmin(context);
-    const { supabaseAdmin } = await import(
-      "@/integrations/supabase/client.server"
-    );
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const code = data.code;
 
     const [coaches, parents, athletes, applied] = await Promise.all([
@@ -454,10 +434,7 @@ export const listPromoCodeUsers = createServerFn({ method: "POST" })
     }
 
     // Fetch names for admin-applied users whose profile has no stash.
-    const knownProfiles = new Map<
-      string,
-      { kind: "coach" | "parent" | "athlete"; name: string }
-    >();
+    const knownProfiles = new Map<string, { kind: "coach" | "parent" | "athlete"; name: string }>();
     for (const c of coaches.data ?? []) {
       knownProfiles.set(c.user_id, {
         kind: "coach",
@@ -467,17 +444,14 @@ export const listPromoCodeUsers = createServerFn({ method: "POST" })
     for (const p of parents.data ?? []) {
       knownProfiles.set(p.user_id, {
         kind: "parent",
-        name:
-          `${p.first_name ?? ""} ${p.last_name ?? ""}`.trim() || "(parent)",
+        name: `${p.first_name ?? ""} ${p.last_name ?? ""}`.trim() || "(parent)",
       });
     }
     for (const a of athletes.data ?? []) {
       if (a.user_id)
         knownProfiles.set(a.user_id, {
           kind: "athlete",
-          name:
-            `${a.first_name ?? ""} ${a.last_name ?? ""}`.trim() ||
-            "(athlete)",
+          name: `${a.first_name ?? ""} ${a.last_name ?? ""}`.trim() || "(athlete)",
         });
     }
 
@@ -504,24 +478,20 @@ export const listPromoCodeUsers = createServerFn({ method: "POST" })
       for (const c of mc.data ?? []) {
         knownProfiles.set(c.user_id, {
           kind: "coach",
-          name:
-            `${c.first_name ?? ""} ${c.last_name ?? ""}`.trim() || "(coach)",
+          name: `${c.first_name ?? ""} ${c.last_name ?? ""}`.trim() || "(coach)",
         });
       }
       for (const p of mp.data ?? []) {
         knownProfiles.set(p.user_id, {
           kind: "parent",
-          name:
-            `${p.first_name ?? ""} ${p.last_name ?? ""}`.trim() || "(parent)",
+          name: `${p.first_name ?? ""} ${p.last_name ?? ""}`.trim() || "(parent)",
         });
       }
       for (const a of ma.data ?? []) {
         if (a.user_id)
           knownProfiles.set(a.user_id, {
             kind: "athlete",
-            name:
-              `${a.first_name ?? ""} ${a.last_name ?? ""}`.trim() ||
-              "(athlete)",
+            name: `${a.first_name ?? ""} ${a.last_name ?? ""}`.trim() || "(athlete)",
           });
       }
     }
@@ -533,12 +503,9 @@ export const listPromoCodeUsers = createServerFn({ method: "POST" })
     for (const [userId, prof] of knownProfiles) {
       // Only mark as "stash" if the profile actually has the code stashed.
       const stashed =
-        (prof.kind === "coach" &&
-          coaches.data?.some((c) => c.user_id === userId)) ||
-        (prof.kind === "parent" &&
-          parents.data?.some((p) => p.user_id === userId)) ||
-        (prof.kind === "athlete" &&
-          athletes.data?.some((a) => a.user_id === userId));
+        (prof.kind === "coach" && coaches.data?.some((c) => c.user_id === userId)) ||
+        (prof.kind === "parent" && parents.data?.some((p) => p.user_id === userId)) ||
+        (prof.kind === "athlete" && athletes.data?.some((a) => a.user_id === userId));
       if (!stashed) continue;
       const key = `${userId}:stash`;
       if (seen.has(key)) continue;
@@ -572,4 +539,3 @@ export const listPromoCodeUsers = createServerFn({ method: "POST" })
     users.sort((a, b) => a.name.localeCompare(b.name));
     return { users };
   });
-

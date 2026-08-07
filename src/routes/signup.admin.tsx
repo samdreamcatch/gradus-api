@@ -48,9 +48,7 @@ function AdminSignupPage() {
     <div className="flex min-h-dvh items-center justify-center px-4 py-12">
       <div className="w-full max-w-md rounded-2xl bg-card p-8 shadow-card">
         <div className="mb-8 text-center">
-          <p className="text-xs font-bold uppercase tracking-widest text-accent-ink">
-            Internal
-          </p>
+          <p className="text-xs font-bold uppercase tracking-widest text-accent-ink">Internal</p>
           <h1 className="mt-2">
             <Logo className="text-6xl" />
           </h1>

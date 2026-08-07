@@ -49,9 +49,7 @@ function RolePicker() {
     <div className="flex min-h-dvh items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
         <div className="text-center">
-          <p className="text-xs font-bold uppercase tracking-widest text-accent-ink">
-            Welcome to
-          </p>
+          <p className="text-xs font-bold uppercase tracking-widest text-accent-ink">Welcome to</p>
           <h1 className="mt-3">
             <Logo className="text-7xl" />
           </h1>
@@ -59,7 +57,8 @@ function RolePicker() {
             The operating system for athletic mastery.
           </p>
           <p className="mt-4 text-base text-text-secondary">
-            75% of an athlete&apos;s progress happens between lessons. We&apos;re here for that part.
+            75% of an athlete&apos;s progress happens between lessons. We&apos;re here for that
+            part.
           </p>
         </div>
 

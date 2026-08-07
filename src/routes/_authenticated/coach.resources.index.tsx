@@ -25,10 +25,7 @@ import {
   sportLabel,
   type ResourceDTO,
 } from "@/components/resources/shared";
-import {
-  deleteCoachResource,
-  listCoachResources,
-} from "@/lib/coach-resources.functions";
+import { deleteCoachResource, listCoachResources } from "@/lib/coach-resources.functions";
 
 export const Route = createFileRoute("/_authenticated/coach/resources/")({
   component: CoachResourcesPage,
@@ -40,9 +37,7 @@ export const Route = createFileRoute("/_authenticated/coach/resources/")({
     </div>
   ),
   notFoundComponent: () => (
-    <div className="mx-auto max-w-2xl px-3 py-6 text-sm text-text-secondary">
-      Not found.
-    </div>
+    <div className="mx-auto max-w-2xl px-3 py-6 text-sm text-text-secondary">Not found.</div>
   ),
 });
 
@@ -103,10 +98,7 @@ function CoachResourcesPage() {
     return resources
       .filter((r) => r.sports.includes(activeSport))
       .filter(
-        (r) =>
-          !q ||
-          r.title.toLowerCase().includes(q) ||
-          r.description.toLowerCase().includes(q),
+        (r) => !q || r.title.toLowerCase().includes(q) || r.description.toLowerCase().includes(q),
       );
   }, [resources, activeSport, search]);
 
@@ -130,10 +122,7 @@ function CoachResourcesPage() {
           />
           <div className="mt-2.5 flex items-center gap-2">
             {sports.length > 1 ? (
-              <Select
-                value={activeSport ?? undefined}
-                onValueChange={(v) => setSelectedSport(v)}
-              >
+              <Select value={activeSport ?? undefined} onValueChange={(v) => setSelectedSport(v)}>
                 <SelectTrigger
                   className="h-8 flex-1 rounded-full border-divider bg-card px-3 text-xs font-bold text-text-primary shadow-none"
                   aria-label="Sport"
@@ -151,10 +140,7 @@ function CoachResourcesPage() {
             ) : (
               <div className="flex-1" />
             )}
-            <UploadButton
-              canUpload={canUpload}
-              onClick={() => setUploadOpen(true)}
-            />
+            <UploadButton canUpload={canUpload} onClick={() => setUploadOpen(true)} />
           </div>
         </FilterBar>
       ) : null}
@@ -227,29 +213,16 @@ function CoachResourcesPage() {
         </>
       )}
 
-      <ResourceSheet
-        resource={openResource}
-        onClose={() => setOpenResource(null)}
-      />
+      <ResourceSheet resource={openResource} onClose={() => setOpenResource(null)} />
 
-      <UploadResourceSheet
-        open={uploadOpen}
-        onOpenChange={setUploadOpen}
-        coachSports={sports}
-      />
+      <UploadResourceSheet open={uploadOpen} onOpenChange={setUploadOpen} coachSports={sports} />
 
       <CoachBottomNav />
     </div>
   );
 }
 
-function UploadButton({
-  canUpload,
-  onClick,
-}: {
-  canUpload: boolean;
-  onClick: () => void;
-}) {
+function UploadButton({ canUpload, onClick }: { canUpload: boolean; onClick: () => void }) {
   const navigate = useNavigate();
   if (canUpload) {
     return (

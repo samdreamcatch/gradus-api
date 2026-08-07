@@ -40,12 +40,18 @@ function AdminActive() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10 space-y-6">
-      <Link to="/admin/reporting" search={{ test: includeTest }} className="text-sm text-accent-ink underline-offset-4 hover:underline">
+      <Link
+        to="/admin/reporting"
+        search={{ test: includeTest }}
+        className="text-sm text-accent-ink underline-offset-4 hover:underline"
+      >
         ← Back to reporting
       </Link>
 
       <header className="space-y-1">
-        <Eyebrow size="small" tone="accent-ink">Admin</Eyebrow>
+        <Eyebrow size="small" tone="accent-ink">
+          Admin
+        </Eyebrow>
         <h1 className="font-display text-h1 text-text-primary">Active users</h1>
         <p className="text-sm text-text-secondary">
           {ROLE_LABEL[role]} ·{" "}
@@ -106,9 +112,7 @@ function AdminActive() {
                       {r.name}
                       {r.isTest && <Tag className="ml-2">test</Tag>}
                     </p>
-                    <p className="truncate text-xs text-text-secondary">
-                      {r.email ?? r.role}
-                    </p>
+                    <p className="truncate text-xs text-text-secondary">{r.email ?? r.role}</p>
                     <p className="truncate text-[11px] text-text-tertiary">
                       {r.activities.join(" · ")}
                     </p>

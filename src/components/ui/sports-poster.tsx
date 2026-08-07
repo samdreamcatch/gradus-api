@@ -62,10 +62,7 @@ export function SportsPoster({
   return (
     <div
       aria-hidden
-      className={cn(
-        "pointer-events-none absolute select-none dark:invert",
-        className,
-      )}
+      className={cn("pointer-events-none absolute select-none dark:invert", className)}
       style={{
         ...pos,
         ...(fill ? {} : { width: size, height: size }),

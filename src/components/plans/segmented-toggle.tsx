@@ -23,9 +23,7 @@ export function SegmentedToggle<T extends string>({
           onClick={() => onChange(t.key)}
           className={cn(
             "press-soft flex-1 rounded-md py-1.5 text-sm font-bold",
-            value === t.key
-              ? "bg-accent text-accent-foreground shadow-sm"
-              : "text-text-secondary",
+            value === t.key ? "bg-accent text-accent-foreground shadow-sm" : "text-text-secondary",
           )}
         >
           {t.label}

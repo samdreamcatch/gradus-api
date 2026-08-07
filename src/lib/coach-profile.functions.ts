@@ -7,11 +7,7 @@ import type { Database } from "@/integrations/supabase/types";
 import { dbError } from "./db-error";
 import { isFoundingCoachWindowOpen } from "./paywall-flag";
 
-export type CoachEntitlement =
-  | "pending"
-  | "club_covered"
-  | "paid"
-  | "promo_free";
+export type CoachEntitlement = "pending" | "club_covered" | "paid" | "promo_free";
 
 export type CoachEffectiveTier = "coach" | "coach_pro" | "club";
 
@@ -54,7 +50,6 @@ export function athleteLimitForTier(tier: CoachEffectiveTier): number | null {
   if (tier === "coach_pro") return 50;
   return 5;
 }
-
 
 export interface CoachLevelDTO {
   sport: string;
@@ -158,7 +153,11 @@ export const getCoachProfile = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const supabase = context.supabase as Client;
-    const profile = await ensureProfile(supabase, context.userId, (context.claims as { user_metadata?: Record<string, unknown> }).user_metadata);
+    const profile = await ensureProfile(
+      supabase,
+      context.userId,
+      (context.claims as { user_metadata?: Record<string, unknown> }).user_metadata,
+    );
 
     const promoLookup = async () => {
       if (!profile.promo_code) return { data: null, error: null } as const;
@@ -188,7 +187,6 @@ export const getCoachProfile = createServerFn({ method: "GET" })
     if (org.error) dbError(org.error);
     if (promo.error) dbError(promo.error);
 
-
     const promoActive = promo.data?.active !== false;
 
     const countRes = await supabase
@@ -199,8 +197,7 @@ export const getCoachProfile = createServerFn({ method: "GET" })
     const athleteCount = countRes.count ?? 0;
 
     const organizationId = profile.organization_id ?? null;
-    const subscriptionTier =
-      (profile.subscription_tier as "coach" | "coach_pro" | null) ?? null;
+    const subscriptionTier = (profile.subscription_tier as "coach" | "coach_pro" | null) ?? null;
     const effectiveTier = computeEffectiveTier({ organizationId, subscriptionTier });
     const athleteLimit = athleteLimitForTier(effectiveTier);
 
@@ -214,8 +211,7 @@ export const getCoachProfile = createServerFn({ method: "GET" })
         organizationId,
         organizationName: org.data?.name ?? null,
         subscriptionTier,
-        subscriptionStatus:
-          (profile.subscription_status as string | null) ?? null,
+        subscriptionStatus: (profile.subscription_status as string | null) ?? null,
         trialEndsAt: (profile.trial_ends_at as string | null) ?? null,
         currentPeriodEnd: (profile.current_period_end as string | null) ?? null,
         hasStripeCustomer: Boolean(profile.stripe_customer_id),
@@ -236,7 +232,6 @@ export const getCoachProfile = createServerFn({ method: "GET" })
     };
   });
 
-
 const nameSchema = z.object({
   firstName: z.string().trim().min(1, "Required").max(80),
   lastName: z.string().trim().min(1, "Required").max(80),
@@ -247,7 +242,11 @@ export const saveCoachProfile = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => nameSchema.parse(input))
   .handler(async ({ data, context }) => {
     const supabase = context.supabase as Client;
-    const profile = await ensureProfile(supabase, context.userId, (context.claims as { user_metadata?: Record<string, unknown> }).user_metadata);
+    const profile = await ensureProfile(
+      supabase,
+      context.userId,
+      (context.claims as { user_metadata?: Record<string, unknown> }).user_metadata,
+    );
     const { error } = await supabase
       .from("coach_profiles")
       .update({ first_name: data.firstName, last_name: data.lastName })
@@ -281,7 +280,11 @@ export const saveCoachLevels = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => levelsSchema.parse(input))
   .handler(async ({ data, context }) => {
     const supabase = context.supabase as Client;
-    const profile = await ensureProfile(supabase, context.userId, (context.claims as { user_metadata?: Record<string, unknown> }).user_metadata);
+    const profile = await ensureProfile(
+      supabase,
+      context.userId,
+      (context.claims as { user_metadata?: Record<string, unknown> }).user_metadata,
+    );
 
     // Replace strategy: delete all then insert. RLS scopes both to this coach.
     const del = await supabase.from("coach_levels").delete().eq("coach_id", profile.id);
@@ -305,23 +308,21 @@ export const completeOnboarding = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const supabase = context.supabase as Client;
-    const profile = await ensureProfile(supabase, context.userId, (context.claims as { user_metadata?: Record<string, unknown> }).user_metadata);
+    const profile = await ensureProfile(
+      supabase,
+      context.userId,
+      (context.claims as { user_metadata?: Record<string, unknown> }).user_metadata,
+    );
     // Founding Coach grandfathering: while the founding window is open,
     // stamp coaches finishing onboarding as founding + complimentary.
     // Existing paid/club entitlement is preserved.
-    const preserve =
-      profile.entitlement === "paid" || profile.entitlement === "club_covered";
+    const preserve = profile.entitlement === "paid" || profile.entitlement === "club_covered";
     const founding = isFoundingCoachWindowOpen() && !preserve;
     const patch = {
       onboarded_at: new Date().toISOString(),
-      ...(founding
-        ? { entitlement: "promo_free" as const, founding_coach: true }
-        : {}),
+      ...(founding ? { entitlement: "promo_free" as const, founding_coach: true } : {}),
     };
-    const { error } = await supabase
-      .from("coach_profiles")
-      .update(patch)
-      .eq("id", profile.id);
+    const { error } = await supabase.from("coach_profiles").update(patch).eq("id", profile.id);
     if (error) dbError(error);
     return { ok: true };
   });

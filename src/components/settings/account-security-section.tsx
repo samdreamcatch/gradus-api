@@ -4,11 +4,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentUserEmail } from "@/hooks/use-current-user-email";
 import { useVisualViewport } from "@/hooks/use-visual-viewport";
-import {
-  SettingsGroup,
-  SettingsList,
-  SettingsButtonRow,
-} from "@/components/settings/primitives";
+import { SettingsGroup, SettingsList, SettingsButtonRow } from "@/components/settings/primitives";
 import {
   Sheet,
   SheetContent,
@@ -119,11 +115,7 @@ export function AccountSecuritySection() {
         </SettingsList>
       </SettingsGroup>
 
-      <ChangeEmailSheet
-        open={changeOpen}
-        onOpenChange={setChangeOpen}
-        currentEmail={email}
-      />
+      <ChangeEmailSheet open={changeOpen} onOpenChange={setChangeOpen} currentEmail={email} />
     </>
   );
 }
@@ -160,15 +152,12 @@ function ChangeEmailSheet({
         <SheetHeader className="text-left">
           <SheetTitle>Change email</SheetTitle>
           <SheetDescription>
-            We'll send a confirmation to both your current and new address. The
-            change takes effect once both are confirmed.
+            We'll send a confirmation to both your current and new address. The change takes effect
+            once both are confirmed.
           </SheetDescription>
         </SheetHeader>
         {open ? (
-          <ChangeEmailBody
-            currentEmail={currentEmail}
-            onClose={() => onOpenChange(false)}
-          />
+          <ChangeEmailBody currentEmail={currentEmail} onClose={() => onOpenChange(false)} />
         ) : null}
       </SheetContent>
     </Sheet>
@@ -192,8 +181,7 @@ function ChangeEmailBody({
   const trimmedConfirm = confirmEmail.trim();
   const emailOk =
     /.+@.+\..+/.test(trimmedNew) && trimmedNew.toLowerCase() === trimmedConfirm.toLowerCase();
-  const sameAsCurrent =
-    currentEmail && trimmedNew.toLowerCase() === currentEmail.toLowerCase();
+  const sameAsCurrent = currentEmail && trimmedNew.toLowerCase() === currentEmail.toLowerCase();
 
   async function submitChange(usingNonce?: string) {
     if (!emailOk || sameAsCurrent) return;
@@ -253,10 +241,7 @@ function ChangeEmailBody({
           <Button variant="ghost" onClick={onClose} disabled={submitting}>
             Cancel
           </Button>
-          <Button
-            onClick={() => submitChange(nonce)}
-            disabled={submitting || nonce.length !== 6}
-          >
+          <Button onClick={() => submitChange(nonce)} disabled={submitting || nonce.length !== 6}>
             {submitting ? (
               <>
                 <Loader2 className="mr-2 size-4 animate-spin" />
@@ -303,19 +288,14 @@ function ChangeEmailBody({
           placeholder="you@example.com"
         />
         {sameAsCurrent ? (
-          <p className="text-xs text-destructive">
-            That's the same as your current email.
-          </p>
+          <p className="text-xs text-destructive">That's the same as your current email.</p>
         ) : null}
       </div>
       <div className="flex justify-end gap-2">
         <Button variant="ghost" onClick={onClose} disabled={submitting}>
           Cancel
         </Button>
-        <Button
-          onClick={() => submitChange()}
-          disabled={submitting || !emailOk || !!sameAsCurrent}
-        >
+        <Button onClick={() => submitChange()} disabled={submitting || !emailOk || !!sameAsCurrent}>
           {submitting ? (
             <>
               <Loader2 className="mr-2 size-4 animate-spin" />

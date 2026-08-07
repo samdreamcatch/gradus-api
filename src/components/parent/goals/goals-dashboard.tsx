@@ -21,11 +21,7 @@ export function GoalsDashboard({ athleteId }: { athleteId: string }) {
   const athletes = data ?? [];
 
   if (isLoading) {
-    return (
-      <p className="mt-5 py-5 text-center text-sm text-text-secondary">
-        Loading goals…
-      </p>
-    );
+    return <p className="mt-5 py-5 text-center text-sm text-text-secondary">Loading goals…</p>;
   }
 
   if (athletes.length === 0) {

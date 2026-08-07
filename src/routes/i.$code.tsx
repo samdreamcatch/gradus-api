@@ -170,8 +170,7 @@ function InviteEntryPage() {
           if (role === "coach") {
             setStage({
               kind: "wrong-role",
-              message:
-                "This invite is for a parent or adult athlete. You're signed in as a coach.",
+              message: "This invite is for a parent or adult athlete. You're signed in as a coach.",
             });
             return;
           }
@@ -204,7 +203,6 @@ function InviteEntryPage() {
     <div className="relative flex min-h-dvh items-center justify-center overflow-hidden px-4 py-12">
       <SportsPoster fill opacity={0.08} />
       <div className="relative w-full max-w-md rounded-2xl bg-card p-8 shadow-card">
-
         <div className="mb-6 text-center">
           <p className="text-xs font-bold uppercase tracking-widest text-accent-ink">
             You've been invited to
@@ -253,20 +251,12 @@ function RolePicker({ code }: { code: string }) {
       </p>
       <div className="space-y-3">
         <Button asChild className="w-full">
-          <Link
-            to="/signup/parent"
-            search={{ invite: code }}
-            onClick={stash}
-          >
+          <Link to="/signup/parent" search={{ invite: code }} onClick={stash}>
             I'm a parent
           </Link>
         </Button>
         <Button asChild variant="outline" className="w-full">
-          <Link
-            to="/signup/athlete/adult"
-            search={{ invite: code }}
-            onClick={stash}
-          >
+          <Link to="/signup/athlete/adult" search={{ invite: code }} onClick={stash}>
             I'm an adult athlete (18+)
           </Link>
         </Button>
@@ -300,11 +290,7 @@ function WrongRoleView({ message, code }: { message: string; code: string }) {
       <p className="text-center text-sm text-text-secondary">
         Sign out and open the link again to use a different account.
       </p>
-      <Button
-        onClick={signOutAndRetry}
-        disabled={signingOut}
-        className="w-full"
-      >
+      <Button onClick={signOutAndRetry} disabled={signingOut} className="w-full">
         {signingOut ? "Signing out…" : "Sign out and continue"}
       </Button>
       <Button asChild variant="outline" className="w-full">

@@ -8,7 +8,12 @@ import { SportChip } from "@/components/onboarding/sport-chip";
 import { getAthleteInviteSummary } from "@/lib/athlete-signup.functions";
 
 const searchSchema = z.object({
-  code: z.string().trim().toUpperCase().length(8).regex(/^[A-Z2-9]+$/),
+  code: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .length(8)
+    .regex(/^[A-Z2-9]+$/),
 });
 
 export const Route = createFileRoute("/signup/athlete/confirm")({
@@ -37,9 +42,7 @@ function AthleteConfirmPage() {
       <div className="w-full max-w-md rounded-2xl bg-card p-8 shadow-card">
         <div className="mb-8 text-center">
           <Logo className="text-5xl" />
-          <p className="mt-6 font-display text-2xl text-text-primary">
-            Does this look right?
-          </p>
+          <p className="mt-6 font-display text-2xl text-text-primary">Does this look right?</p>
         </div>
 
         {isLoading && (
@@ -52,7 +55,9 @@ function AthleteConfirmPage() {
               {error instanceof Error ? error.message : "Something went wrong"}
             </p>
             <Button variant="outline" asChild className="w-full">
-              <Link to="/signup/athlete" search={{ code: undefined }}>Try a different code</Link>
+              <Link to="/signup/athlete" search={{ code: undefined }}>
+                Try a different code
+              </Link>
             </Button>
           </div>
         )}
@@ -99,7 +104,9 @@ function AthleteConfirmPage() {
                 That&apos;s me — continue
               </Button>
               <Button variant="outline" asChild className="w-full">
-                <Link to="/signup/athlete" search={{ code: undefined }}>That&apos;s not me</Link>
+                <Link to="/signup/athlete" search={{ code: undefined }}>
+                  That&apos;s not me
+                </Link>
               </Button>
             </div>
           </div>

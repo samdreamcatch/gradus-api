@@ -12,7 +12,13 @@ import {
   slugifySport,
   type SelectedSport,
 } from "@/components/onboarding/sport-multiselect";
-import { SPORTS, getSport, getSportLevel, getSuggestedHours, DEFAULT_SUGGESTED_HOURS } from "@/lib/coach-sports";
+import {
+  SPORTS,
+  getSport,
+  getSportLevel,
+  getSuggestedHours,
+  DEFAULT_SUGGESTED_HOURS,
+} from "@/lib/coach-sports";
 import {
   coachProfileQueryOptions,
   useCoachProfile,
@@ -46,7 +52,6 @@ export const Route = createFileRoute("/_authenticated/coach/onboarding")({
   component: OnboardingPage,
 });
 
-
 type LevelEntry = { sport: string; levelKey: string; hoursPerWeek: number };
 type CustomLevel = { sportKey: string; key: string; label: string };
 
@@ -66,9 +71,7 @@ function OnboardingPage() {
 
   const onboardedAt = data?.profile.onboardedAt;
   const needsPaywall = Boolean(
-    data &&
-      isCoachPaywallEnabled() &&
-      !ENTITLED.has(data.profile.entitlement),
+    data && isCoachPaywallEnabled() && !ENTITLED.has(data.profile.entitlement),
   );
 
   if (error) {
@@ -102,17 +105,12 @@ type OnboardingData = NonNullable<ReturnType<typeof useCoachProfile>["data"]>;
 function OnboardingForm({ data }: { data: OnboardingData }) {
   const navigate = useNavigate();
 
-  const needsName =
-    !data.profile.firstName.trim() || !data.profile.lastName.trim();
+  const needsName = !data.profile.firstName.trim() || !data.profile.lastName.trim();
 
   const effectiveTier = data.profile.effectiveTier;
   const distinctPrimarySportCount = useMemo(
     () =>
-      new Set(
-        data.levels
-          .map((l) => l.sport)
-          .filter((s) => s !== "strength_conditioning"),
-      ).size,
+      new Set(data.levels.map((l) => l.sport).filter((s) => s !== "strength_conditioning")).size,
     [data.levels],
   );
   const primarySportCap = maxPrimarySportsForCoach({
@@ -124,10 +122,6 @@ function OnboardingForm({ data }: { data: OnboardingData }) {
   const [step, setStep] = useState(1);
   const [firstName, setFirstName] = useState(data.profile.firstName);
   const [lastName, setLastName] = useState(data.profile.lastName);
-
-
-
-
 
   // Initial sport & custom-level reconstruction from saved data.
   const { initialSports, initialCustomLevels } = useMemo(() => {
@@ -159,10 +153,7 @@ function OnboardingForm({ data }: { data: OnboardingData }) {
   const [customLevels, setCustomLevels] = useState<CustomLevel[]>(initialCustomLevels);
   const [entries, setEntries] = useState<LevelEntry[]>(data.levels);
 
-  const customSports = useMemo(
-    () => sports.filter((s) => s.custom),
-    [sports],
-  );
+  const customSports = useMemo(() => sports.filter((s) => s.custom), [sports]);
 
   const saveProfile = useSaveCoachProfile();
   const saveLevels = useSaveCoachLevels();
@@ -198,25 +189,19 @@ function OnboardingForm({ data }: { data: OnboardingData }) {
     const slug = slugifySport(label);
 
     // Check built-ins by key or label slug.
-    const builtInMatch = SPORTS.find(
-      (s) => s.key === slug || slugifySport(s.label) === slug,
-    );
+    const builtInMatch = SPORTS.find((s) => s.key === slug || slugifySport(s.label) === slug);
     if (builtInMatch) {
       const existing: SelectedSport = {
         key: builtInMatch.key,
         label: builtInMatch.label,
         custom: false,
       };
-      setSports((prev) =>
-        prev.some((s) => s.key === existing.key) ? prev : [...prev, existing],
-      );
+      setSports((prev) => (prev.some((s) => s.key === existing.key) ? prev : [...prev, existing]));
       return { status: "selected-existing" as const, label: builtInMatch.label };
     }
 
     // Check existing custom sports by label slug.
-    const customMatch = sports.find(
-      (s) => s.custom && slugifySport(s.label) === slug,
-    );
+    const customMatch = sports.find((s) => s.custom && slugifySport(s.label) === slug);
     if (customMatch) {
       // Already in selected list — nothing to add, but report.
       return { status: "selected-existing" as const, label: customMatch.label };
@@ -244,24 +229,21 @@ function OnboardingForm({ data }: { data: OnboardingData }) {
   const addCustomLevel = (sportKey: string) => {
     const key = `lvl_new_${randSuffix()}`;
     setCustomLevels((prev) => [...prev, { sportKey, key, label: "" }]);
-    setEntries((prev) => [...prev, { sport: sportKey, levelKey: key, hoursPerWeek: DEFAULT_SUGGESTED_HOURS }]);
+    setEntries((prev) => [
+      ...prev,
+      { sport: sportKey, levelKey: key, hoursPerWeek: DEFAULT_SUGGESTED_HOURS },
+    ]);
   };
 
   const updateCustomLevelLabel = (sportKey: string, levelKey: string, label: string) => {
     setCustomLevels((prev) =>
-      prev.map((c) =>
-        c.sportKey === sportKey && c.key === levelKey ? { ...c, label } : c,
-      ),
+      prev.map((c) => (c.sportKey === sportKey && c.key === levelKey ? { ...c, label } : c)),
     );
   };
 
   const removeCustomLevel = (sportKey: string, levelKey: string) => {
-    setCustomLevels((prev) =>
-      prev.filter((c) => !(c.sportKey === sportKey && c.key === levelKey)),
-    );
-    setEntries((prev) =>
-      prev.filter((e) => !(e.sport === sportKey && e.levelKey === levelKey)),
-    );
+    setCustomLevels((prev) => prev.filter((c) => !(c.sportKey === sportKey && c.key === levelKey)));
+    setEntries((prev) => prev.filter((e) => !(e.sport === sportKey && e.levelKey === levelKey)));
   };
 
   const updateHours = (sport: string, levelKey: string, hours: number) => {
@@ -283,17 +265,11 @@ function OnboardingForm({ data }: { data: OnboardingData }) {
 
   const canContinue = (() => {
     if (currentKind === "profile")
-      return (
-        firstName.trim().length > 0 &&
-        lastName.trim().length > 0 &&
-        sports.length > 0
-      );
+      return firstName.trim().length > 0 && lastName.trim().length > 0 && sports.length > 0;
     if (currentKind === "sports") return sports.length > 0;
     if (currentKind === "levels") {
       // Every sport must have at least one entry; for custom sports every level must have a non-empty label.
-      const allHaveLevel = sports.every((s) =>
-        entries.some((e) => e.sport === s.key),
-      );
+      const allHaveLevel = sports.every((s) => entries.some((e) => e.sport === s.key));
       const customLabelsOk = customLevels.every((c) => c.label.trim().length > 0);
       return allHaveLevel && customLabelsOk;
     }
@@ -343,9 +319,7 @@ function OnboardingForm({ data }: { data: OnboardingData }) {
       } catch (err) {
         console.error("[Onboarding] claim invite failed", err);
         toast.error(
-          err instanceof Error
-            ? `Couldn't link parent: ${err.message}`
-            : "Couldn't link parent",
+          err instanceof Error ? `Couldn't link parent: ${err.message}` : "Couldn't link parent",
         );
       } finally {
         try {
@@ -361,275 +335,264 @@ function OnboardingForm({ data }: { data: OnboardingData }) {
   };
 
   const busy = saveProfile.isPending || saveLevels.isPending || complete.isPending;
-  
 
   return (
     <>
-    <div className="flex min-h-dvh items-start justify-center px-4 pt-8 pb-24 sm:items-center">
-      <div className="w-full max-w-2xl rounded-2xl bg-card p-8 shadow-[0_10px_40px_-12px_rgba(0,0,0,0.15)] sm:p-10">
-        <div className="mb-4 flex items-center justify-between">
-          <p className="text-xs font-bold uppercase tracking-widest text-accent-ink">
-            Step {step} of {totalSteps}
-          </p>
-          <div className="flex gap-1.5">
-            {Array.from({ length: totalSteps }, (_, i) => i + 1).map((n) => (
-              <span
-                key={n}
-                className={`h-1.5 w-6 rounded-full ${
-                  n <= step ? "bg-accent" : "bg-divider"
-                }`}
+      <div className="flex min-h-dvh items-start justify-center px-4 pt-8 pb-24 sm:items-center">
+        <div className="w-full max-w-2xl rounded-2xl bg-card p-8 shadow-[0_10px_40px_-12px_rgba(0,0,0,0.15)] sm:p-10">
+          <div className="mb-4 flex items-center justify-between">
+            <p className="text-xs font-bold uppercase tracking-widest text-accent-ink">
+              Step {step} of {totalSteps}
+            </p>
+            <div className="flex gap-1.5">
+              {Array.from({ length: totalSteps }, (_, i) => i + 1).map((n) => (
+                <span
+                  key={n}
+                  className={`h-1.5 w-6 rounded-full ${n <= step ? "bg-accent" : "bg-divider"}`}
+                />
+              ))}
+            </div>
+          </div>
+
+          {currentKind === "profile" && (
+            <Step
+              title="Tell us about yourself"
+              subtitle="Your athletes will see your name on their lessons."
+            >
+              <div className="space-y-6">
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="firstName">First name</Label>
+                    <Input
+                      id="firstName"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      maxLength={80}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="lastName">Last name</Label>
+                    <Input
+                      id="lastName"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      maxLength={80}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Which sports do you coach?</Label>
+                  <SportMultiselect
+                    selected={sports}
+                    customSports={customSports}
+                    onToggle={toggleSport}
+                    onAddCustom={addCustomSport}
+                    onRemoveCustom={removeCustomSport}
+                    maxPrimarySports={primarySportCap}
+                  />
+                </div>
+              </div>
+            </Step>
+          )}
+
+          {currentKind === "sports" && (
+            <Step title="Which sports do you coach?" subtitle="Pick one or more.">
+              <SportMultiselect
+                selected={sports}
+                customSports={customSports}
+                onToggle={toggleSport}
+                onAddCustom={addCustomSport}
+                onRemoveCustom={removeCustomSport}
+                maxPrimarySports={primarySportCap}
               />
-            ))}
+            </Step>
+          )}
+
+          {currentKind === "levels" && (
+            <Step
+              title="Which levels do you coach?"
+              subtitle="Select every level you actively teach. You can change this later."
+            >
+              <div className="space-y-8">
+                {sports.map((selSport) => {
+                  const sportKey = selSport.key;
+                  const meta = getSportMeta(sportKey);
+                  const builtIn = getSport(sportKey);
+                  return (
+                    <div key={sportKey}>
+                      <h2 className="text-xl">{meta.label}</h2>
+                      {meta.standard && (
+                        <p className="mt-1 text-xs uppercase tracking-wider text-text-secondary">
+                          {meta.standard}
+                        </p>
+                      )}
+
+                      {builtIn ? (
+                        <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                          {builtIn.levels.map((lvl) => {
+                            const checked = entries.some(
+                              (e) => e.sport === sportKey && e.levelKey === lvl.key,
+                            );
+                            return (
+                              <label
+                                key={lvl.key}
+                                className="flex cursor-pointer items-start gap-3 rounded-md border border-divider bg-elevated p-3 hover:border-accent/40"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={checked}
+                                  onChange={() => toggleLevel(sportKey, lvl.key)}
+                                  className="mt-1 h-4 w-4 accent-accent"
+                                />
+                                <div className="leading-tight">
+                                  <div className="text-sm font-semibold text-text-primary">
+                                    {lvl.label}
+                                  </div>
+                                  {lvl.hint && (
+                                    <div className="text-xs text-text-secondary">{lvl.hint}</div>
+                                  )}
+                                </div>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <div className="mt-4 space-y-2">
+                          {customLevels
+                            .filter((c) => c.sportKey === sportKey)
+                            .map((c) => (
+                              <div
+                                key={c.key}
+                                className="flex items-center gap-2 rounded-md border border-divider bg-elevated p-2"
+                              >
+                                <Input
+                                  value={c.label}
+                                  onChange={(e) =>
+                                    updateCustomLevelLabel(sportKey, c.key, e.target.value)
+                                  }
+                                  placeholder="Level name (e.g. Beginner)"
+                                  className="h-9 text-sm"
+                                  maxLength={60}
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => removeCustomLevel(sportKey, c.key)}
+                                  className="rounded p-1.5 text-text-tertiary hover:bg-divider hover:text-text-primary"
+                                  aria-label="Remove level"
+                                >
+                                  <X className="h-4 w-4" />
+                                </button>
+                              </div>
+                            ))}
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => addCustomLevel(sportKey)}
+                          >
+                            <Plus className="h-4 w-4" />
+                            Add level
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </Step>
+          )}
+
+          {currentKind === "hours" && (
+            <Step
+              title="Practice expectations"
+              subtitle="How many hours per week should athletes at each level practice on their own?"
+            >
+              <div className="space-y-6">
+                {sports.map((selSport) => {
+                  const sportKey = selSport.key;
+                  const meta = getSportMeta(sportKey);
+                  const sportEntries = entries.filter((e) => e.sport === sportKey);
+                  if (sportEntries.length === 0) return null;
+                  return (
+                    <div key={sportKey}>
+                      <p className="mb-2 text-caption text-text-tertiary">{meta.label}</p>
+                      <div className="divide-y divide-divider rounded-lg border border-divider bg-elevated">
+                        {sportEntries.map((entry) => (
+                          <div
+                            key={entry.levelKey}
+                            className="flex items-center justify-between gap-4 px-4 py-2.5"
+                          >
+                            <div className="text-sm font-medium text-text-primary">
+                              {getLevelLabel(sportKey, entry.levelKey)}
+                            </div>
+                            <div className="flex items-baseline gap-1.5">
+                              <Input
+                                type="number"
+                                inputMode="decimal"
+                                min={0}
+                                max={40}
+                                step={0.5}
+                                value={entry.hoursPerWeek === 0 ? "" : entry.hoursPerWeek}
+                                onChange={(e) => {
+                                  const raw = e.target.value;
+                                  const n = raw === "" ? 0 : Number(raw);
+                                  updateHours(
+                                    sportKey,
+                                    entry.levelKey,
+                                    Math.max(0, Math.min(40, Number.isFinite(n) ? n : 0)),
+                                  );
+                                }}
+                                className="h-9 w-16 px-2 text-right tabular-nums"
+                              />
+                              <span className="text-xs text-text-tertiary">hrs/wk</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </Step>
+          )}
+
+          {currentKind === "invite" && (
+            <Step title="Invite Parents">
+              <InviteCard />
+            </Step>
+          )}
+
+          {currentKind === "review" && (
+            <Step title="Looks good?" subtitle="Review and finish.">
+              <ReviewSummary
+                firstName={firstName}
+                lastName={lastName}
+                sports={sports}
+                entries={entries}
+                getSportMeta={getSportMeta}
+                getLevelLabel={getLevelLabel}
+              />
+            </Step>
+          )}
+
+          <div className="mt-6 flex items-center justify-between">
+            <Button
+              variant="ghost"
+              onClick={() => setStep((s) => Math.max(1, s - 1))}
+              disabled={step === 1 || busy}
+            >
+              Back
+            </Button>
+            <Button
+              onClick={isLastStep ? handleFinish : handleContinue}
+              disabled={!canContinue || busy}
+            >
+              {busy ? "Saving…" : isLastStep ? "Finish" : "Continue"}
+            </Button>
           </div>
         </div>
-
-
-
-        {currentKind === "profile" && (
-          <Step
-            title="Tell us about yourself"
-            subtitle="Your athletes will see your name on their lessons."
-          >
-            <div className="space-y-6">
-              <div className="grid gap-2 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="firstName">First name</Label>
-                  <Input
-                    id="firstName"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    maxLength={80}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="lastName">Last name</Label>
-                  <Input
-                    id="lastName"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    maxLength={80}
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label>Which sports do you coach?</Label>
-                <SportMultiselect
-                  selected={sports}
-                  customSports={customSports}
-                  onToggle={toggleSport}
-                  onAddCustom={addCustomSport}
-                  onRemoveCustom={removeCustomSport}
-                  maxPrimarySports={primarySportCap}
-                />
-              </div>
-            </div>
-          </Step>
-        )}
-
-        {currentKind === "sports" && (
-          <Step title="Which sports do you coach?" subtitle="Pick one or more.">
-            <SportMultiselect
-              selected={sports}
-              customSports={customSports}
-              onToggle={toggleSport}
-              onAddCustom={addCustomSport}
-              onRemoveCustom={removeCustomSport}
-              maxPrimarySports={primarySportCap}
-            />
-          </Step>
-        )}
-
-        {currentKind === "levels" && (
-          <Step
-            title="Which levels do you coach?"
-            subtitle="Select every level you actively teach. You can change this later."
-          >
-            <div className="space-y-8">
-              {sports.map((selSport) => {
-                const sportKey = selSport.key;
-                const meta = getSportMeta(sportKey);
-                const builtIn = getSport(sportKey);
-                return (
-                  <div key={sportKey}>
-                    <h2 className="text-xl">{meta.label}</h2>
-                    {meta.standard && (
-                      <p className="mt-1 text-xs uppercase tracking-wider text-text-secondary">
-                        {meta.standard}
-                      </p>
-                    )}
-
-                    {builtIn ? (
-                      <div className="mt-4 grid gap-2 sm:grid-cols-2">
-                        {builtIn.levels.map((lvl) => {
-                          const checked = entries.some(
-                            (e) => e.sport === sportKey && e.levelKey === lvl.key,
-                          );
-                          return (
-                            <label
-                              key={lvl.key}
-                              className="flex cursor-pointer items-start gap-3 rounded-md border border-divider bg-elevated p-3 hover:border-accent/40"
-                            >
-                              <input
-                                type="checkbox"
-                                checked={checked}
-                                onChange={() => toggleLevel(sportKey, lvl.key)}
-                                className="mt-1 h-4 w-4 accent-accent"
-                              />
-                              <div className="leading-tight">
-                                <div className="text-sm font-semibold text-text-primary">
-                                  {lvl.label}
-                                </div>
-                                {lvl.hint && (
-                                  <div className="text-xs text-text-secondary">{lvl.hint}</div>
-                                )}
-                              </div>
-                            </label>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <div className="mt-4 space-y-2">
-                        {customLevels
-                          .filter((c) => c.sportKey === sportKey)
-                          .map((c) => (
-                            <div
-                              key={c.key}
-                              className="flex items-center gap-2 rounded-md border border-divider bg-elevated p-2"
-                            >
-                              <Input
-                                value={c.label}
-                                onChange={(e) =>
-                                  updateCustomLevelLabel(sportKey, c.key, e.target.value)
-                                }
-                                placeholder="Level name (e.g. Beginner)"
-                                className="h-9 text-sm"
-                                maxLength={60}
-                              />
-                              <button
-                                type="button"
-                                onClick={() => removeCustomLevel(sportKey, c.key)}
-                                className="rounded p-1.5 text-text-tertiary hover:bg-divider hover:text-text-primary"
-                                aria-label="Remove level"
-                              >
-                                <X className="h-4 w-4" />
-                              </button>
-                            </div>
-                          ))}
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => addCustomLevel(sportKey)}
-                        >
-                          <Plus className="h-4 w-4" />
-                          Add level
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </Step>
-        )}
-
-        {currentKind === "hours" && (
-          <Step
-            title="Practice expectations"
-            subtitle="How many hours per week should athletes at each level practice on their own?"
-          >
-            <div className="space-y-6">
-              {sports.map((selSport) => {
-                const sportKey = selSport.key;
-                const meta = getSportMeta(sportKey);
-                const sportEntries = entries.filter((e) => e.sport === sportKey);
-                if (sportEntries.length === 0) return null;
-                return (
-                  <div key={sportKey}>
-                    <p className="mb-2 text-caption text-text-tertiary">
-                      {meta.label}
-                    </p>
-                    <div className="divide-y divide-divider rounded-lg border border-divider bg-elevated">
-                      {sportEntries.map((entry) => (
-                        <div
-                          key={entry.levelKey}
-                          className="flex items-center justify-between gap-4 px-4 py-2.5"
-                        >
-                          <div className="text-sm font-medium text-text-primary">
-                            {getLevelLabel(sportKey, entry.levelKey)}
-                          </div>
-                          <div className="flex items-baseline gap-1.5">
-                            <Input
-                              type="number"
-                              inputMode="decimal"
-                              min={0}
-                              max={40}
-                              step={0.5}
-                              value={entry.hoursPerWeek === 0 ? "" : entry.hoursPerWeek}
-                              onChange={(e) => {
-                                const raw = e.target.value;
-                                const n = raw === "" ? 0 : Number(raw);
-                                updateHours(
-                                  sportKey,
-                                  entry.levelKey,
-                                  Math.max(0, Math.min(40, Number.isFinite(n) ? n : 0)),
-                                );
-                              }}
-                              className="h-9 w-16 px-2 text-right tabular-nums"
-                            />
-                            <span className="text-xs text-text-tertiary">
-                              hrs/wk
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </Step>
-        )}
-
-
-        {currentKind === "invite" && (
-          <Step title="Invite Parents">
-            <InviteCard />
-          </Step>
-        )}
-
-
-        {currentKind === "review" && (
-          <Step title="Looks good?" subtitle="Review and finish.">
-            <ReviewSummary
-              firstName={firstName}
-              lastName={lastName}
-              sports={sports}
-              entries={entries}
-              getSportMeta={getSportMeta}
-              getLevelLabel={getLevelLabel}
-            />
-          </Step>
-        )}
-
-        <div className="mt-6 flex items-center justify-between">
-          <Button
-            variant="ghost"
-            onClick={() => setStep((s) => Math.max(1, s - 1))}
-            disabled={step === 1 || busy}
-          >
-            Back
-          </Button>
-          <Button
-            onClick={isLastStep ? handleFinish : handleContinue}
-            disabled={!canContinue || busy}
-          >
-            {busy ? "Saving…" : isLastStep ? "Finish" : "Continue"}
-          </Button>
-        </div>
       </div>
-    </div>
-    <CoachBottomNav />
+      <CoachBottomNav />
     </>
   );
 }
@@ -681,18 +644,14 @@ function ReviewSummary({
         const sportEntries = entries.filter((e) => e.sport === sportKey);
         return (
           <div key={sportKey}>
-            <p className="text-xs uppercase tracking-wider text-text-secondary">
-              {meta.label}
-            </p>
+            <p className="text-xs uppercase tracking-wider text-text-secondary">{meta.label}</p>
             <ul className="mt-2 space-y-1">
               {sportEntries.map((e) => (
                 <li
                   key={e.levelKey}
                   className="flex justify-between border-b border-divider/60 py-1.5 text-sm"
                 >
-                  <span className="text-text-primary">
-                    {getLevelLabel(sportKey, e.levelKey)}
-                  </span>
+                  <span className="text-text-primary">{getLevelLabel(sportKey, e.levelKey)}</span>
                   <span className="text-text-secondary">
                     <span className="text-text-primary font-semibold">{e.hoursPerWeek}</span>{" "}
                     <span className="font-hand text-lg text-accent-ink">hrs / week</span>

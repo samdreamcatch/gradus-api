@@ -20,10 +20,7 @@ export const Route = createFileRoute("/p/$token")({
     const plan = loaderData as SharedPlanDTO | null | undefined;
     if (!plan) {
       return {
-        meta: [
-          { title: "Plan not found — Gradus" },
-          { name: "robots", content: "noindex" },
-        ],
+        meta: [{ title: "Plan not found — Gradus" }, { name: "robots", content: "noindex" }],
       };
     }
     const title = `${plan.title} — a workout from Coach ${plan.coachFirstName}`;
@@ -62,9 +59,7 @@ function NotFound() {
   return (
     <div className="mx-auto max-w-2xl px-4 py-16 text-center">
       <h1 className="font-display text-2xl font-black">Plan not found</h1>
-      <p className="mt-2 text-sm text-text-secondary">
-        This share link may have been mistyped.
-      </p>
+      <p className="mt-2 text-sm text-text-secondary">This share link may have been mistyped.</p>
       <Link to="/" className="mt-6 inline-block text-sm font-bold text-accent-ink underline">
         Go to Gradus
       </Link>
@@ -77,9 +72,6 @@ function SharedPlanPage() {
   const plan = Route.useLoaderData() as SharedPlanDTO | null;
 
   if (!plan) return <NotFound />;
-
-
-
 
   return (
     <div className="min-h-dvh">
@@ -139,9 +131,7 @@ function MoveCard({ move }: { move: SharedPlanMoveDTO }) {
           </span>
           <span className="text-[11px] text-text-tertiary">{unit}</span>
         </span>
-        <span className="flex-1 font-display text-[15px] text-text-primary">
-          {move.name}
-        </span>
+        <span className="flex-1 font-display text-[15px] text-text-primary">{move.name}</span>
         <ChevronDown
           className={cn(
             "size-4 shrink-0 text-text-tertiary transition-transform",
@@ -152,9 +142,7 @@ function MoveCard({ move }: { move: SharedPlanMoveDTO }) {
       {open ? (
         <div className="space-y-2 px-3.5 pb-3 text-[15px] leading-relaxed text-text-primary">
           {move.cue ? <p>{move.cue}</p> : null}
-          {move.description ? (
-            <p className="text-text-secondary">{move.description}</p>
-          ) : null}
+          {move.description ? <p className="text-text-secondary">{move.description}</p> : null}
           {move.why ? (
             <p className="rounded-xl border border-accent/40 bg-accent/10 px-3 py-2 text-[14px]">
               <span className="mr-1 text-[10px] font-black uppercase tracking-widest text-accent-ink">
@@ -180,7 +168,9 @@ function ImportCTA({ token }: { token: string }) {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (cancelled) return;
       if (!session) {
         setAuthState("anon");
@@ -255,9 +245,7 @@ function ImportCTA({ token }: { token: string }) {
             disabled={loading || !isCoach}
             className={cn(
               "inline-flex w-full items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold shadow-card sm:w-auto",
-              !isCoach
-                ? "bg-divider text-text-tertiary"
-                : "bg-accent text-accent-foreground",
+              !isCoach ? "bg-divider text-text-tertiary" : "bg-accent text-accent-foreground",
             )}
           >
             {loading ? <Loader2 className="size-4 animate-spin" /> : null}

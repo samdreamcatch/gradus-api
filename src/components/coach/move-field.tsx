@@ -20,8 +20,6 @@ interface BaseProps {
   sourceQuote?: string;
 }
 
-
-
 interface TextFieldProps extends BaseProps {
   kind: "text";
 }
@@ -36,7 +34,6 @@ interface SelectFieldProps extends BaseProps {
   /** Values after which a non-selectable divider row is inserted. */
   dividerAfter?: string[];
 }
-
 
 export type MoveFieldProps = TextFieldProps | TextareaFieldProps | SelectFieldProps;
 
@@ -91,7 +88,6 @@ export function MoveField(props: MoveFieldProps) {
     setEditing(false);
   };
 
-
   const cancel = () => {
     setDraft(value);
     setEditing(false);
@@ -101,12 +97,9 @@ export function MoveField(props: MoveFieldProps) {
       <span className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
         {label}
       </span>
-      {saving ? (
-        <span className="text-[10px] font-medium text-text-tertiary">Saving…</span>
-      ) : null}
+      {saving ? <span className="text-[10px] font-medium text-text-tertiary">Saving…</span> : null}
     </div>
   );
-
 
   if (!editing) {
     return (
@@ -134,7 +127,9 @@ export function MoveField(props: MoveFieldProps) {
           {value ? (
             <span className="whitespace-pre-wrap break-words">{value}</span>
           ) : (
-            <span className="text-text-disabled italic text-slate-500">{placeholder ?? "Tap to add"}</span>
+            <span className="text-text-disabled italic text-slate-500">
+              {placeholder ?? "Tap to add"}
+            </span>
           )}
         </button>
         {highlighted && sourceQuote ? (
@@ -156,20 +151,15 @@ export function MoveField(props: MoveFieldProps) {
             ) : null}
           </div>
         ) : null}
-
       </div>
     );
   }
-
 
   const sharedInputCls = cn(
     "block w-full border-b-2 border-accent bg-transparent px-1 py-1 text-text-primary",
     "focus:outline-none",
     inputClassName,
   );
-
-
-
 
   return (
     <div className={cn("space-y-1", className)}>
@@ -183,7 +173,6 @@ export function MoveField(props: MoveFieldProps) {
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onBlur={() => commit()}
-
           onKeyDown={(e) => {
             if (e.key === "Enter") {
               e.preventDefault();
@@ -206,7 +195,6 @@ export function MoveField(props: MoveFieldProps) {
           rows={props.rows ?? 3}
           onChange={(e) => setDraft(e.target.value)}
           onBlur={() => commit()}
-
           onKeyDown={(e) => {
             if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
               e.preventDefault();
@@ -235,8 +223,6 @@ export function MoveField(props: MoveFieldProps) {
             inputRef.current = el;
           }}
         />
-
-
       )}
     </div>
   );
@@ -278,7 +264,6 @@ function SelectOrCombo({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onBlur={() => onCommit()}
-
         onKeyDown={(e) => {
           if (e.key === "Enter") {
             e.preventDefault();
@@ -310,7 +295,6 @@ function SelectOrCombo({
         }
         onChange(v);
         onCommit(v);
-
       }}
       onKeyDown={(e) => {
         if (e.key === "Escape") {
@@ -318,7 +302,10 @@ function SelectOrCombo({
           onCancel();
         }
       }}
-      className={cn(inputClassName, "appearance-none pr-8 bg-[length:16px] bg-no-repeat bg-[right_0.5rem_center]")}
+      className={cn(
+        inputClassName,
+        "appearance-none pr-8 bg-[length:16px] bg-no-repeat bg-[right_0.5rem_center]",
+      )}
       style={{
         backgroundImage:
           "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>\")",
@@ -340,12 +327,7 @@ function SelectOrCombo({
         </Fragment>
       ))}
 
-
-      {allowFreeText ? (
-        <option value={CUSTOM}>Custom…</option>
-      ) : null}
+      {allowFreeText ? <option value={CUSTOM}>Custom…</option> : null}
     </select>
   );
 }
-
-

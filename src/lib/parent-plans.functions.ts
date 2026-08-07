@@ -125,10 +125,7 @@ export const listParentPlans = createServerFn({ method: "GET" })
         .from("plan_moves")
         .select("plan_id, target_kind, target_value")
         .in("plan_id", planIds),
-      supabaseAdmin
-        .from("coach_profiles")
-        .select("id, first_name, last_name")
-        .in("id", coachIds),
+      supabaseAdmin.from("coach_profiles").select("id, first_name, last_name").in("id", coachIds),
     ]);
     if (movesRes.error) dbError(movesRes.error);
     if (coachesRes.error) dbError(coachesRes.error);
@@ -215,18 +212,13 @@ export const getParentPlan = createServerFn({ method: "POST" })
     if (ownership.error) dbError(ownership.error);
     if (!ownership.data) throw new Error("Plan not found");
 
-
     const [movesRes, athleteRes, coachRes] = await Promise.all([
       supabase
         .from("plan_moves")
         .select("id, position, name, description, cue, why, target_kind, target_value")
         .eq("plan_id", plan.id)
         .order("position", { ascending: true }),
-      supabase
-        .from("athletes")
-        .select("first_name")
-        .eq("id", plan.athlete_id)
-        .maybeSingle(),
+      supabase.from("athletes").select("first_name").eq("id", plan.athlete_id).maybeSingle(),
       supabaseAdmin
         .from("coach_profiles")
         .select("first_name, last_name")

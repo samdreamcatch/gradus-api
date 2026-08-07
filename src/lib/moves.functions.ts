@@ -92,17 +92,13 @@ export const listMoves = createServerFn({ method: "GET" })
     if (error) dbError(error);
 
     // Curriculum categories from seed_moves (all sports — small table)
-    const { data: seeds } = await supabase
-      .from("seed_moves")
-      .select("sport, category");
+    const { data: seeds } = await supabase.from("seed_moves").select("sport, category");
 
     return {
       moves: (data ?? []).map(toDTO),
       seedCategories: seeds ?? [],
     };
   });
-
-
 
 export interface NameConflict {
   existingMoveId: string;
@@ -381,9 +377,7 @@ export const forkPlanMoveToLibrary = createServerFn({ method: "POST" })
 
     const { data: pm, error: pmErr } = await supabase
       .from("plan_moves")
-      .select(
-        "id, name, description, cue, why, target_kind, target_value, plans!inner(coach_id)",
-      )
+      .select("id, name, description, cue, why, target_kind, target_value, plans!inner(coach_id)")
       .eq("id", data.planMoveId)
       .maybeSingle();
     if (pmErr) dbError(pmErr);
@@ -453,7 +447,5 @@ export const forkPlanMoveToLibrary = createServerFn({ method: "POST" })
       .eq("id", pm.id);
     if (linkErr) dbError(linkErr);
 
-
     return { ok: true as const, moveId: libraryMoveId };
   });
-

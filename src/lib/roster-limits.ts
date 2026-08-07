@@ -8,7 +8,10 @@ export function isRosterFullError(err: unknown): boolean {
   return /roster full/i.test(msg);
 }
 
-export function coachRosterFullCopy(current: number, limit: number): {
+export function coachRosterFullCopy(
+  current: number,
+  limit: number,
+): {
   title: string;
   description: string;
 } {

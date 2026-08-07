@@ -5,14 +5,7 @@ import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { toast } from "sonner";
-import {
-  ArrowUpDown,
-  KeyRound,
-  MoreHorizontal,
-  Trash2,
-  Undo2,
-  Ticket,
-} from "lucide-react";
+import { ArrowUpDown, KeyRound, MoreHorizontal, Trash2, Undo2, Ticket } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
@@ -149,7 +142,7 @@ function AdminUsersPage() {
           : key === "email"
             ? (a.email ?? "").toLowerCase()
             : key === "lastSignIn"
-              ? a.lastSignInAt ?? ""
+              ? (a.lastSignInAt ?? "")
               : a.createdAt;
       const bv =
         key === "name"
@@ -157,7 +150,7 @@ function AdminUsersPage() {
           : key === "email"
             ? (b.email ?? "").toLowerCase()
             : key === "lastSignIn"
-              ? b.lastSignInAt ?? ""
+              ? (b.lastSignInAt ?? "")
               : b.createdAt;
       return av < bv ? -1 * mul : av > bv ? mul : 0;
     });
@@ -168,9 +161,7 @@ function AdminUsersPage() {
   const setSearch = (patch: Partial<z.infer<typeof searchSchema>>) =>
     navigate({ search: (prev: z.infer<typeof searchSchema>) => ({ ...prev, ...patch }) });
 
-
-  const invalidate = () =>
-    qc.invalidateQueries({ queryKey: ["admin-users"] });
+  const invalidate = () => qc.invalidateQueries({ queryKey: ["admin-users"] });
 
   const typeOptions: UserType[] = [
     "coach",
@@ -215,9 +206,7 @@ function AdminUsersPage() {
           </Button>
 
           <div className="flex flex-wrap items-center gap-1 ml-2">
-            <span className="text-xs uppercase tracking-wide text-text-tertiary mr-1">
-              Type
-            </span>
+            <span className="text-xs uppercase tracking-wide text-text-tertiary mr-1">Type</span>
             {typeOptions.map((t) => {
               const selected = search.types.includes(t);
               return (
@@ -241,9 +230,7 @@ function AdminUsersPage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-1 ml-2">
-            <span className="text-xs uppercase tracking-wide text-text-tertiary mr-1">
-              Plan
-            </span>
+            <span className="text-xs uppercase tracking-wide text-text-tertiary mr-1">Plan</span>
             {["coach", "coach_pro", "club"].map((p) => {
               const selected = search.plans.includes(p);
               return (
@@ -284,9 +271,7 @@ function AdminUsersPage() {
             id="only-test"
             label="Only test users"
             checked={search.onlyTest}
-            onCheckedChange={(v) =>
-              setSearch({ onlyTest: v, hideTest: v ? false : true })
-            }
+            onCheckedChange={(v) => setSearch({ onlyTest: v, hideTest: v ? false : true })}
           />
           <ToggleRow
             id="hide-test"
@@ -364,9 +349,7 @@ function AdminUsersPage() {
                     <TableCell className="font-medium text-text-primary max-w-[220px]">
                       <div className="truncate">{r.name}</div>
                       {r.softDeletedAt && (
-                        <Tag className="mt-1 bg-destructive/10 text-destructive">
-                          deleted
-                        </Tag>
+                        <Tag className="mt-1 bg-destructive/10 text-destructive">deleted</Tag>
                       )}
                     </TableCell>
                     <TableCell className="text-text-secondary max-w-[220px]">
@@ -376,12 +359,10 @@ function AdminUsersPage() {
                       {USER_TYPE_LABEL[r.userType as UserType] ?? r.userType}
                     </TableCell>
                     <TableCell className="whitespace-nowrap">
-                      {r.planTier ? PLAN_LABEL[r.planTier] ?? r.planTier : "—"}
+                      {r.planTier ? (PLAN_LABEL[r.planTier] ?? r.planTier) : "—"}
                     </TableCell>
                     <TableCell className="max-w-[180px]">
-                      <div className="truncate">
-                        {r.organizationName ?? "—"}
-                      </div>
+                      <div className="truncate">{r.organizationName ?? "—"}</div>
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-1">
@@ -395,9 +376,7 @@ function AdminUsersPage() {
                         <span className="text-text-tertiary">—</span>
                       ) : (
                         <div className="flex flex-wrap gap-1">
-                          {r.stashedPromoCode && (
-                            <Tag>{r.stashedPromoCode}</Tag>
-                          )}
+                          {r.stashedPromoCode && <Tag>{r.stashedPromoCode}</Tag>}
                           {r.appliedCodes.map((c) => (
                             <Tag key={c.id}>
                               {c.code}
@@ -410,9 +389,7 @@ function AdminUsersPage() {
                       )}
                     </TableCell>
                     <TableCell className="text-xs text-text-tertiary whitespace-nowrap">
-                      {r.lastSignInAt
-                        ? new Date(r.lastSignInAt).toLocaleDateString()
-                        : "never"}
+                      {r.lastSignInAt ? new Date(r.lastSignInAt).toLocaleDateString() : "never"}
                     </TableCell>
                     <TableCell className="text-xs text-text-tertiary whitespace-nowrap">
                       {new Date(r.createdAt).toLocaleDateString()}
@@ -503,9 +480,7 @@ function SortableTh({
       >
         {label}
         <ArrowUpDown className="size-3 opacity-60" />
-        {isCurrent && (
-          <span className="text-[10px] opacity-70">{dir === "asc" ? "↑" : "↓"}</span>
-        )}
+        {isCurrent && <span className="text-[10px] opacity-70">{dir === "asc" ? "↑" : "↓"}</span>}
       </button>
     </TableHead>
   );
@@ -574,18 +549,13 @@ function RowActions({
             <Ticket className="size-4 mr-2" />
             Manage user
           </DropdownMenuItem>
-          <DropdownMenuItem
-            onClick={() => reset.mutate()}
-            disabled={reset.isPending || !email}
-          >
+          <DropdownMenuItem onClick={() => reset.mutate()} disabled={reset.isPending || !email}>
             <KeyRound className="size-4 mr-2" />
             Reset password
           </DropdownMenuItem>
           <DropdownMenuItem
             onClick={async () => {
-              await toggleTestFn({ data: { userId, isTest: true } }).catch(
-                () => null,
-              );
+              await toggleTestFn({ data: { userId, isTest: true } }).catch(() => null);
               onDone();
             }}
           >
@@ -593,9 +563,7 @@ function RowActions({
           </DropdownMenuItem>
           <DropdownMenuItem
             onClick={async () => {
-              await toggleTestFn({ data: { userId, isTest: false } }).catch(
-                () => null,
-              );
+              await toggleTestFn({ data: { userId, isTest: false } }).catch(() => null);
               onDone();
             }}
           >
@@ -603,18 +571,12 @@ function RowActions({
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           {isDeleted ? (
-            <DropdownMenuItem
-              onClick={() => restore.mutate()}
-              disabled={restore.isPending}
-            >
+            <DropdownMenuItem onClick={() => restore.mutate()} disabled={restore.isPending}>
               <Undo2 className="size-4 mr-2" />
               Restore
             </DropdownMenuItem>
           ) : (
-            <DropdownMenuItem
-              onClick={() => setConfirmDelete(true)}
-              className="text-destructive"
-            >
+            <DropdownMenuItem onClick={() => setConfirmDelete(true)} className="text-destructive">
               <Trash2 className="size-4 mr-2" />
               Soft delete
             </DropdownMenuItem>
@@ -645,8 +607,8 @@ function RowActions({
           <AlertDialogHeader>
             <AlertDialogTitle>Permanently delete this test user?</AlertDialogTitle>
             <AlertDialogDescription>
-              This removes the auth user and their profile rows. The email
-              address will be freed up for reuse. This cannot be undone.
+              This removes the auth user and their profile rows. The email address will be freed up
+              for reuse. This cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -716,9 +678,8 @@ function SoftDeleteDialog({
         <AlertDialogHeader>
           <AlertDialogTitle>Soft-delete this {userType}?</AlertDialogTitle>
           <AlertDialogDescription>
-            The user will be banned from signing in and hidden from default
-            views. Their data is preserved. Type the user&apos;s email to
-            confirm.
+            The user will be banned from signing in and hidden from default views. Their data is
+            preserved. Type the user&apos;s email to confirm.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <div className="space-y-3 py-2">
@@ -736,10 +697,7 @@ function SoftDeleteDialog({
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
           <AlertDialogAction
-            disabled={
-              typed.trim().toLowerCase() !== expectedEmail.toLowerCase() ||
-              m.isPending
-            }
+            disabled={typed.trim().toLowerCase() !== expectedEmail.toLowerCase() || m.isPending}
             onClick={() => m.mutate()}
             className="bg-destructive text-destructive-foreground"
           >
@@ -794,9 +752,7 @@ function ManageUserSheet({
   });
 
   const [selectedCode, setSelectedCode] = useState("");
-  const [scope, setScope] = useState<"next_checkout" | "active_now">(
-    "next_checkout",
-  );
+  const [scope, setScope] = useState<"next_checkout" | "active_now">("next_checkout");
   const [environment, setEnvironment] = useState<"sandbox" | "live">("sandbox");
 
   const setOrg = useMutation({
@@ -884,9 +840,7 @@ function ManageUserSheet({
           {/* Organization */}
           {isCoach && (
             <section className="space-y-2">
-              <h3 className="text-sm font-semibold text-text-primary">
-                Organization
-              </h3>
+              <h3 className="text-sm font-semibold text-text-primary">Organization</h3>
               <OrgSearchCombobox
                 selected={currentOrg}
                 onSelect={(o) => setOrg.mutate(o)}
@@ -913,14 +867,10 @@ function ManageUserSheet({
 
           {/* Promo codes */}
           <section className="space-y-3">
-            <h3 className="text-sm font-semibold text-text-primary">
-              Promo codes
-            </h3>
+            <h3 className="text-sm font-semibold text-text-primary">Promo codes</h3>
 
             {user.appliedCodes.length === 0 ? (
-              <p className="text-xs text-text-tertiary">
-                No admin-applied codes.
-              </p>
+              <p className="text-xs text-text-tertiary">No admin-applied codes.</p>
             ) : (
               <ul className="space-y-2">
                 {user.appliedCodes.map((c) => (
@@ -950,9 +900,7 @@ function ManageUserSheet({
             )}
 
             <div className="rounded-md border border-divider p-3 space-y-3">
-              <p className="text-xs uppercase tracking-wide text-text-tertiary">
-                Apply a code
-              </p>
+              <p className="text-xs uppercase tracking-wide text-text-tertiary">Apply a code</p>
               <Select value={selectedCode} onValueChange={setSelectedCode}>
                 <SelectTrigger>
                   <SelectValue placeholder="Pick a code" />
@@ -989,9 +937,7 @@ function ManageUserSheet({
               {scope === "active_now" && (
                 <Select
                   value={environment}
-                  onValueChange={(v) =>
-                    setEnvironment(v as "sandbox" | "live")
-                  }
+                  onValueChange={(v) => setEnvironment(v as "sandbox" | "live")}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -1013,9 +959,8 @@ function ManageUserSheet({
                   : "Apply to active subscription now"}
               </Button>
               <p className="text-[11px] text-text-tertiary">
-                Next-checkout codes are used on the user&apos;s next Stripe
-                checkout. Active-now attaches the coupon to their current
-                Stripe subscription immediately.
+                Next-checkout codes are used on the user&apos;s next Stripe checkout. Active-now
+                attaches the coupon to their current Stripe subscription immediately.
               </p>
             </div>
           </section>

@@ -116,10 +116,7 @@ export const listAthletePlans = createServerFn({ method: "GET" })
         .from("plan_moves")
         .select("plan_id, target_kind, target_value, move_id")
         .in("plan_id", planIds),
-      supabaseAdmin
-        .from("coach_profiles")
-        .select("id, first_name, last_name")
-        .in("id", coachIds),
+      supabaseAdmin.from("coach_profiles").select("id, first_name, last_name").in("id", coachIds),
       supabaseAdmin
         .from("athlete_goals")
         .select("coach_id, sport")
@@ -136,10 +133,7 @@ export const listAthletePlans = createServerFn({ method: "GET" })
     );
     let moveSport = new Map<string, string>();
     if (moveIds.length) {
-      const mvRes = await supabaseAdmin
-        .from("moves")
-        .select("id, sport")
-        .in("id", moveIds);
+      const mvRes = await supabaseAdmin.from("moves").select("id, sport").in("id", moveIds);
       if (mvRes.error) dbError(mvRes.error);
       moveSport = new Map((mvRes.data ?? []).map((m) => [m.id, m.sport]));
     }

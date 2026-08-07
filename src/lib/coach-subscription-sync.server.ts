@@ -35,16 +35,12 @@ export async function syncCoachSubscription(
   }
 
   const item = subscription.items?.data?.[0];
-  const priceLookup =
-    item?.price?.lookup_key ?? item?.price?.metadata?.lovable_external_id ?? null;
-  const tier = priceLookup ? PRICE_TIER[priceLookup] ?? null : null;
-  const periodEnd =
-    item?.current_period_end ?? subscription.current_period_end ?? null;
+  const priceLookup = item?.price?.lookup_key ?? item?.price?.metadata?.lovable_external_id ?? null;
+  const tier = priceLookup ? (PRICE_TIER[priceLookup] ?? null) : null;
+  const periodEnd = item?.current_period_end ?? subscription.current_period_end ?? null;
   const trialEnd = subscription.trial_end ?? null;
   const customerId =
-    typeof subscription.customer === "string"
-      ? subscription.customer
-      : subscription.customer?.id;
+    typeof subscription.customer === "string" ? subscription.customer : subscription.customer?.id;
 
   const { data: existing } = await supabase
     .from("coach_profiles")
@@ -76,13 +72,8 @@ export async function syncCoachSubscription(
   //  - Only preserve club_covered / promo_free when the incoming
   //    subscription is not active (e.g. incomplete, canceled races).
   const preserve =
-    !incomingIsActive &&
-    (currentEnt === "club_covered" || currentEnt === "promo_free");
-  const nextEnt = preserve
-    ? currentEnt
-    : incomingIsActive
-      ? "paid"
-      : "pending";
+    !incomingIsActive && (currentEnt === "club_covered" || currentEnt === "promo_free");
+  const nextEnt = preserve ? currentEnt : incomingIsActive ? "paid" : "pending";
 
   const { error } = await supabase
     .from("coach_profiles")

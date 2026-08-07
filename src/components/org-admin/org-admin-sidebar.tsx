@@ -55,10 +55,10 @@ export function OrgAdminSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b border-divider">
         <div className="px-2 py-1">
-          <Eyebrow size="small" tone="accent-ink">Club</Eyebrow>
-          <p className="font-display text-h3 text-text-primary leading-tight">
-            Organization Admin
-          </p>
+          <Eyebrow size="small" tone="accent-ink">
+            Club
+          </Eyebrow>
+          <p className="font-display text-h3 text-text-primary leading-tight">Organization Admin</p>
         </div>
       </SidebarHeader>
       <SidebarContent>

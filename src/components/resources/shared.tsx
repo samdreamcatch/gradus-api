@@ -14,25 +14,13 @@ import {
   Trash2,
 } from "lucide-react";
 
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { AnswerMarkdown } from "@/components/parent/answer-markdown";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { getSport, type SportKey } from "@/lib/coach-sports";
-import {
-  getResourceSignedUrl,
-  type ResourceDTO,
-} from "@/lib/parent-resources.functions";
+import { getResourceSignedUrl, type ResourceDTO } from "@/lib/parent-resources.functions";
 import { askGradus } from "@/lib/ask-gradus.functions";
 import {
   deleteSavedAnswer,
@@ -138,9 +126,7 @@ export function ResourceSheet({
             <p className="text-sm text-text-secondary">{resource.description}</p>
           ) : null}
           {resource?.coachName ? (
-            <p className="text-xs text-text-secondary">
-              Shared by Coach {resource.coachName}
-            </p>
+            <p className="text-xs text-text-secondary">Shared by Coach {resource.coachName}</p>
           ) : null}
         </SheetHeader>
         <div className="h-[calc(92vh-96px)] border-t border-divider bg-card">
@@ -204,8 +190,7 @@ export function AskGradusCard({ sport }: { sport: string }) {
   });
 
   const saveMutation = useMutation({
-    mutationFn: (vars: { question: string; answer: string }) =>
-      save({ data: { sport, ...vars } }),
+    mutationFn: (vars: { question: string; answer: string }) => save({ data: { sport, ...vars } }),
     onSuccess: () => {
       setSaved(true);
       qc.invalidateQueries({ queryKey: ["saved-answers"] });
@@ -355,9 +340,7 @@ export function SavedAnswersList({ sport }: { sport: string }) {
   );
 
   if (isLoading) {
-    return (
-      <p className="mt-5 py-5 text-center text-sm text-text-secondary">Loading…</p>
-    );
+    return <p className="mt-5 py-5 text-center text-sm text-text-secondary">Loading…</p>;
   }
 
   if (items.length === 0) {

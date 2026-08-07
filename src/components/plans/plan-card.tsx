@@ -14,7 +14,6 @@ interface PlanCardProps {
   edgeTone?: "active" | "template" | "muted";
 }
 
-
 export function PlanCard({
   to,
   planId,
@@ -45,13 +44,10 @@ export function PlanCard({
         )}
       />
 
-
       <div className="mb-3 flex items-baseline justify-between gap-3">
         <div className="min-w-0">
           {athleteName ? (
-            <p className="truncate text-xs font-medium text-text-secondary">
-              {athleteName}
-            </p>
+            <p className="truncate text-xs font-medium text-text-secondary">{athleteName}</p>
           ) : caption ? (
             <p className="text-micro font-black uppercase tracking-widest text-text-tertiary">
               {caption}
@@ -70,8 +66,6 @@ export function PlanCard({
       </div>
 
       <FlowStateBars counts={sessionsByState} />
-
     </Link>
   );
 }
-

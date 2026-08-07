@@ -19,8 +19,19 @@ export function ParentBottomNav() {
   const unread = useMessagesUnread();
   const ITEMS: Item[] = [
     { label: "Plans", icon: ClipboardList, to: "/parent/plans", matchPrefix: "/parent/plans" },
-    { label: "Messages", icon: MessageSquare, to: "/parent/messages", matchPrefix: "/parent/messages", unreadCount: unread },
-    { label: "Resources", icon: BookOpen, to: "/parent/resources", matchPrefix: "/parent/resources" },
+    {
+      label: "Messages",
+      icon: MessageSquare,
+      to: "/parent/messages",
+      matchPrefix: "/parent/messages",
+      unreadCount: unread,
+    },
+    {
+      label: "Resources",
+      icon: BookOpen,
+      to: "/parent/resources",
+      matchPrefix: "/parent/resources",
+    },
     { label: "Settings", icon: Settings, to: "/parent/settings", matchPrefix: "/parent/settings" },
   ];
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -53,7 +64,10 @@ export function ParentBottomNav() {
               )}
             >
               <span className="relative">
-                <Icon className={cn("h-[18px] w-[18px]", isActive && "text-accent-ink")} aria-hidden />
+                <Icon
+                  className={cn("h-[18px] w-[18px]", isActive && "text-accent-ink")}
+                  aria-hidden
+                />
                 {hasUnread ? (
                   <span
                     aria-label={`${item.unreadCount} unread`}
@@ -95,7 +109,6 @@ export function ParentBottomNav() {
               )}
             </li>
           );
-
         })}
       </ul>
     </nav>

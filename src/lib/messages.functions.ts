@@ -21,14 +21,7 @@ import type {
   RoomDetail,
 } from "./messages-types";
 
-export type {
-  RoleInRoom,
-  RoomKind,
-  RoomParticipant,
-  RoomSummary,
-  MessageDTO,
-  RoomDetail,
-};
+export type { RoleInRoom, RoomKind, RoomParticipant, RoomSummary, MessageDTO, RoomDetail };
 
 /**
  * Convenience: build an IN filter for messages that live in either an athlete
@@ -58,9 +51,9 @@ async function fetchMessagesForRooms(
         .select(selectCols)
         .in("room_id", athleteRoomIds)
         .order("created_at", { ascending: order === "asc" }) as unknown as Promise<{
-          data: unknown[] | null;
-          error: unknown;
-        }>,
+        data: unknown[] | null;
+        error: unknown;
+      }>,
     );
   }
   if (directRoomIds.length) {
@@ -70,9 +63,9 @@ async function fetchMessagesForRooms(
         .select(selectCols)
         .in("direct_room_id", directRoomIds)
         .order("created_at", { ascending: order === "asc" }) as unknown as Promise<{
-          data: unknown[] | null;
-          error: unknown;
-        }>,
+        data: unknown[] | null;
+        error: unknown;
+      }>,
     );
   }
   const results = await Promise.all(promises);
@@ -236,7 +229,11 @@ export const getRoom = createServerFn({ method: "GET" })
         .select("id, title, coach_id")
         .in("id", planIds);
       for (const p of planRows ?? []) {
-        plansById.set(p.id, { id: p.id, title: p.title || "Untitled plan", coachId: p.coach_id ?? null });
+        plansById.set(p.id, {
+          id: p.id,
+          title: p.title || "Untitled plan",
+          coachId: p.coach_id ?? null,
+        });
       }
     }
 
@@ -247,7 +244,7 @@ export const getRoom = createServerFn({ method: "GET" })
           participants.find((p) => p.role === (m.sender_role as RoleInRoom));
         return {
           id: m.id,
-          roomId: (m.room_id ?? m.direct_room_id) ?? room.id,
+          roomId: m.room_id ?? m.direct_room_id ?? room.id,
           senderUserId: m.sender_user_id,
           senderRole: m.sender_role as RoleInRoom,
           senderFirstName: sender?.firstName ?? "",
@@ -258,7 +255,7 @@ export const getRoom = createServerFn({ method: "GET" })
           durationSeconds: m.duration_seconds,
           createdAt: m.created_at,
           readBy: readsByMessage.get(m.id) ?? [],
-          plan: m.plan_id ? plansById.get(m.plan_id) ?? null : null,
+          plan: m.plan_id ? (plansById.get(m.plan_id) ?? null) : null,
         };
       }),
     );
@@ -337,17 +334,14 @@ export const sendMessage = createServerFn({ method: "POST" })
         return {
           ok: false as const,
           reason: "coach_unlinked" as const,
-          message:
-            "This coach is no longer connected to this athlete. New messages can't be sent.",
+          message: "This coach is no longer connected to this athlete. New messages can't be sent.",
         };
       }
     }
 
     // Plan tagging works in athlete-scoped rooms and coach↔coach direct rooms.
     const planId =
-      room.kind === "athlete" || room.kind === "coach_coach"
-        ? data.planId ?? null
-        : null;
+      room.kind === "athlete" || room.kind === "coach_coach" ? (data.planId ?? null) : null;
 
     let audioPath: string | null = null;
     let duration: number | null = null;
@@ -480,9 +474,7 @@ export const getUnreadTotal = createServerFn({ method: "GET" })
       "desc",
     );
     type Row = { id: string; sender_user_id: string };
-    const msgIds = (msgRows as Row[])
-      .filter((m) => m.sender_user_id !== userId)
-      .map((m) => m.id);
+    const msgIds = (msgRows as Row[]).filter((m) => m.sender_user_id !== userId).map((m) => m.id);
     if (msgIds.length === 0) return { total: 0 };
 
     const { data: reads } = await supabaseAdmin
@@ -788,7 +780,12 @@ export const listMyMessageTargets = createServerFn({ method: "GET" })
 
       type RosterRow = {
         athlete_id: string;
-        athletes: { id: string; first_name: string | null; last_name: string | null; parent_id: string | null };
+        athletes: {
+          id: string;
+          first_name: string | null;
+          last_name: string | null;
+          parent_id: string | null;
+        };
       };
       const roster = (rosterRows ?? []) as unknown as RosterRow[];
 
@@ -853,15 +850,9 @@ export const listMyMessageTargets = createServerFn({ method: "GET" })
         const shared = (sharedLinks ?? []) as unknown as SharedRow[];
         const athleteNameById = new Map<string, string>();
         for (const r of roster) {
-          athleteNameById.set(
-            r.athletes.id,
-            `${r.athletes.first_name ?? ""}`.trim() || "Athlete",
-          );
+          athleteNameById.set(r.athletes.id, `${r.athletes.first_name ?? ""}`.trim() || "Athlete");
         }
-        const byCoach = new Map<
-          string,
-          { name: string; kids: Set<string> }
-        >();
+        const byCoach = new Map<string, { name: string; kids: Set<string> }>();
         for (const s of shared) {
           const entry = byCoach.get(s.coach_id) ?? {
             name:
@@ -917,8 +908,7 @@ export const listMyMessageTargets = createServerFn({ method: "GET" })
         const athleteFirst = athlete.first_name || "your athlete";
         for (const link of athlete.coach_athletes ?? []) {
           const cp = link.coach_profiles;
-          const coachName =
-            `${cp.first_name ?? ""} ${cp.last_name ?? ""}`.trim() || "your coach";
+          const coachName = `${cp.first_name ?? ""} ${cp.last_name ?? ""}`.trim() || "your coach";
           targets.push({
             kind: "athlete",
             group: "Coaches",
@@ -976,8 +966,7 @@ export const ensureRoomForTarget = createServerFn({ method: "POST" })
     const me = await resolveMyIdentity(userId);
 
     if (me.coach) {
-      if (me.coach.id !== data.coachId)
-        throw new Error("Not authorized to open this conversation");
+      if (me.coach.id !== data.coachId) throw new Error("Not authorized to open this conversation");
     } else if (me.parent) {
       const { data: athlete } = await supabaseAdmin
         .from("athletes")
