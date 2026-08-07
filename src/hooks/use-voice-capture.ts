@@ -196,7 +196,7 @@ export function useVoiceCapture({
     }, 100);
     maxTimeoutRef.current = setTimeout(() => {
       try {
-        recorder.state === "recording" && recorder.stop();
+        if (recorder.state === "recording") recorder.stop();
       } catch {
         /* noop */
       }
