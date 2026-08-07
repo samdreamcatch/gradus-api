@@ -75,7 +75,7 @@ const SITE_ORIGIN = "https://gradus.training";
 
 export const Route = createFileRoute("/_authenticated/coach/plans/$planId")({
   component: PlanEditorSheet,
-  validateSearch: (search: Record<string, unknown>) => ({
+  validateSearch: (search: Record<string, unknown>): { from?: "plus" } => ({
     from: search.from === "plus" ? ("plus" as const) : undefined,
   }),
   loader: ({ params, context }) => {

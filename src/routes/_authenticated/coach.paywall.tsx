@@ -87,7 +87,9 @@ type PromoState =
   | { status: "invalid"; message: string };
 
 export const Route = createFileRoute("/_authenticated/coach/paywall")({
-  validateSearch: (search: Record<string, unknown>) => ({
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { checkout?: string; session_id?: string; tier?: string; manage?: boolean } => ({
     checkout: typeof search.checkout === "string" ? search.checkout : undefined,
     session_id: typeof search.session_id === "string" ? search.session_id : undefined,
     tier: typeof search.tier === "string" ? search.tier : undefined,

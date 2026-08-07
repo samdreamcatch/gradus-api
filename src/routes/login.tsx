@@ -16,7 +16,7 @@ import { clearPendingTermsAccept } from "@/lib/terms";
 import { clearPendingPromoCode } from "@/lib/pending-promo-code";
 
 export const Route = createFileRoute("/login")({
-  validateSearch: (s: Record<string, unknown>) => {
+  validateSearch: (s: Record<string, unknown>): { redirect?: string } => {
     const raw = typeof s.redirect === "string" ? s.redirect : "";
     const isSafe = raw.startsWith("/") && !raw.startsWith("//") && !raw.startsWith("/login");
     return { redirect: isSafe ? raw : "" };
