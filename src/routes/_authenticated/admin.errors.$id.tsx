@@ -1,24 +1,24 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
-import { useServerFn } from '@tanstack/react-start'
-import { useQuery } from '@tanstack/react-query'
-import { ArrowLeft } from 'lucide-react'
-import { Eyebrow } from '@/components/ui/eyebrow'
-import { getAdminError } from '@/lib/error-tracking.functions'
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
+import { ArrowLeft } from "lucide-react";
+import { Eyebrow } from "@/components/ui/eyebrow";
+import { getAdminError } from "@/lib/error-tracking.functions";
 
-export const Route = createFileRoute('/_authenticated/admin/errors/$id')({
+export const Route = createFileRoute("/_authenticated/admin/errors/$id")({
   component: AdminErrorDetail,
-})
+});
 
 function AdminErrorDetail() {
-  const { id } = Route.useParams()
-  const fn = useServerFn(getAdminError)
+  const { id } = Route.useParams();
+  const fn = useServerFn(getAdminError);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['admin-error', id],
+    queryKey: ["admin-error", id],
     queryFn: () => fn({ data: { id } }),
-  })
+  });
 
-  const e = data?.error as any
+  const e = data?.error as any;
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10 space-y-6">
@@ -39,27 +39,25 @@ function AdminErrorDetail() {
           <header className="space-y-2">
             <span
               className={
-                'inline-block rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ' +
-                (e.source === 'server'
-                  ? 'bg-pen-orange-wash text-pen-orange-ink'
-                  : 'bg-pen-pool-wash text-pen-pool-ink')
+                "inline-block rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider " +
+                (e.source === "server"
+                  ? "bg-pen-orange-wash text-pen-orange-ink"
+                  : "bg-pen-pool-wash text-pen-pool-ink")
               }
             >
               {e.source}
             </span>
             <h1 className="font-display text-h2 text-text-primary">{e.message}</h1>
-            <p className="text-xs text-text-tertiary">
-              {new Date(e.created_at).toLocaleString()}
-            </p>
+            <p className="text-xs text-text-tertiary">{new Date(e.created_at).toLocaleString()}</p>
           </header>
 
           <section className="rounded-lg border border-divider bg-card p-4 space-y-2">
-            <Row label="User" value={e.user_name || '—'} />
-            <Row label="Email" value={e.user_email || '—'} />
-            <Row label="Role" value={e.user_role || '—'} />
-            <Row label="User ID" value={e.user_id || '—'} mono />
-            <Row label="Route" value={e.route || '—'} mono />
-            <Row label="User agent" value={e.user_agent || '—'} />
+            <Row label="User" value={e.user_name || "—"} />
+            <Row label="Email" value={e.user_email || "—"} />
+            <Row label="Role" value={e.user_role || "—"} />
+            <Row label="User ID" value={e.user_id || "—"} mono />
+            <Row label="Route" value={e.route || "—"} mono />
+            <Row label="User agent" value={e.user_agent || "—"} />
           </section>
 
           {e.stack && (
@@ -86,22 +84,25 @@ function AdminErrorDetail() {
         </>
       )}
     </div>
-  )
+  );
 }
 
 function Row({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
   return (
     <div className="flex gap-3 text-sm">
-      <Eyebrow as="span" size="caption" tone="tertiary" weight="normal" tracking="wide" className="w-24 shrink-0 pt-0.5">
+      <Eyebrow
+        as="span"
+        size="caption"
+        tone="tertiary"
+        weight="normal"
+        tracking="wide"
+        className="w-24 shrink-0 pt-0.5"
+      >
         {label}
       </Eyebrow>
-      <span
-        className={
-          'text-text-primary break-all ' + (mono ? 'font-mono text-xs' : '')
-        }
-      >
+      <span className={"text-text-primary break-all " + (mono ? "font-mono text-xs" : "")}>
         {value}
       </span>
     </div>
-  )
+  );
 }

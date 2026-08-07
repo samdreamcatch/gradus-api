@@ -60,10 +60,7 @@ function ParentResourcesPage() {
     return resources
       .filter((r) => r.sports.includes(activeSport))
       .filter(
-        (r) =>
-          !q ||
-          r.title.toLowerCase().includes(q) ||
-          r.description.toLowerCase().includes(q),
+        (r) => !q || r.title.toLowerCase().includes(q) || r.description.toLowerCase().includes(q),
       );
   }, [resources, activeSport, search]);
 
@@ -87,10 +84,7 @@ function ParentResourcesPage() {
           />
           {sports.length > 1 ? (
             <div className="mt-2.5">
-              <Select
-                value={activeSport ?? undefined}
-                onValueChange={(v) => setSelectedSport(v)}
-              >
+              <Select value={activeSport ?? undefined} onValueChange={(v) => setSelectedSport(v)}>
                 <SelectTrigger
                   className="h-8 w-full rounded-full border-divider bg-card px-3 text-xs font-bold text-text-primary shadow-none"
                   aria-label="Sport"
@@ -154,11 +148,7 @@ function ParentResourcesPage() {
                       <p className="px-1 text-[11px] font-bold uppercase tracking-wide text-text-secondary">
                         From your coaches
                       </p>
-                      <ResourceList
-                        rows={coachItems}
-                        onOpen={setOpenResource}
-                        showCoach
-                      />
+                      <ResourceList rows={coachItems} onOpen={setOpenResource} showCoach />
                     </div>
                   ) : null}
                   {libraryItems.length > 0 ? (
@@ -178,10 +168,7 @@ function ParentResourcesPage() {
         </>
       )}
 
-      <ResourceSheet
-        resource={openResource}
-        onClose={() => setOpenResource(null)}
-      />
+      <ResourceSheet resource={openResource} onClose={() => setOpenResource(null)} />
 
       <ParentBottomNav />
     </div>

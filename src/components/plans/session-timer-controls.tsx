@@ -45,8 +45,7 @@ export function IdleSlide({ onStart }: { onStart: () => void }) {
           setDragging(false);
           const max = getMax();
           const triggered =
-            info.offset.x >= max * 0.2 ||
-            (info.offset.x >= max * 0.1 && info.velocity.x > 150);
+            info.offset.x >= max * 0.2 || (info.offset.x >= max * 0.1 && info.velocity.x > 150);
           await controls.start({
             x: 0,
             transition: { type: "spring", stiffness: 520, damping: 22, mass: 0.7 },
@@ -140,8 +139,7 @@ export function RunningPill({
             setDragging(false);
             const max = getMax();
             const triggered =
-              info.offset.x >= max * 0.2 ||
-              (info.offset.x >= max * 0.1 && info.velocity.x > 150);
+              info.offset.x >= max * 0.2 || (info.offset.x >= max * 0.1 && info.velocity.x > 150);
             await controls.start({
               x: 0,
               transition: { type: "spring", stiffness: 520, damping: 22, mass: 0.7 },

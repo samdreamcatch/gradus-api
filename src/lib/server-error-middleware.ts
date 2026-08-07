@@ -15,45 +15,42 @@
 // browser also surface through the client error reporter (via the route
 // error boundary), so wrapping is opt-in for high-value handlers.
 
-import { createMiddleware } from '@tanstack/react-start'
-import { getRequestHeader } from '@tanstack/react-start/server'
+import { createMiddleware } from "@tanstack/react-start";
+import { getRequestHeader } from "@tanstack/react-start/server";
 
-export const withServerErrorLogging = createMiddleware({ type: 'function' }).server(
+export const withServerErrorLogging = createMiddleware({ type: "function" }).server(
   async ({ next, context }) => {
     try {
-      return await next()
+      return await next();
     } catch (err) {
       try {
-        const { logError } = await import('./error-tracking.server')
-        const e = err as Error
-        const userId =
-          (context as any)?.userId ??
-          (context as any)?.claims?.sub ??
-          null
-        let route: string | null = null
-        let environment: 'production' | 'preview' = 'production'
+        const { logError } = await import("./error-tracking.server");
+        const e = err as Error;
+        const userId = (context as any)?.userId ?? (context as any)?.claims?.sub ?? null;
+        let route: string | null = null;
+        let environment: "production" | "preview" = "production";
         try {
-          route = getRequestHeader('referer') ?? null
-          const host = getRequestHeader('host') ?? ''
-          if (host.includes('id-preview') || host.includes('-dev.lovable.app')) {
-            environment = 'preview'
+          route = getRequestHeader("referer") ?? null;
+          const host = getRequestHeader("host") ?? "";
+          if (host.includes("id-preview") || host.includes("-dev.lovable.app")) {
+            environment = "preview";
           }
         } catch {
           // ignore
         }
         await logError({
-          source: 'server',
-          message: e?.message || 'Server function error',
+          source: "server",
+          message: e?.message || "Server function error",
           stack: e?.stack ?? null,
           route,
           userId,
           metadata: { name: e?.name },
           environment,
-        })
+        });
       } catch {
         // never let logging mask the original error
       }
-      throw err
+      throw err;
     }
   },
-)
+);

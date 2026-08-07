@@ -33,8 +33,6 @@ import {
 import { coachProfileQueryOptions } from "@/hooks/use-coach-profile";
 import { isCoachProAvailable } from "@/lib/paywall-flag";
 
-
-
 type RosterTab = "athletes" | "schedule";
 
 function SegmentedToggle({ tab, onChange }: { tab: RosterTab; onChange: (t: RosterTab) => void }) {
@@ -51,9 +49,7 @@ function SegmentedToggle({ tab, onChange }: { tab: RosterTab; onChange: (t: Rost
           onClick={() => onChange(t.key)}
           className={cn(
             "press-soft flex-1 rounded-md py-1.5 text-sm font-bold",
-            tab === t.key
-              ? "bg-accent text-accent-foreground shadow-sm"
-              : "text-text-secondary",
+            tab === t.key ? "bg-accent text-accent-foreground shadow-sm" : "text-text-secondary",
           )}
         >
           {t.label}
@@ -74,9 +70,7 @@ export const Route = createFileRoute("/_authenticated/coach/roster")({
   errorComponent: ({ error }) => (
     <div className="mx-auto max-w-3xl px-4 pt-8 pb-24" role="alert">
       <PageTitle>Roster</PageTitle>
-      <p className="mt-4 text-text-secondary">
-        Couldn't load your roster: {error.message}
-      </p>
+      <p className="mt-4 text-text-secondary">Couldn't load your roster: {error.message}</p>
       <CoachBottomNav />
     </div>
   ),
@@ -104,7 +98,6 @@ function RosterPage() {
   const athleteLimit = coachProfile?.profile.athleteLimit ?? null;
   const rosterFull = athleteLimit !== null && athletes.length >= athleteLimit;
 
-
   const sports = useMemo(() => {
     const set = new Set<string>(coachSports);
     for (const a of athletes) if (a.sport) set.add(a.sport);
@@ -129,14 +122,12 @@ function RosterPage() {
     return m;
   }, [practiceQuery.data]);
 
-
   return (
     <>
       <div className="mx-auto flex min-h-dvh max-w-3xl flex-col px-3 pt-4 pb-24">
         <Sheet open={inviteOpen} onOpenChange={setInviteOpen}>
           <header className="sticky top-0 z-20 -mx-3 bg-background/90 px-3 pb-2 pt-1 backdrop-blur supports-[backdrop-filter]:bg-background/70">
             <SegmentedToggle tab={tab} onChange={setTab} />
-
 
             <div className="mt-3 flex items-center gap-2">
               {athletes.length > 0 && sports.length > 0 ? (
@@ -181,8 +172,6 @@ function RosterPage() {
                 </SheetTrigger>
               </div>
 
-
-
               <div className="min-w-0 flex-1">
                 {tab === "schedule" && athletes.length > 0 ? (
                   <Button
@@ -211,20 +200,13 @@ function RosterPage() {
                 size="sm"
                 variant={coachProAvailable ? "default" : "outline"}
                 disabled={!coachProAvailable}
-                onClick={() =>
-                  navigate({ to: "/coach/paywall", search: { tier: "coach_pro" } })
-                }
+                onClick={() => navigate({ to: "/coach/paywall", search: { tier: "coach_pro" } })}
                 className="shrink-0"
               >
                 {coachProAvailable ? "Upgrade" : "Upgrade · Soon"}
               </Button>
             </div>
           ) : null}
-
-
-
-
-
 
           <SheetContent side="bottom" className="paper-surface max-h-[85dvh] overflow-y-auto">
             <SheetHeader>
@@ -241,19 +223,14 @@ function RosterPage() {
           </SheetContent>
         </Sheet>
 
-
-
-
         {tab === "athletes" ? (
           athletes.length === 0 ? (
             <div className="mt-8 rounded-2xl bg-card p-6 shadow-[0_10px_40px_-12px_rgba(0,0,0,0.15)] sm:p-8">
               <div>
-
-                <h2 className="font-display text-xl text-text-primary">
-                  No athletes yet
-                </h2>
+                <h2 className="font-display text-xl text-text-primary">No athletes yet</h2>
                 <p className="mt-2 text-sm text-text-secondary">
-                  Share your invite code with parents — once they link their athlete to you, they'll show up here.
+                  Share your invite code with parents — once they link their athlete to you, they'll
+                  show up here.
                 </p>
                 <div className="mt-5">
                   <InviteCard />
@@ -287,14 +264,10 @@ function RosterPage() {
             onSelectAthlete={setSelectedAthleteId}
             hideInlineCreateButton
           />
-
         )}
       </div>
       <CoachBottomNav />
-      <AthleteDetailSheet
-        athleteId={selectedAthleteId}
-        onOpenChange={setSelectedAthleteId}
-      />
+      <AthleteDetailSheet athleteId={selectedAthleteId} onOpenChange={setSelectedAthleteId} />
     </>
   );
 }

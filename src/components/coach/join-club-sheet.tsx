@@ -12,15 +12,9 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
-import {
-  OrgSearchCombobox,
-  type OrgOption,
-} from "@/components/onboarding/org-search-combobox";
+import { OrgSearchCombobox, type OrgOption } from "@/components/onboarding/org-search-combobox";
 import { OrgCodeField } from "@/components/onboarding/org-code-field";
-import {
-  joinOrganization,
-  recordSilentClubLead,
-} from "@/lib/coach-org.functions";
+import { joinOrganization, recordSilentClubLead } from "@/lib/coach-org.functions";
 import { getStripeEnvironment } from "@/lib/stripe";
 import { useVisualViewport } from "@/hooks/use-visual-viewport";
 
@@ -36,12 +30,7 @@ type Props = {
   paidInterval: "month" | "year" | null;
 };
 
-export function JoinClubSheet({
-  open,
-  onOpenChange,
-  hasPaidSubscription,
-  paidInterval,
-}: Props) {
+export function JoinClubSheet({ open, onOpenChange, hasPaidSubscription, paidInterval }: Props) {
   const vv = useVisualViewport();
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -56,8 +45,8 @@ export function JoinClubSheet({
         <SheetHeader className="text-left">
           <SheetTitle>Join a club</SheetTitle>
           <SheetDescription>
-            Find your club, enter the invite code they gave you, and your
-            plan switches to club-covered.
+            Find your club, enter the invite code they gave you, and your plan switches to
+            club-covered.
           </SheetDescription>
         </SheetHeader>
         {open ? (
@@ -102,9 +91,7 @@ function JoinClubBody({
       /* silent — lead capture must never block the coach */
     }
     toast.success(
-      typedQuery
-        ? `Thanks — we'll reach out to "${typedQuery}".`
-        : "Thanks — we'll be in touch.",
+      typedQuery ? `Thanks — we'll reach out to "${typedQuery}".` : "Thanks — we'll be in touch.",
     );
     onClose();
   };
@@ -138,9 +125,7 @@ function JoinClubBody({
           break;
         }
         case "canceled_at_period_end":
-          toast.success(
-            `Joined ${res.name} — your Coach plan won't renew.`,
-          );
+          toast.success(`Joined ${res.name} — your Coach plan won't renew.`);
           break;
         case "trial_canceled":
           toast.success(`Joined ${res.name} — your trial was ended.`);
@@ -215,10 +200,7 @@ function JoinClubBody({
           )}
 
           <div className="flex justify-end pt-2 pb-4">
-            <Button
-              onClick={() => void handleJoin()}
-              disabled={!verified || busy}
-            >
+            <Button onClick={() => void handleJoin()} disabled={!verified || busy}>
               {busy ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

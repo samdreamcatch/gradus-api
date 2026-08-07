@@ -10,16 +10,17 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Check, Info, Loader2, X } from "lucide-react";
 
 import { Logo } from "@/components/logo";
-import {
-  checkAthleteUsername,
-  signupAthleteWithUsername,
-} from "@/lib/athlete-signup.functions";
+import { checkAthleteUsername, signupAthleteWithUsername } from "@/lib/athlete-signup.functions";
 import { PromoCodeField } from "@/components/signup/promo-code-field";
 import { savePendingPromoCode } from "@/lib/pending-promo-code";
 
-
 const searchSchema = z.object({
-  code: z.string().trim().toUpperCase().length(8).regex(/^[A-Z2-9]+$/),
+  code: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .length(8)
+    .regex(/^[A-Z2-9]+$/),
 });
 
 export const Route = createFileRoute("/signup/athlete/account")({
@@ -101,9 +102,7 @@ function AthleteAccountPage() {
       <div className="w-full max-w-md rounded-2xl bg-card p-8 shadow-card">
         <div className="mb-8 text-center">
           <Logo className="text-5xl" />
-          <p className="mt-6 font-display text-2xl text-text-primary">
-            Pick a username.
-          </p>
+          <p className="mt-6 font-display text-2xl text-text-primary">Pick a username.</p>
           <p className="mt-2 text-sm text-text-secondary">
             You&apos;ll use this to log back in. No email needed.
           </p>
@@ -125,12 +124,12 @@ function AthleteAccountPage() {
                 </PopoverTrigger>
                 <PopoverContent side="top" align="end" className="w-72 text-xs leading-relaxed">
                   <p className="text-text-primary">
-                    Your username is how you sign in. Pick something you&apos;ll
-                    remember — your first name plus a number works great.
+                    Your username is how you sign in. Pick something you&apos;ll remember — your
+                    first name plus a number works great.
                   </p>
                   <p className="mt-2 text-text-secondary">
-                    If you forget your password, your parent can reset it for
-                    you from their settings.
+                    If you forget your password, your parent can reset it for you from their
+                    settings.
                   </p>
                 </PopoverContent>
               </Popover>
@@ -140,9 +139,7 @@ function AthleteAccountPage() {
                 id="username"
                 autoComplete="username"
                 value={username}
-                onChange={(e) =>
-                  setUsername(e.target.value.toLowerCase().replace(/\s+/g, ""))
-                }
+                onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/\s+/g, ""))}
                 required
                 maxLength={24}
                 minLength={3}
@@ -153,9 +150,7 @@ function AthleteAccountPage() {
                 {availability === "checking" && (
                   <Loader2 className="h-4 w-4 animate-spin text-text-tertiary" />
                 )}
-                {availability === "available" && (
-                  <Check className="h-4 w-4 text-pen-tennis-ink" />
-                )}
+                {availability === "available" && <Check className="h-4 w-4 text-pen-tennis-ink" />}
                 {(availability === "taken" || availability === "invalid") && (
                   <X className="h-4 w-4 text-destructive" />
                 )}
@@ -188,8 +183,6 @@ function AthleteAccountPage() {
 
           {error && <p className="text-sm text-destructive">{error}</p>}
 
-
-
           <Button
             type="submit"
             className="w-full"
@@ -201,7 +194,10 @@ function AthleteAccountPage() {
 
         <p className="mt-6 text-center text-sm text-text-secondary">
           Already have an account?{" "}
-          <Link to="/login" className="font-semibold text-accent-ink underline-offset-4 hover:underline">
+          <Link
+            to="/login"
+            className="font-semibold text-accent-ink underline-offset-4 hover:underline"
+          >
             Log in
           </Link>
         </p>

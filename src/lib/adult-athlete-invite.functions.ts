@@ -174,18 +174,16 @@ export const claimAdultAthleteInvite = createServerFn({ method: "POST" })
     }
 
     const ackIso = data.autoAckCoach ? new Date().toISOString() : null;
-    const linkIns = await supabaseAdmin
-      .from("coach_athletes")
-      .upsert(
-        [
-          {
-            coach_id: coachId,
-            athlete_id: athleteId,
-            ...(ackIso ? { coach_ack_at: ackIso } : {}),
-          },
-        ],
-        { onConflict: "coach_id,athlete_id", ignoreDuplicates: true },
-      );
+    const linkIns = await supabaseAdmin.from("coach_athletes").upsert(
+      [
+        {
+          coach_id: coachId,
+          athlete_id: athleteId,
+          ...(ackIso ? { coach_ack_at: ackIso } : {}),
+        },
+      ],
+      { onConflict: "coach_id,athlete_id", ignoreDuplicates: true },
+    );
     if (linkIns.error) dbError(linkIns.error);
 
     const levelsRes = await supabaseAdmin
@@ -201,12 +199,10 @@ export const claimAdultAthleteInvite = createServerFn({ method: "POST" })
       coach_id: coachId,
       sport,
     }));
-    const scopeIns = await supabaseAdmin
-      .from("coach_athlete_sports")
-      .upsert(scopeRows, {
-        onConflict: "athlete_id,coach_id,sport",
-        ignoreDuplicates: true,
-      });
+    const scopeIns = await supabaseAdmin.from("coach_athlete_sports").upsert(scopeRows, {
+      onConflict: "athlete_id,coach_id,sport",
+      ignoreDuplicates: true,
+    });
     if (scopeIns.error) dbError(scopeIns.error);
 
     const primaryRows = coachSports.map((sport) => ({
@@ -214,12 +210,10 @@ export const claimAdultAthleteInvite = createServerFn({ method: "POST" })
       sport,
       coach_id: coachId,
     }));
-    const primaryIns = await supabaseAdmin
-      .from("athlete_primary_coaches")
-      .upsert(primaryRows, {
-        onConflict: "athlete_id,sport",
-        ignoreDuplicates: true,
-      });
+    const primaryIns = await supabaseAdmin.from("athlete_primary_coaches").upsert(primaryRows, {
+      onConflict: "athlete_id,sport",
+      ignoreDuplicates: true,
+    });
     if (primaryIns.error) dbError(primaryIns.error);
 
     return { ok: true, sports: coachSports.length };

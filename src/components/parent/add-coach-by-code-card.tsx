@@ -8,10 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Chip } from "@/components/ui/chip";
 
-import {
-  linkAthleteToCoach,
-  previewCoachByInviteCode,
-} from "@/lib/parent-settings.functions";
+import { linkAthleteToCoach, previewCoachByInviteCode } from "@/lib/parent-settings.functions";
 import { getSport } from "@/lib/coach-sports";
 
 type Athlete = {
@@ -33,9 +30,11 @@ export function AddCoachByCodeCard({ athletes }: { athletes: Athlete[] }) {
   const [open, setOpen] = useState(false);
   const [code, setCode] = useState("");
   const [lookingUp, setLookingUp] = useState(false);
-  const [preview, setPreview] = useState<
-    { coachId: string; coachName: string; sports: string[] } | null
-  >(null);
+  const [preview, setPreview] = useState<{
+    coachId: string;
+    coachName: string;
+    sports: string[];
+  } | null>(null);
   const [athleteId, setAthleteId] = useState<string>(athletes[0]?.id ?? "");
   const [selectedSports, setSelectedSports] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
@@ -51,9 +50,7 @@ export function AddCoachByCodeCard({ athletes }: { athletes: Athlete[] }) {
   };
 
   const toggleSport = (s: string) =>
-    setSelectedSports((prev) =>
-      prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s],
-    );
+    setSelectedSports((prev) => (prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]));
 
   const handleLookup = async () => {
     setLookingUp(true);
@@ -91,7 +88,6 @@ export function AddCoachByCodeCard({ athletes }: { athletes: Athlete[] }) {
       } else {
         toast.error(err instanceof Error ? err.message : "Couldn't link coach");
       }
-
     } finally {
       setSaving(false);
     }
@@ -102,12 +98,7 @@ export function AddCoachByCodeCard({ athletes }: { athletes: Athlete[] }) {
   if (!open) {
     return (
       <div className="mb-3">
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => setOpen(true)}
-          className="gap-1.5"
-        >
+        <Button size="sm" variant="outline" onClick={() => setOpen(true)} className="gap-1.5">
           <Plus className="size-3.5" /> Add a coach
         </Button>
       </div>
@@ -120,7 +111,6 @@ export function AddCoachByCodeCard({ athletes }: { athletes: Athlete[] }) {
         <Plus className="size-4 text-text-secondary" />
         <div className="text-sm font-medium">Add a coach</div>
       </div>
-
 
       {!preview ? (
         <form
@@ -142,13 +132,7 @@ export function AddCoachByCodeCard({ athletes }: { athletes: Athlete[] }) {
             />
           </div>
           <div className="flex justify-end gap-2">
-            <Button
-              size="sm"
-              variant="ghost"
-              type="button"
-              onClick={reset}
-              disabled={lookingUp}
-            >
+            <Button size="sm" variant="ghost" type="button" onClick={reset} disabled={lookingUp}>
               Cancel
             </Button>
             <Button size="sm" type="submit" disabled={!codeValid || lookingUp}>
@@ -182,16 +166,13 @@ export function AddCoachByCodeCard({ athletes }: { athletes: Athlete[] }) {
                   );
                 })}
               </div>
-
             </div>
           )}
 
           <div className="space-y-1.5">
             <Label className="text-xs">Sports with this coach</Label>
             {preview.sports.length === 0 ? (
-              <p className="text-xs text-destructive">
-                This coach hasn't set up any sports yet.
-              </p>
+              <p className="text-xs text-destructive">This coach hasn't set up any sports yet.</p>
             ) : (
               <div className="flex flex-wrap gap-2">
                 {preview.sports.map((s) => {
@@ -209,25 +190,17 @@ export function AddCoachByCodeCard({ athletes }: { athletes: Athlete[] }) {
                   );
                 })}
               </div>
-
             )}
           </div>
 
           <div className="flex justify-end gap-2">
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={reset}
-              disabled={saving}
-            >
+            <Button size="sm" variant="ghost" onClick={reset} disabled={saving}>
               Cancel
             </Button>
             <Button
               size="sm"
               onClick={handleLink}
-              disabled={
-                saving || !athleteId || selectedSports.length === 0
-              }
+              disabled={saving || !athleteId || selectedSports.length === 0}
             >
               {saving ? "Linking…" : "Link coach"}
             </Button>

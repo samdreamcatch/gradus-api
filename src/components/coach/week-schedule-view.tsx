@@ -6,10 +6,22 @@ import type { AthletePracticeSummary } from "@/lib/coach-schedule.functions";
 import { PreLessonBriefing } from "./pre-lesson-briefing";
 import { LessonSlotSheet, type LessonSlotSheetMode } from "./lesson-slot-sheet";
 
-
 const DAY_LONG = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const WEEKDAY_LETTERS = ["M", "T", "W", "T", "F", "S", "S"]; // Mon..Sun
-const MONTH_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const MONTH_SHORT = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
 
 function startOfWeekMonday(d: Date): Date {
   const out = new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -65,7 +77,6 @@ function toIsoDate(d: Date): string {
   return `${yyyy}-${mm}-${dd}`;
 }
 
-
 export type WeekScheduleHandle = {
   openCreateLesson: () => void;
 };
@@ -108,7 +119,6 @@ export const WeekScheduleView = forwardRef<
     [weekStart, selectedDayIndex],
   );
 
-
   const weekEnd = addDays(weekStart, 6);
   const isCurrentWeek = sameDay(weekStart, currentWeekStart);
 
@@ -145,7 +155,6 @@ export const WeekScheduleView = forwardRef<
     for (const arr of map.values()) arr.sort((a, b) => a.startMinute - b.startMinute);
     return map;
   }, [athletes, weekStart]);
-
 
   const selectedDate = addDays(weekStart, selectedDayIndex);
   const selectedSessions = sessionsByDay.get(selectedDayIndex) ?? [];
@@ -222,9 +231,7 @@ export const WeekScheduleView = forwardRef<
                 aria-label={`${DAY_LONG[date.getDay()]} ${date.getDate()}, ${count} session${count === 1 ? "" : "s"}`}
                 className={cn(
                   "press-soft flex flex-col items-center gap-0.5 rounded-xl px-1 py-2",
-                  isSelected
-                    ? "bg-accent text-accent-foreground shadow-sm"
-                    : "text-text-secondary",
+                  isSelected ? "bg-accent text-accent-foreground shadow-sm" : "text-text-secondary",
                   !isSelected && isDayToday && "ring-1 ring-accent",
                   !isSelected && isEmpty && "opacity-50",
                 )}
@@ -304,7 +311,6 @@ export const WeekScheduleView = forwardRef<
           ) : null}
         </div>
 
-
         {selectedSessions.length === 0 ? (
           <div className="px-4 py-10 text-center text-sm text-text-tertiary">
             No lessons scheduled
@@ -350,9 +356,6 @@ export const WeekScheduleView = forwardRef<
             </ul>
           </div>
         )}
-
-
-
       </div>
 
       <p className="mt-3 flex items-center gap-2 px-1 text-[10px] uppercase tracking-widest text-text-tertiary">
@@ -371,7 +374,6 @@ export const WeekScheduleView = forwardRef<
     </div>
   );
 });
-
 
 const STATE_COLORS = [
   "var(--pen-pink, var(--text-tertiary))", // 0 frustrated
@@ -417,9 +419,7 @@ function LessonRow({
       <div
         className={cn(
           "flex-1 rounded-xl bg-card",
-          expanded
-            ? "border-2 border-text-primary/80 shadow-card"
-            : "border border-divider",
+          expanded ? "border-2 border-text-primary/80 shadow-card" : "border border-divider",
         )}
       >
         <button
@@ -449,7 +449,7 @@ function LessonRow({
         {expanded ? (
           <div className="px-4 pb-4">
             <PracticeMetric summary={summary} />
-            
+
             <div className="mt-3 flex flex-col gap-2">
               {onSelect ? (
                 <button
@@ -460,7 +460,7 @@ function LessonRow({
                   View athlete
                 </button>
               ) : null}
-              {(onEditRecurring || onEditOccurrence) ? (
+              {onEditRecurring || onEditOccurrence ? (
                 <div className="grid grid-cols-2 gap-2">
                   {onEditRecurring ? (
                     <button
@@ -484,16 +484,12 @@ function LessonRow({
                 </div>
               ) : null}
             </div>
-
           </div>
         ) : null}
       </div>
     </div>
   );
 }
-
-
-
 
 function StatusChip({ summary }: { summary?: AthletePracticeSummary }) {
   if (!summary) return null;
@@ -519,9 +515,7 @@ function StatusChip({ summary }: { summary?: AthletePracticeSummary }) {
 
 function PracticeMetric({ summary }: { summary?: AthletePracticeSummary }) {
   if (!summary) {
-    return (
-      <div className="mb-4 h-[68px] animate-pulse rounded-xl bg-divider/40" aria-hidden />
-    );
+    return <div className="mb-4 h-[68px] animate-pulse rounded-xl bg-divider/40" aria-hidden />;
   }
   const { hoursLogged, expectedHoursPerWeek } = summary;
   const hoursStr = hoursLogged > 0 ? hoursLogged.toFixed(1) : "0";
@@ -551,10 +545,7 @@ function PracticeMetric({ summary }: { summary?: AthletePracticeSummary }) {
       </div>
 
       {hasGoal ? (
-        <div
-          className="relative h-12 w-12 shrink-0"
-          aria-label={`${pct}% of weekly goal`}
-        >
+        <div className="relative h-12 w-12 shrink-0" aria-label={`${pct}% of weekly goal`}>
           <svg className="h-full w-full -rotate-90" viewBox="0 0 36 36">
             <path
               d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
@@ -634,4 +625,3 @@ function PracticeFooter({ summary }: { summary?: AthletePracticeSummary }) {
     </div>
   );
 }
-

@@ -5,12 +5,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { dbError } from "./db-error";
 import { createLovableAiGatewayProvider } from "./ai-gateway.server";
-import type {
-  FieldSource,
-  VoicePlanDraft,
-  VoiceSources,
-  VoiceTouched,
-} from "./voice-types";
+import type { FieldSource, VoicePlanDraft, VoiceSources, VoiceTouched } from "./voice-types";
 
 export const MAX_AUDIO_BYTES = 18 * 1024 * 1024; // 18 MB hard cap (~180s)
 export const MAX_AUDIO_SECONDS = 180;
@@ -30,7 +25,10 @@ export async function getCoachId(supabase: Client, userId: string): Promise<stri
 
 /* ---------------- Transcription (ElevenLabs Scribe) ---------------- */
 
-export async function transcribeWithElevenLabs(audio: Blob, vocabularyHints?: string[]): Promise<string> {
+export async function transcribeWithElevenLabs(
+  audio: Blob,
+  vocabularyHints?: string[],
+): Promise<string> {
   const apiKey = process.env.ELEVENLABS_API_KEY;
   if (!apiKey) throw new Error("Voice service not configured");
 
@@ -103,9 +101,7 @@ const slotSchema = z.object({
   leftover: z
     .string()
     .nullish()
-    .describe(
-      "Verbatim transcript fragments NOT slotted anywhere — for downstream notes cleanup.",
-    ),
+    .describe("Verbatim transcript fragments NOT slotted anywhere — for downstream notes cleanup."),
 });
 
 export interface LibraryMove {
@@ -176,7 +172,10 @@ async function slotTranscript(ctx: ParseContext) {
     `TRANSCRIPT:\n"""${ctx.transcript}"""`,
     `KNOWN MOVES (library, name — category):\n${
       ctx.library.length
-        ? ctx.library.slice(0, 150).map((m) => `- ${m.name} (${m.category})`).join("\n")
+        ? ctx.library
+            .slice(0, 150)
+            .map((m) => `- ${m.name} (${m.category})`)
+            .join("\n")
         : "(none)"
     }`,
   ];
@@ -278,7 +277,18 @@ function resolveAthlete(
 }
 
 const MOVE_STOPWORDS = new Set([
-  "the", "a", "an", "and", "or", "to", "of", "for", "with", "drill", "drills", "practice",
+  "the",
+  "a",
+  "an",
+  "and",
+  "or",
+  "to",
+  "of",
+  "for",
+  "with",
+  "drill",
+  "drills",
+  "practice",
 ]);
 
 function moveTokens(s: string): string[] {
@@ -360,7 +370,10 @@ function resolveLibraryMove(
             (qPrimary && mSecondary && qPrimary === mSecondary) ||
             (qSecondary && mPrimary && qSecondary === mPrimary) ||
             (qSecondary && mSecondary && qSecondary === mSecondary);
-          if (hit) { matched++; break; }
+          if (hit) {
+            matched++;
+            break;
+          }
         }
       }
       const total = Math.max(qCodes.length, mCodes.length);
@@ -476,12 +489,8 @@ export async function buildDraft(ctx: ParseContext): Promise<VoicePlanDraft> {
   }
 
   const { id: athleteId, unresolved } = resolveAthlete(slotted.athleteName, ctx.athletes);
-  const resolvedAthlete = athleteId
-    ? ctx.athletes.find((a) => a.id === athleteId) ?? null
-    : null;
-  const athleteFirstName = resolvedAthlete
-    ? resolvedAthlete.name.split(" ")[0] ?? null
-    : null;
+  const resolvedAthlete = athleteId ? (ctx.athletes.find((a) => a.id === athleteId) ?? null) : null;
+  const athleteFirstName = resolvedAthlete ? (resolvedAthlete.name.split(" ")[0] ?? null) : null;
 
   const cleanedNotes = await cleanupNotes({
     leftover: slotted.leftover ?? "",
@@ -499,36 +508,32 @@ export async function buildDraft(ctx: ParseContext): Promise<VoicePlanDraft> {
       JSON.stringify({ droppedCount, kept: keptMoves.length }),
     );
   }
-  const moves = keptMoves
-    .map((m) => {
-      const targetFromVoice =
-        typeof m.targetValue === "number" || Boolean(m.targetQuote?.trim());
-      const lib = m.matchExistingMoveId
-        ? null
-        : resolveLibraryMove(m.name, ctx.library);
+  const moves = keptMoves.map((m) => {
+    const targetFromVoice = typeof m.targetValue === "number" || Boolean(m.targetQuote?.trim());
+    const lib = m.matchExistingMoveId ? null : resolveLibraryMove(m.name, ctx.library);
 
-      return {
-        matchExistingMoveId: m.matchExistingMoveId ?? undefined,
-        libraryMoveId: lib?.id,
-        name: (lib?.name ?? m.name ?? "").trim(),
-        description: (m.description ?? "").trim(),
-        cue: (m.cue ?? "").trim(),
-        why: (m.why ?? "").trim(),
-        targetKind: (m.targetKind ?? lib?.defaultTargetKind ?? "reps") as "reps" | "mins",
-        targetValue:
-          typeof m.targetValue === "number" && m.targetValue >= 0
-            ? m.targetValue
-            : lib?.defaultTargetValue ?? 10,
-        targetFromVoice,
-        sources: {
-          name: m.nameQuote ?? undefined,
-          description: m.descriptionQuote ?? undefined,
-          cue: m.cueQuote ?? undefined,
-          why: m.whyQuote ?? undefined,
-          target: m.targetQuote ?? undefined,
-        },
-      };
-    });
+    return {
+      matchExistingMoveId: m.matchExistingMoveId ?? undefined,
+      libraryMoveId: lib?.id,
+      name: (lib?.name ?? m.name ?? "").trim(),
+      description: (m.description ?? "").trim(),
+      cue: (m.cue ?? "").trim(),
+      why: (m.why ?? "").trim(),
+      targetKind: (m.targetKind ?? lib?.defaultTargetKind ?? "reps") as "reps" | "mins",
+      targetValue:
+        typeof m.targetValue === "number" && m.targetValue >= 0
+          ? m.targetValue
+          : (lib?.defaultTargetValue ?? 10),
+      targetFromVoice,
+      sources: {
+        name: m.nameQuote ?? undefined,
+        description: m.descriptionQuote ?? undefined,
+        cue: m.cueQuote ?? undefined,
+        why: m.whyQuote ?? undefined,
+        target: m.targetQuote ?? undefined,
+      },
+    };
+  });
 
   const notesChanged = cleanedNotes !== (ctx.currentPlan?.notes ?? "");
   const notes = notesChanged ? cleanedNotes : undefined;
@@ -542,7 +547,7 @@ export async function buildDraft(ctx: ParseContext): Promise<VoicePlanDraft> {
     sources: {
       title: slotted.titleQuote ?? undefined,
       athleteName: slotted.athleteQuote ?? undefined,
-      notes: notesChanged ? slotted.leftover ?? undefined : undefined,
+      notes: notesChanged ? (slotted.leftover ?? undefined) : undefined,
     },
   };
 }
@@ -758,7 +763,8 @@ export async function applyDraft(
         : m.description;
       const finalCue = libRow ? mergeAppend(libRow.cue, m.cue) : m.cue;
       const finalWhy = libRow ? mergeAppend(libRow.why, m.why) : m.why;
-      const finalTargetKind = libRow && !m.targetFromVoice ? libRow.default_target_kind : m.targetKind;
+      const finalTargetKind =
+        libRow && !m.targetFromVoice ? libRow.default_target_kind : m.targetKind;
       const finalTargetValue =
         libRow && !m.targetFromVoice ? libRow.default_target_value : m.targetValue;
 

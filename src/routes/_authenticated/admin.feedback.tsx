@@ -10,7 +10,6 @@ import { Chip, chipClasses } from "@/components/ui/chip";
 import { Tag } from "@/components/ui/tag";
 import { cn } from "@/lib/utils";
 
-
 const searchSchema = z.object({
   unresolved: fallback(z.boolean(), false).default(false),
 });
@@ -46,7 +45,9 @@ function AdminFeedback() {
           <ArrowLeft className="size-3.5" /> Back to admin
         </Link>
         <div>
-          <Eyebrow size="small" tone="accent-ink">Internal</Eyebrow>
+          <Eyebrow size="small" tone="accent-ink">
+            Internal
+          </Eyebrow>
           <h1 className="font-display text-h1 text-text-primary">Feedback</h1>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -59,7 +60,6 @@ function AdminFeedback() {
           </Link>
         </div>
       </header>
-
 
       {isLoading ? (
         <p className="text-text-secondary">Loading…</p>
@@ -80,7 +80,13 @@ function AdminFeedback() {
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-semibold text-text-primary">{f.name}</span>
-                    <Eyebrow as="span" size="caption" tone="tertiary" weight="normal" tracking="wide">
+                    <Eyebrow
+                      as="span"
+                      size="caption"
+                      tone="tertiary"
+                      weight="normal"
+                      tracking="wide"
+                    >
                       {f.role}
                     </Eyebrow>
                     {f.isTest && (
@@ -97,14 +103,11 @@ function AdminFeedback() {
                       size="caption"
                       tone="muted"
                       selected={resolved}
-                      onClick={() =>
-                        toggle.mutate({ data: { id: f.id, resolved: !resolved } })
-                      }
+                      onClick={() => toggle.mutate({ data: { id: f.id, resolved: !resolved } })}
                     >
                       <Check className="size-3" />
                       {resolved ? "Resolved" : "Mark resolved"}
                     </Chip>
-
                   </div>
                 </div>
                 <p className="mt-3 whitespace-pre-wrap text-[15px] leading-relaxed text-text-primary">

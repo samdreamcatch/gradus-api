@@ -6,7 +6,9 @@ export const Route = createFileRoute("/_authenticated/org-admin/moves")({
   component: () => (
     <div className="p-4 md:p-6 space-y-4 max-w-5xl">
       <PageTitle subtitle="Club-wide default moves">Move library</PageTitle>
-      <Card><CardContent className="p-6 text-sm text-text-secondary">Coming soon.</CardContent></Card>
+      <Card>
+        <CardContent className="p-6 text-sm text-text-secondary">Coming soon.</CardContent>
+      </Card>
     </div>
   ),
 });

@@ -73,8 +73,6 @@ export const getAthleteInviteSummary = createServerFn({ method: "POST" })
       throw new Error("This code has expired. Ask your parent for a new one.");
     }
 
-
-
     const athlete = await supabaseAdmin
       .from("athletes")
       .select("id, first_name, last_name")
@@ -102,10 +100,7 @@ export const getAthleteInviteSummary = createServerFn({ method: "POST" })
             .eq("id", coachId)
             .single()
         : Promise.resolve({ data: null, error: null } as const),
-      supabaseAdmin
-        .from("athlete_goals")
-        .select("sport")
-        .eq("athlete_id", athlete.data.id),
+      supabaseAdmin.from("athlete_goals").select("sport").eq("athlete_id", athlete.data.id),
       coachId
         ? supabaseAdmin.from("coach_levels").select("sport").eq("coach_id", coachId)
         : Promise.resolve({ data: [] as { sport: string }[], error: null } as const),
@@ -174,11 +169,14 @@ export const claimAthleteInvite = createServerFn({ method: "POST" })
       if (upd.error) dbError(upd.error);
     }
 
-
     if (!codeRow.data.used_at) {
       const stamp = await supabaseAdmin
         .from("athlete_invite_codes")
-        .update({ used_at: new Date().toISOString(), claimed_by: userId, claimed_at: new Date().toISOString() })
+        .update({
+          used_at: new Date().toISOString(),
+          claimed_by: userId,
+          claimed_at: new Date().toISOString(),
+        })
         .eq("id", codeRow.data.id);
       if (stamp.error) dbError(stamp.error);
     }
@@ -233,9 +231,7 @@ const usernameSchema = z
  * same bucket as invite-code lookups to keep enumeration impractical.
  */
 export const checkAthleteUsername = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) =>
-    z.object({ username: usernameSchema }).parse(input),
-  )
+  .inputValidator((input: unknown) => z.object({ username: usernameSchema }).parse(input))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const limit = await supabaseAdmin.rpc("record_invite_lookup_attempt", {
@@ -289,7 +285,6 @@ export const signupAthleteWithUsername = createServerFn({ method: "POST" })
     if (codeRow.data.expires_at && new Date(codeRow.data.expires_at) < new Date()) {
       throw new Error("This code has expired. Ask your parent for a new one.");
     }
-
 
     const athleteId = codeRow.data.athlete_id as string;
 
@@ -364,9 +359,7 @@ export const signupAthleteWithUsername = createServerFn({ method: "POST" })
  * limited per IP to prevent username enumeration.
  */
 export const resolveAthleteLogin = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) =>
-    z.object({ username: usernameSchema }).parse(input),
-  )
+  .inputValidator((input: unknown) => z.object({ username: usernameSchema }).parse(input))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const limit = await supabaseAdmin.rpc("record_invite_lookup_attempt", {

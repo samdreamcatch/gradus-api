@@ -3,8 +3,6 @@ import { Pencil } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Eyebrow } from "@/components/ui/eyebrow";
 
-
-
 export function MotivationCard({
   value,
   onSave,
@@ -24,10 +22,7 @@ export function MotivationCard({
   useEffect(() => {
     if (editing && taRef.current) {
       taRef.current.focus();
-      taRef.current.setSelectionRange(
-        taRef.current.value.length,
-        taRef.current.value.length,
-      );
+      taRef.current.setSelectionRange(taRef.current.value.length, taRef.current.value.length);
     }
   }, [editing]);
 
@@ -63,7 +58,6 @@ export function MotivationCard({
         )}
       </div>
 
-
       {editing ? (
         <div className="mt-2 space-y-2">
           <textarea
@@ -98,9 +92,7 @@ export function MotivationCard({
           </div>
         </div>
       ) : value.trim().length > 0 ? (
-        <p className="mt-2 font-hand text-lg leading-snug text-text-primary">
-          “{value}”
-        </p>
+        <p className="mt-2 font-hand text-lg leading-snug text-text-primary">“{value}”</p>
       ) : (
         <p className="mt-2 font-hand text-lg leading-snug text-text-secondary">
           Tap edit to share what drives you…

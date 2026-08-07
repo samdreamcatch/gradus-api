@@ -147,9 +147,7 @@ const CreateInput = z
   })
   .refine(
     (v) =>
-      v.kind === "link"
-        ? !!v.externalUrl && !v.storagePath
-        : !!v.storagePath && !v.externalUrl,
+      v.kind === "link" ? !!v.externalUrl && !v.storagePath : !!v.storagePath && !v.externalUrl,
     { message: "kind and payload mismatch" },
   );
 
@@ -244,27 +242,22 @@ const UploadUrlInput = z.object({
 export const createCoachResourceUploadUrl = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => UploadUrlInput.parse(input))
-  .handler(
-    async ({
-      context,
-      data,
-    }): Promise<{ path: string; token: string; url: string }> => {
-      const supabase = context.supabase as Client;
-      const coach = await getCallerCoach(supabase, context.userId);
-      if (!coach) throw new Error("Coach profile not found");
-      const tier = computeTier(coach);
-      if (tier === "coach") {
-        throw new Error("Coach Pro or Club plan required to upload resources");
-      }
+  .handler(async ({ context, data }): Promise<{ path: string; token: string; url: string }> => {
+    const supabase = context.supabase as Client;
+    const coach = await getCallerCoach(supabase, context.userId);
+    if (!coach) throw new Error("Coach profile not found");
+    const tier = computeTier(coach);
+    if (tier === "coach") {
+      throw new Error("Coach Pro or Club plan required to upload resources");
+    }
 
-      const uuid = crypto.randomUUID();
-      const path = `coach/${coach.id}/${uuid}.${data.ext}`;
+    const uuid = crypto.randomUUID();
+    const path = `coach/${coach.id}/${uuid}.${data.ext}`;
 
-      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      const { data: signed, error } = await supabaseAdmin.storage
-        .from("resource-pdfs")
-        .createSignedUploadUrl(path);
-      if (error || !signed) throw new Error(error?.message ?? "Could not sign upload");
-      return { path, token: signed.token, url: signed.signedUrl };
-    },
-  );
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: signed, error } = await supabaseAdmin.storage
+      .from("resource-pdfs")
+      .createSignedUploadUrl(path);
+    if (error || !signed) throw new Error(error?.message ?? "Could not sign upload");
+    return { path, token: signed.token, url: signed.signedUrl };
+  });

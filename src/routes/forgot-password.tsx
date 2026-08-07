@@ -58,7 +58,6 @@ function ForgotPasswordPage() {
     <div className="relative flex min-h-dvh items-center justify-center overflow-hidden px-4 py-12">
       <SportsPoster fill opacity={0.08} />
       <div className="relative w-full max-w-md rounded-2xl bg-card p-8 shadow-card">
-
         <div className="mb-8 text-center">
           <h1 className="mt-2">
             <Logo className="text-6xl" />
@@ -69,10 +68,14 @@ function ForgotPasswordPage() {
         {sent ? (
           <div className="space-y-4 text-center">
             <p className="text-sm text-text-primary">
-              If an account exists for <span className="font-semibold">{email}</span>, we&apos;ve sent a password reset link.
+              If an account exists for <span className="font-semibold">{email}</span>, we&apos;ve
+              sent a password reset link.
             </p>
             <p className="text-xs text-text-tertiary">Check your inbox (and spam folder).</p>
-            <Link to="/login" className="inline-block text-sm font-semibold text-accent-ink underline-offset-4 hover:underline">
+            <Link
+              to="/login"
+              className="inline-block text-sm font-semibold text-accent-ink underline-offset-4 hover:underline"
+            >
               Back to sign in
             </Link>
           </div>
@@ -89,7 +92,8 @@ function ForgotPasswordPage() {
                 required
               />
               <p className="text-xs text-text-tertiary">
-                Athlete accounts use a username, not email — ask your parent or coach to reset it for you.
+                Athlete accounts use a username, not email — ask your parent or coach to reset it
+                for you.
               </p>
             </div>
 
@@ -107,7 +111,10 @@ function ForgotPasswordPage() {
             </Button>
 
             <p className="text-center text-sm text-text-secondary">
-              <Link to="/login" className="font-semibold text-accent-ink underline-offset-4 hover:underline">
+              <Link
+                to="/login"
+                className="font-semibold text-accent-ink underline-offset-4 hover:underline"
+              >
                 Back to sign in
               </Link>
             </p>

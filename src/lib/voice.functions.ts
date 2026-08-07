@@ -14,12 +14,7 @@ import {
 } from "./voice.server";
 
 // Re-export types so existing callers keep working.
-export type {
-  FieldSource,
-  VoicePlanDraft,
-  VoiceSources,
-  VoiceTouched,
-} from "./voice-types";
+export type { FieldSource, VoicePlanDraft, VoiceSources, VoiceTouched } from "./voice-types";
 
 export const voiceTranscribe = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -83,7 +78,10 @@ export const voiceBuildPlan = createServerFn({ method: "POST" })
     }));
 
     const [transcript, { data: rosterRows }] = await Promise.all([
-      transcribeWithElevenLabs(data.audio, library.map((m) => m.name)),
+      transcribeWithElevenLabs(
+        data.audio,
+        library.map((m) => m.name),
+      ),
       supabase
         .from("coach_athletes")
         .select("athlete_id, athletes!inner(id, first_name, last_name)")
@@ -92,9 +90,11 @@ export const voiceBuildPlan = createServerFn({ method: "POST" })
     if (!transcript || transcript.length < 2) throw new Error("Didn't catch that — try again");
 
     const athletes = (rosterRows ?? []).map((row) => {
-      const a = (row as unknown as {
-        athletes: { id: string; first_name: string; last_name: string };
-      }).athletes;
+      const a = (
+        row as unknown as {
+          athletes: { id: string; first_name: string; last_name: string };
+        }
+      ).athletes;
       return { id: a.id, name: `${a.first_name} ${a.last_name}`.trim() };
     });
 

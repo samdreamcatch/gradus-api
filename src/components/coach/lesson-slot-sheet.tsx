@@ -217,10 +217,7 @@ export function LessonSlotSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent
-        side="bottom"
-        className="paper-surface max-h-[90dvh] overflow-y-auto"
-      >
+      <SheetContent side="bottom" className="paper-surface max-h-[90dvh] overflow-y-auto">
         <SheetHeader className="text-left">
           <SheetTitle>{title}</SheetTitle>
           <SheetDescription>{description}</SheetDescription>
@@ -320,8 +317,8 @@ export function LessonSlotSheet({
                 <AlertDialogHeader>
                   <AlertDialogTitle>Delete this recurring lesson?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This removes the weekly lesson from every future date. One-off
-                    overrides on this lesson are also removed.
+                    This removes the weekly lesson from every future date. One-off overrides on this
+                    lesson are also removed.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -380,10 +377,7 @@ export function LessonSlotSheet({
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button
-            onClick={() => saveMutation.mutate()}
-            disabled={saveMutation.isPending}
-          >
+          <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending}>
             {saveMutation.isPending ? "Saving…" : "Save"}
           </Button>
         </SheetFooter>

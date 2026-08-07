@@ -111,20 +111,14 @@ function initOnce() {
     setState({ deferred: evt, platform: "installable" });
     if (!dismissedRecently()) {
       if (autoShowTimer) clearTimeout(autoShowTimer);
-      autoShowTimer = setTimeout(
-        () => setState({ status: "installable" }),
-        SHOW_DELAY_MS,
-      );
+      autoShowTimer = setTimeout(() => setState({ status: "installable" }), SHOW_DELAY_MS);
     }
   };
 
   const onInstalled = () => {
     setState({ status: "hidden", platform: "none", deferred: null });
     try {
-      window.localStorage.setItem(
-        DISMISS_KEY,
-        String(Date.now() + DISMISS_TTL_MS * 52),
-      );
+      window.localStorage.setItem(DISMISS_KEY, String(Date.now() + DISMISS_TTL_MS * 52));
     } catch {
       // ignore
     }
@@ -137,10 +131,7 @@ function initOnce() {
     setState({ platform: "ios" });
     if (!dismissedRecently()) {
       if (autoShowTimer) clearTimeout(autoShowTimer);
-      autoShowTimer = setTimeout(
-        () => setState({ status: "ios-instructions" }),
-        SHOW_DELAY_MS,
-      );
+      autoShowTimer = setTimeout(() => setState({ status: "ios-instructions" }), SHOW_DELAY_MS);
     }
   }
 }

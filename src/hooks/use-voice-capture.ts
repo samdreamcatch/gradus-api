@@ -128,8 +128,7 @@ export function useVoiceCapture({
     try {
       const Ctx =
         window.AudioContext ||
-        (window as unknown as { webkitAudioContext: typeof AudioContext })
-          .webkitAudioContext;
+        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       const ctx = new Ctx();
       const src = ctx.createMediaStreamSource(stream);
       const analyser = ctx.createAnalyser();
@@ -161,7 +160,9 @@ export function useVoiceCapture({
       : MediaRecorder.isTypeSupported("audio/webm")
         ? "audio/webm"
         : "";
-    const recorder = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
+    const recorder = mime
+      ? new MediaRecorder(stream, { mimeType: mime })
+      : new MediaRecorder(stream);
     recorderRef.current = recorder;
 
     recorder.ondataavailable = (e) => {
@@ -195,7 +196,7 @@ export function useVoiceCapture({
     }, 100);
     maxTimeoutRef.current = setTimeout(() => {
       try {
-        recorder.state === "recording" && recorder.stop();
+        if (recorder.state === "recording") recorder.stop();
       } catch {
         /* noop */
       }

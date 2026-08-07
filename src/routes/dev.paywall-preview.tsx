@@ -16,10 +16,7 @@ import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
 type Tier = "coach" | "coach_pro";
 type Interval = "month" | "year";
 
-const PRICE_MAP: Record<
-  Tier,
-  Record<Interval, { monthlyEquivalent: number; billed: string }>
-> = {
+const PRICE_MAP: Record<Tier, Record<Interval, { monthlyEquivalent: number; billed: string }>> = {
   coach: {
     month: { monthlyEquivalent: 30, billed: "$30/mo, billed monthly" },
     year: { monthlyEquivalent: 25.5, billed: "$306/yr — save 15%" },
@@ -94,9 +91,7 @@ function PaywallPreview() {
 
   const proMonths = promoApplied?.months ?? 0;
   const proCtaLabel =
-    proMonths > 0
-      ? `Start ${proMonths} month${proMonths === 1 ? "" : "s"} free`
-      : "Subscribe";
+    proMonths > 0 ? `Start ${proMonths} month${proMonths === 1 ? "" : "s"} free` : "Subscribe";
 
   const controls = useMemo(
     () => (
@@ -111,11 +106,7 @@ function PaywallPreview() {
           Founding coach
         </label>
         <label className="flex items-center gap-1.5">
-          <input
-            type="checkbox"
-            checked={hasOrg}
-            onChange={(e) => setHasOrg(e.target.checked)}
-          />
+          <input type="checkbox" checked={hasOrg} onChange={(e) => setHasOrg(e.target.checked)} />
           Linked to org
         </label>
         <span className="ml-auto opacity-60">Visual preview only — no checkout</span>
@@ -145,12 +136,10 @@ function PaywallPreview() {
           <div className="flex items-start gap-3">
             <Building2 className="mt-0.5 h-5 w-5 shrink-0 text-text-secondary" />
             <div className="flex-1 text-sm">
-              <p className="font-semibold text-text-primary">
-                Joining through a club?
-              </p>
+              <p className="font-semibold text-text-primary">Joining through a club?</p>
               <p className="mt-1 text-text-secondary">
-                If your academy or association is a Gradus partner, they can cover
-                your subscription.
+                If your academy or association is a Gradus partner, they can cover your
+                subscription.
               </p>
               {!clubOpen ? (
                 <button
@@ -164,9 +153,7 @@ function PaywallPreview() {
                 <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-start">
                   <Input
                     value={clubInput}
-                    onChange={(e) =>
-                      setClubInput(e.target.value.toUpperCase().slice(0, 32))
-                    }
+                    onChange={(e) => setClubInput(e.target.value.toUpperCase().slice(0, 32))}
                     placeholder="Club code"
                     className="font-mono uppercase tracking-widest sm:flex-1"
                     autoComplete="off"
@@ -184,11 +171,7 @@ function PaywallPreview() {
                     >
                       Cancel
                     </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      disabled={!clubInput.trim()}
-                    >
+                    <Button type="button" size="sm" disabled={!clubInput.trim()}>
                       Join
                     </Button>
                   </div>
@@ -234,8 +217,8 @@ function PaywallPreview() {
                       applied
                     </p>
                     <p className="mt-0.5 text-xs text-text-secondary">
-                      3 months free — applies to Coach Pro. Card required, charges
-                      resume after free months.
+                      3 months free — applies to Coach Pro. Card required, charges resume after free
+                      months.
                     </p>
                   </div>
                   <button
@@ -254,9 +237,7 @@ function PaywallPreview() {
                   <div className="flex-1">
                     <Input
                       value={promoInput}
-                      onChange={(e) =>
-                        setPromoInput(e.target.value.toUpperCase().slice(0, 32))
-                      }
+                      onChange={(e) => setPromoInput(e.target.value.toUpperCase().slice(0, 32))}
                       onKeyDown={(e) => {
                         if (e.key === "Enter") {
                           e.preventDefault();
@@ -287,11 +268,7 @@ function PaywallPreview() {
                       onClick={applyPromo}
                       disabled={validating || !promoInput.trim()}
                     >
-                      {validating ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        "Apply"
-                      )}
+                      {validating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Apply"}
                     </Button>
                   </div>
                 </div>
@@ -299,7 +276,6 @@ function PaywallPreview() {
             </div>
           )}
         </div>
-
 
         <div
           className={cn(
@@ -315,15 +291,11 @@ function PaywallPreview() {
               onClick={() => setInterval(iv)}
               className={cn(
                 "rounded-full px-4 py-1.5 press-soft",
-                interval === iv
-                  ? "bg-card text-text-primary shadow-sm"
-                  : "text-text-secondary",
+                interval === iv ? "bg-card text-text-primary shadow-sm" : "text-text-secondary",
               )}
             >
               {iv === "month" ? "Monthly" : "Yearly"}
-              {iv === "year" && (
-                <span className="ml-1 text-xs text-accent-ink">save 15%</span>
-              )}
+              {iv === "year" && <span className="ml-1 text-xs text-accent-ink">save 15%</span>}
             </button>
           ))}
         </div>
@@ -346,8 +318,6 @@ function PaywallPreview() {
             const isPro = tier === "coach_pro";
             const coachFoundingActive = tier === "coach" && isFoundingCoach;
             const promoAppliesHere = isPro && promoApplied != null;
-
-
 
             return (
               <div
@@ -385,13 +355,9 @@ function PaywallPreview() {
                       <span className="font-display text-2xl text-text-primary tabular-nums sm:text-4xl">
                         ${price.monthlyEquivalent}
                       </span>
-                      <span className="text-xs text-text-secondary sm:text-sm">
-                        / mo
-                      </span>
+                      <span className="text-xs text-text-secondary sm:text-sm">/ mo</span>
                     </div>
-                    <p className="mt-1 text-[11px] text-text-tertiary sm:text-xs">
-                      {price.billed}
-                    </p>
+                    <p className="mt-1 text-[11px] text-text-tertiary sm:text-xs">{price.billed}</p>
                   </>
                 )}
 
@@ -431,7 +397,6 @@ function PaywallPreview() {
           })}
         </div>
 
-
         {hasOrg && (
           <div className="mt-4 text-center">
             <button
@@ -444,10 +409,7 @@ function PaywallPreview() {
         )}
 
         <div className="mt-5 border-t border-divider pt-3 text-center">
-          <button
-            type="button"
-            className="text-xs text-text-tertiary underline underline-offset-2"
-          >
+          <button type="button" className="text-xs text-text-tertiary underline underline-offset-2">
             Sign out
           </button>
         </div>

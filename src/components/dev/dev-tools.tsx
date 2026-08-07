@@ -22,12 +22,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 
-import {
-  DEV_ACCOUNTS,
-  ONBOARDING_STEPS,
-  type DevAccount,
-  type DevRole,
-} from "./dev-accounts";
+import { DEV_ACCOUNTS, ONBOARDING_STEPS, type DevAccount, type DevRole } from "./dev-accounts";
 
 const DEV_PASSWORD = import.meta.env.VITE_DEV_SEED_PASSWORD as string | undefined;
 
@@ -190,9 +185,7 @@ export function DevTools() {
         <ScrollArea className="h-full">
           <div className="space-y-6 p-6">
             <SheetHeader className="text-center">
-              <SheetTitle className="text-center">
-                DEV MODE
-              </SheetTitle>
+              <SheetTitle className="text-center">DEV MODE</SheetTitle>
               <SheetDescription>
                 Local development utilities. Not visible in production.
               </SheetDescription>
@@ -307,11 +300,8 @@ export function DevTools() {
                     </Button>
                   ))}
                 </div>
-
               ) : (
-                <p className="text-xs text-text-secondary">
-                  Sign in to see steps for this role.
-                </p>
+                <p className="text-xs text-text-secondary">Sign in to see steps for this role.</p>
               )}
             </section>
 
@@ -322,9 +312,9 @@ export function DevTools() {
                 Athlete signup walkthrough
               </h3>
               <p className="text-xs text-text-secondary">
-                Mints a fresh unclaimed athlete + invite code under the signed-in
-                parent, then jumps into the screen with{" "}
-                <code>?code=…</code> attached. Requires being signed in as a parent.
+                Mints a fresh unclaimed athlete + invite code under the signed-in parent, then jumps
+                into the screen with <code>?code=…</code> attached. Requires being signed in as a
+                parent.
               </p>
               <div className="grid gap-2">
                 <Button
@@ -361,7 +351,6 @@ export function DevTools() {
             </section>
 
             <Separator />
-
 
             <section className="space-y-3">
               <h3 className="text-xs font-bold uppercase tracking-widest text-text-secondary">

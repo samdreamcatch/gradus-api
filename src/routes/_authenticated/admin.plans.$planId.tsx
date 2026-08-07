@@ -36,7 +36,9 @@ function AdminPlanDetail() {
       ) : (
         <>
           <header className="space-y-1">
-            <Eyebrow size="small" tone="accent-ink">{data.plan.kind}</Eyebrow>
+            <Eyebrow size="small" tone="accent-ink">
+              {data.plan.kind}
+            </Eyebrow>
             <h1 className="font-display text-h1 text-text-primary">
               {data.plan.title || "Untitled plan"}
             </h1>

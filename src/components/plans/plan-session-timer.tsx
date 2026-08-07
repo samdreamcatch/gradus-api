@@ -3,10 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { IdleSlide, RunningPill } from "@/components/plans/session-timer-controls";
-import {
-  submitAthletePlanSession,
-  submitPlanSession,
-} from "@/lib/plan-sessions.functions";
+import { submitAthletePlanSession, submitPlanSession } from "@/lib/plan-sessions.functions";
 import {
   useActiveSession,
   useLiveElapsedMs,
@@ -33,9 +30,7 @@ export function PlanSessionTimer({
   const [showFeedback, setShowFeedback] = useState(false);
 
   const queryClient = useQueryClient();
-  const submitFn = useServerFn(
-    role === "parent" ? submitPlanSession : submitAthletePlanSession,
-  );
+  const submitFn = useServerFn(role === "parent" ? submitPlanSession : submitAthletePlanSession);
   const submitMutation = useMutation({
     mutationFn: submitFn,
     onSuccess: () => {

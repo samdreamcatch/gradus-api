@@ -9,17 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Chip } from "@/components/ui/chip";
 import { Badge } from "@/components/ui/badge";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { PromoCodeField } from "@/components/signup/promo-code-field";
 import { savePendingPromoCode } from "@/lib/pending-promo-code";
 
@@ -82,7 +73,11 @@ function ParentAthletesPage() {
   const codeIsFull = /^[A-Z2-9]{8}$/.test(trimmedCode);
   const codeInvalid = trimmedCode.length > 0 && !codeIsFull;
 
-  const { data: coach, isLoading, error: coachError } = useQuery({
+  const {
+    data: coach,
+    isLoading,
+    error: coachError,
+  } = useQuery({
     queryKey: ["coach-by-code", codeIsFull ? trimmedCode : null],
     queryFn: () => fetchCoach({ data: { code: trimmedCode } }),
     enabled: codeIsFull,
@@ -103,11 +98,7 @@ function ParentAthletesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasPrefill]);
 
-  const updateAthlete = (
-    i: number,
-    field: "firstName" | "lastName" | "birthdate",
-    v: string,
-  ) => {
+  const updateAthlete = (i: number, field: "firstName" | "lastName" | "birthdate", v: string) => {
     setAthletes((arr) => arr.map((a, idx) => (idx === i ? { ...a, [field]: v } : a)));
   };
   const addAthlete = () =>
@@ -153,7 +144,9 @@ function ParentAthletesPage() {
       const { code: normalized } = await startSignup({
         data: { firstName: parentFirst, lastName: parentLast, code: effectiveCode },
       });
-      await linkAthletes({ data: { code: normalized ?? effectiveCode ?? null, athletes: cleaned } });
+      await linkAthletes({
+        data: { code: normalized ?? effectiveCode ?? null, athletes: cleaned },
+      });
       navigate({
         to: "/signup/parent/goals",
         search: effectiveCode ? { code: effectiveCode } : {},
@@ -164,7 +157,6 @@ function ParentAthletesPage() {
       setSubmitting(false);
     }
   };
-
 
   const coachName = coach ? `${coach.firstName} ${coach.lastName}`.trim() : null;
 
@@ -180,9 +172,7 @@ function ParentAthletesPage() {
               {isLoading ? (
                 <p className="mt-2 text-text-tertiary">Loading coach…</p>
               ) : coachError ? (
-                <p className="mt-2 text-sm text-destructive">
-                  {(coachError as Error).message}
-                </p>
+                <p className="mt-2 text-sm text-destructive">{(coachError as Error).message}</p>
               ) : (
                 <>
                   <h1 className="mt-2 font-display text-3xl text-text-primary">
@@ -191,15 +181,10 @@ function ParentAthletesPage() {
                   {coach && coach.sports.length > 0 && (
                     <div className="mt-3 flex flex-wrap justify-center gap-2">
                       {coach.sports.map((s) => (
-                        <Chip
-                          key={s}
-                          tone="muted"
-                          tracking="wide"
-                        >
+                        <Chip key={s} tone="muted" tracking="wide">
                           {s}
                         </Chip>
                       ))}
-
                     </div>
                   )}
                 </>
@@ -207,9 +192,7 @@ function ParentAthletesPage() {
             </>
           ) : (
             <>
-              <h1 className="mt-2 font-display text-3xl text-text-primary">
-                Create your Profiles
-              </h1>
+              <h1 className="mt-2 font-display text-3xl text-text-primary">Create your Profiles</h1>
 
               <p className="mt-2 text-sm text-text-secondary">
                 Add yourself and each athlete in your family.
@@ -217,7 +200,6 @@ function ParentAthletesPage() {
             </>
           )}
         </div>
-
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-2">
@@ -304,7 +286,6 @@ function ParentAthletesPage() {
                   )}
                 </div>
               ))}
-
             </div>
             <Button
               type="button"
@@ -317,11 +298,7 @@ function ParentAthletesPage() {
             </Button>
           </div>
 
-          <Collapsible
-            open={codesOpen}
-            onOpenChange={setCodesOpen}
-            className="space-y-3"
-          >
+          <Collapsible open={codesOpen} onOpenChange={setCodesOpen} className="space-y-3">
             <CollapsibleTrigger asChild>
               <Button
                 type="button"
@@ -330,9 +307,7 @@ function ParentAthletesPage() {
               >
                 <span className="flex items-center gap-2">
                   Optional — enter a coach or promo code
-                  {!codesOpen && hasPrefill && (
-                    <Badge variant="secondary">Code applied</Badge>
-                  )}
+                  {!codesOpen && hasPrefill && <Badge variant="secondary">Code applied</Badge>}
                 </span>
                 <ChevronDown
                   className={`size-4 transition-transform ${codesOpen ? "rotate-180" : ""}`}
@@ -360,7 +335,8 @@ function ParentAthletesPage() {
                         </button>
                       </TooltipTrigger>
                       <TooltipContent side="top" className="max-w-xs">
-                        Have a coach&apos;s 8-character code? Enter it to link your athlete now. You can skip this and add a coach later.
+                        Have a coach&apos;s 8-character code? Enter it to link your athlete now. You
+                        can skip this and add a coach later.
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
@@ -386,15 +362,10 @@ function ParentAthletesPage() {
 
           {error && <p className="text-sm text-destructive">{error}</p>}
 
-          <Button
-            type="submit"
-            className="w-full"
-            disabled={submitting || (codeIsFull && !coach)}
-          >
+          <Button type="submit" className="w-full" disabled={submitting || (codeIsFull && !coach)}>
             {submitting ? "Saving..." : "Continue"}
           </Button>
         </form>
-
       </div>
     </div>
   );

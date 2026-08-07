@@ -55,10 +55,8 @@ export function registerServiceWorker(): void {
   }
 
   window.addEventListener("load", () => {
-    navigator.serviceWorker
-      .register(SW_URL, { type: "classic", scope: "/" })
-      .catch((err) => {
-        console.warn("[pwa] service worker registration failed", err);
-      });
+    navigator.serviceWorker.register(SW_URL, { type: "classic", scope: "/" }).catch((err) => {
+      console.warn("[pwa] service worker registration failed", err);
+    });
   });
 }

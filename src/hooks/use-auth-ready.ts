@@ -35,6 +35,5 @@ export function useAuthReady() {
     };
   }, []);
 
-
   return { user, isReady };
 }

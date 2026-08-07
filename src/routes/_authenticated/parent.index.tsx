@@ -12,9 +12,7 @@ const parentSignupStatusQueryOptions = {
 
 export const Route = createFileRoute("/_authenticated/parent/")({
   loader: async ({ context }) => {
-    const status = await context.queryClient.ensureQueryData(
-      parentSignupStatusQueryOptions,
-    );
+    const status = await context.queryClient.ensureQueryData(parentSignupStatusQueryOptions);
     if (!status.hasParentProfile) {
       throw redirect({ to: "/signup/parent" });
     }
@@ -31,9 +29,7 @@ export const Route = createFileRoute("/_authenticated/parent/")({
     return (
       <div className="flex min-h-dvh items-center justify-center p-6 text-center">
         <div>
-          <p className="text-sm text-text-secondary">
-            Couldn&apos;t load your account.
-          </p>
+          <p className="text-sm text-text-secondary">Couldn&apos;t load your account.</p>
           <p className="mt-2 text-xs text-text-tertiary">{error.message}</p>
         </div>
       </div>
@@ -54,8 +50,7 @@ function ParentHome() {
     queryFn: () => fetchStatus(),
   });
 
-  const showInviteCard =
-    !!status?.hasParentProfile && status.hasAthletes && !status.hasAnyCoach;
+  const showInviteCard = !!status?.hasParentProfile && status.hasAthletes && !status.hasAnyCoach;
 
   return (
     <div className="mx-auto max-w-2xl px-3 py-6 pb-24">
@@ -67,8 +62,8 @@ function ParentHome() {
         <div className="mb-6 rounded-2xl bg-card p-6 shadow-card">
           <h1 className="text-h3 font-display">Welcome back</h1>
           <p className="mt-2 text-sm text-text-secondary">
-            Head to Plans or Messages from the bottom nav to see what your coach
-            is working on with your athlete.
+            Head to Plans or Messages from the bottom nav to see what your coach is working on with
+            your athlete.
           </p>
         </div>
       )}

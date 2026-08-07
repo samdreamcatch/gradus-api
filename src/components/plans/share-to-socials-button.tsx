@@ -27,7 +27,6 @@ export function ShareToSocialsButton({
   onShareInvoked?: () => void;
   disabled?: boolean;
 }) {
-
   const shareFn = useServerFn(getOrCreateShareToken);
   const [busy, setBusy] = useState(false);
 
@@ -54,8 +53,7 @@ export function ShareToSocialsButton({
   const onClick = async () => {
     if (busy) return;
     const caption = `${planTitle} — My workout on Gradus`;
-    const canShare =
-      typeof navigator !== "undefined" && typeof navigator.share === "function";
+    const canShare = typeof navigator !== "undefined" && typeof navigator.share === "function";
 
     // Hot path: token already cached — invoke share sheet synchronously
     // in the click handler to keep user activation alive.
@@ -117,4 +115,3 @@ export function ShareToSocialsButton({
     </button>
   );
 }
-

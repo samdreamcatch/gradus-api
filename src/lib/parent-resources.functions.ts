@@ -123,9 +123,7 @@ export const getParentResources = createServerFn({ method: "GET" })
 
 export const getResourceSignedUrl = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) =>
-    z.object({ resourceId: z.string().uuid() }).parse(input),
-  )
+  .inputValidator((input) => z.object({ resourceId: z.string().uuid() }).parse(input))
   .handler(async ({ context, data }): Promise<{ url: string }> => {
     const supabase = context.supabase as Client;
     // RLS restricts visibility.

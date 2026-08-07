@@ -2,11 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { Building2, ChevronDown, Search } from "lucide-react";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Command,
   CommandEmpty,
@@ -17,10 +13,7 @@ import {
   CommandSeparator,
 } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
-import {
-  getPopularOrganizations,
-  searchOrganizations,
-} from "@/lib/coach-org.functions";
+import { getPopularOrganizations, searchOrganizations } from "@/lib/coach-org.functions";
 
 export type OrgOption = {
   id: string;
@@ -70,8 +63,8 @@ export function OrgSearchCombobox({ selected, onSelect, onNotListed }: Props) {
   const results = useMemo<OrgOption[]>(() => {
     const source =
       debounced.length > 0
-        ? searchQuery.data?.organizations ?? []
-        : popularQuery.data?.organizations ?? [];
+        ? (searchQuery.data?.organizations ?? [])
+        : (popularQuery.data?.organizations ?? []);
     return source.map((o) => ({
       id: o.id,
       name: o.name,
@@ -95,14 +88,10 @@ export function OrgSearchCombobox({ selected, onSelect, onNotListed }: Props) {
             <span className="flex min-w-0 items-center gap-2">
               <Building2 className="h-4 w-4 shrink-0 text-accent-ink" />
               <span className="truncate">
-                <span className="font-semibold text-text-primary">
-                  {selected.name}
-                </span>
+                <span className="font-semibold text-text-primary">{selected.name}</span>
                 {(selected.city || selected.region) && (
                   <span className="ml-2 text-text-secondary">
-                    {[selected.city, selected.region]
-                      .filter(Boolean)
-                      .join(", ")}
+                    {[selected.city, selected.region].filter(Boolean).join(", ")}
                   </span>
                 )}
               </span>
@@ -129,19 +118,15 @@ export function OrgSearchCombobox({ selected, onSelect, onNotListed }: Props) {
             onValueChange={setQuery}
           />
           <CommandList>
-            {results.length === 0 &&
-              !searchQuery.isFetching &&
-              !popularQuery.isFetching && (
-                <CommandEmpty>
-                  {debounced.length > 0
-                    ? "No matches. Your club may not be on Gradus yet."
-                    : "Start typing your club's name."}
-                </CommandEmpty>
-              )}
+            {results.length === 0 && !searchQuery.isFetching && !popularQuery.isFetching && (
+              <CommandEmpty>
+                {debounced.length > 0
+                  ? "No matches. Your club may not be on Gradus yet."
+                  : "Start typing your club's name."}
+              </CommandEmpty>
+            )}
             {results.length > 0 && (
-              <CommandGroup
-                heading={debounced.length > 0 ? "Matches" : "Popular clubs"}
-              >
+              <CommandGroup heading={debounced.length > 0 ? "Matches" : "Popular clubs"}>
                 {results.map((o) => (
                   <CommandItem
                     key={o.id}
@@ -152,9 +137,7 @@ export function OrgSearchCombobox({ selected, onSelect, onNotListed }: Props) {
                     }}
                     className="flex flex-col items-start gap-0.5"
                   >
-                    <span className="font-semibold text-text-primary">
-                      {o.name}
-                    </span>
+                    <span className="font-semibold text-text-primary">{o.name}</span>
                     {(o.city || o.region) && (
                       <span className="text-xs text-text-secondary">
                         {[o.city, o.region].filter(Boolean).join(", ")}

@@ -4,7 +4,6 @@ import { ChevronDown, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getPreLessonBriefing } from "@/lib/pre-lesson-briefing.functions";
 
-
 export function PreLessonBriefing({
   athleteId,
   athleteName,
@@ -24,7 +23,6 @@ export function PreLessonBriefing({
     queryFn: () => getPreLessonBriefing({ data: { athleteId, lessonDate } }),
     staleTime: 5 * 60_000,
   });
-
 
   const time = formatTime(startMinute);
 

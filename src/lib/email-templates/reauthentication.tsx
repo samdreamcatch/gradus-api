@@ -32,7 +32,6 @@ export const ReauthenticationEmail = ({ token, copyOverrides }: Reauthentication
           </Container>
         </PageShell>
       </Body>
-
     </Html>
   );
 };

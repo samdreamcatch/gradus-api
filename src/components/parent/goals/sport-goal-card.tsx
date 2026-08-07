@@ -64,8 +64,6 @@ export function SportGoalCard({
   const gi = levels.findIndex((l) => l.key === goal.seasonGoalKey);
   const distance = ci >= 0 && gi >= 0 ? Math.abs(gi - ci) : null;
 
-  
-
   const bandText =
     lower != null && upper != null
       ? lower === upper
@@ -132,10 +130,7 @@ export function SportGoalCard({
 
       {(goal.longTermGoal.trim().length > 0 || onSaveLongTermGoal) && (
         <div className="mt-5 border-t border-divider pt-4">
-          <LongTermGoalSection
-            value={goal.longTermGoal}
-            onSave={onSaveLongTermGoal}
-          />
+          <LongTermGoalSection value={goal.longTermGoal} onSave={onSaveLongTermGoal} />
         </div>
       )}
     </article>
@@ -236,9 +231,7 @@ function LongTermGoalSection({
           </div>
         </div>
       ) : value.trim().length > 0 ? (
-        <p className="mt-1 font-hand text-lg leading-snug text-text-primary">
-          “{value}”
-        </p>
+        <p className="mt-1 font-hand text-lg leading-snug text-text-primary">“{value}”</p>
       ) : (
         <p className="mt-1 font-hand text-lg leading-snug text-text-secondary">
           Add your long-term goal…

@@ -14,11 +14,7 @@ import {
   Sparkles,
   Trash2,
 } from "lucide-react";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { AnswerMarkdown } from "@/components/parent/answer-markdown";
 
 import { AthleteBottomNav } from "@/components/athlete/bottom-nav";
@@ -55,9 +51,7 @@ export const Route = createFileRoute("/_authenticated/athlete/resources/")({
     </div>
   ),
   notFoundComponent: () => (
-    <div className="mx-auto max-w-2xl px-3 py-6 text-sm text-text-secondary">
-      Not found.
-    </div>
+    <div className="mx-auto max-w-2xl px-3 py-6 text-sm text-text-secondary">Not found.</div>
   ),
 });
 
@@ -96,10 +90,7 @@ function AthleteResourcesPage() {
           />
           {sports.length > 1 ? (
             <div className="mt-2.5">
-              <Select
-                value={activeSport ?? undefined}
-                onValueChange={(v) => setSelectedSport(v)}
-              >
+              <Select value={activeSport ?? undefined} onValueChange={(v) => setSelectedSport(v)}>
                 <SelectTrigger
                   className="h-8 w-full rounded-full border-divider bg-card px-3 text-xs font-bold text-text-primary shadow-none"
                   aria-label="Sport"
@@ -120,9 +111,7 @@ function AthleteResourcesPage() {
       ) : null}
 
       {isLoading ? (
-        <p className="mt-8 py-5 text-center text-sm text-text-secondary">
-          Loading…
-        </p>
+        <p className="mt-8 py-5 text-center text-sm text-text-secondary">Loading…</p>
       ) : sports.length === 0 ? (
         <div className="mt-8 rounded-2xl border border-dashed border-divider bg-card p-8 text-center">
           <p className="font-hand text-2xl text-text-secondary">
@@ -216,15 +205,12 @@ function SafeSportPanel() {
     <section className="mt-5 space-y-6">
       {/* Header */}
       <div className="rounded-2xl border border-divider bg-card p-6">
-        <h2 className="font-display text-2xl text-text-primary">
-          Something feel off?
-        </h2>
+        <h2 className="font-display text-2xl text-text-primary">Something feel off?</h2>
         <p className="mt-3 text-sm text-text-secondary">
-          If something about sport and practice is making you feel unsafe,
-          weird, or just not right — you don't have to figure it out alone.
+          If something about sport and practice is making you feel unsafe, weird, or just not right
+          — you don't have to figure it out alone.
         </p>
       </div>
-
 
       <CountsDisclosure />
       <TrustedAdultDisclosure />
@@ -242,11 +228,10 @@ function SafeSportPanel() {
           ))}
         </ul>
         <p className="mt-3 px-1 text-xs text-text-tertiary">
-          These are independent services — not Gradus, and not your coach.
-          What you share with them stays with them.
+          These are independent services — not Gradus, and not your coach. What you share with them
+          stays with them.
         </p>
       </div>
-
 
       {/* More from SafeSport */}
       <a
@@ -260,12 +245,9 @@ function SafeSportPanel() {
             <Globe className="h-4 w-4" aria-hidden />
           </span>
           <div className="min-w-0">
-            <p className="text-sm font-medium text-text-primary">
-              More from SafeSport
-            </p>
+            <p className="text-sm font-medium text-text-primary">More from SafeSport</p>
             <p className="mt-1 text-xs text-text-secondary">
-              Training videos, athlete toolkits, and resources from the U.S.
-              Center for SafeSport.
+              Training videos, athlete toolkits, and resources from the U.S. Center for SafeSport.
             </p>
           </div>
         </div>
@@ -286,11 +268,7 @@ function HotlineCard({ hotline }: { hotline: Hotline }) {
       <p className="mt-2 text-sm text-text-secondary">{hotline.blurb}</p>
       <div className="mt-3 flex flex-wrap gap-2">
         {hotline.tel && (
-          <Button
-            asChild
-            size="sm"
-            className="rounded-full"
-          >
+          <Button asChild size="sm" className="rounded-full">
             <a href={`tel:${hotline.tel}`}>
               <Phone className="h-3.5 w-3.5" aria-hidden />
               Call {formatTel(hotline.tel)}
@@ -298,24 +276,14 @@ function HotlineCard({ hotline }: { hotline: Hotline }) {
           </Button>
         )}
         {hotline.sms && (
-          <Button
-            asChild
-            variant="outline"
-            size="sm"
-            className="rounded-full"
-          >
+          <Button asChild variant="outline" size="sm" className="rounded-full">
             <a href={`sms:${hotline.sms}`}>
               <MessageSquare className="h-3.5 w-3.5" aria-hidden />
               Text {hotline.sms}
             </a>
           </Button>
         )}
-        <Button
-          asChild
-          variant="outline"
-          size="sm"
-          className="rounded-full"
-        >
+        <Button asChild variant="outline" size="sm" className="rounded-full">
           <a href={hotline.url} target="_blank" rel="noopener noreferrer">
             <Globe className="h-3.5 w-3.5" aria-hidden />
             Website
@@ -330,9 +298,7 @@ function CountsDisclosure() {
   return (
     <Collapsible className="border-t border-divider pt-4">
       <CollapsibleTrigger className="group flex w-full items-center justify-between text-left">
-        <span className="text-sm font-medium text-text-primary">
-          Not sure if it "counts"?
-        </span>
+        <span className="text-sm font-medium text-text-primary">Not sure if it "counts"?</span>
         <ChevronDown
           className="h-4 w-4 shrink-0 text-text-tertiary transition-transform group-data-[state=open]:rotate-180"
           aria-hidden
@@ -340,8 +306,8 @@ function CountsDisclosure() {
       </CollapsibleTrigger>
       <CollapsibleContent className="mt-3 space-y-3">
         <p className="text-sm text-text-secondary">
-          If any of these are happening, it's worth talking to someone. You
-          don't have to decide what it is — that's their job.
+          If any of these are happening, it's worth talking to someone. You don't have to decide
+          what it is — that's their job.
         </p>
         <ul className="space-y-2">
           {COUNTS_ITEMS.map((t) => (
@@ -349,10 +315,7 @@ function CountsDisclosure() {
               key={t}
               className="flex gap-2 rounded-xl border border-divider bg-card px-3 py-2 text-sm text-text-secondary"
             >
-              <span
-                aria-hidden
-                className="mt-1.5 size-1.5 shrink-0 rounded-full bg-accent"
-              />
+              <span aria-hidden className="mt-1.5 size-1.5 shrink-0 rounded-full bg-accent" />
               <span>{t}</span>
             </li>
           ))}
@@ -376,19 +339,17 @@ function TrustedAdultDisclosure() {
       </CollapsibleTrigger>
       <CollapsibleContent className="mt-3 space-y-3">
         <p className="text-sm text-text-secondary">
-          That could be a parent, another coach, a teacher, a doctor, or an
-          older sibling. You don't have to have the right words. Try something
-          like:
+          That could be a parent, another coach, a teacher, a doctor, or an older sibling. You don't
+          have to have the right words. Try something like:
         </p>
         <div className="rounded-2xl border border-divider bg-card p-4">
           <p className="text-sm italic text-text-secondary">
-            "Something's been bugging me about practice and I don't really
-            know how to explain it. Can we talk for a few minutes?"
+            "Something's been bugging me about practice and I don't really know how to explain it.
+            Can we talk for a few minutes?"
           </p>
         </div>
         <p className="text-xs text-text-tertiary">
-          If the first adult doesn't get it, try another one. That's not on
-          you.
+          If the first adult doesn't get it, try another one. That's not on you.
         </p>
       </CollapsibleContent>
     </Collapsible>
@@ -413,8 +374,7 @@ function AskGradusCard({ sport }: { sport: string }) {
   });
 
   const saveMutation = useMutation({
-    mutationFn: (vars: { question: string; answer: string }) =>
-      save({ data: { sport, ...vars } }),
+    mutationFn: (vars: { question: string; answer: string }) => save({ data: { sport, ...vars } }),
     onSuccess: () => {
       setSaved(true);
       qc.invalidateQueries({ queryKey: ["saved-answers"] });
@@ -475,8 +435,7 @@ function AskGradusCard({ sport }: { sport: string }) {
 
       {askMutation.error ? (
         <div className="mt-3 rounded-2xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
-          {(askMutation.error as Error).message ||
-            "Something went wrong asking Gradus."}
+          {(askMutation.error as Error).message || "Something went wrong asking Gradus."}
         </div>
       ) : null}
 
@@ -565,11 +524,7 @@ function SavedAnswersList({ sport }: { sport: string }) {
   );
 
   if (isLoading) {
-    return (
-      <p className="mt-5 py-5 text-center text-sm text-text-secondary">
-        Loading…
-      </p>
-    );
+    return <p className="mt-5 py-5 text-center text-sm text-text-secondary">Loading…</p>;
   }
 
   if (items.length === 0) {

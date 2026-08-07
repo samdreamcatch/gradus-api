@@ -65,7 +65,6 @@ export interface PlanMoveDTO {
   libraryMove: LibraryMoveSnapshotDTO | null;
 }
 
-
 export interface PlanSummaryDTO {
   id: string;
   title: string;
@@ -105,7 +104,9 @@ export const listCoachAthletes = createServerFn({ method: "GET" })
       .eq("coach_id", coachId);
     if (error) dbError(error);
     const athletes: AthleteOptionDTO[] = (data ?? []).map((row) => {
-      const a = (row as unknown as { athletes: { id: string; first_name: string; last_name: string } }).athletes;
+      const a = (
+        row as unknown as { athletes: { id: string; first_name: string; last_name: string } }
+      ).athletes;
       return { id: a.id, name: `${a.first_name} ${a.last_name}`.trim() };
     });
     athletes.sort((a, b) => a.name.localeCompare(b.name));
@@ -136,7 +137,6 @@ const listInput = z.object({
   kind: z.enum(["plan", "template"]).optional(),
   sport: z.string().optional(),
 });
-
 
 export const listPlans = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -171,16 +171,10 @@ export const listPlans = createServerFn({ method: "POST" })
             .in("plan_id", planIds)
         : Promise.resolve({ data: [], error: null }),
       athleteIds.length
-        ? supabase
-            .from("athletes")
-            .select("id, first_name, last_name")
-            .in("id", athleteIds)
+        ? supabase.from("athletes").select("id, first_name, last_name").in("id", athleteIds)
         : Promise.resolve({ data: [], error: null }),
       data.sport && athleteIds.length
-        ? supabase
-            .from("athlete_goals")
-            .select("athlete_id, sport")
-            .in("athlete_id", athleteIds)
+        ? supabase.from("athlete_goals").select("athlete_id, sport").in("athlete_id", athleteIds)
         : Promise.resolve({ data: [], error: null }),
     ]);
     if (movesRes.error) dbError(movesRes.error);
@@ -191,11 +185,7 @@ export const listPlans = createServerFn({ method: "POST" })
     const moveSportMap = new Map<string, string>();
     if (data.sport) {
       const moveIds = Array.from(
-        new Set(
-          (movesRes.data ?? [])
-            .map((m) => m.move_id)
-            .filter((x): x is string => !!x),
-        ),
+        new Set((movesRes.data ?? []).map((m) => m.move_id).filter((x): x is string => !!x)),
       );
       if (moveIds.length) {
         const { data: moveRows, error: moveErr } = await supabase
@@ -317,19 +307,13 @@ export const getPlan = createServerFn({ method: "POST" })
 
     // Load library snapshots for any linked moves so the client can detect edits.
     const linkedMoveIds = Array.from(
-      new Set(
-        (moves ?? [])
-          .map((m) => m.move_id)
-          .filter((x): x is string => !!x),
-      ),
+      new Set((moves ?? []).map((m) => m.move_id).filter((x): x is string => !!x)),
     );
     const libSnapshot = new Map<string, LibraryMoveSnapshotDTO>();
     if (linkedMoveIds.length) {
       const { data: libRows, error: libErr } = await supabase
         .from("moves")
-        .select(
-          "id, name, description, cue, why, default_target_kind, default_target_value",
-        )
+        .select("id, name, description, cue, why, default_target_kind, default_target_value")
         .in("id", linkedMoveIds)
         .eq("coach_id", coachId);
       if (libErr) dbError(libErr);
@@ -358,7 +342,6 @@ export const getPlan = createServerFn({ method: "POST" })
       targetValue: Number(m.target_value),
       libraryMove: m.move_id ? (libSnapshot.get(m.move_id) ?? null) : null,
     }));
-
 
     const totalMinutes = planMoves
       .filter((m) => m.targetKind === "mins")
@@ -397,17 +380,19 @@ const saveInput = z.object({
   notes: z.string().max(4000).default(""),
   kind: z.enum(["plan", "template"]),
   athleteId: z.string().uuid().nullable().optional(),
-  moves: z.array(
-    z.object({
-      moveId: z.string().uuid().nullable().optional(),
-      name: z.string().min(1).max(160),
-      description: z.string().max(2000).default(""),
-      cue: z.string().max(1000).default(""),
-      why: z.string().max(1000).default(""),
-      targetKind: z.enum(["reps", "mins"]),
-      targetValue: z.number().min(0).max(10000),
-    }),
-  ).max(200),
+  moves: z
+    .array(
+      z.object({
+        moveId: z.string().uuid().nullable().optional(),
+        name: z.string().min(1).max(160),
+        description: z.string().max(2000).default(""),
+        cue: z.string().max(1000).default(""),
+        why: z.string().max(1000).default(""),
+        targetKind: z.enum(["reps", "mins"]),
+        targetValue: z.number().min(0).max(10000),
+      }),
+    )
+    .max(200),
 });
 
 export const savePlan = createServerFn({ method: "POST" })
@@ -449,10 +434,7 @@ export const savePlan = createServerFn({ method: "POST" })
     }
 
     // Replace plan_moves
-    const { error: delErr } = await supabase
-      .from("plan_moves")
-      .delete()
-      .eq("plan_id", planId);
+    const { error: delErr } = await supabase.from("plan_moves").delete().eq("plan_id", planId);
     if (delErr) dbError(delErr);
 
     if (data.moves.length) {
@@ -486,10 +468,12 @@ export interface ActivationConflict {
 export const getAthleteActivePlans = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z.object({
-      athleteId: z.string().uuid(),
-      excludePlanId: z.string().uuid().optional(),
-    }).parse(input),
+    z
+      .object({
+        athleteId: z.string().uuid(),
+        excludePlanId: z.string().uuid().optional(),
+      })
+      .parse(input),
   )
   .handler(async ({ context, data }) => {
     const supabase = context.supabase as Client;
@@ -510,11 +494,13 @@ export const getAthleteActivePlans = createServerFn({ method: "POST" })
 export const setPlanStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z.object({
-      id: z.string().uuid(),
-      status: z.enum(["active", "benched", "draft"]),
-      replaceId: z.string().uuid().optional(),
-    }).parse(input),
+    z
+      .object({
+        id: z.string().uuid(),
+        status: z.enum(["active", "benched", "draft"]),
+        replaceId: z.string().uuid().optional(),
+      })
+      .parse(input),
   )
   .handler(async ({ context, data }) => {
     const supabase = context.supabase as Client;
@@ -562,7 +548,6 @@ export const setPlanStatus = createServerFn({ method: "POST" })
         }
       }
 
-
       const { error } = await supabase
         .from("plans")
         .update({ status: "active" })
@@ -580,7 +565,6 @@ export const setPlanStatus = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-
 export const deletePlan = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
@@ -595,9 +579,7 @@ export const deletePlan = createServerFn({ method: "POST" })
     const plan = await assertPlanOwned(supabase, data.id, coachId);
     const deletable = plan.kind === "template" || plan.status === "draft";
     if (!deletable) {
-      throw new Error(
-        "Active or benched plans can't be deleted — bench the plan instead.",
-      );
+      throw new Error("Active or benched plans can't be deleted — bench the plan instead.");
     }
 
     await supabase.from("plan_moves").delete().eq("plan_id", data.id);
@@ -742,10 +724,7 @@ export const addMoveToPlan = createServerFn({ method: "POST" })
     });
     if (insErr) dbError(insErr);
 
-    await supabase
-      .from("plans")
-      .update({ updated_at: new Date().toISOString() })
-      .eq("id", plan.id);
+    await supabase.from("plans").update({ updated_at: new Date().toISOString() }).eq("id", plan.id);
 
     return { planId: plan.id, planTitle: plan.title || "Untitled plan" };
   });
@@ -860,8 +839,7 @@ export const updatePlan = createServerFn({ method: "POST" })
 
     // Resolve the post-patch shape and reconcile against the constraint.
     const nextKind = patch.kind ?? current.kind;
-    const nextAthlete =
-      patch.athlete_id !== undefined ? patch.athlete_id : current.athlete_id;
+    const nextAthlete = patch.athlete_id !== undefined ? patch.athlete_id : current.athlete_id;
     const nextStatus = current.status;
 
     if (nextKind === "template") {
@@ -887,7 +865,6 @@ export const updatePlan = createServerFn({ method: "POST" })
     return { ok: true as const };
   });
 
-
 /* ---------------- per-move plan updates ---------------- */
 
 const planMovePatch = z.object({
@@ -901,9 +878,7 @@ const planMovePatch = z.object({
 
 export const updatePlanMove = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) =>
-    z.object({ id: z.string().uuid(), patch: planMovePatch }).parse(input),
-  )
+  .inputValidator((input) => z.object({ id: z.string().uuid(), patch: planMovePatch }).parse(input))
   .handler(async ({ context, data }) => {
     const supabase = context.supabase as Client;
     const coachId = await getCoachId(supabase, context.userId);
@@ -983,10 +958,12 @@ export const removePlanMove = createServerFn({ method: "POST" })
 export const reorderPlanMoves = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z.object({
-      planId: z.string().uuid(),
-      orderedIds: z.array(z.string().uuid()).max(200),
-    }).parse(input),
+    z
+      .object({
+        planId: z.string().uuid(),
+        orderedIds: z.array(z.string().uuid()).max(200),
+      })
+      .parse(input),
   )
   .handler(async ({ context, data }) => {
     const supabase = context.supabase as Client;
@@ -1009,10 +986,12 @@ export const reorderPlanMoves = createServerFn({ method: "POST" })
 export const addLibraryMovesToPlan = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z.object({
-      planId: z.string().uuid(),
-      moveIds: z.array(z.string().uuid()).min(1).max(50),
-    }).parse(input),
+    z
+      .object({
+        planId: z.string().uuid(),
+        moveIds: z.array(z.string().uuid()).min(1).max(50),
+      })
+      .parse(input),
   )
   .handler(async ({ context, data }) => {
     const supabase = context.supabase as Client;

@@ -7,11 +7,7 @@ import { dbError } from "./db-error";
 
 type Client = SupabaseClient<Database>;
 
-const nameSchema = z
-  .string()
-  .trim()
-  .min(1, "Required")
-  .max(60, "Too long");
+const nameSchema = z.string().trim().min(1, "Required").max(60, "Too long");
 
 const inviteCodeSchema = z
   .string()
@@ -27,10 +23,7 @@ function ageInYears(birthdate: string): number {
   const now = new Date();
   let age = now.getFullYear() - y;
   const bMonth = m - 1;
-  if (
-    now.getMonth() < bMonth ||
-    (now.getMonth() === bMonth && now.getDate() < d)
-  ) {
+  if (now.getMonth() < bMonth || (now.getMonth() === bMonth && now.getDate() < d)) {
     age -= 1;
   }
   return age;
@@ -85,9 +78,7 @@ export const createSelfManagedAthlete = createServerFn({ method: "POST" })
     if (existing.error) dbError(existing.error);
     if (existing.data) {
       if (!existing.data.self_managed) {
-        throw new Error(
-          "This account is already registered as a parent-managed athlete.",
-        );
+        throw new Error("This account is already registered as a parent-managed athlete.");
       }
       return { athleteId: existing.data.id };
     }
@@ -121,9 +112,7 @@ export const createSelfManagedAthlete = createServerFn({ method: "POST" })
  */
 export const previewCoachForAdultAthlete = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z.object({ code: inviteCodeSchema }).parse(input),
-  )
+  .inputValidator((input: unknown) => z.object({ code: inviteCodeSchema }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -178,10 +167,7 @@ export const linkAdultAthleteToCoach = createServerFn({ method: "POST" })
     z
       .object({
         code: inviteCodeSchema,
-        sports: z
-          .array(z.string().min(1).max(64))
-          .min(1, "Pick at least one sport")
-          .max(20),
+        sports: z.array(z.string().min(1).max(64)).min(1, "Pick at least one sport").max(20),
       })
       .parse(input),
   )
@@ -249,9 +235,7 @@ export const linkAdultAthleteToCoach = createServerFn({ method: "POST" })
       coach_id: coachId,
       sport,
     }));
-    const scopeIns = await supabase
-      .from("coach_athlete_sports")
-      .insert(scopeRows);
+    const scopeIns = await supabase.from("coach_athlete_sports").insert(scopeRows);
     if (scopeIns.error) dbError(scopeIns.error);
 
     return { ok: true, coachId };
@@ -283,10 +267,7 @@ export const getAdultOnboardingStatus = createServerFn({ method: "GET" })
  * a self-managed athlete — every adult-scoped mutator below funnels through
  * here so a minor's user_id can never reach these code paths.
  */
-async function requireSelfManagedAthleteId(
-  supabase: Client,
-  userId: string,
-): Promise<string> {
+async function requireSelfManagedAthleteId(supabase: Client, userId: string): Promise<string> {
   const me = await supabase
     .from("athletes")
     .select("id, self_managed")
@@ -333,19 +314,17 @@ export const saveAdultAthleteGoals = createServerFn({ method: "POST" })
     if (primary.error) dbError(primary.error);
     const coachId = primary.data?.coach_id ?? null;
 
-    const up = await supabase
-      .from("athlete_goals")
-      .upsert(
-        {
-          athlete_id: athleteId,
-          coach_id: coachId,
-          sport: data.sport,
-          current_level_key: data.currentLevelKey,
-          season_goal_key: data.seasonGoalKey,
-          long_term_goal: data.longTermGoal,
-        },
-        { onConflict: "athlete_id,sport" },
-      );
+    const up = await supabase.from("athlete_goals").upsert(
+      {
+        athlete_id: athleteId,
+        coach_id: coachId,
+        sport: data.sport,
+        current_level_key: data.currentLevelKey,
+        season_goal_key: data.seasonGoalKey,
+        long_term_goal: data.longTermGoal,
+      },
+      { onConflict: "athlete_id,sport" },
+    );
     if (up.error) dbError(up.error);
     return { ok: true };
   });
@@ -378,9 +357,7 @@ export const listAdultAthleteCoaches = createServerFn({ method: "GET" })
       .select("coach_id")
       .eq("athlete_id", athleteId);
     if (links.error) dbError(links.error);
-    const coachIds = Array.from(
-      new Set((links.data ?? []).map((l) => l.coach_id)),
-    );
+    const coachIds = Array.from(new Set((links.data ?? []).map((l) => l.coach_id)));
     if (coachIds.length === 0) {
       return { selfManaged: true as const, coaches: [] };
     }
@@ -410,7 +387,6 @@ export const listAdultAthleteCoaches = createServerFn({ method: "GET" })
       sports: sportsByCoach.get(cp.id) ?? [],
     }));
 
-
     return { selfManaged: true as const, coaches };
   });
 
@@ -420,9 +396,7 @@ export const listAdultAthleteCoaches = createServerFn({ method: "GET" })
  */
 export const unlinkAdultAthleteFromCoach = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z.object({ coachId: z.string().uuid() }).parse(input),
-  )
+  .inputValidator((input: unknown) => z.object({ coachId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const supabase = context.supabase as Client;
     const athleteId = await requireSelfManagedAthleteId(supabase, context.userId);
@@ -462,10 +436,7 @@ export const updateAdultAthleteCoachSports = createServerFn({ method: "POST" })
     z
       .object({
         coachId: z.string().uuid(),
-        sports: z
-          .array(z.string().min(1).max(64))
-          .min(1, "Pick at least one sport")
-          .max(20),
+        sports: z.array(z.string().min(1).max(64)).min(1, "Pick at least one sport").max(20),
       })
       .parse(input),
   )
@@ -541,9 +512,7 @@ export const updateAdultAthleteCoachSports = createServerFn({ method: "POST" })
  */
 export const getCoachOfferedSportsForAdult = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z.object({ coachId: z.string().uuid() }).parse(input),
-  )
+  .inputValidator((input: unknown) => z.object({ coachId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const supabase = context.supabase as Client;

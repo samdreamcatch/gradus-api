@@ -57,8 +57,7 @@ function ParentPlansPage() {
 
   const { data: goalsData } = useGoalsDashboard();
   const goalsAthletes = goalsData ?? [];
-  const activeGoalsAthleteId =
-    goalsAthleteId || goalsAthletes[0]?.athleteId || "";
+  const activeGoalsAthleteId = goalsAthleteId || goalsAthletes[0]?.athleteId || "";
 
   const coaches = useMemo(() => {
     const map = new Map<string, string>();
@@ -80,7 +79,6 @@ function ParentPlansPage() {
       ),
     [plans, statusFilter, athleteId, coachId],
   );
-
 
   const triggerClass =
     "h-8 w-full rounded-full border-divider bg-card px-3 text-xs font-bold text-text-primary shadow-none";
@@ -149,10 +147,7 @@ function ParentPlansPage() {
           </div>
         ) : goalsAthletes.length > 1 ? (
           <div className="mt-2.5">
-            <Select
-              value={activeGoalsAthleteId}
-              onValueChange={setGoalsAthleteId}
-            >
+            <Select value={activeGoalsAthleteId} onValueChange={setGoalsAthleteId}>
               <SelectTrigger className={triggerClass} aria-label="Athlete">
                 <SelectValue placeholder="Select athlete" />
               </SelectTrigger>
@@ -196,7 +191,6 @@ function ParentPlansPage() {
           )}
         </div>
       )}
-
 
       <ParentBottomNav />
     </div>

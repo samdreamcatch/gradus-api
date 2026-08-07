@@ -106,19 +106,10 @@ function PaymentIssueBanner() {
           Your last payment failed. Update your card to keep coaching.
         </span>
         <div className="flex items-center gap-2">
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() => void openPortal()}
-            disabled={busy}
-          >
+          <Button size="sm" variant="secondary" onClick={() => void openPortal()} disabled={busy}>
             {busy ? "Opening…" : "Update card"}
           </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => navigate({ to: "/coach/settings" })}
-          >
+          <Button size="sm" variant="ghost" onClick={() => navigate({ to: "/coach/settings" })}>
             Settings
           </Button>
         </div>

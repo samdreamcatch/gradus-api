@@ -14,18 +14,13 @@ function read(): VisualViewportState {
   if (!vv) {
     return { height: window.innerHeight, offsetTop: 0, keyboardInset: 0 };
   }
-  const keyboardInset = Math.max(
-    0,
-    window.innerHeight - (vv.height + vv.offsetTop),
-  );
+  const keyboardInset = Math.max(0, window.innerHeight - (vv.height + vv.offsetTop));
   return { height: vv.height, offsetTop: vv.offsetTop, keyboardInset };
 }
 
 function isSame(a: VisualViewportState, b: VisualViewportState): boolean {
   return (
-    a.height === b.height &&
-    a.offsetTop === b.offsetTop &&
-    a.keyboardInset === b.keyboardInset
+    a.height === b.height && a.offsetTop === b.offsetTop && a.keyboardInset === b.keyboardInset
   );
 }
 

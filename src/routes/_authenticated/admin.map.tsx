@@ -2,20 +2,13 @@ import { useMemo } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import ReactFlow, {
-  Background,
-  Controls,
-  MiniMap,
-  type Node,
-  type Edge,
-} from "reactflow";
+import ReactFlow, { Background, Controls, MiniMap, type Node, type Edge } from "reactflow";
 import "reactflow/dist/style.css";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { getAdminConnectionMap } from "@/lib/admin.functions";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { chipClasses } from "@/components/ui/chip";
-
 
 const searchSchema = z.object({
   test: fallback(z.boolean(), false).default(false),
@@ -48,8 +41,7 @@ function AdminMap() {
     const colX = { coach: 0, athlete: 520, parent: 1040 };
     const ySpacing = 90;
 
-    const yFor = (i: number, total: number) =>
-      i * ySpacing - ((total - 1) * ySpacing) / 2;
+    const yFor = (i: number, total: number) => i * ySpacing - ((total - 1) * ySpacing) / 2;
 
     data.coaches.forEach((c, i) => {
       nodes.push({
@@ -129,10 +121,13 @@ function AdminMap() {
       </Link>
 
       <header className="space-y-1">
-        <Eyebrow size="small" tone="accent-ink">Internal</Eyebrow>
+        <Eyebrow size="small" tone="accent-ink">
+          Internal
+        </Eyebrow>
         <h1 className="font-display text-h1 text-text-primary">Connection map</h1>
         <p className="text-sm text-text-secondary">
-          Coaches, athletes, and parents and the links between them. Click a coach or parent to open their detail page. Pan and zoom with mouse / trackpad.
+          Coaches, athletes, and parents and the links between them. Click a coach or parent to open
+          their detail page. Pan and zoom with mouse / trackpad.
         </p>
       </header>
 
@@ -145,7 +140,6 @@ function AdminMap() {
         >
           {includeTest ? "Test users: on" : "Test users: hidden"}
         </Link>
-
       </div>
 
       <div className="h-[70vh] rounded-xl border border-divider bg-card overflow-hidden">
@@ -189,9 +183,26 @@ function nodeStyle(kind: NodeKind): React.CSSProperties {
     minWidth: 140,
     textAlign: "center",
   };
-  if (kind === "coach") return { ...base, borderColor: "var(--pen-pool)", background: "var(--pen-pool-wash)", color: "var(--pen-pool-ink)" };
-  if (kind === "parent") return { ...base, borderColor: "var(--pen-orange)", background: "var(--pen-orange-wash)", color: "var(--pen-orange-ink)" };
-  return { ...base, borderColor: "var(--pen-tennis)", background: "var(--pen-tennis-wash)", color: "var(--pen-tennis-ink)" };
+  if (kind === "coach")
+    return {
+      ...base,
+      borderColor: "var(--pen-pool)",
+      background: "var(--pen-pool-wash)",
+      color: "var(--pen-pool-ink)",
+    };
+  if (kind === "parent")
+    return {
+      ...base,
+      borderColor: "var(--pen-orange)",
+      background: "var(--pen-orange-wash)",
+      color: "var(--pen-orange-ink)",
+    };
+  return {
+    ...base,
+    borderColor: "var(--pen-tennis)",
+    background: "var(--pen-tennis-wash)",
+    color: "var(--pen-tennis-ink)",
+  };
 }
 
 function Legend() {
@@ -211,7 +222,10 @@ function Legend() {
 function Swatch({ color, label }: { color: string; label: string }) {
   return (
     <span className="flex items-center gap-2">
-      <span className="inline-block h-3 w-3 rounded-full border border-divider" style={{ background: color }} />
+      <span
+        className="inline-block h-3 w-3 rounded-full border border-divider"
+        style={{ background: color }}
+      />
       <span className="text-text-secondary">{label}</span>
     </span>
   );

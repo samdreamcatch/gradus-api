@@ -7,13 +7,23 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { Logo } from "@/components/logo";
 import { SportsPoster } from "@/components/ui/sports-poster";
 import { TurnstileWidget } from "@/components/auth/turnstile";
 import { verifyTurnstileToken } from "@/lib/turnstile.functions";
-import { CURRENT_TERMS_VERSION, stashPendingTermsAccept, clearPendingTermsAccept } from "@/lib/terms";
+import {
+  CURRENT_TERMS_VERSION,
+  stashPendingTermsAccept,
+  clearPendingTermsAccept,
+} from "@/lib/terms";
 import { savePendingPromoCode, clearPendingPromoCode } from "@/lib/pending-promo-code";
 
 import { z } from "zod";
@@ -203,7 +213,6 @@ function AdultAthleteSignupPage() {
     <div className="relative flex min-h-dvh items-center justify-center overflow-hidden px-4 py-12">
       <SportsPoster fill opacity={0.08} />
       <div className="relative w-full max-w-md rounded-2xl bg-card p-8 shadow-card">
-
         <div className="mb-8 text-center">
           <p className="text-xs font-bold uppercase tracking-widest text-accent-ink">Welcome to</p>
           <h1 className="mt-2">
@@ -333,7 +342,10 @@ function AdultAthleteSignupPage() {
 
         <p className="mt-6 text-center text-sm text-text-secondary">
           Under 18?{" "}
-          <Link to="/signup/athlete" className="font-semibold text-accent-ink underline-offset-4 hover:underline">
+          <Link
+            to="/signup/athlete"
+            className="font-semibold text-accent-ink underline-offset-4 hover:underline"
+          >
             Use a parent invite code
           </Link>
         </p>

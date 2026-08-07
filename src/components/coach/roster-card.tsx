@@ -44,8 +44,7 @@ export function RosterCard({
   const qc = useQueryClient();
 
   const removeMutation = useMutation({
-    mutationFn: () =>
-      removeAthleteFromRoster({ data: { athleteId: athlete.athleteId } }),
+    mutationFn: () => removeAthleteFromRoster({ data: { athleteId: athlete.athleteId } }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["coach", "roster"] });
       qc.invalidateQueries({ queryKey: ["coach", "roster", "practice-summaries"] });
@@ -73,10 +72,7 @@ export function RosterCard({
             {name}
           </span>
 
-          <div
-            onClick={(e) => e.stopPropagation()}
-            onPointerDown={(e) => e.stopPropagation()}
-          >
+          <div onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <span
@@ -114,9 +110,7 @@ export function RosterCard({
                   key={i}
                   className="rounded-pill border border-divider bg-elevated px-2 py-0.5 text-[11px] font-medium text-text-primary tabular-nums"
                 >
-                  <span className="text-text-secondary">
-                    {DAY_SHORT[s.dayOfWeek]}
-                  </span>{" "}
+                  <span className="text-text-secondary">{DAY_SHORT[s.dayOfWeek]}</span>{" "}
                   <span>{formatTime(s.startMinute)}</span>
                 </li>
               ))}
@@ -145,9 +139,9 @@ export function RosterCard({
           <AlertDialogHeader>
             <AlertDialogTitle>Remove {name} from your roster?</AlertDialogTitle>
             <AlertDialogDescription>
-              This unlinks the athlete from you. Their account, practice history,
-              and parent stay intact. Their recurring lessons with you are unassigned
-              and can be re-claimed later via your invite code.
+              This unlinks the athlete from you. Their account, practice history, and parent stay
+              intact. Their recurring lessons with you are unassigned and can be re-claimed later
+              via your invite code.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

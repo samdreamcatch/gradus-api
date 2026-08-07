@@ -42,8 +42,7 @@ export function ShareInviteButton({
   const handleClick = () => {
     if (!url) return;
     const shareData = { title, text, url };
-    const canShare =
-      typeof navigator !== "undefined" && typeof navigator.share === "function";
+    const canShare = typeof navigator !== "undefined" && typeof navigator.share === "function";
 
     if (canShare) {
       const p = navigator.share(shareData);

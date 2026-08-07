@@ -5,10 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, ChevronDown, MessageCircle, X } from "lucide-react";
 import { AthleteBottomNav } from "@/components/athlete/bottom-nav";
 import { cn } from "@/lib/utils";
-import {
-  getAthletePlan,
-  type AthletePlanMoveDTO,
-} from "@/lib/athlete-plans.functions";
+import { getAthletePlan, type AthletePlanMoveDTO } from "@/lib/athlete-plans.functions";
 import { MessageCoachAboutPlanDialog } from "@/components/plans/message-coach-about-plan-dialog";
 import { PlanSessionTimer } from "@/components/plans/plan-session-timer";
 import { ShareToSocialsButton } from "@/components/plans/share-to-socials-button";
@@ -34,9 +31,7 @@ export const Route = createFileRoute("/_authenticated/athlete/plans/$planId")({
     </div>
   ),
   notFoundComponent: () => (
-    <div className="mx-auto max-w-2xl px-3 py-8 text-sm text-text-secondary">
-      Plan not found.
-    </div>
+    <div className="mx-auto max-w-2xl px-3 py-8 text-sm text-text-secondary">Plan not found.</div>
   ),
 });
 
@@ -65,7 +60,6 @@ function AthletePlanDetail() {
       </div>
     );
   }
-
 
   return (
     <div className="mx-auto max-w-2xl px-3 pt-3 pb-24">
@@ -96,7 +90,6 @@ function AthletePlanDetail() {
         planTitle={plan.title}
       />
 
-
       <p className="mt-5 text-[11px] font-black uppercase tracking-widest text-text-secondary">
         From the Coach
       </p>
@@ -104,9 +97,7 @@ function AthletePlanDetail() {
       <div className="mt-2 space-y-1.5">
         {plan.moves.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-divider bg-card p-4 text-center">
-            <p className="font-hand text-xl text-text-secondary">
-              No moves in this plan yet.
-            </p>
+            <p className="font-hand text-xl text-text-secondary">No moves in this plan yet.</p>
           </div>
         ) : (
           plan.moves.map((m) => (
@@ -164,11 +155,7 @@ function MoveCard({
   const [whyShown, setWhyShown] = useState(false);
 
   const bodyText =
-    view === "how" && hasCue
-      ? move.cue
-      : hasDescription
-        ? move.description
-        : move.cue;
+    view === "how" && hasCue ? move.cue : hasDescription ? move.description : move.cue;
 
   return (
     <div
@@ -189,9 +176,7 @@ function MoveCard({
           </span>
           <span className="text-[11px] text-text-tertiary">{unit}</span>
         </span>
-        <span className="flex-1 font-display text-[15px] text-text-primary">
-          {move.name}
-        </span>
+        <span className="flex-1 font-display text-[15px] text-text-primary">{move.name}</span>
         <ChevronDown
           className={cn(
             "size-4 shrink-0 text-text-tertiary transition-transform",
@@ -202,9 +187,7 @@ function MoveCard({
 
       {expanded ? (
         <div className="space-y-2 px-3.5 pb-3">
-          {hasBoth ? (
-            <HowWhatToggle value={view} onChange={setView} />
-          ) : null}
+          {hasBoth ? <HowWhatToggle value={view} onChange={setView} /> : null}
 
           {bodyText ? (
             <p
@@ -277,23 +260,11 @@ function HowWhatToggle({
   );
 }
 
-function CoachNote({
-  label,
-  body,
-  onClose,
-}: {
-  label: string;
-  body: string;
-  onClose: () => void;
-}) {
+function CoachNote({ label, body, onClose }: { label: string; body: string; onClose: () => void }) {
   return (
     <div className="relative rounded-xl border border-accent/40 bg-accent/10 px-4 py-3 pr-9">
-      <p className="text-[10px] font-black uppercase tracking-widest text-accent-ink">
-        {label}
-      </p>
-      <p className="mt-1 text-[15px] leading-relaxed text-text-primary">
-        {body}
-      </p>
+      <p className="text-[10px] font-black uppercase tracking-widest text-accent-ink">{label}</p>
+      <p className="mt-1 text-[15px] leading-relaxed text-text-primary">{body}</p>
       <button
         type="button"
         onClick={onClose}

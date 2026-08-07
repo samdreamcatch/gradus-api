@@ -18,12 +18,7 @@ import { cn } from "@/lib/utils";
  * Tone maps to existing color tokens. Default is `secondary`.
  */
 export type EyebrowSize = "pico" | "nano" | "micro" | "caption" | "small";
-export type EyebrowTone =
-  | "primary"
-  | "secondary"
-  | "tertiary"
-  | "accent-ink"
-  | "attention-ink";
+export type EyebrowTone = "primary" | "secondary" | "tertiary" | "accent-ink" | "attention-ink";
 export type EyebrowTracking = "wide" | "widest";
 
 const SIZE_CLASS: Record<EyebrowSize, string> = {

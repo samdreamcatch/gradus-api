@@ -143,11 +143,7 @@ export function ActiveSessionProvider({
     [session, start, pause, resume, clear, getElapsedMs],
   );
 
-  return (
-    <ActiveSessionContext.Provider value={value}>
-      {children}
-    </ActiveSessionContext.Provider>
-  );
+  return <ActiveSessionContext.Provider value={value}>{children}</ActiveSessionContext.Provider>;
 }
 
 export function useActiveSession(): Ctx {

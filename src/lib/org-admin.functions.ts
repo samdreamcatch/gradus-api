@@ -48,11 +48,7 @@ async function loadAdminOrgs(supabase: Client, userId: string) {
   return rows;
 }
 
-async function assertOrgAdmin(
-  supabase: Client,
-  userId: string,
-  orgId: string,
-): Promise<void> {
+async function assertOrgAdmin(supabase: Client, userId: string, orgId: string): Promise<void> {
   const { data, error } = await supabase.rpc("has_org_admin", {
     _user_id: userId,
     _org_id: orgId,
@@ -87,9 +83,7 @@ export type RosterCoach = {
 
 export const listOrgRoster = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z.object({ organizationId: z.string().uuid() }).parse(input),
-  )
+  .inputValidator((input: unknown) => z.object({ organizationId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }): Promise<{ coaches: RosterCoach[] }> => {
     const supabase = context.supabase as Client;
     await assertOrgAdmin(supabase, context.userId, data.organizationId);
@@ -217,16 +211,16 @@ export type OrgCoachInvite = {
 
 export const listOrgCoachInvites = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z.object({ organizationId: z.string().uuid() }).parse(input),
-  )
+  .inputValidator((input: unknown) => z.object({ organizationId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }): Promise<{ invites: OrgCoachInvite[] }> => {
     const supabase = context.supabase as Client;
     await assertOrgAdmin(supabase, context.userId, data.organizationId);
 
     const { data: rows, error } = await supabase
       .from("org_coach_invites")
-      .select("id, email, phone, invite_code, invite_token, status, created_at, expires_at, accepted_at")
+      .select(
+        "id, email, phone, invite_code, invite_token, status, created_at, expires_at, accepted_at",
+      )
       .eq("organization_id", data.organizationId)
       .order("created_at", { ascending: false })
       .limit(200);
@@ -288,9 +282,7 @@ export const createOrgCoachInvite = createServerFn({ method: "POST" })
 export const revokeOrgCoachInvite = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
-    z
-      .object({ organizationId: z.string().uuid(), inviteId: z.string().uuid() })
-      .parse(input),
+    z.object({ organizationId: z.string().uuid(), inviteId: z.string().uuid() }).parse(input),
   )
   .handler(async ({ data, context }) => {
     const supabase = context.supabase as Client;
@@ -309,7 +301,9 @@ export const revokeOrgCoachInvite = createServerFn({ method: "POST" })
 
 /** Called from /i/<code> pathway. No auth required — just resolves the org. */
 export const resolveOrgCoachInvite = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) => z.object({ code: z.string().trim().toUpperCase() }).parse(input))
+  .inputValidator((input: unknown) =>
+    z.object({ code: z.string().trim().toUpperCase() }).parse(input),
+  )
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row, error } = await supabaseAdmin
@@ -334,7 +328,9 @@ export const resolveOrgCoachInvite = createServerFn({ method: "POST" })
 /** Signed-in coach accepts an invite: links them to the org, flips entitlement. */
 export const acceptOrgCoachInvite = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ code: z.string().trim().toUpperCase() }).parse(input))
+  .inputValidator((input: unknown) =>
+    z.object({ code: z.string().trim().toUpperCase() }).parse(input),
+  )
   .handler(async ({ data, context }) => {
     const supabase = context.supabase as Client;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

@@ -31,12 +31,18 @@ function AdminSessions() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10 space-y-6">
-      <Link to="/admin/reporting" search={{ test: includeTest }} className="text-sm text-accent-ink underline-offset-4 hover:underline">
+      <Link
+        to="/admin/reporting"
+        search={{ test: includeTest }}
+        className="text-sm text-accent-ink underline-offset-4 hover:underline"
+      >
         ← Back to reporting
       </Link>
 
       <header className="space-y-1">
-        <Eyebrow size="small" tone="accent-ink">Admin</Eyebrow>
+        <Eyebrow size="small" tone="accent-ink">
+          Admin
+        </Eyebrow>
         <h1 className="font-display text-h1 text-text-primary">Logged sessions</h1>
         <p className="text-sm text-text-secondary">
           Last {days} days · {rows.length} session{rows.length === 1 ? "" : "s"}

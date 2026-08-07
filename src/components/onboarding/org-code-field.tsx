@@ -20,17 +20,9 @@ interface Props {
  * from the original inline block so both onboarding and future admin surfaces
  * can share it without duplication.
  */
-export function OrgCodeField({
-  orgId,
-  orgName,
-  value,
-  onChange,
-  id = "org-code",
-}: Props) {
+export function OrgCodeField({ orgId, orgName, value, onChange, id = "org-code" }: Props) {
   const verify = useServerFn(verifyOrgCodeForOrg);
-  const [state, setState] = useState<
-    "idle" | "checking" | "ok" | "mismatch" | "unknown"
-  >("idle");
+  const [state, setState] = useState<"idle" | "checking" | "ok" | "mismatch" | "unknown">("idle");
 
   useEffect(() => {
     const trimmed = value.trim().toUpperCase();
@@ -91,9 +83,7 @@ export function OrgCodeField({
           className="pr-10 font-mono uppercase tracking-widest"
         />
         <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
-          {state === "checking" && (
-            <Loader2 className="h-4 w-4 animate-spin text-text-tertiary" />
-          )}
+          {state === "checking" && <Loader2 className="h-4 w-4 animate-spin text-text-tertiary" />}
           {state === "ok" && <Check className="h-4 w-4 text-accent-ink" />}
         </div>
       </div>
@@ -105,14 +95,11 @@ export function OrgCodeField({
       )}
       {state === "mismatch" && (
         <p className="text-xs text-destructive">
-          That code isn&apos;t for {orgName}. Double-check with your club
-          coordinator.
+          That code isn&apos;t for {orgName}. Double-check with your club coordinator.
         </p>
       )}
       {state === "unknown" && (
-        <p className="text-xs text-destructive">
-          We don&apos;t recognize that code.
-        </p>
+        <p className="text-xs text-destructive">We don&apos;t recognize that code.</p>
       )}
     </div>
   );

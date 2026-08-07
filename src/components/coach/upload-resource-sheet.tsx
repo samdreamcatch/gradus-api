@@ -2,12 +2,7 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Loader2, X } from "lucide-react";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -81,7 +76,8 @@ export function UploadResourceSheet({
       }
 
       if (!file) throw new Error("Choose a file");
-      const ext = (file.name.split(".").pop() ?? "").toLowerCase() || (kind === "pdf" ? "pdf" : "png");
+      const ext =
+        (file.name.split(".").pop() ?? "").toLowerCase() || (kind === "pdf" ? "pdf" : "png");
       const signed = await signUpload({
         data: { ext, contentType: file.type || ACCEPT[kind] },
       });
@@ -207,9 +203,7 @@ export function UploadResourceSheet({
               Sports (tag one or more)
             </label>
             {coachSports.length === 0 ? (
-              <p className="text-sm text-text-secondary">
-                Add sports in Settings first.
-              </p>
+              <p className="text-sm text-text-secondary">Add sports in Settings first.</p>
             ) : (
               <ul className="divide-y divide-divider rounded-2xl border border-divider bg-elevated">
                 {coachSports.map((s) => {
@@ -220,14 +214,10 @@ export function UploadResourceSheet({
                         <Checkbox
                           checked={on}
                           onCheckedChange={(v) =>
-                            setSports((prev) =>
-                              v ? [...prev, s] : prev.filter((x) => x !== s),
-                            )
+                            setSports((prev) => (v ? [...prev, s] : prev.filter((x) => x !== s)))
                           }
                         />
-                        <span className="font-bold text-text-primary">
-                          {sportLabel(s)}
-                        </span>
+                        <span className="font-bold text-text-primary">{sportLabel(s)}</span>
                       </label>
                     </li>
                   );

@@ -1,9 +1,6 @@
 import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import {
-  getCoachInviteCode,
-  rotateCoachInviteCode,
-} from "@/lib/coach-invite.functions";
+import { getCoachInviteCode, rotateCoachInviteCode } from "@/lib/coach-invite.functions";
 
 export const coachInviteQueryOptions = queryOptions({
   queryKey: ["coach-invite"],

@@ -57,10 +57,7 @@ export function InstallBanner() {
                   then{" "}
                   <span className="whitespace-nowrap font-medium text-text-primary">
                     Add to Home Screen
-                    <Plus
-                      className="ml-0.5 inline h-3.5 w-3.5 -translate-y-0.5"
-                      aria-hidden
-                    />
+                    <Plus className="ml-0.5 inline h-3.5 w-3.5 -translate-y-0.5" aria-hidden />
                   </span>
                   .
                 </p>

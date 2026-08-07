@@ -11,11 +11,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import {
-  ensureRoom,
-  ensureDirectRoom,
-  sendMessage,
-} from "@/lib/messages.functions";
+import { ensureRoom, ensureDirectRoom, sendMessage } from "@/lib/messages.functions";
 
 type CommonProps = {
   open: boolean;
@@ -73,8 +69,7 @@ export function MessageCoachAboutPlanDialog(props: Props) {
     onSuccess: (roomId) => {
       setBody("");
       onOpenChange(false);
-      const base =
-        props.mode === "coach-direct" ? "/coach/messages" : props.messagesBasePath;
+      const base = props.mode === "coach-direct" ? "/coach/messages" : props.messagesBasePath;
       navigate({ to: `${base}/${roomId}` });
     },
     onError: (e) => {

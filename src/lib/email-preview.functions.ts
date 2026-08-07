@@ -17,10 +17,12 @@ async function assertAdmin(context: { userId: string; supabase: any }) {
 export const previewEmailTemplate = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
-    z.object({
-      name: z.string(),
-      overrides: z.record(z.string(), z.string()).default({}),
-    }).parse(input),
+    z
+      .object({
+        name: z.string(),
+        overrides: z.record(z.string(), z.string()).default({}),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context);

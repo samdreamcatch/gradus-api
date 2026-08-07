@@ -40,7 +40,6 @@ export const Route = createFileRoute("/_authenticated/coach/plans")({
   component: PlansPage,
 });
 
-
 type Tab = "plans" | "library";
 type PlanFilter = "active" | "drafts" | "benched" | "templates";
 function PlansPage() {
@@ -100,7 +99,6 @@ function PlansPage() {
             <LibraryView query={libraryQuery} onSelectMove={(id) => setMoveSelection(id)} />
           )}
         </main>
-
 
         <button
           type="button"
@@ -237,7 +235,6 @@ function PlansList({
     };
   }, [filter, athleteId, sport]);
 
-
   const { data, isLoading } = useQuery({
     queryKey: ["plans", args],
     queryFn: () => fetchPlans({ data: args }),
@@ -265,8 +262,6 @@ function PlansList({
     </ul>
   );
 }
-
-
 
 function SwipeableDeleteRow({
   plan,
@@ -391,7 +386,6 @@ function SwipeableDeleteRow({
         </button>
       </div>
 
-
       <AlertDialog
         open={confirmOpen}
         onOpenChange={(v) => {
@@ -422,8 +416,7 @@ function SwipeableDeleteRow({
   );
 }
 function PlanRow({ plan }: { plan: PlanSummaryDTO }) {
-  const isPublicActive =
-    plan.kind === "plan" && plan.status === "active" && !plan.athleteName;
+  const isPublicActive = plan.kind === "plan" && plan.status === "active" && !plan.athleteName;
   const caption =
     plan.kind === "template"
       ? "Template"
@@ -437,11 +430,7 @@ function PlanRow({ plan }: { plan: PlanSummaryDTO }) {
               ? "Benched"
               : undefined;
   const edgeTone: "active" | "template" | "muted" =
-    plan.kind === "template"
-      ? "template"
-      : plan.status === "active"
-        ? "active"
-        : "muted";
+    plan.kind === "template" ? "template" : plan.status === "active" ? "active" : "muted";
   return (
     <PlanCard
       to="/coach/plans/$planId"
@@ -454,10 +443,8 @@ function PlanRow({ plan }: { plan: PlanSummaryDTO }) {
       muted={plan.kind === "plan" && plan.status === "benched"}
       edgeTone={edgeTone}
     />
-
   );
 }
-
 
 function StatusPill({ plan }: { plan: PlanSummaryDTO }) {
   if (plan.kind === "template") {
@@ -483,13 +470,7 @@ function StatusPill({ plan }: { plan: PlanSummaryDTO }) {
 
 /* ---------------- Library ---------------- */
 
-function LibrarySearchStrip({
-  query,
-  onQuery,
-}: {
-  query: string;
-  onQuery: (q: string) => void;
-}) {
+function LibrarySearchStrip({ query, onQuery }: { query: string; onQuery: (q: string) => void }) {
   return (
     <div className="mt-3 relative">
       <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-tertiary" />
@@ -518,10 +499,7 @@ function LibraryView({
   const [sport, setSport] = useState<string>("");
 
   const moves = data?.moves ?? [];
-  const sports = useMemo(
-    () => Array.from(new Set(moves.map((m) => m.sport))).sort(),
-    [moves],
-  );
+  const sports = useMemo(() => Array.from(new Set(moves.map((m) => m.sport))).sort(), [moves]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -577,9 +555,7 @@ function LibraryView({
         <div className="space-y-5">
           {grouped.map(([cat, items]) => (
             <section key={cat}>
-              <h3 className="mb-1 font-display text-base font-bold text-text-primary">
-                {cat}
-              </h3>
+              <h3 className="mb-1 font-display text-base font-bold text-text-primary">{cat}</h3>
               <ul className="divide-y divide-divider border-y border-divider">
                 {items.map((m) => (
                   <li key={m.id}>
@@ -590,17 +566,13 @@ function LibraryView({
                     >
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
-                          <p className="truncate text-sm font-bold text-text-primary">
-                            {m.name}
-                          </p>
+                          <p className="truncate text-sm font-bold text-text-primary">{m.name}</p>
                           <span className="shrink-0 rounded-sm bg-elevated px-1.5 py-0.5 text-[10px] font-black uppercase tracking-tight text-text-secondary">
                             {targetLabel(m.defaultTargetKind, m.defaultTargetValue)}
                           </span>
                         </div>
                         {m.cue ? (
-                          <p className="mt-0.5 line-clamp-1 text-xs text-text-secondary">
-                            {m.cue}
-                          </p>
+                          <p className="mt-0.5 line-clamp-1 text-xs text-text-secondary">{m.cue}</p>
                         ) : null}
                       </div>
                       <ChevronRight className="mt-1 h-4 w-4 shrink-0 text-text-tertiary" />
@@ -642,8 +614,6 @@ function FilterChip({
 }
 
 /* ---------------- Create plan sheet ---------------- */
-
-
 
 /* ---------------- helpers ---------------- */
 
