@@ -167,10 +167,9 @@ function InvoiceGenerateBody({ athleteId, onDone }: { athleteId: string; onDone:
         })),
         totalCents: result.totalCents,
       });
-      await shareInvoiceText(text);
+      setCreatedText(text);
       await queryClient.invalidateQueries({ queryKey: ["coach", "billing"] });
       await queryClient.invalidateQueries({ queryKey: ["coach", "invoices"] });
-      onDone();
     },
     onError: (e: Error) => toast.error(e.message),
   });
