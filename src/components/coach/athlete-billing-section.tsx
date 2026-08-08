@@ -22,7 +22,12 @@ import {
   getInvoiceDetail,
   setInvoiceStatus,
 } from "@/lib/invoicing.functions";
-import { buildInvoiceText, formatDateRange, formatMoney, formatMoneyShort } from "@/lib/invoice-format";
+import {
+  buildInvoiceText,
+  formatDateRange,
+  formatMoney,
+  formatMoneyShort,
+} from "@/lib/invoice-format";
 import { shareInvoiceText } from "@/components/coach/invoice-generate-sheet";
 
 /**

@@ -120,11 +120,7 @@ async function athleteNameById(supabase: Client, athleteIds: string[]) {
   return map;
 }
 
-function amountForSlot(
-  rate: AthleteRateDTO,
-  startMinute: number,
-  endMinute: number,
-): number {
+function amountForSlot(rate: AthleteRateDTO, startMinute: number, endMinute: number): number {
   if (rate.rateKind === "per_session") return rate.rateCents;
   const minutes = Math.max(0, endMinute - startMinute);
   return Math.round((rate.rateCents * minutes) / 60);
@@ -189,10 +185,7 @@ async function loadInvoices(
         "invoice_id",
         rows.map((r) => r.id),
       ),
-    athleteNameById(
-      supabase,
-      Array.from(new Set(rows.map((r) => r.athlete_id))),
-    ),
+    athleteNameById(supabase, Array.from(new Set(rows.map((r) => r.athlete_id)))),
   ]);
   if (lErr) dbError(lErr);
 
