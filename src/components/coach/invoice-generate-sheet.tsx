@@ -31,7 +31,7 @@ import {
   parseMoneyToCents,
 } from "@/lib/invoice-format";
 import { cn } from "@/lib/utils";
-import { shareInvoiceText } from "@/lib/share-invoice";
+import { shareInvoiceNow } from "@/lib/share-invoice";
 
 const STATE_LABEL: Record<DraftLineState, string> = {
   confirmed: "Confirmed",
@@ -84,6 +84,7 @@ function InvoiceGenerateBody({ athleteId, onDone }: { athleteId: string; onDone:
   const [periodStart, setPeriodStart] = useState<string | null>(null);
   const [periodEnd, setPeriodEnd] = useState<string>(todayIso());
   const [edits, setEdits] = useState<Record<string, LineEdit>>({});
+  const [createdText, setCreatedText] = useState<string | null>(null);
 
   // Rate entry (shown inline when the athlete has no rate yet).
   const [rateKind, setRateKind] = useState<RateKind>("per_session");
@@ -167,13 +168,35 @@ function InvoiceGenerateBody({ athleteId, onDone }: { athleteId: string; onDone:
         })),
         totalCents: result.totalCents,
       });
-      await shareInvoiceText(text);
+      setCreatedText(text);
       await queryClient.invalidateQueries({ queryKey: ["coach", "billing"] });
       await queryClient.invalidateQueries({ queryKey: ["coach", "invoices"] });
-      onDone();
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  if (createdText !== null) {
+    return (
+      <div className="space-y-5">
+        <SheetHeader className="text-left">
+          <SheetTitle className="font-display text-2xl font-black tracking-tight text-text-primary">
+            Invoice created
+          </SheetTitle>
+          <SheetDescription>Send it over — the sessions are now marked as billed.</SheetDescription>
+        </SheetHeader>
+        <pre className="max-h-64 overflow-y-auto whitespace-pre-wrap rounded-xl border border-divider bg-card p-3 text-sm text-text-secondary">
+          {createdText}
+        </pre>
+        <Button type="button" className="w-full" onClick={() => shareInvoiceNow(createdText)}>
+          <Share2 className="size-4" aria-hidden />
+          Share invoice
+        </Button>
+        <Button type="button" variant="ghost" className="w-full" onClick={onDone}>
+          Done
+        </Button>
+      </div>
+    );
+  }
 
   if (draft.isLoading) {
     return (

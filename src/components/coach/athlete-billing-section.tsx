@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Receipt, Trash2 } from "lucide-react";
@@ -29,7 +29,7 @@ import {
   formatMoney,
   formatMoneyShort,
 } from "@/lib/invoice-format";
-import { shareInvoiceText } from "@/lib/share-invoice";
+import { shareInvoiceNow } from "@/lib/share-invoice";
 
 /**
  * Per-athlete billing: the stored rate, a Generate button, and the invoice
@@ -67,21 +67,42 @@ export function AthleteBillingSection({ athleteId }: { athleteId: string }) {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  async function reshare(invoiceId: string) {
-    try {
-      const detail = await fetchDetail({ data: { invoiceId } });
-      await shareInvoiceText(
-        buildInvoiceText({
-          athleteName: detail.athleteName,
-          periodStart: detail.periodStart,
-          periodEnd: detail.periodEnd,
-          lines: detail.lines,
-          totalCents: detail.totalCents,
-        }),
-      );
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Couldn't load that invoice");
+  type InvoiceDetail = Awaited<ReturnType<typeof getInvoiceDetail>>;
+
+  function textFor(detail: InvoiceDetail) {
+    return buildInvoiceText({
+      athleteName: detail.athleteName,
+      periodStart: detail.periodStart,
+      periodEnd: detail.periodEnd,
+      lines: detail.lines,
+      totalCents: detail.totalCents,
+    });
+  }
+
+  // Prefetch each invoice's lines so the Share tap can open the native sheet
+  // synchronously (iOS drops user activation once we await).
+  useEffect(() => {
+    for (const inv of billing.data?.invoices ?? []) {
+      void queryClient.prefetchQuery({
+        queryKey: ["coach", "invoice", inv.id],
+        queryFn: () => fetchDetail({ data: { invoiceId: inv.id } }),
+        staleTime: 5 * 60 * 1000,
+      });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [billing.data]);
+
+  function reshare(invoiceId: string) {
+    const cached = queryClient.getQueryData<InvoiceDetail>(["coach", "invoice", invoiceId]);
+    if (cached) {
+      shareInvoiceNow(textFor(cached));
+      return;
+    }
+    fetchDetail({ data: { invoiceId } })
+      .then((detail) => shareInvoiceNow(textFor(detail)))
+      .catch((e: unknown) =>
+        toast.error(e instanceof Error ? e.message : "Couldn't load that invoice"),
+      );
   }
 
   if (billing.isLoading) {

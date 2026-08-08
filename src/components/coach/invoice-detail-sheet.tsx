@@ -29,7 +29,7 @@ import {
   formatMoney,
   formatShortDate,
 } from "@/lib/invoice-format";
-import { shareInvoiceText } from "@/lib/share-invoice";
+import { shareInvoiceNow } from "@/lib/share-invoice";
 
 /**
  * Read-only view of a saved invoice: its line items, total, paid state, and the
@@ -159,7 +159,7 @@ function InvoiceDetailBody({ invoiceId, onClose }: { invoiceId: string; onClose:
             type="button"
             className="flex-1"
             onClick={() =>
-              shareInvoiceText(
+              shareInvoiceNow(
                 buildInvoiceText({
                   athleteName: inv.athleteName,
                   periodStart: inv.periodStart,

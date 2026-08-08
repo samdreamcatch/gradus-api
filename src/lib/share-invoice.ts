@@ -1,15 +1,26 @@
 import { toast } from "sonner";
 
-/** Native share sheet, with a clipboard fallback for desktop browsers. */
-export async function shareInvoiceText(text: string) {
-  if (typeof navigator !== "undefined" && navigator.share) {
-    try {
-      await navigator.share({ text });
-      return;
-    } catch {
-      // User dismissed the sheet, or share isn't allowed — fall through to copy.
-    }
+/**
+ * Open the OS-native share sheet with the invoice text.
+ *
+ * MUST be called synchronously inside the click handler — awaiting anything
+ * first consumes user activation and iOS Safari refuses to open the sheet.
+ * Falls back to the clipboard when the browser has no share support, or when
+ * the share fails for a reason other than the user cancelling.
+ */
+export function shareInvoiceNow(text: string) {
+  const canShare = typeof navigator !== "undefined" && typeof navigator.share === "function";
+  if (canShare) {
+    navigator.share({ text }).catch((err: unknown) => {
+      if ((err as DOMException)?.name === "AbortError") return;
+      void copyFallback(text);
+    });
+    return;
   }
+  void copyFallback(text);
+}
+
+async function copyFallback(text: string) {
   try {
     await navigator.clipboard.writeText(text);
     toast.success("Invoice copied to clipboard");
