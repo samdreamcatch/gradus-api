@@ -31,7 +31,7 @@ import {
   parseMoneyToCents,
 } from "@/lib/invoice-format";
 import { cn } from "@/lib/utils";
-import { shareInvoiceText } from "@/lib/share-invoice";
+import { shareInvoiceNow } from "@/lib/share-invoice";
 
 const STATE_LABEL: Record<DraftLineState, string> = {
   confirmed: "Confirmed",
