@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Receipt, Trash2 } from "lucide-react";
@@ -20,16 +20,9 @@ import { InvoiceDetailSheet } from "@/components/coach/invoice-detail-sheet";
 import {
   deleteInvoice,
   getAthleteBilling,
-  getInvoiceDetail,
   setInvoiceStatus,
 } from "@/lib/invoicing.functions";
-import {
-  buildInvoiceText,
-  formatDateRange,
-  formatMoney,
-  formatMoneyShort,
-} from "@/lib/invoice-format";
-import { shareInvoiceNow } from "@/lib/share-invoice";
+import { formatDateRange, formatMoney, formatMoneyShort } from "@/lib/invoice-format";
 
 /**
  * Per-athlete billing: the stored rate, a Generate button, and the invoice
@@ -38,7 +31,6 @@ import { shareInvoiceNow } from "@/lib/share-invoice";
 export function AthleteBillingSection({ athleteId }: { athleteId: string }) {
   const queryClient = useQueryClient();
   const fetchBilling = useServerFn(getAthleteBilling);
-  const fetchDetail = useServerFn(getInvoiceDetail);
   const updateStatus = useServerFn(setInvoiceStatus);
   const removeInvoice = useServerFn(deleteInvoice);
 
@@ -66,44 +58,6 @@ export function AthleteBillingSection({ athleteId }: { athleteId: string }) {
     },
     onError: (e: Error) => toast.error(e.message),
   });
-
-  type InvoiceDetail = Awaited<ReturnType<typeof getInvoiceDetail>>;
-
-  function textFor(detail: InvoiceDetail) {
-    return buildInvoiceText({
-      athleteName: detail.athleteName,
-      periodStart: detail.periodStart,
-      periodEnd: detail.periodEnd,
-      lines: detail.lines,
-      totalCents: detail.totalCents,
-    });
-  }
-
-  // Prefetch each invoice's lines so the Share tap can open the native sheet
-  // synchronously (iOS drops user activation once we await).
-  useEffect(() => {
-    for (const inv of billing.data?.invoices ?? []) {
-      void queryClient.prefetchQuery({
-        queryKey: ["coach", "invoice", inv.id],
-        queryFn: () => fetchDetail({ data: { invoiceId: inv.id } }),
-        staleTime: 5 * 60 * 1000,
-      });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [billing.data]);
-
-  function reshare(invoiceId: string) {
-    const cached = queryClient.getQueryData<InvoiceDetail>(["coach", "invoice", invoiceId]);
-    if (cached) {
-      shareInvoiceNow(textFor(cached));
-      return;
-    }
-    fetchDetail({ data: { invoiceId } })
-      .then((detail) => shareInvoiceNow(textFor(detail)))
-      .catch((e: unknown) =>
-        toast.error(e instanceof Error ? e.message : "Couldn't load that invoice"),
-      );
-  }
 
   if (billing.isLoading) {
     return (
@@ -172,7 +126,12 @@ export function AthleteBillingSection({ athleteId }: { athleteId: string }) {
                   {inv.status}
                 </Tag>
               </button>
-              <Button type="button" size="sm" variant="ghost" onClick={() => reshare(inv.id)}>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                onClick={() => setOpenInvoice(inv.id)}
+              >
                 Share
               </Button>
               {inv.status === "unpaid" ? (
