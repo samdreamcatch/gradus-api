@@ -28,7 +28,7 @@ import {
   formatMoney,
   formatMoneyShort,
 } from "@/lib/invoice-format";
-import { shareInvoiceText } from "@/components/coach/invoice-generate-sheet";
+import { shareInvoiceText } from "@/lib/share-invoice";
 
 /**
  * Per-athlete billing: the stored rate, a Generate button, and the invoice
