@@ -17,11 +17,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { InvoiceGenerateSheet } from "@/components/coach/invoice-generate-sheet";
 import { InvoiceDetailSheet } from "@/components/coach/invoice-detail-sheet";
-import {
-  deleteInvoice,
-  getAthleteBilling,
-  setInvoiceStatus,
-} from "@/lib/invoicing.functions";
+import { deleteInvoice, getAthleteBilling, setInvoiceStatus } from "@/lib/invoicing.functions";
 import { formatDateRange, formatMoney, formatMoneyShort } from "@/lib/invoice-format";
 
 /**
