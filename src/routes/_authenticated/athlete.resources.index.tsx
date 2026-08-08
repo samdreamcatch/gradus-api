@@ -19,7 +19,6 @@ import { Input } from "@/components/ui/input";
 import {
   ResourceList,
   ResourceSheet,
-  
   sportLabel,
   type ResourceDTO,
 } from "@/components/resources/shared";
@@ -81,7 +80,6 @@ function AthleteResourcesPage() {
           options={[
             { key: "library", label: "Library" },
             { key: "safe-sport", label: "Safe Sport" },
-            
           ]}
         />
         {view !== "safe-sport" && sports.length > 1 ? (
