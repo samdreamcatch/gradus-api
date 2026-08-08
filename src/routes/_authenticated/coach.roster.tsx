@@ -274,7 +274,6 @@ function RosterPage() {
             hideInlineCreateButton
           />
         )}
-
       </div>
       <CoachBottomNav />
       <AthleteDetailSheet athleteId={selectedAthleteId} onOpenChange={setSelectedAthleteId} />

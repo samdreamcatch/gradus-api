@@ -14,13 +14,7 @@ import type { RosterAthlete } from "@/lib/coach-roster.functions";
  * Roster → Billing. One row per athlete to start an invoice, plus the recent
  * invoice history across the whole roster.
  */
-export function BillingTab({
-  athletes,
-  locked,
-}: {
-  athletes: RosterAthlete[];
-  locked: boolean;
-}) {
+export function BillingTab({ athletes, locked }: { athletes: RosterAthlete[]; locked: boolean }) {
   const navigate = useNavigate();
   const fetchInvoices = useServerFn(getCoachInvoices);
   const [generateFor, setGenerateFor] = useState<string | null>(null);

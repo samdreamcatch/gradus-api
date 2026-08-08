@@ -74,13 +74,7 @@ export function InvoiceGenerateSheet({
   );
 }
 
-function InvoiceGenerateBody({
-  athleteId,
-  onDone,
-}: {
-  athleteId: string;
-  onDone: () => void;
-}) {
+function InvoiceGenerateBody({ athleteId, onDone }: { athleteId: string; onDone: () => void }) {
   const queryClient = useQueryClient();
   const preview = useServerFn(previewInvoice);
   const saveRate = useServerFn(setAthleteRate);
@@ -154,7 +148,12 @@ function InvoiceGenerateBody({
           })),
         },
       });
-      return { result, athleteName: d.athleteName, periodStart: d.periodStart, periodEnd: d.periodEnd };
+      return {
+        result,
+        athleteName: d.athleteName,
+        periodStart: d.periodStart,
+        periodEnd: d.periodEnd,
+      };
     },
     onSuccess: async ({ result, athleteName, periodStart: ps, periodEnd: pe }) => {
       const text = buildInvoiceText({

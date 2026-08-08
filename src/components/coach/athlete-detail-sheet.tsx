@@ -232,7 +232,6 @@ function AthleteDetailBody({ athleteId }: { athleteId: string }) {
         locked={!canViewOtherCoachPlans}
       />
 
-
       {canViewOtherCoachPlans ? (
         <OtherCoachPlansSheet
           coach={d.otherCoaches.find((c) => c.coachId === openOtherCoachId) ?? null}
