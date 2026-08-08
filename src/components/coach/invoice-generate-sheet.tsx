@@ -175,6 +175,29 @@ function InvoiceGenerateBody({ athleteId, onDone }: { athleteId: string; onDone:
     onError: (e: Error) => toast.error(e.message),
   });
 
+  if (createdText !== null) {
+    return (
+      <div className="space-y-5">
+        <SheetHeader className="text-left">
+          <SheetTitle className="font-display text-2xl font-black tracking-tight text-text-primary">
+            Invoice created
+          </SheetTitle>
+          <SheetDescription>Send it over — the sessions are now marked as billed.</SheetDescription>
+        </SheetHeader>
+        <pre className="max-h-64 overflow-y-auto whitespace-pre-wrap rounded-xl border border-divider bg-card p-3 text-sm text-text-secondary">
+          {createdText}
+        </pre>
+        <Button type="button" className="w-full" onClick={() => shareInvoiceNow(createdText)}>
+          <Share2 className="size-4" aria-hidden />
+          Share invoice
+        </Button>
+        <Button type="button" variant="ghost" className="w-full" onClick={onDone}>
+          Done
+        </Button>
+      </div>
+    );
+  }
+
   if (draft.isLoading) {
     return (
       <div className="flex items-center justify-center py-16">
