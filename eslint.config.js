@@ -35,6 +35,7 @@ const sportsPosterAllowlist = [
 
 export default tseslint.config(
   { ignores: ["dist", ".output", ".vinxi"] },
+  eslintPluginPrettier,
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ["**/*.{ts,tsx}"],
