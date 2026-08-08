@@ -211,7 +211,14 @@ export const getCoachInvoices = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<InvoiceDTO[]> => {
     const supabase = context.supabase as Client;
-    const { coachId } = await requireProCoach(supabase, context.userId);
+    // Read-only list: if the coach isn't entitled, return an empty list rather
+    // than throwing — the UI already renders the locked state.
+    let coachId: string;
+    try {
+      ({ coachId } = await requireProCoach(supabase, context.userId));
+    } catch {
+      return [];
+    }
     return loadInvoices(supabase, coachId);
   });
 
