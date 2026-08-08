@@ -38,8 +38,8 @@ export function BillingTab({ athletes, locked }: { athletes: RosterAthlete[]; lo
           Invoicing
         </h2>
         <p className="mt-2 text-sm text-text-secondary">
-          Turn confirmed lessons into a shareable invoice in one tap — no tallying. Available on
-          Coach Pro and Club plans.
+          Turn confirmed lessons into a shareable invoice in one tap. Available on Coach Pro and
+          Club plans.
         </p>
         <Button
           type="button"
