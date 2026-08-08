@@ -16,6 +16,8 @@ import { Button } from "@/components/ui/button";
 import { PlanCard } from "@/components/plans/plan-card";
 import { AlsoCoachedByList } from "@/components/coach/also-coached-by-list";
 import { OtherCoachPlansSheet } from "@/components/coach/other-coach-plans-sheet";
+import { AthleteBillingSection } from "@/components/coach/athlete-billing-section";
+
 import { cn } from "@/lib/utils";
 import {
   getCoachAthleteDetail,
