@@ -2135,6 +2135,7 @@ export type Database = {
         Args: { _resource_id: string }
         Returns: boolean
       }
+      athlete_has_sport: { Args: { _sport: string }; Returns: boolean }
       caller_is_resource_owner: {
         Args: { _coach_id: string }
         Returns: boolean
