@@ -19,7 +19,7 @@ import { Input } from "@/components/ui/input";
 import {
   ResourceList,
   ResourceSheet,
-  SavedAnswersList,
+  
   sportLabel,
   type ResourceDTO,
 } from "@/components/resources/shared";
@@ -53,7 +53,7 @@ function AthleteResourcesPage() {
   const [selectedSport, setSelectedSport] = useState<string | null>(null);
   const activeSport = selectedSport ?? sports[0] ?? null;
 
-  const [view, setView] = useState<"library" | "safe-sport" | "saved">("library");
+  const [view, setView] = useState<"library" | "safe-sport">("library");
   const [search, setSearch] = useState("");
   const [openResource, setOpenResource] = useState<ResourceDTO | null>(null);
 
@@ -81,7 +81,7 @@ function AthleteResourcesPage() {
           options={[
             { key: "library", label: "Library" },
             { key: "safe-sport", label: "Safe Sport" },
-            { key: "saved", label: "Saved" },
+            
           ]}
         />
         {view !== "safe-sport" && sports.length > 1 ? (
@@ -115,8 +115,6 @@ function AthleteResourcesPage() {
             Add a sport to your profile to see resources.
           </p>
         </div>
-      ) : view === "saved" ? (
-        <SavedAnswersList sport={activeSport!} />
       ) : (
         <section className="mt-5 space-y-3">
           <div className="relative">
