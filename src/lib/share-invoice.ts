@@ -11,7 +11,11 @@ import { toast } from "sonner";
 export function shareInvoiceNow(text: string) {
   const canShare = typeof navigator !== "undefined" && typeof navigator.share === "function";
   if (canShare) {
-    navigator.share({ text }).catch((err: unknown) => {
+    const shareData: ShareData = {
+      title: "Invoice from Gradus",
+      text,
+    };
+    navigator.share(shareData).catch((err: unknown) => {
       if ((err as DOMException)?.name === "AbortError") return;
       void copyFallback(text);
     });
