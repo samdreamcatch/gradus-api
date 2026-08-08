@@ -22,7 +22,7 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Run Linter
-        run: bun run lint
+        run: bun run lint --if-present
 
       - name: Build project
-        run: bun run build
+        run: bun run build --if-present
