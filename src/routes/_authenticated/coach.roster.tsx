@@ -225,7 +225,12 @@ function RosterPage() {
           </SheetContent>
         </Sheet>
 
-        {tab === "athletes" ? (
+        {tab === "billing" ? (
+          <BillingTab
+            athletes={visibleAthletes}
+            locked={(coachProfile?.profile.effectiveTier ?? "coach") === "coach"}
+          />
+        ) : tab === "athletes" ? (
           athletes.length === 0 ? (
             <div className="mt-8 rounded-2xl bg-card p-6 shadow-[0_10px_40px_-12px_rgba(0,0,0,0.15)] sm:p-8">
               <div>
@@ -267,6 +272,7 @@ function RosterPage() {
             hideInlineCreateButton
           />
         )}
+
       </div>
       <CoachBottomNav />
       <AthleteDetailSheet athleteId={selectedAthleteId} onOpenChange={setSelectedAthleteId} />
