@@ -84,6 +84,7 @@ function InvoiceGenerateBody({ athleteId, onDone }: { athleteId: string; onDone:
   const [periodStart, setPeriodStart] = useState<string | null>(null);
   const [periodEnd, setPeriodEnd] = useState<string>(todayIso());
   const [edits, setEdits] = useState<Record<string, LineEdit>>({});
+  const [createdText, setCreatedText] = useState<string | null>(null);
 
   // Rate entry (shown inline when the athlete has no rate yet).
   const [rateKind, setRateKind] = useState<RateKind>("per_session");
