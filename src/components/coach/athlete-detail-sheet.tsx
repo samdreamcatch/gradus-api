@@ -218,12 +218,18 @@ function AthleteDetailBody({ athleteId }: { athleteId: string }) {
         )}
       </section>
 
+      {/* Billing (Coach Pro & Club) */}
+      {effectiveTier === "coach_pro" || effectiveTier === "club" ? (
+        <AthleteBillingSection athleteId={athleteId} />
+      ) : null}
+
       {/* Also coached by */}
       <AlsoCoachedByList
         coaches={d.otherCoaches}
         onOpenCoach={setOpenOtherCoachId}
         locked={!canViewOtherCoachPlans}
       />
+
 
       {canViewOtherCoachPlans ? (
         <OtherCoachPlansSheet
