@@ -403,6 +403,51 @@ export type Database = {
         }
         Relationships: []
       }
+      coach_athlete_rates: {
+        Row: {
+          athlete_id: string
+          coach_id: string
+          created_at: string
+          id: string
+          rate_cents: number
+          rate_kind: string
+          updated_at: string
+        }
+        Insert: {
+          athlete_id: string
+          coach_id: string
+          created_at?: string
+          id?: string
+          rate_cents: number
+          rate_kind: string
+          updated_at?: string
+        }
+        Update: {
+          athlete_id?: string
+          coach_id?: string
+          created_at?: string
+          id?: string
+          rate_cents?: number
+          rate_kind?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coach_athlete_rates_athlete_id_fkey"
+            columns: ["athlete_id"]
+            isOneToOne: false
+            referencedRelation: "athletes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coach_athlete_rates_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "coach_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coach_athlete_sports: {
         Row: {
           athlete_id: string
@@ -951,6 +996,111 @@ export type Database = {
           ip?: string
         }
         Relationships: []
+      }
+      invoice_lines: {
+        Row: {
+          amount_cents: number
+          created_at: string
+          end_minute: number | null
+          id: string
+          included_reason: string
+          invoice_id: string
+          occurrence_date: string
+          slot_id: string | null
+          start_minute: number | null
+        }
+        Insert: {
+          amount_cents: number
+          created_at?: string
+          end_minute?: number | null
+          id?: string
+          included_reason?: string
+          invoice_id: string
+          occurrence_date: string
+          slot_id?: string | null
+          start_minute?: number | null
+        }
+        Update: {
+          amount_cents?: number
+          created_at?: string
+          end_minute?: number | null
+          id?: string
+          included_reason?: string
+          invoice_id?: string
+          occurrence_date?: string
+          slot_id?: string | null
+          start_minute?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_lines_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_lines_slot_id_fkey"
+            columns: ["slot_id"]
+            isOneToOne: false
+            referencedRelation: "athlete_lesson_slots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoices: {
+        Row: {
+          athlete_id: string
+          coach_id: string
+          created_at: string
+          id: string
+          paid_at: string | null
+          period_end: string
+          period_start: string
+          status: string
+          total_cents: number
+          updated_at: string
+        }
+        Insert: {
+          athlete_id: string
+          coach_id: string
+          created_at?: string
+          id?: string
+          paid_at?: string | null
+          period_end: string
+          period_start: string
+          status?: string
+          total_cents?: number
+          updated_at?: string
+        }
+        Update: {
+          athlete_id?: string
+          coach_id?: string
+          created_at?: string
+          id?: string
+          paid_at?: string | null
+          period_end?: string
+          period_start?: string
+          status?: string
+          total_cents?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_athlete_id_fkey"
+            columns: ["athlete_id"]
+            isOneToOne: false
+            referencedRelation: "athletes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "coach_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       lesson_slot_overrides: {
         Row: {
@@ -2140,6 +2290,7 @@ export type Database = {
         Args: { _coach_id: string }
         Returns: boolean
       }
+      caller_owns_coach: { Args: { _coach_id: string }; Returns: boolean }
       coach_effective_tier: { Args: { _coach_id: string }; Returns: string }
       coach_has_rostered_athlete_of_parent: {
         Args: { _parent_id: string }
