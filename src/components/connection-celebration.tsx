@@ -61,9 +61,7 @@ export function ConnectionCelebration({ role }: ConnectionCelebrationProps) {
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
   const [confettiKey, setConfettiKey] = useState(0);
 
-  const currentGroup = groups.find(
-    (g) => !g.linkIds.some((id) => dismissedIds.has(id)),
-  );
+  const currentGroup = groups.find((g) => !g.linkIds.some((id) => dismissedIds.has(id)));
 
   useEffect(() => {
     if (currentGroup) setConfettiKey((k) => k + 1);
@@ -96,7 +94,6 @@ export function ConnectionCelebration({ role }: ConnectionCelebrationProps) {
         <SportsPoster fill opacity={0.08} />
         <ConfettiBurst key={confettiKey} />
 
-
         <DialogHeader className="relative items-center text-center">
           <div className="mb-2 flex h-14 w-14 items-center justify-center rounded-full bg-accent/20 text-accent-ink shadow-sm ring-1 ring-accent/30">
             <PartyPopper className="h-7 w-7" aria-hidden />
@@ -112,7 +109,6 @@ export function ConnectionCelebration({ role }: ConnectionCelebrationProps) {
               : "Say hi so they know you're here."}
           </DialogDescription>
         </DialogHeader>
-
 
         {role === "coach" ? (
           <div className="relative mt-4 grid grid-cols-2 gap-2">
@@ -149,8 +145,7 @@ export function ConnectionCelebration({ role }: ConnectionCelebrationProps) {
               className="w-full gap-2"
               onClick={() =>
                 handleAction(currentGroup, () => {
-                  const base =
-                    role === "parent" ? "/parent/messages" : "/athlete/messages";
+                  const base = role === "parent" ? "/parent/messages" : "/athlete/messages";
                   if (currentGroup.roomId) {
                     navigate({
                       to: `${base}/$roomId`,
@@ -173,7 +168,6 @@ export function ConnectionCelebration({ role }: ConnectionCelebrationProps) {
           onClick={() => dismiss(currentGroup)}
           className="relative mt-3 w-full text-center text-xs font-medium text-text-tertiary hover:text-text-secondary"
         >
-
           Maybe later
         </button>
       </DialogContent>

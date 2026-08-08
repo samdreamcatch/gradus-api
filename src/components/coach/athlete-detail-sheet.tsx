@@ -2,13 +2,16 @@ import { useEffect, useState } from "react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronDown, Loader2, RefreshCw, Sparkles, TrendingUp, Minus, TrendingDown } from "lucide-react";
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+  ChevronDown,
+  Loader2,
+  RefreshCw,
+  Sparkles,
+  TrendingUp,
+  Minus,
+  TrendingDown,
+} from "lucide-react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { PlanCard } from "@/components/plans/plan-card";
 import { AlsoCoachedByList } from "@/components/coach/also-coached-by-list";
@@ -20,8 +23,6 @@ import {
   type Verdict,
 } from "@/lib/coach-athlete-detail.functions";
 import { useCoachProfile } from "@/hooks/use-coach-profile";
-
-
 
 export function AthleteDetailSheet({
   athleteId,
@@ -56,7 +57,6 @@ function AthleteDetailBody({ athleteId }: { athleteId: string }) {
   const effectiveTier = profile.data?.profile.effectiveTier;
   const canViewOtherCoachPlans = effectiveTier === "club";
 
-
   const detail = useQuery({
     queryKey: ["coach", "athlete-detail", athleteId],
     queryFn: () => fetchDetail({ data: { athleteId } }),
@@ -69,7 +69,6 @@ function AthleteDetailBody({ athleteId }: { athleteId: string }) {
     staleTime: 5 * 60_000,
     retry: false,
   });
-
 
   // Auto-run AI summary once we know there's at least some signal.
   useEffect(() => {
@@ -124,25 +123,17 @@ function AthleteDetailBody({ athleteId }: { athleteId: string }) {
                 ? `${d.firstName} hasn't set goals yet.`
                 : `${d.parentFirstName ?? d.firstName} hasn't set goals yet.`}
           </EmptyLine>
-
         ) : (
           <ul className="mt-2 space-y-3">
             {d.goals.map((g) => (
-              <li
-                key={g.sport}
-                className="rounded-xl border border-divider bg-card p-3"
-              >
+              <li key={g.sport} className="rounded-xl border border-divider bg-card p-3">
                 <div className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
                   {g.sportLabel}
                 </div>
                 <div className="mt-1 flex items-baseline gap-2 text-sm">
-                  <span className="font-bold text-text-primary">
-                    {g.currentLevelLabel}
-                  </span>
+                  <span className="font-bold text-text-primary">{g.currentLevelLabel}</span>
                   <span className="text-text-tertiary">→</span>
-                  <span className="font-bold text-text-primary">
-                    {g.seasonGoalLabel}
-                  </span>
+                  <span className="font-bold text-text-primary">{g.seasonGoalLabel}</span>
                   <span className="text-[10px] uppercase tracking-widest text-text-tertiary">
                     this season
                   </span>
@@ -177,9 +168,7 @@ function AthleteDetailBody({ athleteId }: { athleteId: string }) {
             disabled={summary.isFetching || !d.hasAnySignal}
             className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-text-tertiary hover:text-text-primary disabled:opacity-40"
           >
-            <RefreshCw
-              className={cn("h-3 w-3", summary.isFetching && "animate-spin")}
-            />
+            <RefreshCw className={cn("h-3 w-3", summary.isFetching && "animate-spin")} />
             Refresh
           </button>
         </div>
@@ -201,15 +190,8 @@ function AthleteDetailBody({ athleteId }: { athleteId: string }) {
             </div>
           ) : summary.error ? (
             <div className="mt-3 space-y-2">
-              <p className="text-sm text-text-secondary">
-                Couldn't generate summary right now.
-              </p>
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={() => summary.refetch()}
-              >
+              <p className="text-sm text-text-secondary">Couldn't generate summary right now.</p>
+              <Button type="button" size="sm" variant="outline" onClick={() => summary.refetch()}>
                 Try again
               </Button>
             </div>
@@ -219,10 +201,7 @@ function AthleteDetailBody({ athleteId }: { athleteId: string }) {
                 {summary.data.summary}
               </p>
               {!summary.data.empty ? (
-                <VerdictPill
-                  verdict={summary.data.verdict}
-                  rationale={summary.data.rationale}
-                />
+                <VerdictPill verdict={summary.data.verdict} rationale={summary.data.rationale} />
               ) : null}
             </>
           ) : null}
@@ -248,9 +227,7 @@ function AthleteDetailBody({ athleteId }: { athleteId: string }) {
 
       {canViewOtherCoachPlans ? (
         <OtherCoachPlansSheet
-          coach={
-            d.otherCoaches.find((c) => c.coachId === openOtherCoachId) ?? null
-          }
+          coach={d.otherCoaches.find((c) => c.coachId === openOtherCoachId) ?? null}
           athleteFirstName={d.firstName}
           onOpenChange={(v) => {
             if (!v) setOpenOtherCoachId(null);
@@ -260,8 +237,6 @@ function AthleteDetailBody({ athleteId }: { athleteId: string }) {
     </div>
   );
 }
-
-
 
 function formatSportList(labels: string[]): string {
   if (labels.length === 0) return "";
@@ -381,14 +356,7 @@ function ActivityCounts({
   );
 }
 
-
-function VerdictPill({
-  verdict,
-  rationale,
-}: {
-  verdict: Verdict;
-  rationale: string;
-}) {
+function VerdictPill({ verdict, rationale }: { verdict: Verdict; rationale: string }) {
   const config = {
     increase: {
       label: "Increase challenge",
@@ -418,9 +386,7 @@ function VerdictPill({
           {config.label}
         </span>
       </div>
-      <p className="mt-1.5 text-xs leading-relaxed text-text-secondary">
-        {rationale}
-      </p>
+      <p className="mt-1.5 text-xs leading-relaxed text-text-secondary">{rationale}</p>
     </div>
   );
 }

@@ -17,9 +17,25 @@ export function AthleteBottomNav() {
   const unread = useMessagesUnread();
   const items: Item[] = [
     { label: "Plans", icon: ClipboardList, to: "/athlete/plans", matchPrefix: "/athlete/plans" },
-    { label: "Messages", icon: MessageSquare, to: "/athlete/messages", matchPrefix: "/athlete/messages", unreadCount: unread },
-    { label: "Resources", icon: BookOpen, to: "/athlete/resources", matchPrefix: "/athlete/resources" },
-    { label: "Settings", icon: Settings, to: "/athlete/settings", matchPrefix: "/athlete/settings" },
+    {
+      label: "Messages",
+      icon: MessageSquare,
+      to: "/athlete/messages",
+      matchPrefix: "/athlete/messages",
+      unreadCount: unread,
+    },
+    {
+      label: "Resources",
+      icon: BookOpen,
+      to: "/athlete/resources",
+      matchPrefix: "/athlete/resources",
+    },
+    {
+      label: "Settings",
+      icon: Settings,
+      to: "/athlete/settings",
+      matchPrefix: "/athlete/settings",
+    },
   ];
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const ITEMS = items;
@@ -52,7 +68,10 @@ export function AthleteBottomNav() {
               )}
             >
               <span className="relative">
-                <Icon className={cn("h-[18px] w-[18px]", isActive && "text-accent-ink")} aria-hidden />
+                <Icon
+                  className={cn("h-[18px] w-[18px]", isActive && "text-accent-ink")}
+                  aria-hidden
+                />
                 {hasUnread ? (
                   <span
                     aria-label={`${item.unreadCount} unread`}
@@ -94,7 +113,6 @@ export function AthleteBottomNav() {
               )}
             </li>
           );
-
         })}
       </ul>
     </nav>

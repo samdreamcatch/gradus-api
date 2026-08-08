@@ -24,10 +24,23 @@ async function detectRole(
   userId: string,
 ): Promise<"coach" | "parent" | "athlete" | "admin" | "unknown"> {
   const [coach, parent, athlete, admin] = await Promise.all([
-    supabaseAdmin.from("coach_profiles").select("id", { head: true, count: "exact" }).eq("user_id", userId),
-    supabaseAdmin.from("parent_profiles").select("id", { head: true, count: "exact" }).eq("user_id", userId),
-    supabaseAdmin.from("athletes").select("id", { head: true, count: "exact" }).eq("user_id", userId),
-    supabaseAdmin.from("user_roles").select("role", { head: true, count: "exact" }).eq("user_id", userId).eq("role", "admin"),
+    supabaseAdmin
+      .from("coach_profiles")
+      .select("id", { head: true, count: "exact" })
+      .eq("user_id", userId),
+    supabaseAdmin
+      .from("parent_profiles")
+      .select("id", { head: true, count: "exact" })
+      .eq("user_id", userId),
+    supabaseAdmin
+      .from("athletes")
+      .select("id", { head: true, count: "exact" })
+      .eq("user_id", userId),
+    supabaseAdmin
+      .from("user_roles")
+      .select("role", { head: true, count: "exact" })
+      .eq("user_id", userId)
+      .eq("role", "admin"),
   ]);
   if ((coach.count ?? 0) > 0) return "coach";
   if ((parent.count ?? 0) > 0) return "parent";
@@ -75,18 +88,39 @@ export const listFeedback = createServerFn({ method: "POST" })
 
     const userIds = Array.from(new Set((rows ?? []).map((r: any) => r.user_id)));
     const [coaches, parents, athletes] = await Promise.all([
-      supabaseAdmin.from("coach_profiles").select("user_id, first_name, last_name, is_test").in("user_id", userIds),
-      supabaseAdmin.from("parent_profiles").select("user_id, first_name, last_name, is_test").in("user_id", userIds),
-      supabaseAdmin.from("athletes").select("user_id, first_name, last_name, parent_id").in("user_id", userIds),
+      supabaseAdmin
+        .from("coach_profiles")
+        .select("user_id, first_name, last_name, is_test")
+        .in("user_id", userIds),
+      supabaseAdmin
+        .from("parent_profiles")
+        .select("user_id, first_name, last_name, is_test")
+        .in("user_id", userIds),
+      supabaseAdmin
+        .from("athletes")
+        .select("user_id, first_name, last_name, parent_id")
+        .in("user_id", userIds),
     ]);
 
     const profileFor = (uid: string) => {
       const c = (coaches.data ?? []).find((x: any) => x.user_id === uid);
-      if (c) return { name: `${c.first_name ?? ""} ${c.last_name ?? ""}`.trim() || "Coach", isTest: !!c.is_test };
+      if (c)
+        return {
+          name: `${c.first_name ?? ""} ${c.last_name ?? ""}`.trim() || "Coach",
+          isTest: !!c.is_test,
+        };
       const p = (parents.data ?? []).find((x: any) => x.user_id === uid);
-      if (p) return { name: `${p.first_name ?? ""} ${p.last_name ?? ""}`.trim() || "Parent", isTest: !!p.is_test };
+      if (p)
+        return {
+          name: `${p.first_name ?? ""} ${p.last_name ?? ""}`.trim() || "Parent",
+          isTest: !!p.is_test,
+        };
       const a = (athletes.data ?? []).find((x: any) => x.user_id === uid);
-      if (a) return { name: `${a.first_name ?? ""} ${a.last_name ?? ""}`.trim() || "Athlete", isTest: false };
+      if (a)
+        return {
+          name: `${a.first_name ?? ""} ${a.last_name ?? ""}`.trim() || "Athlete",
+          isTest: false,
+        };
       return { name: "Unknown", isTest: false };
     };
 
@@ -113,4 +147,3 @@ export const setFeedbackResolved = createServerFn({ method: "POST" })
     if (error) dbError(error);
     return { ok: true };
   });
-

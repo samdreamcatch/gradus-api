@@ -40,21 +40,9 @@ export const getPendingConnectionCelebrations = createServerFn({ method: "GET" }
 
     // Resolve caller identity (a user may only be one role, but check each).
     const [coach, parent, athlete] = await Promise.all([
-      supabaseAdmin
-        .from("coach_profiles")
-        .select("id")
-        .eq("user_id", userId)
-        .maybeSingle(),
-      supabaseAdmin
-        .from("parent_profiles")
-        .select("id")
-        .eq("user_id", userId)
-        .maybeSingle(),
-      supabaseAdmin
-        .from("athletes")
-        .select("id, self_managed")
-        .eq("user_id", userId)
-        .maybeSingle(),
+      supabaseAdmin.from("coach_profiles").select("id").eq("user_id", userId).maybeSingle(),
+      supabaseAdmin.from("parent_profiles").select("id").eq("user_id", userId).maybeSingle(),
+      supabaseAdmin.from("athletes").select("id, self_managed").eq("user_id", userId).maybeSingle(),
     ]);
     if (coach.error) dbError(coach.error);
     if (parent.error) dbError(parent.error);
@@ -78,16 +66,10 @@ export const getPendingConnectionCelebrations = createServerFn({ method: "GET" }
         .in("id", athleteIds);
       if (athletesRes.error) dbError(athletesRes.error);
 
-      const athleteById = new Map(
-        (athletesRes.data ?? []).map((a) => [a.id, a] as const),
-      );
+      const athleteById = new Map((athletesRes.data ?? []).map((a) => [a.id, a] as const));
 
       const parentIds = Array.from(
-        new Set(
-          (athletesRes.data ?? [])
-            .map((a) => a.parent_id)
-            .filter((p): p is string => !!p),
-        ),
+        new Set((athletesRes.data ?? []).map((a) => a.parent_id).filter((p): p is string => !!p)),
       );
       const parentsRes = parentIds.length
         ? await supabaseAdmin
@@ -96,9 +78,7 @@ export const getPendingConnectionCelebrations = createServerFn({ method: "GET" }
             .in("id", parentIds)
         : { data: [], error: null as null };
       if (parentsRes.error) dbError(parentsRes.error);
-      const parentById = new Map(
-        (parentsRes.data ?? []).map((p) => [p.id, p] as const),
-      );
+      const parentById = new Map((parentsRes.data ?? []).map((p) => [p.id, p] as const));
 
       // Group: by parent_id when present, otherwise by athlete_id (self-managed).
       const groups = new Map<string, CelebrationGroup>();
@@ -153,9 +133,7 @@ export const getPendingConnectionCelebrations = createServerFn({ method: "GET" }
         .select("id, first_name, last_name")
         .in("id", coachIds);
       if (coachesRes.error) dbError(coachesRes.error);
-      const coachById = new Map(
-        (coachesRes.data ?? []).map((c) => [c.id, c] as const),
-      );
+      const coachById = new Map((coachesRes.data ?? []).map((c) => [c.id, c] as const));
 
       // Look up existing rooms so "Say hello" can jump directly.
       const roomsRes = await supabaseAdmin
@@ -164,20 +142,15 @@ export const getPendingConnectionCelebrations = createServerFn({ method: "GET" }
         .in("coach_id", coachIds)
         .in("athlete_id", myAthleteIds);
       if (roomsRes.error) dbError(roomsRes.error);
-      const roomKey = (coachId: string, athleteId: string) =>
-        `${coachId}:${athleteId}`;
+      const roomKey = (coachId: string, athleteId: string) => `${coachId}:${athleteId}`;
       const roomByKey = new Map(
-        (roomsRes.data ?? []).map(
-          (r) => [roomKey(r.coach_id, r.athlete_id), r.id] as const,
-        ),
+        (roomsRes.data ?? []).map((r) => [roomKey(r.coach_id, r.athlete_id), r.id] as const),
       );
 
       const groups = new Map<string, CelebrationGroup>();
       for (const link of rows) {
         const c = coachById.get(link.coach_id);
-        const coachName = c
-          ? `${c.first_name ?? ""} ${c.last_name ?? ""}`.trim()
-          : "your coach";
+        const coachName = c ? `${c.first_name ?? ""} ${c.last_name ?? ""}`.trim() : "your coach";
         const existing = groups.get(link.coach_id);
         if (existing) {
           existing.linkIds.push(link.id);
@@ -215,9 +188,7 @@ export const getPendingConnectionCelebrations = createServerFn({ method: "GET" }
         .select("id, first_name, last_name")
         .in("id", coachIds);
       if (coachesRes.error) dbError(coachesRes.error);
-      const coachById = new Map(
-        (coachesRes.data ?? []).map((c) => [c.id, c] as const),
-      );
+      const coachById = new Map((coachesRes.data ?? []).map((c) => [c.id, c] as const));
 
       const roomsRes = await supabaseAdmin
         .from("message_rooms")
@@ -225,15 +196,11 @@ export const getPendingConnectionCelebrations = createServerFn({ method: "GET" }
         .in("coach_id", coachIds)
         .eq("athlete_id", athlete.data.id);
       if (roomsRes.error) dbError(roomsRes.error);
-      const roomByCoach = new Map(
-        (roomsRes.data ?? []).map((r) => [r.coach_id, r.id] as const),
-      );
+      const roomByCoach = new Map((roomsRes.data ?? []).map((r) => [r.coach_id, r.id] as const));
 
       const groups: CelebrationGroup[] = rows.map((link) => {
         const c = coachById.get(link.coach_id);
-        const coachName = c
-          ? `${c.first_name ?? ""} ${c.last_name ?? ""}`.trim()
-          : "your coach";
+        const coachName = c ? `${c.first_name ?? ""} ${c.last_name ?? ""}`.trim() : "your coach";
         return {
           linkIds: [link.id],
           otherName: coachName,
@@ -263,21 +230,9 @@ export const acknowledgeConnection = createServerFn({ method: "POST" })
     const userId = context.userId;
 
     const [coach, parent, athlete] = await Promise.all([
-      supabaseAdmin
-        .from("coach_profiles")
-        .select("id")
-        .eq("user_id", userId)
-        .maybeSingle(),
-      supabaseAdmin
-        .from("parent_profiles")
-        .select("id")
-        .eq("user_id", userId)
-        .maybeSingle(),
-      supabaseAdmin
-        .from("athletes")
-        .select("id, self_managed")
-        .eq("user_id", userId)
-        .maybeSingle(),
+      supabaseAdmin.from("coach_profiles").select("id").eq("user_id", userId).maybeSingle(),
+      supabaseAdmin.from("parent_profiles").select("id").eq("user_id", userId).maybeSingle(),
+      supabaseAdmin.from("athletes").select("id, self_managed").eq("user_id", userId).maybeSingle(),
     ]);
 
     if (coach.data) {
@@ -301,9 +256,7 @@ export const acknowledgeConnection = createServerFn({ method: "POST" })
         .from("coach_athletes")
         .select("id, athlete_id")
         .in("id", data.linkIds);
-      const scoped = (links.data ?? [])
-        .filter((l) => ownedIds.has(l.athlete_id))
-        .map((l) => l.id);
+      const scoped = (links.data ?? []).filter((l) => ownedIds.has(l.athlete_id)).map((l) => l.id);
       if (scoped.length === 0) return { ok: true };
       const upd = await supabaseAdmin
         .from("coach_athletes")

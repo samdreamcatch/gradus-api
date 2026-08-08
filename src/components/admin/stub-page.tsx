@@ -18,7 +18,9 @@ export function StubPage({
             <Icon className="size-5" />
           </div>
           <div>
-            <Eyebrow size="small" tone="accent-ink">Coming soon</Eyebrow>
+            <Eyebrow size="small" tone="accent-ink">
+              Coming soon
+            </Eyebrow>
             <h2 className="font-display text-h2 text-text-primary leading-tight">{title}</h2>
           </div>
         </div>

@@ -4,7 +4,6 @@ import { cn } from "@/lib/utils";
 
 import type { RoomSummary, RoleInRoom } from "@/lib/messages.functions";
 
-
 function relativeTime(iso: string): string {
   const then = new Date(iso).getTime();
   const diff = Date.now() - then;
@@ -43,13 +42,11 @@ function others(room: RoomSummary): { display: string } {
     return rank(a.role) - rank(b.role);
   });
   const parts = ordered.map((p) => {
-    const prefix =
-      p.role === "coach" ? "Coach " : p.role === "parent" ? "Parent " : "";
+    const prefix = p.role === "coach" ? "Coach " : p.role === "parent" ? "Parent " : "";
     return `${prefix}${p.firstName}`.trim();
   });
   return { display: parts.join(" & ") };
 }
-
 
 export function RoomList({
   rooms,
@@ -88,7 +85,6 @@ export function RoomList({
 
         const unread = room.unreadCount > 0;
 
-
         const inner = (
           <div
             className={cn(
@@ -116,7 +112,6 @@ export function RoomList({
                 <span className="shrink-0 text-caption font-bold uppercase tracking-widest text-text-tertiary">
                   {relativeTime(room.updatedAt)}
                 </span>
-
               </div>
 
               <div className="mt-0.5 flex items-center justify-between gap-2">
@@ -126,7 +121,9 @@ export function RoomList({
                     unread ? "text-text-primary font-semibold" : "text-text-secondary",
                   )}
                 >
-                  {last?.kind === "voice" ? <Mic className="size-3.5 shrink-0" aria-hidden /> : null}
+                  {last?.kind === "voice" ? (
+                    <Mic className="size-3.5 shrink-0" aria-hidden />
+                  ) : null}
                   <span className="truncate">
                     {previewSenderPrefix}
                     {previewBody}
@@ -136,7 +133,6 @@ export function RoomList({
                   <span className="inline-flex h-5 min-w-[20px] shrink-0 items-center justify-center rounded-full bg-attention px-1.5 text-caption font-black text-attention-foreground">
                     {room.unreadCount}
                   </span>
-
                 ) : null}
               </div>
             </div>

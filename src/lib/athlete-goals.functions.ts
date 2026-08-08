@@ -133,10 +133,10 @@ export const getAthleteGoalsDashboard = createServerFn({ method: "GET" })
     const sports: ParentGoalSportDTO[] = (goalsRes.data ?? []).map((g) => {
       const coachId = primaryBySport.get(g.sport) ?? null;
       const hoursAtCurrent = coachId
-        ? hoursByKey.get(`${coachId}|${g.sport}|${g.current_level_key}`) ?? null
+        ? (hoursByKey.get(`${coachId}|${g.sport}|${g.current_level_key}`) ?? null)
         : null;
       const hoursAtGoal = coachId
-        ? hoursByKey.get(`${coachId}|${g.sport}|${g.season_goal_key}`) ?? null
+        ? (hoursByKey.get(`${coachId}|${g.sport}|${g.season_goal_key}`) ?? null)
         : null;
       return {
         sport: g.sport,

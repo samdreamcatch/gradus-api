@@ -14,9 +14,7 @@ export const Route = createFileRoute("/_authenticated/coach/")({
     return (
       <div className="flex min-h-dvh items-center justify-center p-6 text-center">
         <div>
-          <p className="text-sm text-text-secondary">
-            Couldn&apos;t load your coach profile.
-          </p>
+          <p className="text-sm text-text-secondary">Couldn&apos;t load your coach profile.</p>
           <p className="mt-2 text-xs text-text-tertiary">{error.message}</p>
         </div>
       </div>

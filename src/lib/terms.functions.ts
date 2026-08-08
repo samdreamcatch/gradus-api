@@ -47,16 +47,14 @@ export const acceptTerms = createServerFn({ method: "POST" })
       return { ok: false, version: CURRENT_TERMS_VERSION, deferred: true } as const;
     }
 
-    const { error } = await context.supabase
-      .from("terms_acceptances")
-      .upsert(
-        {
-          user_id: context.userId,
-          role,
-          terms_version: CURRENT_TERMS_VERSION,
-        },
-        { onConflict: "user_id,terms_version", ignoreDuplicates: true },
-      );
+    const { error } = await context.supabase.from("terms_acceptances").upsert(
+      {
+        user_id: context.userId,
+        role,
+        terms_version: CURRENT_TERMS_VERSION,
+      },
+      { onConflict: "user_id,terms_version", ignoreDuplicates: true },
+    );
     if (error) dbError(error);
     return { ok: true, version: CURRENT_TERMS_VERSION, deferred: false } as const;
   });

@@ -26,7 +26,6 @@ async function handleSubscriptionDeleted(subscription: any, _env: StripeEnv) {
   await markCoachSubscriptionDeleted(getSupabase(), subscription);
 }
 
-
 async function handleCheckoutCompleted(session: any, env: StripeEnv) {
   // Subscription webhook does most of the work; this just backfills the
   // customer id early if the subscription event races.
@@ -64,33 +63,26 @@ async function recordBillingEvent(event: any, env: StripeEnv) {
   const obj = event.data?.object ?? {};
   const type = event.type as string;
 
-  const customerId =
-    typeof obj.customer === "string" ? obj.customer : obj.customer?.id ?? null;
-  const subscriptionId =
-    type.startsWith("customer.subscription")
-      ? obj.id
-      : typeof obj.subscription === "string"
-        ? obj.subscription
-        : obj.subscription?.id ?? null;
+  const customerId = typeof obj.customer === "string" ? obj.customer : (obj.customer?.id ?? null);
+  const subscriptionId = type.startsWith("customer.subscription")
+    ? obj.id
+    : typeof obj.subscription === "string"
+      ? obj.subscription
+      : (obj.subscription?.id ?? null);
   const invoiceId = type.startsWith("invoice.") ? obj.id : null;
 
   const userId =
-    (obj.metadata?.userId as string | undefined) ??
-    (await userIdForCustomer(customerId));
+    (obj.metadata?.userId as string | undefined) ?? (await userIdForCustomer(customerId));
 
   const amountCents = type.startsWith("invoice.")
-    ? obj.amount_paid ?? obj.amount_due ?? null
+    ? (obj.amount_paid ?? obj.amount_due ?? null)
     : null;
   const currency = obj.currency ?? null;
   const status = obj.status ?? null;
 
   const item = obj.items?.data?.[0];
   const periodStart = item?.current_period_start ?? obj.period_start ?? null;
-  const periodEnd =
-    item?.current_period_end ??
-    obj.current_period_end ??
-    obj.period_end ??
-    null;
+  const periodEnd = item?.current_period_end ?? obj.current_period_end ?? obj.period_end ?? null;
 
   const { error } = await getSupabase()
     .from("billing_events")

@@ -21,18 +21,13 @@ export function useMessagesUnread(): number {
     enabled: isReady && !!user,
   });
 
-
   useEffect(() => {
     const channel = supabase
       .channel("messages-unread")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "messages" },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ["messages-unread-total"] });
-          queryClient.invalidateQueries({ queryKey: ["message-rooms"] });
-        },
-      )
+      .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, () => {
+        queryClient.invalidateQueries({ queryKey: ["messages-unread-total"] });
+        queryClient.invalidateQueries({ queryKey: ["message-rooms"] });
+      })
       .subscribe();
     return () => {
       void supabase.removeChannel(channel);

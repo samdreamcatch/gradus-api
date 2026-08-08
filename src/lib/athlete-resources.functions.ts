@@ -29,8 +29,6 @@ export const getAthleteResources = createServerFn({ method: "GET" })
       .eq("athlete_id", athlete.id);
     if (gErr) dbError(gErr);
 
-    const sports = Array.from(
-      new Set((goalRows ?? []).map((g) => g.sport)),
-    ).sort();
+    const sports = Array.from(new Set((goalRows ?? []).map((g) => g.sport))).sort();
     return { sports };
   });

@@ -10,7 +10,6 @@ import { Label } from "@/components/ui/label";
 
 import { Textarea } from "@/components/ui/textarea";
 
-
 import {
   Select,
   SelectContent,
@@ -40,7 +39,6 @@ import { saveAdultAthleteScheduleForCoach } from "@/lib/adult-athlete-schedule.f
 import { PromoCodeField } from "@/components/signup/promo-code-field";
 import { savePendingPromoCode } from "@/lib/pending-promo-code";
 
-
 export const Route = createFileRoute("/_authenticated/athlete/onboarding")({
   component: AdultAthleteOnboardingPage,
 });
@@ -60,9 +58,7 @@ function AdultAthleteOnboardingPage() {
     queryFn: () => statusFn(),
   });
 
-  const [step, setStep] = useState<"profile" | "coach" | "goals" | "schedule">(
-    "profile",
-  );
+  const [step, setStep] = useState<"profile" | "coach" | "goals" | "schedule">("profile");
   const [sportsToGoal, setSportsToGoal] = useState<string[]>([]);
 
   // Once the athlete row exists, jump past the profile step.
@@ -105,10 +101,7 @@ function AdultAthleteOnboardingPage() {
             }}
           />
         ) : step === "goals" ? (
-          <GoalsStep
-            initialSports={sportsToGoal}
-            onDone={() => setStep("schedule")}
-          />
+          <GoalsStep initialSports={sportsToGoal} onDone={() => setStep("schedule")} />
         ) : (
           <ScheduleStep onDone={finish} />
         )}
@@ -168,9 +161,7 @@ function ProfileStep({ onDone }: { onDone: () => void }) {
   return (
     <>
       <div className="mb-6 text-center">
-        <p className="font-display text-2xl text-text-primary">
-          Tell us about yourself
-        </p>
+        <p className="font-display text-2xl text-text-primary">Tell us about yourself</p>
         <p className="mt-2 text-sm text-text-secondary">
           Your coach will see your name on your lessons.
         </p>
@@ -256,8 +247,7 @@ function ScheduleStep({ onDone }: { onDone: () => void }) {
 
   const current = coaches[index];
   const slots = byCoach[current.coachId] ?? [emptySlot()];
-  const setSlots = (next: Slot[]) =>
-    setByCoach((p) => ({ ...p, [current.coachId]: next }));
+  const setSlots = (next: Slot[]) => setByCoach((p) => ({ ...p, [current.coachId]: next }));
 
   const finish = async (skip: boolean) => {
     setError(null);
@@ -288,8 +278,7 @@ function ScheduleStep({ onDone }: { onDone: () => void }) {
           s.frequency === "weekly" || s.frequency === "biweekly"
             ? []
             : [...s.weeksOfMonth].sort((a, b) => a - b),
-        startsOn:
-          s.frequency === "biweekly" && s.startsOn ? toISODate(s.startsOn) : null,
+        startsOn: s.frequency === "biweekly" && s.startsOn ? toISODate(s.startsOn) : null,
       }));
     }
     setSaving(true);
@@ -327,8 +316,8 @@ function ScheduleStep({ onDone }: { onDone: () => void }) {
         Your lessons with {current.coachName}
       </h1>
       <p className="mt-2 text-sm text-text-secondary">
-        When do you see this coach each week? We&apos;ll use it to recommend a
-        practice schedule around lessons.
+        When do you see this coach each week? We&apos;ll use it to recommend a practice schedule
+        around lessons.
       </p>
 
       <div className="mt-6">
@@ -342,18 +331,12 @@ function ScheduleStep({ onDone }: { onDone: () => void }) {
           Skip
         </Button>
         <Button onClick={() => finish(false)} disabled={saving}>
-          {saving
-            ? "Saving…"
-            : index + 1 < coaches.length
-              ? "Save & next"
-              : "Finish"}
+          {saving ? "Saving…" : index + 1 < coaches.length ? "Save & next" : "Finish"}
         </Button>
       </div>
     </>
   );
 }
-
-
 
 function CoachStep({ onDone }: { onDone: (sports: string[]) => void }) {
   const previewFn = useServerFn(previewCoachForAdultAthlete);
@@ -361,13 +344,13 @@ function CoachStep({ onDone }: { onDone: (sports: string[]) => void }) {
 
   const [code, setCode] = useState("");
   const [promoCode, setPromoCode] = useState("");
-  const [preview, setPreview] = useState<
-    { coachId: string; coachName: string; sports: string[] } | null
-  >(null);
+  const [preview, setPreview] = useState<{
+    coachId: string;
+    coachName: string;
+    sports: string[];
+  } | null>(null);
   const [selectedSports, setSelectedSports] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
-
-
 
   const stashPromoIfAny = () => {
     if (promoCode.trim()) savePendingPromoCode(promoCode);
@@ -423,12 +406,10 @@ function CoachStep({ onDone }: { onDone: (sports: string[]) => void }) {
   return (
     <>
       <div className="mb-6 text-center">
-        <p className="font-display text-2xl text-text-primary">
-          Connect with a coach
-        </p>
+        <p className="font-display text-2xl text-text-primary">Connect with a coach</p>
         <p className="mt-2 text-sm text-text-secondary">
-          Have a coach&apos;s invite code or a promo code? Add either now — or skip
-          and add later from settings.
+          Have a coach&apos;s invite code or a promo code? Add either now — or skip and add later
+          from settings.
         </p>
       </div>
 
@@ -473,10 +454,7 @@ function CoachStep({ onDone }: { onDone: (sports: string[]) => void }) {
             <Button
               type="submit"
               className="w-full"
-              disabled={
-                previewMut.isPending ||
-                (code.trim().length > 0 && !codeValid)
-              }
+              disabled={previewMut.isPending || (code.trim().length > 0 && !codeValid)}
             >
               {previewMut.isPending ? "Looking up…" : "Continue"}
             </Button>
@@ -490,17 +468,12 @@ function CoachStep({ onDone }: { onDone: (sports: string[]) => void }) {
               Skip for now
             </Button>
           </div>
-
         </form>
       ) : (
         <div className="space-y-6">
           <div className="rounded-xl border border-divider bg-elevated p-6 text-center">
-            <p className="text-xs font-bold uppercase tracking-widest text-text-tertiary">
-              Coach
-            </p>
-            <p className="mt-2 font-display text-2xl text-text-primary">
-              {preview.coachName}
-            </p>
+            <p className="text-xs font-bold uppercase tracking-widest text-text-tertiary">Coach</p>
+            <p className="mt-2 font-display text-2xl text-text-primary">{preview.coachName}</p>
           </div>
 
           <div>
@@ -527,8 +500,8 @@ function CoachStep({ onDone }: { onDone: (sports: string[]) => void }) {
             </div>
             {preview.sports.length === 0 && (
               <p className="text-sm text-text-secondary">
-                This coach hasn&apos;t set up their sports yet. Ask them to finish
-                their profile, then try again.
+                This coach hasn&apos;t set up their sports yet. Ask them to finish their profile,
+                then try again.
               </p>
             )}
           </div>
@@ -570,13 +543,7 @@ type GoalDraft = {
   longTermGoal: string;
 };
 
-function GoalsStep({
-  initialSports,
-  onDone,
-}: {
-  initialSports: string[];
-  onDone: () => void;
-}) {
+function GoalsStep({ initialSports, onDone }: { initialSports: string[]; onDone: () => void }) {
   const saveGoals = useServerFn(saveAdultAthleteGoals);
 
   // If the coach step gave us sports, use them; otherwise let the athlete
@@ -601,8 +568,7 @@ function GoalsStep({
     setByS((prev) => ({ ...prev, [current]: { ...state, ...patch } }));
   };
 
-  const canContinue =
-    !!current && !!state.currentLevelKey && !!state.seasonGoalKey;
+  const canContinue = !!current && !!state.currentLevelKey && !!state.seasonGoalKey;
 
   const handleNext = async () => {
     if (!current) return;
@@ -769,11 +735,7 @@ function GoalsStep({
           Skip
         </Button>
         <Button onClick={handleNext} disabled={!canContinue || saving}>
-          {saving
-            ? "Saving…"
-            : index + 1 < sports.length
-              ? "Save & next"
-              : "Finish"}
+          {saving ? "Saving…" : index + 1 < sports.length ? "Save & next" : "Finish"}
         </Button>
       </div>
     </>

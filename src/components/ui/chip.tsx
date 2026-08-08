@@ -143,4 +143,3 @@ export function Chip<As extends React.ElementType = "span">({
     </Comp>
   );
 }
-

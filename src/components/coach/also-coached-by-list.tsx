@@ -42,9 +42,7 @@ export function AlsoCoachedByList({
                   )}
                 >
                   Coach {c.firstName}{" "}
-                  <span className={interactive ? "pen-highlight" : undefined}>
-                    {c.lastName}
-                  </span>
+                  <span className={interactive ? "pen-highlight" : undefined}>{c.lastName}</span>
                 </div>
                 {c.sports.length > 0 ? (
                   <div className="mt-1 flex flex-wrap gap-1">
@@ -59,9 +57,7 @@ export function AlsoCoachedByList({
                   </div>
                 ) : null}
                 {hasPlans && !locked ? (
-                  <p className="mt-1 font-hand text-[15px] text-text-secondary">
-                    {coachMeta(c)}
-                  </p>
+                  <p className="mt-1 font-hand text-[15px] text-text-secondary">{coachMeta(c)}</p>
                 ) : !hasPlans ? (
                   <p className="mt-1 font-hand text-[15px] text-text-tertiary">
                     No shared plans yet
@@ -79,10 +75,7 @@ export function AlsoCoachedByList({
                 locked ? (
                   <Lock className="size-4 shrink-0 text-text-tertiary" aria-hidden />
                 ) : (
-                  <ChevronRight
-                    className="size-4 shrink-0 text-text-tertiary"
-                    aria-hidden
-                  />
+                  <ChevronRight className="size-4 shrink-0 text-text-tertiary" aria-hidden />
                 )
               ) : null}
             </>

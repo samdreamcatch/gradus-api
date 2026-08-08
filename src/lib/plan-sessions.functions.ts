@@ -6,13 +6,9 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
 import { dbError } from "./db-error";
 import { createLovableAiGatewayProvider } from "./ai-gateway.server";
-import {
-  PROMPT_INJECTION_GUARD,
-  sanitizeUserContent,
-  wrapUntrusted,
-} from "./ai-prompt-safety";
+import { PROMPT_INJECTION_GUARD, sanitizeUserContent, wrapUntrusted } from "./ai-prompt-safety";
 import type { SessionsByState } from "@/components/plans/flow-state-bars";
-
+import { STATE_LABELS } from "./session-states";
 
 type Client = SupabaseClient<Database>;
 
@@ -104,16 +100,8 @@ export const submitPlanSession = createServerFn({ method: "POST" })
 
     // Look up plan → athlete; parent_id comes from the caller's parent_profile.
     const [{ data: plan, error: pErr }, { data: parent, error: ppErr }] = await Promise.all([
-      supabase
-        .from("plans")
-        .select("id, athlete_id")
-        .eq("id", data.planId)
-        .maybeSingle(),
-      supabase
-        .from("parent_profiles")
-        .select("id")
-        .eq("user_id", context.userId)
-        .maybeSingle(),
+      supabase.from("plans").select("id, athlete_id").eq("id", data.planId).maybeSingle(),
+      supabase.from("parent_profiles").select("id").eq("user_id", context.userId).maybeSingle(),
     ]);
     if (pErr) dbError(pErr);
     if (ppErr) dbError(ppErr);
@@ -149,16 +137,8 @@ export const submitAthletePlanSession = createServerFn({ method: "POST" })
     const supabase = context.supabase as Client;
 
     const [{ data: athlete, error: aErr }, { data: plan, error: pErr }] = await Promise.all([
-      supabase
-        .from("athletes")
-        .select("id")
-        .eq("user_id", context.userId)
-        .maybeSingle(),
-      supabase
-        .from("plans")
-        .select("id, athlete_id")
-        .eq("id", data.planId)
-        .maybeSingle(),
+      supabase.from("athletes").select("id").eq("user_id", context.userId).maybeSingle(),
+      supabase.from("plans").select("id, athlete_id").eq("id", data.planId).maybeSingle(),
     ]);
     if (aErr) dbError(aErr);
     if (pErr) dbError(pErr);
@@ -179,13 +159,7 @@ export const submitAthletePlanSession = createServerFn({ method: "POST" })
 
 // --- AI summary of logged sessions for a single plan ---
 
-const STATE_LABELS = [
-  "Frustrated",
-  "Pushing",
-  "Steady",
-  "Locked in",
-  "Flowing",
-];
+// Mood labels are shared with the admin drill-downs (src/lib/session-states.ts).
 
 export interface PlanSessionsSummaryDTO {
   summary: string;
@@ -210,8 +184,8 @@ export const getPlanSessionsSummary = createServerFn({ method: "POST" })
     if (!plan) throw new Error("Plan not found");
 
     const athleteFirstName =
-      (plan as unknown as { athletes: { first_name: string } | null }).athletes
-        ?.first_name ?? "the athlete";
+      (plan as unknown as { athletes: { first_name: string } | null }).athletes?.first_name ??
+      "the athlete";
 
     const { data: rows, error } = await supabase
       .from("plan_sessions")

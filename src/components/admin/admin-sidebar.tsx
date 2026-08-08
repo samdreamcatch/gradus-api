@@ -6,6 +6,7 @@ import {
   UserPlus,
   UserCheck,
   BarChart3,
+  ClipboardList,
   History,
   Building2,
   CreditCard,
@@ -36,6 +37,8 @@ const GROUPS: Group[] = [
     label: "Reporting",
     items: [
       { to: "/admin/reporting", label: "Overview", icon: BarChart3 },
+      { to: "/admin/active", label: "Active users", icon: UserCheck },
+      { to: "/admin/sessions", label: "Sessions", icon: ClipboardList },
       { to: "/admin/activity", label: "Activity log", icon: History },
     ],
   },
@@ -51,15 +54,11 @@ const GROUPS: Group[] = [
   },
   {
     label: "Organizations",
-    items: [
-      { to: "/admin/organizations", label: "Organizations & codes", icon: Building2 },
-    ],
+    items: [{ to: "/admin/organizations", label: "Organizations & codes", icon: Building2 }],
   },
   {
     label: "Revenue",
-    items: [
-      { to: "/admin/billing", label: "Billing", icon: CreditCard },
-    ],
+    items: [{ to: "/admin/billing", label: "Billing", icon: CreditCard }],
   },
   {
     label: "Support",
@@ -72,7 +71,6 @@ const GROUPS: Group[] = [
   },
 ];
 
-
 export function AdminSidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
@@ -83,7 +81,9 @@ export function AdminSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b border-divider">
         <div className="px-2 py-1">
-          <Eyebrow size="small" tone="accent-ink">Internal</Eyebrow>
+          <Eyebrow size="small" tone="accent-ink">
+            Internal
+          </Eyebrow>
           <p className="font-display text-h3 text-text-primary leading-tight">Admin</p>
         </div>
       </SidebarHeader>

@@ -179,14 +179,11 @@ function ParentSettingsPage() {
               />
             </SettingsGroup>
 
-
             <SettingsGroup label="Coaches">
               <ConnectedCoachesList athletes={data.athletes as AthleteData[]} />
               <AddCoachByCodeCard athletes={data.athletes as AthleteData[]} />
               <InviteCoachCard />
             </SettingsGroup>
-
-
 
             <SettingsGroup label="Preferences">
               <SettingsList>
@@ -239,8 +236,8 @@ function ConnectedCoachesList({ athletes }: { athletes: AthleteData[] }) {
   if (coaches.length === 0) {
     return (
       <p className="mb-3 px-1 text-sm text-text-tertiary">
-        No coaches connected yet. Share your invite code below, or link a coach
-        from an athlete&apos;s Coaches section above.
+        No coaches connected yet. Share your invite code below, or link a coach from an
+        athlete&apos;s Coaches section above.
       </p>
     );
   }
@@ -252,9 +249,7 @@ function ConnectedCoachesList({ athletes }: { athletes: AthleteData[] }) {
           <div className="text-sm font-medium">{c.coachName}</div>
           <ul className="mt-1 space-y-0.5">
             {c.entries.map((e, j) => {
-              const sportLabels = e.sports
-                .map((s) => getSport(s)?.label ?? s)
-                .join(", ");
+              const sportLabels = e.sports.map((s) => getSport(s)?.label ?? s).join(", ");
               return (
                 <li key={j} className="text-xs text-text-tertiary">
                   {e.athleteName}
@@ -269,11 +264,7 @@ function ConnectedCoachesList({ athletes }: { athletes: AthleteData[] }) {
   );
 }
 
-function NameDisclosure({
-  profile,
-}: {
-  profile: { firstName: string; lastName: string };
-}) {
+function NameDisclosure({ profile }: { profile: { firstName: string; lastName: string } }) {
   const [firstName, setFirstName] = useState(profile.firstName);
   const [lastName, setLastName] = useState(profile.lastName);
   const qc = useQueryClient();
@@ -304,19 +295,11 @@ function NameDisclosure({
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label className="text-xs">First name</Label>
-          <Input
-            value={firstName}
-            maxLength={80}
-            onChange={(e) => setFirstName(e.target.value)}
-          />
+          <Input value={firstName} maxLength={80} onChange={(e) => setFirstName(e.target.value)} />
         </div>
         <div className="space-y-1.5">
           <Label className="text-xs">Last name</Label>
-          <Input
-            value={lastName}
-            maxLength={80}
-            onChange={(e) => setLastName(e.target.value)}
-          />
+          <Input value={lastName} maxLength={80} onChange={(e) => setLastName(e.target.value)} />
         </div>
       </div>
       <div className="mt-3 flex justify-end">
@@ -349,7 +332,7 @@ function AthletesList({
         <AthleteDisclosure
           key={a.id}
           athlete={a}
-          initialLinkCoach={idx === 0 ? initialLinkCoach ?? null : null}
+          initialLinkCoach={idx === 0 ? (initialLinkCoach ?? null) : null}
           onLinkCoachConsumed={idx === 0 ? onLinkCoachConsumed : undefined}
         />
       ))}
@@ -380,9 +363,7 @@ function AthleteDisclosure({
 }) {
   const summary =
     athlete.sports.length > 0
-      ? athlete.sports
-          .map((s) => getSport(s.sport)?.label ?? s.sport)
-          .join(", ")
+      ? athlete.sports.map((s) => getSport(s.sport)?.label ?? s.sport).join(", ")
       : athlete.coaches.length === 0
         ? "No coach linked"
         : athlete.birthdate
@@ -455,34 +436,20 @@ function IdentitySubrow({ athlete }: { athlete: AthleteData }) {
     <SettingsDisclosure
       icon={<User className="size-4" />}
       label="Identity"
-      value={
-        athlete.birthdate ? `Born ${athlete.birthdate}` : "No birthdate"
-      }
+      value={athlete.birthdate ? `Born ${athlete.birthdate}` : "No birthdate"}
     >
       <div className="grid gap-3 sm:grid-cols-3">
         <div className="space-y-1.5">
           <Label className="text-xs">First name</Label>
-          <Input
-            value={firstName}
-            maxLength={80}
-            onChange={(e) => setFirstName(e.target.value)}
-          />
+          <Input value={firstName} maxLength={80} onChange={(e) => setFirstName(e.target.value)} />
         </div>
         <div className="space-y-1.5">
           <Label className="text-xs">Last name</Label>
-          <Input
-            value={lastName}
-            maxLength={80}
-            onChange={(e) => setLastName(e.target.value)}
-          />
+          <Input value={lastName} maxLength={80} onChange={(e) => setLastName(e.target.value)} />
         </div>
         <div className="space-y-1.5">
           <Label className="text-xs">Birthdate</Label>
-          <Input
-            type="date"
-            value={birthdate}
-            onChange={(e) => setBirthdate(e.target.value)}
-          />
+          <Input type="date" value={birthdate} onChange={(e) => setBirthdate(e.target.value)} />
         </div>
       </div>
       <div className="mt-3 flex justify-end">
@@ -528,10 +495,7 @@ function CoachesSection({
   const [editOptions, setEditOptions] = useState<string[]>([]);
   const [editSaving, setEditSaving] = useState(false);
 
-  const summary =
-    athlete.coaches.length === 0
-      ? "None linked"
-      : `${athlete.coaches.length} linked`;
+  const summary = athlete.coaches.length === 0 ? "None linked" : `${athlete.coaches.length} linked`;
 
   const resetLinkForm = () => {
     setAdding(false);
@@ -566,7 +530,6 @@ function CoachesSection({
     onLinkCoachConsumed?.();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialLinkCoach]);
-
 
   const handleLink = async () => {
     if (!preview) return;
@@ -641,15 +604,11 @@ function CoachesSection({
   };
 
   return (
-    <SettingsDisclosure
-      icon={<UserPlus className="size-4" />}
-      label="Coaches"
-      value={summary}
-    >
+    <SettingsDisclosure icon={<UserPlus className="size-4" />} label="Coaches" value={summary}>
       {athlete.coaches.length === 0 ? (
         <p className="mb-3 text-sm text-text-tertiary">
-          No coaches linked yet. Ask {athlete.firstName}'s coach for their
-          invite code, then enter it below.
+          No coaches linked yet. Ask {athlete.firstName}'s coach for their invite code, then enter
+          it below.
         </p>
       ) : (
         <div className="mb-3 space-y-2">
@@ -666,9 +625,7 @@ function CoachesSection({
                     <div className="truncate text-xs text-text-tertiary">
                       {c.sports.length === 0
                         ? "No sports set"
-                        : c.sports
-                            .map((s) => getSport(s)?.label ?? s)
-                            .join(", ")}
+                        : c.sports.map((s) => getSport(s)?.label ?? s).join(", ")}
                     </div>
                   </div>
                   <div className="flex shrink-0 gap-1">
@@ -715,17 +672,12 @@ function CoachesSection({
                     </div>
 
                     <p className="text-xs text-text-tertiary">
-                      Removing a sport here keeps the coach linked but stops
-                      tracking that sport with them. To add a sport this coach
-                      teaches that isn't shown, unlink and re-link with the
-                      invite code.
+                      Removing a sport here keeps the coach linked but stops tracking that sport
+                      with them. To add a sport this coach teaches that isn't shown, unlink and
+                      re-link with the invite code.
                     </p>
                     <div className="flex justify-end gap-2">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => setEditingCoachId(null)}
-                      >
+                      <Button size="sm" variant="ghost" onClick={() => setEditingCoachId(null)}>
                         Cancel
                       </Button>
                       <Button
@@ -744,10 +696,7 @@ function CoachesSection({
         </div>
       )}
 
-      {athlete.sports.length > 0 && (
-        <PrimaryCoachPerSport athlete={athlete} />
-      )}
-
+      {athlete.sports.length > 0 && <PrimaryCoachPerSport athlete={athlete} />}
 
       {adding ? (
         <div className="space-y-2 rounded-lg border border-divider bg-elevated/30 p-3">
@@ -781,14 +730,13 @@ function CoachesSection({
               </p>
               {preview.sports.length === 0 ? (
                 <p className="text-xs text-destructive">
-                  This coach hasn't set up any sports yet. Ask them to finish
-                  onboarding before linking.
+                  This coach hasn't set up any sports yet. Ask them to finish onboarding before
+                  linking.
                 </p>
               ) : (
                 <>
                   <Label className="text-xs">
-                    Which sport(s) does {athlete.firstName} do with{" "}
-                    {preview.coachName}?
+                    Which sport(s) does {athlete.firstName} do with {preview.coachName}?
                   </Label>
                   <div className="flex flex-wrap gap-2">
                     {preview.sports.map((s) => {
@@ -799,16 +747,13 @@ function CoachesSection({
                           as="button"
                           caseSensitive
                           selected={selected}
-                          onClick={() =>
-                            toggleSport(s, selectedSports, setSelectedSports)
-                          }
+                          onClick={() => toggleSport(s, selectedSports, setSelectedSports)}
                         >
                           {getSport(s)?.label ?? s}
                         </Chip>
                       );
                     })}
                   </div>
-
                 </>
               )}
               <div className="flex justify-end gap-2">
@@ -818,11 +763,7 @@ function CoachesSection({
                 <Button
                   size="sm"
                   onClick={handleLink}
-                  disabled={
-                    saving ||
-                    preview.sports.length === 0 ||
-                    selectedSports.length === 0
-                  }
+                  disabled={saving || preview.sports.length === 0 || selectedSports.length === 0}
                 >
                   {saving ? "Linking…" : "Link coach"}
                 </Button>
@@ -831,19 +772,13 @@ function CoachesSection({
           )}
         </div>
       ) : (
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => setAdding(true)}
-          className="gap-1.5"
-        >
+        <Button size="sm" variant="outline" onClick={() => setAdding(true)} className="gap-1.5">
           <Plus className="size-3.5" /> Add a coach
         </Button>
       )}
     </SettingsDisclosure>
   );
 }
-
 
 function PrimaryCoachPerSport({ athlete }: { athlete: AthleteData }) {
   const qc = useQueryClient();
@@ -867,18 +802,15 @@ function PrimaryCoachPerSport({ athlete }: { athlete: AthleteData }) {
     <div className="mt-4 rounded-lg border border-divider bg-elevated/30 p-3">
       <div className="mb-1 text-sm font-medium">Primary coach per sport</div>
       <p className="mb-3 text-xs text-text-tertiary">
-        When more than one coach handles the same sport, pick which one's
-        expectations drive {athlete.firstName}'s goals and practice plans.
+        When more than one coach handles the same sport, pick which one's expectations drive{" "}
+        {athlete.firstName}'s goals and practice plans.
       </p>
       <div className="space-y-2">
         {athlete.sports.map((s) => {
           const label = getSport(s.sport)?.label ?? s.sport;
           if (s.eligibleCoaches.length > 1) {
             return (
-              <div
-                key={s.sport}
-                className="flex flex-wrap items-center justify-between gap-2"
-              >
+              <div key={s.sport} className="flex flex-wrap items-center justify-between gap-2">
                 <span className="text-sm">{label}</span>
                 <Select
                   value={s.primaryCoachId ?? undefined}
@@ -918,7 +850,6 @@ function PrimaryCoachPerSport({ athlete }: { athlete: AthleteData }) {
 }
 
 function GoalsSection({ athlete }: { athlete: AthleteData }) {
-
   const summary =
     athlete.sports.length === 0
       ? athlete.coaches.length === 0
@@ -927,15 +858,11 @@ function GoalsSection({ athlete }: { athlete: AthleteData }) {
       : `${athlete.sports.filter((s) => s.goals).length} of ${athlete.sports.length} set`;
 
   return (
-    <SettingsDisclosure
-      icon={<Target className="size-4" />}
-      label="Goals"
-      value={summary}
-    >
+    <SettingsDisclosure icon={<Target className="size-4" />} label="Goals" value={summary}>
       {athlete.coaches.length === 0 ? (
         <p className="text-sm text-text-tertiary">
-          Request an invite code from {athlete.firstName}'s coach so they can link
-          up. Then you'll be able to set goals here.
+          Request an invite code from {athlete.firstName}'s coach so they can link up. Then you'll
+          be able to set goals here.
         </p>
       ) : athlete.sports.length === 0 ? (
         <p className="text-sm text-text-tertiary">
@@ -952,31 +879,18 @@ function GoalsSection({ athlete }: { athlete: AthleteData }) {
   );
 }
 
-function GoalsRow({
-  athlete,
-  sportEntry,
-}: {
-  athlete: AthleteData;
-  sportEntry: SportEntry;
-}) {
+function GoalsRow({ athlete, sportEntry }: { athlete: AthleteData; sportEntry: SportEntry }) {
   const sportMeta = getSport(sportEntry.sport);
-  const [currentLevelKey, setCurrentLevelKey] = useState(
-    sportEntry.goals?.currentLevelKey ?? "",
-  );
-  const [seasonGoalKey, setSeasonGoalKey] = useState(
-    sportEntry.goals?.seasonGoalKey ?? "",
-  );
-  const [longTermGoal, setLongTermGoal] = useState(
-    sportEntry.goals?.longTermGoal ?? "",
-  );
+  const [currentLevelKey, setCurrentLevelKey] = useState(sportEntry.goals?.currentLevelKey ?? "");
+  const [seasonGoalKey, setSeasonGoalKey] = useState(sportEntry.goals?.seasonGoalKey ?? "");
+  const [longTermGoal, setLongTermGoal] = useState(sportEntry.goals?.longTermGoal ?? "");
   const qc = useQueryClient();
   const save = useServerFn(updateAthleteGoals);
   const changePrimary = useServerFn(setPrimaryCoach);
   const [saving, setSaving] = useState(false);
   const [changingPrimary, setChangingPrimary] = useState(false);
 
-  const canSave =
-    !!currentLevelKey && !!seasonGoalKey && !saving;
+  const canSave = !!currentLevelKey && !!seasonGoalKey && !saving;
 
   const handleSave = async () => {
     setSaving(true);
@@ -1017,9 +931,7 @@ function GoalsRow({
   return (
     <div className="rounded-lg border border-divider bg-elevated/30 p-3">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <div className="font-medium text-sm">
-          {sportMeta?.label ?? sportEntry.sport}
-        </div>
+        <div className="font-medium text-sm">{sportMeta?.label ?? sportEntry.sport}</div>
         <div className="flex items-center gap-2 text-xs text-text-tertiary">
           <span>Primary coach:</span>
           {sportEntry.eligibleCoaches.length > 1 ? (
@@ -1040,9 +952,7 @@ function GoalsRow({
               </SelectContent>
             </Select>
           ) : (
-            <span className="text-text-secondary">
-              {sportEntry.primaryCoachName ?? "—"}
-            </span>
+            <span className="text-text-secondary">{sportEntry.primaryCoachName ?? "—"}</span>
           )}
         </div>
       </div>
@@ -1055,11 +965,7 @@ function GoalsRow({
               {sportMeta.standard}
             </p>
           )}
-          <Select
-            value={currentLevelKey}
-            onValueChange={setCurrentLevelKey}
-            disabled={!sportMeta}
-          >
+          <Select value={currentLevelKey} onValueChange={setCurrentLevelKey} disabled={!sportMeta}>
             <SelectTrigger>
               <SelectValue placeholder="Pick a level" />
             </SelectTrigger>
@@ -1079,11 +985,7 @@ function GoalsRow({
           <p className="text-xs text-text-tertiary">
             Where you&apos;d like {athlete.firstName} to be by the end of the season.
           </p>
-          <Select
-            value={seasonGoalKey}
-            onValueChange={setSeasonGoalKey}
-            disabled={!sportMeta}
-          >
+          <Select value={seasonGoalKey} onValueChange={setSeasonGoalKey} disabled={!sportMeta}>
             <SelectTrigger>
               <SelectValue placeholder="Pick a target level" />
             </SelectTrigger>
@@ -1124,10 +1026,7 @@ function GoalsRow({
 }
 
 function ScheduleSection({ athlete }: { athlete: AthleteData }) {
-  const totalSlots = athlete.schedulesByCoach.reduce(
-    (n, c) => n + c.slots.length,
-    0,
-  );
+  const totalSlots = athlete.schedulesByCoach.reduce((n, c) => n + c.slots.length, 0);
   const summary =
     athlete.coaches.length === 0
       ? "Link a coach first"
@@ -1135,9 +1034,7 @@ function ScheduleSection({ athlete }: { athlete: AthleteData }) {
         ? "Not set"
         : `${totalSlots} slot${totalSlots === 1 ? "" : "s"}`;
 
-  const [selectedCoachId, setSelectedCoachId] = useState<string>(
-    athlete.coaches[0]?.coachId ?? "",
-  );
+  const [selectedCoachId, setSelectedCoachId] = useState<string>(athlete.coaches[0]?.coachId ?? "");
   const activeCoachId = athlete.coaches.some((c) => c.coachId === selectedCoachId)
     ? selectedCoachId
     : (athlete.coaches[0]?.coachId ?? "");
@@ -1150,8 +1047,8 @@ function ScheduleSection({ athlete }: { athlete: AthleteData }) {
     >
       {athlete.coaches.length === 0 ? (
         <p className="text-sm text-text-tertiary">
-          Request an invite code from {athlete.firstName}'s coach so they can link
-          up. Then you'll be able to set a schedule here.
+          Request an invite code from {athlete.firstName}'s coach so they can link up. Then you'll
+          be able to set a schedule here.
         </p>
       ) : (
         <div className="space-y-3">
@@ -1178,10 +1075,7 @@ function ScheduleSection({ athlete }: { athlete: AthleteData }) {
                 key={c.coachId}
                 athleteId={athlete.id}
                 coachId={c.coachId}
-                slots={
-                  athlete.schedulesByCoach.find((s) => s.coachId === c.coachId)
-                    ?.slots ?? []
-                }
+                slots={athlete.schedulesByCoach.find((s) => s.coachId === c.coachId)?.slots ?? []}
               />
             ) : null,
           )}
@@ -1217,8 +1111,7 @@ function CoachScheduleEditor({
 
   const handleSave = async () => {
     const filtered = slots.filter(
-      (s) =>
-        s.dayOfWeek !== null || s.startMinute !== null || s.endMinute !== null,
+      (s) => s.dayOfWeek !== null || s.startMinute !== null || s.endMinute !== null,
     );
     const err = filtered.length ? validateSlots(filtered) : null;
     if (err) {
@@ -1234,8 +1127,7 @@ function CoachScheduleEditor({
         s.frequency === "weekly" || s.frequency === "biweekly"
           ? []
           : [...s.weeksOfMonth].sort((a, b) => a - b),
-      startsOn:
-        s.frequency === "biweekly" && s.startsOn ? toISODate(s.startsOn) : null,
+      startsOn: s.frequency === "biweekly" && s.startsOn ? toISODate(s.startsOn) : null,
     }));
     setSaving(true);
     try {
@@ -1263,9 +1155,7 @@ function CoachScheduleEditor({
 
 function InviteSubrow({ athlete }: { athlete: AthleteData }) {
   const origin = typeof window !== "undefined" ? window.location.origin : "";
-  const url = athlete.inviteCode
-    ? `${origin}/i/${athlete.inviteCode}`
-    : null;
+  const url = athlete.inviteCode ? `${origin}/i/${athlete.inviteCode}` : null;
   return (
     <SettingsDisclosure
       icon={<QrCode className="size-4" />}
@@ -1391,12 +1281,7 @@ function RemoveBlock({ athlete }: { athlete: AthleteData }) {
           <Button size="sm" variant="ghost" onClick={() => setConfirming(false)}>
             Cancel
           </Button>
-          <Button
-            size="sm"
-            variant="destructive"
-            onClick={handleRemove}
-            disabled={busy}
-          >
+          <Button size="sm" variant="destructive" onClick={handleRemove} disabled={busy}>
             {busy ? "Removing…" : "Confirm"}
           </Button>
         </div>
@@ -1449,27 +1334,15 @@ function AddAthleteForm({ onDone }: { onDone: () => void }) {
       <div className="grid gap-3 sm:grid-cols-3">
         <div className="space-y-1.5">
           <Label className="text-xs">First name</Label>
-          <Input
-            value={firstName}
-            maxLength={80}
-            onChange={(e) => setFirstName(e.target.value)}
-          />
+          <Input value={firstName} maxLength={80} onChange={(e) => setFirstName(e.target.value)} />
         </div>
         <div className="space-y-1.5">
           <Label className="text-xs">Last name</Label>
-          <Input
-            value={lastName}
-            maxLength={80}
-            onChange={(e) => setLastName(e.target.value)}
-          />
+          <Input value={lastName} maxLength={80} onChange={(e) => setLastName(e.target.value)} />
         </div>
         <div className="space-y-1.5">
           <Label className="text-xs">Birthdate</Label>
-          <Input
-            type="date"
-            value={birthdate}
-            onChange={(e) => setBirthdate(e.target.value)}
-          />
+          <Input type="date" value={birthdate} onChange={(e) => setBirthdate(e.target.value)} />
         </div>
       </div>
       <div className="mt-3 flex justify-end gap-2">
@@ -1479,9 +1352,7 @@ function AddAthleteForm({ onDone }: { onDone: () => void }) {
         <Button
           size="sm"
           onClick={handleSave}
-          disabled={
-            saving || !firstName.trim() || !lastName.trim() || !birthdate
-          }
+          disabled={saving || !firstName.trim() || !lastName.trim() || !birthdate}
         >
           {saving ? "Adding…" : "Add athlete"}
         </Button>

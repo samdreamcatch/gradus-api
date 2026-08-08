@@ -3,11 +3,7 @@ import { generateText } from "ai";
 import { createHash } from "crypto";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { createLovableAiGatewayProvider } from "./ai-gateway.server";
-import {
-  PROMPT_INJECTION_GUARD,
-  sanitizeUserContent,
-  wrapUntrusted,
-} from "./ai-prompt-safety";
+import { PROMPT_INJECTION_GUARD, sanitizeUserContent, wrapUntrusted } from "./ai-prompt-safety";
 import { dbError } from "./db-error";
 
 const PRE_LESSON_BRIEFING_SYSTEM = `You are a factual reporting assistant for a sports coaching platform. Your only job is to report what is explicitly present in the data you receive. You do not infer, speculate, add encouragement, or use generic coaching language to fill gaps. If a section has no data, skip it — do not write around it. A one-sentence output is always better than three vague ones.`;
@@ -51,7 +47,8 @@ export const getPreLessonBriefing = createServerFn({ method: "POST" })
     if (coachRes.error) dbError(coachRes.error);
     if (!coachRes.data) throw new Error("Coach profile not found");
     const coachId = coachRes.data.id as string;
-    const coachName = `${coachRes.data.first_name ?? ""} ${coachRes.data.last_name ?? ""}`.trim() || "Coach";
+    const coachName =
+      `${coachRes.data.first_name ?? ""} ${coachRes.data.last_name ?? ""}`.trim() || "Coach";
 
     // 2) Confirm coach-athlete link
     const link = await supabaseAdmin
@@ -116,7 +113,12 @@ export const getPreLessonBriefing = createServerFn({ method: "POST" })
       .neq("coach_id", coachId);
     const otherCoachIds = (otherLinks.data ?? []).map((r) => r.coach_id as string);
 
-    let otherPlans: Array<{ title: string; status: string; updated_at: string; coachName: string }> = [];
+    let otherPlans: Array<{
+      title: string;
+      status: string;
+      updated_at: string;
+      coachName: string;
+    }> = [];
     if (otherCoachIds.length > 0) {
       const op = await supabaseAdmin
         .from("plans")
@@ -183,7 +185,8 @@ export const getPreLessonBriefing = createServerFn({ method: "POST" })
       .eq("coach_id", coachId)
       .eq("athlete_id", data.athleteId)
       .maybeSingle();
-    let recentMessages: Array<{ sender_role: string; body: string | null; created_at: string }> = [];
+    let recentMessages: Array<{ sender_role: string; body: string | null; created_at: string }> =
+      [];
     if (room.data?.id) {
       const msgs = await supabaseAdmin
         .from("messages")

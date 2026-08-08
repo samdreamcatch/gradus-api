@@ -21,7 +21,6 @@ import {
   isRosterFullError,
 } from "@/lib/roster-limits";
 
-
 /**
  * Coach-side "enter a code" card. Lets a coach paste a parent or adult-athlete
  * invite code (given to them in person / by text) to link that person's
@@ -38,7 +37,6 @@ export function EnterInviteCodeCard({ onSuccess }: { onSuccess?: () => void } = 
 
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
-
 
   const codeValid = /^[A-Z2-9]{8}$/.test(code.trim().toUpperCase());
 
@@ -70,13 +68,9 @@ export function EnterInviteCodeCard({ onSuccess }: { onSuccess?: () => void } = 
         );
       } else {
         // adult-athlete: preview the name for a nicer toast, then claim.
-        const preview = await previewAdultFn({ data: { code: normalized } }).catch(
-          () => null,
-        );
+        const preview = await previewAdultFn({ data: { code: normalized } }).catch(() => null);
         await claimAdultFn({ data: { code: normalized } });
-        const name = preview
-          ? `${preview.firstName} ${preview.lastName}`.trim()
-          : "athlete";
+        const name = preview ? `${preview.firstName} ${preview.lastName}`.trim() : "athlete";
         toast.success(`Added ${name} to your roster`);
       }
       qc.invalidateQueries();
@@ -97,8 +91,7 @@ export function EnterInviteCodeCard({ onSuccess }: { onSuccess?: () => void } = 
             description: copy.description,
             action: {
               label: "Upgrade",
-              onClick: () =>
-                navigate({ to: "/coach/paywall", search: { tier: "coach_pro" } }),
+              onClick: () => navigate({ to: "/coach/paywall", search: { tier: "coach_pro" } }),
             },
           });
         } else {
@@ -114,12 +107,10 @@ export function EnterInviteCodeCard({ onSuccess }: { onSuccess?: () => void } = 
     }
   };
 
-
   return (
     <div className="space-y-3">
       <div className="text-xs text-text-secondary">
-        Got a code from a parent or an adult athlete? Enter it here to add
-        them to your roster.
+        Got a code from a parent or an adult athlete? Enter it here to add them to your roster.
       </div>
       <form
         className="space-y-3"

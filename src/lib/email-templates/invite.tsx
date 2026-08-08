@@ -1,7 +1,28 @@
 import * as React from "react";
-import { Body, Button, Container, Head, Heading, Hr, Html, Preview, Text } from "@react-email/components";
+import {
+  Body,
+  Button,
+  Container,
+  Head,
+  Heading,
+  Hr,
+  Html,
+  Preview,
+  Text,
+} from "@react-email/components";
 import parse from "html-react-parser";
-import { button, container, divider, eyebrow, footer, h1, main, sign, text, buttonWrap } from "./_styles";
+import {
+  button,
+  container,
+  divider,
+  eyebrow,
+  footer,
+  h1,
+  main,
+  sign,
+  text,
+  buttonWrap,
+} from "./_styles";
 import { Header, PageInner, PageShell } from "./_layout";
 import { resolveCopy, renderTemplateString } from "./copy-schema";
 
@@ -13,7 +34,13 @@ interface InviteEmailProps {
   copyOverrides?: Record<string, string>;
 }
 
-export const InviteEmail = ({ siteName, siteUrl, confirmationUrl, recipient, copyOverrides }: InviteEmailProps) => {
+export const InviteEmail = ({
+  siteName,
+  siteUrl,
+  confirmationUrl,
+  recipient,
+  copyOverrides,
+}: InviteEmailProps) => {
   const c = resolveCopy("invite", copyOverrides);
   const vars = { siteName, siteUrl, confirmationUrl, recipient: recipient ?? "" };
   return (
@@ -28,7 +55,11 @@ export const InviteEmail = ({ siteName, siteUrl, confirmationUrl, recipient, cop
               <Text style={eyebrow}>{renderTemplateString(c.eyebrow, vars)}</Text>
               <Heading style={h1}>{renderTemplateString(c.heading, vars)}</Heading>
               <Text style={text}>{parse(renderTemplateString(c.body, vars))}</Text>
-              <div style={buttonWrap}><Button style={button} href={confirmationUrl}>{renderTemplateString(c.ctaLabel, vars)}</Button></div>
+              <div style={buttonWrap}>
+                <Button style={button} href={confirmationUrl}>
+                  {renderTemplateString(c.ctaLabel, vars)}
+                </Button>
+              </div>
               <Text style={sign}>{renderTemplateString(c.signOff, vars)}</Text>
               <Hr style={divider} />
               <Text style={footer}>{parse(renderTemplateString(c.footer, vars))}</Text>
@@ -36,7 +67,6 @@ export const InviteEmail = ({ siteName, siteUrl, confirmationUrl, recipient, cop
           </Container>
         </PageShell>
       </Body>
-
     </Html>
   );
 };

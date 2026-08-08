@@ -68,10 +68,7 @@ export const getRosterPracticeSummaries = createServerFn({ method: "GET" })
 
     const expectedByKey = new Map<string, number>();
     for (const l of levelsRes.data ?? []) {
-      expectedByKey.set(
-        `${l.sport}::${l.level_key}`,
-        Number(l.practice_hours_per_week),
-      );
+      expectedByKey.set(`${l.sport}::${l.level_key}`, Number(l.practice_hours_per_week));
     }
 
     const since = new Date(Date.now() - WINDOW_DAYS * 24 * 60 * 60 * 1000).toISOString();
@@ -93,10 +90,7 @@ export const getRosterPracticeSummaries = createServerFn({ method: "GET" })
       logged_at: string;
     }>;
 
-    const sessionsByAthlete = new Map<
-      string,
-      { secs: number; states: number[] }
-    >();
+    const sessionsByAthlete = new Map<string, { secs: number; states: number[] }>();
     for (const s of sessions) {
       const cur = sessionsByAthlete.get(s.athlete_id) ?? { secs: 0, states: [] };
       cur.secs += s.duration_seconds;

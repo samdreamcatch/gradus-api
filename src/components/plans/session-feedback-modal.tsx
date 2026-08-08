@@ -12,8 +12,7 @@ import { cn } from "@/lib/utils";
 const FLOW_STATES: { label: string; blurb: string }[] = [
   {
     label: "Frustrated",
-    blurb:
-      "Stuck, irritated, or shutting down. The challenge felt bigger than the skill today.",
+    blurb: "Stuck, irritated, or shutting down. The challenge felt bigger than the skill today.",
   },
   {
     label: "Pushing",
@@ -25,8 +24,7 @@ const FLOW_STATES: { label: string; blurb: string }[] = [
   },
   {
     label: "Locked In",
-    blurb:
-      "Sharp, confident, losing track of time. Skill is rising to meet the challenge.",
+    blurb: "Sharp, confident, losing track of time. Skill is rising to meet the challenge.",
   },
   {
     label: "Flowing",
@@ -195,9 +193,7 @@ function FlowStateScale({
                 <span
                   className={cn(
                     "block rounded-full border-2 border-pen-pool-ink bg-card transition-all",
-                    active
-                      ? "size-5 bg-accent"
-                      : "size-3 group-hover:bg-pen-pool-ink/20",
+                    active ? "size-5 bg-accent" : "size-3 group-hover:bg-pen-pool-ink/20",
                   )}
                 />
               </button>

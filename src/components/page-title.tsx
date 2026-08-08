@@ -45,9 +45,7 @@ export function PageTitle({ children, subtitle }: PageTitleProps) {
           <span style={{ position: "relative", zIndex: 1 }}>{children}</span>
         </span>
       </h1>
-      {subtitle ? (
-        <p className="mt-2 font-hand text-xl text-text-secondary">{subtitle}</p>
-      ) : null}
+      {subtitle ? <p className="mt-2 font-hand text-xl text-text-secondary">{subtitle}</p> : null}
     </>
   );
 }

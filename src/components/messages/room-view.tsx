@@ -49,7 +49,6 @@ function ConversationHeader({
       <p className="text-caption font-black uppercase tracking-widest text-text-tertiary">
         {ordered.map((p) => roleWord(p.role)).join(" · ")}
       </p>
-
     </div>
   );
 }
@@ -64,7 +63,9 @@ function fmtDayHeader(iso: string): string {
   const yest = new Date();
   yest.setDate(today.getDate() - 1);
   const sameDay = (a: Date, b: Date) =>
-    a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate();
   if (sameDay(d, today)) return "Today";
   if (sameDay(d, yest)) return "Yesterday";
   return d.toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" });
@@ -165,7 +166,9 @@ export function RoomView({ roomId, viewerRole }: { roomId: string; viewerRole?: 
         { event: "*", schema: "public", table: "messages", filter: `room_id=eq.${roomId}` },
         () => {
           queryClient.invalidateQueries({ queryKey: ["message-room", roomId] });
-          queryClient.invalidateQueries({ queryKey: ["message-room", viewerRole ?? "default", roomId] });
+          queryClient.invalidateQueries({
+            queryKey: ["message-room", viewerRole ?? "default", roomId],
+          });
           queryClient.invalidateQueries({ queryKey: ["message-rooms"] });
           queryClient.invalidateQueries({ queryKey: ["messages-unread-total"] });
         },
@@ -184,7 +187,9 @@ export function RoomView({ roomId, viewerRole }: { roomId: string; viewerRole?: 
         toast.error("Couldn't send", { description: result.message });
         return;
       }
-      queryClient.invalidateQueries({ queryKey: ["message-room", viewerRole ?? "default", roomId] });
+      queryClient.invalidateQueries({
+        queryKey: ["message-room", viewerRole ?? "default", roomId],
+      });
       queryClient.invalidateQueries({ queryKey: ["message-rooms"] });
     },
     onError: (e) =>
@@ -192,7 +197,6 @@ export function RoomView({ roomId, viewerRole }: { roomId: string; viewerRole?: 
         description: e instanceof Error ? e.message : "Please try again.",
       }),
   });
-
 
   if (isLoading || !room) {
     return <p className="py-10 text-center text-sm text-text-secondary">Loading…</p>;
@@ -234,7 +238,6 @@ export function RoomView({ roomId, viewerRole }: { roomId: string; viewerRole?: 
                       <p className="mb-0.5 px-2 text-caption font-black uppercase tracking-widest text-text-tertiary">
                         {roleWord(m.senderRole)} {m.senderFirstName}
                       </p>
-
                     ) : null}
                     {m.plan ? (
                       room.myRole === "coach" &&
@@ -292,7 +295,6 @@ export function RoomView({ roomId, viewerRole }: { roomId: string; viewerRole?: 
                         <span className="ml-1.5">· Seen</span>
                       ) : null}
                     </p>
-
                   </div>
                 );
               })}
@@ -443,47 +445,47 @@ function Composer({
       ) : (
         <div className="flex items-end gap-2">
           {canTagPlan ? (
-          <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
-            <PopoverTrigger asChild>
-              <button
-                type="button"
-                onClick={handleAttachClick}
-                disabled={disabled || processing}
-                aria-label={attachedPlan ? "Remove plan tag" : "Tag a plan"}
-                aria-pressed={!!attachedPlan}
-                className={cn(
-                  "inline-flex size-10 shrink-0 items-center justify-center rounded-full ring-1 transition-colors disabled:opacity-50",
-                  attachedPlan
-                    ? "bg-accent/20 text-accent-ink ring-accent/40"
-                    : "bg-elevated text-text-primary ring-divider hover:bg-divider",
-                )}
-              >
-                <Paperclip className="size-4" />
-              </button>
-            </PopoverTrigger>
-            <PopoverContent align="start" side="top" className="w-64 p-1">
-              <p className="px-2 py-1.5 text-caption font-black uppercase tracking-widest text-text-tertiary">
-                Tag a plan
-              </p>
+            <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  onClick={handleAttachClick}
+                  disabled={disabled || processing}
+                  aria-label={attachedPlan ? "Remove plan tag" : "Tag a plan"}
+                  aria-pressed={!!attachedPlan}
+                  className={cn(
+                    "inline-flex size-10 shrink-0 items-center justify-center rounded-full ring-1 transition-colors disabled:opacity-50",
+                    attachedPlan
+                      ? "bg-accent/20 text-accent-ink ring-accent/40"
+                      : "bg-elevated text-text-primary ring-divider hover:bg-divider",
+                  )}
+                >
+                  <Paperclip className="size-4" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent align="start" side="top" className="w-64 p-1">
+                <p className="px-2 py-1.5 text-caption font-black uppercase tracking-widest text-text-tertiary">
+                  Tag a plan
+                </p>
 
-              <div className="flex flex-col">
-                {activePlans.map((p) => (
-                  <button
-                    key={p.id}
-                    type="button"
-                    onClick={() => {
-                      setAttachedPlan(p);
-                      setPickerOpen(false);
-                    }}
-                    className="flex items-center gap-2 rounded-md px-2 py-2 text-left text-sm text-text-primary hover:bg-elevated"
-                  >
-                    <ClipboardList className="size-3.5 text-accent-ink" />
-                    <span className="truncate">{p.title}</span>
-                  </button>
-                ))}
-              </div>
-            </PopoverContent>
-          </Popover>
+                <div className="flex flex-col">
+                  {activePlans.map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => {
+                        setAttachedPlan(p);
+                        setPickerOpen(false);
+                      }}
+                      className="flex items-center gap-2 rounded-md px-2 py-2 text-left text-sm text-text-primary hover:bg-elevated"
+                    >
+                      <ClipboardList className="size-3.5 text-accent-ink" />
+                      <span className="truncate">{p.title}</span>
+                    </button>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
           ) : null}
           <textarea
             value={text}
@@ -522,9 +524,7 @@ function Composer({
           )}
         </div>
       )}
-      {voice.errorMsg ? (
-        <p className="mt-1 text-xs text-attention-ink">{voice.errorMsg}</p>
-      ) : null}
+      {voice.errorMsg ? <p className="mt-1 text-xs text-attention-ink">{voice.errorMsg}</p> : null}
     </div>
   );
 }

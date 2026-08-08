@@ -67,11 +67,7 @@ export function InviteCard({ compact = false, audience = "parents" }: InviteCard
           className="relative flex-1 overflow-hidden rounded-md border border-divider bg-elevated px-5 py-4 text-center font-mono text-2xl tracking-[0.25em] text-text-primary sm:text-3xl"
         >
           <span className="relative">
-            {isLoading || !code ? (
-              <span className="text-text-tertiary">········</span>
-            ) : (
-              code
-            )}
+            {isLoading || !code ? <span className="text-text-tertiary">········</span> : code}
           </span>
         </div>
         <Button
@@ -99,9 +95,7 @@ export function InviteCard({ compact = false, audience = "parents" }: InviteCard
     return (
       <div>
         {controls}
-        {error && (
-          <p className="mt-2 text-xs text-destructive">{(error as Error).message}</p>
-        )}
+        {error && <p className="mt-2 text-xs text-destructive">{(error as Error).message}</p>}
       </div>
     );
   }
@@ -109,14 +103,9 @@ export function InviteCard({ compact = false, audience = "parents" }: InviteCard
   return (
     <div>
       {controls}
-      <p className="mt-3 font-hand text-lg text-accent-ink whitespace-pre-wrap">
-        {copy.footer}
-      </p>
+      <p className="mt-3 font-hand text-lg text-accent-ink whitespace-pre-wrap">{copy.footer}</p>
 
-      {error && (
-        <p className="mt-2 text-xs text-destructive">{(error as Error).message}</p>
-      )}
+      {error && <p className="mt-2 text-xs text-destructive">{(error as Error).message}</p>}
     </div>
   );
 }
-

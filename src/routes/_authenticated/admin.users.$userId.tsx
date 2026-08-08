@@ -8,7 +8,6 @@ import { Eyebrow } from "@/components/ui/eyebrow";
 import { Chip } from "@/components/ui/chip";
 import { Tag } from "@/components/ui/tag";
 
-
 export const Route = createFileRoute("/_authenticated/admin/users/$userId")({
   component: UserDetail,
 });
@@ -27,7 +26,10 @@ function UserDetail() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-10 space-y-6">
-      <Link to="/admin/users" className="text-sm text-accent-ink underline-offset-4 hover:underline">
+      <Link
+        to="/admin/users"
+        className="text-sm text-accent-ink underline-offset-4 hover:underline"
+      >
         ← Back to admin
       </Link>
 
@@ -39,13 +41,16 @@ function UserDetail() {
           <header className="rounded-xl border border-divider bg-card p-5">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <Eyebrow size="small" tone="tertiary" weight="normal" tracking="wide">Auth user</Eyebrow>
+                <Eyebrow size="small" tone="tertiary" weight="normal" tracking="wide">
+                  Auth user
+                </Eyebrow>
                 <h1 className="mt-1 font-display text-h2 text-text-primary">
                   {data.auth?.email ?? "(no email)"}
                   {data.isTest && (
-                    <Tag size="caption" className="ml-2 align-middle">test user</Tag>
+                    <Tag size="caption" className="ml-2 align-middle">
+                      test user
+                    </Tag>
                   )}
-
                 </h1>
               </div>
               <div className="shrink-0 flex flex-col items-end gap-2">
@@ -71,7 +76,12 @@ function UserDetail() {
                     className="disabled:opacity-50"
                     onClick={async () => {
                       const email = data.auth?.email ?? "this user";
-                      if (!confirm(`Permanently delete ${email}? This removes their account and profiles so the email can be reused. This cannot be undone.`)) return;
+                      if (
+                        !confirm(
+                          `Permanently delete ${email}? This removes their account and profiles so the email can be reused. This cannot be undone.`,
+                        )
+                      )
+                        return;
                       setDeleting(true);
                       try {
                         await deleteFn({ data: { userId } });
@@ -86,7 +96,6 @@ function UserDetail() {
                     {deleting ? "Deleting…" : "Delete user"}
                   </Chip>
                 )}
-
               </div>
             </div>
             <dl className="mt-3 grid grid-cols-2 gap-3 text-sm">
@@ -107,7 +116,8 @@ function UserDetail() {
               <Field
                 label="Last active"
                 value={(() => {
-                  const seen = (data.coach as any)?.last_seen_at ?? (data.parent as any)?.last_seen_at ?? null;
+                  const seen =
+                    (data.coach as any)?.last_seen_at ?? (data.parent as any)?.last_seen_at ?? null;
                   return seen ? new Date(seen).toLocaleString() : "Never";
                 })()}
               />
@@ -118,9 +128,24 @@ function UserDetail() {
             <section className="rounded-xl border border-divider bg-card p-5 space-y-3">
               <h2 className="font-display text-h3 text-text-primary">Coach profile</h2>
               <dl className="grid grid-cols-2 gap-3 text-sm">
-                <Field label="Name" value={`${data.coach.first_name ?? ""} ${data.coach.last_name ?? ""}`.trim() || "—"} />
-                <Field label="Onboarded" value={data.coach.onboarded_at ? new Date(data.coach.onboarded_at).toLocaleDateString() : "No"} />
-                <Field label="Active plans" value={`${data.coach.activePlansCount} / ${data.coach.plansCount}`} />
+                <Field
+                  label="Name"
+                  value={
+                    `${data.coach.first_name ?? ""} ${data.coach.last_name ?? ""}`.trim() || "—"
+                  }
+                />
+                <Field
+                  label="Onboarded"
+                  value={
+                    data.coach.onboarded_at
+                      ? new Date(data.coach.onboarded_at).toLocaleDateString()
+                      : "No"
+                  }
+                />
+                <Field
+                  label="Active plans"
+                  value={`${data.coach.activePlansCount} / ${data.coach.plansCount}`}
+                />
                 <Field label="Sports" value={(data.coach.sports as string[]).join(", ") || "—"} />
               </dl>
               <div>
@@ -129,7 +154,9 @@ function UserDetail() {
                 </Eyebrow>
                 <ul className="mt-1 text-sm text-text-primary">
                   {(data.coach.athletes as any[]).map((a) => (
-                    <li key={a.id}>• {a.first_name} {a.last_name}</li>
+                    <li key={a.id}>
+                      • {a.first_name} {a.last_name}
+                    </li>
                   ))}
                 </ul>
               </div>
@@ -140,8 +167,16 @@ function UserDetail() {
             <section className="rounded-xl border border-divider bg-card p-5 space-y-3">
               <h2 className="font-display text-h3 text-text-primary">Parent profile</h2>
               <dl className="grid grid-cols-2 gap-3 text-sm">
-                <Field label="Name" value={`${data.parent.first_name ?? ""} ${data.parent.last_name ?? ""}`.trim() || "—"} />
-                <Field label="Coach link" value={data.parent.coach_id ? "Linked" : "Beta (no coach)"} />
+                <Field
+                  label="Name"
+                  value={
+                    `${data.parent.first_name ?? ""} ${data.parent.last_name ?? ""}`.trim() || "—"
+                  }
+                />
+                <Field
+                  label="Coach link"
+                  value={data.parent.coach_id ? "Linked" : "Beta (no coach)"}
+                />
               </dl>
               <div>
                 <Eyebrow size="small" tone="tertiary" weight="normal" tracking="wide">
@@ -164,14 +199,33 @@ function UserDetail() {
               <h2 className="font-display text-h3 text-text-primary">
                 Athlete profile
                 {data.athlete.self_managed && (
-                  <Tag size="caption" className="ml-2">adult</Tag>
+                  <Tag size="caption" className="ml-2">
+                    adult
+                  </Tag>
                 )}
               </h2>
               <dl className="grid grid-cols-2 gap-3 text-sm">
-                <Field label="Name" value={`${data.athlete.first_name ?? ""} ${data.athlete.last_name ?? ""}`.trim() || "—"} />
+                <Field
+                  label="Name"
+                  value={
+                    `${data.athlete.first_name ?? ""} ${data.athlete.last_name ?? ""}`.trim() || "—"
+                  }
+                />
                 <Field label="Birthdate" value={data.athlete.birthdate ?? "—"} />
-                <Field label="Managed by" value={data.athlete.self_managed ? "Self (adult)" : data.athlete.parent_id ? "Parent" : "—"} />
-                <Field label="Active plans" value={`${data.athlete.activePlansCount} / ${data.athlete.plansCount}`} />
+                <Field
+                  label="Managed by"
+                  value={
+                    data.athlete.self_managed
+                      ? "Self (adult)"
+                      : data.athlete.parent_id
+                        ? "Parent"
+                        : "—"
+                  }
+                />
+                <Field
+                  label="Active plans"
+                  value={`${data.athlete.activePlansCount} / ${data.athlete.plansCount}`}
+                />
               </dl>
               <div>
                 <Eyebrow size="small" tone="tertiary" weight="normal" tracking="wide">
@@ -203,7 +257,9 @@ function UserDetail() {
 function Field({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
   return (
     <div>
-      <Eyebrow as="dt" size="small" tone="tertiary" weight="normal" tracking="wide">{label}</Eyebrow>
+      <Eyebrow as="dt" size="small" tone="tertiary" weight="normal" tracking="wide">
+        {label}
+      </Eyebrow>
       <dd className={`text-sm text-text-primary ${mono ? "font-mono break-all" : ""}`}>{value}</dd>
     </div>
   );

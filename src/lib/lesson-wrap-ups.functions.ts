@@ -70,10 +70,7 @@ export const getPendingLessonWrapUps = createServerFn({ method: "POST" })
         .eq("kind", "plan")
         .eq("status", "active")
         .in("athlete_id", athleteIds),
-      supabase
-        .from("athletes")
-        .select("id, first_name, last_name")
-        .in("id", athleteIds),
+      supabase.from("athletes").select("id, first_name, last_name").in("id", athleteIds),
     ]);
     if (handledRes.error) dbError(handledRes.error);
     if (plansRes.error) dbError(plansRes.error);
@@ -114,9 +111,7 @@ export const getPendingLessonWrapUps = createServerFn({ method: "POST" })
       }
     }
 
-    return Array.from(byAthlete.values()).sort(
-      (a, b) => b.lessonEndMinute - a.lessonEndMinute,
-    );
+    return Array.from(byAthlete.values()).sort((a, b) => b.lessonEndMinute - a.lessonEndMinute);
   });
 
 export const recordLessonWrapUp = createServerFn({ method: "POST" })
@@ -135,17 +130,15 @@ export const recordLessonWrapUp = createServerFn({ method: "POST" })
     const coachId = await getCoachIdOrNull(supabase, context.userId);
     if (!coachId) throw new Error("Not a coach");
 
-    const { error } = await supabase
-      .from("lesson_wrap_ups")
-      .upsert(
-        {
-          coach_id: coachId,
-          athlete_id: data.athleteId,
-          lesson_date: data.lessonDate,
-          action: data.action,
-        },
-        { onConflict: "coach_id,athlete_id,lesson_date" },
-      );
+    const { error } = await supabase.from("lesson_wrap_ups").upsert(
+      {
+        coach_id: coachId,
+        athlete_id: data.athleteId,
+        lesson_date: data.lessonDate,
+        action: data.action,
+      },
+      { onConflict: "coach_id,athlete_id,lesson_date" },
+    );
     if (error) dbError(error);
     return { ok: true };
   });

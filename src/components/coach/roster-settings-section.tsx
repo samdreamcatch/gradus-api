@@ -16,15 +16,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { SettingsDisclosure } from "@/components/settings/primitives";
-import {
-  getCoachRoster,
-  type RosterAthlete,
-  type RosterSlot,
-} from "@/lib/coach-roster.functions";
-import {
-  deleteLessonSlot,
-  removeAthleteFromRoster,
-} from "@/lib/coach-roster-mutations.functions";
+import { getCoachRoster, type RosterAthlete, type RosterSlot } from "@/lib/coach-roster.functions";
+import { deleteLessonSlot, removeAthleteFromRoster } from "@/lib/coach-roster-mutations.functions";
 import { LessonSlotSheet, type LessonSlotSheetMode } from "@/components/coach/lesson-slot-sheet";
 
 const DAY_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -119,8 +112,7 @@ function AthleteRosterRow({
   };
 
   const removeMutation = useMutation({
-    mutationFn: () =>
-      removeAthleteFromRoster({ data: { athleteId: athlete.athleteId } }),
+    mutationFn: () => removeAthleteFromRoster({ data: { athleteId: athlete.athleteId } }),
     onSuccess: () => {
       invalidate();
       toast.success(`${name} removed from roster`);
@@ -141,9 +133,7 @@ function AthleteRosterRow({
     <li className="py-3 first:pt-0 last:pb-0">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="truncate font-display text-base font-black text-text-primary">
-            {name}
-          </div>
+          <div className="truncate font-display text-base font-black text-text-primary">{name}</div>
           {athlete.sport ? (
             <div className="mt-0.5 text-[11px] font-bold uppercase tracking-widest text-text-tertiary">
               {athlete.sport.replace(/_/g, " ")}
@@ -162,7 +152,6 @@ function AthleteRosterRow({
           Remove
         </Chip>
       </div>
-
 
       {athlete.slots.length > 0 ? (
         <ul className="mt-2 space-y-1.5">
@@ -220,9 +209,9 @@ function AthleteRosterRow({
           <AlertDialogHeader>
             <AlertDialogTitle>Remove {name} from your roster?</AlertDialogTitle>
             <AlertDialogDescription>
-              This unlinks the athlete from you. Their account and practice history
-              stay intact. Their recurring lessons with you are unassigned and can
-              be re-claimed later via your invite code.
+              This unlinks the athlete from you. Their account and practice history stay intact.
+              Their recurring lessons with you are unassigned and can be re-claimed later via your
+              invite code.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

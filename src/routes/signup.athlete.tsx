@@ -11,11 +11,14 @@ import { getAthleteInviteSummary } from "@/lib/athlete-signup.functions";
 import { PromoCodeField } from "@/components/signup/promo-code-field";
 import { ShareInviteButton } from "@/components/share/share-invite-button";
 
-
-
-
 const searchSchema = z.object({
-  code: z.string().trim().toUpperCase().length(8).regex(/^[A-Z2-9]+$/).optional(),
+  code: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .length(8)
+    .regex(/^[A-Z2-9]+$/)
+    .optional(),
   stage: z.enum(["code"]).optional(),
 });
 
@@ -45,7 +48,6 @@ function AthleteEntryPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-
   if (location.pathname !== "/signup/athlete") {
     return <Outlet />;
   }
@@ -71,7 +73,6 @@ function AthleteEntryPage() {
     <div className="relative flex min-h-dvh items-center justify-center overflow-hidden px-4 py-12">
       <SportsPoster fill opacity={0.08} />
       <div className="relative w-full max-w-md rounded-2xl bg-card p-8 shadow-card">
-
         <div className="mb-8 text-center">
           <p className="text-xs font-bold uppercase tracking-widest text-accent-ink">Welcome to</p>
           <h1 className="mt-2">
@@ -82,26 +83,17 @@ function AthleteEntryPage() {
         {stage === "age" ? (
           <div className="space-y-6">
             <div className="text-center">
-              <p className="font-display text-2xl text-text-primary">
-                Are you 18 or older?
-              </p>
+              <p className="font-display text-2xl text-text-primary">Are you 18 or older?</p>
               <p className="mt-2 text-sm text-text-secondary">
                 Under-18 athletes join through a parent. Adults can set up their own account.
               </p>
             </div>
 
             <div className="space-y-3">
-              <Button
-                asChild
-                className="w-full"
-              >
+              <Button asChild className="w-full">
                 <Link to="/signup/athlete/adult">Yes, I&apos;m 18 or older</Link>
               </Button>
-              <Button
-                asChild
-                variant="outline"
-                className="w-full"
-              >
+              <Button asChild variant="outline" className="w-full">
                 <Link to="/signup/athlete" search={{ stage: "code" }}>
                   No, I&apos;m under 18
                 </Link>
@@ -121,7 +113,9 @@ function AthleteEntryPage() {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="code" className="sr-only">Invite code</Label>
+                <Label htmlFor="code" className="sr-only">
+                  Invite code
+                </Label>
                 <Input
                   id="code"
                   value={code}
@@ -139,24 +133,19 @@ function AthleteEntryPage() {
 
               {error && <p className="text-sm text-destructive">{error}</p>}
 
-
               <Button type="submit" className="w-full" disabled={loading || code.length !== 8}>
                 {loading ? "Checking..." : "Continue"}
               </Button>
 
-              <Button
-                asChild
-                variant="ghost"
-                className="w-full"
-              >
-                <Link to="/signup/athlete" search={{}}>Back</Link>
+              <Button asChild variant="ghost" className="w-full">
+                <Link to="/signup/athlete" search={{}}>
+                  Back
+                </Link>
               </Button>
             </form>
 
             <div className="mt-6 rounded-xl border border-divider bg-elevated p-4 text-center">
-              <p className="text-sm text-text-secondary">
-                Parent not on Gradus yet?
-              </p>
+              <p className="text-sm text-text-secondary">Parent not on Gradus yet?</p>
               {(() => {
                 const trimmed = promoCode.trim().toUpperCase();
                 const url = trimmed
@@ -174,8 +163,6 @@ function AthleteEntryPage() {
                 );
               })()}
             </div>
-
-
           </>
         )}
 

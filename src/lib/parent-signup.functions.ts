@@ -36,7 +36,6 @@ function clientIp(): string {
   return `ua:${ua.slice(0, 64)}`;
 }
 
-
 /**
  * Validates an 8-character signup code. Accepts either:
  *  - a coach invite code (from `coach_invite_codes`), OR
@@ -69,7 +68,9 @@ export const validateSignupCode = createServerFn({ method: "POST" })
       .maybeSingle();
     if (codeLookup.error) dbError(codeLookup.error);
     if (!codeLookup.data) {
-      throw new Error("That code isn't valid. Check with your coach, or use your Gradus beta code.");
+      throw new Error(
+        "That code isn't valid. Check with your coach, or use your Gradus beta code.",
+      );
     }
     return { kind: "coach" as const, coachId: codeLookup.data.coach_id };
   });
@@ -145,7 +146,6 @@ export const startParentSignup = createServerFn({ method: "POST" })
     return { code: returnedCode };
   });
 
-
 /**
  * Returns whether the signed-in parent has finished signup (has at least one
  * athlete) and the invite code for their coach (used to resume the wizard).
@@ -161,7 +161,8 @@ export const getParentSignupStatus = createServerFn({ method: "GET" })
       .eq("user_id", userId)
       .maybeSingle();
     if (parent.error) dbError(parent.error);
-    if (!parent.data) return { hasParentProfile: false, hasAthletes: false, hasAnyCoach: false, inviteCode: null };
+    if (!parent.data)
+      return { hasParentProfile: false, hasAthletes: false, hasAnyCoach: false, inviteCode: null };
 
     const parentId = parent.data.id;
 
@@ -248,16 +249,13 @@ export const linkAthletesToCoach = createServerFn({ method: "POST" })
             z.object({
               firstName: z.string().trim().min(1, "Athlete first name required").max(80),
               lastName: z.string().trim().min(1, "Athlete last name required").max(80),
-              birthdate: z
-                .string()
-                .regex(/^\d{4}-\d{2}-\d{2}$/, "Birthdate required"),
+              birthdate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Birthdate required"),
             }),
           )
           .min(1, "Add at least one athlete")
           .max(20),
       })
       .parse(input),
-
   )
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -293,10 +291,7 @@ export const linkAthletesToCoach = createServerFn({ method: "POST" })
       birthdate: a.birthdate,
     }));
 
-    const athletesIns = await supabaseAdmin
-      .from("athletes")
-      .insert(athleteRows)
-      .select("id");
+    const athletesIns = await supabaseAdmin.from("athletes").insert(athleteRows).select("id");
     if (athletesIns.error) dbError(athletesIns.error);
 
     if (coachId) {
@@ -324,16 +319,13 @@ export const linkAthletesToCoach = createServerFn({ method: "POST" })
           sports.map((sport) => ({ athlete_id: a.id, coach_id: coachId!, sport })),
         );
 
-        const scopeIns = await supabaseAdmin
-          .from("coach_athlete_sports")
-          .insert(scopeRows);
+        const scopeIns = await supabaseAdmin.from("coach_athlete_sports").insert(scopeRows);
         if (scopeIns.error) dbError(scopeIns.error);
       }
     }
 
     return { ok: true };
   });
-
 
 /**
  * Returns the caller's role based on which profile row exists.
@@ -350,23 +342,9 @@ export const getMyRole = createServerFn({ method: "GET" })
         .select("id, onboarded_at")
         .eq("user_id", userId)
         .maybeSingle(),
-      supabaseAdmin
-        .from("parent_profiles")
-        .select("id")
-        .eq("user_id", userId)
-        .maybeSingle(),
-      supabaseAdmin
-        .from("athletes")
-        .select("id")
-        .eq("user_id", userId)
-        .limit(1)
-        .maybeSingle(),
-      supabaseAdmin
-        .from("org_admins")
-        .select("id")
-        .eq("user_id", userId)
-        .limit(1)
-        .maybeSingle(),
+      supabaseAdmin.from("parent_profiles").select("id").eq("user_id", userId).maybeSingle(),
+      supabaseAdmin.from("athletes").select("id").eq("user_id", userId).limit(1).maybeSingle(),
+      supabaseAdmin.from("org_admins").select("id").eq("user_id", userId).limit(1).maybeSingle(),
     ]);
     if (coach.error) dbError(coach.error);
     if (parent.error) dbError(parent.error);
@@ -427,7 +405,11 @@ export const listAthletesForCode = createServerFn({ method: "POST" })
     // Coached path: parent lookup + code lookup in parallel.
     const [parent, codeLookup] = await Promise.all([
       supabaseAdmin.from("parent_profiles").select("id").eq("user_id", userId).maybeSingle(),
-      supabaseAdmin.from("coach_invite_codes").select("coach_id").eq("code", data.code).maybeSingle(),
+      supabaseAdmin
+        .from("coach_invite_codes")
+        .select("coach_id")
+        .eq("code", data.code)
+        .maybeSingle(),
     ]);
     if (parent.error) dbError(parent.error);
     if (!parent.data) throw new Error("Parent profile not found.");
@@ -448,12 +430,15 @@ export const listAthletesForCode = createServerFn({ method: "POST" })
     if (levels.error) dbError(levels.error);
 
     const athletes = (links.data ?? [])
-      .map((l) => l.athletes as unknown as {
-        id: string;
-        first_name: string;
-        last_name: string;
-        parent_id: string;
-      })
+      .map(
+        (l) =>
+          l.athletes as unknown as {
+            id: string;
+            first_name: string;
+            last_name: string;
+            parent_id: string;
+          },
+      )
       .filter((a) => a.parent_id === parentId)
       .map((a) => ({ id: a.id, firstName: a.first_name, lastName: a.last_name }));
 
@@ -525,19 +510,17 @@ export const saveAthleteGoals = createServerFn({ method: "POST" })
       stampCoachId = resolvedPrimary.data?.coach_id ?? coachId;
     }
 
-    const up = await supabaseAdmin
-      .from("athlete_goals")
-      .upsert(
-        {
-          athlete_id: data.athleteId,
-          coach_id: stampCoachId,
-          sport: data.sport,
-          current_level_key: data.currentLevelKey,
-          season_goal_key: data.seasonGoalKey,
-          long_term_goal: data.longTermGoal,
-        },
-        { onConflict: "athlete_id,sport" },
-      );
+    const up = await supabaseAdmin.from("athlete_goals").upsert(
+      {
+        athlete_id: data.athleteId,
+        coach_id: stampCoachId,
+        sport: data.sport,
+        current_level_key: data.currentLevelKey,
+        season_goal_key: data.seasonGoalKey,
+        long_term_goal: data.longTermGoal,
+      },
+      { onConflict: "athlete_id,sport" },
+    );
     if (up.error) dbError(up.error);
     return { ok: true };
   });
@@ -555,9 +538,15 @@ export const saveAthleteSchedule = createServerFn({ method: "POST" })
               dayOfWeek: z.number().int().min(0).max(6),
               startMinute: z.number().int().min(0).max(1439),
               endMinute: z.number().int().min(1).max(1440),
-              frequency: z.enum(["weekly", "biweekly", "twice_monthly", "monthly"]).default("weekly"),
+              frequency: z
+                .enum(["weekly", "biweekly", "twice_monthly", "monthly"])
+                .default("weekly"),
               weeksOfMonth: z.array(z.number().int().min(1).max(5)).default([]),
-              startsOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().default(null),
+              startsOn: z
+                .string()
+                .regex(/^\d{4}-\d{2}-\d{2}$/)
+                .nullable()
+                .default(null),
             }),
           )
           .max(20),
@@ -612,7 +601,8 @@ export const saveAthleteSchedule = createServerFn({ method: "POST" })
           start_minute: s.startMinute,
           end_minute: s.endMinute,
           frequency: s.frequency,
-          weeks_of_month: s.frequency === "biweekly" || s.frequency === "weekly" ? [] : s.weeksOfMonth,
+          weeks_of_month:
+            s.frequency === "biweekly" || s.frequency === "weekly" ? [] : s.weeksOfMonth,
           starts_on: s.frequency === "biweekly" ? s.startsOn : null,
         })),
       );
@@ -620,7 +610,6 @@ export const saveAthleteSchedule = createServerFn({ method: "POST" })
     }
     return { ok: true };
   });
-
 
 /**
  * Returns the parent's athletes with their invite codes, generating codes
@@ -646,11 +635,7 @@ export const listAthletesWithInviteCodes = createServerFn({ method: "GET" })
         .select("id, first_name, last_name")
         .eq("parent_id", parentId)
         .order("created_at", { ascending: true }),
-      supabaseAdmin
-        .from("parent_profiles")
-        .select("promo_code")
-        .eq("id", parentId)
-        .maybeSingle(),
+      supabaseAdmin.from("parent_profiles").select("promo_code").eq("id", parentId).maybeSingle(),
     ]);
     if (athletes.error) dbError(athletes.error);
     const inviterPromo = parentPromo.data?.promo_code ?? null;
@@ -833,10 +818,7 @@ export const claimParentInvite = createServerFn({ method: "POST" })
     }
 
     // Athletes under this parent
-    const athletesRes = await supabaseAdmin
-      .from("athletes")
-      .select("id")
-      .eq("parent_id", parentId);
+    const athletesRes = await supabaseAdmin.from("athletes").select("id").eq("parent_id", parentId);
     if (athletesRes.error) dbError(athletesRes.error);
     const athleteIds = (athletesRes.data ?? []).map((a) => a.id);
     if (athleteIds.length === 0) return { ok: true, athletes: 0, sports: 0 };

@@ -52,10 +52,7 @@ async function assertOwnsAthlete(userId: string, athleteId: string) {
 }
 
 /** Resolve primary coach for (athlete, sport); auto-pick earliest eligible coach if none. */
-async function ensurePrimaryCoach(
-  athleteId: string,
-  sport: string,
-): Promise<string | null> {
+async function ensurePrimaryCoach(athleteId: string, sport: string): Promise<string | null> {
   const supabaseAdmin = await getAdmin();
   const existing = await supabaseAdmin
     .from("athlete_primary_coaches")
@@ -123,34 +120,35 @@ export const getParentSettings = createServerFn({ method: "GET" })
     const athleteIds = athletes.map((a) => a.id);
     const safeIds = athleteIds.length ? athleteIds : ["00000000-0000-0000-0000-000000000000"];
 
-    const [linksRes, sportsScopeRes, goalsRes, slotsRes, primaryRes, codesRes] =
-      await Promise.all([
-        supabaseAdmin
-          .from("coach_athletes")
-          .select("athlete_id, coach_id, created_at, coach_profiles!inner(first_name, last_name)")
-          .in("athlete_id", safeIds)
-          .order("created_at", { ascending: true }),
-        supabaseAdmin
-          .from("coach_athlete_sports")
-          .select("athlete_id, coach_id, sport")
-          .in("athlete_id", safeIds),
-        supabaseAdmin
-          .from("athlete_goals")
-          .select("athlete_id, sport, current_level_key, season_goal_key, long_term_goal, coach_id")
-          .in("athlete_id", safeIds),
-        supabaseAdmin
-          .from("athlete_lesson_slots")
-          .select("id, athlete_id, coach_id, day_of_week, start_minute, end_minute, frequency, weeks_of_month, starts_on")
-          .in("athlete_id", safeIds),
-        supabaseAdmin
-          .from("athlete_primary_coaches")
-          .select("athlete_id, sport, coach_id")
-          .in("athlete_id", safeIds),
-        supabaseAdmin
-          .from("athlete_invite_codes")
-          .select("athlete_id, code")
-          .eq("parent_id", parent.id),
-      ]);
+    const [linksRes, sportsScopeRes, goalsRes, slotsRes, primaryRes, codesRes] = await Promise.all([
+      supabaseAdmin
+        .from("coach_athletes")
+        .select("athlete_id, coach_id, created_at, coach_profiles!inner(first_name, last_name)")
+        .in("athlete_id", safeIds)
+        .order("created_at", { ascending: true }),
+      supabaseAdmin
+        .from("coach_athlete_sports")
+        .select("athlete_id, coach_id, sport")
+        .in("athlete_id", safeIds),
+      supabaseAdmin
+        .from("athlete_goals")
+        .select("athlete_id, sport, current_level_key, season_goal_key, long_term_goal, coach_id")
+        .in("athlete_id", safeIds),
+      supabaseAdmin
+        .from("athlete_lesson_slots")
+        .select(
+          "id, athlete_id, coach_id, day_of_week, start_minute, end_minute, frequency, weeks_of_month, starts_on",
+        )
+        .in("athlete_id", safeIds),
+      supabaseAdmin
+        .from("athlete_primary_coaches")
+        .select("athlete_id, sport, coach_id")
+        .in("athlete_id", safeIds),
+      supabaseAdmin
+        .from("athlete_invite_codes")
+        .select("athlete_id, code")
+        .eq("parent_id", parent.id),
+    ]);
     if (linksRes.error) dbError(linksRes.error);
     if (sportsScopeRes.error) dbError(sportsScopeRes.error);
     if (goalsRes.error) dbError(goalsRes.error);
@@ -217,28 +215,29 @@ export const getParentSettings = createServerFn({ method: "GET" })
         );
         const myGoals = (goalsRes.data ?? []).filter((g) => g.athlete_id === a.id);
 
-        const sports = Array.from(sportSet).sort().map((sport) => {
-          const eligibleCoaches = coaches
-            .filter((c) => c.sports.includes(sport))
-            .map((c) => ({ coachId: c.coachId, coachName: c.coachName }));
-          const primaryCoachId =
-            myPrimary.get(sport) ?? eligibleCoaches[0]?.coachId ?? null;
-          const primaryCoach = eligibleCoaches.find((c) => c.coachId === primaryCoachId);
-          const g = myGoals.find((gg) => gg.sport === sport);
-          return {
-            sport,
-            primaryCoachId,
-            primaryCoachName: primaryCoach?.coachName ?? null,
-            eligibleCoaches,
-            goals: g
-              ? {
-                  currentLevelKey: g.current_level_key,
-                  seasonGoalKey: g.season_goal_key,
-                  longTermGoal: g.long_term_goal ?? "",
-                }
-              : null,
-          };
-        });
+        const sports = Array.from(sportSet)
+          .sort()
+          .map((sport) => {
+            const eligibleCoaches = coaches
+              .filter((c) => c.sports.includes(sport))
+              .map((c) => ({ coachId: c.coachId, coachName: c.coachName }));
+            const primaryCoachId = myPrimary.get(sport) ?? eligibleCoaches[0]?.coachId ?? null;
+            const primaryCoach = eligibleCoaches.find((c) => c.coachId === primaryCoachId);
+            const g = myGoals.find((gg) => gg.sport === sport);
+            return {
+              sport,
+              primaryCoachId,
+              primaryCoachName: primaryCoach?.coachName ?? null,
+              eligibleCoaches,
+              goals: g
+                ? {
+                    currentLevelKey: g.current_level_key,
+                    seasonGoalKey: g.season_goal_key,
+                    longTermGoal: g.long_term_goal ?? "",
+                  }
+                : null,
+            };
+          });
 
         const schedulesByCoach = coaches.map((c) => {
           const slots = (slotsRes.data ?? [])
@@ -338,23 +337,19 @@ export const updateAthleteGoals = createServerFn({ method: "POST" })
     await assertOwnsAthlete(context.userId, data.athleteId);
     const coachId = await ensurePrimaryCoach(data.athleteId, data.sport);
     if (!coachId) {
-      throw new Error(
-        "Link a coach who teaches this sport before setting goals.",
-      );
+      throw new Error("Link a coach who teaches this sport before setting goals.");
     }
-    const up = await supabaseAdmin
-      .from("athlete_goals")
-      .upsert(
-        {
-          athlete_id: data.athleteId,
-          coach_id: coachId,
-          sport: data.sport,
-          current_level_key: data.currentLevelKey,
-          season_goal_key: data.seasonGoalKey,
-          long_term_goal: data.longTermGoal,
-        },
-        { onConflict: "athlete_id,sport" },
-      );
+    const up = await supabaseAdmin.from("athlete_goals").upsert(
+      {
+        athlete_id: data.athleteId,
+        coach_id: coachId,
+        sport: data.sport,
+        current_level_key: data.currentLevelKey,
+        season_goal_key: data.seasonGoalKey,
+        long_term_goal: data.longTermGoal,
+      },
+      { onConflict: "athlete_id,sport" },
+    );
     if (up.error) dbError(up.error);
     return { ok: true };
   });
@@ -372,9 +367,7 @@ const inviteCodeSchema = z
  */
 export const previewCoachByInviteCode = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z.object({ code: inviteCodeSchema }).parse(input),
-  )
+  .inputValidator((input: unknown) => z.object({ code: inviteCodeSchema }).parse(input))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const codeLookup = await supabaseAdmin
@@ -463,9 +456,7 @@ export const linkAthleteToCoach = createServerFn({ method: "POST" })
       coach_id: coachId,
       sport,
     }));
-    const scopeIns = await supabaseAdmin
-      .from("coach_athlete_sports")
-      .insert(scopeRows);
+    const scopeIns = await supabaseAdmin.from("coach_athlete_sports").insert(scopeRows);
     if (scopeIns.error) dbError(scopeIns.error);
 
     return { ok: true };
@@ -593,7 +584,6 @@ export const unlinkAthleteFromCoach = createServerFn({ method: "POST" })
     if (del.error) dbError(del.error);
     return { ok: true };
   });
-
 
 export const setPrimaryCoach = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -728,14 +718,12 @@ export const addAthlete = createServerFn({ method: "POST" })
     // Best-effort invite code
     for (let attempt = 0; attempt < 5; attempt++) {
       const code = genCode(8);
-      const c = await supabaseAdmin
-        .from("athlete_invite_codes")
-        .insert({
-          parent_id: parent.id,
-          athlete_id: ins.data.id,
-          code,
-          promo_code: parent.promo_code,
-        });
+      const c = await supabaseAdmin.from("athlete_invite_codes").insert({
+        parent_id: parent.id,
+        athlete_id: ins.data.id,
+        code,
+        promo_code: parent.promo_code,
+      });
       if (!c.error) break;
     }
 
@@ -744,9 +732,7 @@ export const addAthlete = createServerFn({ method: "POST" })
 
 export const removeAthlete = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z.object({ athleteId: z.string().uuid() }).parse(input),
-  )
+  .inputValidator((input: unknown) => z.object({ athleteId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     await assertOwnsAthlete(context.userId, data.athleteId);

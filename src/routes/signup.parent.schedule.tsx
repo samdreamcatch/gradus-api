@@ -17,13 +17,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  listAthletesForCode,
-  saveAthleteSchedule,
-} from "@/lib/parent-signup.functions";
+import { listAthletesForCode, saveAthleteSchedule } from "@/lib/parent-signup.functions";
 
 const searchSchema = z.object({
-  code: z.string().trim().toUpperCase().length(8).regex(/^[A-Z2-9]+$/).optional(),
+  code: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .length(8)
+    .regex(/^[A-Z2-9]+$/)
+    .optional(),
 });
 
 export const Route = createFileRoute("/signup/parent/schedule")({
@@ -116,7 +119,14 @@ function ParentSchedulePage() {
   const athletes = data?.athletes ?? [];
   const current = athletes[index];
   const slots: Slot[] = byAthlete[current?.id ?? ""] ?? [
-    { dayOfWeek: null, startMinute: null, endMinute: null, frequency: "weekly", weeksOfMonth: [], startsOn: null },
+    {
+      dayOfWeek: null,
+      startMinute: null,
+      endMinute: null,
+      frequency: "weekly",
+      weeksOfMonth: [],
+      startsOn: null,
+    },
   ];
 
   const setSlots = (next: Slot[]) => {
@@ -128,7 +138,14 @@ function ParentSchedulePage() {
   const addSlot = () =>
     setSlots([
       ...slots,
-      { dayOfWeek: null, startMinute: null, endMinute: null, frequency: "weekly", weeksOfMonth: [], startsOn: null },
+      {
+        dayOfWeek: null,
+        startMinute: null,
+        endMinute: null,
+        frequency: "weekly",
+        weeksOfMonth: [],
+        startsOn: null,
+      },
     ]);
   const removeSlot = (i: number) =>
     setSlots(slots.length === 1 ? slots : slots.filter((_, idx) => idx !== i));
@@ -220,8 +237,8 @@ function ParentSchedulePage() {
               {current.firstName}&apos;s lesson times
             </h1>
             <p className="mt-2 text-sm text-text-secondary">
-              When does {current.firstName} see their coach each week? We&apos;ll use
-              this to recommend a practice schedule around lessons.
+              When does {current.firstName} see their coach each week? We&apos;ll use this to
+              recommend a practice schedule around lessons.
             </p>
 
             <div className="mt-8 space-y-3">
@@ -332,7 +349,9 @@ function ParentSchedulePage() {
                             )}
                           >
                             <CalendarIcon className="mr-2 size-4" />
-                            {slot.startsOn ? format(slot.startsOn, "EEE, MMM d, yyyy") : "Pick a start date"}
+                            {slot.startsOn
+                              ? format(slot.startsOn, "EEE, MMM d, yyyy")
+                              : "Pick a start date"}
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">
@@ -412,11 +431,7 @@ function ParentSchedulePage() {
             {formError && <p className="mt-4 text-sm text-destructive">{formError}</p>}
 
             <div className="mt-10 flex items-center justify-between">
-              <Button
-                variant="ghost"
-                onClick={() => finish(true)}
-                disabled={saving}
-              >
+              <Button variant="ghost" onClick={() => finish(true)} disabled={saving}>
                 Skip for now
               </Button>
               <Button onClick={() => finish(false)} disabled={saving}>

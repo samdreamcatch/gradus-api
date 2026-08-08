@@ -14,8 +14,6 @@ import {
 } from "@/components/ui/dialog";
 import { Eyebrow } from "@/components/ui/eyebrow";
 
-
-
 import { submitFeedback } from "@/lib/feedback.functions";
 import { useBottomBannerLocked } from "@/lib/bottom-banner-store";
 import { cn } from "@/lib/utils";
@@ -46,9 +44,7 @@ function FeedbackDialog({ trigger }: { trigger: ReactNode }) {
       data: {
         message: trimmed,
         path:
-          typeof window !== "undefined"
-            ? window.location.pathname + window.location.search
-            : null,
+          typeof window !== "undefined" ? window.location.pathname + window.location.search : null,
         userAgent: typeof navigator !== "undefined" ? navigator.userAgent.slice(0, 500) : null,
         viewport:
           typeof window !== "undefined" ? `${window.innerWidth}x${window.innerHeight}` : null,
@@ -61,7 +57,9 @@ function FeedbackDialog({ trigger }: { trigger: ReactNode }) {
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="top-4 translate-y-0 sm:top-[50%] sm:max-w-md sm:translate-y-[-50%]">
         <DialogHeader>
-          <Eyebrow size="caption" tone="accent-ink" weight="black">Feedback</Eyebrow>
+          <Eyebrow size="caption" tone="accent-ink" weight="black">
+            Feedback
+          </Eyebrow>
           <DialogTitle className="font-display text-2xl font-black leading-tight text-text-primary">
             Your feedback shapes what we build
           </DialogTitle>
@@ -79,7 +77,6 @@ function FeedbackDialog({ trigger }: { trigger: ReactNode }) {
             placeholder=""
             className="focus-input w-full resize-none rounded-xl border border-divider bg-elevated px-3 py-2 text-[15px] leading-relaxed text-text-primary placeholder:text-text-tertiary"
           />
-
 
           <button
             type="button"

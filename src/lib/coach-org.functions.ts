@@ -3,11 +3,7 @@ import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
-import {
-  createStripeClient,
-  getStripeErrorMessage,
-  type StripeEnv,
-} from "@/lib/stripe.server";
+import { createStripeClient, getStripeErrorMessage, type StripeEnv } from "@/lib/stripe.server";
 import { dbError } from "./db-error";
 
 type Client = SupabaseClient<Database>;
@@ -101,9 +97,7 @@ export const verifyOrgCodeForOrg = createServerFn({ method: "POST" })
 /** Public search for the org picker. Coach signs in first, so this is auth-only. */
 export const searchOrganizations = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z.object({ query: z.string().trim().max(80) }).parse(input),
-  )
+  .inputValidator((input: unknown) => z.object({ query: z.string().trim().max(80) }).parse(input))
   .handler(async ({ data, context }) => {
     const supabase = context.supabase as Client;
     const q = data.query.trim();
@@ -117,9 +111,7 @@ export const searchOrganizations = createServerFn({ method: "POST" })
       const esc = q.replace(/[%_]/g, "\\$&");
       builder = builder.or(`name.ilike.%${esc}%,city.ilike.%${esc}%`);
     }
-    const { data: rows, error } = await builder
-      .order("name", { ascending: true })
-      .limit(8);
+    const { data: rows, error } = await builder.order("name", { ascending: true }).limit(8);
     if (error) dbError(error);
     return {
       organizations: (rows ?? []).map((o) => ({
@@ -195,9 +187,7 @@ export const recordSilentClubLead = createServerFn({ method: "POST" })
     const email = (context.claims as { email?: string })?.email ?? "";
 
     const requestedOrgName =
-      data.orgName?.trim() ||
-      data.typedQuery?.trim() ||
-      "(unknown — coach did not name a club)";
+      data.orgName?.trim() || data.typedQuery?.trim() || "(unknown — coach did not name a club)";
 
     const messageBody =
       data.source === "no_code"
@@ -215,7 +205,6 @@ export const recordSilentClubLead = createServerFn({ method: "POST" })
     if (error) dbError(error);
     return { ok: true };
   });
-
 
 /**
  * Link the current coach to an org via invite code and mark them as
@@ -261,8 +250,7 @@ export const claimOrganizationInviteCode = createServerFn({ method: "POST" })
       .eq("id", org.id)
       .maybeSingle();
     if (versionRow.error) dbError(versionRow.error);
-    const version =
-      (versionRow.data?.content_version as number | null | undefined) ?? 0;
+    const version = (versionRow.data?.content_version as number | null | undefined) ?? 0;
 
     const update = await supabase
       .from("coach_profiles")
@@ -319,9 +307,7 @@ export const joinOrganization = createServerFn({ method: "POST" })
     // 1. Load coach profile.
     const coach = await supabase
       .from("coach_profiles")
-      .select(
-        "id, organization_id, entitlement, subscription_status, stripe_customer_id",
-      )
+      .select("id, organization_id, entitlement, subscription_status, stripe_customer_id")
       .eq("user_id", context.userId)
       .maybeSingle();
     if (coach.error) dbError(coach.error);
@@ -346,10 +332,7 @@ export const joinOrganization = createServerFn({ method: "POST" })
     if (!org.active) return { ok: false, error: "That organization is inactive." };
 
     // Idempotent: already on this club.
-    if (
-      coach.data.entitlement === "club_covered" &&
-      coach.data.organization_id === org.id
-    ) {
+    if (coach.data.entitlement === "club_covered" && coach.data.organization_id === org.id) {
       return {
         ok: true,
         organizationId: org.id,
@@ -374,9 +357,10 @@ export const joinOrganization = createServerFn({ method: "POST" })
           expand: ["data.items.data.price"],
         });
         const sub = list.data
-          .filter((s) =>
-            ["active", "trialing", "past_due"].includes(s.status) &&
-            !(s.cancel_at_period_end && s.status !== "trialing"),
+          .filter(
+            (s) =>
+              ["active", "trialing", "past_due"].includes(s.status) &&
+              !(s.cancel_at_period_end && s.status !== "trialing"),
           )
           .sort((a, b) => (b.created ?? 0) - (a.created ?? 0))[0];
 
@@ -392,12 +376,12 @@ export const joinOrganization = createServerFn({ method: "POST" })
                 cancel_at_period_end: true,
               });
               const periodEnd =
-                item?.current_period_end ?? (sub as unknown as { current_period_end?: number }).current_period_end ?? null;
+                item?.current_period_end ??
+                (sub as unknown as { current_period_end?: number }).current_period_end ??
+                null;
               subscriptionOutcome = {
                 kind: "canceled_at_period_end",
-                periodEnd: periodEnd
-                  ? new Date(periodEnd * 1000).toISOString()
-                  : null,
+                periodEnd: periodEnd ? new Date(periodEnd * 1000).toISOString() : null,
               };
             } else if (interval === "year") {
               // Compute unused fraction from the current period.
@@ -426,13 +410,12 @@ export const joinOrganization = createServerFn({ method: "POST" })
                   });
                   const inv = invoices.data[0];
                   const chargeId =
-                    typeof (inv as unknown as { charge?: string | { id: string } })?.charge === "string"
-                      ? ((inv as unknown as { charge: string }).charge)
+                    typeof (inv as unknown as { charge?: string | { id: string } })?.charge ===
+                    "string"
+                      ? (inv as unknown as { charge: string }).charge
                       : (inv as unknown as { charge?: { id: string } })?.charge?.id;
                   if (inv && chargeId && inv.amount_paid > 0) {
-                    const refundAmount = Math.round(
-                      inv.amount_paid * unusedFraction,
-                    );
+                    const refundAmount = Math.round(inv.amount_paid * unusedFraction);
                     if (refundAmount > 0) {
                       const refund = await stripe.refunds.create({
                         charge: chargeId,
@@ -480,8 +463,7 @@ export const joinOrganization = createServerFn({ method: "POST" })
       .eq("id", org.id)
       .maybeSingle();
     if (versionRow.error) dbError(versionRow.error);
-    const version =
-      (versionRow.data?.content_version as number | null | undefined) ?? 0;
+    const version = (versionRow.data?.content_version as number | null | undefined) ?? 0;
 
     const update = await supabase
       .from("coach_profiles")
@@ -520,11 +502,7 @@ export const clearOrganizationLink = createServerFn({ method: "POST" })
     // having paid (no Stripe customer) and no existing personal promo code.
     // The paywall pre-fills it; Coach Pro only, card required, 3 months free.
     let stashPromo: string | null = null;
-    if (
-      wasClubCovered &&
-      !coach.data.promo_code &&
-      !coach.data.stripe_customer_id
-    ) {
+    if (wasClubCovered && !coach.data.promo_code && !coach.data.stripe_customer_id) {
       const promo = await supabase
         .from("promo_codes")
         .select("code, active")
@@ -545,7 +523,6 @@ export const clearOrganizationLink = createServerFn({ method: "POST" })
     return { ok: true, welcomeBackGranted: stashPromo === "WELCOME_BACK" };
   });
 
-
 // ---------- Admin CRUD ----------
 
 export const listOrganizations = createServerFn({ method: "GET" })
@@ -556,7 +533,9 @@ export const listOrganizations = createServerFn({ method: "GET" })
     const [orgs, codes] = await Promise.all([
       supabaseAdmin
         .from("organizations")
-        .select("id, name, slug, active, notes, city, region, logo_url, is_listed, content_version, created_at")
+        .select(
+          "id, name, slug, active, notes, city, region, logo_url, is_listed, content_version, created_at",
+        )
         .order("created_at", { ascending: false }),
       supabaseAdmin
         .from("organization_invite_codes")
@@ -688,19 +667,14 @@ export const updateOrganization = createServerFn({ method: "POST" })
     if (data.logoUrl !== undefined) patch.logo_url = data.logoUrl;
     if (data.isListed !== undefined) patch.is_listed = data.isListed;
     if (Object.keys(patch).length === 0) return { ok: true };
-    const { error } = await supabaseAdmin
-      .from("organizations")
-      .update(patch)
-      .eq("id", data.id);
+    const { error } = await supabaseAdmin.from("organizations").update(patch).eq("id", data.id);
     if (error) dbError(error);
     return { ok: true };
   });
 
 export const rotateOrganizationInviteCode = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z.object({ organizationId: z.string().uuid() }).parse(input),
-  )
+  .inputValidator((input: unknown) => z.object({ organizationId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

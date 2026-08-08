@@ -43,16 +43,9 @@ export default defineConfig({
           ],
         },
         workbox: {
-          globPatterns: [
-            "**/*.{js,css,html,woff,woff2,ttf,svg,png,jpg,jpeg,webp,ico}",
-          ],
+          globPatterns: ["**/*.{js,css,html,woff,woff2,ttf,svg,png,jpg,jpeg,webp,ico}"],
           navigateFallback: "/",
-          navigateFallbackDenylist: [
-            /^\/api\//,
-            /^\/_serverFn\//,
-            /^\/~oauth/,
-            /^\/sw\.js$/,
-          ],
+          navigateFallbackDenylist: [/^\/api\//, /^\/_serverFn\//, /^\/~oauth/, /^\/sw\.js$/],
           runtimeCaching: [
             // Belt-and-braces: any request to Supabase bypasses the SW
             // entirely so live data and auth always hit the network.
@@ -77,8 +70,7 @@ export default defineConfig({
             {
               urlPattern: ({ url, request, sameOrigin }) =>
                 sameOrigin &&
-                (request.destination === "font" ||
-                  /\.(woff2?|ttf|otf)$/.test(url.pathname)),
+                (request.destination === "font" || /\.(woff2?|ttf|otf)$/.test(url.pathname)),
               handler: "CacheFirst",
               options: { cacheName: "fonts" },
             },

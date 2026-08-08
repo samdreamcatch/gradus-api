@@ -70,8 +70,8 @@ function SettingsPage() {
   const { data } = useSuspenseQuery(coachProfileQueryOptions);
   const email = useCurrentUserEmail();
   const sportsSummary =
-    Array.from(new Set(data.levels.map((l) => getSport(l.sport)?.label ?? l.sport)))
-      .join(", ") || "None yet";
+    Array.from(new Set(data.levels.map((l) => getSport(l.sport)?.label ?? l.sport))).join(", ") ||
+    "None yet";
 
   return (
     <>
@@ -80,15 +80,8 @@ function SettingsPage() {
 
         <SettingsGroup label="My profile">
           <SettingsList>
-            <NameDisclosure
-              firstName={data.profile.firstName}
-              lastName={data.profile.lastName}
-            />
-            <SettingsRow
-              icon={<Mail className="size-4" />}
-              label="Email"
-              value={email ?? "—"}
-            />
+            <NameDisclosure firstName={data.profile.firstName} lastName={data.profile.lastName} />
+            <SettingsRow icon={<Mail className="size-4" />} label="Email" value={email ?? "—"} />
           </SettingsList>
         </SettingsGroup>
 
@@ -103,12 +96,8 @@ function SettingsPage() {
 
             <RosterSettingsSection />
             <ConnectionsDisclosure />
-
-
-
           </SettingsList>
         </SettingsGroup>
-
 
         <SettingsGroup label="Plan">
           <PlanSection profile={data.profile} />
@@ -139,13 +128,7 @@ function SettingsPage() {
   );
 }
 
-function NameDisclosure({
-  firstName: f0,
-  lastName: l0,
-}: {
-  firstName: string;
-  lastName: string;
-}) {
+function NameDisclosure({ firstName: f0, lastName: l0 }: { firstName: string; lastName: string }) {
   const [firstName, setFirstName] = useState(f0);
   const [lastName, setLastName] = useState(l0);
   const save = useSaveCoachProfile();
@@ -171,30 +154,18 @@ function NameDisclosure({
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label className="text-xs">First name</Label>
-          <Input
-            value={firstName}
-            onChange={(e) => setFirstName(e.target.value)}
-            maxLength={80}
-          />
+          <Input value={firstName} onChange={(e) => setFirstName(e.target.value)} maxLength={80} />
         </div>
         <div className="space-y-1.5">
           <Label className="text-xs">Last name</Label>
-          <Input
-            value={lastName}
-            onChange={(e) => setLastName(e.target.value)}
-            maxLength={80}
-          />
+          <Input value={lastName} onChange={(e) => setLastName(e.target.value)} maxLength={80} />
         </div>
       </div>
       <div className="mt-3 flex justify-end">
         <Button
           size="sm"
           onClick={handleSave}
-          disabled={
-            save.isPending ||
-            firstName.trim().length === 0 ||
-            lastName.trim().length === 0
-          }
+          disabled={save.isPending || firstName.trim().length === 0 || lastName.trim().length === 0}
         >
           {save.isPending ? "Saving…" : "Save"}
         </Button>
@@ -222,13 +193,14 @@ function SportsDisclosure({
   const [entries, setEntries] = useState<LevelEntry[]>(levels);
   const save = useSaveCoachLevels();
   const distinctPrimarySportCount = useMemo(
-    () =>
-      new Set(
-        levels.map((l) => l.sport).filter((s) => s !== "strength_conditioning"),
-      ).size,
+    () => new Set(levels.map((l) => l.sport).filter((s) => s !== "strength_conditioning")).size,
     [levels],
   );
-  const maxPrimarySports = maxPrimarySportsForCoach({ effectiveTier, foundingCoach, distinctPrimarySportCount });
+  const maxPrimarySports = maxPrimarySportsForCoach({
+    effectiveTier,
+    foundingCoach,
+    distinctPrimarySportCount,
+  });
 
   useEffect(() => {
     setSports(initialSports);
@@ -247,27 +219,17 @@ function SportsDisclosure({
 
   const toggleLevel = (sport: SportKey, levelKey: string) => {
     setEntries((prev) => {
-      const exists = prev.some(
-        (e) => e.sport === sport && e.levelKey === levelKey,
-      );
-      if (exists)
-        return prev.filter(
-          (e) => !(e.sport === sport && e.levelKey === levelKey),
-        );
+      const exists = prev.some((e) => e.sport === sport && e.levelKey === levelKey);
+      if (exists) return prev.filter((e) => !(e.sport === sport && e.levelKey === levelKey));
       const lvl = getSport(sport)?.levels.find((l) => l.key === levelKey);
-      return [
-        ...prev,
-        { sport, levelKey, hoursPerWeek: lvl?.suggestedHours ?? 0 },
-      ];
+      return [...prev, { sport, levelKey, hoursPerWeek: lvl?.suggestedHours ?? 0 }];
     });
   };
 
   const updateHours = (sport: string, levelKey: string, hours: number) => {
     setEntries((prev) =>
       prev.map((e) =>
-        e.sport === sport && e.levelKey === levelKey
-          ? { ...e, hoursPerWeek: hours }
-          : e,
+        e.sport === sport && e.levelKey === levelKey ? { ...e, hoursPerWeek: hours } : e,
       ),
     );
   };
@@ -281,8 +243,7 @@ function SportsDisclosure({
     }
   };
 
-  const valid =
-    sports.length > 0 && sports.every((s) => entries.some((e) => e.sport === s));
+  const valid = sports.length > 0 && sports.every((s) => entries.some((e) => e.sport === s));
 
   return (
     <SettingsDisclosure
@@ -297,11 +258,13 @@ function SportsDisclosure({
           <SportMultiselect
             allowCustom={false}
             customSports={[]}
-            selected={sports.map((k): SelectedSport => ({
-              key: k,
-              label: getSport(k)?.label ?? k,
-              custom: false,
-            }))}
+            selected={sports.map(
+              (k): SelectedSport => ({
+                key: k,
+                label: getSport(k)?.label ?? k,
+                custom: false,
+              }),
+            )}
             onToggle={(s) => toggleSport(s.key as SportKey)}
             onAddCustom={() => ({ status: "added", label: "" })}
             onRemoveCustom={() => {}}
@@ -315,9 +278,7 @@ function SportsDisclosure({
           return (
             <div key={sportKey} className="rounded-xl border border-divider bg-card/60 p-3">
               <div className="flex items-baseline justify-between gap-3">
-                <h3 className="font-display text-base text-text-primary">
-                  {sport.label}
-                </h3>
+                <h3 className="font-display text-base text-text-primary">{sport.label}</h3>
                 <span className="text-[10px] uppercase tracking-wider text-text-tertiary">
                   {sport.standard}
                 </span>
@@ -336,13 +297,9 @@ function SportsDisclosure({
                         onCheckedChange={() => toggleLevel(sportKey, lvl.key)}
                       />
                       <div className="min-w-0 flex-1 leading-tight">
-                        <div className="text-sm text-text-primary">
-                          {lvl.label}
-                        </div>
+                        <div className="text-sm text-text-primary">{lvl.label}</div>
                         {lvl.hint && (
-                          <div className="text-[11px] text-text-tertiary">
-                            {lvl.hint}
-                          </div>
+                          <div className="text-[11px] text-text-tertiary">{lvl.hint}</div>
                         )}
                       </div>
                       {checked && (
@@ -365,9 +322,7 @@ function SportsDisclosure({
                             }}
                             className="h-8 w-16 text-right text-sm"
                           />
-                          <span className="text-[11px] text-text-tertiary">
-                            hr/wk
-                          </span>
+                          <span className="text-[11px] text-text-tertiary">hr/wk</span>
                         </div>
                       )}
                     </label>
@@ -541,8 +496,7 @@ function PlanSection({
       description = `Renews ${periodEnd}.`;
     }
 
-    const isFoundingPro =
-      profile.foundingCoach && profile.subscriptionTier === "coach_pro";
+    const isFoundingPro = profile.foundingCoach && profile.subscriptionTier === "coach_pro";
     const statusPill = isFoundingPro
       ? { label: "Founding · Pro", tone: "accent" as const }
       : status === "trialing"
@@ -582,7 +536,6 @@ function PlanSection({
                 : "Switch tier or apply a promo."
             }
             onClick={() => navigate({ to: "/coach/paywall", search: { manage: true } })}
-
           />
 
           {joinClubRow}
@@ -624,7 +577,6 @@ function PlanSection({
       />
     );
   }
-
 
   // No plan yet — pending.
   return (
@@ -674,9 +626,7 @@ function PlanSummaryCard({
         <div className="flex items-start gap-3">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <div className="truncate font-display text-base text-text-primary">
-                {label}
-              </div>
+              <div className="truncate font-display text-base text-text-primary">{label}</div>
               {status && (
                 <span
                   className={cn(
@@ -688,9 +638,7 @@ function PlanSummaryCard({
                 </span>
               )}
             </div>
-            {description && (
-              <p className="mt-1 text-xs text-text-secondary">{description}</p>
-            )}
+            {description && <p className="mt-1 text-xs text-text-secondary">{description}</p>}
           </div>
         </div>
       </div>
@@ -698,9 +646,6 @@ function PlanSummaryCard({
     </>
   );
 }
-
-
-
 
 function SignOutRow() {
   const navigate = useNavigate();

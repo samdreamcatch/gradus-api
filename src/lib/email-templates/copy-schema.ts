@@ -149,7 +149,12 @@ export const EMAIL_COPY_SCHEMA: Record<string, TemplateCopy> = {
       { key: "subject", label: "Subject line", kind: "text" },
       { key: "eyebrow", label: "Small caps eyebrow", kind: "text" },
       { key: "heading", label: "Big headline", kind: "text" },
-      { key: "body", label: "Main paragraph", kind: "textarea", variables: ["siteName", "oldEmail", "newEmail"] },
+      {
+        key: "body",
+        label: "Main paragraph",
+        kind: "textarea",
+        variables: ["siteName", "oldEmail", "newEmail"],
+      },
       { key: "ctaLabel", label: "Button label", kind: "text" },
       { key: "footer", label: "Fine-print footer", kind: "textarea" },
     ],
@@ -160,7 +165,8 @@ export const EMAIL_COPY_SCHEMA: Record<string, TemplateCopy> = {
       heading: "Confirm your new email.",
       body: "You asked to change your <strong>Gradus</strong> email from <a>{oldEmail}</a> to <a>{newEmail}</a>.",
       ctaLabel: "Confirm email change",
-      footer: "<strong>Didn't request this?</strong> Reset your password right away to secure your account.",
+      footer:
+        "<strong>Didn't request this?</strong> Reset your password right away to secure your account.",
     },
   },
   reauthentication: {
@@ -187,7 +193,10 @@ export const EMAIL_COPY_SCHEMA: Record<string, TemplateCopy> = {
 };
 
 /** Substitute {variable} placeholders. Unknown variables render as literal text. */
-export function renderTemplateString(template: string, values: Record<string, string | null | undefined>): string {
+export function renderTemplateString(
+  template: string,
+  values: Record<string, string | null | undefined>,
+): string {
   return template.replace(/\{(\w+)\}/g, (match, key) => {
     const v = values[key];
     return v == null ? match : String(v);
@@ -195,7 +204,10 @@ export function renderTemplateString(template: string, values: Record<string, st
 }
 
 /** Merge overrides over the schema defaults for a template. */
-export function resolveCopy(templateName: string, overrides: Record<string, string> = {}): Record<string, string> {
+export function resolveCopy(
+  templateName: string,
+  overrides: Record<string, string> = {},
+): Record<string, string> {
   const schema = EMAIL_COPY_SCHEMA[templateName];
   if (!schema) return { ...overrides };
   return { ...schema.defaults, ...overrides };

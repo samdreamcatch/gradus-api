@@ -27,13 +27,7 @@ export function SettingsGroup({
 
 /* ----- List container ----- */
 
-export function SettingsList({
-  children,
-  className,
-}: {
-  children: ReactNode;
-  className?: string;
-}) {
+export function SettingsList({ children, className }: { children: ReactNode; className?: string }) {
   return (
     <div
       className={cn(
@@ -69,23 +63,14 @@ export function SettingsRow({
   trailing?: ReactNode;
 }) {
   return (
-    <div
-      className={cn(
-        "flex items-center gap-3 px-4 py-3 text-sm",
-        className,
-      )}
-    >
+    <div className={cn("flex items-center gap-3 px-4 py-3 text-sm", className)}>
       {icon && <span className="shrink-0 text-text-tertiary">{icon}</span>}
       <div className="min-w-0 flex-1">
         <div className="truncate text-text-primary">{label}</div>
-        {description && (
-          <div className="mt-0.5 text-xs text-text-tertiary">{description}</div>
-        )}
+        {description && <div className="mt-0.5 text-xs text-text-tertiary">{description}</div>}
       </div>
       {value !== undefined && (
-        <div className="max-w-[55%] truncate text-right text-text-secondary">
-          {value}
-        </div>
+        <div className="max-w-[55%] truncate text-right text-text-secondary">{value}</div>
       )}
       {trailing}
     </div>
@@ -130,9 +115,7 @@ export function SettingsButtonRow({
       {icon && <span className="shrink-0">{icon}</span>}
       <div className="min-w-0 flex-1">
         <div className="truncate font-medium">{label}</div>
-        {description && (
-          <div className="mt-0.5 text-xs text-text-tertiary">{description}</div>
-        )}
+        {description && <div className="mt-0.5 text-xs text-text-tertiary">{description}</div>}
       </div>
       {trailing}
     </button>
@@ -165,14 +148,10 @@ export function SettingsDisclosure({
         {icon && <span className="shrink-0 text-text-tertiary">{icon}</span>}
         <div className="min-w-0 flex-1">
           <div className="truncate text-text-primary">{label}</div>
-          {description && (
-            <div className="mt-0.5 text-xs text-text-tertiary">{description}</div>
-          )}
+          {description && <div className="mt-0.5 text-xs text-text-tertiary">{description}</div>}
         </div>
         {value !== undefined && (
-          <div className="max-w-[40%] truncate text-right text-xs text-text-tertiary">
-            {value}
-          </div>
+          <div className="max-w-[40%] truncate text-right text-xs text-text-tertiary">{value}</div>
         )}
         {open ? (
           <ChevronDown className="size-4 text-text-tertiary" />
@@ -180,11 +159,7 @@ export function SettingsDisclosure({
           <ChevronRight className="size-4 text-text-tertiary" />
         )}
       </button>
-      {open && (
-        <div className="border-t border-divider bg-elevated/30 px-4 py-4">
-          {children}
-        </div>
-      )}
+      {open && <div className="border-t border-divider bg-elevated/30 px-4 py-4">{children}</div>}
     </div>
   );
 }
@@ -202,9 +177,7 @@ export function SettingsToggleRow({
       {icon && <span className="shrink-0 text-text-tertiary">{icon}</span>}
       <div className="min-w-0 flex-1">
         <div className="truncate text-text-primary">{label}</div>
-        {description && (
-          <div className="mt-0.5 text-xs text-text-tertiary">{description}</div>
-        )}
+        {description && <div className="mt-0.5 text-xs text-text-tertiary">{description}</div>}
       </div>
       {trailing}
     </div>
@@ -216,9 +189,7 @@ export function SettingsToggleRow({
 export function SettingsHeader({ title }: { title: string }) {
   return (
     <header className="mb-3">
-      <p className="text-[11px] font-bold uppercase tracking-widest text-accent-ink">
-        Settings
-      </p>
+      <p className="text-[11px] font-bold uppercase tracking-widest text-accent-ink">Settings</p>
       <h1 className="mt-0.5 font-display text-2xl text-text-primary">{title}</h1>
     </header>
   );

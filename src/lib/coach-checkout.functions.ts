@@ -1,19 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import {
-  type StripeEnv,
-  createStripeClient,
-  getStripeErrorMessage,
-} from "@/lib/stripe.server";
+import { type StripeEnv, createStripeClient, getStripeErrorMessage } from "@/lib/stripe.server";
 
 const inputSchema = z.object({
-  priceId: z.enum([
-    "coach_monthly",
-    "coach_yearly",
-    "coach_pro_monthly",
-    "coach_pro_yearly",
-  ]),
+  priceId: z.enum(["coach_monthly", "coach_yearly", "coach_pro_monthly", "coach_pro_yearly"]),
   environment: z.enum(["sandbox", "live"]),
   returnUrl: z.string().url(),
   // Optional. If provided, must be a valid, active promo code. WILSON/PRACTICE
@@ -99,15 +90,13 @@ export const startCoachCheckout = createServerFn({ method: "POST" })
         }
       }
 
-
       // Resolve human-readable price id to the Stripe price.
       const prices = await stripe.prices.list({ lookup_keys: [data.priceId] });
       if (!prices.data.length) throw new Error("Price not found");
       const stripePrice = prices.data[0];
 
       const isProPrice =
-        data.priceId === "coach_pro_monthly" ||
-        data.priceId === "coach_pro_yearly";
+        data.priceId === "coach_pro_monthly" || data.priceId === "coach_pro_yearly";
 
       // Discount resolution — two paths:
       //  1. `promoCode` on the request (typed on the paywall). Must be a
@@ -119,9 +108,7 @@ export const startCoachCheckout = createServerFn({ method: "POST" })
       let discountPromoId: string | undefined;
       let promoCodeToPersist: string | undefined;
 
-      const { supabaseAdmin } = await import(
-        "@/integrations/supabase/client.server"
-      );
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
       const tier: "coach" | "coach_pro" = isProPrice ? "coach_pro" : "coach";
       let cardRequiredForPromo = true;
@@ -140,8 +127,7 @@ export const startCoachCheckout = createServerFn({ method: "POST" })
         }
         if (row.duration !== "repeating") {
           return {
-            error:
-              "This code isn't redeemable at checkout — it's already applied to your account.",
+            error: "This code isn't redeemable at checkout — it's already applied to your account.",
           };
         }
         const allowed = (row.applies_to_plans ?? ["coach", "coach_pro"]) as string[];
@@ -154,10 +140,7 @@ export const startCoachCheckout = createServerFn({ method: "POST" })
               : allowed.join(", ");
           return { error: `This code only applies to ${label}.` };
         }
-        const id =
-          env === "sandbox"
-            ? row.stripe_promo_id_sandbox
-            : row.stripe_promo_id_live;
+        const id = env === "sandbox" ? row.stripe_promo_id_sandbox : row.stripe_promo_id_live;
         if (!id) {
           return {
             error: `Promo ${row.code} isn't set up in ${env} yet. Sync it from Admin → Promo codes.`,
@@ -184,9 +167,7 @@ export const startCoachCheckout = createServerFn({ method: "POST" })
           const allowed = (promo.applies_to_plans ?? ["coach", "coach_pro"]) as string[];
           if (allowed.includes(tier)) {
             const id =
-              env === "sandbox"
-                ? promo.stripe_promo_id_sandbox
-                : promo.stripe_promo_id_live;
+              env === "sandbox" ? promo.stripe_promo_id_sandbox : promo.stripe_promo_id_live;
             if (id) {
               discountPromoId = id;
               cardRequiredForPromo = promo.card_required !== false;
@@ -225,9 +206,10 @@ export const startCoachCheckout = createServerFn({ method: "POST" })
           discounts: [{ promotion_code: discountPromoId }],
           payment_method_collection: cardRequiredForPromo ? "always" : "if_required",
         }),
-        ...(useFoundingProTrial && !discountPromoId && {
-          payment_method_collection: "if_required",
-        }),
+        ...(useFoundingProTrial &&
+          !discountPromoId && {
+            payment_method_collection: "if_required",
+          }),
       });
 
       // Persist the promo attribution onto the profile only if it's empty —
@@ -342,12 +324,7 @@ export const changeCoachSubscription = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) =>
     z
       .object({
-        priceId: z.enum([
-          "coach_monthly",
-          "coach_yearly",
-          "coach_pro_monthly",
-          "coach_pro_yearly",
-        ]),
+        priceId: z.enum(["coach_monthly", "coach_yearly", "coach_pro_monthly", "coach_pro_yearly"]),
         environment: z.enum(["sandbox", "live"]),
       })
       .parse(input),
@@ -356,9 +333,7 @@ export const changeCoachSubscription = createServerFn({ method: "POST" })
     const { userId, supabase } = context;
     const { data: profile } = await supabase
       .from("coach_profiles")
-      .select(
-        "stripe_customer_id, stripe_subscription_id, subscription_environment",
-      )
+      .select("stripe_customer_id, stripe_subscription_id, subscription_environment")
       .eq("user_id", userId)
       .maybeSingle();
 
@@ -401,10 +376,7 @@ export const changeCoachSubscription = createServerFn({ method: "POST" })
           status: "all",
           limit: 20,
         });
-        sub =
-          list.data.find((s) =>
-            ["active", "trialing", "past_due"].includes(s.status),
-          ) ?? null;
+        sub = list.data.find((s) => ["active", "trialing", "past_due"].includes(s.status)) ?? null;
       }
       if (!sub) return { error: "No active subscription to switch." };
 
@@ -482,23 +454,17 @@ export const changeCoachSubscription = createServerFn({ method: "POST" })
                 // coach doesn't get the refund twice (once as cash, once as
                 // future-invoice credit).
                 try {
-                  const fresh: any = await stripe.customers.retrieve(
-                    profile.stripe_customer_id,
-                  );
+                  const fresh: any = await stripe.customers.retrieve(profile.stripe_customer_id);
                   const balance = fresh?.balance ?? 0;
                   // Stripe balance: negative = credit owed to customer.
                   if (balance < 0) {
                     const zeroOut = Math.min(refundAmount, -balance);
                     if (zeroOut > 0) {
-                      await stripe.customers.createBalanceTransaction(
-                        profile.stripe_customer_id,
-                        {
-                          amount: zeroOut, // positive charges back against the credit
-                          currency: invoice.currency,
-                          description:
-                            "Offset for cash refund on tier downgrade",
-                        },
-                      );
+                      await stripe.customers.createBalanceTransaction(profile.stripe_customer_id, {
+                        amount: zeroOut, // positive charges back against the credit
+                        currency: invoice.currency,
+                        description: "Offset for cash refund on tier downgrade",
+                      });
                     }
                   }
                 } catch (e) {
@@ -533,10 +499,7 @@ export const changeCoachSubscription = createServerFn({ method: "POST" })
     }
   });
 
-
-type VerifyCheckoutResult =
-  | { ok: true; status: string; entitled: boolean }
-  | { error: string };
+type VerifyCheckoutResult = { ok: true; status: string; entitled: boolean } | { error: string };
 
 /**
  * Called by the paywall when Stripe redirects the coach back with
@@ -561,10 +524,9 @@ export const verifyCheckoutSession = createServerFn({ method: "POST" })
     try {
       const env = data.environment as StripeEnv;
       const stripe = createStripeClient(env);
-      const session: any = await stripe.checkout.sessions.retrieve(
-        data.sessionId,
-        { expand: ["subscription", "subscription.items.data.price"] },
-      );
+      const session: any = await stripe.checkout.sessions.retrieve(data.sessionId, {
+        expand: ["subscription", "subscription.items.data.price"],
+      });
 
       // Only accept sessions minted for this user.
       if (session.metadata?.userId && session.metadata.userId !== context.userId) {
@@ -582,12 +544,8 @@ export const verifyCheckoutSession = createServerFn({ method: "POST" })
         sub.metadata = { ...(sub.metadata ?? {}), userId: context.userId };
       }
 
-      const { syncCoachSubscription } = await import(
-        "@/lib/coach-subscription-sync.server"
-      );
-      const { supabaseAdmin } = await import(
-        "@/integrations/supabase/client.server"
-      );
+      const { syncCoachSubscription } = await import("@/lib/coach-subscription-sync.server");
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       await syncCoachSubscription(supabaseAdmin, sub, env);
 
       // Best-effort audit row so support can see the verify path fired.
@@ -597,7 +555,7 @@ export const verifyCheckoutSession = createServerFn({ method: "POST" })
           stripe_event_id: `verify_${session.id}`,
           event_type: "checkout.session.verified",
           stripe_customer_id:
-            typeof sub.customer === "string" ? sub.customer : sub.customer?.id ?? null,
+            typeof sub.customer === "string" ? sub.customer : (sub.customer?.id ?? null),
           stripe_subscription_id: sub.id,
           status: sub.status,
           environment: env,

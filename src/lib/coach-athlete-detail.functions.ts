@@ -5,11 +5,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { createLovableAiGatewayProvider } from "./ai-gateway.server";
 import { dbError } from "./db-error";
 import { getSportLevel, getSport } from "./coach-sports";
-import {
-  PROMPT_INJECTION_GUARD,
-  sanitizeUserContent,
-  wrapUntrusted,
-} from "./ai-prompt-safety";
+import { PROMPT_INJECTION_GUARD, sanitizeUserContent, wrapUntrusted } from "./ai-prompt-safety";
 import type { SessionsByState } from "@/components/plans/flow-state-bars";
 
 const ATHLETE_SUMMARY_SYSTEM = `You are a factual reporting assistant for a sports coaching platform. Your only job is to report what is explicitly present in the data you receive. Do not infer, speculate, or add encouraging language that isn't backed by a specific data point in the context. If evidence is thin, acknowledge it — do not pad the summary with generic observations. A shorter, accurate output is always better than a longer, embellished one.`;
@@ -92,8 +88,6 @@ export interface CoachAthleteDetailDTO {
   otherCoaches: OtherCoachDTO[];
 }
 
-
-
 type SlotRow = {
   id: string;
   day_of_week: number;
@@ -150,16 +144,12 @@ function computeLessonMinutes(
     arr.push(s);
     slotsByWeekday.set(s.day_of_week, arr);
   }
-  const cursor = new Date(Date.UTC(
-    windowStart.getUTCFullYear(),
-    windowStart.getUTCMonth(),
-    windowStart.getUTCDate(),
-  ));
-  const end = new Date(Date.UTC(
-    windowEnd.getUTCFullYear(),
-    windowEnd.getUTCMonth(),
-    windowEnd.getUTCDate(),
-  ));
+  const cursor = new Date(
+    Date.UTC(windowStart.getUTCFullYear(), windowStart.getUTCMonth(), windowStart.getUTCDate()),
+  );
+  const end = new Date(
+    Date.UTC(windowEnd.getUTCFullYear(), windowEnd.getUTCMonth(), windowEnd.getUTCDate()),
+  );
   while (cursor <= end) {
     const weekday = cursor.getUTCDay();
     const todays = slotsByWeekday.get(weekday) ?? [];
@@ -178,7 +168,6 @@ function computeLessonMinutes(
   }
   return total;
 }
-
 
 async function getAdmin() {
   const m = await import("@/integrations/supabase/client.server");
@@ -224,7 +213,6 @@ async function getCoachAthleteSports(coachId: string, athleteId: string): Promis
   return Array.from(new Set((data ?? []).map((r) => r.sport)));
 }
 
-
 function labelLevel(sport: string, levelKey: string): string {
   return getSportLevel(sport, levelKey)?.label ?? levelKey;
 }
@@ -235,9 +223,7 @@ function sportLabel(sport: string): string {
 
 export const getCoachAthleteDetail = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z.object({ athleteId: z.string().uuid() }).parse(input),
-  )
+  .inputValidator((input: unknown) => z.object({ athleteId: z.string().uuid() }).parse(input))
   .handler(async ({ context, data }): Promise<CoachAthleteDetailDTO> => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const coachId = await getCoachId(context.userId);
@@ -252,9 +238,7 @@ export const getCoachAthleteDetail = createServerFn({ method: "GET" })
     const [athleteRes, goalsRes, planRes, sessionsRes, roomRes, slotsRes] = await Promise.all([
       supabaseAdmin
         .from("athletes")
-        .select(
-          "id, first_name, last_name, self_managed, parent_profiles(first_name, last_name)",
-        )
+        .select("id, first_name, last_name, self_managed, parent_profiles(first_name, last_name)")
         .eq("id", data.athleteId)
         .single(),
       coachSports.length === 0
@@ -304,7 +288,6 @@ export const getCoachAthleteDetail = createServerFn({ method: "GET" })
       self_managed: boolean | null;
       parent_profiles: { first_name: string; last_name: string } | null;
     };
-
 
     const goals: AthleteGoalDTO[] = (goalsRes.data ?? []).map((g) => ({
       sport: g.sport,
@@ -367,10 +350,7 @@ export const getCoachAthleteDetail = createServerFn({ method: "GET" })
       };
     });
 
-    const practiceSecondsTotal = sessions30d.reduce(
-      (sum, s) => sum + (s.duration_seconds ?? 0),
-      0,
-    );
+    const practiceSecondsTotal = sessions30d.reduce((sum, s) => sum + (s.duration_seconds ?? 0), 0);
     const practiceSecondsMine = sessions30d
       .filter((s) => planCoachMap.get(s.plan_id) === coachId)
       .reduce((sum, s) => sum + (s.duration_seconds ?? 0), 0);
@@ -380,7 +360,7 @@ export const getCoachAthleteDetail = createServerFn({ method: "GET" })
     // Lesson minutes across all coaches in the window.
     const slots = (slotsRes.data ?? []) as SlotRow[];
     const slotIds = slots.map((s) => s.id);
-    let overridesBySlot = new Map<string, OverrideRow[]>();
+    const overridesBySlot = new Map<string, OverrideRow[]>();
     if (slotIds.length > 0) {
       const overridesRes = await supabaseAdmin
         .from("lesson_slot_overrides")
@@ -455,7 +435,7 @@ export const getCoachAthleteDetail = createServerFn({ method: "GET" })
       const otherPlanRows = otherPlansRes.data ?? [];
       const otherPlanIds = otherPlanRows.map((p) => p.id as string);
 
-      let movesByPlan = new Map<string, OtherCoachMoveDTO[]>();
+      const movesByPlan = new Map<string, OtherCoachMoveDTO[]>();
       if (otherPlanIds.length > 0) {
         const movesRes = await supabaseAdmin
           .from("plan_moves")
@@ -566,8 +546,6 @@ export const getCoachAthleteDetail = createServerFn({ method: "GET" })
     };
   });
 
-
-
 // --- AI summary ---
 
 export type Verdict = "increase" | "hold" | "reduce";
@@ -584,9 +562,7 @@ const STATE_LABELS = ["Just learning", "Getting it", "Comfortable", "Flowing", "
 
 export const getCoachAthleteAiSummary = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z.object({ athleteId: z.string().uuid() }).parse(input),
-  )
+  .inputValidator((input: unknown) => z.object({ athleteId: z.string().uuid() }).parse(input))
   .handler(async ({ context, data }): Promise<CoachAthleteAiSummaryDTO> => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const coachId = await getCoachId(context.userId);
@@ -598,11 +574,7 @@ export const getCoachAthleteAiSummary = createServerFn({ method: "GET" })
     const coachSports = await getCoachAthleteSports(coachId, data.athleteId);
 
     const [athleteRes, goalsRes, plansRes, sessionsRes, roomRes] = await Promise.all([
-      supabaseAdmin
-        .from("athletes")
-        .select("first_name")
-        .eq("id", data.athleteId)
-        .single(),
+      supabaseAdmin.from("athletes").select("first_name").eq("id", data.athleteId).single(),
       coachSports.length === 0
         ? Promise.resolve({ data: [], error: null } as const)
         : supabaseAdmin
@@ -644,7 +616,13 @@ export const getCoachAthleteAiSummary = createServerFn({ method: "GET" })
       planById.set(p.id, { title: p.title || "Untitled plan", status: p.status });
     }
 
-    type MsgRow = { sender_role: string; kind: string; body: string; duration_seconds: number | null; created_at: string };
+    type MsgRow = {
+      sender_role: string;
+      kind: string;
+      body: string;
+      duration_seconds: number | null;
+      created_at: string;
+    };
     let messages: MsgRow[] = [];
     if (roomRes.data) {
       const mRes = await supabaseAdmin
@@ -779,9 +757,7 @@ export interface OtherCoachPlanForMessageDTO {
 
 export const getOtherCoachPlanForMessage = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z.object({ planId: z.string().uuid() }).parse(input),
-  )
+  .inputValidator((input: unknown) => z.object({ planId: z.string().uuid() }).parse(input))
   .handler(async ({ context, data }): Promise<OtherCoachPlanForMessageDTO> => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const viewerCoachId = await getCoachId(context.userId);
@@ -822,10 +798,9 @@ export const getOtherCoachPlanForMessage = createServerFn({ method: "GET" })
     }
 
     // Club-tier gate mirrors the athlete-profile experience.
-    const { data: tierData, error: tierErr } = await supabaseAdmin.rpc(
-      "coach_effective_tier",
-      { _coach_id: viewerCoachId },
-    );
+    const { data: tierData, error: tierErr } = await supabaseAdmin.rpc("coach_effective_tier", {
+      _coach_id: viewerCoachId,
+    });
     if (tierErr) dbError(tierErr);
     if (tierData !== "club") {
       throw new Error("Viewing another coach's plans requires the Club plan.");
@@ -839,11 +814,7 @@ export const getOtherCoachPlanForMessage = createServerFn({ method: "GET" })
         .select("id, first_name, last_name")
         .eq("id", plan.coach_id)
         .single(),
-      supabaseAdmin
-        .from("athletes")
-        .select("first_name")
-        .eq("id", plan.athlete_id)
-        .single(),
+      supabaseAdmin.from("athletes").select("first_name").eq("id", plan.athlete_id).single(),
       supabaseAdmin
         .from("plan_moves")
         .select("position, name, description, cue, why, target_kind, target_value")

@@ -7,10 +7,7 @@ import { dbError } from "./db-error";
 
 type Client = SupabaseClient<Database>;
 
-async function requireSelfManagedAthleteId(
-  supabase: Client,
-  userId: string,
-): Promise<string> {
+async function requireSelfManagedAthleteId(supabase: Client, userId: string): Promise<string> {
   const me = await supabase
     .from("athletes")
     .select("id, self_managed")
@@ -53,13 +50,12 @@ export const getAdultAthleteSchedules = createServerFn({ method: "GET" })
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const [profiles, slots] = await Promise.all([
-      supabaseAdmin
-        .from("coach_profiles")
-        .select("id, first_name, last_name")
-        .in("id", coachIds),
+      supabaseAdmin.from("coach_profiles").select("id, first_name, last_name").in("id", coachIds),
       supabaseAdmin
         .from("athlete_lesson_slots")
-        .select("coach_id, day_of_week, start_minute, end_minute, frequency, weeks_of_month, starts_on")
+        .select(
+          "coach_id, day_of_week, start_minute, end_minute, frequency, weeks_of_month, starts_on",
+        )
         .eq("athlete_id", athleteId)
         .in("coach_id", coachIds),
     ]);
@@ -155,9 +151,7 @@ export const saveAdultAthleteScheduleForCoach = createServerFn({ method: "POST" 
           end_minute: s.endMinute,
           frequency: s.frequency,
           weeks_of_month:
-            s.frequency === "biweekly" || s.frequency === "weekly"
-              ? []
-              : s.weeksOfMonth,
+            s.frequency === "biweekly" || s.frequency === "weekly" ? [] : s.weeksOfMonth,
           starts_on: s.frequency === "biweekly" ? s.startsOn : null,
         })),
       );

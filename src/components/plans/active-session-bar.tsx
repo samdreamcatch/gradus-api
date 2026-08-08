@@ -16,9 +16,7 @@ export function ActiveSessionBar() {
   if (!session) return null;
 
   const routePattern =
-    session.role === "parent"
-      ? "/parent/plans/$planId"
-      : "/athlete/plans/$planId";
+    session.role === "parent" ? "/parent/plans/$planId" : "/athlete/plans/$planId";
   const resolvedPath =
     session.role === "parent"
       ? `/parent/plans/${session.planId}`
@@ -32,7 +30,6 @@ export function ActiveSessionBar() {
   // resolve it from their own routes, so don't show the return pill
   // while browsing the coach app.
   if (pathname.startsWith("/coach")) return null;
-
 
   const totalSec = Math.floor(elapsedMs / 1000);
   const mm = String(Math.floor(totalSec / 60)).padStart(2, "0");

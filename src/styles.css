@@ -62,16 +62,15 @@
   --color-surface-code-block-foreground: var(--surface-code-block-foreground);
 }
 
-
 :root {
   /* Surfaces — cool slate paper */
-  --background: oklch(0.972 0.005 250);   /* #F5F6FA */
-  --foreground: oklch(0.24 0.08 260);      /* dark navy ink */
-  --card: oklch(1 0 0 / 0.55);             /* translucent so paper shows through */
-  --popover: oklch(1 0 0);                 /* solid for floating menus */
-  --dialog: #ecf1dd;                        /* soft pale sage for dialogs only */
+  --background: oklch(0.972 0.005 250); /* #F5F6FA */
+  --foreground: oklch(0.24 0.08 260); /* dark navy ink */
+  --card: oklch(1 0 0 / 0.55); /* translucent so paper shows through */
+  --popover: oklch(1 0 0); /* solid for floating menus */
+  --dialog: #ecf1dd; /* soft pale sage for dialogs only */
   --elevated: oklch(0.982 0.004 250 / 0.62);
-  --divider: oklch(0.92 0.005 260);        /* #E6E7EB */
+  --divider: oklch(0.92 0.005 260); /* #E6E7EB */
 
   /* Surface simulations — reserved for previewing an external context
      inside our UI (an athlete's phone, an email client, a code editor).
@@ -81,14 +80,13 @@
   --surface-code-block: #0f172a;
   --surface-code-block-foreground: #e2e8f0;
 
-
   --text-primary: oklch(0.24 0.08 260);
-  --text-secondary: oklch(0.42 0.02 260);   /* AAA: ~7.2:1 on background */
-  --text-tertiary: oklch(0.44 0.015 260);   /* AAA at any size on paper */
+  --text-secondary: oklch(0.42 0.02 260); /* AAA: ~7.2:1 on background */
+  --text-tertiary: oklch(0.44 0.015 260); /* AAA at any size on paper */
   --text-disabled: oklch(0.72 0.01 260);
 
   /* Tennis pen — default accent */
-  --pen-tennis: oklch(0.847 0.19 119);       /* desaturated tennis green */
+  --pen-tennis: oklch(0.847 0.19 119); /* desaturated tennis green */
   --pen-tennis-wash: oklch(0.982 0.03 119);
   --pen-tennis-ink: oklch(0.339 0.095 119);
 
@@ -99,7 +97,7 @@
   /* Pool pen — secondary accent (athlete identity + data/metadata) */
   --pen-pool: oklch(0.72 0.14 235);
   --pen-pool-wash: oklch(0.965 0.028 235);
-  --pen-pool-ink: oklch(0.38 0.10 235);
+  --pen-pool-ink: oklch(0.38 0.1 235);
 
   --secondary-accent: var(--pen-pool);
   --secondary-accent-wash: var(--pen-pool-wash);
@@ -124,22 +122,19 @@
   --attention-foreground: oklch(0.22 0.06 55); /* dark ink for contrast on bright orange */
 
   /* Iris pen */
-  --pen-iris: oklch(0.70 0.18 310);
+  --pen-iris: oklch(0.7 0.18 310);
   --pen-iris-wash: oklch(0.96 0.03 310);
   --pen-iris-ink: oklch(0.36 0.13 310);
 
   /* Pink pen */
   --pen-pink: oklch(0.78 0.15 8);
   --pen-pink-wash: oklch(0.96 0.025 8);
-  --pen-pink-ink: oklch(0.40 0.14 8);
+  --pen-pink-ink: oklch(0.4 0.14 8);
 
-
-
-  --cream: oklch(0.975 0.022 85);            /* warm parchment wash */
+  --cream: oklch(0.975 0.022 85); /* warm parchment wash */
 
   --destructive: oklch(0.58 0.22 25);
   --destructive-ink: var(--destructive); /* readable on light surfaces */
-
 }
 
 .dark {
@@ -148,19 +143,19 @@
   --foreground: var(--text-primary);
   /* Card sits clearly above background so on-card text reads comfortably. */
   --card: oklch(0.255 0.012 245 / 0.62);
-  --popover: oklch(0.30 0.012 245);
-  --dialog: oklch(0.20 0.028 226);         /* deep navy dialog surface — matches auth screen */
+  --popover: oklch(0.3 0.012 245);
+  --dialog: oklch(0.2 0.028 226); /* deep navy dialog surface — matches auth screen */
   --elevated: oklch(0.285 0.012 245);
   --divider: oklch(0.36 0.012 245);
 
   /* Body text is intentionally cream (not white) for dyslexia-friendly readability. */
   --text-primary: oklch(0.945 0.032 85);
   --text-secondary: oklch(0.88 0.022 84);
-  --text-tertiary: oklch(0.84 0.018 82);   /* lifted for AAA on dark surfaces */
+  --text-tertiary: oklch(0.84 0.018 82); /* lifted for AAA on dark surfaces */
   --text-disabled: oklch(0.54 0.012 78);
 
   --pen-tennis: oklch(0.78 0.165 119);
-  --pen-tennis-wash: oklch(0.30 0.095 119);
+  --pen-tennis-wash: oklch(0.3 0.095 119);
   --pen-tennis-ink: oklch(0.78 0.165 119);
 
   /* Navy ink — replaces the near-black used on bright accent/attention surfaces in dark mode */
@@ -178,9 +173,9 @@
   --flow-accent: var(--pen-pool);
   --flow-accent-ink: var(--pen-pool-ink);
 
-  --pen-pool: oklch(0.84 0.110 210);
-  --pen-pool-wash: oklch(0.28 0.090 210);
-  --pen-pool-ink: oklch(0.84 0.110 210);
+  --pen-pool: oklch(0.84 0.11 210);
+  --pen-pool-wash: oklch(0.28 0.09 210);
+  --pen-pool-ink: oklch(0.84 0.11 210);
 
   --secondary-accent: var(--pen-pool);
   --secondary-accent-wash: var(--pen-pool-wash);
@@ -191,9 +186,9 @@
   --page-title-stripe-opacity: 0.7;
 
   /* Orange pen — attention/live token (dark) */
-  --pen-orange: oklch(0.87 0.170 55);
-  --pen-orange-wash: oklch(0.30 0.105 55);
-  --pen-orange-ink: oklch(0.87 0.170 55);
+  --pen-orange: oklch(0.87 0.17 55);
+  --pen-orange-wash: oklch(0.3 0.105 55);
+  --pen-orange-ink: oklch(0.87 0.17 55);
 
   --attention: var(--pen-orange);
   --attention-wash: var(--pen-orange-wash);
@@ -206,17 +201,16 @@
   --pen-iris-ink: oklch(0.86 0.175 310);
 
   /* Pink pen (dark) */
-  --pen-pink: oklch(0.86 0.160 8);
-  --pen-pink-wash: oklch(0.28 0.080 8);
-  --pen-pink-ink: oklch(0.86 0.160 8);
+  --pen-pink: oklch(0.86 0.16 8);
+  --pen-pink-wash: oklch(0.28 0.08 8);
+  --pen-pink-ink: oklch(0.86 0.16 8);
 
   --cream: oklch(0.32 0.015 85);
 
   /* Destructive — fill stays toned-down; ink is brightened to pass AAA on dark surfaces. */
-  --destructive: oklch(0.70 0.17 25);
-  --destructive-ink: oklch(0.82 0.150 25);
+  --destructive: oklch(0.7 0.17 25);
+  --destructive-ink: oklch(0.82 0.15 25);
 }
-
 
 @layer base {
   * {
@@ -233,8 +227,16 @@
     color: var(--color-foreground);
     font-family: var(--font-sans);
     background-image:
-      radial-gradient(1200px 800px at 100% 0%, color-mix(in oklab, var(--pen-pool) 34%, transparent), transparent 60%),
-      radial-gradient(1000px 700px at 0% 100%, color-mix(in oklab, var(--accent) 28%, transparent), transparent 60%),
+      radial-gradient(
+        1200px 800px at 100% 0%,
+        color-mix(in oklab, var(--pen-pool) 34%, transparent),
+        transparent 60%
+      ),
+      radial-gradient(
+        1000px 700px at 0% 100%,
+        color-mix(in oklab, var(--accent) 28%, transparent),
+        transparent 60%
+      ),
       repeating-linear-gradient(
         to bottom,
         transparent 0px,
@@ -249,8 +251,16 @@
      Ruled lines kept fainter than light mode so they whisper rather than stripe. */
   .dark body {
     background-image:
-      radial-gradient(1800px 1300px at 70% 30%, color-mix(in oklab, var(--pen-pool) 18%, transparent), transparent 70%),
-      radial-gradient(600px 500px at 5% 100%, color-mix(in oklab, var(--accent) 10%, transparent), transparent 55%),
+      radial-gradient(
+        1800px 1300px at 70% 30%,
+        color-mix(in oklab, var(--pen-pool) 18%, transparent),
+        transparent 70%
+      ),
+      radial-gradient(
+        600px 500px at 5% 100%,
+        color-mix(in oklab, var(--accent) 10%, transparent),
+        transparent 55%
+      ),
       repeating-linear-gradient(
         to bottom,
         transparent 0px,
@@ -260,8 +270,11 @@
       );
   }
 
-
-  h1, h2, h3, h4, h5 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5 {
     font-family: var(--font-display);
     font-weight: 600;
     letter-spacing: -0.01em;
@@ -300,8 +313,6 @@
   overflow: hidden;
 }
 
-
-
 @utility ask-glow {
   position: relative;
   isolation: isolate;
@@ -323,7 +334,7 @@
       linear-gradient(#000 0 0) content-box,
       linear-gradient(#000 0 0);
     -webkit-mask-composite: xor;
-            mask-composite: exclude;
+    mask-composite: exclude;
     pointer-events: none;
     opacity: 0.7;
     animation: ask-glow-pulse 6s ease-in-out infinite;
@@ -331,8 +342,13 @@
 }
 
 @keyframes ask-glow-pulse {
-  0%, 100% { opacity: 0.45; }
-  50% { opacity: 0.85; }
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 0.85;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -355,8 +371,6 @@
     opacity: 0;
   }
 }
-
-
 
 /* ============================================================
    Eyebrow text sizes — see `<Eyebrow>` in src/components/ui/eyebrow.tsx.
@@ -414,7 +428,9 @@
  * fill) uniformly in both themes without needing per-variant token swaps.
  */
 @utility press {
-  transition: transform 120ms ease-out, filter 120ms ease-out;
+  transition:
+    transform 120ms ease-out,
+    filter 120ms ease-out;
   &:active {
     transform: scale(0.98);
     filter: brightness(0.95);
@@ -427,8 +443,6 @@
   }
 }
 
-
-
 /*
  * paper-surface — page-consistent wash + ruled paper background used by
  * every bottom-sliding sheet. Reads as "a page sliding up over the page,"
@@ -438,14 +452,42 @@
 @utility paper-surface {
   background-color: var(--background);
   background-image:
-    radial-gradient(1200px 800px at 100% 0%, color-mix(in oklab, var(--pen-pool) 34%, transparent), transparent 60%),
-    radial-gradient(1000px 700px at 0% 100%, color-mix(in oklab, var(--accent) 28%, transparent), transparent 60%),
-    repeating-linear-gradient(to bottom, transparent 0px, transparent 31px, color-mix(in oklab, var(--foreground) 7%, transparent) 31px, color-mix(in oklab, var(--foreground) 7%, transparent) 32px);
+    radial-gradient(
+      1200px 800px at 100% 0%,
+      color-mix(in oklab, var(--pen-pool) 34%, transparent),
+      transparent 60%
+    ),
+    radial-gradient(
+      1000px 700px at 0% 100%,
+      color-mix(in oklab, var(--accent) 28%, transparent),
+      transparent 60%
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0px,
+      transparent 31px,
+      color-mix(in oklab, var(--foreground) 7%, transparent) 31px,
+      color-mix(in oklab, var(--foreground) 7%, transparent) 32px
+    );
 
   &:where(.dark, .dark *) {
     background-image:
-      radial-gradient(1800px 1300px at 70% 30%, color-mix(in oklab, var(--pen-pool) 18%, transparent), transparent 70%),
-      radial-gradient(600px 500px at 5% 100%, color-mix(in oklab, var(--accent) 10%, transparent), transparent 55%),
-      repeating-linear-gradient(to bottom, transparent 0px, transparent 31px, color-mix(in oklab, var(--foreground) 3%, transparent) 31px, color-mix(in oklab, var(--foreground) 3%, transparent) 32px);
+      radial-gradient(
+        1800px 1300px at 70% 30%,
+        color-mix(in oklab, var(--pen-pool) 18%, transparent),
+        transparent 70%
+      ),
+      radial-gradient(
+        600px 500px at 5% 100%,
+        color-mix(in oklab, var(--accent) 10%, transparent),
+        transparent 55%
+      ),
+      repeating-linear-gradient(
+        to bottom,
+        transparent 0px,
+        transparent 31px,
+        color-mix(in oklab, var(--foreground) 3%, transparent) 31px,
+        color-mix(in oklab, var(--foreground) 3%, transparent) 32px
+      );
   }
 }

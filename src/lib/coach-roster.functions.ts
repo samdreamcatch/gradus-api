@@ -33,13 +33,10 @@ export type RosterAthlete = {
   otherCoachLastName: string | null;
 };
 
-
-
 export type CoachRoster = {
   coachSports: string[];
   athletes: RosterAthlete[];
 };
-
 
 export const getCoachRoster = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -97,20 +94,22 @@ export const getCoachRoster = createServerFn({ method: "GET" })
     if (slotsRes.error) dbError(slotsRes.error);
     if (otherLinksRes.error) dbError(otherLinksRes.error);
 
-
     const slotIds = (slotsRes.data ?? []).map((s) => s.id as string);
     const overridesRes = slotIds.length
       ? await supabaseAdmin
           .from("lesson_slot_overrides")
           .select("slot_id, occurrence_date, status, start_minute, end_minute")
           .in("slot_id", slotIds)
-      : { data: [] as Array<{
-          slot_id: string;
-          occurrence_date: string;
-          status: string;
-          start_minute: number | null;
-          end_minute: number | null;
-        }>, error: null };
+      : {
+          data: [] as Array<{
+            slot_id: string;
+            occurrence_date: string;
+            status: string;
+            start_minute: number | null;
+            end_minute: number | null;
+          }>,
+          error: null,
+        };
     if (overridesRes.error) dbError(overridesRes.error);
 
     const overridesBySlot = new Map<string, SlotOverride[]>();
@@ -147,8 +146,7 @@ export const getCoachRoster = createServerFn({ method: "GET" })
     const dayOrder = (d: number) => (d === 0 ? 7 : d);
     for (const arr of slotsByAthlete.values()) {
       arr.sort(
-        (a, b) =>
-          dayOrder(a.dayOfWeek) - dayOrder(b.dayOfWeek) || a.startMinute - b.startMinute,
+        (a, b) => dayOrder(a.dayOfWeek) - dayOrder(b.dayOfWeek) || a.startMinute - b.startMinute,
       );
     }
 
@@ -184,12 +182,9 @@ export const getCoachRoster = createServerFn({ method: "GET" })
       };
     });
 
-
     result.sort(
-      (a, b) =>
-        a.firstName.localeCompare(b.firstName) || a.lastName.localeCompare(b.lastName),
+      (a, b) => a.firstName.localeCompare(b.firstName) || a.lastName.localeCompare(b.lastName),
     );
-
 
     return { coachSports, athletes: result };
   });

@@ -16,7 +16,10 @@ async function resolveCoachId(userId: string): Promise<string> {
   return res.data.id;
 }
 
-async function assertOwnsSlot(coachId: string, slotId: string): Promise<{
+async function assertOwnsSlot(
+  coachId: string,
+  slotId: string,
+): Promise<{
   athleteId: string;
   dayOfWeek: number;
   startMinute: number;
@@ -117,12 +120,7 @@ export const removeAthleteFromRoster = createServerFn({ method: "POST" })
 export const addLessonSlot = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
-    (data: {
-      athleteId: string;
-      dayOfWeek: number;
-      startMinute: number;
-      endMinute: number;
-    }) => {
+    (data: { athleteId: string; dayOfWeek: number; startMinute: number; endMinute: number }) => {
       if (!data?.athleteId) throw new Error("athleteId required");
       validateDayOfWeek(data.dayOfWeek);
       validateTimeRange(data.startMinute, data.endMinute);
@@ -153,12 +151,7 @@ export const addLessonSlot = createServerFn({ method: "POST" })
 export const updateLessonSlot = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
-    (data: {
-      slotId: string;
-      dayOfWeek: number;
-      startMinute: number;
-      endMinute: number;
-    }) => {
+    (data: { slotId: string; dayOfWeek: number; startMinute: number; endMinute: number }) => {
       if (!data?.slotId) throw new Error("slotId required");
       validateDayOfWeek(data.dayOfWeek);
       validateTimeRange(data.startMinute, data.endMinute);
@@ -191,10 +184,7 @@ export const deleteLessonSlot = createServerFn({ method: "POST" })
     const coachId = await resolveCoachId(context.userId);
     await assertOwnsSlot(coachId, data.slotId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const res = await supabaseAdmin
-      .from("athlete_lesson_slots")
-      .delete()
-      .eq("id", data.slotId);
+    const res = await supabaseAdmin.from("athlete_lesson_slots").delete().eq("id", data.slotId);
     if (res.error) dbError(res.error);
     return { ok: true };
   });
@@ -212,18 +202,16 @@ export const cancelLessonOccurrence = createServerFn({ method: "POST" })
     const coachId = await resolveCoachId(context.userId);
     await assertOwnsSlot(coachId, data.slotId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const res = await supabaseAdmin
-      .from("lesson_slot_overrides")
-      .upsert(
-        {
-          slot_id: data.slotId,
-          occurrence_date: data.date,
-          status: "canceled",
-          start_minute: null,
-          end_minute: null,
-        },
-        { onConflict: "slot_id,occurrence_date" },
-      );
+    const res = await supabaseAdmin.from("lesson_slot_overrides").upsert(
+      {
+        slot_id: data.slotId,
+        occurrence_date: data.date,
+        status: "canceled",
+        start_minute: null,
+        end_minute: null,
+      },
+      { onConflict: "slot_id,occurrence_date" },
+    );
     if (res.error) dbError(res.error);
     return { ok: true };
   });
@@ -231,12 +219,7 @@ export const cancelLessonOccurrence = createServerFn({ method: "POST" })
 export const rescheduleLessonOccurrence = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
-    (data: {
-      slotId: string;
-      date: string;
-      startMinute: number;
-      endMinute: number;
-    }) => {
+    (data: { slotId: string; date: string; startMinute: number; endMinute: number }) => {
       if (!data?.slotId) throw new Error("slotId required");
       validateDateStr(data.date);
       validateTimeRange(data.startMinute, data.endMinute);
@@ -247,18 +230,16 @@ export const rescheduleLessonOccurrence = createServerFn({ method: "POST" })
     const coachId = await resolveCoachId(context.userId);
     await assertOwnsSlot(coachId, data.slotId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const res = await supabaseAdmin
-      .from("lesson_slot_overrides")
-      .upsert(
-        {
-          slot_id: data.slotId,
-          occurrence_date: data.date,
-          status: "rescheduled",
-          start_minute: data.startMinute,
-          end_minute: data.endMinute,
-        },
-        { onConflict: "slot_id,occurrence_date" },
-      );
+    const res = await supabaseAdmin.from("lesson_slot_overrides").upsert(
+      {
+        slot_id: data.slotId,
+        occurrence_date: data.date,
+        status: "rescheduled",
+        start_minute: data.startMinute,
+        end_minute: data.endMinute,
+      },
+      { onConflict: "slot_id,occurrence_date" },
+    );
     if (res.error) dbError(res.error);
     return { ok: true };
   });

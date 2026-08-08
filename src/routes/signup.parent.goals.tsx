@@ -17,7 +17,13 @@ import { getSport, SPORTS } from "@/lib/coach-sports";
 import { listAthletesForCode, saveAthleteGoals } from "@/lib/parent-signup.functions";
 
 const searchSchema = z.object({
-  code: z.string().trim().toUpperCase().length(8).regex(/^[A-Z2-9]+$/).optional(),
+  code: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .length(8)
+    .regex(/^[A-Z2-9]+$/)
+    .optional(),
 });
 
 export const Route = createFileRoute("/signup/parent/goals")({
@@ -70,8 +76,7 @@ function ParentGoalsPage() {
     }));
   };
 
-  const canContinue =
-    !!state.sport && !!state.currentLevelKey && !!state.seasonGoalKey;
+  const canContinue = !!state.sport && !!state.currentLevelKey && !!state.seasonGoalKey;
 
   const handleNext = async () => {
     if (!current) return;

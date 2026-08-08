@@ -11,27 +11,27 @@
 //   - 50-report session cap, prevents runaway loops from spamming alerts
 //   - wrapped in try/catch so the reporter itself can never throw
 
-import { reportClientError } from './error-tracking.functions'
+import { reportClientError } from "./error-tracking.functions";
 
-const SESSION_CAP = 50
-const PRODUCTION_HOSTS = new Set(['gradus.training', 'gradustraining.lovable.app'])
-let reportCount = 0
-let installed = false
+const SESSION_CAP = 50;
+const PRODUCTION_HOSTS = new Set(["gradus.training", "gradustraining.lovable.app"]);
+let reportCount = 0;
+let installed = false;
 
 function isProductionHost(): boolean {
-  if (typeof window === 'undefined') return false
-  return PRODUCTION_HOSTS.has(window.location.hostname)
+  if (typeof window === "undefined") return false;
+  return PRODUCTION_HOSTS.has(window.location.hostname);
 }
 
 function fmtError(value: unknown): { message: string; stack?: string } {
   if (value instanceof Error) {
-    return { message: value.message || value.name, stack: value.stack }
+    return { message: value.message || value.name, stack: value.stack };
   }
-  if (typeof value === 'string') return { message: value }
+  if (typeof value === "string") return { message: value };
   try {
-    return { message: JSON.stringify(value) ?? String(value) }
+    return { message: JSON.stringify(value) ?? String(value) };
   } catch {
-    return { message: String(value) }
+    return { message: String(value) };
   }
 }
 
@@ -40,23 +40,23 @@ function fmtError(value: unknown): { message: string; stack?: string } {
 const IGNORED_MESSAGE_PATTERNS: RegExp[] = [
   /ResizeObserver loop completed with undelivered notifications/i,
   /ResizeObserver loop limit exceeded/i,
-]
+];
 
 function isIgnoredMessage(message: string): boolean {
-  return IGNORED_MESSAGE_PATTERNS.some((re) => re.test(message))
+  return IGNORED_MESSAGE_PATTERNS.some((re) => re.test(message));
 }
 
 function send(payload: {
-  message: string
-  stack?: string | null
-  route?: string | null
-  userAgent?: string | null
-  metadata?: Record<string, unknown>
+  message: string;
+  stack?: string | null;
+  route?: string | null;
+  userAgent?: string | null;
+  metadata?: Record<string, unknown>;
 }) {
-  if (reportCount >= SESSION_CAP) return
-  reportCount += 1
+  if (reportCount >= SESSION_CAP) return;
+  reportCount += 1;
   try {
-    void reportClientError({ data: payload }).catch(() => {})
+    void reportClientError({ data: payload }).catch(() => {});
   } catch {
     // never throw from the reporter
   }
@@ -66,42 +66,42 @@ export function reportError(
   error: unknown,
   extra: { route?: string | null; metadata?: Record<string, unknown> } = {},
 ) {
-  if (import.meta.env.DEV) return
-  if (!isProductionHost()) return
+  if (import.meta.env.DEV) return;
+  if (!isProductionHost()) return;
   try {
-    const { message, stack } = fmtError(error)
-    if (isIgnoredMessage(message)) return
+    const { message, stack } = fmtError(error);
+    if (isIgnoredMessage(message)) return;
     send({
       message,
       stack: stack ?? null,
-      route: extra.route ?? (typeof window !== 'undefined' ? window.location.pathname : null),
-      userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
+      route: extra.route ?? (typeof window !== "undefined" ? window.location.pathname : null),
+      userAgent: typeof navigator !== "undefined" ? navigator.userAgent : null,
       metadata: extra.metadata,
-    })
+    });
   } catch {
     // swallow
   }
 }
 
 export function installErrorReporter() {
-  if (installed) return
-  if (typeof window === 'undefined') return
-  if (import.meta.env.DEV) return
-  if (!isProductionHost()) return
-  installed = true
+  if (installed) return;
+  if (typeof window === "undefined") return;
+  if (import.meta.env.DEV) return;
+  if (!isProductionHost()) return;
+  installed = true;
 
-  window.addEventListener('error', (evt) => {
+  window.addEventListener("error", (evt) => {
     reportError(evt.error ?? evt.message, {
       metadata: {
-        type: 'window.error',
+        type: "window.error",
         filename: evt.filename,
         lineno: evt.lineno,
         colno: evt.colno,
       },
-    })
-  })
+    });
+  });
 
-  window.addEventListener('unhandledrejection', (evt) => {
-    reportError(evt.reason, { metadata: { type: 'unhandledrejection' } })
-  })
+  window.addEventListener("unhandledrejection", (evt) => {
+    reportError(evt.reason, { metadata: { type: "unhandledrejection" } });
+  });
 }

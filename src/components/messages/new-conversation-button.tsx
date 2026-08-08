@@ -4,12 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, MessageSquarePlus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { SegmentedToggle } from "@/components/plans/segmented-toggle";
 import { useVisualViewport } from "@/hooks/use-visual-viewport";
@@ -163,11 +158,7 @@ export function NewConversationButton({
               />
             </div>
             {segmentOptions.length > 2 ? (
-              <SegmentedToggle
-                value={segment}
-                onChange={setSegment}
-                options={segmentOptions}
-              />
+              <SegmentedToggle value={segment} onChange={setSegment} options={segmentOptions} />
             ) : null}
           </div>
         ) : null}
@@ -182,9 +173,7 @@ export function NewConversationButton({
             </div>
           ) : totalMatches === 0 ? (
             <div className="rounded-2xl border border-dashed border-divider bg-card p-6 text-center">
-              <p className="font-hand text-xl text-text-secondary">
-                No one matches “{query}”.
-              </p>
+              <p className="font-hand text-xl text-text-secondary">No one matches “{query}”.</p>
             </div>
           ) : (
             <div className="space-y-4">

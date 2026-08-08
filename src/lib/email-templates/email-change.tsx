@@ -1,7 +1,29 @@
 import * as React from "react";
-import { Body, Button, Container, Head, Heading, Hr, Html, Preview, Text } from "@react-email/components";
+import {
+  Body,
+  Button,
+  Container,
+  Head,
+  Heading,
+  Hr,
+  Html,
+  Preview,
+  Text,
+} from "@react-email/components";
 import parse, { domToReact, type HTMLReactParserOptions, type DOMNode } from "html-react-parser";
-import { button, container, divider, eyebrow, footer, h1, link, main, text, colors, buttonWrap } from "./_styles";
+import {
+  button,
+  container,
+  divider,
+  eyebrow,
+  footer,
+  h1,
+  link,
+  main,
+  text,
+  colors,
+  buttonWrap,
+} from "./_styles";
 import { Header, PageInner, PageShell } from "./_layout";
 import { resolveCopy, renderTemplateString } from "./copy-schema";
 
@@ -33,7 +55,14 @@ function makeMailtoParser(oldEmail: string, newEmail: string): HTMLReactParserOp
   };
 }
 
-export const EmailChangeEmail = ({ siteName, oldEmail, email, newEmail, confirmationUrl, copyOverrides }: EmailChangeEmailProps) => {
+export const EmailChangeEmail = ({
+  siteName,
+  oldEmail,
+  email,
+  newEmail,
+  confirmationUrl,
+  copyOverrides,
+}: EmailChangeEmailProps) => {
   const c = resolveCopy("email_change", copyOverrides);
   const vars = { siteName, oldEmail, email, newEmail, confirmationUrl };
   const parser = makeMailtoParser(oldEmail, newEmail);
@@ -49,14 +78,19 @@ export const EmailChangeEmail = ({ siteName, oldEmail, email, newEmail, confirma
               <Text style={eyebrow}>{renderTemplateString(c.eyebrow, vars)}</Text>
               <Heading style={h1}>{renderTemplateString(c.heading, vars)}</Heading>
               <Text style={text}>{parse(renderTemplateString(c.body, vars), parser)}</Text>
-              <div style={buttonWrap}><Button style={button} href={confirmationUrl}>{renderTemplateString(c.ctaLabel, vars)}</Button></div>
+              <div style={buttonWrap}>
+                <Button style={button} href={confirmationUrl}>
+                  {renderTemplateString(c.ctaLabel, vars)}
+                </Button>
+              </div>
               <Hr style={divider} />
-              <Text style={{ ...footer, color: colors.inkSoft }}>{parse(renderTemplateString(c.footer, vars))}</Text>
+              <Text style={{ ...footer, color: colors.inkSoft }}>
+                {parse(renderTemplateString(c.footer, vars))}
+              </Text>
             </PageInner>
           </Container>
         </PageShell>
       </Body>
-
     </Html>
   );
 };

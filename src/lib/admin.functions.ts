@@ -2,11 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { dbError } from "./db-error";
-import {
-  type StripeEnv,
-  createStripeClient,
-  getStripeErrorMessage,
-} from "@/lib/stripe.server";
+import { type StripeEnv, createStripeClient, getStripeErrorMessage } from "@/lib/stripe.server";
 
 /** Throws if the caller is not an admin. */
 async function assertAdmin(context: { userId: string; supabase: any }) {
@@ -34,17 +30,25 @@ export const checkIsAdmin = createServerFn({ method: "GET" })
 export const setUserTestFlag = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
-    z.object({
-      userId: z.string().uuid(),
-      isTest: z.boolean(),
-    }).parse(input),
+    z
+      .object({
+        userId: z.string().uuid(),
+        isTest: z.boolean(),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const [c, p, a] = await Promise.all([
-      supabaseAdmin.from("coach_profiles").update({ is_test: data.isTest }).eq("user_id", data.userId),
-      supabaseAdmin.from("parent_profiles").update({ is_test: data.isTest }).eq("user_id", data.userId),
+      supabaseAdmin
+        .from("coach_profiles")
+        .update({ is_test: data.isTest })
+        .eq("user_id", data.userId),
+      supabaseAdmin
+        .from("parent_profiles")
+        .update({ is_test: data.isTest })
+        .eq("user_id", data.userId),
       supabaseAdmin.from("athletes").update({ is_test: data.isTest }).eq("user_id", data.userId),
     ]);
     if (c.error) dbError(c.error);
@@ -55,9 +59,7 @@ export const setUserTestFlag = createServerFn({ method: "POST" })
 
 export const deleteTestUser = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z.object({ userId: z.string().uuid() }).parse(input),
-  )
+  .inputValidator((input: unknown) => z.object({ userId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     if (data.userId === context.userId) {
@@ -67,12 +69,23 @@ export const deleteTestUser = createServerFn({ method: "POST" })
 
     // Guard: only allow deletion of accounts explicitly marked as test users.
     const [coach, parent, athlete] = await Promise.all([
-      supabaseAdmin.from("coach_profiles").select("id, is_test").eq("user_id", data.userId).maybeSingle(),
-      supabaseAdmin.from("parent_profiles").select("id, is_test").eq("user_id", data.userId).maybeSingle(),
-      supabaseAdmin.from("athletes").select("id, is_test, parent_id").eq("user_id", data.userId).maybeSingle(),
+      supabaseAdmin
+        .from("coach_profiles")
+        .select("id, is_test")
+        .eq("user_id", data.userId)
+        .maybeSingle(),
+      supabaseAdmin
+        .from("parent_profiles")
+        .select("id, is_test")
+        .eq("user_id", data.userId)
+        .maybeSingle(),
+      supabaseAdmin
+        .from("athletes")
+        .select("id, is_test, parent_id")
+        .eq("user_id", data.userId)
+        .maybeSingle(),
     ]);
-    const anyTest =
-      !!coach.data?.is_test || !!parent.data?.is_test || !!athlete.data?.is_test;
+    const anyTest = !!coach.data?.is_test || !!parent.data?.is_test || !!athlete.data?.is_test;
     const hasAnyProfile = !!coach.data || !!parent.data || !!athlete.data;
     if (hasAnyProfile && !anyTest) {
       throw new Error("Refusing to delete: user is not marked as a test user.");
@@ -80,7 +93,10 @@ export const deleteTestUser = createServerFn({ method: "POST" })
 
     // Delete athlete rows owned by this user (self-managed) or parented by their parent profile.
     if (parent.data) {
-      const kids = await supabaseAdmin.from("athletes").select("id").eq("parent_id", parent.data.id);
+      const kids = await supabaseAdmin
+        .from("athletes")
+        .select("id")
+        .eq("parent_id", parent.data.id);
       const ids = (kids.data ?? []).map((a) => a.id);
       if (ids.length > 0) {
         const del = await supabaseAdmin.from("athletes").delete().in("id", ids);
@@ -137,14 +153,40 @@ export const getAdminOverview = createServerFn({ method: "POST" })
       recentParents,
     ] = await Promise.all([
       filterTest(supabaseAdmin.from("coach_profiles").select("id", { count: "exact", head: true })),
-      filterTest(supabaseAdmin.from("parent_profiles").select("id", { count: "exact", head: true })),
+      filterTest(
+        supabaseAdmin.from("parent_profiles").select("id", { count: "exact", head: true }),
+      ),
       supabaseAdmin.from("athletes").select("id", { count: "exact", head: true }),
       supabaseAdmin.from("plans").select("id", { count: "exact", head: true }).eq("kind", "plan"),
-      supabaseAdmin.from("plans").select("id", { count: "exact", head: true }).eq("kind", "plan").eq("status", "active"),
-      filterTest(supabaseAdmin.from("coach_profiles").select("id", { count: "exact", head: true }).gte("created_at", sevenDaysAgo)),
-      filterTest(supabaseAdmin.from("parent_profiles").select("id", { count: "exact", head: true }).gte("created_at", sevenDaysAgo)),
-      filterTest(supabaseAdmin.from("parent_profiles").select("id", { count: "exact", head: true }).is("coach_id", null)),
-      filterTest(supabaseAdmin.from("parent_profiles").select("id", { count: "exact", head: true }).not("coach_id", "is", null)),
+      supabaseAdmin
+        .from("plans")
+        .select("id", { count: "exact", head: true })
+        .eq("kind", "plan")
+        .eq("status", "active"),
+      filterTest(
+        supabaseAdmin
+          .from("coach_profiles")
+          .select("id", { count: "exact", head: true })
+          .gte("created_at", sevenDaysAgo),
+      ),
+      filterTest(
+        supabaseAdmin
+          .from("parent_profiles")
+          .select("id", { count: "exact", head: true })
+          .gte("created_at", sevenDaysAgo),
+      ),
+      filterTest(
+        supabaseAdmin
+          .from("parent_profiles")
+          .select("id", { count: "exact", head: true })
+          .is("coach_id", null),
+      ),
+      filterTest(
+        supabaseAdmin
+          .from("parent_profiles")
+          .select("id", { count: "exact", head: true })
+          .not("coach_id", "is", null),
+      ),
       filterTest(
         supabaseAdmin
           .from("coach_profiles")
@@ -171,7 +213,10 @@ export const getAdminOverview = createServerFn({ method: "POST" })
     ];
     const emailMap = new Map<string, string>();
     if (userIds.length > 0) {
-      const { data: usersData } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+      const { data: usersData } = await supabaseAdmin.auth.admin.listUsers({
+        page: 1,
+        perPage: 1000,
+      });
       for (const u of usersData?.users ?? []) {
         if (u.id && u.email) emailMap.set(u.id, u.email);
       }
@@ -214,9 +259,7 @@ export const getAdminOverview = createServerFn({ method: "POST" })
 
 export const searchUsers = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z.object({ query: z.string().trim().max(120) }).parse(input),
-  )
+  .inputValidator((input: unknown) => z.object({ query: z.string().trim().max(120) }).parse(input))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -318,9 +361,7 @@ export const searchUsers = createServerFn({ method: "POST" })
 
 export const getUserDetail = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z.object({ userId: z.string().uuid() }).parse(input),
-  )
+  .inputValidator((input: unknown) => z.object({ userId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -339,7 +380,9 @@ export const getUserDetail = createServerFn({ method: "POST" })
         .maybeSingle(),
       supabaseAdmin
         .from("athletes")
-        .select("id, first_name, last_name, birthdate, created_at, self_managed, parent_id, motivation, is_test")
+        .select(
+          "id, first_name, last_name, birthdate, created_at, self_managed, parent_id, motivation, is_test",
+        )
         .eq("user_id", data.userId)
         .maybeSingle(),
     ]);
@@ -371,7 +414,9 @@ export const getUserDetail = createServerFn({ method: "POST" })
         ...coach.data,
         athletes: (athleteLinks.data ?? []).map((l: any) => l.athletes).filter(Boolean),
         plansCount: (plans.data ?? []).filter((p) => p.kind === "plan").length,
-        activePlansCount: (plans.data ?? []).filter((p) => p.kind === "plan" && p.status === "active").length,
+        activePlansCount: (plans.data ?? []).filter(
+          (p) => p.kind === "plan" && p.status === "active",
+        ).length,
         sports: Array.from(new Set((levels.data ?? []).map((l) => l.sport))),
       };
     }
@@ -403,10 +448,7 @@ export const getUserDetail = createServerFn({ method: "POST" })
           .from("coach_athlete_sports")
           .select("coach_id, sport")
           .eq("athlete_id", athlete.data.id),
-        supabaseAdmin
-          .from("plans")
-          .select("id, kind, status")
-          .eq("athlete_id", athlete.data.id),
+        supabaseAdmin.from("plans").select("id, kind, status").eq("athlete_id", athlete.data.id),
       ]);
 
       const sportsByCoach = new Map<string, string[]>();
@@ -416,7 +458,10 @@ export const getUserDetail = createServerFn({ method: "POST" })
         sportsByCoach.set(s.coach_id, arr);
       }
 
-      const merged = new Map<string, { coachUserId: string | null; coachName: string; sports: Set<string> }>();
+      const merged = new Map<
+        string,
+        { coachUserId: string | null; coachName: string; sports: Set<string> }
+      >();
       const ensure = (coachId: string, profile: any) => {
         let entry = merged.get(coachId);
         if (!entry) {
@@ -446,7 +491,9 @@ export const getUserDetail = createServerFn({ method: "POST" })
           sport: Array.from(c.sports).join(", ") || null,
         })),
         plansCount: (plans.data ?? []).filter((p) => p.kind === "plan").length,
-        activePlansCount: (plans.data ?? []).filter((p) => p.kind === "plan" && p.status === "active").length,
+        activePlansCount: (plans.data ?? []).filter(
+          (p) => p.kind === "plan" && p.status === "active",
+        ).length,
       };
     }
 
@@ -459,11 +506,13 @@ const LIST_KINDS = ["coaches", "parents", "athletes", "plans", "beta-signups"] a
 export const getAdminList = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
-    z.object({
-      kind: z.enum(LIST_KINDS),
-      filter: z.string().optional().default("all"),
-      includeTest: z.boolean().optional().default(false),
-    }).parse(input),
+    z
+      .object({
+        kind: z.enum(LIST_KINDS),
+        filter: z.string().optional().default("all"),
+        includeTest: z.boolean().optional().default(false),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
@@ -474,7 +523,10 @@ export const getAdminList = createServerFn({ method: "POST" })
     // Fetch emails once for any kind that needs them
     const loadEmails = async () => {
       const map = new Map<string, string>();
-      const { data: usersData } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+      const { data: usersData } = await supabaseAdmin.auth.admin.listUsers({
+        page: 1,
+        perPage: 1000,
+      });
       for (const u of usersData?.users ?? []) {
         if (u.id && u.email) map.set(u.id, u.email);
       }
@@ -532,7 +584,9 @@ export const getAdminList = createServerFn({ method: "POST" })
     if (data.kind === "athletes") {
       const { data: rows, error } = await supabaseAdmin
         .from("athletes")
-        .select("id, first_name, last_name, birthdate, created_at, parent_id, user_id, self_managed, is_test, parent_profiles(first_name, last_name, user_id, is_test)")
+        .select(
+          "id, first_name, last_name, birthdate, created_at, parent_id, user_id, self_managed, is_test, parent_profiles(first_name, last_name, user_id, is_test)",
+        )
         .order("created_at", { ascending: false })
         .limit(200);
       if (error) dbError(error);
@@ -546,7 +600,11 @@ export const getAdminList = createServerFn({ method: "POST" })
           : a.parent_profiles
             ? `Parent: ${`${a.parent_profiles.first_name ?? ""} ${a.parent_profiles.last_name ?? ""}`.trim() || "—"}`
             : null,
-        tag: a.birthdate ? new Date(a.birthdate).toLocaleDateString() : (a.self_managed ? "adult" : "—"),
+        tag: a.birthdate
+          ? new Date(a.birthdate).toLocaleDateString()
+          : a.self_managed
+            ? "adult"
+            : "—",
         createdAt: a.created_at,
         isTest: !!a.is_test || !!a.parent_profiles?.is_test,
       }));
@@ -557,7 +615,9 @@ export const getAdminList = createServerFn({ method: "POST" })
     if (data.kind === "plans") {
       let q = supabaseAdmin
         .from("plans")
-        .select("id, kind, status, created_at, coach_id, athlete_id, coach_profiles(first_name, last_name, user_id, is_test), athletes(first_name, last_name)")
+        .select(
+          "id, kind, status, created_at, coach_id, athlete_id, coach_profiles(first_name, last_name, user_id, is_test), athletes(first_name, last_name)",
+        )
         .eq("kind", "plan")
         .order("created_at", { ascending: false })
         .limit(200);
@@ -569,7 +629,8 @@ export const getAdminList = createServerFn({ method: "POST" })
       let mapped = (rows ?? []).map((p: any) => ({
         id: p.id,
         userId: p.coach_profiles?.user_id ?? null,
-        name: `${p.athletes?.first_name ?? ""} ${p.athletes?.last_name ?? ""}`.trim() || "(no athlete)",
+        name:
+          `${p.athletes?.first_name ?? ""} ${p.athletes?.last_name ?? ""}`.trim() || "(no athlete)",
         email: `Coach: ${`${p.coach_profiles?.first_name ?? ""} ${p.coach_profiles?.last_name ?? ""}`.trim() || "—"}`,
         tag: p.status,
         createdAt: p.created_at,
@@ -616,8 +677,12 @@ export const getAdminConnectionMap = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const excludeTest = !data.includeTest;
-    let coachQ = supabaseAdmin.from("coach_profiles").select("id, user_id, first_name, last_name, is_test");
-    let parentQ = supabaseAdmin.from("parent_profiles").select("id, user_id, first_name, last_name, coach_id, is_test");
+    let coachQ = supabaseAdmin
+      .from("coach_profiles")
+      .select("id, user_id, first_name, last_name, is_test");
+    let parentQ = supabaseAdmin
+      .from("parent_profiles")
+      .select("id, user_id, first_name, last_name, coach_id, is_test");
     if (excludeTest) {
       coachQ = coachQ.eq("is_test", false);
       parentQ = parentQ.eq("is_test", false);
@@ -684,144 +749,24 @@ export const getDailyActiveUsers = createServerFn({ method: "POST" })
     const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
     const sinceISO = since.toISOString();
 
-    // Gather activity signals
-    const [messages, sessions, wrapUps, plansCreated, resourcesCreated] = await Promise.all([
-      supabaseAdmin
-        .from("messages")
-        .select("sender_user_id, created_at")
-        .gte("created_at", sinceISO)
-        .limit(50000),
-      supabaseAdmin
-        .from("plan_sessions")
-        .select("athlete_id, parent_id, logged_at")
-        .gte("logged_at", sinceISO)
-        .limit(50000),
-      supabaseAdmin
-        .from("lesson_wrap_ups")
-        .select("coach_id, created_at")
-        .gte("created_at", sinceISO)
-        .limit(50000),
-      supabaseAdmin
-        .from("plans")
-        .select("coach_id, created_at")
-        .gte("created_at", sinceISO)
-        .limit(50000),
-      supabaseAdmin
-        .from("resources")
-        .select("coach_id, created_at")
-        .gte("created_at", sinceISO)
-        .not("coach_id", "is", null)
-        .limit(50000),
-    ]);
-
-
-    if (messages.error) dbError(messages.error);
-    if (sessions.error) dbError(sessions.error);
-    if (wrapUps.error) dbError(wrapUps.error);
-    if (plansCreated.error) dbError(plansCreated.error);
-    if (resourcesCreated.error) dbError(resourcesCreated.error);
-
-
-    // Resolve athlete_id -> user_id, coach_id -> user_id
-    const athleteIds = Array.from(
-      new Set((sessions.data ?? []).map((s) => s.athlete_id).filter(Boolean) as string[]),
-    );
-    const coachIds = Array.from(
-      new Set(
-        [
-          ...((wrapUps.data ?? []).map((w) => w.coach_id)),
-          ...((plansCreated.data ?? []).map((p) => p.coach_id)),
-          ...((resourcesCreated.data ?? []).map((r) => r.coach_id)),
-        ].filter(Boolean) as string[],
-      ),
-    );
-
-
-    const athleteUserMap = new Map<string, string>();
-    const testUsers = new Set<string>();
-
-    if (athleteIds.length > 0) {
-      const { data: aRows } = await supabaseAdmin
-        .from("athletes")
-        .select("id, user_id")
-        .in("id", athleteIds);
-      for (const a of aRows ?? []) {
-        if (a.user_id) athleteUserMap.set(a.id, a.user_id);
-      }
-    }
-
-    // For excluding test users: load test user_ids from coach + parent profiles
-    if (!data.includeTest) {
-      const [{ data: testCoaches }, { data: testParents }] = await Promise.all([
-        supabaseAdmin.from("coach_profiles").select("user_id").eq("is_test", true),
-        supabaseAdmin.from("parent_profiles").select("user_id").eq("is_test", true),
-      ]);
-      for (const r of testCoaches ?? []) if (r.user_id) testUsers.add(r.user_id);
-      for (const r of testParents ?? []) if (r.user_id) testUsers.add(r.user_id);
-    }
-
-    // Map coach_profile.id -> user_id for wrap-up signals
-    const coachUserMap = new Map<string, string>();
-    if (coachIds.length > 0) {
-      const { data: cRows } = await supabaseAdmin
-        .from("coach_profiles")
-        .select("id, user_id")
-        .in("id", coachIds);
-      for (const c of cRows ?? []) {
-        if (c.user_id) coachUserMap.set(c.id, c.user_id);
-      }
-    }
+    const { loadActivityEvents } = await import("@/lib/admin-activity.server");
+    const events = await loadActivityEvents(supabaseAdmin, sinceISO, data.includeTest);
 
     // Build day buckets keyed by UTC date
     const buckets = new Map<string, Set<string>>();
     const dayKey = (d: Date | string) => new Date(d).toISOString().slice(0, 10);
     const startKey = dayKey(since);
 
-    const addActivity = (userId: string | null | undefined, when: string | null | undefined) => {
-      if (!userId || !when) return;
-      if (!data.includeTest && testUsers.has(userId)) return;
-      const k = dayKey(when);
-      if (k < startKey) return;
+    for (const e of events) {
+      const k = dayKey(e.at);
+      if (k < startKey) continue;
       let s = buckets.get(k);
       if (!s) {
         s = new Set();
         buckets.set(k, s);
       }
-      s.add(userId);
-    };
-
-    // Resolve parent_profile.id -> user_id for plan_session parent loggers
-    const parentProfileIds = Array.from(
-      new Set((sessions.data ?? []).map((s) => s.parent_id).filter(Boolean) as string[]),
-    );
-    const parentUserMap = new Map<string, string>();
-    if (parentProfileIds.length > 0) {
-      const { data: pRows } = await supabaseAdmin
-        .from("parent_profiles")
-        .select("id, user_id")
-        .in("id", parentProfileIds);
-      for (const p of pRows ?? []) {
-        if (p.user_id) parentUserMap.set(p.id, p.user_id);
-      }
+      s.add(e.userId);
     }
-
-    for (const m of messages.data ?? []) addActivity(m.sender_user_id, m.created_at);
-    for (const s of sessions.data ?? []) {
-      // Parents often log on behalf of athletes; count whoever logged it.
-      if (s.parent_id) addActivity(parentUserMap.get(s.parent_id), s.logged_at);
-      else addActivity(athleteUserMap.get(s.athlete_id), s.logged_at);
-    }
-    for (const w of wrapUps.data ?? []) {
-      addActivity(coachUserMap.get(w.coach_id), w.created_at);
-    }
-    for (const p of plansCreated.data ?? []) {
-      if (p.coach_id) addActivity(coachUserMap.get(p.coach_id), p.created_at);
-    }
-    for (const r of resourcesCreated.data ?? []) {
-      if (r.coach_id) addActivity(coachUserMap.get(r.coach_id), r.created_at);
-    }
-
-
 
     // Emit a row per day in the window (zero-fill)
     const series: { date: string; activeUsers: number }[] = [];
@@ -872,19 +817,11 @@ export const getAdminReporting = createServerFn({ method: "POST" })
       ft(supabaseAdmin.from("coach_profiles").select("id", { count: "exact", head: true })),
       ft(supabaseAdmin.from("parent_profiles").select("id", { count: "exact", head: true })),
       supabaseAdmin.from("athletes").select("id", { count: "exact", head: true }),
-      supabaseAdmin
-        .from("coach_profiles")
-        .select("id, user_id, is_test, onboarded_at, created_at"),
-      supabaseAdmin
-        .from("parent_profiles")
-        .select("id, user_id, is_test, coach_id, created_at"),
-      supabaseAdmin
-        .from("athletes")
-        .select("id, user_id, parent_id, created_at, is_test"),
+      supabaseAdmin.from("coach_profiles").select("id, user_id, is_test, onboarded_at, created_at"),
+      supabaseAdmin.from("parent_profiles").select("id, user_id, is_test, coach_id, created_at"),
+      supabaseAdmin.from("athletes").select("id, user_id, parent_id, created_at, is_test"),
       supabaseAdmin.from("coach_athletes").select("coach_id, athlete_id"),
-      supabaseAdmin
-        .from("plans")
-        .select("id, kind, status, coach_id, athlete_id, created_at"),
+      supabaseAdmin.from("plans").select("id, kind, status, coach_id, athlete_id, created_at"),
       supabaseAdmin
         .from("messages")
         .select("sender_user_id, created_at")
@@ -936,7 +873,9 @@ export const getAdminReporting = createServerFn({ method: "POST" })
       links.filter((l) => !isExcludedCoach(l.coach_id)).map((l) => l.coach_id),
     );
     const visibleCoachIds = new Set(visibleCoaches.map((c) => c.id));
-    const coachesWithAthletes = [...coachWithAthlete].filter((id) => visibleCoachIds.has(id)).length;
+    const coachesWithAthletes = [...coachWithAthlete].filter((id) =>
+      visibleCoachIds.has(id),
+    ).length;
     const coachPlans = planList.filter(
       (p) => p.kind === "plan" && p.coach_id && !isExcludedCoach(p.coach_id),
     );
@@ -957,12 +896,12 @@ export const getAdminReporting = createServerFn({ method: "POST" })
 
     // Athlete metrics
     const athletesWithCoach = new Set(
-      links
-        .filter((l) => !isExcludedCoach(l.coach_id))
-        .map((l) => l.athlete_id),
+      links.filter((l) => !isExcludedCoach(l.coach_id)).map((l) => l.athlete_id),
     );
     const visibleAthleteIds = new Set(visibleAthletes.map((a) => a.id));
-    const athletesConnected = [...athletesWithCoach].filter((id) => visibleAthleteIds.has(id)).length;
+    const athletesConnected = [...athletesWithCoach].filter((id) =>
+      visibleAthleteIds.has(id),
+    ).length;
     const athleteActivePlans = planList.filter(
       (p) =>
         p.kind === "plan" &&
@@ -1052,8 +991,6 @@ export const getAdminReporting = createServerFn({ method: "POST" })
     };
   });
 
-
-
 // =====================================================================
 // Unified admin Users table: fetch, reset password, soft delete, org
 // linkage, org-admin flag, and promo code attach/remove.
@@ -1102,9 +1039,7 @@ export const listAllUsers = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }): Promise<{ rows: UserRow[] }> => {
     await assertAdmin(context);
-    const { supabaseAdmin } = await import(
-      "@/integrations/supabase/client.server"
-    );
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     // 1. Auth users (email + last sign-in). Paginated; grab a large page.
     const authList = await supabaseAdmin.auth.admin.listUsers({
@@ -1115,63 +1050,40 @@ export const listAllUsers = createServerFn({ method: "POST" })
     const authUsers = authList.data.users;
 
     // 2. Profiles + roles + org membership.
-    const [coaches, parents, athletes, roles, orgs, softDeleted, applied] =
-      await Promise.all([
-        supabaseAdmin
-          .from("coach_profiles")
-          .select(
-            "user_id, first_name, last_name, is_test, organization_id, subscription_tier, entitlement, is_org_admin, promo_code",
-          ),
-        supabaseAdmin
-          .from("parent_profiles")
-          .select("user_id, first_name, last_name, is_test, promo_code"),
-        supabaseAdmin
-          .from("athletes")
-          .select(
-            "user_id, first_name, last_name, is_test, self_managed, promo_code",
-          )
-          .not("user_id", "is", null),
-        supabaseAdmin.from("user_roles").select("user_id, role"),
-        supabaseAdmin.from("organizations").select("id, name"),
-        supabaseAdmin
-          .from("soft_deleted_users")
-          .select("user_id, deleted_at"),
-        supabaseAdmin
-          .from("user_applied_promo_codes")
-          .select("id, user_id, code, scope, environment"),
-      ]);
-    for (const r of [
-      coaches,
-      parents,
-      athletes,
-      roles,
-      orgs,
-      softDeleted,
-      applied,
-    ]) {
+    const [coaches, parents, athletes, roles, orgs, softDeleted, applied] = await Promise.all([
+      supabaseAdmin
+        .from("coach_profiles")
+        .select(
+          "user_id, first_name, last_name, is_test, organization_id, subscription_tier, entitlement, is_org_admin, promo_code",
+        ),
+      supabaseAdmin
+        .from("parent_profiles")
+        .select("user_id, first_name, last_name, is_test, promo_code"),
+      supabaseAdmin
+        .from("athletes")
+        .select("user_id, first_name, last_name, is_test, self_managed, promo_code")
+        .not("user_id", "is", null),
+      supabaseAdmin.from("user_roles").select("user_id, role"),
+      supabaseAdmin.from("organizations").select("id, name"),
+      supabaseAdmin.from("soft_deleted_users").select("user_id, deleted_at"),
+      supabaseAdmin
+        .from("user_applied_promo_codes")
+        .select("id, user_id, code, scope, environment"),
+    ]);
+    for (const r of [coaches, parents, athletes, roles, orgs, softDeleted, applied]) {
       if (r.error) dbError(r.error);
     }
 
-    const coachByUser = new Map(
-      (coaches.data ?? []).map((c) => [c.user_id, c]),
-    );
-    const parentByUser = new Map(
-      (parents.data ?? []).map((p) => [p.user_id, p]),
-    );
+    const coachByUser = new Map((coaches.data ?? []).map((c) => [c.user_id, c]));
+    const parentByUser = new Map((parents.data ?? []).map((p) => [p.user_id, p]));
     const athleteByUser = new Map(
-      (athletes.data ?? [])
-        .filter((a) => a.user_id)
-        .map((a) => [a.user_id as string, a]),
+      (athletes.data ?? []).filter((a) => a.user_id).map((a) => [a.user_id as string, a]),
     );
     const adminRoles = new Set(
-      (roles.data ?? [])
-        .filter((r) => r.role === "admin")
-        .map((r) => r.user_id),
+      (roles.data ?? []).filter((r) => r.role === "admin").map((r) => r.user_id),
     );
     const orgById = new Map((orgs.data ?? []).map((o) => [o.id, o.name]));
-    const deletedByUser = new Map(
-      (softDeleted.data ?? []).map((s) => [s.user_id, s.deleted_at]),
-    );
+    const deletedByUser = new Map((softDeleted.data ?? []).map((s) => [s.user_id, s.deleted_at]));
     const appliedByUser = new Map<string, UserRow["appliedCodes"]>();
     for (const a of applied.data ?? []) {
       const list = appliedByUser.get(a.user_id) ?? [];
@@ -1203,13 +1115,10 @@ export const listAllUsers = createServerFn({ method: "POST" })
       }
       if (coach) {
         userType = "coach";
-        name =
-          `${coach.first_name ?? ""} ${coach.last_name ?? ""}`.trim() || name;
+        name = `${coach.first_name ?? ""} ${coach.last_name ?? ""}`.trim() || name;
         isTest = isTest || !!coach.is_test;
         organizationId = coach.organization_id;
-        organizationName = organizationId
-          ? (orgById.get(organizationId) ?? null)
-          : null;
+        organizationName = organizationId ? (orgById.get(organizationId) ?? null) : null;
         isOrgAdmin = !!coach.is_org_admin;
         stashedPromoCode = coach.promo_code ?? null;
         if (coach.entitlement === "club_covered") planTier = "club";
@@ -1217,15 +1126,12 @@ export const listAllUsers = createServerFn({ method: "POST" })
         else planTier = "coach";
       } else if (parent) {
         userType = "parent";
-        name =
-          `${parent.first_name ?? ""} ${parent.last_name ?? ""}`.trim() || name;
+        name = `${parent.first_name ?? ""} ${parent.last_name ?? ""}`.trim() || name;
         isTest = isTest || !!parent.is_test;
         stashedPromoCode = parent.promo_code ?? null;
       } else if (athlete) {
         userType = athlete.self_managed ? "adult_athlete" : "youth_athlete";
-        name =
-          `${athlete.first_name ?? ""} ${athlete.last_name ?? ""}`.trim() ||
-          name;
+        name = `${athlete.first_name ?? ""} ${athlete.last_name ?? ""}`.trim() || name;
         isTest = isTest || !!athlete.is_test;
         stashedPromoCode = athlete.promo_code ?? null;
       }
@@ -1258,14 +1164,10 @@ export const listAllUsers = createServerFn({ method: "POST" })
       if (data.onlyAdmin && !r.isAdmin) return false;
       if (data.onlyOrgAdmin && !r.isOrgAdmin) return false;
       if (data.types.length && !data.types.includes(r.userType)) return false;
-      if (
-        data.plans.length &&
-        (r.planTier == null || !data.plans.includes(r.planTier))
-      )
+      if (data.plans.length && (r.planTier == null || !data.plans.includes(r.planTier)))
         return false;
       if (q) {
-        const haystack =
-          `${r.name} ${r.email ?? ""} ${r.organizationName ?? ""}`.toLowerCase();
+        const haystack = `${r.name} ${r.email ?? ""} ${r.organizationName ?? ""}`.toLowerCase();
         if (!haystack.includes(q)) return false;
       }
       return true;
@@ -1277,32 +1179,26 @@ export const listAllUsers = createServerFn({ method: "POST" })
 /** Reset a user's password: send Supabase recovery email AND return copyable link. */
 export const adminResetPassword = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z.object({ userId: z.string().uuid() }).parse(input),
-  )
+  .inputValidator((input: unknown) => z.object({ userId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
-    const { supabaseAdmin } = await import(
-      "@/integrations/supabase/client.server"
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: userInfo, error: getErr } = await supabaseAdmin.auth.admin.getUserById(
+      data.userId,
     );
-    const { data: userInfo, error: getErr } =
-      await supabaseAdmin.auth.admin.getUserById(data.userId);
     if (getErr) throw new Error(getErr.message);
     const email = userInfo?.user?.email;
     if (!email) throw new Error("User has no email on file.");
 
     // (a) Email the standard recovery link via GoTrue.
-    const { error: emailErr } = await supabaseAdmin.auth.resetPasswordForEmail(
-      email,
-    );
+    const { error: emailErr } = await supabaseAdmin.auth.resetPasswordForEmail(email);
     if (emailErr) throw new Error(emailErr.message);
 
     // (b) Also mint an admin-visible recovery link to copy.
-    const { data: linkData, error: linkErr } =
-      await supabaseAdmin.auth.admin.generateLink({
-        type: "recovery",
-        email,
-      });
+    const { data: linkData, error: linkErr } = await supabaseAdmin.auth.admin.generateLink({
+      type: "recovery",
+      email,
+    });
     if (linkErr) throw new Error(linkErr.message);
 
     return {
@@ -1329,35 +1225,28 @@ export const adminSoftDeleteUser = createServerFn({ method: "POST" })
     if (data.userId === context.userId) {
       throw new Error("You cannot soft-delete your own account.");
     }
-    const { supabaseAdmin } = await import(
-      "@/integrations/supabase/client.server"
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: userInfo, error: getErr } = await supabaseAdmin.auth.admin.getUserById(
+      data.userId,
     );
-    const { data: userInfo, error: getErr } =
-      await supabaseAdmin.auth.admin.getUserById(data.userId);
     if (getErr) throw new Error(getErr.message);
-    if (
-      (userInfo?.user?.email ?? "").toLowerCase() !==
-      data.confirmEmail.toLowerCase()
-    ) {
+    if ((userInfo?.user?.email ?? "").toLowerCase() !== data.confirmEmail.toLowerCase()) {
       throw new Error("Confirmation email did not match.");
     }
 
     // Ban the user for 100 years (876000h). Supabase Auth admin API accepts this.
-    const { error: banErr } = await supabaseAdmin.auth.admin.updateUserById(
-      data.userId,
-      { ban_duration: "876000h" as unknown as string },
-    );
+    const { error: banErr } = await supabaseAdmin.auth.admin.updateUserById(data.userId, {
+      ban_duration: "876000h" as unknown as string,
+    });
     if (banErr) throw new Error(banErr.message);
 
     // Record the soft delete.
-    const { error: insErr } = await supabaseAdmin
-      .from("soft_deleted_users")
-      .upsert({
-        user_id: data.userId,
-        deleted_by: context.userId,
-        deleted_at: new Date().toISOString(),
-        reason: data.reason ?? null,
-      });
+    const { error: insErr } = await supabaseAdmin.from("soft_deleted_users").upsert({
+      user_id: data.userId,
+      deleted_by: context.userId,
+      deleted_at: new Date().toISOString(),
+      reason: data.reason ?? null,
+    });
     if (insErr) dbError(insErr);
 
     return { ok: true };
@@ -1365,18 +1254,13 @@ export const adminSoftDeleteUser = createServerFn({ method: "POST" })
 
 export const adminRestoreUser = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z.object({ userId: z.string().uuid() }).parse(input),
-  )
+  .inputValidator((input: unknown) => z.object({ userId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
-    const { supabaseAdmin } = await import(
-      "@/integrations/supabase/client.server"
-    );
-    const { error: unbanErr } = await supabaseAdmin.auth.admin.updateUserById(
-      data.userId,
-      { ban_duration: "none" as unknown as string },
-    );
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error: unbanErr } = await supabaseAdmin.auth.admin.updateUserById(data.userId, {
+      ban_duration: "none" as unknown as string,
+    });
     if (unbanErr) throw new Error(unbanErr.message);
     const { error: delErr } = await supabaseAdmin
       .from("soft_deleted_users")
@@ -1399,9 +1283,7 @@ export const adminSetUserOrg = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
-    const { supabaseAdmin } = await import(
-      "@/integrations/supabase/client.server"
-    );
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     // Only coaches have an org column today.
     const { data: coach, error: cErr } = await supabaseAdmin
       .from("coach_profiles")
@@ -1433,15 +1315,11 @@ export const adminSetUserOrg = createServerFn({ method: "POST" })
 export const adminSetOrgAdmin = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
-    z
-      .object({ userId: z.string().uuid(), isOrgAdmin: z.boolean() })
-      .parse(input),
+    z.object({ userId: z.string().uuid(), isOrgAdmin: z.boolean() }).parse(input),
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
-    const { supabaseAdmin } = await import(
-      "@/integrations/supabase/client.server"
-    );
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin
       .from("coach_profiles")
       .update({ is_org_admin: data.isOrgAdmin })
@@ -1467,174 +1345,145 @@ export const adminApplyPromoCode = createServerFn({ method: "POST" })
       })
       .parse(input),
   )
-  .handler(
-    async ({
-      data,
-      context,
-    }): Promise<{ ok: true } | { ok: false; error: string }> => {
-      await assertAdmin(context);
-      const code = data.code.toUpperCase();
-      const { supabaseAdmin } = await import(
-        "@/integrations/supabase/client.server"
-      );
+  .handler(async ({ data, context }): Promise<{ ok: true } | { ok: false; error: string }> => {
+    await assertAdmin(context);
+    const code = data.code.toUpperCase();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-      const { data: promo, error: pErr } = await supabaseAdmin
-        .from("promo_codes")
-        .select(
-          "code, active, stripe_coupon_id_sandbox, stripe_coupon_id_live",
-        )
-        .eq("code", code)
+    const { data: promo, error: pErr } = await supabaseAdmin
+      .from("promo_codes")
+      .select("code, active, stripe_coupon_id_sandbox, stripe_coupon_id_live")
+      .eq("code", code)
+      .maybeSingle();
+    if (pErr) dbError(pErr);
+    if (!promo || !promo.active) {
+      return { ok: false, error: `Promo code ${code} is not active.` };
+    }
+
+    let stripeSubscriptionId: string | null = null;
+
+    if (data.scope === "active_now") {
+      const env = data.environment;
+      if (!env) {
+        return {
+          ok: false,
+          error: "Environment (sandbox/live) is required for active_now.",
+        };
+      }
+      const couponId =
+        env === "sandbox" ? promo.stripe_coupon_id_sandbox : promo.stripe_coupon_id_live;
+      if (!couponId) {
+        return {
+          ok: false,
+          error: `Promo code ${code} isn't synced to ${env} Stripe yet.`,
+        };
+      }
+      const { data: coach, error: cErr } = await supabaseAdmin
+        .from("coach_profiles")
+        .select("stripe_customer_id")
+        .eq("user_id", data.userId)
         .maybeSingle();
-      if (pErr) dbError(pErr);
-      if (!promo || !promo.active) {
-        return { ok: false, error: `Promo code ${code} is not active.` };
+      if (cErr) dbError(cErr);
+      if (!coach?.stripe_customer_id) {
+        return {
+          ok: false,
+          error: "User has no active Stripe customer.",
+        };
       }
-
-      let stripeSubscriptionId: string | null = null;
-
-      if (data.scope === "active_now") {
-        const env = data.environment;
-        if (!env) {
-          return {
-            ok: false,
-            error: "Environment (sandbox/live) is required for active_now.",
-          };
+      try {
+        const stripe = createStripeClient(env as StripeEnv);
+        const list = await stripe.subscriptions.list({
+          customer: coach.stripe_customer_id,
+          status: "all",
+          limit: 10,
+        });
+        const sub = list.data
+          .filter((s) => ["active", "trialing", "past_due"].includes(s.status))
+          .sort((a, b) => (b.created ?? 0) - (a.created ?? 0))[0];
+        if (!sub) {
+          return { ok: false, error: "No active subscription found." };
         }
-        const couponId =
-          env === "sandbox"
-            ? promo.stripe_coupon_id_sandbox
-            : promo.stripe_coupon_id_live;
-        if (!couponId) {
-          return {
-            ok: false,
-            error: `Promo code ${code} isn't synced to ${env} Stripe yet.`,
-          };
-        }
-        const { data: coach, error: cErr } = await supabaseAdmin
-          .from("coach_profiles")
-          .select("stripe_customer_id")
-          .eq("user_id", data.userId)
-          .maybeSingle();
-        if (cErr) dbError(cErr);
-        if (!coach?.stripe_customer_id) {
-          return {
-            ok: false,
-            error: "User has no active Stripe customer.",
-          };
-        }
-        try {
-          const stripe = createStripeClient(env as StripeEnv);
-          const list = await stripe.subscriptions.list({
-            customer: coach.stripe_customer_id,
-            status: "all",
-            limit: 10,
-          });
-          const sub = list.data
-            .filter((s) =>
-              ["active", "trialing", "past_due"].includes(s.status),
-            )
-            .sort((a, b) => (b.created ?? 0) - (a.created ?? 0))[0];
-          if (!sub) {
-            return { ok: false, error: "No active subscription found." };
-          }
-          await stripe.subscriptions.update(sub.id, {
-            discounts: [{ coupon: couponId }],
-          });
-          stripeSubscriptionId = sub.id;
-        } catch (err) {
-          return { ok: false, error: getStripeErrorMessage(err) };
-        }
-      } else {
-        // Stash on the coach profile (existing checkout path picks this up).
-        await supabaseAdmin
-          .from("coach_profiles")
-          .update({ promo_code: code })
-          .eq("user_id", data.userId);
+        await stripe.subscriptions.update(sub.id, {
+          discounts: [{ coupon: couponId }],
+        });
+        stripeSubscriptionId = sub.id;
+      } catch (err) {
+        return { ok: false, error: getStripeErrorMessage(err) };
       }
+    } else {
+      // Stash on the coach profile (existing checkout path picks this up).
+      await supabaseAdmin
+        .from("coach_profiles")
+        .update({ promo_code: code })
+        .eq("user_id", data.userId);
+    }
 
-      const { error: upErr } = await supabaseAdmin
-        .from("user_applied_promo_codes")
-        .upsert(
-          {
-            user_id: data.userId,
-            code,
-            scope: data.scope,
-            environment: data.environment ?? null,
-            stripe_subscription_id: stripeSubscriptionId,
-            applied_by: context.userId,
-          },
-          { onConflict: "user_id,code,scope" },
-        );
-      if (upErr) dbError(upErr);
+    const { error: upErr } = await supabaseAdmin.from("user_applied_promo_codes").upsert(
+      {
+        user_id: data.userId,
+        code,
+        scope: data.scope,
+        environment: data.environment ?? null,
+        stripe_subscription_id: stripeSubscriptionId,
+        applied_by: context.userId,
+      },
+      { onConflict: "user_id,code,scope" },
+    );
+    if (upErr) dbError(upErr);
 
-      return { ok: true };
-    },
-  );
+    return { ok: true };
+  });
 
 /** Remove an applied promo code. For active_now, also strips it from the Stripe subscription. */
 export const adminRemovePromoCode = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z.object({ id: z.string().uuid() }).parse(input),
-  )
-  .handler(
-    async ({
-      data,
-      context,
-    }): Promise<{ ok: true } | { ok: false; error: string }> => {
-      await assertAdmin(context);
-      const { supabaseAdmin } = await import(
-        "@/integrations/supabase/client.server"
-      );
-      const { data: row, error: rErr } = await supabaseAdmin
-        .from("user_applied_promo_codes")
-        .select("id, user_id, code, scope, environment, stripe_subscription_id")
-        .eq("id", data.id)
-        .maybeSingle();
-      if (rErr) dbError(rErr);
-      if (!row) return { ok: false, error: "Applied code not found." };
+  .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }): Promise<{ ok: true } | { ok: false; error: string }> => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row, error: rErr } = await supabaseAdmin
+      .from("user_applied_promo_codes")
+      .select("id, user_id, code, scope, environment, stripe_subscription_id")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (rErr) dbError(rErr);
+    if (!row) return { ok: false, error: "Applied code not found." };
 
-      if (row.scope === "active_now" && row.stripe_subscription_id && row.environment) {
-        try {
-          const stripe = createStripeClient(row.environment as StripeEnv);
-          await stripe.subscriptions.update(row.stripe_subscription_id, {
-            discounts: [],
-          });
-        } catch (err) {
-          return { ok: false, error: getStripeErrorMessage(err) };
-        }
-      } else if (row.scope === "next_checkout") {
-        // Clear the profile stash if it matches.
-        const { data: coach } = await supabaseAdmin
-          .from("coach_profiles")
-          .select("id, promo_code")
-          .eq("user_id", row.user_id)
-          .maybeSingle();
-        if (coach && coach.promo_code === row.code) {
-          await supabaseAdmin
-            .from("coach_profiles")
-            .update({ promo_code: null })
-            .eq("id", coach.id);
-        }
+    if (row.scope === "active_now" && row.stripe_subscription_id && row.environment) {
+      try {
+        const stripe = createStripeClient(row.environment as StripeEnv);
+        await stripe.subscriptions.update(row.stripe_subscription_id, {
+          discounts: [],
+        });
+      } catch (err) {
+        return { ok: false, error: getStripeErrorMessage(err) };
       }
+    } else if (row.scope === "next_checkout") {
+      // Clear the profile stash if it matches.
+      const { data: coach } = await supabaseAdmin
+        .from("coach_profiles")
+        .select("id, promo_code")
+        .eq("user_id", row.user_id)
+        .maybeSingle();
+      if (coach && coach.promo_code === row.code) {
+        await supabaseAdmin.from("coach_profiles").update({ promo_code: null }).eq("id", coach.id);
+      }
+    }
 
-      const { error: dErr } = await supabaseAdmin
-        .from("user_applied_promo_codes")
-        .delete()
-        .eq("id", data.id);
-      if (dErr) dbError(dErr);
-      return { ok: true };
-    },
-  );
+    const { error: dErr } = await supabaseAdmin
+      .from("user_applied_promo_codes")
+      .delete()
+      .eq("id", data.id);
+    if (dErr) dbError(dErr);
+    return { ok: true };
+  });
 
 /** Simple picker source for the promo code combobox in the users page. */
 export const listActivePromoCodes = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await assertAdmin(context);
-    const { supabaseAdmin } = await import(
-      "@/integrations/supabase/client.server"
-    );
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data, error } = await supabaseAdmin
       .from("promo_codes")
       .select("code, label, percent_off, duration, duration_in_months, applies_to_plans")
@@ -1644,4 +1493,242 @@ export const listActivePromoCodes = createServerFn({ method: "GET" })
     return { codes: data ?? [] };
   });
 
+// =====================================================================
+// Drill-downs: who was active, plan detail, and session logs.
+// =====================================================================
 
+const ACTIVE_ROLES = ["all", "coaches", "parents", "athletes"] as const;
+
+/** Who was active in a window (or on a single UTC day). */
+export const getAdminActiveUsers = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        role: z.enum(ACTIVE_ROLES).optional().default("all"),
+        days: z.number().int().min(1).max(90).optional().default(7),
+        date: z
+          .string()
+          .regex(/^\d{4}-\d{2}-\d{2}$/)
+          .optional(),
+        includeTest: z.boolean().optional().default(false),
+      })
+      .parse(input ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { loadActivityEvents, ACTIVITY_LABELS } = await import("@/lib/admin-activity.server");
+
+    const sinceISO = data.date
+      ? new Date(`${data.date}T00:00:00.000Z`).toISOString()
+      : new Date(Date.now() - data.days * 24 * 60 * 60 * 1000).toISOString();
+
+    let events = await loadActivityEvents(supabaseAdmin, sinceISO, data.includeTest);
+    if (data.date) {
+      events = events.filter((e) => new Date(e.at).toISOString().slice(0, 10) === data.date);
+    }
+
+    const byUser = new Map<string, { last: string; count: number; kinds: Set<string> }>();
+    for (const e of events) {
+      const cur = byUser.get(e.userId);
+      if (!cur) byUser.set(e.userId, { last: e.at, count: 1, kinds: new Set([e.kind]) });
+      else {
+        cur.count += 1;
+        cur.kinds.add(e.kind);
+        if (e.at > cur.last) cur.last = e.at;
+      }
+    }
+
+    const userIds = [...byUser.keys()];
+    if (userIds.length === 0) return { rows: [] as any[] };
+
+    const [coaches, parents, athletes, usersData] = await Promise.all([
+      supabaseAdmin
+        .from("coach_profiles")
+        .select("user_id, first_name, last_name, is_test")
+        .in("user_id", userIds),
+      supabaseAdmin
+        .from("parent_profiles")
+        .select("user_id, first_name, last_name, is_test")
+        .in("user_id", userIds),
+      supabaseAdmin
+        .from("athletes")
+        .select("user_id, first_name, last_name, is_test")
+        .in("user_id", userIds),
+      supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 }),
+    ]);
+
+    const emails = new Map<string, string>();
+    for (const u of usersData.data?.users ?? []) {
+      if (u.id && u.email) emails.set(u.id, u.email);
+    }
+
+    const identity = new Map<
+      string,
+      { role: "coach" | "parent" | "athlete"; name: string; isTest: boolean }
+    >();
+    const name = (f?: string | null, l?: string | null) =>
+      `${f ?? ""} ${l ?? ""}`.trim() || "(no name)";
+    for (const a of athletes.data ?? [])
+      if (a.user_id)
+        identity.set(a.user_id, {
+          role: "athlete",
+          name: name(a.first_name, a.last_name),
+          isTest: !!a.is_test,
+        });
+    for (const p of parents.data ?? [])
+      if (p.user_id)
+        identity.set(p.user_id, {
+          role: "parent",
+          name: name(p.first_name, p.last_name),
+          isTest: !!p.is_test,
+        });
+    for (const c of coaches.data ?? [])
+      if (c.user_id)
+        identity.set(c.user_id, {
+          role: "coach",
+          name: name(c.first_name, c.last_name),
+          isTest: !!c.is_test,
+        });
+
+    const wanted =
+      data.role === "coaches"
+        ? "coach"
+        : data.role === "parents"
+          ? "parent"
+          : data.role === "athletes"
+            ? "athlete"
+            : null;
+
+    const rows = userIds
+      .map((uid) => {
+        const info = byUser.get(uid)!;
+        const who = identity.get(uid);
+        return {
+          userId: uid,
+          name: who?.name ?? "(unknown user)",
+          email: emails.get(uid) ?? null,
+          role: who?.role ?? "unknown",
+          isTest: who?.isTest ?? false,
+          lastActiveAt: info.last,
+          eventCount: info.count,
+          activities: [...info.kinds].map(
+            (k) => ACTIVITY_LABELS[k as keyof typeof ACTIVITY_LABELS] ?? k,
+          ),
+        };
+      })
+      .filter((r) => (wanted ? r.role === wanted : true))
+      .filter((r) => (data.includeTest ? true : !r.isTest))
+      .sort((a, b) => (a.lastActiveAt < b.lastActiveAt ? 1 : -1));
+
+    return { rows };
+  });
+
+/** Full plan record for admin inspection, including logged sessions. */
+export const getAdminPlanDetail = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ planId: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: plan, error } = await supabaseAdmin
+      .from("plans")
+      .select(
+        "id, kind, title, notes, status, created_at, updated_at, share_token, shared_at, coach_id, athlete_id, coach_profiles(first_name, last_name, user_id), athletes(first_name, last_name)",
+      )
+      .eq("id", data.planId)
+      .maybeSingle();
+    if (error) dbError(error);
+    if (!plan) throw new Error("Plan not found");
+
+    const [moves, sessions] = await Promise.all([
+      supabaseAdmin
+        .from("plan_moves")
+        .select("id, position, name, description, cue, why, target_kind, target_value")
+        .eq("plan_id", data.planId)
+        .order("position", { ascending: true }),
+      supabaseAdmin
+        .from("plan_sessions")
+        .select("id, state_index, note, duration_seconds, logged_at, parent_id, athlete_id")
+        .eq("plan_id", data.planId)
+        .order("logged_at", { ascending: false })
+        .limit(200),
+    ]);
+    if (moves.error) dbError(moves.error);
+    if (sessions.error) dbError(sessions.error);
+
+    const p = plan as any;
+    return {
+      plan: {
+        id: p.id,
+        kind: p.kind,
+        title: p.title,
+        notes: p.notes,
+        status: p.status,
+        createdAt: p.created_at,
+        updatedAt: p.updated_at,
+        shared: !!p.share_token,
+        sharedAt: p.shared_at,
+        coachName:
+          `${p.coach_profiles?.first_name ?? ""} ${p.coach_profiles?.last_name ?? ""}`.trim() ||
+          null,
+        coachUserId: p.coach_profiles?.user_id ?? null,
+        athleteName:
+          `${p.athletes?.first_name ?? ""} ${p.athletes?.last_name ?? ""}`.trim() || null,
+      },
+      moves: moves.data ?? [],
+      sessions: (sessions.data ?? []).map((s) => ({
+        id: s.id,
+        stateIndex: s.state_index,
+        note: s.note ?? "",
+        durationSeconds: s.duration_seconds ?? 0,
+        loggedAt: s.logged_at,
+        loggedBy: s.parent_id ? ("parent" as const) : ("athlete" as const),
+      })),
+    };
+  });
+
+/** Recent logged sessions across all athletes, with notes. */
+export const getAdminSessions = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        days: z.number().int().min(1).max(90).optional().default(7),
+        includeTest: z.boolean().optional().default(false),
+      })
+      .parse(input ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const sinceISO = new Date(Date.now() - data.days * 24 * 60 * 60 * 1000).toISOString();
+    const { data: rows, error } = await supabaseAdmin
+      .from("plan_sessions")
+      .select(
+        "id, plan_id, state_index, note, duration_seconds, logged_at, parent_id, athlete_id, plans(title), athletes(first_name, last_name, is_test)",
+      )
+      .gte("logged_at", sinceISO)
+      .order("logged_at", { ascending: false })
+      .limit(300);
+    if (error) dbError(error);
+
+    let mapped = (rows ?? []).map((s: any) => ({
+      id: s.id,
+      planId: s.plan_id as string,
+      planTitle: s.plans?.title ?? "(untitled plan)",
+      athleteName:
+        `${s.athletes?.first_name ?? ""} ${s.athletes?.last_name ?? ""}`.trim() || "(no athlete)",
+      stateIndex: s.state_index as number,
+      note: (s.note ?? "") as string,
+      durationSeconds: (s.duration_seconds ?? 0) as number,
+      loggedAt: s.logged_at as string,
+      loggedBy: s.parent_id ? ("parent" as const) : ("athlete" as const),
+      isTest: !!s.athletes?.is_test,
+    }));
+    if (!data.includeTest) mapped = mapped.filter((r) => !r.isTest);
+    return { rows: mapped };
+  });

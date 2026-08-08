@@ -1,32 +1,32 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
-import { useServerFn } from '@tanstack/react-start'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { zodValidator, fallback } from '@tanstack/zod-adapter'
-import { z } from 'zod'
-import { useState } from 'react'
-import { ArrowLeft, Sparkles, Loader2 } from 'lucide-react'
-import { listAdminErrorGroups, explainErrorGroup } from '@/lib/error-tracking.functions'
-import { Eyebrow } from '@/components/ui/eyebrow'
-import { Chip, chipClasses } from '@/components/ui/chip'
-import { cn } from '@/lib/utils'
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { zodValidator, fallback } from "@tanstack/zod-adapter";
+import { z } from "zod";
+import { useState } from "react";
+import { ArrowLeft, Sparkles, Loader2 } from "lucide-react";
+import { listAdminErrorGroups, explainErrorGroup } from "@/lib/error-tracking.functions";
+import { Eyebrow } from "@/components/ui/eyebrow";
+import { Chip, chipClasses } from "@/components/ui/chip";
+import { cn } from "@/lib/utils";
 
 const searchSchema = z.object({
   test: fallback(z.boolean(), false).default(false),
-})
+});
 
-export const Route = createFileRoute('/_authenticated/admin/errors')({
+export const Route = createFileRoute("/_authenticated/admin/errors")({
   validateSearch: zodValidator(searchSchema),
   component: AdminErrors,
-})
+});
 
 function AdminErrors() {
-  const { test: includeTest } = Route.useSearch()
-  const listFn = useServerFn(listAdminErrorGroups)
+  const { test: includeTest } = Route.useSearch();
+  const listFn = useServerFn(listAdminErrorGroups);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['admin-error-groups', includeTest],
+    queryKey: ["admin-error-groups", includeTest],
     queryFn: () => listFn({ data: { limit: 1000, includeTest } }),
-  })
+  });
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10 space-y-6">
@@ -38,14 +38,18 @@ function AdminErrors() {
           <ArrowLeft className="size-3.5" /> Back to admin
         </Link>
         <div>
-          <Eyebrow size="small" tone="accent-ink">Internal</Eyebrow>
+          <Eyebrow size="small" tone="accent-ink">
+            Internal
+          </Eyebrow>
           <h1 className="font-display text-h1 text-text-primary">Errors</h1>
           <p className="text-text-secondary text-sm mt-1">
-            Grouped by normalized message. Click <span className="italic">Explain</span> for an AI-written summary.
+            Grouped by normalized message. Click <span className="italic">Explain</span> for an
+            AI-written summary.
           </p>
           {data && (
             <p className="text-xs text-text-tertiary mt-1">
-              {data.groups.length} group{data.groups.length === 1 ? '' : 's'} · {data.totalOccurrences} occurrence{data.totalOccurrences === 1 ? '' : 's'}
+              {data.groups.length} group{data.groups.length === 1 ? "" : "s"} ·{" "}
+              {data.totalOccurrences} occurrence{data.totalOccurrences === 1 ? "" : "s"}
             </p>
           )}
         </div>
@@ -53,9 +57,9 @@ function AdminErrors() {
           <Link
             from={Route.fullPath}
             search={(prev: any) => ({ ...prev, test: !includeTest })}
-            className={chipClasses({ tone: 'muted', selected: includeTest })}
+            className={chipClasses({ tone: "muted", selected: includeTest })}
           >
-            {includeTest ? 'Test users: on' : 'Test users: hidden'}
+            {includeTest ? "Test users: on" : "Test users: hidden"}
           </Link>
         </div>
       </header>
@@ -72,23 +76,23 @@ function AdminErrors() {
         </ul>
       )}
     </div>
-  )
+  );
 }
 
 function GroupCard({ group }: { group: any }) {
-  const explainFn = useServerFn(explainErrorGroup)
-  const qc = useQueryClient()
-  const [expanded, setExpanded] = useState(false)
-  const [localExplanation, setLocalExplanation] = useState<string | null>(group.explanation)
+  const explainFn = useServerFn(explainErrorGroup);
+  const qc = useQueryClient();
+  const [expanded, setExpanded] = useState(false);
+  const [localExplanation, setLocalExplanation] = useState<string | null>(group.explanation);
 
   const explain = useMutation({
     mutationFn: () => explainFn({ data: { signature: group.signature } }),
     onSuccess: (res: any) => {
-      setLocalExplanation(res.explanation)
-      setExpanded(true)
-      qc.invalidateQueries({ queryKey: ['admin-error-groups'] })
+      setLocalExplanation(res.explanation);
+      setExpanded(true);
+      qc.invalidateQueries({ queryKey: ["admin-error-groups"] });
     },
-  })
+  });
 
   return (
     <li className="rounded-lg border border-divider bg-card p-4 shadow-card">
@@ -96,10 +100,10 @@ function GroupCard({ group }: { group: any }) {
         <div className="flex items-center gap-2 min-w-0 flex-1">
           <span
             className={cn(
-              'rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider shrink-0',
-              group.source === 'server'
-                ? 'bg-pen-orange-wash text-pen-orange-ink'
-                : 'bg-pen-pool-wash text-pen-pool-ink',
+              "rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider shrink-0",
+              group.source === "server"
+                ? "bg-pen-orange-wash text-pen-orange-ink"
+                : "bg-pen-pool-wash text-pen-pool-ink",
             )}
           >
             {group.source}
@@ -114,7 +118,7 @@ function GroupCard({ group }: { group: any }) {
           </span>
           {group.uniqueUsers > 0 && (
             <span className="text-[11px] text-text-tertiary whitespace-nowrap">
-              {group.uniqueUsers} user{group.uniqueUsers === 1 ? '' : 's'}
+              {group.uniqueUsers} user{group.uniqueUsers === 1 ? "" : "s"}
             </span>
           )}
         </div>
@@ -125,8 +129,8 @@ function GroupCard({ group }: { group: any }) {
         <span>First: {new Date(group.firstSeen).toLocaleString()}</span>
         {group.routes.length > 0 && (
           <span className="font-mono truncate">
-            {group.routes.slice(0, 3).join(' · ')}
-            {group.routes.length > 3 ? ` +${group.routes.length - 3}` : ''}
+            {group.routes.slice(0, 3).join(" · ")}
+            {group.routes.length > 3 ? ` +${group.routes.length - 3}` : ""}
           </span>
         )}
       </div>
@@ -134,8 +138,8 @@ function GroupCard({ group }: { group: any }) {
       {(group.users?.length > 0 || group.anonCount > 0) && (
         <div className="mt-2 flex flex-wrap gap-1.5">
           {group.users?.slice(0, 8).map((u: any) => {
-            const label = u.name || u.email || u.userId.slice(0, 8)
-            const title = [u.email, u.role, `${u.count}×`].filter(Boolean).join(' · ')
+            const label = u.name || u.email || u.userId.slice(0, 8);
+            const title = [u.email, u.role, `${u.count}×`].filter(Boolean).join(" · ");
             return (
               <span
                 key={u.userId}
@@ -152,7 +156,7 @@ function GroupCard({ group }: { group: any }) {
                   <span className="text-[10px] font-bold text-text-tertiary">×{u.count}</span>
                 )}
               </span>
-            )
+            );
           })}
           {group.users?.length > 8 && (
             <span className="inline-flex items-center rounded-full bg-elevated px-2 py-0.5 text-[11px] text-text-tertiary">
@@ -167,7 +171,6 @@ function GroupCard({ group }: { group: any }) {
         </div>
       )}
 
-
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <Chip
           as="button"
@@ -175,9 +178,9 @@ function GroupCard({ group }: { group: any }) {
           size="micro"
           onClick={() => {
             if (localExplanation) {
-              setExpanded((v) => !v)
+              setExpanded((v) => !v);
             } else {
-              explain.mutate()
+              explain.mutate();
             }
           }}
           disabled={explain.isPending}
@@ -188,7 +191,11 @@ function GroupCard({ group }: { group: any }) {
               Explaining…
             </>
           ) : localExplanation ? (
-            expanded ? 'Hide explanation' : 'Show explanation'
+            expanded ? (
+              "Hide explanation"
+            ) : (
+              "Show explanation"
+            )
           ) : (
             <>
               <Sparkles className="size-3 mr-1 inline" />
@@ -218,9 +225,7 @@ function GroupCard({ group }: { group: any }) {
       </div>
 
       {explain.error && (
-        <p className="mt-2 text-xs text-destructive">
-          {(explain.error as Error).message}
-        </p>
+        <p className="mt-2 text-xs text-destructive">{(explain.error as Error).message}</p>
       )}
 
       {localExplanation && expanded && (
@@ -234,5 +239,5 @@ function GroupCard({ group }: { group: any }) {
         </div>
       )}
     </li>
-  )
+  );
 }

@@ -67,14 +67,19 @@ function UnsubscribePage() {
           <p className="text-text-secondary">This unsubscribe link is invalid or expired.</p>
         )}
         {state.kind === "already" && (
-          <p className="text-text-secondary">You're already unsubscribed. No further emails will be sent.</p>
+          <p className="text-text-secondary">
+            You're already unsubscribed. No further emails will be sent.
+          </p>
         )}
         {state.kind === "valid" && (
           <>
             <p className="text-text-secondary">
-              Confirm to stop receiving emails from Gradus. Account and security emails will still be sent.
+              Confirm to stop receiving emails from Gradus. Account and security emails will still
+              be sent.
             </p>
-            <Button onClick={confirm} className="w-full">Confirm unsubscribe</Button>
+            <Button onClick={confirm} className="w-full">
+              Confirm unsubscribe
+            </Button>
           </>
         )}
         {state.kind === "success" && (

@@ -12,7 +12,11 @@ export function useWakeLock(enabled: boolean) {
   useEffect(() => {
     if (!enabled) return;
     if (typeof navigator === "undefined") return;
-    const wl = (navigator as unknown as { wakeLock?: { request: (t: string) => Promise<WakeLockSentinelLike> } }).wakeLock;
+    const wl = (
+      navigator as unknown as {
+        wakeLock?: { request: (t: string) => Promise<WakeLockSentinelLike> };
+      }
+    ).wakeLock;
     if (!wl?.request) return;
 
     let cancelled = false;

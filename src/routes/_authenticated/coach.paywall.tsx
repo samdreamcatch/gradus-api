@@ -15,16 +15,19 @@ import {
   clearOrganizationLink,
   recordSilentClubLead,
 } from "@/lib/coach-org.functions";
-import { startCoachCheckout, changeCoachSubscription, verifyCheckoutSession, claimFoundingCoachTier, restoreFoundingCoachTier } from "@/lib/coach-checkout.functions";
+import {
+  startCoachCheckout,
+  changeCoachSubscription,
+  verifyCheckoutSession,
+  claimFoundingCoachTier,
+  restoreFoundingCoachTier,
+} from "@/lib/coach-checkout.functions";
 import { validatePromoCode } from "@/lib/promo-codes.functions";
 import { getStripe, getStripeEnvironment } from "@/lib/stripe";
 import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
 import { supabase } from "@/integrations/supabase/client";
 import { isCoachPaywallEnabled } from "@/lib/paywall-flag";
-import {
-  OrgSearchCombobox,
-  type OrgOption,
-} from "@/components/onboarding/org-search-combobox";
+import { OrgSearchCombobox, type OrgOption } from "@/components/onboarding/org-search-combobox";
 import { OrgCodeField } from "@/components/onboarding/org-code-field";
 
 type Tier = "coach" | "coach_pro";
@@ -46,14 +49,29 @@ const PRICE_MAP: Record<
     year: { priceId: "coach_yearly", monthlyEquivalent: 25.5, billed: "$306/yr — save 15%" },
   },
   coach_pro: {
-    month: { priceId: "coach_pro_monthly", monthlyEquivalent: 70, billed: "$70/mo, billed monthly" },
+    month: {
+      priceId: "coach_pro_monthly",
+      monthlyEquivalent: 70,
+      billed: "$70/mo, billed monthly",
+    },
     year: { priceId: "coach_pro_yearly", monthlyEquivalent: 59.5, billed: "$714/yr — save 15%" },
   },
 };
 
 const FEATURES: Record<Tier, string[]> = {
-  coach: ["Full coaching workspace", "Roster, plans, and messaging", "Athlete & parent portals", "Up to 5 athletes"],
-  coach_pro: ["Everything in Coach", "Multi-sport", "Custom resource library", "Up to 50 athletes", "Priority support"],
+  coach: [
+    "Full coaching workspace",
+    "Roster, plans, and messaging",
+    "Athlete & parent portals",
+    "Up to 5 athletes",
+  ],
+  coach_pro: [
+    "Everything in Coach",
+    "Multi-sport",
+    "Custom resource library",
+    "Up to 50 athletes",
+    "Priority support",
+  ],
 };
 
 type PromoState =
@@ -69,7 +87,9 @@ type PromoState =
   | { status: "invalid"; message: string };
 
 export const Route = createFileRoute("/_authenticated/coach/paywall")({
-  validateSearch: (search: Record<string, unknown>) => ({
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { checkout?: string; session_id?: string; tier?: string; manage?: boolean } => ({
     checkout: typeof search.checkout === "string" ? search.checkout : undefined,
     session_id: typeof search.session_id === "string" ? search.session_id : undefined,
     tier: typeof search.tier === "string" ? search.tier : undefined,
@@ -150,7 +170,7 @@ function PaywallPage() {
   const [clubCode, setClubCode] = useState("");
   const [clubCodeVerified, setClubCodeVerified] = useState(false);
   const [claimingClub, setClaimingClub] = useState(false);
-  
+
   const tiersDisabled = clubOrg !== null;
 
   const entitlement = data?.profile.entitlement ?? "pending";
@@ -203,9 +223,10 @@ function PaywallPage() {
     // Give up polling after 30s so the user isn't stuck on the spinner.
     const timeout = window.setTimeout(() => {
       window.clearInterval(iv);
-      setVerifyError((prev) =>
-        prev ??
-        "We couldn't confirm your subscription in time. If you completed payment, refresh in a moment — your plan should update.",
+      setVerifyError(
+        (prev) =>
+          prev ??
+          "We couldn't confirm your subscription in time. If you completed payment, refresh in a moment — your plan should update.",
       );
     }, 30_000);
     return () => {
@@ -245,7 +266,15 @@ function PaywallPage() {
     if (manageIntent) return;
     // Otherwise: entitled coaches don't need the paywall.
     navigate({ to: onboardedAt ? "/coach/roster" : "/coach/onboarding", replace: true });
-  }, [isEntitled, isFoundingCoach, isUpgradeIntent, manageIntent, checkoutStatus, onboardedAt, navigate]);
+  }, [
+    isEntitled,
+    isFoundingCoach,
+    isUpgradeIntent,
+    manageIntent,
+    checkoutStatus,
+    onboardedAt,
+    navigate,
+  ]);
 
   // Auto-apply WELCOME_BACK when the coach was granted it on leaving a club.
   // Pre-fills the promo input, opens the section, and validates in the
@@ -277,8 +306,6 @@ function PaywallPage() {
       })
       .catch(() => setPromo({ status: "idle" }));
   }, [isEntitled, profilePromoCode, promo.status, welcomeBackAutoAppliedRef]);
-
-
 
   const handleSignOut = async () => {
     await qc.cancelQueries();
@@ -317,9 +344,7 @@ function PaywallPage() {
             `Switched to ${tier === "coach_pro" ? "Coach Pro" : "Coach"}. Prorated difference charged today; renewal date unchanged.`,
           );
         } else {
-          toast.success(
-            `Switched to ${tier === "coach_pro" ? "Coach Pro" : "Coach"}.`,
-          );
+          toast.success(`Switched to ${tier === "coach_pro" ? "Coach Pro" : "Coach"}.`);
         }
         await qc.invalidateQueries({ queryKey: ["coach-profile"] });
         navigate({ to: "/coach/roster" });
@@ -381,8 +406,6 @@ function PaywallPage() {
   // entitled coach's Stripe subscription on page load. The coach must click
   // the tier's action button to commit.
 
-
-
   const applyPromo = async () => {
     const code = promoInput.trim().toUpperCase();
     if (!code) return;
@@ -442,9 +465,7 @@ function PaywallPage() {
       /* silent — lead capture must never block the coach */
     }
     toast.success(
-      typedQuery
-        ? `Thanks — we'll reach out to "${typedQuery}".`
-        : "Thanks — we'll be in touch.",
+      typedQuery ? `Thanks — we'll reach out to "${typedQuery}".` : "Thanks — we'll be in touch.",
     );
   };
 
@@ -493,9 +514,7 @@ function PaywallPage() {
             <Loader2 className="h-6 w-6 animate-spin" />
           </div>
           <h1 className="font-display text-h2 text-text-primary">Loading your plan…</h1>
-          <p className="mt-2 text-sm text-text-secondary">
-            Setting up your Coach workspace.
-          </p>
+          <p className="mt-2 text-sm text-text-secondary">Setting up your Coach workspace.</p>
         </div>
       </div>
     );
@@ -560,7 +579,10 @@ function PaywallPage() {
                     if (typeof window !== "undefined") {
                       window.sessionStorage.removeItem("gradus.lastCheckoutSessionId");
                     }
-                    navigate({ to: onboardedAt ? "/coach/roster" : "/coach/onboarding", replace: true });
+                    navigate({
+                      to: onboardedAt ? "/coach/roster" : "/coach/onboarding",
+                      replace: true,
+                    });
                   }}
                 >
                   Back to workspace
@@ -585,15 +607,13 @@ function PaywallPage() {
     );
   }
 
-  const proPromoMonths = promo.status === "valid" ? promo.durationInMonths ?? 0 : 0;
+  const proPromoMonths = promo.status === "valid" ? (promo.durationInMonths ?? 0) : 0;
   // Founding coaches get a one-time 1-month Pro trial (no card, no promo needed).
   const foundingProTrialAvailable =
     isFoundingCoach && !foundingProTrialUsed && promo.status !== "valid";
   const proMonths = proPromoMonths > 0 ? proPromoMonths : foundingProTrialAvailable ? 1 : 0;
   const proCtaLabel =
-    proMonths > 0
-      ? `Start ${proMonths} month${proMonths === 1 ? "" : "s"} free`
-      : "Continue";
+    proMonths > 0 ? `Start ${proMonths} month${proMonths === 1 ? "" : "s"} free` : "Continue";
 
   return (
     <div className="min-h-dvh">
@@ -606,7 +626,9 @@ function PaywallPage() {
           {isEntitled ? "Manage your plan" : "Activate your workspace"}
         </h1>
         <p className="mt-1.5 max-w-md text-center text-sm text-text-secondary">
-          {isEntitled ? "Change tier or apply a promo." : "Pick a plan to get started. Cancel anytime."}
+          {isEntitled
+            ? "Change tier or apply a promo."
+            : "Pick a plan to get started. Cancel anytime."}
         </p>
 
         {isEntitled && (
@@ -616,85 +638,90 @@ function PaywallPage() {
               {currentTier === "club"
                 ? `Club${data?.profile.organizationName ? ` — ${data.profile.organizationName}` : ""}`
                 : entitlement === "paid" && data?.profile.subscriptionTier === "coach_pro"
-                  ? isFoundingCoach ? "Founding Coach Pro" : "Coach Pro"
+                  ? isFoundingCoach
+                    ? "Founding Coach Pro"
+                    : "Coach Pro"
                   : entitlement === "paid" && data?.profile.subscriptionTier === "coach"
-                    ? isFoundingCoach ? "Founding Coach" : "Coach"
+                    ? isFoundingCoach
+                      ? "Founding Coach"
+                      : "Coach"
                     : isFoundingCoach
                       ? "Founding Coach — free for life"
-                      : currentTier === "coach_pro" ? "Coach Pro" : "Coach"}
+                      : currentTier === "coach_pro"
+                        ? "Coach Pro"
+                        : "Coach"}
             </span>
           </div>
         )}
 
         {/* 1. Club search + code — only for un-entitled coaches; existing paid coaches are linked backend-side */}
         {!isEntitled && (
-        <div className="mt-5 w-full rounded-xl border border-divider bg-elevated p-3">
-          <div className="flex items-start gap-3">
-            <Building2 className="mt-0.5 h-5 w-5 shrink-0 text-text-secondary" />
-            <div className="flex-1 text-sm">
-              <p className="font-semibold text-text-primary">Joining through a club?</p>
-              <p className="mt-1 text-text-secondary">
-                If your academy or association is a Gradus partner, they can cover your subscription.
-              </p>
-              <div className="mt-3 space-y-3">
-                {!clubOrg && (
-                  <OrgSearchCombobox
-                    selected={null}
-                    onSelect={(o) => {
-                      setClubOrg(o);
-                      setClubCode("");
-                      setClubCodeVerified(false);
-                    }}
-                    onNotListed={(q) => void handleNotListed(q)}
-                  />
-                )}
-                {clubOrg && (
-                  <>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Chip tone="accent" size="small" caseSensitive>
-                        <Building2 className="h-3.5 w-3.5" />
-                        {clubOrg.name}
-                      </Chip>
-                      <button
-                        type="button"
-                        onClick={resetClub}
-                        className="text-xs text-text-tertiary underline-offset-2 hover:text-text-secondary hover:underline"
-                      >
-                        Change
-                      </button>
-                    </div>
-                    <OrgCodeField
-                      orgId={clubOrg.id}
-                      orgName={clubOrg.name}
-                      value={clubCode}
-                      onChange={(next, ok) => {
-                        setClubCode(next);
-                        setClubCodeVerified(ok);
+          <div className="mt-5 w-full rounded-xl border border-divider bg-elevated p-3">
+            <div className="flex items-start gap-3">
+              <Building2 className="mt-0.5 h-5 w-5 shrink-0 text-text-secondary" />
+              <div className="flex-1 text-sm">
+                <p className="font-semibold text-text-primary">Joining through a club?</p>
+                <p className="mt-1 text-text-secondary">
+                  If your academy or association is a Gradus partner, they can cover your
+                  subscription.
+                </p>
+                <div className="mt-3 space-y-3">
+                  {!clubOrg && (
+                    <OrgSearchCombobox
+                      selected={null}
+                      onSelect={(o) => {
+                        setClubOrg(o);
+                        setClubCode("");
+                        setClubCodeVerified(false);
                       }}
+                      onNotListed={(q) => void handleNotListed(q)}
                     />
-                    <div className="flex justify-end">
-                      <Button
-                        type="button"
-                        size="sm"
-                        onClick={joinClub}
-                        disabled={claimingClub || !clubCodeVerified}
-                      >
-                        {claimingClub ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        ) : (
-                          `Join ${clubOrg.name}`
-                        )}
-                      </Button>
-                    </div>
-                  </>
-                )}
+                  )}
+                  {clubOrg && (
+                    <>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Chip tone="accent" size="small" caseSensitive>
+                          <Building2 className="h-3.5 w-3.5" />
+                          {clubOrg.name}
+                        </Chip>
+                        <button
+                          type="button"
+                          onClick={resetClub}
+                          className="text-xs text-text-tertiary underline-offset-2 hover:text-text-secondary hover:underline"
+                        >
+                          Change
+                        </button>
+                      </div>
+                      <OrgCodeField
+                        orgId={clubOrg.id}
+                        orgName={clubOrg.name}
+                        value={clubCode}
+                        onChange={(next, ok) => {
+                          setClubCode(next);
+                          setClubCodeVerified(ok);
+                        }}
+                      />
+                      <div className="flex justify-end">
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={joinClub}
+                          disabled={claimingClub || !clubCodeVerified}
+                        >
+                          {claimingClub ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            `Join ${clubOrg.name}`
+                          )}
+                        </Button>
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
           </div>
-        </div>
         )}
-
-
 
         {/* 2. Promo code CTA */}
         <div className="mt-4 w-full">
@@ -709,8 +736,12 @@ function PaywallPage() {
                   <Tag className="h-4 w-4" />
                 </span>
                 <span className="flex flex-col">
-                  <span className="text-sm font-semibold text-text-primary">Have a promo code?</span>
-                  <span className="text-xs text-text-secondary">Unlock free months of Coach Pro</span>
+                  <span className="text-sm font-semibold text-text-primary">
+                    Have a promo code?
+                  </span>
+                  <span className="text-xs text-text-secondary">
+                    Unlock free months of Coach Pro
+                  </span>
                 </span>
               </span>
               <span className="text-[11px] font-semibold uppercase tracking-wider text-accent-ink">
@@ -723,10 +754,12 @@ function PaywallPage() {
                 <div className="flex items-center justify-between gap-2">
                   <div className="text-sm">
                     <p className="font-semibold text-text-primary">
-                      <span className="font-mono uppercase tracking-widest">{promo.code}</span> applied
+                      <span className="font-mono uppercase tracking-widest">{promo.code}</span>{" "}
+                      applied
                     </p>
                     <p className="mt-0.5 text-xs text-text-secondary">
-                      {promo.label} — applies to Coach Pro. Card required, charges resume after free months.
+                      {promo.label} — applies to Coach Pro. Card required, charges resume after free
+                      months.
                     </p>
                   </div>
                   <button
@@ -832,9 +865,8 @@ function PaywallPage() {
             const price = PRICE_MAP[tier][interval];
             const isPro = tier === "coach_pro";
             const paidTier =
-              entitlement === "paid" ? data?.profile.subscriptionTier ?? null : null;
-            const foundingOnPaidPro =
-              isFoundingCoach && paidTier === "coach_pro";
+              entitlement === "paid" ? (data?.profile.subscriptionTier ?? null) : null;
+            const foundingOnPaidPro = isFoundingCoach && paidTier === "coach_pro";
             // Founding coach on the free tier (no active paid subscription).
             const coachFoundingActive =
               tier === "coach" && isFoundingCoach && isEntitled && !foundingOnPaidPro;
@@ -844,7 +876,6 @@ function PaywallPage() {
             const isCurrentTier = paidTier === tier;
             const promoAppliesHere = isPro && promo.status === "valid";
             const foundingTrialHere = isPro && foundingProTrialAvailable && !promoAppliesHere;
-
 
             return (
               <div
@@ -862,7 +893,7 @@ function PaywallPage() {
                   <h2 className="font-display text-lg text-text-primary sm:text-h3">
                     {isPro ? "Coach Pro" : "Coach"}
                   </h2>
-                  {(coachFoundingActive || coachFoundingClaim) ? (
+                  {coachFoundingActive || coachFoundingClaim ? (
                     <span className="rounded-full bg-accent/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-accent-ink sm:text-[10px] sm:tracking-widest">
                       FOUNDING
                     </span>
@@ -873,10 +904,12 @@ function PaywallPage() {
                   ) : null}
                 </div>
 
-                {(coachFoundingActive || coachFoundingClaim) ? (
+                {coachFoundingActive || coachFoundingClaim ? (
                   <>
                     <div className="mt-2 flex items-baseline gap-1">
-                      <span className="font-display text-2xl text-text-primary sm:text-4xl">Free</span>
+                      <span className="font-display text-2xl text-text-primary sm:text-4xl">
+                        Free
+                      </span>
                     </div>
                     <p className="mt-1 text-[11px] text-text-tertiary sm:text-xs">
                       Yours for being here early.
@@ -896,7 +929,8 @@ function PaywallPage() {
 
                 {promoAppliesHere && proPromoMonths > 0 && (
                   <p className="mt-2 inline-flex items-center gap-1 rounded-md bg-accent/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-accent-ink sm:text-[11px]">
-                    <Tag className="h-3 w-3" /> {proPromoMonths} months free · then ${price.monthlyEquivalent}/mo
+                    <Tag className="h-3 w-3" /> {proPromoMonths} months free · then $
+                    {price.monthlyEquivalent}/mo
                   </p>
                 )}
                 {foundingTrialHere && (
@@ -940,7 +974,9 @@ function PaywallPage() {
                           replace: true,
                         });
                       } catch (err) {
-                        toast.error(err instanceof Error ? err.message : "Couldn't activate Coach tier");
+                        toast.error(
+                          err instanceof Error ? err.message : "Couldn't activate Coach tier",
+                        );
                         setClaiming(false);
                       } finally {
                         setLoading(false);

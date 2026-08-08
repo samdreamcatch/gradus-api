@@ -56,6 +56,7 @@ import { Route as AuthenticatedCoachOnboardingRouteImport } from './routes/_auth
 import { Route as AuthenticatedCoachCelebrationPreviewRouteImport } from './routes/_authenticated/coach/celebration-preview'
 import { Route as AuthenticatedAthleteSettingsRouteImport } from './routes/_authenticated/athlete.settings'
 import { Route as AuthenticatedAthleteOnboardingRouteImport } from './routes/_authenticated/athlete.onboarding'
+import { Route as AuthenticatedAdminSessionsRouteImport } from './routes/_authenticated/admin.sessions'
 import { Route as AuthenticatedAdminReportingRouteImport } from './routes/_authenticated/admin.reporting'
 import { Route as AuthenticatedAdminPromoCodesRouteImport } from './routes/_authenticated/admin.promo-codes'
 import { Route as AuthenticatedAdminOrganizationsRouteImport } from './routes/_authenticated/admin.organizations'
@@ -68,6 +69,7 @@ import { Route as AuthenticatedAdminEmailHealthRouteImport } from './routes/_aut
 import { Route as AuthenticatedAdminBillingRouteImport } from './routes/_authenticated/admin.billing'
 import { Route as AuthenticatedAdminAnnouncementsRouteImport } from './routes/_authenticated/admin.announcements'
 import { Route as AuthenticatedAdminActivityRouteImport } from './routes/_authenticated/admin.activity'
+import { Route as AuthenticatedAdminActiveRouteImport } from './routes/_authenticated/admin.active'
 import { Route as AuthenticatedParentResourcesIndexRouteImport } from './routes/_authenticated/parent.resources.index'
 import { Route as AuthenticatedParentPlansIndexRouteImport } from './routes/_authenticated/parent.plans.index'
 import { Route as AuthenticatedParentMessagesIndexRouteImport } from './routes/_authenticated/parent.messages.index'
@@ -92,6 +94,7 @@ import { Route as AuthenticatedCoachMessagesRoomIdRouteImport } from './routes/_
 import { Route as AuthenticatedAthletePlansPlanIdRouteImport } from './routes/_authenticated/athlete.plans.$planId'
 import { Route as AuthenticatedAthleteMessagesRoomIdRouteImport } from './routes/_authenticated/athlete.messages.$roomId'
 import { Route as AuthenticatedAdminUsersUserIdRouteImport } from './routes/_authenticated/admin.users.$userId'
+import { Route as AuthenticatedAdminPlansPlanIdRouteImport } from './routes/_authenticated/admin.plans.$planId'
 import { Route as AuthenticatedAdminListKindRouteImport } from './routes/_authenticated/admin.list.$kind'
 import { Route as AuthenticatedAdminErrorsIdRouteImport } from './routes/_authenticated/admin.errors.$id'
 
@@ -346,6 +349,12 @@ const AuthenticatedAthleteOnboardingRoute =
     path: '/onboarding',
     getParentRoute: () => AuthenticatedAthleteRoute,
   } as any)
+const AuthenticatedAdminSessionsRoute =
+  AuthenticatedAdminSessionsRouteImport.update({
+    id: '/sessions',
+    path: '/sessions',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminReportingRoute =
   AuthenticatedAdminReportingRouteImport.update({
     id: '/reporting',
@@ -414,6 +423,12 @@ const AuthenticatedAdminActivityRoute =
   AuthenticatedAdminActivityRouteImport.update({
     id: '/activity',
     path: '/activity',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminActiveRoute =
+  AuthenticatedAdminActiveRouteImport.update({
+    id: '/active',
+    path: '/active',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
 const AuthenticatedParentResourcesIndexRoute =
@@ -558,6 +573,12 @@ const AuthenticatedAdminUsersUserIdRoute =
     path: '/users/$userId',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminPlansPlanIdRoute =
+  AuthenticatedAdminPlansPlanIdRouteImport.update({
+    id: '/plans/$planId',
+    path: '/plans/$planId',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminListKindRoute =
   AuthenticatedAdminListKindRouteImport.update({
     id: '/list/$kind',
@@ -591,6 +612,7 @@ export interface FileRoutesByFullPath {
   '/signup/athlete': typeof SignupAthleteRouteWithChildren
   '/signup/coach': typeof SignupCoachRoute
   '/signup/parent': typeof SignupParentRouteWithChildren
+  '/admin/active': typeof AuthenticatedAdminActiveRoute
   '/admin/activity': typeof AuthenticatedAdminActivityRoute
   '/admin/announcements': typeof AuthenticatedAdminAnnouncementsRoute
   '/admin/billing': typeof AuthenticatedAdminBillingRoute
@@ -603,6 +625,7 @@ export interface FileRoutesByFullPath {
   '/admin/organizations': typeof AuthenticatedAdminOrganizationsRoute
   '/admin/promo-codes': typeof AuthenticatedAdminPromoCodesRoute
   '/admin/reporting': typeof AuthenticatedAdminReportingRoute
+  '/admin/sessions': typeof AuthenticatedAdminSessionsRoute
   '/athlete/onboarding': typeof AuthenticatedAthleteOnboardingRoute
   '/athlete/settings': typeof AuthenticatedAthleteSettingsRoute
   '/coach/celebration-preview': typeof AuthenticatedCoachCelebrationPreviewRoute
@@ -632,6 +655,7 @@ export interface FileRoutesByFullPath {
   '/parent/': typeof AuthenticatedParentIndexRoute
   '/admin/errors/$id': typeof AuthenticatedAdminErrorsIdRoute
   '/admin/list/$kind': typeof AuthenticatedAdminListKindRoute
+  '/admin/plans/$planId': typeof AuthenticatedAdminPlansPlanIdRoute
   '/admin/users/$userId': typeof AuthenticatedAdminUsersUserIdRoute
   '/athlete/messages/$roomId': typeof AuthenticatedAthleteMessagesRoomIdRoute
   '/athlete/plans/$planId': typeof AuthenticatedAthletePlansPlanIdRoute
@@ -672,6 +696,7 @@ export interface FileRoutesByTo {
   '/signup/athlete': typeof SignupAthleteRouteWithChildren
   '/signup/coach': typeof SignupCoachRoute
   '/signup/parent': typeof SignupParentRouteWithChildren
+  '/admin/active': typeof AuthenticatedAdminActiveRoute
   '/admin/activity': typeof AuthenticatedAdminActivityRoute
   '/admin/announcements': typeof AuthenticatedAdminAnnouncementsRoute
   '/admin/billing': typeof AuthenticatedAdminBillingRoute
@@ -684,6 +709,7 @@ export interface FileRoutesByTo {
   '/admin/organizations': typeof AuthenticatedAdminOrganizationsRoute
   '/admin/promo-codes': typeof AuthenticatedAdminPromoCodesRoute
   '/admin/reporting': typeof AuthenticatedAdminReportingRoute
+  '/admin/sessions': typeof AuthenticatedAdminSessionsRoute
   '/athlete/onboarding': typeof AuthenticatedAthleteOnboardingRoute
   '/athlete/settings': typeof AuthenticatedAthleteSettingsRoute
   '/coach/celebration-preview': typeof AuthenticatedCoachCelebrationPreviewRoute
@@ -712,6 +738,7 @@ export interface FileRoutesByTo {
   '/parent': typeof AuthenticatedParentIndexRoute
   '/admin/errors/$id': typeof AuthenticatedAdminErrorsIdRoute
   '/admin/list/$kind': typeof AuthenticatedAdminListKindRoute
+  '/admin/plans/$planId': typeof AuthenticatedAdminPlansPlanIdRoute
   '/admin/users/$userId': typeof AuthenticatedAdminUsersUserIdRoute
   '/athlete/messages/$roomId': typeof AuthenticatedAthleteMessagesRoomIdRoute
   '/athlete/plans/$planId': typeof AuthenticatedAthletePlansPlanIdRoute
@@ -759,6 +786,7 @@ export interface FileRoutesById {
   '/signup/athlete': typeof SignupAthleteRouteWithChildren
   '/signup/coach': typeof SignupCoachRoute
   '/signup/parent': typeof SignupParentRouteWithChildren
+  '/_authenticated/admin/active': typeof AuthenticatedAdminActiveRoute
   '/_authenticated/admin/activity': typeof AuthenticatedAdminActivityRoute
   '/_authenticated/admin/announcements': typeof AuthenticatedAdminAnnouncementsRoute
   '/_authenticated/admin/billing': typeof AuthenticatedAdminBillingRoute
@@ -771,6 +799,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/organizations': typeof AuthenticatedAdminOrganizationsRoute
   '/_authenticated/admin/promo-codes': typeof AuthenticatedAdminPromoCodesRoute
   '/_authenticated/admin/reporting': typeof AuthenticatedAdminReportingRoute
+  '/_authenticated/admin/sessions': typeof AuthenticatedAdminSessionsRoute
   '/_authenticated/athlete/onboarding': typeof AuthenticatedAthleteOnboardingRoute
   '/_authenticated/athlete/settings': typeof AuthenticatedAthleteSettingsRoute
   '/_authenticated/coach/celebration-preview': typeof AuthenticatedCoachCelebrationPreviewRoute
@@ -800,6 +829,7 @@ export interface FileRoutesById {
   '/_authenticated/parent/': typeof AuthenticatedParentIndexRoute
   '/_authenticated/admin/errors/$id': typeof AuthenticatedAdminErrorsIdRoute
   '/_authenticated/admin/list/$kind': typeof AuthenticatedAdminListKindRoute
+  '/_authenticated/admin/plans/$planId': typeof AuthenticatedAdminPlansPlanIdRoute
   '/_authenticated/admin/users/$userId': typeof AuthenticatedAdminUsersUserIdRoute
   '/_authenticated/athlete/messages/$roomId': typeof AuthenticatedAthleteMessagesRoomIdRoute
   '/_authenticated/athlete/plans/$planId': typeof AuthenticatedAthletePlansPlanIdRoute
@@ -847,6 +877,7 @@ export interface FileRouteTypes {
     | '/signup/athlete'
     | '/signup/coach'
     | '/signup/parent'
+    | '/admin/active'
     | '/admin/activity'
     | '/admin/announcements'
     | '/admin/billing'
@@ -859,6 +890,7 @@ export interface FileRouteTypes {
     | '/admin/organizations'
     | '/admin/promo-codes'
     | '/admin/reporting'
+    | '/admin/sessions'
     | '/athlete/onboarding'
     | '/athlete/settings'
     | '/coach/celebration-preview'
@@ -888,6 +920,7 @@ export interface FileRouteTypes {
     | '/parent/'
     | '/admin/errors/$id'
     | '/admin/list/$kind'
+    | '/admin/plans/$planId'
     | '/admin/users/$userId'
     | '/athlete/messages/$roomId'
     | '/athlete/plans/$planId'
@@ -928,6 +961,7 @@ export interface FileRouteTypes {
     | '/signup/athlete'
     | '/signup/coach'
     | '/signup/parent'
+    | '/admin/active'
     | '/admin/activity'
     | '/admin/announcements'
     | '/admin/billing'
@@ -940,6 +974,7 @@ export interface FileRouteTypes {
     | '/admin/organizations'
     | '/admin/promo-codes'
     | '/admin/reporting'
+    | '/admin/sessions'
     | '/athlete/onboarding'
     | '/athlete/settings'
     | '/coach/celebration-preview'
@@ -968,6 +1003,7 @@ export interface FileRouteTypes {
     | '/parent'
     | '/admin/errors/$id'
     | '/admin/list/$kind'
+    | '/admin/plans/$planId'
     | '/admin/users/$userId'
     | '/athlete/messages/$roomId'
     | '/athlete/plans/$planId'
@@ -1014,6 +1050,7 @@ export interface FileRouteTypes {
     | '/signup/athlete'
     | '/signup/coach'
     | '/signup/parent'
+    | '/_authenticated/admin/active'
     | '/_authenticated/admin/activity'
     | '/_authenticated/admin/announcements'
     | '/_authenticated/admin/billing'
@@ -1026,6 +1063,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/organizations'
     | '/_authenticated/admin/promo-codes'
     | '/_authenticated/admin/reporting'
+    | '/_authenticated/admin/sessions'
     | '/_authenticated/athlete/onboarding'
     | '/_authenticated/athlete/settings'
     | '/_authenticated/coach/celebration-preview'
@@ -1055,6 +1093,7 @@ export interface FileRouteTypes {
     | '/_authenticated/parent/'
     | '/_authenticated/admin/errors/$id'
     | '/_authenticated/admin/list/$kind'
+    | '/_authenticated/admin/plans/$planId'
     | '/_authenticated/admin/users/$userId'
     | '/_authenticated/athlete/messages/$roomId'
     | '/_authenticated/athlete/plans/$planId'
@@ -1438,6 +1477,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAthleteOnboardingRouteImport
       parentRoute: typeof AuthenticatedAthleteRoute
     }
+    '/_authenticated/admin/sessions': {
+      id: '/_authenticated/admin/sessions'
+      path: '/sessions'
+      fullPath: '/admin/sessions'
+      preLoaderRoute: typeof AuthenticatedAdminSessionsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/reporting': {
       id: '/_authenticated/admin/reporting'
       path: '/reporting'
@@ -1520,6 +1566,13 @@ declare module '@tanstack/react-router' {
       path: '/activity'
       fullPath: '/admin/activity'
       preLoaderRoute: typeof AuthenticatedAdminActivityRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/active': {
+      id: '/_authenticated/admin/active'
+      path: '/active'
+      fullPath: '/admin/active'
+      preLoaderRoute: typeof AuthenticatedAdminActiveRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
     '/_authenticated/parent/resources/': {
@@ -1690,6 +1743,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminUsersUserIdRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/plans/$planId': {
+      id: '/_authenticated/admin/plans/$planId'
+      path: '/plans/$planId'
+      fullPath: '/admin/plans/$planId'
+      preLoaderRoute: typeof AuthenticatedAdminPlansPlanIdRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/list/$kind': {
       id: '/_authenticated/admin/list/$kind'
       path: '/list/$kind'
@@ -1722,6 +1782,7 @@ const AuthenticatedAdminErrorsRouteWithChildren =
   )
 
 interface AuthenticatedAdminRouteChildren {
+  AuthenticatedAdminActiveRoute: typeof AuthenticatedAdminActiveRoute
   AuthenticatedAdminActivityRoute: typeof AuthenticatedAdminActivityRoute
   AuthenticatedAdminAnnouncementsRoute: typeof AuthenticatedAdminAnnouncementsRoute
   AuthenticatedAdminBillingRoute: typeof AuthenticatedAdminBillingRoute
@@ -1734,13 +1795,16 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminOrganizationsRoute: typeof AuthenticatedAdminOrganizationsRoute
   AuthenticatedAdminPromoCodesRoute: typeof AuthenticatedAdminPromoCodesRoute
   AuthenticatedAdminReportingRoute: typeof AuthenticatedAdminReportingRoute
+  AuthenticatedAdminSessionsRoute: typeof AuthenticatedAdminSessionsRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
   AuthenticatedAdminListKindRoute: typeof AuthenticatedAdminListKindRoute
+  AuthenticatedAdminPlansPlanIdRoute: typeof AuthenticatedAdminPlansPlanIdRoute
   AuthenticatedAdminUsersUserIdRoute: typeof AuthenticatedAdminUsersUserIdRoute
   AuthenticatedAdminUsersIndexRoute: typeof AuthenticatedAdminUsersIndexRoute
 }
 
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
+  AuthenticatedAdminActiveRoute: AuthenticatedAdminActiveRoute,
   AuthenticatedAdminActivityRoute: AuthenticatedAdminActivityRoute,
   AuthenticatedAdminAnnouncementsRoute: AuthenticatedAdminAnnouncementsRoute,
   AuthenticatedAdminBillingRoute: AuthenticatedAdminBillingRoute,
@@ -1753,8 +1817,10 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminOrganizationsRoute: AuthenticatedAdminOrganizationsRoute,
   AuthenticatedAdminPromoCodesRoute: AuthenticatedAdminPromoCodesRoute,
   AuthenticatedAdminReportingRoute: AuthenticatedAdminReportingRoute,
+  AuthenticatedAdminSessionsRoute: AuthenticatedAdminSessionsRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
   AuthenticatedAdminListKindRoute: AuthenticatedAdminListKindRoute,
+  AuthenticatedAdminPlansPlanIdRoute: AuthenticatedAdminPlansPlanIdRoute,
   AuthenticatedAdminUsersUserIdRoute: AuthenticatedAdminUsersUserIdRoute,
   AuthenticatedAdminUsersIndexRoute: AuthenticatedAdminUsersIndexRoute,
 }

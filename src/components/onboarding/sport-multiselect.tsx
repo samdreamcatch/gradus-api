@@ -3,11 +3,7 @@ import { Check, ChevronDown, Plus, X } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { SPORTS } from "@/lib/coach-sports";
 
@@ -57,12 +53,10 @@ export function SportMultiselect({
   const isSelected = (key: string) => selected.some((s) => s.key === key);
   const isSecondaryOnly = (key: string) => alwaysAllowedSecondary.includes(key);
   const primaryCount = selected.filter((s) => !isSecondaryOnly(s.key)).length;
-  const atCap =
-    typeof maxPrimarySports === "number" && primaryCount >= maxPrimarySports;
+  const atCap = typeof maxPrimarySports === "number" && primaryCount >= maxPrimarySports;
   // Locked = would exceed the primary cap if added. Already-selected sports
   // stay clickable so they can be removed.
-  const isLocked = (key: string) =>
-    atCap && !isSelected(key) && !isSecondaryOnly(key);
+  const isLocked = (key: string) => atCap && !isSelected(key) && !isSecondaryOnly(key);
   // Custom sports always count as primary; hide the input entirely when capped.
   const showCustom = allowCustom && !atCap;
   const availableSports = [...SPORTS]
@@ -87,7 +81,13 @@ export function SportMultiselect({
 
   return (
     <div className="space-y-3">
-      <Popover open={open} onOpenChange={(o) => { setOpen(o); if (!o) setHint(null); }}>
+      <Popover
+        open={open}
+        onOpenChange={(o) => {
+          setOpen(o);
+          if (!o) setHint(null);
+        }}
+      >
         <PopoverTrigger asChild>
           <button
             type="button"
@@ -97,9 +97,7 @@ export function SportMultiselect({
             )}
           >
             <span className={selected.length === 0 ? "text-text-secondary font-normal" : ""}>
-              {selected.length === 0
-                ? "Select sports"
-                : selected.map((s) => s.label).join(", ")}
+              {selected.length === 0 ? "Select sports" : selected.map((s) => s.label).join(", ")}
             </span>
             <ChevronDown className="h-4 w-4 text-text-secondary" />
           </button>
@@ -157,69 +155,63 @@ export function SportMultiselect({
                 );
               })}
             </div>
-              {atCap && (
-                <>
-                  <div className="my-1 border-t border-divider" />
-                  <div className="px-3 py-2.5 text-xs text-text-secondary">
-                    <div className="space-y-1">
-                      <p>
-                        Coach plan includes one sport plus Strength &
-                        Conditioning.
-                      </p>
-                      <Link
-                        to="/coach/paywall"
-                        search={{ tier: "coach_pro" }}
-                        className="font-semibold text-accent-ink underline"
-                      >
-                        Choose Coach Pro for more sports →
-                      </Link>
-                    </div>
+            {atCap && (
+              <>
+                <div className="my-1 border-t border-divider" />
+                <div className="px-3 py-2.5 text-xs text-text-secondary">
+                  <div className="space-y-1">
+                    <p>Coach plan includes one sport plus Strength & Conditioning.</p>
+                    <Link
+                      to="/coach/paywall"
+                      search={{ tier: "coach_pro" }}
+                      className="font-semibold text-accent-ink underline"
+                    >
+                      Choose Coach Pro for more sports →
+                    </Link>
                   </div>
-                </>
-              )}
-              {showCustom && (
-                <>
-                  <div className="my-1 border-t border-divider" />
-                  <div className="p-2">
-                    <p className="px-2 pb-1.5 text-xs font-semibold uppercase tracking-wider text-text-secondary">
-                      Custom
-                    </p>
-                    <div className="flex gap-2">
-                      <Input
-                        value={customInput}
-                        onChange={(e) => {
-                          setCustomInput(e.target.value);
-                          if (hint) setHint(null);
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            e.preventDefault();
-                            handleAdd();
-                          }
-                        }}
-                        placeholder="Name your sport"
-                        className="h-9 text-sm"
-                      />
-                      <Button
-                        type="button"
-                        size="sm"
-                        onClick={handleAdd}
-                        disabled={!customInput.trim()}
-                      >
-                        <Plus className="h-4 w-4" />
-                        Add
-                      </Button>
-                    </div>
-                    {hint && (
-                      <p className="mt-2 px-1 text-xs text-text-secondary">{hint}</p>
-                    )}
+                </div>
+              </>
+            )}
+            {showCustom && (
+              <>
+                <div className="my-1 border-t border-divider" />
+                <div className="p-2">
+                  <p className="px-2 pb-1.5 text-xs font-semibold uppercase tracking-wider text-text-secondary">
+                    Custom
+                  </p>
+                  <div className="flex gap-2">
+                    <Input
+                      value={customInput}
+                      onChange={(e) => {
+                        setCustomInput(e.target.value);
+                        if (hint) setHint(null);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          handleAdd();
+                        }
+                      }}
+                      placeholder="Name your sport"
+                      className="h-9 text-sm"
+                    />
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={handleAdd}
+                      disabled={!customInput.trim()}
+                    >
+                      <Plus className="h-4 w-4" />
+                      Add
+                    </Button>
                   </div>
-                </>
-              )}
+                  {hint && <p className="mt-2 px-1 text-xs text-text-secondary">{hint}</p>}
+                </div>
+              </>
+            )}
           </div>
         </PopoverContent>
       </Popover>
-
 
       {selected.length > 0 && (
         <div className="flex flex-wrap gap-2">
