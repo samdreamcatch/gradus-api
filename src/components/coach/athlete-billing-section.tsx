@@ -16,6 +16,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { InvoiceGenerateSheet } from "@/components/coach/invoice-generate-sheet";
+import { InvoiceDetailSheet } from "@/components/coach/invoice-detail-sheet";
 import {
   deleteInvoice,
   getAthleteBilling,
@@ -43,6 +44,7 @@ export function AthleteBillingSection({ athleteId }: { athleteId: string }) {
 
   const [generateFor, setGenerateFor] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<string | null>(null);
+  const [openInvoice, setOpenInvoice] = useState<string | null>(null);
 
   const billing = useQuery({
     queryKey: ["coach", "billing", athleteId],
@@ -120,7 +122,11 @@ export function AthleteBillingSection({ athleteId }: { athleteId: string }) {
               key={inv.id}
               className="flex items-center gap-3 rounded-xl border border-divider bg-card p-3"
             >
-              <div className="min-w-0 flex-1">
+              <button
+                type="button"
+                className="min-w-0 flex-1 text-left"
+                onClick={() => setOpenInvoice(inv.id)}
+              >
                 <div className="text-sm font-bold text-text-primary">
                   {formatMoney(inv.totalCents)}{" "}
                   <span className="font-normal text-text-tertiary">
@@ -130,7 +136,7 @@ export function AthleteBillingSection({ athleteId }: { athleteId: string }) {
                 <div className="mt-0.5 text-xs text-text-tertiary">
                   {formatDateRange(inv.periodStart, inv.periodEnd)}
                 </div>
-              </div>
+              </button>
               <button
                 type="button"
                 onClick={() =>
@@ -167,6 +173,7 @@ export function AthleteBillingSection({ athleteId }: { athleteId: string }) {
       )}
 
       <InvoiceGenerateSheet athleteId={generateFor} onOpenChange={setGenerateFor} />
+      <InvoiceDetailSheet invoiceId={openInvoice} onOpenChange={setOpenInvoice} />
 
       <AlertDialog
         open={pendingDelete !== null}
