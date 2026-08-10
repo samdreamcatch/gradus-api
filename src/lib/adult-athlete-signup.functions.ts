@@ -326,6 +326,10 @@ export const saveAdultAthleteGoals = createServerFn({ method: "POST" })
       { onConflict: "athlete_id,sport" },
     );
     if (up.error) dbError(up.error);
+
+    const { ensureStarterPrograms } = await import("./starter-programs.server");
+    await ensureStarterPrograms(athleteId, data.sport, data.currentLevelKey);
+
     return { ok: true };
   });
 
