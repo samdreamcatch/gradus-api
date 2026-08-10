@@ -70,7 +70,8 @@ function AthletePlansPage() {
   const coaches = useMemo(() => {
     const map = new Map<string, string>();
     for (const p of plans) {
-      if (!map.has(p.coachId)) map.set(p.coachId, p.coachName);
+      const id = p.coachId || "__gradus";
+      if (!map.has(id)) map.set(id, p.isGradus ? "Gradus" : p.coachName);
     }
     return Array.from(map, ([id, name]) => ({ id, name })).sort((a, b) =>
       a.name.localeCompare(b.name),
@@ -88,7 +89,7 @@ function AthletePlansPage() {
       plans.filter(
         (p) =>
           p.status === statusFilter &&
-          (coachId === "" || p.coachId === coachId) &&
+          (coachId === "" || (p.coachId || "__gradus") === coachId) &&
           (sport === "" || p.sport === sport),
       ),
     [plans, statusFilter, coachId, sport],
