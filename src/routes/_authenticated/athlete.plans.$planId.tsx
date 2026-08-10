@@ -111,16 +111,18 @@ function AthletePlanDetail() {
         )}
       </div>
 
-      <div className="mt-5 flex justify-center">
-        <button
-          type="button"
-          onClick={() => setMessageOpen(true)}
-          className="inline-flex items-center gap-2 rounded-full bg-accent px-5 py-2 text-sm font-bold text-accent-foreground shadow-card"
-        >
-          <MessageCircle className="size-4" />
-          Message {plan.coachFirstName} about this plan
-        </button>
-      </div>
+      {plan.isGradus ? null : (
+        <div className="mt-5 flex justify-center">
+          <button
+            type="button"
+            onClick={() => setMessageOpen(true)}
+            className="inline-flex items-center gap-2 rounded-full bg-accent px-5 py-2 text-sm font-bold text-accent-foreground shadow-card"
+          >
+            <MessageCircle className="size-4" />
+            Message {plan.coachFirstName} about this plan
+          </button>
+        </div>
+      )}
 
       <MessageCoachAboutPlanDialog
         open={messageOpen}
