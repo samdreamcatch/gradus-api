@@ -25,6 +25,7 @@ export interface ParentPlanSummaryDTO {
   athleteName: string;
   coachId: string;
   coachName: string;
+  isGradus: boolean;
   moveCount: number;
   totalMinutes: number;
   updatedAt: string;
