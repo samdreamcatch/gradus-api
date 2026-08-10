@@ -250,7 +250,8 @@ export const getAthletePlan = createServerFn({ method: "POST" })
       .filter((m) => m.targetKind === "mins")
       .reduce((s, m) => s + m.targetValue, 0);
 
-    const coachFirst = coachRes.data?.first_name ?? "Coach";
+    const isGradus = plan.source === "gradus" || !plan.coach_id;
+    const coachFirst = coachRes.data?.first_name ?? (isGradus ? "Gradus" : "Coach");
     const coachLast = coachRes.data?.last_name ?? "";
 
     const dto: AthletePlanDetailDTO = {
@@ -263,6 +264,7 @@ export const getAthletePlan = createServerFn({ method: "POST" })
       coachId: plan.coach_id ?? "",
       coachName: `${coachFirst} ${coachLast}`.trim(),
       coachFirstName: coachFirst,
+      isGradus,
       moveCount: moves.length,
       totalMinutes,
       updatedAt: plan.updated_at,
