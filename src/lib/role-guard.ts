@@ -4,11 +4,15 @@ import { getMyRole } from "@/lib/parent-signup.functions";
 
 export type AppRole = "coach" | "parent" | "athlete" | "org_admin";
 
-export const myRoleQueryOptions = queryOptions({
-  queryKey: ["my-role"],
-  queryFn: () => getMyRole(),
-  staleTime: 60_000,
-});
+export const myRoleQueryOptions = (userId?: string) =>
+  queryOptions({
+    // Scoped by user so one account's role can never be served to another
+    // after an account switch.
+    queryKey: ["my-role", userId ?? "anon"],
+    queryFn: () => getMyRole(),
+    staleTime: 60_000,
+  });
+
 
 const ROLE_HOME: Record<AppRole, string> = {
   coach: "/coach",
