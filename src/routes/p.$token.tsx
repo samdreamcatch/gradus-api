@@ -23,10 +23,9 @@ export const Route = createFileRoute("/p/$token")({
         meta: [{ title: "Plan not found — Gradus" }, { name: "robots", content: "noindex" }],
       };
     }
-    const title = `${plan.title} — a workout from Coach ${plan.coachFirstName}`;
+    const title = `${plan.title} — join me on Gradus`;
     const description =
-      plan.notes?.trim() ||
-      `A ${plan.moves.length}-move workout shared by Coach ${plan.coachFirstName} on Gradus.`;
+      plan.notes?.trim() || `A ${plan.moves.length}-move workout on Gradus.`;
     const url = `${SITE_ORIGIN}/p/${params.token}`;
     return {
       meta: [
