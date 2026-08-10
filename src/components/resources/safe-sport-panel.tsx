@@ -90,14 +90,6 @@ export function SafeSportPanel() {
         </div>
       </a>
 
-      {/* Header */}
-      <div className="rounded-2xl border border-divider bg-card p-6">
-        <h2 className="font-display text-2xl text-text-primary">Something feel off?</h2>
-        <p className="mt-3 text-sm text-text-secondary">
-          If something about sport and practice is making you feel unsafe, weird, or just not right
-          — you don't have to figure it out alone.
-        </p>
-      </div>
 
       <CountsDisclosure />
       <TrustedAdultDisclosure />
