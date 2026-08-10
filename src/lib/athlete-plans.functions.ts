@@ -92,7 +92,7 @@ export const listAthletePlans = createServerFn({ method: "GET" })
 
     const { data: planRows, error: pErr } = await supabase
       .from("plans")
-      .select("id, title, status, coach_id, updated_at")
+      .select("id, title, status, coach_id, updated_at, source")
       .eq("athlete_id", athlete.id)
       .eq("kind", "plan")
       .in("status", ["active", "benched"])
