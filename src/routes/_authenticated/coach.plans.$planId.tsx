@@ -1566,12 +1566,18 @@ function NewMoveForm({
             >
               Sport
             </Eyebrow>
-            <Input value={sport} onChange={(e) => setSport(e.target.value)} list="np-sports" />
-            <datalist id="np-sports">
+            <select
+              value={sport}
+              onChange={(e) => setSport(e.target.value)}
+              className="block w-full rounded-md border border-divider bg-card px-2 py-2 text-sm text-text-primary focus:border-accent focus:outline-none"
+            >
+              {sportOptions.length === 0 ? <option value="">No sports configured</option> : null}
               {sportOptions.map((s) => (
-                <option key={s} value={s} />
+                <option key={s} value={s}>
+                  {s}
+                </option>
               ))}
-            </datalist>
+            </select>
           </div>
           <div>
             <Eyebrow
@@ -1583,9 +1589,31 @@ function NewMoveForm({
             >
               Category
             </Eyebrow>
-            <Input value={category} onChange={(e) => setCategory(e.target.value)} />
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              disabled={!sport || movesQuery.isLoading}
+              className="block w-full rounded-md border border-divider bg-card px-2 py-2 text-sm text-text-primary focus:border-accent focus:outline-none"
+            >
+              <option value="">{movesQuery.isLoading ? "Loading…" : "Select a category…"}</option>
+              {categoryOptions.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+              <option value="__other__">Other…</option>
+            </select>
+            {category === "__other__" ? (
+              <Input
+                value={customCategory}
+                onChange={(e) => setCustomCategory(e.target.value)}
+                placeholder="e.g. Forehand, Footwork, Strength"
+                className="mt-2"
+              />
+            ) : null}
           </div>
         </div>
+
 
         <div>
           <Eyebrow as="label" size="caption" tone="tertiary" weight="black" className="mb-1 block">
