@@ -1,4 +1,8 @@
-import { STARTER_PROGRAMS, resolveStarterPrograms } from "@/data/starter-programs";
+import {
+  STARTER_PROGRAMS,
+  resolveStarterPrograms,
+  starterMoveCopy,
+} from "@/data/starter-programs";
 
 /** Every title this sport could ever produce, used for the "already has one" check. */
 function titlesForSport(sport: string): Set<string> {
