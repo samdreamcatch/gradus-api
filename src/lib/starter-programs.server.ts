@@ -41,7 +41,6 @@ export async function ensureStarterPrograms(
     if (hasAnyForSport) return;
 
     for (const program of programs) {
-      // eslint-disable-next-line no-await-in-loop
       const inserted = await supabaseAdmin
         .from("plans")
         .insert({
