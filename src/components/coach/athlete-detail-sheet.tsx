@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useServerFn } from "@tanstack/react-start";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ChevronDown,
   Loader2,
@@ -24,6 +24,7 @@ import {
   getCoachAthleteAiSummary,
   type Verdict,
 } from "@/lib/coach-athlete-detail.functions";
+import { adoptStarterPlan } from "@/lib/starter-programs.functions";
 import { useCoachProfile } from "@/hooks/use-coach-profile";
 
 export function AthleteDetailSheet({
@@ -264,20 +265,46 @@ type PlanRow = {
   planId: string;
   title: string;
   status: string;
+  isGradus: boolean;
   sessionsByState: React.ComponentProps<typeof PlanCard>["sessionsByState"];
   sessionsTotal: number;
 };
 
 function PlanRowCard({ p }: { p: PlanRow }) {
+  const adopt = useServerFn(adoptStarterPlan);
+  const queryClient = useQueryClient();
+  const adoptMutation = useMutation({
+    mutationFn: () => adopt({ data: { planId: p.planId } }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["coach", "athlete-detail"] });
+    },
+  });
+
   return (
-    <PlanCard
-      to="/coach/plans/$planId"
-      planId={p.planId}
-      title={p.title}
-      sessionsByState={p.sessionsByState}
-      sessionsTotal={p.sessionsTotal}
-      edgeTone={p.status === "active" ? "active" : "muted"}
-    />
+    <div className="space-y-1.5">
+      <PlanCard
+        to="/coach/plans/$planId"
+        planId={p.planId}
+        title={p.title}
+        athleteName={p.isGradus ? "from Gradus" : undefined}
+        sessionsByState={p.sessionsByState}
+        sessionsTotal={p.sessionsTotal}
+        edgeTone={p.status === "active" ? "active" : "muted"}
+      />
+      {p.isGradus ? (
+        <div className="flex justify-end">
+          <Button
+            size="sm"
+            variant="outline"
+            className="press h-8 rounded-full text-xs"
+            disabled={adoptMutation.isPending}
+            onClick={() => adoptMutation.mutate()}
+          >
+            {adoptMutation.isPending ? "Adopting…" : "Adopt plan"}
+          </Button>
+        </div>
+      ) : null}
+    </div>
   );
 }
 

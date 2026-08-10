@@ -176,7 +176,7 @@ function AthletePlansPage() {
                 to="/athlete/plans/$planId"
                 planId={p.id}
                 title={p.title}
-                athleteName={`Coach ${p.coachName}`}
+                athleteName={p.isGradus ? "from Gradus" : `Coach ${p.coachName}`}
                 sessionsByState={p.sessionsByState}
                 sessionsTotal={p.sessionsTotal}
                 muted={statusFilter === "benched"}

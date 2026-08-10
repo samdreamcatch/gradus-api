@@ -18,6 +18,7 @@ export interface AthletePlanSummaryDTO {
   status: AthletePlanStatus;
   coachId: string;
   coachName: string;
+  isGradus: boolean;
   sport: string;
   moveCount: number;
   totalMinutes: number;
@@ -47,6 +48,7 @@ export interface AthletePlanDetailDTO {
   coachId: string;
   coachName: string;
   coachFirstName: string;
+  isGradus: boolean;
   moveCount: number;
   totalMinutes: number;
   updatedAt: string;
@@ -91,7 +93,7 @@ export const listAthletePlans = createServerFn({ method: "GET" })
 
     const { data: planRows, error: pErr } = await supabase
       .from("plans")
-      .select("id, title, status, coach_id, updated_at")
+      .select("id, title, status, coach_id, updated_at, source")
       .eq("athlete_id", athlete.id)
       .eq("kind", "plan")
       .in("status", ["active", "benched"])
@@ -169,13 +171,15 @@ export const listAthletePlans = createServerFn({ method: "GET" })
         sessionsTotal: 0,
       };
       const cid = p.coach_id ?? "";
+      const isGradus = p.source === "gradus" || !cid;
       const sport = (cid && coachSport.get(cid)) || a.firstMoveSport || "";
       return {
         id: p.id,
         title: p.title || "Untitled plan",
         status: p.status as AthletePlanStatus,
         coachId: cid,
-        coachName: (cid && coachName.get(cid)) || "Coach",
+        coachName: (cid && coachName.get(cid)) || "Gradus",
+        isGradus,
         sport,
         moveCount: a.count,
         totalMinutes: a.minutes,
@@ -204,7 +208,7 @@ export const getAthletePlan = createServerFn({ method: "POST" })
 
     const { data: plan, error } = await supabase
       .from("plans")
-      .select("id, title, notes, status, athlete_id, coach_id, updated_at, kind")
+      .select("id, title, notes, status, athlete_id, coach_id, updated_at, kind, source")
       .eq("id", data.id)
       .maybeSingle();
     if (error) dbError(error);
@@ -246,7 +250,8 @@ export const getAthletePlan = createServerFn({ method: "POST" })
       .filter((m) => m.targetKind === "mins")
       .reduce((s, m) => s + m.targetValue, 0);
 
-    const coachFirst = coachRes.data?.first_name ?? "Coach";
+    const isGradus = plan.source === "gradus" || !plan.coach_id;
+    const coachFirst = coachRes.data?.first_name ?? (isGradus ? "Gradus" : "Coach");
     const coachLast = coachRes.data?.last_name ?? "";
 
     const dto: AthletePlanDetailDTO = {
@@ -259,6 +264,7 @@ export const getAthletePlan = createServerFn({ method: "POST" })
       coachId: plan.coach_id ?? "",
       coachName: `${coachFirst} ${coachLast}`.trim(),
       coachFirstName: coachFirst,
+      isGradus,
       moveCount: moves.length,
       totalMinutes,
       updatedAt: plan.updated_at,
