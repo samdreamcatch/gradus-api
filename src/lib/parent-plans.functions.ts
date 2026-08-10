@@ -222,11 +222,13 @@ export const getParentPlan = createServerFn({ method: "POST" })
         .eq("plan_id", plan.id)
         .order("position", { ascending: true }),
       supabase.from("athletes").select("first_name").eq("id", plan.athlete_id).maybeSingle(),
-      supabaseAdmin
-        .from("coach_profiles")
-        .select("first_name, last_name")
-        .eq("id", plan.coach_id ?? "")
-        .maybeSingle(),
+      plan.coach_id
+        ? supabaseAdmin
+            .from("coach_profiles")
+            .select("first_name, last_name")
+            .eq("id", plan.coach_id)
+            .maybeSingle()
+        : Promise.resolve({ data: null, error: null } as const),
     ]);
     if (movesRes.error) dbError(movesRes.error);
     if (athleteRes.error) dbError(athleteRes.error);
