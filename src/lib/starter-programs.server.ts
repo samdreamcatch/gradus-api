@@ -61,9 +61,9 @@ export async function ensureStarterPrograms(
         move_id: null,
         position: m.position,
         name: m.name,
-        description: m.elementType,
-        cue: "",
-        why: "",
+        description: m.description,
+        cue: m.cue,
+        why: m.why,
         target_kind: "reps",
         target_value: 1,
       }));
