@@ -170,13 +170,15 @@ export const listAthletePlans = createServerFn({ method: "GET" })
         sessionsTotal: 0,
       };
       const cid = p.coach_id ?? "";
+      const isGradus = p.source === "gradus" || !cid;
       const sport = (cid && coachSport.get(cid)) || a.firstMoveSport || "";
       return {
         id: p.id,
         title: p.title || "Untitled plan",
         status: p.status as AthletePlanStatus,
         coachId: cid,
-        coachName: (cid && coachName.get(cid)) || "Coach",
+        coachName: (cid && coachName.get(cid)) || "Gradus",
+        isGradus,
         sport,
         moveCount: a.count,
         totalMinutes: a.minutes,
