@@ -1453,18 +1453,42 @@ function NewMoveForm({
     defaultTargetValue: number;
   }) => void;
 }) {
-  const sportOptions = useMemo(
-    () => Array.from(new Set(existingMoves.map((m) => m.sport).filter(Boolean))).sort(),
-    [existingMoves],
-  );
+  const fetchSports = useServerFn(listCoachSports);
+  const fetchMovesForCats = useServerFn(listMoves);
+  const sportsQuery = useQuery({ queryKey: ["coach-sports"], queryFn: () => fetchSports() });
+  const movesQuery = useQuery({ queryKey: ["moves"], queryFn: () => fetchMovesForCats() });
+  const sportOptions = sportsQuery.data?.sports ?? [];
 
   const [name, setName] = useState("");
-  const [sport, setSport] = useState(sportOptions[0] ?? "general");
-  const [category, setCategory] = useState("Uncategorized");
+  const [sport, setSport] = useState("");
+  const [category, setCategory] = useState("");
+  const [customCategory, setCustomCategory] = useState("");
   const [cue, setCue] = useState("");
   const [targetKind, setTargetKind] = useState<"reps" | "mins">("reps");
   const [targetValue, setTargetValue] = useState<number>(10);
   const [ignoreDupes, setIgnoreDupes] = useState(false);
+
+  useEffect(() => {
+    if (sportOptions.length > 0 && !sport) setSport(sportOptions[0]);
+  }, [sportOptions, sport]);
+
+  useEffect(() => {
+    setCategory("");
+    setCustomCategory("");
+  }, [sport]);
+
+  const categoryOptions = useMemo(() => {
+    if (!sport) return [] as string[];
+    const set = new Set<string>();
+    for (const m of movesQuery.data?.moves ?? []) {
+      if (m.sport === sport && m.category) set.add(m.category);
+    }
+    for (const s of movesQuery.data?.seedCategories ?? []) {
+      if (s.sport === sport && s.category) set.add(s.category);
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [sport, movesQuery.data]);
+
 
   const dupes = useMemo(() => {
     if (!name.trim()) return [];
