@@ -91,7 +91,7 @@ function AthletePlanDetail() {
       />
 
       <p className="mt-5 text-[11px] font-black uppercase tracking-widest text-text-secondary">
-        From the Coach
+        {plan.isGradus ? "From Gradus" : "From the Coach"}
       </p>
 
       <div className="mt-2 space-y-1.5">
