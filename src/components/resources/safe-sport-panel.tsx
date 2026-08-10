@@ -70,6 +70,26 @@ function formatTel(digits: string): string {
 export function SafeSportPanel() {
   return (
     <section className="mt-5 space-y-6">
+      {/* More from SafeSport */}
+      <a
+        href="https://uscenterforsafesport.org/about/faqs/"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="block rounded-2xl border border-divider bg-card p-4 transition-colors hover:bg-card/60"
+      >
+        <div className="flex items-start gap-3">
+          <span className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent/10 text-accent-ink">
+            <Globe className="h-4 w-4" aria-hidden />
+          </span>
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-text-primary">More from SafeSport</p>
+            <p className="mt-1 text-xs text-text-secondary">
+              Training videos, athlete toolkits, and resources from the U.S. Center for SafeSport.
+            </p>
+          </div>
+        </div>
+      </a>
+
       {/* Header */}
       <div className="rounded-2xl border border-divider bg-card p-6">
         <h2 className="font-display text-2xl text-text-primary">Something feel off?</h2>
@@ -100,29 +120,10 @@ export function SafeSportPanel() {
         </p>
       </div>
 
-      {/* More from SafeSport */}
-      <a
-        href="https://uscenterforsafesport.org/about/faqs/"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="block rounded-2xl border border-divider bg-card p-4 transition-colors hover:bg-card/60"
-      >
-        <div className="flex items-start gap-3">
-          <span className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent/10 text-accent-ink">
-            <Globe className="h-4 w-4" aria-hidden />
-          </span>
-          <div className="min-w-0">
-            <p className="text-sm font-medium text-text-primary">More from SafeSport</p>
-            <p className="mt-1 text-xs text-text-secondary">
-              Training videos, athlete toolkits, and resources from the U.S. Center for SafeSport.
-            </p>
-          </div>
-        </div>
-      </a>
-
       <p className="px-1 text-xs text-text-tertiary">
         If you or someone else is in immediate danger, call 911.
       </p>
+
     </section>
   );
 }
