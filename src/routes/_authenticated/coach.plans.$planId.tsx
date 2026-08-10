@@ -1500,8 +1500,14 @@ function NewMoveForm({
       .map((x) => x.move);
   }, [existingMoves, name]);
 
+  const finalCategory = category === "__other__" ? customCategory.trim() : category;
   const canCreate =
-    name.trim().length > 0 && cue.trim().length > 0 && (dupes.length === 0 || ignoreDupes);
+    name.trim().length > 0 &&
+    cue.trim().length > 0 &&
+    sport.length > 0 &&
+    finalCategory.length > 0 &&
+    (dupes.length === 0 || ignoreDupes);
+
 
   return (
     <div className="mt-3 flex flex-1 flex-col overflow-y-auto">
