@@ -1674,8 +1674,9 @@ function NewMoveForm({
           disabled={!canCreate || saving}
           onClick={() =>
             onCreate({
-              sport: sport.trim() || "general",
-              category: category.trim() || "Uncategorized",
+              sport: sport,
+              category: finalCategory,
+
               name: name.trim(),
               description: "",
               cue,
