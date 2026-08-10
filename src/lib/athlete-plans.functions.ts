@@ -48,6 +48,7 @@ export interface AthletePlanDetailDTO {
   coachId: string;
   coachName: string;
   coachFirstName: string;
+  isGradus: boolean;
   moveCount: number;
   totalMinutes: number;
   updatedAt: string;
