@@ -276,7 +276,7 @@ function PlanRowCard({ p }: { p: PlanRow }) {
   const adoptMutation = useMutation({
     mutationFn: () => adopt({ data: { planId: p.planId } }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["coach-athlete-detail"] });
+      queryClient.invalidateQueries({ queryKey: ["coach", "athlete-detail"] });
     },
   });
 
