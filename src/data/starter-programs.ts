@@ -108,6 +108,7 @@ function jumpParts(name: string): { rotationWord: string; family: string } | nul
 function jumpPhrase(name: string): string {
   const parsed = jumpParts(name);
   if (!parsed) return name;
+  if (parsed.family === "euler") return "half-rotation euler";
   const base = ROTATIONS[parsed.rotationWord]!;
   const rotations = parsed.family === "axel" ? `${base}.5` : base;
   return `${rotations}-rotation ${parsed.family === "toeloop" ? "toe loop" : parsed.family}`;
