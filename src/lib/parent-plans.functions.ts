@@ -105,7 +105,7 @@ export const listParentPlans = createServerFn({ method: "GET" })
 
     const { data: planRows, error: pErr } = await supabase
       .from("plans")
-      .select("id, title, status, athlete_id, coach_id, updated_at")
+      .select("id, title, status, athlete_id, coach_id, updated_at, source")
       .in("athlete_id", athleteIds)
       .eq("kind", "plan")
       .in("status", ["active", "benched"])
@@ -166,7 +166,8 @@ export const listParentPlans = createServerFn({ method: "GET" })
           athleteId: p.athlete_id as string,
           athleteName: athleteName.get(p.athlete_id as string) ?? "",
           coachId: p.coach_id ?? "",
-          coachName: (p.coach_id && coachName.get(p.coach_id)) || "Coach",
+          coachName: (p.coach_id && coachName.get(p.coach_id)) || "Gradus",
+          isGradus: p.source === "gradus" || !p.coach_id,
           moveCount: a.count,
           totalMinutes: a.minutes,
           updatedAt: p.updated_at,
@@ -192,7 +193,7 @@ export const getParentPlan = createServerFn({ method: "POST" })
 
     const { data: plan, error } = await supabase
       .from("plans")
-      .select("id, title, notes, status, athlete_id, coach_id, updated_at, kind")
+      .select("id, title, notes, status, athlete_id, coach_id, updated_at, kind, source")
       .eq("id", data.id)
       .maybeSingle();
     if (error) dbError(error);
@@ -246,7 +247,8 @@ export const getParentPlan = createServerFn({ method: "POST" })
       .filter((m) => m.targetKind === "mins")
       .reduce((s, m) => s + m.targetValue, 0);
 
-    const coachFirst = coachRes.data?.first_name ?? "Coach";
+    const isGradus = plan.source === "gradus" || !plan.coach_id;
+    const coachFirst = coachRes.data?.first_name ?? (isGradus ? "Gradus" : "Coach");
     const coachLast = coachRes.data?.last_name ?? "";
 
     const dto: ParentPlanDetailDTO = {
@@ -259,6 +261,7 @@ export const getParentPlan = createServerFn({ method: "POST" })
       coachId: plan.coach_id ?? "",
       coachName: `${coachFirst} ${coachLast}`.trim(),
       coachFirstName: coachFirst,
+      isGradus,
       moveCount: moves.length,
       totalMinutes,
       updatedAt: plan.updated_at,
