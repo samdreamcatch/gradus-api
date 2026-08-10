@@ -29,7 +29,7 @@ export const adoptStarterPlan = createServerFn({ method: "POST" })
       .maybeSingle();
     if (planRes.error) dbError(planRes.error);
     const plan = planRes.data;
-    if (!plan || plan.source !== "gradus" || plan.coach_id) {
+    if (!plan || plan.source !== "gradus" || plan.coach_id || !plan.athlete_id) {
       throw new Error("Plan is not available to adopt");
     }
 
@@ -37,7 +37,7 @@ export const adoptStarterPlan = createServerFn({ method: "POST" })
       .from("coach_athletes")
       .select("athlete_id")
       .eq("coach_id", coachId)
-      .eq("athlete_id", plan.athlete_id ?? "")
+      .eq("athlete_id", plan.athlete_id)
       .maybeSingle();
     if (rosterRes.error) dbError(rosterRes.error);
     if (!rosterRes.data) throw new Error("Athlete is not on your roster");
