@@ -143,7 +143,7 @@ function comboCopy(name: string): MoveCopy | null {
 
   return {
     description: `Land the ${phrases[0]} cleanly, ${chain}. No steps, turns, or change of foot in between.`,
-    cue: `Entry: ${first.cue} Finish: ${last.cue}`,
+    cue: first.cue === last.cue ? first.cue : `Entry: ${first.cue} Finish: ${last.cue}`,
     why: "Combinations are won on the first landing — it has to be quiet and controlled enough to launch the next jump. If one jump misses, check which end of the combination broke down.",
   };
 }
