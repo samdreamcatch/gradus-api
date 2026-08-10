@@ -26,10 +26,11 @@ const ROLE_HOME: Record<AppRole, string> = {
  * expected role, silently redirect to their own home instead of letting a
  * server-fn role check throw into the error boundary.
  */
-export async function requireRole(expected: AppRole, queryClient: QueryClient) {
+export async function requireRole(expected: AppRole, queryClient: QueryClient, userId?: string) {
   let role: AppRole | null = null;
   try {
-    const data = await queryClient.ensureQueryData(myRoleQueryOptions);
+    const data = await queryClient.ensureQueryData(myRoleQueryOptions(userId));
+
     // The server may serialize null as an empty string over the wire, so
     // normalize it back to null before comparing.
     role = data.role ? (data.role as AppRole) : null;
