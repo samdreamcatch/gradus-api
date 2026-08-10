@@ -91,6 +91,9 @@ export const listAthletePlans = createServerFn({ method: "GET" })
       };
     }
 
+    const { ensureStarterProgramsForAthlete } = await import("./starter-programs.server");
+    await ensureStarterProgramsForAthlete(athlete.id);
+
     const { data: planRows, error: pErr } = await supabase
       .from("plans")
       .select("id, title, status, coach_id, updated_at, source")

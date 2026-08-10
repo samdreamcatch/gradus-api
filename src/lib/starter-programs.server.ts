@@ -73,3 +73,23 @@ export async function ensureStarterPrograms(
     // Starter programs are a nice-to-have; never block the caller.
   }
 }
+
+/**
+ * Backfill safety net: create starter programs from the athlete's saved goals.
+ * Safe to call on every read — ensureStarterPrograms is idempotent and silent.
+ */
+export async function ensureStarterProgramsForAthlete(athleteId: string): Promise<void> {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const goals = await supabaseAdmin
+      .from("athlete_goals")
+      .select("sport, current_level_key")
+      .eq("athlete_id", athleteId);
+    if (goals.error) return;
+    for (const g of goals.data ?? []) {
+      await ensureStarterPrograms(athleteId, g.sport, g.current_level_key);
+    }
+  } catch {
+    // never block the caller
+  }
+}
