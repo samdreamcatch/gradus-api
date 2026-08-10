@@ -26,6 +26,7 @@ export interface AthletePlanSummaryDTO {
   planId: string;
   title: string;
   status: PlanStatus;
+  isGradus: boolean;
   sessionsByState: SessionsByState;
   sessionsTotal: number;
 }
@@ -345,6 +346,7 @@ export const getCoachAthleteDetail = createServerFn({ method: "GET" })
         planId: p.id,
         title: p.title || "Untitled plan",
         status: p.status as PlanStatus,
+        isGradus: p.source === "gradus",
         sessionsByState,
         sessionsTotal: planSessions.length,
       };
