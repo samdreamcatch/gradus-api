@@ -1,4 +1,8 @@
-import { STARTER_PROGRAMS, resolveStarterPrograms } from "@/data/starter-programs";
+import {
+  STARTER_PROGRAMS,
+  resolveStarterPrograms,
+  starterMoveCopy,
+} from "@/data/starter-programs";
 
 /** Every title this sport could ever produce, used for the "already has one" check. */
 function titlesForSport(sport: string): Set<string> {
@@ -61,9 +65,9 @@ export async function ensureStarterPrograms(
         move_id: null,
         position: m.position,
         name: m.name,
-        description: m.elementType,
-        cue: "",
-        why: "",
+        description: m.description,
+        cue: m.cue,
+        why: m.why,
         target_kind: "reps",
         target_value: 1,
       }));
@@ -71,6 +75,42 @@ export async function ensureStarterPrograms(
     }
   } catch {
     // Starter programs are a nice-to-have; never block the caller.
+  }
+}
+
+/**
+ * One-time repair for starter plans created before moves carried coaching copy.
+ * Only touches Gradus plan moves that are still missing a cue.
+ */
+async function repairStarterMoveCopy(athleteId: string): Promise<void> {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const plans = await supabaseAdmin
+      .from("plans")
+      .select("id")
+      .eq("athlete_id", athleteId)
+      .eq("source", "gradus");
+    if (plans.error || !plans.data?.length) return;
+
+    const planIds = plans.data.map((p) => p.id);
+    const stale = await supabaseAdmin
+      .from("plan_moves")
+      .select("id, name")
+      .in("plan_id", planIds)
+      .eq("cue", "");
+    if (stale.error || !stale.data?.length) return;
+
+    await Promise.all(
+      stale.data.map((m) => {
+        const copy = starterMoveCopy(m.name);
+        return supabaseAdmin
+          .from("plan_moves")
+          .update({ description: copy.description, cue: copy.cue, why: copy.why })
+          .eq("id", m.id);
+      }),
+    );
+  } catch {
+    // never block the caller
   }
 }
 
@@ -89,6 +129,7 @@ export async function ensureStarterProgramsForAthlete(athleteId: string): Promis
     for (const g of goals.data ?? []) {
       await ensureStarterPrograms(athleteId, g.sport, g.current_level_key);
     }
+    await repairStarterMoveCopy(athleteId);
   } catch {
     // never block the caller
   }
