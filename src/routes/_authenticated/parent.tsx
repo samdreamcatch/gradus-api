@@ -9,7 +9,7 @@ import { useAuthReady } from "@/hooks/use-auth-ready";
 import { requireRole } from "@/lib/role-guard";
 
 export const Route = createFileRoute("/_authenticated/parent")({
-  beforeLoad: ({ context }) => requireRole("parent", context.queryClient),
+  beforeLoad: ({ context }) => requireRole("parent", context.queryClient, context.user?.id),
   component: ParentLayout,
 });
 

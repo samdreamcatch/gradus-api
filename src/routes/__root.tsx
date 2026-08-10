@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import {
   Outlet,
@@ -182,18 +182,23 @@ function RootComponent() {
 function AuthSync() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const lastUserIdRef = useRef<string | null>(null);
   useEffect(() => {
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       if (event !== "SIGNED_OUT" && event !== "SIGNED_IN" && event !== "USER_UPDATED") {
         return;
       }
-      // Only wipe the cache on sign-out. On SIGNED_IN / USER_UPDATED we
-      // invalidate instead — clearing mid-navigation drops in-flight queries
-      // (e.g. the paywall's coach profile query right after signup) and can
-      // leave the user on a blank screen until they refresh.
-      if (event === "SIGNED_OUT") {
+      const nextUserId = session?.user?.id ?? null;
+      const prevUserId = lastUserIdRef.current;
+      lastUserIdRef.current = nextUserId;
+      // Wipe the cache on sign-out and on a genuine account switch — one
+      // user's cached role/profile must never be served to another. When the
+      // same user's session simply renews we invalidate instead; clearing
+      // mid-navigation drops in-flight queries (e.g. the paywall's coach
+      // profile query right after signup) and can leave a blank screen.
+      if (event === "SIGNED_OUT" || (prevUserId !== null && prevUserId !== nextUserId)) {
         queryClient.clear();
       } else {
         queryClient.invalidateQueries();
@@ -204,3 +209,4 @@ function AuthSync() {
   }, [router, queryClient]);
   return null;
 }
+
