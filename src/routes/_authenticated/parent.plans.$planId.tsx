@@ -86,7 +86,7 @@ function ParentPlanDetail() {
       />
 
       <p className="mt-5 text-[11px] font-black uppercase tracking-widest text-text-secondary">
-        From the Coach
+        {plan.isGradus ? "From Gradus" : "From the Coach"}
       </p>
 
       <div className="mt-2 space-y-1.5">
@@ -106,16 +106,18 @@ function ParentPlanDetail() {
         )}
       </div>
 
-      <div className="mt-5 flex justify-center">
-        <button
-          type="button"
-          onClick={() => setMessageOpen(true)}
-          className="inline-flex items-center gap-2 rounded-full bg-accent px-5 py-2 text-sm font-bold text-accent-foreground shadow-card"
-        >
-          <MessageCircle className="size-4" />
-          Message {plan.coachFirstName} about this plan
-        </button>
-      </div>
+      {plan.isGradus ? null : (
+        <div className="mt-5 flex justify-center">
+          <button
+            type="button"
+            onClick={() => setMessageOpen(true)}
+            className="inline-flex items-center gap-2 rounded-full bg-accent px-5 py-2 text-sm font-bold text-accent-foreground shadow-card"
+          >
+            <MessageCircle className="size-4" />
+            Message {plan.coachFirstName} about this plan
+          </button>
+        </div>
+      )}
 
       <MessageCoachAboutPlanDialog
         open={messageOpen}
