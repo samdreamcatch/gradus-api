@@ -208,7 +208,7 @@ export const getAthletePlan = createServerFn({ method: "POST" })
 
     const { data: plan, error } = await supabase
       .from("plans")
-      .select("id, title, notes, status, athlete_id, coach_id, updated_at, kind")
+      .select("id, title, notes, status, athlete_id, coach_id, updated_at, kind, source")
       .eq("id", data.id)
       .maybeSingle();
     if (error) dbError(error);
