@@ -1,22 +1,15 @@
-# Why the link preview still shows the old copy
+# New move: sport & category dropdowns
 
-The share-title change is written in your project code, but the preview card in Messages is built from the **published** site at gradus.training. Two things stand between the edit and what you see:
+On the "New move" sheet inside a plan, Sport and Category are currently free-text inputs. Make both pickers, matching the "Add to library" dialog that already exists elsewhere on the same screen.
 
-1. The change has not been published yet, so gradus.training still serves the old title.
-2. Once published, Apple/Messages caches the preview it already fetched for that exact URL. Re-sending the same link often replays the cached card.
+## Behavior
 
-Waiting alone will not fix it.
+- **Sport** — dropdown of the coach's configured sports (same source the "Add to library" dialog uses). Defaults to the first sport.
+- **Category** — dropdown of categories already used for the selected sport (from the coach's move library plus the built-in seed categories), plus an "Other…" option that reveals a small text field for a new category name. Resets when the sport changes.
+- Saving works exactly as today; if "Other…" is chosen, the typed category is what gets saved.
 
-## What to do
+## Technical notes
 
-1. Publish the app.
-2. Test with a **new** share link (a different plan, or a plan whose share link hasn't been sent before) — a fresh URL has no cached preview.
-3. If you need the old URL to refresh, delete the message thread's cached card by sending the link from a different device/conversation, or wait for Apple's cache to expire (can be days).
-
-## Verification
-
-After publishing, I can fetch the published page for a share token and read back its `og:title` to confirm the server is emitting "<Plan title> — join me on Gradus". No code change is required unless that check comes back wrong.
-
-## Note on wording
-
-Current copy renders as: `Juvenile — Free Skate — join me on Gradus`. If you'd prefer a cleaner separator (for example `Juvenile — Free Skate | Join me on Gradus`), say so and I'll adjust before you publish.
+- File: `src/routes/_authenticated/coach.plans.$planId.tsx`, the `NewMove` form (Sport/Category block).
+- Reuse the existing `listCoachSports` server fn + `listMoves` (`seedCategories`) query and the same `<select>` + `Input` "Other…" pattern already used by the `AddToLibrary` dialog in this file — no new components or styles.
+- Drop the `datalist`/free-text `Input` for sport and the plain `Input` for category.
