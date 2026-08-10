@@ -16,6 +16,8 @@ import { Button } from "@/components/ui/button";
 import { PlanCard } from "@/components/plans/plan-card";
 import { AlsoCoachedByList } from "@/components/coach/also-coached-by-list";
 import { OtherCoachPlansSheet } from "@/components/coach/other-coach-plans-sheet";
+import { AthleteBillingSection } from "@/components/coach/athlete-billing-section";
+
 import { cn } from "@/lib/utils";
 import {
   getCoachAthleteDetail,
@@ -217,6 +219,11 @@ function AthleteDetailBody({ athleteId }: { athleteId: string }) {
           <PlansList plans={d.plans} />
         )}
       </section>
+
+      {/* Billing (Coach Pro & Club) */}
+      {effectiveTier === "coach_pro" || effectiveTier === "club" ? (
+        <AthleteBillingSection athleteId={athleteId} />
+      ) : null}
 
       {/* Also coached by */}
       <AlsoCoachedByList

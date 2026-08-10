@@ -10,6 +10,8 @@ import { FilterPill } from "@/components/ui/filter-pill";
 import { getSport, type SportKey } from "@/lib/coach-sports";
 import { WeekScheduleView, type WeekScheduleHandle } from "@/components/coach/week-schedule-view";
 import { AthleteDetailSheet } from "@/components/coach/athlete-detail-sheet";
+import { BillingTab } from "@/components/coach/billing-tab";
+
 import { InviteCard } from "@/components/onboarding/invite-card";
 import { EnterInviteCodeCard } from "@/components/coach/enter-invite-code-card";
 import { Button } from "@/components/ui/button";
@@ -33,13 +35,15 @@ import {
 import { coachProfileQueryOptions } from "@/hooks/use-coach-profile";
 import { isCoachProAvailable } from "@/lib/paywall-flag";
 
-type RosterTab = "athletes" | "schedule";
+type RosterTab = "athletes" | "schedule" | "billing";
 
 function SegmentedToggle({ tab, onChange }: { tab: RosterTab; onChange: (t: RosterTab) => void }) {
   const tabs: { key: RosterTab; label: string }[] = [
     { key: "schedule", label: "Schedule" },
     { key: "athletes", label: "Athletes" },
+    { key: "billing", label: "Billing" },
   ];
+
   return (
     <div className="flex rounded-lg border border-foreground/15 bg-popover p-1 shadow-sm">
       {tabs.map((t) => (
@@ -223,7 +227,12 @@ function RosterPage() {
           </SheetContent>
         </Sheet>
 
-        {tab === "athletes" ? (
+        {tab === "billing" ? (
+          <BillingTab
+            athletes={visibleAthletes}
+            locked={(coachProfile?.profile.effectiveTier ?? "coach") === "coach"}
+          />
+        ) : tab === "athletes" ? (
           athletes.length === 0 ? (
             <div className="mt-8 rounded-2xl bg-card p-6 shadow-[0_10px_40px_-12px_rgba(0,0,0,0.15)] sm:p-8">
               <div>

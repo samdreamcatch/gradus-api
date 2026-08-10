@@ -4,11 +4,15 @@ import { getMyRole } from "@/lib/parent-signup.functions";
 
 export type AppRole = "coach" | "parent" | "athlete" | "org_admin";
 
-export const myRoleQueryOptions = queryOptions({
-  queryKey: ["my-role"],
-  queryFn: () => getMyRole(),
-  staleTime: 60_000,
-});
+export const myRoleQueryOptions = (userId?: string) =>
+  queryOptions({
+    // Scoped by user so one account's role can never be served to another
+    // after an account switch.
+    queryKey: ["my-role", userId ?? "anon"],
+    queryFn: () => getMyRole(),
+    staleTime: 60_000,
+  });
+
 
 const ROLE_HOME: Record<AppRole, string> = {
   coach: "/coach",
@@ -22,10 +26,11 @@ const ROLE_HOME: Record<AppRole, string> = {
  * expected role, silently redirect to their own home instead of letting a
  * server-fn role check throw into the error boundary.
  */
-export async function requireRole(expected: AppRole, queryClient: QueryClient) {
+export async function requireRole(expected: AppRole, queryClient: QueryClient, userId?: string) {
   let role: AppRole | null = null;
   try {
-    const data = await queryClient.ensureQueryData(myRoleQueryOptions);
+    const data = await queryClient.ensureQueryData(myRoleQueryOptions(userId));
+
     // The server may serialize null as an empty string over the wire, so
     // normalize it back to null before comparing.
     role = data.role ? (data.role as AppRole) : null;

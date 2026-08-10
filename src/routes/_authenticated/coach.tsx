@@ -16,7 +16,7 @@ const ENTITLED = new Set(["paid", "promo_free", "club_covered"]);
 
 export const Route = createFileRoute("/_authenticated/coach")({
   beforeLoad: async ({ context, location }) => {
-    await requireRole("coach", context.queryClient);
+    await requireRole("coach", context.queryClient, context.user?.id);
 
     // Onboarding step & paywall itself are always reachable so the coach
     // can finish signup / see why access is blocked.
