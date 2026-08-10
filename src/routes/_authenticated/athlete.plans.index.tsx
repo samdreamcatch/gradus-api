@@ -89,7 +89,7 @@ function AthletePlansPage() {
       plans.filter(
         (p) =>
           p.status === statusFilter &&
-          (coachId === "" || p.coachId === coachId) &&
+          (coachId === "" || (p.coachId || "__gradus") === coachId) &&
           (sport === "" || p.sport === sport),
       ),
     [plans, statusFilter, coachId, sport],
