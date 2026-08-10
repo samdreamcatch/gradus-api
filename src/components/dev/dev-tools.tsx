@@ -104,7 +104,13 @@ export function DevTools() {
       if (error) throw error;
       toast.success(`Signed in as ${acct.label}`);
       setOpen(false);
+      // Drop every cached query from the previous account before navigating —
+      // otherwise the role guard can read the old user's role and bounce us
+      // into the wrong app.
+      queryClient.clear();
+      await router.invalidate();
       await navigate({ to: acct.home });
+
     } catch (e) {
       toast.error(`Sign-in failed: ${(e as Error).message}`);
     } finally {
