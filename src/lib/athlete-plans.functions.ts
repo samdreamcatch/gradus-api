@@ -229,11 +229,13 @@ export const getAthletePlan = createServerFn({ method: "POST" })
         .select("id, position, name, description, cue, why, target_kind, target_value")
         .eq("plan_id", plan.id)
         .order("position", { ascending: true }),
-      supabaseAdmin
-        .from("coach_profiles")
-        .select("first_name, last_name")
-        .eq("id", plan.coach_id ?? "")
-        .maybeSingle(),
+      plan.coach_id
+        ? supabaseAdmin
+            .from("coach_profiles")
+            .select("first_name, last_name")
+            .eq("id", plan.coach_id)
+            .maybeSingle()
+        : Promise.resolve({ data: null, error: null } as const),
     ]);
     if (movesRes.error) dbError(movesRes.error);
     if (coachRes.error) dbError(coachRes.error);
