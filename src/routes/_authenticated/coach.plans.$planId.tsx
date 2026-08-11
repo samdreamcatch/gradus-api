@@ -1453,18 +1453,42 @@ function NewMoveForm({
     defaultTargetValue: number;
   }) => void;
 }) {
-  const sportOptions = useMemo(
-    () => Array.from(new Set(existingMoves.map((m) => m.sport).filter(Boolean))).sort(),
-    [existingMoves],
-  );
+  const fetchSports = useServerFn(listCoachSports);
+  const fetchMovesForCats = useServerFn(listMoves);
+  const sportsQuery = useQuery({ queryKey: ["coach-sports"], queryFn: () => fetchSports() });
+  const movesQuery = useQuery({ queryKey: ["moves"], queryFn: () => fetchMovesForCats() });
+  const sportOptions = sportsQuery.data?.sports ?? [];
 
   const [name, setName] = useState("");
-  const [sport, setSport] = useState(sportOptions[0] ?? "general");
-  const [category, setCategory] = useState("Uncategorized");
+  const [sport, setSport] = useState("");
+  const [category, setCategory] = useState("");
+  const [customCategory, setCustomCategory] = useState("");
   const [cue, setCue] = useState("");
   const [targetKind, setTargetKind] = useState<"reps" | "mins">("reps");
   const [targetValue, setTargetValue] = useState<number>(10);
   const [ignoreDupes, setIgnoreDupes] = useState(false);
+
+  useEffect(() => {
+    if (sportOptions.length > 0 && !sport) setSport(sportOptions[0]);
+  }, [sportOptions, sport]);
+
+  useEffect(() => {
+    setCategory("");
+    setCustomCategory("");
+  }, [sport]);
+
+  const categoryOptions = useMemo(() => {
+    if (!sport) return [] as string[];
+    const set = new Set<string>();
+    for (const m of movesQuery.data?.moves ?? []) {
+      if (m.sport === sport && m.category) set.add(m.category);
+    }
+    for (const s of movesQuery.data?.seedCategories ?? []) {
+      if (s.sport === sport && s.category) set.add(s.category);
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [sport, movesQuery.data]);
+
 
   const dupes = useMemo(() => {
     if (!name.trim()) return [];
@@ -1476,8 +1500,14 @@ function NewMoveForm({
       .map((x) => x.move);
   }, [existingMoves, name]);
 
+  const finalCategory = category === "__other__" ? customCategory.trim() : category;
   const canCreate =
-    name.trim().length > 0 && cue.trim().length > 0 && (dupes.length === 0 || ignoreDupes);
+    name.trim().length > 0 &&
+    cue.trim().length > 0 &&
+    sport.length > 0 &&
+    finalCategory.length > 0 &&
+    (dupes.length === 0 || ignoreDupes);
+
 
   return (
     <div className="mt-3 flex flex-1 flex-col overflow-y-auto">
@@ -1542,12 +1572,18 @@ function NewMoveForm({
             >
               Sport
             </Eyebrow>
-            <Input value={sport} onChange={(e) => setSport(e.target.value)} list="np-sports" />
-            <datalist id="np-sports">
+            <select
+              value={sport}
+              onChange={(e) => setSport(e.target.value)}
+              className="block w-full rounded-md border border-divider bg-card px-2 py-2 text-sm text-text-primary focus:border-accent focus:outline-none"
+            >
+              {sportOptions.length === 0 ? <option value="">No sports configured</option> : null}
               {sportOptions.map((s) => (
-                <option key={s} value={s} />
+                <option key={s} value={s}>
+                  {s}
+                </option>
               ))}
-            </datalist>
+            </select>
           </div>
           <div>
             <Eyebrow
@@ -1559,9 +1595,31 @@ function NewMoveForm({
             >
               Category
             </Eyebrow>
-            <Input value={category} onChange={(e) => setCategory(e.target.value)} />
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              disabled={!sport || movesQuery.isLoading}
+              className="block w-full rounded-md border border-divider bg-card px-2 py-2 text-sm text-text-primary focus:border-accent focus:outline-none"
+            >
+              <option value="">{movesQuery.isLoading ? "Loading…" : "Select a category…"}</option>
+              {categoryOptions.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+              <option value="__other__">Other…</option>
+            </select>
+            {category === "__other__" ? (
+              <Input
+                value={customCategory}
+                onChange={(e) => setCustomCategory(e.target.value)}
+                placeholder="e.g. Forehand, Footwork, Strength"
+                className="mt-2"
+              />
+            ) : null}
           </div>
         </div>
+
 
         <div>
           <Eyebrow as="label" size="caption" tone="tertiary" weight="black" className="mb-1 block">
@@ -1616,8 +1674,9 @@ function NewMoveForm({
           disabled={!canCreate || saving}
           onClick={() =>
             onCreate({
-              sport: sport.trim() || "general",
-              category: category.trim() || "Uncategorized",
+              sport: sport,
+              category: finalCategory,
+
               name: name.trim(),
               description: "",
               cue,

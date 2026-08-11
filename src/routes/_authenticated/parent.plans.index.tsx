@@ -178,9 +178,8 @@ function ParentPlansPage() {
                 planId={p.id}
                 title={p.title}
                 athleteName={
-                  athleteId === "" && athletes.length > 1
-                    ? `${p.athleteName} · Coach ${p.coachName}`
-                    : `Coach ${p.coachName}`
+                  (athleteId === "" && athletes.length > 1 ? `${p.athleteName} · ` : "") +
+                  (p.isGradus ? "from Gradus" : `Coach ${p.coachName}`)
                 }
                 sessionsByState={p.sessionsByState}
                 sessionsTotal={p.sessionsTotal}

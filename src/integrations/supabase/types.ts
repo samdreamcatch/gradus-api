@@ -1841,6 +1841,7 @@ export type Database = {
           organization_id: string | null
           share_token: string | null
           shared_at: string | null
+          source: string
           status: string
           title: string
           updated_at: string
@@ -1857,6 +1858,7 @@ export type Database = {
           organization_id?: string | null
           share_token?: string | null
           shared_at?: string | null
+          source?: string
           status?: string
           title?: string
           updated_at?: string
@@ -1873,6 +1875,7 @@ export type Database = {
           organization_id?: string | null
           share_token?: string | null
           shared_at?: string | null
+          source?: string
           status?: string
           title?: string
           updated_at?: string

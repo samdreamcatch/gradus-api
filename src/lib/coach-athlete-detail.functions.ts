@@ -26,6 +26,7 @@ export interface AthletePlanSummaryDTO {
   planId: string;
   title: string;
   status: PlanStatus;
+  isGradus: boolean;
   sessionsByState: SessionsByState;
   sessionsTotal: number;
 }
@@ -250,8 +251,8 @@ export const getCoachAthleteDetail = createServerFn({ method: "GET" })
             .in("sport", coachSports),
       supabaseAdmin
         .from("plans")
-        .select("id, title, status, updated_at")
-        .eq("coach_id", coachId)
+        .select("id, title, status, updated_at, source")
+        .or(`coach_id.eq.${coachId},source.eq.gradus`)
         .eq("athlete_id", data.athleteId)
         .eq("kind", "plan")
         .in("status", ["active", "benched"])
@@ -345,6 +346,7 @@ export const getCoachAthleteDetail = createServerFn({ method: "GET" })
         planId: p.id,
         title: p.title || "Untitled plan",
         status: p.status as PlanStatus,
+        isGradus: p.source === "gradus",
         sessionsByState,
         sessionsTotal: planSessions.length,
       };

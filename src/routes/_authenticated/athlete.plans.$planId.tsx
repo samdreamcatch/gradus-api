@@ -75,7 +75,7 @@ function AthletePlanDetail() {
 
       <div className="mt-4">
         <p className="text-[12px] font-medium text-text-secondary text-center">
-          Coach {plan.coachName}
+          {plan.isGradus ? "from Gradus" : `Coach ${plan.coachName}`}
         </p>
         <h1 className="mt-0.5 font-display leading-[0.95] tracking-tight text-text-primary font-medium text-2xl text-center">
           {plan.title}
@@ -91,7 +91,7 @@ function AthletePlanDetail() {
       />
 
       <p className="mt-5 text-[11px] font-black uppercase tracking-widest text-text-secondary">
-        From the Coach
+        {plan.isGradus ? "From Gradus" : "From the Coach"}
       </p>
 
       <div className="mt-2 space-y-1.5">
@@ -111,16 +111,18 @@ function AthletePlanDetail() {
         )}
       </div>
 
-      <div className="mt-5 flex justify-center">
-        <button
-          type="button"
-          onClick={() => setMessageOpen(true)}
-          className="inline-flex items-center gap-2 rounded-full bg-accent px-5 py-2 text-sm font-bold text-accent-foreground shadow-card"
-        >
-          <MessageCircle className="size-4" />
-          Message {plan.coachFirstName} about this plan
-        </button>
-      </div>
+      {plan.isGradus ? null : (
+        <div className="mt-5 flex justify-center">
+          <button
+            type="button"
+            onClick={() => setMessageOpen(true)}
+            className="inline-flex items-center gap-2 rounded-full bg-accent px-5 py-2 text-sm font-bold text-accent-foreground shadow-card"
+          >
+            <MessageCircle className="size-4" />
+            Message {plan.coachFirstName} about this plan
+          </button>
+        </div>
+      )}
 
       <MessageCoachAboutPlanDialog
         open={messageOpen}
