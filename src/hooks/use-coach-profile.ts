@@ -31,7 +31,11 @@ export function useSaveCoachLevels() {
   return useMutation({
     mutationFn: (data: { entries: { sport: string; levelKey: string; hoursPerWeek: number }[] }) =>
       fn({ data }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["coach-profile"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["coach-profile"] });
+      qc.invalidateQueries({ queryKey: ["coach-sports"] });
+      qc.invalidateQueries({ queryKey: ["moves"] });
+    },
   });
 }
 
