@@ -77,8 +77,15 @@ export const listMoves = createServerFn({ method: "GET" })
       return { moves: [], seedCategories: [] };
     }
 
-    // Idempotent seed if first visit
-    await supabase.rpc("seed_coach_library", { _coach_id: coachId });
+    // Idempotent seed — also picks up sports added after the first visit.
+    const seedRes = await supabase.rpc("seed_coach_library", { _coach_id: coachId });
+    if (seedRes.error) {
+      console.error("seed_coach_library failed", {
+        coachId,
+        message: seedRes.error.message,
+        details: seedRes.error.details,
+      });
+    }
 
     const { data, error } = await supabase
       .from("moves")

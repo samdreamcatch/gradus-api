@@ -301,6 +301,16 @@ export const saveCoachLevels = createServerFn({ method: "POST" })
       if (ins.error) dbError(ins.error);
     }
 
+    // Keep the move library in sync with the coach's sports: seed starter
+    // moves for any newly added sport (idempotent, never duplicates).
+    const seedRes = await supabase.rpc("seed_coach_library", { _coach_id: profile.id });
+    if (seedRes.error) {
+      console.error("seed_coach_library failed after saveCoachLevels", {
+        coachId: profile.id,
+        message: seedRes.error.message,
+      });
+    }
+
     return { ok: true };
   });
 
