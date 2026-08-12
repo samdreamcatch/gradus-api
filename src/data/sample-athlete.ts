@@ -14,6 +14,7 @@ import type {
   CoachAthleteDetailDTO,
   CoachAthleteAiSummaryDTO,
 } from "@/lib/coach-athlete-detail.functions";
+import type { AthleteRateDTO, DraftLineDTO, InvoicePreviewDTO } from "@/lib/invoicing.functions";
 import { resolveStarterPrograms } from "./starter-programs";
 
 export const SAMPLE_ATHLETE_ID = "sample-lisa-simpson";
@@ -157,4 +158,54 @@ export function buildSampleBriefing(): string {
     "One rough session 12 days ago was attributed to boot fit rather than skill — worth a quick check-in before you start.",
     "Her season goal is passing the Intermediate free skate test; triple salchow attempts are still cheating on the takeoff.",
   ].join("\n\n");
+}
+
+// --- Invoicing --------------------------------------------------------------
+
+export const SAMPLE_ATHLETE_NAME = "Sample Athlete";
+
+/** Sample athlete already has a rate so the invoice flow is never blocked. */
+export const SAMPLE_RATE: AthleteRateDTO = { rateKind: "per_session", rateCents: 7000 };
+
+/** Lessons that already happened, as day offsets from today. */
+const SAMPLE_BILLABLE_DAYS_AGO = [2, 5, 9, 12];
+
+function isoDaysAgo(days: number, now: Date): string {
+  const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - days);
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${d.getFullYear()}-${mm}-${dd}`;
+}
+
+/**
+ * A ready-to-review invoice draft: four confirmed 45-minute lessons over the
+ * last two weeks at the sample rate. `billedDates` drops anything the coach
+ * already invoiced in this session, matching the real "bill a date once" rule.
+ */
+export function buildSampleInvoiceDraft(
+  billedDates: Set<string> = new Set(),
+  now: Date = new Date(),
+): InvoicePreviewDTO {
+  const lines: DraftLineDTO[] = SAMPLE_BILLABLE_DAYS_AGO.slice()
+    .sort((a, b) => b - a)
+    .map((daysAgo) => ({
+      slotId: SAMPLE_SLOT_ID,
+      occurrenceDate: isoDaysAgo(daysAgo, now),
+      startMinute: 16 * 60,
+      endMinute: 16 * 60 + 45,
+      amountCents: SAMPLE_RATE.rateCents,
+      state: "confirmed" as const,
+      defaultIncluded: true,
+    }))
+    .filter((l) => !billedDates.has(l.occurrenceDate));
+
+  return {
+    athleteId: SAMPLE_ATHLETE_ID,
+    athleteName: SAMPLE_ATHLETE_NAME,
+    rate: SAMPLE_RATE,
+    suggestedPeriodStart: isoDaysAgo(14, now),
+    periodStart: isoDaysAgo(14, now),
+    periodEnd: isoDaysAgo(0, now),
+    lines,
+  };
 }

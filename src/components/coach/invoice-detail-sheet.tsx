@@ -30,6 +30,13 @@ import {
   formatShortDate,
 } from "@/lib/invoice-format";
 import { shareInvoiceNow } from "@/lib/share-invoice";
+import {
+  deleteSampleInvoice,
+  getSampleInvoice,
+  isSampleInvoiceId,
+  setSampleInvoiceStatus,
+  useSampleInvoices,
+} from "@/data/sample-invoices";
 
 /**
  * Read-only view of a saved invoice: its line items, total, paid state, and the
@@ -68,9 +75,13 @@ function InvoiceDetailBody({ invoiceId, onClose }: { invoiceId: string; onClose:
   const removeInvoice = useServerFn(deleteInvoice);
   const [pendingDelete, setPendingDelete] = useState(false);
 
+  const isSample = isSampleInvoiceId(invoiceId);
+  useSampleInvoices(); // re-render when the sample invoice changes
+
   const detail = useQuery({
     queryKey: ["coach", "invoice", invoiceId],
     queryFn: () => fetchDetail({ data: { invoiceId } }),
+    enabled: !isSample,
   });
 
   async function invalidate() {
@@ -97,7 +108,9 @@ function InvoiceDetailBody({ invoiceId, onClose }: { invoiceId: string; onClose:
     onError: (e: Error) => toast.error(e.message),
   });
 
-  if (detail.isLoading) {
+  const sample = isSample ? getSampleInvoice(invoiceId) : null;
+
+  if (!isSample && detail.isLoading) {
     return (
       <div className="flex items-center gap-2 py-8 text-sm text-text-tertiary">
         <Loader2 className="h-4 w-4 animate-spin" />
@@ -105,11 +118,11 @@ function InvoiceDetailBody({ invoiceId, onClose }: { invoiceId: string; onClose:
       </div>
     );
   }
-  if (detail.error || !detail.data) {
+  if (!sample && (detail.error || !detail.data)) {
     return <p className="py-8 text-sm text-text-secondary">Couldn&apos;t load that invoice.</p>;
   }
 
-  const inv = detail.data;
+  const inv = sample ? { ...sample, lineCount: sample.lines.length } : detail.data!;
 
   return (
     <>
@@ -125,7 +138,14 @@ function InvoiceDetailBody({ invoiceId, onClose }: { invoiceId: string; onClose:
         <button
           type="button"
           className="press-soft"
-          onClick={() => statusMutation.mutate(inv.status === "paid" ? "unpaid" : "paid")}
+          onClick={() => {
+            const next = inv.status === "paid" ? "unpaid" : "paid";
+            if (isSample) {
+              setSampleInvoiceStatus(invoiceId, next);
+              return;
+            }
+            statusMutation.mutate(next);
+          }}
           aria-label={inv.status === "paid" ? "Mark unpaid" : "Mark paid"}
         >
           <Tag size="nano" tone={inv.status === "paid" ? "accent" : "default"}>
@@ -200,6 +220,12 @@ function InvoiceDetailBody({ invoiceId, onClose }: { invoiceId: string; onClose:
             <AlertDialogAction
               onClick={() => {
                 setPendingDelete(false);
+                if (isSample) {
+                  deleteSampleInvoice(invoiceId);
+                  toast.success("Sample invoice deleted");
+                  onClose();
+                  return;
+                }
                 deleteMutation.mutate();
               }}
             >

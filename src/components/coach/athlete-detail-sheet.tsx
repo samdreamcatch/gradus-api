@@ -91,7 +91,12 @@ function AthleteDetailBody({ athleteId }: { athleteId: string }) {
   }, [detail.data?.hasAnySignal, summary]);
 
   if (isSample) {
-    return <SampleAthleteBody />;
+    return (
+      <SampleAthleteBody
+        athleteId={athleteId}
+        showBilling={effectiveTier === "coach_pro" || effectiveTier === "club"}
+      />
+    );
   }
 
   if (detail.isLoading) {
@@ -261,7 +266,13 @@ function AthleteDetailBody({ athleteId }: { athleteId: string }) {
 }
 
 /** Read-only rendering of the sample athlete — same sections, fixture data. */
-function SampleAthleteBody() {
+function SampleAthleteBody({
+  athleteId,
+  showBilling,
+}: {
+  athleteId: string;
+  showBilling: boolean;
+}) {
   const d = buildSampleAthleteDetail();
   const summary = buildSampleAiSummary();
   const g = d.goals[0];
@@ -332,6 +343,8 @@ function SampleAthleteBody() {
           />
         </div>
       </section>
+
+      {showBilling ? <AthleteBillingSection athleteId={athleteId} /> : null}
 
       <section className="pb-2">
         <SectionHeading>Session feedback</SectionHeading>
