@@ -134,7 +134,7 @@ function PaywallPreview() {
 
         <div
           className={cn(
-            "mt-4 grid w-full grid-cols-2 gap-3 transition-opacity",
+            "mt-5 flex w-full flex-col gap-3 transition-opacity",
             tiersDisabled && "pointer-events-none opacity-50",
           )}
           aria-disabled={tiersDisabled}
@@ -157,11 +157,15 @@ function PaywallPreview() {
                   <h2 className="font-display text-lg text-text-primary sm:text-h3">
                     {isPro ? "Coach Pro" : "Coach"}
                   </h2>
-                  {coachFoundingActive && (
+                  {coachFoundingActive ? (
                     <span className="rounded-full bg-accent/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-accent-ink sm:text-[10px] sm:tracking-widest">
                       FOUNDING
                     </span>
-                  )}
+                  ) : isPro ? (
+                    <span className="rounded-full bg-accent/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-accent-ink sm:text-[10px] sm:tracking-widest">
+                      RECOMMENDED
+                    </span>
+                  ) : null}
                 </div>
 
                 {coachFoundingActive ? (
@@ -185,6 +189,32 @@ function PaywallPreview() {
                     </div>
                     <p className="mt-1 text-[11px] text-text-tertiary sm:text-xs">{price.billed}</p>
                   </>
+                )}
+
+                {isPro && (
+                  <div
+                    className="mt-3 inline-flex self-start rounded-full border border-divider bg-elevated p-1 text-sm"
+                    aria-disabled={tiersDisabled}
+                  >
+                    {(["month", "year"] as const).map((iv) => (
+                      <button
+                        key={iv}
+                        type="button"
+                        onClick={() => setInterval(iv)}
+                        className={cn(
+                          "rounded-full px-4 py-1.5 press-soft",
+                          interval === iv
+                            ? "bg-card text-text-primary shadow-sm"
+                            : "text-text-secondary",
+                        )}
+                      >
+                        {iv === "month" ? "Monthly" : "Yearly"}
+                        {iv === "year" && (
+                          <span className="ml-1 text-xs text-accent-ink">save 15%</span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
                 )}
 
                 {promoAppliesHere && proMonths > 0 && (
@@ -217,6 +247,10 @@ function PaywallPreview() {
                   >
                     {isPro ? proCtaLabel : "Subscribe"}
                   </Button>
+                )}
+
+                {isPro && (
+                  <p className="mt-2 text-center text-[11px] text-text-tertiary">Cancel anytime</p>
                 )}
               </div>
             );
