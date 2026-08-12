@@ -333,29 +333,29 @@ export const WeekScheduleView = forwardRef<
                       isSampleAthlete(s.athleteId)
                         ? undefined
                         : () =>
-                      setSheetMode({
-                        kind: "edit",
-                        slotId: s.slotId,
-                        athleteId: s.athleteId,
-                        dayOfWeek: s.dayOfWeek,
-                        startMinute: s.startMinute,
-                        endMinute: s.endMinute,
-                      })
+                            setSheetMode({
+                              kind: "edit",
+                              slotId: s.slotId,
+                              athleteId: s.athleteId,
+                              dayOfWeek: s.dayOfWeek,
+                              startMinute: s.startMinute,
+                              endMinute: s.endMinute,
+                            })
                     }
                     onEditOccurrence={
                       isSampleAthlete(s.athleteId)
                         ? undefined
                         : () =>
-                      setSheetMode({
-                        kind: "occurrence",
-                        slotId: s.slotId,
-                        athleteId: s.athleteId,
-                        date: toIsoDate(selectedDate),
-                        dayOfWeek: s.dayOfWeek,
-                        startMinute: s.startMinute,
-                        endMinute: s.endMinute,
-                        hasOverride: s.overrideStatus != null,
-                      })
+                            setSheetMode({
+                              kind: "occurrence",
+                              slotId: s.slotId,
+                              athleteId: s.athleteId,
+                              date: toIsoDate(selectedDate),
+                              dayOfWeek: s.dayOfWeek,
+                              startMinute: s.startMinute,
+                              endMinute: s.endMinute,
+                              hasOverride: s.overrideStatus != null,
+                            })
                     }
                   />
                 </li>

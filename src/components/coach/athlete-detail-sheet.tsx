@@ -351,7 +351,6 @@ function SampleAthleteBody() {
 }
 
 function formatSportList(labels: string[]): string {
-
   if (labels.length === 0) return "";
   if (labels.length === 1) return labels[0];
   if (labels.length === 2) return `${labels[0]} or ${labels[1]}`;

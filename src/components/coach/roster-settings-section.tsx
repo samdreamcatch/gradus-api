@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { CalendarDays, Pencil, Plus, Trash2, UserMinus } from "lucide-react";
+import { CalendarDays, Pencil, Plus, Sparkles, Trash2, UserMinus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
 
@@ -19,6 +19,10 @@ import { SettingsDisclosure } from "@/components/settings/primitives";
 import { getCoachRoster, type RosterAthlete, type RosterSlot } from "@/lib/coach-roster.functions";
 import { deleteLessonSlot, removeAthleteFromRoster } from "@/lib/coach-roster-mutations.functions";
 import { LessonSlotSheet, type LessonSlotSheetMode } from "@/components/coach/lesson-slot-sheet";
+import { SettingsToggleRow } from "@/components/settings/primitives";
+import { Switch } from "@/components/ui/switch";
+import { SAMPLE_SPORT } from "@/data/sample-athlete";
+import { useSampleAthleteDismissed } from "@/hooks/use-sample-athlete";
 
 const DAY_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -39,6 +43,8 @@ export function RosterSettingsSection() {
   const { data, isLoading } = useQuery(rosterQueryOptions);
   const [sheetMode, setSheetMode] = useState<LessonSlotSheetMode | null>(null);
   const athletes = data?.athletes ?? [];
+  const { dismissed, dismiss, restore } = useSampleAthleteDismissed();
+  const sampleAvailable = athletes.length === 0 && (data?.coachSports ?? []).includes(SAMPLE_SPORT);
 
   return (
     <>
@@ -79,6 +85,22 @@ export function RosterSettingsSection() {
             ))}
           </ul>
         )}
+        {sampleAvailable ? (
+          <div className="mt-3 border-t border-divider pt-1">
+            <SettingsToggleRow
+              icon={<Sparkles className="size-4" />}
+              label="Sample athlete"
+              description="Show Lisa Simpson, a demo athlete, while your roster is empty."
+              trailing={
+                <Switch
+                  checked={!dismissed}
+                  onCheckedChange={(on) => (on ? restore() : dismiss())}
+                  aria-label="Show sample athlete"
+                />
+              }
+            />
+          </div>
+        ) : null}
       </SettingsDisclosure>
 
       <LessonSlotSheet

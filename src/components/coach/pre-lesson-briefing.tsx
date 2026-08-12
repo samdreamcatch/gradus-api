@@ -35,7 +35,6 @@ export function PreLessonBriefing({
   const data = isSample ? { narrative: buildSampleBriefing() } : fetched;
   const isLoading = !isSample && isFetching;
 
-
   const time = formatTime(startMinute);
 
   return (
