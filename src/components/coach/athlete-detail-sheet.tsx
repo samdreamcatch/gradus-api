@@ -260,7 +260,98 @@ function AthleteDetailBody({ athleteId }: { athleteId: string }) {
   );
 }
 
+/** Read-only rendering of the sample athlete — same sections, fixture data. */
+function SampleAthleteBody() {
+  const d = buildSampleAthleteDetail();
+  const summary = buildSampleAiSummary();
+  const g = d.goals[0];
+
+  return (
+    <div className="space-y-6">
+      <SheetHeader className="text-left">
+        <SheetTitle className="font-display text-2xl font-black tracking-tight text-text-primary">
+          {d.firstName} {d.lastName}
+        </SheetTitle>
+        <p className="text-xs text-text-tertiary">
+          Sample athlete · Parent: {d.parentFirstName} {d.parentLastName}
+        </p>
+      </SheetHeader>
+
+      <section>
+        <SectionHeading>GOALS FROM PARENT &amp; ATHLETE</SectionHeading>
+        <ul className="mt-2 space-y-3">
+          <li className="rounded-xl border border-divider bg-card p-3">
+            <div className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
+              {g.sportLabel}
+            </div>
+            <div className="mt-1 flex items-baseline gap-2 text-sm">
+              <span className="font-bold text-text-primary">{g.currentLevelLabel}</span>
+              <span className="text-text-tertiary">→</span>
+              <span className="font-bold text-text-primary">{g.seasonGoalLabel}</span>
+              <span className="text-[10px] uppercase tracking-widest text-text-tertiary">
+                this season
+              </span>
+            </div>
+            <p className="mt-2 text-sm text-text-secondary">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-text-tertiary">
+                Long-term
+              </span>
+              <br />
+              {g.longTermGoal}
+            </p>
+          </li>
+        </ul>
+      </section>
+
+      <section>
+        <SectionHeading>
+          <span className="inline-flex items-center gap-1.5">
+            <Sparkles className="h-3.5 w-3.5" />
+            Last {d.windowDays} days
+          </span>
+        </SectionHeading>
+        <div className="mt-2 rounded-xl border border-divider bg-card p-4">
+          <ActivityCounts
+            practiceMinutesTotal={d.activity.practiceMinutesTotal}
+            lessonMinutesTotal={d.activity.lessonMinutesTotal}
+          />
+          <p className="mt-3 text-sm leading-relaxed text-text-primary">{summary.summary}</p>
+          <VerdictPill verdict={summary.verdict} rationale={summary.rationale} />
+        </div>
+      </section>
+
+      <section>
+        <SectionHeading>Plans</SectionHeading>
+        <div className="mt-2">
+          <PlanCard
+            planId={d.plans[0].planId}
+            title={d.plans[0].title}
+            athleteName="from Gradus"
+            sessionsByState={d.plans[0].sessionsByState}
+            sessionsTotal={d.plans[0].sessionsTotal}
+          />
+        </div>
+      </section>
+
+      <section className="pb-2">
+        <SectionHeading>Session feedback</SectionHeading>
+        <ul className="mt-2 space-y-2">
+          {SAMPLE_SESSION_FEEDBACK.map((s) => (
+            <li key={s.daysAgo} className="rounded-xl border border-divider bg-card p-3">
+              <div className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
+                {s.daysAgo === 1 ? "Yesterday" : `${s.daysAgo} days ago`}
+              </div>
+              <p className="mt-1 text-sm text-text-secondary">{s.note}</p>
+            </li>
+          ))}
+        </ul>
+      </section>
+    </div>
+  );
+}
+
 function formatSportList(labels: string[]): string {
+
   if (labels.length === 0) return "";
   if (labels.length === 1) return labels[0];
   if (labels.length === 2) return `${labels[0]} or ${labels[1]}`;
