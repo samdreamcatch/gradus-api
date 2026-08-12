@@ -151,7 +151,7 @@ export function RosterCard({
             </AlertDialogTitle>
             <AlertDialogDescription>
               {isSample
-                ? "Lisa is a sample athlete used to preview the app. Dismissing hides her from your roster and schedule. You can bring her back anytime from Settings."
+                ? "This is a sample athlete used to preview the app. Dismissing hides her from your roster and schedule. You can bring her back anytime from Settings."
                 : "This unlinks the athlete from you. Their account, practice history, and parent stay intact. Their recurring lessons with you are unassigned and can be re-claimed later via your invite code."}
             </AlertDialogDescription>
           </AlertDialogHeader>

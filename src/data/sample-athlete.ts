@@ -1,8 +1,8 @@
 /**
  * Sample athlete fixture.
  *
- * A figure skating coach with an empty roster sees Lisa Simpson (Juvenile) and
- * her parent Marge Simpson so the value of the app is visible before a real
+ * A figure skating coach with an empty roster sees Sample Athlete (Juvenile) and
+ * her parent Sample Parent so the value of the app is visible before a real
  * athlete ever joins. Nothing here touches the database — the objects are
  * shaped exactly like the server functions' return types and are substituted
  * client-side. No server function is ever called with the sample ID.
@@ -48,7 +48,7 @@ function roundTo5(n: number): number {
 }
 
 /**
- * Roster row for Lisa, with a lesson starting within the next hour so the
+ * Roster row for the sample athlete, with a lesson starting within the next hour so the
  * "Up next briefing" card is visible the moment the coach opens the app.
  */
 export function buildSampleRosterAthlete(now: Date = new Date()): RosterAthlete {
@@ -59,11 +59,11 @@ export function buildSampleRosterAthlete(now: Date = new Date()): RosterAthlete 
 
   return {
     athleteId: SAMPLE_ATHLETE_ID,
-    firstName: "Lisa",
-    lastName: "Simpson",
+    firstName: "Sample",
+    lastName: "Athlete",
     sport: SAMPLE_SPORT,
-    parentFirstName: "Marge",
-    parentLastName: "Simpson",
+    parentFirstName: "Sample",
+    parentLastName: "Parent",
     selfManaged: false,
     slots: [
       {
@@ -101,10 +101,10 @@ function sessionsByState() {
 export function buildSampleAthleteDetail(): CoachAthleteDetailDTO {
   return {
     athleteId: SAMPLE_ATHLETE_ID,
-    firstName: "Lisa",
-    lastName: "Simpson",
-    parentFirstName: "Marge",
-    parentLastName: "Simpson",
+    firstName: "Sample",
+    lastName: "Athlete",
+    parentFirstName: "Sample",
+    parentLastName: "Parent",
     selfManaged: false,
     coachedSports: [{ key: SAMPLE_SPORT, label: "Figure Skating" }],
     goals: [
@@ -141,7 +141,7 @@ export function buildSampleAthleteDetail(): CoachAthleteDetailDTO {
 export function buildSampleAiSummary(): CoachAthleteAiSummaryDTO {
   return {
     summary:
-      "Lisa logged 9 practices in the last 30 days, 6.5 hours in the past week against an 8-hour Juvenile target. Seven of nine sessions were logged as steady or better, with two flow sessions in the past five days tied to the double flip and axel. The two low sessions both mention the fly sit spin and one boot-fit complaint.",
+      "Sample Athlete logged 9 practices in the last 30 days, 6.5 hours in the past week against an 8-hour Juvenile target. Seven of nine sessions were logged as steady or better, with two flow sessions in the past five days tied to the double flip and axel. The two low sessions both mention the fly sit spin and one boot-fit complaint.",
     verdict: "increase",
     rationale:
       "Jump work is trending up with back-to-back flow sessions, while spin quality is the repeated sticking point — a good week to raise the spin demand.",
@@ -151,7 +151,7 @@ export function buildSampleAiSummary(): CoachAthleteAiSummaryDTO {
 
 export function buildSampleBriefing(): string {
   return [
-    "Since your last lesson Lisa logged 9 practices — 6.5 hours this week against her 8-hour Juvenile target.",
+    "Since your last lesson Sample Athlete logged 9 practices — 6.5 hours this week against her 8-hour Juvenile target.",
     "Jumps are trending up: her two most recent sessions were her strongest of the month, with the double flip landed 6 of 8 attempts and a clean axel day where she noted keeping her arms tight.",
     "Spins are the repeated sticking point. She flagged the fly sit spin as too low, and the change-foot combo spin travelled in her most recent attempt.",
     "One rough session 12 days ago was attributed to boot fit rather than skill — worth a quick check-in before you start.",
