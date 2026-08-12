@@ -34,6 +34,12 @@ import {
 } from "@/lib/coach-schedule.functions";
 import { coachProfileQueryOptions } from "@/hooks/use-coach-profile";
 import { isCoachProAvailable } from "@/lib/paywall-flag";
+import {
+  buildSamplePracticeSummary,
+  buildSampleRosterAthlete,
+  SAMPLE_SPORT,
+} from "@/data/sample-athlete";
+import { useSampleAthleteDismissed } from "@/hooks/use-sample-athlete";
 
 type RosterTab = "athletes" | "schedule" | "billing";
 
@@ -89,7 +95,18 @@ export const Route = createFileRoute("/_authenticated/coach/roster")({
 function RosterPage() {
   const { data: roster } = useSuspenseQuery(rosterQueryOptions);
   const { data: coachProfile } = useQuery(coachProfileQueryOptions);
-  const { athletes, coachSports } = roster;
+  const { coachSports } = roster;
+  const { dismissed: sampleDismissed } = useSampleAthleteDismissed();
+
+  // Figure skating coaches with an empty roster see a sample athlete so the
+  // app has real-looking content before anyone joins. Purely client-side.
+  const showSample =
+    roster.athletes.length === 0 && coachSports.includes(SAMPLE_SPORT) && !sampleDismissed;
+
+  const athletes = useMemo(
+    () => (showSample ? [buildSampleRosterAthlete()] : roster.athletes),
+    [showSample, roster.athletes],
+  );
   const router = useRouter();
   const navigate = useNavigate();
   const coachProAvailable = isCoachProAvailable();
@@ -116,15 +133,19 @@ function RosterPage() {
   const practiceQuery = useQuery({
     queryKey: ["coach", "roster", "practice-summaries"],
     queryFn: () => getRosterPracticeSummaries(),
-    enabled: tab === "schedule" && athletes.length > 0,
+    enabled: tab === "schedule" && !showSample && roster.athletes.length > 0,
     staleTime: 60_000,
   });
 
   const summariesByAthlete = useMemo(() => {
     const m = new Map<string, AthletePracticeSummary>();
     for (const s of practiceQuery.data ?? []) m.set(s.athleteId, s);
+    if (showSample) {
+      const sample = buildSamplePracticeSummary();
+      m.set(sample.athleteId, sample);
+    }
     return m;
-  }, [practiceQuery.data]);
+  }, [practiceQuery.data, showSample]);
 
   return (
     <>
