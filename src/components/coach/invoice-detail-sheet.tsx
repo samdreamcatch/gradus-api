@@ -118,13 +118,11 @@ function InvoiceDetailBody({ invoiceId, onClose }: { invoiceId: string; onClose:
       </div>
     );
   }
-  if (detail.error || !detail.data) {
+  if (!sample && (detail.error || !detail.data)) {
     return <p className="py-8 text-sm text-text-secondary">Couldn&apos;t load that invoice.</p>;
   }
 
-  const inv = sample
-    ? { ...sample, athleteName: sample.athleteName, lineCount: sample.lines.length }
-    : detail.data;
+  const inv = sample ? { ...sample, lineCount: sample.lines.length } : detail.data!;
 
   return (
     <>
@@ -222,6 +220,12 @@ function InvoiceDetailBody({ invoiceId, onClose }: { invoiceId: string; onClose:
             <AlertDialogAction
               onClick={() => {
                 setPendingDelete(false);
+                if (isSample) {
+                  deleteSampleInvoice(invoiceId);
+                  toast.success("Sample invoice deleted");
+                  onClose();
+                  return;
+                }
                 deleteMutation.mutate();
               }}
             >
