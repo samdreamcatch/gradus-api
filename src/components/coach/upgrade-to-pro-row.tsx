@@ -14,7 +14,7 @@ export function UpgradeToProRow() {
   const available = isCoachProAvailable();
 
   const description = available
-    ? "$70/mo or $59.50/mo billed yearly — save 15%."
+    ? "$70/mo or $63/mo billed yearly — save 10%."
     : "Coming soon — advanced scheduling, multi-coach visibility, up to 50 athletes.";
 
   return (
