@@ -828,7 +828,12 @@ function PaywallPage() {
                         : "Continue"}
                   </Button>
                 )}
+
+                {isPro && !isCurrentTier && (
+                  <p className="mt-2 text-center text-[11px] text-text-tertiary">Cancel anytime</p>
+                )}
               </div>
+
             );
           })}
         </div>
