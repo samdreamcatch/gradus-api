@@ -732,9 +732,9 @@ function PaywallPage() {
                   </>
                 )}
 
-                {isPro && (
+                {!(coachFoundingActive || coachFoundingClaim) && (
                   <div
-                    className="mt-3 inline-flex self-start rounded-full border border-divider bg-elevated p-1 text-sm"
+                    className="mt-3 inline-flex self-start rounded-full border border-divider bg-elevated p-0.5 text-xs"
                     aria-disabled={tiersDisabled}
                   >
                     {(["month", "year"] as const).map((iv) => (
@@ -743,7 +743,7 @@ function PaywallPage() {
                         type="button"
                         onClick={() => setInterval(iv)}
                         className={cn(
-                          "rounded-full px-4 py-1.5 press-soft",
+                          "rounded-full px-3 py-1 press-soft",
                           interval === iv
                             ? "bg-popover text-text-primary shadow-sm"
                             : "text-text-secondary",
@@ -751,7 +751,7 @@ function PaywallPage() {
                       >
                         {iv === "month" ? "Monthly" : "Yearly"}
                         {iv === "year" && (
-                          <span className="ml-1 text-xs text-accent-ink">save 15%</span>
+                          <span className="ml-1 text-[10px] text-accent-ink">save 15%</span>
                         )}
                       </button>
                     ))}
@@ -770,14 +770,15 @@ function PaywallPage() {
                   </p>
                 )}
 
-                <ul className="mt-3 space-y-1.5 text-xs text-text-secondary sm:text-sm">
+                <ul className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1 text-[11px] text-text-secondary sm:text-xs">
                   {FEATURES[tier].map((f) => (
                     <li key={f} className="flex items-start gap-1.5">
-                      <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-accent-ink sm:h-4 sm:w-4" />
+                      <Check className="mt-0.5 h-3 w-3 shrink-0 text-accent-ink sm:h-3.5 sm:w-3.5" />
                       <span>{f}</span>
                     </li>
                   ))}
                 </ul>
+
 
                 {coachFoundingActive ? (
                   <div className="mt-4 inline-flex items-center justify-center gap-1 rounded-md border border-divider bg-elevated px-3 py-2 text-xs font-semibold text-text-primary sm:text-sm">
