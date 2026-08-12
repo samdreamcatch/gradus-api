@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ChevronDown, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getPreLessonBriefing } from "@/lib/pre-lesson-briefing.functions";
+import { buildSampleBriefing, isSampleAthlete } from "@/data/sample-athlete";
 
 export function PreLessonBriefing({
   athleteId,
@@ -16,13 +17,24 @@ export function PreLessonBriefing({
   startMinute: number;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const isSample = isSampleAthlete(athleteId);
   const queryKey = ["pre-lesson-briefing", athleteId, lessonDate];
 
-  const { data, isLoading, isError, error } = useQuery({
+  const {
+    data: fetched,
+    isLoading: isFetching,
+    isError,
+    error,
+  } = useQuery({
     queryKey,
     queryFn: () => getPreLessonBriefing({ data: { athleteId, lessonDate } }),
     staleTime: 5 * 60_000,
+    enabled: !isSample,
   });
+
+  const data = isSample ? { narrative: buildSampleBriefing() } : fetched;
+  const isLoading = !isSample && isFetching;
+
 
   const time = formatTime(startMinute);
 
