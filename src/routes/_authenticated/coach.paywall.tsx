@@ -654,6 +654,234 @@ function PaywallPage() {
           </div>
         )}
 
+        {/* Tier cards */}
+        <div
+          className={cn(
+            "mt-5 flex w-full flex-col gap-3 transition-opacity",
+            tiersDisabled && "pointer-events-none opacity-50",
+          )}
+          aria-disabled={tiersDisabled}
+        >
+          {(Object.keys(PRICE_MAP) as Tier[]).map((tier) => {
+            const price = PRICE_MAP[tier][interval];
+            const isPro = tier === "coach_pro";
+            const paidTier =
+              entitlement === "paid" ? (data?.profile.subscriptionTier ?? null) : null;
+            const foundingOnPaidPro = isFoundingCoach && paidTier === "coach_pro";
+            // Founding coach on the free tier (no active paid subscription).
+            const coachFoundingActive =
+              tier === "coach" && isFoundingCoach && isEntitled && !foundingOnPaidPro;
+            const coachFoundingClaim = tier === "coach" && isFoundingCoach && !isEntitled;
+            // Founding coach on paid Coach Pro who could switch back to free Coach.
+            const coachFoundingRestore = tier === "coach" && foundingOnPaidPro;
+            const isCurrentTier = paidTier === tier;
+            const promoAppliesHere = isPro && promo.status === "valid";
+            const foundingTrialHere = isPro && foundingProTrialAvailable && !promoAppliesHere;
+
+            return (
+              <div
+                key={tier}
+                className={cn(
+                  "flex flex-col rounded-2xl border p-3 shadow-card sm:p-4",
+                  isCurrentTier
+                    ? "border-accent bg-accent/5"
+                    : isPro
+                      ? "border-accent/60 bg-card"
+                      : "border-divider bg-card",
+                )}
+              >
+                <div className="flex items-baseline justify-between gap-1">
+                  <h2 className="font-display text-lg text-text-primary sm:text-h3">
+                    {isPro ? "Coach Pro" : "Coach"}
+                  </h2>
+                  {coachFoundingActive || coachFoundingClaim ? (
+                    <span className="rounded-full bg-accent/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-accent-ink sm:text-[10px] sm:tracking-widest">
+                      FOUNDING
+                    </span>
+                  ) : isCurrentTier ? (
+                    <span className="rounded-full bg-accent/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-accent-ink sm:text-[10px] sm:tracking-widest">
+                      CURRENT
+                    </span>
+                  ) : isPro ? (
+                    <span className="rounded-full bg-accent/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-accent-ink sm:text-[10px] sm:tracking-widest">
+                      RECOMMENDED
+                    </span>
+                  ) : null}
+                </div>
+
+                {coachFoundingActive || coachFoundingClaim ? (
+                  <>
+                    <div className="mt-2 flex items-baseline gap-1">
+                      <span className="font-display text-2xl text-text-primary sm:text-4xl">
+                        Free
+                      </span>
+                    </div>
+                    <p className="mt-1 text-[11px] text-text-tertiary sm:text-xs">
+                      Yours for being here early.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <div className="mt-2 flex items-baseline gap-1">
+                      <span className="font-display text-2xl text-text-primary tabular-nums sm:text-4xl">
+                        ${price.monthlyEquivalent}
+                      </span>
+                      <span className="text-xs text-text-secondary sm:text-sm">/ mo</span>
+                    </div>
+                    <p className="mt-1 text-[11px] text-text-tertiary sm:text-xs">{price.billed}</p>
+                  </>
+                )}
+
+                {isPro && (
+                  <div
+                    className="mt-3 inline-flex self-start rounded-full border border-divider bg-elevated p-1 text-sm"
+                    aria-disabled={tiersDisabled}
+                  >
+                    {(["month", "year"] as const).map((iv) => (
+                      <button
+                        key={iv}
+                        type="button"
+                        onClick={() => setInterval(iv)}
+                        className={cn(
+                          "rounded-full px-4 py-1.5 press-soft",
+                          interval === iv
+                            ? "bg-popover text-text-primary shadow-sm"
+                            : "text-text-secondary",
+                        )}
+                      >
+                        {iv === "month" ? "Monthly" : "Yearly"}
+                        {iv === "year" && (
+                          <span className="ml-1 text-xs text-accent-ink">save 15%</span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {promoAppliesHere && proPromoMonths > 0 && (
+                  <p className="mt-2 inline-flex items-center gap-1 rounded-md bg-accent/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-accent-ink sm:text-[11px]">
+                    <Tag className="h-3 w-3" /> {proPromoMonths} months free · then $
+                    {price.monthlyEquivalent}/mo
+                  </p>
+                )}
+                {foundingTrialHere && (
+                  <p className="mt-2 inline-flex items-center gap-1 rounded-md bg-accent/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-accent-ink sm:text-[11px]">
+                    <Sparkles className="h-3 w-3" /> Founding · 1 month free · no card today
+                  </p>
+                )}
+
+                <ul className="mt-3 space-y-1.5 text-xs text-text-secondary sm:text-sm">
+                  {FEATURES[tier].map((f) => (
+                    <li key={f} className="flex items-start gap-1.5">
+                      <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-accent-ink sm:h-4 sm:w-4" />
+                      <span>{f}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                {coachFoundingActive ? (
+                  <div className="mt-4 inline-flex items-center justify-center gap-1 rounded-md border border-divider bg-elevated px-3 py-2 text-xs font-semibold text-text-primary sm:text-sm">
+                    <Check className="h-4 w-4 text-accent-ink" /> Active
+                  </div>
+                ) : isCurrentTier ? (
+                  <div className="mt-4 inline-flex items-center justify-center gap-1 rounded-md border border-divider bg-elevated px-3 py-2 text-xs font-semibold text-text-primary sm:text-sm">
+                    <Check className="h-4 w-4 text-accent-ink" /> Current plan
+                  </div>
+                ) : coachFoundingClaim ? (
+                  <Button
+                    type="button"
+                    className="mt-4 w-full text-xs sm:text-sm"
+                    disabled={loading || tiersDisabled}
+                    onClick={async () => {
+                      setLoading(true);
+                      setClaiming(true);
+                      setSelectedTier(tier);
+                      try {
+                        const res = await claimFoundingFn();
+                        if ("error" in res) throw new Error(res.error);
+                        await qc.invalidateQueries({ queryKey: ["coach-profile"] });
+                        navigate({
+                          to: onboardedAt ? "/coach/roster" : "/coach/onboarding",
+                          replace: true,
+                        });
+                      } catch (err) {
+                        toast.error(
+                          err instanceof Error ? err.message : "Couldn't activate Coach tier",
+                        );
+                        setClaiming(false);
+                      } finally {
+                        setLoading(false);
+                        setSelectedTier(null);
+                      }
+                    }}
+                  >
+                    {loading && selectedTier === tier ? "Activating…" : "Continue"}
+                  </Button>
+                ) : coachFoundingRestore ? (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    className="mt-4 w-full text-xs sm:text-sm"
+                    disabled={loading || tiersDisabled}
+                    onClick={async () => {
+                      setLoading(true);
+                      setSelectedTier(tier);
+                      try {
+                        const res = await restoreFoundingFn({
+                          data: { environment: getStripeEnvironment() },
+                        });
+                        if ("error" in res) throw new Error(res.error);
+                        await qc.invalidateQueries({ queryKey: ["coach-profile"] });
+                        toast.success("Switched to your free Founding Coach plan.");
+                        navigate({ to: "/coach/roster" });
+                      } catch (err) {
+                        toast.error(err instanceof Error ? err.message : "Couldn't switch plans");
+                      } finally {
+                        setLoading(false);
+                        setSelectedTier(null);
+                      }
+                    }}
+                  >
+                    {loading && selectedTier === tier ? "Switching…" : "Switch to free Coach"}
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    className="mt-4 w-full text-xs sm:text-sm"
+                    disabled={loading || tiersDisabled}
+                    onClick={() => handleTierAction(tier)}
+                  >
+                    {loading && selectedTier === tier
+                      ? "Starting…"
+                      : isPro
+                        ? proCtaLabel
+                        : "Continue"}
+                  </Button>
+                )}
+
+                {isPro && !isCurrentTier && (
+                  <p className="mt-2 text-center text-[11px] text-text-tertiary">Cancel anytime</p>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {tiersDisabled && (
+          <p className="mt-2 text-center text-xs text-text-tertiary">
+            Individual plans unavailable while a club code is entered.
+          </p>
+        )}
+
+        {/* Alternate paths to Pro */}
+        <div className="mt-7 flex w-full items-center gap-3">
+          <div className="h-px flex-1 bg-divider" />
+          <span className="text-[10px] font-semibold uppercase tracking-widest text-text-tertiary">
+            Or get Pro through
+          </span>
+          <div className="h-px flex-1 bg-divider" />
+        </div>
+
         {/* 1. Club search + code — only for un-entitled coaches; existing paid coaches are linked backend-side */}
         {!isEntitled && (
           <div className="mt-5 w-full rounded-xl border border-divider bg-elevated p-3">
@@ -821,215 +1049,6 @@ function PaywallPage() {
               )}
             </div>
           )}
-        </div>
-
-        {/* 3. Interval toggle */}
-        <div
-          className={cn(
-            "mt-5 inline-flex rounded-full border border-divider bg-elevated p-1 text-sm transition-opacity",
-            tiersDisabled && "pointer-events-none opacity-50",
-          )}
-          aria-disabled={tiersDisabled}
-        >
-          {(["month", "year"] as const).map((iv) => (
-            <button
-              key={iv}
-              type="button"
-              onClick={() => setInterval(iv)}
-              className={cn(
-                "rounded-full px-4 py-1.5 press-soft",
-                interval === iv ? "bg-popover text-text-primary shadow-sm" : "text-text-secondary",
-              )}
-            >
-              {iv === "month" ? "Monthly" : "Yearly"}
-              {iv === "year" && <span className="ml-1 text-xs text-accent-ink">save 15%</span>}
-            </button>
-          ))}
-        </div>
-
-        {tiersDisabled && (
-          <p className="mt-2 text-center text-xs text-text-tertiary">
-            Individual plans unavailable while a club code is entered.
-          </p>
-        )}
-
-        {/* 4. Tier cards */}
-        <div
-          className={cn(
-            "mt-4 grid w-full grid-cols-2 gap-3 transition-opacity",
-            tiersDisabled && "pointer-events-none opacity-50",
-          )}
-          aria-disabled={tiersDisabled}
-        >
-          {(Object.keys(PRICE_MAP) as Tier[]).map((tier) => {
-            const price = PRICE_MAP[tier][interval];
-            const isPro = tier === "coach_pro";
-            const paidTier =
-              entitlement === "paid" ? (data?.profile.subscriptionTier ?? null) : null;
-            const foundingOnPaidPro = isFoundingCoach && paidTier === "coach_pro";
-            // Founding coach on the free tier (no active paid subscription).
-            const coachFoundingActive =
-              tier === "coach" && isFoundingCoach && isEntitled && !foundingOnPaidPro;
-            const coachFoundingClaim = tier === "coach" && isFoundingCoach && !isEntitled;
-            // Founding coach on paid Coach Pro who could switch back to free Coach.
-            const coachFoundingRestore = tier === "coach" && foundingOnPaidPro;
-            const isCurrentTier = paidTier === tier;
-            const promoAppliesHere = isPro && promo.status === "valid";
-            const foundingTrialHere = isPro && foundingProTrialAvailable && !promoAppliesHere;
-
-            return (
-              <div
-                key={tier}
-                className={cn(
-                  "flex flex-col rounded-2xl border p-3 shadow-card sm:p-4",
-                  isCurrentTier
-                    ? "border-accent bg-accent/5"
-                    : isPro
-                      ? "border-accent/60 bg-card"
-                      : "border-divider bg-card",
-                )}
-              >
-                <div className="flex items-baseline justify-between gap-1">
-                  <h2 className="font-display text-lg text-text-primary sm:text-h3">
-                    {isPro ? "Coach Pro" : "Coach"}
-                  </h2>
-                  {coachFoundingActive || coachFoundingClaim ? (
-                    <span className="rounded-full bg-accent/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-accent-ink sm:text-[10px] sm:tracking-widest">
-                      FOUNDING
-                    </span>
-                  ) : isCurrentTier ? (
-                    <span className="rounded-full bg-accent/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-accent-ink sm:text-[10px] sm:tracking-widest">
-                      CURRENT
-                    </span>
-                  ) : null}
-                </div>
-
-                {coachFoundingActive || coachFoundingClaim ? (
-                  <>
-                    <div className="mt-2 flex items-baseline gap-1">
-                      <span className="font-display text-2xl text-text-primary sm:text-4xl">
-                        Free
-                      </span>
-                    </div>
-                    <p className="mt-1 text-[11px] text-text-tertiary sm:text-xs">
-                      Yours for being here early.
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <div className="mt-2 flex items-baseline gap-1">
-                      <span className="font-display text-2xl text-text-primary tabular-nums sm:text-4xl">
-                        ${price.monthlyEquivalent}
-                      </span>
-                      <span className="text-xs text-text-secondary sm:text-sm">/ mo</span>
-                    </div>
-                    <p className="mt-1 text-[11px] text-text-tertiary sm:text-xs">{price.billed}</p>
-                  </>
-                )}
-
-                {promoAppliesHere && proPromoMonths > 0 && (
-                  <p className="mt-2 inline-flex items-center gap-1 rounded-md bg-accent/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-accent-ink sm:text-[11px]">
-                    <Tag className="h-3 w-3" /> {proPromoMonths} months free · then $
-                    {price.monthlyEquivalent}/mo
-                  </p>
-                )}
-                {foundingTrialHere && (
-                  <p className="mt-2 inline-flex items-center gap-1 rounded-md bg-accent/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-accent-ink sm:text-[11px]">
-                    <Sparkles className="h-3 w-3" /> Founding · 1 month free · no card today
-                  </p>
-                )}
-
-                <ul className="mt-3 space-y-1.5 text-xs text-text-secondary sm:text-sm">
-                  {FEATURES[tier].map((f) => (
-                    <li key={f} className="flex items-start gap-1.5">
-                      <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-accent-ink sm:h-4 sm:w-4" />
-                      <span>{f}</span>
-                    </li>
-                  ))}
-                </ul>
-
-                {coachFoundingActive ? (
-                  <div className="mt-4 inline-flex items-center justify-center gap-1 rounded-md border border-divider bg-elevated px-3 py-2 text-xs font-semibold text-text-primary sm:text-sm">
-                    <Check className="h-4 w-4 text-accent-ink" /> Active
-                  </div>
-                ) : isCurrentTier ? (
-                  <div className="mt-4 inline-flex items-center justify-center gap-1 rounded-md border border-divider bg-elevated px-3 py-2 text-xs font-semibold text-text-primary sm:text-sm">
-                    <Check className="h-4 w-4 text-accent-ink" /> Current plan
-                  </div>
-                ) : coachFoundingClaim ? (
-                  <Button
-                    type="button"
-                    className="mt-4 w-full text-xs sm:text-sm"
-                    disabled={loading || tiersDisabled}
-                    onClick={async () => {
-                      setLoading(true);
-                      setClaiming(true);
-                      setSelectedTier(tier);
-                      try {
-                        const res = await claimFoundingFn();
-                        if ("error" in res) throw new Error(res.error);
-                        await qc.invalidateQueries({ queryKey: ["coach-profile"] });
-                        navigate({
-                          to: onboardedAt ? "/coach/roster" : "/coach/onboarding",
-                          replace: true,
-                        });
-                      } catch (err) {
-                        toast.error(
-                          err instanceof Error ? err.message : "Couldn't activate Coach tier",
-                        );
-                        setClaiming(false);
-                      } finally {
-                        setLoading(false);
-                        setSelectedTier(null);
-                      }
-                    }}
-                  >
-                    {loading && selectedTier === tier ? "Activating…" : "Continue"}
-                  </Button>
-                ) : coachFoundingRestore ? (
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    className="mt-4 w-full text-xs sm:text-sm"
-                    disabled={loading || tiersDisabled}
-                    onClick={async () => {
-                      setLoading(true);
-                      setSelectedTier(tier);
-                      try {
-                        const res = await restoreFoundingFn({
-                          data: { environment: getStripeEnvironment() },
-                        });
-                        if ("error" in res) throw new Error(res.error);
-                        await qc.invalidateQueries({ queryKey: ["coach-profile"] });
-                        toast.success("Switched to your free Founding Coach plan.");
-                        navigate({ to: "/coach/roster" });
-                      } catch (err) {
-                        toast.error(err instanceof Error ? err.message : "Couldn't switch plans");
-                      } finally {
-                        setLoading(false);
-                        setSelectedTier(null);
-                      }
-                    }}
-                  >
-                    {loading && selectedTier === tier ? "Switching…" : "Switch to free Coach"}
-                  </Button>
-                ) : (
-                  <Button
-                    type="button"
-                    className="mt-4 w-full text-xs sm:text-sm"
-                    disabled={loading || tiersDisabled}
-                    onClick={() => handleTierAction(tier)}
-                  >
-                    {loading && selectedTier === tier
-                      ? "Starting…"
-                      : isPro
-                        ? proCtaLabel
-                        : "Continue"}
-                  </Button>
-                )}
-              </div>
-            );
-          })}
         </div>
 
         {isEntitled && (
