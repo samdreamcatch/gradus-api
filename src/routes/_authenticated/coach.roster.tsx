@@ -34,6 +34,12 @@ import {
 } from "@/lib/coach-schedule.functions";
 import { coachProfileQueryOptions } from "@/hooks/use-coach-profile";
 import { isCoachProAvailable } from "@/lib/paywall-flag";
+import {
+  buildSamplePracticeSummary,
+  buildSampleRosterAthlete,
+  SAMPLE_SPORT,
+} from "@/data/sample-athlete";
+import { useSampleAthleteDismissed } from "@/hooks/use-sample-athlete";
 
 type RosterTab = "athletes" | "schedule" | "billing";
 
@@ -89,7 +95,18 @@ export const Route = createFileRoute("/_authenticated/coach/roster")({
 function RosterPage() {
   const { data: roster } = useSuspenseQuery(rosterQueryOptions);
   const { data: coachProfile } = useQuery(coachProfileQueryOptions);
-  const { athletes, coachSports } = roster;
+  const { coachSports } = roster;
+  const { dismissed: sampleDismissed } = useSampleAthleteDismissed();
+
+  // Figure skating coaches with an empty roster see a sample athlete so the
+  // app has real-looking content before anyone joins. Purely client-side.
+  const showSample =
+    roster.athletes.length === 0 && coachSports.includes(SAMPLE_SPORT) && !sampleDismissed;
+
+  const athletes = useMemo(
+    () => (showSample ? [buildSampleRosterAthlete()] : roster.athletes),
+    [showSample, roster.athletes],
+  );
   const router = useRouter();
   const navigate = useNavigate();
   const coachProAvailable = isCoachProAvailable();
@@ -100,7 +117,7 @@ function RosterPage() {
   const scheduleRef = useRef<WeekScheduleHandle>(null);
 
   const athleteLimit = coachProfile?.profile.athleteLimit ?? null;
-  const rosterFull = athleteLimit !== null && athletes.length >= athleteLimit;
+  const rosterFull = athleteLimit !== null && roster.athletes.length >= athleteLimit;
 
   const sports = useMemo(() => {
     const set = new Set<string>(coachSports);
@@ -116,15 +133,19 @@ function RosterPage() {
   const practiceQuery = useQuery({
     queryKey: ["coach", "roster", "practice-summaries"],
     queryFn: () => getRosterPracticeSummaries(),
-    enabled: tab === "schedule" && athletes.length > 0,
+    enabled: tab === "schedule" && !showSample && roster.athletes.length > 0,
     staleTime: 60_000,
   });
 
   const summariesByAthlete = useMemo(() => {
     const m = new Map<string, AthletePracticeSummary>();
     for (const s of practiceQuery.data ?? []) m.set(s.athleteId, s);
+    if (showSample) {
+      const sample = buildSamplePracticeSummary();
+      m.set(sample.athleteId, sample);
+    }
     return m;
-  }, [practiceQuery.data]);
+  }, [practiceQuery.data, showSample]);
 
   return (
     <>
@@ -164,9 +185,9 @@ function RosterPage() {
                     disabled={rosterFull}
                     title={
                       rosterFull
-                        ? `Roster full (${athletes.length}/${athleteLimit})`
+                        ? `Roster full (${roster.athletes.length}/${athleteLimit})`
                         : athleteLimit !== null
-                          ? `${athletes.length}/${athleteLimit} athletes`
+                          ? `${roster.athletes.length}/${athleteLimit} athletes`
                           : undefined
                     }
                   >
@@ -198,7 +219,7 @@ function RosterPage() {
           {rosterFull ? (
             <div className="mt-3 flex items-center justify-between gap-3 rounded-lg border border-divider bg-elevated px-3 py-2">
               <div className="text-sm font-bold text-text-primary">
-                Your athlete roster is full — {athletes.length} / {athleteLimit}
+                Your athlete roster is full — {roster.athletes.length} / {athleteLimit}
               </div>
               <Button
                 size="sm"

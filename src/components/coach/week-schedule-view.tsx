@@ -1,5 +1,6 @@
 import { forwardRef, useImperativeHandle, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Plus, Pencil } from "lucide-react";
+import { isSampleAthlete } from "@/data/sample-athlete";
 import { cn } from "@/lib/utils";
 import type { RosterAthlete } from "@/lib/coach-roster.functions";
 import type { AthletePracticeSummary } from "@/lib/coach-schedule.functions";
@@ -328,27 +329,33 @@ export const WeekScheduleView = forwardRef<
                     session={s}
                     summary={summariesByAthlete?.get(s.athleteId)}
                     onSelect={onSelectAthlete}
-                    onEditRecurring={() =>
-                      setSheetMode({
-                        kind: "edit",
-                        slotId: s.slotId,
-                        athleteId: s.athleteId,
-                        dayOfWeek: s.dayOfWeek,
-                        startMinute: s.startMinute,
-                        endMinute: s.endMinute,
-                      })
+                    onEditRecurring={
+                      isSampleAthlete(s.athleteId)
+                        ? undefined
+                        : () =>
+                            setSheetMode({
+                              kind: "edit",
+                              slotId: s.slotId,
+                              athleteId: s.athleteId,
+                              dayOfWeek: s.dayOfWeek,
+                              startMinute: s.startMinute,
+                              endMinute: s.endMinute,
+                            })
                     }
-                    onEditOccurrence={() =>
-                      setSheetMode({
-                        kind: "occurrence",
-                        slotId: s.slotId,
-                        athleteId: s.athleteId,
-                        date: toIsoDate(selectedDate),
-                        dayOfWeek: s.dayOfWeek,
-                        startMinute: s.startMinute,
-                        endMinute: s.endMinute,
-                        hasOverride: s.overrideStatus != null,
-                      })
+                    onEditOccurrence={
+                      isSampleAthlete(s.athleteId)
+                        ? undefined
+                        : () =>
+                            setSheetMode({
+                              kind: "occurrence",
+                              slotId: s.slotId,
+                              athleteId: s.athleteId,
+                              date: toIsoDate(selectedDate),
+                              dayOfWeek: s.dayOfWeek,
+                              startMinute: s.startMinute,
+                              endMinute: s.endMinute,
+                              hasOverride: s.overrideStatus != null,
+                            })
                     }
                   />
                 </li>

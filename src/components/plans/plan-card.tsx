@@ -3,7 +3,8 @@ import { cn } from "@/lib/utils";
 import { FlowStateBars, type SessionsByState } from "./flow-state-bars";
 
 interface PlanCardProps {
-  to: "/parent/plans/$planId" | "/coach/plans/$planId" | "/athlete/plans/$planId";
+  /** Omit to render a non-navigating card (e.g. sample data). */
+  to?: "/parent/plans/$planId" | "/coach/plans/$planId" | "/athlete/plans/$planId";
   planId: string;
   title: string;
   athleteName?: string | null;
@@ -25,15 +26,14 @@ export function PlanCard({
   caption,
   edgeTone = "active",
 }: PlanCardProps) {
-  return (
-    <Link
-      to={to}
-      params={{ planId }}
-      className={cn(
-        "press group relative block overflow-hidden rounded-2xl border border-divider bg-card p-4 pl-5 shadow-card",
-        muted && "opacity-70",
-      )}
-    >
+  const className = cn(
+    "group relative block overflow-hidden rounded-2xl border border-divider bg-card p-4 pl-5 shadow-card",
+    to && "press",
+    muted && "opacity-70",
+  );
+
+  const body = (
+    <>
       <span
         aria-hidden
         className={cn(
@@ -66,6 +66,14 @@ export function PlanCard({
       </div>
 
       <FlowStateBars counts={sessionsByState} />
+    </>
+  );
+
+  if (!to) return <div className={className}>{body}</div>;
+
+  return (
+    <Link to={to} params={{ planId }} className={className}>
+      {body}
     </Link>
   );
 }

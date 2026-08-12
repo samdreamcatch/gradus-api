@@ -5,6 +5,8 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import type { RosterAthlete } from "@/lib/coach-roster.functions";
 import { removeAthleteFromRoster } from "@/lib/coach-roster-mutations.functions";
+import { isSampleAthlete } from "@/data/sample-athlete";
+import { useSampleAthleteDismissed } from "@/hooks/use-sample-athlete";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,6 +44,8 @@ export function RosterCard({
   const name = `${athlete.firstName} ${athlete.lastName}`.trim();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const qc = useQueryClient();
+  const isSample = isSampleAthlete(athlete.athleteId);
+  const { dismiss } = useSampleAthleteDismissed();
 
   const removeMutation = useMutation({
     mutationFn: () => removeAthleteFromRoster({ data: { athleteId: athlete.athleteId } }),
@@ -70,6 +74,11 @@ export function RosterCard({
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
           <span className="min-w-0 truncate text-left font-display text-lg font-black leading-tight tracking-tight text-text-primary">
             {name}
+            {isSample ? (
+              <span className="ml-2 rounded-pill border border-divider bg-elevated px-2 py-0.5 align-middle text-[10px] font-black uppercase tracking-widest text-text-tertiary">
+                Sample
+              </span>
+            ) : null}
           </span>
 
           <div onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
@@ -93,7 +102,7 @@ export function RosterCard({
                   className="text-destructive focus:text-destructive"
                 >
                   <UserMinus className="mr-2 h-4 w-4" />
-                  Remove from roster
+                  {isSample ? "Dismiss sample athlete" : "Remove from roster"}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -137,20 +146,22 @@ export function RosterCard({
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Remove {name} from your roster?</AlertDialogTitle>
+            <AlertDialogTitle>
+              {isSample ? `Dismiss ${name}?` : `Remove ${name} from your roster?`}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              This unlinks the athlete from you. Their account, practice history, and parent stay
-              intact. Their recurring lessons with you are unassigned and can be re-claimed later
-              via your invite code.
+              {isSample
+                ? "Lisa is a sample athlete used to preview the app. Dismissing hides her from your roster and schedule. You can bring her back anytime from Settings."
+                : "This unlinks the athlete from you. Their account, practice history, and parent stay intact. Their recurring lessons with you are unassigned and can be re-claimed later via your invite code."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Keep on roster</AlertDialogCancel>
+            <AlertDialogCancel>{isSample ? "Keep sample" : "Keep on roster"}</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => removeMutation.mutate()}
+              onClick={() => (isSample ? dismiss() : removeMutation.mutate())}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Remove
+              {isSample ? "Dismiss" : "Remove"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
