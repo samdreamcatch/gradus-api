@@ -10,6 +10,7 @@ import { InvoiceDetailSheet } from "@/components/coach/invoice-detail-sheet";
 import { getCoachInvoices } from "@/lib/invoicing.functions";
 import { formatDateRange, formatMoney } from "@/lib/invoice-format";
 import type { RosterAthlete } from "@/lib/coach-roster.functions";
+import { useSampleInvoices } from "@/data/sample-invoices";
 
 /**
  * Roster → Billing. One row per athlete to start an invoice, plus the recent
@@ -26,6 +27,19 @@ export function BillingTab({ athletes, locked }: { athletes: RosterAthlete[]; lo
     queryFn: () => fetchInvoices(),
     enabled: !locked,
   });
+
+  const sampleInvoices = useSampleInvoices();
+  const allInvoices = [
+    ...sampleInvoices.map((inv) => ({
+      id: inv.id,
+      athleteName: inv.athleteName,
+      periodStart: inv.periodStart,
+      periodEnd: inv.periodEnd,
+      status: inv.status,
+      totalCents: inv.totalCents,
+    })),
+    ...(invoices.data ?? []),
+  ];
 
   if (locked) {
     return (
@@ -89,11 +103,11 @@ export function BillingTab({ athletes, locked }: { athletes: RosterAthlete[]; lo
         <h2 className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
           Recent invoices
         </h2>
-        {(invoices.data ?? []).length === 0 ? (
+        {allInvoices.length === 0 ? (
           <p className="mt-2 text-sm text-text-secondary">No invoices yet.</p>
         ) : (
           <ul className="mt-2 space-y-2">
-            {(invoices.data ?? []).map((inv) => (
+            {allInvoices.map((inv) => (
               <li key={inv.id}>
                 <button
                   type="button"
