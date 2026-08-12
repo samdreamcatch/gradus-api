@@ -702,7 +702,12 @@ function PaywallPage() {
                     <span className="rounded-full bg-accent/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-accent-ink sm:text-[10px] sm:tracking-widest">
                       CURRENT
                     </span>
+                  ) : isPro ? (
+                    <span className="rounded-full bg-accent/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-accent-ink sm:text-[10px] sm:tracking-widest">
+                      RECOMMENDED
+                    </span>
                   ) : null}
+
                 </div>
 
                 {coachFoundingActive || coachFoundingClaim ? (
