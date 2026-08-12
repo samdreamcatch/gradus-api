@@ -14,11 +14,7 @@ import type {
   CoachAthleteDetailDTO,
   CoachAthleteAiSummaryDTO,
 } from "@/lib/coach-athlete-detail.functions";
-import type {
-  AthleteRateDTO,
-  DraftLineDTO,
-  InvoicePreviewDTO,
-} from "@/lib/invoicing.functions";
+import type { AthleteRateDTO, DraftLineDTO, InvoicePreviewDTO } from "@/lib/invoicing.functions";
 import { resolveStarterPrograms } from "./starter-programs";
 
 export const SAMPLE_ATHLETE_ID = "sample-lisa-simpson";
