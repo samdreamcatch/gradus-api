@@ -117,7 +117,7 @@ function RosterPage() {
   const scheduleRef = useRef<WeekScheduleHandle>(null);
 
   const athleteLimit = coachProfile?.profile.athleteLimit ?? null;
-  const rosterFull = athleteLimit !== null && athletes.length >= athleteLimit;
+  const rosterFull = athleteLimit !== null && roster.athletes.length >= athleteLimit;
 
   const sports = useMemo(() => {
     const set = new Set<string>(coachSports);
@@ -185,9 +185,9 @@ function RosterPage() {
                     disabled={rosterFull}
                     title={
                       rosterFull
-                        ? `Roster full (${athletes.length}/${athleteLimit})`
+                        ? `Roster full (${roster.athletes.length}/${athleteLimit})`
                         : athleteLimit !== null
-                          ? `${athletes.length}/${athleteLimit} athletes`
+                          ? `${roster.athletes.length}/${athleteLimit} athletes`
                           : undefined
                     }
                   >
@@ -219,7 +219,7 @@ function RosterPage() {
           {rosterFull ? (
             <div className="mt-3 flex items-center justify-between gap-3 rounded-lg border border-divider bg-elevated px-3 py-2">
               <div className="text-sm font-bold text-text-primary">
-                Your athlete roster is full — {athletes.length} / {athleteLimit}
+                Your athlete roster is full — {roster.athletes.length} / {athleteLimit}
               </div>
               <Button
                 size="sm"
