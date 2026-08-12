@@ -90,7 +90,7 @@ export function RosterSettingsSection() {
             <SettingsToggleRow
               icon={<Sparkles className="size-4" />}
               label="Sample athlete"
-              description="Show Lisa Simpson, a demo athlete, while your roster is empty."
+              description="Show Sample Athlete, a demo athlete, while your roster is empty."
               trailing={
                 <Switch
                   checked={!dismissed}
