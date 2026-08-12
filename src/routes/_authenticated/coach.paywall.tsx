@@ -709,54 +709,59 @@ function PaywallPage() {
                   ) : null}
                 </div>
 
-                {coachFoundingActive || coachFoundingClaim ? (
-                  <>
-                    <div className="mt-2 flex items-baseline gap-1">
-                      <span className="font-display text-2xl text-text-primary sm:text-4xl">
-                        Free
-                      </span>
+                <div className="mt-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+                  {coachFoundingActive || coachFoundingClaim ? (
+                    <div>
+                      <div className="flex items-baseline gap-1">
+                        <span className="font-display text-2xl text-text-primary sm:text-4xl">
+                          Free
+                        </span>
+                      </div>
+                      <p className="mt-0.5 text-[11px] text-text-tertiary sm:text-xs">
+                        Yours for being here early.
+                      </p>
                     </div>
-                    <p className="mt-1 text-[11px] text-text-tertiary sm:text-xs">
-                      Yours for being here early.
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <div className="mt-2 flex items-baseline gap-1">
-                      <span className="font-display text-2xl text-text-primary tabular-nums sm:text-4xl">
-                        ${price.monthlyEquivalent}
-                      </span>
-                      <span className="text-xs text-text-secondary sm:text-sm">/ mo</span>
-                    </div>
-                    <p className="mt-1 text-[11px] text-text-tertiary sm:text-xs">{price.billed}</p>
-                  </>
-                )}
+                  ) : (
+                    <>
+                      <div>
+                        <div className="flex items-baseline gap-1">
+                          <span className="font-display text-2xl text-text-primary tabular-nums sm:text-4xl">
+                            ${price.monthlyEquivalent}
+                          </span>
+                          <span className="text-xs text-text-secondary sm:text-sm">/ mo</span>
+                        </div>
+                        <p className="mt-0.5 text-[11px] text-text-tertiary sm:text-xs">
+                          {price.billed}
+                        </p>
+                      </div>
 
-                {!(coachFoundingActive || coachFoundingClaim) && (
-                  <div
-                    className="mt-3 inline-flex self-start rounded-full border border-divider bg-elevated p-0.5 text-xs"
-                    aria-disabled={tiersDisabled}
-                  >
-                    {(["month", "year"] as const).map((iv) => (
-                      <button
-                        key={iv}
-                        type="button"
-                        onClick={() => setInterval(iv)}
-                        className={cn(
-                          "rounded-full px-3 py-1 press-soft",
-                          interval === iv
-                            ? "bg-popover text-text-primary shadow-sm"
-                            : "text-text-secondary",
-                        )}
+                      <div
+                        className="inline-flex shrink-0 rounded-full border border-divider bg-elevated p-0.5 text-xs"
+                        aria-disabled={tiersDisabled}
                       >
-                        {iv === "month" ? "Monthly" : "Yearly"}
-                        {iv === "year" && (
-                          <span className="ml-1 text-[10px] text-accent-ink">save 15%</span>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                )}
+                        {(["month", "year"] as const).map((iv) => (
+                          <button
+                            key={iv}
+                            type="button"
+                            onClick={() => setInterval(iv)}
+                            className={cn(
+                              "whitespace-nowrap rounded-full px-2.5 py-1 press-soft",
+                              interval === iv
+                                ? "bg-popover text-text-primary shadow-sm"
+                                : "text-text-secondary",
+                            )}
+                          >
+                            {iv === "month" ? "Monthly" : "Yearly"}
+                            {iv === "year" && (
+                              <span className="ml-1 text-[10px] text-accent-ink">−15%</span>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+
 
                 {promoAppliesHere && proPromoMonths > 0 && (
                   <p className="mt-2 inline-flex items-center gap-1 rounded-md bg-accent/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-accent-ink sm:text-[11px]">
