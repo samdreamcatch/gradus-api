@@ -1,26 +1,55 @@
-# Sample invoice for Sample Athlete
+# Paywall visual re-order
 
-Let a coach generate an invoice for Sample Athlete so the invoicing value prop is visible before any real athlete exists — fully synthetic, nothing written to the database.
+Rearrange `/coach/paywall` to match the reference flow. No component, copy, pricing, or business-logic changes — only the order, stacking, and grouping of the blocks already on the page.
 
-## What the coach sees
+## New top-to-bottom order
 
-- Sample Athlete appears in Roster → Billing with the same "Invoice" button as a real athlete, and her detail sheet shows the same Billing section (rate + Generate invoice) instead of hiding it.
-- Her rate is pre-set at $70 per session, so there's no "set a rate first" blocker.
-- Opening the invoice sheet shows 4 recent lessons from her sample schedule, dated over the last two weeks, all pre-checked at $70, totaling $280. The coach can uncheck lines and edit amounts exactly as normal; the total updates live.
-- "Create & share" produces the same plain-text invoice and opens the native share sheet.
-- After creating, the invoice appears in her billing history as unpaid, marked with a "Sample" chip, and can be reopened and shared. It lives only for the current session — nothing persists, nothing is billed, and no server function is called.
-- Dismissing the sample athlete removes it all, as today.
+```text
+  ✦  icon
+  Choose your plan / Activate your workspace
+  subhead
+  [Current plan pill]           (unchanged, entitled coaches only)
 
-## Guardrails
+  ┌──────────────────────────────┐
+  │ COACH                        │  full width
+  │ $30 / mo  (or Free · FOUNDING)│
+  │ ✓ features                   │
+  │ [ Continue ]                 │
+  └──────────────────────────────┘
 
-- No server calls with the sample ID: preview, create, rate save, status change and delete are all short-circuited.
-- Delete/mark-paid on the sample invoice act locally so the flow feels real without touching backend data.
+  ┌──────────────────────────────┐
+  │ COACH PRO      RECOMMENDED   │  full width, emphasized
+  │ $70 / mo                     │
+  │ [ Monthly | Yearly −15% ]    │  interval toggle moves inside Pro card
+  │ promo / founding trial chip  │
+  │ ✓ features                   │
+  │ [ Start N months free ]      │
+  │ Cancel anytime               │
+  └──────────────────────────────┘
+
+  ───── OR GET PRO THROUGH ─────
+
+  🏢  Joining through a club?  → search + code
+  🏷️  Have a promo code?       Apply
+
+  [No changes — return to workspace]  (entitled only)
+  Unlink from current club            (when applicable)
+  Sign out
+```
+
+## Changes
+
+- Tier cards go from a 2-column grid to a single full-width stacked column, Coach first, Coach Pro second.
+- Coach Pro card gets a `RECOMMENDED` chip in its header row (same chip styling already used for `FOUNDING` / `CURRENT`; when the card is the current plan, `CURRENT` wins).
+- The Monthly/Yearly toggle moves from above the cards to inside the Coach Pro card, directly under the price. It keeps the same markup and the same disabled-when-club-code state.
+- Coach Pro card gains a "Cancel anytime" line under its CTA (moved out of the page subhead).
+- Club block and promo-code block move below the tier cards, under a new `OR GET PRO THROUGH` centered divider (rendered with existing divider tokens, not a new component).
+- The "Individual plans unavailable while a club code is entered" note moves with the cards.
+- Footer order stays: return-to-workspace → unlink club → sign out.
 
 ## Technical notes
 
-- Extend `src/data/sample-athlete.ts`: export a sample rate (`per_session`, 7000), a `buildSampleInvoiceDraft()` returning the `InvoicePreviewDTO` shape from `invoicing.functions.ts` (4 lines derived from `new Date()` offsets, state `confirmed`, `defaultIncluded: true`), and a sample billing payload matching `getAthleteBilling`'s return type.
-- `invoice-generate-sheet.tsx`: when `isSampleAthlete(athleteId)`, feed the fixture draft (query `enabled: false`) and, on create, build the text with the existing `buildInvoiceText` + `shareInvoiceNow` instead of calling `createInvoice`; record the created invoice in a small in-memory store.
-- `athlete-billing-section.tsx`: same short-circuit for `getAthleteBilling`, mutations become local no-ops, and the section renders for the sample instead of being skipped.
-- New module `src/data/sample-invoices.ts` (module-level array + `useSyncExternalStore` subscription) holds created sample invoices for the session; `invoice-detail-sheet.tsx` reads from it when the id is a sample id.
-- `billing-tab.tsx` needs no change beyond passing the sample athlete through, which the roster route already does.
-- Reuses existing Sheet, Button, Tag, Checkbox, Input and invoice-format helpers — no new design-system pieces.
+- Single file: `src/routes/_authenticated/coach.paywall.tsx`. JSX is reordered inside the returned tree; all state, handlers, `PRICE_MAP`, `FEATURES`, and the tier `.map()` body remain as-is apart from layout classes and the toggle's new position.
+- Because the toggle now renders inside the Pro card, it renders only for the `coach_pro` iteration of the map; `interval` state stays at page level so the Coach card price stays in sync.
+- Grid `grid-cols-2` → `flex flex-col gap-3 w-full`; per-card responsive text sizes can drop their cramped `sm:` split since cards are now full width.
+- `src/routes/dev.paywall-preview.tsx` is updated to mirror the same arrangement so the preview route stays representative.
