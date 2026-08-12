@@ -80,7 +80,7 @@ export function PreLessonBriefing({
               Couldn't load the briefing{error instanceof Error ? `: ${error.message}` : "."}
             </p>
           ) : (
-            <p>{data?.narrative}</p>
+            <p className="whitespace-pre-line">{data?.narrative}</p>
           )}
         </div>
       ) : null}
