@@ -46,7 +46,7 @@ const PRICE_MAP: Record<
 > = {
   coach: {
     month: { priceId: "coach_monthly", monthlyEquivalent: 30, billed: "$30/mo, billed monthly" },
-    year: { priceId: "coach_yearly", monthlyEquivalent: 25.5, billed: "$306/yr — save 15%" },
+    year: { priceId: "coach_yearly", monthlyEquivalent: 27, billed: "$324/yr — save 10%" },
   },
   coach_pro: {
     month: {
@@ -54,7 +54,7 @@ const PRICE_MAP: Record<
       monthlyEquivalent: 70,
       billed: "$70/mo, billed monthly",
     },
-    year: { priceId: "coach_pro_yearly", monthlyEquivalent: 59.5, billed: "$714/yr — save 15%" },
+    year: { priceId: "coach_pro_yearly", monthlyEquivalent: 63, billed: "$756/yr — save 10%" },
   },
 };
 
@@ -753,7 +753,7 @@ function PaywallPage() {
                           >
                             {iv === "month" ? "Monthly" : "Yearly"}
                             {iv === "year" && (
-                              <span className="ml-1 text-[10px] text-accent-ink">−15%</span>
+                              <span className="ml-1 text-[10px] text-accent-ink">−10%</span>
                             )}
                           </button>
                         ))}
