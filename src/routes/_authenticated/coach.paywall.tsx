@@ -662,7 +662,6 @@ function PaywallPage() {
           )}
           aria-disabled={tiersDisabled}
         >
-
           {(Object.keys(PRICE_MAP) as Tier[]).map((tier) => {
             const price = PRICE_MAP[tier][interval];
             const isPro = tier === "coach_pro";
@@ -708,7 +707,6 @@ function PaywallPage() {
                       RECOMMENDED
                     </span>
                   ) : null}
-
                 </div>
 
                 {coachFoundingActive || coachFoundingClaim ? (
@@ -759,8 +757,6 @@ function PaywallPage() {
                     ))}
                   </div>
                 )}
-
-
 
                 {promoAppliesHere && proPromoMonths > 0 && (
                   <p className="mt-2 inline-flex items-center gap-1 rounded-md bg-accent/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-accent-ink sm:text-[11px]">
@@ -867,7 +863,6 @@ function PaywallPage() {
                   <p className="mt-2 text-center text-[11px] text-text-tertiary">Cancel anytime</p>
                 )}
               </div>
-
             );
           })}
         </div>
