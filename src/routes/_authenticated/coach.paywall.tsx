@@ -728,6 +728,34 @@ function PaywallPage() {
                   </>
                 )}
 
+                {isPro && (
+                  <div
+                    className="mt-3 inline-flex self-start rounded-full border border-divider bg-elevated p-1 text-sm"
+                    aria-disabled={tiersDisabled}
+                  >
+                    {(["month", "year"] as const).map((iv) => (
+                      <button
+                        key={iv}
+                        type="button"
+                        onClick={() => setInterval(iv)}
+                        className={cn(
+                          "rounded-full px-4 py-1.5 press-soft",
+                          interval === iv
+                            ? "bg-popover text-text-primary shadow-sm"
+                            : "text-text-secondary",
+                        )}
+                      >
+                        {iv === "month" ? "Monthly" : "Yearly"}
+                        {iv === "year" && (
+                          <span className="ml-1 text-xs text-accent-ink">save 15%</span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+
+
                 {promoAppliesHere && proPromoMonths > 0 && (
                   <p className="mt-2 inline-flex items-center gap-1 rounded-md bg-accent/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-accent-ink sm:text-[11px]">
                     <Tag className="h-3 w-3" /> {proPromoMonths} months free · then $
