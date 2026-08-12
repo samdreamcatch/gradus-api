@@ -19,6 +19,12 @@ import { InvoiceGenerateSheet } from "@/components/coach/invoice-generate-sheet"
 import { InvoiceDetailSheet } from "@/components/coach/invoice-detail-sheet";
 import { deleteInvoice, getAthleteBilling, setInvoiceStatus } from "@/lib/invoicing.functions";
 import { formatDateRange, formatMoney, formatMoneyShort } from "@/lib/invoice-format";
+import { SAMPLE_ATHLETE_NAME, SAMPLE_RATE, isSampleAthlete } from "@/data/sample-athlete";
+import {
+  deleteSampleInvoice,
+  setSampleInvoiceStatus,
+  useSampleInvoices,
+} from "@/data/sample-invoices";
 
 /**
  * Per-athlete billing: the stored rate, a Generate button, and the invoice
@@ -34,9 +40,13 @@ export function AthleteBillingSection({ athleteId }: { athleteId: string }) {
   const [pendingDelete, setPendingDelete] = useState<string | null>(null);
   const [openInvoice, setOpenInvoice] = useState<string | null>(null);
 
+  const isSample = isSampleAthlete(athleteId);
+  const sampleInvoices = useSampleInvoices();
+
   const billing = useQuery({
     queryKey: ["coach", "billing", athleteId],
     queryFn: () => fetchBilling({ data: { athleteId } }),
+    enabled: !isSample,
   });
 
   const statusMutation = useMutation({
@@ -55,7 +65,7 @@ export function AthleteBillingSection({ athleteId }: { athleteId: string }) {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  if (billing.isLoading) {
+  if (!isSample && billing.isLoading) {
     return (
       <div className="flex items-center gap-2 py-3 text-sm text-text-tertiary">
         <Loader2 className="h-4 w-4 animate-spin" />
@@ -63,9 +73,25 @@ export function AthleteBillingSection({ athleteId }: { athleteId: string }) {
       </div>
     );
   }
-  if (billing.error || !billing.data) return null;
-
-  const b = billing.data;
+  const b = isSample
+    ? {
+        athleteId,
+        athleteName: SAMPLE_ATHLETE_NAME,
+        rate: SAMPLE_RATE,
+        invoices: sampleInvoices.map((inv) => ({
+          id: inv.id,
+          athleteId,
+          athleteName: inv.athleteName,
+          periodStart: inv.periodStart,
+          periodEnd: inv.periodEnd,
+          totalCents: inv.totalCents,
+          status: inv.status,
+          createdAt: inv.createdAt,
+          lineCount: inv.lines.length,
+        })),
+      }
+    : billing.data;
+  if (!b) return null;
 
   return (
     <section className="space-y-3">
@@ -110,12 +136,14 @@ export function AthleteBillingSection({ athleteId }: { athleteId: string }) {
               </button>
               <button
                 type="button"
-                onClick={() =>
-                  statusMutation.mutate({
-                    invoiceId: inv.id,
-                    status: inv.status === "paid" ? "unpaid" : "paid",
-                  })
-                }
+                onClick={() => {
+                  const next = inv.status === "paid" ? "unpaid" : "paid";
+                  if (isSample) {
+                    setSampleInvoiceStatus(inv.id, next);
+                    return;
+                  }
+                  statusMutation.mutate({ invoiceId: inv.id, status: next });
+                }}
                 aria-label={inv.status === "paid" ? "Mark unpaid" : "Mark paid"}
               >
                 <Tag size="nano" tone={inv.status === "paid" ? "accent" : "default"}>
@@ -169,7 +197,14 @@ export function AthleteBillingSection({ athleteId }: { athleteId: string }) {
             <AlertDialogCancel>Keep it</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
-                if (pendingDelete) deleteMutation.mutate(pendingDelete);
+                if (pendingDelete) {
+                  if (isSample) {
+                    deleteSampleInvoice(pendingDelete);
+                    toast.success("Sample invoice deleted");
+                  } else {
+                    deleteMutation.mutate(pendingDelete);
+                  }
+                }
                 setPendingDelete(null);
               }}
             >
