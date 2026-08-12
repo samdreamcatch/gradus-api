@@ -31,6 +31,8 @@ import {
   parseMoneyToCents,
 } from "@/lib/invoice-format";
 import { cn } from "@/lib/utils";
+import { buildSampleInvoiceDraft, isSampleAthlete } from "@/data/sample-athlete";
+import { addSampleInvoice, billedSampleDates } from "@/data/sample-invoices";
 import { shareInvoiceNow } from "@/lib/share-invoice";
 
 const STATE_LABEL: Record<DraftLineState, string> = {
@@ -90,23 +92,33 @@ function InvoiceGenerateBody({ athleteId, onDone }: { athleteId: string; onDone:
   const [rateKind, setRateKind] = useState<RateKind>("per_session");
   const [rateText, setRateText] = useState("");
 
+  const isSample = isSampleAthlete(athleteId);
+
   const draft = useQuery({
     queryKey: ["coach", "invoice-preview", athleteId, periodStart, periodEnd],
     queryFn: () => preview({ data: { athleteId, periodStart, periodEnd } }),
+    enabled: !isSample,
   });
+
+  // The sample athlete is display-only: its draft is a fixture, never a server call.
+  const sampleDraft = useMemo(
+    () => (isSample ? buildSampleInvoiceDraft(billedSampleDates()) : null),
+    [isSample],
+  );
+  const draftData = sampleDraft ?? draft.data ?? null;
 
   // Seed line edits whenever a fresh draft arrives.
   useEffect(() => {
-    if (!draft.data) return;
+    if (!draftData) return;
     const next: Record<string, LineEdit> = {};
-    for (const line of draft.data.lines) {
+    for (const line of draftData.lines) {
       next[lineKey(line)] = {
         included: line.defaultIncluded,
         amountText: (line.amountCents / 100).toFixed(2),
       };
     }
     setEdits(next);
-  }, [draft.data]);
+  }, [draftData]);
 
   const rateMutation = useMutation({
     mutationFn: (input: { rateKind: RateKind; rateCents: number }) =>
@@ -120,7 +132,7 @@ function InvoiceGenerateBody({ athleteId, onDone }: { athleteId: string; onDone:
   });
 
   const included = useMemo(() => {
-    const rows = draft.data?.lines ?? [];
+    const rows = draftData?.lines ?? [];
     return rows
       .map((line) => {
         const edit = edits[lineKey(line)];
@@ -128,13 +140,32 @@ function InvoiceGenerateBody({ athleteId, onDone }: { athleteId: string; onDone:
         return { line, included: edit?.included ?? false, amountCents: cents ?? 0 };
       })
       .filter((r) => r.included);
-  }, [draft.data, edits]);
+  }, [draftData, edits]);
 
   const totalCents = included.reduce((sum, r) => sum + r.amountCents, 0);
 
   const createMutation = useMutation({
     mutationFn: async () => {
-      const d = draft.data!;
+      const d = draftData!;
+      if (isSample) {
+        const totalCents = included.reduce((sum, r) => sum + r.amountCents, 0);
+        addSampleInvoice({
+          athleteName: d.athleteName,
+          periodStart: d.periodStart,
+          periodEnd: d.periodEnd,
+          totalCents,
+          lines: included.map((r) => ({
+            occurrenceDate: r.line.occurrenceDate,
+            amountCents: r.amountCents,
+          })),
+        });
+        return {
+          result: { totalCents },
+          athleteName: d.athleteName,
+          periodStart: d.periodStart,
+          periodEnd: d.periodEnd,
+        };
+      }
       const result = await create({
         data: {
           athleteId,
@@ -169,6 +200,7 @@ function InvoiceGenerateBody({ athleteId, onDone }: { athleteId: string; onDone:
         totalCents: result.totalCents,
       });
       setCreatedText(text);
+      if (isSample) return;
       await queryClient.invalidateQueries({ queryKey: ["coach", "billing"] });
       await queryClient.invalidateQueries({ queryKey: ["coach", "invoices"] });
     },
@@ -198,14 +230,14 @@ function InvoiceGenerateBody({ athleteId, onDone }: { athleteId: string; onDone:
     );
   }
 
-  if (draft.isLoading) {
+  if (!isSample && draft.isLoading) {
     return (
       <div className="flex items-center justify-center py-16">
         <Loader2 className="h-5 w-5 animate-spin text-text-tertiary" />
       </div>
     );
   }
-  if (draft.error || !draft.data) {
+  if (!draftData) {
     return (
       <div className="py-10 text-center text-sm text-text-secondary">
         Couldn't build this invoice:{" "}
@@ -214,7 +246,7 @@ function InvoiceGenerateBody({ athleteId, onDone }: { athleteId: string; onDone:
     );
   }
 
-  const d = draft.data;
+  const d = draftData;
 
   return (
     <div className="space-y-5">
@@ -281,6 +313,7 @@ function InvoiceGenerateBody({ athleteId, onDone }: { athleteId: string; onDone:
             type="date"
             value={d.periodStart}
             onChange={(e) => setPeriodStart(e.target.value)}
+            disabled={isSample}
           />
         </div>
         <div>
@@ -292,6 +325,7 @@ function InvoiceGenerateBody({ athleteId, onDone }: { athleteId: string; onDone:
             type="date"
             value={d.periodEnd}
             onChange={(e) => setPeriodEnd(e.target.value)}
+            disabled={isSample}
           />
         </div>
       </section>
