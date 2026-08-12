@@ -654,14 +654,15 @@ function PaywallPage() {
           </div>
         )}
 
-        {/* 4. Tier cards */}
+        {/* Tier cards */}
         <div
           className={cn(
-            "mt-4 grid w-full grid-cols-2 gap-3 transition-opacity",
+            "mt-5 flex w-full flex-col gap-3 transition-opacity",
             tiersDisabled && "pointer-events-none opacity-50",
           )}
           aria-disabled={tiersDisabled}
         >
+
           {(Object.keys(PRICE_MAP) as Tier[]).map((tier) => {
             const price = PRICE_MAP[tier][interval];
             const isPro = tier === "coach_pro";
