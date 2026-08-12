@@ -3,7 +3,8 @@ import { cn } from "@/lib/utils";
 import { FlowStateBars, type SessionsByState } from "./flow-state-bars";
 
 interface PlanCardProps {
-  to: "/parent/plans/$planId" | "/coach/plans/$planId" | "/athlete/plans/$planId";
+  /** Omit to render a non-navigating card (e.g. sample data). */
+  to?: "/parent/plans/$planId" | "/coach/plans/$planId" | "/athlete/plans/$planId";
   planId: string;
   title: string;
   athleteName?: string | null;

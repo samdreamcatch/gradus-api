@@ -26,6 +26,12 @@ import {
 } from "@/lib/coach-athlete-detail.functions";
 import { adoptStarterPlan } from "@/lib/starter-programs.functions";
 import { useCoachProfile } from "@/hooks/use-coach-profile";
+import {
+  buildSampleAiSummary,
+  buildSampleAthleteDetail,
+  isSampleAthlete,
+  SAMPLE_SESSION_FEEDBACK,
+} from "@/data/sample-athlete";
 
 export function AthleteDetailSheet({
   athleteId,
@@ -60,9 +66,12 @@ function AthleteDetailBody({ athleteId }: { athleteId: string }) {
   const effectiveTier = profile.data?.profile.effectiveTier;
   const canViewOtherCoachPlans = effectiveTier === "club";
 
+  const isSample = isSampleAthlete(athleteId);
+
   const detail = useQuery({
     queryKey: ["coach", "athlete-detail", athleteId],
     queryFn: () => fetchDetail({ data: { athleteId } }),
+    enabled: !isSample,
   });
 
   const summary = useQuery({
@@ -75,10 +84,15 @@ function AthleteDetailBody({ athleteId }: { athleteId: string }) {
 
   // Auto-run AI summary once we know there's at least some signal.
   useEffect(() => {
+    if (isSample) return;
     if (detail.data?.hasAnySignal && !summary.data && !summary.isFetching) {
       summary.refetch();
     }
   }, [detail.data?.hasAnySignal, summary]);
+
+  if (isSample) {
+    return <SampleAthleteBody />;
+  }
 
   if (detail.isLoading) {
     return (
