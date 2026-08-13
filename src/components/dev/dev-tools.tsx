@@ -87,6 +87,13 @@ export function DevTools() {
     };
   }, []);
 
+  // Default the step jumper to the signed-in role, but let it be overridden —
+  // e.g. inspecting the athlete flow while signed in as a parent.
+  useEffect(() => {
+    if (session.role) setStepRole(session.role);
+  }, [session.role]);
+
+
   const signInAs = async (acct: DevAccount) => {
     if (!DEV_PASSWORD) {
       toast.error("Set VITE_DEV_SEED_PASSWORD in .env to use the account switcher");
