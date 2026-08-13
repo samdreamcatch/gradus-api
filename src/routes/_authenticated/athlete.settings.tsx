@@ -78,7 +78,7 @@ function AthleteSettingsPage() {
     queryKey: ["adult-athlete-coaches"],
     queryFn: () => fetchCoaches(),
   });
-  const canConnectCoach = coachData?.canConnectCoach === true;
+  const showCoaches = coachData?.hasAthlete === true;
 
   useEffect(() => {
     if (linkCoach) toast.success(`Coach invite ${linkCoach} ready to link`);
@@ -107,7 +107,7 @@ function AthleteSettingsPage() {
               </SettingsList>
             </SettingsGroup>
 
-            {canConnectCoach && (
+            {showCoaches && (
               <SettingsGroup label="Coaches">
                 <SettingsList>
                   <AdultCoachesSection coaches={coachData?.coaches ?? []} />
