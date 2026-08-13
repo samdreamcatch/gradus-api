@@ -53,6 +53,35 @@ import { useSampleAthleteDismissed } from "@/hooks/use-sample-athlete";
 
 type RosterTab = "athletes" | "schedule" | "billing";
 
+type InviteStep = "hub" | "share" | "code" | "manual";
+
+/** The three ways a coach can connect with an athlete, shown as a hub menu. */
+const INVITE_STEPS: {
+  key: Exclude<InviteStep, "hub">;
+  title: string;
+  description: string;
+  icon: typeof Share2;
+}[] = [
+  {
+    key: "share",
+    title: "Share my invite",
+    description: "Send parents or adult athletes a link or code",
+    icon: Share2,
+  },
+  {
+    key: "code",
+    title: "Enter their code",
+    description: "They already gave you an 8-character code",
+    icon: KeyRound,
+  },
+  {
+    key: "manual",
+    title: "Add an athlete myself",
+    description: "No code needed — we'll email their parent a link",
+    icon: UserPlus,
+  },
+];
+
 function SegmentedToggle({ tab, onChange }: { tab: RosterTab; onChange: (t: RosterTab) => void }) {
   const tabs: { key: RosterTab; label: string }[] = [
     { key: "schedule", label: "Schedule" },
