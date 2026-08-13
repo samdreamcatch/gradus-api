@@ -34,7 +34,7 @@ import { coachInviteQueryOptions } from "@/hooks/use-coach-invite";
 import { InviteCard } from "@/components/onboarding/invite-card";
 import { CoachBottomNav } from "@/components/coach/bottom-nav";
 import { RosterSettingsSection } from "@/components/coach/roster-settings-section";
-import { EnterInviteCodeCard } from "@/components/coach/enter-invite-code-card";
+import { ConnectPeopleSheet } from "@/components/coach/connect-people-sheet";
 import { JoinClubSheet } from "@/components/coach/join-club-sheet";
 import { UpgradeToProRow } from "@/components/coach/upgrade-to-pro-row";
 import { SegmentedToggle } from "@/components/plans/segmented-toggle";
