@@ -138,23 +138,31 @@ export const createSelfManagedAthlete = createServerFn({ method: "POST" })
   });
 
 /**
- * Self-managed athletes may connect coaches at any age. Under-18 athletes need
- * a parent/guardian email on file first — that address is how the guardian is
- * told about the connection and mirrored on the athlete's activity.
+ * Any athlete with their own login may connect coaches. The requirement is a
+ * reachable guardian, not self-management: adults need nothing, minors need
+ * either a guardian email on file or a linked parent account (whose email is
+ * the guardian on file).
  */
-function assertCanConnectCoach(row: {
-  self_managed: boolean;
+export function athleteCanConnectCoach(row: {
   birthdate: string | null;
   guardian_email: string | null;
-}) {
-  if (!row.self_managed) {
-    throw new Error("This account is parent-managed; ask your parent to link a coach.");
-  }
+  parent_id: string | null;
+}): boolean {
   const minor = row.birthdate ? ageInYears(row.birthdate) < 18 : false;
-  if (minor && !row.guardian_email) {
+  if (!minor) return true;
+  return Boolean(row.guardian_email) || Boolean(row.parent_id);
+}
+
+function assertCanConnectCoach(row: {
+  birthdate: string | null;
+  guardian_email: string | null;
+  parent_id: string | null;
+}) {
+  if (!athleteCanConnectCoach(row)) {
     throw new Error("Add a parent or guardian email in Settings before connecting a coach.");
   }
 }
+
 
 /**
  * Preview a coach by invite code from the adult-athlete onboarding screen.
