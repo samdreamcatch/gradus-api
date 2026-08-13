@@ -88,8 +88,11 @@ export const ONBOARDING_STEPS: Record<DevRole, { label: string; to: string }[]> 
   athlete: [
     // /signup/athlete/confirm and /signup/athlete/account require a valid
     // invite `?code=` search param (Zod-validated). Without one they crash
-    // with VALIDATE_SEARCH, so the dev stepper only links to code entry.
-    { label: "1. Athlete invite (enter code)", to: "/signup/athlete" },
+    // with VALIDATE_SEARCH, so use the "Athlete signup walkthrough" section
+    // below to mint a code and jump into those screens.
+    { label: "1. Age gate / invite code entry", to: "/signup/athlete" },
+    { label: "2. Adult athlete account", to: "/signup/athlete/adult" },
+    { label: "3. Adult athlete onboarding", to: "/athlete/onboarding" },
   ],
   org_admin: [],
 };

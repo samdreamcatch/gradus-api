@@ -51,6 +51,7 @@ export function DevTools() {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
+  const [stepRole, setStepRole] = useState<DevRole>("coach");
   const [session, setSession] = useState<ActiveSession>({
     email: null,
     userId: null,
@@ -85,6 +86,13 @@ export function DevTools() {
       sub.subscription.unsubscribe();
     };
   }, []);
+
+  // Default the step jumper to the signed-in role, but let it be overridden —
+  // e.g. inspecting the athlete flow while signed in as a parent.
+  useEffect(() => {
+    if (session.role) setStepRole(session.role);
+  }, [session.role]);
+
 
   const signInAs = async (acct: DevAccount) => {
     if (!DEV_PASSWORD) {
@@ -171,7 +179,7 @@ export function DevTools() {
     }
   };
 
-  const steps = session.role ? ONBOARDING_STEPS[session.role] : [];
+  const steps = ONBOARDING_STEPS[stepRole] ?? [];
 
   if (hideOnAdmin) return null;
 
@@ -268,7 +276,19 @@ export function DevTools() {
               <h3 className="text-xs font-bold uppercase tracking-widest text-text-secondary">
                 Onboarding step jumper
               </h3>
-              {session.role ? (
+              <div className="flex flex-wrap gap-1.5">
+                {(["coach", "parent", "athlete", "org_admin"] as DevRole[]).map((r) => (
+                  <Button
+                    key={r}
+                    size="sm"
+                    variant={stepRole === r ? "default" : "outline"}
+                    onClick={() => setStepRole(r)}
+                  >
+                    {r}
+                  </Button>
+                ))}
+              </div>
+              {steps.length > 0 ? (
                 <div className="grid gap-2">
                   {steps.map((step) => (
                     <Button
@@ -307,7 +327,7 @@ export function DevTools() {
                   ))}
                 </div>
               ) : (
-                <p className="text-xs text-text-secondary">Sign in to see steps for this role.</p>
+                <p className="text-xs text-text-secondary">No onboarding steps for this role.</p>
               )}
             </section>
 
