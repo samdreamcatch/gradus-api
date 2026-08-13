@@ -289,7 +289,7 @@ function AdultCoachesSection({ coaches }: { coaches: AdultCoach[] }) {
     setList(list.includes(sport) ? list.filter((s) => s !== sport) : [...list, sport]);
   };
 
-  const codeValid = /^[A-Z2-9]{8}$/.test(code.trim().toUpperCase());
+
 
   return (
     <SettingsDisclosure icon={<UserPlus className="size-4" />} label="Coaches" value={summary}>
