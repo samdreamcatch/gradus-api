@@ -244,7 +244,10 @@ function RosterPage() {
               <InviteCard compact />
               <div className="border-t border-divider" />
               <EnterInviteCodeCard onSuccess={() => setInviteOpen(false)} />
+              <div className="border-t border-divider" />
+              <AddYouthAthleteCard onSuccess={() => setInviteOpen(false)} />
             </div>
+
           </SheetContent>
         </Sheet>
 
