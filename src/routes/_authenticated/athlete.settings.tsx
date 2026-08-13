@@ -26,9 +26,7 @@ import { AccountSecuritySection } from "@/components/settings/account-security-s
 import { getAthleteSettings, updateAthleteSelf } from "@/lib/athlete-settings.functions";
 import {
   getCoachOfferedSportsForAdult,
-  linkAdultAthleteToCoach,
   listAdultAthleteCoaches,
-  previewCoachForAdultAthlete,
   unlinkAdultAthleteFromCoach,
   updateAdultAthleteCoachSports,
 } from "@/lib/adult-athlete-signup.functions";
@@ -107,12 +105,15 @@ function AthleteSettingsPage() {
             </SettingsGroup>
 
             {isSelfManaged && (
-              <SettingsGroup label="My coaches">
+              <SettingsGroup label="Coaches">
                 <SettingsList>
-                  <AdultCoachesSection
-                    coaches={coachData?.coaches ?? []}
-                    initialLinkCoach={linkCoach ?? null}
-                    onLinkCoachConsumed={() =>
+                  <AdultCoachesSection coaches={coachData?.coaches ?? []} />
+                </SettingsList>
+                <div className="mt-3">
+                  <ConnectCoachSheet
+                    audience="adult-athlete"
+                    initialCode={linkCoach ?? null}
+                    onInitialCodeConsumed={() =>
                       navigate({
                         to: "/athlete/settings",
                         search: {},
@@ -120,13 +121,7 @@ function AthleteSettingsPage() {
                       })
                     }
                   />
-                </SettingsList>
-              </SettingsGroup>
-            )}
-
-            {isSelfManaged && (
-              <SettingsGroup label="Coaches">
-                <ConnectCoachSheet audience="adult-athlete" />
+                </div>
               </SettingsGroup>
             )}
 
@@ -228,32 +223,12 @@ function ProfileDisclosure({
 
 type AdultCoach = { coachId: string; coachName: string; sports: string[] };
 
-function AdultCoachesSection({
-  coaches,
-  initialLinkCoach,
-  onLinkCoachConsumed,
-}: {
-  coaches: AdultCoach[];
-  initialLinkCoach?: string | null;
-  onLinkCoachConsumed?: () => void;
-}) {
+function AdultCoachesSection({ coaches }: { coaches: AdultCoach[] }) {
   const qc = useQueryClient();
-  const previewFn = useServerFn(previewCoachForAdultAthlete);
-  const linkFn = useServerFn(linkAdultAthleteToCoach);
   const unlinkFn = useServerFn(unlinkAdultAthleteFromCoach);
   const updateSportsFn = useServerFn(updateAdultAthleteCoachSports);
   const offeredFn = useServerFn(getCoachOfferedSportsForAdult);
 
-  const [adding, setAdding] = useState(false);
-  const [code, setCode] = useState("");
-  const [preview, setPreview] = useState<{
-    coachId: string;
-    coachName: string;
-    sports: string[];
-  } | null>(null);
-  const [selectedSports, setSelectedSports] = useState<string[]>([]);
-  const [lookingUp, setLookingUp] = useState(false);
-  const [saving, setSaving] = useState(false);
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [editingCoachId, setEditingCoachId] = useState<string | null>(null);
   const [editOptions, setEditOptions] = useState<string[]>([]);
@@ -265,56 +240,6 @@ function AdultCoachesSection({
 
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["adult-athlete-coaches"] });
-  };
-
-  const resetLinkForm = () => {
-    setAdding(false);
-    setCode("");
-    setPreview(null);
-    setSelectedSports([]);
-  };
-
-  const handleLookup = async (rawCode?: string) => {
-    const c = (rawCode ?? code).trim().toUpperCase();
-    if (c.length !== 8) return;
-    setLookingUp(true);
-    try {
-      const result = await previewFn({ data: { code: c } });
-      setPreview(result);
-      setSelectedSports(result.sports.length === 1 ? [result.sports[0]] : []);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't find coach");
-    } finally {
-      setLookingUp(false);
-    }
-  };
-
-  // Auto-open + auto-preview when a coach invite code was passed in via
-  // `?linkCoach=CODE` (from the /i/CODE universal invite entry).
-  useEffect(() => {
-    if (!initialLinkCoach) return;
-    setAdding(true);
-    setCode(initialLinkCoach);
-    void handleLookup(initialLinkCoach);
-    onLinkCoachConsumed?.();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialLinkCoach]);
-
-  const handleLink = async () => {
-    if (!preview) return;
-    setSaving(true);
-    try {
-      await linkFn({
-        data: { code: code.trim(), sports: selectedSports },
-      });
-      toast.success("Coach linked");
-      resetLinkForm();
-      invalidate();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't link coach");
-    } finally {
-      setSaving(false);
-    }
   };
 
   const handleUnlink = async (coachId: string) => {
@@ -370,7 +295,7 @@ function AdultCoachesSection({
     <SettingsDisclosure icon={<UserPlus className="size-4" />} label="Coaches" value={summary}>
       {coaches.length === 0 ? (
         <p className="mb-3 text-sm text-text-tertiary">
-          No coaches linked yet. Ask your coach for their invite code, then enter it below.
+          No coaches linked yet. Use “Add a coach” below to invite them or enter their code.
         </p>
       ) : (
         <div className="mb-3 space-y-2">
@@ -471,80 +396,6 @@ function AdultCoachesSection({
         </div>
       )}
 
-      {!adding ? (
-        <Button size="sm" variant="outline" onClick={() => setAdding(true)}>
-          Link a coach
-        </Button>
-      ) : !preview ? (
-        <form
-          className="space-y-3"
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleLookup();
-          }}
-        >
-          <Label className="text-xs">Coach invite code</Label>
-          <Input
-            value={code}
-            onChange={(e) => setCode(e.target.value.toUpperCase())}
-            maxLength={8}
-            placeholder="––––––––"
-            className="text-center font-mono text-lg tracking-[0.3em] uppercase"
-            autoComplete="off"
-          />
-          <div className="flex justify-end gap-2">
-            <Button
-              size="sm"
-              variant="ghost"
-              type="button"
-              onClick={resetLinkForm}
-              disabled={lookingUp}
-            >
-              Cancel
-            </Button>
-            <Button size="sm" type="submit" disabled={!codeValid || lookingUp}>
-              {lookingUp ? "Looking up…" : "Look up"}
-            </Button>
-          </div>
-        </form>
-      ) : (
-        <div className="space-y-3">
-          <div className="rounded-lg border border-divider bg-elevated/30 px-3 py-2">
-            <div className="text-xs text-text-tertiary">Coach</div>
-            <div className="text-sm font-medium">{preview.coachName}</div>
-          </div>
-          <div>
-            <Label className="text-xs">Sports you do with this coach</Label>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {preview.sports.map((s) => {
-                const checked = selectedSports.includes(s);
-                return (
-                  <SportChip
-                    key={s}
-                    selected={checked}
-                    onClick={() => toggle(s, selectedSports, setSelectedSports)}
-                  >
-                    {getSport(s)?.label ?? s}
-                  </SportChip>
-                );
-              })}
-            </div>
-            {preview.sports.length === 0 && (
-              <p className="mt-2 text-xs text-text-tertiary">
-                This coach hasn&apos;t set up sports yet.
-              </p>
-            )}
-          </div>
-          <div className="flex justify-end gap-2">
-            <Button size="sm" variant="ghost" onClick={resetLinkForm} disabled={saving}>
-              Cancel
-            </Button>
-            <Button size="sm" onClick={handleLink} disabled={saving || selectedSports.length === 0}>
-              {saving ? "Linking…" : "Link coach"}
-            </Button>
-          </div>
-        </div>
-      )}
     </SettingsDisclosure>
   );
 }
