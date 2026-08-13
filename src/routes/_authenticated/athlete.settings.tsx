@@ -78,7 +78,7 @@ function AthleteSettingsPage() {
     queryKey: ["adult-athlete-coaches"],
     queryFn: () => fetchCoaches(),
   });
-  const isSelfManaged = coachData?.selfManaged === true;
+  const canConnectCoach = coachData?.canConnectCoach === true;
 
   useEffect(() => {
     if (linkCoach) toast.success(`Coach invite ${linkCoach} ready to link`);
@@ -107,7 +107,7 @@ function AthleteSettingsPage() {
               </SettingsList>
             </SettingsGroup>
 
-            {isSelfManaged && (
+            {canConnectCoach && (
               <SettingsGroup label="Coaches">
                 <SettingsList>
                   <AdultCoachesSection coaches={coachData?.coaches ?? []} />
