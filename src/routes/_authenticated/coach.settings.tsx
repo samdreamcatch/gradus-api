@@ -95,8 +95,10 @@ function SettingsPage() {
             />
 
             <RosterSettingsSection />
-            <ConnectionsDisclosure />
           </SettingsList>
+          <div className="mt-3">
+            <ConnectPeopleSheet />
+          </div>
         </SettingsGroup>
 
         <SettingsGroup label="Plan">
