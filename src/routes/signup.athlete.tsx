@@ -223,7 +223,6 @@ function AgeStep() {
             maxLength={255}
             value={guardianEmail}
             onChange={(e) => setGuardianEmail(e.target.value)}
-            placeholder="parent@example.com"
           />
           <p className="text-xs text-text-tertiary">
             You&apos;ll get your own account right away. We&apos;ll email your parent a link so they
