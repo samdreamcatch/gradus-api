@@ -9,7 +9,9 @@ export const getAthleteSettings = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const row = await supabaseAdmin
       .from("athletes")
-      .select("id, first_name, last_name, birthdate, username")
+      .select(
+        "id, first_name, last_name, birthdate, username, parent_id, guardian_email, guardian_invited_at, guardian_claimed_at",
+      )
       .eq("user_id", context.userId)
       .maybeSingle();
     if (row.error) dbError(row.error);
@@ -20,6 +22,11 @@ export const getAthleteSettings = createServerFn({ method: "GET" })
       lastName: row.data.last_name,
       birthdate: (row.data.birthdate as string | null) ?? null,
       username: (row.data as { username: string | null }).username ?? null,
+      guardianEmail: (row.data.guardian_email as string | null) ?? null,
+      guardianInvitedAt: (row.data.guardian_invited_at as string | null) ?? null,
+      // A guardian "on file" becomes a guardian "in app" once they claim the
+      // athlete or the athlete is attached to a parent profile.
+      guardianClaimed: Boolean(row.data.guardian_claimed_at) || Boolean(row.data.parent_id),
     };
   });
 
