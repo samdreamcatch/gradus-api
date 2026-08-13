@@ -3,6 +3,7 @@ import { getRequestIP, getRequestHeader } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { dbError } from "./db-error";
+import { ageInYears } from "./pending-athlete-dob";
 
 const codeSchema = z
   .string()
@@ -54,12 +55,17 @@ export const getOrCreateAdultAthleteInviteCode = createServerFn({ method: "GET" 
 
     const me = await supabaseAdmin
       .from("athletes")
-      .select("id, self_managed, promo_code")
+      .select("id, self_managed, promo_code, birthdate, guardian_email")
       .eq("user_id", userId)
       .maybeSingle();
     if (me.error) dbError(me.error);
     if (!me.data || !me.data.self_managed) {
-      throw new Error("Only self-managed adult athletes can create an invite code.");
+      throw new Error("Only self-managed athletes can create an invite code.");
+    }
+    // Under-18 athletes can invite a coach, but only with a guardian on file.
+    const bd = me.data.birthdate as string | null;
+    if (bd && ageInYears(bd) < 18 && !me.data.guardian_email) {
+      throw new Error("Add a parent or guardian email in Settings before inviting a coach.");
     }
     const athleteId = me.data.id;
     const inviterPromo = me.data.promo_code ?? null;

@@ -138,6 +138,25 @@ export const createSelfManagedAthlete = createServerFn({ method: "POST" })
   });
 
 /**
+ * Self-managed athletes may connect coaches at any age. Under-18 athletes need
+ * a parent/guardian email on file first — that address is how the guardian is
+ * told about the connection and mirrored on the athlete's activity.
+ */
+function assertCanConnectCoach(row: {
+  self_managed: boolean;
+  birthdate: string | null;
+  guardian_email: string | null;
+}) {
+  if (!row.self_managed) {
+    throw new Error("This account is parent-managed; ask your parent to link a coach.");
+  }
+  const minor = row.birthdate ? ageInYears(row.birthdate) < 18 : false;
+  if (minor && !row.guardian_email) {
+    throw new Error("Add a parent or guardian email in Settings before connecting a coach.");
+  }
+}
+
+/**
  * Preview a coach by invite code from the adult-athlete onboarding screen.
  * Mirrors previewCoachByInviteCode from parent-settings but does not gate
  * on parent ownership — any signed-in self-managed athlete can preview.
@@ -148,17 +167,16 @@ export const previewCoachForAdultAthlete = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    // Only self-managed athletes may use this preview endpoint. Minors go
-    // through the parent flow instead.
+    // Only self-managed athletes may use this preview endpoint; minors also
+    // need a guardian email on file.
     const me = await supabaseAdmin
       .from("athletes")
-      .select("id, self_managed")
+      .select("id, self_managed, birthdate, guardian_email")
       .eq("user_id", context.userId)
       .maybeSingle();
     if (me.error) dbError(me.error);
-    if (!me.data || !me.data.self_managed) {
-      throw new Error("Only adult self-managed athletes can use this flow.");
-    }
+    if (!me.data) throw new Error("Finish setting up your athlete profile first.");
+    assertCanConnectCoach(me.data);
 
     const codeLookup = await supabaseAdmin
       .from("coach_invite_codes")
@@ -210,14 +228,12 @@ export const linkAdultAthleteToCoach = createServerFn({ method: "POST" })
     // Resolve the caller's self-managed athlete.
     const me = await supabase
       .from("athletes")
-      .select("id, self_managed")
+      .select("id, self_managed, birthdate, guardian_email")
       .eq("user_id", context.userId)
       .maybeSingle();
     if (me.error) dbError(me.error);
     if (!me.data) throw new Error("Finish setting up your athlete profile first.");
-    if (!me.data.self_managed) {
-      throw new Error("This account is parent-managed; ask your parent to link a coach.");
-    }
+    assertCanConnectCoach(me.data);
     const athleteId = me.data.id;
 
     // Resolve the coach code (admin: codes are opaque, no RLS gate needed).
@@ -375,13 +391,18 @@ export const listAdultAthleteCoaches = createServerFn({ method: "GET" })
     const supabase = context.supabase as Client;
     const me = await supabase
       .from("athletes")
-      .select("id, self_managed")
+      .select("id, self_managed, birthdate, guardian_email")
       .eq("user_id", context.userId)
       .maybeSingle();
     if (me.error) dbError(me.error);
     if (!me.data || !me.data.self_managed) {
-      return { selfManaged: false as const, coaches: [] };
+      return { selfManaged: false as const, needsGuardianEmail: false, coaches: [] };
     }
+    // Minors can connect coaches too, but only once a guardian email is on file.
+    const needsGuardianEmail =
+      Boolean(me.data.birthdate) &&
+      ageInYears(me.data.birthdate as string) < 18 &&
+      !me.data.guardian_email;
     const athleteId = me.data.id;
 
     // RLS lets the athlete read their own coach_athletes rows, but not
@@ -395,7 +416,7 @@ export const listAdultAthleteCoaches = createServerFn({ method: "GET" })
     if (links.error) dbError(links.error);
     const coachIds = Array.from(new Set((links.data ?? []).map((l) => l.coach_id)));
     if (coachIds.length === 0) {
-      return { selfManaged: true as const, coaches: [] };
+      return { selfManaged: true as const, needsGuardianEmail, coaches: [] };
     }
 
     const scoped = await supabase
@@ -423,7 +444,7 @@ export const listAdultAthleteCoaches = createServerFn({ method: "GET" })
       sports: sportsByCoach.get(cp.id) ?? [],
     }));
 
-    return { selfManaged: true as const, coaches };
+    return { selfManaged: true as const, needsGuardianEmail, coaches };
   });
 
 /**
