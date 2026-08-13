@@ -11,6 +11,7 @@ import {
   Preview,
   Text,
 } from "@react-email/components";
+import parse from "html-react-parser";
 import {
   button,
   buttonWrap,
@@ -25,6 +26,7 @@ import {
   text,
 } from "./_styles";
 import { Header, PageInner, PageShell } from "./_layout";
+import { resolveCopy, renderTemplateString } from "./copy-schema";
 import type { TemplateEntry } from "./registry";
 
 export interface GuardianInviteEmailProps {
@@ -33,6 +35,19 @@ export interface GuardianInviteEmailProps {
   coachName?: string | null;
   claimUrl: string;
   siteUrl?: string;
+  copyOverrides?: Record<string, string>;
+}
+
+export function guardianInviteSubject(
+  data: { athleteName?: string | null; coachName?: string | null },
+  copyOverrides?: Record<string, string>,
+): string {
+  const c = resolveCopy("guardian-invite", copyOverrides);
+  const vars = {
+    athleteName: data.athleteName ?? "Your athlete",
+    coachName: data.coachName ?? "",
+  };
+  return renderTemplateString(data.coachName ? c.subjectWithCoach : c.subject, vars);
 }
 
 export const GuardianInviteEmail = ({
@@ -40,45 +55,44 @@ export const GuardianInviteEmail = ({
   coachName,
   claimUrl,
   siteUrl = "https://gradus.training",
+  copyOverrides,
 }: GuardianInviteEmailProps) => {
-  const intro = coachName
-    ? `Coach ${coachName} added ${athleteName} to Gradus, the training app their coach uses to assign plans, track practice, and message about lessons.`
-    : `${athleteName} joined Gradus, the training app their coach uses to assign plans, track practice, and message about lessons.`;
+  const c = resolveCopy("guardian-invite", copyOverrides);
+  const vars = { athleteName, coachName: coachName ?? "", claimUrl, siteUrl };
+  const intro = renderTemplateString(coachName ? c.introWithCoach : c.intro, vars);
 
   return (
     <Html lang="en" dir="ltr">
       <Head />
-      <Preview>{`See everything ${athleteName} is doing on Gradus`}</Preview>
+      <Preview>{renderTemplateString(c.preview, vars)}</Preview>
       <Body style={main}>
         <PageShell>
           <Container style={container}>
             <Header />
             <PageInner>
-              <Text style={eyebrow}>Parent / guardian access</Text>
-              <Heading style={h1}>{`You've been listed as ${athleteName}'s parent`}</Heading>
-              <Text style={text}>{intro}</Text>
-              <Text style={text}>
-                You were listed as their parent or guardian, so we'll email you a copy of what their
-                coach sends. Create your free parent account to see plans, practice logs, and
-                messages in one place — nothing to pay, and it takes about a minute.
-              </Text>
+              <Text style={eyebrow}>{renderTemplateString(c.eyebrow, vars)}</Text>
+              <Heading style={h1}>{renderTemplateString(c.heading, vars)}</Heading>
+              <Text style={text}>{parse(intro)}</Text>
+              <Text style={text}>{parse(renderTemplateString(c.body, vars))}</Text>
               <div style={buttonWrap}>
                 <Button style={button} href={claimUrl}>
-                  See {athleteName}&apos;s training
+                  {renderTemplateString(c.ctaLabel, vars)}
                 </Button>
               </div>
               <Text style={{ ...text, marginTop: "28px", fontSize: "14px" }}>
-                Or paste this link into your browser:
+                {renderTemplateString(c.fallbackHelp, vars)}
                 <br />
                 <Link href={claimUrl} style={link}>
                   {claimUrl}
                 </Link>
               </Text>
-              <Text style={sign}>— The Gradus team</Text>
+              <Text style={sign}>{renderTemplateString(c.signOff, vars)}</Text>
               <Hr style={divider} />
               <Text style={footer}>
-                If you don&apos;t recognize this athlete, you can ignore this email and no account
-                will be created. <Link href={siteUrl} style={link}>gradus.training</Link>
+                {parse(renderTemplateString(c.footer, vars))}{" "}
+                <Link href={siteUrl} style={link}>
+                  gradus.training
+                </Link>
               </Text>
             </PageInner>
           </Container>
@@ -90,10 +104,7 @@ export const GuardianInviteEmail = ({
 
 export const template = {
   component: GuardianInviteEmail,
-  subject: (data: Record<string, any>) =>
-    data.coachName
-      ? `Coach ${data.coachName} added ${data.athleteName ?? "your athlete"} to Gradus`
-      : `${data.athleteName ?? "Your athlete"} joined Gradus`,
+  subject: (data: Record<string, any>) => guardianInviteSubject(data),
   displayName: "Guardian invite",
   previewData: {
     athleteName: "Sample Athlete",
