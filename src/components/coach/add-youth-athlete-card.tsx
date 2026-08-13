@@ -61,9 +61,7 @@ export function AddYouthAthleteCard({
     <form
       onSubmit={handleSubmit}
       className={
-        hideHeading
-          ? "space-y-4"
-          : "space-y-4 rounded-xl border border-divider bg-elevated p-4"
+        hideHeading ? "space-y-4" : "space-y-4 rounded-xl border border-divider bg-elevated p-4"
       }
     >
       {hideHeading ? null : (

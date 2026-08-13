@@ -348,7 +348,6 @@ function RosterPage() {
               </>
             )}
           </SheetContent>
-
         </Sheet>
 
         {tab === "billing" ? (
