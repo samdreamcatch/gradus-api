@@ -236,20 +236,75 @@ function RosterPage() {
           ) : null}
 
           <SheetContent side="bottom" className="paper-surface max-h-[85dvh] overflow-y-auto">
-            <SheetHeader>
-              <SheetTitle>Add athletes to your roster</SheetTitle>
-              <SheetDescription>
-                Share your code with parents or adult athletes — or paste a code they gave you.
-              </SheetDescription>
-            </SheetHeader>
-            <div className="mt-4 space-y-5">
-              <InviteCard compact />
-              <div className="border-t border-divider" />
-              <EnterInviteCodeCard onSuccess={() => setInviteOpen(false)} />
-              <div className="border-t border-divider" />
-              <AddYouthAthleteCard onSuccess={() => setInviteOpen(false)} />
-            </div>
+            {inviteStep === "hub" ? (
+              <>
+                <SheetHeader>
+                  <SheetTitle>Add an athlete</SheetTitle>
+                  <SheetDescription>Three ways to connect.</SheetDescription>
+                </SheetHeader>
+                <div className="mt-4 overflow-hidden rounded-xl border border-divider bg-elevated">
+                  {INVITE_STEPS.map((s, i) => {
+                    const Icon = s.icon;
+                    return (
+                      <button
+                        key={s.key}
+                        type="button"
+                        onClick={() => setInviteStep(s.key)}
+                        className={cn(
+                          "press flex w-full items-center gap-3 px-4 py-4 text-left",
+                          i > 0 && "border-t border-divider",
+                        )}
+                      >
+                        <Icon className="size-5 shrink-0 text-accent-ink" aria-hidden />
+                        <span className="min-w-0 flex-1">
+                          <span className="block text-sm font-bold text-text-primary">
+                            {s.title}
+                          </span>
+                          <span className="mt-0.5 block text-xs text-text-secondary">
+                            {s.description}
+                          </span>
+                        </span>
+                        <ChevronRight className="size-4 shrink-0 text-text-tertiary" aria-hidden />
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            ) : (
+              <>
+                <SheetHeader>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      aria-label="Back"
+                      onClick={() => setInviteStep("hub")}
+                      className="-ml-2 shrink-0"
+                    >
+                      <ChevronLeft className="size-5" aria-hidden />
+                    </Button>
+                    <SheetTitle className="min-w-0 flex-1">
+                      {INVITE_STEPS.find((s) => s.key === inviteStep)?.title}
+                    </SheetTitle>
+                  </div>
+                  <SheetDescription className="sr-only">
+                    {INVITE_STEPS.find((s) => s.key === inviteStep)?.description}
+                  </SheetDescription>
+                </SheetHeader>
+                <div className="mt-4">
+                  {inviteStep === "share" ? (
+                    <InviteCard compact />
+                  ) : inviteStep === "code" ? (
+                    <EnterInviteCodeCard hideIntro onSuccess={() => setInviteOpen(false)} />
+                  ) : (
+                    <AddYouthAthleteCard hideHeading onSuccess={() => setInviteOpen(false)} />
+                  )}
+                </div>
+              </>
+            )}
           </SheetContent>
+
         </Sheet>
 
         {tab === "billing" ? (
