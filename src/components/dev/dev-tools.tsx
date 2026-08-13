@@ -327,7 +327,7 @@ export function DevTools() {
                   ))}
                 </div>
               ) : (
-                <p className="text-xs text-text-secondary">Sign in to see steps for this role.</p>
+                <p className="text-xs text-text-secondary">No onboarding steps for this role.</p>
               )}
             </section>
 
