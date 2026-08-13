@@ -18,6 +18,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Logo } from "@/components/logo";
+import {
+  ageInYears,
+  clearPendingAthleteDob,
+  readPendingAthleteDob,
+} from "@/lib/pending-athlete-dob";
+
 import { SportChip } from "@/components/onboarding/sport-chip";
 import { getSport, SPORTS } from "@/lib/coach-sports";
 import {
