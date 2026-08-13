@@ -400,12 +400,11 @@ export const listAdultAthleteCoaches = createServerFn({ method: "GET" })
       .maybeSingle();
     if (me.error) dbError(me.error);
     if (!me.data) {
-      return { hasAthlete: false, canConnectCoach: false as const, needsGuardianEmail: false, coaches: [] };
+      return { hasAthlete: false, canConnectCoach: false, needsGuardianEmail: false, coaches: [] };
     }
     // Minors can connect coaches too, but only with a guardian reachable —
     // either an email on file or a linked parent account.
     const needsGuardianEmail = !athleteCanConnectCoach(me.data);
-    void needsGuardianEmail;
     const athleteId = me.data.id;
 
     // RLS lets the athlete read their own coach_athletes rows, but not
@@ -419,7 +418,7 @@ export const listAdultAthleteCoaches = createServerFn({ method: "GET" })
     if (links.error) dbError(links.error);
     const coachIds = Array.from(new Set((links.data ?? []).map((l) => l.coach_id)));
     if (coachIds.length === 0) {
-      return { hasAthlete: true, canConnectCoach: true as const, needsGuardianEmail, coaches: [] };
+      return { hasAthlete: true, canConnectCoach: !needsGuardianEmail, needsGuardianEmail, coaches: [] };
     }
 
     const scoped = await supabase
@@ -447,7 +446,7 @@ export const listAdultAthleteCoaches = createServerFn({ method: "GET" })
       sports: sportsByCoach.get(cp.id) ?? [],
     }));
 
-    return { hasAthlete: true, canConnectCoach: true as const, needsGuardianEmail, coaches };
+    return { hasAthlete: true, canConnectCoach: !needsGuardianEmail, needsGuardianEmail, coaches };
   });
 
 /**
