@@ -18,6 +18,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Logo } from "@/components/logo";
+import {
+  ageInYears,
+  clearPendingAthleteDob,
+  readPendingAthleteDob,
+} from "@/lib/pending-athlete-dob";
+
 import { SportChip } from "@/components/onboarding/sport-chip";
 import { getSport, SPORTS } from "@/lib/coach-sports";
 import {
@@ -114,28 +120,24 @@ function ProfileStep({ onDone }: { onDone: () => void }) {
   const createAthlete = useServerFn(createSelfManagedAthlete);
   const qc = useQueryClient();
 
+  const stashed = useMemo(() => readPendingAthleteDob(), []);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [birthdate, setBirthdate] = useState("");
+  const [birthdate, setBirthdate] = useState(stashed?.birthdate ?? "");
+  const [guardianEmail, setGuardianEmail] = useState(stashed?.guardianEmail ?? "");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  // Client-side age check; DB trigger enforce_adult_self_managed is the
-  // authoritative gate.
-  const birthdateValid = (() => {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(birthdate)) return false;
-    const [y, m, d] = birthdate.split("-").map(Number);
-    const dt = new Date(y, m - 1, d);
-    const now = new Date();
-    let age = now.getFullYear() - y;
-    if (now.getMonth() < m - 1 || (now.getMonth() === m - 1 && now.getDate() < d)) {
-      age -= 1;
-    }
-    return dt.getFullYear() === y && age >= 18 && age < 120;
-  })();
+  // Client-side checks only; the DB trigger enforce_adult_self_managed is the
+  // authoritative gate (under-18 is allowed with a guardian email on file).
+  const dateWellFormed = /^\d{4}-\d{2}-\d{2}$/.test(birthdate);
+  const age = dateWellFormed ? ageInYears(birthdate) : null;
+  const isMinor = age !== null && age < 18;
+  const birthdateValid = age !== null && age >= 0 && age < 120;
+  const guardianValid = !isMinor || /^\S+@\S+\.\S+$/.test(guardianEmail.trim());
 
   const namesValid = firstName.trim().length > 0 && lastName.trim().length > 0;
-  const canSubmit = !saving && namesValid && birthdateValid;
+  const canSubmit = !saving && namesValid && birthdateValid && guardianValid;
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -147,8 +149,10 @@ function ProfileStep({ onDone }: { onDone: () => void }) {
           firstName: firstName.trim(),
           lastName: lastName.trim(),
           birthdate,
+          ...(isMinor ? { guardianEmail: guardianEmail.trim().toLowerCase() } : {}),
         },
       });
+      clearPendingAthleteDob();
       await qc.invalidateQueries({ queryKey: ["adult-onboarding-status"] });
       onDone();
     } catch (e) {
@@ -207,10 +211,28 @@ function ProfileStep({ onDone }: { onDone: () => void }) {
             required
             max={new Date().toISOString().slice(0, 10)}
           />
-          <p className="text-xs text-text-tertiary">
-            You must be 18 or older to have your own account.
-          </p>
         </div>
+
+        {isMinor && (
+          <div className="space-y-2 rounded-xl border border-divider bg-elevated p-4">
+            <Label htmlFor="guardianEmail">Parent or guardian email</Label>
+            <Input
+              id="guardianEmail"
+              name="guardianEmail"
+              type="email"
+              inputMode="email"
+              value={guardianEmail}
+              onChange={(e) => setGuardianEmail(e.target.value)}
+              required
+              maxLength={255}
+              placeholder="parent@example.com"
+            />
+            <p className="text-xs text-text-tertiary">
+              We&apos;ll email them a link so they can follow along and join whenever they&apos;re
+              ready.
+            </p>
+          </div>
+        )}
 
         {error && <p className="text-sm text-destructive">{error}</p>}
 

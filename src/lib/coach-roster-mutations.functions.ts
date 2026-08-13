@@ -1,4 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { dbError } from "./db-error";
 
@@ -78,6 +80,105 @@ function validateDateStr(date: string): void {
 }
 
 // ---------- roster ----------
+
+/**
+ * Add a youth athlete to the coach's roster without waiting on the parent to
+ * sign up. The guardian email is required for minors: the parent gets a claim
+ * link immediately and copies of coach messages until they join.
+ */
+export const addAthleteWithGuardian = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        firstName: z.string().trim().min(1, "First name is required").max(80),
+        lastName: z.string().trim().min(1, "Last name is required").max(80),
+        birthdate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Enter a valid birthdate"),
+        guardianEmail: z
+          .string()
+          .trim()
+          .toLowerCase()
+          .email("Enter a valid parent or guardian email")
+          .max(255)
+          .optional(),
+        sport: z.string().trim().min(1).max(40).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const coachId = await resolveCoachId(context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { newGuardianToken, sendGuardianInvite } = await import("./guardian.server");
+
+    const [y, m, d] = data.birthdate.split("-").map(Number);
+    const dob = new Date(Date.UTC(y, m - 1, d));
+    if (Number.isNaN(dob.getTime()) || dob > new Date()) throw new Error("Enter a valid birthdate");
+    const ageMs = Date.now() - dob.getTime();
+    const age = Math.floor(ageMs / (365.25 * 24 * 3600 * 1000));
+    if (age > 120) throw new Error("Enter a valid birthdate");
+    const isMinor = age < 18;
+
+    if (isMinor && !data.guardianEmail) {
+      throw new Error("Athletes under 18 need a parent or guardian email.");
+    }
+
+    const guardianEmail = data.guardianEmail ?? null;
+    const token = guardianEmail ? newGuardianToken() : null;
+
+    const athleteIns = await supabaseAdmin
+      .from("athletes")
+      .insert({
+        first_name: data.firstName,
+        last_name: data.lastName,
+        birthdate: data.birthdate,
+        parent_id: null,
+        self_managed: false,
+        motivation: "",
+        guardian_email: guardianEmail,
+        guardian_claim_token: token,
+        guardian_invited_at: guardianEmail ? new Date().toISOString() : null,
+        added_by_coach_id: coachId,
+      })
+      .select("id")
+      .single();
+    if (athleteIns.error) dbError(athleteIns.error);
+    const athleteId = athleteIns.data.id;
+
+    const link = await supabaseAdmin
+      .from("coach_athletes")
+      .insert({ coach_id: coachId, athlete_id: athleteId, coach_ack_at: new Date().toISOString() });
+    if (link.error) {
+      // Roster cap trigger (or any other failure) — roll the athlete back so we
+      // don't strand an orphan row the coach can't see.
+      await supabaseAdmin.from("athletes").delete().eq("id", athleteId);
+      dbError(link.error);
+    }
+
+    if (data.sport) {
+      const sportIns = await supabaseAdmin
+        .from("coach_athlete_sports")
+        .insert({ coach_id: coachId, athlete_id: athleteId, sport: data.sport });
+      if (sportIns.error) console.error("[roster] sport link failed", sportIns.error);
+    }
+
+    if (guardianEmail && token) {
+      const coach = await supabaseAdmin
+        .from("coach_profiles")
+        .select("first_name, last_name")
+        .eq("id", coachId)
+        .maybeSingle();
+      await sendGuardianInvite({
+        to: guardianEmail,
+        athleteName: `${data.firstName} ${data.lastName}`.trim(),
+        coachName: coach.data
+          ? `${coach.data.first_name} ${coach.data.last_name}`.trim()
+          : undefined,
+        token,
+      });
+    }
+
+    return { athleteId, guardianEmail };
+  });
 
 export const removeAthleteFromRoster = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

@@ -42,17 +42,20 @@ const birthdateSchema = z
       dt.getUTCDate() === d
     );
   }, "Enter a valid date")
-  .refine((v) => ageInYears(v) >= 18, "You must be 18 or older to create your own account.")
   .refine((v) => ageInYears(v) < 120, "Enter a valid date");
 
 /**
  * Create the signed-in user's self-managed athlete row. Idempotent: if the
  * caller already has an athletes row we return it unchanged (birthdate is
- * locked once written; the DB trigger enforces the 18+ rule).
+ * locked once written).
+ *
+ * Under-18 athletes may manage their own login as long as a parent/guardian
+ * email is on file — the DB trigger `enforce_adult_self_managed` enforces
+ * that. When one is supplied we mint a claim token and email the guardian.
  *
  * Uses the user-scoped supabase client so RLS decides authorization — the
- * "Adults can insert own self-managed athlete row" policy plus the
- * enforce_adult_self_managed trigger are the only gates.
+ * "Adults can insert own self-managed athlete row" policy plus the trigger
+ * are the only gates.
  */
 export const createSelfManagedAthlete = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -62,11 +65,23 @@ export const createSelfManagedAthlete = createServerFn({ method: "POST" })
         firstName: nameSchema,
         lastName: nameSchema,
         birthdate: birthdateSchema,
+        guardianEmail: z
+          .string()
+          .trim()
+          .toLowerCase()
+          .email("Enter a valid parent or guardian email")
+          .max(255)
+          .optional(),
+      })
+      .refine((v) => ageInYears(v.birthdate) >= 18 || Boolean(v.guardianEmail), {
+        message: "Athletes under 18 need a parent or guardian email.",
+        path: ["guardianEmail"],
       })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
     const supabase = context.supabase as Client;
+    const isMinor = ageInYears(data.birthdate) < 18;
 
     // Idempotent: don't error if the user already has a row (e.g. the signup
     // form was submitted twice, or they returned to onboarding).
@@ -83,6 +98,10 @@ export const createSelfManagedAthlete = createServerFn({ method: "POST" })
       return { athleteId: existing.data.id };
     }
 
+    const { newGuardianToken, sendGuardianInvite } = await import("./guardian.server");
+    const guardianEmail = isMinor ? (data.guardianEmail ?? null) : null;
+    const guardianToken = guardianEmail ? newGuardianToken() : null;
+
     const insert = await supabase
       .from("athletes")
       .insert({
@@ -92,16 +111,29 @@ export const createSelfManagedAthlete = createServerFn({ method: "POST" })
         self_managed: true,
         parent_id: null,
         user_id: context.userId,
+        guardian_email: guardianEmail,
+        guardian_claim_token: guardianToken,
+        guardian_invited_at: guardianEmail ? new Date().toISOString() : null,
       })
       .select("id")
       .single();
     if (insert.error) {
       // 23514 = check_violation (age trigger). Give a friendly message.
       if ((insert.error as { code?: string }).code === "23514") {
-        throw new Error("You must be 18 or older to create your own account.");
+        throw new Error("Athletes under 18 need a parent or guardian email.");
       }
+
       dbError(insert.error);
     }
+
+    if (guardianEmail && guardianToken) {
+      await sendGuardianInvite({
+        to: guardianEmail,
+        athleteName: `${data.firstName} ${data.lastName}`.trim(),
+        token: guardianToken,
+      });
+    }
+
     return { athleteId: insert.data.id };
   });
 

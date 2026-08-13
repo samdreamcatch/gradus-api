@@ -396,6 +396,46 @@ export const sendMessage = createServerFn({ method: "POST" })
         .from("message_rooms")
         .update({ updated_at: new Date().toISOString() })
         .eq("id", room.id);
+
+      // Guardian-on-file mirror: while a minor athlete's parent hasn't claimed
+      // their account yet, email them a copy of what the coach sends so they
+      // keep full visibility without being forced to register.
+      if (role === "coach" && data.kind === "text") {
+        try {
+          const { data: athlete } = await supabaseAdmin
+            .from("athletes")
+            .select(
+              "first_name, last_name, parent_id, guardian_email, guardian_claimed_at, guardian_claim_token",
+            )
+            .eq("id", room.athleteId!)
+            .maybeSingle();
+          if (
+            athlete?.guardian_email &&
+            athlete.guardian_claim_token &&
+            !athlete.parent_id &&
+            !athlete.guardian_claimed_at
+          ) {
+            const { data: coach } = await supabaseAdmin
+              .from("coach_profiles")
+              .select("first_name, last_name")
+              .eq("id", room.coachId!)
+              .maybeSingle();
+            const { sendGuardianMessageCopy } = await import("./guardian.server");
+            await sendGuardianMessageCopy({
+              to: athlete.guardian_email,
+              athleteName: `${athlete.first_name} ${athlete.last_name}`.trim(),
+              senderName: coach
+                ? `Coach ${coach.first_name} ${coach.last_name}`.trim()
+                : "Your athlete's coach",
+              senderRole: "coach",
+              body: data.body,
+              token: athlete.guardian_claim_token,
+            });
+          }
+        } catch (e) {
+          console.error("[messages] guardian mirror failed", e);
+        }
+      }
     } else {
       await supabaseAdmin
         .from("direct_rooms")
