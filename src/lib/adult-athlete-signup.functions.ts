@@ -175,11 +175,11 @@ export const previewCoachForAdultAthlete = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    // Only self-managed athletes may use this preview endpoint; minors also
-    // need a guardian email on file.
+    // Any athlete with their own login may preview; minors need a guardian
+    // email on file or a linked parent account.
     const me = await supabaseAdmin
       .from("athletes")
-      .select("id, self_managed, birthdate, guardian_email")
+      .select("id, self_managed, birthdate, guardian_email, parent_id")
       .eq("user_id", context.userId)
       .maybeSingle();
     if (me.error) dbError(me.error);
@@ -236,7 +236,7 @@ export const linkAdultAthleteToCoach = createServerFn({ method: "POST" })
     // Resolve the caller's self-managed athlete.
     const me = await supabase
       .from("athletes")
-      .select("id, self_managed, birthdate, guardian_email")
+      .select("id, self_managed, birthdate, guardian_email, parent_id")
       .eq("user_id", context.userId)
       .maybeSingle();
     if (me.error) dbError(me.error);
@@ -319,21 +319,17 @@ export const getAdultOnboardingStatus = createServerFn({ method: "GET" })
   });
 
 /**
- * Resolve the caller's self-managed athlete row. Throws if the caller is not
- * a self-managed athlete — every adult-scoped mutator below funnels through
- * here so a minor's user_id can never reach these code paths.
+ * Resolve the athlete row owned by the caller's login. RLS
+ * (athlete_can_self_connect) is the real gate on every mutator below.
  */
 async function requireSelfManagedAthleteId(supabase: Client, userId: string): Promise<string> {
   const me = await supabase
     .from("athletes")
-    .select("id, self_managed")
+    .select("id")
     .eq("user_id", userId)
     .maybeSingle();
   if (me.error) dbError(me.error);
   if (!me.data) throw new Error("Finish setting up your athlete profile first.");
-  if (!me.data.self_managed) {
-    throw new Error("This account is parent-managed.");
-  }
   return me.data.id;
 }
 
@@ -399,18 +395,16 @@ export const listAdultAthleteCoaches = createServerFn({ method: "GET" })
     const supabase = context.supabase as Client;
     const me = await supabase
       .from("athletes")
-      .select("id, self_managed, birthdate, guardian_email")
+      .select("id, self_managed, birthdate, guardian_email, parent_id")
       .eq("user_id", context.userId)
       .maybeSingle();
     if (me.error) dbError(me.error);
-    if (!me.data || !me.data.self_managed) {
-      return { selfManaged: false as const, needsGuardianEmail: false, coaches: [] };
+    if (!me.data) {
+      return { canConnectCoach: false as const, needsGuardianEmail: false, coaches: [] };
     }
-    // Minors can connect coaches too, but only once a guardian email is on file.
-    const needsGuardianEmail =
-      Boolean(me.data.birthdate) &&
-      ageInYears(me.data.birthdate as string) < 18 &&
-      !me.data.guardian_email;
+    // Minors can connect coaches too, but only with a guardian reachable —
+    // either an email on file or a linked parent account.
+    const needsGuardianEmail = !athleteCanConnectCoach(me.data);
     const athleteId = me.data.id;
 
     // RLS lets the athlete read their own coach_athletes rows, but not
@@ -424,7 +418,7 @@ export const listAdultAthleteCoaches = createServerFn({ method: "GET" })
     if (links.error) dbError(links.error);
     const coachIds = Array.from(new Set((links.data ?? []).map((l) => l.coach_id)));
     if (coachIds.length === 0) {
-      return { selfManaged: true as const, needsGuardianEmail, coaches: [] };
+      return { canConnectCoach: true as const, needsGuardianEmail, coaches: [] };
     }
 
     const scoped = await supabase
@@ -452,7 +446,7 @@ export const listAdultAthleteCoaches = createServerFn({ method: "GET" })
       sports: sportsByCoach.get(cp.id) ?? [],
     }));
 
-    return { selfManaged: true as const, needsGuardianEmail, coaches };
+    return { canConnectCoach: true as const, needsGuardianEmail, coaches };
   });
 
 /**
