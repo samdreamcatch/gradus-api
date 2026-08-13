@@ -113,20 +113,28 @@ function AthleteSettingsPage() {
                   <AdultCoachesSection coaches={coachData?.coaches ?? []} />
                 </SettingsList>
                 <div className="mt-3">
-                  <ConnectCoachSheet
-                    audience="adult-athlete"
-                    initialCode={linkCoach ?? null}
-                    onInitialCodeConsumed={() =>
-                      navigate({
-                        to: "/athlete/settings",
-                        search: {},
-                        replace: true,
-                      })
-                    }
-                  />
+                  {coachData?.needsGuardianEmail ? (
+                    <p className="px-1 text-xs text-text-tertiary">
+                      Add a parent or guardian email above, then you can invite a coach or enter
+                      their code.
+                    </p>
+                  ) : (
+                    <ConnectCoachSheet
+                      audience="adult-athlete"
+                      initialCode={linkCoach ?? null}
+                      onInitialCodeConsumed={() =>
+                        navigate({
+                          to: "/athlete/settings",
+                          search: {},
+                          replace: true,
+                        })
+                      }
+                    />
+                  )}
                 </div>
               </SettingsGroup>
             )}
+
 
             <SettingsGroup label="Preferences">
               <SettingsList>
