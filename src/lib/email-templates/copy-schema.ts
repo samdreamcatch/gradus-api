@@ -26,6 +26,18 @@ export interface TemplateCopy {
 
 const AUTH_VARS = ["siteName", "siteUrl", "recipient", "confirmationUrl"] as const;
 
+const GUARDIAN_INVITE_VARS = ["athleteName", "coachName", "claimUrl", "siteUrl"] as const;
+
+const GUARDIAN_ACTIVITY_VARS = [
+  "athleteName",
+  "senderName",
+  "senderRole",
+  "senderLabel",
+  "body",
+  "claimUrl",
+  "siteUrl",
+] as const;
+
 export const EMAIL_COPY_SCHEMA: Record<string, TemplateCopy> = {
   signup: {
     displayName: "Signup — confirm your email",
@@ -188,6 +200,102 @@ export const EMAIL_COPY_SCHEMA: Record<string, TemplateCopy> = {
       heading: "Confirm it's you.",
       body: "Enter this code to finish signing in. It expires in 5 minutes.",
       footer: "If you didn't request a code, you can safely ignore this email.",
+    },
+  },
+  "guardian-invite": {
+    displayName: "Guardian invite",
+    category: "App",
+    description:
+      "Sent to a parent or guardian listed on a youth athlete's account, with a link to claim their free parent account.",
+    slots: [
+      { key: "preview", label: "Inbox preview", kind: "text", variables: GUARDIAN_INVITE_VARS },
+      {
+        key: "subject",
+        label: "Subject line (athlete joined on their own)",
+        kind: "text",
+        variables: GUARDIAN_INVITE_VARS,
+      },
+      {
+        key: "subjectWithCoach",
+        label: "Subject line (coach added them)",
+        kind: "text",
+        variables: GUARDIAN_INVITE_VARS,
+      },
+      { key: "eyebrow", label: "Small caps eyebrow", kind: "text" },
+      { key: "heading", label: "Big headline", kind: "text", variables: GUARDIAN_INVITE_VARS },
+      {
+        key: "introWithCoach",
+        label: "Intro paragraph (coach added them)",
+        kind: "textarea",
+        variables: GUARDIAN_INVITE_VARS,
+      },
+      {
+        key: "intro",
+        label: "Intro paragraph (athlete joined on their own)",
+        kind: "textarea",
+        variables: GUARDIAN_INVITE_VARS,
+      },
+      {
+        key: "body",
+        label: "Secondary paragraph",
+        kind: "textarea",
+        variables: GUARDIAN_INVITE_VARS,
+      },
+      { key: "ctaLabel", label: "Button label", kind: "text", variables: GUARDIAN_INVITE_VARS },
+      { key: "fallbackHelp", label: "Button-not-working help", kind: "text" },
+      { key: "signOff", label: "Handwritten sign-off", kind: "text" },
+      { key: "footer", label: "Fine-print footer", kind: "textarea" },
+    ],
+    defaults: {
+      preview: "See everything {athleteName} is doing on Gradus",
+      subject: "{athleteName} joined Gradus",
+      subjectWithCoach: "Coach {coachName} added {athleteName} to Gradus",
+      eyebrow: "Parent / guardian access",
+      heading: "You've been listed as {athleteName}'s parent",
+      introWithCoach:
+        "Coach {coachName} added {athleteName} to Gradus, the training app their coach uses to assign plans, track practice, and message about lessons.",
+      intro:
+        "{athleteName} joined Gradus, the training app their coach uses to assign plans, track practice, and message about lessons.",
+      body: "You were listed as their parent or guardian, so we'll email you a copy of what their coach sends. Create your free parent account to see plans, practice logs, and messages in one place — nothing to pay, and it takes about a minute.",
+      ctaLabel: "See {athleteName}'s training",
+      fallbackHelp: "Or paste this link into your browser:",
+      signOff: "— The Gradus team",
+      footer:
+        "If you don't recognize this athlete, you can ignore this email and no account will be created.",
+    },
+  },
+  "guardian-activity": {
+    displayName: "Guardian message copy",
+    category: "App",
+    description:
+      "Mirror of a coach or athlete message, sent to a guardian who hasn't created their account yet.",
+    slots: [
+      { key: "preview", label: "Inbox preview", kind: "text", variables: GUARDIAN_ACTIVITY_VARS },
+      { key: "subject", label: "Subject line", kind: "text", variables: GUARDIAN_ACTIVITY_VARS },
+      {
+        key: "eyebrow",
+        label: "Small caps eyebrow",
+        kind: "text",
+        variables: GUARDIAN_ACTIVITY_VARS,
+      },
+      { key: "heading", label: "Big headline", kind: "text", variables: GUARDIAN_ACTIVITY_VARS },
+      {
+        key: "body",
+        label: "Explainer paragraph",
+        kind: "textarea",
+        variables: GUARDIAN_ACTIVITY_VARS,
+      },
+      { key: "ctaLabel", label: "Button label", kind: "text" },
+      { key: "footer", label: "Fine-print footer", kind: "textarea" },
+    ],
+    defaults: {
+      preview: "New message about {athleteName} on Gradus",
+      subject: "New message about {athleteName} on Gradus",
+      eyebrow: "Copy for {athleteName}'s parent",
+      heading: "{senderLabel} sent a message",
+      body: "You're getting this because you're listed as {athleteName}'s parent or guardian and haven't created your Gradus account yet. Create it to reply and see everything in one place.",
+      ctaLabel: "Create my parent account",
+      footer: "These copies stop as soon as you create your account.",
     },
   },
 };

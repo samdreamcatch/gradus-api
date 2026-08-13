@@ -8,8 +8,12 @@
  */
 import * as React from "react";
 import { render } from "@react-email/render";
-import { GuardianInviteEmail } from "./email-templates/guardian-invite";
-import { GuardianActivityEmail } from "./email-templates/guardian-activity";
+import { GuardianInviteEmail, guardianInviteSubject } from "./email-templates/guardian-invite";
+import {
+  GuardianActivityEmail,
+  guardianActivitySubject,
+} from "./email-templates/guardian-activity";
+import { fetchOverridesFor } from "./email-templates/overrides.server";
 
 const SITE_NAME = "gradustraining";
 const SENDER_DOMAIN = "support.gradussports.com";
@@ -82,19 +86,22 @@ export async function sendGuardianInvite(params: {
   token: string;
 }): Promise<void> {
   try {
+    const copyOverrides = await fetchOverridesFor("guardian-invite");
     const element = React.createElement(GuardianInviteEmail, {
       athleteName: params.athleteName,
       coachName: params.coachName ?? null,
       claimUrl: guardianClaimUrl(params.token),
       siteUrl: SITE_URL,
+      copyOverrides,
     });
     const html = await render(element);
     const text = await render(element, { plainText: true });
     await enqueue({
       to: params.to,
-      subject: params.coachName
-        ? `Coach ${params.coachName} added ${params.athleteName} to Gradus`
-        : `${params.athleteName} joined Gradus`,
+      subject: guardianInviteSubject(
+        { athleteName: params.athleteName, coachName: params.coachName ?? null },
+        copyOverrides,
+      ),
       html,
       text,
       label: "guardian-invite",
@@ -114,6 +121,7 @@ export async function sendGuardianMessageCopy(params: {
   token: string;
 }): Promise<void> {
   try {
+    const copyOverrides = await fetchOverridesFor("guardian-activity");
     const element = React.createElement(GuardianActivityEmail, {
       athleteName: params.athleteName,
       senderName: params.senderName,
@@ -121,12 +129,20 @@ export async function sendGuardianMessageCopy(params: {
       body: params.body,
       claimUrl: guardianClaimUrl(params.token),
       siteUrl: SITE_URL,
+      copyOverrides,
     });
     const html = await render(element);
     const text = await render(element, { plainText: true });
     await enqueue({
       to: params.to,
-      subject: `New message about ${params.athleteName} on Gradus`,
+      subject: guardianActivitySubject(
+        {
+          athleteName: params.athleteName,
+          senderName: params.senderName,
+          senderRole: params.senderRole,
+        },
+        copyOverrides,
+      ),
       html,
       text,
       label: "guardian-activity",
