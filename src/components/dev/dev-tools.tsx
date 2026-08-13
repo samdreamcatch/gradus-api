@@ -51,6 +51,7 @@ export function DevTools() {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
+  const [stepRole, setStepRole] = useState<DevRole>("coach");
   const [session, setSession] = useState<ActiveSession>({
     email: null,
     userId: null,
