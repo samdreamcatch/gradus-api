@@ -232,9 +232,7 @@ function ConnectedCoachesList({ athletes }: { athletes: AthleteData[] }) {
   const coaches = Array.from(byCoach.values());
 
   if (coaches.length === 0) {
-    return (
-      <p className="mb-3 px-1 text-sm text-text-tertiary">No coaches connected yet.</p>
-    );
+    return <p className="mb-3 px-1 text-sm text-text-tertiary">No coaches connected yet.</p>;
   }
 
   return (

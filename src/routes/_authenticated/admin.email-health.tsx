@@ -220,7 +220,10 @@ function AdminEmailHealth() {
           </p>
           <ul className="rounded-lg border border-divider bg-card divide-y divide-divider shadow-card">
             {data.suppressed.map((s) => (
-              <li key={s.id} className="flex flex-wrap items-center justify-between gap-2 px-3 py-2">
+              <li
+                key={s.id}
+                className="flex flex-wrap items-center justify-between gap-2 px-3 py-2"
+              >
                 <span className="text-meta text-text-primary truncate">{s.email}</span>
                 <span className="flex items-center gap-2">
                   <Tag size="micro" tone="muted">

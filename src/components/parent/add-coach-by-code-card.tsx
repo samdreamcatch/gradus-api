@@ -155,7 +155,13 @@ export function AddCoachByCodeCard({
             />
           </div>
           <div className="flex justify-end gap-2">
-            <Button size="sm" variant="ghost" type="button" onClick={handleCancel} disabled={lookingUp}>
+            <Button
+              size="sm"
+              variant="ghost"
+              type="button"
+              onClick={handleCancel}
+              disabled={lookingUp}
+            >
               Cancel
             </Button>
             <Button size="sm" type="submit" disabled={!codeValid || lookingUp}>
