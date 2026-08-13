@@ -81,26 +81,9 @@ function AthleteEntryPage() {
         </div>
 
         {stage === "age" ? (
-          <div className="space-y-6">
-            <div className="text-center">
-              <p className="font-display text-2xl text-text-primary">Are you 18 or older?</p>
-              <p className="mt-2 text-sm text-text-secondary">
-                Under-18 athletes join through a parent. Adults can set up their own account.
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              <Button asChild className="w-full">
-                <Link to="/signup/athlete/adult">Yes, I&apos;m 18 or older</Link>
-              </Button>
-              <Button asChild variant="outline" className="w-full">
-                <Link to="/signup/athlete" search={{ stage: "code" }}>
-                  No, I&apos;m under 18
-                </Link>
-              </Button>
-            </div>
-          </div>
+          <AgeStep />
         ) : (
+
           <>
             <div className="mb-6 text-center">
               <p className="font-display text-2xl text-text-primary">
