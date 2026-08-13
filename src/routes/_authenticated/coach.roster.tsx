@@ -249,7 +249,6 @@ function RosterPage() {
               <div className="border-t border-divider" />
               <AddYouthAthleteCard onSuccess={() => setInviteOpen(false)} />
             </div>
-
           </SheetContent>
         </Sheet>
 

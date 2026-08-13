@@ -437,7 +437,6 @@ export const sendMessage = createServerFn({ method: "POST" })
         }
       }
     } else {
-
       await supabaseAdmin
         .from("direct_rooms")
         .update({ updated_at: new Date().toISOString() })

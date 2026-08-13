@@ -181,7 +181,6 @@ export const addAthleteWithGuardian = createServerFn({ method: "POST" })
   });
 
 export const removeAthleteFromRoster = createServerFn({ method: "POST" })
-
   .middleware([requireSupabaseAuth])
   .inputValidator((data: { athleteId: string }) => {
     if (!data?.athleteId) throw new Error("athleteId required");

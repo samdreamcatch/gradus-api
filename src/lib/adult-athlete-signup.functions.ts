@@ -44,7 +44,6 @@ const birthdateSchema = z
   }, "Enter a valid date")
   .refine((v) => ageInYears(v) < 120, "Enter a valid date");
 
-
 /**
  * Create the signed-in user's self-managed athlete row. Idempotent: if the
  * caller already has an athletes row we return it unchanged (birthdate is
@@ -137,7 +136,6 @@ export const createSelfManagedAthlete = createServerFn({ method: "POST" })
 
     return { athleteId: insert.data.id };
   });
-
 
 /**
  * Preview a coach by invite code from the adult-athlete onboarding screen.

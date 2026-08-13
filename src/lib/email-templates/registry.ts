@@ -26,4 +26,3 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   "guardian-invite": guardianInviteTemplate,
   "guardian-activity": guardianActivityTemplate,
 };
-

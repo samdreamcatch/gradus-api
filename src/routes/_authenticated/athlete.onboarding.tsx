@@ -234,7 +234,6 @@ function ProfileStep({ onDone }: { onDone: () => void }) {
           </div>
         )}
 
-
         {error && <p className="text-sm text-destructive">{error}</p>}
 
         <Button type="submit" className="w-full" disabled={!canSubmit}>

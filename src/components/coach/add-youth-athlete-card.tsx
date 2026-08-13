@@ -34,9 +34,7 @@ export function AddYouthAthleteCard({ onSuccess }: { onSuccess?: () => void }) {
           firstName: firstName.trim(),
           lastName: lastName.trim(),
           birthdate,
-          ...(guardianEmail.trim()
-            ? { guardianEmail: guardianEmail.trim().toLowerCase() }
-            : {}),
+          ...(guardianEmail.trim() ? { guardianEmail: guardianEmail.trim().toLowerCase() } : {}),
         },
       });
       await qc.invalidateQueries({ queryKey: ["coach-roster"] });
