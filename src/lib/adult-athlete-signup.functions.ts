@@ -163,7 +163,6 @@ function assertCanConnectCoach(row: {
   }
 }
 
-
 /**
  * Preview a coach by invite code from the adult-athlete onboarding screen.
  * Mirrors previewCoachByInviteCode from parent-settings but does not gate
@@ -323,11 +322,7 @@ export const getAdultOnboardingStatus = createServerFn({ method: "GET" })
  * (athlete_can_self_connect) is the real gate on every mutator below.
  */
 async function requireSelfManagedAthleteId(supabase: Client, userId: string): Promise<string> {
-  const me = await supabase
-    .from("athletes")
-    .select("id")
-    .eq("user_id", userId)
-    .maybeSingle();
+  const me = await supabase.from("athletes").select("id").eq("user_id", userId).maybeSingle();
   if (me.error) dbError(me.error);
   if (!me.data) throw new Error("Finish setting up your athlete profile first.");
   return me.data.id;
@@ -418,7 +413,12 @@ export const listAdultAthleteCoaches = createServerFn({ method: "GET" })
     if (links.error) dbError(links.error);
     const coachIds = Array.from(new Set((links.data ?? []).map((l) => l.coach_id)));
     if (coachIds.length === 0) {
-      return { hasAthlete: true, canConnectCoach: !needsGuardianEmail, needsGuardianEmail, coaches: [] };
+      return {
+        hasAthlete: true,
+        canConnectCoach: !needsGuardianEmail,
+        needsGuardianEmail,
+        coaches: [],
+      };
     }
 
     const scoped = await supabase
