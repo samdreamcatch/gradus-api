@@ -171,7 +171,7 @@ export function DevTools() {
     }
   };
 
-  const steps = session.role ? ONBOARDING_STEPS[session.role] : [];
+  const steps = ONBOARDING_STEPS[stepRole] ?? [];
 
   if (hideOnAdmin) return null;
 
