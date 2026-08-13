@@ -279,7 +279,11 @@ function RosterPage() {
             </div>
           ) : null}
 
-          <SheetContent side="bottom" className="paper-surface max-h-[85dvh] overflow-y-auto">
+          <SheetContent
+            side="bottom"
+            className="paper-surface overflow-y-auto"
+            style={{ bottom: vv.keyboardInset, maxHeight: Math.round(vv.height * 0.9) }}
+          >
             {inviteStep === "hub" ? (
               <>
                 <SheetHeader>
