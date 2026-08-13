@@ -81,6 +81,7 @@ import { Route as AuthenticatedAthleteResourcesIndexRouteImport } from './routes
 import { Route as AuthenticatedAthletePlansIndexRouteImport } from './routes/_authenticated/athlete.plans.index'
 import { Route as AuthenticatedAthleteMessagesIndexRouteImport } from './routes/_authenticated/athlete.messages.index'
 import { Route as AuthenticatedAdminUsersIndexRouteImport } from './routes/_authenticated/admin.users.index'
+import { Route as AuthenticatedAdminEmailsIndexRouteImport } from './routes/_authenticated/admin.emails.index'
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
@@ -98,6 +99,7 @@ import { Route as AuthenticatedAdminUsersUserIdRouteImport } from './routes/_aut
 import { Route as AuthenticatedAdminPlansPlanIdRouteImport } from './routes/_authenticated/admin.plans.$planId'
 import { Route as AuthenticatedAdminListKindRouteImport } from './routes/_authenticated/admin.list.$kind'
 import { Route as AuthenticatedAdminErrorsIdRouteImport } from './routes/_authenticated/admin.errors.$id'
+import { Route as AuthenticatedAdminEmailsNameRouteImport } from './routes/_authenticated/admin.emails.$name'
 
 const UnsubscribeRoute = UnsubscribeRouteImport.update({
   id: '/unsubscribe',
@@ -497,6 +499,12 @@ const AuthenticatedAdminUsersIndexRoute =
     path: '/users/',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminEmailsIndexRoute =
+  AuthenticatedAdminEmailsIndexRouteImport.update({
+    id: '/emails/',
+    path: '/emails/',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const LovableEmailTransactionalSendRoute =
   LovableEmailTransactionalSendRouteImport.update({
     id: '/lovable/email/transactional/send',
@@ -597,6 +605,12 @@ const AuthenticatedAdminErrorsIdRoute =
     path: '/$id',
     getParentRoute: () => AuthenticatedAdminErrorsRoute,
   } as any)
+const AuthenticatedAdminEmailsNameRoute =
+  AuthenticatedAdminEmailsNameRouteImport.update({
+    id: '/emails/$name',
+    path: '/emails/$name',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -660,6 +674,7 @@ export interface FileRoutesByFullPath {
   '/coach/': typeof AuthenticatedCoachIndexRoute
   '/org-admin/': typeof AuthenticatedOrgAdminIndexRoute
   '/parent/': typeof AuthenticatedParentIndexRoute
+  '/admin/emails/$name': typeof AuthenticatedAdminEmailsNameRoute
   '/admin/errors/$id': typeof AuthenticatedAdminErrorsIdRoute
   '/admin/list/$kind': typeof AuthenticatedAdminListKindRoute
   '/admin/plans/$planId': typeof AuthenticatedAdminPlansPlanIdRoute
@@ -677,6 +692,7 @@ export interface FileRoutesByFullPath {
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
+  '/admin/emails/': typeof AuthenticatedAdminEmailsIndexRoute
   '/admin/users/': typeof AuthenticatedAdminUsersIndexRoute
   '/athlete/messages/': typeof AuthenticatedAthleteMessagesIndexRoute
   '/athlete/plans/': typeof AuthenticatedAthletePlansIndexRoute
@@ -744,6 +760,7 @@ export interface FileRoutesByTo {
   '/coach': typeof AuthenticatedCoachIndexRoute
   '/org-admin': typeof AuthenticatedOrgAdminIndexRoute
   '/parent': typeof AuthenticatedParentIndexRoute
+  '/admin/emails/$name': typeof AuthenticatedAdminEmailsNameRoute
   '/admin/errors/$id': typeof AuthenticatedAdminErrorsIdRoute
   '/admin/list/$kind': typeof AuthenticatedAdminListKindRoute
   '/admin/plans/$planId': typeof AuthenticatedAdminPlansPlanIdRoute
@@ -761,6 +778,7 @@ export interface FileRoutesByTo {
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
+  '/admin/emails': typeof AuthenticatedAdminEmailsIndexRoute
   '/admin/users': typeof AuthenticatedAdminUsersIndexRoute
   '/athlete/messages': typeof AuthenticatedAthleteMessagesIndexRoute
   '/athlete/plans': typeof AuthenticatedAthletePlansIndexRoute
@@ -836,6 +854,7 @@ export interface FileRoutesById {
   '/_authenticated/coach/': typeof AuthenticatedCoachIndexRoute
   '/_authenticated/org-admin/': typeof AuthenticatedOrgAdminIndexRoute
   '/_authenticated/parent/': typeof AuthenticatedParentIndexRoute
+  '/_authenticated/admin/emails/$name': typeof AuthenticatedAdminEmailsNameRoute
   '/_authenticated/admin/errors/$id': typeof AuthenticatedAdminErrorsIdRoute
   '/_authenticated/admin/list/$kind': typeof AuthenticatedAdminListKindRoute
   '/_authenticated/admin/plans/$planId': typeof AuthenticatedAdminPlansPlanIdRoute
@@ -853,6 +872,7 @@ export interface FileRoutesById {
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
+  '/_authenticated/admin/emails/': typeof AuthenticatedAdminEmailsIndexRoute
   '/_authenticated/admin/users/': typeof AuthenticatedAdminUsersIndexRoute
   '/_authenticated/athlete/messages/': typeof AuthenticatedAthleteMessagesIndexRoute
   '/_authenticated/athlete/plans/': typeof AuthenticatedAthletePlansIndexRoute
@@ -928,6 +948,7 @@ export interface FileRouteTypes {
     | '/coach/'
     | '/org-admin/'
     | '/parent/'
+    | '/admin/emails/$name'
     | '/admin/errors/$id'
     | '/admin/list/$kind'
     | '/admin/plans/$planId'
@@ -945,6 +966,7 @@ export interface FileRouteTypes {
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
+    | '/admin/emails/'
     | '/admin/users/'
     | '/athlete/messages/'
     | '/athlete/plans/'
@@ -1012,6 +1034,7 @@ export interface FileRouteTypes {
     | '/coach'
     | '/org-admin'
     | '/parent'
+    | '/admin/emails/$name'
     | '/admin/errors/$id'
     | '/admin/list/$kind'
     | '/admin/plans/$planId'
@@ -1029,6 +1052,7 @@ export interface FileRouteTypes {
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
+    | '/admin/emails'
     | '/admin/users'
     | '/athlete/messages'
     | '/athlete/plans'
@@ -1103,6 +1127,7 @@ export interface FileRouteTypes {
     | '/_authenticated/coach/'
     | '/_authenticated/org-admin/'
     | '/_authenticated/parent/'
+    | '/_authenticated/admin/emails/$name'
     | '/_authenticated/admin/errors/$id'
     | '/_authenticated/admin/list/$kind'
     | '/_authenticated/admin/plans/$planId'
@@ -1120,6 +1145,7 @@ export interface FileRouteTypes {
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
+    | '/_authenticated/admin/emails/'
     | '/_authenticated/admin/users/'
     | '/_authenticated/athlete/messages/'
     | '/_authenticated/athlete/plans/'
@@ -1665,6 +1691,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminUsersIndexRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/emails/': {
+      id: '/_authenticated/admin/emails/'
+      path: '/emails'
+      fullPath: '/admin/emails/'
+      preLoaderRoute: typeof AuthenticatedAdminEmailsIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/lovable/email/transactional/send': {
       id: '/lovable/email/transactional/send'
       path: '/lovable/email/transactional/send'
@@ -1784,6 +1817,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminErrorsIdRouteImport
       parentRoute: typeof AuthenticatedAdminErrorsRoute
     }
+    '/_authenticated/admin/emails/$name': {
+      id: '/_authenticated/admin/emails/$name'
+      path: '/emails/$name'
+      fullPath: '/admin/emails/$name'
+      preLoaderRoute: typeof AuthenticatedAdminEmailsNameRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
   }
 }
 
@@ -1817,9 +1857,11 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminReportingRoute: typeof AuthenticatedAdminReportingRoute
   AuthenticatedAdminSessionsRoute: typeof AuthenticatedAdminSessionsRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
+  AuthenticatedAdminEmailsNameRoute: typeof AuthenticatedAdminEmailsNameRoute
   AuthenticatedAdminListKindRoute: typeof AuthenticatedAdminListKindRoute
   AuthenticatedAdminPlansPlanIdRoute: typeof AuthenticatedAdminPlansPlanIdRoute
   AuthenticatedAdminUsersUserIdRoute: typeof AuthenticatedAdminUsersUserIdRoute
+  AuthenticatedAdminEmailsIndexRoute: typeof AuthenticatedAdminEmailsIndexRoute
   AuthenticatedAdminUsersIndexRoute: typeof AuthenticatedAdminUsersIndexRoute
 }
 
@@ -1839,9 +1881,11 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminReportingRoute: AuthenticatedAdminReportingRoute,
   AuthenticatedAdminSessionsRoute: AuthenticatedAdminSessionsRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
+  AuthenticatedAdminEmailsNameRoute: AuthenticatedAdminEmailsNameRoute,
   AuthenticatedAdminListKindRoute: AuthenticatedAdminListKindRoute,
   AuthenticatedAdminPlansPlanIdRoute: AuthenticatedAdminPlansPlanIdRoute,
   AuthenticatedAdminUsersUserIdRoute: AuthenticatedAdminUsersUserIdRoute,
+  AuthenticatedAdminEmailsIndexRoute: AuthenticatedAdminEmailsIndexRoute,
   AuthenticatedAdminUsersIndexRoute: AuthenticatedAdminUsersIndexRoute,
 }
 
