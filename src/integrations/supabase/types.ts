@@ -240,9 +240,14 @@ export type Database = {
       }
       athletes: {
         Row: {
+          added_by_coach_id: string | null
           birthdate: string | null
           created_at: string
           first_name: string
+          guardian_claim_token: string | null
+          guardian_claimed_at: string | null
+          guardian_email: string | null
+          guardian_invited_at: string | null
           id: string
           is_test: boolean
           last_name: string
@@ -255,9 +260,14 @@ export type Database = {
           username: string | null
         }
         Insert: {
+          added_by_coach_id?: string | null
           birthdate?: string | null
           created_at?: string
           first_name: string
+          guardian_claim_token?: string | null
+          guardian_claimed_at?: string | null
+          guardian_email?: string | null
+          guardian_invited_at?: string | null
           id?: string
           is_test?: boolean
           last_name?: string
@@ -270,9 +280,14 @@ export type Database = {
           username?: string | null
         }
         Update: {
+          added_by_coach_id?: string | null
           birthdate?: string | null
           created_at?: string
           first_name?: string
+          guardian_claim_token?: string | null
+          guardian_claimed_at?: string | null
+          guardian_email?: string | null
+          guardian_invited_at?: string | null
           id?: string
           is_test?: boolean
           last_name?: string
@@ -285,6 +300,13 @@ export type Database = {
           username?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "athletes_added_by_coach_id_fkey"
+            columns: ["added_by_coach_id"]
+            isOneToOne: false
+            referencedRelation: "coach_profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "athletes_parent_id_fkey"
             columns: ["parent_id"]
