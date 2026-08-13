@@ -2306,6 +2306,10 @@ export type Database = {
     }
     Functions: {
       activate_plan: { Args: { _plan_id: string }; Returns: undefined }
+      athlete_can_self_connect: {
+        Args: { _athlete_id: string }
+        Returns: boolean
+      }
       athlete_has_coach_upload: {
         Args: { _resource_id: string }
         Returns: boolean
