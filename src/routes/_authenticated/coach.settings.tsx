@@ -11,8 +11,6 @@ import {
   Palette,
   User,
   Dumbbell,
-  Send,
-  Link2,
   CreditCard,
   Sparkles,
   Building2,
@@ -31,13 +29,11 @@ import {
   useSaveCoachProfile,
 } from "@/hooks/use-coach-profile";
 import { coachInviteQueryOptions } from "@/hooks/use-coach-invite";
-import { InviteCard } from "@/components/onboarding/invite-card";
 import { CoachBottomNav } from "@/components/coach/bottom-nav";
 import { RosterSettingsSection } from "@/components/coach/roster-settings-section";
-import { EnterInviteCodeCard } from "@/components/coach/enter-invite-code-card";
+import { ConnectPeopleSheet } from "@/components/coach/connect-people-sheet";
 import { JoinClubSheet } from "@/components/coach/join-club-sheet";
 import { UpgradeToProRow } from "@/components/coach/upgrade-to-pro-row";
-import { SegmentedToggle } from "@/components/plans/segmented-toggle";
 import { createCoachBillingPortalSession } from "@/lib/coach-checkout.functions";
 import { getStripeEnvironment } from "@/lib/stripe";
 import { maxPrimarySportsForCoach } from "@/lib/paywall-flag";
@@ -95,8 +91,10 @@ function SettingsPage() {
             />
 
             <RosterSettingsSection />
-            <ConnectionsDisclosure />
           </SettingsList>
+          <div className="mt-3">
+            <ConnectPeopleSheet />
+          </div>
         </SettingsGroup>
 
         <SettingsGroup label="Plan">
@@ -343,49 +341,6 @@ function SportsDisclosure({
   );
 }
 
-function ConnectionsDisclosure() {
-  const [audience, setAudience] = useState<"parents" | "adult-athletes">("parents");
-
-  return (
-    <SettingsDisclosure
-      icon={<Link2 className="size-4" />}
-      label="Connections"
-      description="Share your code or enter someone else's"
-    >
-      <div className="space-y-6">
-        <section className="space-y-3">
-          <div className="flex items-center gap-3">
-            <Send className="size-3.5 text-text-tertiary" />
-            <h3 className="text-caption font-semibold uppercase tracking-wider text-text-secondary">
-              Share your code
-            </h3>
-          </div>
-          <SegmentedToggle
-            value={audience}
-            onChange={setAudience}
-            options={[
-              { key: "parents", label: "Youth parents" },
-              { key: "adult-athletes", label: "Adult (18+)" },
-            ]}
-          />
-          <InviteCard compact audience={audience} />
-        </section>
-
-        <div className="h-px bg-divider" />
-
-        <section className="space-y-3">
-          <div className="flex items-center gap-3">
-            <Send className="size-3.5 rotate-180 text-text-tertiary" />
-            <h3 className="text-caption font-semibold uppercase tracking-wider text-text-secondary">
-              Have a code?
-            </h3>
-          </div>
-          <EnterInviteCodeCard />
-        </section>
-      </div>
-    </SettingsDisclosure>
-  );
-}
 
 const TIER_LABEL: Record<"coach" | "coach_pro", string> = {
   coach: "Coach plan",
