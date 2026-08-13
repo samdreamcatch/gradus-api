@@ -135,7 +135,6 @@ function AthleteSettingsPage() {
               </SettingsGroup>
             )}
 
-
             <SettingsGroup label="Preferences">
               <SettingsList>
                 <SettingsRow
