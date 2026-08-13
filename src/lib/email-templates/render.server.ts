@@ -7,6 +7,8 @@ import { MagicLinkEmail } from "./magic-link";
 import { RecoveryEmail } from "./recovery";
 import { EmailChangeEmail } from "./email-change";
 import { ReauthenticationEmail } from "./reauthentication";
+import { GuardianInviteEmail } from "./guardian-invite";
+import { GuardianActivityEmail } from "./guardian-activity";
 
 const TEMPLATES: Record<string, React.ComponentType<any>> = {
   signup: SignupEmail,
@@ -15,6 +17,8 @@ const TEMPLATES: Record<string, React.ComponentType<any>> = {
   recovery: RecoveryEmail,
   email_change: EmailChangeEmail,
   reauthentication: ReauthenticationEmail,
+  "guardian-invite": GuardianInviteEmail,
+  "guardian-activity": GuardianActivityEmail,
 };
 
 const SAMPLE_PROPS: Record<string, Record<string, any>> = {
@@ -45,6 +49,20 @@ const SAMPLE_PROPS: Record<string, Record<string, any>> = {
     confirmationUrl: "https://gradus.training/confirm-change",
   },
   reauthentication: { token: "123456" },
+  "guardian-invite": {
+    athleteName: "Sample Athlete",
+    coachName: "Tami Taylor",
+    claimUrl: "https://gradus.training/g/preview-token",
+    siteUrl: "https://gradus.training",
+  },
+  "guardian-activity": {
+    athleteName: "Sample Athlete",
+    senderName: "Tami Taylor",
+    senderRole: "coach",
+    body: "Great session today — let's work on the loop jump entry next week.",
+    claimUrl: "https://gradus.training/g/preview-token",
+    siteUrl: "https://gradus.training",
+  },
 };
 
 export async function renderTemplatePreview(
