@@ -99,6 +99,7 @@ import { Route as AuthenticatedAdminUsersUserIdRouteImport } from './routes/_aut
 import { Route as AuthenticatedAdminPlansPlanIdRouteImport } from './routes/_authenticated/admin.plans.$planId'
 import { Route as AuthenticatedAdminListKindRouteImport } from './routes/_authenticated/admin.list.$kind'
 import { Route as AuthenticatedAdminErrorsIdRouteImport } from './routes/_authenticated/admin.errors.$id'
+import { Route as AuthenticatedAdminEmailsNameRouteImport } from './routes/_authenticated/admin.emails.$name'
 
 const UnsubscribeRoute = UnsubscribeRouteImport.update({
   id: '/unsubscribe',
@@ -604,6 +605,12 @@ const AuthenticatedAdminErrorsIdRoute =
     path: '/$id',
     getParentRoute: () => AuthenticatedAdminErrorsRoute,
   } as any)
+const AuthenticatedAdminEmailsNameRoute =
+  AuthenticatedAdminEmailsNameRouteImport.update({
+    id: '/emails/$name',
+    path: '/emails/$name',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -667,6 +674,7 @@ export interface FileRoutesByFullPath {
   '/coach/': typeof AuthenticatedCoachIndexRoute
   '/org-admin/': typeof AuthenticatedOrgAdminIndexRoute
   '/parent/': typeof AuthenticatedParentIndexRoute
+  '/admin/emails/$name': typeof AuthenticatedAdminEmailsNameRoute
   '/admin/errors/$id': typeof AuthenticatedAdminErrorsIdRoute
   '/admin/list/$kind': typeof AuthenticatedAdminListKindRoute
   '/admin/plans/$planId': typeof AuthenticatedAdminPlansPlanIdRoute
@@ -752,6 +760,7 @@ export interface FileRoutesByTo {
   '/coach': typeof AuthenticatedCoachIndexRoute
   '/org-admin': typeof AuthenticatedOrgAdminIndexRoute
   '/parent': typeof AuthenticatedParentIndexRoute
+  '/admin/emails/$name': typeof AuthenticatedAdminEmailsNameRoute
   '/admin/errors/$id': typeof AuthenticatedAdminErrorsIdRoute
   '/admin/list/$kind': typeof AuthenticatedAdminListKindRoute
   '/admin/plans/$planId': typeof AuthenticatedAdminPlansPlanIdRoute
@@ -845,6 +854,7 @@ export interface FileRoutesById {
   '/_authenticated/coach/': typeof AuthenticatedCoachIndexRoute
   '/_authenticated/org-admin/': typeof AuthenticatedOrgAdminIndexRoute
   '/_authenticated/parent/': typeof AuthenticatedParentIndexRoute
+  '/_authenticated/admin/emails/$name': typeof AuthenticatedAdminEmailsNameRoute
   '/_authenticated/admin/errors/$id': typeof AuthenticatedAdminErrorsIdRoute
   '/_authenticated/admin/list/$kind': typeof AuthenticatedAdminListKindRoute
   '/_authenticated/admin/plans/$planId': typeof AuthenticatedAdminPlansPlanIdRoute
@@ -938,6 +948,7 @@ export interface FileRouteTypes {
     | '/coach/'
     | '/org-admin/'
     | '/parent/'
+    | '/admin/emails/$name'
     | '/admin/errors/$id'
     | '/admin/list/$kind'
     | '/admin/plans/$planId'
@@ -1023,6 +1034,7 @@ export interface FileRouteTypes {
     | '/coach'
     | '/org-admin'
     | '/parent'
+    | '/admin/emails/$name'
     | '/admin/errors/$id'
     | '/admin/list/$kind'
     | '/admin/plans/$planId'
@@ -1115,6 +1127,7 @@ export interface FileRouteTypes {
     | '/_authenticated/coach/'
     | '/_authenticated/org-admin/'
     | '/_authenticated/parent/'
+    | '/_authenticated/admin/emails/$name'
     | '/_authenticated/admin/errors/$id'
     | '/_authenticated/admin/list/$kind'
     | '/_authenticated/admin/plans/$planId'
@@ -1804,6 +1817,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminErrorsIdRouteImport
       parentRoute: typeof AuthenticatedAdminErrorsRoute
     }
+    '/_authenticated/admin/emails/$name': {
+      id: '/_authenticated/admin/emails/$name'
+      path: '/emails/$name'
+      fullPath: '/admin/emails/$name'
+      preLoaderRoute: typeof AuthenticatedAdminEmailsNameRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
   }
 }
 
@@ -1837,6 +1857,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminReportingRoute: typeof AuthenticatedAdminReportingRoute
   AuthenticatedAdminSessionsRoute: typeof AuthenticatedAdminSessionsRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
+  AuthenticatedAdminEmailsNameRoute: typeof AuthenticatedAdminEmailsNameRoute
   AuthenticatedAdminListKindRoute: typeof AuthenticatedAdminListKindRoute
   AuthenticatedAdminPlansPlanIdRoute: typeof AuthenticatedAdminPlansPlanIdRoute
   AuthenticatedAdminUsersUserIdRoute: typeof AuthenticatedAdminUsersUserIdRoute
@@ -1860,6 +1881,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminReportingRoute: AuthenticatedAdminReportingRoute,
   AuthenticatedAdminSessionsRoute: AuthenticatedAdminSessionsRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
+  AuthenticatedAdminEmailsNameRoute: AuthenticatedAdminEmailsNameRoute,
   AuthenticatedAdminListKindRoute: AuthenticatedAdminListKindRoute,
   AuthenticatedAdminPlansPlanIdRoute: AuthenticatedAdminPlansPlanIdRoute,
   AuthenticatedAdminUsersUserIdRoute: AuthenticatedAdminUsersUserIdRoute,
