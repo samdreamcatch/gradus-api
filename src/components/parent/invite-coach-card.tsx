@@ -13,12 +13,18 @@ type Audience = "parent" | "adult-athlete";
 interface InviteCoachCardProps {
   /** Which audience is inviting their coach. Defaults to "parent". */
   audience?: Audience;
+  /**
+   * Bare layout for use inside a sheet step — drops the card chrome and
+   * heading, and shortens the intro to a single line.
+   */
+  compact?: boolean;
 }
 
 const COPY: Record<
   Audience,
   {
     intro: string;
+    shortIntro: string;
     shareText: string;
     codeAria: string;
     alreadyOn: string;
@@ -27,6 +33,8 @@ const COPY: Record<
   parent: {
     intro:
       "Tap share — when your coach signs up they'll be linked to your athletes, sports, goals, and lesson times automatically, or they can add the code directly in their settings.\u00a0",
+    shortIntro:
+      "When your coach signs up they'll be linked to your athletes, sports, goals, and lesson times automatically.",
     shareText: "Join me on Gradus so we can share practice plans and messages.",
     codeAria: "Your parent invite code",
     alreadyOn:
@@ -35,6 +43,8 @@ const COPY: Record<
   "adult-athlete": {
     intro:
       "Tap share — when your coach signs up they'll be linked to you, your sports, goals, and lesson times automatically.",
+    shortIntro:
+      "When your coach signs up they'll be linked to you, your sports, goals, and lesson times automatically.",
     shareText: "Join me on Gradus so we can share practice plans and messages.",
     codeAria: "Your athlete invite code",
     alreadyOn:
@@ -49,7 +59,7 @@ const COPY: Record<
  * coaches who are already on Gradus and want to paste it on their roster
  * page.
  */
-export function InviteCoachCard({ audience = "parent" }: InviteCoachCardProps) {
+export function InviteCoachCard({ audience = "parent", compact = false }: InviteCoachCardProps) {
   const parentFn = useServerFn(getOrCreateParentInviteCode);
   const adultAthleteFn = useServerFn(getOrCreateAdultAthleteInviteCode);
   const isAdultAthlete = audience === "adult-athlete";
@@ -80,9 +90,13 @@ export function InviteCoachCard({ audience = "parent" }: InviteCoachCardProps) {
   };
 
   return (
-    <div className="rounded-2xl bg-card p-6 shadow-card">
-      <h2 className="mt-2 font-display text-2xl text-text-primary">Invite your coach</h2>
-      <p className="mt-2 text-sm text-text-secondary">{copy.intro}</p>
+    <div className={compact ? "" : "rounded-2xl bg-card p-6 shadow-card"}>
+      {!compact && (
+        <h2 className="mt-2 font-display text-2xl text-text-primary">Invite your coach</h2>
+      )}
+      <p className={compact ? "text-sm text-text-secondary" : "mt-2 text-sm text-text-secondary"}>
+        {compact ? copy.shortIntro : copy.intro}
+      </p>
 
       <div className="mt-5 space-y-3">
         <ShareInviteButton

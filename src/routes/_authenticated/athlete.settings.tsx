@@ -44,7 +44,7 @@ import {
   validateSlots,
   type Slot,
 } from "@/components/parent/schedule-editor";
-import { InviteCoachCard } from "@/components/parent/invite-coach-card";
+import { ConnectCoachSheet } from "@/components/parent/connect-coach-sheet";
 
 import { z } from "zod";
 
@@ -125,8 +125,8 @@ function AthleteSettingsPage() {
             )}
 
             {isSelfManaged && (
-              <SettingsGroup label="Invite your coach">
-                <InviteCoachCard audience="adult-athlete" />
+              <SettingsGroup label="Coaches">
+                <ConnectCoachSheet audience="adult-athlete" />
               </SettingsGroup>
             )}
 

@@ -32,8 +32,7 @@ import {
 } from "@/components/ui/select";
 import { ParentBottomNav } from "@/components/parent/bottom-nav";
 import { AthleteInviteCard } from "@/components/parent/athlete-invite-card";
-import { InviteCoachCard } from "@/components/parent/invite-coach-card";
-import { AddCoachByCodeCard } from "@/components/parent/add-coach-by-code-card";
+import { ConnectCoachSheet } from "@/components/parent/connect-coach-sheet";
 
 import {
   ScheduleEditor,
@@ -181,8 +180,7 @@ function ParentSettingsPage() {
 
             <SettingsGroup label="Coaches">
               <ConnectedCoachesList athletes={data.athletes as AthleteData[]} />
-              <AddCoachByCodeCard athletes={data.athletes as AthleteData[]} />
-              <InviteCoachCard />
+              <ConnectCoachSheet athletes={data.athletes as AthleteData[]} />
             </SettingsGroup>
 
             <SettingsGroup label="Preferences">
@@ -234,12 +232,7 @@ function ConnectedCoachesList({ athletes }: { athletes: AthleteData[] }) {
   const coaches = Array.from(byCoach.values());
 
   if (coaches.length === 0) {
-    return (
-      <p className="mb-3 px-1 text-sm text-text-tertiary">
-        No coaches connected yet. Share your invite code below, or link a coach from an
-        athlete&apos;s Coaches section above.
-      </p>
-    );
+    return <p className="mb-3 px-1 text-sm text-text-tertiary">No coaches connected yet.</p>;
   }
 
   return (
