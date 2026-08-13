@@ -3,7 +3,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { LogOut, Mail, Palette, User, UserPlus } from "lucide-react";
+import { LogOut, Mail, Palette, ShieldCheck, User, UserPlus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,11 +24,11 @@ import { FeedbackSettingsRow } from "@/components/feedback/feedback-fab";
 import { InstallAppRow } from "@/components/settings/install-app-row";
 import { AccountSecuritySection } from "@/components/settings/account-security-section";
 import { getAthleteSettings, updateAthleteSelf } from "@/lib/athlete-settings.functions";
+import { resendGuardianInvite } from "@/lib/guardian.functions";
+import { ageInYears } from "@/lib/pending-athlete-dob";
 import {
   getCoachOfferedSportsForAdult,
-  linkAdultAthleteToCoach,
   listAdultAthleteCoaches,
-  previewCoachForAdultAthlete,
   unlinkAdultAthleteFromCoach,
   updateAdultAthleteCoachSports,
 } from "@/lib/adult-athlete-signup.functions";
@@ -103,16 +103,20 @@ function AthleteSettingsPage() {
                   label={data.username ? "Username" : "Email"}
                   value={data.username ? `@${data.username}` : (email ?? "—")}
                 />
+                <GuardianRow athlete={data} />
               </SettingsList>
             </SettingsGroup>
 
             {isSelfManaged && (
-              <SettingsGroup label="My coaches">
+              <SettingsGroup label="Coaches">
                 <SettingsList>
-                  <AdultCoachesSection
-                    coaches={coachData?.coaches ?? []}
-                    initialLinkCoach={linkCoach ?? null}
-                    onLinkCoachConsumed={() =>
+                  <AdultCoachesSection coaches={coachData?.coaches ?? []} />
+                </SettingsList>
+                <div className="mt-3">
+                  <ConnectCoachSheet
+                    audience="adult-athlete"
+                    initialCode={linkCoach ?? null}
+                    onInitialCodeConsumed={() =>
                       navigate({
                         to: "/athlete/settings",
                         search: {},
@@ -120,13 +124,7 @@ function AthleteSettingsPage() {
                       })
                     }
                   />
-                </SettingsList>
-              </SettingsGroup>
-            )}
-
-            {isSelfManaged && (
-              <SettingsGroup label="Coaches">
-                <ConnectCoachSheet audience="adult-athlete" />
+                </div>
               </SettingsGroup>
             )}
 
@@ -228,32 +226,12 @@ function ProfileDisclosure({
 
 type AdultCoach = { coachId: string; coachName: string; sports: string[] };
 
-function AdultCoachesSection({
-  coaches,
-  initialLinkCoach,
-  onLinkCoachConsumed,
-}: {
-  coaches: AdultCoach[];
-  initialLinkCoach?: string | null;
-  onLinkCoachConsumed?: () => void;
-}) {
+function AdultCoachesSection({ coaches }: { coaches: AdultCoach[] }) {
   const qc = useQueryClient();
-  const previewFn = useServerFn(previewCoachForAdultAthlete);
-  const linkFn = useServerFn(linkAdultAthleteToCoach);
   const unlinkFn = useServerFn(unlinkAdultAthleteFromCoach);
   const updateSportsFn = useServerFn(updateAdultAthleteCoachSports);
   const offeredFn = useServerFn(getCoachOfferedSportsForAdult);
 
-  const [adding, setAdding] = useState(false);
-  const [code, setCode] = useState("");
-  const [preview, setPreview] = useState<{
-    coachId: string;
-    coachName: string;
-    sports: string[];
-  } | null>(null);
-  const [selectedSports, setSelectedSports] = useState<string[]>([]);
-  const [lookingUp, setLookingUp] = useState(false);
-  const [saving, setSaving] = useState(false);
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [editingCoachId, setEditingCoachId] = useState<string | null>(null);
   const [editOptions, setEditOptions] = useState<string[]>([]);
@@ -265,56 +243,6 @@ function AdultCoachesSection({
 
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["adult-athlete-coaches"] });
-  };
-
-  const resetLinkForm = () => {
-    setAdding(false);
-    setCode("");
-    setPreview(null);
-    setSelectedSports([]);
-  };
-
-  const handleLookup = async (rawCode?: string) => {
-    const c = (rawCode ?? code).trim().toUpperCase();
-    if (c.length !== 8) return;
-    setLookingUp(true);
-    try {
-      const result = await previewFn({ data: { code: c } });
-      setPreview(result);
-      setSelectedSports(result.sports.length === 1 ? [result.sports[0]] : []);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't find coach");
-    } finally {
-      setLookingUp(false);
-    }
-  };
-
-  // Auto-open + auto-preview when a coach invite code was passed in via
-  // `?linkCoach=CODE` (from the /i/CODE universal invite entry).
-  useEffect(() => {
-    if (!initialLinkCoach) return;
-    setAdding(true);
-    setCode(initialLinkCoach);
-    void handleLookup(initialLinkCoach);
-    onLinkCoachConsumed?.();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialLinkCoach]);
-
-  const handleLink = async () => {
-    if (!preview) return;
-    setSaving(true);
-    try {
-      await linkFn({
-        data: { code: code.trim(), sports: selectedSports },
-      });
-      toast.success("Coach linked");
-      resetLinkForm();
-      invalidate();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't link coach");
-    } finally {
-      setSaving(false);
-    }
   };
 
   const handleUnlink = async (coachId: string) => {
@@ -364,13 +292,11 @@ function AdultCoachesSection({
     setList(list.includes(sport) ? list.filter((s) => s !== sport) : [...list, sport]);
   };
 
-  const codeValid = /^[A-Z2-9]{8}$/.test(code.trim().toUpperCase());
-
   return (
     <SettingsDisclosure icon={<UserPlus className="size-4" />} label="Coaches" value={summary}>
       {coaches.length === 0 ? (
         <p className="mb-3 text-sm text-text-tertiary">
-          No coaches linked yet. Ask your coach for their invite code, then enter it below.
+          No coaches linked yet. Use “Add a coach” below to invite them or enter their code.
         </p>
       ) : (
         <div className="mb-3 space-y-2">
@@ -470,81 +396,91 @@ function AdultCoachesSection({
           })}
         </div>
       )}
+    </SettingsDisclosure>
+  );
+}
 
-      {!adding ? (
-        <Button size="sm" variant="outline" onClick={() => setAdding(true)}>
-          Link a coach
+/**
+ * Parent/guardian email on file. Only shown while the athlete is under 18 —
+ * adults who signed up 18+ never see it. Saving re-issues the claim invite.
+ */
+function GuardianRow({
+  athlete,
+}: {
+  athlete: {
+    id: string;
+    birthdate: string | null;
+    guardianEmail: string | null;
+    guardianInvitedAt: string | null;
+    guardianClaimed: boolean;
+  };
+}) {
+  const qc = useQueryClient();
+  const resend = useServerFn(resendGuardianInvite);
+  const [value, setValue] = useState(athlete.guardianEmail ?? "");
+  const [saving, setSaving] = useState(false);
+
+  const age = athlete.birthdate ? ageInYears(athlete.birthdate) : null;
+  const isMinor = age !== null && age < 18;
+  if (!isMinor) return null;
+
+  if (athlete.guardianClaimed) {
+    return (
+      <SettingsRow
+        icon={<ShieldCheck className="size-4" />}
+        label="Parent or guardian"
+        value={athlete.guardianEmail ?? "On Gradus"}
+      />
+    );
+  }
+
+  const emailValid = /^\S+@\S+\.\S+$/.test(value.trim());
+  const changed = value.trim().toLowerCase() !== (athlete.guardianEmail ?? "").toLowerCase();
+
+  const handleSave = async () => {
+    if (!emailValid) return;
+    setSaving(true);
+    try {
+      await resend({
+        data: { athleteId: athlete.id, guardianEmail: value.trim().toLowerCase() },
+      });
+      toast.success(changed ? "Guardian email updated" : "Invite re-sent");
+      qc.invalidateQueries({ queryKey: ["athlete-settings"] });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Couldn't save");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <SettingsDisclosure
+      icon={<ShieldCheck className="size-4" />}
+      label="Parent or guardian"
+      value={athlete.guardianEmail ?? "Needed"}
+    >
+      <p className="mb-3 text-xs text-text-secondary">
+        {athlete.guardianInvitedAt
+          ? "We emailed them a link to follow along. They haven't joined yet — check the address or send it again."
+          : "Because you're under 18, we keep a parent or guardian email on file and send them a link to follow along."}
+      </p>
+      <div className="space-y-1.5">
+        <Label className="text-xs">Parent or guardian email</Label>
+        <Input
+          type="email"
+          inputMode="email"
+          autoComplete="email"
+          value={value}
+          maxLength={160}
+          placeholder="parent@example.com"
+          onChange={(e) => setValue(e.target.value)}
+        />
+      </div>
+      <div className="mt-3 flex justify-end">
+        <Button size="sm" onClick={handleSave} disabled={saving || !emailValid}>
+          {saving ? "Saving…" : changed ? "Save & send invite" : "Re-send invite"}
         </Button>
-      ) : !preview ? (
-        <form
-          className="space-y-3"
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleLookup();
-          }}
-        >
-          <Label className="text-xs">Coach invite code</Label>
-          <Input
-            value={code}
-            onChange={(e) => setCode(e.target.value.toUpperCase())}
-            maxLength={8}
-            placeholder="––––––––"
-            className="text-center font-mono text-lg tracking-[0.3em] uppercase"
-            autoComplete="off"
-          />
-          <div className="flex justify-end gap-2">
-            <Button
-              size="sm"
-              variant="ghost"
-              type="button"
-              onClick={resetLinkForm}
-              disabled={lookingUp}
-            >
-              Cancel
-            </Button>
-            <Button size="sm" type="submit" disabled={!codeValid || lookingUp}>
-              {lookingUp ? "Looking up…" : "Look up"}
-            </Button>
-          </div>
-        </form>
-      ) : (
-        <div className="space-y-3">
-          <div className="rounded-lg border border-divider bg-elevated/30 px-3 py-2">
-            <div className="text-xs text-text-tertiary">Coach</div>
-            <div className="text-sm font-medium">{preview.coachName}</div>
-          </div>
-          <div>
-            <Label className="text-xs">Sports you do with this coach</Label>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {preview.sports.map((s) => {
-                const checked = selectedSports.includes(s);
-                return (
-                  <SportChip
-                    key={s}
-                    selected={checked}
-                    onClick={() => toggle(s, selectedSports, setSelectedSports)}
-                  >
-                    {getSport(s)?.label ?? s}
-                  </SportChip>
-                );
-              })}
-            </div>
-            {preview.sports.length === 0 && (
-              <p className="mt-2 text-xs text-text-tertiary">
-                This coach hasn&apos;t set up sports yet.
-              </p>
-            )}
-          </div>
-          <div className="flex justify-end gap-2">
-            <Button size="sm" variant="ghost" onClick={resetLinkForm} disabled={saving}>
-              Cancel
-            </Button>
-            <Button size="sm" onClick={handleLink} disabled={saving || selectedSports.length === 0}>
-              {saving ? "Linking…" : "Link coach"}
-            </Button>
-          </div>
-        </div>
-      )}
+      </div>
     </SettingsDisclosure>
   );
 }
