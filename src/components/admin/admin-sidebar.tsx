@@ -12,6 +12,7 @@ import {
   CreditCard,
   MessageSquare,
   AlertTriangle,
+  Mail,
   MailCheck,
   Megaphone,
   type LucideIcon,
@@ -65,6 +66,7 @@ const GROUPS: Group[] = [
     items: [
       { to: "/admin/feedback", label: "Feedback", icon: MessageSquare },
       { to: "/admin/errors", label: "Errors", icon: AlertTriangle },
+      { to: "/admin/emails", label: "Email copy", icon: Mail },
       { to: "/admin/email-health", label: "Email deliverability", icon: MailCheck },
       { to: "/admin/announcements", label: "Announcements", icon: Megaphone },
     ],
