@@ -22,7 +22,6 @@ import { BillingTab } from "@/components/coach/billing-tab";
 
 import { InviteCard } from "@/components/onboarding/invite-card";
 import { EnterInviteCodeCard } from "@/components/coach/enter-invite-code-card";
-import { AddYouthAthleteCard } from "@/components/coach/add-youth-athlete-card";
 
 import { Button } from "@/components/ui/button";
 
@@ -54,9 +53,9 @@ import { useVisualViewport } from "@/hooks/use-visual-viewport";
 
 type RosterTab = "athletes" | "schedule" | "billing";
 
-type InviteStep = "hub" | "share" | "code" | "manual";
+type InviteStep = "hub" | "share" | "code";
 
-/** The three ways a coach can connect with an athlete, shown as a hub menu. */
+/** The two ways a coach can connect with an athlete, shown as a hub menu. */
 const INVITE_STEPS: {
   key: Exclude<InviteStep, "hub">;
   title: string;
@@ -74,12 +73,6 @@ const INVITE_STEPS: {
     title: "Enter their code",
     description: "They already gave you an 8-character code",
     icon: KeyRound,
-  },
-  {
-    key: "manual",
-    title: "Add an athlete manually",
-    description: "No code needed",
-    icon: UserPlus,
   },
 ];
 
@@ -290,7 +283,7 @@ function RosterPage() {
               <>
                 <SheetHeader>
                   <SheetTitle>Add an athlete</SheetTitle>
-                  <SheetDescription>Three ways to connect.</SheetDescription>
+                  <SheetDescription>Two ways to connect.</SheetDescription>
                 </SheetHeader>
                 <div className="mt-4 overflow-hidden rounded-xl border border-divider bg-elevated">
                   {INVITE_STEPS.map((s, i) => {
@@ -345,10 +338,8 @@ function RosterPage() {
                 <div className="mt-4">
                   {inviteStep === "share" ? (
                     <InviteCard compact />
-                  ) : inviteStep === "code" ? (
-                    <EnterInviteCodeCard hideIntro onSuccess={() => setInviteOpen(false)} />
                   ) : (
-                    <AddYouthAthleteCard hideHeading onSuccess={() => setInviteOpen(false)} />
+                    <EnterInviteCodeCard hideIntro onSuccess={() => setInviteOpen(false)} />
                   )}
                 </div>
               </>
