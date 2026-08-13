@@ -182,7 +182,7 @@ function AgeStep() {
       return;
     }
     if (isMinor && !/^\S+@\S+\.\S+$/.test(guardianEmail.trim())) {
-      setError("Enter a parent or guardian email so they can follow along.");
+      setError("Enter a parent or guardian email to continue");
       return;
     }
     savePendingAthleteDob({
