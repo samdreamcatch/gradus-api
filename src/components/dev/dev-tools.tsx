@@ -276,7 +276,19 @@ export function DevTools() {
               <h3 className="text-xs font-bold uppercase tracking-widest text-text-secondary">
                 Onboarding step jumper
               </h3>
-              {session.role ? (
+              <div className="flex flex-wrap gap-1.5">
+                {(["coach", "parent", "athlete", "org_admin"] as DevRole[]).map((r) => (
+                  <Button
+                    key={r}
+                    size="sm"
+                    variant={stepRole === r ? "default" : "outline"}
+                    onClick={() => setStepRole(r)}
+                  >
+                    {r}
+                  </Button>
+                ))}
+              </div>
+              {steps.length > 0 ? (
                 <div className="grid gap-2">
                   {steps.map((step) => (
                     <Button
