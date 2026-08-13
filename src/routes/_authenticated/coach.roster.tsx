@@ -194,8 +194,7 @@ function RosterPage() {
           open={inviteOpen}
           onOpenChange={(o) => {
             setInviteOpen(o);
-            if (!o) setInviteStep("hub");
-            else setInviteStep("hub");
+            setInviteStep("hub");
           }}
         >
           <header className="sticky top-0 z-20 -mx-3 bg-background/90 px-3 pb-2 pt-1 backdrop-blur supports-[backdrop-filter]:bg-background/70">
