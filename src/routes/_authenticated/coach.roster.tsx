@@ -50,6 +50,7 @@ import {
   SAMPLE_SPORT,
 } from "@/data/sample-athlete";
 import { useSampleAthleteDismissed } from "@/hooks/use-sample-athlete";
+import { useVisualViewport } from "@/hooks/use-visual-viewport";
 
 type RosterTab = "athletes" | "schedule" | "billing";
 
@@ -155,6 +156,7 @@ function RosterPage() {
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteStep, setInviteStep] = useState<InviteStep>("hub");
   const scheduleRef = useRef<WeekScheduleHandle>(null);
+  const vv = useVisualViewport();
 
   const athleteLimit = coachProfile?.profile.athleteLimit ?? null;
   const rosterFull = athleteLimit !== null && roster.athletes.length >= athleteLimit;
@@ -279,7 +281,11 @@ function RosterPage() {
             </div>
           ) : null}
 
-          <SheetContent side="bottom" className="paper-surface max-h-[85dvh] overflow-y-auto">
+          <SheetContent
+            side="bottom"
+            className="paper-surface overflow-y-auto"
+            style={{ bottom: vv.keyboardInset, maxHeight: Math.round(vv.height * 0.9) }}
+          >
             {inviteStep === "hub" ? (
               <>
                 <SheetHeader>
