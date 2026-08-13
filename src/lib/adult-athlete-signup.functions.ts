@@ -444,7 +444,7 @@ export const listAdultAthleteCoaches = createServerFn({ method: "GET" })
       sports: sportsByCoach.get(cp.id) ?? [],
     }));
 
-    return { selfManaged: true as const, coaches };
+    return { selfManaged: true as const, needsGuardianEmail, coaches };
   });
 
 /**
