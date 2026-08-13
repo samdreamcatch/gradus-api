@@ -238,11 +238,13 @@ function AgeStep() {
         <Button className="w-full" onClick={handleContinue}>
           Continue
         </Button>
-        <Button asChild variant="ghost" className="w-full">
-          <Link to="/signup/athlete" search={{ stage: "code" }}>
-            My parent already has Gradus — use their code
-          </Link>
-        </Button>
+        {isMinor && (
+          <Button asChild variant="ghost" className="w-full">
+            <Link to="/signup/athlete" search={{ stage: "code" }}>
+              My parent already has Gradus — use their code
+            </Link>
+          </Button>
+        )}
       </div>
     </div>
   );
