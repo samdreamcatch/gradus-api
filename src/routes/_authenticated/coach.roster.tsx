@@ -153,6 +153,7 @@ function RosterPage() {
   const [selectedSport, setSelectedSport] = useState<string | null>(null);
   const [selectedAthleteId, setSelectedAthleteId] = useState<string | null>(null);
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [inviteStep, setInviteStep] = useState<InviteStep>("hub");
   const scheduleRef = useRef<WeekScheduleHandle>(null);
 
   const athleteLimit = coachProfile?.profile.athleteLimit ?? null;
