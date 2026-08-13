@@ -339,16 +339,6 @@ function AdultAthleteSignupPage() {
             />
           </DialogContent>
         </Dialog>
-
-        <p className="mt-6 text-center text-sm text-text-secondary">
-          Under 18?{" "}
-          <Link
-            to="/signup/athlete"
-            className="font-semibold text-accent-ink underline-offset-4 hover:underline"
-          >
-            Use a parent invite code
-          </Link>
-        </p>
       </div>
     </div>
   );
