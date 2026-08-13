@@ -10,6 +10,8 @@ import { SportsPoster } from "@/components/ui/sports-poster";
 import { getAthleteInviteSummary } from "@/lib/athlete-signup.functions";
 import { PromoCodeField } from "@/components/signup/promo-code-field";
 import { ShareInviteButton } from "@/components/share/share-invite-button";
+import { ageInYears, savePendingAthleteDob } from "@/lib/pending-athlete-dob";
+
 
 const searchSchema = z.object({
   code: z
