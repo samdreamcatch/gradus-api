@@ -190,7 +190,14 @@ function RosterPage() {
   return (
     <>
       <div className="mx-auto flex min-h-dvh max-w-3xl flex-col px-3 pt-4 pb-24">
-        <Sheet open={inviteOpen} onOpenChange={setInviteOpen}>
+        <Sheet
+          open={inviteOpen}
+          onOpenChange={(o) => {
+            setInviteOpen(o);
+            if (!o) setInviteStep("hub");
+            else setInviteStep("hub");
+          }}
+        >
           <header className="sticky top-0 z-20 -mx-3 bg-background/90 px-3 pb-2 pt-1 backdrop-blur supports-[backdrop-filter]:bg-background/70">
             <SegmentedToggle tab={tab} onChange={setTab} />
 
