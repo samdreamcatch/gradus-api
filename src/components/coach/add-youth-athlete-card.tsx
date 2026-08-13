@@ -30,6 +30,15 @@ export function AddYouthAthleteCard({
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
+  const isMinor = (() => {
+    if (!birthdate) return false;
+    const dob = new Date(birthdate);
+    if (Number.isNaN(dob.getTime())) return false;
+    const eighteen = new Date(dob.getFullYear() + 18, dob.getMonth(), dob.getDate());
+    return eighteen > new Date();
+  })();
+
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
