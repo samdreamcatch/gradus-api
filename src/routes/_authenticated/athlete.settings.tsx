@@ -3,7 +3,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { LogOut, Mail, Palette, User, UserPlus } from "lucide-react";
+import { LogOut, Mail, Palette, ShieldCheck, User, UserPlus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,6 +24,8 @@ import { FeedbackSettingsRow } from "@/components/feedback/feedback-fab";
 import { InstallAppRow } from "@/components/settings/install-app-row";
 import { AccountSecuritySection } from "@/components/settings/account-security-section";
 import { getAthleteSettings, updateAthleteSelf } from "@/lib/athlete-settings.functions";
+import { resendGuardianInvite } from "@/lib/guardian.functions";
+import { ageInYears } from "@/lib/pending-athlete-dob";
 import {
   getCoachOfferedSportsForAdult,
   listAdultAthleteCoaches,
@@ -101,6 +103,7 @@ function AthleteSettingsPage() {
                   label={data.username ? "Username" : "Email"}
                   value={data.username ? `@${data.username}` : (email ?? "—")}
                 />
+                <GuardianRow athlete={data} />
               </SettingsList>
             </SettingsGroup>
 
@@ -289,8 +292,6 @@ function AdultCoachesSection({ coaches }: { coaches: AdultCoach[] }) {
     setList(list.includes(sport) ? list.filter((s) => s !== sport) : [...list, sport]);
   };
 
-
-
   return (
     <SettingsDisclosure icon={<UserPlus className="size-4" />} label="Coaches" value={summary}>
       {coaches.length === 0 ? (
@@ -395,7 +396,91 @@ function AdultCoachesSection({ coaches }: { coaches: AdultCoach[] }) {
           })}
         </div>
       )}
+    </SettingsDisclosure>
+  );
+}
 
+/**
+ * Parent/guardian email on file. Only shown while the athlete is under 18 —
+ * adults who signed up 18+ never see it. Saving re-issues the claim invite.
+ */
+function GuardianRow({
+  athlete,
+}: {
+  athlete: {
+    id: string;
+    birthdate: string | null;
+    guardianEmail: string | null;
+    guardianInvitedAt: string | null;
+    guardianClaimed: boolean;
+  };
+}) {
+  const qc = useQueryClient();
+  const resend = useServerFn(resendGuardianInvite);
+  const [value, setValue] = useState(athlete.guardianEmail ?? "");
+  const [saving, setSaving] = useState(false);
+
+  const age = athlete.birthdate ? ageInYears(athlete.birthdate) : null;
+  const isMinor = age !== null && age < 18;
+  if (!isMinor) return null;
+
+  if (athlete.guardianClaimed) {
+    return (
+      <SettingsRow
+        icon={<ShieldCheck className="size-4" />}
+        label="Parent or guardian"
+        value={athlete.guardianEmail ?? "On Gradus"}
+      />
+    );
+  }
+
+  const emailValid = /^\S+@\S+\.\S+$/.test(value.trim());
+  const changed = value.trim().toLowerCase() !== (athlete.guardianEmail ?? "").toLowerCase();
+
+  const handleSave = async () => {
+    if (!emailValid) return;
+    setSaving(true);
+    try {
+      await resend({
+        data: { athleteId: athlete.id, guardianEmail: value.trim().toLowerCase() },
+      });
+      toast.success(changed ? "Guardian email updated" : "Invite re-sent");
+      qc.invalidateQueries({ queryKey: ["athlete-settings"] });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Couldn't save");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <SettingsDisclosure
+      icon={<ShieldCheck className="size-4" />}
+      label="Parent or guardian"
+      value={athlete.guardianEmail ?? "Needed"}
+    >
+      <p className="mb-3 text-xs text-text-secondary">
+        {athlete.guardianInvitedAt
+          ? "We emailed them a link to follow along. They haven't joined yet — check the address or send it again."
+          : "Because you're under 18, we keep a parent or guardian email on file and send them a link to follow along."}
+      </p>
+      <div className="space-y-1.5">
+        <Label className="text-xs">Parent or guardian email</Label>
+        <Input
+          type="email"
+          inputMode="email"
+          autoComplete="email"
+          value={value}
+          maxLength={160}
+          placeholder="parent@example.com"
+          onChange={(e) => setValue(e.target.value)}
+        />
+      </div>
+      <div className="mt-3 flex justify-end">
+        <Button size="sm" onClick={handleSave} disabled={saving || !emailValid}>
+          {saving ? "Saving…" : changed ? "Save & send invite" : "Re-send invite"}
+        </Button>
+      </div>
     </SettingsDisclosure>
   );
 }
