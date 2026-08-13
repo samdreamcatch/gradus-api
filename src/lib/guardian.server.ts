@@ -136,7 +136,11 @@ export async function sendGuardianMessageCopy(params: {
     await enqueue({
       to: params.to,
       subject: guardianActivitySubject(
-        { athleteName: params.athleteName, senderName: params.senderName, senderRole: params.senderRole },
+        {
+          athleteName: params.athleteName,
+          senderName: params.senderName,
+          senderRole: params.senderRole,
+        },
         copyOverrides,
       ),
       html,

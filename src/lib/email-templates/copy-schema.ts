@@ -38,7 +38,6 @@ const GUARDIAN_ACTIVITY_VARS = [
   "siteUrl",
 ] as const;
 
-
 export const EMAIL_COPY_SCHEMA: Record<string, TemplateCopy> = {
   signup: {
     displayName: "Signup — confirm your email",
@@ -300,7 +299,6 @@ export const EMAIL_COPY_SCHEMA: Record<string, TemplateCopy> = {
     },
   },
 };
-
 
 /** Substitute {variable} placeholders. Unknown variables render as literal text. */
 export function renderTemplateString(
