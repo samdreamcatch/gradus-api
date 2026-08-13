@@ -54,9 +54,9 @@ import { useVisualViewport } from "@/hooks/use-visual-viewport";
 
 type RosterTab = "athletes" | "schedule" | "billing";
 
-type InviteStep = "hub" | "share" | "code" | "manual";
+type InviteStep = "hub" | "share" | "code";
 
-/** The three ways a coach can connect with an athlete, shown as a hub menu. */
+/** The two ways a coach can connect with an athlete, shown as a hub menu. */
 const INVITE_STEPS: {
   key: Exclude<InviteStep, "hub">;
   title: string;
@@ -74,12 +74,6 @@ const INVITE_STEPS: {
     title: "Enter their code",
     description: "They already gave you an 8-character code",
     icon: KeyRound,
-  },
-  {
-    key: "manual",
-    title: "Add an athlete manually",
-    description: "No code needed",
-    icon: UserPlus,
   },
 ];
 
