@@ -55,18 +55,20 @@ export const getOrCreateAdultAthleteInviteCode = createServerFn({ method: "GET" 
 
     const me = await supabaseAdmin
       .from("athletes")
-      .select("id, self_managed, promo_code, birthdate, guardian_email")
+      .select("id, promo_code, birthdate, guardian_email, parent_id")
       .eq("user_id", userId)
       .maybeSingle();
     if (me.error) dbError(me.error);
-    if (!me.data || !me.data.self_managed) {
-      throw new Error("Only self-managed athletes can create an invite code.");
+    if (!me.data) {
+      throw new Error("Finish setting up your athlete profile first.");
     }
-    // Under-18 athletes can invite a coach, but only with a guardian on file.
+    // Under-18 athletes can invite a coach, but only with a guardian reachable
+    // — either an email on file or a linked parent account.
     const bd = me.data.birthdate as string | null;
-    if (bd && ageInYears(bd) < 18 && !me.data.guardian_email) {
+    if (bd && ageInYears(bd) < 18 && !me.data.guardian_email && !me.data.parent_id) {
       throw new Error("Add a parent or guardian email in Settings before inviting a coach.");
     }
+
     const athleteId = me.data.id;
     const inviterPromo = me.data.promo_code ?? null;
 
