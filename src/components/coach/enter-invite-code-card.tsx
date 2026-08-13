@@ -112,10 +112,11 @@ export function EnterInviteCodeCard({
 
   return (
     <div className="space-y-3">
-      <div className="text-xs text-text-secondary">
-        Got a code from a parent or an adult athlete? Enter it here to add them to your roster.
-      </div>
-      <form
+      {hideIntro ? null : (
+        <div className="text-xs text-text-secondary">
+          Got a code from a parent or an adult athlete? Enter it here to add them to your roster.
+        </div>
+      )}
         className="space-y-3"
         onSubmit={(e) => {
           e.preventDefault();
