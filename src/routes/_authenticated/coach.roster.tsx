@@ -284,7 +284,7 @@ function RosterPage() {
               <>
                 <SheetHeader>
                   <SheetTitle>Add an athlete</SheetTitle>
-                  <SheetDescription>Three ways to connect.</SheetDescription>
+                  <SheetDescription>Two ways to connect.</SheetDescription>
                 </SheetHeader>
                 <div className="mt-4 overflow-hidden rounded-xl border border-divider bg-elevated">
                   {INVITE_STEPS.map((s, i) => {
