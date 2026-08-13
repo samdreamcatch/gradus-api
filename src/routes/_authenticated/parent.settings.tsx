@@ -34,7 +34,6 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-
 import {
   Select,
   SelectContent,
@@ -331,7 +330,6 @@ function ConnectedCoachesList({ athletes }: { athletes: AthleteData[] }) {
     </div>
   );
 }
-
 
 function NameDisclosure({ profile }: { profile: { firstName: string; lastName: string } }) {
   const [firstName, setFirstName] = useState(profile.firstName);
