@@ -155,6 +155,7 @@ function RosterPage() {
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteStep, setInviteStep] = useState<InviteStep>("hub");
   const scheduleRef = useRef<WeekScheduleHandle>(null);
+  const vv = useVisualViewport();
 
   const athleteLimit = coachProfile?.profile.athleteLimit ?? null;
   const rosterFull = athleteLimit !== null && roster.athletes.length >= athleteLimit;
