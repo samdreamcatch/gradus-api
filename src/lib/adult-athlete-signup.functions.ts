@@ -126,8 +126,18 @@ export const createSelfManagedAthlete = createServerFn({ method: "POST" })
 
       dbError(insert.error);
     }
+
+    if (guardianEmail && guardianToken) {
+      await sendGuardianInvite({
+        to: guardianEmail,
+        athleteName: `${data.firstName} ${data.lastName}`.trim(),
+        token: guardianToken,
+      });
+    }
+
     return { athleteId: insert.data.id };
   });
+
 
 /**
  * Preview a coach by invite code from the adult-athlete onboarding screen.
