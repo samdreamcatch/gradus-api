@@ -50,6 +50,7 @@ import {
   SAMPLE_SPORT,
 } from "@/data/sample-athlete";
 import { useSampleAthleteDismissed } from "@/hooks/use-sample-athlete";
+import { useVisualViewport } from "@/hooks/use-visual-viewport";
 
 type RosterTab = "athletes" | "schedule" | "billing";
 
