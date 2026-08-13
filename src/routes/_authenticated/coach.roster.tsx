@@ -66,7 +66,7 @@ const INVITE_STEPS: {
   {
     key: "share",
     title: "Share my invite",
-    description: "Send parents or adult athletes a link or code",
+    description: "Send parents or athletes a link or code",
     icon: Share2,
   },
   {
@@ -77,8 +77,8 @@ const INVITE_STEPS: {
   },
   {
     key: "manual",
-    title: "Add an athlete myself",
-    description: "No code needed — we'll email their parent a link",
+    title: "Add an athlete manually",
+    description: "No code needed",
     icon: UserPlus,
   },
 ];
