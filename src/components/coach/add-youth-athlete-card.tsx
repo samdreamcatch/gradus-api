@@ -109,19 +109,22 @@ export function AddYouthAthleteCard({
         />
       </div>
 
-      <div className="space-y-1.5">
-        <Label htmlFor="ya-guardian">Parent or guardian email</Label>
-        <Input
-          id="ya-guardian"
-          type="email"
-          inputMode="email"
-          value={guardianEmail}
-          onChange={(e) => setGuardianEmail(e.target.value)}
-          maxLength={255}
-          placeholder="parent@example.com"
-        />
-        <p className="text-xs text-text-tertiary">Required for athletes under 18.</p>
-      </div>
+      {isMinor && (
+        <div className="space-y-1.5">
+          <Label htmlFor="ya-guardian">Parent or guardian email</Label>
+          <Input
+            id="ya-guardian"
+            type="email"
+            inputMode="email"
+            value={guardianEmail}
+            onChange={(e) => setGuardianEmail(e.target.value)}
+            maxLength={255}
+            required
+          />
+          <p className="text-xs text-text-tertiary">Required for athletes under 18.</p>
+        </div>
+      )}
+
 
       {error && <p className="text-sm text-destructive">{error}</p>}
 
