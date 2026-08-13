@@ -117,6 +117,7 @@ export function EnterInviteCodeCard({
           Got a code from a parent or an adult athlete? Enter it here to add them to your roster.
         </div>
       )}
+      <form
         className="space-y-3"
         onSubmit={(e) => {
           e.preventDefault();
