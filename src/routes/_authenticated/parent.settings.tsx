@@ -22,6 +22,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Chip } from "@/components/ui/chip";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 import {
   Select,
@@ -211,42 +222,105 @@ function ParentSettingsPage() {
 }
 
 function ConnectedCoachesList({ athletes }: { athletes: AthleteData[] }) {
+  const qc = useQueryClient();
+  const unlink = useServerFn(unlinkAthleteFromCoach);
+  const [removing, setRemoving] = useState<string | null>(null);
+
   const byCoach = new Map<
     string,
-    { coachName: string; entries: { athleteName: string; sports: string[] }[] }
+    {
+      coachId: string;
+      coachName: string;
+      entries: { athleteId: string; athleteName: string; sports: string[] }[];
+    }
   >();
   for (const a of athletes) {
     for (const c of a.coaches) {
+      const entry = {
+        athleteId: a.id,
+        athleteName: `${a.firstName} ${a.lastName}`.trim(),
+        sports: c.sports,
+      };
       const existing = byCoach.get(c.coachId);
-      const athleteName = `${a.firstName} ${a.lastName}`.trim();
       if (existing) {
-        existing.entries.push({ athleteName, sports: c.sports });
+        existing.entries.push(entry);
       } else {
         byCoach.set(c.coachId, {
+          coachId: c.coachId,
           coachName: c.coachName,
-          entries: [{ athleteName, sports: c.sports }],
+          entries: [entry],
         });
       }
     }
   }
   const coaches = Array.from(byCoach.values());
 
+  const handleUnlink = async (athleteId: string, coachId: string) => {
+    setRemoving(`${coachId}:${athleteId}`);
+    try {
+      await unlink({ data: { athleteId, coachId } });
+      toast.success("Coach unlinked");
+      qc.invalidateQueries({ queryKey: ["parent-settings"] });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Couldn't unlink");
+    } finally {
+      setRemoving(null);
+    }
+  };
+
   if (coaches.length === 0) {
     return <p className="mb-3 px-1 text-sm text-text-tertiary">No coaches connected yet.</p>;
   }
 
   return (
-    <div className="mb-3 overflow-hidden rounded-xl border border-divider bg-card divide-y divide-divider">
-      {coaches.map((c, i) => (
-        <div key={i} className="px-4 py-3">
+    <div className="mb-3 divide-y divide-divider overflow-hidden rounded-xl border border-divider bg-card">
+      {coaches.map((c) => (
+        <div key={c.coachId} className="px-4 py-3">
           <div className="text-sm font-medium">{c.coachName}</div>
-          <ul className="mt-1 space-y-0.5">
-            {c.entries.map((e, j) => {
+          <ul className="mt-1.5 space-y-1.5">
+            {c.entries.map((e) => {
               const sportLabels = e.sports.map((s) => getSport(s)?.label ?? s).join(", ");
+              const key = `${c.coachId}:${e.athleteId}`;
               return (
-                <li key={j} className="text-xs text-text-tertiary">
-                  {e.athleteName}
-                  {sportLabels ? ` — ${sportLabels}` : ""}
+                <li key={key} className="flex items-center justify-between gap-2">
+                  <span className="min-w-0 text-xs text-text-secondary">
+                    <span className="truncate">{e.athleteName}</span>
+                    {sportLabels ? (
+                      <span className="text-text-tertiary"> — {sportLabels}</span>
+                    ) : null}
+                  </span>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 shrink-0 px-2 text-xs text-destructive"
+                        disabled={removing === key}
+                      >
+                        {removing === key ? "Unlinking…" : "Unlink"}
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>
+                          Unlink {c.coachName} from {e.athleteName}?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                          They'll lose access to {e.athleteName}'s plans and messages. Practice
+                          history stays intact, and you can re-link later with their invite code.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          className="bg-destructive text-white"
+                          onClick={() => void handleUnlink(e.athleteId, c.coachId)}
+                        >
+                          Unlink
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </li>
               );
             })}
