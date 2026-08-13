@@ -22,12 +22,23 @@ type Athlete = {
  * section so parents don't have to open an individual athlete disclosure
  * to link a new coach.
  */
-export function AddCoachByCodeCard({ athletes }: { athletes: Athlete[] }) {
+export function AddCoachByCodeCard({
+  athletes,
+  hideChrome = false,
+  onSuccess,
+  onCancel,
+}: {
+  athletes: Athlete[];
+  /** Render bare inside a sheet step: no trigger button, no card, no heading. */
+  hideChrome?: boolean;
+  onSuccess?: () => void;
+  onCancel?: () => void;
+}) {
   const qc = useQueryClient();
   const previewFn = useServerFn(previewCoachByInviteCode);
   const linkFn = useServerFn(linkAthleteToCoach);
 
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(hideChrome);
   const [code, setCode] = useState("");
   const [lookingUp, setLookingUp] = useState(false);
   const [preview, setPreview] = useState<{
@@ -42,7 +53,7 @@ export function AddCoachByCodeCard({ athletes }: { athletes: Athlete[] }) {
   const codeValid = /^[A-Z2-9]{8}$/.test(code.trim().toUpperCase());
 
   const reset = () => {
-    setOpen(false);
+    if (!hideChrome) setOpen(false);
     setCode("");
     setPreview(null);
     setSelectedSports([]);
@@ -81,6 +92,7 @@ export function AddCoachByCodeCard({ athletes }: { athletes: Athlete[] }) {
       toast.success("Coach linked");
       qc.invalidateQueries({ queryKey: ["parent-settings"] });
       reset();
+      onSuccess?.();
     } catch (err) {
       const { isRosterFullError } = await import("@/lib/roster-limits");
       if (isRosterFullError(err)) {
@@ -95,6 +107,11 @@ export function AddCoachByCodeCard({ athletes }: { athletes: Athlete[] }) {
 
   if (athletes.length === 0) return null;
 
+  const handleCancel = () => {
+    reset();
+    onCancel?.();
+  };
+
   if (!open) {
     return (
       <div className="mb-3">
@@ -106,11 +123,17 @@ export function AddCoachByCodeCard({ athletes }: { athletes: Athlete[] }) {
   }
 
   return (
-    <div className="mb-3 space-y-3 rounded-xl border border-divider bg-card p-4">
-      <div className="flex items-center gap-2">
-        <Plus className="size-4 text-text-secondary" />
-        <div className="text-sm font-medium">Add a coach</div>
-      </div>
+    <div
+      className={
+        hideChrome ? "space-y-3" : "mb-3 space-y-3 rounded-xl border border-divider bg-card p-4"
+      }
+    >
+      {!hideChrome && (
+        <div className="flex items-center gap-2">
+          <Plus className="size-4 text-text-secondary" />
+          <div className="text-sm font-medium">Add a coach</div>
+        </div>
+      )}
 
       {!preview ? (
         <form
@@ -132,7 +155,7 @@ export function AddCoachByCodeCard({ athletes }: { athletes: Athlete[] }) {
             />
           </div>
           <div className="flex justify-end gap-2">
-            <Button size="sm" variant="ghost" type="button" onClick={reset} disabled={lookingUp}>
+            <Button size="sm" variant="ghost" type="button" onClick={handleCancel} disabled={lookingUp}>
               Cancel
             </Button>
             <Button size="sm" type="submit" disabled={!codeValid || lookingUp}>
@@ -194,7 +217,7 @@ export function AddCoachByCodeCard({ athletes }: { athletes: Athlete[] }) {
           </div>
 
           <div className="flex justify-end gap-2">
-            <Button size="sm" variant="ghost" onClick={reset} disabled={saving}>
+            <Button size="sm" variant="ghost" onClick={handleCancel} disabled={saving}>
               Cancel
             </Button>
             <Button
