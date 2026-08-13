@@ -1,0 +1,237 @@
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { dbError } from "./db-error";
+
+const tokenSchema = z
+  .string()
+  .trim()
+  .regex(/^[a-f0-9]{16,64}$/, "Invalid link");
+
+export const guardianEmailSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .email("Enter a valid email address")
+  .max(255, "Email is too long");
+
+/**
+ * Public summary for a guardian claim link. Returns only the athlete's first
+ * name and the coach who added them — enough to recognize the athlete, never
+ * enough to enumerate accounts.
+ */
+export const getGuardianClaimSummary = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => z.object({ token: tokenSchema }).parse(input))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const res = await supabaseAdmin
+      .from("athletes")
+      .select("id, first_name, last_name, guardian_claimed_at, added_by_coach_id, parent_id")
+      .eq("guardian_claim_token", data.token)
+      .maybeSingle();
+    if (res.error) dbError(res.error);
+    if (!res.data) throw new Error("This link is no longer valid. Ask the coach to resend it.");
+
+    let coachName: string | null = null;
+    if (res.data.added_by_coach_id) {
+      const coach = await supabaseAdmin
+        .from("coach_profiles")
+        .select("first_name, last_name")
+        .eq("id", res.data.added_by_coach_id)
+        .maybeSingle();
+      if (coach.data) coachName = `${coach.data.first_name} ${coach.data.last_name}`.trim();
+    }
+
+    return {
+      athleteFirstName: res.data.first_name as string,
+      athleteLastName: res.data.last_name as string,
+      coachName,
+      alreadyClaimed: Boolean(res.data.guardian_claimed_at) || Boolean(res.data.parent_id),
+    };
+  });
+
+/**
+ * Attach the athlete behind a claim token to the signed-in user's parent
+ * profile, creating the parent profile when it doesn't exist yet. The athlete
+ * keeps their own login (self_managed stays as-is); the parent simply gains
+ * full visibility through the normal parent_id relationship.
+ */
+export const claimGuardianAthlete = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        token: tokenSchema,
+        firstName: z.string().trim().min(1).max(80).optional(),
+        lastName: z.string().trim().min(1).max(80).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const userId = context.userId;
+
+    const athlete = await supabaseAdmin
+      .from("athletes")
+      .select("id, first_name, parent_id, guardian_claimed_at")
+      .eq("guardian_claim_token", data.token)
+      .maybeSingle();
+    if (athlete.error) dbError(athlete.error);
+    if (!athlete.data) throw new Error("This link is no longer valid. Ask the coach to resend it.");
+
+    // A coach account can't double as a parent account.
+    const coach = await supabaseAdmin
+      .from("coach_profiles")
+      .select("id")
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (coach.data) {
+      throw new Error(
+        "You're signed in as a coach. Sign out and use a personal email to claim this athlete.",
+      );
+    }
+
+    let parent = await supabaseAdmin
+      .from("parent_profiles")
+      .select("id")
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (parent.error) dbError(parent.error);
+
+    if (!parent.data) {
+      const ins = await supabaseAdmin
+        .from("parent_profiles")
+        .insert({
+          user_id: userId,
+          first_name: data.firstName ?? "Parent",
+          last_name: data.lastName ?? "",
+        })
+        .select("id")
+        .single();
+      if (ins.error) dbError(ins.error);
+      parent = { data: ins.data, error: null } as typeof parent;
+    } else if (data.firstName && data.lastName) {
+      await supabaseAdmin
+        .from("parent_profiles")
+        .update({ first_name: data.firstName, last_name: data.lastName })
+        .eq("id", parent.data.id);
+    }
+
+    if (athlete.data.parent_id && athlete.data.parent_id !== parent.data!.id) {
+      throw new Error("This athlete is already linked to another parent account.");
+    }
+
+    const upd = await supabaseAdmin
+      .from("athletes")
+      .update({
+        parent_id: parent.data!.id,
+        guardian_claimed_at: new Date().toISOString(),
+        guardian_claim_token: null,
+      })
+      .eq("id", athlete.data.id);
+    if (upd.error) dbError(upd.error);
+
+    return { ok: true as const, athleteFirstName: athlete.data.first_name as string };
+  });
+
+/**
+ * Re-send the guardian invite (or change the address on file). Callable by the
+ * athlete themselves or by any coach with the athlete on their roster.
+ */
+export const resendGuardianInvite = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        athleteId: z.string().uuid(),
+        guardianEmail: guardianEmailSchema.optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { newGuardianToken, sendGuardianInvite } = await import("./guardian.server");
+
+    const athlete = await supabaseAdmin
+      .from("athletes")
+      .select(
+        "id, user_id, first_name, last_name, parent_id, guardian_email, guardian_claim_token, guardian_claimed_at",
+      )
+      .eq("id", data.athleteId)
+      .maybeSingle();
+    if (athlete.error) dbError(athlete.error);
+    if (!athlete.data) throw new Error("Athlete not found.");
+    if (athlete.data.parent_id || athlete.data.guardian_claimed_at) {
+      throw new Error("This athlete's parent has already joined.");
+    }
+
+    // Authorization: the athlete themselves, or a coach with them on roster.
+    let allowed = athlete.data.user_id === context.userId;
+    if (!allowed) {
+      const coach = await supabaseAdmin
+        .from("coach_profiles")
+        .select("id")
+        .eq("user_id", context.userId)
+        .maybeSingle();
+      if (coach.data) {
+        const link = await supabaseAdmin
+          .from("coach_athletes")
+          .select("id")
+          .eq("coach_id", coach.data.id)
+          .eq("athlete_id", data.athleteId)
+          .maybeSingle();
+        allowed = Boolean(link.data);
+      }
+    }
+    if (!allowed) throw new Error("You don't have access to this athlete.");
+
+    const email = data.guardianEmail ?? (athlete.data.guardian_email as string | null);
+    if (!email) throw new Error("Add a parent or guardian email first.");
+
+    const token = (athlete.data.guardian_claim_token as string | null) ?? newGuardianToken();
+
+    const upd = await supabaseAdmin
+      .from("athletes")
+      .update({
+        guardian_email: email,
+        guardian_claim_token: token,
+        guardian_invited_at: new Date().toISOString(),
+      })
+      .eq("id", data.athleteId);
+    if (upd.error) dbError(upd.error);
+
+    await sendGuardianInvite({
+      to: email,
+      athleteName: `${athlete.data.first_name} ${athlete.data.last_name}`.trim(),
+      token,
+    });
+
+    return { ok: true as const, guardianEmail: email };
+  });
+
+/** Guardian status for the signed-in athlete's own row (drives the banner). */
+export const getMyGuardianStatus = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const res = await supabaseAdmin
+      .from("athletes")
+      .select("id, birthdate, parent_id, guardian_email, guardian_claimed_at, guardian_invited_at")
+      .eq("user_id", context.userId)
+      .maybeSingle();
+    if (res.error) dbError(res.error);
+    if (!res.data) return null;
+
+    const birthdate = res.data.birthdate as string | null;
+    const isMinor = birthdate
+      ? new Date(birthdate) > new Date(Date.now() - 18 * 365.25 * 24 * 3600 * 1000)
+      : false;
+
+    return {
+      athleteId: res.data.id as string,
+      isMinor,
+      guardianEmail: (res.data.guardian_email as string | null) ?? null,
+      claimed: Boolean(res.data.parent_id) || Boolean(res.data.guardian_claimed_at),
+      invitedAt: (res.data.guardian_invited_at as string | null) ?? null,
+    };
+  });
