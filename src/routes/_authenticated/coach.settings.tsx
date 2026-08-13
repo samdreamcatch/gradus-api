@@ -11,8 +11,6 @@ import {
   Palette,
   User,
   Dumbbell,
-  Send,
-  Link2,
   CreditCard,
   Sparkles,
   Building2,
@@ -31,13 +29,11 @@ import {
   useSaveCoachProfile,
 } from "@/hooks/use-coach-profile";
 import { coachInviteQueryOptions } from "@/hooks/use-coach-invite";
-import { InviteCard } from "@/components/onboarding/invite-card";
 import { CoachBottomNav } from "@/components/coach/bottom-nav";
 import { RosterSettingsSection } from "@/components/coach/roster-settings-section";
 import { ConnectPeopleSheet } from "@/components/coach/connect-people-sheet";
 import { JoinClubSheet } from "@/components/coach/join-club-sheet";
 import { UpgradeToProRow } from "@/components/coach/upgrade-to-pro-row";
-import { SegmentedToggle } from "@/components/plans/segmented-toggle";
 import { createCoachBillingPortalSession } from "@/lib/coach-checkout.functions";
 import { getStripeEnvironment } from "@/lib/stripe";
 import { maxPrimarySportsForCoach } from "@/lib/paywall-flag";
