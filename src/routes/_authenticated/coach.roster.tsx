@@ -339,10 +339,8 @@ function RosterPage() {
                 <div className="mt-4">
                   {inviteStep === "share" ? (
                     <InviteCard compact />
-                  ) : inviteStep === "code" ? (
-                    <EnterInviteCodeCard hideIntro onSuccess={() => setInviteOpen(false)} />
                   ) : (
-                    <AddYouthAthleteCard hideHeading onSuccess={() => setInviteOpen(false)} />
+                    <EnterInviteCodeCard hideIntro onSuccess={() => setInviteOpen(false)} />
                   )}
                 </div>
               </>
