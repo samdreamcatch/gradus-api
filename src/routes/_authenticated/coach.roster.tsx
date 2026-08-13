@@ -22,7 +22,6 @@ import { BillingTab } from "@/components/coach/billing-tab";
 
 import { InviteCard } from "@/components/onboarding/invite-card";
 import { EnterInviteCodeCard } from "@/components/coach/enter-invite-code-card";
-import { AddYouthAthleteCard } from "@/components/coach/add-youth-athlete-card";
 
 import { Button } from "@/components/ui/button";
 
