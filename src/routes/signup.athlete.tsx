@@ -159,3 +159,92 @@ function AthleteEntryPage() {
     </div>
   );
 }
+
+/**
+ * Step 1: date of birth instead of a self-reported "are you 18?" toggle.
+ * Adults continue straight to account creation. Minors keep their own login
+ * but must put a parent/guardian email on file, which we carry into onboarding.
+ */
+function AgeStep() {
+  const navigate = useNavigate();
+  const [birthdate, setBirthdate] = useState("");
+  const [guardianEmail, setGuardianEmail] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  const valid = /^\d{4}-\d{2}-\d{2}$/.test(birthdate);
+  const age = valid ? ageInYears(birthdate) : null;
+  const isMinor = age !== null && age < 18;
+
+  const handleContinue = () => {
+    setError(null);
+    if (!valid || age === null || age < 0 || age > 120) {
+      setError("Enter your date of birth.");
+      return;
+    }
+    if (isMinor && !/^\S+@\S+\.\S+$/.test(guardianEmail.trim())) {
+      setError("Enter a parent or guardian email so they can follow along.");
+      return;
+    }
+    savePendingAthleteDob({
+      birthdate,
+      ...(isMinor ? { guardianEmail: guardianEmail.trim().toLowerCase() } : {}),
+    });
+    navigate({ to: "/signup/athlete/adult" });
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="text-center">
+        <p className="font-display text-2xl text-text-primary">When were you born?</p>
+        <p className="mt-2 text-sm text-text-secondary">
+          This sets up the right experience for your age.
+        </p>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="dob">Date of birth</Label>
+        <Input
+          id="dob"
+          type="date"
+          value={birthdate}
+          onChange={(e) => setBirthdate(e.target.value)}
+          max={new Date().toISOString().slice(0, 10)}
+        />
+      </div>
+
+      {isMinor && (
+        <div className="space-y-2 rounded-xl border border-divider bg-elevated p-4">
+          <Label htmlFor="guardian-email">Parent or guardian email</Label>
+          <Input
+            id="guardian-email"
+            type="email"
+            inputMode="email"
+            autoComplete="email"
+            maxLength={255}
+            value={guardianEmail}
+            onChange={(e) => setGuardianEmail(e.target.value)}
+            placeholder="parent@example.com"
+          />
+          <p className="text-xs text-text-tertiary">
+            You&apos;ll get your own account right away. We&apos;ll email your parent a link so they
+            can see everything your coach sends — they can join whenever they&apos;re ready.
+          </p>
+        </div>
+      )}
+
+      {error && <p className="text-sm text-destructive">{error}</p>}
+
+      <div className="space-y-3">
+        <Button className="w-full" onClick={handleContinue}>
+          Continue
+        </Button>
+        <Button asChild variant="ghost" className="w-full">
+          <Link to="/signup/athlete" search={{ stage: "code" }}>
+            My parent already has Gradus — use their code
+          </Link>
+        </Button>
+      </div>
+    </div>
+  );
+}
+
