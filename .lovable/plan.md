@@ -1,28 +1,35 @@
-# Email copy in the admin sidebar
+# Make guardian emails editable in the admin panel
 
-## What I verified
+## What's happening
 
-The feature is already in the code, confirmed by reading the files:
+The Email copy admin page lists exactly what's in the copy schema, and today that schema only contains the six auth emails (signup, invite, magic link, recovery, email change, reauthentication). The two parent/guardian emails — the guardian invite and the guardian message copy — exist as templates with their wording hardcoded in the component, so they never show up in the list and can't be edited.
 
-- `src/components/admin/admin-sidebar.tsx` has a **Support** group containing `Email copy` → `/admin/emails`.
-- `src/routes/_authenticated/admin.emails.index.tsx` renders the template list (Auth / App / Internal groups).
-- `src/routes/_authenticated/admin.emails.$name.tsx` renders the per-template editor.
-- Both routes are registered in the generated route tree.
+## What to build
 
-So nothing is missing from the build. The two realistic reasons you don't see it:
+Bring the guardian emails into the same editable system as the auth emails.
 
-1. You're on the **published site** — these changes only exist in preview until you publish.
-2. You're on a **narrow/mobile viewport** (your current preview is 393px wide), where the admin sidebar is collapsed off-canvas behind the menu trigger in the admin header.
+1. Add two entries to the copy schema under a new "App" grouping:
+   - **Guardian invite** — "You've been listed as [athlete]'s parent" email with the claim link.
+   - **Guardian message copy** — the mirrored message sent to a guardian who hasn't made an account yet.
+   Each gets the same slot set the auth emails use where it applies: inbox preview, subject, eyebrow, headline, intro paragraph, secondary paragraph, button label, fallback-link help, sign-off, footer. The guardian invite's intro has two variants (coach added them vs. athlete joined on their own), so both are separate editable slots.
+2. Rewrite the two template components to read their wording from the schema (defaults + saved overrides) instead of inline strings, using the same helpers the auth templates use — no visual change to the emails.
+3. Wire overrides into the actual send path so edits made in admin show up in real sends, not just the preview.
+4. Add sample data for both templates so the live preview in the editor renders.
 
-## Proposed change
+## Variables available to editors
 
-Make the entry reachable without hunting for it:
+- Guardian invite: athlete name, coach name, claim URL, site URL.
+- Guardian message copy: athlete name, sender name, sender role, message body, claim URL, site URL.
+These render as chips in the editor, same as the auth emails.
 
-- Add an **Email copy** card/link to the admin overview page (`/admin/reporting` or the admin index), alongside the other Support destinations, so it's visible even when the sidebar is collapsed.
-- Keep the sidebar entry unchanged.
+## Not in scope
 
-If instead the sidebar is expanded on desktop preview and Support still shows no Email copy row, that's a real render bug and the first step becomes inspecting the live sidebar DOM before changing anything.
+The internal error-digest / error-alert emails stay hardcoded — they're operational, not customer copy. Say the word if you want those editable too.
 
-## Quickest check on your side
+## Technical notes
 
-Open `/admin/emails` directly. If the template list loads, the route is fine and only discoverability needs fixing.
+- `src/lib/email-templates/copy-schema.ts`: add `guardian-invite` and `guardian-activity` entries with `category: "App"`.
+- `guardian-invite.tsx` / `guardian-activity.tsx`: accept `copyOverrides`, use `resolveCopy` + `renderTemplateString`.
+- `src/routes/lovable/email/transactional/send.ts`: call `fetchOverridesFor(templateName)` and pass `copyOverrides` into the rendered component, plus `resolveSubject` for the subject line.
+- `src/lib/email-templates/render.server.ts`: register both templates and their sample props so `/admin/emails/:name` preview works.
+- No database or migration changes — `email_template_overrides` is keyed by template name and already accepts these.
