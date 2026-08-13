@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight, KeyRound, Plus, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,6 +13,7 @@ import { useVisualViewport } from "@/hooks/use-visual-viewport";
 import { cn } from "@/lib/utils";
 import { InviteCoachCard } from "./invite-coach-card";
 import { AddCoachByCodeCard } from "./add-coach-by-code-card";
+import { AddCoachByCodeAdultCard } from "@/components/athlete/add-coach-by-code-card";
 
 type Athlete = { id: string; firstName: string; lastName: string };
 
@@ -46,29 +47,45 @@ const STEPS: {
 export function ConnectCoachSheet({
   athletes = [],
   audience = "parent",
+  initialCode = null,
+  onInitialCodeConsumed,
 }: {
   /** Parent's athletes — used by the code step. Empty for adult athletes. */
   athletes?: Athlete[];
   audience?: "parent" | "adult-athlete";
+  /** `?linkCoach=CODE` deep link: opens straight into the code step. */
+  initialCode?: string | null;
+  onInitialCodeConsumed?: () => void;
 }) {
   const isAdultAthlete = audience === "adult-athlete";
-  // Adult athletes only have the share path, so there's nothing to choose
-  // between — the sheet opens straight into it with no hub or back arrow.
-  const steps = isAdultAthlete ? STEPS.filter((s) => s.key === "share") : STEPS;
-  const initialStep: Step = steps.length === 1 ? steps[0].key : "hub";
+  const steps = STEPS;
+  const initialStep: Step = "hub";
 
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<Step>(initialStep);
+  const [deepLinkCode, setDeepLinkCode] = useState<string | null>(null);
   const vv = useVisualViewport();
 
   const active = STEPS.find((s) => s.key === step);
+
+  useEffect(() => {
+    if (!initialCode) return;
+    setDeepLinkCode(initialCode);
+    setStep("code");
+    setOpen(true);
+    onInitialCodeConsumed?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialCode]);
 
   return (
     <Sheet
       open={open}
       onOpenChange={(next) => {
         setOpen(next);
-        if (!next) setStep(initialStep);
+        if (!next) {
+          setStep(initialStep);
+          setDeepLinkCode(null);
+        }
       }}
     >
       <SheetTrigger asChild>
@@ -138,6 +155,12 @@ export function ConnectCoachSheet({
             <div className="mt-4">
               {step === "share" ? (
                 <InviteCoachCard audience={audience} compact />
+              ) : isAdultAthlete ? (
+                <AddCoachByCodeAdultCard
+                  initialCode={deepLinkCode}
+                  onSuccess={() => setOpen(false)}
+                  onCancel={() => setStep(initialStep)}
+                />
               ) : (
                 <AddCoachByCodeCard
                   athletes={athletes}
