@@ -60,15 +60,21 @@ export function AddYouthAthleteCard({
   return (
     <form
       onSubmit={handleSubmit}
-      className="space-y-4 rounded-xl border border-divider bg-elevated p-4"
+      className={
+        hideHeading
+          ? "space-y-4"
+          : "space-y-4 rounded-xl border border-divider bg-elevated p-4"
+      }
     >
-      <div>
-        <p className="font-display text-lg text-text-primary">Add an athlete yourself</p>
-        <p className="mt-1 text-sm text-text-secondary">
-          No code needed. We&apos;ll email their parent a link so they can follow along and join
-          when they&apos;re ready.
-        </p>
-      </div>
+      {hideHeading ? null : (
+        <div>
+          <p className="font-display text-lg text-text-primary">Add an athlete yourself</p>
+          <p className="mt-1 text-sm text-text-secondary">
+            No code needed. We&apos;ll email their parent a link so they can follow along and join
+            when they&apos;re ready.
+          </p>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-2">
         <div className="space-y-1.5">
