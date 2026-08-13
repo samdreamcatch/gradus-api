@@ -42,8 +42,8 @@ const birthdateSchema = z
       dt.getUTCDate() === d
     );
   }, "Enter a valid date")
-  .refine((v) => ageInYears(v) >= 18, "You must be 18 or older to create your own account.")
   .refine((v) => ageInYears(v) < 120, "Enter a valid date");
+
 
 /**
  * Create the signed-in user's self-managed athlete row. Idempotent: if the
