@@ -26,7 +26,10 @@ import {
  * invite code (given to them in person / by text) to link that person's
  * athlete(s) onto their roster without needing the shareable link.
  */
-export function EnterInviteCodeCard({ onSuccess }: { onSuccess?: () => void } = {}) {
+export function EnterInviteCodeCard({
+  onSuccess,
+  hideIntro = false,
+}: { onSuccess?: () => void; hideIntro?: boolean } = {}) {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const resolveFn = useServerFn(resolveInviteCode);
