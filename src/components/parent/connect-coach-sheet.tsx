@@ -51,12 +51,16 @@ export function ConnectCoachSheet({
   athletes?: Athlete[];
   audience?: "parent" | "adult-athlete";
 }) {
+  const isAdultAthlete = audience === "adult-athlete";
+  // Adult athletes only have the share path, so there's nothing to choose
+  // between — the sheet opens straight into it with no hub or back arrow.
+  const steps = isAdultAthlete ? STEPS.filter((s) => s.key === "share") : STEPS;
+  const initialStep: Step = steps.length === 1 ? steps[0].key : "hub";
+
   const [open, setOpen] = useState(false);
-  const [step, setStep] = useState<Step>("hub");
+  const [step, setStep] = useState<Step>(initialStep);
   const vv = useVisualViewport();
 
-  const isAdultAthlete = audience === "adult-athlete";
-  const steps = isAdultAthlete ? STEPS.filter((s) => s.key === "share") : STEPS;
   const active = STEPS.find((s) => s.key === step);
 
   return (
@@ -64,7 +68,7 @@ export function ConnectCoachSheet({
       open={open}
       onOpenChange={(next) => {
         setOpen(next);
-        if (!next) setStep("hub");
+        if (!next) setStep(initialStep);
       }}
     >
       <SheetTrigger asChild>
@@ -115,16 +119,18 @@ export function ConnectCoachSheet({
           <>
             <SheetHeader>
               <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  aria-label="Back"
-                  onClick={() => setStep("hub")}
-                  className="-ml-2 shrink-0"
-                >
-                  <ChevronLeft className="size-5" aria-hidden />
-                </Button>
+                {initialStep === "hub" && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    aria-label="Back"
+                    onClick={() => setStep("hub")}
+                    className="-ml-2 shrink-0"
+                  >
+                    <ChevronLeft className="size-5" aria-hidden />
+                  </Button>
+                )}
                 <SheetTitle className="min-w-0 flex-1">{active?.title}</SheetTitle>
               </div>
               <SheetDescription className="sr-only">{active?.description}</SheetDescription>
@@ -137,7 +143,7 @@ export function ConnectCoachSheet({
                   athletes={athletes}
                   hideChrome
                   onSuccess={() => setOpen(false)}
-                  onCancel={() => setStep("hub")}
+                  onCancel={() => setStep(initialStep)}
                 />
               )}
             </div>
