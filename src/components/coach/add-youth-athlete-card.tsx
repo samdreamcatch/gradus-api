@@ -13,7 +13,13 @@ import { addAthleteWithGuardian } from "@/lib/coach-roster-mutations.functions";
  * guardian gets a claim link immediately and copies of coach messages until
  * they join.
  */
-export function AddYouthAthleteCard({ onSuccess }: { onSuccess?: () => void }) {
+export function AddYouthAthleteCard({
+  onSuccess,
+  hideHeading = false,
+}: {
+  onSuccess?: () => void;
+  hideHeading?: boolean;
+}) {
   const addAthlete = useServerFn(addAthleteWithGuardian);
   const qc = useQueryClient();
 
