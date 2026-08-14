@@ -33,6 +33,12 @@ export interface CoachProfileDTO {
   athleteCount: number;
   foundingCoach: boolean;
   foundingProTrialUsed: boolean;
+  /**
+   * True when the coach is mid-trial on Stripe with no payment method on
+   * file — legacy card-free trials started before cards became mandatory.
+   * Drives the "add a card" nudge; never revokes access.
+   */
+  trialNeedsCard: boolean;
 }
 
 /** Mirrors public.coach_effective_tier() in the DB — DB is authoritative. */
@@ -67,7 +73,7 @@ async function ensureProfile(
   const existing = await supabase
     .from("coach_profiles")
     .select(
-      "id, first_name, last_name, onboarded_at, entitlement, organization_id, subscription_tier, subscription_status, trial_ends_at, current_period_end, stripe_customer_id, stripe_subscription_id, promo_code, founding_coach, founding_pro_trial_used",
+      "id, first_name, last_name, onboarded_at, entitlement, organization_id, subscription_tier, subscription_status, trial_ends_at, current_period_end, subscription_environment, stripe_customer_id, stripe_subscription_id, promo_code, founding_coach, founding_pro_trial_used",
     )
     .eq("user_id", userId)
     .maybeSingle();
@@ -100,7 +106,7 @@ async function ensureProfile(
         })
         .eq("id", existing.data.id)
         .select(
-          "id, first_name, last_name, onboarded_at, entitlement, organization_id, subscription_tier, subscription_status, trial_ends_at, current_period_end, stripe_customer_id, promo_code, founding_coach, founding_pro_trial_used",
+          "id, first_name, last_name, onboarded_at, entitlement, organization_id, subscription_tier, subscription_status, trial_ends_at, current_period_end, subscription_environment, stripe_customer_id, promo_code, founding_coach, founding_pro_trial_used",
         )
         .single();
       if (upd.error) dbError(upd.error);
@@ -142,7 +148,7 @@ async function ensureProfile(
       founding_coach: isFoundingCoachWindowOpen(),
     })
     .select(
-      "id, first_name, last_name, onboarded_at, entitlement, organization_id, subscription_tier, subscription_status, trial_ends_at, current_period_end, stripe_customer_id, promo_code, founding_coach, founding_pro_trial_used",
+      "id, first_name, last_name, onboarded_at, entitlement, organization_id, subscription_tier, subscription_status, trial_ends_at, current_period_end, subscription_environment, stripe_customer_id, promo_code, founding_coach, founding_pro_trial_used",
     )
     .single();
   if (created.error) dbError(created.error);
@@ -201,6 +207,24 @@ export const getCoachProfile = createServerFn({ method: "GET" })
     const effectiveTier = computeEffectiveTier({ organizationId, subscriptionTier });
     const athleteLimit = athleteLimitForTier(effectiveTier);
 
+    // Legacy card-free trials: only hit Stripe when the coach is actually
+    // trialing, so the common case stays a pure DB read.
+    let trialNeedsCard = false;
+    if (profile.subscription_status === "trialing" && profile.stripe_customer_id) {
+      try {
+        const { createStripeClient } = await import("@/lib/stripe.server");
+        const env = (profile.subscription_environment as "sandbox" | "live") ?? "sandbox";
+        const stripe = createStripeClient(env);
+        const methods = await stripe.paymentMethods.list({
+          customer: profile.stripe_customer_id,
+          limit: 1,
+        });
+        trialNeedsCard = methods.data.length === 0;
+      } catch (err) {
+        console.error("getCoachProfile: payment method check failed", err);
+      }
+    }
+
     return {
       profile: {
         id: profile.id,
@@ -223,6 +247,7 @@ export const getCoachProfile = createServerFn({ method: "GET" })
         athleteCount,
         foundingCoach: Boolean(profile.founding_coach),
         foundingProTrialUsed: Boolean(profile.founding_pro_trial_used),
+        trialNeedsCard,
       } as CoachProfileDTO,
       levels: (levels.data ?? []).map((r) => ({
         sport: r.sport,

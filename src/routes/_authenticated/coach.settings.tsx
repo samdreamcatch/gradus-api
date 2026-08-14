@@ -341,7 +341,6 @@ function SportsDisclosure({
   );
 }
 
-
 const TIER_LABEL: Record<"coach" | "coach_pro", string> = {
   coach: "Coach plan",
   coach_pro: "Coach Pro plan",
@@ -369,6 +368,7 @@ function PlanSection({
     promoLabel: string | null;
     promoPercentOff: number;
     foundingCoach: boolean;
+    trialNeedsCard: boolean;
   };
 }) {
   const navigate = useNavigate();
@@ -474,6 +474,17 @@ function PlanSection({
         />
         <SettingsList className="mt-3">
           {promoRow}
+
+          {profile.trialNeedsCard && (
+            <SettingsButtonRow
+              icon={<CreditCard className="size-4" />}
+              label="Add a payment method"
+              description="Required to keep your plan when your free trial ends."
+              tone="accent"
+              onClick={() => void openPortal()}
+              disabled={openingPortal || !profile.hasStripeCustomer}
+            />
+          )}
 
           <SettingsButtonRow
             icon={<CreditCard className="size-4" />}

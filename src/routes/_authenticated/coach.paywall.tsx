@@ -608,7 +608,7 @@ function PaywallPage() {
   }
 
   const proPromoMonths = promo.status === "valid" ? (promo.durationInMonths ?? 0) : 0;
-  // Founding coaches get a one-time 1-month Pro trial (no card, no promo needed).
+  // Founding coaches get a one-time 1-month Pro trial (card required, no promo needed).
   const foundingProTrialAvailable =
     isFoundingCoach && !foundingProTrialUsed && promo.status !== "valid";
   const proMonths = proPromoMonths > 0 ? proPromoMonths : foundingProTrialAvailable ? 1 : 0;
@@ -762,7 +762,6 @@ function PaywallPage() {
                   )}
                 </div>
 
-
                 {promoAppliesHere && proPromoMonths > 0 && (
                   <p className="mt-2 inline-flex items-center gap-1 rounded-md bg-accent/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-accent-ink sm:text-[11px]">
                     <Tag className="h-3 w-3" /> {proPromoMonths} months free · then $
@@ -771,7 +770,7 @@ function PaywallPage() {
                 )}
                 {foundingTrialHere && (
                   <p className="mt-2 inline-flex items-center gap-1 rounded-md bg-accent/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-accent-ink sm:text-[11px]">
-                    <Sparkles className="h-3 w-3" /> Founding · 1 month free · no card today
+                    <Sparkles className="h-3 w-3" /> Founding · 1 month free · card required
                   </p>
                 )}
 
@@ -783,7 +782,6 @@ function PaywallPage() {
                     </li>
                   ))}
                 </ul>
-
 
                 {coachFoundingActive ? (
                   <div className="mt-4 inline-flex items-center justify-center gap-1 rounded-md border border-divider bg-elevated px-3 py-2 text-xs font-semibold text-text-primary sm:text-sm">
@@ -866,7 +864,11 @@ function PaywallPage() {
                 )}
 
                 {isPro && !isCurrentTier && (
-                  <p className="mt-2 text-center text-[11px] text-text-tertiary">Cancel anytime</p>
+                  <p className="mt-2 text-center text-[11px] text-text-tertiary">
+                    {proMonths > 0
+                      ? `Card required — you won't be charged until your ${proMonths} free month${proMonths === 1 ? "" : "s"} end${proMonths === 1 ? "s" : ""}. Cancel anytime.`
+                      : "Cancel anytime"}
+                  </p>
                 )}
               </div>
             );

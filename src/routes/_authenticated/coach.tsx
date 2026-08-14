@@ -2,7 +2,7 @@ import { createFileRoute, Outlet, redirect, isRedirect, useNavigate } from "@tan
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 import { requireRole } from "@/lib/role-guard";
 import { isCoachPaywallEnabled, isFoundingCoachWindowOpen } from "@/lib/paywall-flag";
@@ -57,9 +57,59 @@ function CoachLayout() {
   return (
     <>
       <PaymentIssueBanner />
+      <TrialCardBanner />
       <Outlet />
       <ConnectionCelebration role="coach" />
     </>
+  );
+}
+
+/**
+ * Nudge for legacy card-free trials: the coach is trialing on Stripe but has
+ * no payment method on file, so the first charge after the trial would fail.
+ * Access is never revoked — this is a prompt only.
+ */
+function TrialCardBanner() {
+  const { data, isLoading, error } = useQuery(coachProfileQueryOptions);
+  const portal = useServerFn(createCoachBillingPortalSession);
+  const [busy, setBusy] = useState(false);
+
+  if (isLoading || error || !data) return null;
+  if (!data.profile.trialNeedsCard) return null;
+
+  const openPortal = async () => {
+    setBusy(true);
+    try {
+      const res = await portal({
+        data: {
+          environment: getStripeEnvironment(),
+          returnUrl: window.location.href,
+        },
+      });
+      if ("error" in res) {
+        toast.error(res.error);
+        return;
+      }
+      window.open(res.url, "_blank", "noopener,noreferrer");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Couldn't open billing portal");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="w-full border-b border-divider bg-elevated px-4 py-2 text-sm text-text-secondary">
+      <div className="mx-auto flex max-w-3xl items-center justify-between gap-3">
+        <span className="flex items-center gap-2">
+          <CreditCard className="size-4 shrink-0" />
+          Add a card to keep your plan active when your free trial ends.
+        </span>
+        <Button size="sm" variant="secondary" onClick={() => void openPortal()} disabled={busy}>
+          {busy ? "Opening…" : "Add a card"}
+        </Button>
+      </div>
+    </div>
   );
 }
 
