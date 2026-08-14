@@ -208,6 +208,25 @@ export const getCoachProfile = createServerFn({ method: "GET" })
     const effectiveTier = computeEffectiveTier({ organizationId, subscriptionTier });
     const athleteLimit = athleteLimitForTier(effectiveTier);
 
+    // Legacy card-free trials: only hit Stripe when the coach is actually
+    // trialing, so the common case stays a pure DB read.
+    let trialNeedsCard = false;
+    if (profile.subscription_status === "trialing" && profile.stripe_customer_id) {
+      try {
+        const { createStripeClient } = await import("@/lib/stripe.server");
+        const env = (profile.subscription_environment as "sandbox" | "live") ?? "sandbox";
+        const stripe = createStripeClient(env);
+        const methods = await stripe.paymentMethods.list({
+          customer: profile.stripe_customer_id,
+          limit: 1,
+        });
+        trialNeedsCard = methods.data.length === 0;
+      } catch (err) {
+        console.error("getCoachProfile: payment method check failed", err);
+      }
+    }
+
+
     return {
       profile: {
         id: profile.id,
