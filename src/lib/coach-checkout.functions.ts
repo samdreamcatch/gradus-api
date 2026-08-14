@@ -183,13 +183,21 @@ export const startCoachCheckout = createServerFn({ method: "POST" })
       // Founding-coach one-time 1-month Coach Pro trial. Only fires when
       // no other promo code is being redeemed at checkout (typed codes and
       // profile-attached forever codes win) and the coach hasn't used the
-      // trial before. Card is not collected — Stripe will attempt the first
-      // real charge after 30 days.
+      // trial before. The 30 free days remain, but a card is collected up
+      // front so the first charge after the trial can't silently fail.
       const useFoundingProTrial =
         !discountPromoId &&
         isProPrice &&
         Boolean(profile?.founding_coach) &&
         !profile?.founding_pro_trial_used;
+
+      // Card is required to start ANY trial or discounted subscription.
+      // `promo_codes.card_required` is still stored and editable in admin,
+      // but while this constant is true the checkout path ignores a `false`
+      // value. Flip to false to re-honor per-code card-free starts.
+      const ALWAYS_REQUIRE_CARD = true;
+      const paymentMethodCollection: "always" | "if_required" =
+        ALWAYS_REQUIRE_CARD || cardRequiredForPromo ? "always" : "if_required";
 
       const session = await stripe.checkout.sessions.create({
         line_items: [{ price: stripePrice.id, quantity: 1 }],
@@ -202,15 +210,12 @@ export const startCoachCheckout = createServerFn({ method: "POST" })
           ...(useFoundingProTrial && { trial_period_days: 30 }),
         },
         metadata: { userId },
+        payment_method_collection: paymentMethodCollection,
         ...(discountPromoId && {
           discounts: [{ promotion_code: discountPromoId }],
-          payment_method_collection: cardRequiredForPromo ? "always" : "if_required",
         }),
-        ...(useFoundingProTrial &&
-          !discountPromoId && {
-            payment_method_collection: "if_required",
-          }),
       });
+
 
       // Persist the promo attribution onto the profile only if it's empty —
       // never overwrite an earlier code (e.g. WELCOME_BACK).
