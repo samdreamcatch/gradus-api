@@ -495,8 +495,9 @@ function PlanSection({
             onClick={() => void openPortal()}
             disabled={openingPortal || !profile.hasStripeCustomer}
           />
-
+          <SettingsButtonRow
             icon={<ArrowLeftRight className="size-4" />}
+
             label="Change plan"
             description={
               profile.subscriptionTier === "coach_pro"
