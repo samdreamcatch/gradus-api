@@ -113,7 +113,6 @@ function TrialCardBanner() {
   );
 }
 
-
 /**
  * Sits above coach content when Stripe reports the subscription is past_due —
  * the coach still has access during Stripe's retry window, but their card

@@ -39,7 +39,6 @@ export interface CoachProfileDTO {
    * Drives the "add a card" nudge; never revokes access.
    */
   trialNeedsCard: boolean;
-
 }
 
 /** Mirrors public.coach_effective_tier() in the DB — DB is authoritative. */
@@ -226,7 +225,6 @@ export const getCoachProfile = createServerFn({ method: "GET" })
       }
     }
 
-
     return {
       profile: {
         id: profile.id,
@@ -250,7 +248,6 @@ export const getCoachProfile = createServerFn({ method: "GET" })
         foundingCoach: Boolean(profile.founding_coach),
         foundingProTrialUsed: Boolean(profile.founding_pro_trial_used),
         trialNeedsCard,
-
       } as CoachProfileDTO,
       levels: (levels.data ?? []).map((r) => ({
         sport: r.sport,

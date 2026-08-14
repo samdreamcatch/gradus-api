@@ -341,7 +341,6 @@ function SportsDisclosure({
   );
 }
 
-
 const TIER_LABEL: Record<"coach" | "coach_pro", string> = {
   coach: "Coach plan",
   coach_pro: "Coach Pro plan",
@@ -370,7 +369,6 @@ function PlanSection({
     promoPercentOff: number;
     foundingCoach: boolean;
     trialNeedsCard: boolean;
-
   };
 }) {
   const navigate = useNavigate();
@@ -497,7 +495,6 @@ function PlanSection({
           />
           <SettingsButtonRow
             icon={<ArrowLeftRight className="size-4" />}
-
             label="Change plan"
             description={
               profile.subscriptionTier === "coach_pro"
