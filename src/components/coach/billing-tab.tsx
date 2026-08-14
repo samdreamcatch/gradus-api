@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { Lock, Receipt } from "lucide-react";
-import { useNavigate } from "@tanstack/react-router";
+import { Receipt } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tag } from "@/components/ui/tag";
 import { InvoiceGenerateSheet } from "@/components/coach/invoice-generate-sheet";
@@ -16,8 +15,7 @@ import { useSampleInvoices } from "@/data/sample-invoices";
  * Roster → Billing. One row per athlete to start an invoice, plus the recent
  * invoice history across the whole roster.
  */
-export function BillingTab({ athletes, locked }: { athletes: RosterAthlete[]; locked: boolean }) {
-  const navigate = useNavigate();
+export function BillingTab({ athletes }: { athletes: RosterAthlete[] }) {
   const fetchInvoices = useServerFn(getCoachInvoices);
   const [generateFor, setGenerateFor] = useState<string | null>(null);
   const [openInvoice, setOpenInvoice] = useState<string | null>(null);
@@ -25,7 +23,6 @@ export function BillingTab({ athletes, locked }: { athletes: RosterAthlete[]; lo
   const invoices = useQuery({
     queryKey: ["coach", "invoices"],
     queryFn: () => fetchInvoices(),
-    enabled: !locked,
   });
 
   const sampleInvoices = useSampleInvoices();
@@ -40,31 +37,6 @@ export function BillingTab({ athletes, locked }: { athletes: RosterAthlete[]; lo
     })),
     ...(invoices.data ?? []),
   ];
-
-  if (locked) {
-    return (
-      <div className="mt-6 rounded-2xl border border-divider bg-card p-6">
-        <Tag size="nano" tone="accent">
-          Pro &amp; Club
-        </Tag>
-        <h2 className="mt-3 font-display text-xl text-text-primary">
-          <Lock className="mr-2 inline size-4" aria-hidden />
-          Invoicing
-        </h2>
-        <p className="mt-2 text-sm text-text-secondary">
-          Turn confirmed lessons into a shareable invoice in one tap. Available on Coach Pro and
-          Club plans.
-        </p>
-        <Button
-          type="button"
-          className="mt-4"
-          onClick={() => navigate({ to: "/coach/paywall", search: { tier: "coach_pro" } })}
-        >
-          Upgrade
-        </Button>
-      </div>
-    );
-  }
 
   return (
     <div className="mt-5 space-y-6">
