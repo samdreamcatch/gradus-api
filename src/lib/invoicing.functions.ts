@@ -4,7 +4,6 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
 import { dbError } from "./db-error";
-import { computeEffectiveTier, type CoachEffectiveTier } from "./coach-profile.functions";
 import {
   addDays,
   expandSlotOccurrences,
@@ -74,25 +73,18 @@ export interface AthleteBillingDTO {
 
 const MAX_WINDOW_DAYS = 400;
 
-async function requireProCoach(
+async function requireCoach(
   supabase: Client,
   userId: string,
-): Promise<{ coachId: string; tier: CoachEffectiveTier }> {
+): Promise<{ coachId: string }> {
   const { data, error } = await supabase
     .from("coach_profiles")
-    .select("id, organization_id, subscription_tier")
+    .select("id")
     .eq("user_id", userId)
     .maybeSingle();
   if (error) dbError(error);
   if (!data) throw new Error("Coach profile not found");
-  const tier = computeEffectiveTier({
-    organizationId: data.organization_id,
-    subscriptionTier: (data.subscription_tier as "coach" | "coach_pro" | null) ?? null,
-  });
-  if (tier === "coach") {
-    throw new Error("Invoicing is available on Coach Pro and Club plans.");
-  }
-  return { coachId: data.id, tier };
+  return { coachId: data.id };
 }
 
 async function assertRostered(supabase: Client, coachId: string, athleteId: string) {
@@ -141,7 +133,7 @@ export const setAthleteRate = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const supabase = context.supabase as Client;
-    const { coachId } = await requireProCoach(supabase, context.userId);
+    const { coachId } = await requireCoach(supabase, context.userId);
     await assertRostered(supabase, coachId, data.athleteId);
 
     const { error } = await supabase.from("coach_athlete_rates").upsert(
@@ -211,14 +203,7 @@ export const getCoachInvoices = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<InvoiceDTO[]> => {
     const supabase = context.supabase as Client;
-    // Read-only list: if the coach isn't entitled, return an empty list rather
-    // than throwing — the UI already renders the locked state.
-    let coachId: string;
-    try {
-      ({ coachId } = await requireProCoach(supabase, context.userId));
-    } catch {
-      return [];
-    }
+    const { coachId } = await requireCoach(supabase, context.userId);
     return loadInvoices(supabase, coachId);
   });
 
@@ -227,7 +212,7 @@ export const getAthleteBilling = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ athleteId: z.string().uuid() }).parse(input))
   .handler(async ({ context, data }): Promise<AthleteBillingDTO> => {
     const supabase = context.supabase as Client;
-    const { coachId } = await requireProCoach(supabase, context.userId);
+    const { coachId } = await requireCoach(supabase, context.userId);
     await assertRostered(supabase, coachId, data.athleteId);
 
     const [{ data: rate, error: rErr }, invoices, names] = await Promise.all([
@@ -255,7 +240,7 @@ export const getInvoiceDetail = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ invoiceId: z.string().uuid() }).parse(input))
   .handler(async ({ context, data }): Promise<InvoiceDTO & { lines: InvoiceLineDTO[] }> => {
     const supabase = context.supabase as Client;
-    const { coachId } = await requireProCoach(supabase, context.userId);
+    const { coachId } = await requireCoach(supabase, context.userId);
 
     const { data: inv, error } = await supabase
       .from("invoices")
@@ -483,7 +468,7 @@ export const previewInvoice = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }): Promise<InvoicePreviewDTO> => {
     const supabase = context.supabase as Client;
-    const { coachId } = await requireProCoach(supabase, context.userId);
+    const { coachId } = await requireCoach(supabase, context.userId);
     await assertRostered(supabase, coachId, data.athleteId);
     return buildPreview(supabase, coachId, data.athleteId, data.periodStart, data.periodEnd);
   });
@@ -516,7 +501,7 @@ export const createInvoice = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const supabase = context.supabase as Client;
-    const { coachId } = await requireProCoach(supabase, context.userId);
+    const { coachId } = await requireCoach(supabase, context.userId);
     await assertRostered(supabase, coachId, data.athleteId);
 
     // A date may only ever be billed once for this athlete.
@@ -585,7 +570,7 @@ export const setInvoiceStatus = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const supabase = context.supabase as Client;
-    const { coachId } = await requireProCoach(supabase, context.userId);
+    const { coachId } = await requireCoach(supabase, context.userId);
 
     const { error } = await supabase
       .from("invoices")
@@ -604,7 +589,7 @@ export const deleteInvoice = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ invoiceId: z.string().uuid() }).parse(input))
   .handler(async ({ context, data }) => {
     const supabase = context.supabase as Client;
-    const { coachId } = await requireProCoach(supabase, context.userId);
+    const { coachId } = await requireCoach(supabase, context.userId);
 
     const { data: inv, error } = await supabase
       .from("invoices")
