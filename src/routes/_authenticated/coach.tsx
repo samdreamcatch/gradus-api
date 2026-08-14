@@ -2,7 +2,7 @@ import { createFileRoute, Outlet, redirect, isRedirect, useNavigate } from "@tan
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 import { requireRole } from "@/lib/role-guard";
 import { isCoachPaywallEnabled, isFoundingCoachWindowOpen } from "@/lib/paywall-flag";
