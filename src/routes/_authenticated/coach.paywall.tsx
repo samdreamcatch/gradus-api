@@ -866,8 +866,13 @@ function PaywallPage() {
                 )}
 
                 {isPro && !isCurrentTier && (
-                  <p className="mt-2 text-center text-[11px] text-text-tertiary">Cancel anytime</p>
+                  <p className="mt-2 text-center text-[11px] text-text-tertiary">
+                    {proMonths > 0
+                      ? `Card required — you won't be charged until your ${proMonths} free month${proMonths === 1 ? "" : "s"} end${proMonths === 1 ? "s" : ""}. Cancel anytime.`
+                      : "Cancel anytime"}
+                  </p>
                 )}
+
               </div>
             );
           })}
