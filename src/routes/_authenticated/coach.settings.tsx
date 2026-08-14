@@ -477,6 +477,17 @@ function PlanSection({
         <SettingsList className="mt-3">
           {promoRow}
 
+          {profile.trialNeedsCard && (
+            <SettingsButtonRow
+              icon={<CreditCard className="size-4" />}
+              label="Add a payment method"
+              description="Required to keep your plan when your free trial ends."
+              tone="accent"
+              onClick={() => void openPortal()}
+              disabled={openingPortal || !profile.hasStripeCustomer}
+            />
+          )}
+
           <SettingsButtonRow
             icon={<CreditCard className="size-4" />}
             label={openingPortal ? "Opening billing portal…" : "Manage billing"}
@@ -484,7 +495,7 @@ function PlanSection({
             onClick={() => void openPortal()}
             disabled={openingPortal || !profile.hasStripeCustomer}
           />
-          <SettingsButtonRow
+
             icon={<ArrowLeftRight className="size-4" />}
             label="Change plan"
             description={
