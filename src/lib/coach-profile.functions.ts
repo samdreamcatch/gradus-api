@@ -33,6 +33,13 @@ export interface CoachProfileDTO {
   athleteCount: number;
   foundingCoach: boolean;
   foundingProTrialUsed: boolean;
+  /**
+   * True when the coach is mid-trial on Stripe with no payment method on
+   * file — legacy card-free trials started before cards became mandatory.
+   * Drives the "add a card" nudge; never revokes access.
+   */
+  trialNeedsCard: boolean;
+
 }
 
 /** Mirrors public.coach_effective_tier() in the DB — DB is authoritative. */
