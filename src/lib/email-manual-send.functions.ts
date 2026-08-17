@@ -63,6 +63,9 @@ export const sendEmailManually = createServerFn({ method: "POST" })
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { renderTemplateForSend } = await import("./email-templates/render.server");
+    const { resolveRecipientPersonalization } = await import(
+      "./email-templates/personalize.server"
+    );
 
     const { data: overrideRows, error: overrideError } = await supabaseAdmin
       .from("email_template_overrides")
@@ -74,9 +77,20 @@ export const sendEmailManually = createServerFn({ method: "POST" })
       overrides[row.slot_key as string] = row.value as string;
     }
 
-    const role = data.role;
+    // Real recipient data wins over the admin's role selector and the
+    // template's sample props, so the delivered email is personalized.
+    const person = await resolveRecipientPersonalization(supabaseAdmin, data.recipientEmail);
+    const role = person.role ?? data.role;
     const extraProps: Record<string, any> = { siteUrl: SITE_URL };
-    if (role) extraProps["settingsUrl"] = `${SITE_URL}/${role}/settings`;
+    if (role) {
+      extraProps["settingsUrl"] = `${SITE_URL}/${role}/settings`;
+      extraProps["role"] = role;
+    }
+    if (person.firstName) {
+      extraProps["firstName"] = person.firstName;
+      extraProps["name"] = person.firstName;
+    }
+    if (person.email) extraProps["recipient"] = person.email;
 
     const { html, text, subject } = await renderTemplateForSend(
       data.name,
@@ -84,6 +98,7 @@ export const sendEmailManually = createServerFn({ method: "POST" })
       role,
       extraProps,
     );
+
 
     const messageId = crypto.randomUUID();
     const recipient = data.recipientEmail.trim();
