@@ -248,6 +248,9 @@ function AdminEmailTemplate() {
               />
             </div>
 
+            <SendPanel name={name} role={role || undefined} />
+
+
             {history?.length ? (
               <div className="rounded-lg border border-divider bg-card p-3 shadow-card space-y-2">
                 <p className="text-caption uppercase tracking-widest text-text-tertiary">
