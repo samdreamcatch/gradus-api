@@ -58,10 +58,12 @@ async function getOrCreateUnsubscribeToken(
   if (existing?.token) return existing.token as string;
 
   const candidate = generateUnsubscribeToken();
-  const { error: insertError } = await supabase.from("email_unsubscribe_tokens").upsert(
-    { token: candidate, email: normalizedEmail },
-    { onConflict: "email", ignoreDuplicates: true },
-  );
+  const { error: insertError } = await supabase
+    .from("email_unsubscribe_tokens")
+    .upsert(
+      { token: candidate, email: normalizedEmail },
+      { onConflict: "email", ignoreDuplicates: true },
+    );
   if (insertError) throw insertError;
 
   const { data: stored, error: readError } = await supabase
