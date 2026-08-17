@@ -26,6 +26,8 @@ export interface TemplateCopy {
 
 const AUTH_VARS = ["siteName", "siteUrl", "recipient", "confirmationUrl"] as const;
 
+const WELCOME_VARS = ["firstName", "settingsUrl", "siteUrl"] as const;
+
 const GUARDIAN_INVITE_VARS = ["athleteName", "coachName", "claimUrl", "siteUrl"] as const;
 
 const GUARDIAN_ACTIVITY_VARS = [
