@@ -9,6 +9,8 @@ import { EmailChangeEmail } from "./email-change";
 import { ReauthenticationEmail } from "./reauthentication";
 import { GuardianInviteEmail } from "./guardian-invite";
 import { GuardianActivityEmail } from "./guardian-activity";
+import { WelcomeEmail } from "./welcome";
+import { ActivationEmail } from "./activation";
 
 const TEMPLATES: Record<string, React.ComponentType<any>> = {
   signup: SignupEmail,
@@ -19,6 +21,8 @@ const TEMPLATES: Record<string, React.ComponentType<any>> = {
   reauthentication: ReauthenticationEmail,
   "guardian-invite": GuardianInviteEmail,
   "guardian-activity": GuardianActivityEmail,
+  welcome: WelcomeEmail,
+  activation: ActivationEmail,
 };
 
 const SAMPLE_PROPS: Record<string, Record<string, any>> = {
@@ -61,6 +65,17 @@ const SAMPLE_PROPS: Record<string, Record<string, any>> = {
     senderRole: "coach",
     body: "Great session today — let's work on the loop jump entry next week.",
     claimUrl: "https://gradus.training/g/preview-token",
+    siteUrl: "https://gradus.training",
+  },
+  welcome: {
+    firstName: "Alex",
+    settingsUrl: "https://gradus.training/coach/settings",
+    siteUrl: "https://gradus.training",
+  },
+  activation: {
+    role: "parent",
+    firstName: "Alex",
+    settingsUrl: "https://gradus.training/parent/settings",
     siteUrl: "https://gradus.training",
   },
 };
