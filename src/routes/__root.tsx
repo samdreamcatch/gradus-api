@@ -18,6 +18,7 @@ import { DevToolsMount } from "@/components/dev/dev-tools-mount";
 import { registerServiceWorker } from "@/pwa/register-sw";
 import { InstallBanner } from "@/components/install-banner";
 import { installErrorReporter, reportError } from "@/lib/client-error-reporter";
+import { PRE_HYDRATION_SNAPSHOT_SCRIPT } from "@/lib/hydration-diagnostics";
 
 function NotFoundComponent() {
   return (
