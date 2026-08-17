@@ -1217,6 +1217,7 @@ export type Database = {
           id: string
           kind: string
           last_error: string | null
+          message_id: string | null
           sent_at: string | null
           status: string
           updated_at: string
@@ -1228,6 +1229,7 @@ export type Database = {
           id?: string
           kind: string
           last_error?: string | null
+          message_id?: string | null
           sent_at?: string | null
           status?: string
           updated_at?: string
@@ -1239,6 +1241,7 @@ export type Database = {
           id?: string
           kind?: string
           last_error?: string | null
+          message_id?: string | null
           sent_at?: string | null
           status?: string
           updated_at?: string
