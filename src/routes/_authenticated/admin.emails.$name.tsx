@@ -299,9 +299,20 @@ function AdminEmailTemplate() {
 }
 
 /** Manual push: send this template to a real user, or a test to support. */
-function SendPanel({ name, role }: { name: string; role?: string }) {
+function SendPanel({
+  name,
+  role,
+  draft,
+  onPersonalPreview,
+}: {
+  name: string;
+  role?: string;
+  draft: Record<string, string>;
+  onPersonalPreview: (value: { html: string; label: string } | null) => void;
+}) {
   const search = useServerFn(searchEmailRecipients);
   const send = useServerFn(sendEmailManually);
+  const previewAs = useServerFn(previewEmailForRecipient);
 
   const [query, setQuery] = React.useState("");
   const [results, setResults] = React.useState<Array<{ id: string; email: string }>>([]);
@@ -329,9 +340,28 @@ function SendPanel({ name, role }: { name: string; role?: string }) {
 
   const sendMutation = useMutation({
     mutationFn: (recipientEmail: string) => send({ data: { name, recipientEmail, role } }),
-    onSuccess: (res: any) => toast.success(`Queued to ${res?.recipient ?? "recipient"}`),
+    onSuccess: (res: any) =>
+      toast.success(
+        res?.firstName
+          ? `Queued to ${res.recipient} — personalized for ${res.firstName}`
+          : `Queued to ${res?.recipient ?? "recipient"}`,
+      ),
     onError: (e: any) => toast.error(e?.message ?? "Could not send"),
   });
+
+  const previewMutation = useMutation({
+    mutationFn: (recipientEmail: string) =>
+      previewAs({ data: { name, recipientEmail, overrides: draft } }),
+    onSuccess: (res: any) => {
+      onPersonalPreview({
+        html: res.html,
+        label: res.firstName ? `${res.firstName} (${res.email ?? selected})` : selected,
+      });
+      if (!res.found) toast.message("No app profile for that address — showing sample data");
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Could not preview"),
+  });
+
 
   return (
     <div className="rounded-lg border border-divider bg-card p-3 shadow-card space-y-3">
