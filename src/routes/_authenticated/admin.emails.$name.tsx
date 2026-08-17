@@ -21,6 +21,24 @@ export const Route = createFileRoute("/_authenticated/admin/emails/$name")({
   component: AdminEmailTemplate,
 });
 
+/** Templates whose copy/props change by user type — preview one at a time. */
+const PREVIEW_ROLES: Record<string, Array<{ value: string; label: string }>> = {
+  welcome: [
+    { value: "coach", label: "Coach" },
+    { value: "parent", label: "Parent" },
+    { value: "athlete", label: "Athlete" },
+  ],
+  activation: [
+    { value: "coach", label: "Coach" },
+    { value: "parent", label: "Parent" },
+    { value: "athlete", label: "Athlete" },
+  ],
+  "guardian-activity": [
+    { value: "coach", label: "From coach" },
+    { value: "athlete", label: "From athlete" },
+  ],
+};
+
 function AdminEmailTemplate() {
   const { name } = Route.useParams();
   const qc = useQueryClient();
@@ -52,13 +70,19 @@ function AdminEmailTemplate() {
     setDraft(next);
   }, [data]);
 
+  const roles = PREVIEW_ROLES[name];
+  const [role, setRole] = React.useState<string>(roles?.[0]?.value ?? "");
+  React.useEffect(() => {
+    setRole(PREVIEW_ROLES[name]?.[0]?.value ?? "");
+  }, [name]);
+
   const [html, setHtml] = React.useState("");
   React.useEffect(() => {
     if (!data || !Object.keys(draft).length) return;
     let cancelled = false;
     const t = setTimeout(async () => {
       try {
-        const res = await preview({ data: { name, overrides: draft } });
+        const res = await preview({ data: { name, overrides: draft, role: role || undefined } });
         if (!cancelled) setHtml(res.html);
       } catch {
         /* preview failures are non-fatal */
@@ -68,7 +92,7 @@ function AdminEmailTemplate() {
       cancelled = true;
       clearTimeout(t);
     };
-  }, [draft, data, name, preview]);
+  }, [draft, data, name, preview, role]);
 
   const saveMutation = useMutation({
     mutationFn: (vars: { slotKey: string; value: string }) =>
@@ -198,9 +222,25 @@ function AdminEmailTemplate() {
           {/* Preview + history */}
           <div className="space-y-4 lg:sticky lg:top-20 lg:self-start">
             <div className="rounded-lg border border-divider bg-card p-2 shadow-card">
-              <p className="px-1 pb-2 text-caption uppercase tracking-widest text-text-tertiary">
-                Live preview
-              </p>
+              <div className="flex flex-wrap items-center justify-between gap-2 px-1 pb-2">
+                <p className="text-caption uppercase tracking-widest text-text-tertiary">
+                  Live preview
+                </p>
+                {roles?.length ? (
+                  <div className="flex items-center gap-1">
+                    {roles.map((r) => (
+                      <Button
+                        key={r.value}
+                        size="sm"
+                        variant={role === r.value ? "default" : "outline"}
+                        onClick={() => setRole(r.value)}
+                      >
+                        {r.label}
+                      </Button>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
               <iframe
                 title="Email preview"
                 srcDoc={html}

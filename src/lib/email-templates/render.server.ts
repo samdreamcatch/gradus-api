@@ -80,12 +80,36 @@ const SAMPLE_PROPS: Record<string, Record<string, any>> = {
   },
 };
 
+/** Role-specific sample props, used by the admin preview's user-type selector. */
+const ROLE_PROPS: Record<string, Record<string, Record<string, any>>> = {
+  welcome: {
+    coach: { firstName: "Tami", settingsUrl: "https://gradus.training/coach/settings" },
+    parent: { firstName: "Alex", settingsUrl: "https://gradus.training/parent/settings" },
+    athlete: { firstName: "Jordan", settingsUrl: "https://gradus.training/athlete/settings" },
+  },
+  activation: {
+    coach: { role: "coach", firstName: "Tami", settingsUrl: "https://gradus.training/coach/settings" },
+    parent: { role: "parent", firstName: "Alex", settingsUrl: "https://gradus.training/parent/settings" },
+    athlete: {
+      role: "athlete",
+      firstName: "Jordan",
+      settingsUrl: "https://gradus.training/athlete/settings",
+    },
+  },
+  "guardian-activity": {
+    coach: { senderName: "Tami Taylor", senderRole: "coach" },
+    athlete: { senderName: "Sample Athlete", senderRole: "athlete" },
+  },
+};
+
 export async function renderTemplatePreview(
   name: string,
   overrides: Record<string, string>,
+  role?: string,
 ): Promise<string> {
   const Component = TEMPLATES[name];
   if (!Component) throw new Error("Unknown template");
-  const props = { ...(SAMPLE_PROPS[name] ?? {}), copyOverrides: overrides };
+  const roleProps = (role && ROLE_PROPS[name]?.[role]) || {};
+  const props = { ...(SAMPLE_PROPS[name] ?? {}), ...roleProps, copyOverrides: overrides };
   return await render(React.createElement(Component, props));
 }
