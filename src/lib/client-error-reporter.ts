@@ -12,6 +12,11 @@
 //   - wrapped in try/catch so the reporter itself can never throw
 
 import { reportClientError } from "./error-tracking.functions";
+import {
+  collectHydrationDiagnostics,
+  isHydrationError,
+  EARLY_ERROR_GLOBAL,
+} from "./hydration-diagnostics";
 
 const SESSION_CAP = 50;
 const PRODUCTION_HOSTS = new Set(["gradus.training", "gradustraining.lovable.app"]);
@@ -71,12 +76,21 @@ export function reportError(
   try {
     const { message, stack } = fmtError(error);
     if (isIgnoredMessage(message)) return;
+    // Hydration mismatches are recoverable (React re-renders on the client),
+    // but they arrive minified and context-free. Attach environment signals so
+    // we can tell an SSR bug apart from the page being rewritten before
+    // hydration (iOS data detectors, translation, in-app browsers).
+    const metadata = { ...(extra.metadata ?? {}) };
+    if (isHydrationError(message)) {
+      metadata.type = "react.hydration";
+      metadata.hydration = collectHydrationDiagnostics();
+    }
     send({
       message,
       stack: stack ?? null,
       route: extra.route ?? (typeof window !== "undefined" ? window.location.pathname : null),
       userAgent: typeof navigator !== "undefined" ? navigator.userAgent : null,
-      metadata: extra.metadata,
+      metadata,
     });
   } catch {
     // swallow
@@ -89,6 +103,24 @@ export function installErrorReporter() {
   if (import.meta.env.DEV) return;
   if (!isProductionHost()) return;
   installed = true;
+
+  // Drain anything the pre-hydration inline script buffered. Hydration errors
+  // fire before React mounts, so they land here rather than in the listener
+  // below.
+  try {
+    const early = (window as unknown as Record<string, unknown>)[EARLY_ERROR_GLOBAL];
+    if (Array.isArray(early)) {
+      for (const item of early as Array<{ message?: string; stack?: string | null }>) {
+        if (!item?.message) continue;
+        const err = new Error(item.message);
+        if (item.stack) err.stack = item.stack;
+        reportError(err, { metadata: { type: "window.error", phase: "pre-hydration" } });
+      }
+      early.length = 0;
+    }
+  } catch {
+    // never let draining break startup
+  }
 
   window.addEventListener("error", (evt) => {
     reportError(evt.error ?? evt.message, {
