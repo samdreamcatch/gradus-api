@@ -89,6 +89,7 @@ export const getEmailTemplate = createServerFn({ method: "GET" })
       displayName: schema.displayName,
       category: schema.category,
       description: schema.description,
+      noPreview: schema.noPreview ?? false,
       slots: schema.slots,
       defaults: schema.defaults,
       overrides: overrideMap,

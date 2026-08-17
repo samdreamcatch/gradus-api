@@ -18,6 +18,8 @@ export interface Slot {
 
 export interface TemplateCopy {
   displayName: string;
+  /** Delivery-only entries (e.g. global CC/BCC) have no renderable component. */
+  noPreview?: boolean;
   category: "Auth" | "App" | "Internal";
   description: string;
   slots: readonly Slot[];
@@ -430,6 +432,57 @@ export const EMAIL_COPY_SCHEMA: Record<string, TemplateCopy> = {
   },
 };
 
+/** Pseudo-template holding CC/BCC that applies to every email the app sends. */
+export const GLOBAL_DELIVERY_TEMPLATE = "__global";
+
+/** CC / BCC fields appended to every template so admins can edit them. */
+export const DELIVERY_SLOTS: readonly Slot[] = [
+  {
+    key: "cc",
+    label: "CC (copy to)",
+    kind: "text",
+    help: "Comma-separated email addresses. Leave blank for none.",
+  },
+  {
+    key: "bcc",
+    label: "BCC (blind copy to)",
+    kind: "text",
+    help: "Comma-separated email addresses. Recipients never see these.",
+  },
+];
+
+export function isDeliverySlot(key: string): boolean {
+  return DELIVERY_SLOTS.some((s) => s.key === key);
+}
+
+/** Split a comma/semicolon/whitespace separated address list into clean addresses. */
+export function parseAddressList(value: string | null | undefined): string[] {
+  if (!value) return [];
+  return Array.from(
+    new Set(
+      value
+        .split(/[,;\s]+/)
+        .map((a) => a.trim().toLowerCase())
+        .filter((a) => a.includes("@")),
+    ),
+  );
+}
+
+EMAIL_COPY_SCHEMA[GLOBAL_DELIVERY_TEMPLATE] = {
+  displayName: "Global CC / BCC (all emails)",
+  category: "Internal",
+  noPreview: true,
+  description: "Addresses copied on every email Gradus sends, on top of any per-template CC/BCC.",
+  slots: DELIVERY_SLOTS,
+  defaults: { cc: "", bcc: "" },
+};
+
+// Every template gets editable CC/BCC fields.
+for (const [name, template] of Object.entries(EMAIL_COPY_SCHEMA)) {
+  if (name === GLOBAL_DELIVERY_TEMPLATE) continue;
+  template.slots = [...template.slots, ...DELIVERY_SLOTS];
+  template.defaults = { cc: "", bcc: "", ...template.defaults };
+}
 
 /** Substitute {variable} placeholders. Unknown variables render as literal text. */
 export function renderTemplateString(

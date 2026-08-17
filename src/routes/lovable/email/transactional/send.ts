@@ -290,6 +290,25 @@ export const Route = createFileRoute("/lovable/email/transactional/send")({
           return Response.json({ error: "Failed to enqueue email" }, { status: 500 });
         }
 
+        const { enqueueCopies } = await import("@/lib/email-templates/delivery.server");
+        await enqueueCopies(supabase as any, {
+          templateName: templateName,
+          queueName: "transactional_emails",
+          payload: {
+            message_id: messageId,
+            to: effectiveRecipient,
+            from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
+            sender_domain: SENDER_DOMAIN,
+            subject: resolvedSubject,
+            html,
+            text: plainText,
+            purpose: "transactional",
+            label: templateName,
+            idempotency_key: idempotencyKey,
+            unsubscribe_token: unsubscribeToken,
+          },
+        });
+
         console.log("Transactional email enqueued", {
           templateName,
           recipient_redacted: redactEmail(effectiveRecipient),

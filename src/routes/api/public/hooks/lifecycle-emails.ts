@@ -35,21 +35,10 @@ interface Person {
   email: string | null;
 }
 
-async function resolvePerson(
-  admin: SupabaseClient,
-  userId: string,
-): Promise<Person | null> {
+async function resolvePerson(admin: SupabaseClient, userId: string): Promise<Person | null> {
   const [coach, parent, athlete] = await Promise.all([
-    admin
-      .from("coach_profiles")
-      .select("first_name, is_test")
-      .eq("user_id", userId)
-      .maybeSingle(),
-    admin
-      .from("parent_profiles")
-      .select("first_name, is_test")
-      .eq("user_id", userId)
-      .maybeSingle(),
+    admin.from("coach_profiles").select("first_name, is_test").eq("user_id", userId).maybeSingle(),
+    admin.from("parent_profiles").select("first_name, is_test").eq("user_id", userId).maybeSingle(),
     admin.from("athletes").select("first_name, is_test").eq("user_id", userId).maybeSingle(),
   ]);
 
@@ -226,6 +215,23 @@ export const Route = createFileRoute("/api/public/hooks/lifecycle-emails")({
             });
             continue;
           }
+
+          const { enqueueCopies } = await import("@/lib/email-templates/delivery.server");
+          await enqueueCopies(admin as any, {
+            templateName: kind,
+            queueName: "transactional_emails",
+            payload: {
+              message_id: messageId,
+              to: person.email,
+              from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
+              sender_domain: SENDER_DOMAIN,
+              subject,
+              html,
+              text,
+              purpose: "transactional",
+              label: kind,
+            },
+          });
 
           await admin
             .from("lifecycle_email_jobs")

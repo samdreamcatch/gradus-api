@@ -58,6 +58,7 @@ export const sendEmailManually = createServerFn({ method: "POST" })
     await assertAdmin(context);
     const schema = EMAIL_COPY_SCHEMA[data.name];
     if (!schema) throw new Error("Unknown template");
+    if (schema.noPreview) throw new Error("This entry has no email body to send");
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { renderTemplateForSend } = await import("./email-templates/render.server");
@@ -120,6 +121,23 @@ export const sendEmailManually = createServerFn({ method: "POST" })
       });
       throw new Error(enqueueError.message);
     }
+
+    const { enqueueCopies } = await import("./email-templates/delivery.server");
+    await enqueueCopies(supabaseAdmin as any, {
+      templateName: data.name,
+      queueName: "transactional_emails",
+      payload: {
+        message_id: messageId,
+        to: recipient,
+        from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
+        sender_domain: SENDER_DOMAIN,
+        subject,
+        html,
+        text,
+        purpose: "transactional",
+        label: `manual-${data.name}`,
+      },
+    });
 
     return { ok: true, recipient, subject };
   });
