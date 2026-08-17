@@ -21,6 +21,7 @@ export const previewEmailTemplate = createServerFn({ method: "POST" })
       .object({
         name: z.string(),
         overrides: z.record(z.string(), z.string()).default({}),
+        role: z.string().optional(),
       })
       .parse(input),
   )
@@ -28,6 +29,6 @@ export const previewEmailTemplate = createServerFn({ method: "POST" })
     await assertAdmin(context);
     if (!EMAIL_COPY_SCHEMA[data.name]) throw new Error("Unknown template");
     const { renderTemplatePreview } = await import("./email-templates/render.server");
-    const html = await renderTemplatePreview(data.name, data.overrides);
+    const html = await renderTemplatePreview(data.name, data.overrides, data.role);
     return { html };
   });
