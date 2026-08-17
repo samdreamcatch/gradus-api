@@ -27,7 +27,9 @@ export const previewEmailTemplate = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
-    if (!EMAIL_COPY_SCHEMA[data.name]) throw new Error("Unknown template");
+    const schema = EMAIL_COPY_SCHEMA[data.name];
+    if (!schema) throw new Error("Unknown template");
+    if (schema.noPreview) return { html: "" };
     const { renderTemplatePreview } = await import("./email-templates/render.server");
     const html = await renderTemplatePreview(data.name, data.overrides, data.role);
     return { html };

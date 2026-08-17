@@ -58,6 +58,7 @@ export const sendEmailManually = createServerFn({ method: "POST" })
     await assertAdmin(context);
     const schema = EMAIL_COPY_SCHEMA[data.name];
     if (!schema) throw new Error("Unknown template");
+    if (schema.noPreview) throw new Error("This entry has no email body to send");
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { renderTemplateForSend } = await import("./email-templates/render.server");

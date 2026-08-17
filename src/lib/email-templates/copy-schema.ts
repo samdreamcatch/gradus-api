@@ -432,7 +432,6 @@ export const EMAIL_COPY_SCHEMA: Record<string, TemplateCopy> = {
   },
 };
 
-
 /** Pseudo-template holding CC/BCC that applies to every email the app sends. */
 export const GLOBAL_DELIVERY_TEMPLATE = "__global";
 
@@ -473,8 +472,7 @@ EMAIL_COPY_SCHEMA[GLOBAL_DELIVERY_TEMPLATE] = {
   displayName: "Global CC / BCC (all emails)",
   category: "Internal",
   noPreview: true,
-  description:
-    "Addresses copied on every email Gradus sends, on top of any per-template CC/BCC.",
+  description: "Addresses copied on every email Gradus sends, on top of any per-template CC/BCC.",
   slots: DELIVERY_SLOTS,
   defaults: { cc: "", bcc: "" },
 };
@@ -485,7 +483,6 @@ for (const [name, template] of Object.entries(EMAIL_COPY_SCHEMA)) {
   template.slots = [...template.slots, ...DELIVERY_SLOTS];
   template.defaults = { cc: "", bcc: "", ...template.defaults };
 }
-
 
 /** Substitute {variable} placeholders. Unknown variables render as literal text. */
 export function renderTemplateString(

@@ -218,22 +218,24 @@ export const Route = createFileRoute("/api/public/hooks/error-digest")({
             });
           } else {
             enqueued += 1;
+            // Fan out CC/BCC once, not per internal alert recipient.
             const { enqueueCopies } = await import("@/lib/email-templates/delivery.server");
-            await enqueueCopies(supabaseAdmin as any, {
-              templateName: "error-digest",
-              queueName: "transactional_emails",
-              payload: {
-                message_id: messageId,
-                to,
-                from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
-                sender_domain: SENDER_DOMAIN,
-                subject,
-                html,
-                text,
-                purpose: "transactional",
-                label: "error-digest",
-              },
-            });
+            if (enqueued === 1)
+              await enqueueCopies(supabaseAdmin as any, {
+                templateName: "error-digest",
+                queueName: "transactional_emails",
+                payload: {
+                  message_id: messageId,
+                  to,
+                  from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
+                  sender_domain: SENDER_DOMAIN,
+                  subject,
+                  html,
+                  text,
+                  purpose: "transactional",
+                  label: "error-digest",
+                },
+              });
           }
         }
 
