@@ -14,6 +14,7 @@ import { previewEmailTemplate } from "@/lib/email-preview.functions";
 import {
   searchEmailRecipients,
   sendEmailManually,
+  previewEmailForRecipient,
   TEST_EMAIL_ADDRESS,
 } from "@/lib/email-manual-send.functions";
 
@@ -83,13 +84,19 @@ function AdminEmailTemplate() {
   }, [name]);
 
   const [html, setHtml] = React.useState("");
+  // When an admin previews "as" a real user, that render wins until the copy
+  // or role selection changes again.
+  const [personal, setPersonal] = React.useState<{ html: string; label: string } | null>(null);
   React.useEffect(() => {
     if (!data || !Object.keys(draft).length) return;
     let cancelled = false;
     const t = setTimeout(async () => {
       try {
         const res = await preview({ data: { name, overrides: draft, role: role || undefined } });
-        if (!cancelled) setHtml(res.html);
+        if (!cancelled) {
+          setHtml(res.html);
+          setPersonal(null);
+        }
       } catch {
         /* preview failures are non-fatal */
       }
@@ -231,7 +238,7 @@ function AdminEmailTemplate() {
               <div className="rounded-lg border border-divider bg-card p-2 shadow-card">
                 <div className="flex flex-wrap items-center justify-between gap-2 px-1 pb-2">
                   <p className="text-caption uppercase tracking-widest text-text-tertiary">
-                    Live preview
+                    {personal ? `Preview as ${personal.label}` : "Live preview"}
                   </p>
                   {roles?.length ? (
                     <div className="flex items-center gap-1">
@@ -239,8 +246,11 @@ function AdminEmailTemplate() {
                         <Button
                           key={r.value}
                           size="sm"
-                          variant={role === r.value ? "default" : "outline"}
-                          onClick={() => setRole(r.value)}
+                          variant={role === r.value && !personal ? "default" : "outline"}
+                          onClick={() => {
+                            setPersonal(null);
+                            setRole(r.value);
+                          }}
                         >
                           {r.label}
                         </Button>
@@ -250,13 +260,20 @@ function AdminEmailTemplate() {
                 </div>
                 <iframe
                   title="Email preview"
-                  srcDoc={html}
+                  srcDoc={personal?.html ?? html}
                   className="h-[620px] w-full rounded-md border border-divider bg-white"
                 />
               </div>
             )}
 
-            {data.noPreview ? null : <SendPanel name={name} role={role || undefined} />}
+            {data.noPreview ? null : (
+              <SendPanel
+                name={name}
+                role={role || undefined}
+                draft={draft}
+                onPersonalPreview={setPersonal}
+              />
+            )}
 
             {history?.length ? (
               <div className="rounded-lg border border-divider bg-card p-3 shadow-card space-y-2">
@@ -281,9 +298,20 @@ function AdminEmailTemplate() {
 }
 
 /** Manual push: send this template to a real user, or a test to support. */
-function SendPanel({ name, role }: { name: string; role?: string }) {
+function SendPanel({
+  name,
+  role,
+  draft,
+  onPersonalPreview,
+}: {
+  name: string;
+  role?: string;
+  draft: Record<string, string>;
+  onPersonalPreview: (value: { html: string; label: string } | null) => void;
+}) {
   const search = useServerFn(searchEmailRecipients);
   const send = useServerFn(sendEmailManually);
+  const previewAs = useServerFn(previewEmailForRecipient);
 
   const [query, setQuery] = React.useState("");
   const [results, setResults] = React.useState<Array<{ id: string; email: string }>>([]);
@@ -311,8 +339,26 @@ function SendPanel({ name, role }: { name: string; role?: string }) {
 
   const sendMutation = useMutation({
     mutationFn: (recipientEmail: string) => send({ data: { name, recipientEmail, role } }),
-    onSuccess: (res: any) => toast.success(`Queued to ${res?.recipient ?? "recipient"}`),
+    onSuccess: (res: any) =>
+      toast.success(
+        res?.firstName
+          ? `Queued to ${res.recipient} — personalized for ${res.firstName}`
+          : `Queued to ${res?.recipient ?? "recipient"}`,
+      ),
     onError: (e: any) => toast.error(e?.message ?? "Could not send"),
+  });
+
+  const previewMutation = useMutation({
+    mutationFn: (recipientEmail: string) =>
+      previewAs({ data: { name, recipientEmail, overrides: draft } }),
+    onSuccess: (res: any) => {
+      onPersonalPreview({
+        html: res.html,
+        label: res.firstName ? `${res.firstName} (${res.email ?? selected})` : selected,
+      });
+      if (!res.found) toast.message("No app profile for that address — showing sample data");
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Could not preview"),
   });
 
   return (
@@ -361,6 +407,14 @@ function SendPanel({ name, role }: { name: string; role?: string }) {
         <Button
           size="sm"
           variant="outline"
+          disabled={!selected || previewMutation.isPending}
+          onClick={() => previewMutation.mutate(selected)}
+        >
+          Preview as this user
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
           disabled={sendMutation.isPending}
           onClick={() => sendMutation.mutate(TEST_EMAIL_ADDRESS)}
         >
@@ -369,8 +423,9 @@ function SendPanel({ name, role }: { name: string; role?: string }) {
       </div>
 
       <p className="text-meta text-text-secondary">
-        Sends the saved copy (not unsaved edits){role ? `, as the ${role} version` : ""}. Goes
-        through the normal email queue, so suppressed addresses are respected.
+        Real sends use the recipient&apos;s own name and role from their profile
+        {role ? `; the ${role} toggle only affects the sample preview` : ""}. Sends the saved copy
+        (not unsaved edits) through the normal email queue, so suppressed addresses are respected.
       </p>
     </div>
   );
