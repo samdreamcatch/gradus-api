@@ -411,6 +411,14 @@ function SendPanel({
         <Button
           size="sm"
           variant="outline"
+          disabled={!selected || previewMutation.isPending}
+          onClick={() => previewMutation.mutate(selected)}
+        >
+          Preview as this user
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
           disabled={sendMutation.isPending}
           onClick={() => sendMutation.mutate(TEST_EMAIL_ADDRESS)}
         >
@@ -419,9 +427,11 @@ function SendPanel({
       </div>
 
       <p className="text-meta text-text-secondary">
-        Sends the saved copy (not unsaved edits){role ? `, as the ${role} version` : ""}. Goes
-        through the normal email queue, so suppressed addresses are respected.
+        Real sends use the recipient&apos;s own name and role from their profile
+        {role ? `; the ${role} toggle only affects the sample preview` : ""}. Sends the saved copy
+        (not unsaved edits) through the normal email queue, so suppressed addresses are respected.
       </p>
+
     </div>
   );
 }
