@@ -21,6 +21,24 @@ export const Route = createFileRoute("/_authenticated/admin/emails/$name")({
   component: AdminEmailTemplate,
 });
 
+/** Templates whose copy/props change by user type — preview one at a time. */
+const PREVIEW_ROLES: Record<string, Array<{ value: string; label: string }>> = {
+  welcome: [
+    { value: "coach", label: "Coach" },
+    { value: "parent", label: "Parent" },
+    { value: "athlete", label: "Athlete" },
+  ],
+  activation: [
+    { value: "coach", label: "Coach" },
+    { value: "parent", label: "Parent" },
+    { value: "athlete", label: "Athlete" },
+  ],
+  "guardian-activity": [
+    { value: "coach", label: "From coach" },
+    { value: "athlete", label: "From athlete" },
+  ],
+};
+
 function AdminEmailTemplate() {
   const { name } = Route.useParams();
   const qc = useQueryClient();
