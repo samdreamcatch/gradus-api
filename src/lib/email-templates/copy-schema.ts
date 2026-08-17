@@ -298,7 +298,136 @@ export const EMAIL_COPY_SCHEMA: Record<string, TemplateCopy> = {
       footer: "These copies stop as soon as you create your account.",
     },
   },
+  welcome: {
+    displayName: "Welcome — after signup",
+    category: "App",
+    description:
+      "Sent automatically to every new user right after signup, whatever their role. Points them to Settings to get connected.",
+    slots: [
+      { key: "preview", label: "Inbox preview", kind: "text" },
+      { key: "subject", label: "Subject line", kind: "text" },
+      { key: "eyebrow", label: "Small caps eyebrow", kind: "text" },
+      { key: "heading", label: "Big headline", kind: "text", variables: WELCOME_VARS },
+      { key: "body", label: "Opening paragraph", kind: "textarea", variables: WELCOME_VARS },
+      { key: "nextStep", label: "Next-step paragraph", kind: "textarea", variables: WELCOME_VARS },
+      { key: "ctaLabel", label: "Button label", kind: "text" },
+      { key: "signOff", label: "Sign-off", kind: "text" },
+      { key: "footer", label: "Fine-print footer", kind: "textarea" },
+    ],
+    defaults: {
+      preview: "Welcome to Gradus — here's your first step",
+      subject: "Welcome to Gradus",
+      eyebrow: "Welcome",
+      heading: "Welcome to Gradus, {firstName}.",
+      body: "We're glad you're here. Gradus is where coaches, athletes, and parents stay on the same page between lessons.",
+      nextStep:
+        "Your next step is to get connected — with a coach, a parent, or an athlete, depending on who you are. Head to <strong>Settings</strong> to get started.",
+      ctaLabel: "Go to Settings",
+      signOff: "— Alyson and Mariah, Gradus co-founders",
+      footer: "Questions? Just reply to this email.",
+    },
+  },
+  activation: {
+    displayName: "Activation — after first connection",
+    category: "App",
+    description:
+      "Sent once, the first time someone completes a connection. Three versions — coach, parent, and adult athlete.",
+    slots: [
+      { key: "eyebrow", label: "Small caps eyebrow", kind: "text" },
+      { key: "ctaLabel", label: "Button label", kind: "text" },
+      { key: "signOff", label: "Sign-off", kind: "text" },
+      { key: "footer", label: "Fine-print footer", kind: "textarea" },
+
+      { key: "subjectCoach", label: "Coach — subject line", kind: "text" },
+      { key: "previewCoach", label: "Coach — inbox preview", kind: "text" },
+      { key: "headingCoach", label: "Coach — headline", kind: "text", variables: WELCOME_VARS },
+      { key: "introCoach", label: "Coach — intro line", kind: "textarea", variables: WELCOME_VARS },
+      {
+        key: "bulletsCoach",
+        label: "Coach — bullets (one per line)",
+        kind: "textarea",
+        help: "Each line becomes one bullet. <strong> is supported.",
+      },
+
+      { key: "subjectParent", label: "Parent — subject line", kind: "text" },
+      { key: "previewParent", label: "Parent — inbox preview", kind: "text" },
+      { key: "headingParent", label: "Parent — headline", kind: "text", variables: WELCOME_VARS },
+      {
+        key: "introParent",
+        label: "Parent — intro line",
+        kind: "textarea",
+        variables: WELCOME_VARS,
+      },
+      {
+        key: "bulletsParent",
+        label: "Parent — bullets (one per line)",
+        kind: "textarea",
+        help: "Each line becomes one bullet. <strong> is supported.",
+      },
+
+      { key: "subjectAthlete", label: "Athlete — subject line", kind: "text" },
+      { key: "previewAthlete", label: "Athlete — inbox preview", kind: "text" },
+      { key: "headingAthlete", label: "Athlete — headline", kind: "text", variables: WELCOME_VARS },
+      {
+        key: "introAthlete",
+        label: "Athlete — intro line",
+        kind: "textarea",
+        variables: WELCOME_VARS,
+      },
+      {
+        key: "bulletsAthlete",
+        label: "Athlete — bullets (one per line)",
+        kind: "textarea",
+        help: "Each line becomes one bullet. <strong> is supported.",
+      },
+    ],
+    defaults: {
+      eyebrow: "You're connected",
+      ctaLabel: "Open Gradus",
+      signOff: "— Alyson and Mariah, Gradus co-founders",
+      footer: "Questions? Just reply to this email.",
+
+      subjectCoach: "You're connected — here's how to get the most out of Gradus",
+      previewCoach: "Create your first plan and a few custom moves",
+      headingCoach: "You're connected, {firstName}.",
+      introCoach: "Here's how to get rolling with your athlete:",
+      bulletsCoach: [
+        "<strong>Create your first plan.</strong> Use voice or search moves manually. The plan goes to your athlete — and their parent if they're a minor — so include the specific cues and language you use in lessons.",
+        "<strong>Create custom moves and drills.</strong> Tap Add Moves in the move library, then Add New. Anything you create is saved to your library.",
+        "<strong>Watch practice roll in.</strong> Once an athlete or their parent logs sessions, you'll see a summary of how practice has gone since you last saw them.",
+        "<strong>Check their goals.</strong> Parents enter a goal for the season and for the long term — take a look so you can level-set on practice expectations.",
+        "<strong>Invoice from lesson times.</strong> If parents add lesson times, you can send invoices in a couple of taps.",
+      ].join("\n"),
+
+      subjectParent: "You're connected — here's how to get the most out of Gradus",
+      previewParent: "Align on goals, log practice, and keep your coach in the loop",
+      headingParent: "You're connected, {firstName}.",
+      introParent: "Here's how to make the most of Gradus:",
+      bulletsParent: [
+        "<strong>Finish connecting with your team.</strong> If you haven't already, head to Settings to connect with a coach or additional athletes.",
+        "<strong>Start by aligning on goals.</strong> Research shows this is one of the most important parts of an athlete's development. Be honest about where you'd like your athlete to go long term so your coach can strategize with you early and often.",
+        "<strong>Log practice sessions.</strong> Swipe across the top of a plan to start a session, and use your coach's notes to remind your athlete what to work on using the cues they provided — go from “do better” to specific feedback your coach noticed during a recent lesson.",
+        "<strong>Swipe to end the session</strong> and log how it went. Your coach gets a summary of how much your athlete practiced and where they need support.",
+        "<strong>Add lesson times</strong> to help provide structure. If your coach chooses, they can use those times for easy invoicing.",
+        "<strong>Keep connecting.</strong> If your athlete has multiple coaches or plays multiple sports, they're welcome to use Gradus for all of it. Note: if your coach is on a club plan, they can choose to see the plans of peer coaches training your athlete, so no one duplicates efforts or coaches your child differently.",
+      ].join("\n"),
+
+      subjectAthlete: "You're connected — here's how to get the most out of Gradus",
+      previewAthlete: "Align on goals, log practice, and keep your coach in the loop",
+      headingAthlete: "You're connected, {firstName}.",
+      introAthlete: "Here's how to make the most of Gradus:",
+      bulletsAthlete: [
+        "<strong>Finish connecting with your team.</strong> If you haven't already, head to Settings to take the next steps to connect with a coach.",
+        "<strong>Start by aligning on goals.</strong> Research shows this is one of the most important parts of your development. Be honest about where you'd like to go long term so your coach can strategize with you early and often.",
+        "<strong>Log practice sessions.</strong> Swipe across the top of a plan to start a session, and use your coach's notes to remind yourself what to work on using the cues they provided — go from “I need to do this better” to specific feedback your coach noticed during a recent lesson.",
+        "<strong>Swipe to end the session</strong> and log how it went. Your coach gets a summary of how much you practiced and where you need support.",
+        "<strong>Add lesson times</strong> to help provide structure. If your coach chooses, they can use those times for easy invoicing.",
+        "<strong>Keep connecting.</strong> If you have multiple coaches or play multiple sports, you're welcome to use Gradus for all of it. Note: if your coach is on a club plan, they can choose to see the plans of peer coaches training you, so no one duplicates efforts or coaches you differently.",
+      ].join("\n"),
+    },
+  },
 };
+
 
 /** Substitute {variable} placeholders. Unknown variables render as literal text. */
 export function renderTemplateString(
