@@ -35,21 +35,10 @@ interface Person {
   email: string | null;
 }
 
-async function resolvePerson(
-  admin: SupabaseClient,
-  userId: string,
-): Promise<Person | null> {
+async function resolvePerson(admin: SupabaseClient, userId: string): Promise<Person | null> {
   const [coach, parent, athlete] = await Promise.all([
-    admin
-      .from("coach_profiles")
-      .select("first_name, is_test")
-      .eq("user_id", userId)
-      .maybeSingle(),
-    admin
-      .from("parent_profiles")
-      .select("first_name, is_test")
-      .eq("user_id", userId)
-      .maybeSingle(),
+    admin.from("coach_profiles").select("first_name, is_test").eq("user_id", userId).maybeSingle(),
+    admin.from("parent_profiles").select("first_name, is_test").eq("user_id", userId).maybeSingle(),
     admin.from("athletes").select("first_name, is_test").eq("user_id", userId).maybeSingle(),
   ]);
 

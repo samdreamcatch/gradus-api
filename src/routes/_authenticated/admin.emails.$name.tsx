@@ -227,35 +227,36 @@ function AdminEmailTemplate() {
 
           {/* Preview + history */}
           <div className="space-y-4 lg:sticky lg:top-20 lg:self-start">
-            {data.noPreview ? null : <div className="rounded-lg border border-divider bg-card p-2 shadow-card">
-              <div className="flex flex-wrap items-center justify-between gap-2 px-1 pb-2">
-                <p className="text-caption uppercase tracking-widest text-text-tertiary">
-                  Live preview
-                </p>
-                {roles?.length ? (
-                  <div className="flex items-center gap-1">
-                    {roles.map((r) => (
-                      <Button
-                        key={r.value}
-                        size="sm"
-                        variant={role === r.value ? "default" : "outline"}
-                        onClick={() => setRole(r.value)}
-                      >
-                        {r.label}
-                      </Button>
-                    ))}
-                  </div>
-                ) : null}
+            {data.noPreview ? null : (
+              <div className="rounded-lg border border-divider bg-card p-2 shadow-card">
+                <div className="flex flex-wrap items-center justify-between gap-2 px-1 pb-2">
+                  <p className="text-caption uppercase tracking-widest text-text-tertiary">
+                    Live preview
+                  </p>
+                  {roles?.length ? (
+                    <div className="flex items-center gap-1">
+                      {roles.map((r) => (
+                        <Button
+                          key={r.value}
+                          size="sm"
+                          variant={role === r.value ? "default" : "outline"}
+                          onClick={() => setRole(r.value)}
+                        >
+                          {r.label}
+                        </Button>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+                <iframe
+                  title="Email preview"
+                  srcDoc={html}
+                  className="h-[620px] w-full rounded-md border border-divider bg-white"
+                />
               </div>
-              <iframe
-                title="Email preview"
-                srcDoc={html}
-                className="h-[620px] w-full rounded-md border border-divider bg-white"
-              />
-            </div>
+            )}
 
             {data.noPreview ? null : <SendPanel name={name} role={role || undefined} />}
-
 
             {history?.length ? (
               <div className="rounded-lg border border-divider bg-card p-3 shadow-card space-y-2">
