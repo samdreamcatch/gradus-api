@@ -12,7 +12,11 @@
 //   - wrapped in try/catch so the reporter itself can never throw
 
 import { reportClientError } from "./error-tracking.functions";
-import { collectHydrationDiagnostics, isHydrationError } from "./hydration-diagnostics";
+import {
+  collectHydrationDiagnostics,
+  isHydrationError,
+  EARLY_ERROR_GLOBAL,
+} from "./hydration-diagnostics";
 
 const SESSION_CAP = 50;
 const PRODUCTION_HOSTS = new Set(["gradus.training", "gradustraining.lovable.app"]);
