@@ -11,6 +11,12 @@ import {
   revertEmailOverride,
 } from "@/lib/email-admin.functions";
 import { previewEmailTemplate } from "@/lib/email-preview.functions";
+import {
+  searchEmailRecipients,
+  sendEmailManually,
+  TEST_EMAIL_ADDRESS,
+} from "@/lib/email-manual-send.functions";
+
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { Tag } from "@/components/ui/tag";
 import { Input } from "@/components/ui/input";
