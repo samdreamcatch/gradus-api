@@ -14,14 +14,20 @@
 /** Marker set on window by the pre-hydration inline script in the root shell. */
 export const PRE_HYDRATION_GLOBAL = "__gradusPreHydration";
 
+/** Buffer of errors that fired before the React error reporter was installed. */
+export const EARLY_ERROR_GLOBAL = "__gradusEarlyErrors";
+
 /**
  * Inline script string for the root shell. Runs before hydration and records
  * a snapshot of the DOM as the browser handed it to us, so we can tell
- * "something rewrote the page" apart from "our render was wrong".
+ * "something rewrote the page" apart from "our render was wrong". It also
+ * buffers any error fired during hydration itself — React reports recoverable
+ * hydration errors before our React-mounted listener exists, so without this
+ * buffer the earliest (most informative) ones are lost.
  *
  * Must stay dependency-free, synchronous, and never throw.
  */
-export const PRE_HYDRATION_SNAPSHOT_SCRIPT = `(function(){try{var d=document,h=d.documentElement,b=d.body;window.${PRE_HYDRATION_GLOBAL}={t:Date.now(),lang:h.getAttribute('lang'),cls:h.className||'',bodyChildren:b?b.children.length:0,anchors:d.getElementsByTagName('a').length,dd:!!d.querySelector('a[x-apple-data-detectors],a[href^="tel:"],a[href^="x-apple-data-detectors:"]'),font:!!d.querySelector('font'),tclass:/translated|notranslate-|VIcon/.test(h.className),ext:(function(){var n=0,s=d.getElementsByTagName('script');for(var i=0;i<s.length;i++){var u=s[i].src||'';if(u&&u.indexOf(location.origin)!==0)n++;}return n;})()};}catch(e){}})();`;
+export const PRE_HYDRATION_SNAPSHOT_SCRIPT = `(function(){try{var d=document,h=d.documentElement,b=d.body;window.${PRE_HYDRATION_GLOBAL}={t:Date.now(),lang:h.getAttribute('lang'),cls:h.className||'',bodyChildren:b?b.children.length:0,anchors:d.getElementsByTagName('a').length,dd:!!d.querySelector('a[x-apple-data-detectors],a[href^="x-apple-data-detectors:"]'),font:d.getElementsByTagName('font').length,tclass:/translated|notranslate-/.test(h.className||''),ext:(function(){var n=0,s=d.getElementsByTagName('script');for(var i=0;i<s.length;i++){var u=s[i].getAttribute('src')||'';if(u&&u.indexOf('/')!==0&&u.indexOf(location.origin)!==0)n++;}return n;})()};window.${EARLY_ERROR_GLOBAL}=[];window.addEventListener('error',function(e){try{if(window.${EARLY_ERROR_GLOBAL}.length<10)window.${EARLY_ERROR_GLOBAL}.push({message:(e&&e.error&&e.error.message)||e.message||'',stack:(e&&e.error&&e.error.stack)||null,at:Date.now()});}catch(x){}});}catch(e){}})();`;
 
 const HYDRATION_PATTERNS: RegExp[] = [
   /Minified React error #(418|419|421|422|423|425)\b/i,
