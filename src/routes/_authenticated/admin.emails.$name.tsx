@@ -146,7 +146,7 @@ function AdminEmailTemplate() {
       {isLoading || !data ? (
         <p className="text-text-secondary">Loading…</p>
       ) : (
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className={data.noPreview ? "max-w-xl" : "grid gap-6 lg:grid-cols-2"}>
           {/* Editor */}
           <div className="space-y-4">
             {data.slots.map((slot) => {
@@ -227,7 +227,7 @@ function AdminEmailTemplate() {
 
           {/* Preview + history */}
           <div className="space-y-4 lg:sticky lg:top-20 lg:self-start">
-            <div className="rounded-lg border border-divider bg-card p-2 shadow-card">
+            {data.noPreview ? null : <div className="rounded-lg border border-divider bg-card p-2 shadow-card">
               <div className="flex flex-wrap items-center justify-between gap-2 px-1 pb-2">
                 <p className="text-caption uppercase tracking-widest text-text-tertiary">
                   Live preview
@@ -254,7 +254,7 @@ function AdminEmailTemplate() {
               />
             </div>
 
-            <SendPanel name={name} role={role || undefined} />
+            {data.noPreview ? null : <SendPanel name={name} role={role || undefined} />}
 
 
             {history?.length ? (
