@@ -52,13 +52,19 @@ function AdminEmailTemplate() {
     setDraft(next);
   }, [data]);
 
+  const roles = PREVIEW_ROLES[name];
+  const [role, setRole] = React.useState<string>(roles?.[0]?.value ?? "");
+  React.useEffect(() => {
+    setRole(PREVIEW_ROLES[name]?.[0]?.value ?? "");
+  }, [name]);
+
   const [html, setHtml] = React.useState("");
   React.useEffect(() => {
     if (!data || !Object.keys(draft).length) return;
     let cancelled = false;
     const t = setTimeout(async () => {
       try {
-        const res = await preview({ data: { name, overrides: draft } });
+        const res = await preview({ data: { name, overrides: draft, role: role || undefined } });
         if (!cancelled) setHtml(res.html);
       } catch {
         /* preview failures are non-fatal */
@@ -68,7 +74,7 @@ function AdminEmailTemplate() {
       cancelled = true;
       clearTimeout(t);
     };
-  }, [draft, data, name, preview]);
+  }, [draft, data, name, preview, role]);
 
   const saveMutation = useMutation({
     mutationFn: (vars: { slotKey: string; value: string }) =>
