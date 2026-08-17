@@ -35,6 +35,47 @@ function getRetryAfterSeconds(error: unknown): number {
   return 60;
 }
 
+function generateUnsubscribeToken(): string {
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes)
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+async function getOrCreateUnsubscribeToken(
+  supabase: SupabaseClient<any, any>,
+  email: string,
+): Promise<string> {
+  const normalizedEmail = email.trim().toLowerCase();
+  const { data: existing, error: lookupError } = await supabase
+    .from("email_unsubscribe_tokens")
+    .select("token, used_at")
+    .eq("email", normalizedEmail)
+    .maybeSingle();
+  if (lookupError) throw lookupError;
+  if (existing?.used_at) throw new Error("Recipient is unsubscribed");
+  if (existing?.token) return existing.token as string;
+
+  const candidate = generateUnsubscribeToken();
+  const { error: insertError } = await supabase
+    .from("email_unsubscribe_tokens")
+    .upsert(
+      { token: candidate, email: normalizedEmail },
+      { onConflict: "email", ignoreDuplicates: true },
+    );
+  if (insertError) throw insertError;
+
+  const { data: stored, error: readError } = await supabase
+    .from("email_unsubscribe_tokens")
+    .select("token, used_at")
+    .eq("email", normalizedEmail)
+    .maybeSingle();
+  if (readError) throw readError;
+  if (!stored?.token || stored.used_at) throw new Error("Could not prepare unsubscribe token");
+  return stored.token as string;
+}
+
 async function moveToDlq(
   supabase: SupabaseClient<any, any>,
   queue: string,
@@ -263,6 +304,12 @@ export const Route = createFileRoute("/lovable/email/queue/process")({
             }
 
             try {
+              const unsubscribeToken =
+                queue === "transactional_emails"
+                  ? typeof payload.unsubscribe_token === "string" && payload.unsubscribe_token
+                    ? payload.unsubscribe_token
+                    : await getOrCreateUnsubscribeToken(supabase, String(payload.to ?? ""))
+                  : undefined;
               await sendLovableEmail(
                 {
                   // Only auth-webhook emails have a platform run. Older app
@@ -282,10 +329,17 @@ export const Route = createFileRoute("/lovable/email/queue/process")({
                   purpose: payload.purpose,
                   label: payload.label,
                   idempotency_key: payload.idempotency_key,
-                  unsubscribe_token: payload.unsubscribe_token,
+                  unsubscribe_token: unsubscribeToken,
                   message_id: payload.message_id,
                 },
-                { apiKey, sendUrl: process.env.LOVABLE_SEND_URL },
+                {
+                  apiKey,
+                  sendUrl: process.env.LOVABLE_SEND_URL,
+                  idempotencyKey:
+                    typeof payload.idempotency_key === "string"
+                      ? payload.idempotency_key
+                      : undefined,
+                },
               );
 
               // Log success
