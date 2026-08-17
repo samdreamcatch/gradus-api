@@ -66,6 +66,25 @@ async function enqueue(opts: {
     },
   });
 
+  if (!error) {
+    const { enqueueCopies } = await import("./email-templates/delivery.server");
+    await enqueueCopies(supabaseAdmin as any, {
+      templateName: opts.label,
+      queueName: "transactional_emails",
+      payload: {
+        message_id: messageId,
+        to: opts.to,
+        from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
+        sender_domain: SENDER_DOMAIN,
+        subject: opts.subject,
+        html: opts.html,
+        text: opts.text,
+        purpose: "transactional",
+        label: opts.label,
+      },
+    });
+  }
+
   if (error) {
     console.error(`[guardian] enqueue failed (${opts.label})`, error);
     await supabaseAdmin.from("email_send_log").insert({

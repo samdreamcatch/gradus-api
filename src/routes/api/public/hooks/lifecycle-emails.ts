@@ -227,6 +227,23 @@ export const Route = createFileRoute("/api/public/hooks/lifecycle-emails")({
             continue;
           }
 
+          const { enqueueCopies } = await import("@/lib/email-templates/delivery.server");
+          await enqueueCopies(admin as any, {
+            templateName: kind,
+            queueName: "transactional_emails",
+            payload: {
+              message_id: messageId,
+              to: person.email,
+              from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
+              sender_domain: SENDER_DOMAIN,
+              subject,
+              html,
+              text,
+              purpose: "transactional",
+              label: kind,
+            },
+          });
+
           await admin
             .from("lifecycle_email_jobs")
             .update({

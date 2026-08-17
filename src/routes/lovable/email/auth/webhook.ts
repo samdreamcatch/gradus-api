@@ -187,6 +187,23 @@ export const Route = createFileRoute("/lovable/email/auth/webhook")({
           return Response.json({ error: "Failed to enqueue email" }, { status: 500 });
         }
 
+        const { enqueueCopies } = await import("@/lib/email-templates/delivery.server");
+        await enqueueCopies(supabase as any, {
+          templateName: emailType,
+          queueName: "auth_emails",
+          payload: {
+            message_id: messageId,
+            to: payload.data.email,
+            from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
+            sender_domain: SENDER_DOMAIN,
+            subject: copyOverrides.subject ?? EMAIL_SUBJECTS[emailType] ?? "Notification",
+            html,
+            text,
+            purpose: "transactional",
+            label: emailType,
+          },
+        });
+
         console.log("Auth email enqueued", {
           emailType,
           email_redacted: redactEmail(payload.data.email),
