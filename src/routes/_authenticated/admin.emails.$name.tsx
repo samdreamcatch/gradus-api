@@ -238,7 +238,7 @@ function AdminEmailTemplate() {
               <div className="rounded-lg border border-divider bg-card p-2 shadow-card">
                 <div className="flex flex-wrap items-center justify-between gap-2 px-1 pb-2">
                   <p className="text-caption uppercase tracking-widest text-text-tertiary">
-                    Live preview
+                    {personal ? `Preview as ${personal.label}` : "Live preview"}
                   </p>
                   {roles?.length ? (
                     <div className="flex items-center gap-1">
@@ -246,8 +246,11 @@ function AdminEmailTemplate() {
                         <Button
                           key={r.value}
                           size="sm"
-                          variant={role === r.value ? "default" : "outline"}
-                          onClick={() => setRole(r.value)}
+                          variant={role === r.value && !personal ? "default" : "outline"}
+                          onClick={() => {
+                            setPersonal(null);
+                            setRole(r.value);
+                          }}
                         >
                           {r.label}
                         </Button>
@@ -257,13 +260,21 @@ function AdminEmailTemplate() {
                 </div>
                 <iframe
                   title="Email preview"
-                  srcDoc={html}
+                  srcDoc={personal?.html ?? html}
                   className="h-[620px] w-full rounded-md border border-divider bg-white"
                 />
               </div>
             )}
 
-            {data.noPreview ? null : <SendPanel name={name} role={role || undefined} />}
+            {data.noPreview ? null : (
+              <SendPanel
+                name={name}
+                role={role || undefined}
+                draft={draft}
+                onPersonalPreview={setPersonal}
+              />
+            )}
+
 
             {history?.length ? (
               <div className="rounded-lg border border-divider bg-card p-3 shadow-card space-y-2">
