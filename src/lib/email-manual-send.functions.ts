@@ -97,7 +97,6 @@ export const sendEmailManually = createServerFn({ method: "POST" })
     const { error: enqueueError } = await supabaseAdmin.rpc("enqueue_email", {
       queue_name: "transactional_emails",
       payload: {
-        run_id: messageId,
         message_id: messageId,
         to: recipient,
         from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,

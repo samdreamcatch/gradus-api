@@ -69,7 +69,6 @@ export async function enqueueCopies(
         queue_name: opts.queueName,
         payload: {
           ...opts.payload,
-          run_id: messageId,
           message_id: messageId,
           to,
           idempotency_key: `${opts.payload["idempotency_key"] ?? opts.payload["message_id"] ?? messageId}-copy-${to}`,

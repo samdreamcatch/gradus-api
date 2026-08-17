@@ -194,7 +194,6 @@ export const Route = createFileRoute("/api/public/hooks/error-digest")({
           const { error: enqueueError } = await supabaseAdmin.rpc("enqueue_email", {
             queue_name: "transactional_emails",
             payload: {
-              run_id: messageId,
               message_id: messageId,
               to,
               from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
