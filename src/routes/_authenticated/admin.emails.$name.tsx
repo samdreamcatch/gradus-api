@@ -14,8 +14,10 @@ import { previewEmailTemplate } from "@/lib/email-preview.functions";
 import {
   searchEmailRecipients,
   sendEmailManually,
+  previewEmailForRecipient,
   TEST_EMAIL_ADDRESS,
 } from "@/lib/email-manual-send.functions";
+
 
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { Tag } from "@/components/ui/tag";
