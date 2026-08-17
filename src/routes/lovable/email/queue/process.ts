@@ -237,10 +237,12 @@ export const Route = createFileRoute("/lovable/email/queue/process")({
             try {
               await sendLovableEmail(
                 {
-                  // Only auth-webhook emails have a platform run. Passing an
-                  // absent run_id still makes the API try to resolve it and
-                  // reject ordinary app emails with `run_not_found`.
-                  ...(typeof payload.run_id === "string" && payload.run_id
+                  // Only auth-webhook emails have a platform run. Older app
+                  // email producers populated run_id with the message UUID,
+                  // so presence alone is not proof that the run is valid.
+                  ...(queue === "auth_emails" &&
+                  typeof payload.run_id === "string" &&
+                  payload.run_id
                     ? { run_id: payload.run_id }
                     : {}),
                   to: payload.to,
