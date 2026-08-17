@@ -3,6 +3,7 @@ import { render } from "@react-email/render";
 import { createClient } from "@supabase/supabase-js";
 import { createFileRoute } from "@tanstack/react-router";
 import { TEMPLATES } from "@/lib/email-templates/registry";
+import { buildAppEmailPayload } from "@/lib/email-queue-payload";
 
 // Configuration baked in at scaffold time
 const SITE_NAME = "gradustraining";
@@ -247,29 +248,33 @@ export const Route = createFileRoute("/lovable/email/transactional/send")({
         // The dispatcher (process-email-queue) handles sending, retries, and rate-limit backoff.
 
         // Log pending BEFORE enqueue so we have a record even if enqueue crashes
-        await supabase.from("email_send_log").insert({
+        const { error: pendingError } = await supabase.from("email_send_log").insert({
           message_id: messageId,
           template_name: templateName,
           recipient_email: effectiveRecipient,
           status: "pending",
         });
+        if (pendingError) {
+          console.error("Failed to log pending email", { error: pendingError, templateName });
+          return Response.json({ error: "Failed to record email" }, { status: 500 });
+        }
+
+        const payload = buildAppEmailPayload({
+          messageId,
+          to: effectiveRecipient,
+          from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
+          senderDomain: SENDER_DOMAIN,
+          subject: resolvedSubject,
+          html,
+          text: plainText,
+          label: templateName,
+          idempotencyKey,
+          unsubscribeToken,
+        });
 
         const { error: enqueueError } = await supabase.rpc("enqueue_email", {
           queue_name: "transactional_emails",
-          payload: {
-            message_id: messageId,
-            to: effectiveRecipient,
-            from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
-            sender_domain: SENDER_DOMAIN,
-            subject: resolvedSubject,
-            html,
-            text: plainText,
-            purpose: "transactional",
-            label: templateName,
-            idempotency_key: idempotencyKey,
-            unsubscribe_token: unsubscribeToken,
-            queued_at: new Date().toISOString(),
-          },
+          payload,
         });
 
         if (enqueueError) {
@@ -294,19 +299,7 @@ export const Route = createFileRoute("/lovable/email/transactional/send")({
         await enqueueCopies(supabase as any, {
           templateName: templateName,
           queueName: "transactional_emails",
-          payload: {
-            message_id: messageId,
-            to: effectiveRecipient,
-            from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
-            sender_domain: SENDER_DOMAIN,
-            subject: resolvedSubject,
-            html,
-            text: plainText,
-            purpose: "transactional",
-            label: templateName,
-            idempotency_key: idempotencyKey,
-            unsubscribe_token: unsubscribeToken,
-          },
+          payload,
         });
 
         console.log("Transactional email enqueued", {

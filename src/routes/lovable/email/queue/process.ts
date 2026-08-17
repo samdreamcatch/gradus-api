@@ -42,13 +42,29 @@ async function moveToDlq(
   reason: string,
 ): Promise<void> {
   const payload = msg.message;
-  await supabase.from("email_send_log").insert({
+  const { error: logError } = await supabase.from("email_send_log").insert({
     message_id: payload.message_id,
     template_name: (payload.label || queue) as string,
     recipient_email: payload.to,
     status: "dlq",
     error_message: reason,
   });
+  if (logError) {
+    console.error("Failed to log DLQ transition", { queue, msg_id: msg.msg_id, logError });
+  }
+  if (typeof payload.message_id === "string") {
+    const { error: lifecycleError } = await supabase
+      .from("lifecycle_email_jobs")
+      .update({ status: "failed", last_error: reason })
+      .eq("message_id", payload.message_id)
+      .eq("status", "queued");
+    if (lifecycleError) {
+      console.error("Failed to mark lifecycle email as failed", {
+        message_id: payload.message_id,
+        lifecycleError,
+      });
+    }
+  }
   const { error } = await supabase.rpc("move_to_dlq", {
     source_queue: queue,
     dlq_name: `${queue}_dlq`,
@@ -164,6 +180,18 @@ export const Route = createFileRoute("/lovable/email/queue/process")({
           for (let i = 0; i < messages.length; i++) {
             const msg = messages[i];
             const payload = msg.message;
+            if (
+              queue === "transactional_emails" &&
+              (typeof payload?.idempotency_key !== "string" || !payload.idempotency_key)
+            ) {
+              console.error("Rejecting malformed app email before provider call", {
+                queue,
+                msg_id: msg.msg_id,
+                message_id: payload?.message_id,
+              });
+              await moveToDlq(supabase, queue, msg, "Missing app-email idempotency key");
+              continue;
+            }
             const failedAttempts =
               payload?.message_id && typeof payload.message_id === "string"
                 ? (failedAttemptsByMessageId.get(payload.message_id) ?? 0)
@@ -261,12 +289,33 @@ export const Route = createFileRoute("/lovable/email/queue/process")({
               );
 
               // Log success
-              await supabase.from("email_send_log").insert({
+              const { error: sentLogError } = await supabase.from("email_send_log").insert({
                 message_id: payload.message_id,
                 template_name: payload.label || queue,
                 recipient_email: payload.to,
                 status: "sent",
               });
+              if (sentLogError) {
+                console.error("Failed to log sent email", {
+                  queue,
+                  msg_id: msg.msg_id,
+                  error: sentLogError,
+                });
+                throw new Error("Email sent but delivery log failed");
+              }
+              if (typeof payload.message_id === "string") {
+                const { error: lifecycleError } = await supabase
+                  .from("lifecycle_email_jobs")
+                  .update({ status: "sent", sent_at: new Date().toISOString(), last_error: null })
+                  .eq("message_id", payload.message_id)
+                  .eq("status", "queued");
+                if (lifecycleError) {
+                  console.error("Failed to mark lifecycle email as sent", {
+                    message_id: payload.message_id,
+                    lifecycleError,
+                  });
+                }
+              }
 
               // Delete from queue
               const { error: delError } = await supabase.rpc("delete_email", {

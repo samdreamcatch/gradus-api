@@ -14,6 +14,7 @@ import {
   guardianActivitySubject,
 } from "./email-templates/guardian-activity";
 import { fetchOverridesFor } from "./email-templates/overrides.server";
+import { buildAppEmailPayload } from "./email-queue-payload";
 
 const SITE_NAME = "gradustraining";
 const SENDER_DOMAIN = "support.gradussports.com";
@@ -42,27 +43,32 @@ async function enqueue(opts: {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const messageId = `${opts.label}-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
 
-  await supabaseAdmin.from("email_send_log").insert({
+  const { error: pendingError } = await supabaseAdmin.from("email_send_log").insert({
     message_id: messageId,
     template_name: opts.label,
     recipient_email: opts.to,
     status: "pending",
   });
+  if (pendingError) {
+    console.error(`[guardian] pending log failed (${opts.label})`, pendingError);
+    return;
+  }
+
+  const payload = buildAppEmailPayload({
+    messageId,
+    to: opts.to,
+    from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
+    senderDomain: SENDER_DOMAIN,
+    subject: opts.subject,
+    html: opts.html,
+    text: opts.text,
+    label: opts.label,
+    idempotencyKey: messageId,
+  });
 
   const { error } = await supabaseAdmin.rpc("enqueue_email", {
     queue_name: "transactional_emails",
-    payload: {
-      message_id: messageId,
-      to: opts.to,
-      from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
-      sender_domain: SENDER_DOMAIN,
-      subject: opts.subject,
-      html: opts.html,
-      text: opts.text,
-      purpose: "transactional",
-      label: opts.label,
-      queued_at: new Date().toISOString(),
-    },
+    payload,
   });
 
   if (!error) {
@@ -70,17 +76,7 @@ async function enqueue(opts: {
     await enqueueCopies(supabaseAdmin as any, {
       templateName: opts.label,
       queueName: "transactional_emails",
-      payload: {
-        message_id: messageId,
-        to: opts.to,
-        from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
-        sender_domain: SENDER_DOMAIN,
-        subject: opts.subject,
-        html: opts.html,
-        text: opts.text,
-        purpose: "transactional",
-        label: opts.label,
-      },
+      payload,
     });
   }
 
