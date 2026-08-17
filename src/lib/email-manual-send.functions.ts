@@ -63,9 +63,8 @@ export const sendEmailManually = createServerFn({ method: "POST" })
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { renderTemplateForSend } = await import("./email-templates/render.server");
-    const { resolveRecipientPersonalization } = await import(
-      "./email-templates/personalize.server"
-    );
+    const { resolveRecipientPersonalization } =
+      await import("./email-templates/personalize.server");
 
     const { data: overrideRows, error: overrideError } = await supabaseAdmin
       .from("email_template_overrides")
@@ -98,7 +97,6 @@ export const sendEmailManually = createServerFn({ method: "POST" })
       role,
       extraProps,
     );
-
 
     const messageId = crypto.randomUUID();
     const recipient = data.recipientEmail.trim();
@@ -176,9 +174,8 @@ export const previewEmailForRecipient = createServerFn({ method: "POST" })
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { renderTemplateForSend } = await import("./email-templates/render.server");
-    const { resolveRecipientPersonalization } = await import(
-      "./email-templates/personalize.server"
-    );
+    const { resolveRecipientPersonalization } =
+      await import("./email-templates/personalize.server");
 
     let overrides: Record<string, string> = data.overrides ?? {};
     if (!data.overrides) {
@@ -218,4 +215,3 @@ export const previewEmailForRecipient = createServerFn({ method: "POST" })
       found: Boolean(person.userId),
     };
   });
-

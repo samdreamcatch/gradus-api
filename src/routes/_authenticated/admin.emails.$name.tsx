@@ -18,7 +18,6 @@ import {
   TEST_EMAIL_ADDRESS,
 } from "@/lib/email-manual-send.functions";
 
-
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { Tag } from "@/components/ui/tag";
 import { Input } from "@/components/ui/input";
@@ -107,7 +106,6 @@ function AdminEmailTemplate() {
       clearTimeout(t);
     };
   }, [draft, data, name, preview, role]);
-
 
   const saveMutation = useMutation({
     mutationFn: (vars: { slotKey: string; value: string }) =>
@@ -277,7 +275,6 @@ function AdminEmailTemplate() {
               />
             )}
 
-
             {history?.length ? (
               <div className="rounded-lg border border-divider bg-card p-3 shadow-card space-y-2">
                 <p className="text-caption uppercase tracking-widest text-text-tertiary">
@@ -364,7 +361,6 @@ function SendPanel({
     onError: (e: any) => toast.error(e?.message ?? "Could not preview"),
   });
 
-
   return (
     <div className="rounded-lg border border-divider bg-card p-3 shadow-card space-y-3">
       <p className="text-caption uppercase tracking-widest text-text-tertiary">Send this email</p>
@@ -431,7 +427,6 @@ function SendPanel({
         {role ? `; the ${role} toggle only affects the sample preview` : ""}. Sends the saved copy
         (not unsaved edits) through the normal email queue, so suppressed addresses are respected.
       </p>
-
     </div>
   );
 }
