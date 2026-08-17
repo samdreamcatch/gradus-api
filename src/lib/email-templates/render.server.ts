@@ -113,3 +113,46 @@ export async function renderTemplatePreview(
   const props = { ...(SAMPLE_PROPS[name] ?? {}), ...roleProps, copyOverrides: overrides };
   return await render(React.createElement(Component, props));
 }
+
+/**
+ * Renders a template for a real send (manual admin push / test email).
+ * Uses the same sample props as the preview, with any real recipient data
+ * layered on top, and resolves the subject from schema defaults + overrides.
+ */
+export async function renderTemplateForSend(
+  name: string,
+  overrides: Record<string, string>,
+  role: string | undefined,
+  extraProps: Record<string, any> = {},
+): Promise<{ html: string; text: string; subject: string }> {
+  const { render: renderEmail } = await import("@react-email/components");
+  const { EMAIL_COPY_SCHEMA } = await import("./copy-schema");
+  const Component = TEMPLATES[name];
+  if (!Component) throw new Error("Unknown template");
+
+  const roleProps = (role && ROLE_PROPS[name]?.[role]) || {};
+  const props: Record<string, any> = {
+    ...(SAMPLE_PROPS[name] ?? {}),
+    ...roleProps,
+    ...extraProps,
+    copyOverrides: overrides,
+  };
+
+  const element = React.createElement(Component, props);
+  const html = await renderEmail(element);
+  const text = await renderEmail(element, { plainText: true });
+
+  const schema = EMAIL_COPY_SCHEMA[name];
+  const defaults = schema?.defaults ?? {};
+  const roleKey = role ? `subject${role.charAt(0).toUpperCase()}${role.slice(1)}` : null;
+  const raw =
+    (roleKey && (overrides[roleKey] ?? defaults[roleKey])) ??
+    overrides["subject"] ??
+    defaults["subject"] ??
+    name;
+  const subject = raw.replace(/\{(\w+)\}/g, (m, key) =>
+    props[key] === undefined || props[key] === null ? m : String(props[key]),
+  );
+
+  return { html, text, subject };
+}
