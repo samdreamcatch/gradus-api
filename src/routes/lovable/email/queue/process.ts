@@ -48,13 +48,13 @@ async function getOrCreateUnsubscribeToken(
   email: string,
 ): Promise<string> {
   const normalizedEmail = email.trim().toLowerCase();
+  if (!normalizedEmail) throw new Error("Recipient email is missing");
   const { data: existing, error: lookupError } = await supabase
     .from("email_unsubscribe_tokens")
-    .select("token, used_at")
+    .select("token")
     .eq("email", normalizedEmail)
     .maybeSingle();
   if (lookupError) throw lookupError;
-  if (existing?.used_at) throw new Error("Recipient is unsubscribed");
   if (existing?.token) return existing.token as string;
 
   const candidate = generateUnsubscribeToken();
@@ -68,11 +68,11 @@ async function getOrCreateUnsubscribeToken(
 
   const { data: stored, error: readError } = await supabase
     .from("email_unsubscribe_tokens")
-    .select("token, used_at")
+    .select("token")
     .eq("email", normalizedEmail)
     .maybeSingle();
   if (readError) throw readError;
-  if (!stored?.token || stored.used_at) throw new Error("Could not prepare unsubscribe token");
+  if (!stored?.token) throw new Error("Could not prepare unsubscribe token");
   return stored.token as string;
 }
 
