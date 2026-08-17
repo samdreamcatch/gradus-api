@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
@@ -46,6 +47,10 @@ function statusTone(status: string) {
   return "border-divider bg-elevated text-text-tertiary";
 }
 
+/**
+ * Windows are snapped to the minute so the memoised value (and therefore the
+ * query key) stays stable across renders instead of moving with the clock.
+ */
 function resolveWindow(search: z.infer<typeof searchSchema>) {
   if (search.range === "custom" && search.from && search.to) {
     return {
@@ -54,18 +59,23 @@ function resolveWindow(search: z.infer<typeof searchSchema>) {
     };
   }
   const hours = RANGES.find((r) => r.key === search.range)?.hours ?? 24 * 7;
+  const nowMinute = Math.floor(Date.now() / 60_000) * 60_000;
   return {
-    start: new Date(Date.now() - hours * 3600_000).toISOString(),
-    end: new Date(Date.now() + 60_000).toISOString(),
+    start: new Date(nowMinute - hours * 3600_000).toISOString(),
+    end: new Date(nowMinute + 60_000).toISOString(),
   };
 }
 
 function AdminEmailHealth() {
   const search = Route.useSearch();
   const fetchFn = useServerFn(getEmailHealth);
-  const { start, end } = resolveWindow(search);
+  const { start, end } = useMemo(
+    () => resolveWindow(search),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [search.range, search.from, search.to],
+  );
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isFetching, error, refetch } = useQuery({
     queryKey: ["admin-email-health", start, end, search.template, search.status],
     queryFn: () =>
       fetchFn({
@@ -76,7 +86,9 @@ function AdminEmailHealth() {
           status: search.status || null,
         },
       }),
+    staleTime: 30_000,
   });
+
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10 space-y-6">
@@ -165,11 +177,35 @@ function AdminEmailHealth() {
         <StatCard label="Suppressed" value={data?.counts.suppressed} loading={isLoading} />
       </div>
 
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={() => void refetch()}
+          disabled={isFetching}
+          className={cn(chipClasses({ tone: "muted" }), "press disabled:opacity-60")}
+        >
+          {isFetching ? "Refreshing…" : "Refresh"}
+        </button>
+        {!isLoading && !error && (
+          <span className="text-mono text-text-tertiary">
+            {data?.rows.length ?? 0} shown · window {new Date(start).toLocaleString()} –{" "}
+            {new Date(end).toLocaleString()}
+          </span>
+        )}
+      </div>
+
       {/* Log */}
       {isLoading ? (
         <p className="text-text-secondary">Loading…</p>
+      ) : error ? (
+        <div className="rounded-lg border border-pen-pink/40 bg-pen-pink-wash p-3">
+          <p className="text-meta text-pen-pink-ink">
+            Couldn’t load the send log: {(error as Error).message}
+          </p>
+        </div>
       ) : !data?.rows.length ? (
         <p className="text-text-secondary">No emails in this window.</p>
+
       ) : (
         <ul className="space-y-2">
           {data.rows.map((r) => (
