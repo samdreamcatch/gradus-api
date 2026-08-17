@@ -88,6 +88,7 @@ import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/e
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
+import { Route as ApiPublicHooksLifecycleEmailsRouteImport } from './routes/api/public/hooks/lifecycle-emails'
 import { Route as ApiPublicHooksErrorDigestRouteImport } from './routes/api/public/hooks/error-digest'
 import { Route as AuthenticatedParentPlansPlanIdRouteImport } from './routes/_authenticated/parent.plans.$planId'
 import { Route as AuthenticatedParentMessagesRoomIdRouteImport } from './routes/_authenticated/parent.messages.$roomId'
@@ -539,6 +540,12 @@ const ApiPublicPaymentsWebhookRoute =
     path: '/api/public/payments/webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksLifecycleEmailsRoute =
+  ApiPublicHooksLifecycleEmailsRouteImport.update({
+    id: '/api/public/hooks/lifecycle-emails',
+    path: '/api/public/hooks/lifecycle-emails',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksErrorDigestRoute =
   ApiPublicHooksErrorDigestRouteImport.update({
     id: '/api/public/hooks/error-digest',
@@ -686,6 +693,7 @@ export interface FileRoutesByFullPath {
   '/parent/messages/$roomId': typeof AuthenticatedParentMessagesRoomIdRoute
   '/parent/plans/$planId': typeof AuthenticatedParentPlansPlanIdRoute
   '/api/public/hooks/error-digest': typeof ApiPublicHooksErrorDigestRoute
+  '/api/public/hooks/lifecycle-emails': typeof ApiPublicHooksLifecycleEmailsRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -772,6 +780,7 @@ export interface FileRoutesByTo {
   '/parent/messages/$roomId': typeof AuthenticatedParentMessagesRoomIdRoute
   '/parent/plans/$planId': typeof AuthenticatedParentPlansPlanIdRoute
   '/api/public/hooks/error-digest': typeof ApiPublicHooksErrorDigestRoute
+  '/api/public/hooks/lifecycle-emails': typeof ApiPublicHooksLifecycleEmailsRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -866,6 +875,7 @@ export interface FileRoutesById {
   '/_authenticated/parent/messages/$roomId': typeof AuthenticatedParentMessagesRoomIdRoute
   '/_authenticated/parent/plans/$planId': typeof AuthenticatedParentPlansPlanIdRoute
   '/api/public/hooks/error-digest': typeof ApiPublicHooksErrorDigestRoute
+  '/api/public/hooks/lifecycle-emails': typeof ApiPublicHooksLifecycleEmailsRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -960,6 +970,7 @@ export interface FileRouteTypes {
     | '/parent/messages/$roomId'
     | '/parent/plans/$planId'
     | '/api/public/hooks/error-digest'
+    | '/api/public/hooks/lifecycle-emails'
     | '/api/public/payments/webhook'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -1046,6 +1057,7 @@ export interface FileRouteTypes {
     | '/parent/messages/$roomId'
     | '/parent/plans/$planId'
     | '/api/public/hooks/error-digest'
+    | '/api/public/hooks/lifecycle-emails'
     | '/api/public/payments/webhook'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -1139,6 +1151,7 @@ export interface FileRouteTypes {
     | '/_authenticated/parent/messages/$roomId'
     | '/_authenticated/parent/plans/$planId'
     | '/api/public/hooks/error-digest'
+    | '/api/public/hooks/lifecycle-emails'
     | '/api/public/payments/webhook'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -1177,6 +1190,7 @@ export interface RootRouteChildren {
   SignupParentRoute: typeof SignupParentRouteWithChildren
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicHooksErrorDigestRoute: typeof ApiPublicHooksErrorDigestRoute
+  ApiPublicHooksLifecycleEmailsRoute: typeof ApiPublicHooksLifecycleEmailsRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
@@ -1740,6 +1754,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPaymentsWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/lifecycle-emails': {
+      id: '/api/public/hooks/lifecycle-emails'
+      path: '/api/public/hooks/lifecycle-emails'
+      fullPath: '/api/public/hooks/lifecycle-emails'
+      preLoaderRoute: typeof ApiPublicHooksLifecycleEmailsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/error-digest': {
       id: '/api/public/hooks/error-digest'
       path: '/api/public/hooks/error-digest'
@@ -2087,6 +2108,7 @@ const rootRouteChildren: RootRouteChildren = {
   SignupParentRoute: SignupParentRouteWithChildren,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicHooksErrorDigestRoute: ApiPublicHooksErrorDigestRoute,
+  ApiPublicHooksLifecycleEmailsRoute: ApiPublicHooksLifecycleEmailsRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,

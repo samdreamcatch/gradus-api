@@ -20,9 +20,13 @@ export interface TemplateEntry {
 import { template as errorDigestTemplate } from "./error-digest";
 import { template as guardianInviteTemplate } from "./guardian-invite";
 import { template as guardianActivityTemplate } from "./guardian-activity";
+import { template as welcomeTemplate } from "./welcome";
+import { template as activationTemplate } from "./activation";
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
   "error-digest": errorDigestTemplate,
   "guardian-invite": guardianInviteTemplate,
   "guardian-activity": guardianActivityTemplate,
+  welcome: welcomeTemplate,
+  activation: activationTemplate,
 };
