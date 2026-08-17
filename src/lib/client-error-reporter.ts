@@ -72,12 +72,21 @@ export function reportError(
   try {
     const { message, stack } = fmtError(error);
     if (isIgnoredMessage(message)) return;
+    // Hydration mismatches are recoverable (React re-renders on the client),
+    // but they arrive minified and context-free. Attach environment signals so
+    // we can tell an SSR bug apart from the page being rewritten before
+    // hydration (iOS data detectors, translation, in-app browsers).
+    const metadata = { ...(extra.metadata ?? {}) };
+    if (isHydrationError(message)) {
+      metadata.type = "react.hydration";
+      metadata.hydration = collectHydrationDiagnostics();
+    }
     send({
       message,
       stack: stack ?? null,
       route: extra.route ?? (typeof window !== "undefined" ? window.location.pathname : null),
       userAgent: typeof navigator !== "undefined" ? navigator.userAgent : null,
-      metadata: extra.metadata,
+      metadata,
     });
   } catch {
     // swallow
