@@ -131,12 +131,13 @@ export async function renderTemplateForSend(
   if (!Component) throw new Error("Unknown template");
 
   const roleProps = (role && ROLE_PROPS[name]?.[role]) || {};
-  const props = {
+  const props: Record<string, any> = {
     ...(SAMPLE_PROPS[name] ?? {}),
     ...roleProps,
     ...extraProps,
     copyOverrides: overrides,
   };
+
   const element = React.createElement(Component, props);
   const html = await renderEmail(element);
   const text = await renderEmail(element, { plainText: true });
