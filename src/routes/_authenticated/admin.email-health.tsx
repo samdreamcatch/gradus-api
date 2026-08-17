@@ -177,11 +177,35 @@ function AdminEmailHealth() {
         <StatCard label="Suppressed" value={data?.counts.suppressed} loading={isLoading} />
       </div>
 
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={() => void refetch()}
+          disabled={isFetching}
+          className={cn(chipClasses({ tone: "muted" }), "press disabled:opacity-60")}
+        >
+          {isFetching ? "Refreshing…" : "Refresh"}
+        </button>
+        {!isLoading && !error && (
+          <span className="text-mono text-text-tertiary">
+            {data?.rows.length ?? 0} shown · window {new Date(start).toLocaleString()} –{" "}
+            {new Date(end).toLocaleString()}
+          </span>
+        )}
+      </div>
+
       {/* Log */}
       {isLoading ? (
         <p className="text-text-secondary">Loading…</p>
+      ) : error ? (
+        <div className="rounded-lg border border-pen-pink/40 bg-pen-pink-wash p-3">
+          <p className="text-meta text-pen-pink-ink">
+            Couldn’t load the send log: {(error as Error).message}
+          </p>
+        </div>
       ) : !data?.rows.length ? (
         <p className="text-text-secondary">No emails in this window.</p>
+
       ) : (
         <ul className="space-y-2">
           {data.rows.map((r) => (
