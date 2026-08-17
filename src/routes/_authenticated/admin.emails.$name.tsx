@@ -83,13 +83,19 @@ function AdminEmailTemplate() {
   }, [name]);
 
   const [html, setHtml] = React.useState("");
+  // When an admin previews "as" a real user, that render wins until the copy
+  // or role selection changes again.
+  const [personal, setPersonal] = React.useState<{ html: string; label: string } | null>(null);
   React.useEffect(() => {
     if (!data || !Object.keys(draft).length) return;
     let cancelled = false;
     const t = setTimeout(async () => {
       try {
         const res = await preview({ data: { name, overrides: draft, role: role || undefined } });
-        if (!cancelled) setHtml(res.html);
+        if (!cancelled) {
+          setHtml(res.html);
+          setPersonal(null);
+        }
       } catch {
         /* preview failures are non-fatal */
       }
@@ -99,6 +105,7 @@ function AdminEmailTemplate() {
       clearTimeout(t);
     };
   }, [draft, data, name, preview, role]);
+
 
   const saveMutation = useMutation({
     mutationFn: (vars: { slotKey: string; value: string }) =>
