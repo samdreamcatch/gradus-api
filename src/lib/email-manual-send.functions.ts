@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { EMAIL_COPY_SCHEMA } from "./email-templates/copy-schema";
 import { dbError } from "./db-error";
+import { buildAppEmailPayload } from "./email-queue-payload";
 
 /** Fixed address used by the "send a test" button in the email admin. */
 export const TEST_EMAIL_ADDRESS = "support@gradussports.com";
@@ -87,27 +88,29 @@ export const sendEmailManually = createServerFn({ method: "POST" })
     const messageId = crypto.randomUUID();
     const recipient = data.recipientEmail.trim();
 
-    await supabaseAdmin.from("email_send_log").insert({
+    const { error: pendingError } = await supabaseAdmin.from("email_send_log").insert({
       message_id: messageId,
       template_name: data.name,
       recipient_email: recipient,
       status: "pending",
     });
+    if (pendingError) dbError(pendingError);
+
+    const payload = buildAppEmailPayload({
+      messageId,
+      to: recipient,
+      from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
+      senderDomain: SENDER_DOMAIN,
+      subject,
+      html,
+      text,
+      label: `manual-${data.name}`,
+      idempotencyKey: `manual-${data.name}-${messageId}`,
+    });
 
     const { error: enqueueError } = await supabaseAdmin.rpc("enqueue_email", {
       queue_name: "transactional_emails",
-      payload: {
-        message_id: messageId,
-        to: recipient,
-        from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
-        sender_domain: SENDER_DOMAIN,
-        subject,
-        html,
-        text,
-        purpose: "transactional",
-        label: `manual-${data.name}`,
-        queued_at: new Date().toISOString(),
-      },
+      payload,
     });
 
     if (enqueueError) {
@@ -125,17 +128,7 @@ export const sendEmailManually = createServerFn({ method: "POST" })
     await enqueueCopies(supabaseAdmin as any, {
       templateName: data.name,
       queueName: "transactional_emails",
-      payload: {
-        message_id: messageId,
-        to: recipient,
-        from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
-        sender_domain: SENDER_DOMAIN,
-        subject,
-        html,
-        text,
-        purpose: "transactional",
-        label: `manual-${data.name}`,
-      },
+      payload,
     });
 
     return { ok: true, recipient, subject };

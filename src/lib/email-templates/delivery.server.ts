@@ -5,6 +5,7 @@
 // to the primary recipient either way; CC copies arrive as their own message.
 
 import { GLOBAL_DELIVERY_TEMPLATE, parseAddressList } from "./copy-schema";
+import { buildAppEmailPayload } from "../email-queue-payload";
 
 type AnyClient = {
   from: (table: string) => any;
@@ -65,16 +66,26 @@ export async function enqueueCopies(
         status: "pending",
       });
 
+      const payload = buildAppEmailPayload({
+        messageId,
+        to,
+        from: String(opts.payload["from"] ?? ""),
+        senderDomain: String(opts.payload["sender_domain"] ?? ""),
+        subject: String(opts.payload["subject"] ?? ""),
+        html: String(opts.payload["html"] ?? ""),
+        text: String(opts.payload["text"] ?? ""),
+        label: `${opts.payload["label"] ?? opts.templateName}-copy`,
+        idempotencyKey: `${opts.payload["idempotency_key"] ?? opts.payload["message_id"] ?? messageId}-copy-${to}`,
+        unsubscribeToken:
+          typeof opts.payload["unsubscribe_token"] === "string"
+            ? opts.payload["unsubscribe_token"]
+            : undefined,
+      });
       const { error } = await supabase.rpc("enqueue_email", {
-        queue_name: opts.queueName,
-        payload: {
-          ...opts.payload,
-          message_id: messageId,
-          to,
-          idempotency_key: `${opts.payload["idempotency_key"] ?? opts.payload["message_id"] ?? messageId}-copy-${to}`,
-          label: `${opts.payload["label"] ?? opts.templateName}-copy`,
-          queued_at: new Date().toISOString(),
-        },
+        // Copies are app emails even when the source was an auth email. They
+        // use their own idempotency key rather than reusing the auth run.
+        queue_name: "transactional_emails",
+        payload,
       });
       if (error) console.error("[email-delivery] copy enqueue failed", error);
     } catch (err) {

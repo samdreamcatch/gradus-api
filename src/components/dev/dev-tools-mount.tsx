@@ -23,4 +23,6 @@ function PreviewOnlyDevTools() {
   return <DevTools />;
 }
 
-export const DevToolsMount = import.meta.env.DEV ? DevTools : PreviewOnlyDevTools;
+// Always use the hydrated gate. Branching on the build environment here can
+// make the SSR tree differ from the browser's first render in hosted preview.
+export const DevToolsMount = PreviewOnlyDevTools;
