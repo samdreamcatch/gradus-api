@@ -221,18 +221,23 @@ export const Route = createFileRoute("/lovable/email/queue/process")({
           for (let i = 0; i < messages.length; i++) {
             const msg = messages[i];
             const payload = msg.message;
-            if (
-              queue === "transactional_emails" &&
-              (typeof payload?.idempotency_key !== "string" || !payload.idempotency_key)
-            ) {
-              console.error("Rejecting malformed app email before provider call", {
-                queue,
-                msg_id: msg.msg_id,
-                message_id: payload?.message_id,
-              });
-              await moveToDlq(supabase, queue, msg, "Missing app-email idempotency key");
-              continue;
+            if (queue === "transactional_emails") {
+              // Every app email must carry an idempotency key and the
+              // transactional purpose. Older producers (and any build that
+              // predates the canonical payload helper) may omit them, so
+              // repair the message here instead of dead-lettering it.
+              if (typeof payload?.idempotency_key !== "string" || !payload.idempotency_key) {
+                if (typeof payload?.message_id === "string" && payload.message_id) {
+                  payload.idempotency_key = `${payload.label ?? "app"}-${payload.message_id}`;
+                } else {
+                  await moveToDlq(supabase, queue, msg, "Missing app-email idempotency key");
+                  continue;
+                }
+              }
+              if (payload.purpose !== "transactional") payload.purpose = "transactional";
+              if ("run_id" in payload) delete payload.run_id;
             }
+
             const failedAttempts =
               payload?.message_id && typeof payload.message_id === "string"
                 ? (failedAttemptsByMessageId.get(payload.message_id) ?? 0)
