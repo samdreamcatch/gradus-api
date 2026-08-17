@@ -164,6 +164,18 @@ export const Route = createFileRoute("/lovable/email/queue/process")({
           for (let i = 0; i < messages.length; i++) {
             const msg = messages[i];
             const payload = msg.message;
+            if (
+              queue === "transactional_emails" &&
+              (typeof payload?.idempotency_key !== "string" || !payload.idempotency_key)
+            ) {
+              console.error("Rejecting malformed app email before provider call", {
+                queue,
+                msg_id: msg.msg_id,
+                message_id: payload?.message_id,
+              });
+              await moveToDlq(supabase, queue, msg, "Missing app-email idempotency key");
+              continue;
+            }
             const failedAttempts =
               payload?.message_id && typeof payload.message_id === "string"
                 ? (failedAttemptsByMessageId.get(payload.message_id) ?? 0)
@@ -261,12 +273,20 @@ export const Route = createFileRoute("/lovable/email/queue/process")({
               );
 
               // Log success
-              await supabase.from("email_send_log").insert({
+              const { error: sentLogError } = await supabase.from("email_send_log").insert({
                 message_id: payload.message_id,
                 template_name: payload.label || queue,
                 recipient_email: payload.to,
                 status: "sent",
               });
+              if (sentLogError) {
+                console.error("Failed to log sent email", {
+                  queue,
+                  msg_id: msg.msg_id,
+                  error: sentLogError,
+                });
+                throw new Error("Email sent but delivery log failed");
+              }
 
               // Delete from queue
               const { error: delError } = await supabase.rpc("delete_email", {

@@ -16,6 +16,7 @@ import {
   activationSubject,
   type ActivationRole,
 } from "@/lib/email-templates/activation";
+import { buildAppEmailPayload } from "@/lib/email-queue-payload";
 
 const SITE_NAME = "gradustraining";
 const SENDER_DOMAIN = "support.gradussports.com";
@@ -172,27 +173,40 @@ export const Route = createFileRoute("/api/public/hooks/lifecycle-emails")({
 
           const messageId = `${kind}-${job.id}`;
 
-          await admin.from("email_send_log").insert({
+          const { error: pendingError } = await admin.from("email_send_log").insert({
             message_id: messageId,
             template_name: kind,
             recipient_email: person.email,
             status: "pending",
           });
+          if (pendingError) {
+            console.error("[lifecycle-emails] pending log failed", pendingError);
+            await admin
+              .from("lifecycle_email_jobs")
+              .update({
+                attempts: (job.attempts as number) + 1,
+                last_error: pendingError.message,
+                status: (job.attempts as number) + 1 >= 5 ? "failed" : "pending",
+              })
+              .eq("id", job.id);
+            continue;
+          }
+
+          const payload = buildAppEmailPayload({
+            messageId,
+            to: person.email,
+            from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
+            senderDomain: SENDER_DOMAIN,
+            subject,
+            html,
+            text,
+            label: kind,
+            idempotencyKey: messageId,
+          });
 
           const { error: enqueueError } = await admin.rpc("enqueue_email", {
             queue_name: "transactional_emails",
-            payload: {
-              message_id: messageId,
-              to: person.email,
-              from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
-              sender_domain: SENDER_DOMAIN,
-              subject,
-              html,
-              text,
-              purpose: "transactional",
-              label: kind,
-              queued_at: new Date().toISOString(),
-            },
+            payload,
           });
 
           if (enqueueError) {
@@ -219,24 +233,14 @@ export const Route = createFileRoute("/api/public/hooks/lifecycle-emails")({
           await enqueueCopies(admin as any, {
             templateName: kind,
             queueName: "transactional_emails",
-            payload: {
-              message_id: messageId,
-              to: person.email,
-              from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
-              sender_domain: SENDER_DOMAIN,
-              subject,
-              html,
-              text,
-              purpose: "transactional",
-              label: kind,
-            },
+            payload,
           });
 
           await admin
             .from("lifecycle_email_jobs")
             .update({
-              status: "sent",
-              sent_at: new Date().toISOString(),
+              status: "queued",
+              message_id: messageId,
               attempts: (job.attempts as number) + 1,
             })
             .eq("id", job.id);

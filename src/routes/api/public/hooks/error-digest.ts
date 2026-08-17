@@ -10,6 +10,7 @@ import { createClient } from "@supabase/supabase-js";
 import { createFileRoute } from "@tanstack/react-router";
 import { createHash } from "node:crypto";
 import { ErrorDigestEmail, type DigestGroup } from "@/lib/email-templates/error-digest";
+import { buildAppEmailPayload } from "@/lib/email-queue-payload";
 
 const ALERT_RECIPIENTS = ["alyson@gradussports.com"];
 const SITE_NAME = "gradustraining";
@@ -185,26 +186,30 @@ export const Route = createFileRoute("/api/public/hooks/error-digest")({
         let enqueued = 0;
         for (const to of ALERT_RECIPIENTS) {
           const messageId = `error-digest-${Date.now()}-${to}`;
-          await supabaseAdmin.from("email_send_log").insert({
+          const { error: pendingError } = await supabaseAdmin.from("email_send_log").insert({
             message_id: messageId,
             template_name: "error-digest",
             recipient_email: to,
             status: "pending",
           });
+          if (pendingError) {
+            console.error("[error-digest] pending log failed", pendingError);
+            continue;
+          }
+          const payload = buildAppEmailPayload({
+            messageId,
+            to,
+            from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
+            senderDomain: SENDER_DOMAIN,
+            subject,
+            html,
+            text,
+            label: "error-digest",
+            idempotencyKey: messageId,
+          });
           const { error: enqueueError } = await supabaseAdmin.rpc("enqueue_email", {
             queue_name: "transactional_emails",
-            payload: {
-              message_id: messageId,
-              to,
-              from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
-              sender_domain: SENDER_DOMAIN,
-              subject,
-              html,
-              text,
-              purpose: "transactional",
-              label: "error-digest",
-              queued_at: new Date().toISOString(),
-            },
+            payload,
           });
           if (enqueueError) {
             console.error("[error-digest] enqueue failed", enqueueError);
@@ -223,17 +228,7 @@ export const Route = createFileRoute("/api/public/hooks/error-digest")({
               await enqueueCopies(supabaseAdmin as any, {
                 templateName: "error-digest",
                 queueName: "transactional_emails",
-                payload: {
-                  message_id: messageId,
-                  to,
-                  from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
-                  sender_domain: SENDER_DOMAIN,
-                  subject,
-                  html,
-                  text,
-                  purpose: "transactional",
-                  label: "error-digest",
-                },
+                payload,
               });
           }
         }
