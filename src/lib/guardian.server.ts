@@ -52,7 +52,6 @@ async function enqueue(opts: {
   const { error } = await supabaseAdmin.rpc("enqueue_email", {
     queue_name: "transactional_emails",
     payload: {
-      run_id: messageId,
       message_id: messageId,
       to: opts.to,
       from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,

@@ -182,7 +182,6 @@ export const Route = createFileRoute("/api/public/hooks/lifecycle-emails")({
           const { error: enqueueError } = await admin.rpc("enqueue_email", {
             queue_name: "transactional_emails",
             payload: {
-              run_id: messageId,
               message_id: messageId,
               to: person.email,
               from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
