@@ -61,7 +61,7 @@ export async function enqueueCopies(
     try {
       await supabase.from("email_send_log").insert({
         message_id: messageId,
-        template_name: opts.templateName,
+        template_name: `${opts.payload["label"] ?? opts.templateName}-copy`,
         recipient_email: to,
         status: "pending",
       });

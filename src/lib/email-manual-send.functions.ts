@@ -90,7 +90,7 @@ export const sendEmailManually = createServerFn({ method: "POST" })
 
     const { error: pendingError } = await supabaseAdmin.from("email_send_log").insert({
       message_id: messageId,
-      template_name: data.name,
+      template_name: `manual-${data.name}`,
       recipient_email: recipient,
       status: "pending",
     });
