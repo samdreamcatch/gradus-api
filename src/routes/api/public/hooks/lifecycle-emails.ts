@@ -135,7 +135,7 @@ export const Route = createFileRoute("/api/public/hooks/lifecycle-emails")({
           const kind = job.kind as "welcome" | "activation";
           const person = await resolvePerson(admin, job.user_id as string);
 
-          if (!person) {
+          if (!person?.email) {
             await admin
               .from("lifecycle_email_jobs")
               .update({ status: "skipped", last_error: "no eligible recipient" })
@@ -143,6 +143,8 @@ export const Route = createFileRoute("/api/public/hooks/lifecycle-emails")({
             skipped += 1;
             continue;
           }
+
+          const recipientEmail = person.email;
 
           const settingsUrl = `${SITE_URL}${SETTINGS_PATH[person.role]}`;
           const copyOverrides = overrides[kind];
@@ -176,7 +178,7 @@ export const Route = createFileRoute("/api/public/hooks/lifecycle-emails")({
           const { error: pendingError } = await admin.from("email_send_log").insert({
             message_id: messageId,
             template_name: kind,
-            recipient_email: person.email,
+            recipient_email: recipientEmail,
             status: "pending",
           });
           if (pendingError) {
@@ -194,7 +196,7 @@ export const Route = createFileRoute("/api/public/hooks/lifecycle-emails")({
 
           const payload = buildAppEmailPayload({
             messageId,
-            to: person.email,
+            to: recipientEmail,
             from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
             senderDomain: SENDER_DOMAIN,
             subject,
@@ -222,7 +224,7 @@ export const Route = createFileRoute("/api/public/hooks/lifecycle-emails")({
             await admin.from("email_send_log").insert({
               message_id: messageId,
               template_name: kind,
-              recipient_email: person.email,
+              recipient_email: recipientEmail,
               status: "failed",
               error_message: "Failed to enqueue lifecycle email",
             });
