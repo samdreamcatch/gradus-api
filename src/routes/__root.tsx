@@ -145,6 +145,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         <ScriptOnce>{THEME_INIT_SCRIPT}</ScriptOnce>
+        <ScriptOnce>{PRE_HYDRATION_SNAPSHOT_SCRIPT}</ScriptOnce>
         {children}
         <Scripts />
       </body>
