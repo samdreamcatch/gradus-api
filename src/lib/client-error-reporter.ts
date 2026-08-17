@@ -100,6 +100,24 @@ export function installErrorReporter() {
   if (!isProductionHost()) return;
   installed = true;
 
+  // Drain anything the pre-hydration inline script buffered. Hydration errors
+  // fire before React mounts, so they land here rather than in the listener
+  // below.
+  try {
+    const early = (window as unknown as Record<string, unknown>)[EARLY_ERROR_GLOBAL];
+    if (Array.isArray(early)) {
+      for (const item of early as Array<{ message?: string; stack?: string | null }>) {
+        if (!item?.message) continue;
+        const err = new Error(item.message);
+        if (item.stack) err.stack = item.stack;
+        reportError(err, { metadata: { type: "window.error", phase: "pre-hydration" } });
+      }
+      early.length = 0;
+    }
+  } catch {
+    // never let draining break startup
+  }
+
   window.addEventListener("error", (evt) => {
     reportError(evt.error ?? evt.message, {
       metadata: {
