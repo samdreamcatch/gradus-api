@@ -125,7 +125,8 @@ function PaymentIssueBanner() {
   const [busy, setBusy] = useState(false);
 
   if (isLoading || error || !data) return null;
-  if (data.profile.subscriptionStatus !== "past_due") return null;
+  const status = data.profile.subscriptionStatus;
+  if (status !== "past_due" && status !== "unpaid") return null;
 
   const openPortal = async () => {
     setBusy(true);

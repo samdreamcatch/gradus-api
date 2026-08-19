@@ -6,6 +6,7 @@ import {
   markCoachSubscriptionDeleted,
 } from "@/lib/coach-subscription-sync.server";
 import type { Database } from "@/integrations/supabase/types";
+import { formatEventDate, planLabelFor, sendBillingNotice } from "@/lib/billing-emails.server";
 
 let _supabase: SupabaseClient<Database> | null = null;
 function getSupabase(): SupabaseClient<Database> {
@@ -23,7 +24,54 @@ async function syncSubscription(subscription: any, env: StripeEnv) {
 }
 
 async function handleSubscriptionDeleted(subscription: any, _env: StripeEnv) {
-  await markCoachSubscriptionDeleted(getSupabase(), subscription);
+  const supabase = getSupabase();
+  await markCoachSubscriptionDeleted(supabase, subscription);
+
+  // Auto-downgrade notice: markCoachSubscriptionDeleted has already dropped
+  // the coach back to `pending` unless they're club-covered or promo-free.
+  const userId =
+    (subscription.metadata?.userId as string | undefined) ??
+    (await userIdForCustomer(
+      typeof subscription.customer === "string" ? subscription.customer : subscription.customer?.id,
+    ));
+  if (!userId) return;
+
+  const { data: profile } = await supabase
+    .from("coach_profiles")
+    .select("entitlement, subscription_tier")
+    .eq("user_id", userId)
+    .maybeSingle();
+  // Nothing was lost if they're still covered another way.
+  if (profile && (profile as any).entitlement !== "pending") return;
+
+  await sendBillingNotice(supabase as any, {
+    userId,
+    kind: "canceled",
+    planLabel: planLabelFor((profile as any)?.subscription_tier ?? null),
+    dedupeKey: subscription.id,
+  });
+}
+
+/** Stripe couldn't collect on an invoice — nudge the coach to fix their card. */
+async function handleInvoicePaymentFailed(invoice: any) {
+  const supabase = getSupabase();
+  const customerId = typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id;
+  const userId = await userIdForCustomer(customerId);
+  if (!userId) return;
+
+  const { data: profile } = await supabase
+    .from("coach_profiles")
+    .select("subscription_tier")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  await sendBillingNotice(supabase as any, {
+    userId,
+    kind: "payment_failed",
+    eventDate: formatEventDate(invoice.next_payment_attempt ?? null),
+    planLabel: planLabelFor((profile as any)?.subscription_tier ?? null),
+    dedupeKey: `${invoice.id}-${invoice.attempt_count ?? 0}`,
+  });
 }
 
 async function handleCheckoutCompleted(session: any, env: StripeEnv) {
@@ -145,9 +193,11 @@ async function handleWebhook(req: Request, env: StripeEnv) {
     case "checkout.session.completed":
       await handleCheckoutCompleted(event.data.object, env);
       break;
+    case "invoice.payment_failed":
+      await handleInvoicePaymentFailed(event.data.object);
+      break;
     case "invoice.paid":
     case "invoice.payment_succeeded":
-    case "invoice.payment_failed":
       // No profile mutation needed — subscription.updated carries the
       // status change (active → past_due → canceled). The audit row above
       // is what powers support / dashboards.
