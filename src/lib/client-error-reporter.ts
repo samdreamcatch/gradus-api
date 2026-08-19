@@ -123,6 +123,19 @@ export function installErrorReporter() {
   }
 
   window.addEventListener("error", (evt) => {
+    // Opaque cross-origin failure: the browser strips the message, file, line
+    // and stack, so there is nothing here we can act on. These come from
+    // browser extensions and in-app-browser injections, not our bundles
+    // (which are same-origin). Dropping them keeps the log actionable.
+    if (
+      !evt.error &&
+      evt.message === "Script error." &&
+      !evt.filename &&
+      !evt.lineno &&
+      !evt.colno
+    ) {
+      return;
+    }
     reportError(evt.error ?? evt.message, {
       metadata: {
         type: "window.error",
