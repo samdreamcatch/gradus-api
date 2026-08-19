@@ -71,6 +71,10 @@ function loadTurnstileScript(): Promise<void> {
     }
     const s = document.createElement("script");
     s.src = SCRIPT_SRC;
+    // Without this, any throw inside Turnstile reaches window.onerror as an
+    // opaque "Script error." with no file/line. CORS-enabled loading keeps the
+    // real message and stack.
+    s.crossOrigin = "anonymous";
     s.async = true;
     s.defer = true;
     s.onload = () => resolve();
