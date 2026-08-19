@@ -30,6 +30,8 @@ const AUTH_VARS = ["siteName", "siteUrl", "recipient", "confirmationUrl"] as con
 
 const WELCOME_VARS = ["firstName", "settingsUrl", "siteUrl"] as const;
 
+const BILLING_VARS = ["firstName", "eventDate", "planLabel", "billingUrl", "siteUrl"] as const;
+
 const GUARDIAN_INVITE_VARS = ["athleteName", "coachName", "claimUrl", "siteUrl"] as const;
 
 const GUARDIAN_ACTIVITY_VARS = [
@@ -430,7 +432,121 @@ export const EMAIL_COPY_SCHEMA: Record<string, TemplateCopy> = {
       ].join("\n"),
     },
   },
+  "billing-notice": {
+    displayName: "Billing — trial ending / payment failed / canceled",
+    category: "App",
+    description:
+      "Three billing notices for coaches: free trial ending in 3 days, a failed payment, and a subscription that ended after Stripe stopped retrying.",
+    slots: [
+      { key: "signOff", label: "Sign-off", kind: "text" },
+      { key: "footer", label: "Fine-print footer", kind: "textarea" },
+
+      { key: "subjectTrialEnding", label: "Trial ending — subject", kind: "text" },
+      { key: "previewTrialEnding", label: "Trial ending — inbox preview", kind: "text" },
+      { key: "eyebrowTrialEnding", label: "Trial ending — eyebrow", kind: "text" },
+      {
+        key: "headingTrialEnding",
+        label: "Trial ending — headline",
+        kind: "text",
+        variables: BILLING_VARS,
+      },
+      {
+        key: "bodyTrialEnding",
+        label: "Trial ending — main paragraph",
+        kind: "textarea",
+        variables: BILLING_VARS,
+      },
+      {
+        key: "detailTrialEnding",
+        label: "Trial ending — second paragraph",
+        kind: "textarea",
+        variables: BILLING_VARS,
+      },
+      { key: "ctaLabelTrialEnding", label: "Trial ending — button label", kind: "text" },
+
+      { key: "subjectPaymentFailed", label: "Payment failed — subject", kind: "text" },
+      { key: "previewPaymentFailed", label: "Payment failed — inbox preview", kind: "text" },
+      { key: "eyebrowPaymentFailed", label: "Payment failed — eyebrow", kind: "text" },
+      {
+        key: "headingPaymentFailed",
+        label: "Payment failed — headline",
+        kind: "text",
+        variables: BILLING_VARS,
+      },
+      {
+        key: "bodyPaymentFailed",
+        label: "Payment failed — main paragraph",
+        kind: "textarea",
+        variables: BILLING_VARS,
+      },
+      {
+        key: "detailPaymentFailed",
+        label: "Payment failed — second paragraph",
+        kind: "textarea",
+        variables: BILLING_VARS,
+      },
+      { key: "ctaLabelPaymentFailed", label: "Payment failed — button label", kind: "text" },
+
+      { key: "subjectCanceled", label: "Canceled — subject", kind: "text" },
+      { key: "previewCanceled", label: "Canceled — inbox preview", kind: "text" },
+      { key: "eyebrowCanceled", label: "Canceled — eyebrow", kind: "text" },
+      {
+        key: "headingCanceled",
+        label: "Canceled — headline",
+        kind: "text",
+        variables: BILLING_VARS,
+      },
+      {
+        key: "bodyCanceled",
+        label: "Canceled — main paragraph",
+        kind: "textarea",
+        variables: BILLING_VARS,
+      },
+      {
+        key: "detailCanceled",
+        label: "Canceled — second paragraph",
+        kind: "textarea",
+        variables: BILLING_VARS,
+      },
+      { key: "ctaLabelCanceled", label: "Canceled — button label", kind: "text" },
+    ],
+    defaults: {
+      signOff: "— Alyson and Mariah, Gradus co-founders",
+      footer: "Questions about billing? Just reply to this email.",
+
+      subjectTrialEnding: "Your Gradus free trial ends in 3 days",
+      previewTrialEnding: "Your card will be charged on {eventDate} unless you cancel",
+      eyebrowTrialEnding: "Trial ending soon",
+      headingTrialEnding: "Your free trial ends {eventDate}, {firstName}.",
+      bodyTrialEnding:
+        "Heads up — your free trial of <strong>{planLabel}</strong> ends on <strong>{eventDate}</strong>. When it does, the card on file is charged and your plan continues without interruption.",
+      detailTrialEnding:
+        "Nothing to do if you'd like to keep going. If you'd rather not continue, you can cancel any time before {eventDate} in billing settings and you won't be charged.",
+      ctaLabelTrialEnding: "Manage my plan",
+
+      subjectPaymentFailed: "We couldn't process your Gradus payment",
+      previewPaymentFailed: "Update your card to keep your plan active",
+      eyebrowPaymentFailed: "Action needed",
+      headingPaymentFailed: "Your payment didn't go through.",
+      bodyPaymentFailed:
+        "We tried to charge the card on file for <strong>{planLabel}</strong> and it was declined. Your account is still active for now — we'll retry over the next few days.",
+      detailPaymentFailed:
+        "The quickest fix is to update your card in billing settings. If the retries run out, your plan is canceled and access to coach features stops.",
+      ctaLabelPaymentFailed: "Update my card",
+
+      subjectCanceled: "Your Gradus plan has ended",
+      previewCanceled: "Your subscription was canceled — you can restart any time",
+      eyebrowCanceled: "Plan ended",
+      headingCanceled: "Your Gradus plan has ended, {firstName}.",
+      bodyCanceled:
+        "Your <strong>{planLabel}</strong> subscription has been canceled and coach features are now paused. Your athletes, plans, and history are all still here — nothing has been deleted.",
+      detailCanceled:
+        "You can restart whenever you're ready and pick up exactly where you left off.",
+      ctaLabelCanceled: "Restart my plan",
+    },
+  },
 };
+
 
 /** Pseudo-template holding CC/BCC that applies to every email the app sends. */
 export const GLOBAL_DELIVERY_TEMPLATE = "__global";
