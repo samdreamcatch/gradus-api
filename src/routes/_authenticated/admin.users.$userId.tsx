@@ -420,3 +420,204 @@ function Field({ label, value, mono }: { label: string; value: string; mono?: bo
     </div>
   );
 }
+
+function EditUserSheet({
+  open,
+  onOpenChange,
+  userId,
+  detail,
+  onSaved,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  userId: string;
+  detail: any;
+  onSaved: () => void;
+}) {
+  const updateFn = useServerFn(adminUpdateUserFields);
+  const searchParentsFn = useServerFn(adminSearchParents);
+  const setParentFn = useServerFn(adminSetAthleteParent);
+
+  const profile = detail.coach ?? detail.parent ?? detail.athlete ?? null;
+  const athlete = detail.athlete;
+
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [birthdate, setBirthdate] = useState("");
+  const [guardianEmail, setGuardianEmail] = useState("");
+  const [username, setUsername] = useState("");
+  const [parentQuery, setParentQuery] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    setFirstName(profile?.first_name ?? "");
+    setLastName(profile?.last_name ?? "");
+    setEmail(detail.auth?.email ?? "");
+    setBirthdate(athlete?.birthdate ?? "");
+    setGuardianEmail(athlete?.guardian_email ?? "");
+    setUsername(athlete?.username ?? "");
+    setParentQuery("");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  const parentsQ = useQuery({
+    queryKey: ["admin-parent-search", parentQuery],
+    queryFn: () => searchParentsFn({ data: { query: parentQuery } }),
+    enabled: open && !!athlete,
+  });
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      await updateFn({
+        data: {
+          userId,
+          ...(profile ? { firstName: firstName.trim(), lastName: lastName.trim() } : {}),
+          ...(email.trim() && email.trim() !== (detail.auth?.email ?? "")
+            ? { email: email.trim() }
+            : {}),
+          ...(athlete
+            ? {
+                birthdate: birthdate.trim() ? birthdate.trim() : null,
+                guardianEmail: guardianEmail.trim() ? guardianEmail.trim() : null,
+                username: username.trim() ? username.trim() : null,
+              }
+            : {}),
+        },
+      });
+      toast.success("User updated");
+      onSaved();
+      onOpenChange(false);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Failed to update user");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const relink = async (parentId: string | null) => {
+    try {
+      await setParentFn({ data: { athleteId: athlete.id, parentId } });
+      toast.success(parentId ? "Athlete linked to parent" : "Athlete set to self-managed");
+      onSaved();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Failed to update link");
+    }
+  };
+
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
+        <SheetHeader>
+          <SheetTitle>Edit user</SheetTitle>
+          <SheetDescription>Correct account details. Changes apply immediately.</SheetDescription>
+        </SheetHeader>
+
+        <div className="mt-4 space-y-4">
+          {profile && (
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="edit-first">First name</Label>
+                <Input
+                  id="edit-first"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-last">Last name</Label>
+                <Input
+                  id="edit-last"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                />
+              </div>
+            </div>
+          )}
+
+          <div>
+            <Label htmlFor="edit-email">Login email</Label>
+            <Input
+              id="edit-email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+
+          {athlete && (
+            <>
+              <div>
+                <Label htmlFor="edit-dob">Birthdate</Label>
+                <Input
+                  id="edit-dob"
+                  type="date"
+                  value={birthdate}
+                  onChange={(e) => setBirthdate(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-guardian">Parent / guardian email</Label>
+                <Input
+                  id="edit-guardian"
+                  type="email"
+                  value={guardianEmail}
+                  onChange={(e) => setGuardianEmail(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-username">Username</Label>
+                <Input
+                  id="edit-username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                />
+              </div>
+            </>
+          )}
+
+          <Button onClick={save} disabled={saving} className="w-full">
+            {saving ? "Saving…" : "Save changes"}
+          </Button>
+
+          {athlete && (
+            <div className="space-y-2 border-t border-divider pt-4">
+              <Eyebrow size="small" tone="tertiary" weight="normal" tracking="wide">
+                Managed by
+              </Eyebrow>
+              <p className="text-sm text-text-secondary">
+                {athlete.parent_id
+                  ? `Parent${athlete.guardianParentName ? ` — ${athlete.guardianParentName}` : ""}`
+                  : "Self-managed"}
+              </p>
+              {athlete.parent_id ? (
+                <Chip as="button" tone="muted" onClick={() => relink(null)}>
+                  Detach — make self-managed
+                </Chip>
+              ) : (
+                <>
+                  <Input
+                    value={parentQuery}
+                    onChange={(e) => setParentQuery(e.target.value)}
+                    placeholder="Search parents by name"
+                  />
+                  <ul className="max-h-48 space-y-1 overflow-y-auto">
+                    {(parentsQ.data?.parents ?? []).map((p) => (
+                      <li key={p.id}>
+                        <Chip as="button" tone="muted" onClick={() => relink(p.id)}>
+                          Link to {p.name}
+                        </Chip>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+}
