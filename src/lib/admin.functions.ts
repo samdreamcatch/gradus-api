@@ -1094,31 +1094,83 @@ export const listAllUsers = createServerFn({ method: "POST" })
     const authUsers = authList.data.users;
 
     // 2. Profiles + roles + org membership.
-    const [coaches, parents, athletes, roles, orgs, softDeleted, applied] = await Promise.all([
-      supabaseAdmin
-        .from("coach_profiles")
-        .select(
-          "user_id, first_name, last_name, is_test, organization_id, subscription_tier, entitlement, is_org_admin, promo_code",
-        ),
-      supabaseAdmin
-        .from("parent_profiles")
-        .select("user_id, first_name, last_name, is_test, promo_code"),
-      supabaseAdmin
-        .from("athletes")
-        .select(
-          "user_id, first_name, last_name, is_test, self_managed, promo_code, birthdate, parent_id",
-        )
-        .not("user_id", "is", null),
-      supabaseAdmin.from("user_roles").select("user_id, role"),
-      supabaseAdmin.from("organizations").select("id, name"),
-      supabaseAdmin.from("soft_deleted_users").select("user_id, deleted_at"),
-      supabaseAdmin
-        .from("user_applied_promo_codes")
-        .select("id, user_id, code, scope, environment"),
-    ]);
-    for (const r of [coaches, parents, athletes, roles, orgs, softDeleted, applied]) {
+    const [coaches, parents, athletes, roles, orgs, softDeleted, applied, allAthletes, links] =
+      await Promise.all([
+        supabaseAdmin
+          .from("coach_profiles")
+          .select(
+            "id, user_id, first_name, last_name, is_test, organization_id, subscription_tier, entitlement, is_org_admin, promo_code",
+          ),
+        supabaseAdmin
+          .from("parent_profiles")
+          .select("id, user_id, first_name, last_name, is_test, promo_code"),
+        supabaseAdmin
+          .from("athletes")
+          .select(
+            "id, user_id, first_name, last_name, is_test, self_managed, promo_code, birthdate, parent_id",
+          )
+          .not("user_id", "is", null),
+        supabaseAdmin.from("user_roles").select("user_id, role"),
+        supabaseAdmin.from("organizations").select("id, name"),
+        supabaseAdmin.from("soft_deleted_users").select("user_id, deleted_at"),
+        supabaseAdmin
+          .from("user_applied_promo_codes")
+          .select("id, user_id, code, scope, environment"),
+        supabaseAdmin.from("athletes").select("id, first_name, last_name, parent_id"),
+        supabaseAdmin.from("coach_athletes").select("coach_id, athlete_id"),
+      ]);
+    for (const r of [
+      coaches,
+      parents,
+      athletes,
+      roles,
+      orgs,
+      softDeleted,
+      applied,
+      allAthletes,
+      links,
+    ]) {
       if (r.error) dbError(r.error);
     }
+
+    // Connection maps (admin-only display).
+    const fullName = (f?: string | null, l?: string | null) => `${f ?? ""} ${l ?? ""}`.trim();
+    const athleteNameById = new Map(
+      (allAthletes.data ?? []).map((a) => [a.id, fullName(a.first_name, a.last_name) || "Athlete"]),
+    );
+    const coachNameById = new Map(
+      (coaches.data ?? []).map((c) => [c.id, fullName(c.first_name, c.last_name) || "Coach"]),
+    );
+    const parentNameById = new Map(
+      (parents.data ?? []).map((p) => [p.id, fullName(p.first_name, p.last_name) || "Parent"]),
+    );
+    const athletesByCoachId = new Map<string, string[]>();
+    const coachesByAthleteId = new Map<string, string[]>();
+    for (const l of links.data ?? []) {
+      const aName = athleteNameById.get(l.athlete_id);
+      if (aName) {
+        const arr = athletesByCoachId.get(l.coach_id) ?? [];
+        arr.push(aName);
+        athletesByCoachId.set(l.coach_id, arr);
+      }
+      const cName = coachNameById.get(l.coach_id);
+      if (cName) {
+        const arr = coachesByAthleteId.get(l.athlete_id) ?? [];
+        arr.push(cName);
+        coachesByAthleteId.set(l.athlete_id, arr);
+      }
+    }
+    const athletesByParentId = new Map<string, { id: string; name: string }[]>();
+    for (const a of allAthletes.data ?? []) {
+      if (!a.parent_id) continue;
+      const arr = athletesByParentId.get(a.parent_id) ?? [];
+      arr.push({ id: a.id, name: athleteNameById.get(a.id) ?? "Athlete" });
+      athletesByParentId.set(a.parent_id, arr);
+    }
+    const connectionsOf = (names: string[]): { names: string[]; total: number } => {
+      const unique = Array.from(new Set(names.filter(Boolean)));
+      return { names: unique.slice(0, 3), total: unique.length };
+    };
 
     const coachByUser = new Map((coaches.data ?? []).map((c) => [c.user_id, c]));
     const parentByUser = new Map((parents.data ?? []).map((p) => [p.user_id, p]));
