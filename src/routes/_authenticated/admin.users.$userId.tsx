@@ -248,6 +248,20 @@ function UserDetail() {
                   label="Active plans"
                   value={`${data.athlete.activePlansCount} / ${data.athlete.plansCount}`}
                 />
+                <Field
+                  label="Parent / guardian email"
+                  value={(data.athlete.guardian_email as string | null) ?? "None on file"}
+                />
+                <Field
+                  label="Guardian status"
+                  value={
+                    data.athlete.guardian_claimed_at || data.athlete.parent_id
+                      ? `Claimed${data.athlete.guardianParentName ? ` — ${data.athlete.guardianParentName}` : ""}`
+                      : data.athlete.guardian_invited_at
+                        ? `Invited ${new Date(data.athlete.guardian_invited_at as string).toLocaleDateString()}`
+                        : "Not invited"
+                  }
+                />
               </dl>
               <div>
                 <Eyebrow size="small" tone="tertiary" weight="normal" tracking="wide">

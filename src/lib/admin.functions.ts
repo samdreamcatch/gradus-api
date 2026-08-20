@@ -382,7 +382,7 @@ export const getUserDetail = createServerFn({ method: "POST" })
       supabaseAdmin
         .from("athletes")
         .select(
-          "id, first_name, last_name, birthdate, created_at, self_managed, parent_id, motivation, is_test",
+          "id, first_name, last_name, birthdate, created_at, self_managed, parent_id, motivation, is_test, guardian_email, guardian_invited_at, guardian_claimed_at",
         )
         .eq("user_id", data.userId)
         .maybeSingle(),
@@ -520,8 +520,21 @@ export const getUserDetail = createServerFn({ method: "POST" })
         if (l.sport) entry.sports.add(l.sport);
       }
 
+      let guardianParentName: string | null = null;
+      if (athlete.data.parent_id) {
+        const p = await supabaseAdmin
+          .from("parent_profiles")
+          .select("first_name, last_name")
+          .eq("id", athlete.data.parent_id)
+          .maybeSingle();
+        guardianParentName = p.data
+          ? `${p.data.first_name ?? ""} ${p.data.last_name ?? ""}`.trim() || null
+          : null;
+      }
+
       athleteDetail = {
         ...athlete.data,
+        guardianParentName,
         inviteCode: selfCode.data?.code ?? null,
         claimCode: claimCode.data ? { code: claimCode.data.code, claimed: !!claimCode.data.claimed_at } : null,
         coaches: Array.from(merged.values()).map((c) => ({
@@ -1063,6 +1076,9 @@ type UserRow = {
   stashedPromoCode: string | null;
   softDeletedAt: string | null;
   connections: { names: string[]; total: number };
+  guardianEmail: string | null;
+  guardianInvitedAt: string | null;
+  guardianClaimed: boolean;
 };
 
 export const listAllUsers = createServerFn({ method: "POST" })
@@ -1107,7 +1123,7 @@ export const listAllUsers = createServerFn({ method: "POST" })
         supabaseAdmin
           .from("athletes")
           .select(
-            "id, user_id, first_name, last_name, is_test, self_managed, promo_code, birthdate, parent_id",
+            "id, user_id, first_name, last_name, is_test, self_managed, promo_code, birthdate, parent_id, guardian_email, guardian_invited_at, guardian_claimed_at",
           )
           .not("user_id", "is", null),
         supabaseAdmin.from("user_roles").select("user_id, role"),
@@ -1208,6 +1224,9 @@ export const listAllUsers = createServerFn({ method: "POST" })
       let isOrgAdmin = false;
       let stashedPromoCode: string | null = null;
       let connections: { names: string[]; total: number } = { names: [], total: 0 };
+      let guardianEmail: string | null = null;
+      let guardianInvitedAt: string | null = null;
+      let guardianClaimed = false;
 
       if (adminRoles.has(u.id) && !coach && !parent && !athlete) {
         userType = "internal_admin";
@@ -1245,6 +1264,13 @@ export const listAllUsers = createServerFn({ method: "POST" })
         name = `${athlete.first_name ?? ""} ${athlete.last_name ?? ""}`.trim() || name;
         isTest = isTest || !!athlete.is_test;
         stashedPromoCode = athlete.promo_code ?? null;
+        guardianEmail = (athlete as { guardian_email?: string | null }).guardian_email ?? null;
+        guardianInvitedAt =
+          (athlete as { guardian_invited_at?: string | null }).guardian_invited_at ?? null;
+        guardianClaimed = Boolean(
+          (athlete as { guardian_claimed_at?: string | null }).guardian_claimed_at ||
+            athlete.parent_id,
+        );
         connections = connectionsOf([
           ...(coachesByAthleteId.get(athlete.id) ?? []),
           ...(athlete.parent_id ? [parentNameById.get(athlete.parent_id) ?? ""] : []),
@@ -1268,6 +1294,9 @@ export const listAllUsers = createServerFn({ method: "POST" })
         stashedPromoCode,
         softDeletedAt: deletedByUser.get(u.id) ?? null,
         connections,
+        guardianEmail,
+        guardianInvitedAt,
+        guardianClaimed,
       };
     });
 
@@ -1283,7 +1312,8 @@ export const listAllUsers = createServerFn({ method: "POST" })
       if (data.plans.length && (r.planTier == null || !data.plans.includes(r.planTier)))
         return false;
       if (q) {
-        const haystack = `${r.name} ${r.email ?? ""} ${r.organizationName ?? ""}`.toLowerCase();
+        const haystack =
+          `${r.name} ${r.email ?? ""} ${r.organizationName ?? ""} ${r.guardianEmail ?? ""}`.toLowerCase();
         if (!haystack.includes(q)) return false;
       }
       return true;
