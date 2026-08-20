@@ -1,12 +1,40 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { getUserDetail, setUserTestFlag, deleteTestUser } from "@/lib/admin.functions";
+import {
+  getUserDetail,
+  setUserTestFlag,
+  deleteTestUser,
+  adminUpdateUserFields,
+  adminSearchParents,
+  adminSetAthleteParent,
+  adminDeleteUserHard,
+} from "@/lib/admin.functions";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { Chip } from "@/components/ui/chip";
 import { Tag } from "@/components/ui/tag";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { ImpersonateButton } from "@/components/admin/impersonate-button";
 
 export const Route = createFileRoute("/_authenticated/admin/users/$userId")({
@@ -19,11 +47,16 @@ function UserDetail() {
   const fn = useServerFn(getUserDetail);
   const toggleFn = useServerFn(setUserTestFlag);
   const deleteFn = useServerFn(deleteTestUser);
+  const hardDeleteFn = useServerFn(adminDeleteUserHard);
   const [deleting, setDeleting] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [dangerOpen, setDangerOpen] = useState(false);
+  const [confirmText, setConfirmText] = useState("");
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["admin-user", userId],
     queryFn: () => fn({ data: { userId } }),
   });
+
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-10 space-y-6">
