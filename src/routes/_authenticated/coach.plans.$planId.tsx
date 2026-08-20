@@ -304,6 +304,8 @@ function PlanEditorBody({
     queryFn: () => fetchPlanSessionLog({ data: { planId: plan!.id } }),
     enabled: !!plan?.id && plan?.status === "active",
   });
+  const [showAllSessions, setShowAllSessions] = useState(false);
+
 
 
   const fetchPlanSessionsSummary = useServerFn(getPlanSessionsSummary);
