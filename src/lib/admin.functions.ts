@@ -410,9 +410,15 @@ export const getUserDetail = createServerFn({ method: "POST" })
           .select("id, kind, status, created_at")
           .eq("coach_id", coach.data.id),
         supabaseAdmin.from("coach_levels").select("sport").eq("coach_id", coach.data.id),
+        supabaseAdmin
+          .from("coach_invite_codes")
+          .select("code")
+          .eq("coach_id", coach.data.id)
+          .maybeSingle(),
       ]);
       coachDetail = {
         ...coach.data,
+        inviteCode: coachCode.data?.code ?? null,
         athletes: (athleteLinks.data ?? []).map((l: any) => l.athletes).filter(Boolean),
         plansCount: (plans.data ?? []).filter((p) => p.kind === "plan").length,
         activePlansCount: (plans.data ?? []).filter(
