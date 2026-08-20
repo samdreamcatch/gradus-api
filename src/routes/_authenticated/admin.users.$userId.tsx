@@ -6,7 +6,6 @@ import { toast } from "sonner";
 import {
   getUserDetail,
   setUserTestFlag,
-  deleteTestUser,
   adminUpdateUserFields,
   adminSearchParents,
   adminSetAthleteParent,
@@ -46,7 +45,6 @@ function UserDetail() {
   const navigate = useNavigate();
   const fn = useServerFn(getUserDetail);
   const toggleFn = useServerFn(setUserTestFlag);
-  const deleteFn = useServerFn(deleteTestUser);
   const hardDeleteFn = useServerFn(adminDeleteUserHard);
   const [deleting, setDeleting] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
