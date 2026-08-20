@@ -3,7 +3,12 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { IdleSlide, RunningPill } from "@/components/plans/session-timer-controls";
-import { submitAthletePlanSession, submitPlanSession } from "@/lib/plan-sessions.functions";
+import {
+  submitAthletePlanSession,
+  submitPlanSession,
+  type PlanSessionLogDTO,
+} from "@/lib/plan-sessions.functions";
+
 import {
   useActiveSession,
   useLiveElapsedMs,
@@ -35,6 +40,7 @@ export function PlanSessionTimer({
     mutationFn: submitFn,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["plan-sessions", planId] });
+      queryClient.invalidateQueries({ queryKey: ["plan-session-log", planId] });
       queryClient.invalidateQueries({ queryKey: ["parent-plan", planId] });
       queryClient.invalidateQueries({ queryKey: ["parent-plans"] });
       queryClient.invalidateQueries({ queryKey: ["athlete-plan", planId] });
@@ -61,6 +67,20 @@ export function PlanSessionTimer({
   const ss = String(totalSec % 60).padStart(2, "0");
   const started = ownsActive && (running || elapsedMs > 0);
 
+  /** Nudge (never block) when the other party just logged this same plan. */
+  const warnIfRecentlyLoggedByOther = () => {
+    const log = queryClient.getQueryData<PlanSessionLogDTO>(["plan-session-log", planId]);
+    const latest = log?.sessions[0];
+    if (!latest) return;
+    const viewerKind: "parent" | "athlete" = role === "parent" ? "parent" : "athlete";
+    if (latest.loggedByKind === viewerKind) return;
+    const hoursAgo = (Date.now() - new Date(latest.loggedAt).getTime()) / 3_600_000;
+    if (hoursAgo > 2) return;
+    toast("Already logged recently", {
+      description: `${latest.loggedByFirstName} logged a session for this plan in the last couple of hours.`,
+    });
+  };
+
   const handleStart = () => {
     if (otherActive) {
       toast("You already have a session running", {
@@ -68,8 +88,10 @@ export function PlanSessionTimer({
       });
       return;
     }
+    warnIfRecentlyLoggedByOther();
     start({ role, planId, planTitle, coachFirstName, athleteFirstName });
   };
+
 
   const handleTogglePause = () => {
     if (!ownsActive) return;

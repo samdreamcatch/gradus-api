@@ -9,8 +9,19 @@ import { getAthletePlan, type AthletePlanMoveDTO } from "@/lib/athlete-plans.fun
 import { MessageCoachAboutPlanDialog } from "@/components/plans/message-coach-about-plan-dialog";
 import { PlanSessionTimer } from "@/components/plans/plan-session-timer";
 import { ShareToSocialsButton } from "@/components/plans/share-to-socials-button";
+import { FlowStateBars } from "@/components/plans/flow-state-bars";
+import { getPlanSessions, listPlanSessions } from "@/lib/plan-sessions.functions";
+import { Eyebrow } from "@/components/ui/eyebrow";
+import { SettingsList, SettingsRow, SettingsButtonRow } from "@/components/settings/primitives";
+import {
+  sessionAttributionLine,
+  sessionLoggerLabel,
+  sessionMetaLabel,
+  stateLabel,
+} from "@/lib/session-states";
 
 import { PlansRouteError } from "@/components/plans/plans-error";
+
 
 export const Route = createFileRoute("/_authenticated/athlete/plans/$planId")({
   component: AthletePlanDetail,
@@ -44,6 +55,22 @@ function AthletePlanDetail() {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const toggle = (id: string) => setExpanded((s) => ({ ...s, [id]: !s[id] }));
   const [messageOpen, setMessageOpen] = useState(false);
+  const [showAllSessions, setShowAllSessions] = useState(false);
+
+  const fetchPlanSessions = useServerFn(getPlanSessions);
+  const sessionsQuery = useQuery({
+    queryKey: ["plan-sessions", planId],
+    queryFn: () => fetchPlanSessions({ data: { planId } }),
+    retry: false,
+  });
+  const fetchPlanSessionLog = useServerFn(listPlanSessions);
+  const sessionLogQuery = useQuery({
+    queryKey: ["plan-session-log", planId],
+    queryFn: () => fetchPlanSessionLog({ data: { planId } }),
+    retry: false,
+  });
+  const log = sessionLogQuery.data;
+
 
   if (isLoading || !plan) {
     return (
@@ -102,6 +129,77 @@ function AthletePlanDetail() {
           ))
         )}
       </div>
+
+      <div className="mt-5 rounded-lg border border-divider bg-card p-4">
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <Eyebrow as="span" size="micro" tone="tertiary" weight="black">
+            Logged instances
+          </Eyebrow>
+          <span className="text-xs text-text-tertiary tabular-nums">
+            {sessionsQuery.data?.sessionsTotal ?? 0} session
+            {(sessionsQuery.data?.sessionsTotal ?? 0) === 1 ? "" : "s"}
+          </span>
+        </div>
+        <FlowStateBars
+          counts={
+            sessionsQuery.data?.sessionsByState ?? {
+              frustrated: 0,
+              pushing: 0,
+              steady: 0,
+              lockedIn: 0,
+              flowing: 0,
+            }
+          }
+        />
+
+        {log && log.total > 0 ? (
+          <p className="mt-2 text-xs text-text-tertiary">
+            {sessionAttributionLine({
+              total: log.total,
+              loggedByAthlete: log.loggedByAthlete,
+              loggedByParent: log.loggedByParent,
+              athleteFirstName: log.athleteFirstName,
+            })}
+          </p>
+        ) : null}
+
+        {log && log.sessions.length > 0 ? (
+          <div className="mt-4 border-t border-dashed border-divider pt-3">
+            <Eyebrow as="p" size="micro" tone="tertiary" weight="black" className="mb-2">
+              Practice log
+            </Eyebrow>
+            <SettingsList>
+              {(showAllSessions ? log.sessions : log.sessions.slice(0, 5)).map((s) => (
+                <SettingsRow
+                  key={s.id}
+                  label={sessionLoggerLabel(
+                    s.loggedByKind,
+                    s.loggedByFirstName,
+                    log.athleteFirstName,
+                  )}
+                  description={
+                    s.note ? `${stateLabel(s.stateIndex)} · ${s.note}` : stateLabel(s.stateIndex)
+                  }
+                  value={sessionMetaLabel(s.loggedAt, s.durationSeconds)}
+                />
+              ))}
+              {!showAllSessions && log.sessions.length > 5 ? (
+                <SettingsButtonRow
+                  label={`Show all ${log.sessions.length}`}
+                  tone="accent"
+                  onClick={() => setShowAllSessions(true)}
+                />
+              ) : null}
+            </SettingsList>
+          </div>
+        ) : (
+          <p className="mt-3 text-xs text-text-tertiary">
+            No practice logged yet. Sessions you or a parent log will show up here.
+          </p>
+        )}
+      </div>
+
+
 
       {plan.isGradus ? null : (
         <div className="mt-5 flex justify-center">

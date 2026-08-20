@@ -82,6 +82,103 @@ export const getPlanSessions = createServerFn({ method: "POST" })
     return entry;
   });
 
+export interface PlanSessionEntry {
+  id: string;
+  loggedAt: string;
+  durationSeconds: number;
+  stateIndex: number;
+  note: string;
+  /** Who logged it. */
+  loggedByKind: "parent" | "athlete";
+  loggedByFirstName: string;
+}
+
+export interface PlanSessionLogDTO {
+  sessions: PlanSessionEntry[];
+  athleteFirstName: string;
+  loggedByAthlete: number;
+  loggedByParent: number;
+  total: number;
+}
+
+/**
+ * Coach + parent + athlete detail: the individual logged sessions for one
+ * plan, with who logged each one. RLS scopes what each role can read.
+ */
+export const listPlanSessions = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ planId: z.string().uuid() }).parse(input))
+  .handler(async ({ context, data }): Promise<PlanSessionLogDTO> => {
+    const supabase = context.supabase as Client;
+
+    const { data: plan, error: pErr } = await supabase
+      .from("plans")
+      .select("id, athlete_id, athletes:athlete_id(first_name)")
+      .eq("id", data.planId)
+      .maybeSingle();
+    if (pErr) dbError(pErr);
+
+    const athleteFirstName =
+      (plan as unknown as { athletes: { first_name: string } | null } | null)?.athletes
+        ?.first_name ?? "Athlete";
+
+    const empty: PlanSessionLogDTO = {
+      sessions: [],
+      athleteFirstName,
+      loggedByAthlete: 0,
+      loggedByParent: 0,
+      total: 0,
+    };
+    if (!plan?.athlete_id) return empty;
+
+    const { data: rows, error } = await supabase
+      .from("plan_sessions")
+      .select("id, logged_at, duration_seconds, state_index, note, parent_id")
+      .eq("plan_id", data.planId)
+      .eq("athlete_id", plan.athlete_id)
+      .order("logged_at", { ascending: false })
+      .limit(100);
+    if (error) dbError(error);
+
+    const sessionRows = rows ?? [];
+    const parentIds = Array.from(
+      new Set(sessionRows.map((r) => r.parent_id).filter((v): v is string => !!v)),
+    );
+
+    const parentNames = new Map<string, string>();
+    if (parentIds.length > 0) {
+      const { data: parents, error: ppErr } = await supabase
+        .from("parent_profiles")
+        .select("id, first_name")
+        .in("id", parentIds);
+      if (ppErr) dbError(ppErr);
+      for (const p of parents ?? []) parentNames.set(p.id, p.first_name);
+    }
+
+    const sessions: PlanSessionEntry[] = sessionRows.map((r) => ({
+      id: r.id,
+      loggedAt: r.logged_at,
+      durationSeconds: r.duration_seconds ?? 0,
+      stateIndex: r.state_index ?? 0,
+      note: r.note ?? "",
+      loggedByKind: r.parent_id ? "parent" : "athlete",
+      loggedByFirstName: r.parent_id
+        ? (parentNames.get(r.parent_id) ?? "Parent")
+        : athleteFirstName,
+    }));
+
+    const loggedByParent = sessions.filter((s) => s.loggedByKind === "parent").length;
+    return {
+      sessions,
+      athleteFirstName,
+      loggedByAthlete: sessions.length - loggedByParent,
+      loggedByParent,
+      total: sessions.length,
+    };
+  });
+
+
+
 /** Parent-only: submit a session from the feedback modal. */
 export const submitPlanSession = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
