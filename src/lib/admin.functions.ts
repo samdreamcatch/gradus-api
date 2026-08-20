@@ -400,7 +400,7 @@ export const getUserDetail = createServerFn({ method: "POST" })
 
     let coachDetail: any = null;
     if (coach.data) {
-      const [athleteLinks, plans, levels] = await Promise.all([
+      const [athleteLinks, plans, levels, coachCode] = await Promise.all([
         supabaseAdmin
           .from("coach_athletes")
           .select("athlete_id, athletes(id, first_name, last_name)")
