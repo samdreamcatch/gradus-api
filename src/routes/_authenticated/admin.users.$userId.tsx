@@ -320,8 +320,55 @@ function UserDetail() {
               No coach, parent, or athlete profile (likely an admin-only account).
             </p>
           )}
+
+          <EditUserSheet
+            open={editOpen}
+            onOpenChange={setEditOpen}
+            userId={userId}
+            detail={data}
+            onSaved={() => refetch()}
+          />
+
+          <AlertDialog open={dangerOpen} onOpenChange={setDangerOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Permanently delete this user?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This removes {data.auth?.email ?? "this account"} and all of their profile rows
+                  so the email can be reused. This cannot be undone. Type the email to confirm.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <Input
+                value={confirmText}
+                onChange={(e) => setConfirmText(e.target.value)}
+                placeholder={data.auth?.email ?? "email"}
+                autoComplete="off"
+              />
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  disabled={deleting || confirmText.trim().length === 0}
+                  onClick={async (e) => {
+                    e.preventDefault();
+                    setDeleting(true);
+                    try {
+                      await hardDeleteFn({ data: { userId, confirm: confirmText.trim() } });
+                      toast.success("User deleted");
+                      navigate({ to: "/admin/users" });
+                    } catch (err: any) {
+                      toast.error(err?.message ?? "Failed to delete user");
+                      setDeleting(false);
+                    }
+                  }}
+                >
+                  {deleting ? "Deleting…" : "Delete permanently"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </>
       )}
+
     </div>
   );
 }
