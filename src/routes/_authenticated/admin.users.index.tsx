@@ -313,6 +313,7 @@ function AdminUsersPage() {
                   onSort={(s) => setSearch({ sort: s })}
                 />
                 <TableHead>Type</TableHead>
+                <TableHead>Connected to</TableHead>
                 <TableHead>Plan</TableHead>
                 <TableHead>Organization</TableHead>
                 <TableHead>Flags</TableHead>
