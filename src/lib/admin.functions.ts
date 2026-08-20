@@ -476,6 +476,16 @@ export const getUserDetail = createServerFn({ method: "POST" })
           .select("coach_id, sport")
           .eq("athlete_id", athlete.data.id),
         supabaseAdmin.from("plans").select("id, kind, status").eq("athlete_id", athlete.data.id),
+        supabaseAdmin
+          .from("adult_athlete_invite_codes")
+          .select("code")
+          .eq("athlete_id", athlete.data.id)
+          .maybeSingle(),
+        supabaseAdmin
+          .from("athlete_invite_codes")
+          .select("code, claimed_at")
+          .eq("athlete_id", athlete.data.id)
+          .maybeSingle(),
       ]);
 
       const sportsByCoach = new Map<string, string[]>();
