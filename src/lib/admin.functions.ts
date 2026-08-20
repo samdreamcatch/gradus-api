@@ -522,6 +522,8 @@ export const getUserDetail = createServerFn({ method: "POST" })
 
       athleteDetail = {
         ...athlete.data,
+        inviteCode: selfCode.data?.code ?? null,
+        claimCode: claimCode.data ? { code: claimCode.data.code, claimed: !!claimCode.data.claimed_at } : null,
         coaches: Array.from(merged.values()).map((c) => ({
           coachUserId: c.coachUserId,
           coachName: c.coachName,
