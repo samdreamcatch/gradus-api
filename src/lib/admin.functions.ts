@@ -597,7 +597,11 @@ export const getAdminList = createServerFn({ method: "POST" })
         userId: a.self_managed && a.user_id ? a.user_id : (a.parent_profiles?.user_id ?? null),
         name: `${a.first_name ?? ""} ${a.last_name ?? ""}`.trim() || "(no name)",
         email: a.self_managed
-          ? "Adult athlete"
+          ? a.parent_profiles
+            ? `Parent: ${`${a.parent_profiles.first_name ?? ""} ${a.parent_profiles.last_name ?? ""}`.trim() || "—"}`
+            : isMinorBirthdate(a.birthdate)
+              ? "Awaiting parent connection"
+              : "Adult athlete"
           : a.parent_profiles
             ? `Parent: ${`${a.parent_profiles.first_name ?? ""} ${a.parent_profiles.last_name ?? ""}`.trim() || "—"}`
             : null,
