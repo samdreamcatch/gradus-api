@@ -336,7 +336,7 @@ function AdminUsersPage() {
             <TableBody>
               {listQuery.isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={10} className="text-sm text-text-secondary py-8 text-center">
+                  <TableCell colSpan={11} className="text-sm text-text-secondary py-8 text-center">
                     Loading…
                   </TableCell>
                 </TableRow>
