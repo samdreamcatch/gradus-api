@@ -656,6 +656,53 @@ function PlanEditorBody({
               </div>
               <FlowStateBars counts={loggedSessions} />
 
+              {sessionLogQuery.data && sessionLogQuery.data.total > 0 ? (
+                <p className="mt-2 text-xs text-text-tertiary">
+                  {sessionAttributionLine({
+                    total: sessionLogQuery.data.total,
+                    loggedByAthlete: sessionLogQuery.data.loggedByAthlete,
+                    loggedByParent: sessionLogQuery.data.loggedByParent,
+                    athleteFirstName: sessionLogQuery.data.athleteFirstName,
+                  })}
+                </p>
+              ) : null}
+
+              {sessionLogQuery.data && sessionLogQuery.data.sessions.length > 0 ? (
+                <div className="mt-4 border-t border-dashed border-divider pt-3">
+                  <Eyebrow as="p" size="micro" tone="tertiary" weight="black" className="mb-2">
+                    Practice log
+                  </Eyebrow>
+                  <SettingsList>
+                    {(showAllSessions
+                      ? sessionLogQuery.data.sessions
+                      : sessionLogQuery.data.sessions.slice(0, 5)
+                    ).map((s) => (
+                      <SettingsRow
+                        key={s.id}
+                        label={sessionLoggerLabel(
+                          s.loggedByKind,
+                          s.loggedByFirstName,
+                          sessionLogQuery.data!.athleteFirstName,
+                        )}
+                        description={
+                          s.note ? `${stateLabel(s.stateIndex)} · ${s.note}` : stateLabel(s.stateIndex)
+                        }
+                        value={sessionMetaLabel(s.loggedAt, s.durationSeconds)}
+                      />
+                    ))}
+                    {!showAllSessions && sessionLogQuery.data.sessions.length > 5 ? (
+                      <SettingsButtonRow
+                        label={`Show all ${sessionLogQuery.data.sessions.length}`}
+                        tone="accent"
+                        onClick={() => setShowAllSessions(true)}
+                      />
+                    ) : null}
+                  </SettingsList>
+                </div>
+              ) : null}
+
+
+
               {/* AI summary of logged sessions */}
               <div className="mt-4 border-t border-dashed border-divider pt-3">
                 <div className="mb-2 flex items-center gap-2">
