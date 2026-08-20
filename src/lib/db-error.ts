@@ -32,5 +32,16 @@ export function dbError(
       throw new Error(allowed);
     }
   }
-  throw new Error(fallback);
+  const wrapped = new Error(fallback);
+  // Keep the raw database detail attached (never serialized to the client —
+  // only the message crosses the RPC boundary) so server-side error logging
+  // can record what actually failed instead of the generic fallback.
+  (wrapped as Error & { dbDetail?: unknown }).dbDetail = {
+    message: err?.message ?? null,
+    code: err?.code ?? null,
+    details: err?.details ?? null,
+    hint: err?.hint ?? null,
+  };
+  throw wrapped;
 }
+
