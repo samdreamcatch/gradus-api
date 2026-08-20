@@ -290,6 +290,43 @@ function UserDetail() {
   );
 }
 
+function CodeList({
+  label,
+  codes,
+}: {
+  label: string;
+  codes: { code: string; note?: string }[];
+}) {
+  return (
+    <div>
+      <Eyebrow size="small" tone="tertiary" weight="normal" tracking="wide">
+        {label}
+      </Eyebrow>
+      {codes.length === 0 ? (
+        <p className="mt-1 text-sm text-text-secondary">None yet</p>
+      ) : (
+        <ul className="mt-1 flex flex-wrap gap-2">
+          {codes.map((c) => (
+            <li key={`${c.code}-${c.note ?? ""}`}>
+              <Chip
+                as="button"
+                tone="muted"
+                onClick={() => {
+                  navigator.clipboard?.writeText(c.code);
+                  toast.success(`Copied ${c.code}`);
+                }}
+              >
+                <span className="font-mono">{c.code}</span>
+                {c.note ? <span className="ml-2 text-text-secondary">{c.note}</span> : null}
+              </Chip>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 function Field({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
   return (
     <div>
