@@ -4,6 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
 import { dbError } from "./db-error";
+import { withServerErrorLogging } from "./server-error-middleware";
 import { emptySessionsByState, loadSessionsByPlanIds } from "./plan-sessions.functions";
 import type { SessionsByState } from "@/components/plans/flow-state-bars";
 
@@ -79,7 +80,7 @@ async function findMyAthleteRow(supabase: Client, userId: string) {
 /* ---------------- list ---------------- */
 
 export const listAthletePlans = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSupabaseAuth, withServerErrorLogging])
   .handler(async ({ context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const supabase = context.supabase as Client;
@@ -201,7 +202,7 @@ export const listAthletePlans = createServerFn({ method: "GET" })
 /* ---------------- detail ---------------- */
 
 export const getAthletePlan = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSupabaseAuth, withServerErrorLogging])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ context, data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

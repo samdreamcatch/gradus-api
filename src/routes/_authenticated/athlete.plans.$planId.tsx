@@ -10,6 +10,8 @@ import { MessageCoachAboutPlanDialog } from "@/components/plans/message-coach-ab
 import { PlanSessionTimer } from "@/components/plans/plan-session-timer";
 import { ShareToSocialsButton } from "@/components/plans/share-to-socials-button";
 
+import { PlansRouteError } from "@/components/plans/plans-error";
+
 export const Route = createFileRoute("/_authenticated/athlete/plans/$planId")({
   component: AthletePlanDetail,
   loader: ({ params, context }) =>
@@ -18,17 +20,7 @@ export const Route = createFileRoute("/_authenticated/athlete/plans/$planId")({
       queryFn: () => getAthletePlan({ data: { id: params.planId } }),
     }),
   errorComponent: ({ error }) => (
-    <div className="mx-auto max-w-2xl px-3 py-8">
-      <Link
-        to="/athlete/plans"
-        className="inline-flex items-center gap-1 text-sm text-text-secondary hover:text-text-primary"
-      >
-        <ArrowLeft className="size-4" /> Back
-      </Link>
-      <div className="mt-6 rounded-2xl border border-divider bg-card p-6 text-sm text-text-secondary">
-        Couldn&apos;t load this plan: {error.message}
-      </div>
-    </div>
+    <PlansRouteError error={error} label="Couldn't load this plan" backTo="/athlete/plans" />
   ),
   notFoundComponent: () => (
     <div className="mx-auto max-w-2xl px-3 py-8 text-sm text-text-secondary">Plan not found.</div>

@@ -19,15 +19,11 @@ import { listParentPlans } from "@/lib/parent-plans.functions";
 import { GoalsDashboard, useGoalsDashboard } from "@/components/parent/goals/goals-dashboard";
 import { useActiveSession } from "@/lib/active-session-store";
 
+import { PlansRouteError } from "@/components/plans/plans-error";
+
 export const Route = createFileRoute("/_authenticated/parent/plans/")({
   component: ParentPlansPage,
-  errorComponent: ({ error }) => (
-    <div className="mx-auto max-w-2xl px-3 py-6">
-      <div className="rounded-2xl border border-divider bg-card p-6 text-sm text-text-secondary">
-        Couldn&apos;t load plans: {error.message}
-      </div>
-    </div>
-  ),
+  errorComponent: ({ error }) => <PlansRouteError error={error} label="Couldn't load plans" />,
 });
 
 type StatusFilter = "active" | "benched";
