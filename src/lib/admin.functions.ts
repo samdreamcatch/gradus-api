@@ -1132,7 +1132,13 @@ export const listAllUsers = createServerFn({ method: "POST" })
         isTest = isTest || !!parent.is_test;
         stashedPromoCode = parent.promo_code ?? null;
       } else if (athlete) {
-        userType = athlete.self_managed ? "adult_athlete" : "youth_athlete";
+        userType = !athlete.self_managed
+          ? "youth_athlete"
+          : isMinorBirthdate(athlete.birthdate)
+            ? athlete.parent_id
+              ? "minor_athlete"
+              : "awaiting_parent"
+            : "adult_athlete";
         name = `${athlete.first_name ?? ""} ${athlete.last_name ?? ""}`.trim() || name;
         isTest = isTest || !!athlete.is_test;
         stashedPromoCode = athlete.promo_code ?? null;
