@@ -8,44 +8,46 @@
 
 So: A is already true in the database; B does not exist yet.
 
-## What to build
+## What to build — using only existing components
 
-### 1. One shared "Practice log" list
+No new components. Everything below is assembled from pieces already in the project.
 
-A single new component used identically by all three roles, placed under the existing "Logged instances" card on the coach plan page and added to the parent and athlete plan pages.
+### 1. A practice log list on the plan detail pages
 
-Each row shows:
+Rendered with the existing settings primitives `SettingsGroup` + `SettingsList` + `SettingsRow` (`src/components/settings/primitives.tsx`) — the same list pattern already used across parent, athlete, and coach settings.
+
+One `SettingsRow` per logged session:
 
 ```text
-[TT]  Tami · logged for Addie          Aug 18 · 32 min
-      Steady
-      "Better edges today, still rushing the entry."
+Tami logged for Addie                      Aug 18 · 32 min
+Steady · "Better edges today, still rushing the entry."
 ```
 
-- **Who** — the logger's first name. Parent-logged rows read "Tami · logged for Addie"; athlete-logged rows read "Addie · logged herself/themselves" (plain: "Addie · self-logged").
-- **A small initials chip** distinguishes logger at a glance, using the existing avatar/chip styling already in the roster and messages UI.
-- **When / how long** — date and duration.
-- **Mood** — the existing state label (Frustrated → Flowing).
-- **Note** — when present.
+- `label` = who logged it ("Tami logged for Addie" / "Addie logged this").
+- `description` = mood label (from the existing `STATE_LABELS`) plus the note.
+- `value` = date and duration.
+- Section heading via the existing `Eyebrow` (`src/components/ui/eyebrow.tsx`), matching the "Logged instances" heading already on the coach plan page.
+- Long lists collapse using the existing expandable row behavior in the same primitives file; no new expander.
 
-Newest first, collapsed to the 5 most recent with a "Show all" expander so the page stays short.
+### 2. Attribution alongside the existing mood bars
 
-### 2. Attribution in the aggregate view
+Directly under the existing `FlowStateBars` on the coach plan page, add one line of text (no new component): "12 sessions · 8 logged by Addie, 4 by Tami."
 
-Above the mood bars, add a plain-language line: "12 sessions · 8 logged by Addie, 4 by Tami." Coaches get the split without opening the list.
+### 3. Same block on all three plan pages
 
-### 3. Athlete plan page gains the log
+- **Coach plan detail** — practice log added inside the existing "Logged instances" card.
+- **Parent plan detail** — gains the existing `FlowStateBars` card plus the practice log.
+- **Athlete plan detail** — gains the same card, so the athlete sees what a parent logged for them.
 
-The athlete plan detail page currently ends at the moves list. It gets the same "Logged instances" card (mood bars + practice log) the parent and coach see, so the athlete can see what a parent logged on their behalf.
+Identical markup in all three, so coach, parent, and athlete read the same thing.
 
 ### 4. Double-logging guard
 
-Because both can now log the same practice, add a light warning in the log-session flow when a session for the same plan was already logged in the past 2 hours by the other party: "Tami already logged 32 min on this plan an hour ago — log anyway?" Non-blocking; the person can continue.
+When someone opens the log flow and the other party already logged on this plan within the past 2 hours, show a `toast` (existing sonner setup, already used by the session timer): "Tami already logged 32 min on this plan an hour ago." Informational only — it does not block.
 
 ## Technical notes
 
-- New server function `listPlanSessions({ planId })` in `src/lib/plan-sessions.functions.ts`, auth-scoped like the existing `getPlanSessions`, returning per-session `{ id, loggedAt, durationSeconds, stateIndex, note, loggedBy: { kind: 'parent' | 'athlete', firstName } }`. Parent name resolved via the row's parent profile, athlete name via the plan's athlete.
-- New `src/components/plans/practice-log.tsx` rendering the list; reuses existing card/Eyebrow/state-label primitives and `STATE_LABELS` from `src/lib/session-states.ts`. No new design tokens, no new UI primitives.
-- Session counts split by logger added to the existing `getPlanSessions` response so the aggregate line needs no extra request.
-- Recent-duplicate check served by the same `listPlanSessions` data already loaded on the page — no new endpoint.
-- No schema change and no access-policy change: `plan_sessions` already stores logger identity and already permits cross-visibility.
+- New server function `listPlanSessions({ planId })` added to the existing `src/lib/plan-sessions.functions.ts`, auth-scoped exactly like the neighboring `getPlanSessions`, returning `{ id, loggedAt, durationSeconds, stateIndex, note, loggedByKind, loggedByFirstName }` per session. Parent name resolved from the row's parent profile; athlete name from the plan's athlete.
+- Logger counts added to the existing `getPlanSessions` return value, so the attribution line needs no extra request.
+- Rendering is done inline in the three existing route files using `SettingsGroup`/`SettingsList`/`SettingsRow`, `Eyebrow`, `FlowStateBars`, `STATE_LABELS`, and `toast`. No new files under `src/components`, no new design tokens.
+- No schema change and no access-policy change: `plan_sessions` already records logger identity and already permits cross-visibility.
