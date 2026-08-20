@@ -1,12 +1,39 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { getUserDetail, setUserTestFlag, deleteTestUser } from "@/lib/admin.functions";
+import {
+  getUserDetail,
+  setUserTestFlag,
+  adminUpdateUserFields,
+  adminSearchParents,
+  adminSetAthleteParent,
+  adminDeleteUserHard,
+} from "@/lib/admin.functions";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { Chip } from "@/components/ui/chip";
 import { Tag } from "@/components/ui/tag";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { ImpersonateButton } from "@/components/admin/impersonate-button";
 
 export const Route = createFileRoute("/_authenticated/admin/users/$userId")({
@@ -18,12 +45,16 @@ function UserDetail() {
   const navigate = useNavigate();
   const fn = useServerFn(getUserDetail);
   const toggleFn = useServerFn(setUserTestFlag);
-  const deleteFn = useServerFn(deleteTestUser);
+  const hardDeleteFn = useServerFn(adminDeleteUserHard);
   const [deleting, setDeleting] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [dangerOpen, setDangerOpen] = useState(false);
+  const [confirmText, setConfirmText] = useState("");
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["admin-user", userId],
     queryFn: () => fn({ data: { userId } }),
   });
+
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-10 space-y-6">
@@ -56,6 +87,10 @@ function UserDetail() {
               </div>
               <div className="shrink-0 flex flex-col items-end gap-2">
                 <ImpersonateButton userId={userId} email={data.auth?.email ?? ""} />
+                <Chip as="button" tone="muted" onClick={() => setEditOpen(true)}>
+                  Edit user
+                </Chip>
+
                 {(data.coach || data.parent || data.athlete) && (
                   <Chip
                     as="button"
@@ -70,34 +105,19 @@ function UserDetail() {
                   </Chip>
                 )}
 
-                {data.isTest && (
-                  <Chip
-                    as="button"
-                    tone="destructive"
-                    disabled={deleting}
-                    className="disabled:opacity-50"
-                    onClick={async () => {
-                      const email = data.auth?.email ?? "this user";
-                      if (
-                        !confirm(
-                          `Permanently delete ${email}? This removes their account and profiles so the email can be reused. This cannot be undone.`,
-                        )
-                      )
-                        return;
-                      setDeleting(true);
-                      try {
-                        await deleteFn({ data: { userId } });
-                        toast.success("Test user deleted");
-                        navigate({ to: "/admin" });
-                      } catch (e: any) {
-                        toast.error(e?.message ?? "Failed to delete user");
-                        setDeleting(false);
-                      }
-                    }}
-                  >
-                    {deleting ? "Deleting…" : "Delete user"}
-                  </Chip>
-                )}
+                <Chip
+                  as="button"
+                  tone="destructive"
+                  disabled={deleting}
+                  className="disabled:opacity-50"
+                  onClick={() => {
+                    setConfirmText("");
+                    setDangerOpen(true);
+                  }}
+                >
+                  {deleting ? "Deleting…" : "Delete user"}
+                </Chip>
+
               </div>
             </div>
             <dl className="mt-3 grid grid-cols-2 gap-3 text-sm">
@@ -300,8 +320,55 @@ function UserDetail() {
               No coach, parent, or athlete profile (likely an admin-only account).
             </p>
           )}
+
+          <EditUserSheet
+            open={editOpen}
+            onOpenChange={setEditOpen}
+            userId={userId}
+            detail={data}
+            onSaved={() => refetch()}
+          />
+
+          <AlertDialog open={dangerOpen} onOpenChange={setDangerOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Permanently delete this user?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This removes {data.auth?.email ?? "this account"} and all of their profile rows
+                  so the email can be reused. This cannot be undone. Type the email to confirm.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <Input
+                value={confirmText}
+                onChange={(e) => setConfirmText(e.target.value)}
+                placeholder={data.auth?.email ?? "email"}
+                autoComplete="off"
+              />
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  disabled={deleting || confirmText.trim().length === 0}
+                  onClick={async (e) => {
+                    e.preventDefault();
+                    setDeleting(true);
+                    try {
+                      await hardDeleteFn({ data: { userId, confirm: confirmText.trim() } });
+                      toast.success("User deleted");
+                      navigate({ to: "/admin/users" });
+                    } catch (err: any) {
+                      toast.error(err?.message ?? "Failed to delete user");
+                      setDeleting(false);
+                    }
+                  }}
+                >
+                  {deleting ? "Deleting…" : "Delete permanently"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </>
       )}
+
     </div>
   );
 }
@@ -351,5 +418,206 @@ function Field({ label, value, mono }: { label: string; value: string; mono?: bo
       </Eyebrow>
       <dd className={`text-sm text-text-primary ${mono ? "font-mono break-all" : ""}`}>{value}</dd>
     </div>
+  );
+}
+
+function EditUserSheet({
+  open,
+  onOpenChange,
+  userId,
+  detail,
+  onSaved,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  userId: string;
+  detail: any;
+  onSaved: () => void;
+}) {
+  const updateFn = useServerFn(adminUpdateUserFields);
+  const searchParentsFn = useServerFn(adminSearchParents);
+  const setParentFn = useServerFn(adminSetAthleteParent);
+
+  const profile = detail.coach ?? detail.parent ?? detail.athlete ?? null;
+  const athlete = detail.athlete;
+
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [birthdate, setBirthdate] = useState("");
+  const [guardianEmail, setGuardianEmail] = useState("");
+  const [username, setUsername] = useState("");
+  const [parentQuery, setParentQuery] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    setFirstName(profile?.first_name ?? "");
+    setLastName(profile?.last_name ?? "");
+    setEmail(detail.auth?.email ?? "");
+    setBirthdate(athlete?.birthdate ?? "");
+    setGuardianEmail(athlete?.guardian_email ?? "");
+    setUsername(athlete?.username ?? "");
+    setParentQuery("");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  const parentsQ = useQuery({
+    queryKey: ["admin-parent-search", parentQuery],
+    queryFn: () => searchParentsFn({ data: { query: parentQuery } }),
+    enabled: open && !!athlete,
+  });
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      await updateFn({
+        data: {
+          userId,
+          ...(profile ? { firstName: firstName.trim(), lastName: lastName.trim() } : {}),
+          ...(email.trim() && email.trim() !== (detail.auth?.email ?? "")
+            ? { email: email.trim() }
+            : {}),
+          ...(athlete
+            ? {
+                birthdate: birthdate.trim() ? birthdate.trim() : null,
+                guardianEmail: guardianEmail.trim() ? guardianEmail.trim() : null,
+                username: username.trim() ? username.trim() : null,
+              }
+            : {}),
+        },
+      });
+      toast.success("User updated");
+      onSaved();
+      onOpenChange(false);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Failed to update user");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const relink = async (parentId: string | null) => {
+    try {
+      await setParentFn({ data: { athleteId: athlete.id, parentId } });
+      toast.success(parentId ? "Athlete linked to parent" : "Athlete set to self-managed");
+      onSaved();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Failed to update link");
+    }
+  };
+
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
+        <SheetHeader>
+          <SheetTitle>Edit user</SheetTitle>
+          <SheetDescription>Correct account details. Changes apply immediately.</SheetDescription>
+        </SheetHeader>
+
+        <div className="mt-4 space-y-4">
+          {profile && (
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="edit-first">First name</Label>
+                <Input
+                  id="edit-first"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-last">Last name</Label>
+                <Input
+                  id="edit-last"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                />
+              </div>
+            </div>
+          )}
+
+          <div>
+            <Label htmlFor="edit-email">Login email</Label>
+            <Input
+              id="edit-email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+
+          {athlete && (
+            <>
+              <div>
+                <Label htmlFor="edit-dob">Birthdate</Label>
+                <Input
+                  id="edit-dob"
+                  type="date"
+                  value={birthdate}
+                  onChange={(e) => setBirthdate(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-guardian">Parent / guardian email</Label>
+                <Input
+                  id="edit-guardian"
+                  type="email"
+                  value={guardianEmail}
+                  onChange={(e) => setGuardianEmail(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-username">Username</Label>
+                <Input
+                  id="edit-username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                />
+              </div>
+            </>
+          )}
+
+          <Button onClick={save} disabled={saving} className="w-full">
+            {saving ? "Saving…" : "Save changes"}
+          </Button>
+
+          {athlete && (
+            <div className="space-y-2 border-t border-divider pt-4">
+              <Eyebrow size="small" tone="tertiary" weight="normal" tracking="wide">
+                Managed by
+              </Eyebrow>
+              <p className="text-sm text-text-secondary">
+                {athlete.parent_id
+                  ? `Parent${athlete.guardianParentName ? ` — ${athlete.guardianParentName}` : ""}`
+                  : "Self-managed"}
+              </p>
+              {athlete.parent_id ? (
+                <Chip as="button" tone="muted" onClick={() => relink(null)}>
+                  Detach — make self-managed
+                </Chip>
+              ) : (
+                <>
+                  <Input
+                    value={parentQuery}
+                    onChange={(e) => setParentQuery(e.target.value)}
+                    placeholder="Search parents by name"
+                  />
+                  <ul className="max-h-48 space-y-1 overflow-y-auto">
+                    {(parentsQ.data?.parents ?? []).map((p) => (
+                      <li key={p.id}>
+                        <Chip as="button" tone="muted" onClick={() => relink(p.id)}>
+                          Link to {p.name}
+                        </Chip>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }
