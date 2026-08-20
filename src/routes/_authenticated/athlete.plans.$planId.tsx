@@ -9,8 +9,19 @@ import { getAthletePlan, type AthletePlanMoveDTO } from "@/lib/athlete-plans.fun
 import { MessageCoachAboutPlanDialog } from "@/components/plans/message-coach-about-plan-dialog";
 import { PlanSessionTimer } from "@/components/plans/plan-session-timer";
 import { ShareToSocialsButton } from "@/components/plans/share-to-socials-button";
+import { FlowStateBars } from "@/components/plans/flow-state-bars";
+import { getPlanSessions, listPlanSessions } from "@/lib/plan-sessions.functions";
+import { Eyebrow } from "@/components/ui/eyebrow";
+import { SettingsList, SettingsRow, SettingsButtonRow } from "@/components/settings/primitives";
+import {
+  sessionAttributionLine,
+  sessionLoggerLabel,
+  sessionMetaLabel,
+  stateLabel,
+} from "@/lib/session-states";
 
 import { PlansRouteError } from "@/components/plans/plans-error";
+
 
 export const Route = createFileRoute("/_authenticated/athlete/plans/$planId")({
   component: AthletePlanDetail,
