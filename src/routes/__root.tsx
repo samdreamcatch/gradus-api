@@ -19,6 +19,7 @@ import { registerServiceWorker } from "@/pwa/register-sw";
 import { InstallBanner } from "@/components/install-banner";
 import { installErrorReporter, reportError } from "@/lib/client-error-reporter";
 import { PRE_HYDRATION_SNAPSHOT_SCRIPT } from "@/lib/hydration-diagnostics";
+import { ImpersonationBanner } from "@/components/admin/impersonation-banner";
 
 function NotFoundComponent() {
   return (
@@ -170,6 +171,7 @@ function RootComponent() {
         >
           Skip to main content
         </a>
+        <ImpersonationBanner />
         <main id="main">
           <Outlet />
         </main>

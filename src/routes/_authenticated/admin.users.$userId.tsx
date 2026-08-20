@@ -7,6 +7,7 @@ import { getUserDetail, setUserTestFlag, deleteTestUser } from "@/lib/admin.func
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { Chip } from "@/components/ui/chip";
 import { Tag } from "@/components/ui/tag";
+import { ImpersonateButton } from "@/components/admin/impersonate-button";
 
 export const Route = createFileRoute("/_authenticated/admin/users/$userId")({
   component: UserDetail,
@@ -54,6 +55,7 @@ function UserDetail() {
                 </h1>
               </div>
               <div className="shrink-0 flex flex-col items-end gap-2">
+                <ImpersonateButton userId={userId} email={data.auth?.email ?? ""} />
                 {(data.coach || data.parent || data.athlete) && (
                   <Chip
                     as="button"

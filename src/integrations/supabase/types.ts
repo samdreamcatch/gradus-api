@@ -995,6 +995,36 @@ export type Database = {
         }
         Relationships: []
       }
+      impersonation_events: {
+        Row: {
+          admin_email: string | null
+          admin_user_id: string
+          created_at: string
+          id: string
+          reason: string | null
+          target_email: string | null
+          target_user_id: string
+        }
+        Insert: {
+          admin_email?: string | null
+          admin_user_id: string
+          created_at?: string
+          id?: string
+          reason?: string | null
+          target_email?: string | null
+          target_user_id: string
+        }
+        Update: {
+          admin_email?: string | null
+          admin_user_id?: string
+          created_at?: string
+          id?: string
+          reason?: string | null
+          target_email?: string | null
+          target_user_id?: string
+        }
+        Relationships: []
+      }
       invite_lookup_attempts: {
         Row: {
           attempted_at: string
