@@ -1223,11 +1223,17 @@ export const listAllUsers = createServerFn({ method: "POST" })
         if (coach.entitlement === "club_covered") planTier = "club";
         else if (coach.subscription_tier === "coach_pro") planTier = "coach_pro";
         else planTier = "coach";
+        connections = connectionsOf(athletesByCoachId.get(coach.id) ?? []);
       } else if (parent) {
         userType = "parent";
         name = `${parent.first_name ?? ""} ${parent.last_name ?? ""}`.trim() || name;
         isTest = isTest || !!parent.is_test;
         stashedPromoCode = parent.promo_code ?? null;
+        const kids = athletesByParentId.get(parent.id) ?? [];
+        connections = connectionsOf([
+          ...kids.map((k) => k.name),
+          ...kids.flatMap((k) => coachesByAthleteId.get(k.id) ?? []),
+        ]);
       } else if (athlete) {
         userType = !athlete.self_managed
           ? "youth_athlete"
