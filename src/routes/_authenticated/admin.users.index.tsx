@@ -314,6 +314,7 @@ function AdminUsersPage() {
                 />
                 <TableHead>Type</TableHead>
                 <TableHead>Connected to</TableHead>
+                <TableHead>Guardian</TableHead>
                 <TableHead>Plan</TableHead>
                 <TableHead>Organization</TableHead>
                 <TableHead>Flags</TableHead>
@@ -336,13 +337,13 @@ function AdminUsersPage() {
             <TableBody>
               {listQuery.isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={11} className="text-sm text-text-secondary py-8 text-center">
+                  <TableCell colSpan={12} className="text-sm text-text-secondary py-8 text-center">
                     Loading…
                   </TableCell>
                 </TableRow>
               ) : rows.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={11} className="text-sm text-text-secondary py-8 text-center">
+                  <TableCell colSpan={12} className="text-sm text-text-secondary py-8 text-center">
                     No users match these filters.
                   </TableCell>
                 </TableRow>
@@ -384,6 +385,18 @@ function AdminUsersPage() {
                             </span>
                           )}
                         </div>
+                      )}
+                    </TableCell>
+                    <TableCell className="max-w-[220px] text-text-secondary">
+                      {r.guardianEmail ? (
+                        <div className="truncate">
+                          {r.guardianEmail}
+                          <Tag className="ml-1.5 align-middle">
+                            {r.guardianClaimed ? "joined" : "invited"}
+                          </Tag>
+                        </div>
+                      ) : (
+                        <span className="text-text-tertiary">—</span>
                       )}
                     </TableCell>
                     <TableCell className="whitespace-nowrap">
