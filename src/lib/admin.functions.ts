@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { dbError } from "./db-error";
+import { isMinorBirthdate } from "./athlete-age";
 import { type StripeEnv, createStripeClient, getStripeErrorMessage } from "@/lib/stripe.server";
 
 /** Throws if the caller is not an admin. */
@@ -596,7 +597,11 @@ export const getAdminList = createServerFn({ method: "POST" })
         userId: a.self_managed && a.user_id ? a.user_id : (a.parent_profiles?.user_id ?? null),
         name: `${a.first_name ?? ""} ${a.last_name ?? ""}`.trim() || "(no name)",
         email: a.self_managed
-          ? "Adult athlete"
+          ? a.parent_profiles
+            ? `Parent: ${`${a.parent_profiles.first_name ?? ""} ${a.parent_profiles.last_name ?? ""}`.trim() || "—"}`
+            : isMinorBirthdate(a.birthdate)
+              ? "Awaiting parent connection"
+              : "Adult athlete"
           : a.parent_profiles
             ? `Parent: ${`${a.parent_profiles.first_name ?? ""} ${a.parent_profiles.last_name ?? ""}`.trim() || "—"}`
             : null,
@@ -1061,7 +1066,9 @@ export const listAllUsers = createServerFn({ method: "POST" })
         .select("user_id, first_name, last_name, is_test, promo_code"),
       supabaseAdmin
         .from("athletes")
-        .select("user_id, first_name, last_name, is_test, self_managed, promo_code")
+        .select(
+          "user_id, first_name, last_name, is_test, self_managed, promo_code, birthdate, parent_id",
+        )
         .not("user_id", "is", null),
       supabaseAdmin.from("user_roles").select("user_id, role"),
       supabaseAdmin.from("organizations").select("id, name"),
@@ -1130,7 +1137,13 @@ export const listAllUsers = createServerFn({ method: "POST" })
         isTest = isTest || !!parent.is_test;
         stashedPromoCode = parent.promo_code ?? null;
       } else if (athlete) {
-        userType = athlete.self_managed ? "adult_athlete" : "youth_athlete";
+        userType = !athlete.self_managed
+          ? "youth_athlete"
+          : isMinorBirthdate(athlete.birthdate)
+            ? athlete.parent_id
+              ? "minor_athlete"
+              : "awaiting_parent"
+            : "adult_athlete";
         name = `${athlete.first_name ?? ""} ${athlete.last_name ?? ""}`.trim() || name;
         isTest = isTest || !!athlete.is_test;
         stashedPromoCode = athlete.promo_code ?? null;
