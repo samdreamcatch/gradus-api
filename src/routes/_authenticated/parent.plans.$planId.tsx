@@ -50,6 +50,20 @@ function ParentPlanDetail() {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const toggle = (id: string) => setExpanded((s) => ({ ...s, [id]: !s[id] }));
   const [messageOpen, setMessageOpen] = useState(false);
+  const [showAllSessions, setShowAllSessions] = useState(false);
+
+  const fetchPlanSessions = useServerFn(getPlanSessions);
+  const sessionsQuery = useQuery({
+    queryKey: ["plan-sessions", planId],
+    queryFn: () => fetchPlanSessions({ data: { planId } }),
+  });
+  const fetchPlanSessionLog = useServerFn(listPlanSessions);
+  const sessionLogQuery = useQuery({
+    queryKey: ["plan-session-log", planId],
+    queryFn: () => fetchPlanSessionLog({ data: { planId } }),
+  });
+  const log = sessionLogQuery.data;
+
 
   if (isLoading || !plan) {
     return (
