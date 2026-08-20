@@ -260,6 +260,22 @@ function UserDetail() {
                   ))}
                 </ul>
               </div>
+              <CodeList
+                label="Invite codes"
+                codes={[
+                  ...(data.athlete.inviteCode
+                    ? [{ code: data.athlete.inviteCode as string, note: "give to a coach" }]
+                    : []),
+                  ...(data.athlete.claimCode
+                    ? [
+                        {
+                          code: (data.athlete.claimCode as any).code as string,
+                          note: `athlete login${(data.athlete.claimCode as any).claimed ? " (claimed)" : ""}`,
+                        },
+                      ]
+                    : []),
+                ]}
+              />
             </section>
           )}
 
