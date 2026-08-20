@@ -354,7 +354,13 @@ function AdminUsersPage() {
                     className="data-[deleted=true]:opacity-60"
                   >
                     <TableCell className="font-medium text-text-primary max-w-[220px]">
-                      <div className="truncate">{r.name}</div>
+                      <Link
+                        to="/admin/users/$userId"
+                        params={{ userId: r.userId }}
+                        className="block truncate text-accent-ink underline-offset-4 hover:underline"
+                      >
+                        {r.name}
+                      </Link>
                       {r.softDeletedAt && (
                         <Tag className="mt-1 bg-destructive/10 text-destructive">deleted</Tag>
                       )}
