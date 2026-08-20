@@ -54,6 +54,7 @@ function UserDetail() {
                 </h1>
               </div>
               <div className="shrink-0 flex flex-col items-end gap-2">
+                <ImpersonateButton userId={userId} email={data.auth?.email ?? ""} />
                 {(data.coach || data.parent || data.athlete) && (
                   <Chip
                     as="button"
