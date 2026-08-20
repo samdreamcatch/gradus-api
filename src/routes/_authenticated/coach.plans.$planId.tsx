@@ -317,6 +317,8 @@ function PlanEditorBody({
     enabled: !!plan?.id && plan?.status === "active",
   });
   const [showAllSessions, setShowAllSessions] = useState(false);
+  const [logOpen, setLogOpen] = useState(false);
+
 
 
 
