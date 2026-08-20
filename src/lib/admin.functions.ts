@@ -1267,6 +1267,7 @@ export const listAllUsers = createServerFn({ method: "POST" })
         appliedCodes: appliedByUser.get(u.id) ?? [],
         stashedPromoCode,
         softDeletedAt: deletedByUser.get(u.id) ?? null,
+        connections,
       };
     });
 
