@@ -199,6 +199,18 @@ function UserDetail() {
                   ))}
                 </ul>
               </div>
+              <CodeList
+                label="Invite codes"
+                codes={[
+                  ...(data.parent.inviteCode
+                    ? [{ code: data.parent.inviteCode as string, note: "give to a coach" }]
+                    : []),
+                  ...((data.parent.athleteCodes as any[]) ?? []).map((c) => ({
+                    code: c.code as string,
+                    note: `${c.athleteName} login${c.claimed ? " (claimed)" : ""}`,
+                  })),
+                ]}
+              />
             </section>
           )}
 
