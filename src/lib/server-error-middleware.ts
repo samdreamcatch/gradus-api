@@ -38,13 +38,18 @@ export const withServerErrorLogging = createMiddleware({ type: "function" }).ser
         } catch {
           // ignore
         }
+        const dbDetail = (e as Error & { dbDetail?: Record<string, unknown> })?.dbDetail;
+        const detailMessage =
+          dbDetail && typeof dbDetail.message === "string" && dbDetail.message
+            ? `${e?.message || "Server function error"} — db: ${dbDetail.message}`
+            : e?.message || "Server function error";
         await logError({
           source: "server",
-          message: e?.message || "Server function error",
+          message: detailMessage,
           stack: e?.stack ?? null,
           route,
           userId,
-          metadata: { name: e?.name },
+          metadata: { name: e?.name, ...(dbDetail ? { dbDetail } : {}) },
           environment,
         });
       } catch {
