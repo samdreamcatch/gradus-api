@@ -148,6 +148,14 @@ function UserDetail() {
                 />
                 <Field label="Sports" value={(data.coach.sports as string[]).join(", ") || "—"} />
               </dl>
+              <CodeList
+                label="Coach invite code"
+                codes={
+                  data.coach.inviteCode
+                    ? [{ code: data.coach.inviteCode as string, note: "share with athletes/parents" }]
+                    : []
+                }
+              />
               <div>
                 <Eyebrow size="small" tone="tertiary" weight="normal" tracking="wide">
                   Athletes ({(data.coach.athletes as any[]).length})
