@@ -1061,7 +1061,9 @@ export const listAllUsers = createServerFn({ method: "POST" })
         .select("user_id, first_name, last_name, is_test, promo_code"),
       supabaseAdmin
         .from("athletes")
-        .select("user_id, first_name, last_name, is_test, self_managed, promo_code")
+        .select(
+          "user_id, first_name, last_name, is_test, self_managed, promo_code, birthdate, parent_id",
+        )
         .not("user_id", "is", null),
       supabaseAdmin.from("user_roles").select("user_id, role"),
       supabaseAdmin.from("organizations").select("id, name"),
