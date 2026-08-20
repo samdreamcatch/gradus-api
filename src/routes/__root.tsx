@@ -96,11 +96,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           "width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, interactive-widget=resizes-content",
       },
       { title: "Gradus" },
-      { name: "description", content: "The operating system for athletic mastery." },
+      { name: "description", content: "We make practice perfect." },
       { property: "og:title", content: "Gradus" },
       { name: "twitter:title", content: "Gradus" },
-      { property: "og:description", content: "The operating system for athletic mastery." },
-      { name: "twitter:description", content: "The operating system for athletic mastery." },
+      { property: "og:description", content: "We make practice perfect." },
+      { name: "twitter:description", content: "We make practice perfect." },
       {
         property: "og:image",
         content:
