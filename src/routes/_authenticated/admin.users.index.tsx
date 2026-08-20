@@ -313,6 +313,7 @@ function AdminUsersPage() {
                   onSort={(s) => setSearch({ sort: s })}
                 />
                 <TableHead>Type</TableHead>
+                <TableHead>Connected to</TableHead>
                 <TableHead>Plan</TableHead>
                 <TableHead>Organization</TableHead>
                 <TableHead>Flags</TableHead>
@@ -335,13 +336,13 @@ function AdminUsersPage() {
             <TableBody>
               {listQuery.isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={10} className="text-sm text-text-secondary py-8 text-center">
+                  <TableCell colSpan={11} className="text-sm text-text-secondary py-8 text-center">
                     Loading…
                   </TableCell>
                 </TableRow>
               ) : rows.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={10} className="text-sm text-text-secondary py-8 text-center">
+                  <TableCell colSpan={11} className="text-sm text-text-secondary py-8 text-center">
                     No users match these filters.
                   </TableCell>
                 </TableRow>
@@ -353,7 +354,13 @@ function AdminUsersPage() {
                     className="data-[deleted=true]:opacity-60"
                   >
                     <TableCell className="font-medium text-text-primary max-w-[220px]">
-                      <div className="truncate">{r.name}</div>
+                      <Link
+                        to="/admin/users/$userId"
+                        params={{ userId: r.userId }}
+                        className="block truncate text-accent-ink underline-offset-4 hover:underline"
+                      >
+                        {r.name}
+                      </Link>
                       {r.softDeletedAt && (
                         <Tag className="mt-1 bg-destructive/10 text-destructive">deleted</Tag>
                       )}
@@ -363,6 +370,21 @@ function AdminUsersPage() {
                     </TableCell>
                     <TableCell className="font-mono text-xs uppercase text-accent-ink whitespace-nowrap">
                       {USER_TYPE_LABEL[r.userType as UserType] ?? r.userType}
+                    </TableCell>
+                    <TableCell className="max-w-[220px] text-text-secondary">
+                      {r.connections.total === 0 ? (
+                        <span className="text-text-tertiary">—</span>
+                      ) : (
+                        <div className="truncate">
+                          {r.connections.names.join(", ")}
+                          {r.connections.total > r.connections.names.length && (
+                            <span className="text-text-tertiary">
+                              {" "}
+                              +{r.connections.total - r.connections.names.length} more
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </TableCell>
                     <TableCell className="whitespace-nowrap">
                       {r.planTier ? (PLAN_LABEL[r.planTier] ?? r.planTier) : "—"}
