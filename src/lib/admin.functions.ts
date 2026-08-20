@@ -430,13 +430,33 @@ export const getUserDetail = createServerFn({ method: "POST" })
 
     let parentDetail: any = null;
     if (parent.data) {
-      const athletes = await supabaseAdmin
-        .from("athletes")
-        .select("id, first_name, last_name, birthdate, created_at")
-        .eq("parent_id", parent.data.id);
+      const [athletes, parentCode, athleteCodes] = await Promise.all([
+        supabaseAdmin
+          .from("athletes")
+          .select("id, first_name, last_name, birthdate, created_at")
+          .eq("parent_id", parent.data.id),
+        supabaseAdmin
+          .from("parent_invite_codes")
+          .select("code")
+          .eq("parent_id", parent.data.id)
+          .maybeSingle(),
+        supabaseAdmin
+          .from("athlete_invite_codes")
+          .select("code, athlete_id, claimed_at")
+          .eq("parent_id", parent.data.id),
+      ]);
+      const nameById = new Map(
+        (athletes.data ?? []).map((a: any) => [a.id, `${a.first_name} ${a.last_name}`.trim()]),
+      );
       parentDetail = {
         ...parent.data,
         athletes: athletes.data ?? [],
+        inviteCode: parentCode.data?.code ?? null,
+        athleteCodes: (athleteCodes.data ?? []).map((c: any) => ({
+          code: c.code,
+          athleteName: nameById.get(c.athlete_id) ?? "—",
+          claimed: !!c.claimed_at,
+        })),
       };
     }
 
