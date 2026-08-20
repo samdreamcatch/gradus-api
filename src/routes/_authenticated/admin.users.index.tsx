@@ -90,6 +90,8 @@ type UserType =
   | "parent"
   | "youth_athlete"
   | "adult_athlete"
+  | "minor_athlete"
+  | "awaiting_parent"
   | "internal_admin"
   | "unknown";
 
@@ -97,7 +99,9 @@ const USER_TYPE_LABEL: Record<UserType, string> = {
   coach: "Coach",
   parent: "Parent",
   youth_athlete: "Youth athlete",
-  adult_athlete: "Adult athlete",
+  adult_athlete: "Adult athlete (18+)",
+  minor_athlete: "Self-managed athlete (minor)",
+  awaiting_parent: "Awaiting parent connection",
   internal_admin: "Internal admin",
   unknown: "Unknown",
 };
@@ -168,6 +172,8 @@ function AdminUsersPage() {
     "parent",
     "youth_athlete",
     "adult_athlete",
+    "minor_athlete",
+    "awaiting_parent",
     "internal_admin",
   ];
 
