@@ -67,7 +67,19 @@ import { NameConflictDialog } from "@/components/coach/name-conflict-dialog";
 import { VoiceFab } from "@/components/coach/voice-fab";
 import { consumeVoiceTouched, type VoiceTouchedSnapshot } from "@/lib/voice-touched-store";
 import { FlowStateBars } from "@/components/plans/flow-state-bars";
-import { getPlanSessions, getPlanSessionsSummary } from "@/lib/plan-sessions.functions";
+import {
+  getPlanSessions,
+  getPlanSessionsSummary,
+  listPlanSessions,
+} from "@/lib/plan-sessions.functions";
+import { SettingsList, SettingsRow, SettingsButtonRow } from "@/components/settings/primitives";
+import {
+  sessionAttributionLine,
+  sessionLoggerLabel,
+  sessionMetaLabel,
+  stateLabel,
+} from "@/lib/session-states";
+
 
 const PUBLIC_OPTION = "Public / Shareable Link";
 const TEMPLATE_OPTION = "Save as Template";
