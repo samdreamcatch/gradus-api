@@ -1207,6 +1207,7 @@ export const listAllUsers = createServerFn({ method: "POST" })
       let isTest = false;
       let isOrgAdmin = false;
       let stashedPromoCode: string | null = null;
+      let connections: { names: string[]; total: number } = { names: [], total: 0 };
 
       if (adminRoles.has(u.id) && !coach && !parent && !athlete) {
         userType = "internal_admin";
