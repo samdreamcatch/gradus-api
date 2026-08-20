@@ -382,7 +382,7 @@ export const getUserDetail = createServerFn({ method: "POST" })
       supabaseAdmin
         .from("athletes")
         .select(
-          "id, first_name, last_name, birthdate, created_at, self_managed, parent_id, motivation, is_test",
+          "id, first_name, last_name, birthdate, created_at, self_managed, parent_id, motivation, is_test, guardian_email, guardian_invited_at, guardian_claimed_at",
         )
         .eq("user_id", data.userId)
         .maybeSingle(),
