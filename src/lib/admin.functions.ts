@@ -1062,6 +1062,7 @@ type UserRow = {
   }>;
   stashedPromoCode: string | null;
   softDeletedAt: string | null;
+  connections: { names: string[]; total: number };
 };
 
 export const listAllUsers = createServerFn({ method: "POST" })
