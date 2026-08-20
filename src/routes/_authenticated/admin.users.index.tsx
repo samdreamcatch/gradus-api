@@ -342,7 +342,7 @@ function AdminUsersPage() {
                 </TableRow>
               ) : rows.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={10} className="text-sm text-text-secondary py-8 text-center">
+                  <TableCell colSpan={11} className="text-sm text-text-secondary py-8 text-center">
                     No users match these filters.
                   </TableCell>
                 </TableRow>
