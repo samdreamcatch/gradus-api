@@ -89,6 +89,10 @@ function UserDetail() {
               </div>
               <div className="shrink-0 flex flex-col items-end gap-2">
                 <ImpersonateButton userId={userId} email={data.auth?.email ?? ""} />
+                <Chip as="button" tone="muted" onClick={() => setEditOpen(true)}>
+                  Edit user
+                </Chip>
+
                 {(data.coach || data.parent || data.athlete) && (
                   <Chip
                     as="button"
