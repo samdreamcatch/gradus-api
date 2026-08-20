@@ -1,40 +1,39 @@
-# Clean up duplicate Addie records + admin field editing
+# Clean up duplicate DiMuro records + admin user editing
 
-## 1. Remove the two stray Addie accounts
+## 1. Remove the stray duplicate accounts
 
-Confirmed in the database:
+Two leftover records from the Addie DiMuro signup confusion get hard-deleted, along with their logins:
 
-- Keep: athlete `3e60f91b…` — username `addie`, birthdate 2007-10-08, linked to Christine, holds both plans.
-- Remove: athlete `066e1147…` — same name/birthdate, self-managed, no parent, no plans, own login (created Jul 20). It is linked to the same coach as the real Addie, which is how the wrong record became reachable.
-- Remove: coach profile `67d6a357…` "Addisyn DiMuro" — a coach account created by mistake under her name.
+- Self-managed athlete `066e1147…` — no parent, no plans, duplicate of the real Addie.
+- Coach "Addisyn DiMuro" `67d6a357…` — an accidental coach signup.
 
-For each: unlink from the coach roster, delete the profile/athlete row and any dependent rows, then delete the login so the email is freed. The real Addie's record, plans, coach link and parent link are untouched.
+The real athlete record (`3e60f91b…`, parent-managed by Christine, holds both plans) is untouched.
 
-## 2. Admin editing of user fields
+## 2. Admin can edit user fields
 
-On the admin user detail page, add an "Edit" affordance to the identity block so an admin can correct data in place:
+On the admin user detail page, an "Edit" control opens a sheet where an admin can correct:
 
-- First name, last name
-- Birthdate (athletes) — set or clear
-- Email (the login email) — changing it updates the account's sign-in email
-- Guardian email (athletes) — set or clear
-- Username (athletes) — set or clear
+- First and last name
+- Birthdate (athletes)
+- Login email
+- Parent / guardian email (athletes)
+- Username (athletes)
 
-Clearing is allowed for the optional fields (birthdate, guardian email, username). Name and email are required and cannot be blanked.
+Each field validates before saving, and the page refreshes with the new values.
 
-### User type
+## 3. Admin can move an athlete between self-managed and parent-managed
 
-Changing a user's type is not a simple field edit — a coach, parent and athlete each have different records and connections behind them, so converting one into another would strand plans, rosters and invites. Instead the admin gets the changes that are actually safe:
+For athletes only: an admin can attach the athlete to an existing parent, or detach them back to self-managed. This is the fix for a duplicate/mis-linked athlete without touching the database directly.
 
-- Athlete: toggle between self-managed and parent-managed (detach from parent / attach to a parent by email).
-- Mark/unmark as a test user (already exists) and soft-delete/restore (already exists).
+**No role conversion.** Admins cannot change a user's type (athlete ↔ coach ↔ parent) from the panel — that stays out of the product.
 
-If you want true role conversion (e.g. this athlete account should become a coach), say so and I'll scope it separately — it needs a migration-of-data step, not a dropdown.
+## 4. Admin can delete a user
+
+A guarded delete on the user detail page removes the profile rows and the login, with a typed confirmation naming the user. Audited like the existing admin actions.
 
 ## Technical notes
 
-- Data cleanup runs as a one-off data operation, not a migration: delete `coach_athletes` rows, then `athletes`/`coach_profiles` rows, then `auth.admin.deleteUser` for each stray login — the same sequence `deleteTestUser` already uses, without the test-user guard (these are real but erroneous records).
-- New server fn `adminUpdateUserFields` in `src/lib/admin.functions.ts`: admin-gated, zod-validated (name lengths, ISO date, email format), writes to `coach_profiles`/`parent_profiles`/`athletes` depending on the user's kind, and calls `supabaseAdmin.auth.admin.updateUserById` for email changes. Plus `adminSetAthleteParent` for the parent attach/detach.
-- New server fn `adminDeleteUserHard` (admin-gated, requires typing the account email to confirm) so future stray accounts can be removed from the panel instead of by hand.
-- UI in `src/routes/_authenticated/admin.users.$userId.tsx` only: existing Sheet + Input + Button primitives, no new components.
-- No schema, RLS or grant changes.
+- `src/lib/admin.functions.ts`: add `adminUpdateUserFields` (zod-validated per-role field set), `adminSetAthleteParent`, and `adminDeleteUserHard`. All admin-gated via the existing `has_role` check; deletion follows the `deleteTestUser` blueprint (lines 61–127) but without the test-flag restriction.
+- `src/routes/_authenticated/admin.users.$userId.tsx`: edit Sheet with existing form primitives, a parent-link picker for athletes, and an AlertDialog for delete (destructive confirms only).
+- The two stray records are removed with a one-off data operation, not a schema migration.
+- No RLS/grant changes; all writes go through admin-verified server functions using the service-role client.
