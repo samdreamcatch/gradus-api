@@ -520,8 +520,21 @@ export const getUserDetail = createServerFn({ method: "POST" })
         if (l.sport) entry.sports.add(l.sport);
       }
 
+      let guardianParentName: string | null = null;
+      if (athlete.data.parent_id) {
+        const p = await supabaseAdmin
+          .from("parent_profiles")
+          .select("first_name, last_name")
+          .eq("id", athlete.data.parent_id)
+          .maybeSingle();
+        guardianParentName = p.data
+          ? `${p.data.first_name ?? ""} ${p.data.last_name ?? ""}`.trim() || null
+          : null;
+      }
+
       athleteDetail = {
         ...athlete.data,
+        guardianParentName,
         inviteCode: selfCode.data?.code ?? null,
         claimCode: claimCode.data ? { code: claimCode.data.code, claimed: !!claimCode.data.claimed_at } : null,
         coaches: Array.from(merged.values()).map((c) => ({
