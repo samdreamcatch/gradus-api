@@ -371,6 +371,21 @@ function AdminUsersPage() {
                     <TableCell className="font-mono text-xs uppercase text-accent-ink whitespace-nowrap">
                       {USER_TYPE_LABEL[r.userType as UserType] ?? r.userType}
                     </TableCell>
+                    <TableCell className="max-w-[220px] text-text-secondary">
+                      {r.connections.total === 0 ? (
+                        <span className="text-text-tertiary">—</span>
+                      ) : (
+                        <div className="truncate">
+                          {r.connections.names.join(", ")}
+                          {r.connections.total > r.connections.names.length && (
+                            <span className="text-text-tertiary">
+                              {" "}
+                              +{r.connections.total - r.connections.names.length} more
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </TableCell>
                     <TableCell className="whitespace-nowrap">
                       {r.planTier ? (PLAN_LABEL[r.planTier] ?? r.planTier) : "—"}
                     </TableCell>
