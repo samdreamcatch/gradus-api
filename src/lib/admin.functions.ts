@@ -1922,9 +1922,9 @@ export const adminUpdateUserFields = createServerFn({ method: "POST" })
       supabaseAdmin.from("athletes").select("id").eq("user_id", data.userId).maybeSingle(),
     ]);
 
-    const namePatch: Record<string, string> = {};
-    if (data.firstName !== undefined) namePatch["first_name"] = data.firstName;
-    if (data.lastName !== undefined) namePatch["last_name"] = data.lastName;
+    const namePatch: { first_name?: string; last_name?: string } = {};
+    if (data.firstName !== undefined) namePatch.first_name = data.firstName;
+    if (data.lastName !== undefined) namePatch.last_name = data.lastName;
 
     if (coach.data && Object.keys(namePatch).length > 0) {
       const upd = await supabaseAdmin.from("coach_profiles").update(namePatch).eq("id", coach.data.id);
@@ -1938,10 +1938,16 @@ export const adminUpdateUserFields = createServerFn({ method: "POST" })
       if (upd.error) dbError(upd.error);
     }
     if (athlete.data) {
-      const patch: Record<string, unknown> = { ...namePatch };
-      if (data.birthdate !== undefined) patch["birthdate"] = data.birthdate;
-      if (data.guardianEmail !== undefined) patch["guardian_email"] = data.guardianEmail;
-      if (data.username !== undefined) patch["username"] = data.username;
+      const patch: {
+        first_name?: string;
+        last_name?: string;
+        birthdate?: string | null;
+        guardian_email?: string | null;
+        username?: string | null;
+      } = { ...namePatch };
+      if (data.birthdate !== undefined) patch.birthdate = data.birthdate;
+      if (data.guardianEmail !== undefined) patch.guardian_email = data.guardianEmail;
+      if (data.username !== undefined) patch.username = data.username;
       if (Object.keys(patch).length > 0) {
         const upd = await supabaseAdmin.from("athletes").update(patch).eq("id", athlete.data.id);
         if (upd.error) dbError(upd.error);
