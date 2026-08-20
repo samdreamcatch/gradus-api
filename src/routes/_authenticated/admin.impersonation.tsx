@@ -65,11 +65,11 @@ function ImpersonationPage() {
         )}
         <ul className="divide-y divide-divider">
           {(users.data?.rows ?? []).slice(0, 25).map((r) => (
-            <li key={r.id} className="flex items-center justify-between gap-3 py-3">
+            <li key={r.userId} className="flex items-center justify-between gap-3 py-3">
               <div className="min-w-0">
                 <Link
                   to="/admin/users/$userId"
-                  params={{ userId: r.id }}
+                  params={{ userId: r.userId }}
                   className="block truncate text-sm font-semibold text-accent-ink underline-offset-4 hover:underline"
                 >
                   {r.name || "(no name)"}
@@ -82,7 +82,7 @@ function ImpersonationPage() {
                 <Chip tone="muted">admin</Chip>
               ) : (
                 <ImpersonateButton
-                  userId={r.id}
+                  userId={r.userId}
                   email={r.email ?? ""}
                   onStarted={() => toast.success("Starting session…")}
                 />
