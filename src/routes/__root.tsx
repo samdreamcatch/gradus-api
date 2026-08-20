@@ -170,6 +170,7 @@ function RootComponent() {
         >
           Skip to main content
         </a>
+        <ImpersonationBanner />
         <main id="main">
           <Outlet />
         </main>
