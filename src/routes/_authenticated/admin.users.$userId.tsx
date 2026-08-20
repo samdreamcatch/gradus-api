@@ -148,6 +148,14 @@ function UserDetail() {
                 />
                 <Field label="Sports" value={(data.coach.sports as string[]).join(", ") || "—"} />
               </dl>
+              <CodeList
+                label="Coach invite code"
+                codes={
+                  data.coach.inviteCode
+                    ? [{ code: data.coach.inviteCode as string, note: "share with athletes/parents" }]
+                    : []
+                }
+              />
               <div>
                 <Eyebrow size="small" tone="tertiary" weight="normal" tracking="wide">
                   Athletes ({(data.coach.athletes as any[]).length})
@@ -191,6 +199,18 @@ function UserDetail() {
                   ))}
                 </ul>
               </div>
+              <CodeList
+                label="Invite codes"
+                codes={[
+                  ...(data.parent.inviteCode
+                    ? [{ code: data.parent.inviteCode as string, note: "give to a coach" }]
+                    : []),
+                  ...((data.parent.athleteCodes as any[]) ?? []).map((c) => ({
+                    code: c.code as string,
+                    note: `${c.athleteName} login${c.claimed ? " (claimed)" : ""}`,
+                  })),
+                ]}
+              />
             </section>
           )}
 
@@ -240,6 +260,22 @@ function UserDetail() {
                   ))}
                 </ul>
               </div>
+              <CodeList
+                label="Invite codes"
+                codes={[
+                  ...(data.athlete.inviteCode
+                    ? [{ code: data.athlete.inviteCode as string, note: "give to a coach" }]
+                    : []),
+                  ...(data.athlete.claimCode
+                    ? [
+                        {
+                          code: (data.athlete.claimCode as any).code as string,
+                          note: `athlete login${(data.athlete.claimCode as any).claimed ? " (claimed)" : ""}`,
+                        },
+                      ]
+                    : []),
+                ]}
+              />
             </section>
           )}
 
@@ -249,6 +285,43 @@ function UserDetail() {
             </p>
           )}
         </>
+      )}
+    </div>
+  );
+}
+
+function CodeList({
+  label,
+  codes,
+}: {
+  label: string;
+  codes: { code: string; note?: string }[];
+}) {
+  return (
+    <div>
+      <Eyebrow size="small" tone="tertiary" weight="normal" tracking="wide">
+        {label}
+      </Eyebrow>
+      {codes.length === 0 ? (
+        <p className="mt-1 text-sm text-text-secondary">None yet</p>
+      ) : (
+        <ul className="mt-1 flex flex-wrap gap-2">
+          {codes.map((c) => (
+            <li key={`${c.code}-${c.note ?? ""}`}>
+              <Chip
+                as="button"
+                tone="muted"
+                onClick={() => {
+                  navigator.clipboard?.writeText(c.code);
+                  toast.success(`Copied ${c.code}`);
+                }}
+              >
+                <span className="font-mono">{c.code}</span>
+                {c.note ? <span className="ml-2 text-text-secondary">{c.note}</span> : null}
+              </Chip>
+            </li>
+          ))}
+        </ul>
       )}
     </div>
   );

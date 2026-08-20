@@ -400,7 +400,7 @@ export const getUserDetail = createServerFn({ method: "POST" })
 
     let coachDetail: any = null;
     if (coach.data) {
-      const [athleteLinks, plans, levels] = await Promise.all([
+      const [athleteLinks, plans, levels, coachCode] = await Promise.all([
         supabaseAdmin
           .from("coach_athletes")
           .select("athlete_id, athletes(id, first_name, last_name)")
@@ -410,9 +410,15 @@ export const getUserDetail = createServerFn({ method: "POST" })
           .select("id, kind, status, created_at")
           .eq("coach_id", coach.data.id),
         supabaseAdmin.from("coach_levels").select("sport").eq("coach_id", coach.data.id),
+        supabaseAdmin
+          .from("coach_invite_codes")
+          .select("code")
+          .eq("coach_id", coach.data.id)
+          .maybeSingle(),
       ]);
       coachDetail = {
         ...coach.data,
+        inviteCode: coachCode.data?.code ?? null,
         athletes: (athleteLinks.data ?? []).map((l: any) => l.athletes).filter(Boolean),
         plansCount: (plans.data ?? []).filter((p) => p.kind === "plan").length,
         activePlansCount: (plans.data ?? []).filter(
@@ -424,19 +430,39 @@ export const getUserDetail = createServerFn({ method: "POST" })
 
     let parentDetail: any = null;
     if (parent.data) {
-      const athletes = await supabaseAdmin
-        .from("athletes")
-        .select("id, first_name, last_name, birthdate, created_at")
-        .eq("parent_id", parent.data.id);
+      const [athletes, parentCode, athleteCodes] = await Promise.all([
+        supabaseAdmin
+          .from("athletes")
+          .select("id, first_name, last_name, birthdate, created_at")
+          .eq("parent_id", parent.data.id),
+        supabaseAdmin
+          .from("parent_invite_codes")
+          .select("code")
+          .eq("parent_id", parent.data.id)
+          .maybeSingle(),
+        supabaseAdmin
+          .from("athlete_invite_codes")
+          .select("code, athlete_id, claimed_at")
+          .eq("parent_id", parent.data.id),
+      ]);
+      const nameById = new Map(
+        (athletes.data ?? []).map((a: any) => [a.id, `${a.first_name} ${a.last_name}`.trim()]),
+      );
       parentDetail = {
         ...parent.data,
         athletes: athletes.data ?? [],
+        inviteCode: parentCode.data?.code ?? null,
+        athleteCodes: (athleteCodes.data ?? []).map((c: any) => ({
+          code: c.code,
+          athleteName: nameById.get(c.athlete_id) ?? "—",
+          claimed: !!c.claimed_at,
+        })),
       };
     }
 
     let athleteDetail: any = null;
     if (athlete.data) {
-      const [primaryLinks, roster, sports, plans] = await Promise.all([
+      const [primaryLinks, roster, sports, plans, selfCode, claimCode] = await Promise.all([
         supabaseAdmin
           .from("athlete_primary_coaches")
           .select("sport, coach_id, coach_profiles(first_name, last_name, user_id)")
@@ -450,6 +476,16 @@ export const getUserDetail = createServerFn({ method: "POST" })
           .select("coach_id, sport")
           .eq("athlete_id", athlete.data.id),
         supabaseAdmin.from("plans").select("id, kind, status").eq("athlete_id", athlete.data.id),
+        supabaseAdmin
+          .from("adult_athlete_invite_codes")
+          .select("code")
+          .eq("athlete_id", athlete.data.id)
+          .maybeSingle(),
+        supabaseAdmin
+          .from("athlete_invite_codes")
+          .select("code, claimed_at")
+          .eq("athlete_id", athlete.data.id)
+          .maybeSingle(),
       ]);
 
       const sportsByCoach = new Map<string, string[]>();
@@ -486,6 +522,8 @@ export const getUserDetail = createServerFn({ method: "POST" })
 
       athleteDetail = {
         ...athlete.data,
+        inviteCode: selfCode.data?.code ?? null,
+        claimCode: claimCode.data ? { code: claimCode.data.code, claimed: !!claimCode.data.claimed_at } : null,
         coaches: Array.from(merged.values()).map((c) => ({
           coachUserId: c.coachUserId,
           coachName: c.coachName,
