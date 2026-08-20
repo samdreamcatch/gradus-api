@@ -58,7 +58,10 @@ function ParentPlansPage() {
   const coaches = useMemo(() => {
     const map = new Map<string, string>();
     for (const p of plans) {
-      if (!map.has(p.coachId)) map.set(p.coachId, p.coachName);
+      // Gradus plans have no coach; a Select item can never carry an empty
+      // string value, so they get a sentinel id.
+      const id = p.coachId || "__gradus";
+      if (!map.has(id)) map.set(id, p.isGradus ? "Gradus" : p.coachName);
     }
     return Array.from(map, ([id, name]) => ({ id, name })).sort((a, b) =>
       a.name.localeCompare(b.name),
@@ -71,10 +74,11 @@ function ParentPlansPage() {
         (p) =>
           p.status === statusFilter &&
           (athleteId === "" || p.athleteId === athleteId) &&
-          (coachId === "" || p.coachId === coachId),
+          (coachId === "" || (p.coachId || "__gradus") === coachId),
       ),
     [plans, statusFilter, athleteId, coachId],
   );
+
 
   const triggerClass =
     "h-8 w-full rounded-full border-divider bg-card px-3 text-xs font-bold text-text-primary shadow-none";
