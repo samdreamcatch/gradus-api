@@ -298,6 +298,14 @@ function PlanEditorBody({
   };
   const loggedSessionsTotal = sessionsQuery.data?.sessionsTotal ?? 0;
 
+  const fetchPlanSessionLog = useServerFn(listPlanSessions);
+  const sessionLogQuery = useQuery({
+    queryKey: ["plan-session-log", plan?.id],
+    queryFn: () => fetchPlanSessionLog({ data: { planId: plan!.id } }),
+    enabled: !!plan?.id && plan?.status === "active",
+  });
+
+
   const fetchPlanSessionsSummary = useServerFn(getPlanSessionsSummary);
   const summaryQuery = useQuery({
     queryKey: ["plan-sessions-summary", plan?.id, loggedSessionsTotal],
