@@ -1245,6 +1245,10 @@ export const listAllUsers = createServerFn({ method: "POST" })
         name = `${athlete.first_name ?? ""} ${athlete.last_name ?? ""}`.trim() || name;
         isTest = isTest || !!athlete.is_test;
         stashedPromoCode = athlete.promo_code ?? null;
+        connections = connectionsOf([
+          ...(coachesByAthleteId.get(athlete.id) ?? []),
+          ...(athlete.parent_id ? [parentNameById.get(athlete.parent_id) ?? ""] : []),
+        ]);
       }
 
       return {
