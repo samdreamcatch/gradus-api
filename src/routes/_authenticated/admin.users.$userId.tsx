@@ -107,34 +107,19 @@ function UserDetail() {
                   </Chip>
                 )}
 
-                {data.isTest && (
-                  <Chip
-                    as="button"
-                    tone="destructive"
-                    disabled={deleting}
-                    className="disabled:opacity-50"
-                    onClick={async () => {
-                      const email = data.auth?.email ?? "this user";
-                      if (
-                        !confirm(
-                          `Permanently delete ${email}? This removes their account and profiles so the email can be reused. This cannot be undone.`,
-                        )
-                      )
-                        return;
-                      setDeleting(true);
-                      try {
-                        await deleteFn({ data: { userId } });
-                        toast.success("Test user deleted");
-                        navigate({ to: "/admin" });
-                      } catch (e: any) {
-                        toast.error(e?.message ?? "Failed to delete user");
-                        setDeleting(false);
-                      }
-                    }}
-                  >
-                    {deleting ? "Deleting…" : "Delete user"}
-                  </Chip>
-                )}
+                <Chip
+                  as="button"
+                  tone="destructive"
+                  disabled={deleting}
+                  className="disabled:opacity-50"
+                  onClick={() => {
+                    setConfirmText("");
+                    setDangerOpen(true);
+                  }}
+                >
+                  {deleting ? "Deleting…" : "Delete user"}
+                </Chip>
+
               </div>
             </div>
             <dl className="mt-3 grid grid-cols-2 gap-3 text-sm">
