@@ -681,42 +681,6 @@ function PlanEditorBody({
                 </p>
               ) : null}
 
-              {sessionLogQuery.data && sessionLogQuery.data.sessions.length > 0 ? (
-                <div className="mt-4 border-t border-dashed border-divider pt-3">
-                  <Eyebrow as="p" size="micro" tone="tertiary" weight="black" className="mb-2">
-                    Practice log
-                  </Eyebrow>
-                  <SettingsList>
-                    {(showAllSessions
-                      ? sessionLogQuery.data.sessions
-                      : sessionLogQuery.data.sessions.slice(0, 5)
-                    ).map((s) => (
-                      <SettingsRow
-                        key={s.id}
-                        label={sessionLoggerLabel(
-                          s.loggedByKind,
-                          s.loggedByFirstName,
-                          sessionLogQuery.data!.athleteFirstName,
-                        )}
-                        description={
-                          s.note ? `${stateLabel(s.stateIndex)} · ${s.note}` : stateLabel(s.stateIndex)
-                        }
-                        value={sessionMetaLabel(s.loggedAt, s.durationSeconds)}
-                      />
-                    ))}
-                    {!showAllSessions && sessionLogQuery.data.sessions.length > 5 ? (
-                      <SettingsButtonRow
-                        label={`Show all ${sessionLogQuery.data.sessions.length}`}
-                        tone="accent"
-                        onClick={() => setShowAllSessions(true)}
-                      />
-                    ) : null}
-                  </SettingsList>
-                </div>
-              ) : null}
-
-
-
               {/* AI summary of logged sessions */}
               <div className="mt-4 border-t border-dashed border-divider pt-3">
                 <div className="mb-2 flex items-center gap-2">
@@ -746,6 +710,64 @@ function PlanEditorBody({
                   </p>
                 )}
               </div>
+
+              {sessionLogQuery.data && sessionLogQuery.data.sessions.length > 0 ? (
+                <div className="mt-4 border-t border-dashed border-divider pt-3">
+                  <button
+                    type="button"
+                    onClick={() => setLogOpen((v) => !v)}
+                    aria-expanded={logOpen}
+                    className="press-soft flex w-full items-center justify-between gap-2 text-left"
+                  >
+                    <Eyebrow as="span" size="micro" tone="tertiary" weight="black">
+                      Practice log
+                    </Eyebrow>
+                    <span className="flex items-center gap-1.5">
+                      <span className="text-xs text-text-tertiary tabular-nums">
+                        {sessionLogQuery.data.sessions.length}
+                      </span>
+                      <ChevronDown
+                        className={cn(
+                          "size-4 text-text-tertiary transition-transform",
+                          logOpen && "rotate-180",
+                        )}
+                      />
+                    </span>
+                  </button>
+
+                  {logOpen ? (
+                    <SettingsList className="mt-2">
+                      {(showAllSessions
+                        ? sessionLogQuery.data.sessions
+                        : sessionLogQuery.data.sessions.slice(0, 5)
+                      ).map((s) => (
+                        <SettingsRow
+                          key={s.id}
+                          label={sessionLoggerLabel(
+                            s.loggedByKind,
+                            s.loggedByFirstName,
+                            sessionLogQuery.data!.athleteFirstName,
+                          )}
+                          description={
+                            s.note
+                              ? `${stateLabel(s.stateIndex)} · ${s.note}`
+                              : stateLabel(s.stateIndex)
+                          }
+                          value={sessionMetaLabel(s.loggedAt, s.durationSeconds)}
+                        />
+                      ))}
+                      {!showAllSessions && sessionLogQuery.data.sessions.length > 5 ? (
+                        <SettingsButtonRow
+                          label={`Show all ${sessionLogQuery.data.sessions.length}`}
+                          tone="accent"
+                          onClick={() => setShowAllSessions(true)}
+                        />
+                      ) : null}
+                    </SettingsList>
+                  ) : null}
+                </div>
+              ) : null}
+
             </div>
           </div>
         ) : null}
