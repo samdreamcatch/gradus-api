@@ -250,9 +250,10 @@ function AthleteDetailBody({ athleteId }: { athleteId: string }) {
         coaches={d.otherCoaches}
         onOpenCoach={setOpenOtherCoachId}
         locked={!canViewOtherCoachPlans}
+        unlockedCoachIds={d.sharedCoachIds}
       />
 
-      {canViewOtherCoachPlans ? (
+      {canViewOtherCoachPlans || d.sharedCoachIds.length > 0 ? (
         <OtherCoachPlansSheet
           coach={d.otherCoaches.find((c) => c.coachId === openOtherCoachId) ?? null}
           athleteFirstName={d.firstName}

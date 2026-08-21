@@ -87,6 +87,8 @@ export interface CoachAthleteDetailDTO {
   hasAnySignal: boolean;
   windowDays: number;
   otherCoaches: OtherCoachDTO[];
+  /** Other coaches unlocked for this athlete via a Team-plan visibility link. */
+  sharedCoachIds: string[];
 }
 
 type SlotRow = {
@@ -523,6 +525,25 @@ export const getCoachAthleteDetail = createServerFn({ method: "GET" })
       });
     }
 
+    // ---- Team-plan coach visibility ----
+    // Accepted, still parent-enabled links unlock this athlete's other coaches
+    // for read-only viewing, even outside a club.
+    const sharedCoachIds: string[] = [];
+    if (otherCoachIds.length > 0) {
+      const linksRes = await supabaseAdmin
+        .from("coach_visibility_links")
+        .select("coach_a_id, coach_b_id")
+        .eq("athlete_id", data.athleteId)
+        .eq("a_status", "accepted")
+        .eq("b_status", "accepted")
+        .or(`coach_a_id.eq.${coachId},coach_b_id.eq.${coachId}`);
+      if (linksRes.error) dbError(linksRes.error);
+      for (const l of (linksRes.data ?? []) as { coach_a_id: string; coach_b_id: string }[]) {
+        const other = l.coach_a_id === coachId ? l.coach_b_id : l.coach_a_id;
+        if (otherCoachIds.includes(other)) sharedCoachIds.push(other);
+      }
+    }
+
     return {
       athleteId: data.athleteId,
       firstName: athlete.first_name,
@@ -545,6 +566,7 @@ export const getCoachAthleteDetail = createServerFn({ method: "GET" })
       hasAnySignal,
       windowDays: WINDOW_DAYS,
       otherCoaches,
+      sharedCoachIds,
     };
   });
 
