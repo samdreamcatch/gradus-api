@@ -260,9 +260,11 @@ function AdminEmailTemplate() {
                 </div>
                 <iframe
                   title="Email preview"
+                  sandbox=""
                   srcDoc={personal?.html ?? html}
                   className="h-[620px] w-full rounded-md border border-divider bg-white"
                 />
+
               </div>
             )}
 
