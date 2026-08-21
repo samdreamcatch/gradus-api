@@ -76,6 +76,8 @@ function TrialCardBanner() {
 
   if (isLoading || error || !data) return null;
   if (!data.profile.trialNeedsCard) return null;
+  // A sandbox subscription must never nag on the live app (and vice versa).
+  if (data.profile.subscriptionEnvironment !== getStripeEnvironment()) return null;
 
   const openPortal = async () => {
     setBusy(true);
@@ -125,8 +127,10 @@ function PaymentIssueBanner() {
   const [busy, setBusy] = useState(false);
 
   if (isLoading || error || !data) return null;
-  const status = data.profile.subscriptionStatus;
-  if (status !== "past_due" && status !== "unpaid") return null;
+  // Server-verified against Stripe; additionally scoped to this build's
+  // Stripe environment so test-mode data can't warn on the live app.
+  if (!data.profile.billingPastDue) return null;
+  if (data.profile.subscriptionEnvironment !== getStripeEnvironment()) return null;
 
   const openPortal = async () => {
     setBusy(true);
