@@ -357,31 +357,8 @@ function ParentFamilyPage() {
           </div>
         </div>
 
-        {/* Guardians */}
-        <div className="mt-7 flex w-full items-center gap-3">
-          <div className="h-px flex-1 bg-divider" />
-          <span className="text-[10px] font-semibold uppercase tracking-widest text-text-tertiary">
-            Guardians
-          </span>
-          <div className="h-px flex-1 bg-divider" />
-        </div>
 
-        <div className="mt-5 w-full space-y-3">
-          {guardians.isLoading ? (
-            <p className="text-center text-sm text-text-tertiary">Loading…</p>
-          ) : !guardians.data?.athletes.length ? (
-            <p className="text-center text-sm text-text-tertiary">Add an athlete first.</p>
-          ) : (
-            guardians.data.athletes.map((a) => (
-              <AthleteGuardians
-                key={a.id}
-                athlete={a}
-                planActive={planActive}
-                onUpgrade={() => void handleUpgrade(price.priceId)}
-              />
-            ))
-          )}
-        </div>
+
 
         {/* Join by code */}
         <div className="mt-7 flex w-full items-center gap-3">
