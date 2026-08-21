@@ -252,7 +252,7 @@ export const claimOrganizationInviteCode = createServerFn({ method: "POST" })
     if (versionRow.error) dbError(versionRow.error);
     const version = (versionRow.data?.content_version as number | null | undefined) ?? 0;
 
-    const update = await supabase
+    const update = await supabaseAdmin
       .from("coach_profiles")
       .update({
         organization_id: org.id,
@@ -465,7 +465,7 @@ export const joinOrganization = createServerFn({ method: "POST" })
     if (versionRow.error) dbError(versionRow.error);
     const version = (versionRow.data?.content_version as number | null | undefined) ?? 0;
 
-    const update = await supabase
+    const update = await supabaseAdmin
       .from("coach_profiles")
       .update({
         organization_id: org.id,
@@ -511,7 +511,8 @@ export const clearOrganizationLink = createServerFn({ method: "POST" })
       if (promo.data?.active) stashPromo = "WELCOME_BACK";
     }
 
-    const upd = await supabase
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const upd = await supabaseAdmin
       .from("coach_profiles")
       .update({
         organization_id: null,

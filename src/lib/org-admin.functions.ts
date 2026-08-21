@@ -356,7 +356,7 @@ export const acceptOrgCoachInvite = createServerFn({ method: "POST" })
     if (coach.error) dbError(coach.error);
     if (!coach.data) throw new Error("Coach profile missing — finish coach signup first");
 
-    const upd = await supabase
+    const upd = await supabaseAdmin
       .from("coach_profiles")
       .update({
         organization_id: invite.data.organization_id,

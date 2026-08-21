@@ -98,7 +98,9 @@ async function ensureProfile(
       !hasStripeSub &&
       (!existing.data.founding_coach || existing.data.entitlement === "pending");
     if (needsFoundingStamp) {
-      const upd = await supabase
+      // Billing columns are DB-locked to trusted writers; use the admin client.
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const upd = await supabaseAdmin
         .from("coach_profiles")
         .update({
           entitlement: "promo_free",
@@ -112,6 +114,7 @@ async function ensureProfile(
       if (upd.error) dbError(upd.error);
       return upd.data;
     }
+
     return existing.data;
   }
 
@@ -357,7 +360,12 @@ export const completeOnboarding = createServerFn({ method: "POST" })
       onboarded_at: new Date().toISOString(),
       ...(founding ? { entitlement: "promo_free" as const, founding_coach: true } : {}),
     };
-    const { error } = await supabase.from("coach_profiles").update(patch).eq("id", profile.id);
+    // entitlement/founding_coach are DB-locked to trusted writers.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("coach_profiles")
+      .update(patch)
+      .eq("id", profile.id);
     if (error) dbError(error);
     return { ok: true };
   });

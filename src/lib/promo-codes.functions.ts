@@ -67,13 +67,15 @@ export const applyPromoCodeToMyProfile = createServerFn({ method: "POST" })
     if (!row || !row.active) return { applied: false as const };
 
     const userId = context.userId;
+    // promo_code is DB-locked to trusted writers on profile tables.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const [p, c, a] = await Promise.all([
-      context.supabase
+      supabaseAdmin
         .from("parent_profiles")
         .update({ promo_code: row.code })
         .eq("user_id", userId)
         .is("promo_code", null),
-      context.supabase
+      supabaseAdmin
         .from("coach_profiles")
         .update({ promo_code: row.code })
         .eq("user_id", userId)
