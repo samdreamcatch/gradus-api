@@ -243,7 +243,7 @@ function ParentFamilyPage() {
             )}
           >
             <div className="flex items-baseline justify-between gap-1">
-              <h2 className="font-display text-lg text-text-primary sm:text-h3">Single parent</h2>
+              <h2 className="font-display text-lg text-text-primary sm:text-h3">One parent or guardian</h2>
               {!planActive && (
                 <span className="rounded-full bg-accent/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-accent-ink sm:text-[10px] sm:tracking-widest">
                   CURRENT
