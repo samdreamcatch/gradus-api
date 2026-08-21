@@ -52,11 +52,10 @@ const FREE_FEATURES = [
 ];
 
 const FAMILY_FEATURES = [
-  "Everything in Single parent",
   "Full access for co-guardians",
   "Shared plans and goals",
   "Shared coach messaging",
-  "Unlimited guardians per athlete",
+  "Family-wide notifications",
 ];
 
 export const Route = createFileRoute("/_authenticated/parent/family")({
