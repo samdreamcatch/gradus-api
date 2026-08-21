@@ -68,6 +68,52 @@ export type Database = {
           },
         ]
       }
+      athlete_coach_visibility: {
+        Row: {
+          athlete_id: string
+          coach_id: string
+          created_at: string
+          enabled_by_parent_id: string | null
+          id: string
+        }
+        Insert: {
+          athlete_id: string
+          coach_id: string
+          created_at?: string
+          enabled_by_parent_id?: string | null
+          id?: string
+        }
+        Update: {
+          athlete_id?: string
+          coach_id?: string
+          created_at?: string
+          enabled_by_parent_id?: string | null
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "athlete_coach_visibility_athlete_id_fkey"
+            columns: ["athlete_id"]
+            isOneToOne: false
+            referencedRelation: "athletes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "athlete_coach_visibility_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "coach_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "athlete_coach_visibility_enabled_by_parent_id_fkey"
+            columns: ["enabled_by_parent_id"]
+            isOneToOne: false
+            referencedRelation: "parent_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       athlete_goals: {
         Row: {
           athlete_id: string
@@ -759,6 +805,61 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "promo_codes"
             referencedColumns: ["code"]
+          },
+        ]
+      }
+      coach_visibility_links: {
+        Row: {
+          a_status: string
+          athlete_id: string
+          b_status: string
+          coach_a_id: string
+          coach_b_id: string
+          created_at: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          a_status?: string
+          athlete_id: string
+          b_status?: string
+          coach_a_id: string
+          coach_b_id: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          a_status?: string
+          athlete_id?: string
+          b_status?: string
+          coach_a_id?: string
+          coach_b_id?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coach_visibility_links_athlete_id_fkey"
+            columns: ["athlete_id"]
+            isOneToOne: false
+            referencedRelation: "athletes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coach_visibility_links_coach_a_id_fkey"
+            columns: ["coach_a_id"]
+            isOneToOne: false
+            referencedRelation: "coach_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coach_visibility_links_coach_b_id_fkey"
+            columns: ["coach_b_id"]
+            isOneToOne: false
+            referencedRelation: "coach_profiles"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1853,7 +1954,6 @@ export type Database = {
           coach_id: string | null
           created_at: string
           current_period_end: string | null
-          family_plan_seats: number
           first_name: string
           id: string
           is_test: boolean
@@ -1864,6 +1964,7 @@ export type Database = {
           stripe_subscription_id: string | null
           subscription_environment: string | null
           subscription_status: string | null
+          team_plan_seats: number
           updated_at: string
           user_id: string
         }
@@ -1871,7 +1972,6 @@ export type Database = {
           coach_id?: string | null
           created_at?: string
           current_period_end?: string | null
-          family_plan_seats?: number
           first_name?: string
           id?: string
           is_test?: boolean
@@ -1882,6 +1982,7 @@ export type Database = {
           stripe_subscription_id?: string | null
           subscription_environment?: string | null
           subscription_status?: string | null
+          team_plan_seats?: number
           updated_at?: string
           user_id: string
         }
@@ -1889,7 +1990,6 @@ export type Database = {
           coach_id?: string | null
           created_at?: string
           current_period_end?: string | null
-          family_plan_seats?: number
           first_name?: string
           id?: string
           is_test?: boolean
@@ -1900,6 +2000,7 @@ export type Database = {
           stripe_subscription_id?: string | null
           subscription_environment?: string | null
           subscription_status?: string | null
+          team_plan_seats?: number
           updated_at?: string
           user_id?: string
         }
@@ -2509,9 +2610,21 @@ export type Database = {
         Returns: boolean
       }
       caller_owns_coach: { Args: { _coach_id: string }; Returns: boolean }
+      can_view_shared_coach_plan: {
+        Args: { _athlete_id: string; _owner_coach_id: string }
+        Returns: boolean
+      }
       coach_effective_tier: { Args: { _coach_id: string }; Returns: string }
       coach_has_rostered_athlete_of_parent: {
         Args: { _parent_id: string }
+        Returns: boolean
+      }
+      coaches_linked_for_athlete: {
+        Args: {
+          _athlete_id: string
+          _owner_coach_id: string
+          _viewer_coach_id: string
+        }
         Returns: boolean
       }
       delete_email: {
@@ -2583,6 +2696,7 @@ export type Database = {
         }
         Returns: number
       }
+      my_coach_id: { Args: never; Returns: string }
       parent_athlete_ids: { Args: never; Returns: string[] }
       parent_can_write: { Args: { _athlete_id: string }; Returns: boolean }
       parent_has_athlete_in_sport: {
@@ -2611,6 +2725,7 @@ export type Database = {
         Returns: number
       }
       seed_coach_library: { Args: { _coach_id: string }; Returns: number }
+      shares_athlete_window: { Args: { _athlete_id: string }; Returns: boolean }
       touch_last_seen: { Args: never; Returns: undefined }
     }
     Enums: {
