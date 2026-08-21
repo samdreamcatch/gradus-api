@@ -200,7 +200,7 @@ function ParentSettingsPage() {
                   icon={<Users className="size-4" />}
                   label="Parents & guardians"
                   description="Add another parent or guardian to your athlete"
-                  onClick={() => void navigate({ to: "/parent/family" })}
+                  onClick={() => void navigate({ to: "/parent/family", search: {} })}
                 />
               </SettingsList>
             </SettingsGroup>

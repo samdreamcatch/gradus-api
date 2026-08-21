@@ -49,7 +49,7 @@ export const Route = createFileRoute("/_authenticated/parent/family")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  validateSearch: (search: Record<string, unknown>) => ({
+  validateSearch: (search: Record<string, unknown>): { checkout?: string } => ({
     checkout: typeof search["checkout"] === "string" ? (search["checkout"] as string) : undefined,
   }),
   component: ParentFamilyPage,
@@ -87,7 +87,7 @@ function ParentFamilyPage() {
     void qc.invalidateQueries({ queryKey: ["family-plan-status"] });
     void qc.invalidateQueries({ queryKey: ["family-guardians"] });
     toast.success("Thanks! Your Family plan is being activated.");
-    void navigate({ to: "/parent/family", search: {}, replace: true });
+    void navigate({ to: "/parent/family", search: () => ({}), replace: true });
   }, [checkout, qc, navigate]);
 
   const options = useMemo(

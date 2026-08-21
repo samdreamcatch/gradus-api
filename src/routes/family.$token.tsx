@@ -90,7 +90,7 @@ function FamilyInvitePage() {
             <Button
               type="button"
               className="mt-6"
-              onClick={() => void navigate({ to: "/auth", search: { next: `/family/${token}` } })}
+              onClick={() => void navigate({ to: "/login", search: { redirect: `/family/${token}` } })}
             >
               Sign in to accept
             </Button>
