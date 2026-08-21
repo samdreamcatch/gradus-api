@@ -240,7 +240,7 @@ export const getCoachProfile = createServerFn({ method: "GET" })
         firstName: profile.first_name,
         lastName: profile.last_name,
         onboardedAt: profile.onboarded_at,
-        entitlement: (profile.entitlement ?? "pending") as CoachProfileDTO["entitlement"],
+        entitlement: effectiveEntitlement,
         organizationId,
         organizationName: org.data?.name ?? null,
         subscriptionTier,
