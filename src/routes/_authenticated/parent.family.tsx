@@ -52,7 +52,6 @@ const FREE_FEATURES = [
 ];
 
 const FAMILY_FEATURES = [
-  "Full access for co-guardians",
   "Shared plans and goals",
   "Shared coach messaging",
   "Family-wide notifications",
