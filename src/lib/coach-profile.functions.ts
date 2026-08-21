@@ -34,6 +34,12 @@ export interface CoachProfileDTO {
   foundingCoach: boolean;
   foundingProTrialUsed: boolean;
   /**
+   * When set, complimentary access ends on this date — currently only used
+   * for the 90-day window after a coach leaves or is removed from a club.
+   * Null means the free access has no end date (e.g. Founding Coach).
+   */
+  freeAccessUntil: string | null;
+  /**
    * True when the coach is mid-trial on Stripe with no payment method on
    * file — legacy card-free trials started before cards became mandatory.
    * Drives the "add a card" nudge; never revokes access.
