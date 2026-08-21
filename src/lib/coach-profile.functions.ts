@@ -311,6 +311,8 @@ export const getCoachProfile = createServerFn({ method: "GET" })
         foundingProTrialUsed: Boolean(profile.founding_pro_trial_used),
         freeAccessUntil,
         trialNeedsCard,
+        subscriptionEnvironment,
+        billingPastDue,
       } as CoachProfileDTO,
       levels: (levels.data ?? []).map((r) => ({
         sport: r.sport,
