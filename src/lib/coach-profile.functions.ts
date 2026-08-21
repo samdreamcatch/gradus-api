@@ -360,7 +360,12 @@ export const completeOnboarding = createServerFn({ method: "POST" })
       onboarded_at: new Date().toISOString(),
       ...(founding ? { entitlement: "promo_free" as const, founding_coach: true } : {}),
     };
-    const { error } = await supabase.from("coach_profiles").update(patch).eq("id", profile.id);
+    // entitlement/founding_coach are DB-locked to trusted writers.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("coach_profiles")
+      .update(patch)
+      .eq("id", profile.id);
     if (error) dbError(error);
     return { ok: true };
   });
