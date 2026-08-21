@@ -64,10 +64,6 @@ export const Route = createFileRoute("/_authenticated/parent/family")({
 });
 
 function ParentFamilyPage() {
-  const qc = useQueryClient();
-  const navigate = useNavigate();
-  const { checkout } = Route.useSearch();
-
   const fetchStatus = useServerFn(getFamilyPlanStatus);
   const startCheckout = useServerFn(startFamilyCheckout);
   const openPortal = useServerFn(createParentBillingPortalSession);
@@ -77,15 +73,6 @@ function ParentFamilyPage() {
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [interval, setInterval] = useState<Interval>("month");
   const [busy, setBusy] = useState<string | null>(null);
-
-  // Returning from Stripe — refresh status so the page flips to "active".
-  useEffect(() => {
-    if (checkout !== "return") return;
-    void qc.invalidateQueries({ queryKey: ["family-plan-status"] });
-    void qc.invalidateQueries({ queryKey: ["family-guardians"] });
-    toast.success("Thanks! Your Family plan is being activated.");
-    void navigate({ to: "/parent/family", search: () => ({}), replace: true });
-  }, [checkout, qc, navigate]);
 
   const options = useMemo(
     () => (clientSecret ? { fetchClientSecret: async () => clientSecret } : null),
