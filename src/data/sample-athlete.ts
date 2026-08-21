@@ -136,6 +136,8 @@ export function buildSampleAthleteDetail(): CoachAthleteDetailDTO {
     hasAnySignal: true,
     windowDays: 30,
     otherCoaches: [],
+    sharedCoachIds: [],
+
   };
 }
 
