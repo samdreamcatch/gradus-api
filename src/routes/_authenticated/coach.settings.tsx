@@ -535,13 +535,33 @@ function PlanSection({
 
   // Complimentary access
   if (profile.entitlement === "promo_free") {
+    const freeUntil = formatDate(profile.freeAccessUntil ?? null);
     return (
-      <PlanSummaryCard
-        icon={<Sparkles className="size-4" />}
-        label="Complimentary access"
-        description="Your account is on the house — no card required."
-        extras={promoRow ? <SettingsList>{promoRow}</SettingsList> : null}
-      />
+      <>
+        <PlanSummaryCard
+          icon={<Sparkles className="size-4" />}
+          label={freeUntil ? "Free access" : "Complimentary access"}
+          description={
+            freeUntil
+              ? `Your club seat ended — you're free until ${freeUntil}. Pick a plan any time.`
+              : "Your account is on the house — no card required."
+          }
+          status={freeUntil ? { label: `Free until ${freeUntil}`, tone: "accent" } : undefined}
+          extras={promoRow ? <SettingsList>{promoRow}</SettingsList> : null}
+        />
+        {freeUntil ? (
+          <SettingsList className="mt-3">
+            <SettingsButtonRow
+              icon={<Sparkles className="size-4" />}
+              label="Choose a plan"
+              tone="accent"
+              onClick={() => navigate({ to: "/coach/paywall", search: { upgrade: "1" } })}
+            />
+            {joinClubRow}
+          </SettingsList>
+        ) : null}
+        {freeUntil ? joinSheet : null}
+      </>
     );
   }
 
