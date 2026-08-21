@@ -633,6 +633,7 @@ export type Database = {
           founding_coach: boolean
           founding_pro_trial_started_at: string | null
           founding_pro_trial_used: boolean
+          free_access_until: string | null
           id: string
           is_org_admin: boolean
           is_test: boolean
@@ -659,6 +660,7 @@ export type Database = {
           founding_coach?: boolean
           founding_pro_trial_started_at?: string | null
           founding_pro_trial_used?: boolean
+          free_access_until?: string | null
           id?: string
           is_org_admin?: boolean
           is_test?: boolean
@@ -685,6 +687,7 @@ export type Database = {
           founding_coach?: boolean
           founding_pro_trial_started_at?: string | null
           founding_pro_trial_used?: boolean
+          free_access_until?: string | null
           id?: string
           is_org_admin?: boolean
           is_test?: boolean
