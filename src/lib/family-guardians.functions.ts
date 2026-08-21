@@ -376,6 +376,25 @@ export const claimGuardianInvite = createServerFn({ method: "POST" })
       throw new Error("You're already the primary parent for this athlete.");
     }
 
+    // Cap seats at claim time too (existing links only — this invite is one of them).
+    const alreadyLinked = await admin
+      .from("athlete_guardians")
+      .select("id")
+      .eq("athlete_id", invite.athlete_id)
+      .eq("parent_id", parentId)
+      .maybeSingle();
+    if (alreadyLinked.error) dbError(alreadyLinked.error);
+    if (!alreadyLinked.data) {
+      const used = await guardianSeatsUsed(admin, invite.athlete_id, { includePending: false });
+      if (used >= MAX_GUARDIANS_PER_ATHLETE) {
+        throw new Error(
+          `This athlete already has the maximum of ${MAX_GUARDIANS_PER_ATHLETE} guardians.`,
+        );
+      }
+    }
+
+
+
     const link = await admin
       .from("athlete_guardians")
       .upsert(
