@@ -118,7 +118,10 @@ export const listAthletePlans = createServerFn({ method: "GET" })
     );
 
     const [movesRes, coachesRes, goalsRes] = await Promise.all([
-      supabase
+      // Plan IDs are already scoped to this athlete by the RLS-checked query
+      // above. Reading moves through RLS re-runs the athlete/plan join per
+      // move row and can hit the statement timeout.
+      supabaseAdmin
         .from("plan_moves")
         .select("plan_id, target_kind, target_value, move_id")
         .in("plan_id", planIds),
@@ -166,7 +169,8 @@ export const listAthletePlans = createServerFn({ method: "GET" })
       if (!coachSport.has(g.coach_id)) coachSport.set(g.coach_id, g.sport);
     }
 
-    const sessionsByPlan = await loadSessionsByPlanIds(supabase, planIds);
+    // Same reasoning as moves above: plan IDs are already authorized.
+    const sessionsByPlan = await loadSessionsByPlanIds(supabaseAdmin as Client, planIds);
 
     const result: AthletePlanSummaryDTO[] = plans.map((p) => {
       const a = agg.get(p.id) ?? { count: 0, minutes: 0, firstMoveSport: "" };
@@ -225,7 +229,9 @@ export const getAthletePlan = createServerFn({ method: "POST" })
     }
 
     const [movesRes, coachRes] = await Promise.all([
-      supabase
+      // Plan ownership was verified above; read moves with the admin client so
+      // the per-row RLS join doesn't re-run for every move.
+      supabaseAdmin
         .from("plan_moves")
         .select("id, position, name, description, cue, why, target_kind, target_value")
         .eq("plan_id", plan.id)
