@@ -103,12 +103,8 @@ export async function listMyRoomIds(
     }
   }
   if (me.parent) {
-    const { data: kids, error: kidsErr } = await supabaseAdmin
-      .from("athletes")
-      .select("id")
-      .eq("parent_id", me.parent.id);
-    if (kidsErr) dbError(kidsErr, "Couldn't load conversations");
-    const ids = (kids ?? []).map((k) => k.id);
+    const { guardianAthleteIds } = await import("./family.server");
+    const ids = await guardianAthleteIds(supabaseAdmin as any, me.parent.id);
     if (ids.length > 0) {
       const { data, error } = await supabaseAdmin
         .from("message_rooms")

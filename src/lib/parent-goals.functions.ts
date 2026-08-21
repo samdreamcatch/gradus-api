@@ -44,10 +44,12 @@ export const getParentGoalsDashboard = createServerFn({ method: "GET" })
     if (pErr) dbError(pErr);
     if (!parent) return [];
 
+    const { guardianAthleteIdsSafe } = await import("./family.server");
+    const accessibleIds = await guardianAthleteIdsSafe(supabase as any, parent.id);
     const { data: athleteRows, error: aErr } = await supabase
       .from("athletes")
       .select("id, first_name, last_name")
-      .eq("parent_id", parent.id);
+      .in("id", accessibleIds);
     if (aErr) dbError(aErr);
     if (!athleteRows?.length) return [];
 

@@ -110,10 +110,12 @@ export const getParentSettings = createServerFn({ method: "GET" })
     const userId = context.userId;
     const parent = await getParentProfile(userId);
 
+    const { guardianAthleteIdsSafe } = await import("./family.server");
+    const accessibleAthleteIds = await guardianAthleteIdsSafe(supabaseAdmin as any, parent.id);
     const athletesRes = await supabaseAdmin
       .from("athletes")
-      .select("id, first_name, last_name, birthdate, username, user_id")
-      .eq("parent_id", parent.id)
+      .select("id, first_name, last_name, birthdate, username, user_id, parent_id")
+      .in("id", accessibleAthleteIds)
       .order("created_at", { ascending: true });
     if (athletesRes.error) dbError(athletesRes.error);
     const athletes = athletesRes.data ?? [];
@@ -147,7 +149,7 @@ export const getParentSettings = createServerFn({ method: "GET" })
       supabaseAdmin
         .from("athlete_invite_codes")
         .select("athlete_id, code")
-        .eq("parent_id", parent.id),
+        .in("athlete_id", safeIds),
     ]);
     if (linksRes.error) dbError(linksRes.error);
     if (sportsScopeRes.error) dbError(sportsScopeRes.error);
@@ -169,6 +171,8 @@ export const getParentSettings = createServerFn({ method: "GET" })
     const codeMap = new Map((codesRes.data ?? []).map((r) => [r.athlete_id, r.code]));
     for (const a of athletes) {
       if (codeMap.has(a.id)) continue;
+      // Only the primary parent mints invite codes; co-guardians just read them.
+      if ((a as { parent_id: string | null }).parent_id !== parent.id) continue;
       for (let attempt = 0; attempt < 5; attempt++) {
         const code = genCode(8);
         const ins = await supabaseAdmin

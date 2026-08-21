@@ -104,6 +104,45 @@ export type Database = {
         }
         Relationships: []
       }
+      athlete_guardians: {
+        Row: {
+          athlete_id: string
+          created_at: string
+          id: string
+          parent_id: string
+          role: string
+        }
+        Insert: {
+          athlete_id: string
+          created_at?: string
+          id?: string
+          parent_id: string
+          role?: string
+        }
+        Update: {
+          athlete_id?: string
+          created_at?: string
+          id?: string
+          parent_id?: string
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "athlete_guardians_athlete_id_fkey"
+            columns: ["athlete_id"]
+            isOneToOne: false
+            referencedRelation: "athletes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "athlete_guardians_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "parent_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       athlete_invite_codes: {
         Row: {
           athlete_id: string
@@ -998,6 +1037,66 @@ export type Database = {
         }
         Relationships: []
       }
+      guardian_invites: {
+        Row: {
+          athlete_id: string
+          claimed_at: string | null
+          claimed_by: string | null
+          code: string
+          created_at: string
+          email: string | null
+          expires_at: string | null
+          id: string
+          invited_by_parent_id: string
+          status: string
+          token: string
+          updated_at: string
+        }
+        Insert: {
+          athlete_id: string
+          claimed_at?: string | null
+          claimed_by?: string | null
+          code: string
+          created_at?: string
+          email?: string | null
+          expires_at?: string | null
+          id?: string
+          invited_by_parent_id: string
+          status?: string
+          token: string
+          updated_at?: string
+        }
+        Update: {
+          athlete_id?: string
+          claimed_at?: string | null
+          claimed_by?: string | null
+          code?: string
+          created_at?: string
+          email?: string | null
+          expires_at?: string | null
+          id?: string
+          invited_by_parent_id?: string
+          status?: string
+          token?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guardian_invites_athlete_id_fkey"
+            columns: ["athlete_id"]
+            isOneToOne: false
+            referencedRelation: "athletes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guardian_invites_invited_by_parent_id_fkey"
+            columns: ["invited_by_parent_id"]
+            isOneToOne: false
+            referencedRelation: "parent_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       impersonation_events: {
         Row: {
           admin_email: string | null
@@ -1753,36 +1852,54 @@ export type Database = {
         Row: {
           coach_id: string | null
           created_at: string
+          current_period_end: string | null
+          family_plan_seats: number
           first_name: string
           id: string
           is_test: boolean
           last_name: string
           last_seen_at: string | null
           promo_code: string | null
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          subscription_environment: string | null
+          subscription_status: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           coach_id?: string | null
           created_at?: string
+          current_period_end?: string | null
+          family_plan_seats?: number
           first_name?: string
           id?: string
           is_test?: boolean
           last_name?: string
           last_seen_at?: string | null
           promo_code?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_environment?: string | null
+          subscription_status?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           coach_id?: string | null
           created_at?: string
+          current_period_end?: string | null
+          family_plan_seats?: number
           first_name?: string
           id?: string
           is_test?: boolean
           last_name?: string
           last_seen_at?: string | null
           promo_code?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_environment?: string | null
+          subscription_status?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -2410,6 +2527,7 @@ export type Database = {
         Args: { _kind: string; _user_id: string }
         Returns: undefined
       }
+      family_plan_active: { Args: { _athlete_id: string }; Returns: boolean }
       get_adult_athlete_by_invite_code: {
         Args: { _code: string }
         Returns: {
@@ -2465,6 +2583,8 @@ export type Database = {
         }
         Returns: number
       }
+      parent_athlete_ids: { Args: never; Returns: string[] }
+      parent_can_write: { Args: { _athlete_id: string }; Returns: boolean }
       parent_has_athlete_in_sport: {
         Args: { _sport: string }
         Returns: boolean

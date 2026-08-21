@@ -34,6 +34,10 @@ const BILLING_VARS = ["firstName", "eventDate", "planLabel", "billingUrl", "site
 
 const GUARDIAN_INVITE_VARS = ["athleteName", "coachName", "claimUrl", "siteUrl"] as const;
 
+const FAMILY_INVITE_VARS = ["athleteName", "inviterName", "claimUrl", "code", "siteUrl"] as const;
+
+
+
 const GUARDIAN_ACTIVITY_VARS = [
   "athleteName",
   "senderName",
@@ -270,6 +274,41 @@ export const EMAIL_COPY_SCHEMA: Record<string, TemplateCopy> = {
         "If you don't recognize this athlete, you can ignore this email and no account will be created.",
     },
   },
+  "family-invite": {
+    displayName: "Family plan — guardian invite",
+    category: "App",
+    description:
+      "Sent when a parent on the Family plan invites another parent or guardian to share access to their athlete.",
+    slots: [
+      { key: "preview", label: "Inbox preview", kind: "text", variables: FAMILY_INVITE_VARS },
+      { key: "subject", label: "Subject line", kind: "text", variables: FAMILY_INVITE_VARS },
+      { key: "eyebrow", label: "Small caps eyebrow", kind: "text" },
+      { key: "heading", label: "Big headline", kind: "text", variables: FAMILY_INVITE_VARS },
+      { key: "intro", label: "Intro paragraph", kind: "textarea", variables: FAMILY_INVITE_VARS },
+      { key: "body", label: "Secondary paragraph", kind: "textarea", variables: FAMILY_INVITE_VARS },
+      { key: "ctaLabel", label: "Button label", kind: "text", variables: FAMILY_INVITE_VARS },
+      { key: "codeHelp", label: "Invite-code line", kind: "text", variables: FAMILY_INVITE_VARS },
+      { key: "fallbackHelp", label: "Button-not-working help", kind: "text" },
+      { key: "signOff", label: "Handwritten sign-off", kind: "text" },
+      { key: "footer", label: "Fine-print footer", kind: "textarea" },
+    ],
+    defaults: {
+      preview: "{inviterName} added you to {athleteName}'s Gradus account",
+      subject: "{inviterName} shared {athleteName}'s training with you",
+      eyebrow: "Family plan",
+      heading: "You've been added to {athleteName}'s account",
+      intro:
+        "{inviterName} invited you to share access to {athleteName} on Gradus — the app their coach uses to assign plans, track practice, and message about lessons.",
+      body: "Accept the invite to see plans, log practice, and join the conversation with their coach. It's included in {inviterName}'s Family plan, so there's nothing for you to pay.",
+      ctaLabel: "Accept invite",
+      codeHelp: "Already have a Gradus account? Enter this code in Settings: {code}",
+      fallbackHelp: "Or paste this link into your browser:",
+      signOff: "— The Gradus team",
+      footer:
+        "If you don't recognize this athlete, you can ignore this email and nothing will change.",
+    },
+  },
+
   "guardian-activity": {
     displayName: "Guardian message copy",
     category: "App",
