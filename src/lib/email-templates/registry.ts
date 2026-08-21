@@ -25,6 +25,7 @@ import { template as activationTemplate } from "./activation";
 import { template as billingNoticeTemplate } from "./billing-notice";
 import { template as clubInviteTemplate } from "./club-invite";
 import { template as clubRemovalTemplate } from "./club-removal";
+import { template as familyInviteTemplate } from "./family-invite";
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
   "error-digest": errorDigestTemplate,
@@ -35,4 +36,5 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   "billing-notice": billingNoticeTemplate,
   "club-invite": clubInviteTemplate,
   "club-removal": clubRemovalTemplate,
+  "family-invite": familyInviteTemplate,
 };
