@@ -317,11 +317,11 @@ function ParentTeamPage() {
           </div>
         </div>
 
-
-
+        <CoachVisibilitySection planActive={planActive} />
 
         {/* Join by code */}
         <div className="mt-7 flex w-full items-center gap-3">
+
           <div className="h-px flex-1 bg-divider" />
           <span className="text-[10px] font-semibold uppercase tracking-widest text-text-tertiary">
             Or join a team
