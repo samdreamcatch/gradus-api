@@ -14,6 +14,16 @@ import { Button } from "@/components/ui/button";
 
 const ENTITLED = new Set(["paid", "promo_free", "club_covered"]);
 
+/** getStripeEnvironment throws when payments aren't configured — banners
+ * should stay silent in that case rather than crash the coach layout. */
+function currentStripeEnv(): "sandbox" | "live" | null {
+  try {
+    return getStripeEnvironment();
+  } catch {
+    return null;
+  }
+}
+
 export const Route = createFileRoute("/_authenticated/coach")({
   beforeLoad: async ({ context, location }) => {
     await requireRole("coach", context.queryClient, context.user?.id);
@@ -77,7 +87,7 @@ function TrialCardBanner() {
   if (isLoading || error || !data) return null;
   if (!data.profile.trialNeedsCard) return null;
   // A sandbox subscription must never nag on the live app (and vice versa).
-  if (data.profile.subscriptionEnvironment !== getStripeEnvironment()) return null;
+  if (data.profile.subscriptionEnvironment !== currentStripeEnv()) return null;
 
   const openPortal = async () => {
     setBusy(true);
@@ -130,7 +140,7 @@ function PaymentIssueBanner() {
   // Server-verified against Stripe; additionally scoped to this build's
   // Stripe environment so test-mode data can't warn on the live app.
   if (!data.profile.billingPastDue) return null;
-  if (data.profile.subscriptionEnvironment !== getStripeEnvironment()) return null;
+  if (data.profile.subscriptionEnvironment !== currentStripeEnv()) return null;
 
   const openPortal = async () => {
     setBusy(true);

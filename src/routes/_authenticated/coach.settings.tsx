@@ -444,7 +444,7 @@ function PlanSection({
     let description: string | undefined;
     if (status === "trialing" && trialEnd) {
       description = `Free trial — your card is charged on ${trialEnd}.`;
-    } else if (status === "past_due") {
+    } else if (profile.billingPastDue) {
       description = "Payment failed — update your card in the billing portal.";
     } else if (status === "canceled" && periodEnd) {
       description = `Ends ${periodEnd}. Reactivate anytime.`;
@@ -457,7 +457,7 @@ function PlanSection({
       ? { label: "Founding · Pro", tone: "accent" as const }
       : status === "trialing"
         ? { label: "Trial", tone: "accent" as const }
-        : status === "past_due"
+        : profile.billingPastDue
           ? { label: "Payment failed", tone: "destructive" as const }
           : status === "canceled"
             ? { label: "Canceling", tone: "muted" as const }
