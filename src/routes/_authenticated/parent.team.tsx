@@ -3,13 +3,14 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { EmbeddedCheckoutProvider, EmbeddedCheckout } from "@stripe/react-stripe-js";
-import { ArrowLeft, Check, CreditCard, KeyRound, Loader2, Users } from "lucide-react";
+import { ArrowLeft, Check, CreditCard, Eye, KeyRound, Loader2, Users } from "lucide-react";
 import { toast } from "sonner";
 
 import { ParentBottomNav } from "@/components/parent/bottom-nav";
 import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { getStripe, getStripeEnvironment } from "@/lib/stripe";
 import {
@@ -18,6 +19,7 @@ import {
   createParentBillingPortalSession,
 } from "@/lib/parent-checkout.functions";
 import { claimGuardianInvite } from "@/lib/team-guardians.functions";
+import { listCoachVisibility, setCoachVisibility } from "@/lib/coach-visibility.functions";
 
 type Interval = "month" | "year";
 
