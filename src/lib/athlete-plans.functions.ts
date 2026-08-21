@@ -169,7 +169,8 @@ export const listAthletePlans = createServerFn({ method: "GET" })
       if (!coachSport.has(g.coach_id)) coachSport.set(g.coach_id, g.sport);
     }
 
-    const sessionsByPlan = await loadSessionsByPlanIds(supabase, planIds);
+    // Same reasoning as moves above: plan IDs are already authorized.
+    const sessionsByPlan = await loadSessionsByPlanIds(supabaseAdmin as Client, planIds);
 
     const result: AthletePlanSummaryDTO[] = plans.map((p) => {
       const a = agg.get(p.id) ?? { count: 0, minutes: 0, firstMoveSport: "" };
