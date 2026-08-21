@@ -103,16 +103,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:title", content: "Gradus" },
       { property: "og:description", content: "Practice, made perfect." },
       { name: "twitter:description", content: "Practice, made perfect." },
-      {
-        property: "og:image",
-        content:
-          "https://gradus.training/__l5e/assets-v1/5a4cf40e-b89b-4d9e-97bf-e030e2e8db60/og-share-card.jpg",
-      },
-      {
-        name: "twitter:image",
-        content:
-          "https://gradus.training/__l5e/assets-v1/5a4cf40e-b89b-4d9e-97bf-e030e2e8db60/og-share-card.jpg",
-      },
+      { property: "og:image", content: "https://gradus.training/og-share-card.jpg" },
+      { name: "twitter:image", content: "https://gradus.training/og-share-card.jpg" },
       { name: "twitter:card", content: "summary_large_image" },
       { property: "og:type", content: "website" },
       { name: "theme-color", content: "#F5F6FA" },
