@@ -230,7 +230,7 @@ function ParentSettingsPage() {
               <PlanSection />
             </SettingsGroup>
 
-            <SettingsGroup label="Family">
+            <SettingsGroup label="Team">
               <TeamSection />
             </SettingsGroup>
 
@@ -265,7 +265,7 @@ function ParentSettingsPage() {
 }
 
 /**
- * Plan section — the paying primary parent manages the Family subscription
+ * Plan section — the paying primary parent manages the Team subscription
  * through the Stripe billing portal. Covered co-guardians see status only.
  */
 function PlanSection() {
@@ -324,7 +324,7 @@ function PlanSection() {
         <SettingsList>
           <SettingsButtonRow
             icon={<CreditCard className="size-4" />}
-            label="Upgrade to Family"
+            label="Upgrade to Team"
             description="Add up to 3 parents or guardians per athlete"
             onClick={() => void navigate({ to: "/parent/team", search: {} })}
           />
@@ -423,7 +423,7 @@ function ParentPlanCard({
 }
 
 /**
- * Family section — on an active Team plan the parent manages guardians
+ * Team section — on an active Team plan the parent manages guardians
  * inline (same hub pattern as coaches). Otherwise it routes to the plan page.
  */
 function TeamSection() {

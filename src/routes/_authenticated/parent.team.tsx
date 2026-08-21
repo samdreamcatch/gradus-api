@@ -182,7 +182,7 @@ function ParentTeamPage() {
           <div className="mt-4 w-full rounded-xl border border-accent/40 bg-accent/10 px-3 py-2 text-center text-sm">
             <span className="text-text-secondary">Current plan: </span>
             <span className="font-semibold text-text-primary">
-              Family{status.data?.status ? ` — ${status.data.status}` : ""}
+              Team{status.data?.status ? ` — ${status.data.status}` : ""}
             </span>
           </div>
         )}
@@ -227,7 +227,7 @@ function ParentTeamPage() {
             )}
           </div>
 
-          {/* Family */}
+          {/* Team */}
           <div
             className={cn(
               "flex flex-col rounded-2xl border p-3 shadow-card sm:p-4",
@@ -235,7 +235,7 @@ function ParentTeamPage() {
             )}
           >
             <div className="flex items-baseline justify-between gap-1">
-              <h2 className="font-display text-lg text-text-primary sm:text-h3">Family</h2>
+              <h2 className="font-display text-lg text-text-primary sm:text-h3">Team</h2>
               <span className="rounded-full bg-accent/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-accent-ink sm:text-[10px] sm:tracking-widest">
                 {planActive ? "CURRENT" : "RECOMMENDED"}
               </span>
@@ -321,7 +321,7 @@ function ParentTeamPage() {
         <div className="mt-7 flex w-full items-center gap-3">
           <div className="h-px flex-1 bg-divider" />
           <span className="text-[10px] font-semibold uppercase tracking-widest text-text-tertiary">
-            Or join a family
+            Or join a team
           </span>
           <div className="h-px flex-1 bg-divider" />
         </div>
