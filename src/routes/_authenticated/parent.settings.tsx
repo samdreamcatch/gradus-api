@@ -217,9 +217,14 @@ function ParentSettingsPage() {
               <ConnectCoachSheet athletes={data.athletes as AthleteData[]} />
             </SettingsGroup>
 
+            <SettingsGroup label="Plan">
+              <PlanSection />
+            </SettingsGroup>
+
             <SettingsGroup label="Family">
               <FamilySection />
             </SettingsGroup>
+
 
 
 
