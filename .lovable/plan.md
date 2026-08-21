@@ -39,7 +39,9 @@ athlete with their connected coaches and a switch per coach.
 
 ### What the coach does
 
-Each affected coach gets an email ("A parent connected you with another coach") and a pending
+Each affected coach gets an email ("A parent connected you with another coach"), an in-app prompt
+on next open — a bottom Sheet using the existing `paper-surface` pattern, no new components — and
+a pending
 item in coach settings under the existing Connections hub: *Coach name — for Athlete name*, with
 Accept and Decline. Nothing is shared until they accept. Declining is silent to the other coach
 (the parent sees "Declined").
