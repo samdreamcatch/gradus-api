@@ -41,6 +41,10 @@ Yes — added guardians join the existing coach conversation for that athlete ra
 
 **Messaging.** `listMyRoomIds` and `loadParticipants` in `src/lib/messages.server.ts` currently resolve the parent side of a room via `athletes.parent_id`; both switch to the guardian id set so co-guardians list the room and appear as participants. `is_room_participant()` is widened the same way so RLS on `messages` and `message_reads` follows. Send is gated by `parent_can_write`.
 
+**Admin.** The admin user detail page lists an athlete's guardians and the household's family-plan status, and admin billing gains parent subscriptions alongside coach ones.
+
+
+
 ## Build order
 
 1. Migration: tables, backfill, widened helpers, write-gate helper, RLS, grants.
