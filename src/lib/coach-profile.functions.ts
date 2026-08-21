@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { redirect } from "@tanstack/react-router";
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -133,7 +134,9 @@ async function ensureProfile(
     .maybeSingle();
   if (parent.error) dbError(parent.error);
   if (parent.data) {
-    throw new Error("This account is registered as a parent, not a coach.");
+    // Never blank the screen for a parent that (re)hits a coach query — send
+    // them to their own home instead of throwing into the error boundary.
+    throw redirect({ to: "/parent/plans" });
   }
 
   // Seed first/last name from auth user_metadata (set during signup, or by

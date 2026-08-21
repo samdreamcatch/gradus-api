@@ -10,6 +10,7 @@ import {
 export const coachProfileQueryOptions = queryOptions({
   queryKey: ["coach-profile"],
   queryFn: () => getCoachProfile(),
+  retry: false,
 });
 
 export function useCoachProfile() {
