@@ -44,6 +44,12 @@ import {
 import { ParentBottomNav } from "@/components/parent/bottom-nav";
 import { AthleteInviteCard } from "@/components/parent/athlete-invite-card";
 import { ConnectCoachSheet } from "@/components/parent/connect-coach-sheet";
+import { ConnectGuardianSheet } from "@/components/parent/connect-guardian-sheet";
+import {
+  listFamilyGuardians,
+  removeGuardian,
+  revokeGuardianInvite,
+} from "@/lib/family-guardians.functions";
 
 import {
   ScheduleEditor,
@@ -212,15 +218,9 @@ function ParentSettingsPage() {
             </SettingsGroup>
 
             <SettingsGroup label="Family">
-              <SettingsList>
-                <SettingsButtonRow
-                  icon={<Users className="size-4" />}
-                  label="Parents & guardians"
-                  description="Add another parent or guardian to your athlete"
-                  onClick={() => void navigate({ to: "/parent/family", search: {} })}
-                />
-              </SettingsList>
+              <FamilySection />
             </SettingsGroup>
+
 
 
             <SettingsGroup label="Preferences">
@@ -249,6 +249,148 @@ function ParentSettingsPage() {
     </>
   );
 }
+
+/**
+ * Family section — on an active Family plan the parent manages guardians
+ * inline (same hub pattern as coaches). Otherwise it routes to the plan page.
+ */
+function FamilySection() {
+  const navigate = useNavigate();
+  const qc = useQueryClient();
+  const fetchGuardians = useServerFn(listFamilyGuardians);
+  const remove = useServerFn(removeGuardian);
+  const revoke = useServerFn(revokeGuardianInvite);
+  const { data, isLoading } = useQuery({
+    queryKey: ["family-guardians"],
+    queryFn: () => fetchGuardians(),
+  });
+
+  const refresh = () => void qc.invalidateQueries({ queryKey: ["family-guardians"] });
+
+  if (isLoading || !data) {
+    return (
+      <SettingsList>
+        <SettingsRow
+          icon={<Users className="size-4" />}
+          label="Parents & guardians"
+          value={isLoading ? "Loading…" : "—"}
+        />
+      </SettingsList>
+    );
+  }
+
+  if (!data.planActive) {
+    return (
+      <SettingsList>
+        <SettingsButtonRow
+          icon={<Users className="size-4" />}
+          label="Parents & guardians"
+          description="Add another parent or guardian to your athlete"
+          onClick={() => void navigate({ to: "/parent/family", search: {} })}
+        />
+      </SettingsList>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      <SettingsList>
+        {data.athletes.length === 0 ? (
+          <SettingsRow
+            icon={<Users className="size-4" />}
+            label="Parents & guardians"
+            description="Add an athlete first"
+          />
+        ) : (
+          data.athletes.map((a) => (
+            <SettingsDisclosure
+              key={a.id}
+              icon={<Users className="size-4" />}
+              label={`${a.firstName} ${a.lastName}`}
+              description={`${a.guardians.length + a.invites.length} of 3 guardians`}
+              defaultOpen={data.athletes.length === 1}
+            >
+              <div className="space-y-2">
+                {a.guardians.map((g) => (
+                  <div
+                    key={g.id}
+                    className="flex items-center gap-2 rounded-xl border border-divider bg-card px-3 py-2"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm text-text-primary">{g.name}</div>
+                      <div className="text-xs text-text-tertiary">
+                        {g.role === "primary" ? "Primary" : "Guardian"}
+                        {g.isSelf ? " · You" : ""}
+                      </div>
+                    </div>
+                    {g.role === "co" && (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={async () => {
+                          try {
+                            await remove({ data: { athleteId: a.id, parentId: g.parentId } });
+                            toast.success("Guardian removed");
+                            refresh();
+                          } catch (e) {
+                            toast.error(e instanceof Error ? e.message : "Couldn't remove.");
+                          }
+                        }}
+                      >
+                        <Trash2 className="size-3.5" aria-hidden />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+                {a.invites.map((i) => (
+                  <div
+                    key={i.id}
+                    className="flex items-center gap-2 rounded-xl border border-dashed border-divider px-3 py-2"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm text-text-primary">{i.email ?? "Invite"}</div>
+                      <div className="font-mono text-xs text-text-tertiary">
+                        Pending · {i.code}
+                      </div>
+                    </div>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={async () => {
+                        try {
+                          await revoke({ data: { inviteId: i.id } });
+                          toast.success("Invite revoked");
+                          refresh();
+                        } catch (e) {
+                          toast.error(e instanceof Error ? e.message : "Couldn't revoke.");
+                        }
+                      }}
+                    >
+                      <Trash2 className="size-3.5" aria-hidden />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </SettingsDisclosure>
+          ))
+        )}
+      </SettingsList>
+      <div className="flex justify-end px-1">
+        <ConnectGuardianSheet
+          athletes={data.athletes.map((a) => ({
+            id: a.id,
+            firstName: a.firstName,
+            lastName: a.lastName,
+          }))}
+          disabled={data.athletes.length === 0}
+        />
+      </div>
+    </div>
+  );
+}
+
 
 function ConnectedCoachesList({ athletes }: { athletes: AthleteData[] }) {
   const qc = useQueryClient();
