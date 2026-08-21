@@ -20,11 +20,26 @@ function getSupabase(): SupabaseClient<Database> {
 }
 
 async function syncSubscription(subscription: any, env: StripeEnv) {
-  await syncCoachSubscription(getSupabase(), subscription, env);
+  const supabase = getSupabase();
+  const { isFamilySubscription, syncParentSubscription } = await import(
+    "@/lib/parent-subscription-sync.server"
+  );
+  if (await isFamilySubscription(supabase as any, subscription)) {
+    await syncParentSubscription(supabase as any, subscription, env);
+    return;
+  }
+  await syncCoachSubscription(supabase, subscription, env);
 }
 
 async function handleSubscriptionDeleted(subscription: any, _env: StripeEnv) {
   const supabase = getSupabase();
+  const { isFamilySubscription, markParentSubscriptionDeleted } = await import(
+    "@/lib/parent-subscription-sync.server"
+  );
+  if (await isFamilySubscription(supabase as any, subscription)) {
+    await markParentSubscriptionDeleted(supabase as any, subscription);
+    return;
+  }
   await markCoachSubscriptionDeleted(supabase, subscription);
 
   // Auto-downgrade notice: markCoachSubscriptionDeleted has already dropped
@@ -80,6 +95,13 @@ async function handleCheckoutCompleted(session: any, env: StripeEnv) {
   const userId = session.metadata?.userId;
   if (!userId || !session.customer) return;
   const supabase = getSupabase();
+  if (session.metadata?.plan === "family") {
+    await supabase
+      .from("parent_profiles")
+      .update({ stripe_customer_id: session.customer, subscription_environment: env })
+      .eq("user_id", userId);
+    return;
+  }
   await supabase
     .from("coach_profiles")
     .update({
