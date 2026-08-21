@@ -177,6 +177,7 @@ function RootComponent() {
         </main>
         <Toaster />
         <InstallBanner />
+        <PwaUpdatePrompt />
         <DevToolsMount />
       </ThemeProvider>
     </QueryClientProvider>
