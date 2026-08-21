@@ -39,7 +39,7 @@ Yes — added guardians join the existing coach conversation for that athlete ra
 
 **Invites.** Reuses the guardian pattern already in the codebase: a `guardian-coinvite` branded email template registered in the admin copy schema, a claim route `/gp/$token` modeled on `/g/$token`, and code redemption through the existing `invite-resolve.functions.ts` resolver so an invited guardian who signs up fresh lands in the right place. Seat count is enforced server-side at invite creation and again at claim time.
 
-**Admin.** The admin user detail page lists an athlete's guardians and the household's family-plan status, and admin billing gains parent subscriptions alongside coach ones.
+**Messaging.** `listMyRoomIds` and `loadParticipants` in `src/lib/messages.server.ts` currently resolve the parent side of a room via `athletes.parent_id`; both switch to the guardian id set so co-guardians list the room and appear as participants. `is_room_participant()` is widened the same way so RLS on `messages` and `message_reads` follows. Send is gated by `parent_can_write`.
 
 ## Build order
 
