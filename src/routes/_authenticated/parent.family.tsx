@@ -3,16 +3,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { EmbeddedCheckoutProvider, EmbeddedCheckout } from "@stripe/react-stripe-js";
-import {
-  ArrowLeft,
-  Check,
-  CreditCard,
-  KeyRound,
-  Loader2,
-  Trash2,
-  UserPlus,
-  Users,
-} from "lucide-react";
+import { ArrowLeft, Check, CreditCard, KeyRound, Loader2, Users } from "lucide-react";
 import { toast } from "sonner";
 
 import { ParentBottomNav } from "@/components/parent/bottom-nav";
@@ -26,13 +17,7 @@ import {
   startFamilyCheckout,
   createParentBillingPortalSession,
 } from "@/lib/parent-checkout.functions";
-import {
-  listFamilyGuardians,
-  inviteGuardian,
-  revokeGuardianInvite,
-  removeGuardian,
-  claimGuardianInvite,
-} from "@/lib/family-guardians.functions";
+import { claimGuardianInvite } from "@/lib/family-guardians.functions";
 
 type Interval = "month" | "year";
 
@@ -87,12 +72,10 @@ function ParentFamilyPage() {
   const { checkout } = Route.useSearch();
 
   const fetchStatus = useServerFn(getFamilyPlanStatus);
-  const fetchGuardians = useServerFn(listFamilyGuardians);
   const startCheckout = useServerFn(startFamilyCheckout);
   const openPortal = useServerFn(createParentBillingPortalSession);
 
   const status = useQuery({ queryKey: ["family-plan-status"], queryFn: () => fetchStatus() });
-  const guardians = useQuery({ queryKey: ["family-guardians"], queryFn: () => fetchGuardians() });
 
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [interval, setInterval] = useState<Interval>("month");
@@ -357,31 +340,8 @@ function ParentFamilyPage() {
           </div>
         </div>
 
-        {/* Guardians */}
-        <div className="mt-7 flex w-full items-center gap-3">
-          <div className="h-px flex-1 bg-divider" />
-          <span className="text-[10px] font-semibold uppercase tracking-widest text-text-tertiary">
-            Guardians
-          </span>
-          <div className="h-px flex-1 bg-divider" />
-        </div>
 
-        <div className="mt-5 w-full space-y-3">
-          {guardians.isLoading ? (
-            <p className="text-center text-sm text-text-tertiary">Loading…</p>
-          ) : !guardians.data?.athletes.length ? (
-            <p className="text-center text-sm text-text-tertiary">Add an athlete first.</p>
-          ) : (
-            guardians.data.athletes.map((a) => (
-              <AthleteGuardians
-                key={a.id}
-                athlete={a}
-                planActive={planActive}
-                onUpgrade={() => void handleUpgrade(price.priceId)}
-              />
-            ))
-          )}
-        </div>
+
 
         {/* Join by code */}
         <div className="mt-7 flex w-full items-center gap-3">
@@ -399,143 +359,8 @@ function ParentFamilyPage() {
   );
 }
 
-type AthleteRow = Awaited<ReturnType<typeof listFamilyGuardians>>["athletes"][number];
 
-function AthleteGuardians({
-  athlete,
-  planActive,
-  onUpgrade,
-}: {
-  athlete: AthleteRow;
-  planActive: boolean;
-  onUpgrade: () => void;
-}) {
-  const qc = useQueryClient();
-  const invite = useServerFn(inviteGuardian);
-  const revoke = useServerFn(revokeGuardianInvite);
-  const remove = useServerFn(removeGuardian);
 
-  const [email, setEmail] = useState("");
-  const [busy, setBusy] = useState(false);
-
-  const refresh = () => void qc.invalidateQueries({ queryKey: ["family-guardians"] });
-
-  const handleInvite = async () => {
-    setBusy(true);
-    try {
-      const res = await invite({
-        data: { athleteId: athlete.id, email: email.trim() ? email.trim() : null },
-      });
-      toast.success(email.trim() ? `Invite sent — code ${res.code}` : `Invite code ${res.code}`);
-      setEmail("");
-      refresh();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Couldn't create that invite.");
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  return (
-    <div className="rounded-2xl border border-divider bg-card p-3 shadow-card sm:p-4">
-      <div className="flex items-baseline justify-between gap-2">
-        <h3 className="font-display text-lg text-text-primary sm:text-h3">
-          {`${athlete.firstName} ${athlete.lastName}`.trim()}
-        </h3>
-        <span className="text-[11px] text-text-tertiary sm:text-xs">
-          {athlete.guardians.length} guardian{athlete.guardians.length === 1 ? "" : "s"}
-        </span>
-      </div>
-
-      <ul className="mt-3 space-y-2">
-        {athlete.guardians.map((g) => (
-          <li key={g.id} className="flex items-center gap-2 text-sm">
-            <span className="min-w-0 flex-1 truncate text-text-primary">
-              {g.name} {g.isSelf && <span className="text-text-tertiary">(you)</span>}
-            </span>
-            <span className="rounded-full bg-accent/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-accent-ink sm:text-[10px] sm:tracking-widest">
-              {g.role === "primary" ? "PRIMARY" : "GUARDIAN"}
-            </span>
-            {g.role === "co" && (
-              <Button
-                type="button"
-                size="sm"
-                variant="ghost"
-                aria-label={`Remove ${g.name}`}
-                onClick={async () => {
-                  try {
-                    await remove({ data: { athleteId: athlete.id, parentId: g.parentId } });
-                    toast.success("Guardian removed");
-                    refresh();
-                  } catch (e) {
-                    toast.error(e instanceof Error ? e.message : "Couldn't remove them.");
-                  }
-                }}
-              >
-                <Trash2 className="size-4" />
-              </Button>
-            )}
-          </li>
-        ))}
-      </ul>
-
-      {athlete.invites.length > 0 && (
-        <ul className="mt-2 space-y-2 border-t border-divider pt-2">
-          {athlete.invites.map((i) => (
-            <li key={i.id} className="flex items-center gap-2 text-sm">
-              <span className="min-w-0 flex-1 truncate text-text-secondary">
-                Pending · {i.email ?? "code only"}
-              </span>
-              <span className="font-mono text-xs text-text-primary">{i.code}</span>
-              <Button
-                type="button"
-                size="sm"
-                variant="ghost"
-                aria-label="Revoke invite"
-                onClick={async () => {
-                  try {
-                    await revoke({ data: { inviteId: i.id } });
-                    toast.success("Invite revoked");
-                    refresh();
-                  } catch (e) {
-                    toast.error(e instanceof Error ? e.message : "Couldn't revoke that invite.");
-                  }
-                }}
-              >
-                <Trash2 className="size-4" />
-              </Button>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      {planActive ? (
-        <div className="mt-3 flex items-center gap-2">
-          <Input
-            type="email"
-            inputMode="email"
-            placeholder="Their email (optional)"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-          <Button type="button" onClick={() => void handleInvite()} disabled={busy}>
-            {busy ? <Loader2 className="size-4 animate-spin" /> : <UserPlus className="size-4" />}
-            <span className="ml-1">Invite</span>
-          </Button>
-        </div>
-      ) : (
-        <div className="mt-3 rounded-xl border border-accent/40 bg-accent/10 p-3">
-          <p className="text-[11px] text-text-secondary sm:text-xs">
-            Adding another parent or guardian is part of the Family plan.
-          </p>
-          <Button type="button" className="mt-2 w-full text-xs sm:text-sm" onClick={onUpgrade}>
-            Upgrade to invite
-          </Button>
-        </div>
-      )}
-    </div>
-  );
-}
 
 /** Accept an invite you were given as a code (rather than a link). */
 function JoinByCodeSection() {
