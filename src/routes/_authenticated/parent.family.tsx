@@ -3,16 +3,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { EmbeddedCheckoutProvider, EmbeddedCheckout } from "@stripe/react-stripe-js";
-import {
-  ArrowLeft,
-  Check,
-  CreditCard,
-  KeyRound,
-  Loader2,
-  Trash2,
-  UserPlus,
-  Users,
-} from "lucide-react";
+import { ArrowLeft, Check, CreditCard, KeyRound, Loader2, Users } from "lucide-react";
 import { toast } from "sonner";
 
 import { ParentBottomNav } from "@/components/parent/bottom-nav";
@@ -26,13 +17,7 @@ import {
   startFamilyCheckout,
   createParentBillingPortalSession,
 } from "@/lib/parent-checkout.functions";
-import {
-  listFamilyGuardians,
-  inviteGuardian,
-  revokeGuardianInvite,
-  removeGuardian,
-  claimGuardianInvite,
-} from "@/lib/family-guardians.functions";
+import { claimGuardianInvite } from "@/lib/family-guardians.functions";
 
 type Interval = "month" | "year";
 
