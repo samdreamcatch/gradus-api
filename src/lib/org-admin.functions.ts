@@ -164,24 +164,43 @@ export const removeCoachFromOrg = createServerFn({ method: "POST" })
 
     const coach = await supabaseAdmin
       .from("coach_profiles")
-      .select("id, user_id, organization_id, entitlement")
+      .select("id, user_id, organization_id, entitlement, promo_code, first_name")
       .eq("id", data.coachId)
       .eq("organization_id", data.organizationId)
       .maybeSingle();
     if (coach.error) dbError(coach.error);
     if (!coach.data) throw new Error("Coach not in this organization");
 
-    // Detach + revert entitlement; stash WELCOME_BACK promo (matches
-    // leaveOrganization flow — Coach Pro paywall auto-applies it).
-    const upd = await supabaseAdmin
-      .from("coach_profiles")
-      .update({
-        organization_id: null,
-        entitlement: "pending",
-        promo_code: "WELCOME_BACK",
-      })
-      .eq("id", coach.data.id);
-    if (upd.error) dbError(upd.error);
+    // Detach, grant the 90-day free window, and stash WELCOME_BACK so the
+    // paywall pre-applies the discount if they upgrade.
+    const { applyClubExitGrace } = await import("./club-exit.server");
+    const { freeUntil } = await applyClubExitGrace(supabaseAdmin as any, coach.data.id, {
+      existingPromoCode: coach.data.promo_code ?? null,
+    });
+
+    // Let them know — best-effort, never blocks the removal.
+    try {
+      const [{ data: userRes }, org] = await Promise.all([
+        supabaseAdmin.auth.admin.getUserById(coach.data.user_id),
+        supabaseAdmin
+          .from("organizations")
+          .select("name")
+          .eq("id", data.organizationId)
+          .maybeSingle(),
+      ]);
+      const email = userRes?.user?.email;
+      if (email) {
+        const { sendClubRemovalNotice } = await import("./club-emails.server");
+        await sendClubRemovalNotice({
+          to: email,
+          firstName: coach.data.first_name ?? null,
+          orgName: org.data?.name ?? "your club",
+          freeUntilIso: freeUntil,
+        });
+      }
+    } catch (e) {
+      console.error("removeCoachFromOrg: removal email failed", e);
+    }
 
     // Audit
     await supabaseAdmin.from("org_admin_actions").insert({
