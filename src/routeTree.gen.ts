@@ -43,6 +43,7 @@ import { Route as SignupAthleteAdultRouteImport } from './routes/signup.athlete.
 import { Route as SignupAthleteAccountRouteImport } from './routes/signup.athlete.account'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as AuthenticatedParentSettingsRouteImport } from './routes/_authenticated/parent.settings'
+import { Route as AuthenticatedParentFamilyRouteImport } from './routes/_authenticated/parent.family'
 import { Route as AuthenticatedOrgAdminTemplatesRouteImport } from './routes/_authenticated/org-admin.templates'
 import { Route as AuthenticatedOrgAdminSettingsRouteImport } from './routes/_authenticated/org-admin.settings'
 import { Route as AuthenticatedOrgAdminRosterRouteImport } from './routes/_authenticated/org-admin.roster'
@@ -274,6 +275,12 @@ const AuthenticatedParentSettingsRoute =
   AuthenticatedParentSettingsRouteImport.update({
     id: '/settings',
     path: '/settings',
+    getParentRoute: () => AuthenticatedParentRoute,
+  } as any)
+const AuthenticatedParentFamilyRoute =
+  AuthenticatedParentFamilyRouteImport.update({
+    id: '/family',
+    path: '/family',
     getParentRoute: () => AuthenticatedParentRoute,
   } as any)
 const AuthenticatedOrgAdminTemplatesRoute =
@@ -675,6 +682,7 @@ export interface FileRoutesByFullPath {
   '/org-admin/roster': typeof AuthenticatedOrgAdminRosterRoute
   '/org-admin/settings': typeof AuthenticatedOrgAdminSettingsRoute
   '/org-admin/templates': typeof AuthenticatedOrgAdminTemplatesRoute
+  '/parent/family': typeof AuthenticatedParentFamilyRoute
   '/parent/settings': typeof AuthenticatedParentSettingsRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/signup/athlete/account': typeof SignupAthleteAccountRoute
@@ -763,6 +771,7 @@ export interface FileRoutesByTo {
   '/org-admin/roster': typeof AuthenticatedOrgAdminRosterRoute
   '/org-admin/settings': typeof AuthenticatedOrgAdminSettingsRoute
   '/org-admin/templates': typeof AuthenticatedOrgAdminTemplatesRoute
+  '/parent/family': typeof AuthenticatedParentFamilyRoute
   '/parent/settings': typeof AuthenticatedParentSettingsRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/signup/athlete/account': typeof SignupAthleteAccountRoute
@@ -859,6 +868,7 @@ export interface FileRoutesById {
   '/_authenticated/org-admin/roster': typeof AuthenticatedOrgAdminRosterRoute
   '/_authenticated/org-admin/settings': typeof AuthenticatedOrgAdminSettingsRoute
   '/_authenticated/org-admin/templates': typeof AuthenticatedOrgAdminTemplatesRoute
+  '/_authenticated/parent/family': typeof AuthenticatedParentFamilyRoute
   '/_authenticated/parent/settings': typeof AuthenticatedParentSettingsRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/signup/athlete/account': typeof SignupAthleteAccountRoute
@@ -955,6 +965,7 @@ export interface FileRouteTypes {
     | '/org-admin/roster'
     | '/org-admin/settings'
     | '/org-admin/templates'
+    | '/parent/family'
     | '/parent/settings'
     | '/lovable/email/suppression'
     | '/signup/athlete/account'
@@ -1043,6 +1054,7 @@ export interface FileRouteTypes {
     | '/org-admin/roster'
     | '/org-admin/settings'
     | '/org-admin/templates'
+    | '/parent/family'
     | '/parent/settings'
     | '/lovable/email/suppression'
     | '/signup/athlete/account'
@@ -1138,6 +1150,7 @@ export interface FileRouteTypes {
     | '/_authenticated/org-admin/roster'
     | '/_authenticated/org-admin/settings'
     | '/_authenticated/org-admin/templates'
+    | '/_authenticated/parent/family'
     | '/_authenticated/parent/settings'
     | '/lovable/email/suppression'
     | '/signup/athlete/account'
@@ -1451,6 +1464,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/parent/settings'
       preLoaderRoute: typeof AuthenticatedParentSettingsRouteImport
+      parentRoute: typeof AuthenticatedParentRoute
+    }
+    '/_authenticated/parent/family': {
+      id: '/_authenticated/parent/family'
+      path: '/family'
+      fullPath: '/parent/family'
+      preLoaderRoute: typeof AuthenticatedParentFamilyRouteImport
       parentRoute: typeof AuthenticatedParentRoute
     }
     '/_authenticated/org-admin/templates': {
@@ -2034,6 +2054,7 @@ const AuthenticatedOrgAdminRouteWithChildren =
   )
 
 interface AuthenticatedParentRouteChildren {
+  AuthenticatedParentFamilyRoute: typeof AuthenticatedParentFamilyRoute
   AuthenticatedParentSettingsRoute: typeof AuthenticatedParentSettingsRoute
   AuthenticatedParentIndexRoute: typeof AuthenticatedParentIndexRoute
   AuthenticatedParentMessagesRoomIdRoute: typeof AuthenticatedParentMessagesRoomIdRoute
@@ -2044,6 +2065,7 @@ interface AuthenticatedParentRouteChildren {
 }
 
 const AuthenticatedParentRouteChildren: AuthenticatedParentRouteChildren = {
+  AuthenticatedParentFamilyRoute: AuthenticatedParentFamilyRoute,
   AuthenticatedParentSettingsRoute: AuthenticatedParentSettingsRoute,
   AuthenticatedParentIndexRoute: AuthenticatedParentIndexRoute,
   AuthenticatedParentMessagesRoomIdRoute:
