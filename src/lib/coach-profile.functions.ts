@@ -73,7 +73,7 @@ async function ensureProfile(
   const existing = await supabase
     .from("coach_profiles")
     .select(
-      "id, first_name, last_name, onboarded_at, entitlement, organization_id, subscription_tier, subscription_status, trial_ends_at, current_period_end, subscription_environment, stripe_customer_id, stripe_subscription_id, promo_code, founding_coach, founding_pro_trial_used",
+      "id, first_name, last_name, onboarded_at, entitlement, organization_id, subscription_tier, subscription_status, trial_ends_at, current_period_end, subscription_environment, stripe_customer_id, stripe_subscription_id, promo_code, founding_coach, founding_pro_trial_used, free_access_until",
     )
     .eq("user_id", userId)
     .maybeSingle();
@@ -108,7 +108,7 @@ async function ensureProfile(
         })
         .eq("id", existing.data.id)
         .select(
-          "id, first_name, last_name, onboarded_at, entitlement, organization_id, subscription_tier, subscription_status, trial_ends_at, current_period_end, subscription_environment, stripe_customer_id, promo_code, founding_coach, founding_pro_trial_used",
+          "id, first_name, last_name, onboarded_at, entitlement, organization_id, subscription_tier, subscription_status, trial_ends_at, current_period_end, subscription_environment, stripe_customer_id, promo_code, founding_coach, founding_pro_trial_used, free_access_until",
         )
         .single();
       if (upd.error) dbError(upd.error);
@@ -151,7 +151,7 @@ async function ensureProfile(
       founding_coach: isFoundingCoachWindowOpen(),
     })
     .select(
-      "id, first_name, last_name, onboarded_at, entitlement, organization_id, subscription_tier, subscription_status, trial_ends_at, current_period_end, subscription_environment, stripe_customer_id, promo_code, founding_coach, founding_pro_trial_used",
+      "id, first_name, last_name, onboarded_at, entitlement, organization_id, subscription_tier, subscription_status, trial_ends_at, current_period_end, subscription_environment, stripe_customer_id, promo_code, founding_coach, founding_pro_trial_used, free_access_until",
     )
     .single();
   if (created.error) dbError(created.error);
