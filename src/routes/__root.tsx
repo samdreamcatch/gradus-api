@@ -98,11 +98,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           "width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, interactive-widget=resizes-content",
       },
       { title: "Gradus" },
-      { name: "description", content: "We make practice perfect." },
+      { name: "description", content: "Practice, made perfect." },
       { property: "og:title", content: "Gradus" },
       { name: "twitter:title", content: "Gradus" },
-      { property: "og:description", content: "We make practice perfect." },
-      { name: "twitter:description", content: "We make practice perfect." },
+      { property: "og:description", content: "Practice, made perfect." },
+      { name: "twitter:description", content: "Practice, made perfect." },
       {
         property: "og:image",
         content:
