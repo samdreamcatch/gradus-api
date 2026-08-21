@@ -46,6 +46,14 @@ export interface CoachProfileDTO {
    * Drives the "add a card" nudge; never revokes access.
    */
   trialNeedsCard: boolean;
+  /** Stripe environment the stored subscription belongs to ("sandbox" | "live"). */
+  subscriptionEnvironment: "sandbox" | "live" | null;
+  /**
+   * True only when Stripe itself confirms the subscription is past_due /
+   * unpaid right now, and the coach actually owes money. Stale rows, test
+   * mode leftovers, and free (founding / club-covered) coaches never set it.
+   */
+  billingPastDue: boolean;
 }
 
 /** Mirrors public.coach_effective_tier() in the DB — DB is authoritative. */
@@ -115,7 +123,7 @@ async function ensureProfile(
         })
         .eq("id", existing.data.id)
         .select(
-          "id, first_name, last_name, onboarded_at, entitlement, organization_id, subscription_tier, subscription_status, trial_ends_at, current_period_end, subscription_environment, stripe_customer_id, promo_code, founding_coach, founding_pro_trial_used, free_access_until",
+          "id, first_name, last_name, onboarded_at, entitlement, organization_id, subscription_tier, subscription_status, trial_ends_at, current_period_end, subscription_environment, stripe_customer_id, stripe_subscription_id, promo_code, founding_coach, founding_pro_trial_used, free_access_until",
         )
         .single();
       if (upd.error) dbError(upd.error);
@@ -160,7 +168,7 @@ async function ensureProfile(
       founding_coach: isFoundingCoachWindowOpen(),
     })
     .select(
-      "id, first_name, last_name, onboarded_at, entitlement, organization_id, subscription_tier, subscription_status, trial_ends_at, current_period_end, subscription_environment, stripe_customer_id, promo_code, founding_coach, founding_pro_trial_used, free_access_until",
+      "id, first_name, last_name, onboarded_at, entitlement, organization_id, subscription_tier, subscription_status, trial_ends_at, current_period_end, subscription_environment, stripe_customer_id, stripe_subscription_id, promo_code, founding_coach, founding_pro_trial_used, free_access_until",
     )
     .single();
   if (created.error) dbError(created.error);
@@ -251,6 +259,34 @@ export const getCoachProfile = createServerFn({ method: "GET" })
       }
     }
 
+    const subscriptionEnvironment =
+      (profile.subscription_environment as "sandbox" | "live" | null) ?? null;
+
+    // Failed-payment banner: only for coaches who actually owe money, and
+    // only when Stripe confirms the delinquency right now. A stale DB row,
+    // a test-mode subscription, or a comped coach must never warn.
+    const owesMoney =
+      effectiveEntitlement !== "promo_free" && effectiveEntitlement !== "club_covered";
+    let billingPastDue = false;
+    if (
+      owesMoney &&
+      (profile.subscription_status === "past_due" || profile.subscription_status === "unpaid") &&
+      profile.stripe_subscription_id &&
+      subscriptionEnvironment
+    ) {
+      try {
+        const { createStripeClient } = await import("@/lib/stripe.server");
+        const stripe = createStripeClient(subscriptionEnvironment);
+        const sub = await stripe.subscriptions.retrieve(profile.stripe_subscription_id);
+        billingPastDue = sub.status === "past_due" || sub.status === "unpaid";
+      } catch (err) {
+        // Fail quiet — never warn about a payment we couldn't verify.
+        console.error("getCoachProfile: past_due verification failed", err);
+      }
+    }
+
+
+
     return {
       profile: {
         id: profile.id,
@@ -275,6 +311,8 @@ export const getCoachProfile = createServerFn({ method: "GET" })
         foundingProTrialUsed: Boolean(profile.founding_pro_trial_used),
         freeAccessUntil,
         trialNeedsCard,
+        subscriptionEnvironment,
+        billingPastDue,
       } as CoachProfileDTO,
       levels: (levels.data ?? []).map((r) => ({
         sport: r.sport,
