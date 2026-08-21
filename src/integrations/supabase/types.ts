@@ -2444,6 +2444,7 @@ export type Database = {
       }
       is_parent_of_athlete: { Args: { _athlete_id: string }; Returns: boolean }
       is_parent_of_plan: { Args: { _plan_id: string }; Returns: boolean }
+      is_privileged_writer: { Args: never; Returns: boolean }
       is_room_participant: {
         Args: { _room_id: string; _user_id: string }
         Returns: boolean
