@@ -1,54 +1,43 @@
-# Co-guardian parity with the primary parent
+# Show who actually logged each practice session
 
-A second guardian on a Family plan can see an athlete, but several parts of the app still
-recognize only the athlete's *primary* parent. That's why messaging a coach from a plan
-failed with "Not authorized to open this conversation."
+The practice log says "Parent logged for Jamie" instead of naming the guardian (e.g. "Junie
+logged for Jamie").
 
-## What's already fixed this session
+## Cause (confirmed)
 
-- Athlete profiles are now visible to linked co-guardians (access rule added), so shared
-  athletes appear in lists and plan filters.
-- The messaging code path that opens a coach conversation now accepts co-guardians, and the
-  "who can I message" list is built from all athletes a guardian is linked to.
+Each session row stores which parent logged it, and the log tries to look up that parent's
+first name. But profile visibility only allows a parent to read *their own* profile (plus
+coaches reading parents of rostered athletes). So:
 
-## What still needs to change
+- A co-guardian viewing a session logged by the other guardian can't read that name.
+- An athlete viewing a parent-logged session can't read it either.
 
-Confirmed by inspecting the current access rules, these areas still check only
-`athletes.parent_id`, so a co-guardian is silently blocked or sees nothing:
+In both cases the lookup returns nothing and the label falls back to the generic word
+"Parent".
 
-1. **Practice log / sessions** — a co-guardian cannot see logged sessions for a shared
-   athlete (the view rule checks the primary parent only). Logging is already guardian-aware
-   on insert, so a co-guardian could write a row they then can't read.
-2. **Goals** — viewing and removing an athlete's goals is limited to the primary parent.
-3. **Lesson schedule** — viewing, adding, editing, and removing lesson slots (and per-date
-   overrides) is limited to the primary parent.
-4. **Parent settings** — the athlete list is guardian-aware, but a step inside it skips any
-   athlete where the caller isn't the primary parent, so co-guardians can lose coach-invite
-   context for shared athletes.
+## Fix
 
-## Approach
+Resolve the logging guardian's first name server-side, with privileged access, inside the
+practice-log fetch — scoped strictly to the parent IDs that appear on that plan's own
+sessions, and returning only the first name. No profile visibility is widened, and no other
+field is exposed.
 
-Reuse the guardian-aware helpers that already exist in the database rather than writing new
-per-table logic:
+Result: every entry reads "<Name> logged for Jamie" for whichever guardian logged it, and
+athlete-logged entries keep showing the athlete's name as they do today.
 
-- Read access switches to the existing "is a parent or guardian of this athlete" helper.
-- Write access switches to the existing "can write for this athlete" helper, which already
-  encodes the rule that co-guardians write only while the Family plan is active and
-  otherwise stay read-only.
+## Also covered
 
-Then a pass over the parent-facing server code to remove leftover primary-parent-only
-filters (parent settings), so the UI shows the same athletes and controls to both guardians.
+The same generic-fallback pattern appears in the duplicate-log nudge ("… logged a session
+for this plan"), which reads the same field, so it gets the correct name automatically.
 
 ## Technical details
 
-- Migration replacing the parent policies on `plan_sessions` (select/delete),
-  `athlete_goals` (select/delete/update/insert), `athlete_lesson_slots` (all commands), and
-  `lesson_slot_overrides` with versions built on `public.is_parent_of_athlete(...)` for reads
-  and `public.parent_can_write(...)` for writes. Existing coach/athlete policies untouched.
-- `athlete_invite_codes` stays scoped to the row's own `parent_id` (each guardian generates
-  their own code) — no change.
-- `src/lib/parent-settings.functions.ts`: drop the `parent_id !== parent.id` skip so shared
-  athletes render for co-guardians; keep primary-only gating on guardian invite/removal
-  controls, which is intentional.
-- Verification: query the shared athlete (Jamie Gilmore) as the co-guardian's role context to
-  confirm sessions, goals, and slots come back, then re-test sending a plan message.
+- `src/lib/plan-sessions.functions.ts` → `getPlanSessionLog`: replace the RLS-scoped
+  `parent_profiles` name lookup with a handler-scoped
+  `await import("@/integrations/supabase/client.server")` admin read of
+  `id, first_name` filtered by `.in("id", parentIds)`, where `parentIds` comes only from the
+  already-authorized session rows for that plan. Keep the existing `"Parent"` fallback for
+  deleted profiles.
+- No schema or policy migration required.
+- Verify by loading the shared plan as the co-guardian and as the athlete and confirming the
+  entry names the guardian who logged it.
