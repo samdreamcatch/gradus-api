@@ -276,21 +276,24 @@ function PaywallPage() {
     navigate,
   ]);
 
-  // Auto-apply WELCOME_BACK when the coach was granted it on leaving a club.
-  // Pre-fills the promo input, opens the section, and validates in the
-  // background so Coach Pro shows the 3-months-free discount immediately.
+  // Auto-apply whatever repeating promo is attached to the coach's profile —
+  // WILSON / PRACTICE carried through from an invite, or WELCOME_BACK granted
+  // when they left a club. Pre-fills the promo input, opens the section, and
+  // validates in the background so the discount shows immediately.
   const welcomeBackAutoAppliedRef = useRef(false);
   useEffect(() => {
     if (welcomeBackAutoAppliedRef.current) return;
 
-    if (isEntitled) return;
-    if (profilePromoCode !== "WELCOME_BACK") return;
+    // Already on a paid subscription — nothing to discount.
+    if (entitlement === "paid" || entitlement === "club_covered") return;
+    if (!profilePromoCode) return;
     if (promo.status !== "idle") return;
+    const code = profilePromoCode;
     welcomeBackAutoAppliedRef.current = true;
-    setPromoInput("WELCOME_BACK");
+    setPromoInput(code);
     setPromoOpen(true);
     setPromo({ status: "validating" });
-    validateCode({ data: { code: "WELCOME_BACK" } })
+    validateCode({ data: { code } })
       .then((res) => {
         if (!res.valid || res.duration !== "repeating") {
           setPromo({ status: "idle" });
@@ -298,14 +301,14 @@ function PaywallPage() {
         }
         setPromo({
           status: "valid",
-          code: "WELCOME_BACK",
-          label: res.label ?? "WELCOME_BACK",
+          code,
+          label: res.label ?? code,
           duration: res.duration,
           durationInMonths: res.durationInMonths,
         });
       })
       .catch(() => setPromo({ status: "idle" }));
-  }, [isEntitled, profilePromoCode, promo.status, welcomeBackAutoAppliedRef]);
+  }, [entitlement, profilePromoCode, promo.status, welcomeBackAutoAppliedRef]);
 
   const handleSignOut = async () => {
     await qc.cancelQueries();
