@@ -282,6 +282,38 @@ export const EMAIL_COPY_SCHEMA: Record<string, TemplateCopy> = {
         "If you don't recognize this athlete, you can ignore this email and no account will be created.",
     },
   },
+  "coach-visibility": {
+    displayName: "Team plan — coach visibility request",
+    category: "App",
+    description:
+      "Sent to each coach when a parent on the Team plan connects two of their athlete's coaches so they can see each other's work.",
+    slots: [
+      { key: "preview", label: "Inbox preview", kind: "text", variables: COACH_VISIBILITY_VARS },
+      { key: "subject", label: "Subject line", kind: "text", variables: COACH_VISIBILITY_VARS },
+      { key: "eyebrow", label: "Small caps eyebrow", kind: "text" },
+      { key: "heading", label: "Big headline", kind: "text", variables: COACH_VISIBILITY_VARS },
+      { key: "intro", label: "Intro paragraph", kind: "textarea", variables: COACH_VISIBILITY_VARS },
+      { key: "body", label: "Secondary paragraph", kind: "textarea", variables: COACH_VISIBILITY_VARS },
+      { key: "ctaLabel", label: "Button label", kind: "text", variables: COACH_VISIBILITY_VARS },
+      { key: "fallbackHelp", label: "Button-not-working help", kind: "text" },
+      { key: "signOff", label: "Handwritten sign-off", kind: "text" },
+      { key: "footer", label: "Fine-print footer", kind: "textarea" },
+    ],
+    defaults: {
+      preview: "{parentName} connected you with {otherCoachName} for {athleteName}",
+      subject: "{otherCoachName} would like to share notes on {athleteName}",
+      eyebrow: "Coach visibility",
+      heading: "A parent connected you with another coach",
+      intro:
+        "{parentName} asked to connect you and {otherCoachName} on {athleteName}'s account. If you both agree, each of you can see the other's plans, practice log, goals, and lesson schedule for {athleteName} — read only, and for that athlete alone.",
+      body: "Nothing is shared until you accept. You can decline, or turn the connection off later from your settings.",
+      ctaLabel: "Review the request",
+      fallbackHelp: "Or paste this link into your browser:",
+      signOff: "— The Gradus team",
+      footer:
+        "You're getting this because a parent on the Team plan manages this athlete's coaches.",
+    },
+  },
   "team-invite": {
     displayName: "Team plan — guardian invite",
     category: "App",
