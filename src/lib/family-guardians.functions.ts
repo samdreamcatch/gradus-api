@@ -12,6 +12,8 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { dbError } from "./db-error";
 
 const INVITE_TTL_DAYS = 30;
+/** Family plan allows up to three guardians per athlete (primary + two co-guardians). */
+const MAX_GUARDIANS_PER_ATHLETE = 3;
 
 async function getAdmin() {
   const m = await import("@/integrations/supabase/client.server");
@@ -46,6 +48,36 @@ async function assertPrimary(parentId: string, athleteId: string) {
   }
   return row;
 }
+
+/**
+ * Seats already taken for an athlete: linked guardians plus, optionally,
+ * outstanding pending invites (which will become guardians when claimed).
+ */
+async function guardianSeatsUsed(
+  admin: Awaited<ReturnType<typeof getAdmin>>,
+  athleteId: string,
+  opts: { includePending: boolean },
+) {
+  const links = await admin
+    .from("athlete_guardians")
+    .select("id", { count: "exact", head: true })
+    .eq("athlete_id", athleteId);
+  if (links.error) dbError(links.error);
+  let used = links.count ?? 0;
+
+  if (opts.includePending) {
+    const pending = await admin
+      .from("guardian_invites")
+      .select("id", { count: "exact", head: true })
+      .eq("athlete_id", athleteId)
+      .eq("status", "pending");
+    if (pending.error) dbError(pending.error);
+    used += pending.count ?? 0;
+  }
+  return used;
+}
+
+
 
 /** Guardians + pending invites for each athlete the caller is primary on. */
 export const listFamilyGuardians = createServerFn({ method: "GET" })
@@ -149,6 +181,15 @@ export const inviteGuardian = createServerFn({ method: "POST" })
     if (!(await familyPlanActive(admin, parent.id))) {
       throw new Error("Start the Family plan to add another parent or guardian.");
     }
+
+    const used = await guardianSeatsUsed(admin, data.athleteId, { includePending: true });
+    if (used >= MAX_GUARDIANS_PER_ATHLETE) {
+      throw new Error(
+        `The Family plan allows up to ${MAX_GUARDIANS_PER_ATHLETE} guardians per athlete. Remove a guardian or revoke a pending invite first.`,
+      );
+    }
+
+
 
     const token = newInviteToken();
     let code = "";
@@ -334,6 +375,25 @@ export const claimGuardianInvite = createServerFn({ method: "POST" })
     if (parentId === invite.invited_by_parent_id) {
       throw new Error("You're already the primary parent for this athlete.");
     }
+
+    // Cap seats at claim time too (existing links only — this invite is one of them).
+    const alreadyLinked = await admin
+      .from("athlete_guardians")
+      .select("id")
+      .eq("athlete_id", invite.athlete_id)
+      .eq("parent_id", parentId)
+      .maybeSingle();
+    if (alreadyLinked.error) dbError(alreadyLinked.error);
+    if (!alreadyLinked.data) {
+      const used = await guardianSeatsUsed(admin, invite.athlete_id, { includePending: false });
+      if (used >= MAX_GUARDIANS_PER_ATHLETE) {
+        throw new Error(
+          `This athlete already has the maximum of ${MAX_GUARDIANS_PER_ATHLETE} guardians.`,
+        );
+      }
+    }
+
+
 
     const link = await admin
       .from("athlete_guardians")
