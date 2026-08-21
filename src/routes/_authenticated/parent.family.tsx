@@ -86,7 +86,7 @@ function ParentFamilyPage() {
         data: {
           priceId,
           environment: getStripeEnvironment(),
-          returnUrl: `${window.location.origin}/parent/family?checkout=return`,
+          returnUrl: `${window.location.origin}/parent/settings?checkout=return`,
         },
       });
       if ("error" in result) throw new Error(result.error);
