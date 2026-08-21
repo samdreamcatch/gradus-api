@@ -2640,7 +2640,6 @@ export type Database = {
         Args: { _kind: string; _user_id: string }
         Returns: undefined
       }
-      family_plan_active: { Args: { _athlete_id: string }; Returns: boolean }
       get_adult_athlete_by_invite_code: {
         Args: { _code: string }
         Returns: {
@@ -2659,6 +2658,10 @@ export type Database = {
         }[]
       }
       get_shared_plan: { Args: { _token: string }; Returns: Json }
+      guardian_can_write_athlete: {
+        Args: { _athlete_id: string }
+        Returns: boolean
+      }
       has_org_admin: {
         Args: { _org_id: string; _user_id: string }
         Returns: boolean
@@ -2726,6 +2729,7 @@ export type Database = {
       }
       seed_coach_library: { Args: { _coach_id: string }; Returns: number }
       shares_athlete_window: { Args: { _athlete_id: string }; Returns: boolean }
+      team_plan_active: { Args: { _athlete_id: string }; Returns: boolean }
       touch_last_seen: { Args: never; Returns: undefined }
     }
     Enums: {
