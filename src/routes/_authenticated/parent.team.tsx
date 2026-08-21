@@ -39,7 +39,10 @@ const FREE_FEATURES = [
 const TEAM_FEATURES = [
   "Shared plans and goals",
   "Team-wide notifications",
+  "Up to three guardians",
+  "Connect your athlete's coaches",
 ];
+
 
 export const Route = createFileRoute("/_authenticated/parent/team")({
   head: () => ({
