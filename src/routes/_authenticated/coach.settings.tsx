@@ -535,7 +535,7 @@ function PlanSection({
 
   // Complimentary access
   if (profile.entitlement === "promo_free") {
-    const freeUntil = formatDate(profile.freeAccessUntil ?? null);
+    const freeUntil = formatShortDate(profile.freeAccessUntil ?? null);
     return (
       <>
         <PlanSummaryCard
