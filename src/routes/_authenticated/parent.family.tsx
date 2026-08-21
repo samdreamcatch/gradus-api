@@ -201,7 +201,7 @@ function ParentFamilyPage() {
         <p className="mt-1.5 max-w-md text-center text-sm text-text-secondary">
           {planActive
             ? "Invite guardians, or change your billing."
-            : "Give another parent or guardian full access to your athlete. Cancel anytime."}
+            : "Add up to three guardians per athlete on Family plan"}
         </p>
 
         {planActive && (
