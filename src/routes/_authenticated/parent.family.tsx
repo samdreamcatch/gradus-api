@@ -72,12 +72,10 @@ function ParentFamilyPage() {
   const { checkout } = Route.useSearch();
 
   const fetchStatus = useServerFn(getFamilyPlanStatus);
-  const fetchGuardians = useServerFn(listFamilyGuardians);
   const startCheckout = useServerFn(startFamilyCheckout);
   const openPortal = useServerFn(createParentBillingPortalSession);
 
   const status = useQuery({ queryKey: ["family-plan-status"], queryFn: () => fetchStatus() });
-  const guardians = useQuery({ queryKey: ["family-guardians"], queryFn: () => fetchGuardians() });
 
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [interval, setInterval] = useState<Interval>("month");
