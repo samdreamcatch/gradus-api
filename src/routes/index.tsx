@@ -54,7 +54,7 @@ function RolePicker() {
             <Logo className="text-7xl" />
           </h1>
           <p className="mt-8 font-display text-3xl leading-tight text-text-primary">
-            We make practice perfect.
+            Practice, made perfect.
           </p>
           <p className="mt-4 text-base text-text-secondary">
             75% of an athlete&apos;s progress happens between lessons. We&apos;re here for that
