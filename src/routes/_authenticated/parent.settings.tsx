@@ -92,6 +92,7 @@ const searchSchema = z.object({
     .length(8)
     .regex(/^[A-Z2-9]+$/)
     .optional(),
+  checkout: z.string().optional(),
 });
 
 export const Route = createFileRoute("/_authenticated/parent/settings")({
