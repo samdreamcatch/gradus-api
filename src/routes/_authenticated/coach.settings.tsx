@@ -555,7 +555,7 @@ function PlanSection({
               icon={<Sparkles className="size-4" />}
               label="Choose a plan"
               tone="accent"
-              onClick={() => navigate({ to: "/coach/paywall", search: { upgrade: "1" } })}
+              onClick={() => navigate({ to: "/coach/paywall" })}
             />
             {joinClubRow}
           </SettingsList>
