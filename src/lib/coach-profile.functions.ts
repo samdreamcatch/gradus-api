@@ -98,7 +98,9 @@ async function ensureProfile(
       !hasStripeSub &&
       (!existing.data.founding_coach || existing.data.entitlement === "pending");
     if (needsFoundingStamp) {
-      const upd = await supabase
+      // Billing columns are DB-locked to trusted writers; use the admin client.
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const upd = await supabaseAdmin
         .from("coach_profiles")
         .update({
           entitlement: "promo_free",
@@ -112,6 +114,7 @@ async function ensureProfile(
       if (upd.error) dbError(upd.error);
       return upd.data;
     }
+
     return existing.data;
   }
 
