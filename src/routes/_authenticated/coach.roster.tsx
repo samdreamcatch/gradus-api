@@ -11,6 +11,7 @@ import {
 import { queryOptions, useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { CoachBottomNav } from "@/components/coach/bottom-nav";
+import { CoachVisibilityAutoPrompt } from "@/components/coach/coach-visibility-sheet";
 import { PageTitle } from "@/components/page-title";
 
 import { RosterCard } from "@/components/coach/roster-card";
@@ -394,6 +395,7 @@ function RosterPage() {
       </div>
       <CoachBottomNav />
       <AthleteDetailSheet athleteId={selectedAthleteId} onOpenChange={setSelectedAthleteId} />
+      <CoachVisibilityAutoPrompt />
     </>
   );
 }
