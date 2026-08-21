@@ -923,13 +923,16 @@ export const listMyMessageTargets = createServerFn({ method: "GET" })
     }
 
     if (me.parent) {
+      const { guardianAthleteIdsSafe } = await import("./family.server");
+      const ids = await guardianAthleteIdsSafe(supabaseAdmin as any, me.parent.id);
       const { data, error } = await supabaseAdmin
         .from("athletes")
         .select(
           "id, first_name, last_name, coach_athletes!inner(coach_id, coach_profiles!inner(id, first_name, last_name))",
         )
-        .eq("parent_id", me.parent.id);
+        .in("id", ids);
       if (error) dbError(error, "Couldn't load coaches");
+
 
       const targets: MessageTargetDTO[] = [];
       for (const row of data ?? []) {
