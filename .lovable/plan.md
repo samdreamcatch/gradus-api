@@ -1,42 +1,36 @@
-# Review: PR #40 (remove hardcoded key from cron migrations)
+# Review: second Semgrep autofix PR (`current_setting('supabase.anon_key')`)
 
-## Short answer
+## Verdict: do not merge
 
-Nothing is broken **right now** — but the change also didn't actually do anything, and it will break the scheduled emails the next time the database is rebuilt from migrations. It needs a follow-up before it can be considered done.
+This PR has the same two blocking problems as PR #40, and one of them is worse here because the failure would be silent.
 
-## What the PR did
+## Verified findings
 
-It rewrote two already-applied migration files so the scheduled email jobs read the API key out of Vault instead of having it typed into the SQL, and added a new migration that puts the key into Vault.
+1. **`supabase.anon_key` does not exist on this project.** I queried the live database directly: `current_setting('supabase.anon_key', true)` returns null — the setting is not defined. The PR description's premise ("Supabase exposes the anon key as a PostgreSQL GUC") is not true for this instance. There is no such variable to read.
 
-## Findings (all verified against the live database)
+2. **The failure would be silent and delayed.** Unlike PR #40 (which would have failed loudly at migration time), this version stores the lookup *inside* the scheduled job body. Scheduling succeeds. Then every single run raises `unrecognized configuration parameter: "supabase.anon_key"` and does nothing. Nobody gets an error page. Welcome/activation emails and trial-ending notices just stop, and we would likely find out from a customer weeks later — exactly the failure mode we just spent a day chasing with Christine.
 
-1. **No live effect.** Editing a migration that already ran does not change the database. All three scheduled jobs in production still contain the original hardcoded key, exactly as before. Nothing about today's app behavior changed, so there is no live breakage and no live security improvement either.
+3. **It still edits migrations that have already been applied.** Rewriting a migration file does not change the running database. I checked `cron.job`: all three jobs still contain the original literal. So the PR again produces zero real remediation while making the repo disagree with production — and any future rebuild, branch, or restore would then produce the broken version described in point 2.
 
-2. **The Vault secret does not exist.** The new migration only creates it if a database setting named `app.settings.supabase_anon_key` is present. That setting is not configured on this project, so on a fresh database the migration would fail outright and stop the rest of the migration run.
+4. **Still incomplete.** The hourly `error-digest-hourly` job carries the same literal and is untouched, so even the cosmetic goal isn't met.
 
-3. **If it did run, the emails would stop.** The rewritten jobs look the key up from Vault. With no secret stored, they would send an empty key, and both endpoints reject an unmatched key — so welcome/activation emails and trial-ending notices would silently stop firing, with no error surfaced anywhere.
+5. **Severity context worth recording.** The value flagged is the Supabase **publishable/anon** key. It is designed to be public — it already ships inside the browser bundle of every page load and is protected by row-level security, not by secrecy. Semgrep's rule (`detected-jwt-token`) matches on shape, not on sensitivity, so it cannot tell this apart from a real credential. This is a true positive for "a JWT is present" and a false positive for "a secret is exposed."
 
-4. **One job was missed.** The hourly error-digest job still has the key hardcoded in its migration and wasn't touched, so the stated goal isn't fully met regardless.
+## Recommended disposition
 
-5. **Rewriting applied migrations is itself the risk.** The file history no longer matches what actually ran. Any future rebuild, branch, or restore produces a different database than production.
+- **Close this PR** (and keep #40 reverted).
+- **Mark the Semgrep finding as accepted risk / low**, with the note in point 5. Semgrep autofix cannot see runtime database state, which is why both of its attempts produce SQL that looks right and cannot work here.
+- **Optional cleanup, on our terms:** if we still want the literal out of the SQL, do it as one **new, forward-only** migration that
+  - stores the key in Vault explicitly (with the value supplied at apply time, not read from a setting that doesn't exist),
+  - re-schedules all three jobs — lifecycle-emails, billing-notices, and error-digest — to read from Vault,
+  - and is verified straight afterward.
 
-## Recommended follow-up
+  This is housekeeping, not a security fix, so it can wait for a quiet moment.
 
-1. Revert the two rewritten migration files back to their original content, so history matches the database that's actually running.
-2. Delete the new Vault-seeding migration (it can't succeed as written).
-3. If we still want the key out of the SQL — worth doing, just not this way — add one **new, forward-only** migration that:
-   - stores the key in Vault directly rather than depending on a database setting that doesn't exist,
-   - re-schedules all three jobs (welcome/activation, trial-ending, error digest) to read from Vault,
-   - and is verified immediately after by checking that each job's next run succeeds.
-4. Note for the security scanner: the key in question is the public/publishable key that already ships in the browser bundle. Moving it out of SQL is tidiness, not a leak fix — so this is not urgent.
+## How to verify, if we do the cleanup
 
-## How to test
-
-Once the follow-up lands, verification is quick and observable:
-
-- **Scheduled-job health:** check each job's recent run history for successes rather than failures, and confirm the response status recorded for each outbound call.
-- **Emails still flow:** trigger a signup on a test account and confirm the welcome/activation email lands, then check the email health dashboard in the admin panel for the send record.
-- **Error digest:** confirm the hourly digest continues to arrive.
-- **Fresh-database check:** the strongest test — run the full migration history from scratch on a scratch database and confirm it completes without error. That's the exact failure this PR would otherwise hide until the worst possible moment.
-
-No app-facing UI is involved, so there's nothing for users to test in the browser.
+- Confirm the Vault secret exists and decrypts to the expected value before re-scheduling anything.
+- After re-scheduling, watch each job's run history for successful runs and a 200 response on the outbound call — do not rely on "the migration applied cleanly," since that proves nothing here.
+- Send a test signup and confirm the welcome/activation email lands, checking the email health dashboard for the send record.
+- Confirm the next hourly error digest arrives.
+- Keep a rollback ready: the previous working job definitions, so we can re-schedule them immediately if a run fails.
