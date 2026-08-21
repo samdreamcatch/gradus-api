@@ -20,7 +20,12 @@ Co-guardians go read-only — they can still see everything, but logging, messag
 
 ## Pricing
 
-Flat Family plan, monthly, one subscription per household covering **up to 3 additional guardians**. Suggested price **$8/month** — confirm or change this before build; it drives the Stripe product created during implementation.
+Flat Family plan, one subscription per household covering **up to 3 additional guardians**: **$15/month**, or **$162/year** (10% off). Both prices are created in Stripe during implementation with a digital tax code.
+
+## Messaging
+
+Yes — added guardians join the existing coach conversation for that athlete rather than getting a separate thread. Today a room's participant list is built from `athletes.parent_id`, so exactly one parent appears; the same widening that grants access replaces that single lookup with the full guardian list. Practically: one shared room per coach/athlete pair, every guardian sees the full history including messages sent before they joined, each message is labeled with the sender's name so the coach can tell the two parents apart, and unread badges are tracked per person. While a subscription is lapsed, a co-guardian can read the room but can't send.
+
 
 ## Technical notes
 
