@@ -118,7 +118,10 @@ export const listAthletePlans = createServerFn({ method: "GET" })
     );
 
     const [movesRes, coachesRes, goalsRes] = await Promise.all([
-      supabase
+      // Plan IDs are already scoped to this athlete by the RLS-checked query
+      // above. Reading moves through RLS re-runs the athlete/plan join per
+      // move row and can hit the statement timeout.
+      supabaseAdmin
         .from("plan_moves")
         .select("plan_id, target_kind, target_value, move_id")
         .in("plan_id", planIds),
