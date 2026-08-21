@@ -17,6 +17,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { DevToolsMount } from "@/components/dev/dev-tools-mount";
 import { registerServiceWorker } from "@/pwa/register-sw";
 import { InstallBanner } from "@/components/install-banner";
+import { PwaUpdatePrompt } from "@/components/pwa-update-prompt";
 import { installErrorReporter, reportError } from "@/lib/client-error-reporter";
 import { PRE_HYDRATION_SNAPSHOT_SCRIPT } from "@/lib/hydration-diagnostics";
 import { ImpersonationBanner } from "@/components/admin/impersonation-banner";
@@ -177,6 +178,7 @@ function RootComponent() {
         </main>
         <Toaster />
         <InstallBanner />
+        <PwaUpdatePrompt />
         <DevToolsMount />
       </ThemeProvider>
     </QueryClientProvider>

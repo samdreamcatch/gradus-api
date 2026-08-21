@@ -5,6 +5,41 @@
 
 const SW_URL = "/sw.js";
 
+/** Dispatched on `window` when a newer build has been downloaded and is waiting. */
+export const SW_UPDATE_EVENT = "gradus:sw-update";
+
+/** How often an open session re-checks for a newer build. */
+const UPDATE_POLL_MS = 30 * 60 * 1000;
+
+function announceUpdate(waiting: ServiceWorker | null): void {
+  window.dispatchEvent(new CustomEvent(SW_UPDATE_EVENT, { detail: { waiting } }));
+}
+
+function watchForUpdates(reg: ServiceWorkerRegistration): void {
+  // Already downloaded and waiting when we registered.
+  if (reg.waiting && navigator.serviceWorker.controller) announceUpdate(reg.waiting);
+
+  reg.addEventListener("updatefound", () => {
+    const installing = reg.installing;
+    if (!installing) return;
+    installing.addEventListener("statechange", () => {
+      // A worker reaching "installed" while one is already controlling the
+      // page means this is an update, not a first install.
+      if (installing.state === "installed" && navigator.serviceWorker.controller) {
+        announceUpdate(reg.waiting ?? installing);
+      }
+    });
+  });
+
+  const check = () => {
+    void reg.update().catch(() => undefined);
+  };
+  window.setInterval(check, UPDATE_POLL_MS);
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") check();
+  });
+}
+
 function shouldRefuse(): boolean {
   if (typeof window === "undefined") return true;
   if (!("serviceWorker" in navigator)) return true;
@@ -55,8 +90,13 @@ export function registerServiceWorker(): void {
   }
 
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register(SW_URL, { type: "classic", scope: "/" }).catch((err) => {
-      console.warn("[pwa] service worker registration failed", err);
-    });
+    navigator.serviceWorker
+      .register(SW_URL, { type: "classic", scope: "/" })
+      .then((reg) => {
+        watchForUpdates(reg);
+      })
+      .catch((err) => {
+        console.warn("[pwa] service worker registration failed", err);
+      });
   });
 }
