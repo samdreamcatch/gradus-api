@@ -158,11 +158,14 @@ export const startCoachCheckout = createServerFn({ method: "POST" })
           .eq("code", profile.promo_code)
           .maybeSingle();
         const promo = promoLookup.data;
+        // Honor both forever codes (FOUNDING_COACH) and repeating ones
+        // (WILSON / PRACTICE / WELCOME_BACK) that were attached to the
+        // profile at signup or when leaving a club.
         if (
           promo &&
           promo.active &&
           (promo.percent_off ?? 0) > 0 &&
-          (promo.duration ?? "forever") === "forever"
+          ["forever", "repeating"].includes(promo.duration ?? "forever")
         ) {
           const allowed = (promo.applies_to_plans ?? ["coach", "coach_pro"]) as string[];
           if (allowed.includes(tier)) {
