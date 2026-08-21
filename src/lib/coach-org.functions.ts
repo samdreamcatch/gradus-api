@@ -511,7 +511,8 @@ export const clearOrganizationLink = createServerFn({ method: "POST" })
       if (promo.data?.active) stashPromo = "WELCOME_BACK";
     }
 
-    const upd = await supabase
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const upd = await supabaseAdmin
       .from("coach_profiles")
       .update({
         organization_id: null,
