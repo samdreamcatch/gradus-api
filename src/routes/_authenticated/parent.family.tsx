@@ -159,6 +159,14 @@ function ParentFamilyPage() {
     <>
       <PaymentTestModeBanner />
       <div className="mx-auto flex min-h-dvh max-w-2xl flex-col items-center px-4 pt-5 pb-28">
+        {!planActive && (
+          <Link
+            to="/parent/settings"
+            className="press mb-3 self-start inline-flex items-center gap-1 text-sm text-text-secondary"
+          >
+            <ArrowLeft className="h-4 w-4" /> Not now
+          </Link>
+        )}
         <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-full bg-accent/15 text-accent-ink">
           <Users className="h-5 w-5" />
         </div>
