@@ -465,7 +465,7 @@ export const joinOrganization = createServerFn({ method: "POST" })
     if (versionRow.error) dbError(versionRow.error);
     const version = (versionRow.data?.content_version as number | null | undefined) ?? 0;
 
-    const update = await supabase
+    const update = await supabaseAdmin
       .from("coach_profiles")
       .update({
         organization_id: org.id,
