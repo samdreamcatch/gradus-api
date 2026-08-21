@@ -1,10 +1,10 @@
 /**
- * Server-only sender for Family plan guardian invites. Best-effort: logs and
+ * Server-only sender for Team plan guardian invites. Best-effort: logs and
  * swallows errors so a failed send can never break the invite itself.
  */
 import * as React from "react";
 import { render } from "@react-email/render";
-import { FamilyInviteEmail, familyInviteSubject } from "./email-templates/family-invite";
+import { TeamInviteEmail, teamInviteSubject } from "./email-templates/team-invite";
 import { fetchOverridesFor } from "./email-templates/overrides.server";
 import { buildAppEmailPayload } from "./email-queue-payload";
 
@@ -13,32 +13,32 @@ const SENDER_DOMAIN = "support.gradussports.com";
 const FROM_DOMAIN = "gradussports.com";
 export const SITE_URL = "https://gradus.training";
 
-export function familyClaimUrl(token: string): string {
-  return `${SITE_URL}/family/${token}`;
+export function teamClaimUrl(token: string): string {
+  return `${SITE_URL}/team/${token}`;
 }
 
-export async function sendFamilyInvite(params: {
+export async function sendTeamInvite(params: {
   to: string;
   athleteName: string;
   inviterName: string;
   token: string;
   code: string;
 }): Promise<void> {
-  const label = "family-invite";
+  const label = "team-invite";
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const copyOverrides = await fetchOverridesFor(label);
-    const element = React.createElement(FamilyInviteEmail, {
+    const element = React.createElement(TeamInviteEmail, {
       athleteName: params.athleteName,
       inviterName: params.inviterName,
-      claimUrl: familyClaimUrl(params.token),
+      claimUrl: teamClaimUrl(params.token),
       code: params.code,
       siteUrl: SITE_URL,
       copyOverrides,
     });
     const html = await render(element);
     const text = await render(element, { plainText: true });
-    const subject = familyInviteSubject(
+    const subject = teamInviteSubject(
       { athleteName: params.athleteName, inviterName: params.inviterName },
       copyOverrides,
     );
@@ -51,7 +51,7 @@ export async function sendFamilyInvite(params: {
       status: "pending",
     });
     if (pendingError) {
-      console.error("[family-emails] pending log failed", pendingError);
+      console.error("[team-emails] pending log failed", pendingError);
       return;
     }
 
@@ -73,7 +73,7 @@ export async function sendFamilyInvite(params: {
     });
 
     if (error) {
-      console.error("[family-emails] enqueue failed", error);
+      console.error("[team-emails] enqueue failed", error);
       await supabaseAdmin.from("email_send_log").insert({
         message_id: messageId,
         template_name: label,
@@ -91,6 +91,6 @@ export async function sendFamilyInvite(params: {
       payload,
     });
   } catch (err) {
-    console.error("[family-emails] send failed", err);
+    console.error("[team-emails] send failed", err);
   }
 }

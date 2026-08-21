@@ -41,7 +41,7 @@ export const getParentResources = createServerFn({ method: "GET" })
     if (pErr) dbError(pErr);
     if (!parent) return { sports: [], resources: [] };
 
-    const { guardianAthleteIds } = await import("./family.server");
+    const { guardianAthleteIds } = await import("./team.server");
     const athleteIds = await guardianAthleteIds(supabase as any, parent.id);
     if (!athleteIds.length) return { sports: [], resources: [] };
 

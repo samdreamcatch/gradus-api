@@ -1,7 +1,7 @@
 /**
- * Family plan — co-guardian management.
+ * Team plan — co-guardian management.
  *
- * A primary parent on an active Family plan can invite additional parents or
+ * A primary parent on an active Team plan can invite additional parents or
  * guardians to an athlete. Invitees accept by link (token) or by entering the
  * invite code in their own settings. Co-guardians get full parity with the
  * primary parent while the plan is active, and go view-only if it lapses.
@@ -12,7 +12,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { dbError } from "./db-error";
 
 const INVITE_TTL_DAYS = 30;
-/** Family plan allows up to three guardians per athlete (primary + two co-guardians). */
+/** Team plan allows up to three guardians per athlete (primary + two co-guardians). */
 const MAX_GUARDIANS_PER_ATHLETE = 3;
 
 async function getAdmin() {
@@ -80,13 +80,13 @@ async function guardianSeatsUsed(
 
 
 /** Guardians + pending invites for each athlete the caller is primary on. */
-export const listFamilyGuardians = createServerFn({ method: "GET" })
+export const listTeamGuardians = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const admin = await getAdmin();
-    const { familyPlanActive, guardianAthleteIdsSafe } = await import("./family.server");
+    const { teamPlanActive, guardianAthleteIdsSafe } = await import("./team.server");
     const parent = await parentProfile(context.userId);
-    const isPayer = await familyPlanActive(admin, parent.id);
+    const isPayer = await teamPlanActive(admin, parent.id);
 
     // Every athlete this parent can reach — as primary parent or co-guardian.
     const reachableIds = await guardianAthleteIdsSafe(admin, parent.id);
@@ -136,7 +136,7 @@ export const listFamilyGuardians = createServerFn({ method: "GET" })
     );
 
     // A co-guardian is covered by the primary parent's plan — they're on the
-    // Family plan too, just not the payer.
+    // Team plan too, just not the payer.
     const otherPrimaryIds = Array.from(
       new Set(
         athletes
@@ -146,7 +146,7 @@ export const listFamilyGuardians = createServerFn({ method: "GET" })
     );
     const coveredByOther = isPayer
       ? false
-      : (await Promise.all(otherPrimaryIds.map((p) => familyPlanActive(admin, p)))).some(Boolean);
+      : (await Promise.all(otherPrimaryIds.map((p) => teamPlanActive(admin, p)))).some(Boolean);
     const planActive = isPayer || coveredByOther;
 
     return {
@@ -193,18 +193,18 @@ export const inviteGuardian = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const admin = await getAdmin();
-    const { familyPlanActive, newInviteCode, newInviteToken } = await import("./family.server");
+    const { teamPlanActive, newInviteCode, newInviteToken } = await import("./team.server");
     const parent = await parentProfile(context.userId);
     const athlete = await assertPrimary(parent.id, data.athleteId);
 
-    if (!(await familyPlanActive(admin, parent.id))) {
-      throw new Error("Start the Family plan to add another parent or guardian.");
+    if (!(await teamPlanActive(admin, parent.id))) {
+      throw new Error("Start the Team plan to add another parent or guardian.");
     }
 
     const used = await guardianSeatsUsed(admin, data.athleteId, { includePending: true });
     if (used >= MAX_GUARDIANS_PER_ATHLETE) {
       throw new Error(
-        `The Family plan allows up to ${MAX_GUARDIANS_PER_ATHLETE} guardians per athlete. Remove a guardian or revoke a pending invite first.`,
+        `The Team plan allows up to ${MAX_GUARDIANS_PER_ATHLETE} guardians per athlete. Remove a guardian or revoke a pending invite first.`,
       );
     }
 
@@ -236,8 +236,8 @@ export const inviteGuardian = createServerFn({ method: "POST" })
     }
 
     if (data.email) {
-      const { sendFamilyInvite } = await import("./family-emails.server");
-      await sendFamilyInvite({
+      const { sendTeamInvite } = await import("./team-emails.server");
+      await sendTeamInvite({
         to: data.email,
         athleteName: `${athlete.first_name} ${athlete.last_name}`.trim(),
         inviterName: `${parent.first_name} ${parent.last_name}`.trim(),

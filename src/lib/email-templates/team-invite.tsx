@@ -29,7 +29,7 @@ import { Header, PageInner, PageShell } from "./_layout";
 import { resolveCopy, renderTemplateString } from "./copy-schema";
 import type { TemplateEntry } from "./registry";
 
-export interface FamilyInviteEmailProps {
+export interface TeamInviteEmailProps {
   athleteName: string;
   inviterName: string;
   claimUrl: string;
@@ -38,26 +38,26 @@ export interface FamilyInviteEmailProps {
   copyOverrides?: Record<string, string>;
 }
 
-export function familyInviteSubject(
+export function teamInviteSubject(
   data: { athleteName?: string | null; inviterName?: string | null },
   copyOverrides?: Record<string, string>,
 ): string {
-  const c = resolveCopy("family-invite", copyOverrides);
+  const c = resolveCopy("team-invite", copyOverrides);
   return renderTemplateString(c.subject, {
     athleteName: data.athleteName ?? "your athlete",
     inviterName: data.inviterName ?? "A parent",
   });
 }
 
-export const FamilyInviteEmail = ({
+export const TeamInviteEmail = ({
   athleteName,
   inviterName,
   claimUrl,
   code,
   siteUrl = "https://gradus.training",
   copyOverrides,
-}: FamilyInviteEmailProps) => {
-  const c = resolveCopy("family-invite", copyOverrides);
+}: TeamInviteEmailProps) => {
+  const c = resolveCopy("team-invite", copyOverrides);
   const vars = { athleteName, inviterName, claimUrl, code, siteUrl };
 
   return (
@@ -105,15 +105,15 @@ export const FamilyInviteEmail = ({
 };
 
 export const template = {
-  component: FamilyInviteEmail,
-  subject: (data: Record<string, any>) => familyInviteSubject(data),
-  displayName: "Family plan — guardian invite",
+  component: TeamInviteEmail,
+  subject: (data: Record<string, any>) => teamInviteSubject(data),
+  displayName: "Team plan — guardian invite",
   previewData: {
     athleteName: "Sample Athlete",
     inviterName: "Christine Parent",
     code: "K7QW2MTP",
-    claimUrl: "https://gradus.training/family/preview-token",
+    claimUrl: "https://gradus.training/team/preview-token",
   },
 } satisfies TemplateEntry;
 
-export default FamilyInviteEmail;
+export default TeamInviteEmail;

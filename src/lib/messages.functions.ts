@@ -541,7 +541,7 @@ export const ensureRoom = createServerFn({ method: "POST" })
     const isAthlete = me.athlete?.id === data.athleteId;
     const isParent = me.parent
       ? await (async () => {
-          const { canAccessAthlete } = await import("./family.server");
+          const { canAccessAthlete } = await import("./team.server");
           return canAccessAthlete(supabaseAdmin as any, me.parent!.id, data.athleteId);
         })()
       : false;
@@ -923,7 +923,7 @@ export const listMyMessageTargets = createServerFn({ method: "GET" })
     }
 
     if (me.parent) {
-      const { guardianAthleteIdsSafe } = await import("./family.server");
+      const { guardianAthleteIdsSafe } = await import("./team.server");
       const ids = await guardianAthleteIdsSafe(supabaseAdmin as any, me.parent.id);
       const { data, error } = await supabaseAdmin
         .from("athletes")

@@ -50,7 +50,7 @@ function AuthedLayout() {
   const isCoach = pathname.startsWith("/coach");
   const isAdmin = pathname.startsWith("/admin");
   const isOnboarding = pathname.endsWith("/onboarding");
-  const isPaywall = pathname.startsWith("/coach/paywall") || pathname.startsWith("/parent/family");
+  const isPaywall = pathname.startsWith("/coach/paywall") || pathname.startsWith("/parent/team");
 
   const accept = useServerFn(acceptTerms);
   const applyPromo = useServerFn(applyPromoCodeToMyProfile);

@@ -110,7 +110,7 @@ export const getParentSettings = createServerFn({ method: "GET" })
     const userId = context.userId;
     const parent = await getParentProfile(userId);
 
-    const { guardianAthleteIdsSafe } = await import("./family.server");
+    const { guardianAthleteIdsSafe } = await import("./team.server");
     const accessibleAthleteIds = await guardianAthleteIdsSafe(supabaseAdmin as any, parent.id);
     const athletesRes = await supabaseAdmin
       .from("athletes")

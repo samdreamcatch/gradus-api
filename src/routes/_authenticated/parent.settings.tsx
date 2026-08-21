@@ -48,10 +48,10 @@ import { AthleteInviteCard } from "@/components/parent/athlete-invite-card";
 import { ConnectCoachSheet } from "@/components/parent/connect-coach-sheet";
 import { ConnectGuardianSheet } from "@/components/parent/connect-guardian-sheet";
 import {
-  listFamilyGuardians,
+  listTeamGuardians,
   removeGuardian,
   revokeGuardianInvite,
-} from "@/lib/family-guardians.functions";
+} from "@/lib/team-guardians.functions";
 
 import {
   ScheduleEditor,
@@ -90,7 +90,7 @@ import {
 } from "@/lib/parent-settings.functions";
 import {
   createParentBillingPortalSession,
-  getFamilyPlanStatus,
+  getTeamPlanStatus,
 } from "@/lib/parent-checkout.functions";
 import { getStripeEnvironment } from "@/lib/stripe";
 import { cn } from "@/lib/utils";
@@ -174,10 +174,10 @@ function ParentSettingsPage() {
   // the param so a refresh doesn't re-toast.
   useEffect(() => {
     if (checkout !== "return") return;
-    void qc.invalidateQueries({ queryKey: ["family-plan-status"] });
-    void qc.invalidateQueries({ queryKey: ["family-guardians"] });
+    void qc.invalidateQueries({ queryKey: ["team-plan-status"] });
+    void qc.invalidateQueries({ queryKey: ["team-guardians"] });
     void qc.invalidateQueries({ queryKey: ["parent-settings"] });
-    toast.success("Thanks! Your Family plan is being activated.");
+    toast.success("Thanks! Your Team plan is being activated.");
     void navigate({
       to: "/parent/settings",
       search: (prev) => ({ ...prev, checkout: undefined }),
@@ -231,7 +231,7 @@ function ParentSettingsPage() {
             </SettingsGroup>
 
             <SettingsGroup label="Family">
-              <FamilySection />
+              <TeamSection />
             </SettingsGroup>
 
 
@@ -270,17 +270,17 @@ function ParentSettingsPage() {
  */
 function PlanSection() {
   const navigate = useNavigate();
-  const fetchStatus = useServerFn(getFamilyPlanStatus);
-  const fetchGuardians = useServerFn(listFamilyGuardians);
+  const fetchStatus = useServerFn(getTeamPlanStatus);
+  const fetchGuardians = useServerFn(listTeamGuardians);
   const portal = useServerFn(createParentBillingPortalSession);
   const [opening, setOpening] = useState(false);
 
   const statusQ = useQuery({
-    queryKey: ["family-plan-status"],
+    queryKey: ["team-plan-status"],
     queryFn: () => fetchStatus(),
   });
   const guardiansQ = useQuery({
-    queryKey: ["family-guardians"],
+    queryKey: ["team-guardians"],
     queryFn: () => fetchGuardians(),
   });
 
@@ -326,7 +326,7 @@ function PlanSection() {
             icon={<CreditCard className="size-4" />}
             label="Upgrade to Family"
             description="Add up to 3 parents or guardians per athlete"
-            onClick={() => void navigate({ to: "/parent/family", search: {} })}
+            onClick={() => void navigate({ to: "/parent/team", search: {} })}
           />
         </SettingsList>
       </>
@@ -336,7 +336,7 @@ function PlanSection() {
   if (coveredByOther) {
     return (
       <ParentPlanCard
-        label="Family plan"
+        label="Team plan"
         description="You're covered by the primary parent's plan. They manage billing."
         status={{ label: "Active", tone: "accent" }}
       />
@@ -374,7 +374,7 @@ function PlanSection() {
 
   return (
     <>
-      <ParentPlanCard label="Family plan" description={description} status={tag} />
+      <ParentPlanCard label="Team plan" description={description} status={tag} />
       <SettingsList>
         <SettingsButtonRow
           icon={<CreditCard className="size-4" />}
@@ -423,21 +423,21 @@ function ParentPlanCard({
 }
 
 /**
- * Family section — on an active Family plan the parent manages guardians
+ * Family section — on an active Team plan the parent manages guardians
  * inline (same hub pattern as coaches). Otherwise it routes to the plan page.
  */
-function FamilySection() {
+function TeamSection() {
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const fetchGuardians = useServerFn(listFamilyGuardians);
+  const fetchGuardians = useServerFn(listTeamGuardians);
   const remove = useServerFn(removeGuardian);
   const revoke = useServerFn(revokeGuardianInvite);
   const { data, isLoading } = useQuery({
-    queryKey: ["family-guardians"],
+    queryKey: ["team-guardians"],
     queryFn: () => fetchGuardians(),
   });
 
-  const refresh = () => void qc.invalidateQueries({ queryKey: ["family-guardians"] });
+  const refresh = () => void qc.invalidateQueries({ queryKey: ["team-guardians"] });
 
   if (isLoading || !data) {
     return (
@@ -458,7 +458,7 @@ function FamilySection() {
           icon={<Users className="size-4" />}
           label="Parents & guardians"
           description="Add another parent or guardian to your athlete"
-          onClick={() => void navigate({ to: "/parent/family", search: {} })}
+          onClick={() => void navigate({ to: "/parent/team", search: {} })}
         />
       </SettingsList>
     );

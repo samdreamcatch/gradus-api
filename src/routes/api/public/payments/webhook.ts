@@ -21,10 +21,10 @@ function getSupabase(): SupabaseClient<Database> {
 
 async function syncSubscription(subscription: any, env: StripeEnv) {
   const supabase = getSupabase();
-  const { isFamilySubscription, syncParentSubscription } = await import(
+  const { isTeamSubscription, syncParentSubscription } = await import(
     "@/lib/parent-subscription-sync.server"
   );
-  if (await isFamilySubscription(supabase as any, subscription)) {
+  if (await isTeamSubscription(supabase as any, subscription)) {
     await syncParentSubscription(supabase as any, subscription, env);
     return;
   }
@@ -33,10 +33,10 @@ async function syncSubscription(subscription: any, env: StripeEnv) {
 
 async function handleSubscriptionDeleted(subscription: any, _env: StripeEnv) {
   const supabase = getSupabase();
-  const { isFamilySubscription, markParentSubscriptionDeleted } = await import(
+  const { isTeamSubscription, markParentSubscriptionDeleted } = await import(
     "@/lib/parent-subscription-sync.server"
   );
-  if (await isFamilySubscription(supabase as any, subscription)) {
+  if (await isTeamSubscription(supabase as any, subscription)) {
     await markParentSubscriptionDeleted(supabase as any, subscription);
     return;
   }

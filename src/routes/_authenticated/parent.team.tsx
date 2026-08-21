@@ -13,20 +13,20 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { getStripe, getStripeEnvironment } from "@/lib/stripe";
 import {
-  getFamilyPlanStatus,
-  startFamilyCheckout,
+  getTeamPlanStatus,
+  startTeamCheckout,
   createParentBillingPortalSession,
 } from "@/lib/parent-checkout.functions";
-import { claimGuardianInvite } from "@/lib/family-guardians.functions";
+import { claimGuardianInvite } from "@/lib/team-guardians.functions";
 
 type Interval = "month" | "year";
 
 const PRICE_MAP: Record<
   Interval,
-  { priceId: "family_monthly" | "family_yearly"; monthlyEquivalent: number; billed: string }
+  { priceId: "team_monthly" | "team_yearly"; monthlyEquivalent: number; billed: string }
 > = {
-  month: { priceId: "family_monthly", monthlyEquivalent: 15, billed: "$15/mo, billed monthly" },
-  year: { priceId: "family_yearly", monthlyEquivalent: 13.5, billed: "$162/yr — save 10%" },
+  month: { priceId: "team_monthly", monthlyEquivalent: 15, billed: "$15/mo, billed monthly" },
+  year: { priceId: "team_yearly", monthlyEquivalent: 13.5, billed: "$162/yr — save 10%" },
 };
 
 const FREE_FEATURES = [
@@ -36,39 +36,39 @@ const FREE_FEATURES = [
   "Unlimited athletes",
 ];
 
-const FAMILY_FEATURES = [
+const TEAM_FEATURES = [
   "Shared plans and goals",
-  "Family-wide notifications",
+  "Team-wide notifications",
 ];
 
-export const Route = createFileRoute("/_authenticated/parent/family")({
+export const Route = createFileRoute("/_authenticated/parent/team")({
   head: () => ({
     meta: [
-      { title: "Family plan — Gradus" },
+      { title: "Team plan — Gradus" },
       {
         name: "description",
         content:
-          "Add another parent or guardian to your athlete and manage your Gradus Family plan.",
+          "Add another parent or guardian to your athlete and manage your Gradus Team plan.",
       },
-      { property: "og:title", content: "Family plan — Gradus" },
+      { property: "og:title", content: "Team plan — Gradus" },
       {
         property: "og:description",
         content:
-          "Add another parent or guardian to your athlete and manage your Gradus Family plan.",
+          "Add another parent or guardian to your athlete and manage your Gradus Team plan.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: ParentFamilyPage,
+  component: ParentTeamPage,
 });
 
-function ParentFamilyPage() {
-  const fetchStatus = useServerFn(getFamilyPlanStatus);
-  const startCheckout = useServerFn(startFamilyCheckout);
+function ParentTeamPage() {
+  const fetchStatus = useServerFn(getTeamPlanStatus);
+  const startCheckout = useServerFn(startTeamCheckout);
   const openPortal = useServerFn(createParentBillingPortalSession);
 
-  const status = useQuery({ queryKey: ["family-plan-status"], queryFn: () => fetchStatus() });
+  const status = useQuery({ queryKey: ["team-plan-status"], queryFn: () => fetchStatus() });
 
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [interval, setInterval] = useState<Interval>("month");
@@ -79,7 +79,7 @@ function ParentFamilyPage() {
     [clientSecret],
   );
 
-  const handleUpgrade = async (priceId: "family_monthly" | "family_yearly") => {
+  const handleUpgrade = async (priceId: "team_monthly" | "team_yearly") => {
     setBusy(priceId);
     try {
       const result = await startCheckout({
@@ -104,7 +104,7 @@ function ParentFamilyPage() {
       const result = await openPortal({
         data: {
           environment: getStripeEnvironment(),
-          returnUrl: `${window.location.origin}/parent/family`,
+          returnUrl: `${window.location.origin}/parent/team`,
         },
       });
       if ("error" in result) throw new Error(result.error);
@@ -175,7 +175,7 @@ function ParentFamilyPage() {
         <p className="mt-1.5 max-w-md text-center text-sm text-text-secondary">
           {planActive
             ? "Invite guardians, or change your billing."
-            : "Add up to three guardians per athlete on Family plan"}
+            : "Add up to three guardians per athlete on Team plan"}
         </p>
 
         {planActive && (
@@ -277,7 +277,7 @@ function ParentFamilyPage() {
             </div>
 
             <ul className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1 text-[11px] text-text-secondary sm:text-xs">
-              {FAMILY_FEATURES.map((f) => (
+              {TEAM_FEATURES.map((f) => (
                 <li key={f} className="flex items-start gap-1.5">
                   <Check className="mt-0.5 h-3 w-3 shrink-0 text-accent-ink sm:h-3.5 sm:w-3.5" />
                   <span>{f}</span>

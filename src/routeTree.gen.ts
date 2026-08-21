@@ -16,6 +16,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as TeamTokenRouteImport } from './routes/team.$token'
 import { Route as SignupParentRouteImport } from './routes/signup.parent'
 import { Route as SignupCoachRouteImport } from './routes/signup.coach'
 import { Route as SignupAthleteRouteImport } from './routes/signup.athlete'
@@ -23,7 +24,6 @@ import { Route as SignupAdminRouteImport } from './routes/signup.admin'
 import { Route as PTokenRouteImport } from './routes/p.$token'
 import { Route as ICodeRouteImport } from './routes/i.$code'
 import { Route as GTokenRouteImport } from './routes/g.$token'
-import { Route as FamilyTokenRouteImport } from './routes/family.$token'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as DevPaywallPreviewRouteImport } from './routes/dev.paywall-preview'
 import { Route as AuthenticatedParentRouteImport } from './routes/_authenticated/parent'
@@ -43,8 +43,8 @@ import { Route as SignupAthleteConfirmRouteImport } from './routes/signup.athlet
 import { Route as SignupAthleteAdultRouteImport } from './routes/signup.athlete.adult'
 import { Route as SignupAthleteAccountRouteImport } from './routes/signup.athlete.account'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
+import { Route as AuthenticatedParentTeamRouteImport } from './routes/_authenticated/parent.team'
 import { Route as AuthenticatedParentSettingsRouteImport } from './routes/_authenticated/parent.settings'
-import { Route as AuthenticatedParentFamilyRouteImport } from './routes/_authenticated/parent.family'
 import { Route as AuthenticatedOrgAdminTemplatesRouteImport } from './routes/_authenticated/org-admin.templates'
 import { Route as AuthenticatedOrgAdminSettingsRouteImport } from './routes/_authenticated/org-admin.settings'
 import { Route as AuthenticatedOrgAdminRosterRouteImport } from './routes/_authenticated/org-admin.roster'
@@ -139,6 +139,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TeamTokenRoute = TeamTokenRouteImport.update({
+  id: '/team/$token',
+  path: '/team/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SignupParentRoute = SignupParentRouteImport.update({
   id: '/signup/parent',
   path: '/signup/parent',
@@ -172,11 +177,6 @@ const ICodeRoute = ICodeRouteImport.update({
 const GTokenRoute = GTokenRouteImport.update({
   id: '/g/$token',
   path: '/g/$token',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FamilyTokenRoute = FamilyTokenRouteImport.update({
-  id: '/family/$token',
-  path: '/family/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EmailUnsubscribeRoute = EmailUnsubscribeRouteImport.update({
@@ -277,16 +277,15 @@ const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
   path: '/lovable/email/suppression',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedParentTeamRoute = AuthenticatedParentTeamRouteImport.update({
+  id: '/team',
+  path: '/team',
+  getParentRoute: () => AuthenticatedParentRoute,
+} as any)
 const AuthenticatedParentSettingsRoute =
   AuthenticatedParentSettingsRouteImport.update({
     id: '/settings',
     path: '/settings',
-    getParentRoute: () => AuthenticatedParentRoute,
-  } as any)
-const AuthenticatedParentFamilyRoute =
-  AuthenticatedParentFamilyRouteImport.update({
-    id: '/family',
-    path: '/family',
     getParentRoute: () => AuthenticatedParentRoute,
   } as any)
 const AuthenticatedOrgAdminTemplatesRoute =
@@ -653,7 +652,6 @@ export interface FileRoutesByFullPath {
   '/parent': typeof AuthenticatedParentRouteWithChildren
   '/dev/paywall-preview': typeof DevPaywallPreviewRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
-  '/family/$token': typeof FamilyTokenRoute
   '/g/$token': typeof GTokenRoute
   '/i/$code': typeof ICodeRoute
   '/p/$token': typeof PTokenRoute
@@ -661,6 +659,7 @@ export interface FileRoutesByFullPath {
   '/signup/athlete': typeof SignupAthleteRouteWithChildren
   '/signup/coach': typeof SignupCoachRoute
   '/signup/parent': typeof SignupParentRouteWithChildren
+  '/team/$token': typeof TeamTokenRoute
   '/admin/active': typeof AuthenticatedAdminActiveRoute
   '/admin/activity': typeof AuthenticatedAdminActivityRoute
   '/admin/announcements': typeof AuthenticatedAdminAnnouncementsRoute
@@ -689,8 +688,8 @@ export interface FileRoutesByFullPath {
   '/org-admin/roster': typeof AuthenticatedOrgAdminRosterRoute
   '/org-admin/settings': typeof AuthenticatedOrgAdminSettingsRoute
   '/org-admin/templates': typeof AuthenticatedOrgAdminTemplatesRoute
-  '/parent/family': typeof AuthenticatedParentFamilyRoute
   '/parent/settings': typeof AuthenticatedParentSettingsRoute
+  '/parent/team': typeof AuthenticatedParentTeamRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/signup/athlete/account': typeof SignupAthleteAccountRoute
   '/signup/athlete/adult': typeof SignupAthleteAdultRoute
@@ -744,7 +743,6 @@ export interface FileRoutesByTo {
   '/unsubscribe': typeof UnsubscribeRoute
   '/dev/paywall-preview': typeof DevPaywallPreviewRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
-  '/family/$token': typeof FamilyTokenRoute
   '/g/$token': typeof GTokenRoute
   '/i/$code': typeof ICodeRoute
   '/p/$token': typeof PTokenRoute
@@ -752,6 +750,7 @@ export interface FileRoutesByTo {
   '/signup/athlete': typeof SignupAthleteRouteWithChildren
   '/signup/coach': typeof SignupCoachRoute
   '/signup/parent': typeof SignupParentRouteWithChildren
+  '/team/$token': typeof TeamTokenRoute
   '/admin/active': typeof AuthenticatedAdminActiveRoute
   '/admin/activity': typeof AuthenticatedAdminActivityRoute
   '/admin/announcements': typeof AuthenticatedAdminAnnouncementsRoute
@@ -779,8 +778,8 @@ export interface FileRoutesByTo {
   '/org-admin/roster': typeof AuthenticatedOrgAdminRosterRoute
   '/org-admin/settings': typeof AuthenticatedOrgAdminSettingsRoute
   '/org-admin/templates': typeof AuthenticatedOrgAdminTemplatesRoute
-  '/parent/family': typeof AuthenticatedParentFamilyRoute
   '/parent/settings': typeof AuthenticatedParentSettingsRoute
+  '/parent/team': typeof AuthenticatedParentTeamRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/signup/athlete/account': typeof SignupAthleteAccountRoute
   '/signup/athlete/adult': typeof SignupAthleteAdultRoute
@@ -841,7 +840,6 @@ export interface FileRoutesById {
   '/_authenticated/parent': typeof AuthenticatedParentRouteWithChildren
   '/dev/paywall-preview': typeof DevPaywallPreviewRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
-  '/family/$token': typeof FamilyTokenRoute
   '/g/$token': typeof GTokenRoute
   '/i/$code': typeof ICodeRoute
   '/p/$token': typeof PTokenRoute
@@ -849,6 +847,7 @@ export interface FileRoutesById {
   '/signup/athlete': typeof SignupAthleteRouteWithChildren
   '/signup/coach': typeof SignupCoachRoute
   '/signup/parent': typeof SignupParentRouteWithChildren
+  '/team/$token': typeof TeamTokenRoute
   '/_authenticated/admin/active': typeof AuthenticatedAdminActiveRoute
   '/_authenticated/admin/activity': typeof AuthenticatedAdminActivityRoute
   '/_authenticated/admin/announcements': typeof AuthenticatedAdminAnnouncementsRoute
@@ -877,8 +876,8 @@ export interface FileRoutesById {
   '/_authenticated/org-admin/roster': typeof AuthenticatedOrgAdminRosterRoute
   '/_authenticated/org-admin/settings': typeof AuthenticatedOrgAdminSettingsRoute
   '/_authenticated/org-admin/templates': typeof AuthenticatedOrgAdminTemplatesRoute
-  '/_authenticated/parent/family': typeof AuthenticatedParentFamilyRoute
   '/_authenticated/parent/settings': typeof AuthenticatedParentSettingsRoute
+  '/_authenticated/parent/team': typeof AuthenticatedParentTeamRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/signup/athlete/account': typeof SignupAthleteAccountRoute
   '/signup/athlete/adult': typeof SignupAthleteAdultRoute
@@ -939,7 +938,6 @@ export interface FileRouteTypes {
     | '/parent'
     | '/dev/paywall-preview'
     | '/email/unsubscribe'
-    | '/family/$token'
     | '/g/$token'
     | '/i/$code'
     | '/p/$token'
@@ -947,6 +945,7 @@ export interface FileRouteTypes {
     | '/signup/athlete'
     | '/signup/coach'
     | '/signup/parent'
+    | '/team/$token'
     | '/admin/active'
     | '/admin/activity'
     | '/admin/announcements'
@@ -975,8 +974,8 @@ export interface FileRouteTypes {
     | '/org-admin/roster'
     | '/org-admin/settings'
     | '/org-admin/templates'
-    | '/parent/family'
     | '/parent/settings'
+    | '/parent/team'
     | '/lovable/email/suppression'
     | '/signup/athlete/account'
     | '/signup/athlete/adult'
@@ -1030,7 +1029,6 @@ export interface FileRouteTypes {
     | '/unsubscribe'
     | '/dev/paywall-preview'
     | '/email/unsubscribe'
-    | '/family/$token'
     | '/g/$token'
     | '/i/$code'
     | '/p/$token'
@@ -1038,6 +1036,7 @@ export interface FileRouteTypes {
     | '/signup/athlete'
     | '/signup/coach'
     | '/signup/parent'
+    | '/team/$token'
     | '/admin/active'
     | '/admin/activity'
     | '/admin/announcements'
@@ -1065,8 +1064,8 @@ export interface FileRouteTypes {
     | '/org-admin/roster'
     | '/org-admin/settings'
     | '/org-admin/templates'
-    | '/parent/family'
     | '/parent/settings'
+    | '/parent/team'
     | '/lovable/email/suppression'
     | '/signup/athlete/account'
     | '/signup/athlete/adult'
@@ -1126,7 +1125,6 @@ export interface FileRouteTypes {
     | '/_authenticated/parent'
     | '/dev/paywall-preview'
     | '/email/unsubscribe'
-    | '/family/$token'
     | '/g/$token'
     | '/i/$code'
     | '/p/$token'
@@ -1134,6 +1132,7 @@ export interface FileRouteTypes {
     | '/signup/athlete'
     | '/signup/coach'
     | '/signup/parent'
+    | '/team/$token'
     | '/_authenticated/admin/active'
     | '/_authenticated/admin/activity'
     | '/_authenticated/admin/announcements'
@@ -1162,8 +1161,8 @@ export interface FileRouteTypes {
     | '/_authenticated/org-admin/roster'
     | '/_authenticated/org-admin/settings'
     | '/_authenticated/org-admin/templates'
-    | '/_authenticated/parent/family'
     | '/_authenticated/parent/settings'
+    | '/_authenticated/parent/team'
     | '/lovable/email/suppression'
     | '/signup/athlete/account'
     | '/signup/athlete/adult'
@@ -1219,7 +1218,6 @@ export interface RootRouteChildren {
   UnsubscribeRoute: typeof UnsubscribeRoute
   DevPaywallPreviewRoute: typeof DevPaywallPreviewRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
-  FamilyTokenRoute: typeof FamilyTokenRoute
   GTokenRoute: typeof GTokenRoute
   ICodeRoute: typeof ICodeRoute
   PTokenRoute: typeof PTokenRoute
@@ -1227,6 +1225,7 @@ export interface RootRouteChildren {
   SignupAthleteRoute: typeof SignupAthleteRouteWithChildren
   SignupCoachRoute: typeof SignupCoachRoute
   SignupParentRoute: typeof SignupParentRouteWithChildren
+  TeamTokenRoute: typeof TeamTokenRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicHooksBillingNoticesRoute: typeof ApiPublicHooksBillingNoticesRoute
   ApiPublicHooksErrorDigestRoute: typeof ApiPublicHooksErrorDigestRoute
@@ -1290,6 +1289,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/team/$token': {
+      id: '/team/$token'
+      path: '/team/$token'
+      fullPath: '/team/$token'
+      preLoaderRoute: typeof TeamTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/signup/parent': {
       id: '/signup/parent'
       path: '/signup/parent'
@@ -1337,13 +1343,6 @@ declare module '@tanstack/react-router' {
       path: '/g/$token'
       fullPath: '/g/$token'
       preLoaderRoute: typeof GTokenRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/family/$token': {
-      id: '/family/$token'
-      path: '/family/$token'
-      fullPath: '/family/$token'
-      preLoaderRoute: typeof FamilyTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/email/unsubscribe': {
@@ -1479,18 +1478,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailSuppressionRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/parent/team': {
+      id: '/_authenticated/parent/team'
+      path: '/team'
+      fullPath: '/parent/team'
+      preLoaderRoute: typeof AuthenticatedParentTeamRouteImport
+      parentRoute: typeof AuthenticatedParentRoute
+    }
     '/_authenticated/parent/settings': {
       id: '/_authenticated/parent/settings'
       path: '/settings'
       fullPath: '/parent/settings'
       preLoaderRoute: typeof AuthenticatedParentSettingsRouteImport
-      parentRoute: typeof AuthenticatedParentRoute
-    }
-    '/_authenticated/parent/family': {
-      id: '/_authenticated/parent/family'
-      path: '/family'
-      fullPath: '/parent/family'
-      preLoaderRoute: typeof AuthenticatedParentFamilyRouteImport
       parentRoute: typeof AuthenticatedParentRoute
     }
     '/_authenticated/org-admin/templates': {
@@ -2074,8 +2073,8 @@ const AuthenticatedOrgAdminRouteWithChildren =
   )
 
 interface AuthenticatedParentRouteChildren {
-  AuthenticatedParentFamilyRoute: typeof AuthenticatedParentFamilyRoute
   AuthenticatedParentSettingsRoute: typeof AuthenticatedParentSettingsRoute
+  AuthenticatedParentTeamRoute: typeof AuthenticatedParentTeamRoute
   AuthenticatedParentIndexRoute: typeof AuthenticatedParentIndexRoute
   AuthenticatedParentMessagesRoomIdRoute: typeof AuthenticatedParentMessagesRoomIdRoute
   AuthenticatedParentPlansPlanIdRoute: typeof AuthenticatedParentPlansPlanIdRoute
@@ -2085,8 +2084,8 @@ interface AuthenticatedParentRouteChildren {
 }
 
 const AuthenticatedParentRouteChildren: AuthenticatedParentRouteChildren = {
-  AuthenticatedParentFamilyRoute: AuthenticatedParentFamilyRoute,
   AuthenticatedParentSettingsRoute: AuthenticatedParentSettingsRoute,
+  AuthenticatedParentTeamRoute: AuthenticatedParentTeamRoute,
   AuthenticatedParentIndexRoute: AuthenticatedParentIndexRoute,
   AuthenticatedParentMessagesRoomIdRoute:
     AuthenticatedParentMessagesRoomIdRoute,
@@ -2162,7 +2161,6 @@ const rootRouteChildren: RootRouteChildren = {
   UnsubscribeRoute: UnsubscribeRoute,
   DevPaywallPreviewRoute: DevPaywallPreviewRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
-  FamilyTokenRoute: FamilyTokenRoute,
   GTokenRoute: GTokenRoute,
   ICodeRoute: ICodeRoute,
   PTokenRoute: PTokenRoute,
@@ -2170,6 +2168,7 @@ const rootRouteChildren: RootRouteChildren = {
   SignupAthleteRoute: SignupAthleteRouteWithChildren,
   SignupCoachRoute: SignupCoachRoute,
   SignupParentRoute: SignupParentRouteWithChildren,
+  TeamTokenRoute: TeamTokenRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicHooksBillingNoticesRoute: ApiPublicHooksBillingNoticesRoute,
   ApiPublicHooksErrorDigestRoute: ApiPublicHooksErrorDigestRoute,
