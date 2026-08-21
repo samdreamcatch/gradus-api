@@ -53,7 +53,6 @@ const FREE_FEATURES = [
 
 const FAMILY_FEATURES = [
   "Shared plans and goals",
-  "Shared coach messaging",
   "Family-wide notifications",
 ];
 
