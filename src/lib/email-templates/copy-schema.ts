@@ -34,6 +34,14 @@ const BILLING_VARS = ["firstName", "eventDate", "planLabel", "billingUrl", "site
 
 const GUARDIAN_INVITE_VARS = ["athleteName", "coachName", "claimUrl", "siteUrl"] as const;
 
+const COACH_VISIBILITY_VARS = [
+  "coachName",
+  "otherCoachName",
+  "athleteName",
+  "parentName",
+  "actionUrl",
+  "siteUrl",
+] as const;
 const TEAM_INVITE_VARS = ["athleteName", "inviterName", "claimUrl", "code", "siteUrl"] as const;
 
 
