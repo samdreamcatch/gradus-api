@@ -140,8 +140,9 @@ type AthleteData = {
 
 function ParentSettingsPage() {
   const fetchSettings = useServerFn(getParentSettings);
-  const { linkCoach } = Route.useSearch();
+  const { linkCoach, checkout } = Route.useSearch();
   const navigate = useNavigate();
+  const qc = useQueryClient();
   const { data, isLoading, error } = useQuery({
     queryKey: ["parent-settings"],
     queryFn: () => fetchSettings(),
