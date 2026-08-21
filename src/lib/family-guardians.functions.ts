@@ -84,20 +84,23 @@ export const listFamilyGuardians = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const admin = await getAdmin();
-    const { familyPlanActive } = await import("./family.server");
+    const { familyPlanActive, guardianAthleteIdsSafe } = await import("./family.server");
     const parent = await parentProfile(context.userId);
-    const planActive = await familyPlanActive(admin, parent.id);
+    const isPayer = await familyPlanActive(admin, parent.id);
 
+    // Every athlete this parent can reach — as primary parent or co-guardian.
+    const reachableIds = await guardianAthleteIdsSafe(admin, parent.id);
     const athletesRes = await admin
       .from("athletes")
-      .select("id, first_name, last_name")
-      .eq("parent_id", parent.id)
+      .select("id, first_name, last_name, parent_id")
+      .in("id", reachableIds)
       .order("created_at", { ascending: true });
     if (athletesRes.error) dbError(athletesRes.error);
     const athletes = (athletesRes.data ?? []) as {
       id: string;
       first_name: string;
       last_name: string;
+      parent_id: string | null;
     }[];
     const ids = athletes.length ? athletes.map((a) => a.id) : ["00000000-0000-0000-0000-000000000000"];
 
@@ -132,12 +135,28 @@ export const listFamilyGuardians = createServerFn({ method: "GET" })
       ),
     );
 
+    // A co-guardian is covered by the primary parent's plan — they're on the
+    // Family plan too, just not the payer.
+    const otherPrimaryIds = Array.from(
+      new Set(
+        athletes
+          .map((a) => a.parent_id)
+          .filter((p): p is string => !!p && p !== parent.id),
+      ),
+    );
+    const coveredByOther = isPayer
+      ? false
+      : (await Promise.all(otherPrimaryIds.map((p) => familyPlanActive(admin, p)))).some(Boolean);
+    const planActive = isPayer || coveredByOther;
+
     return {
       planActive,
+      isPayer,
       athletes: athletes.map((a) => ({
         id: a.id,
         firstName: a.first_name,
         lastName: a.last_name,
+        isPrimary: a.parent_id === parent.id,
         guardians: links
           .filter((l) => l.athlete_id === a.id)
           .map((l) => ({
