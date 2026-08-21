@@ -46,6 +46,14 @@ export interface CoachProfileDTO {
    * Drives the "add a card" nudge; never revokes access.
    */
   trialNeedsCard: boolean;
+  /** Stripe environment the stored subscription belongs to ("sandbox" | "live"). */
+  subscriptionEnvironment: "sandbox" | "live" | null;
+  /**
+   * True only when Stripe itself confirms the subscription is past_due /
+   * unpaid right now, and the coach actually owes money. Stale rows, test
+   * mode leftovers, and free (founding / club-covered) coaches never set it.
+   */
+  billingPastDue: boolean;
 }
 
 /** Mirrors public.coach_effective_tier() in the DB — DB is authoritative. */
