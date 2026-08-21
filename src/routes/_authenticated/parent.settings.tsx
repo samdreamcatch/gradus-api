@@ -323,7 +323,7 @@ function FamilySection() {
                         {g.isSelf ? " · You" : ""}
                       </div>
                     </div>
-                    {g.role === "co" && (
+                    {g.role === "co" && a.isPrimary && (
                       <Button
                         type="button"
                         size="sm"
@@ -377,16 +377,16 @@ function FamilySection() {
           ))
         )}
       </SettingsList>
+      {data.isPayer && (
       <div className="flex justify-end px-1">
         <ConnectGuardianSheet
-          athletes={data.athletes.map((a) => ({
-            id: a.id,
-            firstName: a.firstName,
-            lastName: a.lastName,
-          }))}
-          disabled={data.athletes.length === 0}
+          athletes={data.athletes
+            .filter((a) => a.isPrimary)
+            .map((a) => ({ id: a.id, firstName: a.firstName, lastName: a.lastName }))}
+          disabled={!data.athletes.some((a) => a.isPrimary)}
         />
       </div>
+      )}
     </div>
   );
 }
