@@ -20,7 +20,12 @@ Co-guardians go read-only — they can still see everything, but logging, messag
 
 ## Pricing
 
-Flat Family plan, monthly, one subscription per household covering **up to 3 additional guardians**. Suggested price **$8/month** — confirm or change this before build; it drives the Stripe product created during implementation.
+Flat Family plan, one subscription per household covering **up to 3 additional guardians**: **$15/month**, or **$162/year** (10% off). Both prices are created in Stripe during implementation with a digital tax code.
+
+## Messaging
+
+Yes — added guardians join the existing coach conversation for that athlete rather than getting a separate thread. Today a room's participant list is built from `athletes.parent_id`, so exactly one parent appears; the same widening that grants access replaces that single lookup with the full guardian list. Practically: one shared room per coach/athlete pair, every guardian sees the full history including messages sent before they joined, each message is labeled with the sender's name so the coach can tell the two parents apart, and unread badges are tracked per person. While a subscription is lapsed, a co-guardian can read the room but can't send.
+
 
 ## Technical notes
 
@@ -34,7 +39,11 @@ Flat Family plan, monthly, one subscription per household covering **up to 3 add
 
 **Invites.** Reuses the guardian pattern already in the codebase: a `guardian-coinvite` branded email template registered in the admin copy schema, a claim route `/gp/$token` modeled on `/g/$token`, and code redemption through the existing `invite-resolve.functions.ts` resolver so an invited guardian who signs up fresh lands in the right place. Seat count is enforced server-side at invite creation and again at claim time.
 
+**Messaging.** `listMyRoomIds` and `loadParticipants` in `src/lib/messages.server.ts` currently resolve the parent side of a room via `athletes.parent_id`; both switch to the guardian id set so co-guardians list the room and appear as participants. `is_room_participant()` is widened the same way so RLS on `messages` and `message_reads` follows. Send is gated by `parent_can_write`.
+
 **Admin.** The admin user detail page lists an athlete's guardians and the household's family-plan status, and admin billing gains parent subscriptions alongside coach ones.
+
+
 
 ## Build order
 
