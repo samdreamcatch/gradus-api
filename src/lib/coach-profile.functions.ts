@@ -211,6 +211,20 @@ export const getCoachProfile = createServerFn({ method: "GET" })
     if (countRes.error) dbError(countRes.error);
     const athleteCount = countRes.count ?? 0;
 
+    // Time-boxed complimentary access (90 days after leaving a club). Once it
+    // lapses the coach falls back to "pending" and the paywall takes over.
+    const freeAccessUntil = (profile as { free_access_until?: string | null }).free_access_until
+      ? ((profile as { free_access_until?: string | null }).free_access_until as string)
+      : null;
+    const rawEntitlement = (profile.entitlement ?? "pending") as CoachProfileDTO["entitlement"];
+    const freeAccessExpired =
+      rawEntitlement === "promo_free" &&
+      Boolean(freeAccessUntil) &&
+      new Date(freeAccessUntil as string) < new Date();
+    const effectiveEntitlement: CoachProfileDTO["entitlement"] = freeAccessExpired
+      ? "pending"
+      : rawEntitlement;
+
     const organizationId = profile.organization_id ?? null;
     const subscriptionTier = (profile.subscription_tier as "coach" | "coach_pro" | null) ?? null;
     const effectiveTier = computeEffectiveTier({ organizationId, subscriptionTier });
