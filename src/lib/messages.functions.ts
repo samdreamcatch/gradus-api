@@ -540,15 +540,12 @@ export const ensureRoom = createServerFn({ method: "POST" })
     const isCoach = me.coach?.id === data.coachId;
     const isAthlete = me.athlete?.id === data.athleteId;
     const isParent = me.parent
-      ? (
-          await supabaseAdmin
-            .from("athletes")
-            .select("id")
-            .eq("id", data.athleteId)
-            .eq("parent_id", me.parent.id)
-            .maybeSingle()
-        ).data != null
+      ? await (async () => {
+          const { canAccessAthlete } = await import("./family.server");
+          return canAccessAthlete(supabaseAdmin as any, me.parent!.id, data.athleteId);
+        })()
       : false;
+
 
     if (!isCoach && !isAthlete && !isParent) {
       throw new Error("Not authorized to open this conversation");
