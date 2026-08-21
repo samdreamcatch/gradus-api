@@ -405,10 +405,10 @@ export const respondToCoachVisibility = createServerFn({ method: "POST" })
       throw new Error("Not authorized to respond to this request.");
     }
 
-    const field = row.coach_a_id === me.id ? "a_status" : "b_status";
+    const value = data.accept ? "accepted" : "declined";
     const upd = await admin
       .from("coach_visibility_links")
-      .update({ [field]: data.accept ? "accepted" : "declined" })
+      .update(row.coach_a_id === me.id ? { a_status: value } : { b_status: value })
       .eq("id", data.linkId);
     if (upd.error) dbError(upd.error);
     return { ok: true };
@@ -431,10 +431,9 @@ export const disconnectCoachVisibility = createServerFn({ method: "POST" })
     if (!row || (row.coach_a_id !== me.id && row.coach_b_id !== me.id)) {
       throw new Error("Not authorized.");
     }
-    const field = row.coach_a_id === me.id ? "a_status" : "b_status";
     const upd = await admin
       .from("coach_visibility_links")
-      .update({ [field]: "declined" })
+      .update(row.coach_a_id === me.id ? { a_status: "declined" } : { b_status: "declined" })
       .eq("id", data.linkId);
     if (upd.error) dbError(upd.error);
     return { ok: true };
