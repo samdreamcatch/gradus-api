@@ -85,7 +85,7 @@ export const listParentPlans = createServerFn({ method: "GET" })
       return { athletes: [] as ParentAthleteOptionDTO[], plans: [] as ParentPlanSummaryDTO[] };
     }
 
-    const { guardianAthleteIdsSafe } = await import("./family.server");
+    const { guardianAthleteIdsSafe } = await import("./team.server");
     const accessibleIds = await guardianAthleteIdsSafe(supabase as any, parentId);
     const { data: athleteRows, error: aErr } = await supabase
       .from("athletes")
@@ -213,7 +213,7 @@ export const getParentPlan = createServerFn({ method: "POST" })
 
     // Explicit defense-in-depth: ensure the plan's athlete belongs to this parent,
     // independent of any RLS policy state on `plans`.
-    const { canAccessAthlete } = await import("./family.server");
+    const { canAccessAthlete } = await import("./team.server");
     const allowed = await canAccessAthlete(supabase as any, parentId, plan.athlete_id);
     const ownership = { data: allowed ? { id: plan.athlete_id } : null, error: null as any };
     if (ownership.error) dbError(ownership.error);

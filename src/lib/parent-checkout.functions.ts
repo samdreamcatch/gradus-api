@@ -1,7 +1,7 @@
 /**
- * Family plan billing for parent accounts — embedded checkout + Stripe
+ * Team plan billing for parent accounts — embedded checkout + Stripe
  * billing portal. Mirrors the coach checkout flow, but writes to
- * `parent_profiles` and stamps `metadata.plan = "family"` so the payments
+ * `parent_profiles` and stamps `metadata.plan = "team"` so the payments
  * webhook routes the subscription to the parent sync.
  */
 import { createServerFn } from "@tanstack/react-start";
@@ -12,12 +12,12 @@ import { type StripeEnv, createStripeClient, getStripeErrorMessage } from "@/lib
 type CheckoutResult = { clientSecret: string; sessionId: string } | { error: string };
 type PortalResult = { url: string } | { error: string };
 
-export const startFamilyCheckout = createServerFn({ method: "POST" })
+export const startTeamCheckout = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
     z
       .object({
-        priceId: z.enum(["family_monthly", "family_yearly"]),
+        priceId: z.enum(["team_monthly", "team_yearly"]),
         environment: z.enum(["sandbox", "live"]),
         returnUrl: z.string().url(),
       })
@@ -59,13 +59,17 @@ export const startFamilyCheckout = createServerFn({ method: "POST" })
       });
       if (
         existing.data.some(
-          (s) => s.metadata?.plan === "family" && ["active", "trialing", "past_due"].includes(s.status),
+          (s) =>
+            (s.metadata?.plan === "team" || s.metadata?.plan === "family") &&
+            ["active", "trialing", "past_due"].includes(s.status),
         )
       ) {
-        return { error: "You already have an active Family plan. Use “Manage billing” instead." };
+        return { error: "You already have an active Team plan. Use “Manage billing” instead." };
       }
 
-      const prices = await stripe.prices.list({ lookup_keys: [data.priceId] });
+      // Stripe prices may still carry the pre-rename lookup keys.
+      const legacyKey = data.priceId.replace("team_", "family_");
+      const prices = await stripe.prices.list({ lookup_keys: [data.priceId, legacyKey] });
       if (!prices.data.length) return { error: "Price not found." };
 
       const session = await stripe.checkout.sessions.create({
@@ -74,8 +78,8 @@ export const startFamilyCheckout = createServerFn({ method: "POST" })
         ui_mode: "embedded_page",
         return_url: data.returnUrl,
         customer: customerId,
-        metadata: { userId, plan: "family" },
-        subscription_data: { metadata: { userId, plan: "family" } },
+        metadata: { userId, plan: "team" },
+        subscription_data: { metadata: { userId, plan: "team" } },
       } as any);
 
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -121,8 +125,8 @@ export const createParentBillingPortalSession = createServerFn({ method: "POST" 
     }
   });
 
-/** Family plan status for the signed-in parent (drives the settings UI). */
-export const getFamilyPlanStatus = createServerFn({ method: "GET" })
+/** Team plan status for the signed-in parent (drives the settings UI). */
+export const getTeamPlanStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { data: profile } = await context.supabase

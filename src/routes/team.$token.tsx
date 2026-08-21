@@ -7,9 +7,9 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { previewGuardianInvite, claimGuardianInvite } from "@/lib/family-guardians.functions";
+import { previewGuardianInvite, claimGuardianInvite } from "@/lib/team-guardians.functions";
 
-export const Route = createFileRoute("/family/$token")({
+export const Route = createFileRoute("/team/$token")({
   head: () => ({
     meta: [
       { title: "Guardian invite — Gradus" },
@@ -26,10 +26,10 @@ export const Route = createFileRoute("/family/$token")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: FamilyInvitePage,
+  component: TeamInvitePage,
 });
 
-function FamilyInvitePage() {
+function TeamInvitePage() {
   const { token } = Route.useParams();
   const navigate = useNavigate();
   const preview = useServerFn(previewGuardianInvite);
@@ -90,7 +90,7 @@ function FamilyInvitePage() {
             <Button
               type="button"
               className="mt-6"
-              onClick={() => void navigate({ to: "/login", search: { redirect: `/family/${token}` } })}
+              onClick={() => void navigate({ to: "/login", search: { redirect: `/team/${token}` } })}
             >
               Sign in to accept
             </Button>

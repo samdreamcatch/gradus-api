@@ -103,7 +103,7 @@ export async function listMyRoomIds(
     }
   }
   if (me.parent) {
-    const { guardianAthleteIds } = await import("./family.server");
+    const { guardianAthleteIds } = await import("./team.server");
     const ids = await guardianAthleteIds(supabaseAdmin as any, me.parent.id);
     if (ids.length > 0) {
       const { data, error } = await supabaseAdmin

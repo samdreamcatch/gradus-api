@@ -17,11 +17,15 @@ export function AlsoCoachedByList({
   coaches,
   onOpenCoach,
   locked = false,
+  unlockedCoachIds,
 }: {
   coaches: OtherCoachDTO[];
   onOpenCoach: (coachId: string) => void;
   locked?: boolean;
+  /** Coaches unlocked for this athlete alone (Team plan coach visibility). */
+  unlockedCoachIds?: string[];
 }) {
+  const unlocked = new Set(unlockedCoachIds ?? []);
   if (coaches.length === 0) return null;
   return (
     <section>
@@ -31,7 +35,8 @@ export function AlsoCoachedByList({
       <ul className="mt-2 space-y-2">
         {coaches.map((c) => {
           const hasPlans = c.plans.length > 0;
-          const interactive = hasPlans && !locked;
+          const isLocked = locked && !unlocked.has(c.coachId);
+          const interactive = hasPlans && !isLocked;
           const inner = (
             <>
               <div className="min-w-0 flex-1">
@@ -56,14 +61,14 @@ export function AlsoCoachedByList({
                     ))}
                   </div>
                 ) : null}
-                {hasPlans && !locked ? (
+                {hasPlans && !isLocked ? (
                   <p className="mt-1 font-hand text-[15px] text-text-secondary">{coachMeta(c)}</p>
                 ) : !hasPlans ? (
                   <p className="mt-1 font-hand text-[15px] text-text-tertiary">
                     No shared plans yet
                   </p>
                 ) : null}
-                {hasPlans && locked ? (
+                {hasPlans && isLocked ? (
                   <div className="mt-2">
                     <span className="rounded-full bg-elevated px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-text-secondary">
                       CLUB ONLY FEATURE
@@ -72,7 +77,7 @@ export function AlsoCoachedByList({
                 ) : null}
               </div>
               {hasPlans ? (
-                locked ? (
+                isLocked ? (
                   <Lock className="size-4 shrink-0 text-text-tertiary" aria-hidden />
                 ) : (
                   <ChevronRight className="size-4 shrink-0 text-text-tertiary" aria-hidden />

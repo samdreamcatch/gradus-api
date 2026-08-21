@@ -1,7 +1,7 @@
 /**
- * Mirrors a Stripe Family plan subscription onto `parent_profiles`.
+ * Mirrors a Stripe Team plan subscription onto `parent_profiles`.
  * Called from the payments webhook when the subscription is marked
- * `metadata.plan = "family"` (or its customer maps to a parent profile).
+ * `metadata.plan = "team"` (legacy: "family") or its customer maps to a parent profile.
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { StripeEnv } from "@/lib/stripe.server";
@@ -14,9 +14,11 @@ function customerIdOf(subscription: any): string | null {
     : (subscription.customer?.id ?? null);
 }
 
-/** True when this subscription belongs to a parent (Family) plan. */
-export async function isFamilySubscription(supabase: Client, subscription: any): Promise<boolean> {
-  if (subscription?.metadata?.plan === "family") return true;
+/** True when this subscription belongs to a parent (Team) plan. */
+export async function isTeamSubscription(supabase: Client, subscription: any): Promise<boolean> {
+  const planTag = subscription?.metadata?.plan;
+  // "family" is the legacy tag for subscriptions created before the rename.
+  if (planTag === "team" || planTag === "family") return true;
   const customerId = customerIdOf(subscription);
   if (!customerId) return false;
   const { data } = await supabase
@@ -68,7 +70,7 @@ export async function syncParentSubscription(
       subscription_environment: env,
     })
     .eq("id", parentId);
-  if (error) console.error("[family] parent subscription sync failed", error);
+  if (error) console.error("[team] parent subscription sync failed", error);
 }
 
 export async function markParentSubscriptionDeleted(
@@ -81,5 +83,5 @@ export async function markParentSubscriptionDeleted(
     .from("parent_profiles")
     .update({ subscription_status: "canceled" })
     .eq("id", parentId);
-  if (error) console.error("[family] parent subscription delete failed", error);
+  if (error) console.error("[team] parent subscription delete failed", error);
 }

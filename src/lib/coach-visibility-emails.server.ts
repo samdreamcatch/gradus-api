@@ -1,10 +1,10 @@
 /**
- * Server-only sender for Family plan guardian invites. Best-effort: logs and
- * swallows errors so a failed send can never break the invite itself.
+ * Server-only sender for coach visibility requests (Team plan). Best-effort:
+ * logs and swallows errors so a failed send can never break the toggle itself.
  */
 import * as React from "react";
 import { render } from "@react-email/render";
-import { FamilyInviteEmail, familyInviteSubject } from "./email-templates/family-invite";
+import { CoachVisibilityEmail, coachVisibilitySubject } from "./email-templates/coach-visibility";
 import { fetchOverridesFor } from "./email-templates/overrides.server";
 import { buildAppEmailPayload } from "./email-queue-payload";
 
@@ -13,33 +13,31 @@ const SENDER_DOMAIN = "support.gradussports.com";
 const FROM_DOMAIN = "gradussports.com";
 export const SITE_URL = "https://gradus.training";
 
-export function familyClaimUrl(token: string): string {
-  return `${SITE_URL}/family/${token}`;
-}
-
-export async function sendFamilyInvite(params: {
+export async function sendCoachVisibilityRequest(params: {
   to: string;
+  coachName: string;
+  otherCoachName: string;
   athleteName: string;
-  inviterName: string;
-  token: string;
-  code: string;
+  parentName: string;
 }): Promise<void> {
-  const label = "family-invite";
+  const label = "coach-visibility";
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const copyOverrides = await fetchOverridesFor(label);
-    const element = React.createElement(FamilyInviteEmail, {
+    const actionUrl = `${SITE_URL}/coach/settings`;
+    const element = React.createElement(CoachVisibilityEmail, {
+      coachName: params.coachName,
+      otherCoachName: params.otherCoachName,
       athleteName: params.athleteName,
-      inviterName: params.inviterName,
-      claimUrl: familyClaimUrl(params.token),
-      code: params.code,
+      parentName: params.parentName,
+      actionUrl,
       siteUrl: SITE_URL,
       copyOverrides,
     });
     const html = await render(element);
     const text = await render(element, { plainText: true });
-    const subject = familyInviteSubject(
-      { athleteName: params.athleteName, inviterName: params.inviterName },
+    const subject = coachVisibilitySubject(
+      { otherCoachName: params.otherCoachName, athleteName: params.athleteName },
       copyOverrides,
     );
 
@@ -51,7 +49,7 @@ export async function sendFamilyInvite(params: {
       status: "pending",
     });
     if (pendingError) {
-      console.error("[family-emails] pending log failed", pendingError);
+      console.error("[coach-visibility-emails] pending log failed", pendingError);
       return;
     }
 
@@ -73,7 +71,7 @@ export async function sendFamilyInvite(params: {
     });
 
     if (error) {
-      console.error("[family-emails] enqueue failed", error);
+      console.error("[coach-visibility-emails] enqueue failed", error);
       await supabaseAdmin.from("email_send_log").insert({
         message_id: messageId,
         template_name: label,
@@ -91,6 +89,6 @@ export async function sendFamilyInvite(params: {
       payload,
     });
   } catch (err) {
-    console.error("[family-emails] send failed", err);
+    console.error("[coach-visibility-emails] send failed", err);
   }
 }

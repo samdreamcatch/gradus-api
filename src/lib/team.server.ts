@@ -1,5 +1,5 @@
 /**
- * Server-only helpers for the Family plan (multiple guardians per athlete).
+ * Server-only helpers for the Team plan (multiple guardians per athlete).
  *
  * A parent profile can reach an athlete two ways:
  *   1. `athletes.parent_id` — the primary parent (legacy source of truth)
@@ -7,7 +7,7 @@
  *      (kept in sync by a DB trigger) plus any co-guardians
  *
  * Reads use the union of both so nothing regresses if a trigger ever misses.
- * Writes by a co-guardian additionally require an active Family plan on the
+ * Writes by a co-guardian additionally require an active Team plan on the
  * *primary* parent — see `canWriteAthlete`.
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -43,8 +43,8 @@ export async function canAccessAthlete(
   return ids.includes(athleteId);
 }
 
-/** True when this parent profile carries an active/trialing Family plan. */
-export async function familyPlanActive(admin: Admin, parentId: string): Promise<boolean> {
+/** True when this parent profile carries an active/trialing Team plan. */
+export async function teamPlanActive(admin: Admin, parentId: string): Promise<boolean> {
   const res = await admin
     .from("parent_profiles")
     .select("subscription_status, current_period_end")
@@ -69,7 +69,7 @@ export type AthleteAccess = {
 /**
  * Resolve how a parent relates to an athlete and whether they may write.
  * Primary parents always write. Co-guardians write only while the athlete's
- * primary parent holds an active Family plan; otherwise they're read-only.
+ * primary parent holds an active Team plan; otherwise they're read-only.
  */
 export async function resolveAthleteAccess(
   admin: Admin,
@@ -93,7 +93,7 @@ export async function resolveAthleteAccess(
     .maybeSingle();
   if (!link.data) return null;
 
-  const canWrite = primaryId ? await familyPlanActive(admin, primaryId) : false;
+  const canWrite = primaryId ? await teamPlanActive(admin, primaryId) : false;
   return { athleteId, role: "co", canWrite };
 }
 
@@ -107,7 +107,7 @@ export async function assertCanWriteAthlete(
   if (!access) throw new Error("Athlete not found");
   if (!access.canWrite) {
     throw new Error(
-      "This athlete's Family plan isn't active, so additional guardians have view-only access.",
+      "This athlete's Team plan isn't active, so additional guardians have view-only access.",
     );
   }
 }

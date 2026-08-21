@@ -22,7 +22,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { useVisualViewport } from "@/hooks/use-visual-viewport";
-import { inviteGuardian } from "@/lib/family-guardians.functions";
+import { inviteGuardian } from "@/lib/team-guardians.functions";
 
 type Athlete = { id: string; firstName: string; lastName: string };
 
@@ -52,7 +52,7 @@ export function ConnectGuardianSheet({
       setCode(res.code);
       setEmail("");
       toast.success("Invite created");
-      void qc.invalidateQueries({ queryKey: ["family-guardians"] });
+      void qc.invalidateQueries({ queryKey: ["team-guardians"] });
     },
     onError: (e: unknown) => {
       toast.error(e instanceof Error ? e.message : "Couldn't create the invite.");
