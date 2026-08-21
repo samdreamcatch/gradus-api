@@ -92,6 +92,7 @@ const searchSchema = z.object({
     .length(8)
     .regex(/^[A-Z2-9]+$/)
     .optional(),
+  checkout: z.string().optional(),
 });
 
 export const Route = createFileRoute("/_authenticated/parent/settings")({
@@ -139,8 +140,9 @@ type AthleteData = {
 
 function ParentSettingsPage() {
   const fetchSettings = useServerFn(getParentSettings);
-  const { linkCoach } = Route.useSearch();
+  const { linkCoach, checkout } = Route.useSearch();
   const navigate = useNavigate();
+  const qc = useQueryClient();
   const { data, isLoading, error } = useQuery({
     queryKey: ["parent-settings"],
     queryFn: () => fetchSettings(),
@@ -152,6 +154,21 @@ function ParentSettingsPage() {
   useEffect(() => {
     if (linkCoach) toast.success(`Coach invite ${linkCoach} ready to link`);
   }, [linkCoach]);
+
+  // Returning from Stripe checkout — refresh plan data, thank them, and strip
+  // the param so a refresh doesn't re-toast.
+  useEffect(() => {
+    if (checkout !== "return") return;
+    void qc.invalidateQueries({ queryKey: ["family-plan-status"] });
+    void qc.invalidateQueries({ queryKey: ["family-guardians"] });
+    void qc.invalidateQueries({ queryKey: ["parent-settings"] });
+    toast.success("Thanks! Your Family plan is being activated.");
+    void navigate({
+      to: "/parent/settings",
+      search: (prev) => ({ ...prev, checkout: undefined }),
+      replace: true,
+    });
+  }, [checkout, qc, navigate]);
 
   return (
     <>

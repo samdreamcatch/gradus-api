@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { EmbeddedCheckoutProvider, EmbeddedCheckout } from "@stripe/react-stripe-js";
@@ -60,17 +60,10 @@ export const Route = createFileRoute("/_authenticated/parent/family")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  validateSearch: (search: Record<string, unknown>): { checkout?: string } => ({
-    checkout: typeof search["checkout"] === "string" ? (search["checkout"] as string) : undefined,
-  }),
   component: ParentFamilyPage,
 });
 
 function ParentFamilyPage() {
-  const qc = useQueryClient();
-  const navigate = useNavigate();
-  const { checkout } = Route.useSearch();
-
   const fetchStatus = useServerFn(getFamilyPlanStatus);
   const startCheckout = useServerFn(startFamilyCheckout);
   const openPortal = useServerFn(createParentBillingPortalSession);
@@ -80,15 +73,6 @@ function ParentFamilyPage() {
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [interval, setInterval] = useState<Interval>("month");
   const [busy, setBusy] = useState<string | null>(null);
-
-  // Returning from Stripe — refresh status so the page flips to "active".
-  useEffect(() => {
-    if (checkout !== "return") return;
-    void qc.invalidateQueries({ queryKey: ["family-plan-status"] });
-    void qc.invalidateQueries({ queryKey: ["family-guardians"] });
-    toast.success("Thanks! Your Family plan is being activated.");
-    void navigate({ to: "/parent/family", search: () => ({}), replace: true });
-  }, [checkout, qc, navigate]);
 
   const options = useMemo(
     () => (clientSecret ? { fetchClientSecret: async () => clientSecret } : null),
@@ -102,7 +86,7 @@ function ParentFamilyPage() {
         data: {
           priceId,
           environment: getStripeEnvironment(),
-          returnUrl: `${window.location.origin}/parent/family?checkout=return`,
+          returnUrl: `${window.location.origin}/parent/settings?checkout=return`,
         },
       });
       if ("error" in result) throw new Error(result.error);
@@ -155,23 +139,6 @@ function ParentFamilyPage() {
     );
   }
 
-  if (checkout === "return") {
-    return (
-      <div className="min-h-dvh">
-        <PaymentTestModeBanner />
-        <div className="mx-auto flex max-w-md flex-col items-center px-4 py-16 text-center">
-          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-accent/15 text-accent-ink">
-            <Loader2 className="h-6 w-6 animate-spin" />
-          </div>
-          <h1 className="font-display text-h2 text-text-primary">Finishing up…</h1>
-          <p className="mt-2 text-sm text-text-secondary">
-            Confirming your Family plan. This usually takes a few seconds.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   if (status.isPending) {
     return (
       <div className="flex min-h-dvh items-center justify-center px-4 py-12">
@@ -192,6 +159,14 @@ function ParentFamilyPage() {
     <>
       <PaymentTestModeBanner />
       <div className="mx-auto flex min-h-dvh max-w-2xl flex-col items-center px-4 pt-5 pb-28">
+        {!planActive && (
+          <Link
+            to="/parent/settings"
+            className="press mb-3 self-start inline-flex items-center gap-1 text-sm text-text-secondary"
+          >
+            <ArrowLeft className="h-4 w-4" /> Not now
+          </Link>
+        )}
         <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-full bg-accent/15 text-accent-ink">
           <Users className="h-5 w-5" />
         </div>
