@@ -8,7 +8,7 @@ import { toast } from "sonner";
 
 import { PageTitle } from "@/components/page-title";
 import { ParentBottomNav } from "@/components/parent/bottom-nav";
-import { PaymentTestModeBanner } from "@/components/payment-test-mode-banner";
+import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
