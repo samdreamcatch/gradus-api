@@ -147,13 +147,18 @@ export const listPlanSessions = createServerFn({ method: "POST" })
 
     const parentNames = new Map<string, string>();
     if (parentIds.length > 0) {
-      const { data: parents, error: ppErr } = await supabase
+      // Profile visibility only lets a parent read their own row, so co-guardians and
+      // athletes can't resolve the logger's name via RLS. Read just the first name of the
+      // parents that already appear on this plan's authorized session rows.
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data: parents, error: ppErr } = await supabaseAdmin
         .from("parent_profiles")
         .select("id, first_name")
         .in("id", parentIds);
       if (ppErr) dbError(ppErr);
       for (const p of parents ?? []) parentNames.set(p.id, p.first_name);
     }
+
 
     const sessions: PlanSessionEntry[] = sessionRows.map((r) => ({
       id: r.id,
