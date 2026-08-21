@@ -32,6 +32,7 @@ import { coachInviteQueryOptions } from "@/hooks/use-coach-invite";
 import { CoachBottomNav } from "@/components/coach/bottom-nav";
 import { RosterSettingsSection } from "@/components/coach/roster-settings-section";
 import { ConnectPeopleSheet } from "@/components/coach/connect-people-sheet";
+import { CoachVisibilitySettingsRow } from "@/components/coach/coach-visibility-sheet";
 import { JoinClubSheet } from "@/components/coach/join-club-sheet";
 import { UpgradeToProRow } from "@/components/coach/upgrade-to-pro-row";
 import { createCoachBillingPortalSession } from "@/lib/coach-checkout.functions";
@@ -91,6 +92,8 @@ function SettingsPage() {
             />
 
             <RosterSettingsSection />
+
+            <CoachVisibilitySettingsRow />
           </SettingsList>
           <div className="mt-3">
             <ConnectPeopleSheet />

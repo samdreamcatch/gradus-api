@@ -187,4 +187,41 @@ export function CoachVisibilityAutoPrompt() {
   return <CoachVisibilitySheet open={open} onOpenChange={setOpen} />;
 }
 
-export { Eye as CoachVisibilityIcon };
+/** Settings row that opens the sheet, badged with any pending requests. */
+export function CoachVisibilitySettingsRow() {
+  const q = useCoachVisibility();
+  const [open, setOpen] = useState(false);
+  const pending = q.data?.pending.length ?? 0;
+  const connected = q.data?.connected.length ?? 0;
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="press-soft flex w-full items-center gap-3 px-4 py-3 text-left text-sm"
+      >
+        <span className="shrink-0 text-text-tertiary">
+          <Eye className="size-4" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-text-primary">Coach visibility</div>
+          <div className="mt-0.5 text-xs text-text-tertiary">
+            {pending > 0
+              ? `${pending} request${pending === 1 ? "" : "s"} waiting`
+              : connected > 0
+                ? `${connected} connected coach${connected === 1 ? "" : "es"}`
+                : "Shared athletes with other coaches"}
+          </div>
+        </div>
+        {pending > 0 && (
+          <span className="rounded-full bg-accent px-2 py-0.5 text-[10px] font-semibold text-accent-foreground">
+            {pending}
+          </span>
+        )}
+      </button>
+      <CoachVisibilitySheet open={open} onOpenChange={setOpen} />
+    </>
+  );
+}
+
