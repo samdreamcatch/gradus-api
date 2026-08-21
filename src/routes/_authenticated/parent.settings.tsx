@@ -155,6 +155,21 @@ function ParentSettingsPage() {
     if (linkCoach) toast.success(`Coach invite ${linkCoach} ready to link`);
   }, [linkCoach]);
 
+  // Returning from Stripe checkout — refresh plan data, thank them, and strip
+  // the param so a refresh doesn't re-toast.
+  useEffect(() => {
+    if (checkout !== "return") return;
+    void qc.invalidateQueries({ queryKey: ["family-plan-status"] });
+    void qc.invalidateQueries({ queryKey: ["family-guardians"] });
+    void qc.invalidateQueries({ queryKey: ["parent-settings"] });
+    toast.success("Thanks! Your Family plan is being activated.");
+    void navigate({
+      to: "/parent/settings",
+      search: (prev) => ({ ...prev, checkout: undefined }),
+      replace: true,
+    });
+  }, [checkout, qc, navigate]);
+
   return (
     <>
       <div className="mx-auto min-h-dvh max-w-2xl px-3 pt-6 pb-24">
