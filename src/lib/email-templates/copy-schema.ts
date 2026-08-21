@@ -545,6 +545,91 @@ export const EMAIL_COPY_SCHEMA: Record<string, TemplateCopy> = {
       ctaLabelCanceled: "Restart my plan",
     },
   },
+  "club-invite": {
+    displayName: "Club coach invite",
+    category: "App",
+    description:
+      "Sent to a coach when a club admin invites them to join the club's Gradus plan.",
+    slots: [
+      { key: "preview", label: "Inbox preview", kind: "text", variables: ["orgName"] },
+      { key: "subject", label: "Subject line", kind: "text", variables: ["orgName"] },
+      { key: "eyebrow", label: "Small caps eyebrow", kind: "text" },
+      { key: "heading", label: "Big headline", kind: "text", variables: ["orgName"] },
+      {
+        key: "intro",
+        label: "Intro paragraph",
+        kind: "textarea",
+        variables: ["orgName", "inviteCode"],
+      },
+      {
+        key: "body",
+        label: "Secondary paragraph",
+        kind: "textarea",
+        variables: ["orgName", "inviteCode"],
+      },
+      { key: "ctaLabel", label: "Button label", kind: "text", variables: ["orgName"] },
+      { key: "fallbackHelp", label: "Button-not-working help", kind: "text" },
+      { key: "signOff", label: "Handwritten sign-off", kind: "text" },
+      { key: "footer", label: "Fine-print footer", kind: "textarea" },
+    ],
+    defaults: {
+      preview: "{orgName} invited you to coach on Gradus",
+      subject: "{orgName} invited you to Gradus",
+      eyebrow: "Club invitation",
+      heading: "{orgName} invited you to Gradus.",
+      intro:
+        "<strong>{orgName}</strong> uses Gradus to assign practice plans, track sessions, and stay in touch with athletes and parents between lessons. Your seat is covered by the club — there's nothing to pay.",
+      body: "Use the button below to accept, or enter the code <strong>{inviteCode}</strong> when you sign up.",
+      ctaLabel: "Join {orgName} on Gradus",
+      fallbackHelp: "Or paste this link into your browser:",
+      signOff: "— The Gradus team",
+      footer: "If you weren't expecting this invite, you can safely ignore this email.",
+    },
+  },
+  "club-removal": {
+    displayName: "Removed from club",
+    category: "App",
+    description:
+      "Sent to a coach when they leave, or are removed from, a club plan. Explains the 90-day free window and the WELCOME_BACK discount.",
+    slots: [
+      { key: "preview", label: "Inbox preview", kind: "text", variables: ["orgName"] },
+      { key: "subject", label: "Subject line", kind: "text", variables: ["orgName"] },
+      { key: "eyebrow", label: "Small caps eyebrow", kind: "text" },
+      {
+        key: "heading",
+        label: "Big headline",
+        kind: "text",
+        variables: ["firstName", "orgName"],
+      },
+      {
+        key: "intro",
+        label: "Intro paragraph",
+        kind: "textarea",
+        variables: ["orgName", "freeUntil"],
+      },
+      {
+        key: "body",
+        label: "Secondary paragraph",
+        kind: "textarea",
+        variables: ["freeUntil"],
+      },
+      { key: "ctaLabel", label: "Button label", kind: "text" },
+      { key: "signOff", label: "Handwritten sign-off", kind: "text" },
+      { key: "footer", label: "Fine-print footer", kind: "textarea" },
+    ],
+    defaults: {
+      preview: "Your Gradus account stays free until {freeUntil}",
+      subject: "Your {orgName} club seat has ended",
+      eyebrow: "Club plan ended",
+      heading: "Your club seat has ended, {firstName}.",
+      intro:
+        "You're no longer on <strong>{orgName}</strong>'s Gradus plan. Nothing has been deleted — your athletes, plans, and history are all still here.",
+      body: "Your account stays free until <strong>{freeUntil}</strong>. After that, pick a Coach or Coach Pro plan to keep going — we've already applied your <strong>WELCOME_BACK</strong> discount, so your first 3 months are free when you upgrade.",
+      ctaLabel: "See my plan options",
+      signOff: "— The Gradus team",
+      footer: "Questions? Just reply to this email.",
+    },
+  },
 };
 
 
