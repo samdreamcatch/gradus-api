@@ -49,6 +49,36 @@ async function assertPrimary(parentId: string, athleteId: string) {
   return row;
 }
 
+/**
+ * Seats already taken for an athlete: linked guardians plus, optionally,
+ * outstanding pending invites (which will become guardians when claimed).
+ */
+async function guardianSeatsUsed(
+  admin: Awaited<ReturnType<typeof getAdmin>>,
+  athleteId: string,
+  opts: { includePending: boolean },
+) {
+  const links = await admin
+    .from("athlete_guardians")
+    .select("id", { count: "exact", head: true })
+    .eq("athlete_id", athleteId);
+  if (links.error) dbError(links.error);
+  let used = links.count ?? 0;
+
+  if (opts.includePending) {
+    const pending = await admin
+      .from("guardian_invites")
+      .select("id", { count: "exact", head: true })
+      .eq("athlete_id", athleteId)
+      .eq("status", "pending");
+    if (pending.error) dbError(pending.error);
+    used += pending.count ?? 0;
+  }
+  return used;
+}
+
+
+
 /** Guardians + pending invites for each athlete the caller is primary on. */
 export const listFamilyGuardians = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
