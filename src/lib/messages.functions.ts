@@ -540,15 +540,12 @@ export const ensureRoom = createServerFn({ method: "POST" })
     const isCoach = me.coach?.id === data.coachId;
     const isAthlete = me.athlete?.id === data.athleteId;
     const isParent = me.parent
-      ? (
-          await supabaseAdmin
-            .from("athletes")
-            .select("id")
-            .eq("id", data.athleteId)
-            .eq("parent_id", me.parent.id)
-            .maybeSingle()
-        ).data != null
+      ? await (async () => {
+          const { canAccessAthlete } = await import("./family.server");
+          return canAccessAthlete(supabaseAdmin as any, me.parent!.id, data.athleteId);
+        })()
       : false;
+
 
     if (!isCoach && !isAthlete && !isParent) {
       throw new Error("Not authorized to open this conversation");
@@ -926,13 +923,16 @@ export const listMyMessageTargets = createServerFn({ method: "GET" })
     }
 
     if (me.parent) {
+      const { guardianAthleteIdsSafe } = await import("./family.server");
+      const ids = await guardianAthleteIdsSafe(supabaseAdmin as any, me.parent.id);
       const { data, error } = await supabaseAdmin
         .from("athletes")
         .select(
           "id, first_name, last_name, coach_athletes!inner(coach_id, coach_profiles!inner(id, first_name, last_name))",
         )
-        .eq("parent_id", me.parent.id);
+        .in("id", ids);
       if (error) dbError(error, "Couldn't load coaches");
+
 
       const targets: MessageTargetDTO[] = [];
       for (const row of data ?? []) {
