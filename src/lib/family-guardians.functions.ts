@@ -182,6 +182,15 @@ export const inviteGuardian = createServerFn({ method: "POST" })
       throw new Error("Start the Family plan to add another parent or guardian.");
     }
 
+    const used = await guardianSeatsUsed(admin, data.athleteId, { includePending: true });
+    if (used >= MAX_GUARDIANS_PER_ATHLETE) {
+      throw new Error(
+        `The Family plan allows up to ${MAX_GUARDIANS_PER_ATHLETE} guardians per athlete. Remove a guardian or revoke a pending invite first.`,
+      );
+    }
+
+
+
     const token = newInviteToken();
     let code = "";
     let inviteId = "";
