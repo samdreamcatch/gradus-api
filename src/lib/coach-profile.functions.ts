@@ -259,6 +259,34 @@ export const getCoachProfile = createServerFn({ method: "GET" })
       }
     }
 
+    const subscriptionEnvironment =
+      (profile.subscription_environment as "sandbox" | "live" | null) ?? null;
+
+    // Failed-payment banner: only for coaches who actually owe money, and
+    // only when Stripe confirms the delinquency right now. A stale DB row,
+    // a test-mode subscription, or a comped coach must never warn.
+    const owesMoney =
+      effectiveEntitlement !== "promo_free" && effectiveEntitlement !== "club_covered";
+    let billingPastDue = false;
+    if (
+      owesMoney &&
+      (profile.subscription_status === "past_due" || profile.subscription_status === "unpaid") &&
+      profile.stripe_subscription_id &&
+      subscriptionEnvironment
+    ) {
+      try {
+        const { createStripeClient } = await import("@/lib/stripe.server");
+        const stripe = createStripeClient(subscriptionEnvironment);
+        const sub = await stripe.subscriptions.retrieve(profile.stripe_subscription_id);
+        billingPastDue = sub.status === "past_due" || sub.status === "unpaid";
+      } catch (err) {
+        // Fail quiet — never warn about a payment we couldn't verify.
+        console.error("getCoachProfile: past_due verification failed", err);
+      }
+    }
+
+
+
     return {
       profile: {
         id: profile.id,
