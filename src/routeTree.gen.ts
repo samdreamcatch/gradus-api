@@ -23,6 +23,7 @@ import { Route as SignupAdminRouteImport } from './routes/signup.admin'
 import { Route as PTokenRouteImport } from './routes/p.$token'
 import { Route as ICodeRouteImport } from './routes/i.$code'
 import { Route as GTokenRouteImport } from './routes/g.$token'
+import { Route as FamilyTokenRouteImport } from './routes/family.$token'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as DevPaywallPreviewRouteImport } from './routes/dev.paywall-preview'
 import { Route as AuthenticatedParentRouteImport } from './routes/_authenticated/parent'
@@ -171,6 +172,11 @@ const ICodeRoute = ICodeRouteImport.update({
 const GTokenRoute = GTokenRouteImport.update({
   id: '/g/$token',
   path: '/g/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FamilyTokenRoute = FamilyTokenRouteImport.update({
+  id: '/family/$token',
+  path: '/family/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EmailUnsubscribeRoute = EmailUnsubscribeRouteImport.update({
@@ -647,6 +653,7 @@ export interface FileRoutesByFullPath {
   '/parent': typeof AuthenticatedParentRouteWithChildren
   '/dev/paywall-preview': typeof DevPaywallPreviewRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
+  '/family/$token': typeof FamilyTokenRoute
   '/g/$token': typeof GTokenRoute
   '/i/$code': typeof ICodeRoute
   '/p/$token': typeof PTokenRoute
@@ -737,6 +744,7 @@ export interface FileRoutesByTo {
   '/unsubscribe': typeof UnsubscribeRoute
   '/dev/paywall-preview': typeof DevPaywallPreviewRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
+  '/family/$token': typeof FamilyTokenRoute
   '/g/$token': typeof GTokenRoute
   '/i/$code': typeof ICodeRoute
   '/p/$token': typeof PTokenRoute
@@ -833,6 +841,7 @@ export interface FileRoutesById {
   '/_authenticated/parent': typeof AuthenticatedParentRouteWithChildren
   '/dev/paywall-preview': typeof DevPaywallPreviewRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
+  '/family/$token': typeof FamilyTokenRoute
   '/g/$token': typeof GTokenRoute
   '/i/$code': typeof ICodeRoute
   '/p/$token': typeof PTokenRoute
@@ -930,6 +939,7 @@ export interface FileRouteTypes {
     | '/parent'
     | '/dev/paywall-preview'
     | '/email/unsubscribe'
+    | '/family/$token'
     | '/g/$token'
     | '/i/$code'
     | '/p/$token'
@@ -1020,6 +1030,7 @@ export interface FileRouteTypes {
     | '/unsubscribe'
     | '/dev/paywall-preview'
     | '/email/unsubscribe'
+    | '/family/$token'
     | '/g/$token'
     | '/i/$code'
     | '/p/$token'
@@ -1115,6 +1126,7 @@ export interface FileRouteTypes {
     | '/_authenticated/parent'
     | '/dev/paywall-preview'
     | '/email/unsubscribe'
+    | '/family/$token'
     | '/g/$token'
     | '/i/$code'
     | '/p/$token'
@@ -1207,6 +1219,7 @@ export interface RootRouteChildren {
   UnsubscribeRoute: typeof UnsubscribeRoute
   DevPaywallPreviewRoute: typeof DevPaywallPreviewRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
+  FamilyTokenRoute: typeof FamilyTokenRoute
   GTokenRoute: typeof GTokenRoute
   ICodeRoute: typeof ICodeRoute
   PTokenRoute: typeof PTokenRoute
@@ -1324,6 +1337,13 @@ declare module '@tanstack/react-router' {
       path: '/g/$token'
       fullPath: '/g/$token'
       preLoaderRoute: typeof GTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/family/$token': {
+      id: '/family/$token'
+      path: '/family/$token'
+      fullPath: '/family/$token'
+      preLoaderRoute: typeof FamilyTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/email/unsubscribe': {
@@ -2142,6 +2162,7 @@ const rootRouteChildren: RootRouteChildren = {
   UnsubscribeRoute: UnsubscribeRoute,
   DevPaywallPreviewRoute: DevPaywallPreviewRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
+  FamilyTokenRoute: FamilyTokenRoute,
   GTokenRoute: GTokenRoute,
   ICodeRoute: ICodeRoute,
   PTokenRoute: PTokenRoute,
