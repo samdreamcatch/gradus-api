@@ -212,15 +212,9 @@ function ParentSettingsPage() {
             </SettingsGroup>
 
             <SettingsGroup label="Family">
-              <SettingsList>
-                <SettingsButtonRow
-                  icon={<Users className="size-4" />}
-                  label="Parents & guardians"
-                  description="Add another parent or guardian to your athlete"
-                  onClick={() => void navigate({ to: "/parent/family", search: {} })}
-                />
-              </SettingsList>
+              <FamilySection />
             </SettingsGroup>
+
 
 
             <SettingsGroup label="Preferences">
