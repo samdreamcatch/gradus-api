@@ -229,7 +229,9 @@ export const getAthletePlan = createServerFn({ method: "POST" })
     }
 
     const [movesRes, coachRes] = await Promise.all([
-      supabase
+      // Plan ownership was verified above; read moves with the admin client so
+      // the per-row RLS join doesn't re-run for every move.
+      supabaseAdmin
         .from("plan_moves")
         .select("id, position, name, description, cue, why, target_kind, target_value")
         .eq("plan_id", plan.id)
