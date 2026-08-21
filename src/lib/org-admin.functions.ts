@@ -295,7 +295,70 @@ export const createOrgCoachInvite = createServerFn({ method: "POST" })
       .single();
     if (error) dbError(error);
 
-    return { id: row.id, code: row.invite_code, token: row.invite_token };
+    let emailed = false;
+    if (data.email && data.email.length > 0) {
+      emailed = await emailOrgCoachInvite(supabase, data.organizationId, data.email, code);
+    }
+
+    return { id: row.id, code: row.invite_code, token: row.invite_token, emailed };
+  });
+
+/** Send the branded club invite email. Best-effort — returns whether it queued. */
+async function emailOrgCoachInvite(
+  supabase: Client,
+  organizationId: string,
+  email: string,
+  code: string,
+): Promise<boolean> {
+  try {
+    const org = await supabase
+      .from("organizations")
+      .select("name")
+      .eq("id", organizationId)
+      .maybeSingle();
+    const { sendClubCoachInvite } = await import("./club-emails.server");
+    await sendClubCoachInvite({
+      to: email,
+      orgName: org.data?.name ?? "your club",
+      inviteCode: code,
+    });
+    return true;
+  } catch (e) {
+    console.error("createOrgCoachInvite: invite email failed", e);
+    return false;
+  }
+}
+
+/** Re-send a pending invite's email from the Organization Admin portal. */
+export const resendOrgCoachInvite = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ organizationId: z.string().uuid(), inviteId: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const supabase = context.supabase as Client;
+    await assertOrgAdmin(supabase, context.userId, data.organizationId);
+
+    const { data: row, error } = await supabase
+      .from("org_coach_invites")
+      .select("id, email, invite_code, status")
+      .eq("id", data.inviteId)
+      .eq("organization_id", data.organizationId)
+      .maybeSingle();
+    if (error) dbError(error);
+    if (!row) return { ok: false as const, error: "Invite not found." };
+    if (row.status !== "pending") return { ok: false as const, error: "That invite isn't pending." };
+    if (!row.email) return { ok: false as const, error: "This invite has no email address." };
+
+    const emailed = await emailOrgCoachInvite(
+      supabase,
+      data.organizationId,
+      row.email,
+      row.invite_code,
+    );
+    return emailed
+      ? { ok: true as const, email: row.email }
+      : { ok: false as const, error: "Couldn't send the email. Try again." };
   });
 
 export const revokeOrgCoachInvite = createServerFn({ method: "POST" })
