@@ -8,8 +8,7 @@ coaches see one another and each other's work for that athlete.
 
 Full rename, internals included:
 
-- Route `/parent/family` becomes `/parent/team`. The old path stays as a redirect so live invite
-  links and bookmarks keep working.
+- Route `/parent/family` becomes `/parent/team`. The old path is removed, not redirected.
 - All UI copy, page titles/meta, emails ("Family invite" template), and toasts say "Team plan".
 - Code files rename: `family-guardians.functions.ts` → `team-guardians.functions.ts`,
   `family.server.ts` → `team.server.ts`, `family-emails.server.ts` → `team-emails.server.ts`,
