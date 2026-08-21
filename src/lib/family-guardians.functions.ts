@@ -135,12 +135,28 @@ export const listFamilyGuardians = createServerFn({ method: "GET" })
       ),
     );
 
+    // A co-guardian is covered by the primary parent's plan — they're on the
+    // Family plan too, just not the payer.
+    const otherPrimaryIds = Array.from(
+      new Set(
+        athletes
+          .map((a) => a.parent_id)
+          .filter((p): p is string => !!p && p !== parent.id),
+      ),
+    );
+    const coveredByOther = isPayer
+      ? false
+      : (await Promise.all(otherPrimaryIds.map((p) => familyPlanActive(admin, p)))).some(Boolean);
+    const planActive = isPayer || coveredByOther;
+
     return {
       planActive,
+      isPayer,
       athletes: athletes.map((a) => ({
         id: a.id,
         firstName: a.first_name,
         lastName: a.last_name,
+        isPrimary: a.parent_id === parent.id,
         guardians: links
           .filter((l) => l.athlete_id === a.id)
           .map((l) => ({
