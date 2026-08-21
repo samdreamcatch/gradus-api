@@ -369,6 +369,7 @@ function PlanSection({
     promoPercentOff: number;
     foundingCoach: boolean;
     trialNeedsCard: boolean;
+    billingPastDue: boolean;
     freeAccessUntil?: string | null;
   };
 }) {
