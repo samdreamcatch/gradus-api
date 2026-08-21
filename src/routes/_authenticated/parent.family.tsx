@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { EmbeddedCheckoutProvider, EmbeddedCheckout } from "@stripe/react-stripe-js";
@@ -339,6 +339,7 @@ function ParentFamilyPage() {
 /** Accept an invite you were given as a code (rather than a link). */
 function JoinByCodeSection() {
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const claim = useServerFn(claimGuardianInvite);
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
@@ -369,6 +370,7 @@ function JoinByCodeSection() {
                   toast.success("You've been added as a guardian.");
                   setCode("");
                   void qc.invalidateQueries();
+                  void navigate({ to: "/parent/settings" });
                 } catch (e) {
                   toast.error(e instanceof Error ? e.message : "Couldn't accept that invite.");
                 } finally {
