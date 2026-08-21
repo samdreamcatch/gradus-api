@@ -44,6 +44,12 @@ import {
 import { ParentBottomNav } from "@/components/parent/bottom-nav";
 import { AthleteInviteCard } from "@/components/parent/athlete-invite-card";
 import { ConnectCoachSheet } from "@/components/parent/connect-coach-sheet";
+import { ConnectGuardianSheet } from "@/components/parent/connect-guardian-sheet";
+import {
+  listFamilyGuardians,
+  removeGuardian,
+  revokeGuardianInvite,
+} from "@/lib/family-guardians.functions";
 
 import {
   ScheduleEditor,
