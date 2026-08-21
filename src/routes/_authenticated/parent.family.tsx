@@ -60,9 +60,6 @@ export const Route = createFileRoute("/_authenticated/parent/family")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  validateSearch: (search: Record<string, unknown>): { checkout?: string } => ({
-    checkout: typeof search["checkout"] === "string" ? (search["checkout"] as string) : undefined,
-  }),
   component: ParentFamilyPage,
 });
 
