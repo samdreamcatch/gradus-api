@@ -255,9 +255,6 @@ function ParentFamilyPage() {
               <div className="flex items-baseline gap-1">
                 <span className="font-display text-2xl text-text-primary sm:text-4xl">Free</span>
               </div>
-              <p className="mt-0.5 text-[11px] text-text-tertiary sm:text-xs">
-                Included with every parent account.
-              </p>
             </div>
 
             <ul className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1 text-[11px] text-text-secondary sm:text-xs">
