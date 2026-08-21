@@ -369,6 +369,7 @@ function PlanSection({
     promoPercentOff: number;
     foundingCoach: boolean;
     trialNeedsCard: boolean;
+    freeAccessUntil?: string | null;
   };
 }) {
   const navigate = useNavigate();
