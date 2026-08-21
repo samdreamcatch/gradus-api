@@ -139,23 +139,6 @@ function ParentFamilyPage() {
     );
   }
 
-  if (checkout === "return") {
-    return (
-      <div className="min-h-dvh">
-        <PaymentTestModeBanner />
-        <div className="mx-auto flex max-w-md flex-col items-center px-4 py-16 text-center">
-          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-accent/15 text-accent-ink">
-            <Loader2 className="h-6 w-6 animate-spin" />
-          </div>
-          <h1 className="font-display text-h2 text-text-primary">Finishing up…</h1>
-          <p className="mt-2 text-sm text-text-secondary">
-            Confirming your Family plan. This usually takes a few seconds.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   if (status.isPending) {
     return (
       <div className="flex min-h-dvh items-center justify-center px-4 py-12">
