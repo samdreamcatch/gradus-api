@@ -117,7 +117,8 @@ export const resolveInviteCode = createServerFn({ method: "POST" })
         valid: !athlete.data.used_at && !expired,
         used: !!athlete.data.used_at,
         expired,
+        promoCode: null,
       };
     }
-    return { kind: null, valid: false };
+    return { kind: null, valid: false, promoCode: null };
   });
