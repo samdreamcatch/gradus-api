@@ -496,32 +496,24 @@ export const clearOrganizationLink = createServerFn({ method: "POST" })
     if (coach.error) dbError(coach.error);
     if (!coach.data) throw new Error("Coach profile missing.");
     const wasClubCovered = coach.data.entitlement === "club_covered";
-    const nextEntitlement = wasClubCovered ? "pending" : coach.data.entitlement;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    // Auto-grant WELCOME_BACK to coaches who leave a club plan without ever
-    // having paid (no Stripe customer) and no existing personal promo code.
-    // The paywall pre-fills it; Coach Pro only, card required, 3 months free.
-    let stashPromo: string | null = null;
-    if (wasClubCovered && !coach.data.promo_code && !coach.data.stripe_customer_id) {
-      const promo = await supabase
-        .from("promo_codes")
-        .select("code, active")
-        .eq("code", "WELCOME_BACK")
-        .maybeSingle();
-      if (promo.data?.active) stashPromo = "WELCOME_BACK";
+    if (!wasClubCovered) {
+      const upd = await supabaseAdmin
+        .from("coach_profiles")
+        .update({ organization_id: null })
+        .eq("id", coach.data.id);
+      if (upd.error) dbError(upd.error);
+      return { ok: true, welcomeBackGranted: false };
     }
 
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const upd = await supabaseAdmin
-      .from("coach_profiles")
-      .update({
-        organization_id: null,
-        entitlement: nextEntitlement,
-        ...(stashPromo && { promo_code: stashPromo }),
-      })
-      .eq("id", coach.data.id);
-    if (upd.error) dbError(upd.error);
-    return { ok: true, welcomeBackGranted: stashPromo === "WELCOME_BACK" };
+    // Leaving a club seat: 90 days free, WELCOME_BACK stashed for the paywall.
+    const { applyClubExitGrace } = await import("./club-exit.server");
+    const { welcomeBackGranted } = await applyClubExitGrace(supabaseAdmin as any, coach.data.id, {
+      existingPromoCode: coach.data.promo_code ?? null,
+      hasStripeCustomer: Boolean(coach.data.stripe_customer_id),
+    });
+    return { ok: true, welcomeBackGranted };
   });
 
 // ---------- Admin CRUD ----------

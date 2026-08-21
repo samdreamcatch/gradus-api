@@ -89,7 +89,15 @@ function InviteEntryPage() {
         // Signed-out: send them into the right signup with the code carried.
         if (!signedIn) {
           if (kind === "parent" || kind === "adult-athlete") {
-            navigate({ to: "/signup/coach", search: { invite: code } });
+            // Carry the inviter's promo code so the coach sees the discount
+            // on the signup screen (and it's stashed for their profile).
+            navigate({
+              to: "/signup/coach",
+              search: {
+                invite: code,
+                ...(resolved.promoCode ? { promo: resolved.promoCode } : {}),
+              },
+            });
             return;
           }
           if (kind === "athlete") {

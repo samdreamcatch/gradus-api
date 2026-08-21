@@ -10,6 +10,7 @@ import {
   listOrgCoachInvites,
   createOrgCoachInvite,
   revokeOrgCoachInvite,
+  resendOrgCoachInvite,
 } from "@/lib/org-admin.functions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -28,6 +29,7 @@ function OrgRosterPage() {
   const invitesFn = useServerFn(listOrgCoachInvites);
   const createInviteFn = useServerFn(createOrgCoachInvite);
   const revokeInviteFn = useServerFn(revokeOrgCoachInvite);
+  const resendInviteFn = useServerFn(resendOrgCoachInvite);
   const removeFn = useServerFn(removeCoachFromOrg);
   const qc = useQueryClient();
 
@@ -52,7 +54,9 @@ function OrgRosterPage() {
   const createInvite = useMutation({
     mutationFn: () => createInviteFn({ data: { organizationId: orgId!, email, phone } }),
     onSuccess: (res) => {
-      toast.success(`Invite created — code ${res.code}`);
+      toast.success(
+        res.emailed ? `Invite emailed — code ${res.code}` : `Invite created — code ${res.code}`,
+      );
       setEmail("");
       setPhone("");
       qc.invalidateQueries({ queryKey: ["org-invites", orgId] });
@@ -63,6 +67,15 @@ function OrgRosterPage() {
   const revokeInvite = useMutation({
     mutationFn: (id: string) => revokeInviteFn({ data: { organizationId: orgId!, inviteId: id } }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["org-invites", orgId] }),
+  });
+
+  const resendInvite = useMutation({
+    mutationFn: (id: string) => resendInviteFn({ data: { organizationId: orgId!, inviteId: id } }),
+    onSuccess: (res) => {
+      if (res.ok) toast.success(`Invite re-sent to ${res.email}`);
+      else toast.error(res.error);
+    },
+    onError: (e: Error) => toast.error(e.message),
   });
 
   const removeCoach = useMutation({
@@ -133,6 +146,16 @@ function OrgRosterPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge variant="outline">{inv.status}</Badge>
+                    {inv.status === "pending" && inv.email && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={resendInvite.isPending}
+                        onClick={() => resendInvite.mutate(inv.id)}
+                      >
+                        Resend
+                      </Button>
+                    )}
                     {inv.status === "pending" && (
                       <Button variant="ghost" size="sm" onClick={() => revokeInvite.mutate(inv.id)}>
                         Revoke

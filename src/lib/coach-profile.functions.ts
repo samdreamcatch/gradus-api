@@ -34,6 +34,12 @@ export interface CoachProfileDTO {
   foundingCoach: boolean;
   foundingProTrialUsed: boolean;
   /**
+   * When set, complimentary access ends on this date — currently only used
+   * for the 90-day window after a coach leaves or is removed from a club.
+   * Null means the free access has no end date (e.g. Founding Coach).
+   */
+  freeAccessUntil: string | null;
+  /**
    * True when the coach is mid-trial on Stripe with no payment method on
    * file — legacy card-free trials started before cards became mandatory.
    * Drives the "add a card" nudge; never revokes access.
@@ -73,7 +79,7 @@ async function ensureProfile(
   const existing = await supabase
     .from("coach_profiles")
     .select(
-      "id, first_name, last_name, onboarded_at, entitlement, organization_id, subscription_tier, subscription_status, trial_ends_at, current_period_end, subscription_environment, stripe_customer_id, stripe_subscription_id, promo_code, founding_coach, founding_pro_trial_used",
+      "id, first_name, last_name, onboarded_at, entitlement, organization_id, subscription_tier, subscription_status, trial_ends_at, current_period_end, subscription_environment, stripe_customer_id, stripe_subscription_id, promo_code, founding_coach, founding_pro_trial_used, free_access_until",
     )
     .eq("user_id", userId)
     .maybeSingle();
@@ -108,7 +114,7 @@ async function ensureProfile(
         })
         .eq("id", existing.data.id)
         .select(
-          "id, first_name, last_name, onboarded_at, entitlement, organization_id, subscription_tier, subscription_status, trial_ends_at, current_period_end, subscription_environment, stripe_customer_id, promo_code, founding_coach, founding_pro_trial_used",
+          "id, first_name, last_name, onboarded_at, entitlement, organization_id, subscription_tier, subscription_status, trial_ends_at, current_period_end, subscription_environment, stripe_customer_id, promo_code, founding_coach, founding_pro_trial_used, free_access_until",
         )
         .single();
       if (upd.error) dbError(upd.error);
@@ -151,7 +157,7 @@ async function ensureProfile(
       founding_coach: isFoundingCoachWindowOpen(),
     })
     .select(
-      "id, first_name, last_name, onboarded_at, entitlement, organization_id, subscription_tier, subscription_status, trial_ends_at, current_period_end, subscription_environment, stripe_customer_id, promo_code, founding_coach, founding_pro_trial_used",
+      "id, first_name, last_name, onboarded_at, entitlement, organization_id, subscription_tier, subscription_status, trial_ends_at, current_period_end, subscription_environment, stripe_customer_id, promo_code, founding_coach, founding_pro_trial_used, free_access_until",
     )
     .single();
   if (created.error) dbError(created.error);
@@ -205,6 +211,20 @@ export const getCoachProfile = createServerFn({ method: "GET" })
     if (countRes.error) dbError(countRes.error);
     const athleteCount = countRes.count ?? 0;
 
+    // Time-boxed complimentary access (90 days after leaving a club). Once it
+    // lapses the coach falls back to "pending" and the paywall takes over.
+    const freeAccessUntil = (profile as { free_access_until?: string | null }).free_access_until
+      ? ((profile as { free_access_until?: string | null }).free_access_until as string)
+      : null;
+    const rawEntitlement = (profile.entitlement ?? "pending") as CoachProfileDTO["entitlement"];
+    const freeAccessExpired =
+      rawEntitlement === "promo_free" &&
+      Boolean(freeAccessUntil) &&
+      new Date(freeAccessUntil as string) < new Date();
+    const effectiveEntitlement: CoachProfileDTO["entitlement"] = freeAccessExpired
+      ? "pending"
+      : rawEntitlement;
+
     const organizationId = profile.organization_id ?? null;
     const subscriptionTier = (profile.subscription_tier as "coach" | "coach_pro" | null) ?? null;
     const effectiveTier = computeEffectiveTier({ organizationId, subscriptionTier });
@@ -234,7 +254,7 @@ export const getCoachProfile = createServerFn({ method: "GET" })
         firstName: profile.first_name,
         lastName: profile.last_name,
         onboardedAt: profile.onboarded_at,
-        entitlement: (profile.entitlement ?? "pending") as CoachProfileDTO["entitlement"],
+        entitlement: effectiveEntitlement,
         organizationId,
         organizationName: org.data?.name ?? null,
         subscriptionTier,
@@ -250,6 +270,7 @@ export const getCoachProfile = createServerFn({ method: "GET" })
         athleteCount,
         foundingCoach: Boolean(profile.founding_coach),
         foundingProTrialUsed: Boolean(profile.founding_pro_trial_used),
+        freeAccessUntil,
         trialNeedsCard,
       } as CoachProfileDTO,
       levels: (levels.data ?? []).map((r) => ({

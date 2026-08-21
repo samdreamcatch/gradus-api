@@ -23,6 +23,8 @@ import { template as guardianActivityTemplate } from "./guardian-activity";
 import { template as welcomeTemplate } from "./welcome";
 import { template as activationTemplate } from "./activation";
 import { template as billingNoticeTemplate } from "./billing-notice";
+import { template as clubInviteTemplate } from "./club-invite";
+import { template as clubRemovalTemplate } from "./club-removal";
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
   "error-digest": errorDigestTemplate,
@@ -31,4 +33,6 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   welcome: welcomeTemplate,
   activation: activationTemplate,
   "billing-notice": billingNoticeTemplate,
+  "club-invite": clubInviteTemplate,
+  "club-removal": clubRemovalTemplate,
 };
