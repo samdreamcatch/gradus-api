@@ -16,6 +16,8 @@ import {
   QrCode,
   UserPlus,
   KeyRound,
+  CreditCard,
+
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -86,7 +88,14 @@ import {
   updateCoachAthleteSports,
   resetAthletePassword,
 } from "@/lib/parent-settings.functions";
+import {
+  createParentBillingPortalSession,
+  getFamilyPlanStatus,
+} from "@/lib/parent-checkout.functions";
+import { getStripeEnvironment } from "@/lib/stripe";
+import { cn } from "@/lib/utils";
 import { getSport } from "@/lib/coach-sports";
+
 
 import { z } from "zod";
 
@@ -217,9 +226,14 @@ function ParentSettingsPage() {
               <ConnectCoachSheet athletes={data.athletes as AthleteData[]} />
             </SettingsGroup>
 
+            <SettingsGroup label="Plan">
+              <PlanSection />
+            </SettingsGroup>
+
             <SettingsGroup label="Family">
               <FamilySection />
             </SettingsGroup>
+
 
 
 
@@ -247,6 +261,164 @@ function ParentSettingsPage() {
       </div>
       <ParentBottomNav />
     </>
+  );
+}
+
+/**
+ * Plan section — the paying primary parent manages the Family subscription
+ * through the Stripe billing portal. Covered co-guardians see status only.
+ */
+function PlanSection() {
+  const navigate = useNavigate();
+  const fetchStatus = useServerFn(getFamilyPlanStatus);
+  const fetchGuardians = useServerFn(listFamilyGuardians);
+  const portal = useServerFn(createParentBillingPortalSession);
+  const [opening, setOpening] = useState(false);
+
+  const statusQ = useQuery({
+    queryKey: ["family-plan-status"],
+    queryFn: () => fetchStatus(),
+  });
+  const guardiansQ = useQuery({
+    queryKey: ["family-guardians"],
+    queryFn: () => fetchGuardians(),
+  });
+
+  if (statusQ.isLoading || guardiansQ.isLoading) {
+    return (
+      <SettingsList>
+        <SettingsRow icon={<CreditCard className="size-4" />} label="Plan" value="Loading…" />
+      </SettingsList>
+    );
+  }
+
+  const status = statusQ.data;
+  const isPayer = Boolean(status?.active && guardiansQ.data?.isPayer);
+  const coveredByOther = Boolean(guardiansQ.data?.planActive) && !isPayer;
+
+  const openPortal = async () => {
+    setOpening(true);
+    try {
+      const res = await portal({
+        data: {
+          environment: getStripeEnvironment(),
+          returnUrl: `${window.location.origin}/parent/settings`,
+        },
+      });
+      if ("error" in res) {
+        toast.error(res.error);
+        return;
+      }
+      window.open(res.url, "_blank");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Couldn't open billing.");
+    } finally {
+      setOpening(false);
+    }
+  };
+
+  if (!isPayer && !coveredByOther) {
+    return (
+      <>
+        <ParentPlanCard label="Free" description="One parent or guardian per athlete." />
+        <SettingsList>
+          <SettingsButtonRow
+            icon={<CreditCard className="size-4" />}
+            label="Upgrade to Family"
+            description="Add up to 3 parents or guardians per athlete"
+            onClick={() => void navigate({ to: "/parent/family", search: {} })}
+          />
+        </SettingsList>
+      </>
+    );
+  }
+
+  if (coveredByOther) {
+    return (
+      <ParentPlanCard
+        label="Family plan"
+        description="You're covered by the primary parent's plan. They manage billing."
+        status={{ label: "Active", tone: "accent" }}
+      />
+    );
+  }
+
+  const raw = status?.status ?? null;
+  const periodEnd = status?.currentPeriodEnd
+    ? new Date(status.currentPeriodEnd).toLocaleDateString(undefined, {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
+    : null;
+
+  const tag =
+    raw === "past_due"
+      ? { label: "Past due", tone: "destructive" as const }
+      : raw === "canceled"
+        ? { label: "Ending", tone: "muted" as const }
+        : raw === "trialing"
+          ? { label: "Trial", tone: "accent" as const }
+          : { label: "Active", tone: "accent" as const };
+
+  const description =
+    raw === "past_due"
+      ? "Payment failed — update your payment method to keep your plan."
+      : raw === "canceled"
+        ? periodEnd
+          ? `Access ends ${periodEnd}.`
+          : "Your plan is ending."
+        : periodEnd
+          ? `Renews ${periodEnd}.`
+          : "Up to 3 parents or guardians per athlete.";
+
+  return (
+    <>
+      <ParentPlanCard label="Family plan" description={description} status={tag} />
+      <SettingsList>
+        <SettingsButtonRow
+          icon={<CreditCard className="size-4" />}
+          label={opening ? "Opening…" : "Manage subscription"}
+          description="Payment method, invoices, and cancellation"
+          onClick={() => void openPortal()}
+        />
+      </SettingsList>
+    </>
+  );
+}
+
+function ParentPlanCard({
+  label,
+  description,
+  status,
+}: {
+  label: React.ReactNode;
+  description?: React.ReactNode;
+  status?: { label: string; tone: "accent" | "destructive" | "muted" } | null;
+}) {
+  const toneClass =
+    status?.tone === "destructive"
+      ? "bg-destructive/10 text-destructive"
+      : status?.tone === "muted"
+        ? "bg-elevated text-text-secondary"
+        : "bg-accent/10 text-accent-ink";
+  return (
+    <div className="mb-2 rounded-2xl border border-divider bg-elevated/60 px-4 py-4 backdrop-blur-sm">
+      <div className="flex items-center gap-2">
+        <div className="truncate font-display text-base text-text-primary">{label}</div>
+        {status && (
+          <span
+            className={cn(
+              "shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest",
+              toneClass,
+            )}
+          >
+            {status.label}
+          </span>
+        )}
+      </div>
+      {description && <p className="mt-1 text-xs text-text-secondary">{description}</p>}
+    </div>
   );
 }
 
