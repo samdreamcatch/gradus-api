@@ -12,6 +12,8 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { dbError } from "./db-error";
 
 const INVITE_TTL_DAYS = 30;
+/** Family plan allows up to three guardians per athlete (primary + two co-guardians). */
+const MAX_GUARDIANS_PER_ATHLETE = 3;
 
 async function getAdmin() {
   const m = await import("@/integrations/supabase/client.server");
