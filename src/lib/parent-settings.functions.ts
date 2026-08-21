@@ -110,10 +110,12 @@ export const getParentSettings = createServerFn({ method: "GET" })
     const userId = context.userId;
     const parent = await getParentProfile(userId);
 
+    const { guardianAthleteIdsSafe } = await import("./family.server");
+    const accessibleAthleteIds = await guardianAthleteIdsSafe(supabaseAdmin as any, parent.id);
     const athletesRes = await supabaseAdmin
       .from("athletes")
       .select("id, first_name, last_name, birthdate, username, user_id")
-      .eq("parent_id", parent.id)
+      .in("id", accessibleAthleteIds)
       .order("created_at", { ascending: true });
     if (athletesRes.error) dbError(athletesRes.error);
     const athletes = athletesRes.data ?? [];

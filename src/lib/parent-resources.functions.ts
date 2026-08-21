@@ -41,12 +41,8 @@ export const getParentResources = createServerFn({ method: "GET" })
     if (pErr) dbError(pErr);
     if (!parent) return { sports: [], resources: [] };
 
-    const { data: athleteRows, error: aErr } = await supabase
-      .from("athletes")
-      .select("id")
-      .eq("parent_id", parent.id);
-    if (aErr) dbError(aErr);
-    const athleteIds = (athleteRows ?? []).map((a) => a.id);
+    const { guardianAthleteIds } = await import("./family.server");
+    const athleteIds = await guardianAthleteIds(supabase as any, parent.id);
     if (!athleteIds.length) return { sports: [], resources: [] };
 
     const { data: goalRows, error: gErr } = await supabase
