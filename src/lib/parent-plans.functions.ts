@@ -126,12 +126,16 @@ export const listParentPlans = createServerFn({ method: "GET" })
     );
 
     const [movesRes, coachesRes] = await Promise.all([
-      supabase
+      // Plan IDs here are already scoped to athletes this parent can access
+      // (checked above), so we read moves with the admin client. Going through
+      // RLS re-runs the parent/guardian lookup per move row and times out.
+      supabaseAdmin
         .from("plan_moves")
         .select("plan_id, target_kind, target_value")
         .in("plan_id", planIds),
       supabaseAdmin.from("coach_profiles").select("id, first_name, last_name").in("id", coachIds),
     ]);
+
     if (movesRes.error) dbError(movesRes.error);
     if (coachesRes.error) dbError(coachesRes.error);
 
