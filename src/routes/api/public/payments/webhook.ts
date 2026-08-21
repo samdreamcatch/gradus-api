@@ -95,7 +95,7 @@ async function handleCheckoutCompleted(session: any, env: StripeEnv) {
   const userId = session.metadata?.userId;
   if (!userId || !session.customer) return;
   const supabase = getSupabase();
-  if (session.metadata?.plan === "family") {
+  if (session.metadata?.plan === "team" || session.metadata?.plan === "family") {
     await supabase
       .from("parent_profiles")
       .update({ stripe_customer_id: session.customer, subscription_environment: env })
