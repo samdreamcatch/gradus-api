@@ -1,6 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { Database } from "@/integrations/supabase/types";
 import { dbError } from "./db-error";
 
 /**
@@ -10,7 +12,7 @@ import { dbError } from "./db-error";
  */
 
 async function requireCoachId(
-  supabase: { from: (t: string) => any },
+  supabase: SupabaseClient<Database>,
   userId: string,
 ): Promise<string> {
   const { data, error } = await supabase
@@ -35,7 +37,7 @@ export const setPracticeTarget = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ context, data }) => {
-    const coachId = await requireCoachId(context.supabase as never, context.userId);
+    const coachId = await requireCoachId(context.supabase, context.userId);
     const { error } = await context.supabase.from("coach_athlete_practice_targets").upsert(
       {
         coach_id: coachId,
@@ -56,7 +58,7 @@ export const clearPracticeTarget = createServerFn({ method: "POST" })
     z.object({ athleteId: z.string().uuid(), sport: z.string().min(1).max(64) }).parse(input),
   )
   .handler(async ({ context, data }) => {
-    const coachId = await requireCoachId(context.supabase as never, context.userId);
+    const coachId = await requireCoachId(context.supabase, context.userId);
     const { error } = await context.supabase
       .from("coach_athlete_practice_targets")
       .delete()
