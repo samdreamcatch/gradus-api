@@ -570,13 +570,14 @@ function ReviewStep({
               {name || "Needs a name"}
             </p>
 
-            <div className="mt-1 divide-y divide-divider">
+            <div className="mt-0.5">
               {group.rows.map((row) => {
                 const errors = allErrors[row.id] ?? {};
                 const expanded = expandedId === row.id;
                 const index = rows.findIndex((r) => r.id === row.id);
                 return (
-                  <div key={row.id} className="py-1.5 first:pt-0 last:pb-0">
+                  <div key={row.id} className={expanded ? "py-1" : ""}>
+
                     <LessonLine
                       row={row}
                       index={index}
