@@ -464,10 +464,6 @@ export const matchScheduleRows = createServerFn({ method: "POST" })
         }
       }
 
-        }
-      }
-
-
       const list = [...candidates.values()].sort((a, b) => {
         if (a.onRoster !== b.onRoster) return a.onRoster ? -1 : 1;
         if (a.reason !== b.reason) return a.reason === "email" ? -1 : 1;
@@ -475,9 +471,7 @@ export const matchScheduleRows = createServerFn({ method: "POST" })
       });
 
       // Name + email both line up on one athlete: confirmed, hide the alternatives.
-      const confirmed = list.find(
-        (c) => c.reason === "email" && norm(c.name) === norm(`${input.firstName} ${input.lastName}`),
-      );
+      const confirmed = list.find((c) => c.reason === "email" && c.nameAlsoMatches);
       if (confirmed) {
         return {
           key: input.key,
