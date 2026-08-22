@@ -510,6 +510,51 @@ export type Database = {
         }
         Relationships: []
       }
+      coach_athlete_practice_targets: {
+        Row: {
+          athlete_id: string
+          coach_id: string
+          created_at: string
+          hours_per_week: number
+          id: string
+          sport: string
+          updated_at: string
+        }
+        Insert: {
+          athlete_id: string
+          coach_id: string
+          created_at?: string
+          hours_per_week: number
+          id?: string
+          sport: string
+          updated_at?: string
+        }
+        Update: {
+          athlete_id?: string
+          coach_id?: string
+          created_at?: string
+          hours_per_week?: number
+          id?: string
+          sport?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coach_athlete_practice_targets_athlete_id_fkey"
+            columns: ["athlete_id"]
+            isOneToOne: false
+            referencedRelation: "athletes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coach_athlete_practice_targets_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "coach_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coach_athlete_rates: {
         Row: {
           athlete_id: string
