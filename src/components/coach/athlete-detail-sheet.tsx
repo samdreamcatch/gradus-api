@@ -13,6 +13,8 @@ import {
 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 import { PlanCard } from "@/components/plans/plan-card";
 import { AlsoCoachedByList } from "@/components/coach/also-coached-by-list";
 import { OtherCoachPlansSheet } from "@/components/coach/other-coach-plans-sheet";
@@ -23,8 +25,10 @@ import {
   getCoachAthleteDetail,
   getCoachAthleteAiSummary,
   type Verdict,
+  type AthletePracticeTargetDTO,
 } from "@/lib/coach-athlete-detail.functions";
 import { adoptStarterPlan } from "@/lib/starter-programs.functions";
+import { setPracticeTarget, clearPracticeTarget } from "@/lib/practice-targets.functions";
 import { useCoachProfile } from "@/hooks/use-coach-profile";
 import {
   buildSampleAiSummary,
@@ -559,6 +563,100 @@ function VerdictPill({ verdict, rationale }: { verdict: Verdict; rationale: stri
         </span>
       </div>
       <p className="mt-1.5 text-xs leading-relaxed text-text-secondary">{rationale}</p>
+    </div>
+  );
+}
+
+/** One editable weekly practice expectation for an athlete in one sport. */
+function PracticeTargetRow({
+  athleteId,
+  target,
+}: {
+  athleteId: string;
+  target: AthletePracticeTargetDTO;
+}) {
+  const queryClient = useQueryClient();
+  const save = useServerFn(setPracticeTarget);
+  const reset = useServerFn(clearPracticeTarget);
+  const [value, setValue] = useState(String(target.hoursPerWeek));
+
+  useEffect(() => {
+    setValue(String(target.hoursPerWeek));
+  }, [target.hoursPerWeek]);
+
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ["coach", "athlete-detail", athleteId] });
+  };
+
+  const saveMutation = useMutation({
+    mutationFn: (hours: number) =>
+      save({ data: { athleteId, sport: target.sport, hoursPerWeek: hours } }),
+    onSuccess: invalidate,
+    onError: (err: unknown) =>
+      toast.error(err instanceof Error ? err.message : "Couldn't save expectation"),
+  });
+
+  const resetMutation = useMutation({
+    mutationFn: () => reset({ data: { athleteId, sport: target.sport } }),
+    onSuccess: invalidate,
+    onError: (err: unknown) =>
+      toast.error(err instanceof Error ? err.message : "Couldn't reset expectation"),
+  });
+
+  const commit = () => {
+    const n = Number(value);
+    const clamped = Math.max(0, Math.min(40, Number.isFinite(n) ? n : 0));
+    setValue(String(clamped));
+    if (clamped === target.hoursPerWeek) return;
+    saveMutation.mutate(clamped);
+  };
+
+  const busy = saveMutation.isPending || resetMutation.isPending;
+
+  return (
+    <div className="rounded-xl border border-divider bg-card p-3">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <div className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
+            {target.sportLabel}
+          </div>
+          <div className="mt-0.5 text-sm text-text-secondary">
+            {target.currentLevelLabel ?? "No level set yet"}
+          </div>
+        </div>
+        <div className="flex items-baseline gap-1.5">
+          <Input
+            type="number"
+            inputMode="decimal"
+            min={0}
+            max={40}
+            step={0.5}
+            value={value}
+            disabled={busy}
+            onChange={(e) => setValue(e.target.value)}
+            onBlur={commit}
+            className="h-9 w-16 px-2 text-right tabular-nums"
+            aria-label={`Weekly practice hours for ${target.sportLabel}`}
+          />
+          <span className="text-xs text-text-tertiary">hrs/wk</span>
+        </div>
+      </div>
+      {target.isOverride ? (
+        <div className="mt-2 flex items-center justify-between gap-2">
+          <span className="text-xs text-text-tertiary">
+            Custom — default is {target.defaultHoursPerWeek} hrs/wk
+          </span>
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            disabled={busy}
+            onClick={() => resetMutation.mutate()}
+          >
+            Reset to default
+          </Button>
+        </div>
+      ) : null}
     </div>
   );
 }
