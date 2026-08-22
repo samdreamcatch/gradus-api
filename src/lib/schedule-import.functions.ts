@@ -48,22 +48,64 @@ const IMAGE_SYSTEM = `You transcribe coaching lesson schedules from photos or sc
 Report only what is visibly written. Never invent names, emails, times or days.
 If a field is not visible, leave it empty (or null). One row per lesson per athlete per week.`;
 
-const lessonSchema = z.object({
-  lessons: z
-    .array(
-      z.object({
-        firstName: z.string().max(80),
-        lastName: z.string().max(80),
-        day: z.string().max(20),
-        startTime: z.string().max(20),
-        lengthMinutes: z.number().nullable(),
-        frequency: z.string().max(30),
-        guardianEmail: z.string().max(255).nullable(),
-        athleteEmail: z.string().max(255).nullable(),
-      }),
-    )
-    .max(200),
-});
+const str = z.union([z.string(), z.number()]).nullish();
+
+// The model sometimes answers with snake_case keys, so accept both spellings
+// and normalize below.
+const rawLesson = z
+  .object({
+    firstName: str,
+    first_name: str,
+    lastName: str,
+    last_name: str,
+    name: str,
+    athlete_name: str,
+    athleteName: str,
+    day: str,
+    day_of_week: str,
+    dayOfWeek: str,
+    startTime: str,
+    start_time: str,
+    lengthMinutes: str,
+    length_minutes: str,
+    lesson_length_minutes: str,
+    frequency: str,
+    repeats: str,
+    guardianEmail: str,
+    guardian_email: str,
+    athleteEmail: str,
+    athlete_email: str,
+    email: str,
+  })
+  .partial();
+
+type RawLesson = z.infer<typeof rawLesson>;
+
+const text = (v: unknown): string => (v == null ? "" : String(v).trim());
+
+function normalize(raw: RawLesson): ParsedLesson {
+  const full = text(raw.name ?? raw.athlete_name ?? raw.athleteName);
+  let firstName = text(raw.firstName ?? raw.first_name);
+  let lastName = text(raw.lastName ?? raw.last_name);
+  if (!firstName && !lastName && full) {
+    const parts = full.split(/\s+/);
+    firstName = parts.shift() ?? "";
+    lastName = parts.join(" ");
+  }
+  const lenRaw = raw.lengthMinutes ?? raw.length_minutes ?? raw.lesson_length_minutes;
+  const len = lenRaw == null || lenRaw === "" ? null : Number(lenRaw);
+  const email = text(raw.email);
+  return {
+    firstName,
+    lastName,
+    day: text(raw.day ?? raw.day_of_week ?? raw.dayOfWeek),
+    startTime: text(raw.startTime ?? raw.start_time),
+    lengthMinutes: Number.isFinite(len as number) ? (len as number) : null,
+    frequency: text(raw.frequency ?? raw.repeats),
+    guardianEmail: text(raw.guardianEmail ?? raw.guardian_email) || email || null,
+    athleteEmail: text(raw.athleteEmail ?? raw.athlete_email) || null,
+  };
+}
 
 export const parseScheduleImage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -87,26 +129,29 @@ export const parseScheduleImage = createServerFn({ method: "POST" })
       const { object } = await generateObject({
         model: gateway("google/gemini-2.5-flash"),
         system: IMAGE_SYSTEM,
-        schema: lessonSchema,
+        output: "array",
+        schema: rawLesson,
         messages: [
           {
             role: "user",
             content: [
               {
                 type: "text",
-                text: "Transcribe every lesson in this schedule. Use the day of week, the start time as written, the lesson length in minutes if shown, how often it repeats (weekly, every other week, twice a month, monthly), and any parent/guardian or athlete email shown.",
+                text: "Transcribe every lesson in this schedule. For each lesson return firstName, lastName, day (day of week), startTime (as written), lengthMinutes (number of minutes, or null), frequency (weekly, biweekly, twice_monthly or monthly), guardianEmail and athleteEmail (null if not shown).",
               },
               { type: "image", image: data.imageDataUrl },
             ],
           },
         ],
       });
-      return { lessons: object.lessons };
+      const lessons = (object as RawLesson[]).map(normalize).filter((l) => l.firstName || l.lastName);
+      return { lessons };
     } catch (err) {
       console.error("[schedule-import] image parse failed", err);
       throw new Error("Couldn't read that photo. Try a clearer picture, or enter rows manually.");
     }
   });
+
 
 // ---------- matching ----------
 
