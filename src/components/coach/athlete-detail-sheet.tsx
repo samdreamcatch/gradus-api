@@ -251,6 +251,8 @@ function AthleteDetailBody({ athleteId }: { athleteId: string }) {
         onOpenCoach={setOpenOtherCoachId}
         locked={!canViewOtherCoachPlans}
         unlockedCoachIds={d.sharedCoachIds}
+        visibility={d.coachVisibility}
+        askName={d.selfManaged ? d.firstName : d.parentFirstName}
       />
 
       {canViewOtherCoachPlans || d.sharedCoachIds.length > 0 ? (
