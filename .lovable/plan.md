@@ -23,14 +23,30 @@ Counting rules per coach pairing:
 - declined = either side declined
 - pending = everything else
 
+## Tap the line for details
+
+The counts line becomes a tappable button that opens a Popover (anchored,
+top-aligned on mobile per the overlay doctrine) listing one row per pairing —
+the existing per-pair wording, e.g.:
+
+```text
+Connected with Dana
+Tami accepted — waiting on Sophia
+Alex declined
+```
+
+Only tappable when there's at least one pairing; `Off` and
+`On — add another coach to connect` stay plain text.
+
 ## Where it changes
 
 - `src/components/parent/coach-visibility-toggles.tsx` — rewrite `statusLabel`
-  to count pairings instead of building sentence lines; remove the per-pair
-  detail list rendering. `pairLabel` / `pairLabels` become unused and get
-  deleted.
-- `src/routes/_authenticated/parent.settings.tsx` — remove the `pairLabels`
-  detail `<ul>` under each coach row and its import; keep the single
-  `statusLabel` line.
+  to count pairings; keep `pairLabel` / `pairLabels` (now used only inside the
+  popover) and add a small shared `CoachVisibilityStatus` component that renders
+  the counts line plus its popover. Replace the inline summary + detail list
+  with it.
+- `src/routes/_authenticated/parent.settings.tsx` — replace the summary line and
+  the `pairLabels` detail `<ul>` with `CoachVisibilityStatus`.
 
 No data, server function, or toggle behavior changes.
+
