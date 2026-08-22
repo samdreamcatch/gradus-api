@@ -18,14 +18,27 @@ export function AlsoCoachedByList({
   onOpenCoach,
   locked = false,
   unlockedCoachIds,
+  visibility,
+  askName,
 }: {
   coaches: OtherCoachDTO[];
   onOpenCoach: (coachId: string) => void;
   locked?: boolean;
   /** Coaches unlocked for this athlete alone (Team plan coach visibility). */
   unlockedCoachIds?: string[];
+  /** Where each other coach's visibility link stands (absent = not requested). */
+  visibility?: Record<string, "pending" | "declined" | "accepted">;
+  /** Who the coach should ask — the athlete's parent, or the athlete themself. */
+  askName?: string | null;
 }) {
   const unlocked = new Set(unlockedCoachIds ?? []);
+
+  const lockedLabel = (coachId: string): string => {
+    const state = visibility?.[coachId];
+    if (state === "pending") return "Pending connection";
+    if (state === "declined") return "Connection declined";
+    return askName ? `Ask ${askName} to connect you` : "Ask their parent to connect you";
+  };
   if (coaches.length === 0) return null;
   return (
     <section>

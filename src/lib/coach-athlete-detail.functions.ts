@@ -582,6 +582,7 @@ export const getCoachAthleteDetail = createServerFn({ method: "GET" })
       windowDays: WINDOW_DAYS,
       otherCoaches,
       sharedCoachIds,
+      coachVisibility,
     };
   });
 
