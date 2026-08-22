@@ -1754,11 +1754,25 @@ function NewMoveForm({
         </div>
       </div>
 
-      <div className="sticky bottom-0 mt-auto flex items-center justify-between gap-3 border-t border-divider bg-popover pt-3">
+      <div className="sticky bottom-0 mt-auto flex items-center justify-between gap-2 border-t border-divider bg-popover pt-3">
         <Button type="button" variant="ghost" onClick={onCancel} disabled={saving}>
           Back
         </Button>
+        <div className="flex items-center gap-2">
+          {dupes.length > 0 ? (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIgnoreDupes((v) => !v)}
+              disabled={saving}
+              className="gap-1.5"
+            >
+              {ignoreDupes ? <Check className="h-4 w-4" /> : null}
+              Create new anyway
+            </Button>
+          ) : null}
         <Button
+
           type="button"
           disabled={!canCreate || saving}
           onClick={() =>
