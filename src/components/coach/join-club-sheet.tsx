@@ -15,7 +15,7 @@ import { Chip } from "@/components/ui/chip";
 import { OrgSearchCombobox, type OrgOption } from "@/components/onboarding/org-search-combobox";
 import { OrgCodeField } from "@/components/onboarding/org-code-field";
 import { joinOrganization, recordSilentClubLead } from "@/lib/coach-org.functions";
-import { getStripeEnvironment } from "@/lib/stripe";
+import { getStripeEnvironment } from "@/lib/stripe-env";
 import { useVisualViewport } from "@/hooks/use-visual-viewport";
 
 type Props = {

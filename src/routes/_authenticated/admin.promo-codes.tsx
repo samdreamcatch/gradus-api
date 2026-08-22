@@ -26,7 +26,7 @@ import {
   syncPromoCodeToStripe,
   listPromoCodeUsers,
 } from "@/lib/promo-codes.functions";
-import { getStripeEnvironment } from "@/lib/stripe";
+import { getStripeEnvironment } from "@/lib/stripe-env";
 
 export const Route = createFileRoute("/_authenticated/admin/promo-codes")({
   component: PromoCodesPage,
