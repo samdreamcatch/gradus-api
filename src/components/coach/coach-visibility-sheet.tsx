@@ -43,7 +43,11 @@ export function CoachVisibilitySheet({
   const [busy, setBusy] = useState<string | null>(null);
 
   const pending = q.data?.pending ?? [];
-  const connected = q.data?.connected ?? [];
+  const awaiting = q.data?.awaiting ?? [];
+  const connected = [
+    ...(q.data?.connected ?? []).map((r) => ({ ...r, waiting: false })),
+    ...awaiting.map((r) => ({ ...r, waiting: true })),
+  ];
 
   const act = async (key: string, run: () => Promise<unknown>, message: string) => {
     setBusy(key);
