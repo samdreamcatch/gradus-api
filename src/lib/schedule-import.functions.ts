@@ -259,6 +259,19 @@ export const matchScheduleRows = createServerFn({ method: "POST" })
       }
     }
 
+    // Every athlete an email can legitimately point at — scoped per email, so one
+    // row's email can never surface another row's athletes.
+    const athleteIdsByEmail = new Map<string, Set<string>>();
+    const addForEmail = (email: string, athleteId: string) => {
+      const set = athleteIdsByEmail.get(email) ?? new Set<string>();
+      set.add(athleteId);
+      athleteIdsByEmail.set(email, set);
+    };
+    for (const a of byGuardianEmail) {
+      const e = a.guardian_email?.toLowerCase();
+      if (e) addForEmail(e, a.id);
+    }
+
     const athletesOfMatchedAccounts: AthleteRow[] = [];
     if (userIdByEmail.size > 0) {
       const userIds = [...userIdByEmail.values()];
@@ -270,13 +283,26 @@ export const matchScheduleRows = createServerFn({ method: "POST" })
           .in("user_id", userIds),
       ]);
       athletesOfMatchedAccounts.push(...((selfAthletes.data ?? []) as AthleteRow[]));
-      const parentIds = (parents.data ?? []).map((p) => p.id as string);
+      const parentRows = (parents.data ?? []) as { id: string; user_id: string }[];
+      const parentIds = parentRows.map((p) => p.id);
+      const kidRows: AthleteRow[] = [];
       if (parentIds.length > 0) {
         const kids = await supabaseAdmin
           .from("athletes")
           .select("id, first_name, last_name, guardian_email, parent_id, user_id")
           .in("parent_id", parentIds);
-        athletesOfMatchedAccounts.push(...((kids.data ?? []) as AthleteRow[]));
+        kidRows.push(...((kids.data ?? []) as AthleteRow[]));
+        athletesOfMatchedAccounts.push(...kidRows);
+      }
+
+      for (const [email, userId] of userIdByEmail.entries()) {
+        for (const a of selfAthletes.data ?? []) {
+          if ((a as AthleteRow).user_id === userId) addForEmail(email, (a as AthleteRow).id);
+        }
+        const parentIdsForUser = parentRows.filter((p) => p.user_id === userId).map((p) => p.id);
+        for (const a of kidRows) {
+          if (a.parent_id && parentIdsForUser.includes(a.parent_id)) addForEmail(email, a.id);
+        }
       }
     }
 
@@ -303,13 +329,14 @@ export const matchScheduleRows = createServerFn({ method: "POST" })
     const results: MatchResult[] = data.athletes.map((input) => {
       const candidates = new Map<string, MatchCandidate>();
 
-      const rowEmails = [input.guardianEmail, input.athleteEmail].filter(Boolean);
+      const rowEmails = [input.guardianEmail, input.athleteEmail]
+        .filter(Boolean)
+        .map((e) => e!.toLowerCase());
       for (const a of emailById.values()) {
         const guardianHit =
           a.guardian_email != null && rowEmails.includes(a.guardian_email.toLowerCase());
-        const accountHit = athletesOfMatchedAccounts.some(
-          (x) => x.id === a.id && rowEmails.some((e) => userIdByEmail.has(e)),
-        );
+        // Scoped per email: this athlete must belong to one of THIS row's emails.
+        const accountHit = rowEmails.some((e) => athleteIdsByEmail.get(e)?.has(a.id));
         if (!guardianHit && !accountHit) continue;
         candidates.set(a.id, {
           athleteId: a.id,
@@ -341,6 +368,19 @@ export const matchScheduleRows = createServerFn({ method: "POST" })
         if (a.reason !== b.reason) return a.reason === "email" ? -1 : 1;
         return 0;
       });
+
+      // Name + email both line up on one athlete: confirmed, hide the alternatives.
+      const confirmed = list.find(
+        (c) => c.reason === "email" && norm(c.name) === norm(`${input.firstName} ${input.lastName}`),
+      );
+      if (confirmed) {
+        return {
+          key: input.key,
+          status: "exact",
+          suggestedAthleteId: confirmed.athleteId,
+          candidates: [confirmed],
+        };
+      }
 
       // Only auto-suggest a name-only match when it is the single hit; email
       // matches (and anyone already on this coach's roster) always win.
