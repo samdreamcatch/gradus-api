@@ -107,6 +107,11 @@ export function LessonSlotSheet({
   const [dayOfWeek, setDayOfWeek] = useState<number>(1);
   const [startStr, setStartStr] = useState<string>("16:00");
   const [endStr, setEndStr] = useState<string>("17:00");
+  const [addingAthlete, setAddingAthlete] = useState(false);
+
+  useEffect(() => {
+    if (!open) setAddingAthlete(false);
+  }, [open]);
 
   useEffect(() => {
     if (!open || !mode) return;
