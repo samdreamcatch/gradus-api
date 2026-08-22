@@ -578,20 +578,7 @@ function TeamPeopleGroup({ athletes }: { athletes: AthleteData[] }) {
                                   <span className="text-text-tertiary"> — {sportLabels}</span>
                                 ) : null}
                               </div>
-                              {showSwitches && vis && (
-                                <div className="text-[11px] text-text-tertiary">
-                                  {statusLabel(vis)}
-                                </div>
-                              )}
-                              {showSwitches && vis?.enabled && (vis.pairs?.length ?? 0) > 1 && (
-                                <ul className="mt-0.5 space-y-0.5">
-                                  {pairLabels(vis).map((line) => (
-                                    <li key={line} className="text-[10px] text-text-tertiary">
-                                      {line}
-                                    </li>
-                                  ))}
-                                </ul>
-                              )}
+                              {showSwitches && vis && <CoachVisibilityStatus coach={vis} />}
                             </div>
                             <div className="flex shrink-0 items-center gap-1.5">
                               {showSwitches && vis && (
