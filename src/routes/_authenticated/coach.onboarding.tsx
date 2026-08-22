@@ -328,10 +328,7 @@ function OnboardingForm({ data }: { data: OnboardingData }) {
           )}
 
           {currentKind === "review" && (
-            <Step
-              title="Looks good?"
-              subtitle="We'll start you with Gradus practice expectations for every level. You can adjust them in settings, or per athlete from your roster."
-            >
+            <Step title="Looks good?">
               <ReviewSummary
                 firstName={firstName}
                 lastName={lastName}
