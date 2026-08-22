@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { CalendarDays, Pencil, Plus, Sparkles, Trash2, UserMinus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { SettingsDisclosure } from "@/components/settings/primitives";
-import { getCoachRoster, type RosterAthlete, type RosterSlot } from "@/lib/coach-roster.functions";
+import { type RosterAthlete, type RosterSlot } from "@/lib/coach-roster.functions";
+import { rosterQueryOptions } from "@/lib/roster-queries";
 import { deleteLessonSlot, removeAthleteFromRoster } from "@/lib/coach-roster-mutations.functions";
 import { LessonSlotSheet, type LessonSlotSheetMode } from "@/components/coach/lesson-slot-sheet";
 import { SettingsToggleRow } from "@/components/settings/primitives";
@@ -34,10 +35,6 @@ function formatTime(minute: number): string {
   return m === 0 ? `${h12}${ampm}` : `${h12}:${String(m).padStart(2, "0")}${ampm}`;
 }
 
-const rosterQueryOptions = queryOptions({
-  queryKey: ["coach", "roster"],
-  queryFn: () => getCoachRoster(),
-});
 
 export function RosterSettingsSection() {
   const { data, isLoading } = useQuery(rosterQueryOptions);

@@ -10,7 +10,7 @@ import {
   ChevronLeft,
 } from "lucide-react";
 
-import { queryOptions, useQuery, useSuspenseQuery } from "@tanstack/react-query";
+import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { CoachBottomNav } from "@/components/coach/bottom-nav";
 import { CoachVisibilityAutoPrompt } from "@/components/coach/coach-visibility-sheet";
@@ -47,7 +47,7 @@ import {
 } from "@/components/ui/sheet";
 
 import { cn } from "@/lib/utils";
-import { getCoachRoster } from "@/lib/coach-roster.functions";
+import { rosterQueryOptions } from "@/lib/roster-queries";
 import { listPlans } from "@/lib/plans.functions";
 import {
   getRosterPracticeSummaries,
@@ -115,10 +115,6 @@ function SegmentedToggle({ tab, onChange }: { tab: RosterTab; onChange: (t: Rost
   );
 }
 
-const rosterQueryOptions = queryOptions({
-  queryKey: ["coach", "roster"],
-  queryFn: () => getCoachRoster(),
-});
 
 export const Route = createFileRoute("/_authenticated/coach/roster")({
   loader: ({ context }) => context.queryClient.ensureQueryData(rosterQueryOptions),
