@@ -69,7 +69,7 @@ export function CoachVisibilitySheet({
           <SheetTitle>Coach visibility</SheetTitle>
           <SheetDescription>
             A parent asked to connect you with another coach. If you both accept, you can each see
-            the other's plans, practice log, goals, and schedule for that athlete — view only.
+            the other's plans, practice log, goals, and schedule for that shared athlete — view only.
           </SheetDescription>
         </SheetHeader>
 
