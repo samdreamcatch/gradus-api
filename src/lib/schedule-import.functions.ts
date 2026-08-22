@@ -12,7 +12,13 @@ export type MatchCandidate = {
   maskedEmail: string | null;
   reason: "email" | "name";
   onRoster: boolean;
+  /** Parent / guardian on the existing account, when there is one. */
+  guardianName: string | null;
+  /** Sport + level keys from the athlete's existing goals, when set. */
+  sport: string | null;
+  levelKey: string | null;
 };
+
 
 export type MatchResult = {
   key: string;
