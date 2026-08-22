@@ -285,7 +285,7 @@ function RosterPage() {
               <>
                 <SheetHeader>
                   <SheetTitle>Add an athlete</SheetTitle>
-                  <SheetDescription>Two ways to connect.</SheetDescription>
+                  <SheetDescription>Three ways to fill your roster.</SheetDescription>
                 </SheetHeader>
                 <div className="mt-4 overflow-hidden rounded-xl border border-divider bg-elevated">
                   {INVITE_STEPS.map((s, i) => {
@@ -313,7 +313,27 @@ function RosterPage() {
                       </button>
                     );
                   })}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setInviteOpen(false);
+                      setImportOpen(true);
+                    }}
+                    className="press flex w-full items-center gap-3 border-t border-divider px-4 py-4 text-left"
+                  >
+                    <CalendarPlus className="size-5 shrink-0 text-accent-ink" aria-hidden />
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm font-bold text-text-primary">
+                        Import my schedule
+                      </span>
+                      <span className="mt-0.5 block text-xs text-text-secondary">
+                        CSV, a photo of your schedule, or type it in
+                      </span>
+                    </span>
+                    <ChevronRight className="size-4 shrink-0 text-text-tertiary" aria-hidden />
+                  </button>
                 </div>
+
               </>
             ) : (
               <>
