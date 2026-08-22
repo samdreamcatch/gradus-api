@@ -34,10 +34,6 @@ function formatTime(minute: number): string {
   return m === 0 ? `${h12}${ampm}` : `${h12}:${String(m).padStart(2, "0")}${ampm}`;
 }
 
-const rosterQueryOptions = queryOptions({
-  queryKey: ["coach", "roster"],
-  queryFn: () => getCoachRoster(),
-});
 
 export function RosterSettingsSection() {
   const { data, isLoading } = useQuery(rosterQueryOptions);
