@@ -1,17 +1,10 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useNavigate } from "@tanstack/react-router";
 import { Eye, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Switch } from "@/components/ui/switch";
-import {
-  SettingsList,
-  SettingsRow,
-  SettingsButtonRow,
-  SettingsDisclosure,
-} from "@/components/settings/primitives";
 import { listCoachVisibility, setCoachVisibility } from "@/lib/coach-visibility.functions";
 
 type CoachRow = {
@@ -33,7 +26,7 @@ type CoachVisibilityData = {
 
 const coachVisibilityQueryKey = ["coach-visibility"] as const;
 
-function statusLabel(status: string): string {
+export function statusLabel(status: string): string {
   switch (status) {
     case "connected":
       return "Connected";
@@ -49,7 +42,7 @@ function statusLabel(status: string): string {
 }
 
 /** Shared data + toggle logic for the parent-facing coach visibility controls. */
-function useCoachVisibility(enabled: boolean) {
+export function useCoachVisibility(enabled: boolean) {
   const qc = useQueryClient();
   const fetchVisibility = useServerFn(listCoachVisibility);
   const setVisibility = useServerFn(setCoachVisibility);
