@@ -936,7 +936,7 @@ function MatchStep({
                             ? "Already on your roster"
                             : c.reason === "email"
                               ? `${c.nameAlsoMatches ? "Email + name match" : "Email match"}${c.maskedEmail ? ` · ${c.maskedEmail}` : ""}`
-                              : "Same name — confirm this is them"}
+                              : "Matches an existing Gradus account"}
                         </span>
 
                         {(() => {
