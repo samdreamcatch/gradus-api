@@ -7,11 +7,19 @@ import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
 import { listCoachVisibility, setCoachVisibility } from "@/lib/coach-visibility.functions";
 
+export type VisibilityPair = {
+  otherCoachId: string;
+  otherName: string;
+  myStatus: "pending" | "accepted" | "declined";
+  theirStatus: "pending" | "accepted" | "declined";
+};
+
 type CoachRow = {
   coachId: string;
   name: string;
   enabled: boolean;
   status: string;
+  pairs?: VisibilityPair[];
 };
 
 type CoachVisibilityData = {
@@ -26,20 +34,40 @@ type CoachVisibilityData = {
 
 const coachVisibilityQueryKey = ["coach-visibility"] as const;
 
-export function statusLabel(status: string): string {
-  switch (status) {
-    case "connected":
-      return "Connected";
-    case "pending":
-      return "Waiting on coaches to accept";
-    case "declined":
-      return "Declined";
-    case "waiting":
-      return "On — add another coach to connect";
-    default:
-      return "Off";
-  }
+/** First name only — these lines get long with two full names in them. */
+function shortName(name: string): string {
+  return name.trim().split(/\s+/)[0] || name;
 }
+
+/** One line describing where a single coach-to-coach pairing stands. */
+export function pairLabel(coachName: string, p: VisibilityPair): string {
+  const me = shortName(coachName);
+  const them = shortName(p.otherName);
+  if (p.myStatus === "declined") return `${me} declined`;
+  if (p.theirStatus === "declined") return `${them} declined`;
+  if (p.myStatus === "accepted" && p.theirStatus === "accepted") return `Connected with ${them}`;
+  if (p.myStatus === "accepted") return `${me} accepted — waiting on ${them}`;
+  if (p.theirStatus === "accepted") return `Waiting on ${me} to accept`;
+  return `Waiting on ${me} and ${them} to accept`;
+}
+
+/** Per-pair detail lines, shown under the summary when there's more than one. */
+export function pairLabels(coach: Pick<CoachRow, "name" | "pairs">): string[] {
+  return (coach.pairs ?? []).map((p) => pairLabel(coach.name, p));
+}
+
+/**
+ * Summary line under a coach's name. Reflects what each side has actually
+ * done rather than collapsing everything into "waiting to accept".
+ */
+export function statusLabel(coach: Pick<CoachRow, "name" | "enabled" | "status" | "pairs">): string {
+  if (!coach.enabled) return "Off";
+  const lines = Array.from(new Set(pairLabels(coach)));
+  if (lines.length === 0) return "On — add another coach to connect";
+  if (lines.length <= 2) return lines.join(" · ");
+  return `${lines.slice(0, 2).join(" · ")} · +${lines.length - 2} more`;
+}
+
 
 /** Shared data + toggle logic for the parent-facing coach visibility controls. */
 export function useCoachVisibility(enabled: boolean) {
