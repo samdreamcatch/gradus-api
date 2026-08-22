@@ -11,10 +11,7 @@ import { dbError } from "./db-error";
  * on their goals dashboard.
  */
 
-async function requireCoachId(
-  supabase: SupabaseClient<Database>,
-  userId: string,
-): Promise<string> {
+async function requireCoachId(supabase: SupabaseClient<Database>, userId: string): Promise<string> {
   const { data, error } = await supabase
     .from("coach_profiles")
     .select("id")

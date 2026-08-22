@@ -195,8 +195,6 @@ function AthleteDetailBody({ athleteId }: { athleteId: string }) {
         </section>
       ) : null}
 
-
-
       {/* AI Summary */}
       <section>
         <div className="flex items-center justify-between">

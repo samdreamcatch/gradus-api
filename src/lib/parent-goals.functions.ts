@@ -158,7 +158,9 @@ export const getParentGoalsDashboard = createServerFn({ method: "GET" })
           // athlete without a coach still sees an expectation.
           const hoursAtCurrent =
             override ??
-            (coachId ? hoursByKey.get(`${coachId}|${g.sport}|${g.current_level_key}`) : undefined) ??
+            (coachId
+              ? hoursByKey.get(`${coachId}|${g.sport}|${g.current_level_key}`)
+              : undefined) ??
             getSuggestedHours(g.sport, g.current_level_key);
           const hoursAtGoal =
             override ??
