@@ -1,11 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import type { Database } from "@/integrations/supabase/types";
 import { dbError } from "./db-error";
-
-type Client = SupabaseClient<Database>;
+import { getCoachIdOrNull, type WrapUpClient as Client } from "./lesson-wrap-ups.server";
 
 export type PendingWrapUp = {
   athleteId: string;
@@ -17,19 +14,9 @@ export type PendingWrapUp = {
 
 export type WrapUpAction = "edited" | "redeployed" | "dismissed" | "did_not_happen";
 
-async function getCoachIdOrNull(supabase: Client, userId: string): Promise<string | null> {
-  const { data, error } = await supabase
-    .from("coach_profiles")
-    .select("id")
-    .eq("user_id", userId)
-    .maybeSingle();
-  if (error) dbError(error);
-  return data?.id ?? null;
-}
-
 export const getPendingLessonWrapUps = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) =>
+  .validator((input) =>
     z
       .object({
         lessonDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -116,7 +103,7 @@ export const getPendingLessonWrapUps = createServerFn({ method: "POST" })
 
 export const recordLessonWrapUp = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) =>
+  .validator((input) =>
     z
       .object({
         athleteId: z.string().uuid(),
