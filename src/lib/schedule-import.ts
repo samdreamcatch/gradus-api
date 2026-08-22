@@ -511,10 +511,12 @@ export function rowsFromParsedLessons(
       dayOfWeek,
       startMinute,
       lengthMinutes: l.lengthMinutes && l.lengthMinutes > 0 ? l.lengthMinutes : 60,
+      frequency: parseFrequency(l.frequency),
+      guardianEmail: (l.guardianEmail ?? "").trim().toLowerCase(),
+      athleteEmail: (l.athleteEmail ?? "").trim().toLowerCase(),
+      sport: defaultSport,
+      unreadable: unreadableFlags(l.day, dayOfWeek, l.startTime, startMinute, "", 1),
+    };
+  });
 
-    frequency: parseFrequency(l.frequency),
-    guardianEmail: (l.guardianEmail ?? "").trim().toLowerCase(),
-    athleteEmail: (l.athleteEmail ?? "").trim().toLowerCase(),
-    sport: defaultSport,
-  }));
 }
