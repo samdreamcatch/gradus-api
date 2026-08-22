@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
 import { dbError } from "./db-error";
+import { getSuggestedHours } from "./coach-sports";
 
 type Client = SupabaseClient<Database>;
 
@@ -120,6 +121,24 @@ export const getParentGoalsDashboard = createServerFn({ method: "GET" })
       }
     }
 
+    // Per-athlete coach overrides beat the coach's per-level defaults.
+    const overrideByKey = new Map<string, number>(); // `${athlete_id}|${sport}` -> hours
+    if (coachIds.length && athleteRows.length) {
+      const { data: targets, error: tErr } = await supabaseAdmin
+        .from("coach_athlete_practice_targets")
+        .select("athlete_id, sport, hours_per_week, coach_id")
+        .in("coach_id", coachIds)
+        .in(
+          "athlete_id",
+          athleteRows.map((a) => a.id),
+        );
+      if (tErr) dbError(tErr);
+      for (const t of targets ?? []) {
+        if (primaryByKey.get(`${t.athlete_id}|${t.sport}`) !== t.coach_id) continue;
+        overrideByKey.set(`${t.athlete_id}|${t.sport}`, Number(t.hours_per_week));
+      }
+    }
+
     // Build DTO per athlete
     type GoalRow = NonNullable<typeof goalsRes.data>[number];
     const goalsByAthlete = new Map<string, GoalRow[]>();
@@ -134,12 +153,19 @@ export const getParentGoalsDashboard = createServerFn({ method: "GET" })
         const goals = goalsByAthlete.get(a.id) ?? [];
         const sports: ParentGoalSportDTO[] = goals.map((g) => {
           const coachId = primaryByKey.get(`${a.id}|${g.sport}`) ?? null;
-          const hoursAtCurrent = coachId
-            ? (hoursByKey.get(`${coachId}|${g.sport}|${g.current_level_key}`) ?? null)
-            : null;
-          const hoursAtGoal = coachId
-            ? (hoursByKey.get(`${coachId}|${g.sport}|${g.season_goal_key}`) ?? null)
-            : null;
+          const override = overrideByKey.get(`${a.id}|${g.sport}`) ?? null;
+          // Override → primary coach's level hours → Gradus default, so an
+          // athlete without a coach still sees an expectation.
+          const hoursAtCurrent =
+            override ??
+            (coachId
+              ? hoursByKey.get(`${coachId}|${g.sport}|${g.current_level_key}`)
+              : undefined) ??
+            getSuggestedHours(g.sport, g.current_level_key);
+          const hoursAtGoal =
+            override ??
+            (coachId ? hoursByKey.get(`${coachId}|${g.sport}|${g.season_goal_key}`) : undefined) ??
+            getSuggestedHours(g.sport, g.season_goal_key);
           const t = trailing.get(a.id) ?? { seconds: 0, count: 0 };
           const hrsPerWeek = t.seconds / 3600 / 4;
           return {

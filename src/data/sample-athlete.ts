@@ -118,6 +118,17 @@ export function buildSampleAthleteDetail(): CoachAthleteDetailDTO {
           "Pass the Intermediate free skate test this season and qualify for regionals next year. Land a consistent double axel by spring.",
       },
     ],
+    practiceTargets: [
+      {
+        sport: SAMPLE_SPORT,
+        sportLabel: "Figure Skating",
+        currentLevelLabel: "Juvenile",
+        defaultHoursPerWeek: 6,
+        hoursPerWeek: 6,
+        isOverride: false,
+      },
+    ],
+
     plans: [
       {
         planId: SAMPLE_PLAN_ID,

@@ -4,6 +4,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
 import { dbError } from "./db-error";
+import { getSuggestedHours } from "./coach-sports";
 import type { ParentGoalSportDTO } from "./parent-goals.functions";
 
 type Client = SupabaseClient<Database>;
@@ -130,14 +131,34 @@ export const getAthleteGoalsDashboard = createServerFn({ method: "GET" })
       }
     }
 
+    // Per-athlete coach overrides beat the coach's per-level defaults.
+    const overrideBySport = new Map<string, number>();
+    if (coachIds.length) {
+      const { data: targets, error: tErr } = await supabaseAdmin
+        .from("coach_athlete_practice_targets")
+        .select("sport, hours_per_week, coach_id")
+        .in("coach_id", coachIds)
+        .eq("athlete_id", athlete.id);
+      if (tErr) dbError(tErr);
+      for (const t of targets ?? []) {
+        if (primaryBySport.get(t.sport) !== t.coach_id) continue;
+        overrideBySport.set(t.sport, Number(t.hours_per_week));
+      }
+    }
+
     const sports: ParentGoalSportDTO[] = (goalsRes.data ?? []).map((g) => {
       const coachId = primaryBySport.get(g.sport) ?? null;
-      const hoursAtCurrent = coachId
-        ? (hoursByKey.get(`${coachId}|${g.sport}|${g.current_level_key}`) ?? null)
-        : null;
-      const hoursAtGoal = coachId
-        ? (hoursByKey.get(`${coachId}|${g.sport}|${g.season_goal_key}`) ?? null)
-        : null;
+      const override = overrideBySport.get(g.sport) ?? null;
+      // Override → primary coach's level hours → Gradus default, so an
+      // athlete without a coach still sees an expectation.
+      const hoursAtCurrent =
+        override ??
+        (coachId ? hoursByKey.get(`${coachId}|${g.sport}|${g.current_level_key}`) : undefined) ??
+        getSuggestedHours(g.sport, g.current_level_key);
+      const hoursAtGoal =
+        override ??
+        (coachId ? hoursByKey.get(`${coachId}|${g.sport}|${g.season_goal_key}`) : undefined) ??
+        getSuggestedHours(g.sport, g.season_goal_key);
       return {
         sport: g.sport,
         currentLevelKey: g.current_level_key,
