@@ -564,14 +564,12 @@ function ReviewStep({
               groupBad ? "border-destructive/50" : "border-divider",
             )}
           >
-            <p
-              className={cn(
-                "truncate text-sm font-bold",
-                name ? "text-text-primary" : "text-destructive",
-              )}
-            >
-              {name || "Needs a name"}
-            </p>
+            {name ? (
+              <p className="truncate text-sm font-bold text-text-primary">
+                {name}
+              </p>
+            ) : null}
+
 
             <div className="mt-0.5">
               {group.rows.map((row) => {
