@@ -50,6 +50,7 @@ import { ConnectGuardianSheet } from "@/components/parent/connect-guardian-sheet
 import { Switch } from "@/components/ui/switch";
 import {
   statusLabel,
+  pairLabels,
   useCoachVisibility,
 } from "@/components/parent/coach-visibility-toggles";
 import {
