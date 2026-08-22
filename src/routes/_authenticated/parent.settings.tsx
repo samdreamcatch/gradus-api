@@ -323,11 +323,12 @@ function PlanSection() {
         <SettingsList>
           <SettingsButtonRow
             icon={<CreditCard className="size-4" />}
-            label="Upgrade to Team"
-            description="Add up to 3 parents or guardians per athlete"
-            onClick={() => void navigate({ to: "/parent/team", search: {} })}
+            label="Join or start a team"
+            description="Have an invite code, or add up to 3 parents or guardians per athlete"
+            onClick={() => setJoinOpen(true)}
           />
         </SettingsList>
+        <JoinTeamSheet open={joinOpen} onOpenChange={setJoinOpen} />
       </>
     );
   }
