@@ -14,6 +14,7 @@ import {
   ChevronDown,
   BarChart3,
   Sparkles,
+  Check,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
@@ -1644,13 +1645,9 @@ function NewMoveForm({
                 </li>
               ))}
             </ul>
-            <button
-              type="button"
-              onClick={() => setIgnoreDupes((v) => !v)}
-              className="mt-2 text-[11px] font-bold uppercase tracking-widest text-text-secondary hover:text-text-primary"
-            >
-              {ignoreDupes ? "✓ Creating anyway" : "Ignore — create new anyway"}
-            </button>
+            <p className="mt-2 text-[11px] text-text-secondary">
+              Not a match? Use “Create new anyway” below.
+            </p>
           </div>
         ) : null}
 
@@ -1758,11 +1755,25 @@ function NewMoveForm({
         </div>
       </div>
 
-      <div className="sticky bottom-0 mt-auto flex items-center justify-between gap-3 border-t border-divider bg-popover pt-3">
+      <div className="sticky bottom-0 mt-auto flex items-center justify-between gap-2 border-t border-divider bg-popover pt-3">
         <Button type="button" variant="ghost" onClick={onCancel} disabled={saving}>
           Back
         </Button>
+        <div className="flex items-center gap-2">
+          {dupes.length > 0 ? (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIgnoreDupes((v) => !v)}
+              disabled={saving}
+              className="gap-1.5"
+            >
+              {ignoreDupes ? <Check className="h-4 w-4" /> : null}
+              Create new anyway
+            </Button>
+          ) : null}
         <Button
+
           type="button"
           disabled={!canCreate || saving}
           onClick={() =>
@@ -1783,6 +1794,7 @@ function NewMoveForm({
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
           Save to library &amp; add
         </Button>
+        </div>
       </div>
     </div>
   );
