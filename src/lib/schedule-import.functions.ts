@@ -15,6 +15,8 @@ export type MatchCandidate = {
   nameAlsoMatches: boolean;
 
   onRoster: boolean;
+  /** True when name/guardian name are shown as "First L." because there's no connection yet. */
+  redacted: boolean;
   /** Parent / guardian on the existing account, when there is one. */
   guardianName: string | null;
   /** Sport + level keys from the athlete's existing goals, when set. */
@@ -192,6 +194,23 @@ function maskEmail(email: string | null | undefined): string | null {
   const head = local.slice(0, 2);
   return `${head}${local.length > 2 ? "•••" : ""}@${domain}`;
 }
+
+/** "Sasha Whitfield" -> "Sasha W." — used for people the coach isn't connected to yet. */
+function firstNameLastInitial(first: string | null | undefined, last: string | null | undefined) {
+  const f = (first ?? "").trim();
+  const l = (last ?? "").trim();
+  if (!f) return l ? `${l.slice(0, 1).toUpperCase()}.` : "";
+  return l ? `${f} ${l.slice(0, 1).toUpperCase()}.` : f;
+}
+
+/** Redact a full name string we only have as one blob (e.g. a guardian name). */
+function redactFullName(name: string | null | undefined): string | null {
+  if (!name) return null;
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0];
+  return firstNameLastInitial(parts[0], parts[parts.length - 1]);
+}
+
 
 export const matchScheduleRows = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -379,11 +398,20 @@ export const matchScheduleRows = createServerFn({ method: "POST" })
         }
       }
     }
-    const detailsFor = (id: string) => ({
-      guardianName: guardianNameByAthleteId.get(id) ?? null,
+    const detailsFor = (id: string, connected: boolean) => ({
+      guardianName: connected
+        ? (guardianNameByAthleteId.get(id) ?? null)
+        : redactFullName(guardianNameByAthleteId.get(id) ?? null),
       sport: goalByAthleteId.get(id)?.sport ?? null,
       levelKey: goalByAthleteId.get(id)?.levelKey ?? null,
     });
+
+    // Coaches only see the full name of someone they're already connected to.
+    const displayName = (
+      first: string | null,
+      last: string | null,
+      connected: boolean,
+    ) => (connected ? `${first ?? ""} ${last ?? ""}`.trim() : firstNameLastInitial(first, last));
 
     const norm = (s: string) => s.trim().toLowerCase();
 
@@ -399,16 +427,18 @@ export const matchScheduleRows = createServerFn({ method: "POST" })
         // Scoped per email: this athlete must belong to one of THIS row's emails.
         const accountHit = rowEmails.some((e) => athleteIdsByEmail.get(e)?.has(a.id));
         if (!guardianHit && !accountHit) continue;
+        const connected = rosterIds.has(a.id);
         candidates.set(a.id, {
           athleteId: a.id,
-          name: `${a.first_name} ${a.last_name}`.trim(),
+          name: displayName(a.first_name, a.last_name, connected),
           maskedEmail: maskEmail(a.guardian_email),
           reason: "email",
           nameAlsoMatches:
             norm(a.first_name) === norm(input.firstName) &&
             norm(a.last_name) === norm(input.lastName),
-          onRoster: rosterIds.has(a.id),
-          ...detailsFor(a.id),
+          onRoster: connected,
+          redacted: !connected,
+          ...detailsFor(a.id, connected),
         });
 
       }
@@ -419,19 +449,20 @@ export const matchScheduleRows = createServerFn({ method: "POST" })
           norm(a.first_name) === norm(input.firstName) &&
           norm(a.last_name) === norm(input.lastName)
         ) {
+          const connected = rosterIds.has(a.id);
           candidates.set(a.id, {
             athleteId: a.id,
-            name: `${a.first_name} ${a.last_name}`.trim(),
+            name: displayName(a.first_name, a.last_name, connected),
             maskedEmail: maskEmail(a.guardian_email),
             reason: "name",
             nameAlsoMatches: true,
-            onRoster: rosterIds.has(a.id),
-            ...detailsFor(a.id),
+            onRoster: connected,
+            redacted: !connected,
+            ...detailsFor(a.id, connected),
           });
 
         }
       }
-
 
       const list = [...candidates.values()].sort((a, b) => {
         if (a.onRoster !== b.onRoster) return a.onRoster ? -1 : 1;
@@ -440,9 +471,7 @@ export const matchScheduleRows = createServerFn({ method: "POST" })
       });
 
       // Name + email both line up on one athlete: confirmed, hide the alternatives.
-      const confirmed = list.find(
-        (c) => c.reason === "email" && norm(c.name) === norm(`${input.firstName} ${input.lastName}`),
-      );
+      const confirmed = list.find((c) => c.reason === "email" && c.nameAlsoMatches);
       if (confirmed) {
         return {
           key: input.key,
