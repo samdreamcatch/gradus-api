@@ -297,12 +297,18 @@ export function ScheduleImportSheet({
                 Cancel
               </Button>
               <Button
-                onClick={() => runMatch.mutate()}
-                disabled={rows.length === 0 || invalidCount > 0 || runMatch.isPending}
+                onClick={() => {
+                  if (invalidCount > 0) {
+                    setShowErrors(true);
+                    return;
+                  }
+                  runMatch.mutate();
+                }}
+                disabled={rows.length === 0 || runMatch.isPending}
               >
                 {runMatch.isPending
                   ? "Checking…"
-                  : invalidCount > 0
+                  : showErrors && invalidCount > 0
                     ? `${invalidCount} row${invalidCount === 1 ? "" : "s"} to fix`
                     : "Continue"}
               </Button>
