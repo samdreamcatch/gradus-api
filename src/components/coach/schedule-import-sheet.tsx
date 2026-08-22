@@ -630,7 +630,27 @@ function ReviewStep({
   );
 }
 
-function RowHeader({
+// One card per student: rows with the same name (and email, when present) collapse together.
+function groupRowsByStudent(rows: ImportRow[]) {
+  const groups: { key: string; rows: ImportRow[] }[] = [];
+  const index = new Map<string, { key: string; rows: ImportRow[] }>();
+  for (const row of rows) {
+    const name = `${row.firstName ?? ""} ${row.lastName ?? ""}`.trim().toLowerCase();
+    const email = (row.guardianEmail || row.athleteEmail || "").trim().toLowerCase();
+    const key = name ? `${name}|${email}` : `row:${row.id}`;
+    const existing = index.get(key);
+    if (existing) {
+      existing.rows.push(row);
+    } else {
+      const group = { key, rows: [row] };
+      index.set(key, group);
+      groups.push(group);
+    }
+  }
+  return groups;
+}
+
+function LessonLine({
   row,
   index,
   expanded,
@@ -647,7 +667,6 @@ function RowHeader({
   onToggle: () => void;
   onRemove: () => void;
 }) {
-  const name = `${row.firstName} ${row.lastName}`.trim();
   const sportLabel =
     coachSports.length > 1 && row.sport ? (getSport(row.sport as SportKey)?.label ?? row.sport) : "";
   const dayLabel = IMPORT_DAYS.find((d) => d.value === row.dayOfWeek)?.short ?? "—";
@@ -659,6 +678,7 @@ function RowHeader({
         : `${formatTimeLabel(row.startMinute)}–${formatTimeLabel(row.startMinute + row.lengthMinutes)}`;
   const freqLabel = IMPORT_FREQUENCIES.find((f) => f.value === row.frequency)?.label ?? "";
   const meta = [dayLabel, timeLabel, freqLabel, sportLabel].filter(Boolean).join(" · ");
+  const lineBad = Object.keys(errors).some((k) => k !== "guardianEmail" && k !== "athleteEmail");
 
   return (
     <div className="flex items-start justify-between gap-2">
@@ -668,19 +688,17 @@ function RowHeader({
             Lesson {index + 1}
           </span>
         ) : (
-          <>
-            <p
-              className={cn(
-                "truncate text-sm font-bold",
-                name ? "text-text-primary" : "text-destructive",
-              )}
-            >
-              {name || "Needs a name"}
-            </p>
-            <p className="mt-0.5 truncate text-xs text-text-secondary">{meta}</p>
-          </>
+          <p
+            className={cn(
+              "truncate text-xs",
+              lineBad ? "text-destructive" : "text-text-secondary",
+            )}
+          >
+            {meta}
+          </p>
         )}
       </div>
+
       <div className="flex shrink-0 items-center gap-1">
         <button
           type="button"
