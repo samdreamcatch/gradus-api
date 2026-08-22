@@ -479,10 +479,33 @@ function ReviewStep({
   onRemove: (id: string) => void;
   onAdd: () => string;
 }) {
-  const allErrors = validateRows(rows);
+  // Manual entry starts on an empty row: open the editor, no red state yet.
+  const [expandedId, setExpandedId] = useState<string | null>(() =>
+    rows.length === 1 && !rows[0]?.firstName?.trim() ? (rows[0]?.id ?? null) : null,
+  );
+  // Rows the coach adds by hand start clean — no red state until they touch them.
+  const [pristineIds, setPristineIds] = useState<Set<string>>(
+    () => new Set(rows.filter((r) => !r.firstName?.trim() && !r.lastName?.trim()).map((r) => r.id)),
+  );
+
+  const rawErrors = validateRows(rows);
+  const allErrors: Record<string, Record<string, string>> = {};
+  for (const r of rows) {
+    allErrors[r.id] = pristineIds.has(r.id) ? {} : (rawErrors[r.id] ?? {});
+  }
+  const handleChange = (id: string, patch: Partial<ImportRow>) => {
+    if (pristineIds.has(id)) {
+      setPristineIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    }
+    onChange(id, patch);
+  };
   const badRows = rows.filter((r) => Object.keys(allErrors[r.id] ?? {}).length > 0);
   const badCount = badRows.length;
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+
 
   // Name each problem so the coach knows what to fix, not just that something's wrong.
   const fieldLabels: Record<string, string> = {
@@ -564,9 +587,14 @@ function ReviewStep({
             />
 
             {expanded ? (
-              <RowEditor row={row} errors={errors} coachSports={coachSports} onChange={onChange} />
+              <RowEditor
+                row={row}
+                errors={errors}
+                coachSports={coachSports}
+                onChange={handleChange}
+              />
             ) : (
-              <RowSummary row={row} errors={errors} onChange={onChange} />
+              <RowSummary row={row} errors={errors} onChange={handleChange} />
             )}
           </div>
         );
@@ -576,7 +604,12 @@ function ReviewStep({
         type="button"
         variant="outline"
         size="sm"
-        onClick={() => setExpandedId(onAdd())}
+        onClick={() => {
+          const id = onAdd();
+          setPristineIds((prev) => new Set(prev).add(id));
+          setExpandedId(id);
+        }}
+
         className="w-full"
       >
         <Plus className="size-4" aria-hidden />
