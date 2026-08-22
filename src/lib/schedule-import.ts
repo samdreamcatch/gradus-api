@@ -404,8 +404,24 @@ const HEADER_ALIASES: Record<string, string> = {
 
 export type CsvParseResult = { rows: ImportRow[]; error: string | null };
 
+function unreadableFlags(
+  dayRaw: string,
+  dayOfWeek: number | null,
+  timeRaw: string,
+  startMinute: number | null,
+  lengthRaw: string,
+  lengthMinutes: number | null,
+): ImportRow["unreadable"] {
+  const flags: NonNullable<ImportRow["unreadable"]> = {};
+  if (dayRaw && dayOfWeek == null) flags.dayOfWeek = true;
+  if (timeRaw && startMinute == null) flags.startMinute = true;
+  if (lengthRaw && lengthMinutes == null) flags.lengthMinutes = true;
+  return Object.keys(flags).length > 0 ? flags : undefined;
+}
+
 export function parseScheduleCsv(text: string, defaultSport = ""): CsvParseResult {
-  const table = splitCsv(text);
+  const delimiter = pickDelimiter(text);
+  const table = splitCsv(text, delimiter);
   if (table.length === 0) return { rows: [], error: "That file looks empty." };
   const header = table[0].map((h) => {
     const k = headerKey(h);
@@ -425,22 +441,51 @@ export function parseScheduleCsv(text: string, defaultSport = ""): CsvParseResul
     return i >= 0 ? (r[i] ?? "").trim() : "";
   };
 
-  const rows: ImportRow[] = table.slice(1).map((r) => ({
-    id: newRowId(),
-    firstName: cell(r, "athlete_first_name"),
-    lastName: cell(r, "athlete_last_name"),
-    dayOfWeek: parseDay(cell(r, "day")),
-    startMinute: parseTimeToMinutes(cell(r, "start_time")),
-    lengthMinutes: parseLengthToMinutes(cell(r, "length_minutes")) ?? 60,
-    frequency: parseFrequency(cell(r, "frequency")),
-    guardianEmail: cell(r, "guardian_email").toLowerCase(),
-    athleteEmail: cell(r, "athlete_email").toLowerCase(),
-    sport: cell(r, "sport") || defaultSport,
-  }));
+  const rows: ImportRow[] = table.slice(1).map((r) => {
+    const dayRaw = cell(r, "day");
+    const timeRaw = cell(r, "start_time");
+    const lengthRaw = cell(r, "length_minutes");
+    const dayOfWeek = parseDay(dayRaw);
+    const startMinute = parseTimeToMinutes(timeRaw);
+    const parsedLength = parseLengthToMinutes(lengthRaw);
+    return {
+      id: newRowId(),
+      firstName: cell(r, "athlete_first_name"),
+      lastName: cell(r, "athlete_last_name"),
+      dayOfWeek,
+      startMinute,
+      lengthMinutes: parsedLength ?? (lengthRaw ? null : 60),
+      frequency: parseFrequency(cell(r, "frequency")),
+      guardianEmail: cell(r, "guardian_email").toLowerCase(),
+      athleteEmail: cell(r, "athlete_email").toLowerCase(),
+      sport: cell(r, "sport") || defaultSport,
+      unreadable: unreadableFlags(
+        dayRaw,
+        dayOfWeek,
+        timeRaw,
+        startMinute,
+        lengthRaw,
+        parsedLength,
+      ),
+    };
+  });
 
   if (rows.length === 0) return { rows: [], error: "No lesson rows found in that file." };
   return { rows, error: null };
 }
+
+/** Tab-separated when it looks like a spreadsheet paste, comma otherwise. */
+function pickDelimiter(text: string): string {
+  const firstLine = text.replace(/^\uFEFF/, "").split(/\r?\n/)[0] ?? "";
+  return firstLine.includes("\t") ? "\t" : ",";
+}
+
+/** Parse text pasted straight out of Excel / Sheets (tab- or comma-separated). */
+export function parsePastedSchedule(text: string, defaultSport = ""): CsvParseResult {
+  if (!text.trim()) return { rows: [], error: "Nothing pasted yet." };
+  return parseScheduleCsv(text, defaultSport);
+}
+
 
 /** Turn the AI vision output into review rows. */
 export function rowsFromParsedLessons(
