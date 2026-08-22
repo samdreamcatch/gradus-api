@@ -89,6 +89,8 @@ export interface CoachAthleteDetailDTO {
   otherCoaches: OtherCoachDTO[];
   /** Other coaches unlocked for this athlete via a Team-plan visibility link. */
   sharedCoachIds: string[];
+  /** Where a visibility link with each other coach stands (absent = none yet). */
+  coachVisibility: Record<string, "pending" | "declined" | "accepted">;
 }
 
 type SlotRow = {
