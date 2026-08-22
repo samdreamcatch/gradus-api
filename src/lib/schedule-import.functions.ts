@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { generateObject } from "ai";
+import { generateText } from "ai";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { createLovableAiGatewayProvider } from "./ai-gateway.server";
 
@@ -126,26 +126,47 @@ export const parseScheduleImage = createServerFn({ method: "POST" })
     const gateway = createLovableAiGatewayProvider(apiKey);
 
     try {
-      const { object } = await generateObject({
+      const { text: out } = await generateText({
         model: gateway("google/gemini-2.5-flash"),
         system: IMAGE_SYSTEM,
-        output: "array",
-        schema: rawLesson,
         messages: [
           {
             role: "user",
             content: [
               {
                 type: "text",
-                text: "Transcribe every lesson in this schedule. For each lesson return firstName, lastName, day (day of week), startTime (as written), lengthMinutes (number of minutes, or null), frequency (weekly, biweekly, twice_monthly or monthly), guardianEmail and athleteEmail (null if not shown).",
+                text: 'Transcribe every lesson in this schedule. Reply with ONLY a JSON array (no markdown fences, no commentary). Each element: {"firstName": string, "lastName": string, "day": string, "startTime": string, "lengthMinutes": number|null, "frequency": "weekly"|"biweekly"|"twice_monthly"|"monthly", "guardianEmail": string|null, "athleteEmail": string|null}.',
               },
               { type: "image", image: data.imageDataUrl },
             ],
           },
         ],
       });
-      const lessons = (object as RawLesson[]).map(normalize).filter((l) => l.firstName || l.lastName);
+
+      const cleaned = out.trim().replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
+      const start = cleaned.indexOf("[");
+      const end = cleaned.lastIndexOf("]");
+      const slice = start >= 0 && end > start ? cleaned.slice(start, end + 1) : cleaned;
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(slice);
+      } catch {
+        throw new Error("Model did not return JSON");
+      }
+      const arr = Array.isArray(parsed)
+        ? parsed
+        : Array.isArray((parsed as { elements?: unknown[] })?.elements)
+          ? (parsed as { elements: unknown[] }).elements
+          : Array.isArray((parsed as { lessons?: unknown[] })?.lessons)
+            ? (parsed as { lessons: unknown[] }).lessons
+            : [];
+      const rows = arr
+        .map((r) => rawLesson.safeParse(r))
+        .filter((r) => r.success)
+        .map((r) => (r as { data: RawLesson }).data);
+      const lessons = rows.map(normalize).filter((l) => l.firstName || l.lastName);
       return { lessons };
+
     } catch (err) {
       console.error("[schedule-import] image parse failed", err);
       throw new Error("Couldn't read that photo. Try a clearer picture, or enter rows manually.");
