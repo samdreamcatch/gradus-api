@@ -448,8 +448,8 @@ export function LessonSlotSheet({
 }
 
 /**
- * Inline "add new athlete" form — gathers the same fields as the other
- * add-athlete flows (name, birthdate, sport, guardian email for minors).
+ * Inline "add new athlete" form — mirrors the schedule-import fields:
+ * name, sport, and one invite email (parent/guardian, or the athlete's own).
  */
 function NewAthleteForm({
   onCancel,
@@ -464,7 +464,6 @@ function NewAthleteForm({
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [birthdate, setBirthdate] = useState("");
   const [guardianEmail, setGuardianEmail] = useState("");
   const [sport, setSport] = useState<string>(coachSports[0] ?? "");
   const [showErrors, setShowErrors] = useState(false);
@@ -473,18 +472,14 @@ function NewAthleteForm({
     if (!sport && coachSports.length > 0) setSport(coachSports[0]);
   }, [coachSports, sport]);
 
-  const isMinor = /^\d{4}-\d{2}-\d{2}$/.test(birthdate) ? ageInYears(birthdate) < 18 : false;
-
   const errors = {
     firstName: firstName.trim() ? null : "First name is required",
     lastName: lastName.trim() ? null : "Last name is required",
-    birthdate: /^\d{4}-\d{2}-\d{2}$/.test(birthdate) ? null : "Birthdate is required",
-    guardianEmail:
-      isMinor && !guardianEmail.trim()
-        ? "Athletes under 18 need a parent or guardian email"
-        : guardianEmail.trim() && !/^\S+@\S+\.\S+$/.test(guardianEmail.trim())
-          ? "Enter a valid email"
-          : null,
+    guardianEmail: !guardianEmail.trim()
+      ? "An email is required so we can send them an invite"
+      : !/^\S+@\S+\.\S+$/.test(guardianEmail.trim())
+        ? "Enter a valid email"
+        : null,
   };
   const hasErrors = Object.values(errors).some(Boolean);
 
@@ -494,7 +489,6 @@ function NewAthleteForm({
         data: {
           firstName: firstName.trim(),
           lastName: lastName.trim(),
-          birthdate,
           guardianEmail: guardianEmail.trim() ? guardianEmail.trim() : undefined,
           sport: sport || undefined,
         },
@@ -536,12 +530,6 @@ function NewAthleteForm({
         )}
       </div>
 
-      {field(
-        "Birthdate",
-        <Input type="date" value={birthdate} onChange={(e) => setBirthdate(e.target.value)} />,
-        errors.birthdate,
-      )}
-
       {coachSports.length > 0
         ? field(
             "Sport",
@@ -562,7 +550,7 @@ function NewAthleteForm({
         : null}
 
       {field(
-        isMinor ? "Parent / guardian email" : "Parent / guardian email (optional)",
+        "Parent / guardian email",
         <Input
           type="email"
           inputMode="email"
@@ -574,7 +562,8 @@ function NewAthleteForm({
       )}
 
       <p className="text-xs text-text-secondary">
-        If they&apos;re 18 or older, use their own email — we&apos;ll send the invite there.
+        If they&apos;re 18 or older, use their own email — we&apos;ll send the invite there. We ask
+        for their birthday when they create their account.
       </p>
 
       <SheetFooter className="mt-2 flex-row justify-end gap-2">
