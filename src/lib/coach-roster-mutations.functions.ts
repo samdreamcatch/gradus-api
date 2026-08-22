@@ -93,7 +93,10 @@ export const addAthleteWithGuardian = createServerFn({ method: "POST" })
       .object({
         firstName: z.string().trim().min(1, "First name is required").max(80),
         lastName: z.string().trim().min(1, "Last name is required").max(80),
-        birthdate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Enter a valid birthdate"),
+        birthdate: z
+          .string()
+          .regex(/^\d{4}-\d{2}-\d{2}$/, "Enter a valid birthdate")
+          .optional(),
         guardianEmail: z
           .string()
           .trim()
