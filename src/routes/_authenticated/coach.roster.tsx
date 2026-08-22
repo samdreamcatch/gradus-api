@@ -29,6 +29,13 @@ import { InviteCard } from "@/components/onboarding/invite-card";
 import { EnterInviteCodeCard } from "@/components/coach/enter-invite-code-card";
 
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
 
 import {
   Sheet,
