@@ -330,19 +330,31 @@ function SourceStep({
   onPickCsv,
   onPickPhoto,
   onManual,
+  onPaste,
 }: {
   busy: boolean;
   onPickCsv: () => void;
   onPickPhoto: () => void;
   onManual: () => void;
+  onPaste: (text: string) => void;
 }) {
+  const [pasting, setPasting] = useState(false);
+  const [pasted, setPasted] = useState("");
+
   const options = [
     {
       key: "csv",
       icon: FileSpreadsheet,
-      title: "Upload a CSV",
-      description: "One row per weekly lesson",
+      title: "Upload a spreadsheet",
+      description: "A .csv from Excel, Numbers or Google Sheets",
       onClick: onPickCsv,
+    },
+    {
+      key: "paste",
+      icon: ClipboardPaste,
+      title: "Paste from a spreadsheet",
+      description: "Copy your rows and paste them here — no file needed",
+      onClick: () => setPasting((v) => !v),
     },
     {
       key: "photo",
@@ -385,17 +397,50 @@ function SourceStep({
           );
         })}
       </div>
+
+      {pasting ? (
+        <div className="mt-3 space-y-2">
+          <Textarea
+            value={pasted}
+            onChange={(e) => setPasted(e.target.value)}
+            rows={6}
+            placeholder={
+              "Paste your rows, including the header line. For example:\nathlete_first_name\tathlete_last_name\tday\tstart_time\tlength_minutes\nAva\tNguyen\tMon\t4:00 PM\t45"
+            }
+            className="bg-card text-xs"
+          />
+          <Button
+            type="button"
+            size="sm"
+            className="w-full"
+            disabled={!pasted.trim()}
+            onClick={() => onPaste(pasted)}
+          >
+            Use these rows
+          </Button>
+        </div>
+      ) : null}
+
+      <p className="mt-3 text-xs text-text-secondary">
+        You'll see every row and can fix anything before a single athlete is created.
+      </p>
+
       <button
         type="button"
         onClick={downloadTemplate}
-        className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-text-secondary"
+        className="mt-2 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-text-secondary"
       >
         <Download className="size-3.5" aria-hidden />
         Download CSV template
       </button>
+      <p className="mt-1 text-[11px] text-text-tertiary">
+        The template explains every column — day, time, length, how often it repeats, and which
+        email to use.
+      </p>
     </div>
   );
 }
+
 
 const LENGTH_PRESETS = [30, 45, 60, 90];
 
