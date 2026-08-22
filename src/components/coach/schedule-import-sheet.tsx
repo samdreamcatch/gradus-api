@@ -484,6 +484,31 @@ function ReviewStep({
   const badCount = badRows.length;
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
+  // Name each problem so the coach knows what to fix, not just that something's wrong.
+  const fieldLabels: Record<string, string> = {
+    firstName: "first name",
+    lastName: "last name",
+    dayOfWeek: "day",
+    startMinute: "start time",
+    lengthMinutes: "length",
+    guardianEmail: "email",
+    athleteEmail: "email",
+  };
+  const counts = new Map<string, number>();
+  for (const r of badRows) {
+    const seen = new Set<string>();
+    for (const key of Object.keys(allErrors[r.id] ?? {})) {
+      const label = fieldLabels[key] ?? key;
+      if (seen.has(label)) continue;
+      seen.add(label);
+      counts.set(label, (counts.get(label) ?? 0) + 1);
+    }
+  }
+  const problemSummary = [...counts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([label, n]) => `${label} (${n})`)
+    .join(", ");
+
   return (
     <div className="mt-4 space-y-2">
       <p className="rounded-xl border border-divider bg-elevated px-3 py-2 text-xs text-text-secondary">
@@ -507,12 +532,14 @@ function ReviewStep({
           <TriangleAlert className="mt-0.5 size-4 shrink-0 text-destructive" aria-hidden />
           <p className="text-xs text-text-secondary">
             <span className="font-bold text-text-primary">
-              {badCount} lesson{badCount === 1 ? "" : "s"} need{badCount === 1 ? "s" : ""} a fix.
+              {badCount} lesson{badCount === 1 ? "" : "s"} missing {problemSummary}.
             </span>{" "}
             Tap to jump to the first one.
           </p>
         </button>
       ) : null}
+
+
 
       {rows.map((row, index) => {
         const errors = allErrors[row.id] ?? {};
