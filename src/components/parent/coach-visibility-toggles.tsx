@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Eye, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
 import { listCoachVisibility, setCoachVisibility } from "@/lib/coach-visibility.functions";
 
