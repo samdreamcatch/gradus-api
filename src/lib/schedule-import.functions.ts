@@ -11,6 +11,9 @@ export type MatchCandidate = {
   name: string;
   maskedEmail: string | null;
   reason: "email" | "name";
+  /** True when the existing athlete's name also matches the imported row. */
+  nameAlsoMatches: boolean;
+
   onRoster: boolean;
   /** Parent / guardian on the existing account, when there is one. */
   guardianName: string | null;
@@ -401,9 +404,13 @@ export const matchScheduleRows = createServerFn({ method: "POST" })
           name: `${a.first_name} ${a.last_name}`.trim(),
           maskedEmail: maskEmail(a.guardian_email),
           reason: "email",
+          nameAlsoMatches:
+            norm(a.first_name) === norm(input.firstName) &&
+            norm(a.last_name) === norm(input.lastName),
           onRoster: rosterIds.has(a.id),
           ...detailsFor(a.id),
         });
+
       }
 
       for (const a of nameMatches) {
@@ -417,9 +424,11 @@ export const matchScheduleRows = createServerFn({ method: "POST" })
             name: `${a.first_name} ${a.last_name}`.trim(),
             maskedEmail: maskEmail(a.guardian_email),
             reason: "name",
+            nameAlsoMatches: true,
             onRoster: rosterIds.has(a.id),
             ...detailsFor(a.id),
           });
+
         }
       }
 
