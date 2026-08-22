@@ -82,6 +82,8 @@ export function ScheduleImportSheet({
   const [matches, setMatches] = useState<MatchResult[]>([]);
   const [decisions, setDecisions] = useState<Record<string, Decision>>({});
   const [outcomes, setOutcomes] = useState<ImportOutcome[]>([]);
+  // Errors stay hidden until the coach tries to continue — typing shouldn't feel accusatory.
+  const [showErrors, setShowErrors] = useState(false);
   const csvInputRef = useRef<HTMLInputElement>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
 
