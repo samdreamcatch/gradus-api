@@ -152,6 +152,8 @@ function RosterPage() {
   const [selectedAthleteId, setSelectedAthleteId] = useState<string | null>(null);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteStep, setInviteStep] = useState<InviteStep>("hub");
+  const [importOpen, setImportOpen] = useState(false);
+
   const scheduleRef = useRef<WeekScheduleHandle>(null);
   const vv = useVisualViewport();
 
