@@ -86,10 +86,11 @@ export function ScheduleImportSheet({
   const photoInputRef = useRef<HTMLInputElement>(null);
 
   const groups = useMemo(() => groupRowsByAthlete(rows), [rows]);
-  const invalidCount = useMemo(
-    () => rows.filter((r) => Object.keys(validateRow(r)).length > 0).length,
-    [rows],
-  );
+  const invalidCount = useMemo(() => {
+    const all = validateRows(rows);
+    return rows.filter((r) => Object.keys(all[r.id] ?? {}).length > 0).length;
+  }, [rows]);
+
 
   const reset = () => {
     setStep("source");
