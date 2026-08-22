@@ -1,5 +1,8 @@
-import { useEffect, useState } from "react";
-import { DevTools } from "./dev-tools";
+import { Suspense, lazy, useEffect, useState } from "react";
+
+// Code-split: the dev panel never renders on production hosts, so its code
+// shouldn't sit in the main bundle that every phone downloads.
+const DevTools = lazy(() => import("./dev-tools").then((m) => ({ default: m.DevTools })));
 
 // In local dev (`vite dev`), `import.meta.env.DEV` is true and we always
 // mount DevTools. In the Lovable preview build, Vite runs in production
@@ -20,7 +23,11 @@ function PreviewOnlyDevTools() {
     if (isPreview) setShow(true);
   }, []);
   if (!show) return null;
-  return <DevTools />;
+  return (
+    <Suspense fallback={null}>
+      <DevTools />
+    </Suspense>
+  );
 }
 
 // Always use the hydrated gate. Branching on the build environment here can
