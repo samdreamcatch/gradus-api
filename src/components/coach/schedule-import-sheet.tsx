@@ -621,7 +621,6 @@ function ReviewStep({
         size="sm"
         onClick={() => {
           const id = onAdd();
-          setPristineIds((prev) => new Set(prev).add(id));
           setExpandedId(id);
         }}
 
