@@ -149,11 +149,26 @@ export const listCoachVisibility = createServerFn({ method: "GET" })
                   : states.includes("pending")
                     ? "pending"
                     : "declined";
+            // Per-pair detail so the parent can see which side has acted.
+            const pairDetails = related.map((p) => {
+              const isA = p.coach_a_id === l.coach_id;
+              const otherId = isA ? p.coach_b_id : p.coach_a_id;
+              return {
+                otherCoachId: otherId,
+                otherName: coachById.get(otherId) ?? "Coach",
+                myStatus: (isA ? p.a_status : p.b_status) as "pending" | "accepted" | "declined",
+                theirStatus: (isA ? p.b_status : p.a_status) as
+                  | "pending"
+                  | "accepted"
+                  | "declined",
+              };
+            });
             return {
               coachId: l.coach_id,
               name: coachById.get(l.coach_id) ?? "Coach",
               enabled,
               status,
+              pairs: pairDetails,
             };
           }),
         };
