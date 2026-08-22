@@ -100,7 +100,14 @@ export function useCoachVisibility(enabled: boolean) {
                     ...athlete,
                     coaches: athlete.coaches.map((coach) =>
                       coach.coachId === coachId
-                        ? { ...coach, enabled: next, status: next ? "waiting" : "off" }
+                        ? {
+                            ...coach,
+                            enabled: next,
+                            status: next ? "waiting" : "off",
+                            // Sharing off clears the pairings; turning it on
+                            // rebuilds them server-side on refetch.
+                            pairs: [],
+                          }
                         : coach,
                     ),
                   },
