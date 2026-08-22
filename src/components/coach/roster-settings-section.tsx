@@ -16,7 +16,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { SettingsDisclosure } from "@/components/settings/primitives";
-import { getCoachRoster, type RosterAthlete, type RosterSlot } from "@/lib/coach-roster.functions";
+import { type RosterAthlete, type RosterSlot } from "@/lib/coach-roster.functions";
+import { rosterQueryOptions } from "@/lib/roster-queries";
 import { deleteLessonSlot, removeAthleteFromRoster } from "@/lib/coach-roster-mutations.functions";
 import { LessonSlotSheet, type LessonSlotSheetMode } from "@/components/coach/lesson-slot-sheet";
 import { SettingsToggleRow } from "@/components/settings/primitives";
