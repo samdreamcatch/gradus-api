@@ -559,6 +559,51 @@ export const getCoachAthleteDetail = createServerFn({ method: "GET" })
       }
     }
 
+    // Weekly practice expectation per coached sport: coach override →
+    // coach's saved hours for the athlete's current level → Gradus default.
+    const [targetsRes, levelsRes] = await Promise.all([
+      supabaseAdmin
+        .from("coach_athlete_practice_targets")
+        .select("sport, hours_per_week")
+        .eq("coach_id", coachId)
+        .eq("athlete_id", data.athleteId),
+      supabaseAdmin
+        .from("coach_levels")
+        .select("sport, level_key, practice_hours_per_week")
+        .eq("coach_id", coachId),
+    ]);
+    if (targetsRes.error) dbError(targetsRes.error);
+    if (levelsRes.error) dbError(levelsRes.error);
+
+    const overrideBySport = new Map<string, number>(
+      (targetsRes.data ?? []).map((t) => [t.sport, Number(t.hours_per_week)]),
+    );
+    const coachHoursByKey = new Map<string, number>(
+      (levelsRes.data ?? []).map((l) => [
+        `${l.sport}|${l.level_key}`,
+        Number(l.practice_hours_per_week),
+      ]),
+    );
+    const currentLevelBySport = new Map<string, string>(
+      (goalsRes.data ?? []).map((g) => [g.sport, g.current_level_key]),
+    );
+
+    const practiceTargets: AthletePracticeTargetDTO[] = coachSports.map((s) => {
+      const levelKey = currentLevelBySport.get(s) ?? null;
+      const defaultHours = levelKey
+        ? (coachHoursByKey.get(`${s}|${levelKey}`) ?? getSuggestedHours(s, levelKey))
+        : getSuggestedHours(s, "");
+      const override = overrideBySport.get(s) ?? null;
+      return {
+        sport: s,
+        sportLabel: sportLabel(s),
+        currentLevelLabel: levelKey ? labelLevel(s, levelKey) : null,
+        defaultHoursPerWeek: defaultHours,
+        hoursPerWeek: override ?? defaultHours,
+        isOverride: override !== null,
+      };
+    });
+
     return {
       athleteId: data.athleteId,
       firstName: athlete.first_name,
@@ -571,6 +616,7 @@ export const getCoachAthleteDetail = createServerFn({ method: "GET" })
         label: sportLabel(s),
       })),
       goals,
+      practiceTargets,
 
       plans,
       activity: {
@@ -584,6 +630,7 @@ export const getCoachAthleteDetail = createServerFn({ method: "GET" })
       sharedCoachIds,
       coachVisibility,
     };
+
   });
 
 // --- AI summary ---
