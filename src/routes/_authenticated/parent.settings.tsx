@@ -50,6 +50,7 @@ import { ConnectGuardianSheet } from "@/components/parent/connect-guardian-sheet
 import { Switch } from "@/components/ui/switch";
 import {
   statusLabel,
+  pairLabels,
   useCoachVisibility,
 } from "@/components/parent/coach-visibility-toggles";
 import {
@@ -579,8 +580,17 @@ function TeamPeopleGroup({ athletes }: { athletes: AthleteData[] }) {
                               </div>
                               {showSwitches && vis && (
                                 <div className="text-[11px] text-text-tertiary">
-                                  {statusLabel(vis.status)}
+                                  {statusLabel(vis)}
                                 </div>
+                              )}
+                              {showSwitches && vis?.enabled && (vis.pairs?.length ?? 0) > 1 && (
+                                <ul className="mt-0.5 space-y-0.5">
+                                  {pairLabels(vis).map((line) => (
+                                    <li key={line} className="text-[10px] text-text-tertiary">
+                                      {line}
+                                    </li>
+                                  ))}
+                                </ul>
                               )}
                             </div>
                             <div className="flex shrink-0 items-center gap-1.5">
