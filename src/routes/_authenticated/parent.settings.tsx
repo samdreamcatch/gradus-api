@@ -47,6 +47,7 @@ import { ParentBottomNav } from "@/components/parent/bottom-nav";
 import { AthleteInviteCard } from "@/components/parent/athlete-invite-card";
 import { ConnectCoachSheet } from "@/components/parent/connect-coach-sheet";
 import { ConnectGuardianSheet } from "@/components/parent/connect-guardian-sheet";
+import { CoachVisibilitySettings } from "@/components/parent/coach-visibility-toggles";
 import {
   listTeamGuardians,
   removeGuardian,
@@ -232,6 +233,10 @@ function ParentSettingsPage() {
 
             <SettingsGroup label="Team">
               <TeamSection />
+            </SettingsGroup>
+
+            <SettingsGroup label="Coach visibility">
+              <CoachVisibilitySectionForSettings />
             </SettingsGroup>
 
 
@@ -1784,4 +1789,14 @@ function SignOutRow() {
       }}
     />
   );
+}
+
+/** Coach visibility hub — gated on the household's Team plan being active. */
+function CoachVisibilitySectionForSettings() {
+  const fetchGuardians = useServerFn(listTeamGuardians);
+  const { data } = useQuery({
+    queryKey: ["team-guardians"],
+    queryFn: () => fetchGuardians(),
+  });
+  return <CoachVisibilitySettings planActive={Boolean(data?.planActive)} />;
 }
