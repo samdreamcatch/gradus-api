@@ -418,180 +418,28 @@ function ParentPlanCard({
 }
 
 /**
- * Team section — on an active Team plan the parent manages guardians
- * inline (same hub pattern as coaches). Otherwise it routes to the plan page.
+ * Team / Coaches group — on an active Team plan this is one card per athlete
+ * holding that athlete's guardians and coaches (with the per-coach visibility
+ * switch). Without the plan it's the plain coach list plus an upsell row.
  */
-function TeamSection() {
+function TeamPeopleGroup({ athletes }: { athletes: AthleteData[] }) {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const fetchGuardians = useServerFn(listTeamGuardians);
-  const remove = useServerFn(removeGuardian);
+  const removeGuardianFn = useServerFn(removeGuardian);
   const revoke = useServerFn(revokeGuardianInvite);
-  const { data, isLoading } = useQuery({
-    queryKey: ["team-guardians"],
-    queryFn: () => fetchGuardians(),
-  });
-
-  const refresh = () => void qc.invalidateQueries({ queryKey: ["team-guardians"] });
-
-  if (isLoading || !data) {
-    return (
-      <SettingsList>
-        <SettingsRow
-          icon={<Users className="size-4" />}
-          label="Parents & guardians"
-          value={isLoading ? "Loading…" : "—"}
-        />
-      </SettingsList>
-    );
-  }
-
-  if (!data.planActive) {
-    return (
-      <SettingsList>
-        <SettingsButtonRow
-          icon={<Users className="size-4" />}
-          label="Parents & guardians"
-          description="Add another parent or guardian to your athlete"
-          onClick={() => void navigate({ to: "/parent/team", search: {} })}
-        />
-      </SettingsList>
-    );
-  }
-
-  return (
-    <div className="space-y-2">
-      <SettingsList>
-        {data.athletes.length === 0 ? (
-          <SettingsRow
-            icon={<Users className="size-4" />}
-            label="Parents & guardians"
-            description="Add an athlete first"
-          />
-        ) : (
-          data.athletes.map((a) => (
-            <SettingsDisclosure
-              key={a.id}
-              icon={<Users className="size-4" />}
-              label={`${a.firstName} ${a.lastName}`}
-              description={`${a.guardians.length + a.invites.length} of 3 guardians`}
-              defaultOpen={data.athletes.length === 1}
-            >
-              <div className="space-y-2">
-                {a.guardians.map((g) => (
-                  <div
-                    key={g.id}
-                    className="flex items-center gap-2 rounded-xl border border-divider bg-card px-3 py-2"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm text-text-primary">{g.name}</div>
-                      <div className="text-xs text-text-tertiary">
-                        {g.role === "primary" ? "Primary" : "Guardian"}
-                        {g.isSelf ? " · You" : ""}
-                      </div>
-                    </div>
-                    {g.role === "co" && a.isPrimary && (
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="ghost"
-                        onClick={async () => {
-                          try {
-                            await remove({ data: { athleteId: a.id, parentId: g.parentId } });
-                            toast.success("Guardian removed");
-                            refresh();
-                          } catch (e) {
-                            toast.error(e instanceof Error ? e.message : "Couldn't remove.");
-                          }
-                        }}
-                      >
-                        <Trash2 className="size-3.5" aria-hidden />
-                      </Button>
-                    )}
-                  </div>
-                ))}
-                {a.invites.map((i) => (
-                  <div
-                    key={i.id}
-                    className="flex items-center gap-2 rounded-xl border border-dashed border-divider px-3 py-2"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm text-text-primary">{i.email ?? "Invite"}</div>
-                      <div className="font-mono text-xs text-text-tertiary">
-                        Pending · {i.code}
-                      </div>
-                    </div>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      onClick={async () => {
-                        try {
-                          await revoke({ data: { inviteId: i.id } });
-                          toast.success("Invite revoked");
-                          refresh();
-                        } catch (e) {
-                          toast.error(e instanceof Error ? e.message : "Couldn't revoke.");
-                        }
-                      }}
-                    >
-                      <Trash2 className="size-3.5" aria-hidden />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            </SettingsDisclosure>
-          ))
-        )}
-      </SettingsList>
-      {data.isPayer && (
-      <div className="flex justify-end px-1">
-        <ConnectGuardianSheet
-          athletes={data.athletes
-            .filter((a) => a.isPrimary)
-            .map((a) => ({ id: a.id, firstName: a.firstName, lastName: a.lastName }))}
-          disabled={!data.athletes.some((a) => a.isPrimary)}
-        />
-      </div>
-      )}
-    </div>
-  );
-}
-
-
-function ConnectedCoachesList({ athletes }: { athletes: AthleteData[] }) {
-  const qc = useQueryClient();
   const unlink = useServerFn(unlinkAthleteFromCoach);
   const [removing, setRemoving] = useState<string | null>(null);
 
-  const byCoach = new Map<
-    string,
-    {
-      coachId: string;
-      coachName: string;
-      entries: { athleteId: string; athleteName: string; sports: string[] }[];
-    }
-  >();
-  for (const a of athletes) {
-    for (const c of a.coaches) {
-      const entry = {
-        athleteId: a.id,
-        athleteName: `${a.firstName} ${a.lastName}`.trim(),
-        sports: c.sports,
-      };
-      const existing = byCoach.get(c.coachId);
-      if (existing) {
-        existing.entries.push(entry);
-      } else {
-        byCoach.set(c.coachId, {
-          coachId: c.coachId,
-          coachName: c.coachName,
-          entries: [entry],
-        });
-      }
-    }
-  }
-  const coaches = Array.from(byCoach.values());
+  const guardiansQ = useQuery({
+    queryKey: ["team-guardians"],
+    queryFn: () => fetchGuardians(),
+  });
+  const planActive = Boolean(guardiansQ.data?.planActive);
+  const isPayer = Boolean(guardiansQ.data?.isPayer);
+  const visibility = useCoachVisibility(planActive);
+
+  const refreshGuardians = () => void qc.invalidateQueries({ queryKey: ["team-guardians"] });
 
   const handleUnlink = async (athleteId: string, coachId: string) => {
     setRemoving(`${coachId}:${athleteId}`);
@@ -599,6 +447,7 @@ function ConnectedCoachesList({ athletes }: { athletes: AthleteData[] }) {
       await unlink({ data: { athleteId, coachId } });
       toast.success("Coach unlinked");
       qc.invalidateQueries({ queryKey: ["parent-settings"] });
+      qc.invalidateQueries({ queryKey: ["coach-visibility"] });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Couldn't unlink");
     } finally {
@@ -606,68 +455,215 @@ function ConnectedCoachesList({ athletes }: { athletes: AthleteData[] }) {
     }
   };
 
-  if (coaches.length === 0) {
-    return <p className="mb-3 px-1 text-sm text-text-tertiary">No coaches connected yet.</p>;
-  }
+  const guardianAthletes = guardiansQ.data?.athletes ?? [];
+  const visibilityFor = (athleteId: string, coachId: string) =>
+    visibility.q.data?.athletes
+      .find((a) => a.id === athleteId)
+      ?.coaches.find((c) => c.coachId === coachId);
 
   return (
-    <div className="mb-3 divide-y divide-divider overflow-hidden rounded-xl border border-divider bg-card">
-      {coaches.map((c) => (
-        <div key={c.coachId} className="px-4 py-3">
-          <div className="text-sm font-medium">{c.coachName}</div>
-          <ul className="mt-1.5 space-y-1.5">
-            {c.entries.map((e) => {
-              const sportLabels = e.sports.map((s) => getSport(s)?.label ?? s).join(", ");
-              const key = `${c.coachId}:${e.athleteId}`;
-              return (
-                <li key={key} className="flex items-center justify-between gap-2">
-                  <span className="min-w-0 text-xs text-text-secondary">
-                    <span className="truncate">{e.athleteName}</span>
-                    {sportLabels ? (
-                      <span className="text-text-tertiary"> — {sportLabels}</span>
-                    ) : null}
-                  </span>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-7 shrink-0 px-2 text-xs text-destructive"
-                        disabled={removing === key}
-                      >
-                        {removing === key ? "Unlinking…" : "Unlink"}
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>
-                          Unlink {c.coachName} from {e.athleteName}?
-                        </AlertDialogTitle>
-                        <AlertDialogDescription>
-                          They'll lose access to {e.athleteName}'s plans and messages. Practice
-                          history stays intact, and you can re-link later with their invite code.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                          className="bg-destructive text-white"
-                          onClick={() => void handleUnlink(e.athleteId, c.coachId)}
-                        >
-                          Unlink
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </li>
-              );
-            })}
-          </ul>
+    <SettingsGroup label={planActive ? "Team" : "Coaches"}>
+      {athletes.length === 0 ? (
+        <p className="mb-3 px-1 text-sm text-text-tertiary">Add an athlete first.</p>
+      ) : (
+        <div className="mb-3 space-y-2">
+          {athletes.map((a) => {
+            const athleteName = `${a.firstName} ${a.lastName}`.trim();
+            const g = guardianAthletes.find((x) => x.id === a.id);
+            const showSwitches = planActive && a.coaches.length > 1;
+            return (
+              <div
+                key={a.id}
+                className="overflow-hidden rounded-xl border border-divider bg-card px-4 py-3"
+              >
+                <div className="text-sm font-semibold text-text-primary">{athleteName}</div>
+
+                {planActive && g && (
+                  <div className="mt-3">
+                    <div className="text-[10px] font-semibold uppercase tracking-widest text-text-tertiary">
+                      Guardians
+                    </div>
+                    <ul className="mt-1.5 space-y-1.5">
+                      {g.guardians.map((person) => (
+                        <li key={person.id} className="flex items-center gap-2">
+                          <div className="min-w-0 flex-1">
+                            <div className="truncate text-xs text-text-secondary">
+                              {person.name}
+                              <span className="text-text-tertiary">
+                                {" "}
+                                — {person.role === "primary" ? "Primary" : "Guardian"}
+                                {person.isSelf ? " · You" : ""}
+                              </span>
+                            </div>
+                          </div>
+                          {person.role === "co" && g.isPrimary && (
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 shrink-0 px-2"
+                              onClick={async () => {
+                                try {
+                                  await removeGuardianFn({
+                                    data: { athleteId: a.id, parentId: person.parentId },
+                                  });
+                                  toast.success("Guardian removed");
+                                  refreshGuardians();
+                                } catch (e) {
+                                  toast.error(
+                                    e instanceof Error ? e.message : "Couldn't remove.",
+                                  );
+                                }
+                              }}
+                            >
+                              <Trash2 className="size-3.5" aria-hidden />
+                            </Button>
+                          )}
+                        </li>
+                      ))}
+                      {g.invites.map((i) => (
+                        <li key={i.id} className="flex items-center gap-2">
+                          <div className="min-w-0 flex-1 truncate text-xs text-text-secondary">
+                            {i.email ?? "Invite"}
+                            <span className="font-mono text-text-tertiary"> — Pending · {i.code}</span>
+                          </div>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 shrink-0 px-2"
+                            onClick={async () => {
+                              try {
+                                await revoke({ data: { inviteId: i.id } });
+                                toast.success("Invite revoked");
+                                refreshGuardians();
+                              } catch (e) {
+                                toast.error(e instanceof Error ? e.message : "Couldn't revoke.");
+                              }
+                            }}
+                          >
+                            <Trash2 className="size-3.5" aria-hidden />
+                          </Button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                <div className="mt-3">
+                  <div className="text-[10px] font-semibold uppercase tracking-widest text-text-tertiary">
+                    Coaches
+                  </div>
+                  {a.coaches.length === 0 ? (
+                    <p className="mt-1.5 text-xs text-text-tertiary">No coaches connected yet.</p>
+                  ) : (
+                    <ul className="mt-1.5 space-y-2">
+                      {a.coaches.map((c) => {
+                        const key = `${c.coachId}:${a.id}`;
+                        const sportLabels = c.sports
+                          .map((s) => getSport(s)?.label ?? s)
+                          .join(", ");
+                        const vis = visibilityFor(a.id, c.coachId);
+                        return (
+                          <li key={key} className="flex items-center justify-between gap-2">
+                            <div className="min-w-0">
+                              <div className="truncate text-xs text-text-secondary">
+                                {c.coachName}
+                                {sportLabels ? (
+                                  <span className="text-text-tertiary"> — {sportLabels}</span>
+                                ) : null}
+                              </div>
+                              {showSwitches && vis && (
+                                <div className="text-[11px] text-text-tertiary">
+                                  {statusLabel(vis.status)}
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex shrink-0 items-center gap-1.5">
+                              {showSwitches && vis && (
+                                <Switch
+                                  checked={vis.enabled}
+                                  disabled={visibility.busy === `${a.id}:${c.coachId}`}
+                                  aria-label={`Let ${c.coachName} see ${athleteName}'s other coaches`}
+                                  onCheckedChange={(next) =>
+                                    void visibility.toggle(a.id, c.coachId, next)
+                                  }
+                                />
+                              )}
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-7 px-2 text-xs text-destructive"
+                                    disabled={removing === key}
+                                  >
+                                    {removing === key ? "Unlinking…" : "Unlink"}
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>
+                                      Unlink {c.coachName} from {athleteName}?
+                                    </AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      They'll lose access to {athleteName}'s plans and messages.
+                                      Practice history stays intact, and you can re-link later
+                                      with their invite code.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      className="bg-destructive text-white"
+                                      onClick={() => void handleUnlink(a.id, c.coachId)}
+                                    >
+                                      Unlink
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
-      ))}
-    </div>
+      )}
+
+      <div className="flex flex-wrap justify-end gap-2 px-1">
+        <ConnectCoachSheet athletes={athletes} />
+        {planActive && isPayer && (
+          <ConnectGuardianSheet
+            athletes={guardianAthletes
+              .filter((x) => x.isPrimary)
+              .map((x) => ({ id: x.id, firstName: x.firstName, lastName: x.lastName }))}
+            disabled={!guardianAthletes.some((x) => x.isPrimary)}
+          />
+        )}
+      </div>
+
+      {!planActive && !guardiansQ.isLoading && (
+        <div className="mt-3">
+          <SettingsList>
+            <SettingsButtonRow
+              icon={<Users className="size-4" />}
+              label="Add parents & connect coaches"
+              description="On the Team plan, add up to 3 parents or guardians per athlete and let their coaches see each other's plans"
+              onClick={() => void navigate({ to: "/parent/team", search: {} })}
+            />
+          </SettingsList>
+        </div>
+      )}
+    </SettingsGroup>
   );
 }
+
 
 function NameDisclosure({ profile }: { profile: { firstName: string; lastName: string } }) {
   const [firstName, setFirstName] = useState(profile.firstName);
