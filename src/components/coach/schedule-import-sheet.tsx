@@ -5,6 +5,7 @@ import {
   Camera,
   Check,
   ChevronLeft,
+  ClipboardPaste,
   Download,
   FileSpreadsheet,
   Pencil,
@@ -12,6 +13,7 @@ import {
   Trash2,
   TriangleAlert,
 } from "lucide-react";
+
 import {
   Sheet,
   SheetContent,
