@@ -546,43 +546,70 @@ function ReviewStep({
 
 
 
-      {rows.map((row, index) => {
-        const errors = allErrors[row.id] ?? {};
-        const bad = Object.keys(errors).length > 0;
-        const expanded = expandedId === row.id;
+      {groupRowsByStudent(rows).map((group) => {
+        const groupBad = group.rows.some(
+          (r) => Object.keys(allErrors[r.id] ?? {}).length > 0,
+        );
+        const first = group.rows[0]!;
+        const name = `${first.firstName} ${first.lastName}`.trim();
         return (
           <div
-            key={row.id}
-            id={`import-row-${row.id}`}
+            key={group.key}
+            id={`import-row-${first.id}`}
             className={cn(
-              "rounded-xl border bg-card",
-              expanded ? "p-3" : "px-3 py-2.5",
-              bad ? "border-destructive/50" : "border-divider",
+              "rounded-xl border bg-card p-3",
+              groupBad ? "border-destructive/50" : "border-divider",
             )}
           >
-            <RowHeader
-              row={row}
-              index={index}
-              expanded={expanded}
-              errors={errors}
-              coachSports={coachSports}
-              onToggle={() => setExpandedId(expanded ? null : row.id)}
-              onRemove={() => onRemove(row.id)}
-            />
+            <p
+              className={cn(
+                "truncate text-sm font-bold",
+                name ? "text-text-primary" : "text-destructive",
+              )}
+            >
+              {name || "Needs a name"}
+            </p>
 
-            {expanded ? (
-              <RowEditor
-                row={row}
-                errors={errors}
-                coachSports={coachSports}
-                onChange={handleChange}
-              />
-            ) : (
-              <RowSummary row={row} errors={errors} onChange={handleChange} />
-            )}
+            <div className="mt-1 divide-y divide-divider">
+              {group.rows.map((row) => {
+                const errors = allErrors[row.id] ?? {};
+                const expanded = expandedId === row.id;
+                const index = rows.findIndex((r) => r.id === row.id);
+                return (
+                  <div key={row.id} className="py-1.5 first:pt-0 last:pb-0">
+                    <LessonLine
+                      row={row}
+                      index={index}
+                      expanded={expanded}
+                      errors={errors}
+                      coachSports={coachSports}
+                      onToggle={() => setExpandedId(expanded ? null : row.id)}
+                      onRemove={() => onRemove(row.id)}
+                    />
+                    {expanded ? (
+                      <RowEditor
+                        row={row}
+                        errors={errors}
+                        coachSports={coachSports}
+                        onChange={handleChange}
+                      />
+                    ) : null}
+                  </div>
+                );
+              })}
+            </div>
+
+            <RowSummary
+              row={first}
+              errors={allErrors[first.id] ?? {}}
+              onChange={(_id, patch) => {
+                for (const r of group.rows) handleChange(r.id, patch);
+              }}
+            />
           </div>
         );
       })}
+
 
       <Button
         type="button"
