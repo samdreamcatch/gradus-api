@@ -36,7 +36,7 @@ import { CoachVisibilitySettingsRow } from "@/components/coach/coach-visibility-
 import { JoinClubSheet } from "@/components/coach/join-club-sheet";
 import { UpgradeToProRow } from "@/components/coach/upgrade-to-pro-row";
 import { createCoachBillingPortalSession } from "@/lib/coach-checkout.functions";
-import { getStripeEnvironment } from "@/lib/stripe";
+import { getStripeEnvironment } from "@/lib/stripe-env";
 import { maxPrimarySportsForCoach } from "@/lib/paywall-flag";
 
 import {

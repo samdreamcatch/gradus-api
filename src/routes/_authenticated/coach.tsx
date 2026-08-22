@@ -9,7 +9,7 @@ import { isCoachPaywallEnabled, isFoundingCoachWindowOpen } from "@/lib/paywall-
 import { coachProfileQueryOptions } from "@/hooks/use-coach-profile";
 import { ConnectionCelebration } from "@/components/connection-celebration";
 import { createCoachBillingPortalSession } from "@/lib/coach-checkout.functions";
-import { getStripeEnvironment } from "@/lib/stripe";
+import { getStripeEnvironment } from "@/lib/stripe-env";
 import { Button } from "@/components/ui/button";
 
 const ENTITLED = new Set(["paid", "promo_free", "club_covered"]);

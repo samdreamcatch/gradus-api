@@ -97,7 +97,7 @@ import {
   createParentBillingPortalSession,
   getTeamPlanStatus,
 } from "@/lib/parent-checkout.functions";
-import { getStripeEnvironment } from "@/lib/stripe";
+import { getStripeEnvironment } from "@/lib/stripe-env";
 import { cn } from "@/lib/utils";
 import { getSport } from "@/lib/coach-sports";
 
