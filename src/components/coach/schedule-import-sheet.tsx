@@ -187,6 +187,16 @@ export function ScheduleImportSheet({
     setStep("review");
   };
 
+  const handlePaste = (text: string) => {
+    const { rows: parsed, error } = parsePastedSchedule(text, defaultSport);
+    if (error) {
+      toast.error(error);
+      return;
+    }
+    setRows(parsed);
+    setStep("review");
+  };
+
   const updateRow = (id: string, patch: Partial<ImportRow>) =>
     setRows((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));
 
@@ -220,7 +230,7 @@ export function ScheduleImportSheet({
           </div>
           <SheetDescription>
             {step === "source"
-              ? "Upload a spreadsheet, snap a photo of your schedule, or type it in."
+              ? "Pick whichever is easiest — spreadsheet, paste, photo, or typing it in."
               : step === "review"
                 ? "Fix anything flagged, then continue. One row per weekly lesson."
                 : step === "match"
@@ -234,12 +244,14 @@ export function ScheduleImportSheet({
             busy={parseImage.isPending}
             onPickCsv={() => csvInputRef.current?.click()}
             onPickPhoto={() => photoInputRef.current?.click()}
+            onPaste={handlePaste}
             onManual={() => {
               setRows([blankRow(defaultSport)]);
               setStep("review");
             }}
           />
         ) : null}
+
 
         {step === "review" ? (
           <ReviewStep
