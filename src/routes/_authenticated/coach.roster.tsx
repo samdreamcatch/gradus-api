@@ -115,10 +115,6 @@ function SegmentedToggle({ tab, onChange }: { tab: RosterTab; onChange: (t: Rost
   );
 }
 
-const rosterQueryOptions = queryOptions({
-  queryKey: ["coach", "roster"],
-  queryFn: () => getCoachRoster(),
-});
 
 export const Route = createFileRoute("/_authenticated/coach/roster")({
   loader: ({ context }) => context.queryClient.ensureQueryData(rosterQueryOptions),
