@@ -193,6 +193,23 @@ function maskEmail(email: string | null | undefined): string | null {
   return `${head}${local.length > 2 ? "•••" : ""}@${domain}`;
 }
 
+/** "Sasha Whitfield" -> "Sasha W." — used for people the coach isn't connected to yet. */
+function firstNameLastInitial(first: string | null | undefined, last: string | null | undefined) {
+  const f = (first ?? "").trim();
+  const l = (last ?? "").trim();
+  if (!f) return l ? `${l.slice(0, 1).toUpperCase()}.` : "";
+  return l ? `${f} ${l.slice(0, 1).toUpperCase()}.` : f;
+}
+
+/** Redact a full name string we only have as one blob (e.g. a guardian name). */
+function redactFullName(name: string | null | undefined): string | null {
+  if (!name) return null;
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0];
+  return firstNameLastInitial(parts[0], parts[parts.length - 1]);
+}
+
+
 export const matchScheduleRows = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
