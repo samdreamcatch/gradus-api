@@ -33,7 +33,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { getSport, type SportKey } from "@/lib/coach-sports";
+import { getSport, getSportLevel, type SportKey } from "@/lib/coach-sports";
 import {
   blankRow,
   CSV_TEMPLATE,
@@ -985,7 +985,31 @@ function MatchStep({
                               ? `Email match${c.maskedEmail ? ` · ${c.maskedEmail}` : ""}`
                               : "Same name — confirm this is them"}
                         </span>
+                        {(() => {
+                          const sportLabel = c.sport
+                            ? (getSport(c.sport as SportKey)?.label ?? c.sport)
+                            : null;
+                          const levelLabel =
+                            c.sport && c.levelKey
+                              ? (getSportLevel(c.sport, c.levelKey)?.label ?? c.levelKey)
+                              : null;
+                          const bits = [
+                            c.guardianName ? `Parent: ${c.guardianName}` : null,
+                            sportLabel
+                              ? levelLabel
+                                ? `${sportLabel} · ${levelLabel}`
+                                : sportLabel
+                              : null,
+                          ].filter(Boolean);
+                          if (bits.length === 0) return null;
+                          return (
+                            <span className="mt-0.5 block truncate text-xs text-text-tertiary">
+                              {bits.join(" · ")}
+                            </span>
+                          );
+                        })()}
                       </span>
+
                       {selected ? (
                         <Check className="size-4 shrink-0 text-accent-ink" aria-hidden />
                       ) : null}
