@@ -775,16 +775,19 @@ function DoneStep({ outcomes }: { outcomes: ImportOutcome[] }) {
 
 function Field({
   label,
+  hint,
   error,
   children,
 }: {
   label: string;
+  hint?: string;
   error?: string;
   children: React.ReactNode;
 }) {
   return (
     <div>
       <span className={LABEL}>{label}</span>
+      {hint ? <span className="mb-1 block text-[11px] text-text-tertiary">{hint}</span> : null}
       {children}
       {error ? <p className="mt-1 text-[11px] text-destructive">{error}</p> : null}
     </div>
@@ -792,8 +795,10 @@ function Field({
 }
 
 function downloadTemplate() {
-  const blob = new Blob([CSV_TEMPLATE], { type: "text/csv;charset=utf-8" });
+  // BOM so Excel opens it as UTF-8 without mangling names.
+  const blob = new Blob([`\uFEFF${CSV_TEMPLATE}`], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);
+
   const a = document.createElement("a");
   a.href = url;
   a.download = "gradus-schedule-template.csv";
