@@ -615,7 +615,7 @@ function ReviewStep({
             </div>
 
             <div className="mt-2 grid grid-cols-2 gap-2">
-              <Field label="Repeats" hint="How often it happens">
+              <Field label="Repeats">
                 <Select
                   value={row.frequency}
                   onValueChange={(v) => onChange(row.id, { frequency: v as ImportFrequency })}
