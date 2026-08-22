@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Eye, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -218,22 +218,7 @@ export function CoachVisibilitySection({ planActive }: { planActive: boolean }) 
   const { q, athletes, busy, toggle } = useCoachVisibility(planActive);
 
   if (!planActive) {
-    return (
-      <div className="mt-5 w-full rounded-xl border border-divider bg-elevated p-3">
-        <div className="flex items-start gap-3">
-          <Eye className="mt-0.5 h-5 w-5 shrink-0 text-text-tertiary" />
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold text-text-primary">
-              Connect your athlete's coaches
-            </p>
-            <p className="mt-0.5 text-[11px] text-text-tertiary sm:text-xs">
-              On the Team plan you can let an athlete's coaches see each other's plans, practice
-              log, goals, and schedule — read only, and only when both coaches agree.
-            </p>
-          </div>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   return (
