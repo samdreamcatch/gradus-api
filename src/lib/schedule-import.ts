@@ -367,7 +367,10 @@ export function splitCsv(text: string, delimiter = ","): string[][] {
     row.push(field);
     rows.push(row);
   }
-  return rows.filter((r) => r.some((cell) => cell.trim() !== ""));
+  return rows.filter(
+    (r) => r.some((cell) => cell.trim() !== "") && !r[0].trim().startsWith("#"),
+  );
+
 }
 
 function headerKey(value: string): string {
