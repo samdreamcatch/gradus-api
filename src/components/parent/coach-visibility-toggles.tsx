@@ -44,8 +44,8 @@ function shortName(name: string): string {
 export function pairLabel(coachName: string, p: VisibilityPair): string {
   const me = shortName(coachName);
   const them = shortName(p.otherName);
-  if (p.myStatus === "declined") return `${me} declined`;
-  if (p.theirStatus === "declined") return `${them} declined`;
+  if (p.myStatus === "declined") return `${me} declined connecting with ${them}`;
+  if (p.theirStatus === "declined") return `${them} declined connecting with ${me}`;
   if (p.myStatus === "accepted" && p.theirStatus === "accepted") return `Connected with ${them}`;
   if (p.myStatus === "accepted") return `${me} accepted — waiting on ${them}`;
   if (p.theirStatus === "accepted") return `Waiting on ${me} to accept`;
