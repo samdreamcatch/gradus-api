@@ -539,8 +539,7 @@ function ReviewStep({
         </button>
       ) : null}
 
-        </button>
-      ) : null}
+
 
       {rows.map((row, index) => {
         const errors = allErrors[row.id] ?? {};
