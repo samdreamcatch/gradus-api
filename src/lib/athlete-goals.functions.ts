@@ -4,6 +4,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
 import { dbError } from "./db-error";
+import { getSuggestedHours } from "./coach-sports";
 import type { ParentGoalSportDTO } from "./parent-goals.functions";
 
 type Client = SupabaseClient<Database>;
@@ -127,6 +128,21 @@ export const getAthleteGoalsDashboard = createServerFn({ method: "GET" })
           `${l.coach_id}|${l.sport}|${l.level_key}`,
           Number(l.practice_hours_per_week),
         );
+      }
+    }
+
+    // Per-athlete coach overrides beat the coach's per-level defaults.
+    const overrideBySport = new Map<string, number>();
+    if (coachIds.length) {
+      const { data: targets, error: tErr } = await supabaseAdmin
+        .from("coach_athlete_practice_targets")
+        .select("sport, hours_per_week, coach_id")
+        .in("coach_id", coachIds)
+        .eq("athlete_id", athlete.id);
+      if (tErr) dbError(tErr);
+      for (const t of targets ?? []) {
+        if (primaryBySport.get(t.sport) !== t.coach_id) continue;
+        overrideBySport.set(t.sport, Number(t.hours_per_week));
       }
     }
 

@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
 import { dbError } from "./db-error";
+import { getSuggestedHours } from "./coach-sports";
 
 type Client = SupabaseClient<Database>;
 
@@ -117,6 +118,24 @@ export const getParentGoalsDashboard = createServerFn({ method: "GET" })
           `${l.coach_id}|${l.sport}|${l.level_key}`,
           Number(l.practice_hours_per_week),
         );
+      }
+    }
+
+    // Per-athlete coach overrides beat the coach's per-level defaults.
+    const overrideByKey = new Map<string, number>(); // `${athlete_id}|${sport}` -> hours
+    if (coachIds.length && athleteRows.length) {
+      const { data: targets, error: tErr } = await supabaseAdmin
+        .from("coach_athlete_practice_targets")
+        .select("athlete_id, sport, hours_per_week, coach_id")
+        .in("coach_id", coachIds)
+        .in(
+          "athlete_id",
+          athleteRows.map((a) => a.id),
+        );
+      if (tErr) dbError(tErr);
+      for (const t of targets ?? []) {
+        if (primaryByKey.get(`${t.athlete_id}|${t.sport}`) !== t.coach_id) continue;
+        overrideByKey.set(`${t.athlete_id}|${t.sport}`, Number(t.hours_per_week));
       }
     }
 
