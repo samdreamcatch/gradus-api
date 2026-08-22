@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { CalendarDays, Pencil, Plus, Sparkles, Trash2, UserMinus } from "lucide-react";
 import { Button } from "@/components/ui/button";
