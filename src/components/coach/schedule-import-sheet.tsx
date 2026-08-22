@@ -500,13 +500,6 @@ function ReviewStep({
     allErrors[r.id] = showErrors ? (rawErrors[r.id] ?? {}) : {};
   }
   const handleChange = (id: string, patch: Partial<ImportRow>) => {
-    if (pristineIds.has(id)) {
-      setPristineIds((prev) => {
-        const next = new Set(prev);
-        next.delete(id);
-        return next;
-      });
-    }
     onChange(id, patch);
   };
   const badRows = rows.filter((r) => Object.keys(allErrors[r.id] ?? {}).length > 0);
