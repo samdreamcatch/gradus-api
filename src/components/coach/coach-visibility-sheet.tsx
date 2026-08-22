@@ -153,12 +153,6 @@ export function CoachVisibilitySheet({
               </div>
             )}
 
-            {pending.length === 0 && connected.length === 0 && (
-              <p className="text-sm text-text-tertiary">
-                No coach connections yet. A parent on the Team plan can connect you with their
-                athlete's other coaches.
-              </p>
-            )}
           </div>
         )}
       </SheetContent>
