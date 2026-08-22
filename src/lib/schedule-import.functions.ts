@@ -11,6 +11,9 @@ export type MatchCandidate = {
   name: string;
   maskedEmail: string | null;
   reason: "email" | "name";
+  /** True when the existing athlete's name also matches the imported row. */
+  nameAlsoMatches: boolean;
+
   onRoster: boolean;
   /** Parent / guardian on the existing account, when there is one. */
   guardianName: string | null;
