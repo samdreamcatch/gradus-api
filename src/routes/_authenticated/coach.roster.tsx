@@ -48,6 +48,7 @@ import {
 
 import { cn } from "@/lib/utils";
 import { getCoachRoster } from "@/lib/coach-roster.functions";
+import { rosterQueryOptions } from "@/lib/roster-queries";
 import { listPlans } from "@/lib/plans.functions";
 import {
   getRosterPracticeSummaries,
