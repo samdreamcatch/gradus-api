@@ -93,7 +93,10 @@ export const addAthleteWithGuardian = createServerFn({ method: "POST" })
       .object({
         firstName: z.string().trim().min(1, "First name is required").max(80),
         lastName: z.string().trim().min(1, "Last name is required").max(80),
-        birthdate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Enter a valid birthdate"),
+        birthdate: z
+          .string()
+          .regex(/^\d{4}-\d{2}-\d{2}$/, "Enter a valid birthdate")
+          .optional(),
         guardianEmail: z
           .string()
           .trim()
@@ -110,16 +113,17 @@ export const addAthleteWithGuardian = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { newGuardianToken, sendGuardianInvite } = await import("./guardian.server");
 
-    const [y, m, d] = data.birthdate.split("-").map(Number);
-    const dob = new Date(Date.UTC(y, m - 1, d));
-    if (Number.isNaN(dob.getTime()) || dob > new Date()) throw new Error("Enter a valid birthdate");
-    const ageMs = Date.now() - dob.getTime();
-    const age = Math.floor(ageMs / (365.25 * 24 * 3600 * 1000));
-    if (age > 120) throw new Error("Enter a valid birthdate");
-    const isMinor = age < 18;
-
-    if (isMinor && !data.guardianEmail) {
-      throw new Error("Athletes under 18 need a parent or guardian email.");
+    if (data.birthdate) {
+      const [y, m, d] = data.birthdate.split("-").map(Number);
+      const dob = new Date(Date.UTC(y, m - 1, d));
+      if (Number.isNaN(dob.getTime()) || dob > new Date())
+        throw new Error("Enter a valid birthdate");
+      const ageMs = Date.now() - dob.getTime();
+      const age = Math.floor(ageMs / (365.25 * 24 * 3600 * 1000));
+      if (age > 120) throw new Error("Enter a valid birthdate");
+      if (age < 18 && !data.guardianEmail) {
+        throw new Error("Athletes under 18 need a parent or guardian email.");
+      }
     }
 
     const guardianEmail = data.guardianEmail ?? null;
@@ -130,7 +134,7 @@ export const addAthleteWithGuardian = createServerFn({ method: "POST" })
       .insert({
         first_name: data.firstName,
         last_name: data.lastName,
-        birthdate: data.birthdate,
+        birthdate: data.birthdate ?? null,
         parent_id: null,
         self_managed: false,
         motivation: "",
