@@ -299,18 +299,40 @@ export const CSV_HEADERS = [
   "sport",
 ] as const;
 
-export const CSV_TEMPLATE = `${CSV_HEADERS.join(",")}
+/**
+ * The downloadable template carries its own instructions. Every line starting
+ * with `#` is skipped by the parser, so a coach can fill the file in and
+ * re-upload it without deleting anything.
+ */
+export const CSV_TEMPLATE = `# GRADUS LESSON SCHEDULE — fill in one row per weekly lesson, then upload this file.
+# Lines starting with # are ignored. Keep the header row below. Delete the example rows.
+#
+# athlete_first_name  Required.
+# athlete_last_name   Required.
+# day                 Mon / Monday / Tue ... any spelling works.
+# start_time          4:00 PM  or  4pm  or  16:00  or  1600
+# length_minutes      45  or  60  or  "1 hr"  or  "1.5 hours"
+# frequency           weekly | every other week | twice a month | monthly
+# guardian_email      Required for anyone under 18. We email them an invite.
+# athlete_email       Use this instead for adult (18+) athletes.
+# sport               Leave blank to use your sport.
+#
+${CSV_HEADERS.join(",")}
 Ava,Nguyen,Mon,4:00 PM,45,weekly,parent@example.com,,
-Liam,Brooks,Wed,17:30,60,biweekly,,liam@example.com,
+Liam,Brooks,Wed,17:30,60,every other week,parent2@example.com,,
+Jordan,Reyes,Sat,9:00 AM,1 hr,weekly,,jordan@example.com,
 `;
 
-/** Minimal RFC-4180-ish CSV splitter (handles quoted fields and commas). */
-export function splitCsv(text: string): string[][] {
+/**
+ * Minimal RFC-4180-ish splitter (handles quoted fields). Skips `#` comment
+ * lines and blank lines. Pass a tab delimiter to parse spreadsheet pastes.
+ */
+export function splitCsv(text: string, delimiter = ","): string[][] {
   const rows: string[][] = [];
   let field = "";
   let row: string[] = [];
   let inQuotes = false;
-  const src = text.replace(/\r\n?/g, "\n");
+  const src = text.replace(/^\uFEFF/, "").replace(/\r\n?/g, "\n");
   for (let i = 0; i < src.length; i += 1) {
     const c = src[i];
     if (inQuotes) {
@@ -328,7 +350,7 @@ export function splitCsv(text: string): string[][] {
     }
     if (c === '"') {
       inQuotes = true;
-    } else if (c === ",") {
+    } else if (c === delimiter) {
       row.push(field);
       field = "";
     } else if (c === "\n") {
@@ -340,6 +362,7 @@ export function splitCsv(text: string): string[][] {
       field += c;
     }
   }
+
   if (field.length > 0 || row.length > 0) {
     row.push(field);
     rows.push(row);
