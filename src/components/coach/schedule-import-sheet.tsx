@@ -749,10 +749,11 @@ function RowSummary({
         <p className="mt-1 truncate text-xs text-text-tertiary">{email}</p>
       ) : (
         <div className="mt-2">
-          <span className={LABEL}>Email needed</span>
+          <span className={LABEL}>Email</span>
           <Input
             type="email"
             inputMode="email"
+            placeholder="parent@example.com"
             value={row.guardianEmail}
             onBlur={() => {
               if (row.guardianEmail || row.athleteEmail) setCollecting(false);
@@ -761,9 +762,8 @@ function RowSummary({
             className="h-9 w-full"
           />
           <p className="mt-1 text-[11px] text-text-tertiary">
-            Parent / guardian email is required for anyone under 18
+            Parent / guardian email — or the athlete&apos;s own if they&apos;re 18+
           </p>
-
         </div>
       )}
       {otherErrors.length > 0 ? (
@@ -918,34 +918,7 @@ function RowEditor({
         ) : null}
       </div>
 
-      <div className="mt-2 grid grid-cols-1 gap-2">
-        <Field
-          label="Parent / guardian email"
-          hint="Required for anyone under 18"
-          error={errors.guardianEmail}
-        >
-          <Input
-            type="email"
-            inputMode="email"
-            placeholder="parent@example.com"
-            value={row.guardianEmail}
-            onChange={(e) => onChange(row.id, { guardianEmail: e.target.value.toLowerCase() })}
-          />
-        </Field>
-        <Field
-          label="Athlete email"
-          hint="Use this instead for adults (18+)"
-          error={errors.athleteEmail}
-        >
-          <Input
-            type="email"
-            inputMode="email"
-            placeholder="athlete@example.com"
-            value={row.athleteEmail}
-            onChange={(e) => onChange(row.id, { athleteEmail: e.target.value.toLowerCase() })}
-          />
-        </Field>
-      </div>
+    
     </>
   );
 }
