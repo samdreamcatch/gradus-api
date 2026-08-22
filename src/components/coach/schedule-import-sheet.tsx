@@ -918,34 +918,7 @@ function RowEditor({
         ) : null}
       </div>
 
-      <div className="mt-2 grid grid-cols-1 gap-2">
-        <Field
-          label="Parent / guardian email"
-          hint="Required for anyone under 18"
-          error={errors.guardianEmail}
-        >
-          <Input
-            type="email"
-            inputMode="email"
-            placeholder="parent@example.com"
-            value={row.guardianEmail}
-            onChange={(e) => onChange(row.id, { guardianEmail: e.target.value.toLowerCase() })}
-          />
-        </Field>
-        <Field
-          label="Athlete email"
-          hint="Use this instead for adults (18+)"
-          error={errors.athleteEmail}
-        >
-          <Input
-            type="email"
-            inputMode="email"
-            placeholder="athlete@example.com"
-            value={row.athleteEmail}
-            onChange={(e) => onChange(row.id, { athleteEmail: e.target.value.toLowerCase() })}
-          />
-        </Field>
-      </div>
+    
     </>
   );
 }
