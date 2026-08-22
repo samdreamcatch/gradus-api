@@ -718,7 +718,7 @@ function RowSummary({
             className="h-9 w-full"
           />
           <p className="mt-1 text-[11px] text-text-tertiary">
-            Parent / guardian email — required for anyone under 18
+            Parent / guardian email is required for anyone under 18
           </p>
 
         </div>
