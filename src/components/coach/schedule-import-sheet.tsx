@@ -455,10 +455,6 @@ function SourceStep({
         <Download className="size-3.5" aria-hidden />
         Download CSV template
       </button>
-      <p className="mt-1 text-[11px] text-text-tertiary">
-        The template explains every column — day, time, length, how often it repeats, and which
-        email to use.
-      </p>
     </div>
   );
 }
