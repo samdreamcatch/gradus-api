@@ -398,11 +398,20 @@ export const matchScheduleRows = createServerFn({ method: "POST" })
         }
       }
     }
-    const detailsFor = (id: string) => ({
-      guardianName: guardianNameByAthleteId.get(id) ?? null,
+    const detailsFor = (id: string, connected: boolean) => ({
+      guardianName: connected
+        ? (guardianNameByAthleteId.get(id) ?? null)
+        : redactFullName(guardianNameByAthleteId.get(id) ?? null),
       sport: goalByAthleteId.get(id)?.sport ?? null,
       levelKey: goalByAthleteId.get(id)?.levelKey ?? null,
     });
+
+    // Coaches only see the full name of someone they're already connected to.
+    const displayName = (
+      first: string | null,
+      last: string | null,
+      connected: boolean,
+    ) => (connected ? `${first ?? ""} ${last ?? ""}`.trim() : firstNameLastInitial(first, last));
 
     const norm = (s: string) => s.trim().toLowerCase();
 
@@ -418,16 +427,18 @@ export const matchScheduleRows = createServerFn({ method: "POST" })
         // Scoped per email: this athlete must belong to one of THIS row's emails.
         const accountHit = rowEmails.some((e) => athleteIdsByEmail.get(e)?.has(a.id));
         if (!guardianHit && !accountHit) continue;
+        const connected = rosterIds.has(a.id);
         candidates.set(a.id, {
           athleteId: a.id,
-          name: `${a.first_name} ${a.last_name}`.trim(),
+          name: displayName(a.first_name, a.last_name, connected),
           maskedEmail: maskEmail(a.guardian_email),
           reason: "email",
           nameAlsoMatches:
             norm(a.first_name) === norm(input.firstName) &&
             norm(a.last_name) === norm(input.lastName),
-          onRoster: rosterIds.has(a.id),
-          ...detailsFor(a.id),
+          onRoster: connected,
+          redacted: !connected,
+          ...detailsFor(a.id, connected),
         });
 
       }
@@ -438,15 +449,20 @@ export const matchScheduleRows = createServerFn({ method: "POST" })
           norm(a.first_name) === norm(input.firstName) &&
           norm(a.last_name) === norm(input.lastName)
         ) {
+          const connected = rosterIds.has(a.id);
           candidates.set(a.id, {
             athleteId: a.id,
-            name: `${a.first_name} ${a.last_name}`.trim(),
+            name: displayName(a.first_name, a.last_name, connected),
             maskedEmail: maskEmail(a.guardian_email),
             reason: "name",
             nameAlsoMatches: true,
-            onRoster: rosterIds.has(a.id),
-            ...detailsFor(a.id),
+            onRoster: connected,
+            redacted: !connected,
+            ...detailsFor(a.id, connected),
           });
+
+        }
+      }
 
         }
       }
