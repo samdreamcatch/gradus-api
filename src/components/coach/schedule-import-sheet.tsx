@@ -479,10 +479,27 @@ function ReviewStep({
   onRemove: (id: string) => void;
   onAdd: () => string;
 }) {
-  const allErrors = validateRows(rows);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  // Rows the coach just added by hand start clean — no red state until they touch them.
+  const [pristineIds, setPristineIds] = useState<Set<string>>(() => new Set());
+  const rawErrors = validateRows(rows);
+  const allErrors: Record<string, Record<string, string>> = {};
+  for (const r of rows) {
+    allErrors[r.id] = pristineIds.has(r.id) ? {} : (rawErrors[r.id] ?? {});
+  }
+  const handleChange = (id: string, patch: Partial<ImportRow>) => {
+    if (pristineIds.has(id)) {
+      setPristineIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    }
+    onChange(id, patch);
+  };
   const badRows = rows.filter((r) => Object.keys(allErrors[r.id] ?? {}).length > 0);
   const badCount = badRows.length;
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+
 
   // Name each problem so the coach knows what to fix, not just that something's wrong.
   const fieldLabels: Record<string, string> = {
