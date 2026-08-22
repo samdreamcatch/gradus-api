@@ -174,12 +174,12 @@ function ParentTeamPage() {
           <Users className="h-5 w-5" />
         </div>
         <h1 className="text-center font-display text-h2 text-text-primary">
-          {planActive ? "Manage your plan" : "Add a parent or guardian"}
+          {planActive ? "Manage your plan" : "Add your Team"}
         </h1>
         <p className="mt-1.5 max-w-md text-center text-sm text-text-secondary">
           {planActive
             ? "Invite guardians, or change your billing."
-            : "Add up to three guardians per athlete on Team plan"}
+            : "Add up to three guardians per athlete and give coaches visibility into plans assigned to shared athletes"}
         </p>
 
         {planActive && (
