@@ -43,7 +43,11 @@ export function CoachVisibilitySheet({
   const [busy, setBusy] = useState<string | null>(null);
 
   const pending = q.data?.pending ?? [];
-  const connected = q.data?.connected ?? [];
+  const awaiting = q.data?.awaiting ?? [];
+  const connected = [
+    ...(q.data?.connected ?? []).map((r) => ({ ...r, waiting: false })),
+    ...awaiting.map((r) => ({ ...r, waiting: true })),
+  ];
 
   const act = async (key: string, run: () => Promise<unknown>, message: string) => {
     setBusy(key);
@@ -124,13 +128,20 @@ export function CoachVisibilitySheet({
             {connected.length > 0 && (
               <div>
                 <p className="mb-2 px-1 text-[11px] font-bold uppercase tracking-widest text-text-tertiary">
-                  Connected
+                  Connections
                 </p>
                 <div className="overflow-hidden rounded-xl border border-divider bg-elevated divide-y divide-divider">
                   {connected.map((r) => (
                     <div key={r.id} className="flex items-center justify-between gap-3 px-3 py-3">
                       <div className="min-w-0">
-                        <p className="truncate text-sm text-text-primary">{r.coachName}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="truncate text-sm text-text-primary">{r.coachName}</p>
+                          {r.waiting && (
+                            <span className="shrink-0 rounded-full border border-divider px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-text-tertiary">
+                              Pending
+                            </span>
+                          )}
+                        </div>
                         <p className="text-[11px] text-text-tertiary">for {r.athleteName}</p>
                       </div>
                       <Button
@@ -186,7 +197,7 @@ export function CoachVisibilitySettingsRow() {
   const q = useCoachVisibility();
   const [open, setOpen] = useState(false);
   const pending = q.data?.pending.length ?? 0;
-  const connected = q.data?.connected.length ?? 0;
+  const connected = (q.data?.connected.length ?? 0) + (q.data?.awaiting.length ?? 0);
 
   return (
     <>

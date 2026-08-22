@@ -357,7 +357,7 @@ export const listMyCoachVisibility = createServerFn({ method: "GET" })
       a_status: string;
       b_status: string;
     }[];
-    if (rows.length === 0) return { pending: [], connected: [] };
+    if (rows.length === 0) return { pending: [], connected: [], awaiting: [] };
 
     const athleteIds = Array.from(new Set(rows.map((r) => r.athlete_id)));
     const otherIds = Array.from(
@@ -396,6 +396,8 @@ export const listMyCoachVisibility = createServerFn({ method: "GET" })
     return {
       pending: shaped.filter((s) => s.myStatus === "pending" && s.theirStatus !== "declined"),
       connected: shaped.filter((s) => s.myStatus === "accepted" && s.theirStatus === "accepted"),
+      // I've accepted; still waiting on the other coach.
+      awaiting: shaped.filter((s) => s.myStatus === "accepted" && s.theirStatus === "pending"),
     };
   });
 
