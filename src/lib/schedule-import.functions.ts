@@ -421,9 +421,11 @@ export const matchScheduleRows = createServerFn({ method: "POST" })
             name: `${a.first_name} ${a.last_name}`.trim(),
             maskedEmail: maskEmail(a.guardian_email),
             reason: "name",
+            nameAlsoMatches: true,
             onRoster: rosterIds.has(a.id),
             ...detailsFor(a.id),
           });
+
         }
       }
 
