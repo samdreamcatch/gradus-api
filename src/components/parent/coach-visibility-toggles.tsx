@@ -213,7 +213,16 @@ export function CoachVisibilitySection({ planActive }: { planActive: boolean }) 
                   <div key={c.coachId} className="flex items-center justify-between gap-3 py-2">
                     <div className="min-w-0">
                       <p className="truncate text-sm text-text-primary">{c.name}</p>
-                      <p className="text-[11px] text-text-tertiary">{statusLabel(c.status)}</p>
+                      <p className="text-[11px] text-text-tertiary">{statusLabel(c)}</p>
+                      {c.enabled && (c.pairs?.length ?? 0) > 1 && (
+                        <ul className="mt-0.5 space-y-0.5">
+                          {pairLabels(c).map((line) => (
+                            <li key={line} className="text-[10px] text-text-tertiary">
+                              {line}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
                     </div>
                     <Switch
                       checked={c.enabled}
