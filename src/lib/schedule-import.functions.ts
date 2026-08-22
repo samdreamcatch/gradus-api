@@ -330,6 +330,58 @@ export const matchScheduleRows = createServerFn({ method: "POST" })
     const emailById = new Map<string, AthleteRow>();
     for (const a of emailPool) emailById.set(a.id, a);
 
+    // Extra identifying detail so the coach can actually confirm a match:
+    // the guardian's name and the athlete's existing sport / level.
+    const possibleIds = [...new Set([...emailById.keys(), ...nameMatches.map((a) => a.id)])];
+    const guardianNameByAthleteId = new Map<string, string>();
+    const goalByAthleteId = new Map<string, { sport: string | null; levelKey: string | null }>();
+    if (possibleIds.length > 0) {
+      const parentIds = [
+        ...new Set(
+          [...emailById.values(), ...nameMatches].map((a) => a.parent_id).filter(Boolean),
+        ),
+      ] as string[];
+      const [parentRes, goalRes] = await Promise.all([
+        parentIds.length > 0
+          ? supabaseAdmin
+              .from("parent_profiles")
+              .select("id, first_name, last_name")
+              .in("id", parentIds)
+          : Promise.resolve({ data: [] as { id: string; first_name: string; last_name: string }[] }),
+        supabaseAdmin
+          .from("athlete_goals")
+          .select("athlete_id, sport, current_level_key")
+          .in("athlete_id", possibleIds),
+      ]);
+      const nameByParentId = new Map<string, string>();
+      for (const p of (parentRes.data ?? []) as {
+        id: string;
+        first_name: string | null;
+        last_name: string | null;
+      }[]) {
+        const n = `${p.first_name ?? ""} ${p.last_name ?? ""}`.trim();
+        if (n) nameByParentId.set(p.id, n);
+      }
+      for (const a of [...emailById.values(), ...nameMatches]) {
+        const n = a.parent_id ? nameByParentId.get(a.parent_id) : undefined;
+        if (n) guardianNameByAthleteId.set(a.id, n);
+      }
+      for (const g of (goalRes.data ?? []) as {
+        athlete_id: string;
+        sport: string | null;
+        current_level_key: string | null;
+      }[]) {
+        if (!goalByAthleteId.has(g.athlete_id)) {
+          goalByAthleteId.set(g.athlete_id, { sport: g.sport, levelKey: g.current_level_key });
+        }
+      }
+    }
+    const detailsFor = (id: string) => ({
+      guardianName: guardianNameByAthleteId.get(id) ?? null,
+      sport: goalByAthleteId.get(id)?.sport ?? null,
+      levelKey: goalByAthleteId.get(id)?.levelKey ?? null,
+    });
+
     const norm = (s: string) => s.trim().toLowerCase();
 
     const results: MatchResult[] = data.athletes.map((input) => {
@@ -350,6 +402,7 @@ export const matchScheduleRows = createServerFn({ method: "POST" })
           maskedEmail: maskEmail(a.guardian_email),
           reason: "email",
           onRoster: rosterIds.has(a.id),
+          ...detailsFor(a.id),
         });
       }
 
@@ -365,9 +418,11 @@ export const matchScheduleRows = createServerFn({ method: "POST" })
             maskedEmail: maskEmail(a.guardian_email),
             reason: "name",
             onRoster: rosterIds.has(a.id),
+            ...detailsFor(a.id),
           });
         }
       }
+
 
       const list = [...candidates.values()].sort((a, b) => {
         if (a.onRoster !== b.onRoster) return a.onRoster ? -1 : 1;
