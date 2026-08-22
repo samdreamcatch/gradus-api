@@ -190,15 +190,6 @@ export function ScheduleImportSheet({
     setStep("review");
   };
 
-  const handlePaste = (text: string) => {
-    const { rows: parsed, error } = parsePastedSchedule(text, defaultSport);
-    if (error) {
-      toast.error(error);
-      return;
-    }
-    setRows(parsed);
-    setStep("review");
-  };
 
   const updateRow = (id: string, patch: Partial<ImportRow>) =>
     setRows((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));
