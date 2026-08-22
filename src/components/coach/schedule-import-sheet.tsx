@@ -546,43 +546,70 @@ function ReviewStep({
 
 
 
-      {rows.map((row, index) => {
-        const errors = allErrors[row.id] ?? {};
-        const bad = Object.keys(errors).length > 0;
-        const expanded = expandedId === row.id;
+      {groupRowsByStudent(rows).map((group) => {
+        const groupBad = group.rows.some(
+          (r) => Object.keys(allErrors[r.id] ?? {}).length > 0,
+        );
+        const first = group.rows[0]!;
+        const name = `${first.firstName} ${first.lastName}`.trim();
         return (
           <div
-            key={row.id}
-            id={`import-row-${row.id}`}
+            key={group.key}
+            id={`import-row-${first.id}`}
             className={cn(
-              "rounded-xl border bg-card",
-              expanded ? "p-3" : "px-3 py-2.5",
-              bad ? "border-destructive/50" : "border-divider",
+              "rounded-xl border bg-card p-3",
+              groupBad ? "border-destructive/50" : "border-divider",
             )}
           >
-            <RowHeader
-              row={row}
-              index={index}
-              expanded={expanded}
-              errors={errors}
-              coachSports={coachSports}
-              onToggle={() => setExpandedId(expanded ? null : row.id)}
-              onRemove={() => onRemove(row.id)}
-            />
+            <p
+              className={cn(
+                "truncate text-sm font-bold",
+                name ? "text-text-primary" : "text-destructive",
+              )}
+            >
+              {name || "Needs a name"}
+            </p>
 
-            {expanded ? (
-              <RowEditor
-                row={row}
-                errors={errors}
-                coachSports={coachSports}
-                onChange={handleChange}
-              />
-            ) : (
-              <RowSummary row={row} errors={errors} onChange={handleChange} />
-            )}
+            <div className="mt-1 divide-y divide-divider">
+              {group.rows.map((row) => {
+                const errors = allErrors[row.id] ?? {};
+                const expanded = expandedId === row.id;
+                const index = rows.findIndex((r) => r.id === row.id);
+                return (
+                  <div key={row.id} className="py-1.5 first:pt-0 last:pb-0">
+                    <LessonLine
+                      row={row}
+                      index={index}
+                      expanded={expanded}
+                      errors={errors}
+                      coachSports={coachSports}
+                      onToggle={() => setExpandedId(expanded ? null : row.id)}
+                      onRemove={() => onRemove(row.id)}
+                    />
+                    {expanded ? (
+                      <RowEditor
+                        row={row}
+                        errors={errors}
+                        coachSports={coachSports}
+                        onChange={handleChange}
+                      />
+                    ) : null}
+                  </div>
+                );
+              })}
+            </div>
+
+            <RowSummary
+              row={first}
+              errors={allErrors[first.id] ?? {}}
+              onChange={(_id, patch) => {
+                for (const r of group.rows) handleChange(r.id, patch);
+              }}
+            />
           </div>
         );
       })}
+
 
       <Button
         type="button"
@@ -603,7 +630,27 @@ function ReviewStep({
   );
 }
 
-function RowHeader({
+// One card per student: rows with the same name (and email, when present) collapse together.
+function groupRowsByStudent(rows: ImportRow[]) {
+  const groups: { key: string; rows: ImportRow[] }[] = [];
+  const index = new Map<string, { key: string; rows: ImportRow[] }>();
+  for (const row of rows) {
+    const name = `${row.firstName ?? ""} ${row.lastName ?? ""}`.trim().toLowerCase();
+    const email = (row.guardianEmail || row.athleteEmail || "").trim().toLowerCase();
+    const key = name ? `${name}|${email}` : `row:${row.id}`;
+    const existing = index.get(key);
+    if (existing) {
+      existing.rows.push(row);
+    } else {
+      const group = { key, rows: [row] };
+      index.set(key, group);
+      groups.push(group);
+    }
+  }
+  return groups;
+}
+
+function LessonLine({
   row,
   index,
   expanded,
@@ -620,7 +667,6 @@ function RowHeader({
   onToggle: () => void;
   onRemove: () => void;
 }) {
-  const name = `${row.firstName} ${row.lastName}`.trim();
   const sportLabel =
     coachSports.length > 1 && row.sport ? (getSport(row.sport as SportKey)?.label ?? row.sport) : "";
   const dayLabel = IMPORT_DAYS.find((d) => d.value === row.dayOfWeek)?.short ?? "—";
@@ -632,6 +678,7 @@ function RowHeader({
         : `${formatTimeLabel(row.startMinute)}–${formatTimeLabel(row.startMinute + row.lengthMinutes)}`;
   const freqLabel = IMPORT_FREQUENCIES.find((f) => f.value === row.frequency)?.label ?? "";
   const meta = [dayLabel, timeLabel, freqLabel, sportLabel].filter(Boolean).join(" · ");
+  const lineBad = Object.keys(errors).some((k) => k !== "guardianEmail" && k !== "athleteEmail");
 
   return (
     <div className="flex items-start justify-between gap-2">
@@ -641,19 +688,17 @@ function RowHeader({
             Lesson {index + 1}
           </span>
         ) : (
-          <>
-            <p
-              className={cn(
-                "truncate text-sm font-bold",
-                name ? "text-text-primary" : "text-destructive",
-              )}
-            >
-              {name || "Needs a name"}
-            </p>
-            <p className="mt-0.5 truncate text-xs text-text-secondary">{meta}</p>
-          </>
+          <p
+            className={cn(
+              "truncate text-xs",
+              lineBad ? "text-destructive" : "text-text-secondary",
+            )}
+          >
+            {meta}
+          </p>
         )}
       </div>
+
       <div className="flex shrink-0 items-center gap-1">
         <button
           type="button"
