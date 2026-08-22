@@ -47,7 +47,11 @@ import { ParentBottomNav } from "@/components/parent/bottom-nav";
 import { AthleteInviteCard } from "@/components/parent/athlete-invite-card";
 import { ConnectCoachSheet } from "@/components/parent/connect-coach-sheet";
 import { ConnectGuardianSheet } from "@/components/parent/connect-guardian-sheet";
-import { CoachVisibilitySettings } from "@/components/parent/coach-visibility-toggles";
+import { Switch } from "@/components/ui/switch";
+import {
+  statusLabel,
+  useCoachVisibility,
+} from "@/components/parent/coach-visibility-toggles";
 import {
   listTeamGuardians,
   removeGuardian,
