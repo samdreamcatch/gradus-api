@@ -549,7 +549,7 @@ function NewAthleteForm({
         : null}
 
       {field(
-        "Parent / guardian email",
+        "EMAIL",
         <Input
           type="email"
           inputMode="email"
@@ -561,8 +561,7 @@ function NewAthleteForm({
       )}
 
       <p className="text-xs text-text-secondary">
-        If they&apos;re 18 or older, use their own email — we&apos;ll send the invite there. We ask
-        for their birthday when they create their account.
+        Enter a parent/guardian email for athletes under 18
       </p>
 
       <SheetFooter className="mt-2 flex-row justify-end gap-2">
