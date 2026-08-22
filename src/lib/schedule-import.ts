@@ -36,6 +36,12 @@ export type ImportRow = {
   guardianEmail: string;
   athleteEmail: string;
   sport: string;
+  /**
+   * Fields that came in from a CSV or a photo with something written that we
+   * couldn't understand. Surfaced in review as "couldn't read — confirm"
+   * instead of being silently defaulted.
+   */
+  unreadable?: Partial<Record<"dayOfWeek" | "startMinute" | "lengthMinutes", true>>;
 };
 
 export type RowErrors = Partial<Record<keyof ImportRow, string>>;
@@ -60,6 +66,7 @@ export function blankRow(sport = ""): ImportRow {
     sport,
   };
 }
+
 
 // ---------- field parsers ----------
 
