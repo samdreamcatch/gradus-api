@@ -479,9 +479,15 @@ function ReviewStep({
   onRemove: (id: string) => void;
   onAdd: () => string;
 }) {
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-  // Rows the coach just added by hand start clean — no red state until they touch them.
-  const [pristineIds, setPristineIds] = useState<Set<string>>(() => new Set());
+  // Manual entry starts on an empty row: open the editor, no red state yet.
+  const [expandedId, setExpandedId] = useState<string | null>(() =>
+    rows.length === 1 && !rows[0]?.firstName?.trim() ? (rows[0]?.id ?? null) : null,
+  );
+  // Rows the coach adds by hand start clean — no red state until they touch them.
+  const [pristineIds, setPristineIds] = useState<Set<string>>(
+    () => new Set(rows.filter((r) => !r.firstName?.trim() && !r.lastName?.trim()).map((r) => r.id)),
+  );
+
   const rawErrors = validateRows(rows);
   const allErrors: Record<string, Record<string, string>> = {};
   for (const r of rows) {
