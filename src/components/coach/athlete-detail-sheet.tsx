@@ -175,6 +175,24 @@ function AthleteDetailBody({ athleteId }: { athleteId: string }) {
         )}
       </section>
 
+      {/* Practice expectations */}
+      {d.practiceTargets.length > 0 ? (
+        <section>
+          <SectionHeading>PRACTICE EXPECTATIONS</SectionHeading>
+          <p className="mt-1 text-xs text-text-tertiary">
+            What {d.firstName} should practice on their own each week. Starts from the Gradus
+            default for their level.
+          </p>
+          <div className="mt-2 space-y-2">
+            {d.practiceTargets.map((t) => (
+              <PracticeTargetRow key={t.sport} athleteId={athleteId} target={t} />
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+
+
       {/* AI Summary */}
       <section>
         <div className="flex items-center justify-between">
