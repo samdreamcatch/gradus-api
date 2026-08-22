@@ -705,7 +705,6 @@ function RowSummary({
           <Input
             type="email"
             inputMode="email"
-            placeholder="parent@example.com"
             value={row.guardianEmail}
             onBlur={() => {
               if (row.guardianEmail || row.athleteEmail) setCollecting(false);
