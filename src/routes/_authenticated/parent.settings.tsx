@@ -429,7 +429,6 @@ function ParentPlanCard({
  * switch). Without the plan it's the plain coach list plus an upsell row.
  */
 function TeamPeopleGroup({ athletes }: { athletes: AthleteData[] }) {
-  const navigate = useNavigate();
   const qc = useQueryClient();
   const fetchGuardians = useServerFn(listTeamGuardians);
   const removeGuardianFn = useServerFn(removeGuardian);
