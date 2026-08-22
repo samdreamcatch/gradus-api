@@ -22,6 +22,8 @@ import { getSport, type SportKey } from "@/lib/coach-sports";
 import { WeekScheduleView, type WeekScheduleHandle } from "@/components/coach/week-schedule-view";
 import { AthleteDetailSheet } from "@/components/coach/athlete-detail-sheet";
 import { BillingTab } from "@/components/coach/billing-tab";
+import { ScheduleImportSheet } from "@/components/coach/schedule-import-sheet";
+
 
 import { InviteCard } from "@/components/onboarding/invite-card";
 import { EnterInviteCodeCard } from "@/components/coach/enter-invite-code-card";
