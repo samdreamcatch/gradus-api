@@ -137,6 +137,7 @@ export function buildSampleAthleteDetail(): CoachAthleteDetailDTO {
     windowDays: 30,
     otherCoaches: [],
     sharedCoachIds: [],
+    coachVisibility: {},
 
   };
 }
