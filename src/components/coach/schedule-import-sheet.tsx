@@ -100,6 +100,7 @@ export function ScheduleImportSheet({
     setMatches([]);
     setDecisions({});
     setOutcomes([]);
+    setShowErrors(false);
   };
 
   const close = (o: boolean) => {
