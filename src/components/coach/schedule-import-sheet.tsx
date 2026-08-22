@@ -82,6 +82,8 @@ export function ScheduleImportSheet({
   const [matches, setMatches] = useState<MatchResult[]>([]);
   const [decisions, setDecisions] = useState<Record<string, Decision>>({});
   const [outcomes, setOutcomes] = useState<ImportOutcome[]>([]);
+  // Errors stay hidden until the coach tries to continue — typing shouldn't feel accusatory.
+  const [showErrors, setShowErrors] = useState(false);
   const csvInputRef = useRef<HTMLInputElement>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
 
@@ -98,6 +100,7 @@ export function ScheduleImportSheet({
     setMatches([]);
     setDecisions({});
     setOutcomes([]);
+    setShowErrors(false);
   };
 
   const close = (o: boolean) => {
@@ -259,6 +262,7 @@ export function ScheduleImportSheet({
           <ReviewStep
             rows={rows}
             coachSports={coachSports}
+            showErrors={showErrors}
             onChange={updateRow}
             onRemove={(id) => setRows((prev) => prev.filter((r) => r.id !== id))}
             onAdd={() => {
@@ -293,12 +297,18 @@ export function ScheduleImportSheet({
                 Cancel
               </Button>
               <Button
-                onClick={() => runMatch.mutate()}
-                disabled={rows.length === 0 || invalidCount > 0 || runMatch.isPending}
+                onClick={() => {
+                  if (invalidCount > 0) {
+                    setShowErrors(true);
+                    return;
+                  }
+                  runMatch.mutate();
+                }}
+                disabled={rows.length === 0 || runMatch.isPending}
               >
                 {runMatch.isPending
                   ? "Checking…"
-                  : invalidCount > 0
+                  : showErrors && invalidCount > 0
                     ? `${invalidCount} row${invalidCount === 1 ? "" : "s"} to fix`
                     : "Continue"}
               </Button>
@@ -467,12 +477,14 @@ const LENGTH_PRESETS = [30, 45, 60, 90];
 function ReviewStep({
   rows,
   coachSports,
+  showErrors,
   onChange,
   onRemove,
   onAdd,
 }: {
   rows: ImportRow[];
   coachSports: string[];
+  showErrors: boolean;
   onChange: (id: string, patch: Partial<ImportRow>) => void;
   onRemove: (id: string) => void;
   onAdd: () => string;
@@ -481,24 +493,13 @@ function ReviewStep({
   const [expandedId, setExpandedId] = useState<string | null>(() =>
     rows.length === 1 && !rows[0]?.firstName?.trim() ? (rows[0]?.id ?? null) : null,
   );
-  // Rows the coach adds by hand start clean — no red state until they touch them.
-  const [pristineIds, setPristineIds] = useState<Set<string>>(
-    () => new Set(rows.filter((r) => !r.firstName?.trim() && !r.lastName?.trim()).map((r) => r.id)),
-  );
 
   const rawErrors = validateRows(rows);
   const allErrors: Record<string, Record<string, string>> = {};
   for (const r of rows) {
-    allErrors[r.id] = pristineIds.has(r.id) ? {} : (rawErrors[r.id] ?? {});
+    allErrors[r.id] = showErrors ? (rawErrors[r.id] ?? {}) : {};
   }
   const handleChange = (id: string, patch: Partial<ImportRow>) => {
-    if (pristineIds.has(id)) {
-      setPristineIds((prev) => {
-        const next = new Set(prev);
-        next.delete(id);
-        return next;
-      });
-    }
     onChange(id, patch);
   };
   const badRows = rows.filter((r) => Object.keys(allErrors[r.id] ?? {}).length > 0);
@@ -620,7 +621,6 @@ function ReviewStep({
         size="sm"
         onClick={() => {
           const id = onAdd();
-          setPristineIds((prev) => new Set(prev).add(id));
           setExpandedId(id);
         }}
 
