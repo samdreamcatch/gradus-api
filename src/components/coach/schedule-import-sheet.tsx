@@ -228,7 +228,9 @@ export function ScheduleImportSheet({
             ) : null}
             <SheetTitle className="min-w-0 flex-1">{title}</SheetTitle>
           </div>
-          <SheetDescription className={step === "source" ? "sr-only" : undefined}>
+          <SheetDescription
+            className={step === "source" || step === "review" ? "sr-only" : undefined}
+          >
             {step === "source"
               ? "Import your lesson schedule."
               : step === "review"
