@@ -538,26 +538,14 @@ function ReviewStep({
 
 
       {badCount > 0 ? (
-        <button
-          type="button"
-          onClick={() => {
-            const first = badRows[0];
-            if (!first) return;
-            setExpandedId(first.id);
-            document
-              .getElementById(`import-row-${first.id}`)
-              ?.scrollIntoView({ behavior: "smooth", block: "center" });
-          }}
-          className="press-soft flex w-full items-start gap-2 rounded-xl border border-destructive/50 bg-card px-3 py-2 text-left"
-        >
+        <div className="flex w-full items-start gap-2 rounded-xl border border-destructive/50 bg-card px-3 py-2 text-left">
           <TriangleAlert className="mt-0.5 size-4 shrink-0 text-destructive" aria-hidden />
           <p className="text-xs text-text-secondary">
             <span className="font-bold text-text-primary">
               {badCount} lesson{badCount === 1 ? "" : "s"} missing {problemSummary}.
-            </span>{" "}
-            Tap to jump to the first one.
+            </span>
           </p>
-        </button>
+        </div>
       ) : null}
 
 
