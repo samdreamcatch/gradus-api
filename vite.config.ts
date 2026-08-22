@@ -17,38 +17,7 @@ export default defineConfig({
     server: { entry: "server" },
   },
   vite: {
-    build: process.env["ANALYZE"] ? { sourcemap: true } : {},
     plugins: [
-      // Client-only: pull the long-lived framework code into its own chunk so a
-      // routine app deploy doesn't invalidate it in the browser / service-worker
-      // cache. Deliberately conservative — one vendor chunk, no further
-      // splitting, so phones on cellular don't pay for extra round-trips.
-      {
-        name: "gradus:vendor-framework-chunk",
-        applyToEnvironment: (env: { name: string }) => env.name === "client",
-        outputOptions(options: Record<string, unknown>) {
-          options["manualChunks"] = (id: string) => {
-            if (!id.includes("node_modules")) return;
-            if (
-              /node_modules\/(react|react-dom|scheduler|use-sync-external-store)\//.test(id) ||
-              id.includes("node_modules/@tanstack/")
-            ) {
-              return "vendor-framework";
-            }
-            return;
-          };
-          return options;
-        },
-      },
-      ...(process.env["ANALYZE"]
-        ? [
-            visualizer({
-              filename: `/tmp/stats-${statsSeq++}-${Math.random().toString(36).slice(2, 7)}.json`,
-              template: "raw-data",
-              emitFile: false,
-            }),
-          ]
-        : []),
       VitePWA({
         registerType: "autoUpdate",
         injectRegister: null,
