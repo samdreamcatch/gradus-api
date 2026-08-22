@@ -329,13 +329,14 @@ export const matchScheduleRows = createServerFn({ method: "POST" })
     const results: MatchResult[] = data.athletes.map((input) => {
       const candidates = new Map<string, MatchCandidate>();
 
-      const rowEmails = [input.guardianEmail, input.athleteEmail].filter(Boolean);
+      const rowEmails = [input.guardianEmail, input.athleteEmail]
+        .filter(Boolean)
+        .map((e) => e!.toLowerCase());
       for (const a of emailById.values()) {
         const guardianHit =
           a.guardian_email != null && rowEmails.includes(a.guardian_email.toLowerCase());
-        const accountHit = athletesOfMatchedAccounts.some(
-          (x) => x.id === a.id && rowEmails.some((e) => userIdByEmail.has(e)),
-        );
+        // Scoped per email: this athlete must belong to one of THIS row's emails.
+        const accountHit = rowEmails.some((e) => athleteIdsByEmail.get(e)?.has(a.id));
         if (!guardianHit && !accountHit) continue;
         candidates.set(a.id, {
           athleteId: a.id,
