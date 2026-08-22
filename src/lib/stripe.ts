@@ -1,27 +1,19 @@
-import { loadStripe, type Stripe } from "@stripe/stripe-js";
+// `@stripe/stripe-js/pure` does NOT inject https://js.stripe.com on import —
+// the ~1MB script is fetched only when loadStripe() is actually called. The
+// default entry point auto-injects it on every page that touches this module.
+import { loadStripe, type Stripe } from "@stripe/stripe-js/pure";
 
-export type StripeEnv = "sandbox" | "live";
+import { getStripeClientToken, getStripeEnvironment, type StripeEnv } from "./stripe-env";
 
-const clientToken = import.meta.env.VITE_PAYMENTS_CLIENT_TOKEN as string | undefined;
-
-function paymentsEnvironment(): StripeEnv {
-  if (clientToken?.startsWith("pk_test_")) return "sandbox";
-  if (clientToken?.startsWith("pk_live_")) return "live";
-  throw new Error(
-    "Stripe payments are not configured for this build. Complete Stripe go-live in your Lovable project to enable production checkout.",
-  );
-}
+export type { StripeEnv };
+export { getStripeEnvironment };
 
 let stripePromise: Promise<Stripe | null> | null = null;
 
 export function getStripe(): Promise<Stripe | null> {
   if (!stripePromise) {
-    paymentsEnvironment();
-    stripePromise = loadStripe(clientToken as string);
+    getStripeEnvironment();
+    stripePromise = loadStripe(getStripeClientToken() as string);
   }
   return stripePromise;
-}
-
-export function getStripeEnvironment(): StripeEnv {
-  return paymentsEnvironment();
 }
