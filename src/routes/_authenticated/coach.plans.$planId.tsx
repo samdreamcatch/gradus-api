@@ -1644,13 +1644,9 @@ function NewMoveForm({
                 </li>
               ))}
             </ul>
-            <button
-              type="button"
-              onClick={() => setIgnoreDupes((v) => !v)}
-              className="mt-2 text-[11px] font-bold uppercase tracking-widest text-text-secondary hover:text-text-primary"
-            >
-              {ignoreDupes ? "✓ Creating anyway" : "Ignore — create new anyway"}
-            </button>
+            <p className="mt-2 text-[11px] text-text-secondary">
+              Not a match? Use “Create new anyway” below.
+            </p>
           </div>
         ) : null}
 
