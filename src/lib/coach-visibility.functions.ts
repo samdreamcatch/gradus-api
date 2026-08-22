@@ -342,7 +342,16 @@ export const listMyCoachVisibility = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const admin = await getAdmin();
-    const me = await coachProfile(context.userId);
+    // Non-coach viewers (parents/athletes) simply have nothing here.
+    const meRes = await admin
+      .from("coach_profiles")
+      .select("id, first_name, last_name")
+      .eq("user_id", context.userId)
+      .maybeSingle();
+    if (meRes.error) dbError(meRes.error);
+    if (!meRes.data) return { pending: [], connected: [], awaiting: [] };
+    const me = meRes.data as { id: string; first_name: string; last_name: string };
+
 
     const res = await admin
       .from("coach_visibility_links")
