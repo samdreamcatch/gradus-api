@@ -421,6 +421,12 @@ function RosterPage() {
       <CoachBottomNav />
       <AthleteDetailSheet athleteId={selectedAthleteId} onOpenChange={setSelectedAthleteId} />
       <CoachVisibilityAutoPrompt />
+      <ScheduleImportSheet
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        coachSports={coachSports}
+      />
+
     </>
   );
 }
