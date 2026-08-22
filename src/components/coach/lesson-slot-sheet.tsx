@@ -446,3 +446,152 @@ export function LessonSlotSheet({
     </Sheet>
   );
 }
+
+/**
+ * Inline "add new athlete" form — gathers the same fields as the other
+ * add-athlete flows (name, birthdate, sport, guardian email for minors).
+ */
+function NewAthleteForm({
+  onCancel,
+  onCreated,
+}: {
+  onCancel: () => void;
+  onCreated: (athleteId: string) => void;
+}) {
+  const qc = useQueryClient();
+  const { data: roster } = useQuery(rosterQueryOptions);
+  const coachSports = roster?.coachSports ?? [];
+
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [birthdate, setBirthdate] = useState("");
+  const [guardianEmail, setGuardianEmail] = useState("");
+  const [sport, setSport] = useState<string>(coachSports[0] ?? "");
+  const [showErrors, setShowErrors] = useState(false);
+
+  useEffect(() => {
+    if (!sport && coachSports.length > 0) setSport(coachSports[0]);
+  }, [coachSports, sport]);
+
+  const isMinor = /^\d{4}-\d{2}-\d{2}$/.test(birthdate) ? ageInYears(birthdate) < 18 : false;
+
+  const errors = {
+    firstName: firstName.trim() ? null : "First name is required",
+    lastName: lastName.trim() ? null : "Last name is required",
+    birthdate: /^\d{4}-\d{2}-\d{2}$/.test(birthdate) ? null : "Birthdate is required",
+    guardianEmail:
+      isMinor && !guardianEmail.trim()
+        ? "Athletes under 18 need a parent or guardian email"
+        : guardianEmail.trim() && !/^\S+@\S+\.\S+$/.test(guardianEmail.trim())
+          ? "Enter a valid email"
+          : null,
+  };
+  const hasErrors = Object.values(errors).some(Boolean);
+
+  const create = useMutation({
+    mutationFn: () =>
+      addAthleteWithGuardian({
+        data: {
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          birthdate,
+          guardianEmail: guardianEmail.trim() ? guardianEmail.trim() : undefined,
+          sport: sport || undefined,
+        },
+      }),
+    onSuccess: async (res) => {
+      await qc.invalidateQueries({ queryKey: ["coach", "roster"] });
+      toast.success(
+        res.guardianEmail
+          ? `${firstName.trim()} added — invite sent to ${res.guardianEmail}`
+          : `${firstName.trim()} added`,
+      );
+      onCreated(res.athleteId);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const field = (label: string, node: React.ReactNode, error: string | null) => (
+    <div>
+      <label className="mb-1 block text-[11px] font-bold uppercase tracking-widest text-text-tertiary">
+        {label}
+      </label>
+      {node}
+      {showErrors && error ? <p className="mt-1 text-xs text-destructive">{error}</p> : null}
+    </div>
+  );
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-3">
+        {field(
+          "First name",
+          <Input value={firstName} onChange={(e) => setFirstName(e.target.value)} />,
+          errors.firstName,
+        )}
+        {field(
+          "Last name",
+          <Input value={lastName} onChange={(e) => setLastName(e.target.value)} />,
+          errors.lastName,
+        )}
+      </div>
+
+      {field(
+        "Birthdate",
+        <Input type="date" value={birthdate} onChange={(e) => setBirthdate(e.target.value)} />,
+        errors.birthdate,
+      )}
+
+      {coachSports.length > 0
+        ? field(
+            "Sport",
+            <Select value={sport} onValueChange={setSport}>
+              <SelectTrigger className="w-full bg-card">
+                <SelectValue placeholder="Pick a sport" />
+              </SelectTrigger>
+              <SelectContent>
+                {coachSports.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {getSport(s as SportKey)?.label ?? s}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>,
+            null,
+          )
+        : null}
+
+      {field(
+        isMinor ? "Parent / guardian email" : "Parent / guardian email (optional)",
+        <Input
+          type="email"
+          inputMode="email"
+          value={guardianEmail}
+          onChange={(e) => setGuardianEmail(e.target.value)}
+          placeholder="parent@example.com"
+        />,
+        errors.guardianEmail,
+      )}
+
+      <p className="text-xs text-text-secondary">
+        If they&apos;re 18 or older, use their own email — we&apos;ll send the invite there.
+      </p>
+
+      <SheetFooter className="mt-2 flex-row justify-end gap-2">
+        <Button variant="ghost" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button
+          onClick={() => {
+            setShowErrors(true);
+            if (hasErrors) return;
+            create.mutate();
+          }}
+          disabled={create.isPending}
+        >
+          {create.isPending ? "Adding…" : "Add athlete"}
+        </Button>
+      </SheetFooter>
+    </div>
+  );
+}
