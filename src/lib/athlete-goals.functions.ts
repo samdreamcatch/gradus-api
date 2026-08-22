@@ -132,12 +132,17 @@ export const getAthleteGoalsDashboard = createServerFn({ method: "GET" })
 
     const sports: ParentGoalSportDTO[] = (goalsRes.data ?? []).map((g) => {
       const coachId = primaryBySport.get(g.sport) ?? null;
-      const hoursAtCurrent = coachId
-        ? (hoursByKey.get(`${coachId}|${g.sport}|${g.current_level_key}`) ?? null)
-        : null;
-      const hoursAtGoal = coachId
-        ? (hoursByKey.get(`${coachId}|${g.sport}|${g.season_goal_key}`) ?? null)
-        : null;
+      const override = overrideBySport.get(g.sport) ?? null;
+      // Override → primary coach's level hours → Gradus default, so an
+      // athlete without a coach still sees an expectation.
+      const hoursAtCurrent =
+        override ??
+        (coachId ? hoursByKey.get(`${coachId}|${g.sport}|${g.current_level_key}`) : undefined) ??
+        getSuggestedHours(g.sport, g.current_level_key);
+      const hoursAtGoal =
+        override ??
+        (coachId ? hoursByKey.get(`${coachId}|${g.sport}|${g.season_goal_key}`) : undefined) ??
+        getSuggestedHours(g.sport, g.season_goal_key);
       return {
         sport: g.sport,
         currentLevelKey: g.current_level_key,
