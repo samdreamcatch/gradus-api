@@ -511,10 +511,8 @@ function ReviewStep({
 
   return (
     <div className="mt-4 space-y-2">
-      <p className="rounded-xl border border-divider bg-elevated px-3 py-2 text-xs text-text-secondary">
-        Check these lessons and fix anything highlighted. Nothing is saved until you import — then
-        guardians (or adult athletes) get their invite email right away.
-      </p>
+
+
 
       {badCount > 0 ? (
         <button
