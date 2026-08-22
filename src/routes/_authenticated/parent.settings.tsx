@@ -46,6 +46,7 @@ import {
 import { ParentBottomNav } from "@/components/parent/bottom-nav";
 import { AthleteInviteCard } from "@/components/parent/athlete-invite-card";
 import { ConnectCoachSheet } from "@/components/parent/connect-coach-sheet";
+import { JoinTeamSheet } from "@/components/parent/join-team-sheet";
 import { ConnectGuardianSheet } from "@/components/parent/connect-guardian-sheet";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -268,7 +269,7 @@ function ParentSettingsPage() {
  * through the Stripe billing portal. Covered co-guardians see status only.
  */
 function PlanSection() {
-  const navigate = useNavigate();
+  const [joinOpen, setJoinOpen] = useState(false);
   const fetchStatus = useServerFn(getTeamPlanStatus);
   const fetchGuardians = useServerFn(listTeamGuardians);
   const portal = useServerFn(createParentBillingPortalSession);
@@ -323,11 +324,12 @@ function PlanSection() {
         <SettingsList>
           <SettingsButtonRow
             icon={<CreditCard className="size-4" />}
-            label="Upgrade to Team"
-            description="Add up to 3 parents or guardians per athlete"
-            onClick={() => void navigate({ to: "/parent/team", search: {} })}
+            label="Join or start a team"
+            description="Have an invite code, or add up to 3 parents or guardians per athlete"
+            onClick={() => setJoinOpen(true)}
           />
         </SettingsList>
+        <JoinTeamSheet open={joinOpen} onOpenChange={setJoinOpen} />
       </>
     );
   }

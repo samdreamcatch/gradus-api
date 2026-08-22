@@ -1,15 +1,14 @@
 import { useMemo, useState } from "react";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { EmbeddedCheckoutProvider, EmbeddedCheckout } from "@stripe/react-stripe-js";
-import { ArrowLeft, Check, CreditCard, KeyRound, Loader2, Users } from "lucide-react";
+import { ArrowLeft, Check, CreditCard, Loader2, Users } from "lucide-react";
 import { toast } from "sonner";
 
 import { ParentBottomNav } from "@/components/parent/bottom-nav";
 import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { getStripe, getStripeEnvironment } from "@/lib/stripe";
 import {
@@ -17,7 +16,6 @@ import {
   startTeamCheckout,
   createParentBillingPortalSession,
 } from "@/lib/parent-checkout.functions";
-import { claimGuardianInvite } from "@/lib/team-guardians.functions";
 import { CoachVisibilitySection } from "@/components/parent/coach-visibility-toggles";
 
 type Interval = "month" | "year";
@@ -319,71 +317,8 @@ function ParentTeamPage() {
         </div>
 
         <CoachVisibilitySection planActive={planActive} />
-
-        {/* Join by code */}
-        <div className="mt-7 flex w-full items-center gap-3">
-
-          <div className="h-px flex-1 bg-divider" />
-          <span className="text-[10px] font-semibold uppercase tracking-widest text-text-tertiary">
-            Or join a team
-          </span>
-          <div className="h-px flex-1 bg-divider" />
-        </div>
-
-        <JoinByCodeSection />
       </div>
       <ParentBottomNav />
     </>
-  );
-}
-
-/** Accept an invite you were given as a code (rather than a link). */
-function JoinByCodeSection() {
-  const qc = useQueryClient();
-  const navigate = useNavigate();
-  const claim = useServerFn(claimGuardianInvite);
-  const [code, setCode] = useState("");
-  const [busy, setBusy] = useState(false);
-
-  return (
-    <div className="mt-5 w-full rounded-xl border border-divider bg-elevated p-3">
-      <div className="flex items-start gap-3">
-        <KeyRound className="mt-0.5 h-5 w-5 shrink-0 text-text-secondary" />
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-text-primary">Have an invite code?</p>
-          <p className="mt-0.5 text-[11px] text-text-tertiary sm:text-xs">
-            Enter the code another parent shared to join their athlete.
-          </p>
-          <div className="mt-3 flex items-center gap-2">
-            <Input
-              placeholder="Invite code"
-              value={code}
-              onChange={(e) => setCode(e.target.value.toUpperCase())}
-              className="font-mono"
-            />
-            <Button
-              type="button"
-              disabled={busy || code.trim().length < 4}
-              onClick={async () => {
-                setBusy(true);
-                try {
-                  await claim({ data: { code: code.trim() } });
-                  toast.success("You've been added as a guardian.");
-                  setCode("");
-                  void qc.invalidateQueries();
-                  void navigate({ to: "/parent/settings" });
-                } catch (e) {
-                  toast.error(e instanceof Error ? e.message : "Couldn't accept that invite.");
-                } finally {
-                  setBusy(false);
-                }
-              }}
-            >
-              {busy ? <Loader2 className="size-4 animate-spin" /> : "Join"}
-            </Button>
-          </div>
-        </div>
-      </div>
-    </div>
   );
 }
