@@ -242,9 +242,6 @@ export function LessonSlotSheet({
               </Button>
               <SheetTitle className="min-w-0 flex-1">New athlete</SheetTitle>
             </div>
-            <SheetDescription>
-              We&apos;ll email their parent or guardian a link to join.
-            </SheetDescription>
           </SheetHeader>
           <div className="mt-4">
             <NewAthleteForm
