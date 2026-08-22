@@ -581,9 +581,14 @@ function ReviewStep({
             />
 
             {expanded ? (
-              <RowEditor row={row} errors={errors} coachSports={coachSports} onChange={onChange} />
+              <RowEditor
+                row={row}
+                errors={errors}
+                coachSports={coachSports}
+                onChange={handleChange}
+              />
             ) : (
-              <RowSummary row={row} errors={errors} onChange={onChange} />
+              <RowSummary row={row} errors={errors} onChange={handleChange} />
             )}
           </div>
         );
@@ -593,7 +598,12 @@ function ReviewStep({
         type="button"
         variant="outline"
         size="sm"
-        onClick={() => setExpandedId(onAdd())}
+        onClick={() => {
+          const id = onAdd();
+          setPristineIds((prev) => new Set(prev).add(id));
+          setExpandedId(id);
+        }}
+
         className="w-full"
       >
         <Plus className="size-4" aria-hidden />
