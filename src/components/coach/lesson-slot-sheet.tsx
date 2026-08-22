@@ -225,6 +225,42 @@ export function LessonSlotSheet({
       ? `Affects ${mode.date} only — other weeks stay on the regular schedule.`
       : "Recurring weekly lesson.";
 
+  if (mode.kind === "create" && addingAthlete) {
+    return (
+      <Sheet open={open} onOpenChange={onOpenChange}>
+        <SheetContent side="bottom" className="paper-surface max-h-[90dvh] overflow-y-auto">
+          <SheetHeader className="text-left">
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label="Back"
+                onClick={() => setAddingAthlete(false)}
+                className="-ml-2 shrink-0"
+              >
+                <ChevronLeft className="size-5" aria-hidden />
+              </Button>
+              <SheetTitle className="min-w-0 flex-1">New athlete</SheetTitle>
+            </div>
+            <SheetDescription>
+              We&apos;ll email their parent or guardian a link to join.
+            </SheetDescription>
+          </SheetHeader>
+          <div className="mt-4">
+            <NewAthleteForm
+              onCancel={() => setAddingAthlete(false)}
+              onCreated={(id) => {
+                setAthleteId(id);
+                setAddingAthlete(false);
+              }}
+            />
+          </div>
+        </SheetContent>
+      </Sheet>
+    );
+  }
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="paper-surface max-h-[90dvh] overflow-y-auto">
@@ -240,7 +276,16 @@ export function LessonSlotSheet({
               <label className="mb-1 block text-[11px] font-bold uppercase tracking-widest text-text-tertiary">
                 Athlete
               </label>
-              <Select value={athleteId} onValueChange={setAthleteId}>
+              <Select
+                value={athleteId}
+                onValueChange={(v) => {
+                  if (v === "__new") {
+                    setAddingAthlete(true);
+                    return;
+                  }
+                  setAthleteId(v);
+                }}
+              >
                 <SelectTrigger className="w-full bg-card">
                   <SelectValue placeholder="Pick an athlete" />
                 </SelectTrigger>
@@ -250,6 +295,12 @@ export function LessonSlotSheet({
                       {a.firstName} {a.lastName}
                     </SelectItem>
                   ))}
+                  <SelectItem value="__new">
+                    <span className="flex items-center gap-2">
+                      <UserPlus className="size-3.5" aria-hidden />
+                      Add new athlete…
+                    </span>
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
