@@ -57,11 +57,21 @@ export function LessonWrapUpProvider() {
   const fetchPending = useServerFn(getPendingLessonWrapUps);
   const { data: pending = [] } = useQuery({
     queryKey: ["lesson-wrap-ups", tick.lessonDate, tick.dayOfWeek, tick.currentMinute],
-    queryFn: () => fetchPending({ data: tick }),
+    // Background poll: never let a transient server-fn failure bubble into an
+    // error boundary / blank screen. Quietly empty for non-coach users too.
+    queryFn: async () => {
+      try {
+        return await fetchPending({ data: tick });
+      } catch {
+        return [] as PendingWrapUp[];
+      }
+    },
+    retry: false,
+    throwOnError: false,
     refetchInterval: 60_000,
     refetchOnWindowFocus: true,
-    // Quietly empty for non-coach users (server returns []).
   });
+
 
   // Track which athletes we've already shown the modal for in this session,
   // so the modal doesn't keep re-popping after the user dismisses it.
