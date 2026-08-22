@@ -191,25 +191,61 @@ export function validateRow(row: ImportRow): RowErrors {
   const errors: RowErrors = {};
   if (!row.firstName.trim()) errors.firstName = "Required";
   if (!row.lastName.trim()) errors.lastName = "Required";
-  if (row.dayOfWeek == null) errors.dayOfWeek = "Required";
-  if (row.startMinute == null) errors.startMinute = "Required";
-  if (row.lengthMinutes == null || row.lengthMinutes <= 0) errors.lengthMinutes = "Required";
+  if (row.dayOfWeek == null) {
+    errors.dayOfWeek = row.unreadable?.dayOfWeek ? "Couldn't read the day — pick one" : "Pick a day";
+  }
+  if (row.startMinute == null) {
+    errors.startMinute = row.unreadable?.startMinute
+      ? "Couldn't read that time — e.g. 4:00 PM"
+      : "Add a start time";
+  }
+  if (row.lengthMinutes == null || row.lengthMinutes <= 0) {
+    errors.lengthMinutes = "Pick how long it runs";
+  }
   if (row.startMinute != null && row.lengthMinutes != null) {
     if (row.startMinute + row.lengthMinutes > 1440) errors.lengthMinutes = "Runs past midnight";
   }
   const guardian = row.guardianEmail.trim();
   const athlete = row.athleteEmail.trim();
   if (!guardian && !athlete) {
-    errors.guardianEmail = "Add a guardian or athlete email";
+    errors.guardianEmail = "Required for under 18 — or add an athlete email instead";
   }
-  if (guardian && !EMAIL_RE.test(guardian)) errors.guardianEmail = "Invalid email";
-  if (athlete && !EMAIL_RE.test(athlete)) errors.athleteEmail = "Invalid email";
+  if (guardian && !EMAIL_RE.test(guardian)) errors.guardianEmail = "e.g. parent@example.com";
+  if (athlete && !EMAIL_RE.test(athlete)) errors.athleteEmail = "e.g. athlete@example.com";
   return errors;
+}
+
+/**
+ * Validate the whole table so we can also flag duplicates — the same athlete
+ * at the same day and time twice, which the commit step would silently skip.
+ */
+export function validateRows(rows: ImportRow[]): Record<string, RowErrors> {
+  const out: Record<string, RowErrors> = {};
+  const seen = new Map<string, string>();
+  for (const row of rows) {
+    const errors = validateRow(row);
+    if (row.dayOfWeek != null && row.startMinute != null && row.firstName && row.lastName) {
+      const key = [
+        row.firstName.trim().toLowerCase(),
+        row.lastName.trim().toLowerCase(),
+        row.dayOfWeek,
+        row.startMinute,
+      ].join("|");
+      if (seen.has(key)) {
+        errors.startMinute = "Duplicate — same athlete, same day and time";
+      } else {
+        seen.set(key, row.id);
+      }
+    }
+    out[row.id] = errors;
+  }
+  return out;
 }
 
 export function rowHasErrors(row: ImportRow): boolean {
   return Object.keys(validateRow(row)).length > 0;
 }
+
 
 // ---------- grouping ----------
 
