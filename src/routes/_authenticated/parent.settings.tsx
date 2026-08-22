@@ -1776,13 +1776,3 @@ function SignOutRow() {
     />
   );
 }
-
-/** Coach visibility hub — gated on the household's Team plan being active. */
-function CoachVisibilitySectionForSettings() {
-  const fetchGuardians = useServerFn(listTeamGuardians);
-  const { data } = useQuery({
-    queryKey: ["team-guardians"],
-    queryFn: () => fetchGuardians(),
-  });
-  return <CoachVisibilitySettings planActive={Boolean(data?.planActive)} />;
-}
