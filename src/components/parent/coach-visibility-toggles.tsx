@@ -51,22 +51,79 @@ export function pairLabel(coachName: string, p: VisibilityPair): string {
   return `Waiting on ${me} and ${them} to accept`;
 }
 
-/** Per-pair detail lines, shown under the summary when there's more than one. */
+/** Per-pair detail lines, shown inside the status popover. */
 export function pairLabels(coach: Pick<CoachRow, "name" | "pairs">): string[] {
   return (coach.pairs ?? []).map((p) => pairLabel(coach.name, p));
 }
 
 /**
- * Summary line under a coach's name. Reflects what each side has actually
- * done rather than collapsing everything into "waiting to accept".
+ * Summary line under a coach's name. One line, counts only — the per-pairing
+ * wording lives behind a tap (see CoachVisibilityStatus).
  */
 export function statusLabel(coach: Pick<CoachRow, "name" | "enabled" | "status" | "pairs">): string {
   if (!coach.enabled) return "Off";
-  const lines = Array.from(new Set(pairLabels(coach)));
-  if (lines.length === 0) return "On — add another coach to connect";
-  if (lines.length <= 2) return lines.join(" · ");
-  return `${lines.slice(0, 2).join(" · ")} · +${lines.length - 2} more`;
+  const pairs = coach.pairs ?? [];
+  if (pairs.length === 0) return "On — add another coach to connect";
+  let accepted = 0;
+  let declined = 0;
+  let pending = 0;
+  for (const p of pairs) {
+    if (p.myStatus === "declined" || p.theirStatus === "declined") declined += 1;
+    else if (p.myStatus === "accepted" && p.theirStatus === "accepted") accepted += 1;
+    else pending += 1;
+  }
+  const parts: string[] = [];
+  if (accepted) parts.push(`${accepted} accepted`);
+  if (pending) parts.push(`${pending} pending`);
+  if (declined) parts.push(`${declined} declined`);
+  return parts.join(" · ");
 }
+
+/**
+ * The one-line status. Tappable when there are pairings to explain; plain text
+ * otherwise. The popover is top-aligned so a phone keyboard/thumb doesn't sit
+ * over it.
+ */
+export function CoachVisibilityStatus({
+  coach,
+  className,
+}: {
+  coach: Pick<CoachRow, "name" | "enabled" | "status" | "pairs">;
+  className?: string;
+}) {
+  const label = statusLabel(coach);
+  const lines = coach.enabled ? Array.from(new Set(pairLabels(coach))) : [];
+  const textClass = className ?? "text-[11px] text-text-tertiary";
+
+  if (lines.length === 0) return <p className={textClass}>{label}</p>;
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className={`press-soft truncate text-left underline decoration-dotted underline-offset-2 ${textClass}`}
+          aria-label={`${label} — see details`}
+        >
+          {label}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="start" side="bottom" className="w-64 p-3">
+        <p className="text-[10px] font-semibold uppercase tracking-widest text-text-tertiary">
+          Connection details
+        </p>
+        <ul className="mt-1.5 space-y-1">
+          {lines.map((line) => (
+            <li key={line} className="text-xs text-text-secondary">
+              {line}
+            </li>
+          ))}
+        </ul>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 
 
 /** Shared data + toggle logic for the parent-facing coach visibility controls. */
