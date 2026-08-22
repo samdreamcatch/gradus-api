@@ -325,7 +325,11 @@ function PlanSection() {
           <SettingsButtonRow
             icon={<CreditCard className="size-4" />}
             label="Join or start a team"
-            description="A team lets up to 3 parents or guardians share an athlete, and lets their coaches see each other's plans."
+            description={
+              <span className="text-xs text-text-secondary">
+                A team lets up to 3 parents or guardians share an athlete, and lets their coaches see each other's plans.
+              </span>
+            }
             onClick={() => setJoinOpen(true)}
           />
         </SettingsList>
