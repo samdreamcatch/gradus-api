@@ -649,7 +649,6 @@ function RowSummary({
 }) {
   const email = row.guardianEmail || row.athleteEmail;
   const [collecting, setCollecting] = useState(!email);
-  const [adult, setAdult] = useState(Boolean(row.athleteEmail && !row.guardianEmail));
   const otherErrors = Object.entries(errors)
     .filter(([k]) => k !== "guardianEmail" && k !== "athleteEmail")
     .map(([, v]) => v);
@@ -661,48 +660,21 @@ function RowSummary({
       ) : (
         <div className="mt-2">
           <span className={LABEL}>Email needed</span>
-          <div className="flex items-center gap-1.5">
-            <Input
-              type="email"
-              inputMode="email"
-              placeholder={adult ? "athlete@example.com" : "parent@example.com"}
-              value={adult ? row.athleteEmail : row.guardianEmail}
-              onBlur={() => {
-                if (row.guardianEmail || row.athleteEmail) setCollecting(false);
-              }}
-              onChange={(e) => {
-                const v = e.target.value.toLowerCase();
-                onChange(row.id, adult ? { athleteEmail: v } : { guardianEmail: v });
-              }}
-              className="h-9 flex-1"
-            />
-            <button
-              type="button"
-              onClick={() => {
-                const next = !adult;
-                setAdult(next);
-                onChange(
-                  row.id,
-                  next
-                    ? { athleteEmail: row.guardianEmail, guardianEmail: "" }
-                    : { guardianEmail: row.athleteEmail, athleteEmail: "" },
-                );
-              }}
-              className={cn(
-                "press-soft shrink-0 rounded-full border px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-widest",
-                adult
-                  ? "border-accent bg-accent text-accent-foreground"
-                  : "border-divider bg-card text-text-secondary",
-              )}
-            >
-              Adult
-            </button>
-          </div>
+          <Input
+            type="email"
+            inputMode="email"
+            placeholder="parent@example.com"
+            value={row.guardianEmail}
+            onBlur={() => {
+              if (row.guardianEmail || row.athleteEmail) setCollecting(false);
+            }}
+            onChange={(e) => onChange(row.id, { guardianEmail: e.target.value.toLowerCase() })}
+            className="h-9 w-full"
+          />
           <p className="mt-1 text-[11px] text-text-tertiary">
-            {adult
-              ? "The athlete's own email (18+)"
-              : "Parent / guardian email — required for anyone under 18"}
+            Parent / guardian email — required for anyone under 18
           </p>
+
         </div>
       )}
       {otherErrors.length > 0 ? (
