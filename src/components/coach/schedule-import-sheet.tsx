@@ -749,10 +749,11 @@ function RowSummary({
         <p className="mt-1 truncate text-xs text-text-tertiary">{email}</p>
       ) : (
         <div className="mt-2">
-          <span className={LABEL}>Email needed</span>
+          <span className={LABEL}>Email</span>
           <Input
             type="email"
             inputMode="email"
+            placeholder="parent@example.com"
             value={row.guardianEmail}
             onBlur={() => {
               if (row.guardianEmail || row.athleteEmail) setCollecting(false);
@@ -761,9 +762,8 @@ function RowSummary({
             className="h-9 w-full"
           />
           <p className="mt-1 text-[11px] text-text-tertiary">
-            Parent / guardian email is required for anyone under 18
+            Parent / guardian email — or the athlete&apos;s own if they&apos;re 18+
           </p>
-
         </div>
       )}
       {otherErrors.length > 0 ? (
