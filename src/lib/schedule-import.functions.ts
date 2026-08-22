@@ -15,6 +15,8 @@ export type MatchCandidate = {
   nameAlsoMatches: boolean;
 
   onRoster: boolean;
+  /** True when name/guardian name are shown as "First L." because there's no connection yet. */
+  redacted: boolean;
   /** Parent / guardian on the existing account, when there is one. */
   guardianName: string | null;
   /** Sport + level keys from the athlete's existing goals, when set. */
