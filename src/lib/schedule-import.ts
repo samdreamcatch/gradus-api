@@ -501,13 +501,17 @@ export function rowsFromParsedLessons(
   }[],
   defaultSport = "",
 ): ImportRow[] {
-  return lessons.map((l) => ({
-    id: newRowId(),
-    firstName: l.firstName.trim(),
-    lastName: l.lastName.trim(),
-    dayOfWeek: parseDay(l.day),
-    startMinute: parseTimeToMinutes(l.startTime),
-    lengthMinutes: l.lengthMinutes && l.lengthMinutes > 0 ? l.lengthMinutes : 60,
+  return lessons.map((l) => {
+    const dayOfWeek = parseDay(l.day);
+    const startMinute = parseTimeToMinutes(l.startTime);
+    return {
+      id: newRowId(),
+      firstName: l.firstName.trim(),
+      lastName: l.lastName.trim(),
+      dayOfWeek,
+      startMinute,
+      lengthMinutes: l.lengthMinutes && l.lengthMinutes > 0 ? l.lengthMinutes : 60,
+
     frequency: parseFrequency(l.frequency),
     guardianEmail: (l.guardianEmail ?? "").trim().toLowerCase(),
     athleteEmail: (l.athleteEmail ?? "").trim().toLowerCase(),
