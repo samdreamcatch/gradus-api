@@ -369,6 +369,19 @@ export const matchScheduleRows = createServerFn({ method: "POST" })
         return 0;
       });
 
+      // Name + email both line up on one athlete: confirmed, hide the alternatives.
+      const confirmed = list.find(
+        (c) => c.reason === "email" && norm(c.name) === norm(`${input.firstName} ${input.lastName}`),
+      );
+      if (confirmed) {
+        return {
+          key: input.key,
+          status: "exact",
+          suggestedAthleteId: confirmed.athleteId,
+          candidates: [confirmed],
+        };
+      }
+
       // Only auto-suggest a name-only match when it is the single hit; email
       // matches (and anyone already on this coach's roster) always win.
       const strong = list.find((c) => c.onRoster) ?? list.find((c) => c.reason === "email");
