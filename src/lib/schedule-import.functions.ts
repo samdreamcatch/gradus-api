@@ -401,9 +401,13 @@ export const matchScheduleRows = createServerFn({ method: "POST" })
           name: `${a.first_name} ${a.last_name}`.trim(),
           maskedEmail: maskEmail(a.guardian_email),
           reason: "email",
+          nameAlsoMatches:
+            norm(a.first_name) === norm(input.firstName) &&
+            norm(a.last_name) === norm(input.lastName),
           onRoster: rosterIds.has(a.id),
           ...detailsFor(a.id),
         });
+
       }
 
       for (const a of nameMatches) {
