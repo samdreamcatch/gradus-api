@@ -197,7 +197,7 @@ export function CoachVisibilitySettingsRow() {
   const q = useCoachVisibility();
   const [open, setOpen] = useState(false);
   const pending = q.data?.pending.length ?? 0;
-  const connected = q.data?.connected.length ?? 0;
+  const connected = (q.data?.connected.length ?? 0) + (q.data?.awaiting.length ?? 0);
 
   return (
     <>
