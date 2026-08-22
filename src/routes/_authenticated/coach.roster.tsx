@@ -248,18 +248,27 @@ function RosterPage() {
 
               <div className="min-w-0 flex-1">
                 {tab === "schedule" && athletes.length > 0 ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="w-full"
-                    onClick={() => scheduleRef.current?.openCreateLesson()}
-                  >
-                    <Plus className="size-4" aria-hidden />
-                    <span className="truncate">Add event</span>
-                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button type="button" variant="outline" size="sm" className="w-full">
+                        <Plus className="size-4" aria-hidden />
+                        <span className="truncate">Add event</span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56">
+                      <DropdownMenuItem onSelect={() => scheduleRef.current?.openCreateLesson()}>
+                        <Plus className="size-4" aria-hidden />
+                        Add one lesson
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onSelect={() => setImportOpen(true)}>
+                        <CalendarPlus className="size-4" aria-hidden />
+                        Import my schedule
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 ) : null}
               </div>
+
             </div>
           </header>
 
