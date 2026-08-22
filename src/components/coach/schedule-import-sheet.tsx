@@ -33,7 +33,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { getSport, type SportKey } from "@/lib/coach-sports";
+import { getSport, getSportLevel, type SportKey } from "@/lib/coach-sports";
 import {
   blankRow,
   CSV_TEMPLATE,
