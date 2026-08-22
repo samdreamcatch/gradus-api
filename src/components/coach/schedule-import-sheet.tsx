@@ -259,7 +259,11 @@ export function ScheduleImportSheet({
             coachSports={coachSports}
             onChange={updateRow}
             onRemove={(id) => setRows((prev) => prev.filter((r) => r.id !== id))}
-            onAdd={() => setRows((prev) => [...prev, blankRow(defaultSport)])}
+            onAdd={() => {
+              const r = blankRow(defaultSport);
+              setRows((prev) => [...prev, r]);
+              return r.id;
+            }}
           />
         ) : null}
 
