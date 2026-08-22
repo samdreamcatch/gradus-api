@@ -588,7 +588,7 @@ function NewAthleteForm({
                 {[
                   c.maskedEmail,
                   c.guardianName ? `Guardian: ${c.guardianName}` : null,
-                  c.onRoster ? "Already on your roster" : null,
+                  c.onRoster ? "Already on your roster" : "Not connected yet",
                   c.reason === "email" ? "Email match" : "Name match",
                 ]
                   .filter(Boolean)
