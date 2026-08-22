@@ -429,7 +429,6 @@ function ParentPlanCard({
  * switch). Without the plan it's the plain coach list plus an upsell row.
  */
 function TeamPeopleGroup({ athletes }: { athletes: AthleteData[] }) {
-  const navigate = useNavigate();
   const qc = useQueryClient();
   const fetchGuardians = useServerFn(listTeamGuardians);
   const removeGuardianFn = useServerFn(removeGuardian);
@@ -650,18 +649,6 @@ function TeamPeopleGroup({ athletes }: { athletes: AthleteData[] }) {
         )}
       </div>
 
-      {!planActive && !guardiansQ.isLoading && (
-        <div className="mt-3">
-          <SettingsList>
-            <SettingsButtonRow
-              icon={<Users className="size-4" />}
-              label="Add parents & connect coaches"
-              description="On the Team plan, add up to 3 parents or guardians per athlete and let their coaches see each other's plans"
-              onClick={() => void navigate({ to: "/parent/team", search: {} })}
-            />
-          </SettingsList>
-        </div>
-      )}
     </SettingsGroup>
   );
 }
