@@ -5,9 +5,11 @@ import {
   Plus,
   Share2,
   KeyRound,
+  CalendarPlus,
   ChevronRight,
   ChevronLeft,
 } from "lucide-react";
+
 import { queryOptions, useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { CoachBottomNav } from "@/components/coach/bottom-nav";
@@ -20,6 +22,8 @@ import { getSport, type SportKey } from "@/lib/coach-sports";
 import { WeekScheduleView, type WeekScheduleHandle } from "@/components/coach/week-schedule-view";
 import { AthleteDetailSheet } from "@/components/coach/athlete-detail-sheet";
 import { BillingTab } from "@/components/coach/billing-tab";
+import { ScheduleImportSheet } from "@/components/coach/schedule-import-sheet";
+
 
 import { InviteCard } from "@/components/onboarding/invite-card";
 import { EnterInviteCodeCard } from "@/components/coach/enter-invite-code-card";
@@ -56,7 +60,7 @@ type RosterTab = "athletes" | "schedule" | "billing";
 
 type InviteStep = "hub" | "share" | "code";
 
-/** The two ways a coach can connect with an athlete, shown as a hub menu. */
+/** The ways a coach can connect with athletes, shown as a hub menu. */
 const INVITE_STEPS: {
   key: Exclude<InviteStep, "hub">;
   title: string;
@@ -76,6 +80,7 @@ const INVITE_STEPS: {
     icon: KeyRound,
   },
 ];
+
 
 function SegmentedToggle({ tab, onChange }: { tab: RosterTab; onChange: (t: RosterTab) => void }) {
   const tabs: { key: RosterTab; label: string }[] = [
@@ -149,6 +154,8 @@ function RosterPage() {
   const [selectedAthleteId, setSelectedAthleteId] = useState<string | null>(null);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteStep, setInviteStep] = useState<InviteStep>("hub");
+  const [importOpen, setImportOpen] = useState(false);
+
   const scheduleRef = useRef<WeekScheduleHandle>(null);
   const vv = useVisualViewport();
 
@@ -284,7 +291,7 @@ function RosterPage() {
               <>
                 <SheetHeader>
                   <SheetTitle>Add an athlete</SheetTitle>
-                  <SheetDescription>Two ways to connect.</SheetDescription>
+                  <SheetDescription>Three ways to fill your roster.</SheetDescription>
                 </SheetHeader>
                 <div className="mt-4 overflow-hidden rounded-xl border border-divider bg-elevated">
                   {INVITE_STEPS.map((s, i) => {
@@ -312,7 +319,27 @@ function RosterPage() {
                       </button>
                     );
                   })}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setInviteOpen(false);
+                      setImportOpen(true);
+                    }}
+                    className="press flex w-full items-center gap-3 border-t border-divider px-4 py-4 text-left"
+                  >
+                    <CalendarPlus className="size-5 shrink-0 text-accent-ink" aria-hidden />
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm font-bold text-text-primary">
+                        Import my schedule
+                      </span>
+                      <span className="mt-0.5 block text-xs text-text-secondary">
+                        CSV, a photo of your schedule, or type it in
+                      </span>
+                    </span>
+                    <ChevronRight className="size-4 shrink-0 text-text-tertiary" aria-hidden />
+                  </button>
                 </div>
+
               </>
             ) : (
               <>
@@ -396,6 +423,12 @@ function RosterPage() {
       <CoachBottomNav />
       <AthleteDetailSheet athleteId={selectedAthleteId} onOpenChange={setSelectedAthleteId} />
       <CoachVisibilityAutoPrompt />
+      <ScheduleImportSheet
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        coachSports={coachSports}
+      />
+
     </>
   );
 }
