@@ -184,6 +184,68 @@ export const addAthleteWithGuardian = createServerFn({ method: "POST" })
     return { athleteId, guardianEmail };
   });
 
+/**
+ * Link an athlete that already exists in Gradus (matched by email) onto this
+ * coach's roster instead of creating a duplicate account.
+ */
+export const linkExistingAthleteToRoster = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        athleteId: z.string().uuid(),
+        sport: z.string().trim().min(1).max(40).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const coachId = await resolveCoachId(context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const athlete = await supabaseAdmin
+      .from("athletes")
+      .select("id")
+      .eq("id", data.athleteId)
+      .maybeSingle();
+    if (athlete.error) dbError(athlete.error);
+    if (!athlete.data) throw new Error("Athlete not found");
+
+    const existing = await supabaseAdmin
+      .from("coach_athletes")
+      .select("id")
+      .eq("coach_id", coachId)
+      .eq("athlete_id", data.athleteId)
+      .maybeSingle();
+    if (existing.error) dbError(existing.error);
+
+    if (!existing.data) {
+      const link = await supabaseAdmin.from("coach_athletes").insert({
+        coach_id: coachId,
+        athlete_id: data.athleteId,
+        coach_ack_at: new Date().toISOString(),
+      });
+      if (link.error) dbError(link.error);
+    }
+
+    if (data.sport) {
+      const hasSport = await supabaseAdmin
+        .from("coach_athlete_sports")
+        .select("id")
+        .eq("coach_id", coachId)
+        .eq("athlete_id", data.athleteId)
+        .eq("sport", data.sport)
+        .maybeSingle();
+      if (!hasSport.data) {
+        await supabaseAdmin
+          .from("coach_athlete_sports")
+          .insert({ coach_id: coachId, athlete_id: data.athleteId, sport: data.sport });
+      }
+    }
+
+    return { athleteId: data.athleteId, alreadyOnRoster: Boolean(existing.data) };
+  });
+
+
 export const removeAthleteFromRoster = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: { athleteId: string }) => {
