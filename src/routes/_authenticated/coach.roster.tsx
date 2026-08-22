@@ -5,9 +5,11 @@ import {
   Plus,
   Share2,
   KeyRound,
+  CalendarPlus,
   ChevronRight,
   ChevronLeft,
 } from "lucide-react";
+
 import { queryOptions, useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { CoachBottomNav } from "@/components/coach/bottom-nav";
