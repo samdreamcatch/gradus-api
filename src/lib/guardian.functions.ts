@@ -26,7 +26,9 @@ export const getGuardianClaimSummary = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const res = await supabaseAdmin
       .from("athletes")
-      .select("id, first_name, last_name, guardian_claimed_at, added_by_coach_id, parent_id")
+      .select(
+        "id, first_name, last_name, birthdate, guardian_claimed_at, added_by_coach_id, parent_id",
+      )
       .eq("guardian_claim_token", data.token)
       .maybeSingle();
     if (res.error) dbError(res.error);
@@ -46,6 +48,7 @@ export const getGuardianClaimSummary = createServerFn({ method: "POST" })
       athleteFirstName: res.data.first_name as string,
       athleteLastName: res.data.last_name as string,
       coachName,
+      needsBirthdate: res.data.birthdate == null,
       alreadyClaimed: Boolean(res.data.guardian_claimed_at) || Boolean(res.data.parent_id),
     };
   });
@@ -64,6 +67,11 @@ export const claimGuardianAthlete = createServerFn({ method: "POST" })
         token: tokenSchema,
         firstName: z.string().trim().min(1).max(80).optional(),
         lastName: z.string().trim().min(1).max(80).optional(),
+        birthdate: z
+          .string()
+          .trim()
+          .regex(/^\d{4}-\d{2}-\d{2}$/, "Enter the athlete's date of birth")
+          .optional(),
       })
       .parse(input),
   )
@@ -73,11 +81,16 @@ export const claimGuardianAthlete = createServerFn({ method: "POST" })
 
     const athlete = await supabaseAdmin
       .from("athletes")
-      .select("id, first_name, parent_id, guardian_claimed_at")
+      .select("id, first_name, birthdate, parent_id, guardian_claimed_at")
       .eq("guardian_claim_token", data.token)
       .maybeSingle();
     if (athlete.error) dbError(athlete.error);
     if (!athlete.data) throw new Error("This link is no longer valid. Ask the coach to resend it.");
+
+    // Coaches import athletes without a birthdate; the guardian supplies it here.
+    if (athlete.data.birthdate == null && !data.birthdate) {
+      throw new Error("Enter the athlete's date of birth to finish setting up their account.");
+    }
 
     // A coach account can't double as a parent account.
     const coach = await supabaseAdmin
@@ -125,6 +138,9 @@ export const claimGuardianAthlete = createServerFn({ method: "POST" })
       .from("athletes")
       .update({
         parent_id: parent.data!.id,
+        ...(athlete.data.birthdate == null && data.birthdate
+          ? { birthdate: data.birthdate }
+          : {}),
         guardian_claimed_at: new Date().toISOString(),
         guardian_claim_token: null,
       })
