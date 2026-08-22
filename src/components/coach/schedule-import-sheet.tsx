@@ -556,7 +556,7 @@ function ReviewStep({
         const name = `${first.firstName} ${first.lastName}`.trim();
         return (
           <div
-            key={group.key}
+            key={first.id}
             id={`import-row-${first.id}`}
             className={cn(
               "rounded-xl border bg-card p-3",
