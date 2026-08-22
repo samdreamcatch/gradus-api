@@ -21,6 +21,18 @@ type CoachRow = {
   status: string;
 };
 
+type CoachVisibilityData = {
+  planActive: boolean;
+  athletes: Array<{
+    id: string;
+    firstName: string;
+    lastName: string;
+    coaches: CoachRow[];
+  }>;
+};
+
+const coachVisibilityQueryKey = ["coach-visibility"] as const;
+
 function statusLabel(status: string): string {
   switch (status) {
     case "connected":
@@ -44,21 +56,65 @@ function useCoachVisibility(enabled: boolean) {
   const [busy, setBusy] = useState<string | null>(null);
 
   const q = useQuery({
-    queryKey: ["coach-visibility"],
+    queryKey: coachVisibilityQueryKey,
     queryFn: () => fetchVisibility(),
     enabled,
   });
 
   const toggle = async (athleteId: string, coachId: string, next: boolean) => {
+    await qc.cancelQueries({ queryKey: coachVisibilityQueryKey });
+    const previous = qc
+      .getQueryData<CoachVisibilityData>(coachVisibilityQueryKey)
+      ?.athletes.find((athlete) => athlete.id === athleteId)
+      ?.coaches.find((coach) => coach.coachId === coachId);
+
+    qc.setQueryData<CoachVisibilityData>(coachVisibilityQueryKey, (current) =>
+      current
+        ? {
+            ...current,
+            athletes: current.athletes.map((athlete) =>
+              athlete.id !== athleteId
+                ? athlete
+                : {
+                    ...athlete,
+                    coaches: athlete.coaches.map((coach) =>
+                      coach.coachId === coachId
+                        ? { ...coach, enabled: next, status: next ? "waiting" : "off" }
+                        : coach,
+                    ),
+                  },
+            ),
+          }
+        : current,
+    );
     setBusy(`${athleteId}:${coachId}`);
     try {
       await setVisibility({ data: { athleteId, coachId, enabled: next } });
-      await qc.invalidateQueries({ queryKey: ["coach-visibility"] });
       toast.success(next ? "Request sent to your coaches." : "Sharing turned off.");
     } catch (e) {
+      if (previous) {
+        qc.setQueryData<CoachVisibilityData>(coachVisibilityQueryKey, (current) =>
+          current
+            ? {
+                ...current,
+                athletes: current.athletes.map((athlete) =>
+                  athlete.id !== athleteId
+                    ? athlete
+                    : {
+                        ...athlete,
+                        coaches: athlete.coaches.map((coach) =>
+                          coach.coachId === coachId ? previous : coach,
+                        ),
+                      },
+                ),
+              }
+            : current,
+        );
+      }
       toast.error(e instanceof Error ? e.message : "Couldn't update sharing.");
     } finally {
       setBusy(null);
+      void qc.invalidateQueries({ queryKey: coachVisibilityQueryKey });
     }
   };
 
