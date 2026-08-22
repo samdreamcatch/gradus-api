@@ -531,18 +531,31 @@ export const getCoachAthleteDetail = createServerFn({ method: "GET" })
     // Accepted, still parent-enabled links unlock this athlete's other coaches
     // for read-only viewing, even outside a club.
     const sharedCoachIds: string[] = [];
+    const coachVisibility: Record<string, "pending" | "declined" | "accepted"> = {};
     if (otherCoachIds.length > 0) {
       const linksRes = await supabaseAdmin
         .from("coach_visibility_links")
-        .select("coach_a_id, coach_b_id")
+        .select("coach_a_id, coach_b_id, a_status, b_status")
         .eq("athlete_id", data.athleteId)
-        .eq("a_status", "accepted")
-        .eq("b_status", "accepted")
         .or(`coach_a_id.eq.${coachId},coach_b_id.eq.${coachId}`);
       if (linksRes.error) dbError(linksRes.error);
-      for (const l of (linksRes.data ?? []) as { coach_a_id: string; coach_b_id: string }[]) {
+      const links = (linksRes.data ?? []) as {
+        coach_a_id: string;
+        coach_b_id: string;
+        a_status: string;
+        b_status: string;
+      }[];
+      for (const l of links) {
         const other = l.coach_a_id === coachId ? l.coach_b_id : l.coach_a_id;
-        if (otherCoachIds.includes(other)) sharedCoachIds.push(other);
+        if (!otherCoachIds.includes(other)) continue;
+        const state =
+          l.a_status === "declined" || l.b_status === "declined"
+            ? "declined"
+            : l.a_status === "accepted" && l.b_status === "accepted"
+              ? "accepted"
+              : "pending";
+        coachVisibility[other] = state;
+        if (state === "accepted") sharedCoachIds.push(other);
       }
     }
 
