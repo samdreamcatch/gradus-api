@@ -259,7 +259,11 @@ export function ScheduleImportSheet({
             coachSports={coachSports}
             onChange={updateRow}
             onRemove={(id) => setRows((prev) => prev.filter((r) => r.id !== id))}
-            onAdd={() => setRows((prev) => [...prev, blankRow(defaultSport)])}
+            onAdd={() => {
+              const r = blankRow(defaultSport);
+              setRows((prev) => [...prev, r]);
+              return r.id;
+            }}
           />
         ) : null}
 
@@ -473,228 +477,418 @@ function ReviewStep({
   coachSports: string[];
   onChange: (id: string, patch: Partial<ImportRow>) => void;
   onRemove: (id: string) => void;
-  onAdd: () => void;
+  onAdd: () => string;
 }) {
   const allErrors = validateRows(rows);
-  const badCount = rows.filter((r) => Object.keys(allErrors[r.id] ?? {}).length > 0).length;
+  const badRows = rows.filter((r) => Object.keys(allErrors[r.id] ?? {}).length > 0);
+  const badCount = badRows.length;
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   return (
-    <div className="mt-4 space-y-3">
+    <div className="mt-4 space-y-2">
       <p className="rounded-xl border border-divider bg-elevated px-3 py-2 text-xs text-text-secondary">
-        Check these rows and fix anything highlighted. Nothing is saved until you import — then
+        Check these lessons and fix anything highlighted. Nothing is saved until you import — then
         guardians (or adult athletes) get their invite email right away.
       </p>
 
       {badCount > 0 ? (
-        <div className="flex items-start gap-2 rounded-xl border border-destructive/50 bg-card px-3 py-2">
+        <button
+          type="button"
+          onClick={() => {
+            const first = badRows[0];
+            if (!first) return;
+            setExpandedId(first.id);
+            document
+              .getElementById(`import-row-${first.id}`)
+              ?.scrollIntoView({ behavior: "smooth", block: "center" });
+          }}
+          className="press-soft flex w-full items-start gap-2 rounded-xl border border-destructive/50 bg-card px-3 py-2 text-left"
+        >
           <TriangleAlert className="mt-0.5 size-4 shrink-0 text-destructive" aria-hidden />
           <p className="text-xs text-text-secondary">
             <span className="font-bold text-text-primary">
-              {badCount} row{badCount === 1 ? "" : "s"} need{badCount === 1 ? "s" : ""} a fix.
+              {badCount} lesson{badCount === 1 ? "" : "s"} need{badCount === 1 ? "s" : ""} a fix.
             </span>{" "}
-            Each one is outlined in red below.
+            Tap to jump to the first one.
           </p>
-        </div>
+        </button>
       ) : null}
 
       {rows.map((row, index) => {
         const errors = allErrors[row.id] ?? {};
         const bad = Object.keys(errors).length > 0;
+        const expanded = expandedId === row.id;
         return (
           <div
             key={row.id}
+            id={`import-row-${row.id}`}
             className={cn(
-              "rounded-xl border bg-card p-3",
+              "rounded-xl border bg-card",
+              expanded ? "p-3" : "px-3 py-2.5",
               bad ? "border-destructive/50" : "border-divider",
             )}
           >
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-[11px] font-bold uppercase tracking-widest text-text-tertiary">
-                Lesson {index + 1}
-              </span>
-              <button
-                type="button"
-                aria-label="Remove row"
-                onClick={() => onRemove(row.id)}
-                className="flex h-7 w-7 items-center justify-center rounded-full text-destructive"
-              >
-                <Trash2 className="size-3.5" aria-hidden />
-              </button>
-            </div>
+            <RowHeader
+              row={row}
+              index={index}
+              expanded={expanded}
+              errors={errors}
+              coachSports={coachSports}
+              onToggle={() => setExpandedId(expanded ? null : row.id)}
+              onRemove={() => onRemove(row.id)}
+            />
 
-            <div className="mt-2 grid grid-cols-2 gap-2">
-              <Field label="First name" error={errors.firstName}>
-                <Input
-                  value={row.firstName}
-                  onChange={(e) => onChange(row.id, { firstName: e.target.value })}
-                />
-              </Field>
-              <Field label="Last name" error={errors.lastName}>
-                <Input
-                  value={row.lastName}
-                  onChange={(e) => onChange(row.id, { lastName: e.target.value })}
-                />
-              </Field>
-            </div>
-
-            <div className="mt-2">
-              <span className={LABEL}>Day of the week</span>
-              <div className="grid grid-cols-7 gap-1">
-                {IMPORT_DAYS.map((d) => (
-                  <button
-                    key={d.value}
-                    type="button"
-                    aria-label={d.long}
-                    onClick={() => onChange(row.id, { dayOfWeek: d.value })}
-                    className={cn(
-                      "press-soft rounded-md border px-1 py-2 text-[11px] font-bold uppercase tracking-wider",
-                      row.dayOfWeek === d.value
-                        ? "border-accent bg-accent text-accent-foreground"
-                        : "border-divider bg-card text-text-secondary",
-                    )}
-                  >
-                    {d.short}
-                  </button>
-                ))}
-              </div>
-              {errors.dayOfWeek ? (
-                <p className="mt-1 text-[11px] text-destructive">{errors.dayOfWeek}</p>
-              ) : null}
-            </div>
-
-            <div className="mt-2">
-              <Field label="Start time" hint="e.g. 4:00 PM" error={errors.startMinute}>
-                <input
-                  type="time"
-                  value={row.startMinute == null ? "" : minutesToHHMM(row.startMinute)}
-                  onChange={(e) =>
-                    onChange(row.id, { startMinute: hhmmToMinutes(e.target.value) ?? null })
-                  }
-                  className="h-9 w-full rounded-md border border-divider bg-card px-3 text-sm text-text-primary"
-                />
-              </Field>
-            </div>
-
-            <div className="mt-2">
-              <span className={LABEL}>How long (minutes)</span>
-              <div className="flex flex-wrap gap-1.5">
-                {LENGTH_PRESETS.map((n) => (
-                  <button
-                    key={n}
-                    type="button"
-                    onClick={() => onChange(row.id, { lengthMinutes: n })}
-                    className={cn(
-                      "press-soft rounded-full border px-3 py-1.5 text-xs font-bold",
-                      row.lengthMinutes === n
-                        ? "border-accent bg-accent text-accent-foreground"
-                        : "border-divider bg-card text-text-secondary",
-                    )}
-                  >
-                    {n} min
-                  </button>
-                ))}
-                <Input
-                  inputMode="numeric"
-                  aria-label="Custom length in minutes"
-                  placeholder="Other"
-                  className="h-8 w-20"
-                  value={
-                    row.lengthMinutes != null && !LENGTH_PRESETS.includes(row.lengthMinutes)
-                      ? String(row.lengthMinutes)
-                      : ""
-                  }
-                  onChange={(e) => {
-                    const n = Number(e.target.value.replace(/\D/g, ""));
-                    onChange(row.id, { lengthMinutes: Number.isFinite(n) && n > 0 ? n : null });
-                  }}
-                />
-              </div>
-              {errors.lengthMinutes ? (
-                <p className="mt-1 text-[11px] text-destructive">{errors.lengthMinutes}</p>
-              ) : null}
-            </div>
-
-            <div className="mt-2 grid grid-cols-2 gap-2">
-              <Field label="Repeats">
-                <Select
-                  value={row.frequency}
-                  onValueChange={(v) => onChange(row.id, { frequency: v as ImportFrequency })}
-                >
-                  <SelectTrigger className="w-full bg-card">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {IMPORT_FREQUENCIES.map((f) => (
-                      <SelectItem key={f.value} value={f.value}>
-                        {f.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </Field>
-              {coachSports.length > 1 ? (
-                <Field label="Sport">
-                  <Select
-                    value={row.sport || "__none"}
-                    onValueChange={(v) => onChange(row.id, { sport: v === "__none" ? "" : v })}
-                  >
-                    <SelectTrigger className="w-full bg-card">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__none">No sport</SelectItem>
-                      {coachSports.map((s) => (
-                        <SelectItem key={s} value={s}>
-                          {getSport(s as SportKey)?.label ?? s}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </Field>
-              ) : null}
-            </div>
-
-            <div className="mt-2 grid grid-cols-1 gap-2">
-              <Field
-                label="Parent / guardian email"
-                hint="Required for anyone under 18"
-                error={errors.guardianEmail}
-              >
-                <Input
-                  type="email"
-                  inputMode="email"
-                  placeholder="parent@example.com"
-                  value={row.guardianEmail}
-                  onChange={(e) =>
-                    onChange(row.id, { guardianEmail: e.target.value.toLowerCase() })
-                  }
-                />
-              </Field>
-              <Field
-                label="Athlete email"
-                hint="Use this instead for adults (18+)"
-                error={errors.athleteEmail}
-              >
-                <Input
-                  type="email"
-                  inputMode="email"
-                  placeholder="athlete@example.com"
-                  value={row.athleteEmail}
-                  onChange={(e) => onChange(row.id, { athleteEmail: e.target.value.toLowerCase() })}
-                />
-              </Field>
-            </div>
+            {expanded ? (
+              <RowEditor row={row} errors={errors} coachSports={coachSports} onChange={onChange} />
+            ) : (
+              <RowSummary row={row} errors={errors} onChange={onChange} />
+            )}
           </div>
         );
       })}
 
-      <Button type="button" variant="outline" size="sm" onClick={onAdd} className="w-full">
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={() => setExpandedId(onAdd())}
+        className="w-full"
+      >
         <Plus className="size-4" aria-hidden />
         Add lesson row
       </Button>
     </div>
   );
 }
+
+function RowHeader({
+  row,
+  index,
+  expanded,
+  errors,
+  coachSports,
+  onToggle,
+  onRemove,
+}: {
+  row: ImportRow;
+  index: number;
+  expanded: boolean;
+  errors: Record<string, string>;
+  coachSports: string[];
+  onToggle: () => void;
+  onRemove: () => void;
+}) {
+  const name = `${row.firstName} ${row.lastName}`.trim();
+  const sportLabel =
+    coachSports.length > 1 && row.sport ? (getSport(row.sport as SportKey)?.label ?? row.sport) : "";
+  const dayLabel = IMPORT_DAYS.find((d) => d.value === row.dayOfWeek)?.short ?? "—";
+  const timeLabel =
+    row.startMinute == null
+      ? "No time"
+      : row.lengthMinutes == null
+        ? formatTimeLabel(row.startMinute)
+        : `${formatTimeLabel(row.startMinute)}–${formatTimeLabel(row.startMinute + row.lengthMinutes)}`;
+  const freqLabel = IMPORT_FREQUENCIES.find((f) => f.value === row.frequency)?.label ?? "";
+  const meta = [dayLabel, timeLabel, freqLabel, sportLabel].filter(Boolean).join(" · ");
+
+  return (
+    <div className="flex items-start justify-between gap-2">
+      <div className="min-w-0">
+        {expanded ? (
+          <span className="text-[11px] font-bold uppercase tracking-widest text-text-tertiary">
+            Lesson {index + 1}
+          </span>
+        ) : (
+          <>
+            <p
+              className={cn(
+                "truncate text-sm font-bold",
+                name ? "text-text-primary" : "text-destructive",
+              )}
+            >
+              {name || "Needs a name"}
+            </p>
+            <p className="mt-0.5 truncate text-xs text-text-secondary">{meta}</p>
+          </>
+        )}
+      </div>
+      <div className="flex shrink-0 items-center gap-1">
+        <button
+          type="button"
+          aria-label={expanded ? "Done editing" : "Edit lesson"}
+          onClick={onToggle}
+          className="flex h-7 w-7 items-center justify-center rounded-full text-text-secondary"
+        >
+          {expanded ? (
+            <Check className="size-4 text-accent-ink" aria-hidden />
+          ) : (
+            <Pencil className="size-3.5" aria-hidden />
+          )}
+        </button>
+        <button
+          type="button"
+          aria-label="Remove row"
+          onClick={onRemove}
+          className="flex h-7 w-7 items-center justify-center rounded-full text-destructive"
+        >
+          <Trash2 className="size-3.5" aria-hidden />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function RowSummary({
+  row,
+  errors,
+  onChange,
+}: {
+  row: ImportRow;
+  errors: Record<string, string>;
+  onChange: (id: string, patch: Partial<ImportRow>) => void;
+}) {
+  const email = row.guardianEmail || row.athleteEmail;
+  const [collecting, setCollecting] = useState(!email);
+  const [adult, setAdult] = useState(Boolean(row.athleteEmail && !row.guardianEmail));
+  const otherErrors = Object.entries(errors)
+    .filter(([k]) => k !== "guardianEmail" && k !== "athleteEmail")
+    .map(([, v]) => v);
+
+  return (
+    <>
+      {!collecting ? (
+        <p className="mt-1 truncate text-xs text-text-tertiary">{email}</p>
+      ) : (
+        <div className="mt-2">
+          <span className={LABEL}>Email needed</span>
+          <div className="flex items-center gap-1.5">
+            <Input
+              type="email"
+              inputMode="email"
+              placeholder={adult ? "athlete@example.com" : "parent@example.com"}
+              value={adult ? row.athleteEmail : row.guardianEmail}
+              onBlur={() => {
+                if (row.guardianEmail || row.athleteEmail) setCollecting(false);
+              }}
+              onChange={(e) => {
+                const v = e.target.value.toLowerCase();
+                onChange(row.id, adult ? { athleteEmail: v } : { guardianEmail: v });
+              }}
+              className="h-9 flex-1"
+            />
+            <button
+              type="button"
+              onClick={() => {
+                const next = !adult;
+                setAdult(next);
+                onChange(
+                  row.id,
+                  next
+                    ? { athleteEmail: row.guardianEmail, guardianEmail: "" }
+                    : { guardianEmail: row.athleteEmail, athleteEmail: "" },
+                );
+              }}
+              className={cn(
+                "press-soft shrink-0 rounded-full border px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-widest",
+                adult
+                  ? "border-accent bg-accent text-accent-foreground"
+                  : "border-divider bg-card text-text-secondary",
+              )}
+            >
+              Adult
+            </button>
+          </div>
+          <p className="mt-1 text-[11px] text-text-tertiary">
+            {adult
+              ? "The athlete's own email (18+)"
+              : "Parent / guardian email — required for anyone under 18"}
+          </p>
+        </div>
+      )}
+      {otherErrors.length > 0 ? (
+        <p className="mt-1 text-[11px] text-destructive">{otherErrors[0]}</p>
+      ) : null}
+    </>
+  );
+}
+
+function RowEditor({
+  row,
+  errors,
+  coachSports,
+  onChange,
+}: {
+  row: ImportRow;
+  errors: Record<string, string>;
+  coachSports: string[];
+  onChange: (id: string, patch: Partial<ImportRow>) => void;
+}) {
+  return (
+    <>
+      <div className="mt-2 grid grid-cols-2 gap-2">
+        <Field label="First name" error={errors.firstName}>
+          <Input
+            value={row.firstName}
+            onChange={(e) => onChange(row.id, { firstName: e.target.value })}
+          />
+        </Field>
+        <Field label="Last name" error={errors.lastName}>
+          <Input
+            value={row.lastName}
+            onChange={(e) => onChange(row.id, { lastName: e.target.value })}
+          />
+        </Field>
+      </div>
+
+      <div className="mt-2">
+        <span className={LABEL}>Day of the week</span>
+        <div className="grid grid-cols-7 gap-1">
+          {IMPORT_DAYS.map((d) => (
+            <button
+              key={d.value}
+              type="button"
+              aria-label={d.long}
+              onClick={() => onChange(row.id, { dayOfWeek: d.value })}
+              className={cn(
+                "press-soft rounded-md border px-1 py-2 text-[11px] font-bold uppercase tracking-wider",
+                row.dayOfWeek === d.value
+                  ? "border-accent bg-accent text-accent-foreground"
+                  : "border-divider bg-card text-text-secondary",
+              )}
+            >
+              {d.short}
+            </button>
+          ))}
+        </div>
+        {errors.dayOfWeek ? (
+          <p className="mt-1 text-[11px] text-destructive">{errors.dayOfWeek}</p>
+        ) : null}
+      </div>
+
+      <div className="mt-2">
+        <Field label="Start time" hint="e.g. 4:00 PM" error={errors.startMinute}>
+          <input
+            type="time"
+            value={row.startMinute == null ? "" : minutesToHHMM(row.startMinute)}
+            onChange={(e) =>
+              onChange(row.id, { startMinute: hhmmToMinutes(e.target.value) ?? null })
+            }
+            className="h-9 w-full rounded-md border border-divider bg-card px-3 text-sm text-text-primary"
+          />
+        </Field>
+      </div>
+
+      <div className="mt-2">
+        <span className={LABEL}>How long (minutes)</span>
+        <div className="flex flex-wrap gap-1.5">
+          {LENGTH_PRESETS.map((n) => (
+            <button
+              key={n}
+              type="button"
+              onClick={() => onChange(row.id, { lengthMinutes: n })}
+              className={cn(
+                "press-soft rounded-full border px-3 py-1.5 text-xs font-bold",
+                row.lengthMinutes === n
+                  ? "border-accent bg-accent text-accent-foreground"
+                  : "border-divider bg-card text-text-secondary",
+              )}
+            >
+              {n} min
+            </button>
+          ))}
+          <Input
+            inputMode="numeric"
+            aria-label="Custom length in minutes"
+            placeholder="Other"
+            className="h-8 w-20"
+            value={
+              row.lengthMinutes != null && !LENGTH_PRESETS.includes(row.lengthMinutes)
+                ? String(row.lengthMinutes)
+                : ""
+            }
+            onChange={(e) => {
+              const n = Number(e.target.value.replace(/\D/g, ""));
+              onChange(row.id, { lengthMinutes: Number.isFinite(n) && n > 0 ? n : null });
+            }}
+          />
+        </div>
+        {errors.lengthMinutes ? (
+          <p className="mt-1 text-[11px] text-destructive">{errors.lengthMinutes}</p>
+        ) : null}
+      </div>
+
+      <div className="mt-2 grid grid-cols-2 gap-2">
+        <Field label="Repeats">
+          <Select
+            value={row.frequency}
+            onValueChange={(v) => onChange(row.id, { frequency: v as ImportFrequency })}
+          >
+            <SelectTrigger className="w-full bg-card">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {IMPORT_FREQUENCIES.map((f) => (
+                <SelectItem key={f.value} value={f.value}>
+                  {f.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </Field>
+        {coachSports.length > 1 ? (
+          <Field label="Sport">
+            <Select
+              value={row.sport || "__none"}
+              onValueChange={(v) => onChange(row.id, { sport: v === "__none" ? "" : v })}
+            >
+              <SelectTrigger className="w-full bg-card">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none">No sport</SelectItem>
+                {coachSports.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {getSport(s as SportKey)?.label ?? s}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+        ) : null}
+      </div>
+
+      <div className="mt-2 grid grid-cols-1 gap-2">
+        <Field
+          label="Parent / guardian email"
+          hint="Required for anyone under 18"
+          error={errors.guardianEmail}
+        >
+          <Input
+            type="email"
+            inputMode="email"
+            placeholder="parent@example.com"
+            value={row.guardianEmail}
+            onChange={(e) => onChange(row.id, { guardianEmail: e.target.value.toLowerCase() })}
+          />
+        </Field>
+        <Field
+          label="Athlete email"
+          hint="Use this instead for adults (18+)"
+          error={errors.athleteEmail}
+        >
+          <Input
+            type="email"
+            inputMode="email"
+            placeholder="athlete@example.com"
+            value={row.athleteEmail}
+            onChange={(e) => onChange(row.id, { athleteEmail: e.target.value.toLowerCase() })}
+          />
+        </Field>
+      </div>
+    </>
+  );
+}
+
 
 
 function MatchStep({
