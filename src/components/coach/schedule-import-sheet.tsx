@@ -5,6 +5,7 @@ import {
   Camera,
   Check,
   ChevronLeft,
+  ClipboardPaste,
   Download,
   FileSpreadsheet,
   Pencil,
@@ -12,6 +13,7 @@ import {
   Trash2,
   TriangleAlert,
 } from "lucide-react";
+
 import {
   Sheet,
   SheetContent,
@@ -22,6 +24,7 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -40,12 +43,14 @@ import {
   IMPORT_DAYS,
   IMPORT_FREQUENCIES,
   minutesToHHMM,
+  parsePastedSchedule,
   parseScheduleCsv,
   rowsFromParsedLessons,
-  validateRow,
+  validateRows,
   type ImportFrequency,
   type ImportRow,
 } from "@/lib/schedule-import";
+
 import {
   commitScheduleImport,
   matchScheduleRows,
@@ -81,10 +86,11 @@ export function ScheduleImportSheet({
   const photoInputRef = useRef<HTMLInputElement>(null);
 
   const groups = useMemo(() => groupRowsByAthlete(rows), [rows]);
-  const invalidCount = useMemo(
-    () => rows.filter((r) => Object.keys(validateRow(r)).length > 0).length,
-    [rows],
-  );
+  const invalidCount = useMemo(() => {
+    const all = validateRows(rows);
+    return rows.filter((r) => Object.keys(all[r.id] ?? {}).length > 0).length;
+  }, [rows]);
+
 
   const reset = () => {
     setStep("source");
@@ -181,6 +187,16 @@ export function ScheduleImportSheet({
     setStep("review");
   };
 
+  const handlePaste = (text: string) => {
+    const { rows: parsed, error } = parsePastedSchedule(text, defaultSport);
+    if (error) {
+      toast.error(error);
+      return;
+    }
+    setRows(parsed);
+    setStep("review");
+  };
+
   const updateRow = (id: string, patch: Partial<ImportRow>) =>
     setRows((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));
 
@@ -214,7 +230,7 @@ export function ScheduleImportSheet({
           </div>
           <SheetDescription>
             {step === "source"
-              ? "Upload a spreadsheet, snap a photo of your schedule, or type it in."
+              ? "Pick whichever is easiest — spreadsheet, paste, photo, or typing it in."
               : step === "review"
                 ? "Fix anything flagged, then continue. One row per weekly lesson."
                 : step === "match"
@@ -228,12 +244,14 @@ export function ScheduleImportSheet({
             busy={parseImage.isPending}
             onPickCsv={() => csvInputRef.current?.click()}
             onPickPhoto={() => photoInputRef.current?.click()}
+            onPaste={handlePaste}
             onManual={() => {
               setRows([blankRow(defaultSport)]);
               setStep("review");
             }}
           />
         ) : null}
+
 
         {step === "review" ? (
           <ReviewStep
@@ -330,19 +348,31 @@ function SourceStep({
   onPickCsv,
   onPickPhoto,
   onManual,
+  onPaste,
 }: {
   busy: boolean;
   onPickCsv: () => void;
   onPickPhoto: () => void;
   onManual: () => void;
+  onPaste: (text: string) => void;
 }) {
+  const [pasting, setPasting] = useState(false);
+  const [pasted, setPasted] = useState("");
+
   const options = [
     {
       key: "csv",
       icon: FileSpreadsheet,
-      title: "Upload a CSV",
-      description: "One row per weekly lesson",
+      title: "Upload a spreadsheet",
+      description: "A .csv from Excel, Numbers or Google Sheets",
       onClick: onPickCsv,
+    },
+    {
+      key: "paste",
+      icon: ClipboardPaste,
+      title: "Paste from a spreadsheet",
+      description: "Copy your rows and paste them here — no file needed",
+      onClick: () => setPasting((v) => !v),
     },
     {
       key: "photo",
@@ -385,17 +415,52 @@ function SourceStep({
           );
         })}
       </div>
+
+      {pasting ? (
+        <div className="mt-3 space-y-2">
+          <Textarea
+            value={pasted}
+            onChange={(e) => setPasted(e.target.value)}
+            rows={6}
+            placeholder={
+              "Paste your rows, including the header line. For example:\nathlete_first_name\tathlete_last_name\tday\tstart_time\tlength_minutes\nAva\tNguyen\tMon\t4:00 PM\t45"
+            }
+            className="bg-card text-xs"
+          />
+          <Button
+            type="button"
+            size="sm"
+            className="w-full"
+            disabled={!pasted.trim()}
+            onClick={() => onPaste(pasted)}
+          >
+            Use these rows
+          </Button>
+        </div>
+      ) : null}
+
+      <p className="mt-3 text-xs text-text-secondary">
+        You'll see every row and can fix anything before a single athlete is created.
+      </p>
+
       <button
         type="button"
         onClick={downloadTemplate}
-        className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-text-secondary"
+        className="mt-2 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-text-secondary"
       >
         <Download className="size-3.5" aria-hidden />
         Download CSV template
       </button>
+      <p className="mt-1 text-[11px] text-text-tertiary">
+        The template explains every column — day, time, length, how often it repeats, and which
+        email to use.
+      </p>
     </div>
   );
 }
+
+
+const LENGTH_PRESETS = [30, 45, 60, 90];
 
 function ReviewStep({
   rows,
@@ -410,10 +475,30 @@ function ReviewStep({
   onRemove: (id: string) => void;
   onAdd: () => void;
 }) {
+  const allErrors = validateRows(rows);
+  const badCount = rows.filter((r) => Object.keys(allErrors[r.id] ?? {}).length > 0).length;
+
   return (
     <div className="mt-4 space-y-3">
+      <p className="rounded-xl border border-divider bg-elevated px-3 py-2 text-xs text-text-secondary">
+        Check these rows and fix anything highlighted. Nothing is saved until you import — then
+        guardians (or adult athletes) get their invite email right away.
+      </p>
+
+      {badCount > 0 ? (
+        <div className="flex items-start gap-2 rounded-xl border border-destructive/50 bg-card px-3 py-2">
+          <TriangleAlert className="mt-0.5 size-4 shrink-0 text-destructive" aria-hidden />
+          <p className="text-xs text-text-secondary">
+            <span className="font-bold text-text-primary">
+              {badCount} row{badCount === 1 ? "" : "s"} need{badCount === 1 ? "s" : ""} a fix.
+            </span>{" "}
+            Each one is outlined in red below.
+          </p>
+        </div>
+      ) : null}
+
       {rows.map((row, index) => {
-        const errors = validateRow(row);
+        const errors = allErrors[row.id] ?? {};
         const bad = Object.keys(errors).length > 0;
         return (
           <div
@@ -453,12 +538,13 @@ function ReviewStep({
             </div>
 
             <div className="mt-2">
-              <span className={LABEL}>Day</span>
+              <span className={LABEL}>Day of the week</span>
               <div className="grid grid-cols-7 gap-1">
                 {IMPORT_DAYS.map((d) => (
                   <button
                     key={d.value}
                     type="button"
+                    aria-label={d.long}
                     onClick={() => onChange(row.id, { dayOfWeek: d.value })}
                     className={cn(
                       "press-soft rounded-md border px-1 py-2 text-[11px] font-bold uppercase tracking-wider",
@@ -476,8 +562,8 @@ function ReviewStep({
               ) : null}
             </div>
 
-            <div className="mt-2 grid grid-cols-2 gap-2">
-              <Field label="Start" error={errors.startMinute}>
+            <div className="mt-2">
+              <Field label="Start time" hint="e.g. 4:00 PM" error={errors.startMinute}>
                 <input
                   type="time"
                   value={row.startMinute == null ? "" : minutesToHHMM(row.startMinute)}
@@ -487,20 +573,49 @@ function ReviewStep({
                   className="h-9 w-full rounded-md border border-divider bg-card px-3 text-sm text-text-primary"
                 />
               </Field>
-              <Field label="Length (min)" error={errors.lengthMinutes}>
+            </div>
+
+            <div className="mt-2">
+              <span className={LABEL}>How long (minutes)</span>
+              <div className="flex flex-wrap gap-1.5">
+                {LENGTH_PRESETS.map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    onClick={() => onChange(row.id, { lengthMinutes: n })}
+                    className={cn(
+                      "press-soft rounded-full border px-3 py-1.5 text-xs font-bold",
+                      row.lengthMinutes === n
+                        ? "border-accent bg-accent text-accent-foreground"
+                        : "border-divider bg-card text-text-secondary",
+                    )}
+                  >
+                    {n} min
+                  </button>
+                ))}
                 <Input
                   inputMode="numeric"
-                  value={row.lengthMinutes == null ? "" : String(row.lengthMinutes)}
+                  aria-label="Custom length in minutes"
+                  placeholder="Other"
+                  className="h-8 w-20"
+                  value={
+                    row.lengthMinutes != null && !LENGTH_PRESETS.includes(row.lengthMinutes)
+                      ? String(row.lengthMinutes)
+                      : ""
+                  }
                   onChange={(e) => {
                     const n = Number(e.target.value.replace(/\D/g, ""));
                     onChange(row.id, { lengthMinutes: Number.isFinite(n) && n > 0 ? n : null });
                   }}
                 />
-              </Field>
+              </div>
+              {errors.lengthMinutes ? (
+                <p className="mt-1 text-[11px] text-destructive">{errors.lengthMinutes}</p>
+              ) : null}
             </div>
 
             <div className="mt-2 grid grid-cols-2 gap-2">
-              <Field label="Repeats">
+              <Field label="Repeats" hint="How often it happens">
                 <Select
                   value={row.frequency}
                   onValueChange={(v) => onChange(row.id, { frequency: v as ImportFrequency })}
@@ -540,20 +655,30 @@ function ReviewStep({
             </div>
 
             <div className="mt-2 grid grid-cols-1 gap-2">
-              <Field label="Parent / guardian email" error={errors.guardianEmail}>
+              <Field
+                label="Parent / guardian email"
+                hint="Required for anyone under 18"
+                error={errors.guardianEmail}
+              >
                 <Input
                   type="email"
                   inputMode="email"
+                  placeholder="parent@example.com"
                   value={row.guardianEmail}
                   onChange={(e) =>
                     onChange(row.id, { guardianEmail: e.target.value.toLowerCase() })
                   }
                 />
               </Field>
-              <Field label="Athlete email (18+)" error={errors.athleteEmail}>
+              <Field
+                label="Athlete email"
+                hint="Use this instead for adults (18+)"
+                error={errors.athleteEmail}
+              >
                 <Input
                   type="email"
                   inputMode="email"
+                  placeholder="athlete@example.com"
                   value={row.athleteEmail}
                   onChange={(e) => onChange(row.id, { athleteEmail: e.target.value.toLowerCase() })}
                 />
@@ -570,6 +695,7 @@ function ReviewStep({
     </div>
   );
 }
+
 
 function MatchStep({
   groups,
@@ -712,16 +838,19 @@ function DoneStep({ outcomes }: { outcomes: ImportOutcome[] }) {
 
 function Field({
   label,
+  hint,
   error,
   children,
 }: {
   label: string;
+  hint?: string;
   error?: string;
   children: React.ReactNode;
 }) {
   return (
     <div>
       <span className={LABEL}>{label}</span>
+      {hint ? <span className="mb-1 block text-[11px] text-text-tertiary">{hint}</span> : null}
       {children}
       {error ? <p className="mt-1 text-[11px] text-destructive">{error}</p> : null}
     </div>
@@ -729,8 +858,10 @@ function Field({
 }
 
 function downloadTemplate() {
-  const blob = new Blob([CSV_TEMPLATE], { type: "text/csv;charset=utf-8" });
+  // BOM so Excel opens it as UTF-8 without mangling names.
+  const blob = new Blob([`\uFEFF${CSV_TEMPLATE}`], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);
+
   const a = document.createElement("a");
   a.href = url;
   a.download = "gradus-schedule-template.csv";

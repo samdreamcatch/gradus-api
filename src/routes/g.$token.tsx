@@ -45,6 +45,7 @@ function GuardianClaimPage() {
   const [signedIn, setSignedIn] = useState<boolean | null>(null);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [birthdate, setBirthdate] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [claiming, setClaiming] = useState(false);
 
@@ -78,6 +79,7 @@ function GuardianClaimPage() {
           ...(firstName.trim() && lastName.trim()
             ? { firstName: firstName.trim(), lastName: lastName.trim() }
             : {}),
+          ...(birthdate ? { birthdate } : {}),
         },
       });
       navigate({ to: "/parent/plans" });
@@ -175,9 +177,25 @@ function GuardianClaimPage() {
                   </div>
                 </div>
 
+                {summary?.needsBirthdate ? (
+                  <div className="space-y-2">
+                    <Label htmlFor="g-dob">{summary.athleteFirstName}&apos;s date of birth</Label>
+                    <Input
+                      id="g-dob"
+                      type="date"
+                      value={birthdate}
+                      onChange={(e) => setBirthdate(e.target.value)}
+                    />
+                    <p className="text-xs text-text-tertiary">
+                      We use this to set the right privacy protections for your athlete.
+                    </p>
+                  </div>
+                ) : null}
+
                 {error && <p className="text-sm text-destructive">{error}</p>}
 
-                <Button className="w-full" onClick={handleClaim} disabled={claiming}>
+                <Button className="w-full" onClick={handleClaim} disabled={claiming || (Boolean(summary?.needsBirthdate) && !birthdate)}
+                >
                   {claiming ? "Setting up…" : `Claim ${summary?.athleteFirstName}'s account`}
                 </Button>
               </>

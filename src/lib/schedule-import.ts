@@ -36,6 +36,12 @@ export type ImportRow = {
   guardianEmail: string;
   athleteEmail: string;
   sport: string;
+  /**
+   * Fields that came in from a CSV or a photo with something written that we
+   * couldn't understand. Surfaced in review as "couldn't read — confirm"
+   * instead of being silently defaulted.
+   */
+  unreadable?: Partial<Record<"dayOfWeek" | "startMinute" | "lengthMinutes", true>>;
 };
 
 export type RowErrors = Partial<Record<keyof ImportRow, string>>;
@@ -60,6 +66,7 @@ export function blankRow(sport = ""): ImportRow {
     sport,
   };
 }
+
 
 // ---------- field parsers ----------
 
@@ -184,25 +191,61 @@ export function validateRow(row: ImportRow): RowErrors {
   const errors: RowErrors = {};
   if (!row.firstName.trim()) errors.firstName = "Required";
   if (!row.lastName.trim()) errors.lastName = "Required";
-  if (row.dayOfWeek == null) errors.dayOfWeek = "Required";
-  if (row.startMinute == null) errors.startMinute = "Required";
-  if (row.lengthMinutes == null || row.lengthMinutes <= 0) errors.lengthMinutes = "Required";
+  if (row.dayOfWeek == null) {
+    errors.dayOfWeek = row.unreadable?.dayOfWeek ? "Couldn't read the day — pick one" : "Pick a day";
+  }
+  if (row.startMinute == null) {
+    errors.startMinute = row.unreadable?.startMinute
+      ? "Couldn't read that time — e.g. 4:00 PM"
+      : "Add a start time";
+  }
+  if (row.lengthMinutes == null || row.lengthMinutes <= 0) {
+    errors.lengthMinutes = "Pick how long it runs";
+  }
   if (row.startMinute != null && row.lengthMinutes != null) {
     if (row.startMinute + row.lengthMinutes > 1440) errors.lengthMinutes = "Runs past midnight";
   }
   const guardian = row.guardianEmail.trim();
   const athlete = row.athleteEmail.trim();
   if (!guardian && !athlete) {
-    errors.guardianEmail = "Add a guardian or athlete email";
+    errors.guardianEmail = "Required for under 18 — or add an athlete email instead";
   }
-  if (guardian && !EMAIL_RE.test(guardian)) errors.guardianEmail = "Invalid email";
-  if (athlete && !EMAIL_RE.test(athlete)) errors.athleteEmail = "Invalid email";
+  if (guardian && !EMAIL_RE.test(guardian)) errors.guardianEmail = "e.g. parent@example.com";
+  if (athlete && !EMAIL_RE.test(athlete)) errors.athleteEmail = "e.g. athlete@example.com";
   return errors;
+}
+
+/**
+ * Validate the whole table so we can also flag duplicates — the same athlete
+ * at the same day and time twice, which the commit step would silently skip.
+ */
+export function validateRows(rows: ImportRow[]): Record<string, RowErrors> {
+  const out: Record<string, RowErrors> = {};
+  const seen = new Map<string, string>();
+  for (const row of rows) {
+    const errors = validateRow(row);
+    if (row.dayOfWeek != null && row.startMinute != null && row.firstName && row.lastName) {
+      const key = [
+        row.firstName.trim().toLowerCase(),
+        row.lastName.trim().toLowerCase(),
+        row.dayOfWeek,
+        row.startMinute,
+      ].join("|");
+      if (seen.has(key)) {
+        errors.startMinute = "Duplicate — same athlete, same day and time";
+      } else {
+        seen.set(key, row.id);
+      }
+    }
+    out[row.id] = errors;
+  }
+  return out;
 }
 
 export function rowHasErrors(row: ImportRow): boolean {
   return Object.keys(validateRow(row)).length > 0;
 }
+
 
 // ---------- grouping ----------
 
@@ -256,18 +299,40 @@ export const CSV_HEADERS = [
   "sport",
 ] as const;
 
-export const CSV_TEMPLATE = `${CSV_HEADERS.join(",")}
+/**
+ * The downloadable template carries its own instructions. Every line starting
+ * with `#` is skipped by the parser, so a coach can fill the file in and
+ * re-upload it without deleting anything.
+ */
+export const CSV_TEMPLATE = `# GRADUS LESSON SCHEDULE — fill in one row per weekly lesson, then upload this file.
+# Lines starting with # are ignored. Keep the header row below. Delete the example rows.
+#
+# athlete_first_name  Required.
+# athlete_last_name   Required.
+# day                 Mon / Monday / Tue ... any spelling works.
+# start_time          4:00 PM  or  4pm  or  16:00  or  1600
+# length_minutes      45  or  60  or  "1 hr"  or  "1.5 hours"
+# frequency           weekly | every other week | twice a month | monthly
+# guardian_email      Required for anyone under 18. We email them an invite.
+# athlete_email       Use this instead for adult (18+) athletes.
+# sport               Leave blank to use your sport.
+#
+${CSV_HEADERS.join(",")}
 Ava,Nguyen,Mon,4:00 PM,45,weekly,parent@example.com,,
-Liam,Brooks,Wed,17:30,60,biweekly,,liam@example.com,
+Liam,Brooks,Wed,17:30,60,every other week,parent2@example.com,,
+Jordan,Reyes,Sat,9:00 AM,1 hr,weekly,,jordan@example.com,
 `;
 
-/** Minimal RFC-4180-ish CSV splitter (handles quoted fields and commas). */
-export function splitCsv(text: string): string[][] {
+/**
+ * Minimal RFC-4180-ish splitter (handles quoted fields). Skips `#` comment
+ * lines and blank lines. Pass a tab delimiter to parse spreadsheet pastes.
+ */
+export function splitCsv(text: string, delimiter = ","): string[][] {
   const rows: string[][] = [];
   let field = "";
   let row: string[] = [];
   let inQuotes = false;
-  const src = text.replace(/\r\n?/g, "\n");
+  const src = text.replace(/^\uFEFF/, "").replace(/\r\n?/g, "\n");
   for (let i = 0; i < src.length; i += 1) {
     const c = src[i];
     if (inQuotes) {
@@ -285,7 +350,7 @@ export function splitCsv(text: string): string[][] {
     }
     if (c === '"') {
       inQuotes = true;
-    } else if (c === ",") {
+    } else if (c === delimiter) {
       row.push(field);
       field = "";
     } else if (c === "\n") {
@@ -297,11 +362,15 @@ export function splitCsv(text: string): string[][] {
       field += c;
     }
   }
+
   if (field.length > 0 || row.length > 0) {
     row.push(field);
     rows.push(row);
   }
-  return rows.filter((r) => r.some((cell) => cell.trim() !== ""));
+  return rows.filter(
+    (r) => r.some((cell) => cell.trim() !== "") && !r[0].trim().startsWith("#"),
+  );
+
 }
 
 function headerKey(value: string): string {
@@ -335,8 +404,24 @@ const HEADER_ALIASES: Record<string, string> = {
 
 export type CsvParseResult = { rows: ImportRow[]; error: string | null };
 
+function unreadableFlags(
+  dayRaw: string,
+  dayOfWeek: number | null,
+  timeRaw: string,
+  startMinute: number | null,
+  lengthRaw: string,
+  lengthMinutes: number | null,
+): ImportRow["unreadable"] {
+  const flags: NonNullable<ImportRow["unreadable"]> = {};
+  if (dayRaw && dayOfWeek == null) flags.dayOfWeek = true;
+  if (timeRaw && startMinute == null) flags.startMinute = true;
+  if (lengthRaw && lengthMinutes == null) flags.lengthMinutes = true;
+  return Object.keys(flags).length > 0 ? flags : undefined;
+}
+
 export function parseScheduleCsv(text: string, defaultSport = ""): CsvParseResult {
-  const table = splitCsv(text);
+  const delimiter = pickDelimiter(text);
+  const table = splitCsv(text, delimiter);
   if (table.length === 0) return { rows: [], error: "That file looks empty." };
   const header = table[0].map((h) => {
     const k = headerKey(h);
@@ -356,22 +441,51 @@ export function parseScheduleCsv(text: string, defaultSport = ""): CsvParseResul
     return i >= 0 ? (r[i] ?? "").trim() : "";
   };
 
-  const rows: ImportRow[] = table.slice(1).map((r) => ({
-    id: newRowId(),
-    firstName: cell(r, "athlete_first_name"),
-    lastName: cell(r, "athlete_last_name"),
-    dayOfWeek: parseDay(cell(r, "day")),
-    startMinute: parseTimeToMinutes(cell(r, "start_time")),
-    lengthMinutes: parseLengthToMinutes(cell(r, "length_minutes")) ?? 60,
-    frequency: parseFrequency(cell(r, "frequency")),
-    guardianEmail: cell(r, "guardian_email").toLowerCase(),
-    athleteEmail: cell(r, "athlete_email").toLowerCase(),
-    sport: cell(r, "sport") || defaultSport,
-  }));
+  const rows: ImportRow[] = table.slice(1).map((r) => {
+    const dayRaw = cell(r, "day");
+    const timeRaw = cell(r, "start_time");
+    const lengthRaw = cell(r, "length_minutes");
+    const dayOfWeek = parseDay(dayRaw);
+    const startMinute = parseTimeToMinutes(timeRaw);
+    const parsedLength = parseLengthToMinutes(lengthRaw);
+    return {
+      id: newRowId(),
+      firstName: cell(r, "athlete_first_name"),
+      lastName: cell(r, "athlete_last_name"),
+      dayOfWeek,
+      startMinute,
+      lengthMinutes: parsedLength ?? (lengthRaw ? null : 60),
+      frequency: parseFrequency(cell(r, "frequency")),
+      guardianEmail: cell(r, "guardian_email").toLowerCase(),
+      athleteEmail: cell(r, "athlete_email").toLowerCase(),
+      sport: cell(r, "sport") || defaultSport,
+      unreadable: unreadableFlags(
+        dayRaw,
+        dayOfWeek,
+        timeRaw,
+        startMinute,
+        lengthRaw,
+        parsedLength,
+      ),
+    };
+  });
 
   if (rows.length === 0) return { rows: [], error: "No lesson rows found in that file." };
   return { rows, error: null };
 }
+
+/** Tab-separated when it looks like a spreadsheet paste, comma otherwise. */
+function pickDelimiter(text: string): string {
+  const firstLine = text.replace(/^\uFEFF/, "").split(/\r?\n/)[0] ?? "";
+  return firstLine.includes("\t") ? "\t" : ",";
+}
+
+/** Parse text pasted straight out of Excel / Sheets (tab- or comma-separated). */
+export function parsePastedSchedule(text: string, defaultSport = ""): CsvParseResult {
+  if (!text.trim()) return { rows: [], error: "Nothing pasted yet." };
+  return parseScheduleCsv(text, defaultSport);
+}
+
 
 /** Turn the AI vision output into review rows. */
 export function rowsFromParsedLessons(
@@ -387,16 +501,22 @@ export function rowsFromParsedLessons(
   }[],
   defaultSport = "",
 ): ImportRow[] {
-  return lessons.map((l) => ({
-    id: newRowId(),
-    firstName: l.firstName.trim(),
-    lastName: l.lastName.trim(),
-    dayOfWeek: parseDay(l.day),
-    startMinute: parseTimeToMinutes(l.startTime),
-    lengthMinutes: l.lengthMinutes && l.lengthMinutes > 0 ? l.lengthMinutes : 60,
-    frequency: parseFrequency(l.frequency),
-    guardianEmail: (l.guardianEmail ?? "").trim().toLowerCase(),
-    athleteEmail: (l.athleteEmail ?? "").trim().toLowerCase(),
-    sport: defaultSport,
-  }));
+  return lessons.map((l) => {
+    const dayOfWeek = parseDay(l.day);
+    const startMinute = parseTimeToMinutes(l.startTime);
+    return {
+      id: newRowId(),
+      firstName: l.firstName.trim(),
+      lastName: l.lastName.trim(),
+      dayOfWeek,
+      startMinute,
+      lengthMinutes: l.lengthMinutes && l.lengthMinutes > 0 ? l.lengthMinutes : 60,
+      frequency: parseFrequency(l.frequency),
+      guardianEmail: (l.guardianEmail ?? "").trim().toLowerCase(),
+      athleteEmail: (l.athleteEmail ?? "").trim().toLowerCase(),
+      sport: defaultSport,
+      unreadable: unreadableFlags(l.day, dayOfWeek, l.startTime, startMinute, "", 1),
+    };
+  });
+
 }
