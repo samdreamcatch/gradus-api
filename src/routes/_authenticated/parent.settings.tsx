@@ -46,6 +46,7 @@ import {
 import { ParentBottomNav } from "@/components/parent/bottom-nav";
 import { AthleteInviteCard } from "@/components/parent/athlete-invite-card";
 import { ConnectCoachSheet } from "@/components/parent/connect-coach-sheet";
+import { JoinTeamSheet } from "@/components/parent/join-team-sheet";
 import { ConnectGuardianSheet } from "@/components/parent/connect-guardian-sheet";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -268,7 +269,7 @@ function ParentSettingsPage() {
  * through the Stripe billing portal. Covered co-guardians see status only.
  */
 function PlanSection() {
-  const navigate = useNavigate();
+  const [joinOpen, setJoinOpen] = useState(false);
   const fetchStatus = useServerFn(getTeamPlanStatus);
   const fetchGuardians = useServerFn(listTeamGuardians);
   const portal = useServerFn(createParentBillingPortalSession);
