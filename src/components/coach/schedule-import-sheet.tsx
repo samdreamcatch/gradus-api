@@ -639,8 +639,8 @@ function groupRowsByStudent(rows: ImportRow[]) {
   const index = new Map<string, { key: string; rows: ImportRow[] }>();
   for (const row of rows) {
     const name = `${row.firstName ?? ""} ${row.lastName ?? ""}`.trim().toLowerCase();
-    const email = (row.guardianEmail || row.athleteEmail || "").trim().toLowerCase();
-    const key = name ? `${name}|${email}` : `row:${row.id}`;
+    // Group on the name only — including the email would regroup on every keystroke.
+    const key = name ? `name:${name}` : `row:${row.id}`;
     const existing = index.get(key);
     if (existing) {
       existing.rows.push(row);
