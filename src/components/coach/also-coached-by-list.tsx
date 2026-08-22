@@ -83,7 +83,7 @@ export function AlsoCoachedByList({
                 ) : null}
                 {hasPlans && isLocked ? (
                   <div className="mt-2">
-                    <span className="rounded-full bg-elevated px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-text-secondary">
+                    <span className="rounded-full bg-elevated px-2 py-0.5 text-[11px] font-semibold text-text-secondary">
                       {lockedLabel(c.coachId)}
                     </span>
                   </div>
