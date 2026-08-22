@@ -29,9 +29,14 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { getSport, type SportKey } from "@/lib/coach-sports";
+import { rosterQueryOptions } from "@/lib/roster-queries";
+import { ageInYears } from "@/lib/pending-athlete-dob";
 import type { RosterAthlete } from "@/lib/coach-roster.functions";
 import {
+  addAthleteWithGuardian,
   addLessonSlot,
   cancelLessonOccurrence,
   clearLessonOverride,
