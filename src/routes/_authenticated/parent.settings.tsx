@@ -222,22 +222,12 @@ function ParentSettingsPage() {
               />
             </SettingsGroup>
 
-            <SettingsGroup label="Coaches">
-              <ConnectedCoachesList athletes={data.athletes as AthleteData[]} />
-              <ConnectCoachSheet athletes={data.athletes as AthleteData[]} />
-            </SettingsGroup>
+            <TeamPeopleGroup athletes={data.athletes as AthleteData[]} />
 
             <SettingsGroup label="Plan">
               <PlanSection />
             </SettingsGroup>
 
-            <SettingsGroup label="Team">
-              <TeamSection />
-            </SettingsGroup>
-
-            <SettingsGroup label="Coach visibility">
-              <CoachVisibilitySectionForSettings />
-            </SettingsGroup>
 
 
 
