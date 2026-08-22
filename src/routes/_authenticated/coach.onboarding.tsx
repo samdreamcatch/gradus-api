@@ -290,10 +290,7 @@ function OnboardingForm({ data }: { data: OnboardingData }) {
           </div>
 
           {currentKind === "profile" && (
-            <Step
-              title="Tell us about yourself"
-              subtitle="Your athletes will see your name on their lessons."
-            >
+            <Step title="Tell us about yourself">
               <div className="space-y-6">
                 <div className="grid gap-2 sm:grid-cols-2">
                   <div className="space-y-2">
