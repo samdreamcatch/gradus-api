@@ -982,9 +982,10 @@ function MatchStep({
                           {c.onRoster
                             ? "Already on your roster"
                             : c.reason === "email"
-                              ? `Email match${c.maskedEmail ? ` · ${c.maskedEmail}` : ""}`
+                              ? `${c.nameAlsoMatches ? "Email + name match" : "Email match"}${c.maskedEmail ? ` · ${c.maskedEmail}` : ""}`
                               : "Same name — confirm this is them"}
                         </span>
+
                         {(() => {
                           const sportLabel = c.sport
                             ? (getSport(c.sport as SportKey)?.label ?? c.sport)
