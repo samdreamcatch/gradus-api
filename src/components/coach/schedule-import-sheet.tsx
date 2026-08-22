@@ -262,6 +262,7 @@ export function ScheduleImportSheet({
           <ReviewStep
             rows={rows}
             coachSports={coachSports}
+            showErrors={showErrors}
             onChange={updateRow}
             onRemove={(id) => setRows((prev) => prev.filter((r) => r.id !== id))}
             onAdd={() => {
