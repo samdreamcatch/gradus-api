@@ -5,7 +5,6 @@ import {
   Camera,
   Check,
   ChevronLeft,
-  ClipboardPaste,
   Download,
   FileSpreadsheet,
   Pencil,
@@ -43,7 +42,6 @@ import {
   IMPORT_DAYS,
   IMPORT_FREQUENCIES,
   minutesToHHMM,
-  parsePastedSchedule,
   parseScheduleCsv,
   rowsFromParsedLessons,
   validateRows,
@@ -240,7 +238,6 @@ export function ScheduleImportSheet({
             busy={parseImage.isPending}
             onPickCsv={() => csvInputRef.current?.click()}
             onPickPhoto={() => photoInputRef.current?.click()}
-            onPaste={handlePaste}
             onManual={() => {
               setRows([blankRow(defaultSport)]);
               setStep("review");
