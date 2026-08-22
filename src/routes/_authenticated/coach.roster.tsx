@@ -56,7 +56,7 @@ type RosterTab = "athletes" | "schedule" | "billing";
 
 type InviteStep = "hub" | "share" | "code";
 
-/** The two ways a coach can connect with an athlete, shown as a hub menu. */
+/** The ways a coach can connect with athletes, shown as a hub menu. */
 const INVITE_STEPS: {
   key: Exclude<InviteStep, "hub">;
   title: string;
@@ -76,6 +76,7 @@ const INVITE_STEPS: {
     icon: KeyRound,
   },
 ];
+
 
 function SegmentedToggle({ tab, onChange }: { tab: RosterTab; onChange: (t: RosterTab) => void }) {
   const tabs: { key: RosterTab; label: string }[] = [
