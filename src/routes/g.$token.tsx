@@ -219,13 +219,26 @@ function GuardianClaimPage() {
               </div>
             ) : (
               <>
-                {mergeOptions.length > 0 ? (
+                {knownParent && claimContext?.parentName ? (
+                  <p className="text-center text-xs text-text-tertiary">
+                    Signed in as {claimContext.parentName}.{" "}
+                    <Link
+                      to="/login"
+                      search={{ redirect: `/g/${token}` }}
+                      className="underline underline-offset-2"
+                    >
+                      Switch account
+                    </Link>
+                  </p>
+                ) : null}
+
+                {!isAdultInvite && mergeOptions.length > 0 ? (
                   <div className="space-y-3 rounded-xl border border-divider bg-elevated p-4">
                     <p className="text-sm text-text-secondary">
-                      Is this your existing athlete, {mergeOptions[0]!.name}?
+                      Is this someone you already have on Gradus?
                     </p>
                     <div className="flex flex-col gap-2">
-                      {mergeOptions.map((o) => (
+                      {suggestedOptions.map((o) => (
                         <Button
                           key={o.athleteId}
                           variant="outline"
@@ -236,14 +249,36 @@ function GuardianClaimPage() {
                           Yes, same athlete — {o.name}
                         </Button>
                       ))}
+                      {showOthers
+                        ? otherOptions.map((o) => (
+                            <Button
+                              key={o.athleteId}
+                              variant="outline"
+                              className="w-full"
+                              disabled={claiming}
+                              onClick={() => handleMerge(o.athleteId)}
+                            >
+                              Yes, same athlete — {o.name}
+                            </Button>
+                          ))
+                        : null}
                     </div>
+                    {!showOthers && otherOptions.length > 0 ? (
+                      <button
+                        type="button"
+                        className="press text-xs text-text-secondary underline underline-offset-2"
+                        onClick={() => setShowOthers(true)}
+                      >
+                        Show my other athletes
+                      </button>
+                    ) : null}
                     <p className="text-xs text-text-tertiary">
-                      Or keep them separate by filling in the details below.
+                      Or keep them separate by continuing below.
                     </p>
                   </div>
                 ) : null}
 
-                {isAdultInvite ? null : (
+                {isAdultInvite || knownParent ? null : (
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
                       <Label htmlFor="g-first">Your first name</Label>
@@ -267,6 +302,7 @@ function GuardianClaimPage() {
                     </div>
                   </div>
                 )}
+
 
                 {isAdultInvite || summary?.needsBirthdate ? (
                   <div className="space-y-2">
