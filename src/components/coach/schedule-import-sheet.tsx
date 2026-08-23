@@ -624,14 +624,16 @@ function RowSummary({
             <span className={LABEL}>Who should we email?</span>
             <Select
               value={recipient}
-              onValueChange={(v) =>
+              onValueChange={(v) => {
+                const next = v === "athlete" ? "athlete" : "guardian";
+                setRecipient(next);
                 onChange(
                   row.id,
-                  v === "athlete"
+                  next === "athlete"
                     ? { athleteEmail: email, guardianEmail: "" }
                     : { guardianEmail: email, athleteEmail: "" },
-                )
-              }
+                );
+              }}
             >
               <SelectTrigger className="h-9 w-full bg-card">
                 <SelectValue />
