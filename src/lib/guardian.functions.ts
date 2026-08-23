@@ -397,3 +397,77 @@ export const mergeGuardianClaim = createServerFn({ method: "POST" })
 
     return { ok: true as const, athleteFirstName: target.data.first_name as string };
   });
+
+/**
+ * Adult-athlete path for a coach invite: the signed-in user IS the athlete, so
+ * attach the pending athlete row to their own account instead of a parent's.
+ */
+export const claimAthleteSelf = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        token: tokenSchema,
+        birthdate: z
+          .string()
+          .trim()
+          .regex(/^\d{4}-\d{2}-\d{2}$/, "Enter your date of birth"),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const dob = new Date(`${data.birthdate}T00:00:00Z`);
+    const eighteen = new Date(Date.now() - 18 * 365.25 * 24 * 3600 * 1000);
+    if (Number.isNaN(dob.getTime())) throw new Error("Enter your date of birth");
+    if (dob > eighteen) {
+      throw new Error(
+        "You're under 18 — ask a parent or guardian to open this link and set the account up.",
+      );
+    }
+
+    const athlete = await supabaseAdmin
+      .from("athletes")
+      .select("id, first_name, parent_id, user_id, guardian_claimed_at")
+      .eq("guardian_claim_token", data.token)
+      .maybeSingle();
+    if (athlete.error) dbError(athlete.error);
+    if (!athlete.data) throw new Error("This link is no longer valid. Ask the coach to resend it.");
+    if (athlete.data.user_id || athlete.data.parent_id || athlete.data.guardian_claimed_at) {
+      throw new Error("This invite has already been claimed.");
+    }
+
+    const coach = await supabaseAdmin
+      .from("coach_profiles")
+      .select("id")
+      .eq("user_id", context.userId)
+      .maybeSingle();
+    if (coach.data) {
+      throw new Error("You're signed in as a coach. Sign out and use your athlete account.");
+    }
+
+    const mine = await supabaseAdmin
+      .from("athletes")
+      .select("id")
+      .eq("user_id", context.userId)
+      .maybeSingle();
+    if (mine.data) {
+      throw new Error("You already have an athlete profile on this account.");
+    }
+
+    const upd = await supabaseAdmin
+      .from("athletes")
+      .update({
+        user_id: context.userId,
+        self_managed: true,
+        birthdate: data.birthdate,
+        guardian_email: null,
+        guardian_claim_token: null,
+        guardian_claimed_at: new Date().toISOString(),
+      })
+      .eq("id", athlete.data.id);
+    if (upd.error) dbError(upd.error);
+
+    return { ok: true as const, athleteFirstName: athlete.data.first_name as string };
+  });
