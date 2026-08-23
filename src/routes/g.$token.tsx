@@ -52,6 +52,7 @@ function GuardianClaimPage() {
   const selfClaimFn = useServerFn(claimAthleteSelf);
   const mergeOptionsFn = useServerFn(getGuardianClaimMergeOptions);
   const mergeFn = useServerFn(mergeGuardianClaim);
+  const contextFn = useServerFn(getGuardianClaimContext);
 
   const [signedIn, setSignedIn] = useState<boolean | null>(null);
   const [firstName, setFirstName] = useState("");
@@ -59,6 +60,8 @@ function GuardianClaimPage() {
   const [birthdate, setBirthdate] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [claiming, setClaiming] = useState(false);
+  const [showOthers, setShowOthers] = useState(false);
+
 
   useEffect(() => {
     let cancelled = false;
