@@ -253,3 +253,147 @@ export const getMyGuardianStatus = createServerFn({ method: "GET" })
       invitedAt: (res.data.guardian_invited_at as string | null) ?? null,
     };
   });
+
+/**
+ * The signed-in claimer's OWN athletes whose name matches the pending athlete
+ * behind this token. Only their own data is returned, so this discloses
+ * nothing about anyone else's account.
+ */
+export const getGuardianClaimMergeOptions = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ token: tokenSchema }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const pending = await supabaseAdmin
+      .from("athletes")
+      .select("id, first_name, last_name, parent_id, guardian_claimed_at")
+      .eq("guardian_claim_token", data.token)
+      .maybeSingle();
+    if (pending.error) dbError(pending.error);
+    if (!pending.data) return { options: [] as { athleteId: string; name: string }[] };
+
+    const parent = await supabaseAdmin
+      .from("parent_profiles")
+      .select("id")
+      .eq("user_id", context.userId)
+      .maybeSingle();
+    if (!parent.data) return { options: [] as { athleteId: string; name: string }[] };
+
+    const mine = await supabaseAdmin
+      .from("athletes")
+      .select("id, first_name, last_name")
+      .eq("parent_id", parent.data.id);
+
+    const norm = (s: string) => s.trim().toLowerCase().replace(/\s+/g, " ");
+    const target = norm(`${pending.data.first_name} ${pending.data.last_name}`);
+
+    const options = (mine.data ?? [])
+      .filter(
+        (a) =>
+          a.id !== pending.data!.id &&
+          norm(`${a.first_name} ${a.last_name}`) === target,
+      )
+      .map((a) => ({ athleteId: a.id as string, name: `${a.first_name} ${a.last_name}`.trim() }));
+
+    return { options };
+  });
+
+/**
+ * "That's my existing athlete" — move the coach's link and lessons from the
+ * pending athlete onto one of the claimer's own athletes, then delete the
+ * pending row so no duplicate survives.
+ */
+export const mergeGuardianClaim = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ token: tokenSchema, athleteId: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const pending = await supabaseAdmin
+      .from("athletes")
+      .select("id, first_name, parent_id, guardian_claimed_at")
+      .eq("guardian_claim_token", data.token)
+      .maybeSingle();
+    if (pending.error) dbError(pending.error);
+    if (!pending.data) throw new Error("This link is no longer valid. Ask the coach to resend it.");
+    if (pending.data.parent_id || pending.data.guardian_claimed_at) {
+      throw new Error("This invite has already been claimed.");
+    }
+
+    const parent = await supabaseAdmin
+      .from("parent_profiles")
+      .select("id")
+      .eq("user_id", context.userId)
+      .maybeSingle();
+    if (parent.error) dbError(parent.error);
+    if (!parent.data) throw new Error("Create your parent account first.");
+
+    // The target must be the caller's own athlete.
+    const target = await supabaseAdmin
+      .from("athletes")
+      .select("id, first_name, parent_id")
+      .eq("id", data.athleteId)
+      .maybeSingle();
+    if (target.error) dbError(target.error);
+    if (!target.data || target.data.parent_id !== parent.data.id) {
+      throw new Error("That athlete isn't on your account.");
+    }
+
+    const pendingId = pending.data.id as string;
+
+    // Move the coach relationships onto the existing athlete, skipping links
+    // the coach already has there.
+    const links = await supabaseAdmin
+      .from("coach_athletes")
+      .select("coach_id")
+      .eq("athlete_id", pendingId);
+    for (const l of links.data ?? []) {
+      const exists = await supabaseAdmin
+        .from("coach_athletes")
+        .select("id")
+        .eq("coach_id", l.coach_id)
+        .eq("athlete_id", data.athleteId)
+        .maybeSingle();
+      if (!exists.data) {
+        await supabaseAdmin.from("coach_athletes").insert({
+          coach_id: l.coach_id,
+          athlete_id: data.athleteId,
+          coach_ack_at: new Date().toISOString(),
+          other_ack_at: new Date().toISOString(),
+        });
+      }
+    }
+
+    const sports = await supabaseAdmin
+      .from("coach_athlete_sports")
+      .select("coach_id, sport")
+      .eq("athlete_id", pendingId);
+    for (const s of sports.data ?? []) {
+      const exists = await supabaseAdmin
+        .from("coach_athlete_sports")
+        .select("id")
+        .eq("coach_id", s.coach_id)
+        .eq("athlete_id", data.athleteId)
+        .eq("sport", s.sport)
+        .maybeSingle();
+      if (!exists.data) {
+        await supabaseAdmin
+          .from("coach_athlete_sports")
+          .insert({ coach_id: s.coach_id, athlete_id: data.athleteId, sport: s.sport });
+      }
+    }
+
+    const slots = await supabaseAdmin
+      .from("athlete_lesson_slots")
+      .update({ athlete_id: data.athleteId })
+      .eq("athlete_id", pendingId);
+    if (slots.error) dbError(slots.error);
+
+    const del = await supabaseAdmin.from("athletes").delete().eq("id", pendingId);
+    if (del.error) dbError(del.error);
+
+    return { ok: true as const, athleteFirstName: target.data.first_name as string };
+  });
