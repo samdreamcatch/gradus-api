@@ -610,8 +610,9 @@ function RowSummary({
     .filter(([k]) => k !== "guardianEmail" && k !== "athleteEmail")
     .map(([, v]) => v);
   // Which inbox this address belongs to decides the voice of the invite email.
-  const recipient: "guardian" | "athlete" =
-    row.athleteEmail && !row.guardianEmail ? "athlete" : "guardian";
+  const [recipient, setRecipient] = useState<"guardian" | "athlete">(
+    row.athleteEmail && !row.guardianEmail ? "athlete" : "guardian",
+  );
 
   return (
     <>
@@ -623,14 +624,16 @@ function RowSummary({
             <span className={LABEL}>Who should we email?</span>
             <Select
               value={recipient}
-              onValueChange={(v) =>
+              onValueChange={(v) => {
+                const next = v === "athlete" ? "athlete" : "guardian";
+                setRecipient(next);
                 onChange(
                   row.id,
-                  v === "athlete"
+                  next === "athlete"
                     ? { athleteEmail: email, guardianEmail: "" }
                     : { guardianEmail: email, athleteEmail: "" },
-                )
-              }
+                );
+              }}
             >
               <SelectTrigger className="h-9 w-full bg-card">
                 <SelectValue />
@@ -663,7 +666,9 @@ function RowSummary({
               className="h-9 w-full"
             />
             <p className="mt-1 text-[11px] text-text-tertiary">
-              Enter a parent/guardian email for athletes under 18
+              {recipient === "athlete"
+                ? "Adult athletes only — use a parent/guardian email for anyone under 18"
+                : "Enter a parent/guardian email for athletes under 18"}
             </p>
           </div>
         </div>
