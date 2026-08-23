@@ -7,7 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/logo";
-import { claimGuardianAthlete, getGuardianClaimSummary } from "@/lib/guardian.functions";
+import {
+  claimAthleteSelf,
+  claimGuardianAthlete,
+  getGuardianClaimMergeOptions,
+  getGuardianClaimSummary,
+  mergeGuardianClaim,
+} from "@/lib/guardian.functions";
 
 export const Route = createFileRoute("/g/$token")({
   component: GuardianClaimPage,
