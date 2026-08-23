@@ -50,16 +50,11 @@ import {
 
 import {
   commitScheduleImport,
-  matchScheduleRows,
   parseScheduleImage,
   type ImportOutcome,
-  type MatchResult,
 } from "@/lib/schedule-import.functions";
 
-type Step = "source" | "review" | "match" | "done";
-
-/** Per-athlete decision made on the match step. */
-type Decision = { athleteId: string | null };
+type Step = "source" | "review" | "done";
 
 const LABEL = "mb-1 block text-[11px] font-bold uppercase tracking-widest text-text-tertiary";
 
@@ -76,8 +71,6 @@ export function ScheduleImportSheet({
   const defaultSport = coachSports.length === 1 ? coachSports[0] : "";
   const [step, setStep] = useState<Step>("source");
   const [rows, setRows] = useState<ImportRow[]>([]);
-  const [matches, setMatches] = useState<MatchResult[]>([]);
-  const [decisions, setDecisions] = useState<Record<string, Decision>>({});
   const [outcomes, setOutcomes] = useState<ImportOutcome[]>([]);
   // Errors stay hidden until the coach tries to continue — typing shouldn't feel accusatory.
   const [showErrors, setShowErrors] = useState(false);
@@ -94,8 +87,6 @@ export function ScheduleImportSheet({
   const reset = () => {
     setStep("source");
     setRows([]);
-    setMatches([]);
-    setDecisions({});
     setOutcomes([]);
     setShowErrors(false);
   };
@@ -123,29 +114,6 @@ export function ScheduleImportSheet({
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const runMatch = useMutation({
-    mutationFn: () =>
-      matchScheduleRows({
-        data: {
-          athletes: groups.map((g) => ({
-            key: g.key,
-            firstName: g.firstName,
-            lastName: g.lastName,
-            guardianEmail: g.guardianEmail,
-            athleteEmail: g.athleteEmail,
-          })),
-        },
-      }),
-    onSuccess: (res) => {
-      setMatches(res.results);
-      const next: Record<string, Decision> = {};
-      for (const m of res.results) next[m.key] = { athleteId: m.suggestedAthleteId };
-      setDecisions(next);
-      setStep("match");
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-
   const commit = useMutation({
     mutationFn: () =>
       commitScheduleImport({
@@ -157,7 +125,8 @@ export function ScheduleImportSheet({
             guardianEmail: g.guardianEmail,
             athleteEmail: g.athleteEmail,
             sport: g.sport || defaultSport,
-            matchedAthleteId: decisions[g.key]?.athleteId ?? null,
+            emailRecipient:
+              g.athleteEmail && !g.guardianEmail ? ("athlete" as const) : ("guardian" as const),
             slots: g.rows.map((r) => ({
               dayOfWeek: r.dayOfWeek as number,
               startMinute: r.startMinute as number,
@@ -196,23 +165,21 @@ export function ScheduleImportSheet({
       ? "Import your schedule"
       : step === "review"
         ? "Review lessons"
-        : step === "match"
-          ? "Check for existing accounts"
-          : "Import complete";
+        : "Import complete";
 
   return (
     <Sheet open={open} onOpenChange={close}>
       <SheetContent side="bottom" className="paper-surface max-h-[92dvh] overflow-y-auto">
         <SheetHeader className="text-left">
           <div className="flex items-center gap-2">
-            {step === "review" || step === "match" ? (
+            {step === "review" ? (
               <Button
                 type="button"
                 variant="ghost"
                 size="icon"
                 aria-label="Back"
                 className="-ml-2 shrink-0"
-                onClick={() => setStep(step === "match" ? "review" : "source")}
+                onClick={() => setStep("source")}
               >
                 <ChevronLeft className="size-5" aria-hidden />
               </Button>
@@ -226,9 +193,7 @@ export function ScheduleImportSheet({
               ? "Import your lesson schedule."
               : step === "review"
                 ? "Fix anything flagged, then continue. One row per weekly lesson."
-                : step === "match"
-                  ? "Some of these people may already be on Gradus."
-                  : "Here's what happened."}
+                : "Here's what happened."}
           </SheetDescription>
         </SheetHeader>
 
@@ -260,21 +225,6 @@ export function ScheduleImportSheet({
           />
         ) : null}
 
-        {step === "match" ? (
-          <MatchStep
-            groups={groups.map((g) => ({
-              key: g.key,
-              name: `${g.firstName} ${g.lastName}`.trim(),
-              lessons: g.rows.length,
-            }))}
-            matches={matches}
-            decisions={decisions}
-            onDecide={(key, athleteId) =>
-              setDecisions((prev) => ({ ...prev, [key]: { athleteId } }))
-            }
-          />
-        ) : null}
-
         {step === "done" ? <DoneStep outcomes={outcomes} /> : null}
 
         <SheetFooter className="mt-6 flex-row justify-end gap-2">
@@ -289,27 +239,15 @@ export function ScheduleImportSheet({
                     setShowErrors(true);
                     return;
                   }
-                  runMatch.mutate();
+                  commit.mutate();
                 }}
-                disabled={rows.length === 0 || runMatch.isPending}
+                disabled={rows.length === 0 || commit.isPending}
               >
-                {runMatch.isPending
-                  ? "Checking…"
+                {commit.isPending
+                  ? "Importing…"
                   : showErrors && invalidCount > 0
                     ? `${invalidCount} row${invalidCount === 1 ? "" : "s"} to fix`
                     : "Continue"}
-              </Button>
-            </>
-          ) : null}
-          {step === "match" ? (
-            <>
-              <Button variant="ghost" onClick={() => setStep("review")}>
-                Back
-              </Button>
-              <Button onClick={() => commit.mutate()} disabled={commit.isPending}>
-                {commit.isPending
-                  ? "Importing…"
-                  : `Import ${groups.length} athlete${groups.length === 1 ? "" : "s"}`}
               </Button>
             </>
           ) : null}
@@ -909,123 +847,6 @@ function RowEditor({
 }
 
 
-
-function MatchStep({
-  groups,
-  matches,
-  decisions,
-  onDecide,
-}: {
-  groups: { key: string; name: string; lessons: number }[];
-  matches: MatchResult[];
-  decisions: Record<string, Decision>;
-  onDecide: (key: string, athleteId: string | null) => void;
-}) {
-  return (
-    <ul className="mt-4 space-y-3">
-      {groups.map((g) => {
-        const match = matches.find((m) => m.key === g.key);
-        const chosen = decisions[g.key]?.athleteId ?? null;
-        return (
-          <li key={g.key} className="rounded-xl border border-divider bg-card p-3">
-            <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0">
-                <p className="truncate font-display text-base font-black text-text-primary">
-                  {g.name}
-                </p>
-                <p className="mt-0.5 text-[11px] font-bold uppercase tracking-widest text-text-tertiary">
-                  {g.lessons} lesson{g.lessons === 1 ? "" : "s"}
-                </p>
-              </div>
-              <span
-                className={cn(
-                  "shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest",
-                  chosen
-                    ? "border-accent/50 text-accent-ink"
-                    : "border-divider text-text-secondary",
-                )}
-              >
-                {chosen ? "Matched" : "New athlete"}
-              </span>
-            </div>
-
-            {match && match.candidates.length > 0 ? (
-              <div className="mt-3 space-y-1.5">
-                {match.candidates.map((c) => {
-                  const selected = chosen === c.athleteId;
-                  return (
-                    <button
-                      key={c.athleteId}
-                      type="button"
-                      onClick={() => onDecide(g.key, selected ? null : c.athleteId)}
-                      className={cn(
-                        "press-soft flex w-full items-center gap-2 rounded-lg border px-3 py-2 text-left text-sm",
-                        selected ? "border-accent bg-accent/10" : "border-divider bg-elevated",
-                      )}
-                    >
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate font-bold text-text-primary">{c.name}</span>
-                        <span className="mt-0.5 block text-xs text-text-secondary">
-                          {c.onRoster
-                            ? "Already on your roster"
-                            : c.reason === "email"
-                              ? `${c.nameAlsoMatches ? "Email + name match" : "Email match"}${c.maskedEmail ? ` · ${c.maskedEmail}` : ""}`
-                              : "Matches an existing Gradus account"}
-                        </span>
-
-                        {(() => {
-                          const sportLabel = c.sport
-                            ? (getSport(c.sport as SportKey)?.label ?? c.sport)
-                            : null;
-                          const levelLabel =
-                            c.sport && c.levelKey
-                              ? (getSportLevel(c.sport, c.levelKey)?.label ?? c.levelKey)
-                              : null;
-                          const bits = [
-                            c.guardianName ? `Parent: ${c.guardianName}` : null,
-                            sportLabel
-                              ? levelLabel
-                                ? `${sportLabel} · ${levelLabel}`
-                                : sportLabel
-                              : null,
-                          ].filter(Boolean);
-                          if (bits.length === 0) return null;
-                          return (
-                            <span className="mt-0.5 block truncate text-xs text-text-tertiary">
-                              {bits.join(" · ")}
-                            </span>
-                          );
-                        })()}
-                      </span>
-
-                      {selected ? (
-                        <Check className="size-4 shrink-0 text-accent-ink" aria-hidden />
-                      ) : null}
-                    </button>
-                  );
-                })}
-                <button
-                  type="button"
-                  onClick={() => onDecide(g.key, null)}
-                  className={cn(
-                    "press-soft flex w-full items-center rounded-lg border px-3 py-2 text-left text-sm",
-                    chosen == null ? "border-accent bg-accent/10" : "border-divider bg-elevated",
-                  )}
-                >
-                  <span className="font-bold text-text-primary">None of these — add as new</span>
-                </button>
-              </div>
-            ) : (
-              <p className="mt-2 text-xs text-text-secondary">
-                No existing account found. We'll create the athlete and email an invite.
-              </p>
-            )}
-          </li>
-        );
-      })}
-    </ul>
-  );
-}
 
 function DoneStep({ outcomes }: { outcomes: ImportOutcome[] }) {
   const created = outcomes.filter((o) => o.status === "created").length;
