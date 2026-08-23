@@ -666,7 +666,9 @@ function RowSummary({
               className="h-9 w-full"
             />
             <p className="mt-1 text-[11px] text-text-tertiary">
-              Enter a parent/guardian email for athletes under 18
+              {recipient === "athlete"
+                ? "Adult athletes only — use a parent/guardian email for anyone under 18"
+                : "Enter a parent/guardian email for athletes under 18"}
             </p>
           </div>
         </div>
