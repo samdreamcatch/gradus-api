@@ -610,8 +610,9 @@ function RowSummary({
     .filter(([k]) => k !== "guardianEmail" && k !== "athleteEmail")
     .map(([, v]) => v);
   // Which inbox this address belongs to decides the voice of the invite email.
-  const recipient: "guardian" | "athlete" =
-    row.athleteEmail && !row.guardianEmail ? "athlete" : "guardian";
+  const [recipient, setRecipient] = useState<"guardian" | "athlete">(
+    row.athleteEmail && !row.guardianEmail ? "athlete" : "guardian",
+  );
 
   return (
     <>
