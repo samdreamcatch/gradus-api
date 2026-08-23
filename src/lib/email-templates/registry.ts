@@ -19,6 +19,7 @@ export interface TemplateEntry {
  */
 import { template as errorDigestTemplate } from "./error-digest";
 import { template as guardianInviteTemplate } from "./guardian-invite";
+import { template as athleteInviteTemplate } from "./athlete-invite";
 import { template as guardianActivityTemplate } from "./guardian-activity";
 import { template as welcomeTemplate } from "./welcome";
 import { template as activationTemplate } from "./activation";
@@ -31,6 +32,7 @@ import { template as coachVisibilityTemplate } from "./coach-visibility";
 export const TEMPLATES: Record<string, TemplateEntry> = {
   "error-digest": errorDigestTemplate,
   "guardian-invite": guardianInviteTemplate,
+  "athlete-invite": athleteInviteTemplate,
   "guardian-activity": guardianActivityTemplate,
   welcome: welcomeTemplate,
   activation: activationTemplate,
