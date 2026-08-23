@@ -551,13 +551,35 @@ export const commitScheduleImport = createServerFn({ method: "POST" })
     const coachId = coach.data.id;
     const coachName = `${coach.data.first_name} ${coach.data.last_name}`.trim();
 
+    // Athletes already on this coach's roster, keyed by normalized name, so a
+    // repeat import attaches lessons instead of creating a duplicate.
+    const rosterByName = new Map<string, string>();
+    {
+      const links = await supabaseAdmin
+        .from("coach_athletes")
+        .select("athlete_id")
+        .eq("coach_id", coachId);
+      const ids = (links.data ?? []).map((r) => r.athlete_id as string);
+      if (ids.length > 0) {
+        const rows = await supabaseAdmin
+          .from("athletes")
+          .select("id, first_name, last_name")
+          .in("id", ids);
+        for (const a of rows.data ?? []) {
+          const k = normName(a.first_name as string, a.last_name as string);
+          if (!rosterByName.has(k)) rosterByName.set(k, a.id as string);
+        }
+      }
+    }
+
     const outcomes: ImportOutcome[] = [];
 
     for (const g of data.groups) {
       const name = `${g.firstName} ${g.lastName}`.trim();
-      // Guardian email wins; an athlete-only email still gets the claim link so
-      // the athlete can set their account up.
-      const inviteEmail = g.guardianEmail || g.athleteEmail || null;
+      // One address either way; the toggle only decides which voice the email uses.
+      const inviteEmail =
+        (g.emailRecipient === "athlete" ? g.athleteEmail || g.guardianEmail : g.guardianEmail || g.athleteEmail) ||
+        null;
 
       for (const s of g.slots) {
         if (s.endMinute <= s.startMinute) {
