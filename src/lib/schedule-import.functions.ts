@@ -616,6 +616,7 @@ export const commitScheduleImport = createServerFn({ method: "POST" })
               guardian_claim_token: token,
               guardian_invited_at: inviteEmail ? new Date().toISOString() : null,
               added_by_coach_id: coachId,
+              invite_recipient: g.emailRecipient,
             })
             .select("id")
             .single();
@@ -639,6 +640,7 @@ export const commitScheduleImport = createServerFn({ method: "POST" })
               athleteName: name,
               coachName,
               token,
+              recipient: g.emailRecipient,
             });
             invited = inviteEmail;
           }
