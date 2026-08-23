@@ -10,10 +10,12 @@ import { Logo } from "@/components/logo";
 import {
   claimAthleteSelf,
   claimGuardianAthlete,
+  getGuardianClaimContext,
   getGuardianClaimMergeOptions,
   getGuardianClaimSummary,
   mergeGuardianClaim,
 } from "@/lib/guardian.functions";
+
 
 export const Route = createFileRoute("/g/$token")({
   component: GuardianClaimPage,
