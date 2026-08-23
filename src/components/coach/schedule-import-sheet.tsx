@@ -693,28 +693,62 @@ function RowSummary({
   const otherErrors = Object.entries(errors)
     .filter(([k]) => k !== "guardianEmail" && k !== "athleteEmail")
     .map(([, v]) => v);
+  // Which inbox this address belongs to decides the voice of the invite email.
+  const recipient: "guardian" | "athlete" =
+    row.athleteEmail && !row.guardianEmail ? "athlete" : "guardian";
 
   return (
     <>
       {!collecting ? (
         <p className="mt-1 truncate text-xs text-text-tertiary">{email}</p>
       ) : (
-        <div className="mt-2">
-          <span className={LABEL}>Email</span>
-          <Input
-            type="email"
-            inputMode="email"
-            placeholder="parent@example.com"
-            value={row.guardianEmail}
-            onBlur={() => {
-              if (row.guardianEmail || row.athleteEmail) setCollecting(false);
-            }}
-            onChange={(e) => onChange(row.id, { guardianEmail: e.target.value.toLowerCase() })}
-            className="h-9 w-full"
-          />
-          <p className="mt-1 text-[11px] text-text-tertiary">
-            Parent / guardian email — or the athlete&apos;s own if they&apos;re 18+
-          </p>
+        <div className="mt-2 space-y-2">
+          <div>
+            <span className={LABEL}>Who should we email?</span>
+            <Select
+              value={recipient}
+              onValueChange={(v) =>
+                onChange(row.id,
+                  v === "athlete"
+                    ? { athleteEmail: email, guardianEmail: "" }
+                    : { guardianEmail: email, athleteEmail: "" },
+                )
+              }
+            >
+              <SelectTrigger className="h-9 w-full bg-card">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="guardian">A parent or guardian</SelectItem>
+                <SelectItem value="athlete">The athlete (18+)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <span className={LABEL}>Email</span>
+            <Input
+              type="email"
+              inputMode="email"
+              placeholder={recipient === "athlete" ? "athlete@example.com" : "parent@example.com"}
+              value={email}
+              onBlur={() => {
+                if (row.guardianEmail || row.athleteEmail) setCollecting(false);
+              }}
+              onChange={(e) => {
+                const v = e.target.value.toLowerCase();
+                onChange(
+                  row.id,
+                  recipient === "athlete"
+                    ? { athleteEmail: v, guardianEmail: "" }
+                    : { guardianEmail: v, athleteEmail: "" },
+                );
+              }}
+              className="h-9 w-full"
+            />
+            <p className="mt-1 text-[11px] text-text-tertiary">
+              Enter a parent/guardian email for athletes under 18
+            </p>
+          </div>
         </div>
       )}
       {otherErrors.length > 0 ? (
