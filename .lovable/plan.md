@@ -35,22 +35,43 @@ Both the import sheet and the "Add athlete" step in the lesson slot sheet go str
 - "Added to Wednesday 4:00pm" (existing roster athlete)
 - "Invite sent to p••••@gmail.com — they'll appear once they accept"
 
+## Making the invite say the right thing (adult vs child)
+
+The coach never needs a birthdate — only *whose inbox this is*, which they always know. So each athlete carries one choice, sitting right above the email field:
+
+**Who should we email?**  (•) A parent or guardian   ( ) The athlete (18+)
+
+- Default is **parent or guardian** — the common case and the safer default for a minor.
+- This isn't new data. The CSV template already separates `guardian_email` from `athlete_email`, and the import row type already carries both. The toggle just decides which field the typed address lands in, so files, photos and manual entry all produce the same signal.
+- No birthdate is asked for or implied. If the coach guesses wrong, the claim page corrects it: the recipient can still say "I'm the athlete" / "I'm the parent," and the real date of birth is captured there as it is today.
+
+Downstream:
+
+- **Email copy branches.** Guardian route keeps the existing `guardian-invite` template ("Coach Tami added Leon to her schedule — set up his account"). Adult route uses athlete-voiced copy ("Coach Tami added you to her schedule — set up your account"), same claim link.
+- **The claim page branches.** Guardian path asks for the guardian's name plus the athlete's date of birth. Adult path drops the "who are you to this athlete" framing and treats the claimer as the athlete.
+
 ## Technical notes
 
 `src/lib/schedule-import.functions.ts`
 - Delete `matchScheduleRows`, the `MatchCandidate` / `MatchResult` types, the `maskEmail` / `firstNameLastInitial` / `redactFullName` helpers, and the whole cross-account lookup block (guardian-email pool, `athletes`/`parent_profiles` by `user_id`, the `last_name` sweep, guardian names, `athlete_goals`).
-- `commitScheduleImport` resolves the athlete server-side and drops the client-supplied `matchedAthleteId` from its input schema. Order per group: (1) reuse an athlete already in `coach_athletes` for this coach with a matching normalized first+last name; (2) otherwise create the pending athlete + `guardian_claim_token` + `coach_athletes` row and send `sendGuardianInvite`.
+- `commitScheduleImport` resolves the athlete server-side and drops the client-supplied `matchedAthleteId` from its input schema. Order per group: (1) reuse an athlete already in `coach_athletes` for this coach with a matching normalized first+last name; (2) otherwise create the pending athlete + `guardian_claim_token` + `coach_athletes` row and send the invite.
+- Recipient kind is derived, not a new column: `guardianEmail` set → guardian invite; `athleteEmail` set → adult invite. Both still write the address to `athletes.guardian_email` with a claim token.
 - `ImportOutcome.name` stays the name the coach typed; statuses become `created` | `linked` | `failed`.
 
 `src/components/coach/schedule-import-sheet.tsx`
 - Remove the match step, its mutation/state and the candidate list markup. Review → commit.
+- Add the "Who should we email?" two-option control per athlete in the review step.
 
 `src/components/coach/lesson-slot-sheet.tsx`
-- Remove the match-review step from `NewAthleteForm`; submit goes straight to `addAthleteWithGuardian`.
+- Add the same control above the EMAIL field in `NewAthleteForm`.
+- Remove the match-review step; submit goes straight to `addAthleteWithGuardian` (which gains an `emailRecipient: "guardian" | "athlete"` input).
 - Remove `linkExistingAthleteToRoster` from `src/lib/coach-roster-mutations.functions.ts` — it links a client-chosen athlete id and is unreachable once the match UI is gone.
 
-`src/lib/guardian.functions.ts` + `src/routes/g.$token.tsx`
-- `getGuardianClaimSummary` additionally returns the claimer's own same-name athletes (id + full name — their own data) so the page can offer the merge choice.
-- New `mergeGuardianClaim` server fn: given the token and one of *their own* athlete ids, move the coach link (`coach_athletes`, `coach_athlete_sports`, `athlete_lesson_slots`) from the pending athlete onto the existing one, then delete the pending row. Verify the target athlete belongs to the caller's parent profile before touching anything.
+New `src/lib/email-templates/athlete-invite.tsx`, mirroring `guardian-invite.tsx` with athlete-voiced copy and registered in the template registry so it's editable from the email copy admin.
 
-No schema changes.
+`src/lib/guardian.functions.ts` + `src/routes/g.$token.tsx`
+- `getGuardianClaimSummary` returns the invite's recipient kind, plus the claimer's own same-name athletes (id + full name — their own data) so the page can offer the merge choice.
+- New `mergeGuardianClaim` server fn: given the token and one of *their own* athlete ids, move the coach link (`coach_athletes`, `coach_athlete_sports`, `athlete_lesson_slots`) onto the existing athlete, then delete the pending row. Verify the target athlete belongs to the caller before touching anything.
+
+Schema: one nullable `athletes.invite_recipient` text column ('guardian' | 'athlete') so the claim page knows which voice the invite used.
+
