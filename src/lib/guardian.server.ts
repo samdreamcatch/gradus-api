@@ -9,6 +9,7 @@
 import * as React from "react";
 import { render } from "@react-email/render";
 import { GuardianInviteEmail, guardianInviteSubject } from "./email-templates/guardian-invite";
+import { AthleteInviteEmail, athleteInviteSubject } from "./email-templates/athlete-invite";
 import {
   GuardianActivityEmail,
   guardianActivitySubject,
@@ -98,10 +99,14 @@ export async function sendGuardianInvite(params: {
   athleteName: string;
   coachName?: string | null;
   token: string;
+  /** Whose inbox this is — drives athlete-voiced vs guardian-voiced copy. */
+  recipient?: "guardian" | "athlete";
 }): Promise<void> {
   try {
-    const copyOverrides = await fetchOverridesFor("guardian-invite");
-    const element = React.createElement(GuardianInviteEmail, {
+    const isAthlete = params.recipient === "athlete";
+    const label = isAthlete ? "athlete-invite" : "guardian-invite";
+    const copyOverrides = await fetchOverridesFor(label);
+    const element = React.createElement(isAthlete ? AthleteInviteEmail : GuardianInviteEmail, {
       athleteName: params.athleteName,
       coachName: params.coachName ?? null,
       claimUrl: guardianClaimUrl(params.token),
@@ -112,13 +117,13 @@ export async function sendGuardianInvite(params: {
     const text = await render(element, { plainText: true });
     await enqueue({
       to: params.to,
-      subject: guardianInviteSubject(
+      subject: (isAthlete ? athleteInviteSubject : guardianInviteSubject)(
         { athleteName: params.athleteName, coachName: params.coachName ?? null },
         copyOverrides,
       ),
       html,
       text,
-      label: "guardian-invite",
+      label,
     });
   } catch (e) {
     console.error("[guardian] invite render/send failed", e);

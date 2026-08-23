@@ -282,6 +282,63 @@ export const EMAIL_COPY_SCHEMA: Record<string, TemplateCopy> = {
         "If you don't recognize this athlete, you can ignore this email and no account will be created.",
     },
   },
+  "athlete-invite": {
+    displayName: "Athlete invite (18+)",
+    category: "App",
+    description:
+      "Sent to an adult athlete a coach added to their schedule, with a link to set up their own Gradus account.",
+    slots: [
+      { key: "preview", label: "Inbox preview", kind: "text", variables: GUARDIAN_INVITE_VARS },
+      {
+        key: "subject",
+        label: "Subject line (no coach named)",
+        kind: "text",
+        variables: GUARDIAN_INVITE_VARS,
+      },
+      {
+        key: "subjectWithCoach",
+        label: "Subject line (coach added them)",
+        kind: "text",
+        variables: GUARDIAN_INVITE_VARS,
+      },
+      { key: "eyebrow", label: "Small caps eyebrow", kind: "text" },
+      { key: "heading", label: "Big headline", kind: "text", variables: GUARDIAN_INVITE_VARS },
+      {
+        key: "introWithCoach",
+        label: "Intro paragraph (coach added them)",
+        kind: "textarea",
+        variables: GUARDIAN_INVITE_VARS,
+      },
+      {
+        key: "intro",
+        label: "Intro paragraph (no coach named)",
+        kind: "textarea",
+        variables: GUARDIAN_INVITE_VARS,
+      },
+      { key: "body", label: "Secondary paragraph", kind: "textarea", variables: GUARDIAN_INVITE_VARS },
+      { key: "ctaLabel", label: "Button label", kind: "text", variables: GUARDIAN_INVITE_VARS },
+      { key: "fallbackHelp", label: "Button-not-working help", kind: "text" },
+      { key: "signOff", label: "Handwritten sign-off", kind: "text" },
+      { key: "footer", label: "Fine-print footer", kind: "textarea" },
+    ],
+    defaults: {
+      preview: "Set up your Gradus account",
+      subject: "You've been added to Gradus",
+      subjectWithCoach: "Coach {coachName} added you to Gradus",
+      eyebrow: "Athlete access",
+      heading: "Set up your Gradus account",
+      introWithCoach:
+        "Coach {coachName} added you to their schedule on Gradus, the training app they use to assign plans, track practice, and message about lessons.",
+      intro:
+        "You've been added to a coach's schedule on Gradus, the training app they use to assign plans, track practice, and message about lessons.",
+      body: "Create your free account to see your plans, log practice, and message your coach in one place — nothing to pay, and it takes about a minute.",
+      ctaLabel: "Set up my account",
+      fallbackHelp: "Or paste this link into your browser:",
+      signOff: "\u2014 The Gradus team",
+      footer:
+        "If this wasn't meant for you, you can ignore this email and no account will be created.",
+    },
+  },
   "coach-visibility": {
     displayName: "Team plan — coach visibility request",
     category: "App",

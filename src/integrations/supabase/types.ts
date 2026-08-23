@@ -334,6 +334,7 @@ export type Database = {
           guardian_email: string | null
           guardian_invited_at: string | null
           id: string
+          invite_recipient: string | null
           is_test: boolean
           last_name: string
           motivation: string
@@ -354,6 +355,7 @@ export type Database = {
           guardian_email?: string | null
           guardian_invited_at?: string | null
           id?: string
+          invite_recipient?: string | null
           is_test?: boolean
           last_name?: string
           motivation?: string
@@ -374,6 +376,7 @@ export type Database = {
           guardian_email?: string | null
           guardian_invited_at?: string | null
           id?: string
+          invite_recipient?: string | null
           is_test?: boolean
           last_name?: string
           motivation?: string

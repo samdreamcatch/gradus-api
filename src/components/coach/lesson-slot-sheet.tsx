@@ -40,14 +40,9 @@ import {
   cancelLessonOccurrence,
   clearLessonOverride,
   deleteLessonSlot,
-  linkExistingAthleteToRoster,
   rescheduleLessonOccurrence,
   updateLessonSlot,
 } from "@/lib/coach-roster-mutations.functions";
-import {
-  matchScheduleRows,
-  type MatchResult,
-} from "@/lib/schedule-import.functions";
 
 const DAYS = [
   { value: 1, short: "Mon" },
@@ -468,7 +463,7 @@ function NewAthleteForm({
   const [guardianEmail, setGuardianEmail] = useState("");
   const [sport, setSport] = useState<string>(coachSports[0] ?? "");
   const [showErrors, setShowErrors] = useState(false);
-  const [match, setMatch] = useState<MatchResult | null>(null);
+  const [emailRecipient, setEmailRecipient] = useState<"guardian" | "athlete">("guardian");
 
   useEffect(() => {
     if (!sport && coachSports.length > 0) setSport(coachSports[0]);
@@ -485,8 +480,6 @@ function NewAthleteForm({
   };
   const hasErrors = Object.values(errors).some(Boolean);
 
-  const fullName = `${firstName.trim()} ${lastName.trim()}`.trim();
-
   const create = useMutation({
     mutationFn: () =>
       addAthleteWithGuardian({
@@ -495,6 +488,7 @@ function NewAthleteForm({
           lastName: lastName.trim(),
           guardianEmail: guardianEmail.trim() ? guardianEmail.trim() : undefined,
           sport: sport || undefined,
+          emailRecipient,
         },
       }),
     onSuccess: async (res) => {
@@ -509,49 +503,6 @@ function NewAthleteForm({
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const link = useMutation({
-    mutationFn: (athleteId: string) =>
-      linkExistingAthleteToRoster({ data: { athleteId, sport: sport || undefined } }),
-    onSuccess: async (res) => {
-      await qc.invalidateQueries({ queryKey: ["coach", "roster"] });
-      toast.success(
-        res.alreadyOnRoster ? `${fullName} is already on your roster` : `${fullName} added`,
-      );
-      onCreated(res.athleteId);
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-
-  // Step 1 → check whether this athlete already has a Gradus account.
-  const lookup = useMutation({
-    mutationFn: () =>
-      matchScheduleRows({
-        data: {
-          athletes: [
-            {
-              key: "new-athlete",
-              firstName: firstName.trim(),
-              lastName: lastName.trim(),
-              guardianEmail: guardianEmail.trim(),
-              athleteEmail: guardianEmail.trim(),
-            },
-          ],
-        },
-      }),
-    onSuccess: (res) => {
-      const result = res.results[0];
-      if (!result || result.candidates.length === 0) {
-        create.mutate();
-        return;
-      }
-      setMatch(result);
-    },
-    onError: () => {
-      // Matching is a convenience — never block adding the athlete.
-      create.mutate();
-    },
-  });
-
   const field = (label: string, node: React.ReactNode, error: string | null) => (
     <div>
       <label className="mb-1 block text-[11px] font-bold uppercase tracking-widest text-text-tertiary">
@@ -562,69 +513,8 @@ function NewAthleteForm({
     </div>
   );
 
-  const busy = lookup.isPending || create.isPending || link.isPending;
+  const busy = create.isPending;
 
-  // ---- Step 2: match review ----
-  if (match) {
-    return (
-      <div className="space-y-4">
-        <p className="text-sm text-text-secondary">
-          {match.status === "exact"
-            ? "We found an existing Gradus account that looks like this athlete. Link it so they keep their history."
-            : "These existing Gradus athletes look similar. Link one, or send a fresh invite."}
-        </p>
-
-        <div className="space-y-2">
-          {match.candidates.map((c) => (
-            <button
-              key={c.athleteId}
-              type="button"
-              disabled={busy}
-              onClick={() => link.mutate(c.athleteId)}
-              className="press w-full rounded-md border border-divider bg-card p-3 text-left disabled:opacity-60"
-            >
-              <div className="text-sm font-semibold text-text-primary">{c.name}</div>
-              <div className="mt-0.5 text-xs text-text-secondary">
-                {[
-                  c.maskedEmail,
-                  c.guardianName ? `Guardian: ${c.guardianName}` : null,
-                  c.onRoster ? "Already on your roster" : "Not connected yet",
-                  c.reason === "email" ? "Email match" : "Name match",
-                ]
-                  .filter(Boolean)
-                  .join(" · ")}
-              </div>
-            </button>
-          ))}
-        </div>
-
-        <div className="rounded-md border border-divider bg-card p-3">
-          <div className="text-sm font-semibold text-text-primary">
-            None of these — invite {fullName}
-          </div>
-          <p className="mt-0.5 text-xs text-text-secondary">
-            We&apos;ll email {guardianEmail.trim()} a link to join Gradus.
-          </p>
-          <Button
-            variant="secondary"
-            className="mt-2 w-full"
-            disabled={busy}
-            onClick={() => create.mutate()}
-          >
-            {create.isPending ? "Sending…" : "Send invite"}
-          </Button>
-        </div>
-
-        <SheetFooter className="mt-2 flex-row justify-end gap-2">
-          <Button variant="ghost" disabled={busy} onClick={() => setMatch(null)}>
-            Back
-          </Button>
-        </SheetFooter>
-      </div>
-    );
-  }
-
-  // ---- Step 1: details ----
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3">
@@ -660,13 +550,30 @@ function NewAthleteForm({
         : null}
 
       {field(
+        "Who should we email?",
+        <Select
+          value={emailRecipient}
+          onValueChange={(v) => setEmailRecipient(v as "guardian" | "athlete")}
+        >
+          <SelectTrigger className="w-full bg-card">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="guardian">A parent or guardian</SelectItem>
+            <SelectItem value="athlete">The athlete (18+)</SelectItem>
+          </SelectContent>
+        </Select>,
+        null,
+      )}
+
+      {field(
         "EMAIL",
         <Input
           type="email"
           inputMode="email"
           value={guardianEmail}
           onChange={(e) => setGuardianEmail(e.target.value)}
-          placeholder="parent@example.com"
+          placeholder={emailRecipient === "athlete" ? "athlete@example.com" : "parent@example.com"}
         />,
         errors.guardianEmail,
       )}
@@ -683,11 +590,11 @@ function NewAthleteForm({
           onClick={() => {
             setShowErrors(true);
             if (hasErrors) return;
-            lookup.mutate();
+            create.mutate();
           }}
           disabled={busy}
         >
-          {busy ? "Checking…" : "Add athlete"}
+          {busy ? "Adding…" : "Add athlete"}
         </Button>
       </SheetFooter>
     </div>

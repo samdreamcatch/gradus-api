@@ -1,0 +1,2 @@
+ALTER TABLE public.athletes ADD COLUMN IF NOT EXISTS invite_recipient text;
+ALTER TABLE public.athletes ADD CONSTRAINT athletes_invite_recipient_check CHECK (invite_recipient IS NULL OR invite_recipient IN ('guardian','athlete'));
