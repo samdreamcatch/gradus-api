@@ -27,7 +27,7 @@ export const getGuardianClaimSummary = createServerFn({ method: "POST" })
     const res = await supabaseAdmin
       .from("athletes")
       .select(
-        "id, first_name, last_name, birthdate, guardian_claimed_at, added_by_coach_id, parent_id",
+        "id, first_name, last_name, birthdate, guardian_claimed_at, added_by_coach_id, parent_id, invite_recipient",
       )
       .eq("guardian_claim_token", data.token)
       .maybeSingle();
@@ -49,6 +49,8 @@ export const getGuardianClaimSummary = createServerFn({ method: "POST" })
       athleteLastName: res.data.last_name as string,
       coachName,
       needsBirthdate: res.data.birthdate == null,
+      inviteRecipient: ((res.data as { invite_recipient?: string | null }).invite_recipient ??
+        "guardian") as "guardian" | "athlete",
       alreadyClaimed: Boolean(res.data.guardian_claimed_at) || Boolean(res.data.parent_id),
     };
   });
