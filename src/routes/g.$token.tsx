@@ -47,6 +47,9 @@ function GuardianClaimPage() {
   const navigate = useNavigate();
   const summaryFn = useServerFn(getGuardianClaimSummary);
   const claimFn = useServerFn(claimGuardianAthlete);
+  const selfClaimFn = useServerFn(claimAthleteSelf);
+  const mergeOptionsFn = useServerFn(getGuardianClaimMergeOptions);
+  const mergeFn = useServerFn(mergeGuardianClaim);
 
   const [signedIn, setSignedIn] = useState<boolean | null>(null);
   const [firstName, setFirstName] = useState("");
@@ -75,10 +78,27 @@ function GuardianClaimPage() {
     retry: false,
   });
 
+  const isAdultInvite = summary?.inviteRecipient === "athlete";
+
+  // Only the claimer's OWN athletes with the same name — offered so a second
+  // coach's invite doesn't create a duplicate athlete on their account.
+  const { data: mergeData } = useQuery({
+    queryKey: ["guardian-claim-merge", token],
+    queryFn: () => mergeOptionsFn({ data: { token } }),
+    enabled: signedIn === true && Boolean(summary) && !summary?.alreadyClaimed && !isAdultInvite,
+    retry: false,
+  });
+  const mergeOptions = mergeData?.options ?? [];
+
   const handleClaim = async () => {
     setError(null);
     setClaiming(true);
     try {
+      if (isAdultInvite) {
+        await selfClaimFn({ data: { token, birthdate } });
+        navigate({ to: "/athlete/plans" });
+        return;
+      }
       await claimFn({
         data: {
           token,
@@ -88,6 +108,19 @@ function GuardianClaimPage() {
           ...(birthdate ? { birthdate } : {}),
         },
       });
+      navigate({ to: "/parent/plans" });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Something went wrong");
+    } finally {
+      setClaiming(false);
+    }
+  };
+
+  const handleMerge = async (athleteId: string) => {
+    setError(null);
+    setClaiming(true);
+    try {
+      await mergeFn({ data: { token, athleteId } });
       navigate({ to: "/parent/plans" });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");
