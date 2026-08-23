@@ -206,6 +206,9 @@ export const commitScheduleImport = createServerFn({ method: "POST" })
     const coachId = coach.data.id;
     const coachName = `${coach.data.first_name} ${coach.data.last_name}`.trim();
 
+    const normName = (first: string, last: string) =>
+      `${first} ${last}`.trim().toLowerCase().replace(/\s+/g, " ");
+
     // Athletes already on this coach's roster, keyed by normalized name, so a
     // repeat import attaches lessons instead of creating a duplicate.
     const rosterByName = new Map<string, string>();
