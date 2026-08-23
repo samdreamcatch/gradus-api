@@ -159,8 +159,9 @@ function GuardianClaimPage() {
           </h1>
         </div>
 
-        {isLoading ? (
+        {isLoading || signedIn === null ? (
           <p className="text-center text-text-tertiary">Checking your link…</p>
+
         ) : summaryError ? (
           <div className="space-y-4 text-center">
             <p className="text-sm text-destructive">{(summaryError as Error).message}</p>
