@@ -252,10 +252,52 @@ export const getMyGuardianStatus = createServerFn({ method: "GET" })
     };
   });
 
+/** Who the signed-in claimer is, so the page doesn't ask a returning parent to re-introduce themselves. */
+export const getGuardianClaimContext = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const parent = await supabaseAdmin
+      .from("parent_profiles")
+      .select("first_name, last_name")
+      .eq("user_id", context.userId)
+      .maybeSingle();
+    if (parent.error) dbError(parent.error);
+    return {
+      hasParentProfile: Boolean(parent.data),
+      parentName: parent.data
+        ? `${parent.data.first_name} ${parent.data.last_name}`.trim()
+        : null,
+    };
+  });
+
+type MergeOption = { athleteId: string; name: string; rank: "exact" | "close" | "other" };
+
+const normName = (s: string) => s.trim().toLowerCase().replace(/\s+/g, " ");
+
+/** Small edit distance, used to catch nickname/typo variants like Leo / Leon. */
+function levenshtein(a: string, b: string): number {
+  const prev = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i += 1) {
+    let diag = prev[0]!;
+    prev[0] = i;
+    for (let j = 1; j <= b.length; j += 1) {
+      const tmp = prev[j]!;
+      prev[j] = Math.min(
+        prev[j]! + 1,
+        prev[j - 1]! + 1,
+        diag + (a[i - 1] === b[j - 1] ? 0 : 1),
+      );
+      diag = tmp;
+    }
+  }
+  return prev[b.length]!;
+}
+
 /**
- * The signed-in claimer's OWN athletes whose name matches the pending athlete
- * behind this token. Only their own data is returned, so this discloses
- * nothing about anyone else's account.
+ * The signed-in claimer's OWN athletes, ranked by how closely they match the
+ * pending athlete behind this token. Only their own data is returned, so this
+ * discloses nothing about anyone else's account.
  */
 export const getGuardianClaimMergeOptions = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -269,29 +311,56 @@ export const getGuardianClaimMergeOptions = createServerFn({ method: "POST" })
       .eq("guardian_claim_token", data.token)
       .maybeSingle();
     if (pending.error) dbError(pending.error);
-    if (!pending.data) return { options: [] as { athleteId: string; name: string }[] };
+    if (!pending.data) return { options: [] as MergeOption[] };
 
     const parent = await supabaseAdmin
       .from("parent_profiles")
       .select("id")
       .eq("user_id", context.userId)
       .maybeSingle();
-    if (!parent.data) return { options: [] as { athleteId: string; name: string }[] };
+    if (parent.error) dbError(parent.error);
+    if (!parent.data) return { options: [] as MergeOption[] };
 
     const mine = await supabaseAdmin
       .from("athletes")
       .select("id, first_name, last_name")
       .eq("parent_id", parent.data.id);
+    if (mine.error) dbError(mine.error);
 
-    const norm = (s: string) => s.trim().toLowerCase().replace(/\s+/g, " ");
-    const target = norm(`${pending.data.first_name} ${pending.data.last_name}`);
+    const targetFirst = normName(pending.data.first_name as string);
+    const targetLast = normName(pending.data.last_name as string);
+    const targetFull = `${targetFirst} ${targetLast}`.trim();
 
-    const options = (mine.data ?? [])
-      .filter((a) => a.id !== pending.data!.id && norm(`${a.first_name} ${a.last_name}`) === target)
-      .map((a) => ({ athleteId: a.id as string, name: `${a.first_name} ${a.last_name}`.trim() }));
+    const rankOrder = { exact: 0, close: 1, other: 2 } as const;
+
+    const options: MergeOption[] = (mine.data ?? [])
+      .filter((a) => a.id !== pending.data!.id)
+      .map((a) => {
+        const first = normName(a.first_name as string);
+        const last = normName(a.last_name as string);
+        const full = `${first} ${last}`.trim();
+        let rank: MergeOption["rank"] = "other";
+        if (full === targetFull) rank = "exact";
+        else if (
+          last === targetLast &&
+          (first.startsWith(targetFirst) ||
+            targetFirst.startsWith(first) ||
+            levenshtein(first, targetFirst) <= 2)
+        ) {
+          rank = "close";
+        }
+        return {
+          athleteId: a.id as string,
+          name: `${a.first_name} ${a.last_name}`.trim(),
+          rank,
+        };
+      })
+      .sort((x, y) => rankOrder[x.rank] - rankOrder[y.rank] || x.name.localeCompare(y.name));
 
     return { options };
   });
+
+
 
 /**
  * "That's my existing athlete" — move the coach's link and lessons from the

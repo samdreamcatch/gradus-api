@@ -10,10 +10,12 @@ import { Logo } from "@/components/logo";
 import {
   claimAthleteSelf,
   claimGuardianAthlete,
+  getGuardianClaimContext,
   getGuardianClaimMergeOptions,
   getGuardianClaimSummary,
   mergeGuardianClaim,
 } from "@/lib/guardian.functions";
+
 
 export const Route = createFileRoute("/g/$token")({
   component: GuardianClaimPage,
@@ -50,6 +52,7 @@ function GuardianClaimPage() {
   const selfClaimFn = useServerFn(claimAthleteSelf);
   const mergeOptionsFn = useServerFn(getGuardianClaimMergeOptions);
   const mergeFn = useServerFn(mergeGuardianClaim);
+  const contextFn = useServerFn(getGuardianClaimContext);
 
   const [signedIn, setSignedIn] = useState<boolean | null>(null);
   const [firstName, setFirstName] = useState("");
@@ -57,6 +60,8 @@ function GuardianClaimPage() {
   const [birthdate, setBirthdate] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [claiming, setClaiming] = useState(false);
+  const [showOthers, setShowOthers] = useState(false);
+
 
   useEffect(() => {
     let cancelled = false;
@@ -80,7 +85,7 @@ function GuardianClaimPage() {
 
   const isAdultInvite = summary?.inviteRecipient === "athlete";
 
-  // Only the claimer's OWN athletes with the same name — offered so a second
+  // Only the claimer's OWN athletes, ranked by closeness — offered so a second
   // coach's invite doesn't create a duplicate athlete on their account.
   const { data: mergeData } = useQuery({
     queryKey: ["guardian-claim-merge", token],
@@ -89,6 +94,17 @@ function GuardianClaimPage() {
     retry: false,
   });
   const mergeOptions = mergeData?.options ?? [];
+  const suggestedOptions = mergeOptions.filter((o) => o.rank !== "other");
+  const otherOptions = mergeOptions.filter((o) => o.rank === "other");
+
+  const { data: claimContext } = useQuery({
+    queryKey: ["guardian-claim-context"],
+    queryFn: () => contextFn(),
+    enabled: signedIn === true,
+    retry: false,
+  });
+  const knownParent = claimContext?.hasParentProfile === true;
+
 
   const handleClaim = async () => {
     setError(null);
@@ -143,8 +159,9 @@ function GuardianClaimPage() {
           </h1>
         </div>
 
-        {isLoading ? (
+        {isLoading || signedIn === null ? (
           <p className="text-center text-text-tertiary">Checking your link…</p>
+
         ) : summaryError ? (
           <div className="space-y-4 text-center">
             <p className="text-sm text-destructive">{(summaryError as Error).message}</p>
@@ -202,13 +219,26 @@ function GuardianClaimPage() {
               </div>
             ) : (
               <>
-                {mergeOptions.length > 0 ? (
+                {knownParent && claimContext?.parentName ? (
+                  <p className="text-center text-xs text-text-tertiary">
+                    Signed in as {claimContext.parentName}.{" "}
+                    <Link
+                      to="/login"
+                      search={{ redirect: `/g/${token}` }}
+                      className="underline underline-offset-2"
+                    >
+                      Switch account
+                    </Link>
+                  </p>
+                ) : null}
+
+                {!isAdultInvite && mergeOptions.length > 0 ? (
                   <div className="space-y-3 rounded-xl border border-divider bg-elevated p-4">
                     <p className="text-sm text-text-secondary">
-                      Is this your existing athlete, {mergeOptions[0]!.name}?
+                      Is this someone you already have on Gradus?
                     </p>
                     <div className="flex flex-col gap-2">
-                      {mergeOptions.map((o) => (
+                      {suggestedOptions.map((o) => (
                         <Button
                           key={o.athleteId}
                           variant="outline"
@@ -219,14 +249,36 @@ function GuardianClaimPage() {
                           Yes, same athlete — {o.name}
                         </Button>
                       ))}
+                      {showOthers
+                        ? otherOptions.map((o) => (
+                            <Button
+                              key={o.athleteId}
+                              variant="outline"
+                              className="w-full"
+                              disabled={claiming}
+                              onClick={() => handleMerge(o.athleteId)}
+                            >
+                              Yes, same athlete — {o.name}
+                            </Button>
+                          ))
+                        : null}
                     </div>
+                    {!showOthers && otherOptions.length > 0 ? (
+                      <button
+                        type="button"
+                        className="press text-xs text-text-secondary underline underline-offset-2"
+                        onClick={() => setShowOthers(true)}
+                      >
+                        Show my other athletes
+                      </button>
+                    ) : null}
                     <p className="text-xs text-text-tertiary">
-                      Or keep them separate by filling in the details below.
+                      Or keep them separate by continuing below.
                     </p>
                   </div>
                 ) : null}
 
-                {isAdultInvite ? null : (
+                {isAdultInvite || knownParent ? null : (
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
                       <Label htmlFor="g-first">Your first name</Label>
@@ -250,6 +302,7 @@ function GuardianClaimPage() {
                     </div>
                   </div>
                 )}
+
 
                 {isAdultInvite || summary?.needsBirthdate ? (
                   <div className="space-y-2">
