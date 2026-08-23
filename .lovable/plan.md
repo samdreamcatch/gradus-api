@@ -1,47 +1,56 @@
-# Stop showing strangers' accounts in the match step
+# Stop showing strangers' accounts — let the invite link do the identifying
 
-Today, when a coach imports a schedule or adds an athlete, we look across every Gradus account and show cards for possible matches — masked name, masked email, sport and level. Even masked ("Sasha W."), that lets anyone with a coach account type a name and learn that a person exists, what sport they do, and roughly who their guardian is. Standard practice is to disclose nothing about an account the coach isn't connected to, and let the person on the other side consent first.
+Today, when a coach imports a schedule or adds an athlete, we search every Gradus account and show cards for possible matches — masked name, masked email, sport and level. Even masked ("Sasha W."), that lets anyone with a coach account type a name and learn a person exists, what sport they do, and roughly who their guardian is. Standard practice is to disclose nothing about an account the coach isn't connected to, and let the person on the other side prove who they are.
+
+## Answers to your three questions
+
+**Can we reuse the invite infrastructure?** Yes — it already does exactly this job. Every coach-added athlete gets a one-time claim link (`/g/<token>`) emailed to the address the coach typed. Whoever opens that link, signed in as *any* account, attaches the athlete to themselves. That's the connection mechanism; we don't need a match screen at all.
+
+**What if the person's account uses a different email?** It still works, and this is the key point: the claim link is a secret, not an email check. If the coach types `mom@work.com` but the parent's Gradus login is `mom@gmail.com`, the email lands at the work address, she taps the link, signs in with her Gmail account, and the athlete lands on that account. No email equality required.
+
+**Could the email carry the coach code instead?** It effectively already does — the claim token is stronger than a coach code, because it's single-purpose, scoped to one athlete, and identifies the coach too. A plain coach code (`/i/CODE`) is shareable and reusable, so it can't stand in for identity. Keeping the guardian claim token is the right call; if the recipient is an adult athlete rather than a parent, the same token routes them to the adult path.
+
+**How do we know it's the same person?** We don't, and we shouldn't guess. Possession of the emailed link is the proof. The coach asserts an email; the person who reads that inbox confirms it. Name similarity is never treated as evidence.
 
 ## The change
 
-The "match your lessons to athletes" review step goes away entirely. Nothing about anyone else's account is shown to the coach — no name, no initial, no email, no sport, no level.
+The "match your lessons to athletes" review step goes away. Nothing about anyone else's account is shown to the coach — no name, no initial, no email, no sport, no level.
 
-Instead the server decides quietly, per row:
+Per row, the server decides quietly:
 
-- **Already on your roster** — the row attaches to that existing athlete. No duplicate is created, no card is shown.
-- **The email you typed already has a Gradus account** — we do not create a second athlete record and we do not tell the coach an account exists. We send that email the same invite as always; when the person accepts, they land on their existing account and the connection to this coach becomes real. Until they accept, the coach sees the athlete under the name and email *they* typed, marked pending.
-- **No email, or an email we've never seen** — a pending athlete record is created and invited, exactly as today.
-- **Name-only similarity is ignored completely.** A typed name is a guess, not proof, and acting on it is how a directory gets scraped. Two people with the same name stay separate until an email or an accepted invite connects them.
+- **Already on your roster** — attaches to that athlete, no duplicate, no card.
+- **Anyone else** — a pending athlete record is created under the name and email the coach typed, and the claim link goes out. Identical behavior whether or not a Gradus account already exists at that address, so nothing is inferable from what the coach sees.
+- **Name-only similarity is ignored completely.**
 
-The coach's end state is unchanged: their lessons land on the calendar, their roster fills in, and the invite goes out. The only difference is they no longer see a screen listing people they don't know.
+## Avoiding duplicate athletes at claim time
 
-## What the coach sees instead
+Since we no longer merge accounts up front, the merge moves to the claim page, where it's safe — the person is looking at their *own* athletes:
 
-Both the import sheet and the single "Add athlete" step in the lesson slot sheet go straight from the details form to the result. The result summary says one of:
+On `/g/<token>`, if the signed-in parent already has an athlete whose name matches the pending one, they see: "Is this your existing athlete, Leon Gillespie?" → **Yes, same athlete** links the coach to the existing record and discards the pending one; **No, add as new** keeps both. If there's no name match, it claims as it does today.
+
+## What the coach sees
+
+Both the import sheet and the "Add athlete" step in the lesson slot sheet go straight from the details form to the result:
 
 - "Added to Wednesday 4:00pm" (existing roster athlete)
-- "Invite sent to p••••@gmail.com — they'll appear once they accept" (pending, whether or not an account already existed)
-
-That wording is identical for "account exists" and "account doesn't exist", so nothing about the other person is inferable from it.
+- "Invite sent to p••••@gmail.com — they'll appear once they accept"
 
 ## Technical notes
 
 `src/lib/schedule-import.functions.ts`
-
-- Delete `matchScheduleRows` and the `MatchCandidate` / `MatchResult` types, plus the now-unused `maskEmail`, `firstNameLastInitial`, `redactFullName` helpers and the cross-account lookup block (guardian-email pool, `parent_profiles` / `athletes` by `user_id`, the `last_name` sweep, guardian names, `athlete_goals`).
-- `commitScheduleImport` resolves the athlete itself and no longer trusts a client-supplied `matchedAthleteId` — drop that field from the input schema. Resolution order per group, all via `supabaseAdmin`:
-  1. Athlete already in `coach_athletes` for this coach whose normalized first+last name matches → reuse.
-  2. Otherwise, if an email was given, look up an existing athlete reachable from that email (athlete `guardian_email`, the athlete's own `user_id` account, or a `parent_profiles` row for that account) **scoped to that one email**. If found, insert a `coach_athletes` row with `coach_ack_at` set and `other_ack_at` null (pending, awaiting their approval) against the existing athlete id, and send the invite. Never surface the found athlete's fields in the response.
-  3. Otherwise create the pending athlete + `guardian_claim_token` + invite, as today.
-- `ImportOutcome.name` stays the name the coach typed. New status set: `created` | `pending` | `linked` (roster reuse only). Never echo a resolved athlete's stored name.
+- Delete `matchScheduleRows`, the `MatchCandidate` / `MatchResult` types, the `maskEmail` / `firstNameLastInitial` / `redactFullName` helpers, and the whole cross-account lookup block (guardian-email pool, `athletes`/`parent_profiles` by `user_id`, the `last_name` sweep, guardian names, `athlete_goals`).
+- `commitScheduleImport` resolves the athlete server-side and drops the client-supplied `matchedAthleteId` from its input schema. Order per group: (1) reuse an athlete already in `coach_athletes` for this coach with a matching normalized first+last name; (2) otherwise create the pending athlete + `guardian_claim_token` + `coach_athletes` row and send `sendGuardianInvite`.
+- `ImportOutcome.name` stays the name the coach typed; statuses become `created` | `linked` | `failed`.
 
 `src/components/coach/schedule-import-sheet.tsx`
-
-- Remove the match step, its `useMutation`/state, the candidate list UI and the "Matches an existing Gradus account" / "Not connected yet" markup. Review step → commit directly.
+- Remove the match step, its mutation/state and the candidate list markup. Review → commit.
 
 `src/components/coach/lesson-slot-sheet.tsx`
+- Remove the match-review step from `NewAthleteForm`; submit goes straight to `addAthleteWithGuardian`.
+- Remove `linkExistingAthleteToRoster` from `src/lib/coach-roster-mutations.functions.ts` — it links a client-chosen athlete id and is unreachable once the match UI is gone.
 
-- Remove the match-review step from `NewAthleteForm`; submitting goes straight to create/invite.
-- `linkExistingAthleteToRoster` in `src/lib/coach-roster-mutations.functions.ts` is no longer reachable from the UI (it links an arbitrary athlete id chosen client-side) — remove it.
+`src/lib/guardian.functions.ts` + `src/routes/g.$token.tsx`
+- `getGuardianClaimSummary` additionally returns the claimer's own same-name athletes (id + full name — their own data) so the page can offer the merge choice.
+- New `mergeGuardianClaim` server fn: given the token and one of *their own* athlete ids, move the coach link (`coach_athletes`, `coach_athlete_sports`, `athlete_lesson_slots`) from the pending athlete onto the existing one, then delete the pending row. Verify the target athlete belongs to the caller's parent profile before touching anything.
 
-No schema changes; the pending-connection semantics already exist via `coach_athletes.other_ack_at`.
+No schema changes.
