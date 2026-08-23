@@ -573,7 +573,9 @@ export const commitScheduleImport = createServerFn({ method: "POST" })
       }
       if (outcomes.some((o) => o.key === g.key && o.status === "failed")) continue;
 
-      let athleteId = g.matchedAthleteId;
+      // Resolve silently, server-side: only athletes already on THIS coach's
+      // roster can be reused. Nothing about anyone else's account is consulted.
+      let athleteId = rosterByName.get(normName(g.firstName, g.lastName)) ?? null;
       let created = false;
       let invited: string | null = null;
 
