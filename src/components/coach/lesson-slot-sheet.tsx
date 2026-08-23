@@ -596,11 +596,11 @@ function NewAthleteForm({
           onClick={() => {
             setShowErrors(true);
             if (hasErrors) return;
-            lookup.mutate();
+            create.mutate();
           }}
           disabled={busy}
         >
-          {busy ? "Checking…" : "Add athlete"}
+          {busy ? "Adding…" : "Add athlete"}
         </Button>
       </SheetFooter>
     </div>
