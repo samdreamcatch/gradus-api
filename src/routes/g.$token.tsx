@@ -167,12 +167,21 @@ function GuardianClaimPage() {
         ) : (
           <div className="space-y-5">
             <div className="text-center">
-              <p className="font-display text-2xl text-text-primary">Follow {athleteName}</p>
+              <p className="font-display text-2xl text-text-primary">
+                {isAdultInvite ? "Set up your account" : `Follow ${athleteName}`}
+              </p>
               <p className="mt-2 text-sm text-text-secondary">
-                {summary?.coachName
-                  ? `Coach ${summary.coachName} added ${summary.athleteFirstName} to Gradus.`
-                  : `${summary?.athleteFirstName} started training on Gradus.`}{" "}
-                Claim your parent account to see their plans, lessons and coach messages.
+                {isAdultInvite
+                  ? `${
+                      summary?.coachName
+                        ? `Coach ${summary.coachName} added you to their schedule.`
+                        : "You've been added to a coach's schedule."
+                    } Set up your account to see your plans, lessons and coach messages.`
+                  : `${
+                      summary?.coachName
+                        ? `Coach ${summary.coachName} added ${summary.athleteFirstName} to Gradus.`
+                        : `${summary?.athleteFirstName} started training on Gradus.`
+                    } Claim your parent account to see their plans, lessons and coach messages.`}
               </p>
             </div>
 
@@ -193,32 +202,62 @@ function GuardianClaimPage() {
               </div>
             ) : (
               <>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-2">
-                    <Label htmlFor="g-first">Your first name</Label>
-                    <Input
-                      id="g-first"
-                      value={firstName}
-                      onChange={(e) => setFirstName(e.target.value)}
-                      maxLength={80}
-                      autoComplete="given-name"
-                    />
+                {mergeOptions.length > 0 ? (
+                  <div className="space-y-3 rounded-xl border border-divider bg-elevated p-4">
+                    <p className="text-sm text-text-secondary">
+                      Is this your existing athlete, {mergeOptions[0]!.name}?
+                    </p>
+                    <div className="flex flex-col gap-2">
+                      {mergeOptions.map((o) => (
+                        <Button
+                          key={o.athleteId}
+                          variant="outline"
+                          className="w-full"
+                          disabled={claiming}
+                          onClick={() => handleMerge(o.athleteId)}
+                        >
+                          Yes, same athlete — {o.name}
+                        </Button>
+                      ))}
+                    </div>
+                    <p className="text-xs text-text-tertiary">
+                      Or keep them separate by filling in the details below.
+                    </p>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="g-last">Your last name</Label>
-                    <Input
-                      id="g-last"
-                      value={lastName}
-                      onChange={(e) => setLastName(e.target.value)}
-                      maxLength={80}
-                      autoComplete="family-name"
-                    />
-                  </div>
-                </div>
+                ) : null}
 
-                {summary?.needsBirthdate ? (
+                {isAdultInvite ? null : (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="g-first">Your first name</Label>
+                      <Input
+                        id="g-first"
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
+                        maxLength={80}
+                        autoComplete="given-name"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="g-last">Your last name</Label>
+                      <Input
+                        id="g-last"
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
+                        maxLength={80}
+                        autoComplete="family-name"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {isAdultInvite || summary?.needsBirthdate ? (
                   <div className="space-y-2">
-                    <Label htmlFor="g-dob">{summary.athleteFirstName}&apos;s date of birth</Label>
+                    <Label htmlFor="g-dob">
+                      {isAdultInvite
+                        ? "Your date of birth"
+                        : `${summary?.athleteFirstName}'s date of birth`}
+                    </Label>
                     <Input
                       id="g-dob"
                       type="date"
@@ -226,16 +265,27 @@ function GuardianClaimPage() {
                       onChange={(e) => setBirthdate(e.target.value)}
                     />
                     <p className="text-xs text-text-tertiary">
-                      We use this to set the right privacy protections for your athlete.
+                      {isAdultInvite
+                        ? "We use this to confirm you can manage your own account."
+                        : "We use this to set the right privacy protections for your athlete."}
                     </p>
                   </div>
                 ) : null}
 
                 {error && <p className="text-sm text-destructive">{error}</p>}
 
-                <Button className="w-full" onClick={handleClaim} disabled={claiming || (Boolean(summary?.needsBirthdate) && !birthdate)}
+                <Button
+                  className="w-full"
+                  onClick={handleClaim}
+                  disabled={
+                    claiming || ((isAdultInvite || Boolean(summary?.needsBirthdate)) && !birthdate)
+                  }
                 >
-                  {claiming ? "Setting up…" : `Claim ${summary?.athleteFirstName}'s account`}
+                  {claiming
+                    ? "Setting up…"
+                    : isAdultInvite
+                      ? "Set up my account"
+                      : `Claim ${summary?.athleteFirstName}'s account`}
                 </Button>
               </>
             )}
