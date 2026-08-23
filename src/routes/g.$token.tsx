@@ -82,7 +82,7 @@ function GuardianClaimPage() {
 
   const isAdultInvite = summary?.inviteRecipient === "athlete";
 
-  // Only the claimer's OWN athletes with the same name — offered so a second
+  // Only the claimer's OWN athletes, ranked by closeness — offered so a second
   // coach's invite doesn't create a duplicate athlete on their account.
   const { data: mergeData } = useQuery({
     queryKey: ["guardian-claim-merge", token],
@@ -91,6 +91,17 @@ function GuardianClaimPage() {
     retry: false,
   });
   const mergeOptions = mergeData?.options ?? [];
+  const suggestedOptions = mergeOptions.filter((o) => o.rank !== "other");
+  const otherOptions = mergeOptions.filter((o) => o.rank === "other");
+
+  const { data: claimContext } = useQuery({
+    queryKey: ["guardian-claim-context"],
+    queryFn: () => contextFn(),
+    enabled: signedIn === true,
+    retry: false,
+  });
+  const knownParent = claimContext?.hasParentProfile === true;
+
 
   const handleClaim = async () => {
     setError(null);
