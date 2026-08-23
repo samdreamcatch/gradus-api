@@ -529,7 +529,7 @@ export const commitScheduleImport = createServerFn({ method: "POST" })
               guardianEmail: z.string().trim().toLowerCase().max(255).default(""),
               athleteEmail: z.string().trim().toLowerCase().max(255).default(""),
               sport: z.string().trim().max(40).default(""),
-              matchedAthleteId: z.string().uuid().nullable().default(null),
+              emailRecipient: z.enum(["guardian", "athlete"]).default("guardian"),
               slots: z.array(slotSchema).min(1).max(20),
             }),
           )
