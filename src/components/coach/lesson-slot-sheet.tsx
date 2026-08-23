@@ -40,14 +40,9 @@ import {
   cancelLessonOccurrence,
   clearLessonOverride,
   deleteLessonSlot,
-  linkExistingAthleteToRoster,
   rescheduleLessonOccurrence,
   updateLessonSlot,
 } from "@/lib/coach-roster-mutations.functions";
-import {
-  matchScheduleRows,
-  type MatchResult,
-} from "@/lib/schedule-import.functions";
 
 const DAYS = [
   { value: 1, short: "Mon" },
