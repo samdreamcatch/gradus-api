@@ -83,7 +83,6 @@ export function ScheduleImportSheet({
     return rows.filter((r) => Object.keys(all[r.id] ?? {}).length > 0).length;
   }, [rows]);
 
-
   const reset = () => {
     setStep("source");
     setRows([]);
@@ -156,7 +155,6 @@ export function ScheduleImportSheet({
     setStep("review");
   };
 
-
   const updateRow = (id: string, patch: Partial<ImportRow>) =>
     setRows((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));
 
@@ -208,7 +206,6 @@ export function ScheduleImportSheet({
             }}
           />
         ) : null}
-
 
         {step === "review" ? (
           <ReviewStep
@@ -345,7 +342,6 @@ function SourceStep({
         })}
       </div>
 
-
       <p className="mt-3 text-xs text-text-secondary">
         You'll see every row and can fix anything before a single athlete is created.
       </p>
@@ -361,7 +357,6 @@ function SourceStep({
     </div>
   );
 }
-
 
 const LENGTH_PRESETS = [30, 45, 60, 90];
 
@@ -396,7 +391,6 @@ function ReviewStep({
   const badRows = rows.filter((r) => Object.keys(allErrors[r.id] ?? {}).length > 0);
   const badCount = badRows.length;
 
-
   // Name each problem so the coach knows what to fix, not just that something's wrong.
   const fieldLabels: Record<string, string> = {
     firstName: "first name",
@@ -424,9 +418,6 @@ function ReviewStep({
 
   return (
     <div className="mt-4 space-y-2">
-
-
-
       {badCount > 0 ? (
         <div className="flex w-full items-start gap-2 rounded-xl border border-destructive/50 bg-card px-3 py-2 text-left">
           <TriangleAlert className="mt-0.5 size-4 shrink-0 text-destructive" aria-hidden />
@@ -438,12 +429,8 @@ function ReviewStep({
         </div>
       ) : null}
 
-
-
       {groupRowsByStudent(rows).map((group) => {
-        const groupBad = group.rows.some(
-          (r) => Object.keys(allErrors[r.id] ?? {}).length > 0,
-        );
+        const groupBad = group.rows.some((r) => Object.keys(allErrors[r.id] ?? {}).length > 0);
         const first = group.rows[0]!;
         const name = `${first.firstName} ${first.lastName}`.trim();
         return (
@@ -455,12 +442,7 @@ function ReviewStep({
               groupBad ? "border-destructive/50" : "border-divider",
             )}
           >
-            {name ? (
-              <p className="truncate text-sm font-bold text-text-primary">
-                {name}
-              </p>
-            ) : null}
-
+            {name ? <p className="truncate text-sm font-bold text-text-primary">{name}</p> : null}
 
             <div className="mt-0.5">
               {group.rows.map((row) => {
@@ -469,7 +451,6 @@ function ReviewStep({
                 const index = rows.findIndex((r) => r.id === row.id);
                 return (
                   <div key={row.id} className={expanded ? "py-1" : ""}>
-
                     <LessonLine
                       row={row}
                       index={index}
@@ -503,7 +484,6 @@ function ReviewStep({
         );
       })}
 
-
       <Button
         type="button"
         variant="outline"
@@ -512,7 +492,6 @@ function ReviewStep({
           const id = onAdd();
           setExpandedId(id);
         }}
-
         className="w-full"
       >
         <Plus className="size-4" aria-hidden />
@@ -560,7 +539,9 @@ function LessonLine({
   onRemove: () => void;
 }) {
   const sportLabel =
-    coachSports.length > 1 && row.sport ? (getSport(row.sport as SportKey)?.label ?? row.sport) : "";
+    coachSports.length > 1 && row.sport
+      ? (getSport(row.sport as SportKey)?.label ?? row.sport)
+      : "";
   const dayLabel = IMPORT_DAYS.find((d) => d.value === row.dayOfWeek)?.short ?? "—";
   const timeLabel =
     row.startMinute == null
@@ -581,10 +562,7 @@ function LessonLine({
           </span>
         ) : (
           <p
-            className={cn(
-              "truncate text-xs",
-              lineBad ? "text-destructive" : "text-text-secondary",
-            )}
+            className={cn("truncate text-xs", lineBad ? "text-destructive" : "text-text-secondary")}
           >
             {meta}
           </p>
@@ -646,7 +624,8 @@ function RowSummary({
             <Select
               value={recipient}
               onValueChange={(v) =>
-                onChange(row.id,
+                onChange(
+                  row.id,
                   v === "athlete"
                     ? { athleteEmail: email, guardianEmail: "" }
                     : { guardianEmail: email, athleteEmail: "" },
@@ -840,13 +819,9 @@ function RowEditor({
           </Field>
         ) : null}
       </div>
-
-    
     </>
   );
 }
-
-
 
 function DoneStep({ outcomes }: { outcomes: ImportOutcome[] }) {
   const created = outcomes.filter((o) => o.status === "created").length;

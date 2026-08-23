@@ -140,9 +140,7 @@ export const claimGuardianAthlete = createServerFn({ method: "POST" })
       .from("athletes")
       .update({
         parent_id: parent.data!.id,
-        ...(athlete.data.birthdate == null && data.birthdate
-          ? { birthdate: data.birthdate }
-          : {}),
+        ...(athlete.data.birthdate == null && data.birthdate ? { birthdate: data.birthdate } : {}),
         guardian_claimed_at: new Date().toISOString(),
         guardian_claim_token: null,
       })
@@ -289,11 +287,7 @@ export const getGuardianClaimMergeOptions = createServerFn({ method: "POST" })
     const target = norm(`${pending.data.first_name} ${pending.data.last_name}`);
 
     const options = (mine.data ?? [])
-      .filter(
-        (a) =>
-          a.id !== pending.data!.id &&
-          norm(`${a.first_name} ${a.last_name}`) === target,
-      )
+      .filter((a) => a.id !== pending.data!.id && norm(`${a.first_name} ${a.last_name}`) === target)
       .map((a) => ({ athleteId: a.id as string, name: `${a.first_name} ${a.last_name}`.trim() }));
 
     return { options };

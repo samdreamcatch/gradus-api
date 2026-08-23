@@ -582,7 +582,6 @@ function NewAthleteForm({
         Enter a parent/guardian email for athletes under 18
       </p>
 
-
       <SheetFooter className="mt-2 flex-row justify-end gap-2">
         <Button variant="ghost" onClick={onCancel}>
           Cancel
