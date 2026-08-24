@@ -1264,6 +1264,12 @@ export const listAllUsers = createServerFn({ method: "POST" })
       return { count, last };
     };
 
+    const athleteIdsByCoachId = new Map<string, string[]>();
+    for (const l of links.data ?? []) {
+      const arr = athleteIdsByCoachId.get(l.coach_id) ?? [];
+      arr.push(l.athlete_id);
+      athleteIdsByCoachId.set(l.coach_id, arr);
+    }
 
 
     const coachByUser = new Map((coaches.data ?? []).map((c) => [c.user_id, c]));
