@@ -2658,6 +2658,10 @@ export type Database = {
         Returns: boolean
       }
       caller_owns_coach: { Args: { _coach_id: string }; Returns: boolean }
+      can_subscribe_message_topic: {
+        Args: { _topic: string; _user_id: string }
+        Returns: boolean
+      }
       can_view_plan: { Args: { _plan_id: string }; Returns: boolean }
       can_view_shared_coach_plan: {
         Args: { _athlete_id: string; _owner_coach_id: string }
