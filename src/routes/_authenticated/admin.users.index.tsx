@@ -132,9 +132,11 @@ function AdminUsersPage() {
           onlyTest: search.onlyTest,
           hideTest: search.hideTest,
           includeDeleted: search.includeDeleted,
+          connection: search.connection,
         },
       }),
   });
+
 
   const rows = useMemo(() => {
     const list = listQuery.data?.rows ?? [];
