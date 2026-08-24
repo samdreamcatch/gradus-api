@@ -975,7 +975,36 @@ function DoneStep({ outcomes }: { outcomes: ImportOutcome[] }) {
   const created = outcomes.filter((o) => o.status === "created").length;
   const linked = outcomes.filter((o) => o.status === "linked").length;
   const failed = outcomes.filter((o) => o.status === "failed");
+  const skipped = outcomes.filter((o) => o.status === "skipped");
+  const imported = outcomes.filter((o) => o.status !== "skipped");
   const slots = outcomes.reduce((n, o) => n + o.slotsAdded, 0);
+
+  const row = (o: ImportOutcome) => (
+    <li
+      key={`${o.key}-${o.name}`}
+      className="flex items-start gap-2 rounded-lg border border-divider bg-card px-3 py-2 text-sm"
+    >
+      {o.status === "failed" ? (
+        <TriangleAlert className="mt-0.5 size-4 shrink-0 text-destructive" aria-hidden />
+      ) : o.status === "skipped" ? (
+        <TriangleAlert className="mt-0.5 size-4 shrink-0 text-text-tertiary" aria-hidden />
+      ) : (
+        <Check className="mt-0.5 size-4 shrink-0 text-accent-ink" aria-hidden />
+      )}
+      <span className="min-w-0">
+        <span className="block font-bold text-text-primary">{o.name}</span>
+        <span className="block text-xs text-text-secondary">
+          {o.status === "failed"
+            ? (o.message ?? "Could not import")
+            : o.status === "skipped"
+              ? (o.message ?? "Skipped — roster full")
+              : `${o.slotsAdded} lesson${o.slotsAdded === 1 ? "" : "s"}${
+                  o.invited ? ` · invite sent to ${o.invited}` : ""
+                }${o.message ? ` · ${o.message}` : ""}`}
+        </span>
+      </span>
+    </li>
+  );
 
   return (
     <div className="mt-4 space-y-3">
@@ -983,36 +1012,27 @@ function DoneStep({ outcomes }: { outcomes: ImportOutcome[] }) {
         {created} new athlete{created === 1 ? "" : "s"}, {linked} matched, {slots} lesson
         {slots === 1 ? "" : "s"} added.
       </p>
-      <ul className="space-y-1.5">
-        {outcomes.map((o) => (
-          <li
-            key={`${o.key}-${o.name}`}
-            className="flex items-start gap-2 rounded-lg border border-divider bg-card px-3 py-2 text-sm"
-          >
-            {o.status === "failed" ? (
-              <TriangleAlert className="mt-0.5 size-4 shrink-0 text-destructive" aria-hidden />
-            ) : (
-              <Check className="mt-0.5 size-4 shrink-0 text-accent-ink" aria-hidden />
-            )}
-            <span className="min-w-0">
-              <span className="block font-bold text-text-primary">{o.name}</span>
-              <span className="block text-xs text-text-secondary">
-                {o.status === "failed"
-                  ? (o.message ?? "Could not import")
-                  : `${o.slotsAdded} lesson${o.slotsAdded === 1 ? "" : "s"}${
-                      o.invited ? ` · invite sent to ${o.invited}` : ""
-                    }${o.message ? ` · ${o.message}` : ""}`}
-              </span>
-            </span>
-          </li>
-        ))}
-      </ul>
+      <ul className="space-y-1.5">{imported.map(row)}</ul>
+
+      {skipped.length > 0 ? (
+        <div className="space-y-1.5">
+          <p className="text-[11px] font-bold uppercase tracking-widest text-text-tertiary">
+            Skipped — roster full
+          </p>
+          <ul className="space-y-1.5">{skipped.map(row)}</ul>
+          <Button asChild size="sm" className="w-full">
+            <a href="/coach/paywall">Upgrade to add {skipped.length} more</a>
+          </Button>
+        </div>
+      ) : null}
+
       {failed.length > 0 ? (
         <p className="text-xs text-text-secondary">
           Failed rows were skipped — successful ones are already on your roster.
         </p>
       ) : null}
     </div>
+
   );
 }
 
