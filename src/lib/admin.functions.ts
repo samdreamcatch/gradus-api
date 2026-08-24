@@ -1054,7 +1054,7 @@ export const getAdminReporting = createServerFn({ method: "POST" })
 
 const envSchema = z.enum(["sandbox", "live"]);
 
-type UserRow = {
+export type UserRow = {
   userId: string;
   email: string | null;
   name: string;
