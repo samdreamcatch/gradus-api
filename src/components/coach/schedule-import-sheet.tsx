@@ -62,10 +62,18 @@ export function ScheduleImportSheet({
   open,
   onOpenChange,
   coachSports,
+  athleteLimit = null,
+  rosterCount = 0,
+  rosterNames = [],
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   coachSports: string[];
+  /** Athletes allowed on the coach's plan; null = unlimited. */
+  athleteLimit?: number | null;
+  rosterCount?: number;
+  /** Full names already on the roster, so repeats don't count against the cap. */
+  rosterNames?: string[];
 }) {
   const qc = useQueryClient();
   const defaultSport = coachSports.length === 1 ? coachSports[0] : "";
@@ -74,10 +82,40 @@ export function ScheduleImportSheet({
   const [outcomes, setOutcomes] = useState<ImportOutcome[]>([]);
   // Errors stay hidden until the coach tries to continue — typing shouldn't feel accusatory.
   const [showErrors, setShowErrors] = useState(false);
+  // Student name-keys the coach chose to leave out of this import.
+  const [skipped, setSkipped] = useState<string[]>([]);
   const csvInputRef = useRef<HTMLInputElement>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
 
+  const rosterSet = useMemo(
+    () => new Set(rosterNames.map((n) => n.trim().toLowerCase().replace(/\s+/g, " "))),
+    [rosterNames],
+  );
+  const room = athleteLimit === null ? Infinity : Math.max(0, athleteLimit - rosterCount);
+
   const groups = useMemo(() => groupRowsByAthlete(rows), [rows]);
+
+  // Which students are new (count against the cap) and which spill past it.
+  const nameKey = (first: string, last: string) =>
+    `${first} ${last}`.trim().toLowerCase().replace(/\s+/g, " ");
+  const overCapKeys = useMemo(() => {
+    if (room === Infinity) return new Set<string>();
+    const over = new Set<string>();
+    let left = room;
+    for (const g of groups) {
+      const key = nameKey(g.firstName, g.lastName);
+      if (!key || rosterSet.has(key) || skipped.includes(key)) continue;
+      if (left > 0) left -= 1;
+      else over.add(key);
+    }
+    return over;
+  }, [groups, room, rosterSet, skipped]);
+
+  const newCount = groups.filter((g) => {
+    const key = nameKey(g.firstName, g.lastName);
+    return key && !rosterSet.has(key) && !skipped.includes(key);
+  }).length;
+
   const invalidCount = useMemo(() => {
     const all = validateRows(rows);
     return rows.filter((r) => Object.keys(all[r.id] ?? {}).length > 0).length;
@@ -88,12 +126,14 @@ export function ScheduleImportSheet({
     setRows([]);
     setOutcomes([]);
     setShowErrors(false);
+    setSkipped([]);
   };
 
   const close = (o: boolean) => {
     onOpenChange(o);
     if (!o) reset();
   };
+
 
   const parseImage = useMutation({
     mutationFn: async (file: File) => {
