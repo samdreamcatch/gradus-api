@@ -170,6 +170,85 @@ function AdminUsersPage() {
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["admin-users"] });
 
+  const exportCsv = () => {
+    if (rows.length === 0) {
+      toast.error("Nothing to export with these filters.");
+      return;
+    }
+    const date = (v: string | null | undefined) => (v ? new Date(v).toISOString().slice(0, 10) : "");
+    const csv = toCsv(
+      [
+        "Name",
+        "Email",
+        "User type",
+        "Created at",
+        "Last sign-in",
+        "Connection status",
+        "Connection count",
+        "Coaches",
+        "Athletes",
+        "Parents / guardians",
+        "Guardian email",
+        "Guardian status",
+        "Organization",
+        "Plan tier",
+        "Subscription status",
+        "Plan / trial ends",
+        "Sessions logged",
+        "Last session",
+        "Admin",
+        "Org admin",
+        "Test",
+        "Soft-deleted",
+        "Promo codes",
+      ],
+      rows.map((r) => [
+        r.name,
+        r.email ?? "",
+        USER_TYPE_LABEL[r.userType as UserType] ?? r.userType,
+        date(r.createdAt),
+        date(r.lastSignInAt),
+        r.connectionStatus,
+        r.connections.total,
+        r.connectedCoaches.join("; "),
+        r.connectedAthletes.join("; "),
+        r.connectedParents.join("; "),
+        r.guardianEmail ?? "",
+        r.guardianEmail
+          ? r.guardianClaimed
+            ? "claimed"
+            : r.guardianInvitedAt
+              ? `invited ${date(r.guardianInvitedAt)}`
+              : "not invited"
+          : "",
+        r.organizationName ?? "",
+        r.planTier ? (PLAN_LABEL[r.planTier] ?? r.planTier) : "",
+        r.subscriptionStatus ?? "",
+        date(r.planEndsAt),
+        r.sessionsLogged,
+        date(r.lastSessionAt),
+        r.isAdmin ? "yes" : "",
+        r.isOrgAdmin ? "yes" : "",
+        r.isTest ? "yes" : "",
+        r.softDeletedAt ? date(r.softDeletedAt) : "",
+        [
+          ...r.appliedCodes.map((c) => c.code),
+          ...(r.stashedPromoCode ? [r.stashedPromoCode] : []),
+        ].join("; "),
+      ]),
+    );
+    const scope = [
+      search.types.length === 1 ? search.types[0] : search.types.length ? "filtered" : "all",
+      search.connection !== "all" ? search.connection : null,
+    ]
+      .filter(Boolean)
+      .join("-");
+    downloadCsv(`gradus-users-${scope}-${new Date().toISOString().slice(0, 10)}.csv`, csv);
+    toast.success(`Exported ${rows.length} user${rows.length === 1 ? "" : "s"}.`);
+  };
+
+
+
   const typeOptions: UserType[] = [
     "coach",
     "parent",
