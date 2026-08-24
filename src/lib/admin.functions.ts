@@ -1054,7 +1054,7 @@ export const getAdminReporting = createServerFn({ method: "POST" })
 
 const envSchema = z.enum(["sandbox", "live"]);
 
-type UserRow = {
+export type UserRow = {
   userId: string;
   email: string | null;
   name: string;
@@ -1062,6 +1062,8 @@ type UserRow = {
   lastSignInAt: string | null;
   userType: string;
   planTier: string | null;
+  subscriptionStatus: string | null;
+  planEndsAt: string | null;
   isAdmin: boolean;
   isTest: boolean;
   isOrgAdmin: boolean;
@@ -1076,10 +1078,17 @@ type UserRow = {
   stashedPromoCode: string | null;
   softDeletedAt: string | null;
   connections: { names: string[]; total: number };
+  connectedCoaches: string[];
+  connectedAthletes: string[];
+  connectedParents: string[];
+  connectionStatus: "connected" | "unconnected" | "n/a";
+  sessionsLogged: number;
+  lastSessionAt: string | null;
   guardianEmail: string | null;
   guardianInvitedAt: string | null;
   guardianClaimed: boolean;
 };
+
 
 export const listAllUsers = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -1094,6 +1103,8 @@ export const listAllUsers = createServerFn({ method: "POST" })
         onlyTest: z.boolean().optional().default(false),
         hideTest: z.boolean().optional().default(true),
         includeDeleted: z.boolean().optional().default(false),
+        connection: z.enum(["all", "connected", "unconnected"]).optional().default("all"),
+
       })
       .parse(input ?? {}),
   )
@@ -1110,31 +1121,45 @@ export const listAllUsers = createServerFn({ method: "POST" })
     const authUsers = authList.data.users;
 
     // 2. Profiles + roles + org membership.
-    const [coaches, parents, athletes, roles, orgs, softDeleted, applied, allAthletes, links] =
-      await Promise.all([
-        supabaseAdmin
-          .from("coach_profiles")
-          .select(
-            "id, user_id, first_name, last_name, is_test, organization_id, subscription_tier, entitlement, is_org_admin, promo_code",
-          ),
-        supabaseAdmin
-          .from("parent_profiles")
-          .select("id, user_id, first_name, last_name, is_test, promo_code"),
-        supabaseAdmin
-          .from("athletes")
-          .select(
-            "id, user_id, first_name, last_name, is_test, self_managed, promo_code, birthdate, parent_id, guardian_email, guardian_invited_at, guardian_claimed_at",
-          )
-          .not("user_id", "is", null),
-        supabaseAdmin.from("user_roles").select("user_id, role"),
-        supabaseAdmin.from("organizations").select("id, name"),
-        supabaseAdmin.from("soft_deleted_users").select("user_id, deleted_at"),
-        supabaseAdmin
-          .from("user_applied_promo_codes")
-          .select("id, user_id, code, scope, environment"),
-        supabaseAdmin.from("athletes").select("id, first_name, last_name, parent_id"),
-        supabaseAdmin.from("coach_athletes").select("coach_id, athlete_id"),
-      ]);
+    const [
+      coaches,
+      parents,
+      athletes,
+      roles,
+      orgs,
+      softDeleted,
+      applied,
+      allAthletes,
+      links,
+      guardianLinks,
+      planSessions,
+    ] = await Promise.all([
+      supabaseAdmin
+        .from("coach_profiles")
+        .select(
+          "id, user_id, first_name, last_name, is_test, organization_id, subscription_tier, entitlement, is_org_admin, promo_code, subscription_status, current_period_end, trial_ends_at, founding_coach",
+        ),
+      supabaseAdmin
+        .from("parent_profiles")
+        .select(
+          "id, user_id, first_name, last_name, is_test, promo_code, subscription_status, current_period_end, team_plan_seats",
+        ),
+      supabaseAdmin
+        .from("athletes")
+        .select(
+          "id, user_id, first_name, last_name, is_test, self_managed, promo_code, birthdate, parent_id, guardian_email, guardian_invited_at, guardian_claimed_at",
+        )
+        .not("user_id", "is", null),
+      supabaseAdmin.from("user_roles").select("user_id, role"),
+      supabaseAdmin.from("organizations").select("id, name"),
+      supabaseAdmin.from("soft_deleted_users").select("user_id, deleted_at"),
+      supabaseAdmin.from("user_applied_promo_codes").select("id, user_id, code, scope, environment"),
+      supabaseAdmin.from("athletes").select("id, first_name, last_name, parent_id"),
+      supabaseAdmin.from("coach_athletes").select("coach_id, athlete_id"),
+      supabaseAdmin.from("athlete_guardians").select("athlete_id, parent_id"),
+      supabaseAdmin.from("plan_sessions").select("athlete_id, parent_id, logged_at"),
+    ]);
+
     for (const r of [
       coaches,
       parents,
@@ -1145,9 +1170,12 @@ export const listAllUsers = createServerFn({ method: "POST" })
       applied,
       allAthletes,
       links,
+      guardianLinks,
+      planSessions,
     ]) {
       if (r.error) dbError(r.error);
     }
+
 
     // Connection maps (admin-only display).
     const fullName = (f?: string | null, l?: string | null) => `${f ?? ""} ${l ?? ""}`.trim();
@@ -1188,6 +1216,62 @@ export const listAllUsers = createServerFn({ method: "POST" })
       return { names: unique.slice(0, 3), total: unique.length };
     };
 
+    // Guardians (including co-guardians on a Team plan) per athlete, and the
+    // athletes each guardian is attached to.
+    const guardianNamesByAthleteId = new Map<string, string[]>();
+    const athletesByGuardianParentId = new Map<string, { id: string; name: string }[]>();
+    for (const g of guardianLinks.data ?? []) {
+      const pName = parentNameById.get(g.parent_id);
+      if (pName) {
+        const arr = guardianNamesByAthleteId.get(g.athlete_id) ?? [];
+        arr.push(pName);
+        guardianNamesByAthleteId.set(g.athlete_id, arr);
+      }
+      const aName = athleteNameById.get(g.athlete_id);
+      if (aName) {
+        const arr = athletesByGuardianParentId.get(g.parent_id) ?? [];
+        arr.push({ id: g.athlete_id, name: aName });
+        athletesByGuardianParentId.set(g.parent_id, arr);
+      }
+    }
+
+    // Practice sessions: attributed to the logger (parent when parent_id is
+    // set, otherwise the athlete). Coaches roll up their roster.
+    type SessionAgg = { count: number; last: string | null };
+    const bumpAgg = (map: Map<string, SessionAgg>, key: string, when: string | null) => {
+      const cur = map.get(key) ?? { count: 0, last: null };
+      cur.count += 1;
+      if (when && (!cur.last || when > cur.last)) cur.last = when;
+      map.set(key, cur);
+    };
+    const sessionsByAthleteId = new Map<string, SessionAgg>();
+    const sessionsByParentId = new Map<string, SessionAgg>();
+    const sessionsByAthleteIdAll = new Map<string, SessionAgg>();
+    for (const s of planSessions.data ?? []) {
+      if (s.athlete_id) bumpAgg(sessionsByAthleteIdAll, s.athlete_id, s.logged_at);
+      if (s.parent_id) bumpAgg(sessionsByParentId, s.parent_id, s.logged_at);
+      else if (s.athlete_id) bumpAgg(sessionsByAthleteId, s.athlete_id, s.logged_at);
+    }
+    const rollUp = (ids: string[], source: Map<string, SessionAgg>): SessionAgg => {
+      let count = 0;
+      let last: string | null = null;
+      for (const id of ids) {
+        const agg = source.get(id);
+        if (!agg) continue;
+        count += agg.count;
+        if (agg.last && (!last || agg.last > last)) last = agg.last;
+      }
+      return { count, last };
+    };
+
+    const athleteIdsByCoachId = new Map<string, string[]>();
+    for (const l of links.data ?? []) {
+      const arr = athleteIdsByCoachId.get(l.coach_id) ?? [];
+      arr.push(l.athlete_id);
+      athleteIdsByCoachId.set(l.coach_id, arr);
+    }
+
+
     const coachByUser = new Map((coaches.data ?? []).map((c) => [c.user_id, c]));
     const parentByUser = new Map((parents.data ?? []).map((p) => [p.user_id, p]));
     const athleteByUser = new Map(
@@ -1211,6 +1295,17 @@ export const listAllUsers = createServerFn({ method: "POST" })
     }
 
     // 3. Build unified rows.
+    const uniqBy = <T,>(items: T[], key: (item: T) => string): T[] => {
+      const seen = new Set<string>();
+      const out: T[] = [];
+      for (const item of items) {
+        const k = key(item);
+        if (seen.has(k)) continue;
+        seen.add(k);
+        out.push(item);
+      }
+      return out;
+    };
     const rows: UserRow[] = authUsers.map((u) => {
       const coach = coachByUser.get(u.id);
       const parent = parentByUser.get(u.id);
@@ -1218,15 +1313,24 @@ export const listAllUsers = createServerFn({ method: "POST" })
       let userType = "unknown";
       let name = u.email ?? "(no email)";
       let planTier: string | null = null;
+      let subscriptionStatus: string | null = null;
+      let planEndsAt: string | null = null;
       let organizationId: string | null = null;
       let organizationName: string | null = null;
       let isTest = false;
       let isOrgAdmin = false;
       let stashedPromoCode: string | null = null;
       let connections: { names: string[]; total: number } = { names: [], total: 0 };
+      let connectedCoaches: string[] = [];
+      let connectedAthletes: string[] = [];
+      let connectedParents: string[] = [];
+      let sessions: { count: number; last: string | null } = { count: 0, last: null };
       let guardianEmail: string | null = null;
       let guardianInvitedAt: string | null = null;
       let guardianClaimed = false;
+
+      const uniq = (names: (string | null | undefined)[]) =>
+        Array.from(new Set(names.filter(Boolean) as string[]));
 
       if (adminRoles.has(u.id) && !coach && !parent && !athlete) {
         userType = "internal_admin";
@@ -1242,17 +1346,30 @@ export const listAllUsers = createServerFn({ method: "POST" })
         if (coach.entitlement === "club_covered") planTier = "club";
         else if (coach.subscription_tier === "coach_pro") planTier = "coach_pro";
         else planTier = "coach";
-        connections = connectionsOf(athletesByCoachId.get(coach.id) ?? []);
+        subscriptionStatus = coach.founding_coach
+          ? (coach.subscription_status ?? "founding")
+          : (coach.subscription_status ?? null);
+        planEndsAt = coach.current_period_end ?? coach.trial_ends_at ?? null;
+        connectedAthletes = uniq(athletesByCoachId.get(coach.id) ?? []);
+        connections = connectionsOf(connectedAthletes);
+        sessions = rollUp(athleteIdsByCoachId.get(coach.id) ?? [], sessionsByAthleteIdAll);
       } else if (parent) {
         userType = "parent";
         name = `${parent.first_name ?? ""} ${parent.last_name ?? ""}`.trim() || name;
         isTest = isTest || !!parent.is_test;
         stashedPromoCode = parent.promo_code ?? null;
-        const kids = athletesByParentId.get(parent.id) ?? [];
-        connections = connectionsOf([
-          ...kids.map((k) => k.name),
-          ...kids.flatMap((k) => coachesByAthleteId.get(k.id) ?? []),
-        ]);
+        subscriptionStatus = parent.subscription_status ?? null;
+        planEndsAt = parent.current_period_end ?? null;
+        if (parent.subscription_status && parent.subscription_status !== "canceled")
+          planTier = "team";
+        const kids = uniqBy(
+          [...(athletesByParentId.get(parent.id) ?? []), ...(athletesByGuardianParentId.get(parent.id) ?? [])],
+          (k) => k.id,
+        );
+        connectedAthletes = uniq(kids.map((k) => k.name));
+        connectedCoaches = uniq(kids.flatMap((k) => coachesByAthleteId.get(k.id) ?? []));
+        connections = connectionsOf([...connectedAthletes, ...connectedCoaches]);
+        sessions = sessionsByParentId.get(parent.id) ?? { count: 0, last: null };
       } else if (athlete) {
         userType = !athlete.self_managed
           ? "youth_athlete"
@@ -1271,11 +1388,21 @@ export const listAllUsers = createServerFn({ method: "POST" })
           (athlete as { guardian_claimed_at?: string | null }).guardian_claimed_at ||
             athlete.parent_id,
         );
-        connections = connectionsOf([
-          ...(coachesByAthleteId.get(athlete.id) ?? []),
-          ...(athlete.parent_id ? [parentNameById.get(athlete.parent_id) ?? ""] : []),
+        connectedCoaches = uniq(coachesByAthleteId.get(athlete.id) ?? []);
+        connectedParents = uniq([
+          athlete.parent_id ? parentNameById.get(athlete.parent_id) : null,
+          ...(guardianNamesByAthleteId.get(athlete.id) ?? []),
         ]);
+        connections = connectionsOf([...connectedCoaches, ...connectedParents]);
+        sessions = sessionsByAthleteId.get(athlete.id) ?? { count: 0, last: null };
       }
+
+      const connectionStatus: UserRow["connectionStatus"] =
+        userType === "internal_admin" || userType === "unknown"
+          ? "n/a"
+          : connections.total > 0
+            ? "connected"
+            : "unconnected";
 
       return {
         userId: u.id,
@@ -1285,6 +1412,8 @@ export const listAllUsers = createServerFn({ method: "POST" })
         lastSignInAt: u.last_sign_in_at ?? null,
         userType,
         planTier,
+        subscriptionStatus,
+        planEndsAt,
         isAdmin: adminRoles.has(u.id),
         isTest,
         isOrgAdmin,
@@ -1294,6 +1423,12 @@ export const listAllUsers = createServerFn({ method: "POST" })
         stashedPromoCode,
         softDeletedAt: deletedByUser.get(u.id) ?? null,
         connections,
+        connectedCoaches,
+        connectedAthletes,
+        connectedParents,
+        connectionStatus,
+        sessionsLogged: sessions.count,
+        lastSessionAt: sessions.last,
         guardianEmail,
         guardianInvitedAt,
         guardianClaimed,
@@ -1311,6 +1446,7 @@ export const listAllUsers = createServerFn({ method: "POST" })
       if (data.types.length && !data.types.includes(r.userType)) return false;
       if (data.plans.length && (r.planTier == null || !data.plans.includes(r.planTier)))
         return false;
+      if (data.connection !== "all" && r.connectionStatus !== data.connection) return false;
       if (q) {
         const haystack =
           `${r.name} ${r.email ?? ""} ${r.organizationName ?? ""} ${r.guardianEmail ?? ""}`.toLowerCase();
@@ -1318,6 +1454,7 @@ export const listAllUsers = createServerFn({ method: "POST" })
       }
       return true;
     });
+
 
     return { rows: filtered };
   });

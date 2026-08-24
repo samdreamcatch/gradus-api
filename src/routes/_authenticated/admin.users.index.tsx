@@ -67,6 +67,7 @@ import {
   setUserTestFlag,
   deleteTestUser,
 } from "@/lib/admin.functions";
+import { toCsv, downloadCsv } from "@/lib/csv";
 
 const searchSchema = z.object({
   q: fallback(z.string(), "").default(""),
@@ -77,6 +78,7 @@ const searchSchema = z.object({
   onlyTest: fallback(z.boolean(), false).default(false),
   hideTest: fallback(z.boolean(), true).default(true),
   includeDeleted: fallback(z.boolean(), false).default(false),
+  connection: fallback(z.enum(["all", "connected", "unconnected"]), "all").default("all"),
   sort: fallback(z.string(), "created_desc").default("created_desc"),
 });
 
@@ -110,6 +112,7 @@ const PLAN_LABEL: Record<string, string> = {
   coach: "Coach",
   coach_pro: "Coach Pro",
   club: "Club",
+  team: "Team",
 };
 
 function AdminUsersPage() {
@@ -131,9 +134,11 @@ function AdminUsersPage() {
           onlyTest: search.onlyTest,
           hideTest: search.hideTest,
           includeDeleted: search.includeDeleted,
+          connection: search.connection,
         },
       }),
   });
+
 
   const rows = useMemo(() => {
     const list = listQuery.data?.rows ?? [];
@@ -166,6 +171,85 @@ function AdminUsersPage() {
     navigate({ search: (prev: z.infer<typeof searchSchema>) => ({ ...prev, ...patch }) });
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["admin-users"] });
+
+  const exportCsv = () => {
+    if (rows.length === 0) {
+      toast.error("Nothing to export with these filters.");
+      return;
+    }
+    const date = (v: string | null | undefined) => (v ? new Date(v).toISOString().slice(0, 10) : "");
+    const csv = toCsv(
+      [
+        "Name",
+        "Email",
+        "User type",
+        "Created at",
+        "Last sign-in",
+        "Connection status",
+        "Connection count",
+        "Coaches",
+        "Athletes",
+        "Parents / guardians",
+        "Guardian email",
+        "Guardian status",
+        "Organization",
+        "Plan tier",
+        "Subscription status",
+        "Plan / trial ends",
+        "Sessions logged",
+        "Last session",
+        "Admin",
+        "Org admin",
+        "Test",
+        "Soft-deleted",
+        "Promo codes",
+      ],
+      rows.map((r) => [
+        r.name,
+        r.email ?? "",
+        USER_TYPE_LABEL[r.userType as UserType] ?? r.userType,
+        date(r.createdAt),
+        date(r.lastSignInAt),
+        r.connectionStatus,
+        r.connections.total,
+        r.connectedCoaches.join("; "),
+        r.connectedAthletes.join("; "),
+        r.connectedParents.join("; "),
+        r.guardianEmail ?? "",
+        r.guardianEmail
+          ? r.guardianClaimed
+            ? "claimed"
+            : r.guardianInvitedAt
+              ? `invited ${date(r.guardianInvitedAt)}`
+              : "not invited"
+          : "",
+        r.organizationName ?? "",
+        r.planTier ? (PLAN_LABEL[r.planTier] ?? r.planTier) : "",
+        r.subscriptionStatus ?? "",
+        date(r.planEndsAt),
+        r.sessionsLogged,
+        date(r.lastSessionAt),
+        r.isAdmin ? "yes" : "",
+        r.isOrgAdmin ? "yes" : "",
+        r.isTest ? "yes" : "",
+        r.softDeletedAt ? date(r.softDeletedAt) : "",
+        [
+          ...r.appliedCodes.map((c) => c.code),
+          ...(r.stashedPromoCode ? [r.stashedPromoCode] : []),
+        ].join("; "),
+      ]),
+    );
+    const scope = [
+      search.types.length === 1 ? search.types[0] : search.types.length ? "filtered" : "all",
+      search.connection !== "all" ? search.connection : null,
+    ]
+      .filter(Boolean)
+      .join("-");
+    downloadCsv(`gradus-users-${scope}-${new Date().toISOString().slice(0, 10)}.csv`, csv);
+    toast.success(`Exported ${rows.length} user${rows.length === 1 ? "" : "s"}.`);
+  };
+
+
 
   const typeOptions: UserType[] = [
     "coach",
@@ -237,7 +321,7 @@ function AdminUsersPage() {
 
           <div className="flex flex-wrap items-center gap-1 ml-2">
             <span className="text-xs uppercase tracking-wide text-text-tertiary mr-1">Plan</span>
-            {["coach", "coach_pro", "club"].map((p) => {
+            {["coach", "coach_pro", "club", "team"].map((p) => {
               const selected = search.plans.includes(p);
               return (
                 <Chip
@@ -258,7 +342,32 @@ function AdminUsersPage() {
               );
             })}
           </div>
+
+          <div className="flex flex-wrap items-center gap-1 ml-2">
+            <span className="text-xs uppercase tracking-wide text-text-tertiary mr-1">
+              Connections
+            </span>
+            {(["all", "connected", "unconnected"] as const).map((c) => (
+              <Chip
+                key={c}
+                as="button"
+                size="micro"
+                selected={search.connection === c}
+                onClick={(e) => {
+                  e.preventDefault();
+                  setSearch({ connection: c });
+                }}
+              >
+                {c === "all" ? "All" : c === "connected" ? "Connected" : "Unconnected"}
+              </Chip>
+            ))}
+          </div>
+
+          <Button type="button" variant="secondary" onClick={exportCsv} className="ml-auto">
+            Export CSV
+          </Button>
         </form>
+
 
         <div className="flex flex-wrap items-center gap-4 pt-1">
           <ToggleRow
