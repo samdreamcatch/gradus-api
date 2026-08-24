@@ -1302,15 +1302,24 @@ export const listAllUsers = createServerFn({ method: "POST" })
       let userType = "unknown";
       let name = u.email ?? "(no email)";
       let planTier: string | null = null;
+      let subscriptionStatus: string | null = null;
+      let planEndsAt: string | null = null;
       let organizationId: string | null = null;
       let organizationName: string | null = null;
       let isTest = false;
       let isOrgAdmin = false;
       let stashedPromoCode: string | null = null;
       let connections: { names: string[]; total: number } = { names: [], total: 0 };
+      let connectedCoaches: string[] = [];
+      let connectedAthletes: string[] = [];
+      let connectedParents: string[] = [];
+      let sessions: { count: number; last: string | null } = { count: 0, last: null };
       let guardianEmail: string | null = null;
       let guardianInvitedAt: string | null = null;
       let guardianClaimed = false;
+
+      const uniq = (names: (string | null | undefined)[]) =>
+        Array.from(new Set(names.filter(Boolean) as string[]));
 
       if (adminRoles.has(u.id) && !coach && !parent && !athlete) {
         userType = "internal_admin";
@@ -1326,17 +1335,30 @@ export const listAllUsers = createServerFn({ method: "POST" })
         if (coach.entitlement === "club_covered") planTier = "club";
         else if (coach.subscription_tier === "coach_pro") planTier = "coach_pro";
         else planTier = "coach";
-        connections = connectionsOf(athletesByCoachId.get(coach.id) ?? []);
+        subscriptionStatus = coach.founding_coach
+          ? (coach.subscription_status ?? "founding")
+          : (coach.subscription_status ?? null);
+        planEndsAt = coach.current_period_end ?? coach.trial_ends_at ?? null;
+        connectedAthletes = uniq(athletesByCoachId.get(coach.id) ?? []);
+        connections = connectionsOf(connectedAthletes);
+        sessions = rollUp(athleteIdsByCoachId.get(coach.id) ?? [], sessionsByAthleteIdAll);
       } else if (parent) {
         userType = "parent";
         name = `${parent.first_name ?? ""} ${parent.last_name ?? ""}`.trim() || name;
         isTest = isTest || !!parent.is_test;
         stashedPromoCode = parent.promo_code ?? null;
-        const kids = athletesByParentId.get(parent.id) ?? [];
-        connections = connectionsOf([
-          ...kids.map((k) => k.name),
-          ...kids.flatMap((k) => coachesByAthleteId.get(k.id) ?? []),
-        ]);
+        subscriptionStatus = parent.subscription_status ?? null;
+        planEndsAt = parent.current_period_end ?? null;
+        if (parent.subscription_status && parent.subscription_status !== "canceled")
+          planTier = "team";
+        const kids = uniqBy(
+          [...(athletesByParentId.get(parent.id) ?? []), ...(athletesByGuardianParentId.get(parent.id) ?? [])],
+          (k) => k.id,
+        );
+        connectedAthletes = uniq(kids.map((k) => k.name));
+        connectedCoaches = uniq(kids.flatMap((k) => coachesByAthleteId.get(k.id) ?? []));
+        connections = connectionsOf([...connectedAthletes, ...connectedCoaches]);
+        sessions = sessionsByParentId.get(parent.id) ?? { count: 0, last: null };
       } else if (athlete) {
         userType = !athlete.self_managed
           ? "youth_athlete"
@@ -1355,11 +1377,21 @@ export const listAllUsers = createServerFn({ method: "POST" })
           (athlete as { guardian_claimed_at?: string | null }).guardian_claimed_at ||
             athlete.parent_id,
         );
-        connections = connectionsOf([
-          ...(coachesByAthleteId.get(athlete.id) ?? []),
-          ...(athlete.parent_id ? [parentNameById.get(athlete.parent_id) ?? ""] : []),
+        connectedCoaches = uniq(coachesByAthleteId.get(athlete.id) ?? []);
+        connectedParents = uniq([
+          athlete.parent_id ? parentNameById.get(athlete.parent_id) : null,
+          ...(guardianNamesByAthleteId.get(athlete.id) ?? []),
         ]);
+        connections = connectionsOf([...connectedCoaches, ...connectedParents]);
+        sessions = sessionsByAthleteId.get(athlete.id) ?? { count: 0, last: null };
       }
+
+      const connectionStatus: UserRow["connectionStatus"] =
+        userType === "internal_admin" || userType === "unknown"
+          ? "n/a"
+          : connections.total > 0
+            ? "connected"
+            : "unconnected";
 
       return {
         userId: u.id,
@@ -1369,6 +1401,8 @@ export const listAllUsers = createServerFn({ method: "POST" })
         lastSignInAt: u.last_sign_in_at ?? null,
         userType,
         planTier,
+        subscriptionStatus,
+        planEndsAt,
         isAdmin: adminRoles.has(u.id),
         isTest,
         isOrgAdmin,
@@ -1378,6 +1412,12 @@ export const listAllUsers = createServerFn({ method: "POST" })
         stashedPromoCode,
         softDeletedAt: deletedByUser.get(u.id) ?? null,
         connections,
+        connectedCoaches,
+        connectedAthletes,
+        connectedParents,
+        connectionStatus,
+        sessionsLogged: sessions.count,
+        lastSessionAt: sessions.last,
         guardianEmail,
         guardianInvitedAt,
         guardianClaimed,
@@ -1395,6 +1435,7 @@ export const listAllUsers = createServerFn({ method: "POST" })
       if (data.types.length && !data.types.includes(r.userType)) return false;
       if (data.plans.length && (r.planTier == null || !data.plans.includes(r.planTier)))
         return false;
+      if (data.connection !== "all" && r.connectionStatus !== data.connection) return false;
       if (q) {
         const haystack =
           `${r.name} ${r.email ?? ""} ${r.organizationName ?? ""} ${r.guardianEmail ?? ""}`.toLowerCase();
@@ -1402,6 +1443,7 @@ export const listAllUsers = createServerFn({ method: "POST" })
       }
       return true;
     });
+
 
     return { rows: filtered };
   });
