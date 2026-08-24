@@ -34,7 +34,17 @@ const sportsPosterAllowlist = [
 ];
 
 export default tseslint.config(
-  { ignores: ["dist", ".output", ".vinxi"] },
+  {
+    ignores: [
+      "dist",
+      ".output",
+      ".vinxi",
+      // Auto-generated integration files — never hand-edited, so lint findings
+      // in them can't be fixed and would permanently fail CI.
+      "src/integrations/supabase/previewAuthStorage.ts",
+      "src/routeTree.gen.ts",
+    ],
+  },
   eslintPluginPrettier,
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
