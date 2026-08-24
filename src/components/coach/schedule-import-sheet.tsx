@@ -538,7 +538,7 @@ function ReviewStep({
         </div>
       ) : null}
 
-      {groupRowsByStudent(rows).map((group) => {
+      {groupRowsByStudent(rows, expandedId).map((group) => {
         const groupBad = group.rows.some((r) => Object.keys(allErrors[r.id] ?? {}).length > 0);
         const first = group.rows[0]!;
         const name = `${first.firstName} ${first.lastName}`.trim();
@@ -548,7 +548,7 @@ function ReviewStep({
         const onRoster = rosterSet.has(key);
         return (
           <div
-            key={first.id}
+            key={group.key}
             id={`import-row-${first.id}`}
             className={cn(
               "rounded-xl border bg-card p-3",
