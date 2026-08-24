@@ -77,6 +77,7 @@ const searchSchema = z.object({
   onlyTest: fallback(z.boolean(), false).default(false),
   hideTest: fallback(z.boolean(), true).default(true),
   includeDeleted: fallback(z.boolean(), false).default(false),
+  connection: fallback(z.enum(["all", "connected", "unconnected"]), "all").default("all"),
   sort: fallback(z.string(), "created_desc").default("created_desc"),
 });
 
