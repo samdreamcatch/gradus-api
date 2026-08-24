@@ -84,7 +84,6 @@ import { Route as AuthenticatedAthletePlansIndexRouteImport } from './routes/_au
 import { Route as AuthenticatedAthleteMessagesIndexRouteImport } from './routes/_authenticated/athlete.messages.index'
 import { Route as AuthenticatedAdminUsersIndexRouteImport } from './routes/_authenticated/admin.users.index'
 import { Route as AuthenticatedAdminEmailsIndexRouteImport } from './routes/_authenticated/admin.emails.index'
-import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
@@ -519,12 +518,6 @@ const AuthenticatedAdminEmailsIndexRoute =
     path: '/emails/',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
-const LovableEmailTransactionalSendRoute =
-  LovableEmailTransactionalSendRouteImport.update({
-    id: '/lovable/email/transactional/send',
-    path: '/lovable/email/transactional/send',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const LovableEmailTransactionalPreviewRoute =
   LovableEmailTransactionalPreviewRouteImport.update({
     id: '/lovable/email/transactional/preview',
@@ -721,7 +714,6 @@ export interface FileRoutesByFullPath {
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
-  '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
   '/admin/emails/': typeof AuthenticatedAdminEmailsIndexRoute
   '/admin/users/': typeof AuthenticatedAdminUsersIndexRoute
   '/athlete/messages/': typeof AuthenticatedAthleteMessagesIndexRoute
@@ -811,7 +803,6 @@ export interface FileRoutesByTo {
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
-  '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
   '/admin/emails': typeof AuthenticatedAdminEmailsIndexRoute
   '/admin/users': typeof AuthenticatedAdminUsersIndexRoute
   '/athlete/messages': typeof AuthenticatedAthleteMessagesIndexRoute
@@ -909,7 +900,6 @@ export interface FileRoutesById {
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
-  '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
   '/_authenticated/admin/emails/': typeof AuthenticatedAdminEmailsIndexRoute
   '/_authenticated/admin/users/': typeof AuthenticatedAdminUsersIndexRoute
   '/_authenticated/athlete/messages/': typeof AuthenticatedAthleteMessagesIndexRoute
@@ -1007,7 +997,6 @@ export interface FileRouteTypes {
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
-    | '/lovable/email/transactional/send'
     | '/admin/emails/'
     | '/admin/users/'
     | '/athlete/messages/'
@@ -1097,7 +1086,6 @@ export interface FileRouteTypes {
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
-    | '/lovable/email/transactional/send'
     | '/admin/emails'
     | '/admin/users'
     | '/athlete/messages'
@@ -1194,7 +1182,6 @@ export interface FileRouteTypes {
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
-    | '/lovable/email/transactional/send'
     | '/_authenticated/admin/emails/'
     | '/_authenticated/admin/users/'
     | '/_authenticated/athlete/messages/'
@@ -1235,7 +1222,6 @@ export interface RootRouteChildren {
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
-  LovableEmailTransactionalSendRoute: typeof LovableEmailTransactionalSendRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1765,13 +1751,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminEmailsIndexRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
-    '/lovable/email/transactional/send': {
-      id: '/lovable/email/transactional/send'
-      path: '/lovable/email/transactional/send'
-      fullPath: '/lovable/email/transactional/send'
-      preLoaderRoute: typeof LovableEmailTransactionalSendRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/lovable/email/transactional/preview': {
       id: '/lovable/email/transactional/preview'
       path: '/lovable/email/transactional/preview'
@@ -2178,7 +2157,6 @@ const rootRouteChildren: RootRouteChildren = {
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
-  LovableEmailTransactionalSendRoute: LovableEmailTransactionalSendRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
