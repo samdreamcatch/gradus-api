@@ -112,6 +112,7 @@ const PLAN_LABEL: Record<string, string> = {
   coach: "Coach",
   coach_pro: "Coach Pro",
   club: "Club",
+  team: "Team",
 };
 
 function AdminUsersPage() {
