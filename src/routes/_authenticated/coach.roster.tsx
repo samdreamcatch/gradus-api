@@ -439,6 +439,9 @@ function RosterPage() {
         open={importOpen}
         onOpenChange={setImportOpen}
         coachSports={coachSports}
+        athleteLimit={athleteLimit}
+        rosterCount={roster.athletes.length}
+        rosterNames={roster.athletes.map((a) => `${a.firstName} ${a.lastName}`)}
       />
 
     </>

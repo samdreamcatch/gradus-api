@@ -62,10 +62,18 @@ export function ScheduleImportSheet({
   open,
   onOpenChange,
   coachSports,
+  athleteLimit = null,
+  rosterCount = 0,
+  rosterNames = [],
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   coachSports: string[];
+  /** Athletes allowed on the coach's plan; null = unlimited. */
+  athleteLimit?: number | null;
+  rosterCount?: number;
+  /** Full names already on the roster, so repeats don't count against the cap. */
+  rosterNames?: string[];
 }) {
   const qc = useQueryClient();
   const defaultSport = coachSports.length === 1 ? coachSports[0] : "";
@@ -74,10 +82,40 @@ export function ScheduleImportSheet({
   const [outcomes, setOutcomes] = useState<ImportOutcome[]>([]);
   // Errors stay hidden until the coach tries to continue — typing shouldn't feel accusatory.
   const [showErrors, setShowErrors] = useState(false);
+  // Student name-keys the coach chose to leave out of this import.
+  const [skipped, setSkipped] = useState<string[]>([]);
   const csvInputRef = useRef<HTMLInputElement>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
 
+  const rosterSet = useMemo(
+    () => new Set(rosterNames.map((n) => n.trim().toLowerCase().replace(/\s+/g, " "))),
+    [rosterNames],
+  );
+  const room = athleteLimit === null ? Infinity : Math.max(0, athleteLimit - rosterCount);
+
   const groups = useMemo(() => groupRowsByAthlete(rows), [rows]);
+
+  // Which students are new (count against the cap) and which spill past it.
+  const nameKey = (first: string, last: string) =>
+    `${first} ${last}`.trim().toLowerCase().replace(/\s+/g, " ");
+  const overCapKeys = useMemo(() => {
+    if (room === Infinity) return new Set<string>();
+    const over = new Set<string>();
+    let left = room;
+    for (const g of groups) {
+      const key = nameKey(g.firstName, g.lastName);
+      if (!key || rosterSet.has(key) || skipped.includes(key)) continue;
+      if (left > 0) left -= 1;
+      else over.add(key);
+    }
+    return over;
+  }, [groups, room, rosterSet, skipped]);
+
+  const newCount = groups.filter((g) => {
+    const key = nameKey(g.firstName, g.lastName);
+    return key && !rosterSet.has(key) && !skipped.includes(key);
+  }).length;
+
   const invalidCount = useMemo(() => {
     const all = validateRows(rows);
     return rows.filter((r) => Object.keys(all[r.id] ?? {}).length > 0).length;
@@ -88,12 +126,14 @@ export function ScheduleImportSheet({
     setRows([]);
     setOutcomes([]);
     setShowErrors(false);
+    setSkipped([]);
   };
 
   const close = (o: boolean) => {
     onOpenChange(o);
     if (!o) reset();
   };
+
 
   const parseImage = useMutation({
     mutationFn: async (file: File) => {
@@ -117,7 +157,9 @@ export function ScheduleImportSheet({
     mutationFn: () =>
       commitScheduleImport({
         data: {
-          groups: groups.map((g) => ({
+          groups: groups
+            .filter((g) => !skipped.includes(nameKey(g.firstName, g.lastName)))
+            .map((g) => ({
             key: g.key,
             firstName: g.firstName,
             lastName: g.lastName,
@@ -212,6 +254,17 @@ export function ScheduleImportSheet({
             rows={rows}
             coachSports={coachSports}
             showErrors={showErrors}
+            rosterSet={rosterSet}
+            skipped={skipped}
+            overCapKeys={overCapKeys}
+            room={room}
+            athleteLimit={athleteLimit}
+            newCount={newCount}
+            onToggleSkip={(key) =>
+              setSkipped((prev) =>
+                prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key],
+              )
+            }
             onChange={updateRow}
             onRemove={(id) => setRows((prev) => prev.filter((r) => r.id !== id))}
             onAdd={() => {
@@ -223,6 +276,7 @@ export function ScheduleImportSheet({
         ) : null}
 
         {step === "done" ? <DoneStep outcomes={outcomes} /> : null}
+
 
         <SheetFooter className="mt-6 flex-row justify-end gap-2">
           {step === "review" ? (
@@ -364,6 +418,13 @@ function ReviewStep({
   rows,
   coachSports,
   showErrors,
+  rosterSet,
+  skipped,
+  overCapKeys,
+  room,
+  athleteLimit,
+  newCount,
+  onToggleSkip,
   onChange,
   onRemove,
   onAdd,
@@ -371,6 +432,13 @@ function ReviewStep({
   rows: ImportRow[];
   coachSports: string[];
   showErrors: boolean;
+  rosterSet: Set<string>;
+  skipped: string[];
+  overCapKeys: Set<string>;
+  room: number;
+  athleteLimit: number | null;
+  newCount: number;
+  onToggleSkip: (key: string) => void;
   onChange: (id: string, patch: Partial<ImportRow>) => void;
   onRemove: (id: string) => void;
   onAdd: () => string;
@@ -429,20 +497,95 @@ function ReviewStep({
         </div>
       ) : null}
 
+      {athleteLimit !== null ? (
+        <div
+          className={cn(
+            "flex w-full items-start gap-2 rounded-xl border bg-card px-3 py-2 text-left",
+            overCapKeys.size > 0 ? "border-destructive/50" : "border-divider",
+          )}
+        >
+          <TriangleAlert
+            className={cn(
+              "mt-0.5 size-4 shrink-0",
+              overCapKeys.size > 0 ? "text-destructive" : "text-text-tertiary",
+            )}
+            aria-hidden
+          />
+          <p className="text-xs text-text-secondary">
+            {overCapKeys.size > 0 ? (
+              <>
+                <span className="font-bold text-text-primary">
+                  {room === 0
+                    ? "Your roster is full."
+                    : `Only ${room} seat${room === 1 ? "" : "s"} left on your plan.`}
+                </span>{" "}
+                {overCapKeys.size} athlete{overCapKeys.size === 1 ? "" : "s"} below won't be
+                imported. Skip someone else to make room, or{" "}
+                <a href="/coach/paywall" className="font-bold text-accent-ink underline">
+                  upgrade your plan
+                </a>
+                .
+              </>
+            ) : (
+              <>
+                <span className="font-bold text-text-primary">
+                  {room} seat{room === 1 ? "" : "s"} left on your plan.
+                </span>{" "}
+                {newCount} new athlete{newCount === 1 ? "" : "s"} in this import.
+              </>
+            )}
+          </p>
+        </div>
+      ) : null}
+
       {groupRowsByStudent(rows).map((group) => {
         const groupBad = group.rows.some((r) => Object.keys(allErrors[r.id] ?? {}).length > 0);
         const first = group.rows[0]!;
         const name = `${first.firstName} ${first.lastName}`.trim();
+        const key = name.toLowerCase().replace(/\s+/g, " ");
+        const isSkipped = skipped.includes(key);
+        const isOver = overCapKeys.has(key);
+        const onRoster = rosterSet.has(key);
         return (
           <div
             key={first.id}
             id={`import-row-${first.id}`}
             className={cn(
               "rounded-xl border bg-card p-3",
-              groupBad ? "border-destructive/50" : "border-divider",
+              groupBad || isOver ? "border-destructive/50" : "border-divider",
+              isSkipped ? "opacity-60" : undefined,
             )}
           >
-            {name ? <p className="truncate text-sm font-bold text-text-primary">{name}</p> : null}
+            {name ? (
+              <div className="flex items-start justify-between gap-2">
+                <p className="min-w-0 flex-1 truncate text-sm font-bold text-text-primary">
+                  {name}
+                </p>
+                {athleteLimit !== null && !onRoster ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="-mr-1 h-7 shrink-0 px-2 text-[11px] font-bold uppercase tracking-widest text-text-secondary"
+                    onClick={() => onToggleSkip(key)}
+                  >
+                    {isSkipped ? "Include" : "Skip"}
+                  </Button>
+                ) : null}
+              </div>
+            ) : null}
+            {isSkipped ? (
+              <p className="text-[11px] text-text-tertiary">
+                Left out of this import.
+              </p>
+            ) : isOver ? (
+              <p className="text-[11px] text-destructive">Won't import — roster full.</p>
+            ) : onRoster ? (
+              <p className="text-[11px] text-text-tertiary">
+                Already on your roster — lessons will be added.
+              </p>
+            ) : null}
+
 
             <div className="mt-0.5">
               {group.rows.map((row) => {
@@ -832,7 +975,36 @@ function DoneStep({ outcomes }: { outcomes: ImportOutcome[] }) {
   const created = outcomes.filter((o) => o.status === "created").length;
   const linked = outcomes.filter((o) => o.status === "linked").length;
   const failed = outcomes.filter((o) => o.status === "failed");
+  const skipped = outcomes.filter((o) => o.status === "skipped");
+  const imported = outcomes.filter((o) => o.status !== "skipped");
   const slots = outcomes.reduce((n, o) => n + o.slotsAdded, 0);
+
+  const row = (o: ImportOutcome) => (
+    <li
+      key={`${o.key}-${o.name}`}
+      className="flex items-start gap-2 rounded-lg border border-divider bg-card px-3 py-2 text-sm"
+    >
+      {o.status === "failed" ? (
+        <TriangleAlert className="mt-0.5 size-4 shrink-0 text-destructive" aria-hidden />
+      ) : o.status === "skipped" ? (
+        <TriangleAlert className="mt-0.5 size-4 shrink-0 text-text-tertiary" aria-hidden />
+      ) : (
+        <Check className="mt-0.5 size-4 shrink-0 text-accent-ink" aria-hidden />
+      )}
+      <span className="min-w-0">
+        <span className="block font-bold text-text-primary">{o.name}</span>
+        <span className="block text-xs text-text-secondary">
+          {o.status === "failed"
+            ? (o.message ?? "Could not import")
+            : o.status === "skipped"
+              ? (o.message ?? "Skipped — roster full")
+              : `${o.slotsAdded} lesson${o.slotsAdded === 1 ? "" : "s"}${
+                  o.invited ? ` · invite sent to ${o.invited}` : ""
+                }${o.message ? ` · ${o.message}` : ""}`}
+        </span>
+      </span>
+    </li>
+  );
 
   return (
     <div className="mt-4 space-y-3">
@@ -840,36 +1012,27 @@ function DoneStep({ outcomes }: { outcomes: ImportOutcome[] }) {
         {created} new athlete{created === 1 ? "" : "s"}, {linked} matched, {slots} lesson
         {slots === 1 ? "" : "s"} added.
       </p>
-      <ul className="space-y-1.5">
-        {outcomes.map((o) => (
-          <li
-            key={`${o.key}-${o.name}`}
-            className="flex items-start gap-2 rounded-lg border border-divider bg-card px-3 py-2 text-sm"
-          >
-            {o.status === "failed" ? (
-              <TriangleAlert className="mt-0.5 size-4 shrink-0 text-destructive" aria-hidden />
-            ) : (
-              <Check className="mt-0.5 size-4 shrink-0 text-accent-ink" aria-hidden />
-            )}
-            <span className="min-w-0">
-              <span className="block font-bold text-text-primary">{o.name}</span>
-              <span className="block text-xs text-text-secondary">
-                {o.status === "failed"
-                  ? (o.message ?? "Could not import")
-                  : `${o.slotsAdded} lesson${o.slotsAdded === 1 ? "" : "s"}${
-                      o.invited ? ` · invite sent to ${o.invited}` : ""
-                    }${o.message ? ` · ${o.message}` : ""}`}
-              </span>
-            </span>
-          </li>
-        ))}
-      </ul>
+      <ul className="space-y-1.5">{imported.map(row)}</ul>
+
+      {skipped.length > 0 ? (
+        <div className="space-y-1.5">
+          <p className="text-[11px] font-bold uppercase tracking-widest text-text-tertiary">
+            Skipped — roster full
+          </p>
+          <ul className="space-y-1.5">{skipped.map(row)}</ul>
+          <Button asChild size="sm" className="w-full">
+            <a href="/coach/paywall">Upgrade to add {skipped.length} more</a>
+          </Button>
+        </div>
+      ) : null}
+
       {failed.length > 0 ? (
         <p className="text-xs text-text-secondary">
           Failed rows were skipped — successful ones are already on your roster.
         </p>
       ) : null}
     </div>
+
   );
 }
 
