@@ -254,6 +254,17 @@ export function ScheduleImportSheet({
             rows={rows}
             coachSports={coachSports}
             showErrors={showErrors}
+            rosterSet={rosterSet}
+            skipped={skipped}
+            overCapKeys={overCapKeys}
+            room={room}
+            athleteLimit={athleteLimit}
+            newCount={newCount}
+            onToggleSkip={(key) =>
+              setSkipped((prev) =>
+                prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key],
+              )
+            }
             onChange={updateRow}
             onRemove={(id) => setRows((prev) => prev.filter((r) => r.id !== id))}
             onAdd={() => {
@@ -265,6 +276,7 @@ export function ScheduleImportSheet({
         ) : null}
 
         {step === "done" ? <DoneStep outcomes={outcomes} /> : null}
+
 
         <SheetFooter className="mt-6 flex-row justify-end gap-2">
           {step === "review" ? (
