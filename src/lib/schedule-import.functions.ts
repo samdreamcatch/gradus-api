@@ -272,6 +272,25 @@ export const commitScheduleImport = createServerFn({ method: "POST" })
       let created = false;
       let invited: string | null = null;
 
+      if (!athleteId) {
+        if (room <= 0) {
+          outcomes.push({
+            key: g.key,
+            name,
+            status: "skipped",
+            slotsAdded: 0,
+            invited: null,
+            message:
+              athleteLimit === null
+                ? "Roster limit reached."
+                : `Roster limit reached (${athleteLimit} athletes on your plan).`,
+          });
+          continue;
+        }
+        room -= 1;
+      }
+
+
       try {
         if (!athleteId) {
           const token = inviteEmail ? newGuardianToken() : null;
