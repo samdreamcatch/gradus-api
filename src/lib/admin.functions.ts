@@ -1216,6 +1216,56 @@ export const listAllUsers = createServerFn({ method: "POST" })
       return { names: unique.slice(0, 3), total: unique.length };
     };
 
+    // Guardians (including co-guardians on a Team plan) per athlete, and the
+    // athletes each guardian is attached to.
+    const guardianNamesByAthleteId = new Map<string, string[]>();
+    const athletesByGuardianParentId = new Map<string, { id: string; name: string }[]>();
+    for (const g of guardianLinks.data ?? []) {
+      const pName = parentNameById.get(g.parent_id);
+      if (pName) {
+        const arr = guardianNamesByAthleteId.get(g.athlete_id) ?? [];
+        arr.push(pName);
+        guardianNamesByAthleteId.set(g.athlete_id, arr);
+      }
+      const aName = athleteNameById.get(g.athlete_id);
+      if (aName) {
+        const arr = athletesByGuardianParentId.get(g.parent_id) ?? [];
+        arr.push({ id: g.athlete_id, name: aName });
+        athletesByGuardianParentId.set(g.parent_id, arr);
+      }
+    }
+
+    // Practice sessions: attributed to the logger (parent when parent_id is
+    // set, otherwise the athlete). Coaches roll up their roster.
+    type SessionAgg = { count: number; last: string | null };
+    const bumpAgg = (map: Map<string, SessionAgg>, key: string, when: string | null) => {
+      const cur = map.get(key) ?? { count: 0, last: null };
+      cur.count += 1;
+      if (when && (!cur.last || when > cur.last)) cur.last = when;
+      map.set(key, cur);
+    };
+    const sessionsByAthleteId = new Map<string, SessionAgg>();
+    const sessionsByParentId = new Map<string, SessionAgg>();
+    const sessionsByAthleteIdAll = new Map<string, SessionAgg>();
+    for (const s of planSessions.data ?? []) {
+      if (s.athlete_id) bumpAgg(sessionsByAthleteIdAll, s.athlete_id, s.logged_at);
+      if (s.parent_id) bumpAgg(sessionsByParentId, s.parent_id, s.logged_at);
+      else if (s.athlete_id) bumpAgg(sessionsByAthleteId, s.athlete_id, s.logged_at);
+    }
+    const rollUp = (ids: string[], source: Map<string, SessionAgg>): SessionAgg => {
+      let count = 0;
+      let last: string | null = null;
+      for (const id of ids) {
+        const agg = source.get(id);
+        if (!agg) continue;
+        count += agg.count;
+        if (agg.last && (!last || agg.last > last)) last = agg.last;
+      }
+      return { count, last };
+    };
+
+
+
     const coachByUser = new Map((coaches.data ?? []).map((c) => [c.user_id, c]));
     const parentByUser = new Map((parents.data ?? []).map((p) => [p.user_id, p]));
     const athleteByUser = new Map(
