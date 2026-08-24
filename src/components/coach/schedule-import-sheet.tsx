@@ -418,6 +418,13 @@ function ReviewStep({
   rows,
   coachSports,
   showErrors,
+  rosterSet,
+  skipped,
+  overCapKeys,
+  room,
+  athleteLimit,
+  newCount,
+  onToggleSkip,
   onChange,
   onRemove,
   onAdd,
@@ -425,6 +432,13 @@ function ReviewStep({
   rows: ImportRow[];
   coachSports: string[];
   showErrors: boolean;
+  rosterSet: Set<string>;
+  skipped: string[];
+  overCapKeys: Set<string>;
+  room: number;
+  athleteLimit: number | null;
+  newCount: number;
+  onToggleSkip: (key: string) => void;
   onChange: (id: string, patch: Partial<ImportRow>) => void;
   onRemove: (id: string) => void;
   onAdd: () => string;
