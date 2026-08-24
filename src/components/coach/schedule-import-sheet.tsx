@@ -644,20 +644,24 @@ function ReviewStep({
   );
 }
 
-// One card per student: rows with the same name (and email, when present) collapse together.
-function groupRowsByStudent(rows: ImportRow[]) {
+// One card per student: rows with the same name collapse together.
+// The row currently being edited is always kept in its own group, keyed by row
+// id. Otherwise every keystroke in the name fields would re-key the group and
+// move the row into a different card subtree, which unmounts the focused input
+// and drops the caret mid-word. It re-merges with its student card on collapse.
+function groupRowsByStudent(rows: ImportRow[], expandedId?: string | null) {
   const groups: { key: string; rows: ImportRow[] }[] = [];
   const index = new Map<string, { key: string; rows: ImportRow[] }>();
   for (const row of rows) {
     const name = `${row.firstName ?? ""} ${row.lastName ?? ""}`.trim().toLowerCase();
-    // Group on the name only — including the email would regroup on every keystroke.
-    const key = name ? `name:${name}` : `row:${row.id}`;
-    const existing = index.get(key);
+    const isEditing = expandedId != null && row.id === expandedId;
+    const key = name && !isEditing ? `name:${name}` : `row:${row.id}`;
+    const existing = isEditing ? undefined : index.get(key);
     if (existing) {
       existing.rows.push(row);
     } else {
       const group = { key, rows: [row] };
-      index.set(key, group);
+      if (!isEditing) index.set(key, group);
       groups.push(group);
     }
   }
