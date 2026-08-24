@@ -1170,9 +1170,12 @@ export const listAllUsers = createServerFn({ method: "POST" })
       applied,
       allAthletes,
       links,
+      guardianLinks,
+      planSessions,
     ]) {
       if (r.error) dbError(r.error);
     }
+
 
     // Connection maps (admin-only display).
     const fullName = (f?: string | null, l?: string | null) => `${f ?? ""} ${l ?? ""}`.trim();
