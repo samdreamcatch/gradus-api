@@ -1062,6 +1062,8 @@ type UserRow = {
   lastSignInAt: string | null;
   userType: string;
   planTier: string | null;
+  subscriptionStatus: string | null;
+  planEndsAt: string | null;
   isAdmin: boolean;
   isTest: boolean;
   isOrgAdmin: boolean;
@@ -1076,10 +1078,17 @@ type UserRow = {
   stashedPromoCode: string | null;
   softDeletedAt: string | null;
   connections: { names: string[]; total: number };
+  connectedCoaches: string[];
+  connectedAthletes: string[];
+  connectedParents: string[];
+  connectionStatus: "connected" | "unconnected" | "n/a";
+  sessionsLogged: number;
+  lastSessionAt: string | null;
   guardianEmail: string | null;
   guardianInvitedAt: string | null;
   guardianClaimed: boolean;
 };
+
 
 export const listAllUsers = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
