@@ -497,20 +497,95 @@ function ReviewStep({
         </div>
       ) : null}
 
+      {athleteLimit !== null ? (
+        <div
+          className={cn(
+            "flex w-full items-start gap-2 rounded-xl border bg-card px-3 py-2 text-left",
+            overCapKeys.size > 0 ? "border-destructive/50" : "border-divider",
+          )}
+        >
+          <TriangleAlert
+            className={cn(
+              "mt-0.5 size-4 shrink-0",
+              overCapKeys.size > 0 ? "text-destructive" : "text-text-tertiary",
+            )}
+            aria-hidden
+          />
+          <p className="text-xs text-text-secondary">
+            {overCapKeys.size > 0 ? (
+              <>
+                <span className="font-bold text-text-primary">
+                  {room === 0
+                    ? "Your roster is full."
+                    : `Only ${room} seat${room === 1 ? "" : "s"} left on your plan.`}
+                </span>{" "}
+                {overCapKeys.size} athlete{overCapKeys.size === 1 ? "" : "s"} below won't be
+                imported. Skip someone else to make room, or{" "}
+                <a href="/coach/paywall" className="font-bold text-accent-ink underline">
+                  upgrade your plan
+                </a>
+                .
+              </>
+            ) : (
+              <>
+                <span className="font-bold text-text-primary">
+                  {room} seat{room === 1 ? "" : "s"} left on your plan.
+                </span>{" "}
+                {newCount} new athlete{newCount === 1 ? "" : "s"} in this import.
+              </>
+            )}
+          </p>
+        </div>
+      ) : null}
+
       {groupRowsByStudent(rows).map((group) => {
         const groupBad = group.rows.some((r) => Object.keys(allErrors[r.id] ?? {}).length > 0);
         const first = group.rows[0]!;
         const name = `${first.firstName} ${first.lastName}`.trim();
+        const key = name.toLowerCase().replace(/\s+/g, " ");
+        const isSkipped = skipped.includes(key);
+        const isOver = overCapKeys.has(key);
+        const onRoster = rosterSet.has(key);
         return (
           <div
             key={first.id}
             id={`import-row-${first.id}`}
             className={cn(
               "rounded-xl border bg-card p-3",
-              groupBad ? "border-destructive/50" : "border-divider",
+              groupBad || isOver ? "border-destructive/50" : "border-divider",
+              isSkipped ? "opacity-60" : undefined,
             )}
           >
-            {name ? <p className="truncate text-sm font-bold text-text-primary">{name}</p> : null}
+            {name ? (
+              <div className="flex items-start justify-between gap-2">
+                <p className="min-w-0 flex-1 truncate text-sm font-bold text-text-primary">
+                  {name}
+                </p>
+                {athleteLimit !== null && !onRoster ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="-mr-1 h-7 shrink-0 px-2 text-[11px] font-bold uppercase tracking-widest text-text-secondary"
+                    onClick={() => onToggleSkip(key)}
+                  >
+                    {isSkipped ? "Include" : "Skip"}
+                  </Button>
+                ) : null}
+              </div>
+            ) : null}
+            {isSkipped ? (
+              <p className="text-[11px] text-text-tertiary">
+                Left out of this import.
+              </p>
+            ) : isOver ? (
+              <p className="text-[11px] text-destructive">Won't import — roster full.</p>
+            ) : onRoster ? (
+              <p className="text-[11px] text-text-tertiary">
+                Already on your roster — lessons will be added.
+              </p>
+            ) : null}
+
 
             <div className="mt-0.5">
               {group.rows.map((row) => {
