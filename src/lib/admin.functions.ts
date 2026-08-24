@@ -1295,6 +1295,17 @@ export const listAllUsers = createServerFn({ method: "POST" })
     }
 
     // 3. Build unified rows.
+    const uniqBy = <T,>(items: T[], key: (item: T) => string): T[] => {
+      const seen = new Set<string>();
+      const out: T[] = [];
+      for (const item of items) {
+        const k = key(item);
+        if (seen.has(k)) continue;
+        seen.add(k);
+        out.push(item);
+      }
+      return out;
+    };
     const rows: UserRow[] = authUsers.map((u) => {
       const coach = coachByUser.get(u.id);
       const parent = parentByUser.get(u.id);
