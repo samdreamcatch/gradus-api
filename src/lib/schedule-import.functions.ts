@@ -23,7 +23,7 @@ export type ParsedLesson = {
 export type ImportOutcome = {
   key: string;
   name: string;
-  status: "created" | "linked" | "failed";
+  status: "created" | "linked" | "failed" | "skipped";
   slotsAdded: number;
   invited: string | null;
   message: string | null;
