@@ -157,7 +157,9 @@ export function ScheduleImportSheet({
     mutationFn: () =>
       commitScheduleImport({
         data: {
-          groups: groups.map((g) => ({
+          groups: groups
+            .filter((g) => !skipped.includes(nameKey(g.firstName, g.lastName)))
+            .map((g) => ({
             key: g.key,
             firstName: g.firstName,
             lastName: g.lastName,
