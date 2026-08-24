@@ -1121,31 +1121,45 @@ export const listAllUsers = createServerFn({ method: "POST" })
     const authUsers = authList.data.users;
 
     // 2. Profiles + roles + org membership.
-    const [coaches, parents, athletes, roles, orgs, softDeleted, applied, allAthletes, links] =
-      await Promise.all([
-        supabaseAdmin
-          .from("coach_profiles")
-          .select(
-            "id, user_id, first_name, last_name, is_test, organization_id, subscription_tier, entitlement, is_org_admin, promo_code",
-          ),
-        supabaseAdmin
-          .from("parent_profiles")
-          .select("id, user_id, first_name, last_name, is_test, promo_code"),
-        supabaseAdmin
-          .from("athletes")
-          .select(
-            "id, user_id, first_name, last_name, is_test, self_managed, promo_code, birthdate, parent_id, guardian_email, guardian_invited_at, guardian_claimed_at",
-          )
-          .not("user_id", "is", null),
-        supabaseAdmin.from("user_roles").select("user_id, role"),
-        supabaseAdmin.from("organizations").select("id, name"),
-        supabaseAdmin.from("soft_deleted_users").select("user_id, deleted_at"),
-        supabaseAdmin
-          .from("user_applied_promo_codes")
-          .select("id, user_id, code, scope, environment"),
-        supabaseAdmin.from("athletes").select("id, first_name, last_name, parent_id"),
-        supabaseAdmin.from("coach_athletes").select("coach_id, athlete_id"),
-      ]);
+    const [
+      coaches,
+      parents,
+      athletes,
+      roles,
+      orgs,
+      softDeleted,
+      applied,
+      allAthletes,
+      links,
+      guardianLinks,
+      planSessions,
+    ] = await Promise.all([
+      supabaseAdmin
+        .from("coach_profiles")
+        .select(
+          "id, user_id, first_name, last_name, is_test, organization_id, subscription_tier, entitlement, is_org_admin, promo_code, subscription_status, current_period_end, trial_ends_at, founding_coach",
+        ),
+      supabaseAdmin
+        .from("parent_profiles")
+        .select(
+          "id, user_id, first_name, last_name, is_test, promo_code, subscription_status, current_period_end, team_plan_seats",
+        ),
+      supabaseAdmin
+        .from("athletes")
+        .select(
+          "id, user_id, first_name, last_name, is_test, self_managed, promo_code, birthdate, parent_id, guardian_email, guardian_invited_at, guardian_claimed_at",
+        )
+        .not("user_id", "is", null),
+      supabaseAdmin.from("user_roles").select("user_id, role"),
+      supabaseAdmin.from("organizations").select("id, name"),
+      supabaseAdmin.from("soft_deleted_users").select("user_id, deleted_at"),
+      supabaseAdmin.from("user_applied_promo_codes").select("id, user_id, code, scope, environment"),
+      supabaseAdmin.from("athletes").select("id, first_name, last_name, parent_id"),
+      supabaseAdmin.from("coach_athletes").select("coach_id, athlete_id"),
+      supabaseAdmin.from("athlete_guardians").select("athlete_id, parent_id"),
+      supabaseAdmin.from("plan_sessions").select("athlete_id, parent_id, logged_at"),
+    ]);
+
     for (const r of [
       coaches,
       parents,
