@@ -10,22 +10,37 @@ The admin Users table already loads everything you'd want in an export — email
 
 ## Columns in the export
 
-Name, Email, User type, Connection status, Connected to, Guardian email, Guardian status, Plan tier, Organization, Admin, Org admin, Test, Soft-deleted, Promo codes, Created at, Last sign-in.
+Identity: Name, Email, User type, Created at, Last sign-in.
 
-"Connection status" is a new derived field so you can sort/pivot in a spreadsheet:
+Connections (typed, so a spreadsheet can pivot on them):
 
-- `connected` — has at least one linked coach/athlete/parent
-- `unconnected` — none
-- `n/a` — internal admin or unknown type
+- Connection status — `connected` / `unconnected` / `n/a`
+- Connection count — total links
+- Coaches — names of linked coaches (athletes, parents)
+- Athletes — names of linked athletes (coaches, parents)
+- Parents / guardians — linked parent or guardian names (athletes), plus guardian email and guardian status (claimed / invited / none) for athlete rows
+- Organization — club name for coaches in a club
 
-That same value also becomes a filter chip on the page (All / Connected / Unconnected), so you can export just unconnected users directly.
+Each cell is filled only where it applies to that user type; other cells stay blank.
+
+Plan and activity:
+
+- Plan tier — coach / coach pro / club / team / free, plus subscription status (trialing, active, past_due, canceled) and trial or period end date
+- Last sign-in — from the auth record
+- Sessions logged — count of practice sessions attributable to that user, and the date of the most recent one
+- Flags — admin, org admin, test, soft-deleted
+- Promo codes
 
 ## Technical notes
 
-- No new server function and no schema change. `listAllUsers` in `src/lib/admin.functions.ts` already returns `connections: { names, total }`; connection status derives from `total > 0`.
-- Add an optional `connection: "all" | "connected" | "unconnected"` input to `listAllUsers`, filtered in memory after the existing joins, and a matching chip group in `src/routes/_authenticated/admin.users.index.tsx`.
-- CSV generation is client-side in a new `src/lib/csv.ts` helper (RFC-4180 quoting, `Blob` + object URL download) — the data is already in the browser from the existing query, so no extra round trip.
+- `listAllUsers` in `src/lib/admin.functions.ts` already returns `connections: { names, total }` as a flat display list. It gains a typed breakdown (`coaches[]`, `athletes[]`, `parents[]`) built from the same batched `coach_athletes` / `athletes` / `athlete_guardians` joins it already runs — no per-row queries and no schema change.
+- Plan status comes from existing `coach_profiles` / `parent_profiles` billing columns (`subscription_status`, `subscription_tier`, `current_period_end`, `trial_ends_at`) already fetched there.
+- "Sessions logged" needs one new batched aggregate over `plan_sessions` (count + max `logged_at`, grouped by the logging user — athlete or parent). Coaches get the sessions logged across their roster instead, labelled as such.
+- Add an optional `connection: "all" | "connected" | "unconnected"` input to `listAllUsers`, filtered in memory after the joins, and a matching chip group in `src/routes/_authenticated/admin.users.index.tsx`.
+- The extra fields ride along on `UserRow` and go into the CSV; the on-screen table keeps its current columns so it stays readable.
+- CSV generation is client-side in a new `src/lib/csv.ts` helper (RFC-4180 quoting, `Blob` + object URL download) — the data is already in the browser.
 - Admin-only, unchanged auth path (`assertAdmin`).
+
 
 ## Alternative if you want it once, not repeatedly
 
