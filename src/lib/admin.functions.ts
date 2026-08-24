@@ -1103,6 +1103,8 @@ export const listAllUsers = createServerFn({ method: "POST" })
         onlyTest: z.boolean().optional().default(false),
         hideTest: z.boolean().optional().default(true),
         includeDeleted: z.boolean().optional().default(false),
+        connection: z.enum(["all", "connected", "unconnected"]).optional().default("all"),
+
       })
       .parse(input ?? {}),
   )
