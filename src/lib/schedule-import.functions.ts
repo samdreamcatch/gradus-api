@@ -199,7 +199,7 @@ export const commitScheduleImport = createServerFn({ method: "POST" })
 
     const coach = await supabaseAdmin
       .from("coach_profiles")
-      .select("id, first_name, last_name")
+      .select("id, first_name, last_name, organization_id, subscription_tier")
       .eq("user_id", context.userId)
       .maybeSingle();
     if (!coach.data) throw new Error("Coach profile not found");
@@ -212,12 +212,14 @@ export const commitScheduleImport = createServerFn({ method: "POST" })
     // Athletes already on this coach's roster, keyed by normalized name, so a
     // repeat import attaches lessons instead of creating a duplicate.
     const rosterByName = new Map<string, string>();
+    let rosterCount = 0;
     {
       const links = await supabaseAdmin
         .from("coach_athletes")
         .select("athlete_id")
         .eq("coach_id", coachId);
       const ids = (links.data ?? []).map((r) => r.athlete_id as string);
+      rosterCount = ids.length;
       if (ids.length > 0) {
         const rows = await supabaseAdmin
           .from("athletes")
@@ -230,7 +232,18 @@ export const commitScheduleImport = createServerFn({ method: "POST" })
       }
     }
 
+    // Plan cap: the DB trigger is the backstop, but we stop short of it so the
+    // coach gets "skipped — roster full" instead of a raw database error.
+    const tier: "coach" | "coach_pro" | "club" = coach.data.organization_id
+      ? "club"
+      : coach.data.subscription_tier === "coach_pro"
+        ? "coach_pro"
+        : "coach";
+    const athleteLimit = tier === "club" ? null : tier === "coach_pro" ? 50 : 5;
+    let room = athleteLimit === null ? Number.POSITIVE_INFINITY : Math.max(0, athleteLimit - rosterCount);
+
     const outcomes: ImportOutcome[] = [];
+
 
     for (const g of data.groups) {
       const name = `${g.firstName} ${g.lastName}`.trim();
