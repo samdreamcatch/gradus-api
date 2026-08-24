@@ -320,7 +320,7 @@ function AdminUsersPage() {
 
           <div className="flex flex-wrap items-center gap-1 ml-2">
             <span className="text-xs uppercase tracking-wide text-text-tertiary mr-1">Plan</span>
-            {["coach", "coach_pro", "club"].map((p) => {
+            {["coach", "coach_pro", "club", "team"].map((p) => {
               const selected = search.plans.includes(p);
               return (
                 <Chip
@@ -341,7 +341,32 @@ function AdminUsersPage() {
               );
             })}
           </div>
+
+          <div className="flex flex-wrap items-center gap-1 ml-2">
+            <span className="text-xs uppercase tracking-wide text-text-tertiary mr-1">
+              Connections
+            </span>
+            {(["all", "connected", "unconnected"] as const).map((c) => (
+              <Chip
+                key={c}
+                as="button"
+                size="micro"
+                selected={search.connection === c}
+                onClick={(e) => {
+                  e.preventDefault();
+                  setSearch({ connection: c });
+                }}
+              >
+                {c === "all" ? "All" : c === "connected" ? "Connected" : "Unconnected"}
+              </Chip>
+            ))}
+          </div>
+
+          <Button type="button" variant="secondary" onClick={exportCsv} className="ml-auto">
+            Export CSV
+          </Button>
         </form>
+
 
         <div className="flex flex-wrap items-center gap-4 pt-1">
           <ToggleRow
