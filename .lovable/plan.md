@@ -33,6 +33,13 @@ The risk with this approach is App Store guideline 4.2: a pure website wrapper g
    - Privacy manifest and data-collection disclosures for both stores.
    - Store listing copy, screenshots, and the required privacy-policy and support URLs.
 
+5. **Handoff docs for the work that happens on your Mac**
+   - `docs/mobile/README.md` — the full local runbook: prerequisites, `npx cap sync`, opening the iOS and Android projects, running on a simulator and a real device, and the rebuild loop after web changes.
+   - `docs/mobile/signing.md` — Apple Developer setup (bundle id, certificates, provisioning profiles, APNs key) and Play Console setup (keystore, service account), written as ordered steps with the exact values this project uses.
+   - `docs/mobile/submission.md` — App Store Connect and Play Console checklists, privacy answers, screenshot sizes, and review notes covering the guideline 4.2 justification.
+   - `CLAUDE.md` in the repo root — project context written for Claude Code: stack, where the native config lives, what's safe to edit in `ios/` and `android/`, what's generated, and the conventions to follow. Every doc above is written to be read by both you and Claude Code, so you can hand it a task like "run the iOS build and fix the signing error" and it has the context it needs.
+
+
 ## Sequence
 
 - Phase 1: Capacitor setup, icons, safe areas, native storage for auth, `isNativeApp()` plumbing — app runs on a device.
