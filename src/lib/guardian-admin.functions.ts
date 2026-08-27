@@ -215,7 +215,9 @@ export const adminGetGuardianInvite = createServerFn({ method: "POST" })
 
     return {
       claimed: false as const,
-      guardianEmail: (athlete.data.guardian_email as string | null) ?? null,
+      guardianEmail,
+      athleteEmail,
+      sameInbox,
       invitedAt: (athlete.data.guardian_invited_at as string | null) ?? null,
       claimUrl: `${SITE_URL}/g/${token}`,
       claimCode: code,
