@@ -241,7 +241,21 @@ export function ScheduleImportSheet({
           <SourceStep
             busy={parseImage.isPending}
             onPickCsv={() => csvInputRef.current?.click()}
-            onPickPhoto={() => photoInputRef.current?.click()}
+            onPickPhoto={() => {
+              // In the native shell, use the real camera UI (better capture
+              // quality and no file-input quirks); the web keeps the input.
+              if (isNativeApp()) {
+                void captureNativePhoto("camera")
+                  .then((file) => {
+                    if (file) parseImage.mutate(file);
+                  })
+                  .catch(() => {
+                    photoInputRef.current?.click();
+                  });
+                return;
+              }
+              photoInputRef.current?.click();
+            }}
             onManual={() => {
               setRows([blankRow(defaultSport)]);
               setStep("review");
