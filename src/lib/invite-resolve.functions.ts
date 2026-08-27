@@ -30,7 +30,7 @@ function clientIp(): string {
   return `ua:${ua.slice(0, 64)}`;
 }
 
-export type InviteKind = "coach" | "parent" | "athlete" | "adult-athlete";
+export type InviteKind = "coach" | "parent" | "athlete" | "adult-athlete" | "guardian";
 
 /**
  * Public: identify whether an 8-char code belongs to a coach, parent, or
@@ -61,7 +61,7 @@ export const resolveInviteCode = createServerFn({ method: "POST" })
       throw new Error("Too many attempts. Please wait a minute and try again.");
     }
 
-    const [coach, parent, athlete, adultAthlete] = await Promise.all([
+    const [coach, parent, athlete, adultAthlete, guardian] = await Promise.all([
       supabaseAdmin.from("coach_invite_codes").select("code").eq("code", data.code).maybeSingle(),
       supabaseAdmin
         .from("parent_invite_codes")
@@ -78,11 +78,17 @@ export const resolveInviteCode = createServerFn({ method: "POST" })
         .select("code, promo_code")
         .eq("code", data.code)
         .maybeSingle(),
+      supabaseAdmin
+        .from("athletes")
+        .select("guardian_claim_token, parent_id, guardian_claimed_at")
+        .eq("guardian_claim_code", data.code)
+        .maybeSingle(),
     ]);
     if (coach.error) dbError(coach.error);
     if (parent.error) dbError(parent.error);
     if (athlete.error) dbError(athlete.error);
     if (adultAthlete.error) dbError(adultAthlete.error);
+    if (guardian.error) dbError(guardian.error);
 
     /** Only surface a promo that's still active — the signup screen shows it. */
     const activePromo = async (code: string | null) => {
@@ -117,6 +123,16 @@ export const resolveInviteCode = createServerFn({ method: "POST" })
         valid: !athlete.data.used_at && !expired,
         used: !!athlete.data.used_at,
         expired,
+        promoCode: null,
+      };
+    }
+    if (guardian.data) {
+      const claimed = Boolean(guardian.data.parent_id || guardian.data.guardian_claimed_at);
+      return {
+        kind: "guardian" as const,
+        valid: !claimed && !!guardian.data.guardian_claim_token,
+        used: claimed,
+        guardianToken: (guardian.data.guardian_claim_token as string | null) ?? null,
         promoCode: null,
       };
     }

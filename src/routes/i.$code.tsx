@@ -79,8 +79,16 @@ function InviteEntryPage() {
               ? "This invite has already been used."
               : resolved.kind === "athlete" && resolved.expired
                 ? "This invite has expired. Ask the sender for a new one."
-                : "This invite link isn't valid.";
+                : resolved.kind === "guardian" && resolved.used
+                  ? "This athlete's parent account has already been set up."
+                  : "This invite link isn't valid.";
           setStage({ kind: "invalid", message: msg });
+          return;
+        }
+
+        // Guardian codes are just a typeable shortcut to the personal claim link.
+        if (resolved.kind === "guardian" && resolved.guardianToken) {
+          navigate({ to: "/g/$token", params: { token: resolved.guardianToken }, replace: true });
           return;
         }
 
