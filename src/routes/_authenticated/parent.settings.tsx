@@ -104,6 +104,7 @@ import { getSport } from "@/lib/coach-sports";
 
 
 import { z } from "zod";
+import { openExternal } from "@/lib/native";
 
 const searchSchema = z.object({
   linkCoach: z
@@ -309,7 +310,7 @@ function PlanSection() {
         toast.error(res.error);
         return;
       }
-      window.open(res.url, "_blank");
+      void openExternal(res.url);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Couldn't open billing.");
     } finally {
