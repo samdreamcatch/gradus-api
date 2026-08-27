@@ -329,6 +329,7 @@ export type Database = {
           birthdate: string | null
           created_at: string
           first_name: string
+          guardian_claim_code: string | null
           guardian_claim_token: string | null
           guardian_claimed_at: string | null
           guardian_email: string | null
@@ -350,6 +351,7 @@ export type Database = {
           birthdate?: string | null
           created_at?: string
           first_name: string
+          guardian_claim_code?: string | null
           guardian_claim_token?: string | null
           guardian_claimed_at?: string | null
           guardian_email?: string | null
@@ -371,6 +373,7 @@ export type Database = {
           birthdate?: string | null
           created_at?: string
           first_name?: string
+          guardian_claim_code?: string | null
           guardian_claim_token?: string | null
           guardian_claimed_at?: string | null
           guardian_email?: string | null
@@ -2780,6 +2783,7 @@ export type Database = {
         Returns: number
       }
       my_coach_id: { Args: never; Returns: string }
+      new_guardian_claim_code: { Args: never; Returns: string }
       parent_athlete_ids: { Args: never; Returns: string[] }
       parent_can_write: { Args: { _athlete_id: string }; Returns: boolean }
       parent_has_athlete_in_sport: {

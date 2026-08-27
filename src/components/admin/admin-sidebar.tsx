@@ -14,6 +14,7 @@ import {
   AlertTriangle,
   Mail,
   MailCheck,
+  MailPlus,
   Megaphone,
   type LucideIcon,
 } from "lucide-react";
@@ -49,6 +50,7 @@ const GROUPS: Group[] = [
       { to: "/admin/users", label: "Users", icon: Users },
       { to: "/admin/map", label: "Connection map", icon: Network },
       { to: "/admin/promo-codes", label: "Promo codes", icon: Ticket },
+      { to: "/admin/parent-invites", label: "Parent invites", icon: MailPlus },
       { to: "/admin/leads", label: "Waitlist & leads", icon: UserPlus },
       { to: "/admin/impersonation", label: "Impersonation", icon: UserCheck },
     ],
