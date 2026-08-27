@@ -25,6 +25,13 @@ export interface PendingGuardianInvite {
   claimCode: string | null;
   coachNames: string[];
   isTest: boolean;
+  selfManaged: boolean;
+  /** The athlete's own login email, when they have an account. */
+  athleteEmail: string | null;
+  /** True when the guardian email is the athlete's own login address. */
+  sameInbox: boolean;
+  /** Latest invite email result for this guardian address. */
+  lastSend: { status: string; at: string } | null;
 }
 
 /**
@@ -40,11 +47,10 @@ export const listPendingGuardianInvites = createServerFn({ method: "GET" })
     const athletes = await supabaseAdmin
       .from("athletes")
       .select(
-        "id, first_name, last_name, is_test, guardian_email, guardian_invited_at, guardian_claim_token, guardian_claim_code, parent_id, guardian_claimed_at, self_managed",
+        "id, first_name, last_name, is_test, guardian_email, guardian_invited_at, guardian_claim_token, guardian_claim_code, parent_id, guardian_claimed_at, self_managed, user_id",
       )
       .is("parent_id", null)
       .is("guardian_claimed_at", null)
-      .eq("self_managed", false)
       .order("guardian_invited_at", { ascending: false, nullsFirst: false });
     if (athletes.error) dbError(athletes.error);
 
@@ -52,12 +58,60 @@ export const listPendingGuardianInvites = createServerFn({ method: "GET" })
     if (rows.length === 0) return [];
 
     const ids = rows.map((r) => r.id);
-    const [links, coaches] = await Promise.all([
+    const guardianEmails = Array.from(
+      new Set(
+        rows
+          .map((r) => (r.guardian_email as string | null)?.toLowerCase())
+          .filter((e): e is string => Boolean(e)),
+      ),
+    );
+
+    const [links, coaches, sends] = await Promise.all([
       supabaseAdmin.from("coach_athletes").select("athlete_id, coach_id").in("athlete_id", ids),
       supabaseAdmin.from("coach_profiles").select("id, first_name, last_name"),
+      guardianEmails.length
+        ? supabaseAdmin
+            .from("email_send_log")
+            .select("recipient_email, status, created_at, template_name")
+            .in("template_name", ["guardian-invite", "athlete-invite"])
+            .in("recipient_email", guardianEmails)
+            .order("created_at", { ascending: false })
+            .limit(1000)
+        : Promise.resolve({ data: [], error: null } as any),
     ]);
     if (links.error) dbError(links.error);
     if (coaches.error) dbError(coaches.error);
+
+    // Latest non-pending result per recipient (fall back to pending).
+    const lastSend = new Map<string, { status: string; at: string }>();
+    for (const s of (sends.data ?? []) as Array<{
+      recipient_email: string;
+      status: string;
+      created_at: string;
+    }>) {
+      const key = s.recipient_email.toLowerCase();
+      const existing = lastSend.get(key);
+      if (!existing || (existing.status === "pending" && s.status !== "pending")) {
+        if (!existing || new Date(s.created_at) >= new Date(existing.at) || existing.status === "pending") {
+          lastSend.set(key, { status: s.status, at: s.created_at });
+        }
+      }
+    }
+
+    // Athlete login emails (for the "goes to their own inbox" warning).
+    const athleteEmail = new Map<string, string>();
+    await Promise.all(
+      rows
+        .filter((r) => r.user_id)
+        .map(async (r) => {
+          try {
+            const { data } = await supabaseAdmin.auth.admin.getUserById(r.user_id as string);
+            if (data?.user?.email) athleteEmail.set(r.id, data.user.email);
+          } catch {
+            /* ignore — the warning is best-effort */
+          }
+        }),
+    );
 
     const coachName = new Map(
       (coaches.data ?? []).map((c) => [c.id, `${c.first_name} ${c.last_name}`.trim()]),
@@ -70,17 +124,28 @@ export const listPendingGuardianInvites = createServerFn({ method: "GET" })
       byAthlete.set(l.athlete_id, arr);
     }
 
-    return rows.map((r) => ({
-      athleteId: r.id,
-      athleteName: `${r.first_name} ${r.last_name}`.trim(),
-      guardianEmail: (r.guardian_email as string | null) ?? null,
-      invitedAt: (r.guardian_invited_at as string | null) ?? null,
-      claimUrl: r.guardian_claim_token ? `${SITE_URL}/g/${r.guardian_claim_token}` : null,
-      claimCode: (r.guardian_claim_code as string | null) ?? null,
-      coachNames: byAthlete.get(r.id) ?? [],
-      isTest: Boolean(r.is_test),
-    }));
+    return rows.map((r) => {
+      const guardianEmail = (r.guardian_email as string | null) ?? null;
+      const own = athleteEmail.get(r.id) ?? null;
+      return {
+        athleteId: r.id,
+        athleteName: `${r.first_name} ${r.last_name}`.trim(),
+        guardianEmail,
+        invitedAt: (r.guardian_invited_at as string | null) ?? null,
+        claimUrl: r.guardian_claim_token ? `${SITE_URL}/g/${r.guardian_claim_token}` : null,
+        claimCode: (r.guardian_claim_code as string | null) ?? null,
+        coachNames: byAthlete.get(r.id) ?? [],
+        isTest: Boolean(r.is_test),
+        selfManaged: Boolean(r.self_managed),
+        athleteEmail: own,
+        sameInbox: Boolean(
+          guardianEmail && own && guardianEmail.toLowerCase() === own.toLowerCase(),
+        ),
+        lastSend: guardianEmail ? (lastSend.get(guardianEmail.toLowerCase()) ?? null) : null,
+      };
+    });
   });
+
 
 /**
  * Admin: read (creating if needed) the claim link + code for one athlete.
@@ -97,23 +162,42 @@ export const adminGetGuardianInvite = createServerFn({ method: "POST" })
     const athlete = await supabaseAdmin
       .from("athletes")
       .select(
-        "id, first_name, last_name, guardian_email, guardian_invited_at, guardian_claim_token, guardian_claim_code, parent_id, guardian_claimed_at",
+        "id, first_name, last_name, guardian_email, guardian_invited_at, guardian_claim_token, guardian_claim_code, parent_id, guardian_claimed_at, user_id",
       )
       .eq("id", data.athleteId)
       .maybeSingle();
     if (athlete.error) dbError(athlete.error);
     if (!athlete.data) throw new Error("Athlete not found.");
 
+    let athleteEmail: string | null = null;
+    if (athlete.data.user_id) {
+      try {
+        const { data: u } = await supabaseAdmin.auth.admin.getUserById(
+          athlete.data.user_id as string,
+        );
+        athleteEmail = u?.user?.email ?? null;
+      } catch {
+        /* best-effort */
+      }
+    }
+    const guardianEmail = (athlete.data.guardian_email as string | null) ?? null;
+    const sameInbox = Boolean(
+      guardianEmail && athleteEmail && guardianEmail.toLowerCase() === athleteEmail.toLowerCase(),
+    );
+
     const claimed = Boolean(athlete.data.parent_id || athlete.data.guardian_claimed_at);
     if (claimed) {
       return {
         claimed: true as const,
-        guardianEmail: (athlete.data.guardian_email as string | null) ?? null,
+        guardianEmail,
+        athleteEmail,
+        sameInbox,
         invitedAt: (athlete.data.guardian_invited_at as string | null) ?? null,
         claimUrl: null,
         claimCode: null,
       };
     }
+
 
     let token = athlete.data.guardian_claim_token as string | null;
     let code = athlete.data.guardian_claim_code as string | null;
@@ -131,7 +215,9 @@ export const adminGetGuardianInvite = createServerFn({ method: "POST" })
 
     return {
       claimed: false as const,
-      guardianEmail: (athlete.data.guardian_email as string | null) ?? null,
+      guardianEmail,
+      athleteEmail,
+      sameInbox,
       invitedAt: (athlete.data.guardian_invited_at as string | null) ?? null,
       claimUrl: `${SITE_URL}/g/${token}`,
       claimCode: code,

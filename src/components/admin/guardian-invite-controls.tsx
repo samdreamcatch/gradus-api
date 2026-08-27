@@ -86,6 +86,14 @@ export function GuardianInviteControls({ athleteId }: { athleteId: string }) {
         Parent invite
       </Eyebrow>
 
+      {data.sameInbox && (
+        <p className="rounded-md border border-divider bg-elevated px-3 py-2 text-xs text-text-secondary">
+          Heads up: this invite goes to the athlete&apos;s own inbox — the guardian email on file is
+          the same address they log in with. Change it below before resending.
+        </p>
+      )}
+
+
       <div className="flex flex-wrap items-center gap-2">
         <span className="rounded-md border border-divider bg-elevated px-3 py-2 font-mono text-sm tracking-[0.2em] text-text-primary">
           {data.claimCode ?? "—"}

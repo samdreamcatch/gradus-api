@@ -107,18 +107,36 @@ function ParentInvitesPage() {
                         test
                       </Tag>
                     )}
+                    {r.selfManaged && (
+                      <Tag size="caption" className="ml-2">
+                        self-managed
+                      </Tag>
+                    )}
                   </p>
                   <p className="truncate text-sm text-text-secondary">
                     {r.guardianEmail ?? "No email on file"}
                     {r.coachNames.length > 0 && ` · ${r.coachNames.join(", ")}`}
                   </p>
+                  {r.sameInbox && (
+                    <p className="text-xs text-text-secondary">
+                      Goes to the athlete&apos;s own inbox
+                    </p>
+                  )}
                   <p className="text-xs text-text-tertiary">
                     {r.invitedAt
                       ? `Invited ${new Date(r.invitedAt).toLocaleDateString()}`
                       : "Never invited"}
                     {r.claimCode ? ` · code ${r.claimCode}` : ""}
+                    {` · ${
+                      r.lastSend
+                        ? `last email ${r.lastSend.status} ${new Date(
+                            r.lastSend.at,
+                          ).toLocaleDateString()}`
+                        : "no email logged"
+                    }`}
                   </p>
                 </div>
+
                 <Button
                   type="button"
                   variant="outline"
