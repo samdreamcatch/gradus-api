@@ -162,23 +162,42 @@ export const adminGetGuardianInvite = createServerFn({ method: "POST" })
     const athlete = await supabaseAdmin
       .from("athletes")
       .select(
-        "id, first_name, last_name, guardian_email, guardian_invited_at, guardian_claim_token, guardian_claim_code, parent_id, guardian_claimed_at",
+        "id, first_name, last_name, guardian_email, guardian_invited_at, guardian_claim_token, guardian_claim_code, parent_id, guardian_claimed_at, user_id",
       )
       .eq("id", data.athleteId)
       .maybeSingle();
     if (athlete.error) dbError(athlete.error);
     if (!athlete.data) throw new Error("Athlete not found.");
 
+    let athleteEmail: string | null = null;
+    if (athlete.data.user_id) {
+      try {
+        const { data: u } = await supabaseAdmin.auth.admin.getUserById(
+          athlete.data.user_id as string,
+        );
+        athleteEmail = u?.user?.email ?? null;
+      } catch {
+        /* best-effort */
+      }
+    }
+    const guardianEmail = (athlete.data.guardian_email as string | null) ?? null;
+    const sameInbox = Boolean(
+      guardianEmail && athleteEmail && guardianEmail.toLowerCase() === athleteEmail.toLowerCase(),
+    );
+
     const claimed = Boolean(athlete.data.parent_id || athlete.data.guardian_claimed_at);
     if (claimed) {
       return {
         claimed: true as const,
-        guardianEmail: (athlete.data.guardian_email as string | null) ?? null,
+        guardianEmail,
+        athleteEmail,
+        sameInbox,
         invitedAt: (athlete.data.guardian_invited_at as string | null) ?? null,
         claimUrl: null,
         claimCode: null,
       };
     }
+
 
     let token = athlete.data.guardian_claim_token as string | null;
     let code = athlete.data.guardian_claim_code as string | null;
