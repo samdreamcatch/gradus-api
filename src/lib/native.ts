@@ -75,12 +75,13 @@ export async function hapticNotify(type: "success" | "warning" | "error"): Promi
 /**
  * Open a URL outside the app shell. Stripe Checkout and the billing portal
  * MUST go through here: card entry inside an embedded webview is blocked by
- * Stripe and rejected by the app stores. On the web this is a normal
- * navigation so existing behavior is unchanged.
+ * Stripe and rejected by the app stores. On the web this is the same
+ * new-tab behavior these call sites already had.
  */
 export async function openExternal(url: string): Promise<void> {
   if (!isNativeApp()) {
-    window.location.href = url;
+    const win = window.open(url, "_blank", "noopener,noreferrer");
+    if (!win) window.location.href = url;
     return;
   }
   try {
