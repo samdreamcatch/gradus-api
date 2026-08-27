@@ -86,6 +86,12 @@ export function GuardianInviteControls({ athleteId }: { athleteId: string }) {
         Parent invite
       </Eyebrow>
 
+      <p className="text-xs text-text-tertiary">
+        Opening this link — or typing the code at gradus.training — creates the parent or
+        guardian&apos;s account and connects them to this athlete automatically.
+      </p>
+
+
       {data.sameInbox && (
         <p className="rounded-md border border-divider bg-elevated px-3 py-2 text-xs text-text-secondary">
           Heads up: this invite goes to the athlete&apos;s own inbox — the guardian email on file is

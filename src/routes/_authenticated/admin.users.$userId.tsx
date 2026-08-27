@@ -284,13 +284,11 @@ function UserDetail() {
                   }
                 />
               </dl>
-              {!data.athlete.self_managed &&
-                !data.athlete.parent_id &&
-                !data.athlete.guardian_claimed_at && (
-                  <div className="rounded-lg border border-divider bg-elevated p-4">
-                    <GuardianInviteControls athleteId={data.athlete.id as string} />
-                  </div>
-                )}
+              {!data.athlete.parent_id && !data.athlete.guardian_claimed_at && (
+                <div className="rounded-lg border border-divider bg-elevated p-4">
+                  <GuardianInviteControls athleteId={data.athlete.id as string} />
+                </div>
+              )}
               <div>
                 <Eyebrow size="small" tone="tertiary" weight="normal" tracking="wide">
                   Coaches ({(data.athlete.coaches as any[]).length})
