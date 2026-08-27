@@ -51,6 +51,7 @@ import { ThemeSelect } from "@/components/settings/theme-select";
 import { useCurrentUserEmail } from "@/hooks/use-current-user-email";
 import { FeedbackSettingsRow } from "@/components/feedback/feedback-fab";
 import { InstallAppRow } from "@/components/settings/install-app-row";
+import { NativeAppSection } from "@/components/settings/native-app-section";
 import { AccountSecuritySection } from "@/components/settings/account-security-section";
 import { openExternal } from "@/lib/native";
 
@@ -120,6 +121,7 @@ function SettingsPage() {
         <SettingsGroup>
           <SettingsList>
             <InstallAppRow />
+            <NativeAppSection />
             <FeedbackSettingsRow />
             <SignOutRow />
           </SettingsList>
