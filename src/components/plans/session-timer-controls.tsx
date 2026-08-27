@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { motion, useAnimationControls } from "framer-motion";
 import { ArrowRight, Pause, Play, X } from "lucide-react";
+import { haptic, hapticNotify } from "@/lib/native";
 import { cn } from "@/lib/utils";
 
 /** Idle state — slide right to start logging session time. */
@@ -150,7 +151,10 @@ export function RunningPill({
               x: 0,
               transition: { type: "spring", stiffness: 520, damping: 22, mass: 0.7 },
             });
-            if (triggered) onEnd();
+            if (triggered) {
+              void hapticNotify("success");
+              onEnd();
+            }
             setArmed(false);
           }}
           style={{ touchAction: "pan-y" }}
