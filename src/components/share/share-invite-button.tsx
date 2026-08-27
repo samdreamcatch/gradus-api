@@ -1,6 +1,7 @@
 import { Share2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button, type ButtonProps } from "@/components/ui/button";
+import { canShareNatively, shareNatively } from "@/lib/native";
 import { cn } from "@/lib/utils";
 
 interface ShareInviteButtonProps {
@@ -42,10 +43,9 @@ export function ShareInviteButton({
   const handleClick = () => {
     if (!url) return;
     const shareData = { title, text, url };
-    const canShare = typeof navigator !== "undefined" && typeof navigator.share === "function";
 
-    if (canShare) {
-      const p = navigator.share(shareData);
+    if (canShareNatively()) {
+      const p = shareNatively(shareData);
       onShared?.();
       p.catch((err: unknown) => {
         if ((err as DOMException)?.name === "AbortError") return;

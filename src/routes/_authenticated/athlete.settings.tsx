@@ -22,6 +22,7 @@ import { SportChip } from "@/components/onboarding/sport-chip";
 import { useCurrentUserEmail } from "@/hooks/use-current-user-email";
 import { FeedbackSettingsRow } from "@/components/feedback/feedback-fab";
 import { InstallAppRow } from "@/components/settings/install-app-row";
+import { NativeAppSection } from "@/components/settings/native-app-section";
 import { AccountSecuritySection } from "@/components/settings/account-security-section";
 import { getAthleteSettings, updateAthleteSelf } from "@/lib/athlete-settings.functions";
 import { resendGuardianInvite } from "@/lib/guardian.functions";
@@ -150,6 +151,7 @@ function AthleteSettingsPage() {
             <SettingsGroup>
               <SettingsList>
                 <InstallAppRow />
+            <NativeAppSection />
                 <FeedbackSettingsRow />
                 <SignOutRow />
               </SettingsList>

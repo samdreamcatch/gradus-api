@@ -78,6 +78,7 @@ import { ThemeSelect } from "@/components/settings/theme-select";
 import { useCurrentUserEmail } from "@/hooks/use-current-user-email";
 import { FeedbackSettingsRow } from "@/components/feedback/feedback-fab";
 import { InstallAppRow } from "@/components/settings/install-app-row";
+import { NativeAppSection } from "@/components/settings/native-app-section";
 import { AccountSecuritySection } from "@/components/settings/account-security-section";
 import {
   getParentSettings,
@@ -104,6 +105,7 @@ import { getSport } from "@/lib/coach-sports";
 
 
 import { z } from "zod";
+import { openExternal } from "@/lib/native";
 
 const searchSchema = z.object({
   linkCoach: z
@@ -252,6 +254,7 @@ function ParentSettingsPage() {
             <SettingsGroup>
               <SettingsList>
                 <InstallAppRow />
+            <NativeAppSection />
                 <FeedbackSettingsRow />
                 <SignOutRow />
               </SettingsList>
@@ -309,7 +312,7 @@ function PlanSection() {
         toast.error(res.error);
         return;
       }
-      window.open(res.url, "_blank");
+      void openExternal(res.url);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Couldn't open billing.");
     } finally {

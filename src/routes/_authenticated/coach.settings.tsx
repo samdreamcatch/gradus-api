@@ -51,7 +51,9 @@ import { ThemeSelect } from "@/components/settings/theme-select";
 import { useCurrentUserEmail } from "@/hooks/use-current-user-email";
 import { FeedbackSettingsRow } from "@/components/feedback/feedback-fab";
 import { InstallAppRow } from "@/components/settings/install-app-row";
+import { NativeAppSection } from "@/components/settings/native-app-section";
 import { AccountSecuritySection } from "@/components/settings/account-security-section";
+import { openExternal } from "@/lib/native";
 
 export const Route = createFileRoute("/_authenticated/coach/settings")({
   loader: ({ context }) => {
@@ -119,6 +121,7 @@ function SettingsPage() {
         <SettingsGroup>
           <SettingsList>
             <InstallAppRow />
+            <NativeAppSection />
             <FeedbackSettingsRow />
             <SignOutRow />
           </SettingsList>
@@ -416,7 +419,7 @@ function PlanSection({
         toast.error(res.error);
         return;
       }
-      window.open(res.url, "_blank", "noopener,noreferrer");
+      void openExternal(res.url);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Couldn't open billing portal");
     } finally {

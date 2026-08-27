@@ -33,6 +33,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { canShareNatively, shareNatively } from "@/lib/native";
 import { cn } from "@/lib/utils";
 import {
   getPlan,
@@ -443,10 +444,10 @@ function PlanEditorBody({
     // only in the same tick as the click). Kick off the activation mutation
     // in parallel — order matters, share must not be awaited.
     const caption = `${plan.title || "Untitled plan"} — My workout on Gradus`;
-    const canShare = typeof navigator !== "undefined" && typeof navigator.share === "function";
+    const canShare = canShareNatively();
     if (prefetchedShare?.token && canShare) {
       const url = `${SITE_ORIGIN}/p/${prefetchedShare.token}`;
-      navigator.share({ title: plan.title || "Untitled plan", text: caption, url }).catch(() => {});
+      shareNatively({ title: plan.title || "Untitled plan", text: caption, url }).catch(() => {});
     } else if (prefetchedShare?.token) {
       const url = `${SITE_ORIGIN}/p/${prefetchedShare.token}`;
       navigator.clipboard?.writeText(url).catch(() => {});

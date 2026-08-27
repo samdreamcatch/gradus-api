@@ -1,4 +1,5 @@
 import { toast } from "sonner";
+import { canShareNatively, shareNatively } from "@/lib/native";
 
 /**
  * Open the OS-native share sheet with the invoice text.
@@ -9,13 +10,11 @@ import { toast } from "sonner";
  * the share fails for a reason other than the user cancelling.
  */
 export function shareInvoiceNow(text: string) {
-  const canShare = typeof navigator !== "undefined" && typeof navigator.share === "function";
-  if (canShare) {
-    const shareData: ShareData = {
+  if (canShareNatively()) {
+    shareNatively({
       title: "Invoice from Gradus",
       text,
-    };
-    navigator.share(shareData).catch((err: unknown) => {
+    }).catch((err: unknown) => {
       if ((err as DOMException)?.name === "AbortError") return;
       void copyFallback(text);
     });

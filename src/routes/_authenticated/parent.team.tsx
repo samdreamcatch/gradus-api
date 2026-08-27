@@ -17,6 +17,7 @@ import {
   createParentBillingPortalSession,
 } from "@/lib/parent-checkout.functions";
 import { CoachVisibilitySection } from "@/components/parent/coach-visibility-toggles";
+import { openExternal } from "@/lib/native";
 
 type Interval = "month" | "year";
 
@@ -110,7 +111,7 @@ function ParentTeamPage() {
         },
       });
       if ("error" in result) throw new Error(result.error);
-      window.open(result.url, "_blank");
+      void openExternal(result.url);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Couldn't open billing.");
     } finally {

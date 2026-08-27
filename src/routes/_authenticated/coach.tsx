@@ -11,6 +11,7 @@ import { ConnectionCelebration } from "@/components/connection-celebration";
 import { createCoachBillingPortalSession } from "@/lib/coach-checkout.functions";
 import { getStripeEnvironment } from "@/lib/stripe-env";
 import { Button } from "@/components/ui/button";
+import { openExternal } from "@/lib/native";
 
 const ENTITLED = new Set(["paid", "promo_free", "club_covered"]);
 
@@ -102,7 +103,7 @@ function TrialCardBanner() {
         toast.error(res.error);
         return;
       }
-      window.open(res.url, "_blank", "noopener,noreferrer");
+      void openExternal(res.url);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Couldn't open billing portal");
     } finally {
@@ -155,7 +156,7 @@ function PaymentIssueBanner() {
         toast.error(res.error);
         return;
       }
-      window.open(res.url, "_blank", "noopener,noreferrer");
+      void openExternal(res.url);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Couldn't open billing portal");
     } finally {
