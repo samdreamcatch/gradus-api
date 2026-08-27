@@ -16,6 +16,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider";
 import { DevToolsMount } from "@/components/dev/dev-tools-mount";
 import { registerServiceWorker } from "@/pwa/register-sw";
+import { initNativeShell } from "@/lib/native";
 import { InstallBannerMount } from "@/components/install-banner-mount";
 import { PwaUpdatePrompt } from "@/components/pwa-update-prompt";
 import { installErrorReporter, reportError } from "@/lib/client-error-reporter";
@@ -152,6 +153,7 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   useEffect(() => {
     registerServiceWorker();
+    initNativeShell();
     installErrorReporter();
   }, []);
   return (

@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useSyncExternalStore } from "react";
+import { isNativeApp } from "@/lib/native";
 
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>;
@@ -17,6 +18,8 @@ const SHOW_DELAY_MS = 3000;
 function shouldRefuseEnv(): boolean {
   if (typeof window === "undefined") return true;
   if (!import.meta.env.PROD) return true;
+  // Already a real installed app — never offer "add to home screen".
+  if (isNativeApp()) return true;
   try {
     if (window.top !== window.self) return true;
   } catch {
