@@ -50,7 +50,10 @@ export function IdleSlide({ onStart }: { onStart: () => void }) {
             x: 0,
             transition: { type: "spring", stiffness: 520, damping: 22, mass: 0.7 },
           });
-          if (triggered) onStart();
+          if (triggered) {
+            void haptic("medium");
+            onStart();
+          }
           setArmed(false);
         }}
         style={{ touchAction: "pan-y" }}
@@ -104,7 +107,10 @@ export function RunningPill({
       {/* Pause / resume — tap only, no drag */}
       <button
         type="button"
-        onClick={onTogglePause}
+        onClick={() => {
+          void haptic("light");
+          onTogglePause();
+        }}
         aria-label={running ? "Pause session timer" : "Resume session timer"}
         className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-attention/15 text-attention-ink ring-1 ring-attention/40"
       >
