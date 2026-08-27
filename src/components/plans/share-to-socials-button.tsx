@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { Share2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { canShareNatively, shareNatively } from "@/lib/native";
 import { cn } from "@/lib/utils";
 import { getOrCreateShareToken } from "@/lib/plan-share.functions";
 
@@ -53,14 +54,14 @@ export function ShareToSocialsButton({
   const onClick = async () => {
     if (busy) return;
     const caption = `${planTitle} — My workout on Gradus`;
-    const canShare = typeof navigator !== "undefined" && typeof navigator.share === "function";
+    const canShare = canShareNatively();
 
     // Hot path: token already cached — invoke share sheet synchronously
     // in the click handler to keep user activation alive.
     if (prefetched?.token) {
       const url = `${SITE_ORIGIN}/p/${prefetched.token}`;
       if (canShare) {
-        const p = navigator.share({ title: planTitle, text: caption, url });
+        const p = shareNatively({ title: planTitle, text: caption, url });
         onShareInvoked?.();
         try {
           await p;
