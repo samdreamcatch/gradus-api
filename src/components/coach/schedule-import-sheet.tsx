@@ -30,6 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { captureNativePhoto, isNativeApp } from "@/lib/native";
 import { cn } from "@/lib/utils";
 import { getSport, getSportLevel, type SportKey } from "@/lib/coach-sports";
 import {
