@@ -80,6 +80,7 @@ import { FeedbackSettingsRow } from "@/components/feedback/feedback-fab";
 import { InstallAppRow } from "@/components/settings/install-app-row";
 import { NativeAppSection } from "@/components/settings/native-app-section";
 import { AccountSecuritySection } from "@/components/settings/account-security-section";
+import { LegalSection } from "@/components/settings/legal-section";
 import {
   getParentSettings,
   updateParentProfile,
@@ -250,6 +251,8 @@ function ParentSettingsPage() {
             </SettingsGroup>
 
             <AccountSecuritySection />
+
+            <LegalSection />
 
             <SettingsGroup>
               <SettingsList>

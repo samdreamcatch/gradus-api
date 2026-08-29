@@ -53,6 +53,7 @@ import { FeedbackSettingsRow } from "@/components/feedback/feedback-fab";
 import { InstallAppRow } from "@/components/settings/install-app-row";
 import { NativeAppSection } from "@/components/settings/native-app-section";
 import { AccountSecuritySection } from "@/components/settings/account-security-section";
+import { LegalSection } from "@/components/settings/legal-section";
 import { openExternal } from "@/lib/native";
 
 export const Route = createFileRoute("/_authenticated/coach/settings")({
@@ -117,6 +118,8 @@ function SettingsPage() {
         </SettingsGroup>
 
         <AccountSecuritySection />
+
+        <LegalSection />
 
         <SettingsGroup>
           <SettingsList>

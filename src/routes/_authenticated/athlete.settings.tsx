@@ -24,6 +24,7 @@ import { FeedbackSettingsRow } from "@/components/feedback/feedback-fab";
 import { InstallAppRow } from "@/components/settings/install-app-row";
 import { NativeAppSection } from "@/components/settings/native-app-section";
 import { AccountSecuritySection } from "@/components/settings/account-security-section";
+import { LegalSection } from "@/components/settings/legal-section";
 import { getAthleteSettings, updateAthleteSelf } from "@/lib/athlete-settings.functions";
 import { resendGuardianInvite } from "@/lib/guardian.functions";
 import { ageInYears } from "@/lib/pending-athlete-dob";
@@ -147,6 +148,8 @@ function AthleteSettingsPage() {
             </SettingsGroup>
 
             <AccountSecuritySection />
+
+            <LegalSection />
 
             <SettingsGroup>
               <SettingsList>
