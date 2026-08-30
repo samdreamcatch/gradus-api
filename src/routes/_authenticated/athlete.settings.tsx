@@ -106,8 +106,13 @@ function AthleteSettingsPage() {
                   value={data.username ? `@${data.username}` : (email ?? "—")}
                 />
                 <GuardianRow athlete={data} />
+                <InstallAppRow />
+                <NativeAppSection />
+                <FeedbackSettingsRow />
+                <SignOutRow />
               </SettingsList>
             </SettingsGroup>
+
 
             {showCoaches && (
               <SettingsGroup label="Coaches">
