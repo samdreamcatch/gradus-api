@@ -379,7 +379,9 @@ export const sendMessage = createServerFn({ method: "POST" })
       }
       audioPath = path;
       duration = data.durationSeconds;
+      voiceBytes = bytes;
     }
+
 
     const insertRow = {
       sender_user_id: userId,
