@@ -32,9 +32,9 @@ Adult athletes (18+) with their own sign-in are not offered this — their guard
   - Render one radio group (existing `RadioGroup`/`Label` primitives) per affected athlete with the three options above; default `keep`.
   - Update the description paragraph to match the real behaviour (transfer / erase / minor choice).
 - `src/lib/account-deletion.functions.ts`
-  - `deleteMyAccount` input becomes `{ confirmPhrase: string, minorChoices: Array<{ athleteId: string, action: "keep" | "clear" | "delete" }> }`; validate the phrase equals `DELETE ACCOUNT`.
+  - `deleteMyAccount` input becomes `{ confirmPhrase: string, minorChoices: Array<{ athleteId: string, action: "keep" | "delete" }> }`; validate the phrase equals `DELETE ACCOUNT`.
   - Add `getDeletionImpact` (authenticated, read-only) for the dialog.
 - `src/lib/account-deletion.server.ts`
-  - `deleteAccountForUser` takes the choices map. In the parent branch, for a self-signing minor with no successor: `keep` → detach `parent_id` only and leave `guardian_email`; `clear` → detach and null `guardian_email`; `delete` → `purgeAthlete` plus removing that athlete's auth user.
+  - `deleteAccountForUser` takes the choices map. In the parent branch, for a self-signing minor with no successor: `keep` → detach `parent_id` only and leave `guardian_email` in place; `delete` → `purgeAthlete` plus removing that athlete's auth user.
   - Unknown/missing choice defaults to `keep` so a server-side call can never silently strip oversight.
 - Verify with typecheck and lint.
