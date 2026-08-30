@@ -1,15 +1,39 @@
-# Confirm deletion by typing "DELETE ACCOUNT"
+# Delete-account dialog: fixed confirmation phrase + minor athlete choice
 
-Replace the email-retype confirmation on the delete-account dialog with a fixed phrase, and correct the dialog copy now that orphaned minor athletes are erased rather than de-identified.
+Two changes to the self-service deletion flow.
 
-## What changes for the user
+## 1. Confirm by typing "DELETE ACCOUNT"
 
-- The dialog asks them to type `DELETE ACCOUNT` (case-insensitive, trimmed) instead of their email address. The Delete button stays disabled until it matches.
-- The third paragraph now reads accurately: athletes with another guardian transfer to them; an athlete with no other guardian and no sign-in of their own is deleted along with their plans, practice log and lesson history. An athlete who signs in themselves keeps their profile — only the guardian link is removed.
+- The dialog asks the user to type `DELETE ACCOUNT` (case-insensitive, trimmed) instead of their email address. The Delete button stays disabled until it matches.
+- Admin-side deletion keeps its email confirmation — an admin deleting someone else's account should have to name that account.
+
+## 2. What happens to a minor athlete when their only guardian leaves
+
+Today the parent branch handles three cases. The last one is what changes:
+
+- Athlete has another guardian → transfers to them (unchanged).
+- Athlete has no sign-in of their own and no other guardian → the profile and its history are erased (unchanged).
+- **Athlete is under 18, signs in themselves, and has no other guardian** → the athlete keeps their account, and the departing guardian chooses what happens to the oversight link.
+
+When the deleting parent has at least one athlete in that third group, the dialog shows a per-athlete choice before they can confirm:
+
+- **Keep sending copies to my email** (default) — the athlete's `guardian_email` stays on file, so lesson recaps and communication copies keep going to that address even though the guardian's Gradus account is gone.
+- **Stop the copies** — the guardian email is cleared; the minor's account continues without an adult on file.
+- **Delete this athlete's account too** — the athlete's sign-in and profile are erased with the guardian's, same as the no-account case.
+
+Adult athletes (18+) with their own sign-in are not offered this — their guardian link is simply removed.
 
 ## Technical details
 
-- `src/components/settings/account-security-section.tsx`: swap the email `Label`/`Input` for a text input labelled "Type DELETE ACCOUNT to confirm"; match against the constant phrase; drop the now-unused `currentEmail` prop usage for confirmation (keep it only if still shown elsewhere). Update the description paragraph.
-- `src/lib/account-deletion.functions.ts`: rename the validated field to `confirmPhrase` and compare it to `DELETE ACCOUNT` instead of the JWT email. The account email is still read from claims for the audit hash.
-- Admin-side `adminHardDeleteUser` keeps its email confirmation — an admin deleting someone else's account should have to name that account.
-- Run typecheck and lint after the edit.
+- `src/components/settings/account-security-section.tsx`
+  - Replace the email `Label`/`Input` with a text input labelled "Type DELETE ACCOUNT to confirm".
+  - Before opening, fetch the parent's affected minors via a new server function (`getDeletionImpact`) returning `{ id, firstName }` for athletes with `parent_id = me`, `user_id NOT NULL`, birthdate under 18, and no other guardian.
+  - Render one radio group (existing `RadioGroup`/`Label` primitives) per affected athlete with the three options above; default `keep`.
+  - Update the description paragraph to match the real behaviour (transfer / erase / minor choice).
+- `src/lib/account-deletion.functions.ts`
+  - `deleteMyAccount` input becomes `{ confirmPhrase: string, minorChoices: Array<{ athleteId: string, action: "keep" | "clear" | "delete" }> }`; validate the phrase equals `DELETE ACCOUNT`.
+  - Add `getDeletionImpact` (authenticated, read-only) for the dialog.
+- `src/lib/account-deletion.server.ts`
+  - `deleteAccountForUser` takes the choices map. In the parent branch, for a self-signing minor with no successor: `keep` → detach `parent_id` only and leave `guardian_email`; `clear` → detach and null `guardian_email`; `delete` → `purgeAthlete` plus removing that athlete's auth user.
+  - Unknown/missing choice defaults to `keep` so a server-side call can never silently strip oversight.
+- Verify with typecheck and lint.
