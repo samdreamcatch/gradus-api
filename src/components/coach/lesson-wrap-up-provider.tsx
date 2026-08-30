@@ -22,6 +22,7 @@ import {
 } from "@/lib/lesson-wrap-ups.functions";
 import { createPlan } from "@/lib/plans.functions";
 import { useBottomBannerLock } from "@/lib/bottom-banner-store";
+import { useAuthReady } from "@/hooks/use-auth-ready";
 
 function nowParts() {
   const d = new Date();
