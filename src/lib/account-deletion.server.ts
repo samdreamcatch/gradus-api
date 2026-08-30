@@ -145,10 +145,7 @@ export async function deleteAccountForUser(
         .neq("parent_id", parent.id);
       const successor = (coGuardians ?? [])[0]?.parent_id ?? null;
       if (successor) {
-        await supabaseAdmin
-          .from("athletes")
-          .update({ parent_id: successor })
-          .eq("id", athlete.id);
+        await supabaseAdmin.from("athletes").update({ parent_id: successor }).eq("id", athlete.id);
         athletesTransferred += 1;
       } else {
         // Detach first so the parent cascade can't take the athlete's shared

@@ -560,7 +560,6 @@ export const ensureRoom = createServerFn({ method: "POST" })
         })()
       : false;
 
-
     if (!isCoach && !isAthlete && !isParent) {
       throw new Error("Not authorized to open this conversation");
     }
@@ -946,7 +945,6 @@ export const listMyMessageTargets = createServerFn({ method: "GET" })
         )
         .in("id", ids);
       if (error) dbError(error, "Couldn't load coaches");
-
 
       const targets: MessageTargetDTO[] = [];
       for (const row of data ?? []) {

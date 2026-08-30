@@ -349,7 +349,8 @@ export const resendOrgCoachInvite = createServerFn({ method: "POST" })
       .maybeSingle();
     if (error) dbError(error);
     if (!row) return { ok: false as const, error: "Invite not found." };
-    if (row.status !== "pending") return { ok: false as const, error: "That invite isn't pending." };
+    if (row.status !== "pending")
+      return { ok: false as const, error: "That invite isn't pending." };
     if (!row.email) return { ok: false as const, error: "This invite has no email address." };
 
     const emailed = await emailOrgCoachInvite(
