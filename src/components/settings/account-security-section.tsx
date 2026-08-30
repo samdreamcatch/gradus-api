@@ -1,7 +1,20 @@
 import { useState } from "react";
-import { KeyRound, AtSign, Loader2, Wand2 } from "lucide-react";
+import { KeyRound, AtSign, Loader2, Wand2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { useServerFn } from "@tanstack/react-start";
+import { useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
+import { deleteMyAccount } from "@/lib/account-deletion.functions";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useCurrentUserEmail } from "@/hooks/use-current-user-email";
 import { useVisualViewport } from "@/hooks/use-visual-viewport";
 import { SettingsGroup, SettingsList, SettingsButtonRow } from "@/components/settings/primitives";
