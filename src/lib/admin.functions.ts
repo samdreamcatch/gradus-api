@@ -398,33 +398,61 @@ export const getUserDetail = createServerFn({ method: "POST" })
         }
       : null;
 
+    type PlanRow = {
+      id: string;
+      title: string | null;
+      kind: string;
+      status: string;
+      share_token: string | null;
+      athlete_id: string | null;
+      athletes?: { is_test?: boolean; first_name?: string; last_name?: string } | null;
+    };
+    const PLAN_COLS =
+      "id, title, kind, status, share_token, athlete_id, athletes(is_test, first_name, last_name)";
+    /** Real (non-test) athlete plans only. */
+    const realPlans = (rows: PlanRow[] | null) =>
+      (rows ?? []).filter((p) => p.kind === "plan" && !p.athletes?.is_test);
+    const toActiveList = (rows: PlanRow[]) =>
+      rows
+        .filter((p) => p.status === "active")
+        .map((p) => ({
+          id: p.id,
+          title: p.title ?? "Untitled plan",
+          athleteName:
+            `${p.athletes?.first_name ?? ""} ${p.athletes?.last_name ?? ""}`.trim() || null,
+          shareToken: p.share_token,
+        }));
+
     let coachDetail: any = null;
     if (coach.data) {
-      const [athleteLinks, plans, levels, coachCode] = await Promise.all([
+      const [athleteLinks, plans, levels, rosterSports, coachCode] = await Promise.all([
         supabaseAdmin
           .from("coach_athletes")
           .select("athlete_id, athletes(id, first_name, last_name)")
           .eq("coach_id", coach.data.id),
-        supabaseAdmin
-          .from("plans")
-          .select("id, kind, status, created_at")
-          .eq("coach_id", coach.data.id),
+        supabaseAdmin.from("plans").select(PLAN_COLS).eq("coach_id", coach.data.id),
         supabaseAdmin.from("coach_levels").select("sport").eq("coach_id", coach.data.id),
+        supabaseAdmin.from("coach_athlete_sports").select("sport").eq("coach_id", coach.data.id),
         supabaseAdmin
           .from("coach_invite_codes")
           .select("code")
           .eq("coach_id", coach.data.id)
           .maybeSingle(),
       ]);
+      const rows = realPlans(plans.data as unknown as PlanRow[]);
       coachDetail = {
         ...coach.data,
         inviteCode: coachCode.data?.code ?? null,
         athletes: (athleteLinks.data ?? []).map((l: any) => l.athletes).filter(Boolean),
-        plansCount: (plans.data ?? []).filter((p) => p.kind === "plan").length,
-        activePlansCount: (plans.data ?? []).filter(
-          (p) => p.kind === "plan" && p.status === "active",
-        ).length,
-        sports: Array.from(new Set((levels.data ?? []).map((l) => l.sport))),
+        plansCount: rows.length,
+        activePlansCount: rows.filter((p) => p.status === "active").length,
+        activePlans: toActiveList(rows),
+        sports: Array.from(
+          new Set([
+            ...(levels.data ?? []).map((l: any) => l.sport),
+            ...(rosterSports.data ?? []).map((l: any) => l.sport),
+          ]),
+        ),
       };
     }
 
@@ -433,7 +461,7 @@ export const getUserDetail = createServerFn({ method: "POST" })
       const [athletes, parentCode, athleteCodes] = await Promise.all([
         supabaseAdmin
           .from("athletes")
-          .select("id, first_name, last_name, birthdate, created_at")
+          .select("id, first_name, last_name, birthdate, created_at, is_test")
           .eq("parent_id", parent.data.id),
         supabaseAdmin
           .from("parent_invite_codes")
@@ -448,9 +476,32 @@ export const getUserDetail = createServerFn({ method: "POST" })
       const nameById = new Map(
         (athletes.data ?? []).map((a: any) => [a.id, `${a.first_name} ${a.last_name}`.trim()]),
       );
+      const athleteIds = (athletes.data ?? []).filter((a: any) => !a.is_test).map((a: any) => a.id);
+
+      let parentSports: string[] = [];
+      let parentPlans: PlanRow[] = [];
+      if (athleteIds.length > 0) {
+        const [sportRows, primaryRows, planRows] = await Promise.all([
+          supabaseAdmin.from("coach_athlete_sports").select("sport").in("athlete_id", athleteIds),
+          supabaseAdmin.from("athlete_primary_coaches").select("sport").in("athlete_id", athleteIds),
+          supabaseAdmin.from("plans").select(PLAN_COLS).in("athlete_id", athleteIds),
+        ]);
+        parentSports = Array.from(
+          new Set([
+            ...(sportRows.data ?? []).map((r: any) => r.sport),
+            ...(primaryRows.data ?? []).map((r: any) => r.sport),
+          ]),
+        ).filter(Boolean);
+        parentPlans = realPlans(planRows.data as unknown as PlanRow[]);
+      }
+
       parentDetail = {
         ...parent.data,
         athletes: athletes.data ?? [],
+        sports: parentSports,
+        plansCount: parentPlans.length,
+        activePlansCount: parentPlans.filter((p) => p.status === "active").length,
+        activePlans: toActiveList(parentPlans),
         inviteCode: parentCode.data?.code ?? null,
         athleteCodes: (athleteCodes.data ?? []).map((c: any) => ({
           code: c.code,
@@ -475,7 +526,7 @@ export const getUserDetail = createServerFn({ method: "POST" })
           .from("coach_athlete_sports")
           .select("coach_id, sport")
           .eq("athlete_id", athlete.data.id),
-        supabaseAdmin.from("plans").select("id, kind, status").eq("athlete_id", athlete.data.id),
+        supabaseAdmin.from("plans").select(PLAN_COLS).eq("athlete_id", athlete.data.id),
         supabaseAdmin
           .from("adult_athlete_invite_codes")
           .select("code")
@@ -532,6 +583,10 @@ export const getUserDetail = createServerFn({ method: "POST" })
           : null;
       }
 
+      const athletePlans = athlete.data.is_test
+        ? []
+        : realPlans(plans.data as unknown as PlanRow[]);
+
       athleteDetail = {
         ...athlete.data,
         guardianParentName,
@@ -542,12 +597,18 @@ export const getUserDetail = createServerFn({ method: "POST" })
           coachName: c.coachName,
           sport: Array.from(c.sports).join(", ") || null,
         })),
-        plansCount: (plans.data ?? []).filter((p) => p.kind === "plan").length,
-        activePlansCount: (plans.data ?? []).filter(
-          (p) => p.kind === "plan" && p.status === "active",
-        ).length,
+        sports: Array.from(
+          new Set([
+            ...(sports.data ?? []).map((s: any) => s.sport),
+            ...(primaryLinks.data ?? []).map((s: any) => s.sport),
+          ]),
+        ).filter(Boolean),
+        plansCount: athletePlans.length,
+        activePlansCount: athletePlans.filter((p) => p.status === "active").length,
+        activePlans: toActiveList(athletePlans),
       };
     }
+
 
     const isTest = !!(coach.data?.is_test || parent.data?.is_test || athlete.data?.is_test);
     return { auth, coach: coachDetail, parent: parentDetail, athlete: athleteDetail, isTest };
