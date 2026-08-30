@@ -17,6 +17,7 @@ import {
   MailPlus,
   Megaphone,
   Share2,
+  Sparkles,
   type LucideIcon,
 } from "lucide-react";
 import {
@@ -40,6 +41,7 @@ const GROUPS: Group[] = [
     label: "Reporting",
     items: [
       { to: "/admin/reporting", label: "Overview", icon: BarChart3 },
+      { to: "/admin/ask", label: "Ask the data", icon: Sparkles },
       { to: "/admin/active", label: "Active users", icon: UserCheck },
       { to: "/admin/sessions", label: "Sessions", icon: ClipboardList },
       { to: "/admin/activity", label: "Activity log", icon: History },
