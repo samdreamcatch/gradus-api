@@ -255,6 +255,7 @@ function SocialPlansPage() {
                   type="button"
                   variant="ghost"
                   size="sm"
+                  aria-label={`Remove move ${i + 1}`}
                   onClick={() => setMoves((prev) => prev.filter((_, idx) => idx !== i))}
                   disabled={moves.length === 1}
                 >

@@ -517,6 +517,7 @@ function TeamPeopleGroup({ athletes }: { athletes: AthleteData[] }) {
                               size="sm"
                               variant="ghost"
                               className="h-7 shrink-0 px-2"
+                              aria-label={`Remove ${person.name} as guardian`}
                               onClick={async () => {
                                 try {
                                   await removeGuardianFn({
@@ -547,6 +548,7 @@ function TeamPeopleGroup({ athletes }: { athletes: AthleteData[] }) {
                             size="sm"
                             variant="ghost"
                             className="h-7 shrink-0 px-2"
+                            aria-label={`Revoke guardian invite${i.email ? ` for ${i.email}` : ""}`}
                             onClick={async () => {
                               try {
                                 await revoke({ data: { inviteId: i.id } });

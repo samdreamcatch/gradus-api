@@ -123,6 +123,7 @@ export function UploadResourceSheet({
             type="button"
             variant="ghost"
             size="icon"
+            aria-label="Close"
             onClick={() => onOpenChange(false)}
             className="rounded-full"
           >
