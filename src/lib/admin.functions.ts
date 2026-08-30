@@ -513,7 +513,7 @@ export const getUserDetail = createServerFn({ method: "POST" })
 
     let athleteDetail: any = null;
     if (athlete.data) {
-      const [primaryLinks, roster, sports, plans, selfCode, claimCode] = await Promise.all([
+      const [primaryLinks, roster, sports, goalSports, plans, selfCode, claimCode] = await Promise.all([
         supabaseAdmin
           .from("athlete_primary_coaches")
           .select("sport, coach_id, coach_profiles(first_name, last_name, user_id)")
