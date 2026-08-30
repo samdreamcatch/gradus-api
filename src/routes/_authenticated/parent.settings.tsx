@@ -215,6 +215,10 @@ function ParentSettingsPage() {
                   label="Email"
                   value={email ?? "—"}
                 />
+                <InstallAppRow />
+                <NativeAppSection />
+                <FeedbackSettingsRow />
+                <SignOutRow />
               </SettingsList>
             </SettingsGroup>
 
@@ -246,15 +250,6 @@ function ParentSettingsPage() {
             </SettingsGroup>
 
             <LegalSection />
-
-            <SettingsGroup>
-              <SettingsList>
-                <InstallAppRow />
-                <NativeAppSection />
-                <FeedbackSettingsRow />
-                <SignOutRow />
-              </SettingsList>
-            </SettingsGroup>
           </>
         )}
       </div>

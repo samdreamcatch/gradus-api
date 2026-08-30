@@ -106,6 +106,10 @@ function AthleteSettingsPage() {
                   value={data.username ? `@${data.username}` : (email ?? "—")}
                 />
                 <GuardianRow athlete={data} />
+                <InstallAppRow />
+                <NativeAppSection />
+                <FeedbackSettingsRow />
+                <SignOutRow />
               </SettingsList>
             </SettingsGroup>
 
@@ -152,15 +156,6 @@ function AthleteSettingsPage() {
             </SettingsGroup>
 
             <LegalSection />
-
-            <SettingsGroup>
-              <SettingsList>
-                <InstallAppRow />
-                <NativeAppSection />
-                <FeedbackSettingsRow />
-                <SignOutRow />
-              </SettingsList>
-            </SettingsGroup>
           </>
         )}
       </div>
