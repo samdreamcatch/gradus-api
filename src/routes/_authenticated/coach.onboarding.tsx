@@ -198,35 +198,17 @@ function OnboardingForm({ data }: { data: OnboardingData }) {
     setSports((prev) => prev.filter((s) => s.key !== key));
   };
 
-  type StepKind = "profile" | "review";
-  const stepOrder: StepKind[] = ["profile", "review"];
-  const totalSteps = stepOrder.length;
-  const currentKind = stepOrder[step - 1];
-  const isLastStep = step === totalSteps;
-
   const canContinue =
-    currentKind === "profile"
-      ? firstName.trim().length > 0 && lastName.trim().length > 0 && sports.length > 0
-      : true;
-
-  const handleContinue = async () => {
-    try {
-      if (currentKind === "profile") {
-        await saveProfile.mutateAsync({
-          firstName: firstName.trim(),
-          lastName: lastName.trim(),
-        });
-      }
-      setStep((s) => s + 1);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't save");
-    }
-  };
+    firstName.trim().length > 0 && lastName.trim().length > 0 && sports.length > 0;
 
   const claim = useServerFn(claimParentInvite);
 
   const handleFinish = async () => {
     try {
+      await saveProfile.mutateAsync({
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+      });
       await saveLevels.mutateAsync({ entries: defaultEntriesForSports(sports) });
       await complete.mutateAsync();
     } catch (err) {
