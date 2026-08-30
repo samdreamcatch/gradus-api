@@ -19,10 +19,13 @@ The existing eligibility rules are unchanged and apply to all three: only athlet
 
 ## Technical notes
 
-- `src/lib/messages.functions.ts` (`sendMessage`): lift the guardian-mirror block out of the `role === "coach" && data.kind === "text"` condition into a helper that runs for `role === "coach" || role === "athlete"`, for both `text` and `voice` kinds. The eligibility query on `athletes` stays as-is.
+- Extract the eligibility check + send into one server-only helper (in `src/lib/guardian.server.ts`) that takes the athlete id and the activity payload, so messages and plan assignment share it.
+- `src/lib/messages.functions.ts` (`sendMessage`): lift the guardian-mirror block out of the `role === "coach" && data.kind === "text"` condition so it runs for `role === "coach" || role === "athlete"`, for both `text` and `voice` kinds.
 - Sender name resolution branches on role: coach → `coach_profiles` lookup, prefixed "Coach"; athlete → the athlete's own first/last name already fetched by the eligibility query. `senderRole` is passed through to `sendGuardianMessageCopy`, which already accepts `"coach" | "athlete"`.
 - Voice body: transcribe the just-uploaded bytes with the existing `transcribeWithElevenLabs` helper in `src/lib/voice.server.ts` (dynamic import, server-only) before the mirror email is composed. Reuse the in-memory `bytes` from the upload step rather than re-downloading from storage. Wrap in try/catch; on failure send the email with a "transcript unavailable" body.
-- The whole mirror block stays inside its existing try/catch and continues to run after the message row is inserted, so a mail or transcription failure can never fail the send.
+- Plan assignment: in `setPlanStatus` (`src/lib/plans.functions.ts`), after a successful transition to `active` on a plan with an `athlete_id`, call the same guardian helper with a body like "Assigned a new plan: <title>" and `senderRole: "coach"`. Only on the draft/benched → active transition, so re-saving an already-active plan doesn't re-email.
+- Every guardian send stays inside its own try/catch after the write commits, so a mail or transcription failure can never fail sending a message or activating a plan.
 - No schema change, no RLS change, no change to `src/lib/email-templates/guardian-activity.tsx` markup — only the `body`/`senderName` values passed into it. Copy overrides in the email-copy admin continue to apply.
 - Note: no client currently sends `kind: "voice"` (the composer dictates to text before sending), so the voice path covers the server API and any future/native voice sending.
 - Verify with `bunx tsgo --noEmit`, `bun run lint`, and prettier.
+
