@@ -73,6 +73,7 @@ import { Route as AuthenticatedAdminFeedbackRouteImport } from './routes/_authen
 import { Route as AuthenticatedAdminErrorsRouteImport } from './routes/_authenticated/admin.errors'
 import { Route as AuthenticatedAdminEmailHealthRouteImport } from './routes/_authenticated/admin.email-health'
 import { Route as AuthenticatedAdminBillingRouteImport } from './routes/_authenticated/admin.billing'
+import { Route as AuthenticatedAdminAskRouteImport } from './routes/_authenticated/admin.ask'
 import { Route as AuthenticatedAdminAnnouncementsRouteImport } from './routes/_authenticated/admin.announcements'
 import { Route as AuthenticatedAdminActivityRouteImport } from './routes/_authenticated/admin.activity'
 import { Route as AuthenticatedAdminActiveRouteImport } from './routes/_authenticated/admin.active'
@@ -454,6 +455,11 @@ const AuthenticatedAdminBillingRoute =
     path: '/billing',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminAskRoute = AuthenticatedAdminAskRouteImport.update({
+  id: '/ask',
+  path: '/ask',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
 const AuthenticatedAdminAnnouncementsRoute =
   AuthenticatedAdminAnnouncementsRouteImport.update({
     id: '/announcements',
@@ -677,6 +683,7 @@ export interface FileRoutesByFullPath {
   '/admin/active': typeof AuthenticatedAdminActiveRoute
   '/admin/activity': typeof AuthenticatedAdminActivityRoute
   '/admin/announcements': typeof AuthenticatedAdminAnnouncementsRoute
+  '/admin/ask': typeof AuthenticatedAdminAskRoute
   '/admin/billing': typeof AuthenticatedAdminBillingRoute
   '/admin/email-health': typeof AuthenticatedAdminEmailHealthRoute
   '/admin/errors': typeof AuthenticatedAdminErrorsRouteWithChildren
@@ -770,6 +777,7 @@ export interface FileRoutesByTo {
   '/admin/active': typeof AuthenticatedAdminActiveRoute
   '/admin/activity': typeof AuthenticatedAdminActivityRoute
   '/admin/announcements': typeof AuthenticatedAdminAnnouncementsRoute
+  '/admin/ask': typeof AuthenticatedAdminAskRoute
   '/admin/billing': typeof AuthenticatedAdminBillingRoute
   '/admin/email-health': typeof AuthenticatedAdminEmailHealthRoute
   '/admin/errors': typeof AuthenticatedAdminErrorsRouteWithChildren
@@ -869,6 +877,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/active': typeof AuthenticatedAdminActiveRoute
   '/_authenticated/admin/activity': typeof AuthenticatedAdminActivityRoute
   '/_authenticated/admin/announcements': typeof AuthenticatedAdminAnnouncementsRoute
+  '/_authenticated/admin/ask': typeof AuthenticatedAdminAskRoute
   '/_authenticated/admin/billing': typeof AuthenticatedAdminBillingRoute
   '/_authenticated/admin/email-health': typeof AuthenticatedAdminEmailHealthRoute
   '/_authenticated/admin/errors': typeof AuthenticatedAdminErrorsRouteWithChildren
@@ -969,6 +978,7 @@ export interface FileRouteTypes {
     | '/admin/active'
     | '/admin/activity'
     | '/admin/announcements'
+    | '/admin/ask'
     | '/admin/billing'
     | '/admin/email-health'
     | '/admin/errors'
@@ -1062,6 +1072,7 @@ export interface FileRouteTypes {
     | '/admin/active'
     | '/admin/activity'
     | '/admin/announcements'
+    | '/admin/ask'
     | '/admin/billing'
     | '/admin/email-health'
     | '/admin/errors'
@@ -1160,6 +1171,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/active'
     | '/_authenticated/admin/activity'
     | '/_authenticated/admin/announcements'
+    | '/_authenticated/admin/ask'
     | '/_authenticated/admin/billing'
     | '/_authenticated/admin/email-health'
     | '/_authenticated/admin/errors'
@@ -1713,6 +1725,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminBillingRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/ask': {
+      id: '/_authenticated/admin/ask'
+      path: '/ask'
+      fullPath: '/admin/ask'
+      preLoaderRoute: typeof AuthenticatedAdminAskRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/announcements': {
       id: '/_authenticated/admin/announcements'
       path: '/announcements'
@@ -1965,6 +1984,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminActiveRoute: typeof AuthenticatedAdminActiveRoute
   AuthenticatedAdminActivityRoute: typeof AuthenticatedAdminActivityRoute
   AuthenticatedAdminAnnouncementsRoute: typeof AuthenticatedAdminAnnouncementsRoute
+  AuthenticatedAdminAskRoute: typeof AuthenticatedAdminAskRoute
   AuthenticatedAdminBillingRoute: typeof AuthenticatedAdminBillingRoute
   AuthenticatedAdminEmailHealthRoute: typeof AuthenticatedAdminEmailHealthRoute
   AuthenticatedAdminErrorsRoute: typeof AuthenticatedAdminErrorsRouteWithChildren
@@ -1991,6 +2011,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminActiveRoute: AuthenticatedAdminActiveRoute,
   AuthenticatedAdminActivityRoute: AuthenticatedAdminActivityRoute,
   AuthenticatedAdminAnnouncementsRoute: AuthenticatedAdminAnnouncementsRoute,
+  AuthenticatedAdminAskRoute: AuthenticatedAdminAskRoute,
   AuthenticatedAdminBillingRoute: AuthenticatedAdminBillingRoute,
   AuthenticatedAdminEmailHealthRoute: AuthenticatedAdminEmailHealthRoute,
   AuthenticatedAdminErrorsRoute: AuthenticatedAdminErrorsRouteWithChildren,
