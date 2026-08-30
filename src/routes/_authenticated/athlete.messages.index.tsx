@@ -20,7 +20,7 @@ function AthleteMessages() {
   const rooms = data?.rooms ?? [];
 
   return (
-    <div className="mx-auto max-w-2xl px-3 pt-6 pb-24">
+    <div className="mx-auto max-w-2xl px-3 pt-6 pb-app-chrome">
       <div className="flex items-start justify-between gap-3">
         <div>
           <MessagesHeader />

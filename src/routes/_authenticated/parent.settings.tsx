@@ -196,7 +196,7 @@ function ParentSettingsPage() {
 
   return (
     <>
-      <div className="mx-auto min-h-dvh max-w-2xl px-3 pt-6 pb-24">
+      <div className="mx-auto min-h-dvh max-w-2xl px-3 pt-6 pb-app-chrome">
         <PageTitle>Settings</PageTitle>
 
         {isLoading ? (

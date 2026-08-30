@@ -74,7 +74,7 @@ function ParentPlanDetail() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-3 pt-3 pb-24">
+    <div className="mx-auto max-w-2xl px-3 pt-3 pb-app-chrome">
       <div className="flex items-center justify-between">
         <Link
           to="/parent/plans"
