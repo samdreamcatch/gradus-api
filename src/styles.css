@@ -491,3 +491,30 @@
       );
   }
 }
+
+/*
+ * pb-app-chrome — bottom padding for any scrolling page that sits under the
+ * fixed bottom nav and the beta feedback FAB.
+ *
+ * Two obstructions overlap the bottom of the viewport, and the taller one
+ * wins:
+ *   - the bottom nav: min-h-16 (4rem) plus env(safe-area-inset-bottom)
+ *   - the feedback FAB: pinned at bottom-24 (6rem) and ~2rem tall, so its
+ *     top edge is ~8rem up — and because it is positioned from the viewport
+ *     edge rather than the safe area, that number does not grow with the
+ *     inset
+ *
+ * `max()` takes whichever is taller on the device in hand and adds a 1rem
+ * gap, so the last card in a list is never trapped behind the FAB. The
+ * plain `pb-24` this replaces reserved 6rem, which cleared neither on a
+ * phone with a home indicator.
+ *
+ * From md: up the FAB moves to bottom-6 and tucks under the nav, so 6rem is
+ * enough again and the extra space would just be dead whitespace.
+ */
+@utility pb-app-chrome {
+  padding-bottom: max(9rem, calc(env(safe-area-inset-bottom, 0px) + 5rem));
+  @media (width >= 48rem) {
+    padding-bottom: 6rem;
+  }
+}

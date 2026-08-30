@@ -53,7 +53,7 @@ function ParentHome() {
   const showInviteCard = !!status?.hasParentProfile && status.hasAthletes && !status.hasAnyCoach;
 
   return (
-    <div className="mx-auto max-w-2xl px-3 py-6 pb-24">
+    <div className="mx-auto max-w-2xl px-3 py-6 pb-app-chrome">
       {showInviteCard ? (
         <div className="mb-6">
           <InviteCoachCard />

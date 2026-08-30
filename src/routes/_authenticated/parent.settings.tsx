@@ -80,6 +80,7 @@ import { FeedbackSettingsRow } from "@/components/feedback/feedback-fab";
 import { InstallAppRow } from "@/components/settings/install-app-row";
 import { NativeAppSection } from "@/components/settings/native-app-section";
 import { AccountSecuritySection } from "@/components/settings/account-security-section";
+import { LegalSection } from "@/components/settings/legal-section";
 import {
   getParentSettings,
   updateParentProfile,
@@ -195,7 +196,7 @@ function ParentSettingsPage() {
 
   return (
     <>
-      <div className="mx-auto min-h-dvh max-w-2xl px-3 pt-6 pb-24">
+      <div className="mx-auto min-h-dvh max-w-2xl px-3 pt-6 pb-app-chrome">
         <PageTitle>Settings</PageTitle>
 
         {isLoading ? (
@@ -250,6 +251,8 @@ function ParentSettingsPage() {
             </SettingsGroup>
 
             <AccountSecuritySection />
+
+            <LegalSection />
 
             <SettingsGroup>
               <SettingsList>

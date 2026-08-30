@@ -120,14 +120,14 @@ export const Route = createFileRoute("/_authenticated/coach/roster")({
   loader: ({ context }) => context.queryClient.ensureQueryData(rosterQueryOptions),
   component: RosterPage,
   errorComponent: ({ error }) => (
-    <div className="mx-auto max-w-3xl px-4 pt-8 pb-24" role="alert">
+    <div className="mx-auto max-w-3xl px-4 pt-8 pb-app-chrome" role="alert">
       <PageTitle>Roster</PageTitle>
       <p className="mt-4 text-text-secondary">Couldn't load your roster: {error.message}</p>
       <CoachBottomNav />
     </div>
   ),
   notFoundComponent: () => (
-    <div className="mx-auto max-w-3xl px-4 pt-8 pb-24">
+    <div className="mx-auto max-w-3xl px-4 pt-8 pb-app-chrome">
       <p>Roster not found.</p>
       <CoachBottomNav />
     </div>
@@ -195,7 +195,7 @@ function RosterPage() {
 
   return (
     <>
-      <div className="mx-auto flex min-h-dvh max-w-3xl flex-col px-3 pt-4 pb-24">
+      <div className="mx-auto flex min-h-dvh max-w-3xl flex-col px-3 pt-4 pb-app-chrome">
         <Sheet
           open={inviteOpen}
           onOpenChange={(o) => {

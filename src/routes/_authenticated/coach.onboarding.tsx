@@ -273,7 +273,7 @@ function OnboardingForm({ data }: { data: OnboardingData }) {
 
   return (
     <>
-      <div className="flex min-h-dvh items-start justify-center px-4 pt-8 pb-24 sm:items-center">
+      <div className="flex min-h-dvh items-start justify-center px-4 pt-8 pb-app-chrome sm:items-center">
         <div className="w-full max-w-2xl rounded-2xl bg-card p-8 shadow-[0_10px_40px_-12px_rgba(0,0,0,0.15)] sm:p-10">
           <div className="mb-4 flex items-center justify-between">
             <p className="text-xs font-bold uppercase tracking-widest text-accent-ink">

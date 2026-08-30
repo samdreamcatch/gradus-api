@@ -70,7 +70,7 @@ function AthleteResourcesPage() {
   const libraryItems = filtered.filter((r) => r.source === "library");
 
   return (
-    <div className="mx-auto max-w-2xl px-4 pt-6 pb-24">
+    <div className="mx-auto max-w-2xl px-4 pt-6 pb-app-chrome">
       <PageTitle>Resources</PageTitle>
 
       <FilterBar className="mt-4">

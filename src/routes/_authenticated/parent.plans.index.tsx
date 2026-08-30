@@ -84,7 +84,7 @@ function ParentPlansPage() {
     "h-8 w-full rounded-full border-divider bg-card px-3 text-xs font-bold text-text-primary shadow-none";
 
   return (
-    <div className="mx-auto max-w-2xl px-3 pt-6 pb-24">
+    <div className="mx-auto max-w-2xl px-3 pt-6 pb-app-chrome">
       <PageTitle>Plans</PageTitle>
 
       <FilterBar className="mt-4">
