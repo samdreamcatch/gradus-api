@@ -51,6 +51,7 @@ function AuthedLayout() {
   const isAdmin = pathname.startsWith("/admin");
   const isOnboarding = pathname.endsWith("/onboarding");
   const isPaywall = pathname.startsWith("/coach/paywall") || pathname.startsWith("/parent/team");
+  const isAccountSecurity = pathname.endsWith("/settings/account");
 
   const accept = useServerFn(acceptTerms);
   const applyPromo = useServerFn(applyPromoCodeToMyProfile);
@@ -110,7 +111,7 @@ function AuthedLayout() {
       <ActiveSessionBar />
       <Outlet />
       {isCoach ? <LessonWrapUpProvider /> : null}
-      {isAdmin || isOnboarding || isPaywall ? null : <FeedbackFab />}
+      {isAdmin || isOnboarding || isPaywall || isAccountSecurity ? null : <FeedbackFab />}
     </ActiveSessionProvider>
   );
 }
