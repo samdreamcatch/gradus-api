@@ -52,7 +52,7 @@ import { useCurrentUserEmail } from "@/hooks/use-current-user-email";
 import { FeedbackSettingsRow } from "@/components/feedback/feedback-fab";
 import { InstallAppRow } from "@/components/settings/install-app-row";
 import { NativeAppSection } from "@/components/settings/native-app-section";
-import { AccountSecuritySection } from "@/components/settings/account-security-section";
+import { AccountSecurityRow } from "@/components/settings/account-security-row";
 import { LegalSection } from "@/components/settings/legal-section";
 import { openExternal } from "@/lib/native";
 
@@ -105,6 +105,7 @@ function SettingsPage() {
 
         <SettingsGroup label="Plan">
           <PlanSection profile={data.profile} />
+          <AccountSecurityRow to="/coach/settings/account" />
         </SettingsGroup>
 
         <SettingsGroup label="Preferences">
@@ -116,8 +117,6 @@ function SettingsPage() {
             />
           </SettingsList>
         </SettingsGroup>
-
-        <AccountSecuritySection />
 
         <LegalSection />
 

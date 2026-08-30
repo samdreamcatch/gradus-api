@@ -23,7 +23,7 @@ import { useCurrentUserEmail } from "@/hooks/use-current-user-email";
 import { FeedbackSettingsRow } from "@/components/feedback/feedback-fab";
 import { InstallAppRow } from "@/components/settings/install-app-row";
 import { NativeAppSection } from "@/components/settings/native-app-section";
-import { AccountSecuritySection } from "@/components/settings/account-security-section";
+import { AccountSecurityRow } from "@/components/settings/account-security-row";
 import { LegalSection } from "@/components/settings/legal-section";
 import { getAthleteSettings, updateAthleteSelf } from "@/lib/athlete-settings.functions";
 import { resendGuardianInvite } from "@/lib/guardian.functions";
@@ -147,14 +147,16 @@ function AthleteSettingsPage() {
               </SettingsList>
             </SettingsGroup>
 
-            <AccountSecuritySection />
+            <SettingsGroup label="Account">
+              <AccountSecurityRow to="/athlete/settings/account" />
+            </SettingsGroup>
 
             <LegalSection />
 
             <SettingsGroup>
               <SettingsList>
                 <InstallAppRow />
-            <NativeAppSection />
+                <NativeAppSection />
                 <FeedbackSettingsRow />
                 <SignOutRow />
               </SettingsList>

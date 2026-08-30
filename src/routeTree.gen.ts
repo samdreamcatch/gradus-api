@@ -96,10 +96,13 @@ import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/publi
 import { Route as ApiPublicHooksLifecycleEmailsRouteImport } from './routes/api/public/hooks/lifecycle-emails'
 import { Route as ApiPublicHooksErrorDigestRouteImport } from './routes/api/public/hooks/error-digest'
 import { Route as ApiPublicHooksBillingNoticesRouteImport } from './routes/api/public/hooks/billing-notices'
+import { Route as AuthenticatedParentSettingsAccountRouteImport } from './routes/_authenticated/parent.settings_.account'
 import { Route as AuthenticatedParentPlansPlanIdRouteImport } from './routes/_authenticated/parent.plans.$planId'
 import { Route as AuthenticatedParentMessagesRoomIdRouteImport } from './routes/_authenticated/parent.messages.$roomId'
+import { Route as AuthenticatedCoachSettingsAccountRouteImport } from './routes/_authenticated/coach.settings_.account'
 import { Route as AuthenticatedCoachPlansPlanIdRouteImport } from './routes/_authenticated/coach.plans.$planId'
 import { Route as AuthenticatedCoachMessagesRoomIdRouteImport } from './routes/_authenticated/coach.messages.$roomId'
+import { Route as AuthenticatedAthleteSettingsAccountRouteImport } from './routes/_authenticated/athlete.settings_.account'
 import { Route as AuthenticatedAthletePlansPlanIdRouteImport } from './routes/_authenticated/athlete.plans.$planId'
 import { Route as AuthenticatedAthleteMessagesRoomIdRouteImport } from './routes/_authenticated/athlete.messages.$roomId'
 import { Route as AuthenticatedAdminUsersUserIdRouteImport } from './routes/_authenticated/admin.users.$userId'
@@ -590,6 +593,12 @@ const ApiPublicHooksBillingNoticesRoute =
     path: '/api/public/hooks/billing-notices',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AuthenticatedParentSettingsAccountRoute =
+  AuthenticatedParentSettingsAccountRouteImport.update({
+    id: '/settings_/account',
+    path: '/settings/account',
+    getParentRoute: () => AuthenticatedParentRoute,
+  } as any)
 const AuthenticatedParentPlansPlanIdRoute =
   AuthenticatedParentPlansPlanIdRouteImport.update({
     id: '/plans/$planId',
@@ -602,6 +611,12 @@ const AuthenticatedParentMessagesRoomIdRoute =
     path: '/messages/$roomId',
     getParentRoute: () => AuthenticatedParentRoute,
   } as any)
+const AuthenticatedCoachSettingsAccountRoute =
+  AuthenticatedCoachSettingsAccountRouteImport.update({
+    id: '/settings_/account',
+    path: '/settings/account',
+    getParentRoute: () => AuthenticatedCoachRoute,
+  } as any)
 const AuthenticatedCoachPlansPlanIdRoute =
   AuthenticatedCoachPlansPlanIdRouteImport.update({
     id: '/$planId',
@@ -613,6 +628,12 @@ const AuthenticatedCoachMessagesRoomIdRoute =
     id: '/messages/$roomId',
     path: '/messages/$roomId',
     getParentRoute: () => AuthenticatedCoachRoute,
+  } as any)
+const AuthenticatedAthleteSettingsAccountRoute =
+  AuthenticatedAthleteSettingsAccountRouteImport.update({
+    id: '/settings_/account',
+    path: '/settings/account',
+    getParentRoute: () => AuthenticatedAthleteRoute,
   } as any)
 const AuthenticatedAthletePlansPlanIdRoute =
   AuthenticatedAthletePlansPlanIdRouteImport.update({
@@ -732,10 +753,13 @@ export interface FileRoutesByFullPath {
   '/admin/users/$userId': typeof AuthenticatedAdminUsersUserIdRoute
   '/athlete/messages/$roomId': typeof AuthenticatedAthleteMessagesRoomIdRoute
   '/athlete/plans/$planId': typeof AuthenticatedAthletePlansPlanIdRoute
+  '/athlete/settings/account': typeof AuthenticatedAthleteSettingsAccountRoute
   '/coach/messages/$roomId': typeof AuthenticatedCoachMessagesRoomIdRoute
   '/coach/plans/$planId': typeof AuthenticatedCoachPlansPlanIdRoute
+  '/coach/settings/account': typeof AuthenticatedCoachSettingsAccountRoute
   '/parent/messages/$roomId': typeof AuthenticatedParentMessagesRoomIdRoute
   '/parent/plans/$planId': typeof AuthenticatedParentPlansPlanIdRoute
+  '/parent/settings/account': typeof AuthenticatedParentSettingsAccountRoute
   '/api/public/hooks/billing-notices': typeof ApiPublicHooksBillingNoticesRoute
   '/api/public/hooks/error-digest': typeof ApiPublicHooksErrorDigestRoute
   '/api/public/hooks/lifecycle-emails': typeof ApiPublicHooksLifecycleEmailsRoute
@@ -825,10 +849,13 @@ export interface FileRoutesByTo {
   '/admin/users/$userId': typeof AuthenticatedAdminUsersUserIdRoute
   '/athlete/messages/$roomId': typeof AuthenticatedAthleteMessagesRoomIdRoute
   '/athlete/plans/$planId': typeof AuthenticatedAthletePlansPlanIdRoute
+  '/athlete/settings/account': typeof AuthenticatedAthleteSettingsAccountRoute
   '/coach/messages/$roomId': typeof AuthenticatedCoachMessagesRoomIdRoute
   '/coach/plans/$planId': typeof AuthenticatedCoachPlansPlanIdRoute
+  '/coach/settings/account': typeof AuthenticatedCoachSettingsAccountRoute
   '/parent/messages/$roomId': typeof AuthenticatedParentMessagesRoomIdRoute
   '/parent/plans/$planId': typeof AuthenticatedParentPlansPlanIdRoute
+  '/parent/settings/account': typeof AuthenticatedParentSettingsAccountRoute
   '/api/public/hooks/billing-notices': typeof ApiPublicHooksBillingNoticesRoute
   '/api/public/hooks/error-digest': typeof ApiPublicHooksErrorDigestRoute
   '/api/public/hooks/lifecycle-emails': typeof ApiPublicHooksLifecycleEmailsRoute
@@ -926,10 +953,13 @@ export interface FileRoutesById {
   '/_authenticated/admin/users/$userId': typeof AuthenticatedAdminUsersUserIdRoute
   '/_authenticated/athlete/messages/$roomId': typeof AuthenticatedAthleteMessagesRoomIdRoute
   '/_authenticated/athlete/plans/$planId': typeof AuthenticatedAthletePlansPlanIdRoute
+  '/_authenticated/athlete/settings_/account': typeof AuthenticatedAthleteSettingsAccountRoute
   '/_authenticated/coach/messages/$roomId': typeof AuthenticatedCoachMessagesRoomIdRoute
   '/_authenticated/coach/plans/$planId': typeof AuthenticatedCoachPlansPlanIdRoute
+  '/_authenticated/coach/settings_/account': typeof AuthenticatedCoachSettingsAccountRoute
   '/_authenticated/parent/messages/$roomId': typeof AuthenticatedParentMessagesRoomIdRoute
   '/_authenticated/parent/plans/$planId': typeof AuthenticatedParentPlansPlanIdRoute
+  '/_authenticated/parent/settings_/account': typeof AuthenticatedParentSettingsAccountRoute
   '/api/public/hooks/billing-notices': typeof ApiPublicHooksBillingNoticesRoute
   '/api/public/hooks/error-digest': typeof ApiPublicHooksErrorDigestRoute
   '/api/public/hooks/lifecycle-emails': typeof ApiPublicHooksLifecycleEmailsRoute
@@ -1027,10 +1057,13 @@ export interface FileRouteTypes {
     | '/admin/users/$userId'
     | '/athlete/messages/$roomId'
     | '/athlete/plans/$planId'
+    | '/athlete/settings/account'
     | '/coach/messages/$roomId'
     | '/coach/plans/$planId'
+    | '/coach/settings/account'
     | '/parent/messages/$roomId'
     | '/parent/plans/$planId'
+    | '/parent/settings/account'
     | '/api/public/hooks/billing-notices'
     | '/api/public/hooks/error-digest'
     | '/api/public/hooks/lifecycle-emails'
@@ -1120,10 +1153,13 @@ export interface FileRouteTypes {
     | '/admin/users/$userId'
     | '/athlete/messages/$roomId'
     | '/athlete/plans/$planId'
+    | '/athlete/settings/account'
     | '/coach/messages/$roomId'
     | '/coach/plans/$planId'
+    | '/coach/settings/account'
     | '/parent/messages/$roomId'
     | '/parent/plans/$planId'
+    | '/parent/settings/account'
     | '/api/public/hooks/billing-notices'
     | '/api/public/hooks/error-digest'
     | '/api/public/hooks/lifecycle-emails'
@@ -1220,10 +1256,13 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/users/$userId'
     | '/_authenticated/athlete/messages/$roomId'
     | '/_authenticated/athlete/plans/$planId'
+    | '/_authenticated/athlete/settings_/account'
     | '/_authenticated/coach/messages/$roomId'
     | '/_authenticated/coach/plans/$planId'
+    | '/_authenticated/coach/settings_/account'
     | '/_authenticated/parent/messages/$roomId'
     | '/_authenticated/parent/plans/$planId'
+    | '/_authenticated/parent/settings_/account'
     | '/api/public/hooks/billing-notices'
     | '/api/public/hooks/error-digest'
     | '/api/public/hooks/lifecycle-emails'
@@ -1886,6 +1925,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksBillingNoticesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/parent/settings_/account': {
+      id: '/_authenticated/parent/settings_/account'
+      path: '/settings/account'
+      fullPath: '/parent/settings/account'
+      preLoaderRoute: typeof AuthenticatedParentSettingsAccountRouteImport
+      parentRoute: typeof AuthenticatedParentRoute
+    }
     '/_authenticated/parent/plans/$planId': {
       id: '/_authenticated/parent/plans/$planId'
       path: '/plans/$planId'
@@ -1900,6 +1946,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedParentMessagesRoomIdRouteImport
       parentRoute: typeof AuthenticatedParentRoute
     }
+    '/_authenticated/coach/settings_/account': {
+      id: '/_authenticated/coach/settings_/account'
+      path: '/settings/account'
+      fullPath: '/coach/settings/account'
+      preLoaderRoute: typeof AuthenticatedCoachSettingsAccountRouteImport
+      parentRoute: typeof AuthenticatedCoachRoute
+    }
     '/_authenticated/coach/plans/$planId': {
       id: '/_authenticated/coach/plans/$planId'
       path: '/$planId'
@@ -1913,6 +1966,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/coach/messages/$roomId'
       preLoaderRoute: typeof AuthenticatedCoachMessagesRoomIdRouteImport
       parentRoute: typeof AuthenticatedCoachRoute
+    }
+    '/_authenticated/athlete/settings_/account': {
+      id: '/_authenticated/athlete/settings_/account'
+      path: '/settings/account'
+      fullPath: '/athlete/settings/account'
+      preLoaderRoute: typeof AuthenticatedAthleteSettingsAccountRouteImport
+      parentRoute: typeof AuthenticatedAthleteRoute
     }
     '/_authenticated/athlete/plans/$planId': {
       id: '/_authenticated/athlete/plans/$planId'
@@ -2043,6 +2103,7 @@ interface AuthenticatedAthleteRouteChildren {
   AuthenticatedAthleteIndexRoute: typeof AuthenticatedAthleteIndexRoute
   AuthenticatedAthleteMessagesRoomIdRoute: typeof AuthenticatedAthleteMessagesRoomIdRoute
   AuthenticatedAthletePlansPlanIdRoute: typeof AuthenticatedAthletePlansPlanIdRoute
+  AuthenticatedAthleteSettingsAccountRoute: typeof AuthenticatedAthleteSettingsAccountRoute
   AuthenticatedAthleteMessagesIndexRoute: typeof AuthenticatedAthleteMessagesIndexRoute
   AuthenticatedAthletePlansIndexRoute: typeof AuthenticatedAthletePlansIndexRoute
   AuthenticatedAthleteResourcesIndexRoute: typeof AuthenticatedAthleteResourcesIndexRoute
@@ -2055,6 +2116,8 @@ const AuthenticatedAthleteRouteChildren: AuthenticatedAthleteRouteChildren = {
   AuthenticatedAthleteMessagesRoomIdRoute:
     AuthenticatedAthleteMessagesRoomIdRoute,
   AuthenticatedAthletePlansPlanIdRoute: AuthenticatedAthletePlansPlanIdRoute,
+  AuthenticatedAthleteSettingsAccountRoute:
+    AuthenticatedAthleteSettingsAccountRoute,
   AuthenticatedAthleteMessagesIndexRoute:
     AuthenticatedAthleteMessagesIndexRoute,
   AuthenticatedAthletePlansIndexRoute: AuthenticatedAthletePlansIndexRoute,
@@ -2090,6 +2153,7 @@ interface AuthenticatedCoachRouteChildren {
   AuthenticatedCoachSettingsRoute: typeof AuthenticatedCoachSettingsRoute
   AuthenticatedCoachIndexRoute: typeof AuthenticatedCoachIndexRoute
   AuthenticatedCoachMessagesRoomIdRoute: typeof AuthenticatedCoachMessagesRoomIdRoute
+  AuthenticatedCoachSettingsAccountRoute: typeof AuthenticatedCoachSettingsAccountRoute
   AuthenticatedCoachMessagesIndexRoute: typeof AuthenticatedCoachMessagesIndexRoute
   AuthenticatedCoachResourcesIndexRoute: typeof AuthenticatedCoachResourcesIndexRoute
 }
@@ -2104,6 +2168,8 @@ const AuthenticatedCoachRouteChildren: AuthenticatedCoachRouteChildren = {
   AuthenticatedCoachSettingsRoute: AuthenticatedCoachSettingsRoute,
   AuthenticatedCoachIndexRoute: AuthenticatedCoachIndexRoute,
   AuthenticatedCoachMessagesRoomIdRoute: AuthenticatedCoachMessagesRoomIdRoute,
+  AuthenticatedCoachSettingsAccountRoute:
+    AuthenticatedCoachSettingsAccountRoute,
   AuthenticatedCoachMessagesIndexRoute: AuthenticatedCoachMessagesIndexRoute,
   AuthenticatedCoachResourcesIndexRoute: AuthenticatedCoachResourcesIndexRoute,
 }
@@ -2142,6 +2208,7 @@ interface AuthenticatedParentRouteChildren {
   AuthenticatedParentIndexRoute: typeof AuthenticatedParentIndexRoute
   AuthenticatedParentMessagesRoomIdRoute: typeof AuthenticatedParentMessagesRoomIdRoute
   AuthenticatedParentPlansPlanIdRoute: typeof AuthenticatedParentPlansPlanIdRoute
+  AuthenticatedParentSettingsAccountRoute: typeof AuthenticatedParentSettingsAccountRoute
   AuthenticatedParentMessagesIndexRoute: typeof AuthenticatedParentMessagesIndexRoute
   AuthenticatedParentPlansIndexRoute: typeof AuthenticatedParentPlansIndexRoute
   AuthenticatedParentResourcesIndexRoute: typeof AuthenticatedParentResourcesIndexRoute
@@ -2154,6 +2221,8 @@ const AuthenticatedParentRouteChildren: AuthenticatedParentRouteChildren = {
   AuthenticatedParentMessagesRoomIdRoute:
     AuthenticatedParentMessagesRoomIdRoute,
   AuthenticatedParentPlansPlanIdRoute: AuthenticatedParentPlansPlanIdRoute,
+  AuthenticatedParentSettingsAccountRoute:
+    AuthenticatedParentSettingsAccountRoute,
   AuthenticatedParentMessagesIndexRoute: AuthenticatedParentMessagesIndexRoute,
   AuthenticatedParentPlansIndexRoute: AuthenticatedParentPlansIndexRoute,
   AuthenticatedParentResourcesIndexRoute:
