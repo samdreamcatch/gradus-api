@@ -23,9 +23,7 @@ function TermsPage() {
       <div className="mb-8">
         <button
           type="button"
-          onClick={() =>
-            canGoBack ? router.history.back() : void router.navigate({ to: "/" })
-          }
+          onClick={() => (canGoBack ? router.history.back() : void router.navigate({ to: "/" }))}
           className="press text-sm text-text-secondary underline-offset-2"
         >
           ← Back
