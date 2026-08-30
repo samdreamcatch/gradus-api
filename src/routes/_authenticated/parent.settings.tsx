@@ -215,8 +215,13 @@ function ParentSettingsPage() {
                   label="Email"
                   value={email ?? "—"}
                 />
+                <InstallAppRow />
+                <NativeAppSection />
+                <FeedbackSettingsRow />
+                <SignOutRow />
               </SettingsList>
             </SettingsGroup>
+
 
             <SettingsGroup label="My athletes">
               <AthletesList
