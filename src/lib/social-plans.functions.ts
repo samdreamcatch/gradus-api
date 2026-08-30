@@ -1,0 +1,221 @@
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { generateObject } from "ai";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { createLovableAiGatewayProvider } from "./ai-gateway.server";
+import { PROMPT_INJECTION_GUARD, sanitizeUserContent } from "./ai-prompt-safety";
+import { dbError } from "./db-error";
+
+/** Throws if the caller is not an admin. */
+async function assertAdmin(context: { userId: string; supabase: any }) {
+  const { data, error } = await context.supabase.rpc("has_role", {
+    _user_id: context.userId,
+    _role: "admin",
+  });
+  if (error) dbError(error);
+  if (!data) throw new Error("Forbidden");
+}
+
+const moveSchema = z.object({
+  name: z.string().min(1).max(120),
+  description: z.string().max(600).default(""),
+  cue: z.string().max(300).default(""),
+  why: z.string().max(300).default(""),
+  targetKind: z.enum(["reps", "mins"]),
+  targetValue: z.number().min(1).max(600),
+});
+
+export type SocialPlanMoveInput = z.infer<typeof moveSchema>;
+
+export interface SocialPlanRow {
+  id: string;
+  title: string;
+  notes: string;
+  moveCount: number;
+  shareToken: string | null;
+  createdAt: string;
+}
+
+/** AI first draft of a shareable plan for any sport. */
+export const adminDraftSocialPlan = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        sport: z.string().min(1).max(60),
+        level: z.string().max(80).optional().default(""),
+        focus: z.string().max(200).optional().default(""),
+        moveCount: z.number().int().min(2).max(8).default(4),
+      })
+      .parse(input),
+  )
+  .handler(async ({ context, data }) => {
+    await assertAdmin(context);
+    const apiKey = process.env.LOVABLE_API_KEY;
+    if (!apiKey) throw new Error("AI service is unavailable. Please try again later.");
+    const gateway = createLovableAiGatewayProvider(apiKey);
+
+    const sport = sanitizeUserContent(data.sport, 60);
+    const level = sanitizeUserContent(data.level, 80);
+    const focus = sanitizeUserContent(data.focus, 200);
+
+    const prompt = `${PROMPT_INJECTION_GUARD}
+
+You are a ${sport} coach writing a short at-home practice plan that will be shared publicly on social media by Gradus.
+
+Sport: ${sport}
+Level: ${level || "general / all levels"}
+Focus: ${focus || "well-rounded fundamentals"}
+
+Write exactly ${data.moveCount} moves an athlete can do on their own, in order. For each move give:
+- name: short, punchy (max 6 words)
+- description: 1-2 sentences on how to do it
+- cue: one short coaching cue an athlete can repeat to themselves
+- why: one short sentence on why it matters
+- targetKind: "reps" or "mins"
+- targetValue: a realistic number
+
+Also write a plan title (max 8 words, no emoji) and a 1-2 sentence intro note.
+Be specific to ${sport}. Never invent medical claims.`;
+
+    const schema = z.object({
+      title: z.string().min(1).max(120),
+      notes: z.string().max(600),
+      moves: z.array(moveSchema).min(1).max(8),
+    });
+
+    try {
+      const { object } = await generateObject({
+        model: gateway("google/gemini-2.5-flash"),
+        schema,
+        prompt,
+      });
+      return object;
+    } catch (err) {
+      console.error("[social-plans draft]", err);
+      throw new Error("Could not draft the plan. Please try again.");
+    }
+  });
+
+/** Create a shareable Gradus plan (not assigned to any athlete) and mint its share link. */
+export const adminCreateSocialPlan = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        title: z.string().min(1).max(140),
+        notes: z.string().max(1000).default(""),
+        moves: z.array(moveSchema).min(1).max(12),
+      })
+      .parse(input),
+  )
+  .handler(async ({ context, data }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const buf = new Uint8Array(12);
+    crypto.getRandomValues(buf);
+    const token = Array.from(buf, (b) => b.toString(36).padStart(2, "0")).join("");
+
+    const ins = await supabaseAdmin
+      .from("plans")
+      .insert({
+        kind: "template",
+        source: "gradus",
+        status: "draft",
+        coach_id: null,
+        athlete_id: null,
+        title: data.title.trim(),
+        notes: data.notes.trim(),
+        share_token: token,
+        shared_at: new Date().toISOString(),
+      })
+      .select("id")
+      .single();
+    if (ins.error) dbError(ins.error);
+
+    const planId = ins.data!.id;
+    const rows = data.moves.map((m, i) => ({
+      plan_id: planId,
+      position: i + 1,
+      name: m.name.trim(),
+      description: m.description.trim(),
+      cue: m.cue.trim(),
+      why: m.why.trim(),
+      target_kind: m.targetKind,
+      target_value: m.targetValue,
+    }));
+    const mv = await supabaseAdmin.from("plan_moves").insert(rows);
+    if (mv.error) {
+      await supabaseAdmin.from("plans").delete().eq("id", planId);
+      dbError(mv.error);
+    }
+
+    return { planId, token };
+  });
+
+/** List the shareable social plans created from the admin panel. */
+export const adminListSocialPlans = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<{ plans: SocialPlanRow[] }> => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const res = await supabaseAdmin
+      .from("plans")
+      .select("id, title, notes, share_token, created_at")
+      .eq("kind", "template")
+      .eq("source", "gradus")
+      .is("coach_id", null)
+      .not("share_token", "is", null)
+      .order("created_at", { ascending: false })
+      .limit(100);
+    if (res.error) dbError(res.error);
+
+    const plans = res.data ?? [];
+    const ids = plans.map((p) => p.id);
+    const counts = new Map<string, number>();
+    if (ids.length) {
+      const mv = await supabaseAdmin.from("plan_moves").select("plan_id").in("plan_id", ids);
+      if (mv.error) dbError(mv.error);
+      for (const row of mv.data ?? []) {
+        counts.set(row.plan_id, (counts.get(row.plan_id) ?? 0) + 1);
+      }
+    }
+
+    return {
+      plans: plans.map((p) => ({
+        id: p.id,
+        title: p.title || "Untitled plan",
+        notes: p.notes ?? "",
+        moveCount: counts.get(p.id) ?? 0,
+        shareToken: p.share_token,
+        createdAt: p.created_at,
+      })),
+    };
+  });
+
+/** Delete a shareable social plan. */
+export const adminDeleteSocialPlan = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ planId: z.string().uuid() }).parse(input))
+  .handler(async ({ context, data }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const plan = await supabaseAdmin
+      .from("plans")
+      .select("id, kind, source, coach_id, athlete_id")
+      .eq("id", data.planId)
+      .maybeSingle();
+    if (plan.error) dbError(plan.error);
+    if (!plan.data) throw new Error("Plan not found.");
+    if (plan.data.kind !== "template" || plan.data.coach_id || plan.data.athlete_id) {
+      throw new Error("Only admin-created social plans can be deleted here.");
+    }
+
+    await supabaseAdmin.from("plan_moves").delete().eq("plan_id", data.planId);
+    const del = await supabaseAdmin.from("plans").delete().eq("id", data.planId);
+    if (del.error) dbError(del.error);
+    return { ok: true };
+  });
