@@ -4,10 +4,12 @@ import { generateText } from "ai";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { dbError } from "./db-error";
 
+export type CellValue = string | number | boolean | null;
+
 export interface AskDataResult {
   sql: string;
   columns: string[];
-  rows: Record<string, unknown>[];
+  rows: Record<string, CellValue>[];
   rowCount: number;
   truncated: boolean;
 }
@@ -47,16 +49,28 @@ async function assertAdmin(context: { userId: string; supabase: any }) {
 async function execute(
   supabase: any,
   sql: string,
-): Promise<{ rows: Record<string, unknown>[]; truncated: boolean }> {
+): Promise<{ rows: Record<string, CellValue>[]; truncated: boolean }> {
   const wrapped = `select * from (${sql}) q limit ${MAX_ROWS + 1}`;
   const { data, error } = await supabase.rpc("admin_run_readonly_sql", { _sql: wrapped });
   if (error) throw new Error(error.message || "Query failed");
-  const rows = (Array.isArray(data) ? data : []) as Record<string, unknown>[];
+  const raw = (Array.isArray(data) ? data : []) as Record<string, unknown>[];
+  const rows: Record<string, CellValue>[] = raw.map((row) => {
+    const out: Record<string, CellValue> = {};
+    for (const [k, v] of Object.entries(row)) {
+      out[k] =
+        v === null || v === undefined
+          ? null
+          : typeof v === "string" || typeof v === "number" || typeof v === "boolean"
+            ? v
+            : JSON.stringify(v);
+    }
+    return out;
+  });
   const truncated = rows.length > MAX_ROWS;
   return { rows: truncated ? rows.slice(0, MAX_ROWS) : rows, truncated };
 }
 
-function columnsOf(rows: Record<string, unknown>[]): string[] {
+function columnsOf(rows: Record<string, CellValue>[]): string[] {
   const cols: string[] = [];
   for (const row of rows) {
     for (const key of Object.keys(row)) if (!cols.includes(key)) cols.push(key);

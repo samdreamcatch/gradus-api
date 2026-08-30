@@ -83,7 +83,7 @@ function AskDataPage() {
     if (q) setQuestion(q);
     setBusy("ask");
     try {
-      const res = await ask({ data: { question: text } });
+      const res = (await ask({ data: { question: text } })) as AskDataResult;
       setResult(res);
       setSql(res.sql);
       if (res.rowCount === 0) toast.info("The query ran but returned no rows");
@@ -98,7 +98,7 @@ function AskDataPage() {
     if (!sql.trim()) return;
     setBusy("run");
     try {
-      const res = await run({ data: { sql } });
+      const res = (await run({ data: { sql } })) as AskDataResult;
       setResult(res);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Query failed");
