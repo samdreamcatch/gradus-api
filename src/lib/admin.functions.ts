@@ -1076,7 +1076,10 @@ export const getAdminReporting = createServerFn({ method: "POST" })
         if (recent7) active.athlete7.add(uid);
       }
     };
-    for (const m of messages.data ?? []) bump(m.sender_user_id, m.created_at);
+    for (const m of messages.data ?? []) {
+      if (!m.sender_user_id) continue;
+      bump(m.sender_user_id, m.created_at);
+    }
     for (const s of sessions.data ?? []) {
       if (s.parent_id) bump(parentUserById.get(s.parent_id), s.logged_at);
       else if (s.athlete_id) bump(athleteUserById.get(s.athlete_id), s.logged_at);

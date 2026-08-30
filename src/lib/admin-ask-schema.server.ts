@@ -17,7 +17,7 @@ plan_sessions(id, plan_id, athlete_id, parent_id, state_index, note, duration_se
 moves(id, coach_id, sport, category, name, archived_at, created_at, organization_id, is_org_template)
 lesson_wrap_ups(id, coach_id, athlete_id, lesson_date, action, created_at)
 athlete_lesson_slots(id, athlete_id, coach_id, day_of_week, start_minute, end_minute, frequency, weeks_of_month, starts_on)
-messages(id, room_id, direct_room_id, sender_user_id, sender_role, kind, body, created_at)
+messages(id, room_id, direct_room_id, sender_user_id, sender_deleted_at, sender_role, kind, body, created_at)
 message_rooms(id, coach_id, athlete_id, created_at)
 invoices(id, coach_id, athlete_id, period_start, period_end, total_cents, status, paid_at, created_at)
 invoice_lines(id, invoice_id, slot_id, occurrence_date, amount_cents, created_at)
