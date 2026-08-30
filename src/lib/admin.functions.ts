@@ -605,6 +605,7 @@ export const getUserDetail = createServerFn({ method: "POST" })
           new Set([
             ...(sports.data ?? []).map((s: any) => s.sport),
             ...(primaryLinks.data ?? []).map((s: any) => s.sport),
+            ...(goalSports.data ?? []).map((s: any) => s.sport),
           ]),
         ).filter(Boolean),
         plansCount: athletePlans.length,
