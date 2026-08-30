@@ -124,11 +124,55 @@ async function purgeAthlete(athleteId: string): Promise<void> {
   await supabaseAdmin.from("athletes").delete().eq("id", athleteId);
 }
 
+function isMinor(birthdate: string | null): boolean {
+  if (!birthdate) return false;
+  const dob = new Date(birthdate);
+  const eighteen = new Date(dob.getFullYear() + 18, dob.getMonth(), dob.getDate());
+  return eighteen.getTime() > Date.now();
+}
+
+/**
+ * Athletes under 18 who sign in themselves and whose only guardian is this
+ * user — deleting the guardian would leave them with no adult on file.
+ */
+export async function listOrphanedMinors(
+  userId: string,
+): Promise<{ id: string; firstName: string; guardianEmail: string | null }[]> {
+  const { data: parent } = await supabaseAdmin
+    .from("parent_profiles")
+    .select("id")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (!parent) return [];
+
+  const { data: athletes } = await supabaseAdmin
+    .from("athletes")
+    .select("id, first_name, birthdate, user_id, guardian_email")
+    .eq("parent_id", parent.id);
+
+  const out: { id: string; firstName: string; guardianEmail: string | null }[] = [];
+  for (const a of athletes ?? []) {
+    if (!a.user_id || !isMinor(a.birthdate)) continue;
+    const { data: coGuardians } = await supabaseAdmin
+      .from("athlete_guardians")
+      .select("parent_id")
+      .eq("athlete_id", a.id)
+      .neq("parent_id", parent.id);
+    if ((coGuardians ?? []).length > 0) continue;
+    out.push({ id: a.id, firstName: a.first_name, guardianEmail: a.guardian_email });
+  }
+  return out;
+}
+
+export type MinorChoice = { athleteId: string; action: "keep" | "delete" };
+
 export async function deleteAccountForUser(
   userId: string,
   email: string | null,
   initiatedBy: "self" | "admin",
+  minorChoices: MinorChoice[] = [],
 ): Promise<DeletionResult> {
+  const choiceFor = new Map(minorChoices.map((c) => [c.athleteId, c.action]));
   let role: DeletionRole = "unknown";
   let athletesDeleted = 0;
   let athletesTransferred = 0;
