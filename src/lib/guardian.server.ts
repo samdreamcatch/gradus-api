@@ -170,3 +170,64 @@ export async function sendGuardianMessageCopy(params: {
     console.error("[guardian] message copy failed", e);
   }
 }
+
+/**
+ * Shared entry point for "guardian on file" activity emails.
+ *
+ * Resolves eligibility (guardian email + claim token on file, no parent
+ * account, unclaimed) and the sender's display name, then mirrors the
+ * activity. Never throws — callers run this after their write commits.
+ */
+export async function mirrorGuardianActivity(params: {
+  athleteId: string;
+  senderRole: "coach" | "athlete";
+  /** Required when senderRole is "coach" — used to resolve the coach name. */
+  coachId?: string | null;
+  body: string;
+}): Promise<void> {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: athlete } = await supabaseAdmin
+      .from("athletes")
+      .select(
+        "first_name, last_name, parent_id, guardian_email, guardian_claimed_at, guardian_claim_token",
+      )
+      .eq("id", params.athleteId)
+      .maybeSingle();
+
+    if (
+      !athlete?.guardian_email ||
+      !athlete.guardian_claim_token ||
+      athlete.parent_id ||
+      athlete.guardian_claimed_at
+    ) {
+      return;
+    }
+
+    const athleteName = `${athlete.first_name} ${athlete.last_name}`.trim();
+
+    let senderName = athleteName || "Your athlete";
+    if (params.senderRole === "coach") {
+      senderName = "Your athlete's coach";
+      if (params.coachId) {
+        const { data: coach } = await supabaseAdmin
+          .from("coach_profiles")
+          .select("first_name, last_name")
+          .eq("id", params.coachId)
+          .maybeSingle();
+        if (coach) senderName = `Coach ${coach.first_name} ${coach.last_name}`.trim();
+      }
+    }
+
+    await sendGuardianMessageCopy({
+      to: athlete.guardian_email,
+      athleteName,
+      senderName,
+      senderRole: params.senderRole,
+      body: params.body,
+      token: athlete.guardian_claim_token,
+    });
+  } catch (e) {
+    console.error("[guardian] activity mirror failed", e);
+  }
+}
