@@ -64,6 +64,10 @@ const GROUPS: Group[] = [
     items: [{ to: "/admin/billing", label: "Billing", icon: CreditCard }],
   },
   {
+    label: "Content",
+    items: [{ to: "/admin/social-plans", label: "Social plans", icon: Share2 }],
+  },
+  {
     label: "Support",
     items: [
       { to: "/admin/feedback", label: "Feedback", icon: MessageSquare },
