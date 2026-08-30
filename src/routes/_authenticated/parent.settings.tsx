@@ -232,7 +232,6 @@ function ParentSettingsPage() {
 
             <SettingsGroup label="Plan">
               <PlanSection />
-              <AccountSecurityRow to="/parent/settings/account" />
             </SettingsGroup>
 
             <SettingsGroup label="Preferences">
@@ -245,7 +244,23 @@ function ParentSettingsPage() {
               </SettingsList>
             </SettingsGroup>
 
+            <SettingsGroup label="Account">
+              <AccountSecurityRow to="/parent/settings/account" />
+            </SettingsGroup>
+
+            <SettingsGroup label="Support">
+              <SettingsList>
+                <InstallAppRow />
+                <NativeAppSection />
+                <FeedbackSettingsRow />
+              </SettingsList>
+            </SettingsGroup>
+
             <LegalSection />
+
+            <SettingsList className="mt-6">
+              <SignOutRow />
+            </SettingsList>
           </>
         )}
       </div>
