@@ -408,11 +408,6 @@ function ReviewSummary({
                 className="flex justify-between border-b border-divider/60 py-1.5 text-sm"
               >
                 <span className="text-text-primary">{meta.label}</span>
-                {meta.standard ? (
-                  <span className="text-xs uppercase tracking-wider text-text-tertiary">
-                    {meta.standard}
-                  </span>
-                ) : null}
               </li>
             );
           })}
