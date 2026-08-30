@@ -2254,3 +2254,40 @@ export const adminDeleteUserHard = createServerFn({ method: "POST" })
 
     return { ok: true };
   });
+
+/** Admin action: return (creating if needed) the public share token for a plan. */
+export const adminGetPlanShareToken = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ planId: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const existing = await supabaseAdmin
+      .from("plans")
+      .select("id, share_token")
+      .eq("id", data.planId)
+      .maybeSingle();
+    if (existing.error) dbError(existing.error);
+    if (!existing.data) throw new Error("Plan not found.");
+    if (existing.data.share_token) return { token: existing.data.share_token };
+
+    const buf = new Uint8Array(12);
+    crypto.getRandomValues(buf);
+    const token = Array.from(buf, (b) => b.toString(36).padStart(2, "0")).join("");
+    const upd = await supabaseAdmin
+      .from("plans")
+      .update({ share_token: token, shared_at: new Date().toISOString() })
+      .eq("id", data.planId)
+      .is("share_token", null);
+    if (upd.error) {
+      const refetch = await supabaseAdmin
+        .from("plans")
+        .select("share_token")
+        .eq("id", data.planId)
+        .maybeSingle();
+      if (refetch.data?.share_token) return { token: refetch.data.share_token };
+      dbError(upd.error);
+    }
+    return { token };
+  });
