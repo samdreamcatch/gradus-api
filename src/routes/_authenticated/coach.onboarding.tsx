@@ -284,33 +284,11 @@ function OnboardingForm({ data }: { data: OnboardingData }) {
                   />
                 </div>
               </div>
-            </Step>
-          )}
+          </Step>
 
-          {currentKind === "review" && (
-            <Step title="Looks good?">
-              <ReviewSummary
-                firstName={firstName}
-                lastName={lastName}
-                sports={sports}
-                getSportMeta={getSportMeta}
-              />
-            </Step>
-          )}
-
-          <div className="mt-6 flex items-center justify-between">
-            <Button
-              variant="ghost"
-              onClick={() => setStep((s) => Math.max(1, s - 1))}
-              disabled={step === 1 || busy}
-            >
-              Back
-            </Button>
-            <Button
-              onClick={isLastStep ? handleFinish : handleContinue}
-              disabled={!canContinue || busy}
-            >
-              {busy ? "Saving…" : isLastStep ? "Finish" : "Continue"}
+          <div className="mt-6 flex justify-end">
+            <Button onClick={handleFinish} disabled={!canContinue || busy}>
+              {busy ? "Saving…" : "Finish"}
             </Button>
           </div>
         </div>
