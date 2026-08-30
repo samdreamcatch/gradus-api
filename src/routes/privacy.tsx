@@ -7,6 +7,8 @@ import { createFileRoute, useCanGoBack, useRouter } from "@tanstack/react-router
  * https://www.gradussports.com/privacy. Do not edit the wording here —
  * the two must stay identical, and changes go through counsel first.
  * If the published policy is revised, mirror it into this file unchanged.
+ *
+ * Last mirrored: 2026-08-30 (published "Last Updated: August 30, 2026").
  */
 export const Route = createFileRoute("/privacy")({
   head: () => ({
@@ -42,7 +44,7 @@ function PrivacyPage() {
         <header>
           <h1 className="font-display text-4xl">Privacy Policy</h1>
           <p className="mt-2 text-sm text-text-secondary">
-            Gradus Sports, Inc. · Effective Date: June 26, 2026 · Last Updated: June 26, 2026
+            Gradus Sports, Inc. · Effective Date: June 26, 2026 · Last Updated: August 30, 2026
           </p>
         </header>
 
@@ -72,10 +74,6 @@ function PrivacyPage() {
               browser data)
             </li>
             <li>Inferences drawn from the above to personalize the Service</li>
-            <li>
-              For Athlete accounts: name and date of birth only, plus in-app practice responses and
-              messages
-            </li>
           </ul>
 
           <p>
@@ -164,12 +162,17 @@ function PrivacyPage() {
 
           <h3 className="font-display text-xl">2.3 Information Provided by Athletes</h3>
           <p>
-            Athlete accounts are created by Parents. We collect only the following personal
-            information from or about Athletes:
+            Athlete accounts are created by Parents or Athletes themselves. We collect only the
+            following personal information from or about Athletes:
           </p>
           <ul className="list-disc space-y-1 pl-6">
             <li>First name (entered by Parent at account creation)</li>
             <li>Date of birth (entered by Parent at account creation)</li>
+            <li>Email address (if Athlete creates account before Parent, or if adult athlete)</li>
+            <li>
+              Parent/guardian email address (if an under 18 Athlete creates an account before their
+              Parent)
+            </li>
             <li>
               Practice responses, session check-ins, and content submitted within assigned practice
               plans
@@ -177,8 +180,8 @@ function PrivacyPage() {
             <li>Communications transmitted through the in-app messaging thread</li>
           </ul>
           <p>
-            We do not collect email addresses, phone numbers, physical addresses, photographs, or
-            video content from or about Athletes.
+            We do not collect phone numbers, physical addresses, photographs, or video content from
+            or about Athletes.
           </p>
 
           <h3 className="font-display text-xl">2.4 Information Collected Automatically</h3>
@@ -246,8 +249,13 @@ function PrivacyPage() {
           </p>
           <ul className="list-disc space-y-1 pl-6">
             <li>Supabase — database infrastructure and data storage</li>
+            <li>Stripe — payments infrastructure</li>
+            <li>
+              Cloudflare — application hosting and edge compute, content delivery, TLS termination,
+              and bot and abuse prevention (Cloudflare Turnstile) on sign-in and registration
+            </li>
             <li>ElevenLabs — AI-powered speech synthesis and voice processing features</li>
-            <li>Lovable Cloud — application development and hosting infrastructure</li>
+            <li>Lovable Cloud — application development and backend services</li>
             <li>
               Google LLC — email and productivity services (Google Workspace); AI model inference
               for in-app features (Google Gemini)
@@ -291,19 +299,24 @@ function PrivacyPage() {
 
           <h3 className="font-display text-xl">5.1 Applicability</h3>
           <p>
-            The Service is designed for use by youth athletes. All Athlete accounts on the Service
-            are held by individuals under the age of 18. We comply with the Children's Online
-            Privacy Protection Act (COPPA) with respect to Athletes under the age of 13, and we
-            apply consistent protections to all Athlete accounts regardless of age.
+            The Service is designed for use by athletes, including youth athletes. Some Athlete
+            accounts on the Service are held by individuals under the age of 18. We comply with the
+            Children's Online Privacy Protection Act (COPPA) with respect to Athletes under the age
+            of 13, and we apply consistent protections to all under 18 Athlete accounts regardless
+            of age.
           </p>
 
           <h3 className="font-display text-xl">5.2 Parental Consent</h3>
           <p>
-            Athlete accounts cannot be created by Athletes themselves. An Athlete account is created
-            by a Parent during the Parent's own account registration. By creating an Athlete
+            Athlete accounts cannot be created by Athletes under 18 themselves without the input of
+            a parent or guardian email address. Alternatively, an Athlete account is created by a
+            Parent during the Parent's own account registration. By creating an under 18 Athlete
             profile, the Parent represents and warrants that they are the Athlete's parent or legal
             guardian and provides verifiable parental consent under COPPA for the collection and use
-            of the Athlete's personal information as described in this Privacy Policy.
+            of the Athlete's personal information as described in this Privacy Policy. For Athletes
+            under 18 whose parent or guardian has not yet set up their Parent account, their parent
+            or guardian receives an email carbon copy of every interaction the athlete has with
+            other users, e.g. coaches, in the app.
           </p>
           <p>
             We do not knowingly collect personal information directly from children under 13 without
@@ -315,24 +328,24 @@ function PrivacyPage() {
           <h3 className="font-display text-xl">5.3 Limitations on Athlete Data</h3>
           <p>With respect to Athlete accounts, we:</p>
           <ul className="list-disc space-y-1 pl-6">
-            <li>Collect only a name and date of birth as personal identifiers</li>
-            <li>Do not collect contact information from Athletes</li>
+            <li>Collect only a name, email, and date of birth as personal identifiers</li>
+            <li>Do not collect phone numbers from Athletes</li>
             <li>Do not make Athlete profiles publicly visible</li>
             <li>
               Do not use Athlete information for advertising, behavioral profiling, or any purpose
               unrelated to providing the Service
             </li>
             <li>
-              Do not permit Athletes to communicate with any party outside their connected coach and
-              Parent within the Service
+              Do not permit Athletes to communicate with any party outside their connected coaches
+              and Parents or guardians within the Service
             </li>
           </ul>
 
           <h3 className="font-display text-xl">5.4 Parental Rights</h3>
           <p>
             A Parent may at any time request access to, correction of, or deletion of their
-            Athlete's personal information by contacting us at support@gradussports.com. We will
-            process such requests as described in Section 8.
+            Athlete's personal information either in-app or by contacting us at
+            support@gradussports.com. We will process such requests as described in Section 8.
           </p>
         </section>
 
@@ -367,9 +380,9 @@ function PrivacyPage() {
           <p>
             Upon deletion of a coach account, we retain practice plans, assigned moves, and coaching
             notes created by that coach, as this content forms part of the ongoing record of the
-            coaching relationship and may be referenced by connected Parents. Personal information
-            associated with the coach account (name and email address) will be deleted or
-            de-identified within a reasonable period following account deletion.
+            coaching relationship and may be referenced by connected Athletes and Parents. Personal
+            information associated with the coach account (name and email address) will be deleted
+            or de-identified within a reasonable period following account deletion.
           </p>
           <p>
             Upon deletion of a Parent account or upon a Parent's request for deletion of an
@@ -379,7 +392,7 @@ function PrivacyPage() {
             resolving disputes or preventing fraud.
           </p>
           <p>
-            Requests for deletion of personal information may be submitted to
+            Requests for deletion of personal information may be initiated in-app or submitted to
             support@gradussports.com.
           </p>
         </section>
@@ -395,10 +408,12 @@ function PrivacyPage() {
             <li>Object to or request restriction of certain processing activities</li>
           </ul>
           <p>
-            To exercise any of the above rights, please submit a written request to
-            support@gradussports.com. We will respond within the timeframe required by applicable
-            law. We may require verification of your identity prior to processing any request. We
-            reserve the right to deny requests that are unfounded, excessive, or prohibited by law.
+            Account deletion may be initiated directly in the app from your account settings. To
+            exercise this or any of the other rights listed above, you may also submit a written
+            request to support@gradussports.com. We will respond within the timeframe required by
+            applicable law. We may require verification of your identity prior to processing any
+            request. We reserve the right to deny requests that are unfounded, excessive, or
+            prohibited by law.
           </p>
         </section>
 
@@ -474,9 +489,10 @@ function PrivacyPage() {
             personal information as defined by the CCPA/CPRA:
           </p>
           <ul className="list-disc space-y-1 pl-6">
+            <li>Identifiers, including name and email address</li>
             <li>
-              Identifiers, including name and email address (coaches and Parents); first name
-              (Athletes)
+              Commercial information, including subscription plan, billing status, transaction
+              history for paid accounts
             </li>
             <li>
               Internet or other electronic network activity information, including usage data and
@@ -487,9 +503,10 @@ function PrivacyPage() {
             </li>
           </ul>
           <p>
-            We do not collect Social Security numbers, financial information, precise geolocation
-            data, biometric identifiers, health information, or characteristics of protected
-            classifications from any user.
+            Payment card numbers and financial account details are collected and processed directly
+            by Stripe, Inc. and are not stored on Gradus systems. We do not collect Social Security
+            numbers, precise geolocation data, biometric identifiers, health information, or
+            characteristics of protected classifications from any user.
           </p>
 
           <h3 className="font-display text-xl">A.2 Purposes for Collection</h3>
