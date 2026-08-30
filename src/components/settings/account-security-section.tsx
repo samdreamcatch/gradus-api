@@ -4,7 +4,13 @@ import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
-import { deleteMyAccount } from "@/lib/account-deletion.functions";
+import {
+  DELETE_CONFIRM_PHRASE,
+  deleteMyAccount,
+  getDeletionImpact,
+} from "@/lib/account-deletion.functions";
+import { useQuery } from "@tanstack/react-query";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -147,7 +153,6 @@ export function AccountSecuritySection() {
 function DeleteAccountDialog({
   open,
   onOpenChange,
-  currentEmail,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -155,17 +160,33 @@ function DeleteAccountDialog({
 }) {
   const [typed, setTyped] = useState("");
   const [deleting, setDeleting] = useState(false);
+  const [choices, setChoices] = useState<Record<string, "keep" | "delete">>({});
   const deleteFn = useServerFn(deleteMyAccount);
+  const impactFn = useServerFn(getDeletionImpact);
   const navigate = useNavigate();
 
-  const matches =
-    !!currentEmail && typed.trim().toLowerCase() === currentEmail.trim().toLowerCase();
+  const { data: impact } = useQuery({
+    queryKey: ["deletion-impact"],
+    queryFn: () => impactFn(),
+    enabled: open,
+  });
+  const minors = impact?.minors ?? [];
+
+  const matches = typed.trim().toUpperCase() === DELETE_CONFIRM_PHRASE;
 
   async function confirmDelete() {
-    if (!matches || !currentEmail) return;
+    if (!matches) return;
     setDeleting(true);
     try {
-      const result = await deleteFn({ data: { confirmEmail: typed.trim() } });
+      const result = await deleteFn({
+        data: {
+          confirmPhrase: typed.trim(),
+          minorChoices: minors.map((m) => ({
+            athleteId: m.id,
+            action: choices[m.id] ?? ("keep" as const),
+          })),
+        },
+      });
       if (result && "ok" in result && result.ok === false) {
         toast.error(result.message);
         return;
@@ -184,11 +205,14 @@ function DeleteAccountDialog({
     <AlertDialog
       open={open}
       onOpenChange={(o) => {
-        if (!o) setTyped("");
+        if (!o) {
+          setTyped("");
+          setChoices({});
+        }
         onOpenChange(o);
       }}
     >
-      <AlertDialogContent>
+      <AlertDialogContent className="max-h-[85dvh] overflow-y-auto">
         <AlertDialogHeader>
           <AlertDialogTitle>Delete your account?</AlertDialogTitle>
           <AlertDialogDescription asChild>
@@ -203,22 +227,66 @@ function DeleteAccountDialog({
               </p>
               <p>
                 If you're a parent, athletes with another guardian on the account transfer to them.
-                Otherwise their profile is de-identified.
+                An athlete with no other guardian and no sign-in of their own is deleted along with
+                their plans and practice log.
               </p>
             </div>
           </AlertDialogDescription>
         </AlertDialogHeader>
+
+        {minors.length > 0 ? (
+          <div className="space-y-3 rounded-md border border-divider bg-elevated p-3">
+            <p className="text-xs text-text-secondary">
+              These athletes are under 18 and sign in themselves. You're the only adult on their
+              account, so choose what happens next.
+            </p>
+            {minors.map((m) => (
+              <div key={m.id} className="space-y-1.5">
+                <p className="text-sm font-bold text-text-primary">{m.firstName}</p>
+                <RadioGroup
+                  value={choices[m.id] ?? "keep"}
+                  onValueChange={(v) =>
+                    setChoices((prev) => ({ ...prev, [m.id]: v as "keep" | "delete" }))
+                  }
+                >
+                  <div className="flex items-start gap-2">
+                    <RadioGroupItem value="keep" id={`minor-keep-${m.id}`} className="mt-0.5" />
+                    <Label
+                      htmlFor={`minor-keep-${m.id}`}
+                      className="text-xs font-normal leading-snug"
+                    >
+                      Keep sending copies to {m.guardianEmail ?? "my email"} — {m.firstName} keeps
+                      their account and an adult stays on file.
+                    </Label>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <RadioGroupItem value="delete" id={`minor-delete-${m.id}`} className="mt-0.5" />
+                    <Label
+                      htmlFor={`minor-delete-${m.id}`}
+                      className="text-xs font-normal leading-snug"
+                    >
+                      Delete {m.firstName}'s account too — their sign-in, plans and practice log are
+                      erased with mine.
+                    </Label>
+                  </div>
+                </RadioGroup>
+              </div>
+            ))}
+          </div>
+        ) : null}
+
         <div className="space-y-1.5">
-          <Label htmlFor="delete-confirm-email" className="text-xs">
-            Type {currentEmail ?? "your email"} to confirm
+          <Label htmlFor="delete-confirm-phrase" className="text-xs">
+            Type {DELETE_CONFIRM_PHRASE} to confirm
           </Label>
           <Input
-            id="delete-confirm-email"
-            type="email"
+            id="delete-confirm-phrase"
+            type="text"
             autoComplete="off"
+            autoCapitalize="characters"
             value={typed}
             onChange={(e) => setTyped(e.target.value)}
-            placeholder={currentEmail ?? "you@example.com"}
+            placeholder={DELETE_CONFIRM_PHRASE}
           />
         </div>
         <AlertDialogFooter>
