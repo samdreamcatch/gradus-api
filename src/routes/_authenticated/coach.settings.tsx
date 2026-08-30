@@ -82,10 +82,6 @@ function SettingsPage() {
           <SettingsList>
             <NameDisclosure firstName={data.profile.firstName} lastName={data.profile.lastName} />
             <SettingsRow icon={<Mail className="size-4" />} label="Email" value={email ?? "—"} />
-            <InstallAppRow />
-            <NativeAppSection />
-            <FeedbackSettingsRow />
-            <SignOutRow />
           </SettingsList>
         </SettingsGroup>
 
@@ -109,7 +105,6 @@ function SettingsPage() {
 
         <SettingsGroup label="Plan">
           <PlanSection profile={data.profile} />
-          <AccountSecurityRow to="/coach/settings/account" />
         </SettingsGroup>
 
         <SettingsGroup label="Preferences">
@@ -122,7 +117,23 @@ function SettingsPage() {
           </SettingsList>
         </SettingsGroup>
 
+        <SettingsGroup label="Account">
+          <AccountSecurityRow to="/coach/settings/account" />
+        </SettingsGroup>
+
+        <SettingsGroup label="Support">
+          <SettingsList>
+            <InstallAppRow />
+            <NativeAppSection />
+            <FeedbackSettingsRow />
+          </SettingsList>
+        </SettingsGroup>
+
         <LegalSection />
+
+        <SettingsList className="mt-6">
+          <SignOutRow />
+        </SettingsList>
       </div>
       <CoachBottomNav />
     </>
