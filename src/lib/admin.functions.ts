@@ -1606,6 +1606,31 @@ export const adminSoftDeleteUser = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+/** Permanent, irreversible deletion — same code path as self-service deletion. */
+export const adminHardDeleteUser = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ userId: z.string().uuid(), confirmEmail: z.string().email() }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    if (data.userId === context.userId) {
+      throw new Error("You cannot delete your own account from the admin panel.");
+    }
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: userInfo, error: getErr } = await supabaseAdmin.auth.admin.getUserById(
+      data.userId,
+    );
+    if (getErr) throw new Error(getErr.message);
+    const email = userInfo?.user?.email ?? "";
+    if (email.toLowerCase() !== data.confirmEmail.toLowerCase()) {
+      throw new Error("Confirmation email did not match.");
+    }
+    const { deleteAccountForUser } = await import("@/lib/account-deletion.server");
+    const result = await deleteAccountForUser(data.userId, email, "admin");
+    return { ok: true, ...result };
+  });
+
 export const adminRestoreUser = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ userId: z.string().uuid() }).parse(input))
