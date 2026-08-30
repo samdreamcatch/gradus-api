@@ -19,7 +19,7 @@ export function LegalSection() {
         <SettingsButtonRow
           icon={<ShieldCheck className="size-4 text-text-tertiary" />}
           label="Privacy Policy"
-          description="What we collect, and how athlete data is protected"
+          
           onClick={() => void navigate({ to: "/privacy" })}
           trailing={chevron}
         />
