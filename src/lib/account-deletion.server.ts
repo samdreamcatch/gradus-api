@@ -213,7 +213,7 @@ export async function deleteAccountForUser(
 
     const { data: athletes } = await supabaseAdmin
       .from("athletes")
-      .select("id, user_id")
+      .select("id, user_id, birthdate")
       .eq("parent_id", parent.id);
 
     for (const athlete of athletes ?? []) {
@@ -226,9 +226,24 @@ export async function deleteAccountForUser(
       if (successor) {
         await supabaseAdmin.from("athletes").update({ parent_id: successor }).eq("id", athlete.id);
         athletesTransferred += 1;
+      } else if (athlete.user_id && isMinor(athlete.birthdate)) {
+        // Minor with their own sign-in and no other guardian. Either an adult
+        // stays reachable on the profile, or the athlete goes too — we never
+        // leave a minor with no adult on file. Default is to keep.
+        if (choiceFor.get(athlete.id) === "delete") {
+          await supabaseAdmin.from("athletes").update({ parent_id: null }).eq("id", athlete.id);
+          const athleteUserId = athlete.user_id;
+          await purgeAthlete(athlete.id);
+          const { error } = await supabaseAdmin.auth.admin.deleteUser(athleteUserId);
+          if (error) console.error("[account-deletion] athlete auth delete failed", error);
+          athletesDeleted += 1;
+        } else {
+          // guardian_email stays on file so recaps and copies keep reaching
+          // the departing guardian's address.
+          await supabaseAdmin.from("athletes").update({ parent_id: null }).eq("id", athlete.id);
+        }
       } else if (athlete.user_id) {
-        // The athlete signs in themselves, so their profile is theirs to keep
-        // or delete. Only the guardian linkage goes away.
+        // Adult athlete with their own sign-in: just drop the guardian link.
         await supabaseAdmin
           .from("athletes")
           .update({
