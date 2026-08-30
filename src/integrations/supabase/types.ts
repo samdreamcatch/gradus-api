@@ -2674,6 +2674,7 @@ export type Database = {
     }
     Functions: {
       activate_plan: { Args: { _plan_id: string }; Returns: undefined }
+      admin_run_readonly_sql: { Args: { _sql: string }; Returns: Json }
       athlete_can_self_connect: {
         Args: { _athlete_id: string }
         Returns: boolean
