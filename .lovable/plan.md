@@ -18,8 +18,9 @@ Today the parent branch handles three cases. The last one is what changes:
 When the deleting parent has at least one athlete in that third group, the dialog shows a per-athlete choice before they can confirm:
 
 - **Keep sending copies to my email** (default) — the athlete's `guardian_email` stays on file, so lesson recaps and communication copies keep going to that address even though the guardian's Gradus account is gone.
-- **Stop the copies** — the guardian email is cleared; the minor's account continues without an adult on file.
 - **Delete this athlete's account too** — the athlete's sign-in and profile are erased with the guardian's, same as the no-account case.
+
+There is no option to leave a minor with no adult on file: either an adult stays reachable, or the minor's account goes too.
 
 Adult athletes (18+) with their own sign-in are not offered this — their guardian link is simply removed.
 
@@ -31,9 +32,9 @@ Adult athletes (18+) with their own sign-in are not offered this — their guard
   - Render one radio group (existing `RadioGroup`/`Label` primitives) per affected athlete with the three options above; default `keep`.
   - Update the description paragraph to match the real behaviour (transfer / erase / minor choice).
 - `src/lib/account-deletion.functions.ts`
-  - `deleteMyAccount` input becomes `{ confirmPhrase: string, minorChoices: Array<{ athleteId: string, action: "keep" | "clear" | "delete" }> }`; validate the phrase equals `DELETE ACCOUNT`.
+  - `deleteMyAccount` input becomes `{ confirmPhrase: string, minorChoices: Array<{ athleteId: string, action: "keep" | "delete" }> }`; validate the phrase equals `DELETE ACCOUNT`.
   - Add `getDeletionImpact` (authenticated, read-only) for the dialog.
 - `src/lib/account-deletion.server.ts`
-  - `deleteAccountForUser` takes the choices map. In the parent branch, for a self-signing minor with no successor: `keep` → detach `parent_id` only and leave `guardian_email`; `clear` → detach and null `guardian_email`; `delete` → `purgeAthlete` plus removing that athlete's auth user.
+  - `deleteAccountForUser` takes the choices map. In the parent branch, for a self-signing minor with no successor: `keep` → detach `parent_id` only and leave `guardian_email` in place; `delete` → `purgeAthlete` plus removing that athlete's auth user.
   - Unknown/missing choice defaults to `keep` so a server-side call can never silently strip oversight.
 - Verify with typecheck and lint.
