@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ImpersonateButton } from "@/components/admin/impersonate-button";
 import { GuardianInviteControls } from "@/components/admin/guardian-invite-controls";
+import { PlanShareLinks } from "@/components/admin/plan-share-links";
 
 export const Route = createFileRoute("/_authenticated/admin/users/$userId")({
   component: UserDetail,
@@ -171,6 +172,7 @@ function UserDetail() {
                 />
                 <Field label="Sports" value={(data.coach.sports as string[]).join(", ") || "—"} />
               </dl>
+              <PlanShareLinks plans={(data.coach.activePlans as any[]) ?? []} />
               <CodeList
                 label="Coach invite code"
                 codes={
@@ -208,7 +210,13 @@ function UserDetail() {
                   label="Coach link"
                   value={data.parent.coach_id ? "Linked" : "Beta (no coach)"}
                 />
+                <Field label="Sports" value={((data.parent.sports as string[]) ?? []).join(", ") || "—"} />
+                <Field
+                  label="Active plans"
+                  value={`${data.parent.activePlansCount} / ${data.parent.plansCount}`}
+                />
               </dl>
+              <PlanShareLinks plans={(data.parent.activePlans as any[]) ?? []} />
               <div>
                 <Eyebrow size="small" tone="tertiary" weight="normal" tracking="wide">
                   Athletes ({(data.parent.athletes as any[]).length})
@@ -270,6 +278,10 @@ function UserDetail() {
                   value={`${data.athlete.activePlansCount} / ${data.athlete.plansCount}`}
                 />
                 <Field
+                  label="Sports"
+                  value={((data.athlete.sports as string[]) ?? []).join(", ") || "—"}
+                />
+                <Field
                   label="Parent / guardian email"
                   value={(data.athlete.guardian_email as string | null) ?? "None on file"}
                 />
@@ -302,6 +314,7 @@ function UserDetail() {
                   ))}
                 </ul>
               </div>
+              <PlanShareLinks plans={(data.athlete.activePlans as any[]) ?? []} />
               <CodeList
                 label="Invite codes"
                 codes={[
