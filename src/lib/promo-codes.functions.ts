@@ -438,6 +438,7 @@ export const listPromoCodeUsers = createServerFn({ method: "POST" })
     // Fetch names for admin-applied users whose profile has no stash.
     const knownProfiles = new Map<string, { kind: "coach" | "parent" | "athlete"; name: string }>();
     for (const c of coaches.data ?? []) {
+      if (!c.user_id) continue;
       knownProfiles.set(c.user_id, {
         kind: "coach",
         name: `${c.first_name ?? ""} ${c.last_name ?? ""}`.trim() || "(coach)",
@@ -478,6 +479,7 @@ export const listPromoCodeUsers = createServerFn({ method: "POST" })
           .not("user_id", "is", null),
       ]);
       for (const c of mc.data ?? []) {
+        if (!c.user_id) continue;
         knownProfiles.set(c.user_id, {
           kind: "coach",
           name: `${c.first_name ?? ""} ${c.last_name ?? ""}`.trim() || "(coach)",
