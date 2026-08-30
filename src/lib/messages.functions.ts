@@ -410,44 +410,46 @@ export const sendMessage = createServerFn({ method: "POST" })
         .eq("id", room.id);
 
       // Guardian-on-file mirror: while a minor athlete's parent hasn't claimed
-      // their account yet, email them a copy of what the coach sends so they
-      // keep full visibility without being forced to register.
-      if (role === "coach" && data.kind === "text") {
+      // their account yet, email them a copy of what the coach or the athlete
+      // sends so they keep full visibility without being forced to register.
+      if (role === "coach" || role === "athlete") {
         try {
-          const { data: athlete } = await supabaseAdmin
-            .from("athletes")
-            .select(
-              "first_name, last_name, parent_id, guardian_email, guardian_claimed_at, guardian_claim_token",
-            )
-            .eq("id", room.athleteId!)
-            .maybeSingle();
-          if (
-            athlete?.guardian_email &&
-            athlete.guardian_claim_token &&
-            !athlete.parent_id &&
-            !athlete.guardian_claimed_at
-          ) {
-            const { data: coach } = await supabaseAdmin
-              .from("coach_profiles")
-              .select("first_name, last_name")
-              .eq("id", room.coachId!)
-              .maybeSingle();
-            const { sendGuardianMessageCopy } = await import("./guardian.server");
-            await sendGuardianMessageCopy({
-              to: athlete.guardian_email,
-              athleteName: `${athlete.first_name} ${athlete.last_name}`.trim(),
-              senderName: coach
-                ? `Coach ${coach.first_name} ${coach.last_name}`.trim()
-                : "Your athlete's coach",
-              senderRole: "coach",
-              body: data.body,
-              token: athlete.guardian_claim_token,
-            });
+          let mirrorBody: string;
+          if (data.kind === "text") {
+            mirrorBody = data.body;
+          } else {
+            const secs = data.durationSeconds;
+            const stamp = `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, "0")}`;
+            let transcript: string | null = null;
+            try {
+              if (voiceBytes) {
+                const { transcribeWithElevenLabs } = await import("./voice.server");
+                const blob = new Blob([voiceBytes as unknown as BlobPart], {
+                  type: data.mimeType,
+                });
+                const text = await transcribeWithElevenLabs(blob);
+                transcript = text.trim() || null;
+              }
+            } catch (te) {
+              console.error("[messages] guardian voice transcription failed", te);
+            }
+            mirrorBody = transcript
+              ? `Voice note (${stamp}) — transcript:\n\n${transcript}`
+              : `Voice note (${stamp}) — transcript unavailable. Sign in to listen.`;
           }
+
+          const { mirrorGuardianActivity } = await import("./guardian.server");
+          await mirrorGuardianActivity({
+            athleteId: room.athleteId!,
+            senderRole: role,
+            coachId: room.coachId ?? null,
+            body: mirrorBody,
+          });
         } catch (e) {
           console.error("[messages] guardian mirror failed", e);
         }
       }
+
     } else {
       await supabaseAdmin
         .from("direct_rooms")
