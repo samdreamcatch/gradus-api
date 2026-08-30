@@ -481,15 +481,17 @@ export const getUserDetail = createServerFn({ method: "POST" })
       let parentSports: string[] = [];
       let parentPlans: PlanRow[] = [];
       if (athleteIds.length > 0) {
-        const [sportRows, primaryRows, planRows] = await Promise.all([
+        const [sportRows, primaryRows, goalRows, planRows] = await Promise.all([
           supabaseAdmin.from("coach_athlete_sports").select("sport").in("athlete_id", athleteIds),
           supabaseAdmin.from("athlete_primary_coaches").select("sport").in("athlete_id", athleteIds),
+          supabaseAdmin.from("athlete_goals").select("sport").in("athlete_id", athleteIds),
           supabaseAdmin.from("plans").select(PLAN_COLS).in("athlete_id", athleteIds),
         ]);
         parentSports = Array.from(
           new Set([
             ...(sportRows.data ?? []).map((r: any) => r.sport),
             ...(primaryRows.data ?? []).map((r: any) => r.sport),
+            ...(goalRows.data ?? []).map((r: any) => r.sport),
           ]),
         ).filter(Boolean);
         parentPlans = realPlans(planRows.data as unknown as PlanRow[]);
