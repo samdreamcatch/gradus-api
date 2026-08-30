@@ -82,8 +82,13 @@ function SettingsPage() {
           <SettingsList>
             <NameDisclosure firstName={data.profile.firstName} lastName={data.profile.lastName} />
             <SettingsRow icon={<Mail className="size-4" />} label="Email" value={email ?? "—"} />
+            <InstallAppRow />
+            <NativeAppSection />
+            <FeedbackSettingsRow />
+            <SignOutRow />
           </SettingsList>
         </SettingsGroup>
+
 
         <SettingsGroup label="Coaching">
           <SettingsList>
