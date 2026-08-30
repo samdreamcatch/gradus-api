@@ -136,7 +136,6 @@ function OnboardingForm({ data }: { data: OnboardingData }) {
     distinctPrimarySportCount,
   });
 
-  const [step, setStep] = useState(1);
   const [firstName, setFirstName] = useState(data.profile.firstName);
   const [lastName, setLastName] = useState(data.profile.lastName);
 
@@ -156,14 +155,6 @@ function OnboardingForm({ data }: { data: OnboardingData }) {
   const saveProfile = useSaveCoachProfile();
   const saveLevels = useSaveCoachLevels();
   const complete = useCompleteOnboarding();
-
-  // Resolve sport metadata regardless of built-in/custom.
-  const getSportMeta = (key: string): { label: string; standard?: string; custom: boolean } => {
-    const builtIn = getSport(key);
-    if (builtIn) return { label: builtIn.label, standard: builtIn.standard, custom: false };
-    const custom = sports.find((s) => s.key === key);
-    return { label: custom?.label ?? prettify(key), custom: true };
-  };
 
   const toggleSport = (sport: SelectedSport) => {
     setSports((prev) => {
@@ -205,35 +196,17 @@ function OnboardingForm({ data }: { data: OnboardingData }) {
     setSports((prev) => prev.filter((s) => s.key !== key));
   };
 
-  type StepKind = "profile" | "review";
-  const stepOrder: StepKind[] = ["profile", "review"];
-  const totalSteps = stepOrder.length;
-  const currentKind = stepOrder[step - 1];
-  const isLastStep = step === totalSteps;
-
   const canContinue =
-    currentKind === "profile"
-      ? firstName.trim().length > 0 && lastName.trim().length > 0 && sports.length > 0
-      : true;
-
-  const handleContinue = async () => {
-    try {
-      if (currentKind === "profile") {
-        await saveProfile.mutateAsync({
-          firstName: firstName.trim(),
-          lastName: lastName.trim(),
-        });
-      }
-      setStep((s) => s + 1);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't save");
-    }
-  };
+    firstName.trim().length > 0 && lastName.trim().length > 0 && sports.length > 0;
 
   const claim = useServerFn(claimParentInvite);
 
   const handleFinish = async () => {
     try {
+      await saveProfile.mutateAsync({
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+      });
       await saveLevels.mutateAsync({ entries: defaultEntriesForSports(sports) });
       await complete.mutateAsync();
     } catch (err) {
@@ -275,82 +248,45 @@ function OnboardingForm({ data }: { data: OnboardingData }) {
     <>
       <div className="flex min-h-dvh items-start justify-center px-4 pt-8 pb-app-chrome sm:items-center">
         <div className="w-full max-w-2xl rounded-2xl bg-card p-8 shadow-[0_10px_40px_-12px_rgba(0,0,0,0.15)] sm:p-10">
-          <div className="mb-4 flex items-center justify-between">
-            <p className="text-xs font-bold uppercase tracking-widest text-accent-ink">
-              Step {step} of {totalSteps}
-            </p>
-            <div className="flex gap-1.5">
-              {Array.from({ length: totalSteps }, (_, i) => i + 1).map((n) => (
-                <span
-                  key={n}
-                  className={`h-1.5 w-6 rounded-full ${n <= step ? "bg-accent" : "bg-divider"}`}
-                />
-              ))}
-            </div>
-          </div>
-
-          {currentKind === "profile" && (
-            <Step title="Tell us about yourself">
-              <div className="space-y-6">
-                <div className="grid gap-2 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="firstName">First name</Label>
-                    <Input
-                      id="firstName"
-                      value={firstName}
-                      onChange={(e) => setFirstName(e.target.value)}
-                      maxLength={80}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="lastName">Last name</Label>
-                    <Input
-                      id="lastName"
-                      value={lastName}
-                      onChange={(e) => setLastName(e.target.value)}
-                      maxLength={80}
-                    />
-                  </div>
+          <Step title="Tell us about yourself">
+            <div className="space-y-6">
+              <div className="grid gap-2 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="firstName">First name</Label>
+                  <Input
+                    id="firstName"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    maxLength={80}
+                  />
                 </div>
                 <div className="space-y-2">
-                  <Label>Which sports do you coach?</Label>
-                  <SportMultiselect
-                    selected={sports}
-                    customSports={customSports}
-                    onToggle={toggleSport}
-                    onAddCustom={addCustomSport}
-                    onRemoveCustom={removeCustomSport}
-                    maxPrimarySports={primarySportCap}
+                  <Label htmlFor="lastName">Last name</Label>
+                  <Input
+                    id="lastName"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    maxLength={80}
                   />
                 </div>
               </div>
-            </Step>
-          )}
+              <div className="space-y-2">
+                <Label>Which sports do you coach?</Label>
+                <SportMultiselect
+                  selected={sports}
+                  customSports={customSports}
+                  onToggle={toggleSport}
+                  onAddCustom={addCustomSport}
+                  onRemoveCustom={removeCustomSport}
+                  maxPrimarySports={primarySportCap}
+                />
+              </div>
+            </div>
+          </Step>
 
-          {currentKind === "review" && (
-            <Step title="Looks good?">
-              <ReviewSummary
-                firstName={firstName}
-                lastName={lastName}
-                sports={sports}
-                getSportMeta={getSportMeta}
-              />
-            </Step>
-          )}
-
-          <div className="mt-6 flex items-center justify-between">
-            <Button
-              variant="ghost"
-              onClick={() => setStep((s) => Math.max(1, s - 1))}
-              disabled={step === 1 || busy}
-            >
-              Back
-            </Button>
-            <Button
-              onClick={isLastStep ? handleFinish : handleContinue}
-              disabled={!canContinue || busy}
-            >
-              {busy ? "Saving…" : isLastStep ? "Finish" : "Continue"}
+          <div className="mt-6 flex justify-end">
+            <Button onClick={handleFinish} disabled={!canContinue || busy}>
+              {busy ? "Saving…" : "Finish"}
             </Button>
           </div>
         </div>
@@ -374,45 +310,6 @@ function Step({
       <h1 className="text-3xl sm:text-4xl">{title}</h1>
       {subtitle && <p className="mt-2 text-sm text-text-secondary">{subtitle}</p>}
       <div className="mt-5">{children}</div>
-    </div>
-  );
-}
-
-function ReviewSummary({
-  firstName,
-  lastName,
-  sports,
-  getSportMeta,
-}: {
-  firstName: string;
-  lastName: string;
-  sports: SelectedSport[];
-  getSportMeta: (key: string) => { label: string; standard?: string; custom: boolean };
-}) {
-  return (
-    <div className="space-y-3">
-      <div>
-        <p className="text-xs uppercase tracking-wider text-text-secondary">Coach</p>
-        <p className="mt-1 text-lg font-semibold text-text-primary">
-          {firstName} {lastName}
-        </p>
-      </div>
-      <div>
-        <p className="text-xs uppercase tracking-wider text-text-secondary">Sports</p>
-        <ul className="mt-2 space-y-1">
-          {sports.map((s) => {
-            const meta = getSportMeta(s.key);
-            return (
-              <li
-                key={s.key}
-                className="flex justify-between border-b border-divider/60 py-1.5 text-sm"
-              >
-                <span className="text-text-primary">{meta.label}</span>
-              </li>
-            );
-          })}
-        </ul>
-      </div>
     </div>
   );
 }
