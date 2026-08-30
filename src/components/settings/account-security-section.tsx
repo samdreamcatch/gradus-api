@@ -47,7 +47,7 @@ function friendlyError(err: unknown, fallback: string) {
  * Shared account & security actions rendered inside its own SettingsGroup.
  * Drop <AccountSecuritySection /> into any settings page.
  */
-export function AccountSecuritySection() {
+export function AccountSecuritySection({ showLabel = true }: { showLabel?: boolean } = {}) {
   const email = useCurrentUserEmail();
   const [sendingReset, setSendingReset] = useState(false);
   const [sendingMagic, setSendingMagic] = useState(false);
@@ -98,7 +98,7 @@ export function AccountSecuritySection() {
 
   return (
     <>
-      <SettingsGroup label="Account & security">
+      <SettingsGroup label={showLabel ? "Account & security" : undefined}>
         <SettingsList>
           <SettingsButtonRow
             icon={
