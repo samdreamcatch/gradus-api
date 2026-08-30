@@ -509,12 +509,13 @@ export const setPlanStatus = createServerFn({ method: "POST" })
     if (data.status === "active") {
       const { data: owned, error: ownErr } = await supabase
         .from("plans")
-        .select("id, athlete_id")
+        .select("id, athlete_id, title, status")
         .eq("id", data.id)
         .eq("coach_id", coachId)
         .maybeSingle();
       if (ownErr) dbError(ownErr);
       if (!owned) throw new Error("Plan not found");
+
       // Athlete-scoped conflict logic only runs when an athlete is assigned.
       // A plan with no athlete is a public/social share and activates directly.
       if (owned.athlete_id) {
