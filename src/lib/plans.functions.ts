@@ -555,6 +555,23 @@ export const setPlanStatus = createServerFn({ method: "POST" })
         .eq("id", data.id)
         .eq("coach_id", coachId);
       if (error) dbError(error);
+
+      // Guardian-on-file: email a copy of the assignment to an unclaimed
+      // guardian, but only on the transition into active.
+      if (owned.athlete_id && owned.status !== "active") {
+        try {
+          const { mirrorGuardianActivity } = await import("./guardian.server");
+          await mirrorGuardianActivity({
+            athleteId: owned.athlete_id,
+            senderRole: "coach",
+            coachId,
+            body: `Assigned a new plan: ${owned.title ?? "Untitled plan"}`,
+          });
+        } catch (e) {
+          console.error("[plans] guardian plan mirror failed", e);
+        }
+      }
+
     } else {
       const { error } = await supabase
         .from("plans")
