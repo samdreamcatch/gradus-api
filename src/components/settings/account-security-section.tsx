@@ -125,11 +125,122 @@ export function AccountSecuritySection() {
             description="Both your current and new address will need to confirm."
             onClick={() => setChangeOpen(true)}
           />
+          <SettingsButtonRow
+            icon={<Trash2 className="size-4" />}
+            label="Delete account"
+            description="Permanently delete your account and personal data."
+            tone="destructive"
+            onClick={() => setDeleteOpen(true)}
+          />
         </SettingsList>
       </SettingsGroup>
 
       <ChangeEmailSheet open={changeOpen} onOpenChange={setChangeOpen} currentEmail={email} />
+      <DeleteAccountDialog open={deleteOpen} onOpenChange={setDeleteOpen} currentEmail={email} />
     </>
+  );
+}
+
+/* ---------- Delete account ---------- */
+
+function DeleteAccountDialog({
+  open,
+  onOpenChange,
+  currentEmail,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  currentEmail: string | null;
+}) {
+  const [typed, setTyped] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const deleteFn = useServerFn(deleteMyAccount);
+  const navigate = useNavigate();
+
+  const matches =
+    !!currentEmail && typed.trim().toLowerCase() === currentEmail.trim().toLowerCase();
+
+  async function confirmDelete() {
+    if (!matches || !currentEmail) return;
+    setDeleting(true);
+    try {
+      const result = await deleteFn({ data: { confirmEmail: typed.trim() } });
+      if (result && "ok" in result && result.ok === false) {
+        toast.error(result.message);
+        return;
+      }
+      await supabase.auth.signOut();
+      toast.success("Your account has been deleted.");
+      void navigate({ to: "/" });
+    } catch (err) {
+      toast.error(friendlyError(err, "Couldn't delete your account."));
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  return (
+    <AlertDialog
+      open={open}
+      onOpenChange={(o) => {
+        if (!o) setTyped("");
+        onOpenChange(o);
+      }}
+    >
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete your account?</AlertDialogTitle>
+          <AlertDialogDescription asChild>
+            <div className="space-y-2 text-left">
+              <p>
+                This is immediate and can't be undone. Your name, email and sign-in are deleted, any
+                active subscription is cancelled, and your voice notes and uploads are removed.
+              </p>
+              <p>
+                Shared history stays readable for the people you worked with — your messages remain
+                in their threads with the content removed and no name attached.
+              </p>
+              <p>
+                If you're a parent, athletes with another guardian on the account transfer to them.
+                Otherwise their profile is de-identified.
+              </p>
+            </div>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <div className="space-y-1.5">
+          <Label htmlFor="delete-confirm-email" className="text-xs">
+            Type {currentEmail ?? "your email"} to confirm
+          </Label>
+          <Input
+            id="delete-confirm-email"
+            type="email"
+            autoComplete="off"
+            value={typed}
+            onChange={(e) => setTyped(e.target.value)}
+            placeholder={currentEmail ?? "you@example.com"}
+          />
+        </div>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            disabled={!matches || deleting}
+            onClick={(e) => {
+              e.preventDefault();
+              void confirmDelete();
+            }}
+          >
+            {deleting ? (
+              <>
+                <Loader2 className="mr-2 size-4 animate-spin" />
+                Deleting…
+              </>
+            ) : (
+              "Delete my account"
+            )}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
 
