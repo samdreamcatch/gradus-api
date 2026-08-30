@@ -1,0 +1,44 @@
+<svg viewBox="0 0 640 260" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    text { font-family: var(--font-sans); fill: hsl(var(--foreground)); font-size: 14px; }
+    .s { font-size: 12px; fill: hsl(var(--muted-foreground)); }
+    .m { font-family: var(--font-mono); font-size: 12px; fill: hsl(var(--muted-foreground)); }
+    .box { fill: none; stroke: hsl(var(--muted-foreground)); stroke-width: 1; }
+    .wire { stroke: hsl(var(--muted-foreground)); stroke-width: 1; fill: none; }
+    .zone { fill: none; stroke: hsl(var(--border)); stroke-dasharray: 4 3; }
+  </style>
+  <defs>
+    <marker id="a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0 0 L8 4 L0 8 z" fill="hsl(var(--muted-foreground))"/>
+    </marker>
+  </defs>
+
+  <rect class="zone" x="8" y="8" width="180" height="150" rx="8"/>
+  <text class="s" x="20" y="28">admin page</text>
+  <rect class="box" x="28" y="44" width="140" height="40" rx="8"/>
+  <text x="98" y="69" text-anchor="middle">Question box</text>
+  <rect class="box" x="28" y="100" width="140" height="40" rx="8"/>
+  <text x="98" y="125" text-anchor="middle">Results table</text>
+
+  <rect class="box" x="236" y="44" width="150" height="40" rx="8"/>
+  <text x="311" y="69" text-anchor="middle">AI → SQL draft</text>
+
+  <rect x="236" y="112" width="150" height="44" rx="8" fill="hsl(var(--accent))" stroke="none"/>
+  <text x="311" y="132" text-anchor="middle" style="fill:hsl(var(--accent-foreground))">Read-only guard</text>
+  <text x="311" y="148" text-anchor="middle" class="s" style="fill:hsl(var(--accent-foreground))">SELECT only · row + time caps</text>
+
+  <rect class="box" x="446" y="112" width="170" height="44" rx="8"/>
+  <text x="531" y="131" text-anchor="middle">Database</text>
+  <text class="m" x="531" y="147" text-anchor="middle">read-only role</text>
+
+  <path class="wire" d="M168 64 H232" marker-end="url(#a)"/>
+  <path class="wire" d="M311 84 V108" marker-end="url(#a)"/>
+  <path class="wire" d="M386 134 H442" marker-end="url(#a)"/>
+  <path class="wire" d="M446 150 C 300 210, 220 210, 98 150" marker-end="url(#a)"/>
+  <text class="s" x="272" y="200">rows back</text>
+
+  <circle cx="28" cy="196" r="10" fill="hsl(var(--accent))"/>
+  <text x="28" y="200" text-anchor="middle" style="font-size:12px;fill:hsl(var(--accent-foreground))">1</text>
+  <text class="s" x="46" y="200">Anything that isn't a single SELECT is rejected before it runs.</text>
+  <text class="s" x="46" y="222">Generated SQL is editable and re-runnable by hand.</text>
+</svg>
