@@ -158,14 +158,6 @@ function AthleteSettingsPage() {
 
             <LegalSection />
 
-            <SettingsGroup>
-              <SettingsList>
-                <InstallAppRow />
-                <NativeAppSection />
-                <FeedbackSettingsRow />
-                <SignOutRow />
-              </SettingsList>
-            </SettingsGroup>
           </>
         )}
       </div>
