@@ -353,6 +353,8 @@ export const sendMessage = createServerFn({ method: "POST" })
 
     let audioPath: string | null = null;
     let duration: number | null = null;
+    let voiceBytes: Uint8Array | null = null;
+
 
     if (data.kind === "voice") {
       const base64 = data.audioBase64.includes(",")
