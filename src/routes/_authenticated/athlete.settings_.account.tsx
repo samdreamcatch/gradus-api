@@ -3,7 +3,7 @@ import { ChevronLeft } from "lucide-react";
 import { AthleteBottomNav } from "@/components/athlete/bottom-nav";
 import { AccountSecuritySection } from "@/components/settings/account-security-section";
 
-export const Route = createFileRoute("/_authenticated/athlete/settings/account")({
+export const Route = createFileRoute("/_authenticated/athlete/settings_/account")({
   head: () => ({
     meta: [
       { title: "Account & security — Gradus" },

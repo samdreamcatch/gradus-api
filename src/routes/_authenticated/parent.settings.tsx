@@ -17,7 +17,6 @@ import {
   UserPlus,
   KeyRound,
   CreditCard,
-
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -79,7 +78,7 @@ import { useCurrentUserEmail } from "@/hooks/use-current-user-email";
 import { FeedbackSettingsRow } from "@/components/feedback/feedback-fab";
 import { InstallAppRow } from "@/components/settings/install-app-row";
 import { NativeAppSection } from "@/components/settings/native-app-section";
-import { AccountSecuritySection } from "@/components/settings/account-security-section";
+import { AccountSecurityRow } from "@/components/settings/account-security-row";
 import { LegalSection } from "@/components/settings/legal-section";
 import {
   getParentSettings,
@@ -103,7 +102,6 @@ import {
 import { getStripeEnvironment } from "@/lib/stripe-env";
 import { cn } from "@/lib/utils";
 import { getSport } from "@/lib/coach-sports";
-
 
 import { z } from "zod";
 import { openExternal } from "@/lib/native";
@@ -234,11 +232,8 @@ function ParentSettingsPage() {
 
             <SettingsGroup label="Plan">
               <PlanSection />
+              <AccountSecurityRow to="/parent/settings/account" />
             </SettingsGroup>
-
-
-
-
 
             <SettingsGroup label="Preferences">
               <SettingsList>
@@ -250,14 +245,12 @@ function ParentSettingsPage() {
               </SettingsList>
             </SettingsGroup>
 
-            <AccountSecuritySection />
-
             <LegalSection />
 
             <SettingsGroup>
               <SettingsList>
                 <InstallAppRow />
-            <NativeAppSection />
+                <NativeAppSection />
                 <FeedbackSettingsRow />
                 <SignOutRow />
               </SettingsList>
@@ -333,7 +326,8 @@ function PlanSection() {
             label="Join or start a team"
             description={
               <span className="text-xs text-text-secondary">
-                A team lets up to 3 parents or guardians share an athlete, and lets their coaches see each other's plans.
+                A team lets up to 3 parents or guardians share an athlete, and lets their coaches
+                see each other's plans.
               </span>
             }
             onClick={() => setJoinOpen(true)}
@@ -526,9 +520,7 @@ function TeamPeopleGroup({ athletes }: { athletes: AthleteData[] }) {
                                   toast.success("Guardian removed");
                                   refreshGuardians();
                                 } catch (e) {
-                                  toast.error(
-                                    e instanceof Error ? e.message : "Couldn't remove.",
-                                  );
+                                  toast.error(e instanceof Error ? e.message : "Couldn't remove.");
                                 }
                               }}
                             >
@@ -541,7 +533,10 @@ function TeamPeopleGroup({ athletes }: { athletes: AthleteData[] }) {
                         <li key={i.id} className="flex items-center gap-2">
                           <div className="min-w-0 flex-1 truncate text-xs text-text-secondary">
                             {i.email ?? "Invite"}
-                            <span className="font-mono text-text-tertiary"> — Pending · {i.code}</span>
+                            <span className="font-mono text-text-tertiary">
+                              {" "}
+                              — Pending · {i.code}
+                            </span>
                           </div>
                           <Button
                             type="button"
@@ -577,9 +572,7 @@ function TeamPeopleGroup({ athletes }: { athletes: AthleteData[] }) {
                     <ul className="mt-1.5 space-y-2">
                       {a.coaches.map((c) => {
                         const key = `${c.coachId}:${a.id}`;
-                        const sportLabels = c.sports
-                          .map((s) => getSport(s)?.label ?? s)
-                          .join(", ");
+                        const sportLabels = c.sports.map((s) => getSport(s)?.label ?? s).join(", ");
                         const vis = visibilityFor(a.id, c.coachId);
                         return (
                           <li key={key} className="flex items-center justify-between gap-2">
@@ -621,8 +614,8 @@ function TeamPeopleGroup({ athletes }: { athletes: AthleteData[] }) {
                                     </AlertDialogTitle>
                                     <AlertDialogDescription>
                                       They'll lose access to {athleteName}'s plans and messages.
-                                      Practice history stays intact, and you can re-link later
-                                      with their invite code.
+                                      Practice history stays intact, and you can re-link later with
+                                      their invite code.
                                     </AlertDialogDescription>
                                   </AlertDialogHeader>
                                   <AlertDialogFooter>
@@ -660,11 +653,9 @@ function TeamPeopleGroup({ athletes }: { athletes: AthleteData[] }) {
           />
         )}
       </div>
-
     </SettingsGroup>
   );
 }
-
 
 function NameDisclosure({ profile }: { profile: { firstName: string; lastName: string } }) {
   const [firstName, setFirstName] = useState(profile.firstName);

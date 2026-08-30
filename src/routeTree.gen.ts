@@ -102,6 +102,7 @@ import { Route as AuthenticatedParentMessagesRoomIdRouteImport } from './routes/
 import { Route as AuthenticatedCoachSettingsAccountRouteImport } from './routes/_authenticated/coach.settings_.account'
 import { Route as AuthenticatedCoachPlansPlanIdRouteImport } from './routes/_authenticated/coach.plans.$planId'
 import { Route as AuthenticatedCoachMessagesRoomIdRouteImport } from './routes/_authenticated/coach.messages.$roomId'
+import { Route as AuthenticatedAthleteSettingsAccountRouteImport } from './routes/_authenticated/athlete.settings_.account'
 import { Route as AuthenticatedAthletePlansPlanIdRouteImport } from './routes/_authenticated/athlete.plans.$planId'
 import { Route as AuthenticatedAthleteMessagesRoomIdRouteImport } from './routes/_authenticated/athlete.messages.$roomId'
 import { Route as AuthenticatedAdminUsersUserIdRouteImport } from './routes/_authenticated/admin.users.$userId'
@@ -628,6 +629,12 @@ const AuthenticatedCoachMessagesRoomIdRoute =
     path: '/messages/$roomId',
     getParentRoute: () => AuthenticatedCoachRoute,
   } as any)
+const AuthenticatedAthleteSettingsAccountRoute =
+  AuthenticatedAthleteSettingsAccountRouteImport.update({
+    id: '/settings_/account',
+    path: '/settings/account',
+    getParentRoute: () => AuthenticatedAthleteRoute,
+  } as any)
 const AuthenticatedAthletePlansPlanIdRoute =
   AuthenticatedAthletePlansPlanIdRouteImport.update({
     id: '/plans/$planId',
@@ -746,6 +753,7 @@ export interface FileRoutesByFullPath {
   '/admin/users/$userId': typeof AuthenticatedAdminUsersUserIdRoute
   '/athlete/messages/$roomId': typeof AuthenticatedAthleteMessagesRoomIdRoute
   '/athlete/plans/$planId': typeof AuthenticatedAthletePlansPlanIdRoute
+  '/athlete/settings/account': typeof AuthenticatedAthleteSettingsAccountRoute
   '/coach/messages/$roomId': typeof AuthenticatedCoachMessagesRoomIdRoute
   '/coach/plans/$planId': typeof AuthenticatedCoachPlansPlanIdRoute
   '/coach/settings/account': typeof AuthenticatedCoachSettingsAccountRoute
@@ -841,6 +849,7 @@ export interface FileRoutesByTo {
   '/admin/users/$userId': typeof AuthenticatedAdminUsersUserIdRoute
   '/athlete/messages/$roomId': typeof AuthenticatedAthleteMessagesRoomIdRoute
   '/athlete/plans/$planId': typeof AuthenticatedAthletePlansPlanIdRoute
+  '/athlete/settings/account': typeof AuthenticatedAthleteSettingsAccountRoute
   '/coach/messages/$roomId': typeof AuthenticatedCoachMessagesRoomIdRoute
   '/coach/plans/$planId': typeof AuthenticatedCoachPlansPlanIdRoute
   '/coach/settings/account': typeof AuthenticatedCoachSettingsAccountRoute
@@ -944,6 +953,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/users/$userId': typeof AuthenticatedAdminUsersUserIdRoute
   '/_authenticated/athlete/messages/$roomId': typeof AuthenticatedAthleteMessagesRoomIdRoute
   '/_authenticated/athlete/plans/$planId': typeof AuthenticatedAthletePlansPlanIdRoute
+  '/_authenticated/athlete/settings_/account': typeof AuthenticatedAthleteSettingsAccountRoute
   '/_authenticated/coach/messages/$roomId': typeof AuthenticatedCoachMessagesRoomIdRoute
   '/_authenticated/coach/plans/$planId': typeof AuthenticatedCoachPlansPlanIdRoute
   '/_authenticated/coach/settings_/account': typeof AuthenticatedCoachSettingsAccountRoute
@@ -1047,6 +1057,7 @@ export interface FileRouteTypes {
     | '/admin/users/$userId'
     | '/athlete/messages/$roomId'
     | '/athlete/plans/$planId'
+    | '/athlete/settings/account'
     | '/coach/messages/$roomId'
     | '/coach/plans/$planId'
     | '/coach/settings/account'
@@ -1142,6 +1153,7 @@ export interface FileRouteTypes {
     | '/admin/users/$userId'
     | '/athlete/messages/$roomId'
     | '/athlete/plans/$planId'
+    | '/athlete/settings/account'
     | '/coach/messages/$roomId'
     | '/coach/plans/$planId'
     | '/coach/settings/account'
@@ -1244,6 +1256,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/users/$userId'
     | '/_authenticated/athlete/messages/$roomId'
     | '/_authenticated/athlete/plans/$planId'
+    | '/_authenticated/athlete/settings_/account'
     | '/_authenticated/coach/messages/$roomId'
     | '/_authenticated/coach/plans/$planId'
     | '/_authenticated/coach/settings_/account'
@@ -1954,6 +1967,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCoachMessagesRoomIdRouteImport
       parentRoute: typeof AuthenticatedCoachRoute
     }
+    '/_authenticated/athlete/settings_/account': {
+      id: '/_authenticated/athlete/settings_/account'
+      path: '/settings/account'
+      fullPath: '/athlete/settings/account'
+      preLoaderRoute: typeof AuthenticatedAthleteSettingsAccountRouteImport
+      parentRoute: typeof AuthenticatedAthleteRoute
+    }
     '/_authenticated/athlete/plans/$planId': {
       id: '/_authenticated/athlete/plans/$planId'
       path: '/plans/$planId'
@@ -2083,6 +2103,7 @@ interface AuthenticatedAthleteRouteChildren {
   AuthenticatedAthleteIndexRoute: typeof AuthenticatedAthleteIndexRoute
   AuthenticatedAthleteMessagesRoomIdRoute: typeof AuthenticatedAthleteMessagesRoomIdRoute
   AuthenticatedAthletePlansPlanIdRoute: typeof AuthenticatedAthletePlansPlanIdRoute
+  AuthenticatedAthleteSettingsAccountRoute: typeof AuthenticatedAthleteSettingsAccountRoute
   AuthenticatedAthleteMessagesIndexRoute: typeof AuthenticatedAthleteMessagesIndexRoute
   AuthenticatedAthletePlansIndexRoute: typeof AuthenticatedAthletePlansIndexRoute
   AuthenticatedAthleteResourcesIndexRoute: typeof AuthenticatedAthleteResourcesIndexRoute
@@ -2095,6 +2116,8 @@ const AuthenticatedAthleteRouteChildren: AuthenticatedAthleteRouteChildren = {
   AuthenticatedAthleteMessagesRoomIdRoute:
     AuthenticatedAthleteMessagesRoomIdRoute,
   AuthenticatedAthletePlansPlanIdRoute: AuthenticatedAthletePlansPlanIdRoute,
+  AuthenticatedAthleteSettingsAccountRoute:
+    AuthenticatedAthleteSettingsAccountRoute,
   AuthenticatedAthleteMessagesIndexRoute:
     AuthenticatedAthleteMessagesIndexRoute,
   AuthenticatedAthletePlansIndexRoute: AuthenticatedAthletePlansIndexRoute,
