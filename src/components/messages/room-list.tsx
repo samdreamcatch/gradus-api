@@ -71,17 +71,21 @@ export function RoomList({
       {rooms.map((room) => {
         const { display } = others(room);
         const last = room.lastMessage;
-        const previewSenderPrefix =
-          last && last.senderRole !== room.myRole
+        const senderDeleted = !!last?.senderDeletedAt;
+        const previewSenderPrefix = senderDeleted
+          ? `${roleLabel(last!.senderRole)} (deleted account): `
+          : last && last.senderRole !== room.myRole
             ? `${roleLabel(last.senderRole)} ${last.senderFirstName.split(" ")[0]}: `
             : last
               ? "You: "
               : "";
-        const previewBody = last
-          ? last.kind === "voice"
-            ? "Voice note"
-            : last.body
-          : "No messages yet — say hello.";
+        const previewBody = senderDeleted
+          ? "Message deleted"
+          : last
+            ? last.kind === "voice"
+              ? "Voice note"
+              : last.body
+            : "No messages yet — say hello.";
 
         const unread = room.unreadCount > 0;
 

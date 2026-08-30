@@ -786,7 +786,7 @@ export type Database = {
           subscription_tier: string | null
           trial_ends_at: string | null
           updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
@@ -813,7 +813,7 @@ export type Database = {
           subscription_tier?: string | null
           trial_ends_at?: string | null
           updated_at?: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
@@ -840,7 +840,7 @@ export type Database = {
           subscription_tier?: string | null
           trial_ends_at?: string | null
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -913,6 +913,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      deleted_accounts: {
+        Row: {
+          created_at: string
+          deleted_at: string
+          email_hash: string | null
+          id: string
+          initiated_by: string
+          notes: string | null
+          role: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          deleted_at?: string
+          email_hash?: string | null
+          id?: string
+          initiated_by?: string
+          notes?: string | null
+          role: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          deleted_at?: string
+          email_hash?: string | null
+          id?: string
+          initiated_by?: string
+          notes?: string | null
+          role?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       device_tokens: {
         Row: {
@@ -1621,8 +1654,9 @@ export type Database = {
           kind: string
           plan_id: string | null
           room_id: string | null
+          sender_deleted_at: string | null
           sender_role: string
-          sender_user_id: string
+          sender_user_id: string | null
         }
         Insert: {
           audio_url?: string | null
@@ -1634,8 +1668,9 @@ export type Database = {
           kind: string
           plan_id?: string | null
           room_id?: string | null
+          sender_deleted_at?: string | null
           sender_role: string
-          sender_user_id: string
+          sender_user_id?: string | null
         }
         Update: {
           audio_url?: string | null
@@ -1647,8 +1682,9 @@ export type Database = {
           kind?: string
           plan_id?: string | null
           room_id?: string | null
+          sender_deleted_at?: string | null
           sender_role?: string
-          sender_user_id?: string
+          sender_user_id?: string | null
         }
         Relationships: [
           {

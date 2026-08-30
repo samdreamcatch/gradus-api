@@ -133,10 +133,10 @@ export const listOrgRoster = createServerFn({ method: "POST" })
     return {
       coaches: (coaches.data ?? []).map((c) => ({
         coachId: c.id,
-        userId: c.user_id,
+        userId: c.user_id ?? "",
         firstName: c.first_name ?? "",
         lastName: c.last_name ?? "",
-        email: emails.get(c.user_id) ?? null,
+        email: c.user_id ? (emails.get(c.user_id) ?? null) : null,
         athleteCount: athleteByCoach.get(c.id) ?? 0,
         parentCount: parentSetByCoach.get(c.id)?.size ?? 0,
         adultAthleteCount: adultByCoach.get(c.id) ?? 0,
@@ -181,7 +181,9 @@ export const removeCoachFromOrg = createServerFn({ method: "POST" })
     // Let them know — best-effort, never blocks the removal.
     try {
       const [{ data: userRes }, org] = await Promise.all([
-        supabaseAdmin.auth.admin.getUserById(coach.data.user_id),
+        coach.data.user_id
+          ? supabaseAdmin.auth.admin.getUserById(coach.data.user_id)
+          : Promise.resolve({ data: null }),
         supabaseAdmin
           .from("organizations")
           .select("name")
@@ -347,7 +349,8 @@ export const resendOrgCoachInvite = createServerFn({ method: "POST" })
       .maybeSingle();
     if (error) dbError(error);
     if (!row) return { ok: false as const, error: "Invite not found." };
-    if (row.status !== "pending") return { ok: false as const, error: "That invite isn't pending." };
+    if (row.status !== "pending")
+      return { ok: false as const, error: "That invite isn't pending." };
     if (!row.email) return { ok: false as const, error: "This invite has no email address." };
 
     const emailed = await emailOrgCoachInvite(

@@ -227,7 +227,8 @@ export function RoomView({ roomId, viewerRole }: { roomId: string; viewerRole?: 
             <div key={group.day} className="space-y-2">
               <p className="text-center font-hand text-base text-text-tertiary">{group.day}</p>
               {group.items.map((m) => {
-                const mine = m.senderUserId === room.myUserId;
+                const senderDeleted = !!m.senderDeletedAt || m.senderUserId === null;
+                const mine = !senderDeleted && m.senderUserId === room.myUserId;
                 const otherReaders = m.readBy.filter((r) => r.userId !== room.myUserId);
                 return (
                   <div
@@ -236,7 +237,9 @@ export function RoomView({ roomId, viewerRole }: { roomId: string; viewerRole?: 
                   >
                     {!mine ? (
                       <p className="mb-0.5 px-2 text-caption font-black uppercase tracking-widest text-text-tertiary">
-                        {roleWord(m.senderRole)} {m.senderFirstName}
+                        {senderDeleted
+                          ? `${roleWord(m.senderRole)} (deleted account)`
+                          : `${roleWord(m.senderRole)} ${m.senderFirstName}`}
                       </p>
                     ) : null}
                     {m.plan ? (
@@ -278,7 +281,9 @@ export function RoomView({ roomId, viewerRole }: { roomId: string; viewerRole?: 
                           : "bg-card text-text-primary rounded-bl-md shadow-card",
                       )}
                     >
-                      {m.kind === "voice" ? (
+                      {senderDeleted ? (
+                        <span className="italic opacity-70">Message deleted</span>
+                      ) : m.kind === "voice" ? (
                         <VoiceBubble url={m.audioUrl} duration={m.durationSeconds} />
                       ) : (
                         <span className="whitespace-pre-wrap break-words">{m.body}</span>

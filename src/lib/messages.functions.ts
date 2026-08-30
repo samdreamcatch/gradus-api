@@ -93,14 +93,15 @@ export const listMyRooms = createServerFn({ method: "GET" })
     const msgsRaw = await fetchMessagesForRooms(
       athleteRoomIds,
       directRoomIds,
-      "id, room_id, direct_room_id, sender_user_id, sender_role, kind, body, created_at",
+      "id, room_id, direct_room_id, sender_user_id, sender_deleted_at, sender_role, kind, body, created_at",
       "desc",
     );
     type MsgRow = {
       id: string;
       room_id: string | null;
       direct_room_id: string | null;
-      sender_user_id: string;
+      sender_user_id: string | null;
+      sender_deleted_at: string | null;
       sender_role: string;
       kind: string;
       body: string | null;
@@ -122,20 +123,23 @@ export const listMyRooms = createServerFn({ method: "GET" })
     for (const m of msgs) {
       const roomKey = m.room_id ?? m.direct_room_id;
       if (!roomKey) continue;
-      if (m.sender_user_id !== userId && !readSet.has(m.id)) {
+      if (m.sender_user_id && m.sender_user_id !== userId && !readSet.has(m.id)) {
         unreadByRoom.set(roomKey, (unreadByRoom.get(roomKey) ?? 0) + 1);
       }
       if (!lastByRoom.has(roomKey)) {
         const parts = participantsByRoom.get(roomKey) ?? [];
-        const sender =
-          parts.find((p) => p.userId === m.sender_user_id) ??
-          parts.find((p) => p.role === (m.sender_role as RoleInRoom));
+        const senderGone = !m.sender_user_id;
+        const sender = senderGone
+          ? null
+          : (parts.find((p) => p.userId === m.sender_user_id) ??
+            parts.find((p) => p.role === (m.sender_role as RoleInRoom)));
         lastByRoom.set(roomKey, {
           id: m.id,
           kind: m.kind as "text" | "voice",
           body: m.body ?? "",
           senderRole: m.sender_role as RoleInRoom,
           senderFirstName: sender?.firstName ?? "",
+          senderDeletedAt: m.sender_deleted_at ?? (senderGone ? m.created_at : null),
           createdAt: m.created_at,
         });
       }
@@ -184,7 +188,7 @@ export const getRoom = createServerFn({ method: "GET" })
     const participants = participantsByRoom.get(room.id) ?? [];
 
     const selectCols =
-      "id, room_id, direct_room_id, sender_user_id, sender_role, kind, body, audio_url, duration_seconds, created_at, plan_id";
+      "id, room_id, direct_room_id, sender_user_id, sender_deleted_at, sender_role, kind, body, audio_url, duration_seconds, created_at, plan_id";
     const q = supabaseAdmin.from("messages").select(selectCols);
     const { data: msgs, error } =
       room.kind === "athlete"
@@ -196,7 +200,8 @@ export const getRoom = createServerFn({ method: "GET" })
       id: string;
       room_id: string | null;
       direct_room_id: string | null;
-      sender_user_id: string;
+      sender_user_id: string | null;
+      sender_deleted_at: string | null;
       sender_role: string;
       kind: string;
       body: string | null;
@@ -239,13 +244,16 @@ export const getRoom = createServerFn({ method: "GET" })
 
     const messages: MessageDTO[] = await Promise.all(
       rows.map(async (m) => {
-        const sender =
-          participants.find((p) => p.userId === m.sender_user_id) ??
-          participants.find((p) => p.role === (m.sender_role as RoleInRoom));
+        const senderGone = !m.sender_user_id;
+        const sender = senderGone
+          ? null
+          : (participants.find((p) => p.userId === m.sender_user_id) ??
+            participants.find((p) => p.role === (m.sender_role as RoleInRoom)));
         return {
           id: m.id,
           roomId: m.room_id ?? m.direct_room_id ?? room.id,
           senderUserId: m.sender_user_id,
+          senderDeletedAt: m.sender_deleted_at ?? (senderGone ? m.created_at : null),
           senderRole: m.sender_role as RoleInRoom,
           senderFirstName: sender?.firstName ?? "",
           senderLastName: sender?.lastName ?? "",
@@ -465,7 +473,11 @@ export const markRoomRead = createServerFn({ method: "POST" })
     const room = rooms.find((r) => r.id === data.roomId);
     if (!room) return { marked: 0 };
 
-    const q = supabaseAdmin.from("messages").select("id").neq("sender_user_id", userId);
+    const q = supabaseAdmin
+      .from("messages")
+      .select("id")
+      .not("sender_user_id", "is", null)
+      .neq("sender_user_id", userId);
     const { data: unread, error } =
       room.kind === "athlete"
         ? await q.eq("room_id", room.id)
@@ -513,8 +525,10 @@ export const getUnreadTotal = createServerFn({ method: "GET" })
       "id, sender_user_id",
       "desc",
     );
-    type Row = { id: string; sender_user_id: string };
-    const msgIds = (msgRows as Row[]).filter((m) => m.sender_user_id !== userId).map((m) => m.id);
+    type Row = { id: string; sender_user_id: string | null };
+    const msgIds = (msgRows as Row[])
+      .filter((m) => !!m.sender_user_id && m.sender_user_id !== userId)
+      .map((m) => m.id);
     if (msgIds.length === 0) return { total: 0 };
 
     const { data: reads } = await supabaseAdmin
@@ -545,7 +559,6 @@ export const ensureRoom = createServerFn({ method: "POST" })
           return canAccessAthlete(supabaseAdmin as any, me.parent!.id, data.athleteId);
         })()
       : false;
-
 
     if (!isCoach && !isAthlete && !isParent) {
       throw new Error("Not authorized to open this conversation");
@@ -932,7 +945,6 @@ export const listMyMessageTargets = createServerFn({ method: "GET" })
         )
         .in("id", ids);
       if (error) dbError(error, "Couldn't load coaches");
-
 
       const targets: MessageTargetDTO[] = [];
       for (const row of data ?? []) {

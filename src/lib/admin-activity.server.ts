@@ -127,7 +127,10 @@ export async function loadActivityEvents(
     events.push({ userId, at, kind });
   };
 
-  for (const m of messages.data ?? []) push(m.sender_user_id, m.created_at, "message");
+  for (const m of messages.data ?? []) {
+    if (!m.sender_user_id) continue;
+    push(m.sender_user_id, m.created_at, "message");
+  }
   for (const s of sessions.data ?? []) {
     if (s.parent_id) push(parentUserMap.get(s.parent_id), s.logged_at, "session");
     else push(athleteUserMap.get(s.athlete_id), s.logged_at, "session");

@@ -25,6 +25,8 @@ export type RoomSummary = {
     body: string;
     senderRole: RoleInRoom;
     senderFirstName: string;
+    /** Set when the sender deleted their account; the body is blanked. */
+    senderDeletedAt: string | null;
     createdAt: string;
   } | null;
   unreadCount: number;
@@ -34,7 +36,9 @@ export type RoomSummary = {
 export type MessageDTO = {
   id: string;
   roomId: string;
-  senderUserId: string;
+  senderUserId: string | null;
+  /** Set when the sender deleted their account; the body is blanked. */
+  senderDeletedAt: string | null;
   senderRole: RoleInRoom;
   senderFirstName: string;
   senderLastName: string;

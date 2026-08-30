@@ -240,7 +240,7 @@ export const getAdminOverview = createServerFn({ method: "POST" })
         userId: c.user_id,
         firstName: c.first_name,
         lastName: c.last_name,
-        email: emailMap.get(c.user_id) ?? null,
+        email: c.user_id ? (emailMap.get(c.user_id) ?? null) : null,
         createdAt: c.created_at,
         onboarded: !!c.onboarded_at,
         isTest: !!c.is_test,
@@ -340,7 +340,7 @@ export const searchUsers = createServerFn({ method: "POST" })
         userId: c.user_id,
         firstName: c.first_name ?? "",
         lastName: c.last_name ?? "",
-        email: emailMap.get(c.user_id) ?? null,
+        email: c.user_id ? (emailMap.get(c.user_id) ?? null) : null,
         createdAt: c.created_at,
         isTest: !!c.is_test,
       })),
@@ -483,7 +483,10 @@ export const getUserDetail = createServerFn({ method: "POST" })
       if (athleteIds.length > 0) {
         const [sportRows, primaryRows, goalRows, planRows] = await Promise.all([
           supabaseAdmin.from("coach_athlete_sports").select("sport").in("athlete_id", athleteIds),
-          supabaseAdmin.from("athlete_primary_coaches").select("sport").in("athlete_id", athleteIds),
+          supabaseAdmin
+            .from("athlete_primary_coaches")
+            .select("sport")
+            .in("athlete_id", athleteIds),
           supabaseAdmin.from("athlete_goals").select("sport").in("athlete_id", athleteIds),
           supabaseAdmin.from("plans").select(PLAN_COLS).in("athlete_id", athleteIds),
         ]);
@@ -515,35 +518,33 @@ export const getUserDetail = createServerFn({ method: "POST" })
 
     let athleteDetail: any = null;
     if (athlete.data) {
-      const [primaryLinks, roster, sports, goalSports, plans, selfCode, claimCode] = await Promise.all([
-        supabaseAdmin
-          .from("athlete_primary_coaches")
-          .select("sport, coach_id, coach_profiles(first_name, last_name, user_id)")
-          .eq("athlete_id", athlete.data.id),
-        supabaseAdmin
-          .from("coach_athletes")
-          .select("coach_id, coach_profiles(first_name, last_name, user_id)")
-          .eq("athlete_id", athlete.data.id),
-        supabaseAdmin
-          .from("coach_athlete_sports")
-          .select("coach_id, sport")
-          .eq("athlete_id", athlete.data.id),
-        supabaseAdmin
-          .from("athlete_goals")
-          .select("sport")
-          .eq("athlete_id", athlete.data.id),
-        supabaseAdmin.from("plans").select(PLAN_COLS).eq("athlete_id", athlete.data.id),
-        supabaseAdmin
-          .from("adult_athlete_invite_codes")
-          .select("code")
-          .eq("athlete_id", athlete.data.id)
-          .maybeSingle(),
-        supabaseAdmin
-          .from("athlete_invite_codes")
-          .select("code, claimed_at")
-          .eq("athlete_id", athlete.data.id)
-          .maybeSingle(),
-      ]);
+      const [primaryLinks, roster, sports, goalSports, plans, selfCode, claimCode] =
+        await Promise.all([
+          supabaseAdmin
+            .from("athlete_primary_coaches")
+            .select("sport, coach_id, coach_profiles(first_name, last_name, user_id)")
+            .eq("athlete_id", athlete.data.id),
+          supabaseAdmin
+            .from("coach_athletes")
+            .select("coach_id, coach_profiles(first_name, last_name, user_id)")
+            .eq("athlete_id", athlete.data.id),
+          supabaseAdmin
+            .from("coach_athlete_sports")
+            .select("coach_id, sport")
+            .eq("athlete_id", athlete.data.id),
+          supabaseAdmin.from("athlete_goals").select("sport").eq("athlete_id", athlete.data.id),
+          supabaseAdmin.from("plans").select(PLAN_COLS).eq("athlete_id", athlete.data.id),
+          supabaseAdmin
+            .from("adult_athlete_invite_codes")
+            .select("code")
+            .eq("athlete_id", athlete.data.id)
+            .maybeSingle(),
+          supabaseAdmin
+            .from("athlete_invite_codes")
+            .select("code, claimed_at")
+            .eq("athlete_id", athlete.data.id)
+            .maybeSingle(),
+        ]);
 
       const sportsByCoach = new Map<string, string[]>();
       for (const s of (sports.data ?? []) as any[]) {
@@ -597,7 +598,9 @@ export const getUserDetail = createServerFn({ method: "POST" })
         ...athlete.data,
         guardianParentName,
         inviteCode: selfCode.data?.code ?? null,
-        claimCode: claimCode.data ? { code: claimCode.data.code, claimed: !!claimCode.data.claimed_at } : null,
+        claimCode: claimCode.data
+          ? { code: claimCode.data.code, claimed: !!claimCode.data.claimed_at }
+          : null,
         coaches: Array.from(merged.values()).map((c) => ({
           coachUserId: c.coachUserId,
           coachName: c.coachName,
@@ -615,7 +618,6 @@ export const getUserDetail = createServerFn({ method: "POST" })
         activePlans: toActiveList(athletePlans),
       };
     }
-
 
     const isTest = !!(coach.data?.is_test || parent.data?.is_test || athlete.data?.is_test);
     return { auth, coach: coachDetail, parent: parentDetail, athlete: athleteDetail, isTest };
@@ -669,7 +671,7 @@ export const getAdminList = createServerFn({ method: "POST" })
           id: c.id,
           userId: c.user_id,
           name: `${c.first_name ?? ""} ${c.last_name ?? ""}`.trim() || "(no name)",
-          email: emails.get(c.user_id) ?? null,
+          email: c.user_id ? (emails.get(c.user_id) ?? null) : null,
           tag: c.onboarded_at ? "onboarded" : "stub",
           createdAt: c.created_at,
           isTest: !!c.is_test,
@@ -1076,7 +1078,10 @@ export const getAdminReporting = createServerFn({ method: "POST" })
         if (recent7) active.athlete7.add(uid);
       }
     };
-    for (const m of messages.data ?? []) bump(m.sender_user_id, m.created_at);
+    for (const m of messages.data ?? []) {
+      if (!m.sender_user_id) continue;
+      bump(m.sender_user_id, m.created_at);
+    }
     for (const s of sessions.data ?? []) {
       if (s.parent_id) bump(parentUserById.get(s.parent_id), s.logged_at);
       else if (s.athlete_id) bump(athleteUserById.get(s.athlete_id), s.logged_at);
@@ -1157,7 +1162,6 @@ export type UserRow = {
   guardianClaimed: boolean;
 };
 
-
 export const listAllUsers = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
@@ -1172,7 +1176,6 @@ export const listAllUsers = createServerFn({ method: "POST" })
         hideTest: z.boolean().optional().default(true),
         includeDeleted: z.boolean().optional().default(false),
         connection: z.enum(["all", "connected", "unconnected"]).optional().default("all"),
-
       })
       .parse(input ?? {}),
   )
@@ -1221,7 +1224,9 @@ export const listAllUsers = createServerFn({ method: "POST" })
       supabaseAdmin.from("user_roles").select("user_id, role"),
       supabaseAdmin.from("organizations").select("id, name"),
       supabaseAdmin.from("soft_deleted_users").select("user_id, deleted_at"),
-      supabaseAdmin.from("user_applied_promo_codes").select("id, user_id, code, scope, environment"),
+      supabaseAdmin
+        .from("user_applied_promo_codes")
+        .select("id, user_id, code, scope, environment"),
       supabaseAdmin.from("athletes").select("id, first_name, last_name, parent_id"),
       supabaseAdmin.from("coach_athletes").select("coach_id, athlete_id"),
       supabaseAdmin.from("athlete_guardians").select("athlete_id, parent_id"),
@@ -1243,7 +1248,6 @@ export const listAllUsers = createServerFn({ method: "POST" })
     ]) {
       if (r.error) dbError(r.error);
     }
-
 
     // Connection maps (admin-only display).
     const fullName = (f?: string | null, l?: string | null) => `${f ?? ""} ${l ?? ""}`.trim();
@@ -1339,7 +1343,6 @@ export const listAllUsers = createServerFn({ method: "POST" })
       athleteIdsByCoachId.set(l.coach_id, arr);
     }
 
-
     const coachByUser = new Map((coaches.data ?? []).map((c) => [c.user_id, c]));
     const parentByUser = new Map((parents.data ?? []).map((p) => [p.user_id, p]));
     const athleteByUser = new Map(
@@ -1363,7 +1366,7 @@ export const listAllUsers = createServerFn({ method: "POST" })
     }
 
     // 3. Build unified rows.
-    const uniqBy = <T,>(items: T[], key: (item: T) => string): T[] => {
+    const uniqBy = <T>(items: T[], key: (item: T) => string): T[] => {
       const seen = new Set<string>();
       const out: T[] = [];
       for (const item of items) {
@@ -1431,7 +1434,10 @@ export const listAllUsers = createServerFn({ method: "POST" })
         if (parent.subscription_status && parent.subscription_status !== "canceled")
           planTier = "team";
         const kids = uniqBy(
-          [...(athletesByParentId.get(parent.id) ?? []), ...(athletesByGuardianParentId.get(parent.id) ?? [])],
+          [
+            ...(athletesByParentId.get(parent.id) ?? []),
+            ...(athletesByGuardianParentId.get(parent.id) ?? []),
+          ],
           (k) => k.id,
         );
         connectedAthletes = uniq(kids.map((k) => k.name));
@@ -1454,7 +1460,7 @@ export const listAllUsers = createServerFn({ method: "POST" })
           (athlete as { guardian_invited_at?: string | null }).guardian_invited_at ?? null;
         guardianClaimed = Boolean(
           (athlete as { guardian_claimed_at?: string | null }).guardian_claimed_at ||
-            athlete.parent_id,
+          athlete.parent_id,
         );
         connectedCoaches = uniq(coachesByAthleteId.get(athlete.id) ?? []);
         connectedParents = uniq([
@@ -1522,7 +1528,6 @@ export const listAllUsers = createServerFn({ method: "POST" })
       }
       return true;
     });
-
 
     return { rows: filtered };
   });
@@ -1601,6 +1606,31 @@ export const adminSoftDeleteUser = createServerFn({ method: "POST" })
     if (insErr) dbError(insErr);
 
     return { ok: true };
+  });
+
+/** Permanent, irreversible deletion — same code path as self-service deletion. */
+export const adminHardDeleteUser = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ userId: z.string().uuid(), confirmEmail: z.string().email() }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    if (data.userId === context.userId) {
+      throw new Error("You cannot delete your own account from the admin panel.");
+    }
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: userInfo, error: getErr } = await supabaseAdmin.auth.admin.getUserById(
+      data.userId,
+    );
+    if (getErr) throw new Error(getErr.message);
+    const email = userInfo?.user?.email ?? "";
+    if (email.toLowerCase() !== data.confirmEmail.toLowerCase()) {
+      throw new Error("Confirmation email did not match.");
+    }
+    const { deleteAccountForUser } = await import("@/lib/account-deletion.server");
+    const result = await deleteAccountForUser(data.userId, email, "admin");
+    return { ok: true, ...result };
   });
 
 export const adminRestoreUser = createServerFn({ method: "POST" })
@@ -2158,7 +2188,10 @@ export const adminUpdateUserFields = createServerFn({ method: "POST" })
     if (data.lastName !== undefined) namePatch.last_name = data.lastName;
 
     if (coach.data && Object.keys(namePatch).length > 0) {
-      const upd = await supabaseAdmin.from("coach_profiles").update(namePatch).eq("id", coach.data.id);
+      const upd = await supabaseAdmin
+        .from("coach_profiles")
+        .update(namePatch)
+        .eq("id", coach.data.id);
       if (upd.error) dbError(upd.error);
     }
     if (parent.data && Object.keys(namePatch).length > 0) {
@@ -2219,9 +2252,7 @@ export const adminSearchParents = createServerFn({ method: "POST" })
 export const adminSetAthleteParent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
-    z
-      .object({ athleteId: z.string().uuid(), parentId: z.string().uuid().nullable() })
-      .parse(input),
+    z.object({ athleteId: z.string().uuid(), parentId: z.string().uuid().nullable() }).parse(input),
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
@@ -2262,7 +2293,10 @@ export const adminDeleteUserHard = createServerFn({ method: "POST" })
     ]);
 
     if (parent.data) {
-      const kids = await supabaseAdmin.from("athletes").select("id").eq("parent_id", parent.data.id);
+      const kids = await supabaseAdmin
+        .from("athletes")
+        .select("id")
+        .eq("parent_id", parent.data.id);
       const ids = (kids.data ?? []).map((a) => a.id);
       if (ids.length > 0) {
         const del = await supabaseAdmin.from("athletes").delete().in("id", ids);
