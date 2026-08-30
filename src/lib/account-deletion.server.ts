@@ -89,6 +89,41 @@ async function deIdentifyAthlete(athleteId: string): Promise<void> {
     .eq("id", athleteId);
 }
 
+/**
+ * Fully erase an athlete who has no account of their own and no remaining
+ * guardian. Nobody is left to control this profile, so a de-identified shell
+ * would just be orphaned personal data. Tables without a cascading foreign key
+ * are cleared first; the athlete row cascades the rest (plans, sessions,
+ * coach links, invoices, invites).
+ */
+async function purgeAthlete(athleteId: string): Promise<void> {
+  const { data: rooms } = await supabaseAdmin
+    .from("message_rooms")
+    .select("id")
+    .eq("athlete_id", athleteId);
+  const roomIds = (rooms ?? []).map((r) => r.id);
+  if (roomIds.length > 0) {
+    const { data: audio } = await supabaseAdmin
+      .from("messages")
+      .select("audio_url")
+      .in("room_id", roomIds)
+      .not("audio_url", "is", null);
+    const paths = (audio ?? []).map((r) => r.audio_url).filter((p): p is string => !!p);
+    if (paths.length > 0) {
+      const { error } = await supabaseAdmin.storage.from("voice-notes").remove(paths);
+      if (error) console.error("[account-deletion] athlete voice note cleanup failed", error);
+    }
+    await supabaseAdmin.from("messages").delete().in("room_id", roomIds);
+    await supabaseAdmin.from("message_rooms").delete().in("id", roomIds);
+  }
+
+  await supabaseAdmin.from("plan_sessions").delete().eq("athlete_id", athleteId);
+  await supabaseAdmin.from("athlete_goals").delete().eq("athlete_id", athleteId);
+  await supabaseAdmin.from("athlete_lesson_slots").delete().eq("athlete_id", athleteId);
+  await supabaseAdmin.from("athlete_invite_codes").delete().eq("athlete_id", athleteId);
+  await supabaseAdmin.from("athletes").delete().eq("id", athleteId);
+}
+
 export async function deleteAccountForUser(
   userId: string,
   email: string | null,
