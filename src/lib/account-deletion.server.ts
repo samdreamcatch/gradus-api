@@ -169,7 +169,7 @@ export async function deleteAccountForUser(
 
     const { data: athletes } = await supabaseAdmin
       .from("athletes")
-      .select("id")
+      .select("id, user_id")
       .eq("parent_id", parent.id);
 
     for (const athlete of athletes ?? []) {
@@ -182,11 +182,24 @@ export async function deleteAccountForUser(
       if (successor) {
         await supabaseAdmin.from("athletes").update({ parent_id: successor }).eq("id", athlete.id);
         athletesTransferred += 1;
+      } else if (athlete.user_id) {
+        // The athlete signs in themselves, so their profile is theirs to keep
+        // or delete. Only the guardian linkage goes away.
+        await supabaseAdmin
+          .from("athletes")
+          .update({
+            parent_id: null,
+            guardian_email: null,
+            guardian_claim_token: null,
+            guardian_claim_code: null,
+            invite_recipient: null,
+          })
+          .eq("id", athlete.id);
       } else {
-        // Detach first so the parent cascade can't take the athlete's shared
-        // history (invoices, plans) with it, then de-identify in place.
+        // No successor guardian and no account of their own: nobody is left to
+        // control this profile, so erase it rather than leave a shell behind.
         await supabaseAdmin.from("athletes").update({ parent_id: null }).eq("id", athlete.id);
-        await deIdentifyAthlete(athlete.id);
+        await purgeAthlete(athlete.id);
         athletesDeleted += 1;
       }
     }
