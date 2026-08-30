@@ -157,13 +157,6 @@ function OnboardingForm({ data }: { data: OnboardingData }) {
   const saveLevels = useSaveCoachLevels();
   const complete = useCompleteOnboarding();
 
-  // Resolve sport metadata regardless of built-in/custom.
-  const getSportMeta = (key: string): { label: string; standard?: string; custom: boolean } => {
-    const builtIn = getSport(key);
-    if (builtIn) return { label: builtIn.label, standard: builtIn.standard, custom: false };
-    const custom = sports.find((s) => s.key === key);
-    return { label: custom?.label ?? prettify(key), custom: true };
-  };
 
   const toggleSport = (sport: SelectedSport) => {
     setSports((prev) => {
