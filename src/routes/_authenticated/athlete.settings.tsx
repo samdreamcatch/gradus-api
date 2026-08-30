@@ -151,7 +151,19 @@ function AthleteSettingsPage() {
               <AccountSecurityRow to="/athlete/settings/account" />
             </SettingsGroup>
 
+            <SettingsGroup label="Support">
+              <SettingsList>
+                <InstallAppRow />
+                <NativeAppSection />
+                <FeedbackSettingsRow />
+              </SettingsList>
+            </SettingsGroup>
+
             <LegalSection />
+
+            <SettingsList className="mt-6">
+              <SignOutRow />
+            </SettingsList>
           </>
         )}
       </div>
