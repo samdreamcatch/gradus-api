@@ -526,6 +526,10 @@ export const getUserDetail = createServerFn({ method: "POST" })
           .from("coach_athlete_sports")
           .select("coach_id, sport")
           .eq("athlete_id", athlete.data.id),
+        supabaseAdmin
+          .from("athlete_goals")
+          .select("sport")
+          .eq("athlete_id", athlete.data.id),
         supabaseAdmin.from("plans").select(PLAN_COLS).eq("athlete_id", athlete.data.id),
         supabaseAdmin
           .from("adult_athlete_invite_codes")
