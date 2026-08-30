@@ -571,7 +571,6 @@ export const setPlanStatus = createServerFn({ method: "POST" })
           console.error("[plans] guardian plan mirror failed", e);
         }
       }
-
     } else {
       const { error } = await supabase
         .from("plans")

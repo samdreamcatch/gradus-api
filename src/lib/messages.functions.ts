@@ -355,7 +355,6 @@ export const sendMessage = createServerFn({ method: "POST" })
     let duration: number | null = null;
     let voiceBytes: Uint8Array | null = null;
 
-
     if (data.kind === "voice") {
       const base64 = data.audioBase64.includes(",")
         ? data.audioBase64.split(",")[1]
@@ -381,7 +380,6 @@ export const sendMessage = createServerFn({ method: "POST" })
       duration = data.durationSeconds;
       voiceBytes = bytes;
     }
-
 
     const insertRow = {
       sender_user_id: userId,
@@ -449,7 +447,6 @@ export const sendMessage = createServerFn({ method: "POST" })
           console.error("[messages] guardian mirror failed", e);
         }
       }
-
     } else {
       await supabaseAdmin
         .from("direct_rooms")

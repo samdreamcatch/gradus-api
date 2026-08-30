@@ -51,7 +51,7 @@ async function enqueue(opts: {
     status: "pending",
   });
   if (pendingError) {
-    console.error('[guardian] pending log failed (%s)', opts.label, pendingError);
+    console.error("[guardian] pending log failed (%s)", opts.label, pendingError);
     return;
   }
 
@@ -82,7 +82,7 @@ async function enqueue(opts: {
   }
 
   if (error) {
-    console.error('[guardian] enqueue failed (%s)', opts.label, error);
+    console.error("[guardian] enqueue failed (%s)", opts.label, error);
     await supabaseAdmin.from("email_send_log").insert({
       message_id: messageId,
       template_name: opts.label,
