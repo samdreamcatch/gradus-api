@@ -111,7 +111,7 @@ function AuthedLayout() {
       <ActiveSessionBar />
       <Outlet />
       {isCoach ? <LessonWrapUpProvider /> : null}
-      {isAdmin || isOnboarding || isPaywall ? null : <FeedbackFab />}
+      {isAdmin || isOnboarding || isPaywall || isAccountSecurity ? null : <FeedbackFab />}
     </ActiveSessionProvider>
   );
 }
