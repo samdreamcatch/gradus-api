@@ -156,7 +156,6 @@ function OnboardingForm({ data }: { data: OnboardingData }) {
   const saveLevels = useSaveCoachLevels();
   const complete = useCompleteOnboarding();
 
-
   const toggleSport = (sport: SelectedSport) => {
     setSports((prev) => {
       if (prev.some((s) => s.key === sport.key)) {
@@ -250,39 +249,39 @@ function OnboardingForm({ data }: { data: OnboardingData }) {
       <div className="flex min-h-dvh items-start justify-center px-4 pt-8 pb-app-chrome sm:items-center">
         <div className="w-full max-w-2xl rounded-2xl bg-card p-8 shadow-[0_10px_40px_-12px_rgba(0,0,0,0.15)] sm:p-10">
           <Step title="Tell us about yourself">
-              <div className="space-y-6">
-                <div className="grid gap-2 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="firstName">First name</Label>
-                    <Input
-                      id="firstName"
-                      value={firstName}
-                      onChange={(e) => setFirstName(e.target.value)}
-                      maxLength={80}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="lastName">Last name</Label>
-                    <Input
-                      id="lastName"
-                      value={lastName}
-                      onChange={(e) => setLastName(e.target.value)}
-                      maxLength={80}
-                    />
-                  </div>
+            <div className="space-y-6">
+              <div className="grid gap-2 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="firstName">First name</Label>
+                  <Input
+                    id="firstName"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    maxLength={80}
+                  />
                 </div>
                 <div className="space-y-2">
-                  <Label>Which sports do you coach?</Label>
-                  <SportMultiselect
-                    selected={sports}
-                    customSports={customSports}
-                    onToggle={toggleSport}
-                    onAddCustom={addCustomSport}
-                    onRemoveCustom={removeCustomSport}
-                    maxPrimarySports={primarySportCap}
+                  <Label htmlFor="lastName">Last name</Label>
+                  <Input
+                    id="lastName"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    maxLength={80}
                   />
                 </div>
               </div>
+              <div className="space-y-2">
+                <Label>Which sports do you coach?</Label>
+                <SportMultiselect
+                  selected={sports}
+                  customSports={customSports}
+                  onToggle={toggleSport}
+                  onAddCustom={addCustomSport}
+                  onRemoveCustom={removeCustomSport}
+                  maxPrimarySports={primarySportCap}
+                />
+              </div>
+            </div>
           </Step>
 
           <div className="mt-6 flex justify-end">
