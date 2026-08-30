@@ -23,12 +23,21 @@ export const Route = createFileRoute("/privacy")({
 });
 
 function PrivacyPage() {
+  const router = useRouter();
+  const canGoBack = useCanGoBack();
+
   return (
     <div className="mx-auto max-w-3xl px-5 py-12 sm:py-16">
       <div className="mb-8">
-        <Link to="/" className="text-sm text-text-secondary underline-offset-2 hover:underline">
+        <button
+          type="button"
+          onClick={() =>
+            canGoBack ? router.history.back() : void router.navigate({ to: "/" })
+          }
+          className="press text-sm text-text-secondary underline-offset-2"
+        >
           ← Back
-        </Link>
+        </button>
       </div>
 
       <article className="prose-gradus space-y-6 text-text-primary">
