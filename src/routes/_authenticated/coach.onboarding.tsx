@@ -136,7 +136,6 @@ function OnboardingForm({ data }: { data: OnboardingData }) {
     distinctPrimarySportCount,
   });
 
-  const [step, setStep] = useState(1);
   const [firstName, setFirstName] = useState(data.profile.firstName);
   const [lastName, setLastName] = useState(data.profile.lastName);
 
@@ -312,45 +311,6 @@ function Step({
       <h1 className="text-3xl sm:text-4xl">{title}</h1>
       {subtitle && <p className="mt-2 text-sm text-text-secondary">{subtitle}</p>}
       <div className="mt-5">{children}</div>
-    </div>
-  );
-}
-
-function ReviewSummary({
-  firstName,
-  lastName,
-  sports,
-  getSportMeta,
-}: {
-  firstName: string;
-  lastName: string;
-  sports: SelectedSport[];
-  getSportMeta: (key: string) => { label: string; standard?: string; custom: boolean };
-}) {
-  return (
-    <div className="space-y-3">
-      <div>
-        <p className="text-xs uppercase tracking-wider text-text-secondary">Coach</p>
-        <p className="mt-1 text-lg font-semibold text-text-primary">
-          {firstName} {lastName}
-        </p>
-      </div>
-      <div>
-        <p className="text-xs uppercase tracking-wider text-text-secondary">Sports</p>
-        <ul className="mt-2 space-y-1">
-          {sports.map((s) => {
-            const meta = getSportMeta(s.key);
-            return (
-              <li
-                key={s.key}
-                className="flex justify-between border-b border-divider/60 py-1.5 text-sm"
-              >
-                <span className="text-text-primary">{meta.label}</span>
-              </li>
-            );
-          })}
-        </ul>
-      </div>
     </div>
   );
 }
