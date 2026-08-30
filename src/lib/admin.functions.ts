@@ -2057,29 +2057,55 @@ export const getAdminSessions = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const sinceISO = new Date(Date.now() - data.days * 24 * 60 * 60 * 1000).toISOString();
+    // plan_sessions has no FK to plans/athletes, so PostgREST can't embed them.
+    // Resolve titles and athlete names with explicit follow-up lookups.
     const { data: rows, error } = await supabaseAdmin
       .from("plan_sessions")
-      .select(
-        "id, plan_id, state_index, note, duration_seconds, logged_at, parent_id, athlete_id, plans(title), athletes(first_name, last_name, is_test)",
-      )
+      .select("id, plan_id, state_index, note, duration_seconds, logged_at, parent_id, athlete_id")
       .gte("logged_at", sinceISO)
       .order("logged_at", { ascending: false })
       .limit(300);
     if (error) dbError(error);
 
-    let mapped = (rows ?? []).map((s: any) => ({
-      id: s.id,
-      planId: s.plan_id as string,
-      planTitle: s.plans?.title ?? "(untitled plan)",
-      athleteName:
-        `${s.athletes?.first_name ?? ""} ${s.athletes?.last_name ?? ""}`.trim() || "(no athlete)",
-      stateIndex: s.state_index as number,
-      note: (s.note ?? "") as string,
-      durationSeconds: (s.duration_seconds ?? 0) as number,
-      loggedAt: s.logged_at as string,
-      loggedBy: s.parent_id ? ("parent" as const) : ("athlete" as const),
-      isTest: !!s.athletes?.is_test,
-    }));
+    const sessionRows = rows ?? [];
+    const planIds = [...new Set(sessionRows.map((s) => s.plan_id).filter(Boolean))] as string[];
+    const athleteIds = [
+      ...new Set(sessionRows.map((s) => s.athlete_id).filter(Boolean)),
+    ] as string[];
+
+    const [planRes, athleteRes] = await Promise.all([
+      planIds.length
+        ? supabaseAdmin.from("plans").select("id, title").in("id", planIds)
+        : Promise.resolve({ data: [], error: null } as const),
+      athleteIds.length
+        ? supabaseAdmin
+            .from("athletes")
+            .select("id, first_name, last_name, is_test")
+            .in("id", athleteIds)
+        : Promise.resolve({ data: [], error: null } as const),
+    ]);
+    if (planRes.error) dbError(planRes.error);
+    if (athleteRes.error) dbError(athleteRes.error);
+
+    const planTitles = new Map((planRes.data ?? []).map((p: any) => [p.id, p.title as string]));
+    const athleteById = new Map((athleteRes.data ?? []).map((a: any) => [a.id, a]));
+
+    let mapped = sessionRows.map((s: any) => {
+      const athlete = athleteById.get(s.athlete_id);
+      return {
+        id: s.id,
+        planId: s.plan_id as string,
+        planTitle: planTitles.get(s.plan_id) ?? "(untitled plan)",
+        athleteName:
+          `${athlete?.first_name ?? ""} ${athlete?.last_name ?? ""}`.trim() || "(no athlete)",
+        stateIndex: s.state_index as number,
+        note: (s.note ?? "") as string,
+        durationSeconds: (s.duration_seconds ?? 0) as number,
+        loggedAt: s.logged_at as string,
+        loggedBy: s.parent_id ? ("parent" as const) : ("athlete" as const),
+        isTest: !!athlete?.is_test,
+      };
+    });
     if (!data.includeTest) mapped = mapped.filter((r) => !r.isTest);
     return { rows: mapped };
   });
