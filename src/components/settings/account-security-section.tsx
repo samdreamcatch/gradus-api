@@ -46,6 +46,7 @@ export function AccountSecuritySection() {
   const [sendingReset, setSendingReset] = useState(false);
   const [sendingMagic, setSendingMagic] = useState(false);
   const [changeOpen, setChangeOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   async function sendReset() {
     if (!email) {
