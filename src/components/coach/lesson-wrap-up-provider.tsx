@@ -22,6 +22,7 @@ import {
 } from "@/lib/lesson-wrap-ups.functions";
 import { createPlan } from "@/lib/plans.functions";
 import { useBottomBannerLock } from "@/lib/bottom-banner-store";
+import { useAuthReady } from "@/hooks/use-auth-ready";
 
 function nowParts() {
   const d = new Date();
@@ -54,9 +55,10 @@ export function LessonWrapUpProvider() {
     return () => clearInterval(id);
   }, []);
 
+  const { user, isReady } = useAuthReady();
   const fetchPending = useServerFn(getPendingLessonWrapUps);
   const { data: pending = [] } = useQuery({
-    queryKey: ["lesson-wrap-ups", tick.lessonDate, tick.dayOfWeek, tick.currentMinute],
+    queryKey: ["lesson-wrap-ups", user?.id, tick.lessonDate, tick.dayOfWeek, tick.currentMinute],
     // Background poll: never let a transient server-fn failure bubble into an
     // error boundary / blank screen. Quietly empty for non-coach users too.
     queryFn: async () => {
@@ -66,6 +68,9 @@ export function LessonWrapUpProvider() {
         return [] as PendingWrapUp[];
       }
     },
+    // Don't call the protected server fn before the session is hydrated —
+    // without a bearer token the middleware throws "No authorization header".
+    enabled: isReady && !!user,
     retry: false,
     throwOnError: false,
     refetchInterval: 60_000,
