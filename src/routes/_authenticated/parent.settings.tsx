@@ -222,7 +222,6 @@ function ParentSettingsPage() {
               </SettingsList>
             </SettingsGroup>
 
-
             <SettingsGroup label="My athletes">
               <AthletesList
                 athletes={data.athletes as AthleteData[]}
@@ -251,7 +250,6 @@ function ParentSettingsPage() {
             </SettingsGroup>
 
             <LegalSection />
-
           </>
         )}
       </div>

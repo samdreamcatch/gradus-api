@@ -89,7 +89,6 @@ function SettingsPage() {
           </SettingsList>
         </SettingsGroup>
 
-
         <SettingsGroup label="Coaching">
           <SettingsList>
             <SportsDisclosure
@@ -124,7 +123,6 @@ function SettingsPage() {
         </SettingsGroup>
 
         <LegalSection />
-
       </div>
       <CoachBottomNav />
     </>

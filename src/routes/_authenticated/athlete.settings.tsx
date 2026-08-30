@@ -113,7 +113,6 @@ function AthleteSettingsPage() {
               </SettingsList>
             </SettingsGroup>
 
-
             {showCoaches && (
               <SettingsGroup label="Coaches">
                 <SettingsList>
@@ -157,7 +156,6 @@ function AthleteSettingsPage() {
             </SettingsGroup>
 
             <LegalSection />
-
           </>
         )}
       </div>
