@@ -16,6 +16,7 @@ import {
   MailCheck,
   MailPlus,
   Megaphone,
+  Share2,
   type LucideIcon,
 } from "lucide-react";
 import {
