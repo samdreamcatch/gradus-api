@@ -250,22 +250,7 @@ function OnboardingForm({ data }: { data: OnboardingData }) {
     <>
       <div className="flex min-h-dvh items-start justify-center px-4 pt-8 pb-app-chrome sm:items-center">
         <div className="w-full max-w-2xl rounded-2xl bg-card p-8 shadow-[0_10px_40px_-12px_rgba(0,0,0,0.15)] sm:p-10">
-          <div className="mb-4 flex items-center justify-between">
-            <p className="text-xs font-bold uppercase tracking-widest text-accent-ink">
-              Step {step} of {totalSteps}
-            </p>
-            <div className="flex gap-1.5">
-              {Array.from({ length: totalSteps }, (_, i) => i + 1).map((n) => (
-                <span
-                  key={n}
-                  className={`h-1.5 w-6 rounded-full ${n <= step ? "bg-accent" : "bg-divider"}`}
-                />
-              ))}
-            </div>
-          </div>
-
-          {currentKind === "profile" && (
-            <Step title="Tell us about yourself">
+          <Step title="Tell us about yourself">
               <div className="space-y-6">
                 <div className="grid gap-2 sm:grid-cols-2">
                   <div className="space-y-2">
