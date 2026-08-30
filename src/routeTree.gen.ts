@@ -96,6 +96,7 @@ import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/publi
 import { Route as ApiPublicHooksLifecycleEmailsRouteImport } from './routes/api/public/hooks/lifecycle-emails'
 import { Route as ApiPublicHooksErrorDigestRouteImport } from './routes/api/public/hooks/error-digest'
 import { Route as ApiPublicHooksBillingNoticesRouteImport } from './routes/api/public/hooks/billing-notices'
+import { Route as AuthenticatedParentSettingsAccountRouteImport } from './routes/_authenticated/parent.settings_.account'
 import { Route as AuthenticatedParentPlansPlanIdRouteImport } from './routes/_authenticated/parent.plans.$planId'
 import { Route as AuthenticatedParentMessagesRoomIdRouteImport } from './routes/_authenticated/parent.messages.$roomId'
 import { Route as AuthenticatedCoachSettingsAccountRouteImport } from './routes/_authenticated/coach.settings_.account'
@@ -591,6 +592,12 @@ const ApiPublicHooksBillingNoticesRoute =
     path: '/api/public/hooks/billing-notices',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AuthenticatedParentSettingsAccountRoute =
+  AuthenticatedParentSettingsAccountRouteImport.update({
+    id: '/settings_/account',
+    path: '/settings/account',
+    getParentRoute: () => AuthenticatedParentRoute,
+  } as any)
 const AuthenticatedParentPlansPlanIdRoute =
   AuthenticatedParentPlansPlanIdRouteImport.update({
     id: '/plans/$planId',
@@ -744,6 +751,7 @@ export interface FileRoutesByFullPath {
   '/coach/settings/account': typeof AuthenticatedCoachSettingsAccountRoute
   '/parent/messages/$roomId': typeof AuthenticatedParentMessagesRoomIdRoute
   '/parent/plans/$planId': typeof AuthenticatedParentPlansPlanIdRoute
+  '/parent/settings/account': typeof AuthenticatedParentSettingsAccountRoute
   '/api/public/hooks/billing-notices': typeof ApiPublicHooksBillingNoticesRoute
   '/api/public/hooks/error-digest': typeof ApiPublicHooksErrorDigestRoute
   '/api/public/hooks/lifecycle-emails': typeof ApiPublicHooksLifecycleEmailsRoute
@@ -838,6 +846,7 @@ export interface FileRoutesByTo {
   '/coach/settings/account': typeof AuthenticatedCoachSettingsAccountRoute
   '/parent/messages/$roomId': typeof AuthenticatedParentMessagesRoomIdRoute
   '/parent/plans/$planId': typeof AuthenticatedParentPlansPlanIdRoute
+  '/parent/settings/account': typeof AuthenticatedParentSettingsAccountRoute
   '/api/public/hooks/billing-notices': typeof ApiPublicHooksBillingNoticesRoute
   '/api/public/hooks/error-digest': typeof ApiPublicHooksErrorDigestRoute
   '/api/public/hooks/lifecycle-emails': typeof ApiPublicHooksLifecycleEmailsRoute
@@ -940,6 +949,7 @@ export interface FileRoutesById {
   '/_authenticated/coach/settings_/account': typeof AuthenticatedCoachSettingsAccountRoute
   '/_authenticated/parent/messages/$roomId': typeof AuthenticatedParentMessagesRoomIdRoute
   '/_authenticated/parent/plans/$planId': typeof AuthenticatedParentPlansPlanIdRoute
+  '/_authenticated/parent/settings_/account': typeof AuthenticatedParentSettingsAccountRoute
   '/api/public/hooks/billing-notices': typeof ApiPublicHooksBillingNoticesRoute
   '/api/public/hooks/error-digest': typeof ApiPublicHooksErrorDigestRoute
   '/api/public/hooks/lifecycle-emails': typeof ApiPublicHooksLifecycleEmailsRoute
@@ -1042,6 +1052,7 @@ export interface FileRouteTypes {
     | '/coach/settings/account'
     | '/parent/messages/$roomId'
     | '/parent/plans/$planId'
+    | '/parent/settings/account'
     | '/api/public/hooks/billing-notices'
     | '/api/public/hooks/error-digest'
     | '/api/public/hooks/lifecycle-emails'
@@ -1136,6 +1147,7 @@ export interface FileRouteTypes {
     | '/coach/settings/account'
     | '/parent/messages/$roomId'
     | '/parent/plans/$planId'
+    | '/parent/settings/account'
     | '/api/public/hooks/billing-notices'
     | '/api/public/hooks/error-digest'
     | '/api/public/hooks/lifecycle-emails'
@@ -1237,6 +1249,7 @@ export interface FileRouteTypes {
     | '/_authenticated/coach/settings_/account'
     | '/_authenticated/parent/messages/$roomId'
     | '/_authenticated/parent/plans/$planId'
+    | '/_authenticated/parent/settings_/account'
     | '/api/public/hooks/billing-notices'
     | '/api/public/hooks/error-digest'
     | '/api/public/hooks/lifecycle-emails'
@@ -1899,6 +1912,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksBillingNoticesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/parent/settings_/account': {
+      id: '/_authenticated/parent/settings_/account'
+      path: '/settings/account'
+      fullPath: '/parent/settings/account'
+      preLoaderRoute: typeof AuthenticatedParentSettingsAccountRouteImport
+      parentRoute: typeof AuthenticatedParentRoute
+    }
     '/_authenticated/parent/plans/$planId': {
       id: '/_authenticated/parent/plans/$planId'
       path: '/plans/$planId'
@@ -2165,6 +2185,7 @@ interface AuthenticatedParentRouteChildren {
   AuthenticatedParentIndexRoute: typeof AuthenticatedParentIndexRoute
   AuthenticatedParentMessagesRoomIdRoute: typeof AuthenticatedParentMessagesRoomIdRoute
   AuthenticatedParentPlansPlanIdRoute: typeof AuthenticatedParentPlansPlanIdRoute
+  AuthenticatedParentSettingsAccountRoute: typeof AuthenticatedParentSettingsAccountRoute
   AuthenticatedParentMessagesIndexRoute: typeof AuthenticatedParentMessagesIndexRoute
   AuthenticatedParentPlansIndexRoute: typeof AuthenticatedParentPlansIndexRoute
   AuthenticatedParentResourcesIndexRoute: typeof AuthenticatedParentResourcesIndexRoute
@@ -2177,6 +2198,8 @@ const AuthenticatedParentRouteChildren: AuthenticatedParentRouteChildren = {
   AuthenticatedParentMessagesRoomIdRoute:
     AuthenticatedParentMessagesRoomIdRoute,
   AuthenticatedParentPlansPlanIdRoute: AuthenticatedParentPlansPlanIdRoute,
+  AuthenticatedParentSettingsAccountRoute:
+    AuthenticatedParentSettingsAccountRoute,
   AuthenticatedParentMessagesIndexRoute: AuthenticatedParentMessagesIndexRoute,
   AuthenticatedParentPlansIndexRoute: AuthenticatedParentPlansIndexRoute,
   AuthenticatedParentResourcesIndexRoute:

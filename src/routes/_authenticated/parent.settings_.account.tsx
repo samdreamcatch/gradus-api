@@ -3,7 +3,7 @@ import { ChevronLeft } from "lucide-react";
 import { ParentBottomNav } from "@/components/parent/bottom-nav";
 import { AccountSecuritySection } from "@/components/settings/account-security-section";
 
-export const Route = createFileRoute("/_authenticated/parent/settings/account")({
+export const Route = createFileRoute("/_authenticated/parent/settings_/account")({
   head: () => ({
     meta: [
       { title: "Account & security — Gradus" },
