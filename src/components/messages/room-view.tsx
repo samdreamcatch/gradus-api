@@ -2,7 +2,21 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { Mic, Send, Square, Trash2, Play, Pause, Paperclip, X, ClipboardList } from "lucide-react";
+import {
+  Mic,
+  Send,
+  Square,
+  Trash2,
+  Play,
+  Pause,
+  Paperclip,
+  X,
+  ClipboardList,
+  MoreVertical,
+  Flag,
+  Ban,
+} from "lucide-react";
+
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,6 +34,8 @@ import { OtherCoachPlansSheet } from "@/components/coach/other-coach-plans-sheet
 import { voiceTranscribe } from "@/lib/voice.functions";
 import { useVoiceCapture } from "@/hooks/use-voice-capture";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ReportSheet } from "@/components/safety/report-sheet";
+import { BlockConfirm } from "@/components/safety/block-confirm";
 
 function roleWord(role: RoleInRoom): string {
   return role === "coach" ? "Coach" : role === "parent" ? "Parent" : "Athlete";
@@ -33,22 +49,64 @@ function planHrefForRole(role: RoleInRoom, planId: string): string {
 
 function ConversationHeader({
   others,
+  onReport,
+  onBlock,
 }: {
-  roomId: string;
-  others: { role: RoleInRoom; firstName: string }[];
+  others: { role: RoleInRoom; firstName: string; userId: string | null }[];
+  onReport: (userId: string, name: string) => void;
+  onBlock: (userId: string, name: string) => void;
 }) {
   const ordered = [...others].sort((a, b) => {
     const rank = (r: RoleInRoom) => (r === "athlete" ? 0 : r === "parent" ? 1 : 2);
     return rank(a.role) - rank(b.role);
   });
+  const actionable = ordered.filter((p) => !!p.userId);
   return (
-    <div className="flex flex-col items-center gap-1 pb-4">
+    <div className="relative flex flex-col items-center gap-1 pb-4">
       <p className="text-base font-bold text-text-primary">
         {ordered.map((p) => p.firstName).join(" & ")}
       </p>
       <p className="text-caption font-black uppercase tracking-widest text-text-tertiary">
         {ordered.map((p) => roleWord(p.role)).join(" · ")}
       </p>
+      {actionable.length > 0 ? (
+        <Popover>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              aria-label="Conversation options"
+              className="press-soft absolute right-0 top-0 inline-flex size-8 items-center justify-center rounded-full text-text-tertiary"
+            >
+              <MoreVertical className="size-4" />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent align="end" className="w-56 p-1">
+            {actionable.map((p) => (
+              <div key={p.userId} className="py-1">
+                {actionable.length > 1 ? (
+                  <p className="px-2 pb-1 text-caption font-black uppercase tracking-widest text-text-tertiary">
+                    {p.firstName}
+                  </p>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={() => onReport(p.userId!, p.firstName)}
+                  className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm text-text-primary"
+                >
+                  <Flag className="size-4" /> Report {p.firstName}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onBlock(p.userId!, p.firstName)}
+                  className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm text-destructive"
+                >
+                  <Ban className="size-4" /> Block {p.firstName}
+                </button>
+              </div>
+            ))}
+          </PopoverContent>
+        </Popover>
+      ) : null}
     </div>
   );
 }
@@ -127,6 +185,12 @@ export function RoomView({ roomId, viewerRole }: { roomId: string; viewerRole?: 
   const queryClient = useQueryClient();
   const fetchOtherPlan = useServerFn(getOtherCoachPlanForMessage);
   const [otherPlanId, setOtherPlanId] = useState<string | null>(null);
+  const [reportTarget, setReportTarget] = useState<{
+    userId: string;
+    name: string;
+    messageId: string | null;
+  } | null>(null);
+  const [blockTarget, setBlockTarget] = useState<{ userId: string; name: string } | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["message-room", viewerRole ?? "default", roomId],
@@ -213,9 +277,11 @@ export function RoomView({ roomId, viewerRole }: { roomId: string; viewerRole?: 
   return (
     <div className="flex h-[calc(100dvh-180px)] flex-col">
       <ConversationHeader
-        roomId={roomId}
         others={room.participants.filter((p) => p.userId !== room.myUserId)}
+        onReport={(userId, name) => setReportTarget({ userId, name, messageId: null })}
+        onBlock={(userId, name) => setBlockTarget({ userId, name })}
       />
+
       <div ref={scrollerRef} className="flex-1 overflow-y-auto">
         <div className="space-y-5">
           {groups.length === 0 ? (
@@ -291,13 +357,27 @@ export function RoomView({ roomId, viewerRole }: { roomId: string; viewerRole?: 
                     </div>
                     <p
                       className={cn(
-                        "mt-0.5 px-2 text-micro font-bold uppercase tracking-widest text-text-tertiary",
-                        mine ? "text-right" : "text-left",
+                        "mt-0.5 flex items-center gap-1.5 px-2 text-micro font-bold uppercase tracking-widest text-text-tertiary",
+                        mine ? "justify-end" : "justify-start",
                       )}
                     >
-                      {fmtTime(m.createdAt)}
-                      {mine && otherReaders.length > 0 ? (
-                        <span className="ml-1.5">· Seen</span>
+                      <span>{fmtTime(m.createdAt)}</span>
+                      {mine && otherReaders.length > 0 ? <span>· Seen</span> : null}
+                      {!mine && !senderDeleted && m.senderUserId ? (
+                        <button
+                          type="button"
+                          aria-label="Report this message"
+                          className="press-soft inline-flex items-center gap-1 text-text-tertiary"
+                          onClick={() =>
+                            setReportTarget({
+                              userId: m.senderUserId!,
+                              name: m.senderFirstName || roleWord(m.senderRole),
+                              messageId: m.id,
+                            })
+                          }
+                        >
+                          <Flag className="size-3" /> Report
+                        </button>
                       ) : null}
                     </p>
                   </div>
@@ -321,6 +401,23 @@ export function RoomView({ roomId, viewerRole }: { roomId: string; viewerRole?: 
         onOpenChange={(open) => {
           if (!open) setOtherPlanId(null);
         }}
+      />
+      <ReportSheet
+        open={!!reportTarget}
+        onOpenChange={(open) => {
+          if (!open) setReportTarget(null);
+        }}
+        targetUserId={reportTarget?.userId ?? ""}
+        targetName={reportTarget?.name ?? ""}
+        messageId={reportTarget?.messageId ?? null}
+      />
+      <BlockConfirm
+        open={!!blockTarget}
+        onOpenChange={(open) => {
+          if (!open) setBlockTarget(null);
+        }}
+        targetUserId={blockTarget?.userId ?? ""}
+        targetName={blockTarget?.name ?? ""}
       />
     </div>
   );

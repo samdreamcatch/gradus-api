@@ -145,21 +145,29 @@ export const listMyRooms = createServerFn({ method: "GET" })
       }
     }
 
-    const out: RoomSummary[] = rooms.map((r) => {
-      const participants = participantsByRoom.get(r.id) ?? [];
-      return {
-        id: r.id,
-        kind: r.kind,
-        coachId: r.coachId,
-        athleteId: r.athleteId,
-        participants,
-        myRole: myRoleByRoom.get(r.id)!,
-        myUserId: userId,
-        lastMessage: lastByRoom.get(r.id) ?? null,
-        unreadCount: unreadByRoom.get(r.id) ?? 0,
-        updatedAt: lastByRoom.get(r.id)?.createdAt ?? r.updatedAt,
-      };
-    });
+    const { blockedUserIds } = await import("./safety.server");
+    const blocked = await blockedUserIds(supabaseAdmin, userId);
+
+    const out: RoomSummary[] = rooms
+      .filter((r) => {
+        const parts = participantsByRoom.get(r.id) ?? [];
+        return !parts.some((p) => p.userId && p.userId !== userId && blocked.has(p.userId));
+      })
+      .map((r) => {
+        const participants = participantsByRoom.get(r.id) ?? [];
+        return {
+          id: r.id,
+          kind: r.kind,
+          coachId: r.coachId,
+          athleteId: r.athleteId,
+          participants,
+          myRole: myRoleByRoom.get(r.id)!,
+          myUserId: userId,
+          lastMessage: lastByRoom.get(r.id) ?? null,
+          unreadCount: unreadByRoom.get(r.id) ?? 0,
+          updatedAt: lastByRoom.get(r.id)?.createdAt ?? r.updatedAt,
+        };
+      });
 
     out.sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1));
     return { rooms: out };
@@ -328,6 +336,22 @@ export const sendMessage = createServerFn({ method: "POST" })
     const room = rooms.find((r) => r.id === data.roomId);
     if (!room) throw new Error("You can't post into this conversation");
     const role = myRoleByRoom.get(room.id)!;
+
+    // Blocking is a full disconnect: no new messages in either direction.
+    {
+      const { blockedUserIds } = await import("./safety.server");
+      const blocked = await blockedUserIds(supabaseAdmin, userId);
+      if (blocked.size > 0) {
+        const parts = (await loadParticipants([room])).get(room.id) ?? [];
+        if (parts.some((p) => p.userId && p.userId !== userId && blocked.has(p.userId))) {
+          return {
+            ok: false as const,
+            reason: "blocked" as const,
+            message: "You can't message this person because one of you has blocked the other.",
+          };
+        }
+      }
+    }
 
     // Athlete-scoped rooms: block sends when the coach↔athlete link is gone.
     if (room.kind === "athlete") {

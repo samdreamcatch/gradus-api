@@ -18,6 +18,7 @@ import {
   Megaphone,
   Share2,
   Sparkles,
+  ShieldAlert,
   type LucideIcon,
 } from "lucide-react";
 import {
@@ -71,7 +72,12 @@ const GROUPS: Group[] = [
     items: [{ to: "/admin/social-plans", label: "Social plans", icon: Share2 }],
   },
   {
+    label: "Trust & safety",
+    items: [{ to: "/admin/reports", label: "Reports", icon: ShieldAlert }],
+  },
+  {
     label: "Support",
+
     items: [
       { to: "/admin/feedback", label: "Feedback", icon: MessageSquare },
       { to: "/admin/errors", label: "Errors", icon: AlertTriangle },

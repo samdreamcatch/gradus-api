@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ChevronLeft } from "lucide-react";
 import { ParentBottomNav } from "@/components/parent/bottom-nav";
 import { AccountSecuritySection } from "@/components/settings/account-security-section";
+import { BlockedUsersSection } from "@/components/safety/blocked-users-section";
 
 export const Route = createFileRoute("/_authenticated/parent/settings_/account")({
   head: () => ({
@@ -37,6 +38,7 @@ function ParentAccountPage() {
         </header>
 
         <AccountSecuritySection showLabel={false} />
+        <BlockedUsersSection />
       </div>
       <ParentBottomNav />
     </>
