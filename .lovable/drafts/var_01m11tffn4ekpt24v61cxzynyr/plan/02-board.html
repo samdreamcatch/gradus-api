@@ -1,0 +1,81 @@
+<svg viewBox="0 0 640 430" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Board layout: Now tab and Schedule tab">
+  <style>
+    text { font-family: var(--font-sans); fill: hsl(var(--muted-foreground)); font-size: 12px; }
+    .lbl { fill: hsl(var(--foreground)); font-size: 14px; font-weight: 480; }
+    .mono { font-family: var(--font-mono); font-size: 11px; }
+    .box { fill: none; stroke: hsl(var(--muted-foreground)); stroke-width: 1; }
+    .rail { stroke: hsl(var(--border)); stroke-width: 1; }
+    .zone { fill: none; stroke: hsl(var(--border)); stroke-width: 1; stroke-dasharray: 4 3; }
+    .quiet { fill: hsl(var(--muted)); }
+    .greek { fill: hsl(var(--border)); }
+    .acc { fill: hsl(var(--accent)); }
+    .accink { fill: hsl(var(--accent-foreground)); font-size: 11px; }
+  </style>
+
+  <!-- NOW tab -->
+  <text class="lbl" x="8" y="16">Now</text>
+  <rect class="zone" x="0" y="26" width="306" height="392" rx="8"/>
+
+  <rect class="box" x="14" y="40" width="278" height="26" rx="8"/>
+  <text x="26" y="57" class="mono">[ Now ]   Schedule</text>
+
+  <!-- your skaters board -->
+  <rect class="box" x="14" y="78" width="278" height="96" rx="8"/>
+  <text x="26" y="96" class="mono">YOUR SKATERS</text>
+  <rect class="greek" x="26" y="104" width="150" height="7" rx="3"/>
+  <text x="26" y="128" class="mono">Nora D. · Interm. Ladies FS · A Rink</text>
+  <text x="26" y="143" class="mono">skates 8 of 12 · 3 ahead · ~14 min</text>
+  <circle class="acc" cx="272" cy="124" r="9"/>
+  <text class="accink" x="272" y="128" text-anchor="middle">★</text>
+  <line class="rail" x1="26" y1="152" x2="280" y2="152"/>
+  <text x="26" y="167" class="mono">Leon G. · Juvenile Boys · C Rink · FINAL 41.20</text>
+
+  <!-- rink panel with three lanes -->
+  <rect class="box" x="14" y="186" width="278" height="218" rx="8"/>
+  <text x="26" y="205" class="lbl">A Rink</text>
+  <text x="248" y="205" class="mono">LIVE</text>
+  <rect class="quiet" x="26" y="216" width="254" height="52" rx="8"/>
+  <text x="38" y="234" class="mono">JUST SCORED</text>
+  <text x="38" y="252" class="mono">7 · Josephine Marr        62.41  ›</text>
+  <rect class="quiet" x="26" y="276" width="254" height="52" rx="8"/>
+  <text x="38" y="294" class="mono">ON THE ICE</text>
+  <text x="38" y="312" class="mono">8 · Nora Donaldson     awaiting</text>
+  <rect class="quiet" x="26" y="336" width="254" height="52" rx="8"/>
+  <text x="38" y="354" class="mono">UP NEXT</text>
+  <text x="38" y="372" class="mono">9 · Addie DiMuro</text>
+
+  <!-- SCHEDULE tab -->
+  <text class="lbl" x="334" y="16">Schedule</text>
+  <rect class="zone" x="326" y="26" width="306" height="392" rx="8"/>
+
+  <rect class="box" x="340" y="40" width="278" height="26" rx="8"/>
+  <text x="352" y="57" class="mono">  Now    [ Schedule ]</text>
+
+  <rect class="box" x="340" y="78" width="278" height="326" rx="8"/>
+  <text x="352" y="98" class="mono">TIME   EVENT                 RINK  STATUS</text>
+  <line class="rail" x1="352" y1="106" x2="606" y2="106"/>
+
+  <text x="352" y="126" class="mono">8:00   Preliminary Ladies    B     FINAL</text>
+  <line class="rail" x1="352" y1="136" x2="606" y2="136"/>
+  <text x="352" y="156" class="mono">9:15   Pre-Juv Ladies FS     B     FINAL</text>
+  <line class="rail" x1="352" y1="166" x2="606" y2="166"/>
+
+  <rect class="quiet" x="346" y="176" width="266" height="34" rx="8"/>
+  <text x="352" y="198" class="mono">10:30  Interm. Ladies FS     A     LIVE</text>
+  <circle class="acc" cx="600" cy="193" r="7"/>
+  <line class="rail" x1="352" y1="216" x2="606" y2="216"/>
+
+  <text x="352" y="236" class="mono">10:40  Juvenile Boys FS      C     LIVE</text>
+  <line class="rail" x1="352" y1="246" x2="606" y2="246"/>
+  <text x="352" y="266" class="mono">11:20  Juvenile Ladies FS    C     DELAYED</text>
+  <line class="rail" x1="352" y1="276" x2="606" y2="276"/>
+  <text x="352" y="296" class="mono">12:05  Novice Ladies SP      A     SCHEDULED</text>
+  <line class="rail" x1="352" y1="306" x2="606" y2="306"/>
+  <text x="352" y="326" class="mono">13:00  Novice Men SP         A     SCHEDULED</text>
+  <line class="rail" x1="352" y1="336" x2="606" y2="336"/>
+  <text x="352" y="356" class="mono">14:10  Junior Ladies FS      B     SCHEDULED</text>
+
+  <circle class="acc" cx="352" cy="392" r="9"/>
+  <text class="accink" x="352" y="396" text-anchor="middle">1</text>
+  <text x="368" y="396">accent marks rows your skaters are in</text>
+</svg>
