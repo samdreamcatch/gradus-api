@@ -39,8 +39,13 @@ export interface BoardSkater {
   segScore: string;
   total: string;
   place: string;
+  /** Overall placement in the event, as published (blank until placed). */
+  finalPlace?: string;
+  /** Every segment's score for combined events, in published column order. */
+  segScores?: { segment: string; score: string; place: string }[];
   protocol?: SkaterProtocol | null;
 }
+
 
 
 export interface BoardCurrent {
