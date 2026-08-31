@@ -242,6 +242,7 @@ export interface IjsSkater {
   segPlace: string;
   total: string;
   of: number;
+  protocol: SkaterProtocol | null;
 }
 
 export interface IjsEventPage {
@@ -254,6 +255,86 @@ export interface IjsEventPage {
   skaters: IjsSkater[];
   count: number;
   withdrawn: number;
+}
+
+/* --------------------------------------------------------- score protocol */
+
+/** Body rows of one detail table, as class-keyed cells. */
+function detailRows(block: string, table: string): { cls: string; val: string }[][] {
+  const m = new RegExp(
+    `<TABLE[^>]*class=["']?${table}[^>]*>([\\s\\S]*?)</TABLE>`,
+    "i",
+  ).exec(block);
+  if (!m) return [];
+  const body = /<TBODY[^>]*>([\s\S]*?)<\/TBODY>/i.exec(m[1] ?? "")?.[1] ?? m[1] ?? "";
+  return matchAll(/<TR[^>]*>([\s\S]*?)<\/TR>/gis, body)
+    .filter((r) => !/<TH[\s>]/i.test(r[1] ?? ""))
+    .map((r) =>
+      matchAll(/<TD([^>]*)>([\s\S]*?)<\/TD>/gis, r[1] ?? "").map((c) => ({
+        cls: attrClass(c[1] ?? ""),
+        val: text(c[2] ?? ""),
+      })),
+    );
+}
+
+/**
+ * The judged breakdown lives in a hidden `TR class=child` row next to each
+ * skater — same page, no extra request. Deductions that scored zero are
+ * dropped: IJS prints the whole catalogue whether or not it applied.
+ */
+export function parseProtocol(block: string): SkaterProtocol | null {
+  const sum = detailRows(block, "detailScoreSum")[0];
+  if (!sum || sum.length < 5) return null;
+
+  const elements: SkaterProtocol["elements"] = [];
+  let elementsTotal: SkaterProtocol["elementsTotal"] = null;
+  for (const row of detailRows(block, "detailScoreElm")) {
+    if (row.some((c) => c.cls === "totbv")) {
+      elementsTotal = {
+        baseValue: row.find((c) => c.cls === "bvv")?.val ?? "",
+        score: row.find((c) => c.cls === "psv")?.val ?? "",
+      };
+      continue;
+    }
+    if (row.length < 6) continue;
+    elements.push({
+      planned: row[0]?.val ?? "",
+      executed: row[1]?.val ?? "",
+      baseValue: row[2]?.val ?? "",
+      goe: row[4]?.val ?? "",
+      score: row[5]?.val ?? "",
+    });
+  }
+
+  const components: SkaterProtocol["components"] = [];
+  for (const row of detailRows(block, "detailScoreCmp")) {
+    if (row.some((c) => c.cls === "totcomp")) continue;
+    if (row[0]?.cls !== "t") continue;
+    components.push({
+      name: row[0].val,
+      unfactored: row[1]?.val ?? "",
+      factor: row[2]?.val ?? "",
+    });
+  }
+
+  const deductions: SkaterProtocol["deductions"] = [];
+  for (const row of detailRows(block, "detailScoreDed")) {
+    if (row[0]?.cls !== "t") continue;
+    const value = row[1]?.val ?? "";
+    if (!value || Number(value) === 0) continue;
+    deductions.push({ name: row[0].val, value });
+  }
+
+  return {
+    total: sum[0]?.val ?? "",
+    elementsScore: sum[1]?.val ?? "",
+    componentsScore: sum[2]?.val ?? "",
+    deductionsScore: sum[4]?.val ?? "",
+    elements,
+    elementsTotal,
+    components,
+    deductions,
+  };
 }
 
 export function parseEvent(doc: string): IjsEventPage {
@@ -289,11 +370,19 @@ export function parseEvent(doc: string): IjsEventPage {
   const skaters: IjsSkater[] = [];
   let withdrawn = 0;
 
-  for (const rowMatch of matchAll(/<TR[^>]*class=["']?parent["']?[^>]*>(.*?)<\/TR>/gis, doc)) {
+  // Parent rows carry the summary; everything between one parent row and the
+  // next is that skater's hidden detail block.
+  const parents = matchAll(/<TR[^>]*class=["']?parent["']?[^>]*>(.*?)<\/TR>/gis, doc);
+  for (let p = 0; p < parents.length; p += 1) {
+    const rowMatch = parents[p]!;
     const row = rowMatch[1] ?? "";
+    const blockStart = rowMatch.index + rowMatch[0].length;
+    const blockEnd = p + 1 < parents.length ? parents[p + 1]!.index : doc.length;
+    const detailBlock = doc.slice(blockStart, blockEnd);
     const tds = matchAll(/<TD([^>]*)>(.*?)<\/TD>/gis, row)
       .map((m) => ({ cls: attrClass(m[1] ?? ""), val: text(m[2] ?? "") }))
       .filter((c) => c.cls !== "expb"); // drop the detail toggle
+
 
     const rest = [...tds];
     let place = "";
