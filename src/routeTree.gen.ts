@@ -97,6 +97,7 @@ import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/publi
 import { Route as ApiPublicHooksLifecycleEmailsRouteImport } from './routes/api/public/hooks/lifecycle-emails'
 import { Route as ApiPublicHooksErrorDigestRouteImport } from './routes/api/public/hooks/error-digest'
 import { Route as ApiPublicHooksBillingNoticesRouteImport } from './routes/api/public/hooks/billing-notices'
+import { Route as ApiPublicBoardRefreshRouteImport } from './routes/api/public/board/refresh'
 import { Route as AuthenticatedParentSettingsAccountRouteImport } from './routes/_authenticated/parent.settings_.account'
 import { Route as AuthenticatedParentPlansPlanIdRouteImport } from './routes/_authenticated/parent.plans.$planId'
 import { Route as AuthenticatedParentMessagesRoomIdRouteImport } from './routes/_authenticated/parent.messages.$roomId'
@@ -600,6 +601,11 @@ const ApiPublicHooksBillingNoticesRoute =
     path: '/api/public/hooks/billing-notices',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicBoardRefreshRoute = ApiPublicBoardRefreshRouteImport.update({
+  id: '/api/public/board/refresh',
+  path: '/api/public/board/refresh',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedParentSettingsAccountRoute =
   AuthenticatedParentSettingsAccountRouteImport.update({
     id: '/settings_/account',
@@ -768,6 +774,7 @@ export interface FileRoutesByFullPath {
   '/parent/messages/$roomId': typeof AuthenticatedParentMessagesRoomIdRoute
   '/parent/plans/$planId': typeof AuthenticatedParentPlansPlanIdRoute
   '/parent/settings/account': typeof AuthenticatedParentSettingsAccountRoute
+  '/api/public/board/refresh': typeof ApiPublicBoardRefreshRoute
   '/api/public/hooks/billing-notices': typeof ApiPublicHooksBillingNoticesRoute
   '/api/public/hooks/error-digest': typeof ApiPublicHooksErrorDigestRoute
   '/api/public/hooks/lifecycle-emails': typeof ApiPublicHooksLifecycleEmailsRoute
@@ -865,6 +872,7 @@ export interface FileRoutesByTo {
   '/parent/messages/$roomId': typeof AuthenticatedParentMessagesRoomIdRoute
   '/parent/plans/$planId': typeof AuthenticatedParentPlansPlanIdRoute
   '/parent/settings/account': typeof AuthenticatedParentSettingsAccountRoute
+  '/api/public/board/refresh': typeof ApiPublicBoardRefreshRoute
   '/api/public/hooks/billing-notices': typeof ApiPublicHooksBillingNoticesRoute
   '/api/public/hooks/error-digest': typeof ApiPublicHooksErrorDigestRoute
   '/api/public/hooks/lifecycle-emails': typeof ApiPublicHooksLifecycleEmailsRoute
@@ -970,6 +978,7 @@ export interface FileRoutesById {
   '/_authenticated/parent/messages/$roomId': typeof AuthenticatedParentMessagesRoomIdRoute
   '/_authenticated/parent/plans/$planId': typeof AuthenticatedParentPlansPlanIdRoute
   '/_authenticated/parent/settings_/account': typeof AuthenticatedParentSettingsAccountRoute
+  '/api/public/board/refresh': typeof ApiPublicBoardRefreshRoute
   '/api/public/hooks/billing-notices': typeof ApiPublicHooksBillingNoticesRoute
   '/api/public/hooks/error-digest': typeof ApiPublicHooksErrorDigestRoute
   '/api/public/hooks/lifecycle-emails': typeof ApiPublicHooksLifecycleEmailsRoute
@@ -1075,6 +1084,7 @@ export interface FileRouteTypes {
     | '/parent/messages/$roomId'
     | '/parent/plans/$planId'
     | '/parent/settings/account'
+    | '/api/public/board/refresh'
     | '/api/public/hooks/billing-notices'
     | '/api/public/hooks/error-digest'
     | '/api/public/hooks/lifecycle-emails'
@@ -1172,6 +1182,7 @@ export interface FileRouteTypes {
     | '/parent/messages/$roomId'
     | '/parent/plans/$planId'
     | '/parent/settings/account'
+    | '/api/public/board/refresh'
     | '/api/public/hooks/billing-notices'
     | '/api/public/hooks/error-digest'
     | '/api/public/hooks/lifecycle-emails'
@@ -1276,6 +1287,7 @@ export interface FileRouteTypes {
     | '/_authenticated/parent/messages/$roomId'
     | '/_authenticated/parent/plans/$planId'
     | '/_authenticated/parent/settings_/account'
+    | '/api/public/board/refresh'
     | '/api/public/hooks/billing-notices'
     | '/api/public/hooks/error-digest'
     | '/api/public/hooks/lifecycle-emails'
@@ -1317,6 +1329,7 @@ export interface RootRouteChildren {
   SignupParentRoute: typeof SignupParentRouteWithChildren
   TeamTokenRoute: typeof TeamTokenRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
+  ApiPublicBoardRefreshRoute: typeof ApiPublicBoardRefreshRoute
   ApiPublicHooksBillingNoticesRoute: typeof ApiPublicHooksBillingNoticesRoute
   ApiPublicHooksErrorDigestRoute: typeof ApiPublicHooksErrorDigestRoute
   ApiPublicHooksLifecycleEmailsRoute: typeof ApiPublicHooksLifecycleEmailsRoute
@@ -1945,6 +1958,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksBillingNoticesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/board/refresh': {
+      id: '/api/public/board/refresh'
+      path: '/api/public/board/refresh'
+      fullPath: '/api/public/board/refresh'
+      preLoaderRoute: typeof ApiPublicBoardRefreshRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/parent/settings_/account': {
       id: '/_authenticated/parent/settings_/account'
       path: '/settings/account'
@@ -2326,6 +2346,7 @@ const rootRouteChildren: RootRouteChildren = {
   SignupParentRoute: SignupParentRouteWithChildren,
   TeamTokenRoute: TeamTokenRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
+  ApiPublicBoardRefreshRoute: ApiPublicBoardRefreshRoute,
   ApiPublicHooksBillingNoticesRoute: ApiPublicHooksBillingNoticesRoute,
   ApiPublicHooksErrorDigestRoute: ApiPublicHooksErrorDigestRoute,
   ApiPublicHooksLifecycleEmailsRoute: ApiPublicHooksLifecycleEmailsRoute,
