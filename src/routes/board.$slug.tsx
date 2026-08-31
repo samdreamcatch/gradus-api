@@ -390,10 +390,23 @@ function BoardPage() {
           <ScheduleBoard
             schedule={payload?.schedule ?? []}
             myNames={watched}
-            onSelectRink={goToRink}
+            onOpenEvent={(e) => setResultsEvent(e)}
           />
         </div>
       )}
+
+      <EventResults
+        event={resultsEvent}
+        onOpenChange={(open) => {
+          if (!open) setResultsEvent(null);
+        }}
+        onOpenScore={(s) =>
+          setScore({
+            skater: s,
+            eventLabel: [resultsEvent?.name, resultsEvent?.segment].filter(Boolean).join(" · "),
+          })
+        }
+      />
 
       <ScoreSheet
         skater={score?.skater ?? null}
@@ -402,6 +415,7 @@ function BoardPage() {
           if (!open) setScore(null);
         }}
       />
+
     </div>
   );
 }
