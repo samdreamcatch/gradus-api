@@ -2,7 +2,21 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { Mic, Send, Square, Trash2, Play, Pause, Paperclip, X, ClipboardList } from "lucide-react";
+import {
+  Mic,
+  Send,
+  Square,
+  Trash2,
+  Play,
+  Pause,
+  Paperclip,
+  X,
+  ClipboardList,
+  MoreVertical,
+  Flag,
+  Ban,
+} from "lucide-react";
+
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
