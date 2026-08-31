@@ -13,6 +13,7 @@ import { MySkaters, findMySkaters, type SkaterMatch } from "@/components/board/m
 import { ScheduleBoard } from "@/components/board/schedule-board";
 import { FollowSearch } from "@/components/board/follow-search";
 import { ScoreSheet } from "@/components/board/score-sheet";
+import { EventResults } from "@/components/board/event-results";
 import { SegmentedToggle } from "@/components/plans/segmented-toggle";
 import { useChangedKeys } from "@/hooks/use-changed-keys";
 import { getBoard, getMySkaterNames } from "@/lib/board.functions";
@@ -78,6 +79,7 @@ function BoardPage() {
   const [rinkName, setRinkName] = useState<string | null>(null);
   const [tab, setTab] = useState<BoardTab | null>(null);
   const [score, setScore] = useState<{ skater: BoardSkater; eventLabel: string } | null>(null);
+  const [resultsEvent, setResultsEvent] = useState<BoardEvent | null>(null);
   /** Names the viewer has muted for this competition. Absent = following. */
   const [unfollowed, setUnfollowed] = useState<string[]>([]);
   /** Skaters the viewer added by hand — no account or connection required. */
