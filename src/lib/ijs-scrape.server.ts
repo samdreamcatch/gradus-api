@@ -242,10 +242,13 @@ export interface IjsSkater {
   club: string;
   segScore: string;
   segPlace: string;
+  /** Every published segment column, in page order. */
+  segScores: { segment: string; score: string; place: string }[];
   total: string;
   of: number;
   protocol: SkaterProtocol | null;
 }
+
 
 export interface IjsEventPage {
   event: string;
