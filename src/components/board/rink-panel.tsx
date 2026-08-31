@@ -50,15 +50,29 @@ function Lane({
   label,
   skater,
   awaiting,
+  onOpenScore,
 }: {
   tone: LaneTone;
   label: string;
   skater: BoardSkater | null;
   awaiting?: boolean;
+  onOpenScore?: (s: BoardSkater) => void;
 }) {
   const style = LANE_STYLE[tone];
+  const tappable = !!skater?.protocol && !!onOpenScore;
+  const Wrapper = tappable ? "button" : "div";
+
   return (
-    <div className={cn("rounded-xl border-l-4 px-4 py-3", style.border)}>
+    <Wrapper
+      {...(tappable
+        ? { type: "button" as const, onClick: () => onOpenScore!(skater!) }
+        : {})}
+      className={cn(
+        "block w-full rounded-xl border-l-4 px-4 py-3 text-left",
+        style.border,
+        tappable && "press-soft",
+      )}
+    >
       <Eyebrow size="micro" className={cn("block", style.label)}>
         {label}
       </Eyebrow>
@@ -89,6 +103,9 @@ function Lane({
                     {skater.place ? `${skater.place}` : ""}
                   </span>
                 ) : null}
+                {tappable ? (
+                  <span className="mt-1 block text-nano text-text-tertiary">score detail ›</span>
+                ) : null}
               </>
             ) : awaiting ? (
               <span className="font-hand text-sm text-text-tertiary">awaiting score</span>
@@ -98,9 +115,10 @@ function Lane({
       ) : (
         <p className="mt-2 text-sm text-text-tertiary">—</p>
       )}
-    </div>
+    </Wrapper>
   );
 }
+
 
 export function RinkPanel({ rink }: { rink: BoardRink }) {
   const current = rink.current;
