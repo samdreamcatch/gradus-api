@@ -113,11 +113,15 @@ export function ScoreSheet({
 
             {p.components.length > 0 ? (
               <section className="space-y-2">
-                <Eyebrow size="micro" tone="tertiary">
+                <Eyebrow size="micro" tone="tertiary" as="h3">
                   PROGRAM COMPONENTS
                 </Eyebrow>
                 {p.components.map((c) => (
-                  <div key={c.name} className="flex items-baseline gap-2 text-sm">
+                  <div
+                    key={c.name}
+                    aria-label={`${c.name}: ${c.unfactored}, factor ${c.factor}`}
+                    className="flex items-baseline gap-2 text-sm"
+                  >
                     <span className="min-w-0 flex-1 truncate text-text-primary">{c.name}</span>
                     <span className="font-mono text-xs text-text-secondary tabular-nums">
                       {c.unfactored}
@@ -127,6 +131,7 @@ export function ScoreSheet({
                     </span>
                   </div>
                 ))}
+
               </section>
             ) : null}
 
