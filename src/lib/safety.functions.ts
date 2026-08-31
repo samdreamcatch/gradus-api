@@ -209,7 +209,6 @@ export const submitReport = createServerFn({ method: "POST" })
     return { ok: true as const, blocked: alsoBlock };
   });
 
-
 /* ---------------- admin queue ---------------- */
 
 export type AdminReport = {
@@ -224,7 +223,6 @@ export type AdminReport = {
   messageBody: string | null;
   resourceTitle: string | null;
   urgent: boolean;
-
 };
 
 export const adminListReports = createServerFn({ method: "POST" })
@@ -304,11 +302,12 @@ export const adminListReports = createServerFn({ method: "POST" })
         reporter: { userId: r.reporter_user_id, ...reporter },
         reported: { userId: r.reported_user_id, ...reported },
         messageBody: r.message_id ? (bodyById.get(r.message_id) ?? null) : null,
-        resourceTitle: r.resource_id ? (resourceById.get(r.resource_id) ?? "Deleted resource") : null,
+        resourceTitle: r.resource_id
+          ? (resourceById.get(r.resource_id) ?? "Deleted resource")
+          : null,
         urgent: r.reason === "minor_safety",
       });
     }
-
 
     // Safety concerns about a minor float to the top, then newest first.
     items.sort((a, b) => {
