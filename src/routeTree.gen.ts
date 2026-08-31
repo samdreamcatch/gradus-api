@@ -17,6 +17,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as BoardIndexRouteImport } from './routes/board.index'
 import { Route as TeamTokenRouteImport } from './routes/team.$token'
 import { Route as SignupParentRouteImport } from './routes/signup.parent'
 import { Route as SignupCoachRouteImport } from './routes/signup.coach'
@@ -151,6 +152,11 @@ const AuthenticatedRoute = AuthenticatedRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BoardIndexRoute = BoardIndexRouteImport.update({
+  id: '/board/',
+  path: '/board/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TeamTokenRoute = TeamTokenRouteImport.update({
@@ -721,6 +727,7 @@ export interface FileRoutesByFullPath {
   '/signup/coach': typeof SignupCoachRoute
   '/signup/parent': typeof SignupParentRouteWithChildren
   '/team/$token': typeof TeamTokenRoute
+  '/board/': typeof BoardIndexRoute
   '/admin/active': typeof AuthenticatedAdminActiveRoute
   '/admin/activity': typeof AuthenticatedAdminActivityRoute
   '/admin/announcements': typeof AuthenticatedAdminAnnouncementsRoute
@@ -821,6 +828,7 @@ export interface FileRoutesByTo {
   '/signup/coach': typeof SignupCoachRoute
   '/signup/parent': typeof SignupParentRouteWithChildren
   '/team/$token': typeof TeamTokenRoute
+  '/board': typeof BoardIndexRoute
   '/admin/active': typeof AuthenticatedAdminActiveRoute
   '/admin/activity': typeof AuthenticatedAdminActivityRoute
   '/admin/announcements': typeof AuthenticatedAdminAnnouncementsRoute
@@ -927,6 +935,7 @@ export interface FileRoutesById {
   '/signup/coach': typeof SignupCoachRoute
   '/signup/parent': typeof SignupParentRouteWithChildren
   '/team/$token': typeof TeamTokenRoute
+  '/board/': typeof BoardIndexRoute
   '/_authenticated/admin/active': typeof AuthenticatedAdminActiveRoute
   '/_authenticated/admin/activity': typeof AuthenticatedAdminActivityRoute
   '/_authenticated/admin/announcements': typeof AuthenticatedAdminAnnouncementsRoute
@@ -1034,6 +1043,7 @@ export interface FileRouteTypes {
     | '/signup/coach'
     | '/signup/parent'
     | '/team/$token'
+    | '/board/'
     | '/admin/active'
     | '/admin/activity'
     | '/admin/announcements'
@@ -1134,6 +1144,7 @@ export interface FileRouteTypes {
     | '/signup/coach'
     | '/signup/parent'
     | '/team/$token'
+    | '/board'
     | '/admin/active'
     | '/admin/activity'
     | '/admin/announcements'
@@ -1239,6 +1250,7 @@ export interface FileRouteTypes {
     | '/signup/coach'
     | '/signup/parent'
     | '/team/$token'
+    | '/board/'
     | '/_authenticated/admin/active'
     | '/_authenticated/admin/activity'
     | '/_authenticated/admin/announcements'
@@ -1341,6 +1353,7 @@ export interface RootRouteChildren {
   SignupCoachRoute: typeof SignupCoachRoute
   SignupParentRoute: typeof SignupParentRouteWithChildren
   TeamTokenRoute: typeof TeamTokenRoute
+  BoardIndexRoute: typeof BoardIndexRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicBoardRefreshRoute: typeof ApiPublicBoardRefreshRoute
   ApiPublicHooksBillingNoticesRoute: typeof ApiPublicHooksBillingNoticesRoute
@@ -1409,6 +1422,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/board/': {
+      id: '/board/'
+      path: '/board'
+      fullPath: '/board/'
+      preLoaderRoute: typeof BoardIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/team/$token': {
@@ -2366,6 +2386,7 @@ const rootRouteChildren: RootRouteChildren = {
   SignupCoachRoute: SignupCoachRoute,
   SignupParentRoute: SignupParentRouteWithChildren,
   TeamTokenRoute: TeamTokenRoute,
+  BoardIndexRoute: BoardIndexRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicBoardRefreshRoute: ApiPublicBoardRefreshRoute,
   ApiPublicHooksBillingNoticesRoute: ApiPublicHooksBillingNoticesRoute,
