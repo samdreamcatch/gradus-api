@@ -27,6 +27,7 @@ import { Route as ICodeRouteImport } from './routes/i.$code'
 import { Route as GTokenRouteImport } from './routes/g.$token'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as DevPaywallPreviewRouteImport } from './routes/dev.paywall-preview'
+import { Route as BoardSlugRouteImport } from './routes/board.$slug'
 import { Route as AuthenticatedParentRouteImport } from './routes/_authenticated/parent'
 import { Route as AuthenticatedOrgAdminRouteImport } from './routes/_authenticated/org-admin'
 import { Route as AuthenticatedCoachRouteImport } from './routes/_authenticated/coach'
@@ -200,6 +201,11 @@ const EmailUnsubscribeRoute = EmailUnsubscribeRouteImport.update({
 const DevPaywallPreviewRoute = DevPaywallPreviewRouteImport.update({
   id: '/dev/paywall-preview',
   path: '/dev/paywall-preview',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BoardSlugRoute = BoardSlugRouteImport.update({
+  id: '/board/$slug',
+  path: '/board/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedParentRoute = AuthenticatedParentRouteImport.update({
@@ -704,6 +710,7 @@ export interface FileRoutesByFullPath {
   '/coach': typeof AuthenticatedCoachRouteWithChildren
   '/org-admin': typeof AuthenticatedOrgAdminRouteWithChildren
   '/parent': typeof AuthenticatedParentRouteWithChildren
+  '/board/$slug': typeof BoardSlugRoute
   '/dev/paywall-preview': typeof DevPaywallPreviewRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/g/$token': typeof GTokenRoute
@@ -803,6 +810,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
   '/unsubscribe': typeof UnsubscribeRoute
+  '/board/$slug': typeof BoardSlugRoute
   '/dev/paywall-preview': typeof DevPaywallPreviewRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/g/$token': typeof GTokenRoute
@@ -908,6 +916,7 @@ export interface FileRoutesById {
   '/_authenticated/coach': typeof AuthenticatedCoachRouteWithChildren
   '/_authenticated/org-admin': typeof AuthenticatedOrgAdminRouteWithChildren
   '/_authenticated/parent': typeof AuthenticatedParentRouteWithChildren
+  '/board/$slug': typeof BoardSlugRoute
   '/dev/paywall-preview': typeof DevPaywallPreviewRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/g/$token': typeof GTokenRoute
@@ -1014,6 +1023,7 @@ export interface FileRouteTypes {
     | '/coach'
     | '/org-admin'
     | '/parent'
+    | '/board/$slug'
     | '/dev/paywall-preview'
     | '/email/unsubscribe'
     | '/g/$token'
@@ -1113,6 +1123,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/terms'
     | '/unsubscribe'
+    | '/board/$slug'
     | '/dev/paywall-preview'
     | '/email/unsubscribe'
     | '/g/$token'
@@ -1217,6 +1228,7 @@ export interface FileRouteTypes {
     | '/_authenticated/coach'
     | '/_authenticated/org-admin'
     | '/_authenticated/parent'
+    | '/board/$slug'
     | '/dev/paywall-preview'
     | '/email/unsubscribe'
     | '/g/$token'
@@ -1318,6 +1330,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   TermsRoute: typeof TermsRoute
   UnsubscribeRoute: typeof UnsubscribeRoute
+  BoardSlugRoute: typeof BoardSlugRoute
   DevPaywallPreviewRoute: typeof DevPaywallPreviewRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   GTokenRoute: typeof GTokenRoute
@@ -1466,6 +1479,13 @@ declare module '@tanstack/react-router' {
       path: '/dev/paywall-preview'
       fullPath: '/dev/paywall-preview'
       preLoaderRoute: typeof DevPaywallPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/board/$slug': {
+      id: '/board/$slug'
+      path: '/board/$slug'
+      fullPath: '/board/$slug'
+      preLoaderRoute: typeof BoardSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/parent': {
@@ -2335,6 +2355,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   TermsRoute: TermsRoute,
   UnsubscribeRoute: UnsubscribeRoute,
+  BoardSlugRoute: BoardSlugRoute,
   DevPaywallPreviewRoute: DevPaywallPreviewRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   GTokenRoute: GTokenRoute,
