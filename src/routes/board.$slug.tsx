@@ -23,6 +23,19 @@ const HISTORY_KEY = "gradus.boardHistory";
 const FOLLOW_KEY = "gradus.boardFollow";
 const EXTRA_KEY = "gradus.boardFollowExtra";
 
+type BoardTab = "mine" | "rinks" | "schedule";
+
+const TABS = [
+  { key: "mine" as const, label: "Mine", id: "board-tab-mine", controls: "board-panel-mine" },
+  { key: "rinks" as const, label: "Rinks", id: "board-tab-rinks", controls: "board-panel-rinks" },
+  {
+    key: "schedule" as const,
+    label: "Schedule",
+    id: "board-tab-schedule",
+    controls: "board-panel-schedule",
+  },
+];
+
 export const Route = createFileRoute("/board/$slug")({
   head: () => ({
     meta: [
