@@ -274,11 +274,25 @@ export const adminListReports = createServerFn({ method: "POST" })
       }
     }
 
+    const resourceIds = (rows ?? []).map((r: any) => r.resource_id).filter(Boolean) as string[];
+    const resourceById = new Map<string, string>();
+    if (resourceIds.length) {
+      const { data: res } = await supabaseAdmin
+        .from("resources")
+        .select("id, title, kind")
+        .in("id", resourceIds);
+      for (const x of res ?? []) {
+        resourceById.set(x.id, `${x.title ?? "Untitled"} (${x.kind ?? "file"})`);
+      }
+    }
+
     const items: AdminReport[] = [];
     for (const r of rows ?? []) {
       const [reporter, reported] = await Promise.all([
         who(r.reporter_user_id),
-        who(r.reported_user_id),
+        r.reported_user_id
+          ? who(r.reported_user_id)
+          : Promise.resolve({ name: "Gradus resource", role: "n/a" }),
       ]);
       items.push({
         id: r.id,
@@ -290,9 +304,11 @@ export const adminListReports = createServerFn({ method: "POST" })
         reporter: { userId: r.reporter_user_id, ...reporter },
         reported: { userId: r.reported_user_id, ...reported },
         messageBody: r.message_id ? (bodyById.get(r.message_id) ?? null) : null,
+        resourceTitle: r.resource_id ? (resourceById.get(r.resource_id) ?? "Deleted resource") : null,
         urgent: r.reason === "minor_safety",
       });
     }
+
 
     // Safety concerns about a minor float to the top, then newest first.
     items.sort((a, b) => {
