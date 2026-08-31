@@ -217,11 +217,13 @@ export async function buildPayload(
     rinks.push(rink);
   }
 
-  // The day's departures board. Every event, in start order, with its results
-  // when we already know them. Pages are fetched once per status change and
-  // then read from the cache.
+  // The departures board. Every event of the whole competition, in start order,
+  // with its results when we already know them. Pages are fetched once per
+  // status change and then read from the cache, so past days cost nothing after
+  // the first pass; future events on other days are not fetched at all.
   const schedule: BoardEvent[] = [];
-  for (const e of day) {
+  const dayKeys = new Set(day.map((e) => dayKeyOf(e.startAt)));
+  for (const e of dated) {
     const raw = e.status.toLowerCase();
     const status: BoardEvent["status"] = DONE_STATUSES.includes(raw)
       ? "final"
@@ -230,6 +232,8 @@ export async function buildPayload(
         : "scheduled";
     const key = `${e.file}:${raw}`;
     const withProtocol = +e.startAt >= Date.now() - PROTOCOL_WINDOW_MS;
+    const onShownDay = dayKeys.has(dayKeyOf(e.startAt));
+    const worthFetching = onShownDay || status !== "scheduled";
 
     let entry: CachedEvent | null = null;
     const loaded = pageCache.get(e.file);
@@ -240,7 +244,7 @@ export async function buildPayload(
       };
     } else if (orderCache[key]) {
       entry = orderCache[key]!;
-    } else {
+    } else if (worthFetching) {
       try {
         const ev = await loadEvent(e.file);
         entry = { count: ev.count, results: ev.skaters.map((s) => skaterJson(s, withProtocol)!) };
@@ -253,16 +257,19 @@ export async function buildPayload(
     schedule.push({
       file: e.file,
       name: e.name,
-      segment: loaded?.segment ?? "",
-      rink: e.venue || "Unassigned",
+      segment: pageCache.get(e.file)?.segment ?? "",
+      rink: e.venue || venues[e.file] || "Unassigned",
       timeLabel: e.timeLabel,
       startIso: e.startAt.toISOString(),
       status,
       count: entry?.count ?? null,
+      dayLabel: e.day,
+      dayKey: dayKeyOf(e.startAt),
       results: entry?.results ?? [],
     });
   }
   schedule.sort((a, b) => (a.startIso ?? "").localeCompare(b.startIso ?? ""));
+
 
   return {
     payload: {
