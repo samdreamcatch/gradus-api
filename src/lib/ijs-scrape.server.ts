@@ -410,17 +410,30 @@ export function parseEvent(doc: string): IjsEventPage {
     let segScore = "";
     let segPlace = place;
     let total = "";
+    const segScores: IjsSkater["segScores"] = [];
     if (colSegs.length > 1) {
       const pairs: [string, string][] = [];
       for (let i = 0; i + 1 < vals.length && pairs.length < colSegs.length; i += 2) {
         pairs.push([vals[i] ?? "", vals[i + 1] ?? ""]);
       }
+      pairs.forEach(([p, s], i) => {
+        segScores.push({
+          segment: colSegs[i] ?? "",
+          score: isNum(s) ? s : "",
+          place: p ?? "",
+        });
+      });
       const pair = pairs[activeCol];
       segPlace = pair?.[0] ?? "";
       segScore = pair?.[1] ?? "";
       total = vals[colSegs.length * 2] ?? "";
     } else {
       segScore = vals[0] ?? "";
+      segScores.push({
+        segment: colSegs[0] ?? segment,
+        score: isNum(segScore) ? segScore : "",
+        place,
+      });
     }
     if (!isNum(segScore)) segScore = "";
     if (!isNum(total)) total = "";
@@ -438,10 +451,13 @@ export function parseEvent(doc: string): IjsEventPage {
       club,
       segScore,
       segPlace,
+      segScores,
       total,
       of: 0,
       protocol: segScore ? parseProtocol(detailBlock) : null,
     });
+
+
 
   }
 
