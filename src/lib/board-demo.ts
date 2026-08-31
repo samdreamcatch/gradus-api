@@ -6,10 +6,12 @@
  */
 import type {
   BoardCurrent,
+  BoardEvent,
   BoardPayload,
   BoardResponse,
   BoardRink,
   BoardSkater,
+  SkaterProtocol,
 } from "./board-types";
 
 export const DEMO_SLUG = "demo";
@@ -29,6 +31,35 @@ function timeLabel(minutesFromNow: number): string {
   }).format(new Date(Date.now() + minutesFromNow * 60_000));
 }
 
+/** A plausible free skate protocol, scaled so the totals match `score`. */
+function protocolFor(score: string): SkaterProtocol {
+  const total = Number(score);
+  const elementsScore = (total * 0.55).toFixed(2);
+  const componentsScore = (total * 0.45).toFixed(2);
+  return {
+    total: score,
+    elementsScore,
+    componentsScore,
+    deductionsScore: "0.00",
+    elements: [
+      { planned: "2A", executed: "2A", baseValue: "3.30", goe: "0.44", score: "3.74" },
+      { planned: "3T", executed: "3T", baseValue: "4.20", goe: "-0.56", score: "3.64" },
+      { planned: "FCSp3", executed: "FCSp3", baseValue: "2.80", goe: "0.28", score: "3.08" },
+      { planned: "2Lz+2Lo", executed: "2Lz+2Lo", baseValue: "3.80", goe: "0.21", score: "4.01" },
+      { planned: "StSq2", executed: "StSq2", baseValue: "2.60", goe: "0.35", score: "2.95" },
+      { planned: "2F", executed: "2F", baseValue: "1.80", goe: "0.18", score: "1.98" },
+      { planned: "CCoSp4", executed: "CCoSp4", baseValue: "3.50", goe: "0.47", score: "3.97" },
+    ],
+    elementsTotal: { baseValue: "22.00", score: elementsScore },
+    components: [
+      { name: "Composition", unfactored: "5.25", factor: "1.00" },
+      { name: "Presentation", unfactored: "5.00", factor: "1.00" },
+      { name: "Skating Skills", unfactored: "5.50", factor: "1.00" },
+    ],
+    deductions: [],
+  };
+}
+
 function skater(
   start: number,
   of: number,
@@ -45,22 +76,48 @@ function skater(
     segScore: opts.segScore ?? "",
     total: opts.total ?? "",
     place: opts.place ?? "",
+    protocol: opts.segScore ? protocolFor(opts.segScore) : null,
   };
 }
 
-const A_ORDER: { start: number; name: string; club: string }[] = [
-  { start: 1, name: "Harper Lindqvist", club: "Detroit SC" },
-  { start: 2, name: "Mia Okonkwo", club: "Ann Arbor FSC" },
-  { start: 3, name: "Sofia Renaldi", club: "Onyx-Suburban SA" },
-  { start: 4, name: "Claire Beaumont", club: "Lansing SC" },
-  { start: 5, name: "Ava Petrenko", club: "Detroit SC" },
-  { start: 6, name: "Emilia Vasquez", club: "Fraser FSC" },
-  { start: 7, name: "Josephine Marr", club: "Detroit SC" },
-  { start: 8, name: "Nora Donaldson", club: "Onyx-Suburban SA" },
-  { start: 9, name: "Addie DiMuro", club: "Ann Arbor FSC" },
-  { start: 10, name: "Leon Gillespie", club: "Detroit SC" },
-  { start: 11, name: "Wren Castellano", club: "Lansing SC" },
-  { start: 12, name: "Talia Bergström", club: "Fraser FSC" },
+const A_ORDER: BoardSkater[] = [
+  skater(1, 12, "Harper Lindqvist", "Detroit SC", { segScore: "54.18", total: "54.18", place: "5" }),
+  skater(2, 12, "Mia Okonkwo", "Ann Arbor FSC", { segScore: "58.02", total: "58.02", place: "3" }),
+  skater(3, 12, "Sofia Renaldi", "Onyx-Suburban SA", {
+    segScore: "49.77",
+    total: "49.77",
+    place: "7",
+  }),
+  skater(4, 12, "Claire Beaumont", "Lansing SC", {
+    segScore: "51.30",
+    total: "51.30",
+    place: "6",
+  }),
+  skater(5, 12, "Ava Petrenko", "Detroit SC", { segScore: "60.11", total: "60.11", place: "2" }),
+  skater(6, 12, "Emilia Vasquez", "Fraser FSC", { segScore: "56.44", total: "56.44", place: "4" }),
+  skater(7, 12, "Josephine Marr", "Detroit SC", {
+    segScore: "62.41",
+    total: "62.41",
+    place: "1",
+  }),
+  skater(8, 12, "Nora Donaldson", "Onyx-Suburban SA"),
+  skater(9, 12, "Addie DiMuro", "Ann Arbor FSC"),
+  skater(10, 12, "Leon Gillespie", "Detroit SC"),
+  skater(11, 12, "Wren Castellano", "Lansing SC"),
+  skater(12, 12, "Talia Bergström", "Fraser FSC"),
+];
+
+const C_ORDER: BoardSkater[] = [
+  skater(1, 8, "Theo Marchetti", "Fraser FSC"),
+  skater(2, 8, "Bennett Shaw", "Detroit SC"),
+  skater(3, 8, "Kai Nakamura", "Ann Arbor FSC"),
+  skater(4, 8, "Elias Brandt", "Lansing SC"),
+];
+
+const B_DONE: BoardSkater[] = [
+  skater(1, 6, "Isla Fontaine", "Detroit SC", { segScore: "38.92", total: "38.92", place: "1" }),
+  skater(2, 6, "Jamie Gilmore", "Fraser FSC", { segScore: "35.10", total: "35.10", place: "2" }),
+  skater(3, 6, "Sam Jean", "Lansing SC", { segScore: "31.44", total: "31.44", place: "3" }),
 ];
 
 const A_CURRENT: BoardCurrent = {
@@ -73,13 +130,9 @@ const A_CURRENT: BoardCurrent = {
   startLabel: timeLabel(-52),
   startIso: iso(-52),
   url: "#",
-  justScored: skater(7, 12, "Josephine Marr", "Detroit SC", {
-    segScore: "62.41",
-    total: "62.41",
-    place: "1",
-  }),
-  onIce: skater(8, 12, "Nora Donaldson", "Onyx-Suburban SA"),
-  upNext: skater(9, 12, "Addie DiMuro", "Ann Arbor FSC"),
+  justScored: A_ORDER[6]!,
+  onIce: A_ORDER[7]!,
+  upNext: A_ORDER[8]!,
   startOrder: A_ORDER,
 };
 
@@ -94,14 +147,9 @@ const C_CURRENT: BoardCurrent = {
   startIso: iso(-6),
   url: "#",
   justScored: null,
-  onIce: skater(1, 8, "Theo Marchetti", "Fraser FSC"),
-  upNext: skater(2, 8, "Bennett Shaw", "Detroit SC"),
-  startOrder: [
-    { start: 1, name: "Theo Marchetti", club: "Fraser FSC" },
-    { start: 2, name: "Bennett Shaw", club: "Detroit SC" },
-    { start: 3, name: "Kai Nakamura", club: "Ann Arbor FSC" },
-    { start: 4, name: "Elias Brandt", club: "Lansing SC" },
-  ],
+  onIce: C_ORDER[0]!,
+  upNext: C_ORDER[1]!,
+  startOrder: C_ORDER,
 };
 
 const RINKS: BoardRink[] = [
@@ -155,6 +203,41 @@ const RINKS: BoardRink[] = [
   },
 ];
 
+function ev(
+  file: string,
+  name: string,
+  segment: string,
+  rink: string,
+  minutes: number,
+  status: BoardEvent["status"],
+  results: BoardSkater[] = [],
+  count: number | null = null,
+): BoardEvent {
+  return {
+    file,
+    name,
+    segment,
+    rink,
+    timeLabel: timeLabel(minutes),
+    startIso: iso(minutes),
+    status,
+    count: count ?? (results.length || null),
+    results,
+  };
+}
+
+const SCHEDULE: BoardEvent[] = [
+  ev("d1", "Pre-Juvenile Ladies", "Free Skate", "B Rink", -120, "final", B_DONE, 6),
+  ev("d2", "Aspire 3 Boys", "Free Skate", "C Rink", -95, "final", [], 5),
+  ev("d3", "Intermediate Ladies", "Free Skate", "A Rink", -52, "live", A_ORDER, 12),
+  ev("d4", "Juvenile Boys", "Free Skate", "C Rink", -6, "live", C_ORDER, 8),
+  ev("d5", "Preliminary Ladies", "Free Skate", "B Rink", 21, "scheduled", [], 18),
+  ev("d6", "Novice Ladies", "Short Program", "A Rink", 38, "scheduled", [], 15),
+  ev("d7", "Juvenile Ladies", "Free Skate", "C Rink", 46, "scheduled", [], 22),
+  ev("d8", "Novice Men", "Short Program", "A Rink", 95, "scheduled", [], 9),
+  ev("d9", "Junior Ladies", "Free Skate", "B Rink", 150, "scheduled", [], 11),
+];
+
 export function buildDemoBoard(): BoardResponse {
   const payload: BoardPayload = {
     generatedAt: new Date().toISOString(),
@@ -165,6 +248,7 @@ export function buildDemoBoard(): BoardResponse {
       url: "#",
     },
     rinks: RINKS,
+    schedule: SCHEDULE,
     errors: [],
   };
 
