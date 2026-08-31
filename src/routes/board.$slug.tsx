@@ -64,6 +64,8 @@ function BoardPage() {
   const [score, setScore] = useState<{ skater: BoardSkater; eventLabel: string } | null>(null);
   /** Names the viewer has muted for this competition. Absent = following. */
   const [unfollowed, setUnfollowed] = useState<string[]>([]);
+  /** Skaters the viewer added by hand — no account or connection required. */
+  const [extras, setExtras] = useState<string[]>([]);
 
   useEffect(() => {
     void supabase.auth.getSession().then(({ data }) => setSignedIn(!!data.session));
@@ -75,6 +77,12 @@ function BoardPage() {
       setUnfollowed(raw ? (JSON.parse(raw) as string[]) : []);
     } catch {
       setUnfollowed([]);
+    }
+    try {
+      const raw = window.localStorage.getItem(`${EXTRA_KEY}.${slug}`);
+      setExtras(raw ? (JSON.parse(raw) as string[]) : []);
+    } catch {
+      setExtras([]);
     }
   }, [slug]);
 
