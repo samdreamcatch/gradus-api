@@ -187,6 +187,13 @@ export function RoomView({ roomId, viewerRole }: { roomId: string; viewerRole?: 
   const queryClient = useQueryClient();
   const fetchOtherPlan = useServerFn(getOtherCoachPlanForMessage);
   const [otherPlanId, setOtherPlanId] = useState<string | null>(null);
+  const [reportTarget, setReportTarget] = useState<{
+    userId: string;
+    name: string;
+    messageId: string | null;
+  } | null>(null);
+  const [blockTarget, setBlockTarget] = useState<{ userId: string; name: string } | null>(null);
+
 
   const { data, isLoading } = useQuery({
     queryKey: ["message-room", viewerRole ?? "default", roomId],
