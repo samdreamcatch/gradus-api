@@ -33,25 +33,68 @@ function planHrefForRole(role: RoleInRoom, planId: string): string {
 
 function ConversationHeader({
   others,
+  onReport,
+  onBlock,
 }: {
-  roomId: string;
-  others: { role: RoleInRoom; firstName: string }[];
+  others: { role: RoleInRoom; firstName: string; userId: string | null }[];
+  onReport: (userId: string, name: string) => void;
+  onBlock: (userId: string, name: string) => void;
 }) {
   const ordered = [...others].sort((a, b) => {
     const rank = (r: RoleInRoom) => (r === "athlete" ? 0 : r === "parent" ? 1 : 2);
     return rank(a.role) - rank(b.role);
   });
+  const actionable = ordered.filter((p) => !!p.userId);
   return (
-    <div className="flex flex-col items-center gap-1 pb-4">
+    <div className="relative flex flex-col items-center gap-1 pb-4">
       <p className="text-base font-bold text-text-primary">
         {ordered.map((p) => p.firstName).join(" & ")}
       </p>
       <p className="text-caption font-black uppercase tracking-widest text-text-tertiary">
         {ordered.map((p) => roleWord(p.role)).join(" · ")}
       </p>
+      {actionable.length > 0 ? (
+        <Popover>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              aria-label="Conversation options"
+              className="press-soft absolute right-0 top-0 inline-flex size-8 items-center justify-center rounded-full text-text-tertiary"
+            >
+              <MoreVertical className="size-4" />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent align="end" className="w-56 p-1">
+            {actionable.map((p) => (
+              <div key={p.userId} className="py-1">
+                {actionable.length > 1 ? (
+                  <p className="px-2 pb-1 text-caption font-black uppercase tracking-widest text-text-tertiary">
+                    {p.firstName}
+                  </p>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={() => onReport(p.userId!, p.firstName)}
+                  className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm text-text-primary"
+                >
+                  <Flag className="size-4" /> Report {p.firstName}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onBlock(p.userId!, p.firstName)}
+                  className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm text-destructive"
+                >
+                  <Ban className="size-4" /> Block {p.firstName}
+                </button>
+              </div>
+            ))}
+          </PopoverContent>
+        </Popover>
+      ) : null}
     </div>
   );
 }
+
 
 function fmtTime(iso: string): string {
   return new Date(iso).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
