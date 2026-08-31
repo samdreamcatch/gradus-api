@@ -62,7 +62,7 @@ function BoardPage() {
   const mine = useServerFn(getMySkaterNames);
   const [signedIn, setSignedIn] = useState(false);
   const [rinkName, setRinkName] = useState<string | null>(null);
-  const [tab, setTab] = useState<"now" | "schedule">("now");
+  const [tab, setTab] = useState<BoardTab | null>(null);
   const [score, setScore] = useState<{ skater: BoardSkater; eventLabel: string } | null>(null);
   /** Names the viewer has muted for this competition. Absent = following. */
   const [unfollowed, setUnfollowed] = useState<string[]>([]);
