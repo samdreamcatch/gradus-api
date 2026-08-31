@@ -130,6 +130,7 @@ export async function sendReportAlert(
     reporter: SafetyIdentity;
     reported: SafetyIdentity;
     messageBody: string | null;
+    resourceTitle?: string | null;
     blocked: boolean;
   },
 ): Promise<void> {
@@ -137,7 +138,7 @@ export async function sendReportAlert(
     const urgent = opts.reason === "minor_safety";
     const subject = `${urgent ? "[URGENT] " : ""}[Gradus report] ${
       REPORT_REASON_LABELS[opts.reason]
-    } — ${opts.reported.name}`;
+    } — ${opts.resourceTitle ?? opts.reported.name}`;
 
     const lines = [
       `Reason: ${REPORT_REASON_LABELS[opts.reason]}`,
@@ -146,6 +147,7 @@ export async function sendReportAlert(
       `Also blocked: ${opts.blocked ? "yes" : "no"}`,
       opts.note ? `Note: ${opts.note}` : null,
       opts.messageBody ? `Reported message: ${opts.messageBody}` : null,
+      opts.resourceTitle ? `Reported resource: ${opts.resourceTitle}` : null,
       `Review: ${SITE_URL}/admin/reports`,
     ].filter(Boolean) as string[];
 
