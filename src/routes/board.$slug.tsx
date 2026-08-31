@@ -204,17 +204,40 @@ function BoardPage() {
         </p>
       </header>
 
-      <div className="flex gap-2">
-        <Chip selected={tab === "now"} onClick={() => setTab("now")}>
+      <div aria-live="polite" className="sr-only">
+        {announcement}
+      </div>
+
+      <div role="tablist" aria-label="Board view" className="flex gap-2">
+        <Chip
+          role="tab"
+          id="board-tab-now"
+          aria-selected={tab === "now"}
+          aria-controls="board-panel-now"
+          selected={tab === "now"}
+          onClick={() => setTab("now")}
+        >
           Now
         </Chip>
-        <Chip selected={tab === "schedule"} onClick={() => setTab("schedule")}>
+        <Chip
+          role="tab"
+          id="board-tab-schedule"
+          aria-selected={tab === "schedule"}
+          aria-controls="board-panel-schedule"
+          selected={tab === "schedule"}
+          onClick={() => setTab("schedule")}
+        >
           Full schedule
         </Chip>
       </div>
 
       {tab === "now" ? (
-        <>
+        <div
+          role="tabpanel"
+          id="board-panel-now"
+          aria-labelledby="board-tab-now"
+          className="space-y-4"
+        >
           <MySkaters
             matches={followedMatches.length > 0 ? followedMatches : matches}
             followed={isFollowed}
@@ -232,9 +255,19 @@ function BoardPage() {
           {rinks.length > 1 ? (
             <div className="flex flex-wrap gap-2">
               {rinks.map((r) => (
-                <Chip key={r.name} onClick={() => setRinkName(r.name)} selected={selected?.name === r.name}>
+                <Chip
+                  key={r.name}
+                  onClick={() => setRinkName(r.name)}
+                  selected={selected?.name === r.name}
+                  aria-pressed={selected?.name === r.name}
+                >
                   {r.name}
-                  {r.state === "live" ? " •" : ""}
+                  {r.state === "live" ? (
+                    <>
+                      <span aria-hidden="true"> •</span>
+                      <span className="sr-only"> live</span>
+                    </>
+                  ) : null}
                 </Chip>
               ))}
             </div>
@@ -265,14 +298,17 @@ function BoardPage() {
               next event {untilLabel(selected.next.startIso)}
             </p>
           ) : null}
-        </>
+        </div>
       ) : (
-        <ScheduleBoard
-          schedule={payload?.schedule ?? []}
-          myNames={myNames ?? []}
-          onSelectRink={goToRink}
-        />
+        <div role="tabpanel" id="board-panel-schedule" aria-labelledby="board-tab-schedule">
+          <ScheduleBoard
+            schedule={payload?.schedule ?? []}
+            myNames={myNames ?? []}
+            onSelectRink={goToRink}
+          />
+        </div>
       )}
+
 
       {!signedIn ? (
         <p className="text-center text-sm text-text-secondary">
