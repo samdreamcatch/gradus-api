@@ -406,7 +406,25 @@ export function RoomView({ roomId, viewerRole }: { roomId: string; viewerRole?: 
           if (!open) setOtherPlanId(null);
         }}
       />
+      <ReportSheet
+        open={!!reportTarget}
+        onOpenChange={(open) => {
+          if (!open) setReportTarget(null);
+        }}
+        targetUserId={reportTarget?.userId ?? ""}
+        targetName={reportTarget?.name ?? ""}
+        messageId={reportTarget?.messageId ?? null}
+      />
+      <BlockConfirm
+        open={!!blockTarget}
+        onOpenChange={(open) => {
+          if (!open) setBlockTarget(null);
+        }}
+        targetUserId={blockTarget?.userId ?? ""}
+        targetName={blockTarget?.name ?? ""}
+      />
     </div>
+
   );
 }
 
