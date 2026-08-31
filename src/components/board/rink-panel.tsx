@@ -205,7 +205,7 @@ export function RinkPanel({
             <Eyebrow size="micro" tone="tertiary">
               NEXT
             </Eyebrow>
-            <span className="font-mono text-sm text-attention-ink tabular-nums">
+            <span className="font-mono text-sm text-text-secondary tabular-nums">
               {timeLabel(rink.next.startIso)}
             </span>
             <span className="min-w-0 flex-1 truncate text-sm text-text-secondary">
