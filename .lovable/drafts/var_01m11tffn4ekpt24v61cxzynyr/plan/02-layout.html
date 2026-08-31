@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 380" width="640" height="380">
+  <style>
+    text { font-family: var(--font-sans); fill: hsl(var(--foreground)); }
+    .lbl { font-size: 14px; font-weight: 480; }
+    .sm { font-size: 12px; fill: hsl(var(--muted-foreground)); }
+    .mono { font-family: var(--font-mono); font-size: 12px; fill: hsl(var(--muted-foreground)); }
+    .box { fill: none; stroke: hsl(var(--muted-foreground)); stroke-width: 1; }
+    .rail { stroke: hsl(var(--border)); stroke-width: 1; }
+    .quiet { fill: hsl(var(--muted)); }
+    .zone { fill: none; stroke: hsl(var(--border)); stroke-width: 1; stroke-dasharray: 4 3; }
+  </style>
+
+  <!-- Schedule tab -->
+  <rect x="8" y="24" width="290" height="330" rx="8" class="box"/>
+  <text x="20" y="18" class="sm">Schedule tab</text>
+
+  <rect x="20" y="38" width="266" height="26" rx="13" class="quiet"/>
+  <text x="32" y="55" class="mono">Fri 20 · Sat 21 · SUN 22</text>
+  <circle cx="230" cy="51" r="9" fill="hsl(var(--accent))"/>
+  <text x="230" y="55" text-anchor="middle" font-size="11" fill="hsl(var(--accent-foreground))">1</text>
+
+  <line x1="20" y1="78" x2="286" y2="78" class="rail"/>
+  <text x="20" y="94" class="mono">TIME   EVENT                RINK</text>
+  <g>
+    <line x1="20" y1="104" x2="286" y2="104" class="rail"/>
+    <text x="20" y="122" class="lbl">9:15  Juv Girls Free</text>
+    <text x="20" y="138" class="sm">FINAL · 18 skaters</text>
+    <line x1="20" y1="150" x2="286" y2="150" class="rail"/>
+    <text x="20" y="168" class="lbl">10:40 Inter Boys Short</text>
+    <text x="20" y="184" class="sm">FINAL · 9 skaters</text>
+    <line x1="20" y1="196" x2="286" y2="196" class="rail"/>
+    <text x="20" y="214" class="lbl">12:05 Novice Ladies</text>
+    <text x="20" y="230" class="sm">FINAL · 14 skaters</text>
+    <line x1="20" y1="242" x2="286" y2="242" class="rail"/>
+  </g>
+  <rect x="20" y="256" width="266" height="34" rx="8" class="box" stroke="hsl(var(--accent))"/>
+  <text x="34" y="277" class="lbl">tap a row → results</text>
+  <circle cx="266" cy="273" r="9" fill="hsl(var(--accent))"/>
+  <text x="266" y="277" text-anchor="middle" font-size="11" fill="hsl(var(--accent-foreground))">2</text>
+
+  <!-- Results sheet -->
+  <rect x="330" y="60" width="300" height="294" rx="8" class="zone"/>
+  <text x="342" y="52" class="sm">Results sheet (bottom Sheet)</text>
+  <text x="344" y="86" class="lbl">Juvenile Girls Free Skate</text>
+  <text x="344" y="104" class="mono">FINAL · Sat 21 · Rink B</text>
+  <line x1="344" y1="116" x2="616" y2="116" class="rail"/>
+
+  <g>
+    <rect x="344" y="126" width="272" height="30" rx="8" class="quiet"/>
+    <text x="356" y="146" class="lbl">1  Ava Lin</text>
+    <text x="606" y="146" text-anchor="end" class="mono">98.42</text>
+    <rect x="424" y="132" width="46" height="18" rx="9" fill="hsl(var(--accent))"/>
+    <text x="447" y="145" text-anchor="middle" font-size="10" fill="hsl(var(--accent-foreground))">GOLD</text>
+
+    <text x="356" y="178" class="lbl">2  Mei Ortiz</text>
+    <text x="606" y="178" text-anchor="end" class="mono">95.10</text>
+    <line x1="344" y1="188" x2="616" y2="188" class="rail"/>
+    <text x="356" y="208" class="lbl">3  Jo Baptiste</text>
+    <text x="606" y="208" text-anchor="end" class="mono">92.77</text>
+    <line x1="344" y1="218" x2="616" y2="218" class="rail"/>
+    <text x="356" y="238" class="lbl">4  Reese Ng</text>
+    <text x="606" y="238" text-anchor="end" class="mono">88.03</text>
+    <line x1="344" y1="248" x2="616" y2="248" class="rail"/>
+    <text x="356" y="268" class="sm">…</text>
+  </g>
+
+  <rect x="344" y="292" width="272" height="34" rx="8" class="box"/>
+  <text x="358" y="313" class="lbl">tap a skater → full protocol</text>
+  <circle cx="596" cy="309" r="9" fill="hsl(var(--accent))"/>
+  <text x="596" y="313" text-anchor="middle" font-size="11" fill="hsl(var(--accent-foreground))">3</text>
+
+  <text x="8" y="372" class="sm">1 day picker · 2 event results · 3 existing score sheet, unchanged</text>
+</svg>
