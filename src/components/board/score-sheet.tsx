@@ -57,13 +57,24 @@ export function ScoreSheet({
 
             {p.elements.length > 0 ? (
               <section className="space-y-2">
-                <Eyebrow size="micro" tone="tertiary">
+                <Eyebrow size="micro" tone="tertiary" as="h3">
                   EXECUTED ELEMENTS
                 </Eyebrow>
+                <div
+                  aria-hidden="true"
+                  className="flex items-baseline gap-2 font-mono text-nano uppercase tracking-wider text-text-tertiary"
+                >
+                  <span className="w-5 shrink-0" />
+                  <span className="min-w-0 flex-1">Element</span>
+                  <span className="w-12 shrink-0 text-right">Base</span>
+                  <span className="w-12 shrink-0 text-right">GOE</span>
+                  <span className="w-12 shrink-0 text-right">Score</span>
+                </div>
                 <div className="space-y-1">
                   {p.elements.map((el, i) => (
                     <div
                       key={`${el.executed}-${i}`}
+                      aria-label={`${el.executed || el.planned}: base value ${el.baseValue}, GOE ${el.goe}, score ${el.score}`}
                       className="flex items-baseline gap-2 font-mono text-xs tabular-nums"
                     >
                       <span className="w-5 shrink-0 text-text-tertiary">{i + 1}</span>
@@ -80,7 +91,10 @@ export function ScoreSheet({
                   {p.elementsTotal ? (
                     <>
                       <Separator className="my-1" />
-                      <div className="flex items-baseline gap-2 font-mono text-xs tabular-nums">
+                      <div
+                        aria-label={`Totals: base value ${p.elementsTotal.baseValue}, score ${p.elementsTotal.score}`}
+                        className="flex items-baseline gap-2 font-mono text-xs tabular-nums"
+                      >
                         <span className="min-w-0 flex-1 text-text-secondary">Totals</span>
                         <span className="w-12 shrink-0 text-right text-text-tertiary">
                           {p.elementsTotal.baseValue}
@@ -93,11 +107,9 @@ export function ScoreSheet({
                     </>
                   ) : null}
                 </div>
-                <p className="font-mono text-nano text-text-tertiary">
-                  base value · GOE · score
-                </p>
               </section>
             ) : null}
+
 
             {p.components.length > 0 ? (
               <section className="space-y-2">
