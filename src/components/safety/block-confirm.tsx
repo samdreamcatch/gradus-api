@@ -59,7 +59,7 @@ export function BlockConfirm({
         <AlertDialogFooter>
           <AlertDialogCancel disabled={mutation.isPending}>Cancel</AlertDialogCancel>
           <AlertDialogAction
-            className="bg-destructive text-accent-foreground"
+            className="bg-destructive"
             disabled={mutation.isPending}
             onClick={(e) => {
               e.preventDefault();
