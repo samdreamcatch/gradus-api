@@ -71,7 +71,7 @@ export function ReportSheet({
 
           <div className="space-y-2">
             <Eyebrow size="caption" weight="black" tone="secondary">
-              What happened?
+              WHAT'S WRONG WITH THIS RESOURCE?
             </Eyebrow>
             <div className="flex flex-col gap-2">
               {REPORT_REASONS.map((r) => (
