@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ChevronLeft } from "lucide-react";
 import { CoachBottomNav } from "@/components/coach/bottom-nav";
 import { AccountSecuritySection } from "@/components/settings/account-security-section";
+import { BlockedUsersSection } from "@/components/safety/blocked-users-section";
 
 export const Route = createFileRoute("/_authenticated/coach/settings_/account")({
   head: () => ({
@@ -37,6 +38,7 @@ function CoachAccountPage() {
         </header>
 
         <AccountSecuritySection showLabel={false} />
+        <BlockedUsersSection />
       </div>
       <CoachBottomNav />
     </>
