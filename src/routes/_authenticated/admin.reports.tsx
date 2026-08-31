@@ -109,6 +109,12 @@ function AdminReports() {
                 </p>
               ) : null}
 
+              {r.resourceTitle ? (
+                <p className="mt-2 rounded-md border border-divider bg-elevated/60 p-2 text-sm text-text-secondary">
+                  Resource: {r.resourceTitle}
+                </p>
+              ) : null}
+
               <div className="mt-3 flex flex-wrap gap-2">
                 {STATUSES.map((s) => (
                   <Chip

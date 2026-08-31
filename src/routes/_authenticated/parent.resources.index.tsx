@@ -168,7 +168,7 @@ function ParentResourcesPage() {
         </>
       )}
 
-      <ResourceSheet resource={openResource} onClose={() => setOpenResource(null)} />
+      <ResourceSheet resource={openResource} onClose={() => setOpenResource(null)} canReport />
 
       <ParentBottomNav />
     </div>
