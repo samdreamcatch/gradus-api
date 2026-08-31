@@ -8,8 +8,6 @@
   only appears on the event page, so it is filled in for events already fetched and
   cached per event file thereafter; unfetched future events show a blank rink until
   their page is opened).
-- A row is `DELAYED` when its start instant has passed, its status is not final, and
-  no score has posted for it.
 - The event page parser gains `parseProtocol`: the `TR class=child` rows already in
   the same HTML carry `detailScoreSum` (total, executed elements, factored components,
   deductions), `detailScoreElm` (planned/executed element, base value, GOE, score) and

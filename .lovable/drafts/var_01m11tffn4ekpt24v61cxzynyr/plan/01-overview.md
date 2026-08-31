@@ -7,8 +7,7 @@ Five changes, all inside the existing board route and design system.
 The board gets two tabs: **Now** (today's rink panels, what exists now) and **Schedule**.
 
 Schedule is one time-ordered list of every event of the day, styled like an airport
-departures board: time, event name, rink, and a status tag — SCHEDULED, LIVE, FINAL,
-or DELAYED (shown when an event's posted start time has passed but nothing has scored).
+departures board: time, event name, rink, and a status tag — SCHEDULED, LIVE, or FINAL.
 Rows where one of your skaters competes are marked with the accent pen and float to
 your attention with a small "YOUR SKATER" tag. Tapping a row jumps to that rink and
 event on the Now tab.
@@ -40,8 +39,6 @@ match. All matched skaters now appear, sorted by who skates soonest.
 - A **Follow** toggle on each of your skaters, remembered on the device.
 - When a followed skater's row changes state (score posts, moves to on-ice, event
   goes live) the row briefly highlights, so a glance tells you what changed.
-- Delay awareness: an event running behind its posted time is labelled DELAYED with
-  the running estimate, the way a gate board does.
 
 Push notifications are not part of this round — the Follow toggle stores the intent
 so notifications can be switched on later without changing the UI.
