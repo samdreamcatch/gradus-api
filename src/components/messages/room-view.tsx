@@ -360,15 +360,30 @@ export function RoomView({ roomId, viewerRole }: { roomId: string; viewerRole?: 
                     </div>
                     <p
                       className={cn(
-                        "mt-0.5 px-2 text-micro font-bold uppercase tracking-widest text-text-tertiary",
-                        mine ? "text-right" : "text-left",
+                        "mt-0.5 flex items-center gap-1.5 px-2 text-micro font-bold uppercase tracking-widest text-text-tertiary",
+                        mine ? "justify-end" : "justify-start",
                       )}
                     >
-                      {fmtTime(m.createdAt)}
-                      {mine && otherReaders.length > 0 ? (
-                        <span className="ml-1.5">· Seen</span>
+                      <span>{fmtTime(m.createdAt)}</span>
+                      {mine && otherReaders.length > 0 ? <span>· Seen</span> : null}
+                      {!mine && !senderDeleted && m.senderUserId ? (
+                        <button
+                          type="button"
+                          aria-label="Report this message"
+                          className="press-soft inline-flex items-center gap-1 text-text-tertiary"
+                          onClick={() =>
+                            setReportTarget({
+                              userId: m.senderUserId!,
+                              name: m.senderFirstName || roleWord(m.senderRole),
+                              messageId: m.id,
+                            })
+                          }
+                        >
+                          <Flag className="size-3" /> Report
+                        </button>
                       ) : null}
                     </p>
+
                   </div>
                 );
               })}
