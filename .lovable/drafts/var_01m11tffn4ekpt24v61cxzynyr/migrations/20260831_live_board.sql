@@ -36,6 +36,7 @@ CREATE TABLE IF NOT EXISTS public.competition_snapshots (
   competition_id uuid PRIMARY KEY REFERENCES public.competitions(id) ON DELETE CASCADE,
   payload jsonb NOT NULL DEFAULT '{}'::jsonb,
   venues jsonb NOT NULL DEFAULT '{}'::jsonb,
+  orders jsonb NOT NULL DEFAULT '{}'::jsonb,
   generated_at timestamptz,
   refreshing_at timestamptz,
   error text,
