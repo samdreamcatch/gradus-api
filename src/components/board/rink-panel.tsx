@@ -124,7 +124,6 @@ function Lane({
   );
 }
 
-
 export function RinkPanel({
   rink,
   onOpenScore,
@@ -173,7 +172,6 @@ export function RinkPanel({
             />
             <Lane tone="ice" label="ON THE ICE" skater={current.onIce} awaiting />
             <Lane tone="next" label="UP NEXT" skater={current.upNext} />
-
           </div>
         </>
       ) : (

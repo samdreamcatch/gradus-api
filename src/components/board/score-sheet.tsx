@@ -110,7 +110,6 @@ export function ScoreSheet({
               </section>
             ) : null}
 
-
             {p.components.length > 0 ? (
               <section className="space-y-2">
                 <Eyebrow size="micro" tone="tertiary" as="h3">
@@ -131,7 +130,6 @@ export function ScoreSheet({
                     </span>
                   </div>
                 ))}
-
               </section>
             ) : null}
 

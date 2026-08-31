@@ -80,7 +80,6 @@ export function ScheduleBoard({
                 mine && "bg-accent/10",
               )}
             >
-
               <span className="w-14 shrink-0 font-mono text-sm text-text-primary tabular-nums">
                 {timeOf(e.startIso, e.timeLabel)}
               </span>

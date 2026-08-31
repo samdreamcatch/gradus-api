@@ -159,18 +159,13 @@ function BoardPage() {
 
   if (isLoading) {
     return (
-      <div
-        role="status"
-        aria-busy="true"
-        className="mx-auto max-w-2xl space-y-4 px-4 py-8"
-      >
+      <div role="status" aria-busy="true" className="mx-auto max-w-2xl space-y-4 px-4 py-8">
         <span className="sr-only">Loading the live board</span>
         <Skeleton className="h-8 w-2/3" />
         <Skeleton className="h-64 w-full" />
       </div>
     );
   }
-
 
   if (!data) {
     return (
@@ -309,7 +304,6 @@ function BoardPage() {
         </div>
       )}
 
-
       {!signedIn ? (
         <p className="text-center text-sm text-text-secondary">
           <Link to="/login" className="underline underline-offset-2">
@@ -329,8 +323,8 @@ function BoardPage() {
 
       <footer className="space-y-1 border-t border-divider pt-4 font-mono text-xs text-text-tertiary">
         <p>
-          &ldquo;On the ice&rdquo; is inferred from the last posted score — IJS does not publish
-          who is currently skating, and scores post 1–2 minutes late.
+          &ldquo;On the ice&rdquo; is inferred from the last posted score — IJS does not publish who
+          is currently skating, and scores post 1–2 minutes late.
         </p>
         <p>
           {data.generatedAt
@@ -341,4 +335,3 @@ function BoardPage() {
     </div>
   );
 }
-

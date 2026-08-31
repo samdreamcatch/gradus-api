@@ -3,7 +3,12 @@ import { Chip } from "@/components/ui/chip";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { Tag } from "@/components/ui/tag";
 import { cn } from "@/lib/utils";
-import { normalizeName, type BoardEvent, type BoardPayload, type BoardSkater } from "@/lib/board-types";
+import {
+  normalizeName,
+  type BoardEvent,
+  type BoardPayload,
+  type BoardSkater,
+} from "@/lib/board-types";
 
 /** Rough pace of an IJS event, used only for the "about" estimate. */
 const MINUTES_PER_SKATER = 4.5;
@@ -92,12 +97,16 @@ const STATE_LABEL: Record<SkaterMatch["state"], string> = {
 
 function line(m: SkaterMatch): string {
   if (m.state === "scored") {
-    return [m.skater.segScore ? `scored ${m.skater.segScore}` : "", m.skater.place ? `currently ${m.skater.place}` : ""]
+    return [
+      m.skater.segScore ? `scored ${m.skater.segScore}` : "",
+      m.skater.place ? `currently ${m.skater.place}` : "",
+    ]
       .filter(Boolean)
       .join(" · ");
   }
   if (m.state === "on-ice") return "on the ice now — score posts a minute or two late";
-  if (m.state === "scheduled") return `${m.event.timeLabel} · ${m.event.count ?? m.skater.of} skaters`;
+  if (m.state === "scheduled")
+    return `${m.event.timeLabel} · ${m.event.count ?? m.skater.of} skaters`;
   const mins = Math.max(1, Math.round(m.ahead * MINUTES_PER_SKATER));
   return `${m.ahead} ${m.ahead === 1 ? "skater" : "skaters"} ahead · about ${mins} min`;
 }
@@ -162,9 +171,7 @@ export function MySkaters({
                 selected={followed(m)}
                 aria-pressed={followed(m)}
                 aria-label={
-                  followed(m)
-                    ? `Stop following ${m.skater.name}`
-                    : `Follow ${m.skater.name}`
+                  followed(m) ? `Stop following ${m.skater.name}` : `Follow ${m.skater.name}`
                 }
                 onClick={() => onToggleFollow(m)}
               >
@@ -195,4 +202,3 @@ export function MySkaters({
     </Card>
   );
 }
-
