@@ -39,8 +39,8 @@ const LANE_STYLE: Record<LaneTone, { border: string; label: string; score: strin
     score: "text-accent-ink",
   },
   next: {
-    border: "border-l-attention bg-attention-wash/40",
-    label: "text-attention-ink",
+    border: "border-l-accent/40 bg-accent/5",
+    label: "text-text-secondary",
     score: "text-text-tertiary",
   },
 };
