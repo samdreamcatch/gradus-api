@@ -220,9 +220,11 @@ export type AdminReport = {
   adminNotes: string;
   createdAt: string;
   reporter: { userId: string; name: string; role: string };
-  reported: { userId: string; name: string; role: string };
+  reported: { userId: string | null; name: string; role: string };
   messageBody: string | null;
+  resourceTitle: string | null;
   urgent: boolean;
+
 };
 
 export const adminListReports = createServerFn({ method: "POST" })
