@@ -2712,8 +2712,9 @@ export type Database = {
           message_id: string | null
           note: string
           reason: string
-          reported_user_id: string
+          reported_user_id: string | null
           reporter_user_id: string
+          resource_id: string | null
           status: string
           updated_at: string
         }
@@ -2724,8 +2725,9 @@ export type Database = {
           message_id?: string | null
           note?: string
           reason: string
-          reported_user_id: string
+          reported_user_id?: string | null
           reporter_user_id: string
+          resource_id?: string | null
           status?: string
           updated_at?: string
         }
@@ -2736,8 +2738,9 @@ export type Database = {
           message_id?: string | null
           note?: string
           reason?: string
-          reported_user_id?: string
+          reported_user_id?: string | null
           reporter_user_id?: string
+          resource_id?: string | null
           status?: string
           updated_at?: string
         }
@@ -2747,6 +2750,13 @@ export type Database = {
             columns: ["message_id"]
             isOneToOne: false
             referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_reports_resource_id_fkey"
+            columns: ["resource_id"]
+            isOneToOne: false
+            referencedRelation: "resources"
             referencedColumns: ["id"]
           },
         ]
