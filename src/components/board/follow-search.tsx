@@ -60,11 +60,39 @@ export function FollowSearch({
 
   const followed = entries.filter((e) => followedKeys.includes(e.key));
 
+  if (!open) {
+    return (
+      <Card variant="section" className="p-0">
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          aria-expanded={false}
+          aria-controls="board-follow-search-panel"
+          className="press-soft flex min-h-11 w-full items-center justify-between gap-3 px-4 py-3 text-left"
+        >
+          <span className="text-sm text-text-primary">Follow someone else</span>
+          <span className="font-mono text-nano uppercase tracking-wider text-text-tertiary">
+            {followed.length > 0 ? `${followed.length} added` : "search"}
+          </span>
+        </button>
+      </Card>
+    );
+  }
+
   return (
-    <Card variant="section" className="space-y-3">
-      <Eyebrow as="h2" size="micro" tone="tertiary">
-        FOLLOW A SKATER
-      </Eyebrow>
+    <Card variant="section" id="board-follow-search-panel" className="space-y-3">
+      <div className="flex items-center justify-between gap-3">
+        <Eyebrow as="h2" size="micro" tone="tertiary">
+          FOLLOW A SKATER
+        </Eyebrow>
+        <button
+          type="button"
+          onClick={() => setOpen(false)}
+          className="press-soft font-mono text-nano uppercase tracking-wider text-text-tertiary"
+        >
+          Close
+        </button>
+      </div>
 
       <label htmlFor="board-follow-search" className="sr-only">
         Search skaters competing today
