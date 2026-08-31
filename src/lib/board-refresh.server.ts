@@ -43,15 +43,22 @@ function skaterJson(s: IjsSkater | null, withProtocol = false): BoardSkater | nu
 
 
 
-function sameRinkDay(a: Date, b: Date): boolean {
-  const fmt = new Intl.DateTimeFormat("en-CA", {
-    timeZone: RINK_TZ,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  });
-  return fmt.format(a) === fmt.format(b);
+const DAY_FMT = new Intl.DateTimeFormat("en-CA", {
+  timeZone: RINK_TZ,
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+
+/** Venue-local `YYYY-MM-DD` for grouping a competition into days. */
+function dayKeyOf(d: Date): string {
+  return DAY_FMT.format(d);
 }
+
+function sameRinkDay(a: Date, b: Date): boolean {
+  return dayKeyOf(a) === dayKeyOf(b);
+}
+
 
 /** Lean, cached results for one event file at one status. */
 export interface CachedEvent {
