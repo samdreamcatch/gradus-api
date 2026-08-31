@@ -19,7 +19,6 @@ export function LegalSection() {
         <SettingsButtonRow
           icon={<ShieldCheck className="size-4 text-text-tertiary" />}
           label="Privacy Policy"
-          
           onClick={() => void navigate({ to: "/privacy" })}
           trailing={chevron}
         />
@@ -35,6 +34,5 @@ export function LegalSection() {
         team reviews every report within 24 hours.
       </p>
     </SettingsGroup>
-
   );
 }

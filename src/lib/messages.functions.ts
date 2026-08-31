@@ -173,7 +173,6 @@ export const listMyRooms = createServerFn({ method: "GET" })
     return { rooms: out };
   });
 
-
 /* ---------------- getRoom ---------------- */
 
 export const getRoom = createServerFn({ method: "GET" })
@@ -353,7 +352,6 @@ export const sendMessage = createServerFn({ method: "POST" })
         }
       }
     }
-
 
     // Athlete-scoped rooms: block sends when the coach↔athlete link is gone.
     if (room.kind === "athlete") {

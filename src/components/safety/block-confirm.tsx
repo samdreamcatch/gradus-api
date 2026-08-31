@@ -52,8 +52,8 @@ export function BlockConfirm({
           <AlertDialogTitle>Block {targetName}?</AlertDialogTitle>
           <AlertDialogDescription>
             You will no longer be able to message each other, and any coaching connection between
-            you will be removed. Past conversations stay in your history. You can unblock them
-            later in Account &amp; security, but the connection won&apos;t come back on its own.
+            you will be removed. Past conversations stay in your history. You can unblock them later
+            in Account &amp; security, but the connection won&apos;t come back on its own.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

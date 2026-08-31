@@ -14,7 +14,6 @@ const SENDER_DOMAIN = "support.gradussports.com";
 const FROM_DOMAIN = "gradussports.com";
 const SITE_URL = "https://gradus.training";
 
-
 export type SafetyIdentity = {
   userId: string;
   coachId: string | null;
@@ -38,11 +37,7 @@ export async function resolveIdentity(admin: any, userId: string): Promise<Safet
       .select("id, first_name, last_name")
       .eq("user_id", userId)
       .maybeSingle(),
-    admin
-      .from("athletes")
-      .select("id, first_name, last_name")
-      .eq("user_id", userId)
-      .maybeSingle(),
+    admin.from("athletes").select("id, first_name, last_name").eq("user_id", userId).maybeSingle(),
   ]);
 
   const row = coach.data ?? parent.data ?? athlete.data ?? null;
@@ -61,11 +56,7 @@ export async function resolveIdentity(admin: any, userId: string): Promise<Safet
 /** Remove a coach↔athlete relationship and all coach-scoped athlete data. */
 async function severCoachAthlete(admin: any, coachId: string, athleteId: string): Promise<void> {
   await Promise.all([
-    admin
-      .from("athlete_lesson_slots")
-      .delete()
-      .eq("athlete_id", athleteId)
-      .eq("coach_id", coachId),
+    admin.from("athlete_lesson_slots").delete().eq("athlete_id", athleteId).eq("coach_id", coachId),
     admin
       .from("athlete_primary_coaches")
       .delete()
@@ -77,11 +68,7 @@ async function severCoachAthlete(admin: any, coachId: string, athleteId: string)
       .delete()
       .eq("athlete_id", athleteId)
       .eq("coach_id", coachId),
-    admin
-      .from("coach_athlete_sports")
-      .delete()
-      .eq("athlete_id", athleteId)
-      .eq("coach_id", coachId),
+    admin.from("coach_athlete_sports").delete().eq("athlete_id", athleteId).eq("coach_id", coachId),
   ]);
   await admin.from("coach_athletes").delete().eq("athlete_id", athleteId).eq("coach_id", coachId);
 }
@@ -163,8 +150,7 @@ export async function sendReportAlert(
     ].filter(Boolean) as string[];
 
     const text = lines.join("\n");
-    const esc = (s: string) =>
-      s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
     const html = `<div style="font-family:system-ui,sans-serif;font-size:14px;line-height:1.6">${lines
       .map((l) => `<p style="margin:0 0 6px">${esc(l)}</p>`)
       .join("")}</div>`;

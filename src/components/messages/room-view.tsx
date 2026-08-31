@@ -37,7 +37,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { ReportSheet } from "@/components/safety/report-sheet";
 import { BlockConfirm } from "@/components/safety/block-confirm";
 
-
 function roleWord(role: RoleInRoom): string {
   return role === "coach" ? "Coach" : role === "parent" ? "Parent" : "Athlete";
 }
@@ -111,7 +110,6 @@ function ConversationHeader({
     </div>
   );
 }
-
 
 function fmtTime(iso: string): string {
   return new Date(iso).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
@@ -193,7 +191,6 @@ export function RoomView({ roomId, viewerRole }: { roomId: string; viewerRole?: 
     messageId: string | null;
   } | null>(null);
   const [blockTarget, setBlockTarget] = useState<{ userId: string; name: string } | null>(null);
-
 
   const { data, isLoading } = useQuery({
     queryKey: ["message-room", viewerRole ?? "default", roomId],
@@ -383,7 +380,6 @@ export function RoomView({ roomId, viewerRole }: { roomId: string; viewerRole?: 
                         </button>
                       ) : null}
                     </p>
-
                   </div>
                 );
               })}
@@ -424,7 +420,6 @@ export function RoomView({ roomId, viewerRole }: { roomId: string; viewerRole?: 
         targetName={blockTarget?.name ?? ""}
       />
     </div>
-
   );
 }
 

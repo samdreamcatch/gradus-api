@@ -29,9 +29,7 @@ export type BlockedUser = {
 
 export const blockUser = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z.object({ targetUserId: z.string().uuid() }).parse(input),
-  )
+  .inputValidator((input: unknown) => z.object({ targetUserId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     if (data.targetUserId === context.userId) throw new Error("You can't block yourself.");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -58,9 +56,7 @@ export const blockUser = createServerFn({ method: "POST" })
 
 export const unblockUser = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z.object({ targetUserId: z.string().uuid() }).parse(input),
-  )
+  .inputValidator((input: unknown) => z.object({ targetUserId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin
@@ -118,9 +114,8 @@ export const submitReport = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     if (data.targetUserId === context.userId) throw new Error("You can't report yourself.");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { resolveIdentity, severRelationships, sendReportAlert } = await import(
-      "./safety.server"
-    );
+    const { resolveIdentity, severRelationships, sendReportAlert } =
+      await import("./safety.server");
 
     const [me, them] = await Promise.all([
       resolveIdentity(supabaseAdmin, context.userId),
@@ -278,7 +273,7 @@ export const adminUpdateReportStatus = createServerFn({ method: "POST" })
     await assertAdmin(context as any);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const patch: Record<string, unknown> = { status: data.status };
-    if (data.adminNotes !== undefined) patch['admin_notes'] = data.adminNotes;
+    if (data.adminNotes !== undefined) patch["admin_notes"] = data.adminNotes;
     const { error } = await supabaseAdmin.from("user_reports").update(patch).eq("id", data.id);
     if (error) dbError(error);
     return { ok: true as const };

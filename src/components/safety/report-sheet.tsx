@@ -111,8 +111,8 @@ export function ReportSheet({
             <span className="text-sm text-text-primary">
               Also block {targetName}
               <span className="block text-xs text-text-secondary">
-                Stops all messages between you and removes any coaching connection. You can
-                unblock later in Account &amp; security.
+                Stops all messages between you and removes any coaching connection. You can unblock
+                later in Account &amp; security.
               </span>
             </span>
           </label>
