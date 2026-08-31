@@ -35,9 +35,12 @@ function skaterJson(s: IjsSkater | null, withProtocol = false): BoardSkater | nu
     segScore: s.segScore,
     total: s.total,
     place: s.segPlace,
+    finalPlace: s.place,
+    segScores: s.segScores.length > 1 ? s.segScores : undefined,
     protocol: withProtocol ? s.protocol : null,
   };
 }
+
 
 
 function sameRinkDay(a: Date, b: Date): boolean {
