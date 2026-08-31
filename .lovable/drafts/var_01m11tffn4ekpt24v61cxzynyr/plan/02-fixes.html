@@ -1,0 +1,43 @@
+<svg viewBox="0 0 640 300" xmlns="http://www.w3.org/2000/svg" style="font-family: var(--font-sans)">
+  <style>
+    .lbl { font-size: 14px; font-weight: 480; fill: hsl(var(--foreground)); }
+    .note { font-size: 12px; fill: hsl(var(--muted-foreground)); }
+    .box { fill: none; stroke: hsl(var(--muted-foreground)); stroke-width: 1; rx: 8; }
+    .zone { fill: none; stroke: hsl(var(--border)); stroke-width: 1; stroke-dasharray: 4 3; rx: 8; }
+    .tag { font-size: 12px; fill: hsl(var(--border)); }
+    .pin { fill: hsl(var(--accent)); }
+    .pinlbl { font-size: 12px; fill: hsl(var(--accent-foreground)); }
+  </style>
+
+  <rect class="zone" x="8" y="8" width="624" height="284" />
+  <text class="tag" x="20" y="26">board screen</text>
+
+  <rect class="box" x="28" y="44" width="260" height="34" />
+  <text class="lbl" x="42" y="66">Now / Full schedule</text>
+  <circle class="pin" cx="308" cy="61" r="10" />
+  <text class="pinlbl" x="308" y="65" text-anchor="middle">1</text>
+  <text class="note" x="326" y="65">role="tablist" + aria-selected</text>
+
+  <rect class="box" x="28" y="94" width="260" height="60" />
+  <text class="lbl" x="42" y="118">Your skaters</text>
+  <text class="note" x="42" y="138">Follow · Go to rink · Score detail</text>
+  <circle class="pin" cx="308" cy="112" r="10" />
+  <text class="pinlbl" x="308" y="116" text-anchor="middle">2</text>
+  <text class="note" x="326" y="116">aria-live region announces changes</text>
+  <circle class="pin" cx="308" cy="142" r="10" />
+  <text class="pinlbl" x="308" y="146" text-anchor="middle">3</text>
+  <text class="note" x="326" y="146">aria-pressed + min-h-11 targets</text>
+
+  <rect class="box" x="28" y="170" width="260" height="34" />
+  <text class="lbl" x="42" y="192">Rink A •   Rink B</text>
+  <circle class="pin" cx="308" cy="187" r="10" />
+  <text class="pinlbl" x="308" y="191" text-anchor="middle">4</text>
+  <text class="note" x="326" y="191">bullet gets a text label: "live"</text>
+
+  <rect class="box" x="28" y="220" width="260" height="52" />
+  <text class="lbl" x="42" y="242">Schedule rows</text>
+  <text class="note" x="42" y="260">10:05 · Juv Girls · LIVE · Rink A</text>
+  <circle class="pin" cx="308" cy="246" r="10" />
+  <text class="pinlbl" x="308" y="250" text-anchor="middle">5</text>
+  <text class="note" x="326" y="250">one composed aria-label per row</text>
+</svg>
