@@ -61,7 +61,7 @@ export function ReportSheet({
         <div className="space-y-5 px-1 pb-8">
           <p className="text-sm text-text-secondary">
             {messageId
-              ? "Tell us what's wrong with this message. Our safety team reviews every report within 24 hours."
+               ? "Tell us what's wrong with this message. Our safety team reviews every report within 24 hours.\u00a0You will remain anonymous to the person you are reporting."
                : "Tell us what's going on. Our safety team reviews every report within 24 hours. You will remain anonymous to the person you are reporting.\u00a0"}
           </p>
 
