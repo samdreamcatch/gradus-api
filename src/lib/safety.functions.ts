@@ -272,8 +272,10 @@ export const adminUpdateReportStatus = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context as any);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const patch: Record<string, unknown> = { status: data.status };
-    if (data.adminNotes !== undefined) patch["admin_notes"] = data.adminNotes;
+    const patch = {
+      status: data.status,
+      ...(data.adminNotes !== undefined ? { admin_notes: data.adminNotes } : {}),
+    };
     const { error } = await supabaseAdmin.from("user_reports").update(patch).eq("id", data.id);
     if (error) dbError(error);
     return { ok: true as const };
