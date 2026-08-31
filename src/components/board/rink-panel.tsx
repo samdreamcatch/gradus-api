@@ -65,7 +65,11 @@ function Lane({
   return (
     <Wrapper
       {...(tappable
-        ? { type: "button" as const, onClick: () => onOpenScore!(skater!) }
+        ? {
+            type: "button" as const,
+            onClick: () => onOpenScore!(skater!),
+            "aria-label": `${label}: ${skater!.name} — open score detail`,
+          }
         : {})}
       className={cn(
         "block w-full rounded-xl border-l-4 px-4 py-3 text-left",
@@ -76,6 +80,7 @@ function Lane({
       <Eyebrow size="micro" className={cn("block", style.label)}>
         {label}
       </Eyebrow>
+
       {skater ? (
         <div className="mt-2 flex items-center gap-4">
           <div className="shrink-0 text-center font-mono tabular-nums">

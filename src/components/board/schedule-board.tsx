@@ -47,7 +47,10 @@ export function ScheduleBoard({
 
   return (
     <Card variant="section" className="space-y-2">
-      <div className="flex items-baseline gap-3 font-mono text-nano uppercase tracking-wider text-text-tertiary">
+      <div
+        aria-hidden="true"
+        className="flex items-baseline gap-3 font-mono text-nano uppercase tracking-wider text-text-tertiary"
+      >
         <span className="w-14">Time</span>
         <span className="min-w-0 flex-1">Event</span>
         <span className="w-14 text-right">Rink</span>
@@ -56,16 +59,28 @@ export function ScheduleBoard({
       <div className="divide-y divide-divider">
         {schedule.map((e) => {
           const mine = e.results.some((s) => wanted.has(normalizeName(s.name)));
+          const label = [
+            timeOf(e.startIso, e.timeLabel),
+            [e.name, e.segment].filter(Boolean).join(" "),
+            STATUS_LABEL[e.status].toLowerCase(),
+            e.count ? `${e.count} skaters` : "",
+            e.rink,
+            mine ? "your skater" : "",
+          ]
+            .filter(Boolean)
+            .join(", ");
           return (
             <button
               key={`${e.file}-${e.startIso}`}
               type="button"
               onClick={() => onSelectRink(e.rink)}
+              aria-label={label}
               className={cn(
-                "press-soft flex w-full items-baseline gap-3 py-2 text-left",
+                "press-soft flex min-h-11 w-full items-baseline gap-3 py-2 text-left",
                 mine && "bg-accent/10",
               )}
             >
+
               <span className="w-14 shrink-0 font-mono text-sm text-text-primary tabular-nums">
                 {timeOf(e.startIso, e.timeLabel)}
               </span>
