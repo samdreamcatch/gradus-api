@@ -30,6 +30,11 @@ export function LegalSection() {
           trailing={chevron}
         />
       </SettingsList>
+      <p className="mt-2 px-3 text-xs text-text-tertiary">
+        You can report or block anyone you&apos;re messaging from the conversation menu. Our safety
+        team reviews every report within 24 hours.
+      </p>
     </SettingsGroup>
+
   );
 }
