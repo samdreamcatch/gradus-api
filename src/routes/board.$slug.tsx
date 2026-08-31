@@ -142,14 +142,35 @@ function BoardPage() {
     setTab("now");
   }, []);
 
+  // A short spoken version of whatever just flipped on screen.
+  const announcement = useMemo(() => {
+    const moved = matches.filter((m) => changed.has(m.key));
+    if (moved.length === 0) return "";
+    return moved
+      .map((m) => {
+        if (m.state === "scored" && m.skater.segScore)
+          return `${m.skater.name} scored ${m.skater.segScore}${m.skater.place ? `, currently ${m.skater.place}` : ""}`;
+        if (m.state === "on-ice") return `${m.skater.name} is on the ice at ${m.event.rink}`;
+        if (m.state === "up-next") return `${m.skater.name} is up next at ${m.event.rink}`;
+        return `${m.skater.name}: ${m.ahead} ahead at ${m.event.rink}`;
+      })
+      .join(". ");
+  }, [matches, changed]);
+
   if (isLoading) {
     return (
-      <div className="mx-auto max-w-2xl space-y-4 px-4 py-8">
+      <div
+        role="status"
+        aria-busy="true"
+        className="mx-auto max-w-2xl space-y-4 px-4 py-8"
+      >
+        <span className="sr-only">Loading the live board</span>
         <Skeleton className="h-8 w-2/3" />
         <Skeleton className="h-64 w-full" />
       </div>
     );
   }
+
 
   if (!data) {
     return (
