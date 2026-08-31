@@ -34,6 +34,9 @@ import { OtherCoachPlansSheet } from "@/components/coach/other-coach-plans-sheet
 import { voiceTranscribe } from "@/lib/voice.functions";
 import { useVoiceCapture } from "@/hooks/use-voice-capture";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ReportSheet } from "@/components/safety/report-sheet";
+import { BlockConfirm } from "@/components/safety/block-confirm";
+
 
 function roleWord(role: RoleInRoom): string {
   return role === "coach" ? "Coach" : role === "parent" ? "Parent" : "Athlete";
