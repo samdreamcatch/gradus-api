@@ -50,16 +50,36 @@ function sameRinkDay(a: Date, b: Date): boolean {
   return fmt.format(a) === fmt.format(b);
 }
 
-/** Parse the whole competition into a board payload. Venues are cached by file. */
+/** Lean, cached results for one event file at one status. */
+export interface CachedEvent {
+  count: number;
+  results: BoardSkater[];
+}
+
+/** How long after an event a full protocol is still worth carrying. */
+const PROTOCOL_WINDOW_MS = 3 * 60 * 60_000;
+
+/**
+ * Parse the whole competition into a board payload. Venues and per-event start
+ * orders are cached by file so a finished event is fetched once, not every
+ * thirty seconds.
+ */
 export async function buildPayload(
   base: string,
   year: number,
   venueCache: Record<string, string>,
-): Promise<{ payload: BoardPayload; venues: Record<string, string> }> {
+  orderCache: Record<string, CachedEvent> = {},
+): Promise<{
+  payload: BoardPayload;
+  venues: Record<string, string>;
+  orders: Record<string, CachedEvent>;
+}> {
   const { competition, events } = parseIndex(await fetchPage(`${base}/index.asp`), year);
   const now = new Date();
   const errors: string[] = [];
   const venues = { ...venueCache };
+  const orders: Record<string, CachedEvent> = {};
+
 
   const pageCache = new Map<string, Awaited<ReturnType<typeof parseEvent>>>();
   const loadEvent = async (file: string) => {
