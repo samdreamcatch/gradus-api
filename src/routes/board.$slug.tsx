@@ -248,11 +248,11 @@ function BoardPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-5 px-4 py-6 pb-16">
-      <header className="space-y-2">
+    <div className="mx-auto max-w-2xl space-y-3 px-4 py-4 pb-12">
+      <header className="space-y-1">
         <div className="flex items-center justify-between gap-3">
           <Link to="/" className="press">
-            <Logo className="text-2xl" />
+            <Logo className="text-xl" />
           </Link>
           {data.isLiveWindow ? (
             <Tag size="caption" tone="accent">
@@ -262,8 +262,8 @@ function BoardPage() {
             <Tag size="caption">FINISHED</Tag>
           )}
         </div>
-        <h1 className="font-display text-h2 leading-tight text-text-primary">{data.name}</h1>
-        <p className="font-mono text-xs text-text-tertiary">
+        <h1 className="font-display text-h3 leading-tight text-text-primary">{data.name}</h1>
+        <p className="truncate font-mono text-nano uppercase tracking-wider text-text-tertiary">
           {[data.datesLabel, data.location].filter(Boolean).join(" · ")}
         </p>
       </header>
@@ -272,35 +272,19 @@ function BoardPage() {
         {announcement}
       </div>
 
-      <div role="tablist" aria-label="Board view" className="flex gap-2">
-        <Chip
-          role="tab"
-          id="board-tab-now"
-          aria-selected={tab === "now"}
-          aria-controls="board-panel-now"
-          selected={tab === "now"}
-          onClick={() => setTab("now")}
-        >
-          Now
-        </Chip>
-        <Chip
-          role="tab"
-          id="board-tab-schedule"
-          aria-selected={tab === "schedule"}
-          aria-controls="board-panel-schedule"
-          selected={tab === "schedule"}
-          onClick={() => setTab("schedule")}
-        >
-          Full schedule
-        </Chip>
-      </div>
+      <SegmentedToggle
+        label="Board view"
+        value={activeTab}
+        onChange={(v) => setTab(v)}
+        options={TABS}
+      />
 
-      {tab === "now" ? (
+      {activeTab === "mine" ? (
         <div
           role="tabpanel"
-          id="board-panel-now"
-          aria-labelledby="board-tab-now"
-          className="space-y-4"
+          id="board-panel-mine"
+          aria-labelledby="board-tab-mine"
+          className="space-y-3"
         >
           <MySkaters
             matches={followedMatches.length > 0 ? followedMatches : matches}
@@ -323,6 +307,22 @@ function BoardPage() {
             onUnfollow={unfollowByKey}
           />
 
+          {!signedIn ? (
+            <p className="text-center text-sm text-text-secondary">
+              <Link to="/login" className="underline underline-offset-2">
+                Sign in
+              </Link>{" "}
+              to see your own skaters here automatically.
+            </p>
+          ) : null}
+        </div>
+      ) : activeTab === "rinks" ? (
+        <div
+          role="tabpanel"
+          id="board-panel-rinks"
+          aria-labelledby="board-tab-rinks"
+          className="space-y-3"
+        >
           {rinks.length > 1 ? (
             <div className="flex flex-wrap gap-2">
               {rinks.map((r) => (
@@ -369,6 +369,21 @@ function BoardPage() {
               next event {untilLabel(selected.next.startIso)}
             </p>
           ) : null}
+
+          <details className="font-mono text-nano text-text-tertiary">
+            <summary className="press-soft cursor-pointer uppercase tracking-wider">
+              How this board works
+            </summary>
+            <p className="mt-2">
+              &ldquo;On the ice&rdquo; is inferred from the last posted score — IJS does not publish
+              who is currently skating, and scores post 1–2 minutes late.
+            </p>
+            <p className="mt-1">
+              {data.generatedAt
+                ? `updated ${new Date(data.generatedAt).toLocaleTimeString()}`
+                : "not updated yet"}
+            </p>
+          </details>
         </div>
       ) : (
         <div role="tabpanel" id="board-panel-schedule" aria-labelledby="board-tab-schedule">
@@ -380,15 +395,6 @@ function BoardPage() {
         </div>
       )}
 
-      {!signedIn ? (
-        <p className="text-center text-sm text-text-secondary">
-          <Link to="/login" className="underline underline-offset-2">
-            Sign in
-          </Link>{" "}
-          to see your own skaters here automatically.
-        </p>
-      ) : null}
-
       <ScoreSheet
         skater={score?.skater ?? null}
         eventLabel={score?.eventLabel ?? ""}
@@ -396,18 +402,6 @@ function BoardPage() {
           if (!open) setScore(null);
         }}
       />
-
-      <footer className="space-y-1 border-t border-divider pt-4 font-mono text-xs text-text-tertiary">
-        <p>
-          &ldquo;On the ice&rdquo; is inferred from the last posted score — IJS does not publish who
-          is currently skating, and scores post 1–2 minutes late.
-        </p>
-        <p>
-          {data.generatedAt
-            ? `updated ${new Date(data.generatedAt).toLocaleTimeString()}`
-            : "not updated yet"}
-        </p>
-      </footer>
     </div>
   );
 }
