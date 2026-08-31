@@ -57,7 +57,7 @@ export interface BoardCurrent {
   onIce: BoardSkater | null;
   upNext: BoardSkater | null;
   /** Full start order, used to find a viewer's own skater. */
-  startOrder: { start: number; name: string; club: string }[];
+  startOrder: BoardSkater[];
 }
 
 export interface BoardNext {
@@ -81,12 +81,34 @@ export interface BoardRink {
   dayEvents: number;
 }
 
+/** One row of the day's departures board. */
+export interface BoardEvent {
+  file: string;
+  name: string;
+  segment: string;
+  rink: string;
+  timeLabel: string;
+  startIso: string | null;
+  status: "scheduled" | "live" | "final";
+  count: number | null;
+  /**
+   * Start order with any posted scores. Present for events already fetched;
+   * protocols are attached only for the live and most recently finished event
+   * on each sheet, which keeps the shared snapshot small.
+   */
+  results: BoardSkater[];
+}
+
 export interface BoardPayload {
   generatedAt: string;
   competition: { name: string; dates: string; location: string; url: string };
   rinks: BoardRink[];
+  /** Every event on the competition's current day, in start-time order. */
+  schedule: BoardEvent[];
   errors: string[];
 }
+
+
 
 export interface BoardResponse {
   slug: string;
