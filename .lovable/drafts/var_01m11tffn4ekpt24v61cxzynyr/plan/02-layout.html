@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 400" width="640" height="400">
+  <style>
+    text { font-family: var(--font-sans); fill: hsl(var(--muted-foreground)); font-size: 12px; }
+    .lbl { fill: hsl(var(--foreground)); font-size: 14px; font-weight: 480; }
+    .box { fill: none; stroke: hsl(var(--muted-foreground)); stroke-width: 1; }
+    .rail { stroke: hsl(var(--border)); stroke-width: 1; }
+    .greek { fill: hsl(var(--border)); }
+    .quiet { fill: hsl(var(--muted)); }
+    .tag { font-size: 11px; }
+  </style>
+
+  <!-- before -->
+  <text class="lbl" x="16" y="20">before — one long column</text>
+  <rect class="box" x="16" y="32" width="180" height="352" rx="8"/>
+  <rect class="quiet" x="28" y="44" width="156" height="34" rx="6"/>
+  <text x="36" y="65" class="tag">header + dates</text>
+  <rect class="greek" x="28" y="86" width="70" height="14" rx="7"/>
+  <rect class="greek" x="104" y="86" width="80" height="14" rx="7"/>
+  <rect class="box" x="28" y="108" width="156" height="70" rx="8"/>
+  <text x="36" y="128" class="tag">your skaters</text>
+  <rect class="box" x="28" y="186" width="156" height="40" rx="8"/>
+  <text x="36" y="206" class="tag">follow search</text>
+  <rect class="greek" x="28" y="234" width="50" height="14" rx="7"/>
+  <rect class="greek" x="84" y="234" width="50" height="14" rx="7"/>
+  <rect class="box" x="28" y="256" width="156" height="80" rx="8"/>
+  <text x="36" y="276" class="tag">rink panel</text>
+  <rect class="quiet" x="28" y="344" width="156" height="28" rx="6"/>
+  <text x="36" y="362" class="tag">footer notes</text>
+  <text x="200" y="384" class="tag">scrolls</text>
+
+  <!-- arrow -->
+  <line x1="252" y1="200" x2="292" y2="200" stroke="hsl(var(--muted-foreground))" stroke-width="1" marker-end="url(#c)"/>
+  <defs>
+    <marker id="c" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 z" fill="hsl(var(--muted-foreground))"/>
+    </marker>
+  </defs>
+
+  <!-- after -->
+  <text class="lbl" x="312" y="20">after — three tabs, one screenful each</text>
+
+  <g>
+    <rect class="box" x="312" y="32" width="100" height="240" rx="8"/>
+    <rect class="quiet" x="320" y="40" width="84" height="22" rx="6"/>
+    <text x="326" y="55" class="tag">header</text>
+    <rect x="320" y="68" width="84" height="20" rx="8" fill="hsl(var(--accent))"/>
+    <text x="330" y="82" class="tag" style="fill:hsl(var(--accent-foreground))">Mine</text>
+    <rect class="box" x="320" y="96" width="84" height="50" rx="8"/>
+    <text x="326" y="115" class="tag">skater 1</text>
+    <rect class="box" x="320" y="152" width="84" height="50" rx="8"/>
+    <text x="326" y="171" class="tag">skater 2</text>
+    <rect class="greek" x="320" y="210" width="84" height="14" rx="7"/>
+    <text x="312" y="288" class="tag">tab: Mine</text>
+  </g>
+
+  <g>
+    <rect class="box" x="424" y="32" width="100" height="240" rx="8"/>
+    <rect class="quiet" x="432" y="40" width="84" height="22" rx="6"/>
+    <rect class="box" x="432" y="68" width="84" height="20" rx="8"/>
+    <text x="440" y="82" class="tag">Rinks</text>
+    <rect class="greek" x="432" y="96" width="38" height="14" rx="7"/>
+    <rect class="greek" x="476" y="96" width="40" height="14" rx="7"/>
+    <rect class="box" x="432" y="118" width="84" height="100" rx="8"/>
+    <text x="438" y="138" class="tag">rink panel</text>
+    <text x="424" y="288" class="tag">tab: Rinks</text>
+  </g>
+
+  <g>
+    <rect class="box" x="536" y="32" width="100" height="240" rx="8"/>
+    <rect class="quiet" x="544" y="40" width="84" height="22" rx="6"/>
+    <rect class="box" x="544" y="68" width="84" height="20" rx="8"/>
+    <text x="552" y="82" class="tag">Schedule</text>
+    <line class="rail" x1="544" y1="104" x2="628" y2="104"/>
+    <line class="rail" x1="544" y1="126" x2="628" y2="126"/>
+    <line class="rail" x1="544" y1="148" x2="628" y2="148"/>
+    <line class="rail" x1="544" y1="170" x2="628" y2="170"/>
+    <line class="rail" x1="544" y1="192" x2="628" y2="192"/>
+    <text x="536" y="288" class="tag">tab: Schedule</text>
+  </g>
+
+  <circle cx="322" cy="330" r="9" fill="hsl(var(--accent))"/>
+  <text x="318" y="334" style="fill:hsl(var(--accent-foreground));font-size:11px">1</text>
+  <text x="340" y="334">Segmented control replaces the two chips; default lands on Mine when you follow someone.</text>
+</svg>
