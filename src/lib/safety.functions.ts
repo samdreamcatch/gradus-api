@@ -243,8 +243,9 @@ export const adminListReports = createServerFn({ method: "POST" })
     let q = supabaseAdmin
       .from("user_reports")
       .select(
-        "id, reporter_user_id, reported_user_id, message_id, reason, note, status, admin_notes, created_at",
+        "id, reporter_user_id, reported_user_id, message_id, resource_id, reason, note, status, admin_notes, created_at",
       )
+
       .order("created_at", { ascending: false })
       .limit(200);
     if (data.openOnly) q = q.eq("status", "open");
