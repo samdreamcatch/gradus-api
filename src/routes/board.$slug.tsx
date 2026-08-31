@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -6,17 +6,19 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Chip } from "@/components/ui/chip";
 import { Tag } from "@/components/ui/tag";
-import { Button } from "@/components/ui/button";
-import { Eyebrow } from "@/components/ui/eyebrow";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Logo } from "@/components/logo";
 import { RinkPanel, untilLabel } from "@/components/board/rink-panel";
+import { MySkaters, findMySkaters, type SkaterMatch } from "@/components/board/my-skaters";
+import { ScheduleBoard } from "@/components/board/schedule-board";
+import { ScoreSheet } from "@/components/board/score-sheet";
+import { useChangedKeys } from "@/hooks/use-changed-keys";
 import { getBoard, getMySkaterNames } from "@/lib/board.functions";
-import { normalizeName, type BoardPayload } from "@/lib/board-types";
+import { normalizeName, type BoardSkater } from "@/lib/board-types";
 
 const REFRESH_MS = 30_000;
 const HISTORY_KEY = "gradus.boardHistory";
-const MATCH_KEY = "gradus.boardSkater";
+const FOLLOW_KEY = "gradus.boardFollow";
 
 export const Route = createFileRoute("/board/$slug")({
   head: () => ({
@@ -52,28 +54,16 @@ function rememberVisit(slug: string, name: string) {
   }
 }
 
-/** Find the viewer's own skater in any rink's start order. */
-function findMySkater(payload: BoardPayload | null, names: string[]) {
-  if (!payload || names.length === 0) return null;
-  const wanted = new Set(names.map(normalizeName));
-  for (const rink of payload.rinks) {
-    const order = rink.current?.startOrder ?? [];
-    for (const s of order) {
-      if (wanted.has(normalizeName(s.name))) {
-        return { rink, skater: s, done: rink.current?.done ?? 0 };
-      }
-    }
-  }
-  return null;
-}
-
 function BoardPage() {
   const { slug } = Route.useParams();
   const board = useServerFn(getBoard);
   const mine = useServerFn(getMySkaterNames);
   const [signedIn, setSignedIn] = useState(false);
   const [rinkName, setRinkName] = useState<string | null>(null);
-  const [matchAnswer, setMatchAnswer] = useState<"yes" | "no" | null>(null);
+  const [tab, setTab] = useState<"now" | "schedule">("now");
+  const [score, setScore] = useState<{ skater: BoardSkater; eventLabel: string } | null>(null);
+  /** Names the viewer has muted for this competition. Absent = following. */
+  const [unfollowed, setUnfollowed] = useState<string[]>([]);
 
   useEffect(() => {
     void supabase.auth.getSession().then(({ data }) => setSignedIn(!!data.session));
@@ -81,11 +71,10 @@ function BoardPage() {
 
   useEffect(() => {
     try {
-      setMatchAnswer(
-        (window.localStorage.getItem(`${MATCH_KEY}.${slug}`) as "yes" | "no" | null) ?? null,
-      );
+      const raw = window.localStorage.getItem(`${FOLLOW_KEY}.${slug}`);
+      setUnfollowed(raw ? (JSON.parse(raw) as string[]) : []);
     } catch {
-      setMatchAnswer(null);
+      setUnfollowed([]);
     }
   }, [slug]);
 
@@ -108,23 +97,50 @@ function BoardPage() {
   }, [slug, data?.name]);
 
   const payload = data?.payload ?? null;
-  const match = useMemo(() => findMySkater(payload, myNames ?? []), [payload, myNames]);
+  const matches = useMemo(() => findMySkaters(payload, myNames ?? []), [payload, myNames]);
 
+  // Flash a card when its state moves — the flight-board flip.
+  const signature = useMemo(() => {
+    const sig: Record<string, string> = {};
+    for (const m of matches) sig[m.key] = `${m.state}:${m.ahead}:${m.skater.segScore ?? ""}`;
+    return sig;
+  }, [matches]);
+  const changed = useChangedKeys(signature);
+
+  const isFollowed = useCallback(
+    (m: SkaterMatch) => !unfollowed.includes(normalizeName(m.skater.name)),
+    [unfollowed],
+  );
+
+  const toggleFollow = useCallback(
+    (m: SkaterMatch) => {
+      const key = normalizeName(m.skater.name);
+      setUnfollowed((old) => {
+        const next = old.includes(key) ? old.filter((n) => n !== key) : [...old, key];
+        try {
+          window.localStorage.setItem(`${FOLLOW_KEY}.${slug}`, JSON.stringify(next));
+        } catch {
+          // Following is a local preference; storage failures are silent.
+        }
+        return next;
+      });
+    },
+    [slug],
+  );
+
+  const followedMatches = useMemo(() => matches.filter(isFollowed), [matches, isFollowed]);
   const rinks = payload?.rinks ?? [];
+  const firstRink = followedMatches[0]?.event.rink ?? matches[0]?.event.rink;
   const selected =
     rinks.find((r) => r.name === rinkName) ??
-    (match ? rinks.find((r) => r.name === match.rink.name) : undefined) ??
+    rinks.find((r) => r.name === firstRink) ??
     rinks.find((r) => r.state === "live") ??
     rinks[0];
 
-  const answerMatch = (answer: "yes" | "no") => {
-    setMatchAnswer(answer);
-    try {
-      window.localStorage.setItem(`${MATCH_KEY}.${slug}`, answer);
-    } catch {
-      // ignore
-    }
-  };
+  const goToRink = useCallback((name: string) => {
+    setRinkName(name);
+    setTab("now");
+  }, []);
 
   if (isLoading) {
     return (
@@ -167,76 +183,75 @@ function BoardPage() {
         </p>
       </header>
 
-      {match && matchAnswer !== "no" ? (
-        <Card variant="row" className="border-secondary-accent/50">
-          <Eyebrow size="micro" tone="tertiary">
-            YOUR SKATER
-          </Eyebrow>
-          <p className="mt-1 text-base text-text-primary">
-            <span className="font-bold">{match.skater.name}</span> skates{" "}
-            <span className="font-mono tabular-nums">#{match.skater.start}</span> in{" "}
-            {match.rink.name}
-            {match.rink.current ? ` — ${match.rink.current.done} have skated so far` : ""}.
-          </p>
-          {matchAnswer === null ? (
-            <div className="mt-3 flex items-center gap-2">
-              <span className="text-sm text-text-secondary">Is this your skater?</span>
-              <Button type="button" size="sm" onClick={() => answerMatch("yes")}>
-                Yes
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={() => answerMatch("no")}
-              >
-                Not mine
-              </Button>
+      <div className="flex gap-2">
+        <Chip selected={tab === "now"} onClick={() => setTab("now")}>
+          Now
+        </Chip>
+        <Chip selected={tab === "schedule"} onClick={() => setTab("schedule")}>
+          Full schedule
+        </Chip>
+      </div>
+
+      {tab === "now" ? (
+        <>
+          <MySkaters
+            matches={followedMatches.length > 0 ? followedMatches : matches}
+            followed={isFollowed}
+            changed={changed}
+            onToggleFollow={toggleFollow}
+            onSelectRink={goToRink}
+            onOpenScore={(m) =>
+              setScore({
+                skater: m.skater,
+                eventLabel: [m.event.name, m.event.segment].filter(Boolean).join(" · "),
+              })
+            }
+          />
+
+          {rinks.length > 1 ? (
+            <div className="flex flex-wrap gap-2">
+              {rinks.map((r) => (
+                <Chip key={r.name} onClick={() => setRinkName(r.name)} selected={selected?.name === r.name}>
+                  {r.name}
+                  {r.state === "live" ? " •" : ""}
+                </Chip>
+              ))}
             </div>
+          ) : null}
+
+          {selected ? (
+            <RinkPanel
+              rink={selected}
+              onOpenScore={(s) =>
+                setScore({
+                  skater: s,
+                  eventLabel: [selected.current?.event, selected.current?.segment]
+                    .filter(Boolean)
+                    .join(" · "),
+                })
+              }
+            />
           ) : (
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              className="mt-3"
-              onClick={() => setRinkName(match.rink.name)}
-            >
-              Go to {match.rink.name}
-            </Button>
+            <Card variant="section">
+              <p className="text-sm text-text-secondary">
+                No events scheduled on this day yet. The board fills in as the competition starts.
+              </p>
+            </Card>
           )}
-        </Card>
-      ) : null}
 
-      {rinks.length > 1 ? (
-        <div className="flex flex-wrap gap-2">
-          {rinks.map((r) => (
-            <Chip
-              key={r.name}
-              onClick={() => setRinkName(r.name)}
-              selected={selected?.name === r.name}
-            >
-              {r.name}
-              {r.state === "live" ? " •" : ""}
-            </Chip>
-          ))}
-        </div>
-      ) : null}
-
-      {selected ? (
-        <RinkPanel rink={selected} />
+          {selected?.next && !selected.current ? (
+            <p className="text-center font-mono text-xs text-text-tertiary">
+              next event {untilLabel(selected.next.startIso)}
+            </p>
+          ) : null}
+        </>
       ) : (
-        <Card variant="section">
-          <p className="text-sm text-text-secondary">
-            No events scheduled on this day yet. The board fills in as the competition starts.
-          </p>
-        </Card>
+        <ScheduleBoard
+          schedule={payload?.schedule ?? []}
+          myNames={myNames ?? []}
+          onSelectRink={goToRink}
+        />
       )}
-
-      {selected?.next && !selected.current ? (
-        <p className="text-center font-mono text-xs text-text-tertiary">
-          next event {untilLabel(selected.next.startIso)}
-        </p>
-      ) : null}
 
       {!signedIn ? (
         <p className="text-center text-sm text-text-secondary">
@@ -246,6 +261,14 @@ function BoardPage() {
           to follow your skater.
         </p>
       ) : null}
+
+      <ScoreSheet
+        skater={score?.skater ?? null}
+        eventLabel={score?.eventLabel ?? ""}
+        onOpenChange={(open) => {
+          if (!open) setScore(null);
+        }}
+      />
 
       <footer className="space-y-1 border-t border-divider pt-4 font-mono text-xs text-text-tertiary">
         <p>
@@ -261,3 +284,4 @@ function BoardPage() {
     </div>
   );
 }
+
