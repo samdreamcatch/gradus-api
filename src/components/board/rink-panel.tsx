@@ -160,9 +160,15 @@ export function RinkPanel({
           </div>
 
           <div className="space-y-2">
-            <Lane tone="just" label="JUST SCORED" skater={current.justScored} />
+            <Lane
+              tone="just"
+              label="JUST SCORED"
+              skater={current.justScored}
+              onOpenScore={onOpenScore}
+            />
             <Lane tone="ice" label="ON THE ICE" skater={current.onIce} awaiting />
             <Lane tone="next" label="UP NEXT" skater={current.upNext} />
+
           </div>
         </>
       ) : (
