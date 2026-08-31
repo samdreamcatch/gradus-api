@@ -120,7 +120,13 @@ function Lane({
 }
 
 
-export function RinkPanel({ rink }: { rink: BoardRink }) {
+export function RinkPanel({
+  rink,
+  onOpenScore,
+}: {
+  rink: BoardRink;
+  onOpenScore?: (s: BoardSkater) => void;
+}) {
   const current = rink.current;
 
   return (
