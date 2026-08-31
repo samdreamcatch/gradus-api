@@ -47,6 +47,7 @@ export function FollowSearch({
   onUnfollow: (key: string) => void;
 }) {
   const [query, setQuery] = useState("");
+  const [open, setOpen] = useState(false);
   const entries = useMemo(() => everySkater(payload), [payload]);
 
   const results = useMemo(() => {
