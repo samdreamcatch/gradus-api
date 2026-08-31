@@ -45,7 +45,10 @@ export function allEvents(payload: BoardPayload): BoardEvent[] {
       startIso: c.startIso,
       status: "live",
       count: c.skaters,
+      dayLabel: "",
+      dayKey: c.startIso ? c.startIso.slice(0, 10) : "",
       results: c.startOrder,
+
     });
   }
   return list;
