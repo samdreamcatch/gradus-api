@@ -214,6 +214,53 @@ export async function buildPayload(
     rinks.push(rink);
   }
 
+  // The day's departures board. Every event, in start order, with its results
+  // when we already know them. Pages are fetched once per status change and
+  // then read from the cache.
+  const schedule: BoardEvent[] = [];
+  for (const e of day) {
+    const raw = e.status.toLowerCase();
+    const status: BoardEvent["status"] = DONE_STATUSES.includes(raw)
+      ? "final"
+      : raw === LIVE_STATUS
+        ? "live"
+        : "scheduled";
+    const key = `${e.file}:${raw}`;
+    const withProtocol = +e.startAt >= Date.now() - PROTOCOL_WINDOW_MS;
+
+    let entry: CachedEvent | null = null;
+    const loaded = pageCache.get(e.file);
+    if (loaded) {
+      entry = {
+        count: loaded.count,
+        results: loaded.skaters.map((s) => skaterJson(s, withProtocol)!),
+      };
+    } else if (orderCache[key]) {
+      entry = orderCache[key]!;
+    } else {
+      try {
+        const ev = await loadEvent(e.file);
+        entry = { count: ev.count, results: ev.skaters.map((s) => skaterJson(s, withProtocol)!) };
+      } catch (err) {
+        errors.push(`${e.file}: ${(err as Error).message}`);
+      }
+    }
+    if (entry) orders[key] = entry;
+
+    schedule.push({
+      file: e.file,
+      name: e.name,
+      segment: loaded?.segment ?? "",
+      rink: e.venue || "Unassigned",
+      timeLabel: e.timeLabel,
+      startIso: e.startAt.toISOString(),
+      status,
+      count: entry?.count ?? null,
+      results: entry?.results ?? [],
+    });
+  }
+  schedule.sort((a, b) => (a.startIso ?? "").localeCompare(b.startIso ?? ""));
+
   return {
     payload: {
       generatedAt: now.toISOString(),
@@ -224,9 +271,11 @@ export async function buildPayload(
         url: `${base}/index.asp`,
       },
       rinks,
+      schedule,
       errors,
     },
     venues,
+    orders,
   };
 }
 
@@ -248,6 +297,7 @@ export async function refreshCompetition(
   // The board tables are new; use an untyped handle until types regenerate.
   const db = mod.supabaseAdmin as unknown as {
     from: (t: string) => any;
+
   };
 
   const existing = await db
