@@ -11,6 +11,7 @@ import { Logo } from "@/components/logo";
 import { RinkPanel, untilLabel } from "@/components/board/rink-panel";
 import { MySkaters, findMySkaters, type SkaterMatch } from "@/components/board/my-skaters";
 import { ScheduleBoard } from "@/components/board/schedule-board";
+import { FollowSearch } from "@/components/board/follow-search";
 import { ScoreSheet } from "@/components/board/score-sheet";
 import { useChangedKeys } from "@/hooks/use-changed-keys";
 import { getBoard, getMySkaterNames } from "@/lib/board.functions";
@@ -19,6 +20,7 @@ import { normalizeName, type BoardSkater } from "@/lib/board-types";
 const REFRESH_MS = 30_000;
 const HISTORY_KEY = "gradus.boardHistory";
 const FOLLOW_KEY = "gradus.boardFollow";
+const EXTRA_KEY = "gradus.boardFollowExtra";
 
 export const Route = createFileRoute("/board/$slug")({
   head: () => ({
@@ -297,6 +299,13 @@ function BoardPage() {
             }
           />
 
+          <FollowSearch
+            payload={payload}
+            followedKeys={extraKeys.filter((k) => !unfollowed.includes(k))}
+            onFollow={followByName}
+            onUnfollow={unfollowByKey}
+          />
+
           {rinks.length > 1 ? (
             <div className="flex flex-wrap gap-2">
               {rinks.map((r) => (
@@ -348,7 +357,7 @@ function BoardPage() {
         <div role="tabpanel" id="board-panel-schedule" aria-labelledby="board-tab-schedule">
           <ScheduleBoard
             schedule={payload?.schedule ?? []}
-            myNames={myNames ?? []}
+            myNames={watched}
             onSelectRink={goToRink}
           />
         </div>
@@ -359,7 +368,7 @@ function BoardPage() {
           <Link to="/login" className="underline underline-offset-2">
             Sign in
           </Link>{" "}
-          to follow your skater.
+          to see your own skaters here automatically.
         </p>
       ) : null}
 
