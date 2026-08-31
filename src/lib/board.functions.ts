@@ -100,14 +100,17 @@ export const listBoards = createServerFn({ method: "GET" }).handler(
       .eq("active", true)
       .order("starts_on", { ascending: false, nullsFirst: false });
     const today = new Date().toISOString().slice(0, 10);
-    return ((res.data ?? []) as any[]).map((c) => ({
-      slug: c.slug as string,
-      name: c.name as string,
-      datesLabel: c.dates_label as string,
-      location: c.location as string,
-      isLiveWindow:
-        (!c.starts_on || c.starts_on <= today) && (!c.ends_on || c.ends_on >= today),
-    }));
+    return [
+      DEMO_LIST_ENTRY,
+      ...((res.data ?? []) as any[]).map((c) => ({
+        slug: c.slug as string,
+        name: c.name as string,
+        datesLabel: c.dates_label as string,
+        location: c.location as string,
+        isLiveWindow:
+          (!c.starts_on || c.starts_on <= today) && (!c.ends_on || c.ends_on >= today),
+      })),
+    ];
   },
 );
 
