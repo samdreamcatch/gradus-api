@@ -338,6 +338,23 @@ export const sendMessage = createServerFn({ method: "POST" })
     if (!room) throw new Error("You can't post into this conversation");
     const role = myRoleByRoom.get(room.id)!;
 
+    // Blocking is a full disconnect: no new messages in either direction.
+    {
+      const { blockedUserIds } = await import("./safety.server");
+      const blocked = await blockedUserIds(supabaseAdmin, userId);
+      if (blocked.size > 0) {
+        const parts = (await loadParticipants([room])).get(room.id) ?? [];
+        if (parts.some((p) => p.userId && p.userId !== userId && blocked.has(p.userId))) {
+          return {
+            ok: false as const,
+            reason: "blocked" as const,
+            message: "You can't message this person because one of you has blocked the other.",
+          };
+        }
+      }
+    }
+
+
     // Athlete-scoped rooms: block sends when the coach↔athlete link is gone.
     if (room.kind === "athlete") {
       const { data: link, error: linkErr } = await supabaseAdmin
