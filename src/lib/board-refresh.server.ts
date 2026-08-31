@@ -297,18 +297,22 @@ export async function refreshCompetition(
   // The board tables are new; use an untyped handle until types regenerate.
   const db = mod.supabaseAdmin as unknown as {
     from: (t: string) => any;
-
   };
 
   const existing = await db
     .from("competition_snapshots")
-    .select("competition_id, venues, generated_at, refreshing_at, fetch_count")
+    .select("competition_id, venues, orders, generated_at, refreshing_at, fetch_count")
     .eq("competition_id", comp.id)
     .maybeSingle();
 
   const nowIso = new Date().toISOString();
   const row = existing.data as
-    | { venues: Record<string, string>; refreshing_at: string | null; fetch_count: number }
+    | {
+        venues: Record<string, string>;
+        orders: Record<string, CachedEvent> | null;
+        refreshing_at: string | null;
+        fetch_count: number;
+      }
     | null;
 
   if (!opts.force && row?.refreshing_at) {
@@ -325,17 +329,20 @@ export async function refreshCompetition(
     );
 
   try {
-    const { payload, venues } = await buildPayload(
+    const { payload, venues, orders } = await buildPayload(
       comp.ijs_base_url,
       comp.year,
       (row?.venues as Record<string, string>) ?? {},
+      row?.orders ?? {},
     );
     await db.from("competition_snapshots").upsert(
       {
         competition_id: comp.id,
         payload: payload as unknown as Record<string, unknown>,
         venues,
+        orders,
         generated_at: payload.generatedAt,
+
         refreshing_at: null,
         error: payload.errors.length ? payload.errors.join(" · ") : null,
         fetch_count: (row?.fetch_count ?? 0) + 1,
