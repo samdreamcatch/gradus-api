@@ -6,6 +6,7 @@
  * preserved — nothing is deleted from `messages`.
  */
 import { buildAppEmailPayload } from "./email-queue-payload";
+import { REPORT_REASON_LABELS, type ReportReason } from "./safety-types";
 
 const ALERT_RECIPIENTS = ["alyson@gradussports.com"];
 const SITE_NAME = "gradustraining";
@@ -13,23 +14,6 @@ const SENDER_DOMAIN = "support.gradussports.com";
 const FROM_DOMAIN = "gradussports.com";
 const SITE_URL = "https://gradus.training";
 
-export const REPORT_REASONS = [
-  "harassment",
-  "inappropriate",
-  "spam",
-  "minor_safety",
-  "other",
-] as const;
-
-export type ReportReason = (typeof REPORT_REASONS)[number];
-
-export const REPORT_REASON_LABELS: Record<ReportReason, string> = {
-  harassment: "Harassment or bullying",
-  inappropriate: "Inappropriate or sexual content",
-  spam: "Spam or scam",
-  minor_safety: "Safety concern about a minor",
-  other: "Something else",
-};
 
 export type SafetyIdentity = {
   userId: string;
