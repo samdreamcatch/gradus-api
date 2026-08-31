@@ -105,7 +105,9 @@ function BoardPage() {
   }, [slug, data?.name]);
 
   const payload = data?.payload ?? null;
-  const matches = useMemo(() => findMySkaters(payload, myNames ?? []), [payload, myNames]);
+  const watched = useMemo(() => [...(myNames ?? []), ...extras], [myNames, extras]);
+  const extraKeys = useMemo(() => extras.map(normalizeName), [extras]);
+  const matches = useMemo(() => findMySkaters(payload, watched), [payload, watched]);
 
   // Flash a card when its state moves — the flight-board flip.
   const signature = useMemo(() => {
