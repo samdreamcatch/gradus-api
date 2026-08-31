@@ -145,25 +145,34 @@ export const listMyRooms = createServerFn({ method: "GET" })
       }
     }
 
-    const out: RoomSummary[] = rooms.map((r) => {
-      const participants = participantsByRoom.get(r.id) ?? [];
-      return {
-        id: r.id,
-        kind: r.kind,
-        coachId: r.coachId,
-        athleteId: r.athleteId,
-        participants,
-        myRole: myRoleByRoom.get(r.id)!,
-        myUserId: userId,
-        lastMessage: lastByRoom.get(r.id) ?? null,
-        unreadCount: unreadByRoom.get(r.id) ?? 0,
-        updatedAt: lastByRoom.get(r.id)?.createdAt ?? r.updatedAt,
-      };
-    });
+    const { blockedUserIds } = await import("./safety.server");
+    const blocked = await blockedUserIds(supabaseAdmin, userId);
+
+    const out: RoomSummary[] = rooms
+      .filter((r) => {
+        const parts = participantsByRoom.get(r.id) ?? [];
+        return !parts.some((p) => p.userId && p.userId !== userId && blocked.has(p.userId));
+      })
+      .map((r) => {
+        const participants = participantsByRoom.get(r.id) ?? [];
+        return {
+          id: r.id,
+          kind: r.kind,
+          coachId: r.coachId,
+          athleteId: r.athleteId,
+          participants,
+          myRole: myRoleByRoom.get(r.id)!,
+          myUserId: userId,
+          lastMessage: lastByRoom.get(r.id) ?? null,
+          unreadCount: unreadByRoom.get(r.id) ?? 0,
+          updatedAt: lastByRoom.get(r.id)?.createdAt ?? r.updatedAt,
+        };
+      });
 
     out.sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1));
     return { rooms: out };
   });
+
 
 /* ---------------- getRoom ---------------- */
 
