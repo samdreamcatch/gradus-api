@@ -26,7 +26,7 @@ export interface SkaterMatch {
 }
 
 /** Every event on the day, plus the live events held in the rink panels. */
-function allEvents(payload: BoardPayload): BoardEvent[] {
+export function allEvents(payload: BoardPayload): BoardEvent[] {
   const list = [...(payload.schedule ?? [])];
   for (const rink of payload.rinks) {
     const c = rink.current;
