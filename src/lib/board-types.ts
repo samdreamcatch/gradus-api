@@ -3,6 +3,33 @@
  * board routes and the server-side refresher.
  */
 
+/** One judged element from a skater's protocol. */
+export interface ProtocolElement {
+  planned: string;
+  executed: string;
+  baseValue: string;
+  goe: string;
+  score: string;
+}
+
+export interface ProtocolComponent {
+  name: string;
+  unfactored: string;
+  factor: string;
+}
+
+/** The judged breakdown behind a posted score, as published on the event page. */
+export interface SkaterProtocol {
+  total: string;
+  elementsScore: string;
+  componentsScore: string;
+  deductionsScore: string;
+  elements: ProtocolElement[];
+  elementsTotal: { baseValue: string; score: string } | null;
+  components: ProtocolComponent[];
+  deductions: { name: string; value: string }[];
+}
+
 export interface BoardSkater {
   start: number;
   of: number;
@@ -12,7 +39,9 @@ export interface BoardSkater {
   segScore: string;
   total: string;
   place: string;
+  protocol?: SkaterProtocol | null;
 }
+
 
 export interface BoardCurrent {
   event: string;
