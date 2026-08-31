@@ -18,13 +18,13 @@ import {
   type IjsEvent,
   type IjsSkater,
 } from "./ijs-scrape.server";
-import type { BoardPayload, BoardRink, BoardSkater } from "./board-types";
+import type { BoardEvent, BoardPayload, BoardRink, BoardSkater } from "./board-types";
 
 export const REFRESH_INTERVAL_MS = 30_000;
 /** How long a claimed refresh is assumed to be in flight before another may run. */
 const REFRESH_LOCK_MS = 45_000;
 
-function skaterJson(s: IjsSkater | null): BoardSkater | null {
+function skaterJson(s: IjsSkater | null, withProtocol = false): BoardSkater | null {
   if (!s) return null;
   return {
     start: s.start,
@@ -35,8 +35,10 @@ function skaterJson(s: IjsSkater | null): BoardSkater | null {
     segScore: s.segScore,
     total: s.total,
     place: s.segPlace,
+    protocol: withProtocol ? s.protocol : null,
   };
 }
+
 
 function sameRinkDay(a: Date, b: Date): boolean {
   const fmt = new Intl.DateTimeFormat("en-CA", {
