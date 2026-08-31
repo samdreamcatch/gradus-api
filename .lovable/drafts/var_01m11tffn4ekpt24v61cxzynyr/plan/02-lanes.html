@@ -1,0 +1,47 @@
+<svg viewBox="0 0 640 250" xmlns="http://www.w3.org/2000/svg" style="font-family: var(--font-sans)">
+  <style>
+    .lbl { font-size: 14px; font-weight: 480; fill: hsl(var(--foreground)); }
+    .note { font-size: 12px; fill: hsl(var(--muted-foreground)); }
+    .tag { font-size: 12px; fill: hsl(var(--muted-foreground)); font-family: var(--font-mono); }
+  </style>
+
+  <text x="24" y="24" class="tag">BEFORE</text>
+  <text x="344" y="24" class="tag">AFTER</text>
+
+  <!-- before -->
+  <rect x="24" y="40" width="270" height="46" rx="8" fill="hsl(var(--muted))" stroke="hsl(var(--muted-foreground))" stroke-width="1"/>
+  <rect x="24" y="40" width="4" height="46" fill="hsl(var(--muted-foreground))"/>
+  <text x="42" y="60" class="lbl">JUST SCORED</text>
+  <text x="42" y="77" class="note">pool blue</text>
+
+  <rect x="24" y="96" width="270" height="46" rx="8" fill="hsl(var(--muted))" stroke="hsl(var(--muted-foreground))" stroke-width="1"/>
+  <rect x="24" y="96" width="4" height="46" fill="hsl(var(--muted-foreground))"/>
+  <text x="42" y="116" class="lbl">ON THE ICE</text>
+  <text x="42" y="133" class="note">accent pen</text>
+
+  <rect x="24" y="152" width="270" height="46" rx="8" fill="hsl(var(--accent))" fill-opacity="0.25" stroke="hsl(var(--muted-foreground))" stroke-width="1"/>
+  <rect x="24" y="152" width="4" height="46" fill="hsl(var(--accent))"/>
+  <text x="42" y="172" class="lbl">UP NEXT</text>
+  <text x="42" y="189" class="note">orange — reserved for live</text>
+  <circle cx="300" cy="175" r="9" fill="hsl(var(--accent))"/>
+  <text x="300" y="179" text-anchor="middle" font-size="11" fill="hsl(var(--accent-foreground))">1</text>
+
+  <!-- after -->
+  <rect x="344" y="40" width="270" height="46" rx="8" fill="hsl(var(--muted))" stroke="hsl(var(--muted-foreground))" stroke-width="1"/>
+  <rect x="344" y="40" width="4" height="46" fill="hsl(var(--muted-foreground))"/>
+  <text x="362" y="60" class="lbl">JUST SCORED</text>
+  <text x="362" y="77" class="note">pool blue — unchanged</text>
+
+  <rect x="344" y="96" width="270" height="46" rx="8" fill="hsl(var(--muted))" stroke="hsl(var(--muted-foreground))" stroke-width="1"/>
+  <rect x="344" y="96" width="4" height="46" fill="hsl(var(--muted-foreground))"/>
+  <text x="362" y="116" class="lbl">ON THE ICE</text>
+  <text x="362" y="133" class="note">accent pen — unchanged</text>
+
+  <rect x="344" y="152" width="270" height="46" rx="8" fill="hsl(var(--muted))" stroke="hsl(var(--muted-foreground))" stroke-width="1" stroke-dasharray="4 3"/>
+  <rect x="344" y="152" width="4" height="46" fill="hsl(var(--accent))" fill-opacity="0.4"/>
+  <text x="362" y="172" class="lbl">UP NEXT</text>
+  <text x="362" y="189" class="note">same pen, dimmed</text>
+
+  <line x1="24" y1="218" x2="614" y2="218" stroke="hsl(var(--border))" stroke-width="1"/>
+  <text x="24" y="238" class="note">1 — orange also appears on the countdown numbers and the NEXT time stamp; both move to the dimmed pen.</text>
+</svg>
