@@ -69,8 +69,8 @@ export function ScheduleBoard({
     return (
       <Card variant="section">
         <p className="text-sm text-text-secondary">
-          The schedule hasn&apos;t been published yet. It fills in as soon as the competition
-          posts its running order.
+          The schedule hasn&apos;t been published yet. It fills in as soon as the competition posts
+          its running order.
         </p>
       </Card>
     );

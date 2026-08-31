@@ -43,7 +43,9 @@ export function EventResults({
                   ? "IN PROGRESS"
                   : "SCHEDULED"}
             </Tag>
-            <span>{[event?.dayLabel, event?.timeLabel, event?.rink].filter(Boolean).join(" · ")}</span>
+            <span>
+              {[event?.dayLabel, event?.timeLabel, event?.rink].filter(Boolean).join(" · ")}
+            </span>
           </p>
         </SheetHeader>
 

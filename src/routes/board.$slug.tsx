@@ -417,7 +417,6 @@ function BoardPage() {
           if (!open) setScore(null);
         }}
       />
-
     </div>
   );
 }

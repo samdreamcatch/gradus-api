@@ -65,7 +65,7 @@ function skater(
   of: number,
   name: string,
   club: string,
-  opts: { segScore?: string; total?: string; place?: string } = {},
+  opts: { segScore?: string; total?: string; place?: string; finalPlace?: string } = {},
 ): BoardSkater {
   return {
     start,
@@ -76,12 +76,17 @@ function skater(
     segScore: opts.segScore ?? "",
     total: opts.total ?? "",
     place: opts.place ?? "",
+    finalPlace: opts.finalPlace ?? opts.place ?? "",
     protocol: opts.segScore ? protocolFor(opts.segScore) : null,
   };
 }
 
 const A_ORDER: BoardSkater[] = [
-  skater(1, 12, "Harper Lindqvist", "Detroit SC", { segScore: "54.18", total: "54.18", place: "5" }),
+  skater(1, 12, "Harper Lindqvist", "Detroit SC", {
+    segScore: "54.18",
+    total: "54.18",
+    place: "5",
+  }),
   skater(2, 12, "Mia Okonkwo", "Ann Arbor FSC", { segScore: "58.02", total: "58.02", place: "3" }),
   skater(3, 12, "Sofia Renaldi", "Onyx-Suburban SA", {
     segScore: "49.77",
@@ -213,20 +218,72 @@ function ev(
   results: BoardSkater[] = [],
   count: number | null = null,
 ): BoardEvent {
+  const startIso = iso(minutes);
+  const at = new Date(startIso);
   return {
     file,
     name,
     segment,
     rink,
     timeLabel: timeLabel(minutes),
-    startIso: iso(minutes),
+    startIso,
     status,
     count: count ?? (results.length || null),
+    dayLabel: new Intl.DateTimeFormat("en-US", {
+      timeZone: "America/New_York",
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+    }).format(at),
+    dayKey: new Intl.DateTimeFormat("en-CA", {
+      timeZone: "America/New_York",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(at),
     results,
   };
 }
 
+const DAY_MIN = 60 * 24;
+
+/** Yesterday's finished event, so past-day standings are visible in the demo. */
+const YESTERDAY_RESULTS: BoardSkater[] = [
+  skater(1, 5, "Nora Blomqvist", "Detroit SC", {
+    segScore: "61.44",
+    total: "61.44",
+    place: "2",
+  }),
+  skater(2, 5, "Elise Marchetti", "Fraser FSC", {
+    segScore: "64.90",
+    total: "64.90",
+    place: "1",
+  }),
+  skater(3, 5, "Priya Raman", "Lansing SC", { segScore: "58.31", total: "58.31", place: "3" }),
+  skater(4, 5, "Tessa Halvorsen", "Ann Arbor FSC", {
+    segScore: "52.07",
+    total: "52.07",
+    place: "4",
+  }),
+  skater(5, 5, "Junie Park", "Onyx-Suburban SA", {
+    segScore: "47.85",
+    total: "47.85",
+    place: "5",
+  }),
+];
+
 const SCHEDULE: BoardEvent[] = [
+  ev(
+    "d0a",
+    "Intermediate Ladies",
+    "Short Program",
+    "A Rink",
+    -DAY_MIN - 200,
+    "final",
+    YESTERDAY_RESULTS,
+    5,
+  ),
+  ev("d0b", "Juvenile Boys", "Short Program", "C Rink", -DAY_MIN - 120, "final", [], 8),
   ev("d1", "Pre-Juvenile Ladies", "Free Skate", "B Rink", -120, "final", B_DONE, 6),
   ev("d2", "Aspire 3 Boys", "Free Skate", "C Rink", -95, "final", [], 5),
   ev("d3", "Intermediate Ladies", "Free Skate", "A Rink", -52, "live", A_ORDER, 12),

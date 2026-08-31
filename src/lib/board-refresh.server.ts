@@ -41,8 +41,6 @@ function skaterJson(s: IjsSkater | null, withProtocol = false): BoardSkater | nu
   };
 }
 
-
-
 const DAY_FMT = new Intl.DateTimeFormat("en-CA", {
   timeZone: RINK_TZ,
   year: "numeric",
@@ -58,7 +56,6 @@ function dayKeyOf(d: Date): string {
 function sameRinkDay(a: Date, b: Date): boolean {
   return dayKeyOf(a) === dayKeyOf(b);
 }
-
 
 /** Lean, cached results for one event file at one status. */
 export interface CachedEvent {
@@ -89,7 +86,6 @@ export async function buildPayload(
   const errors: string[] = [];
   const venues = { ...venueCache };
   const orders: Record<string, CachedEvent> = {};
-
 
   const pageCache = new Map<string, Awaited<ReturnType<typeof parseEvent>>>();
   const loadEvent = async (file: string) => {
@@ -277,7 +273,6 @@ export async function buildPayload(
   }
   schedule.sort((a, b) => (a.startIso ?? "").localeCompare(b.startIso ?? ""));
 
-
   return {
     payload: {
       generatedAt: now.toISOString(),
@@ -323,14 +318,12 @@ export async function refreshCompetition(
     .maybeSingle();
 
   const nowIso = new Date().toISOString();
-  const row = existing.data as
-    | {
-        venues: Record<string, string>;
-        orders: Record<string, CachedEvent> | null;
-        refreshing_at: string | null;
-        fetch_count: number;
-      }
-    | null;
+  const row = existing.data as {
+    venues: Record<string, string>;
+    orders: Record<string, CachedEvent> | null;
+    refreshing_at: string | null;
+    fetch_count: number;
+  } | null;
 
   if (!opts.force && row?.refreshing_at) {
     const age = Date.now() - new Date(row.refreshing_at).getTime();
