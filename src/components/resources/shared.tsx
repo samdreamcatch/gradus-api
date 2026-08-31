@@ -10,10 +10,12 @@ import {
   Image as ImageIcon,
   Link as LinkIcon,
   Loader2,
+  Flag,
   Sparkles,
   Trash2,
 } from "lucide-react";
 
+import { ReportSheet } from "@/components/safety/report-sheet";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { AnswerMarkdown } from "@/components/parent/answer-markdown";
 import { Button } from "@/components/ui/button";
@@ -100,10 +102,13 @@ export function ResourceList({
 export function ResourceSheet({
   resource,
   onClose,
+  canReport = false,
 }: {
   resource: ResourceDTO | null;
   onClose: () => void;
+  canReport?: boolean;
 }) {
+  const [reportOpen, setReportOpen] = useState(false);
   const sign = useServerFn(getResourceSignedUrl);
   const { data, isLoading, error } = useQuery({
     queryKey: ["resource-signed-url", resource?.id],
@@ -127,6 +132,16 @@ export function ResourceSheet({
           ) : null}
           {resource?.coachName ? (
             <p className="text-xs text-text-secondary">Shared by Coach {resource.coachName}</p>
+          ) : null}
+          {canReport && resource ? (
+            <button
+              type="button"
+              onClick={() => setReportOpen(true)}
+              className="press-soft mt-1 inline-flex w-fit items-center gap-1.5 text-xs font-bold text-text-secondary underline underline-offset-2"
+            >
+              <Flag className="h-3.5 w-3.5" aria-hidden />
+              Report this resource
+            </button>
           ) : null}
         </SheetHeader>
         <div className="h-[calc(92vh-96px)] border-t border-divider bg-card">
@@ -168,6 +183,14 @@ export function ResourceSheet({
           ) : null}
         </div>
       </SheetContent>
+      {canReport && resource ? (
+        <ReportSheet
+          open={reportOpen}
+          onOpenChange={setReportOpen}
+          targetName={resource.title}
+          resourceId={resource.id}
+        />
+      ) : null}
     </Sheet>
   );
 }
