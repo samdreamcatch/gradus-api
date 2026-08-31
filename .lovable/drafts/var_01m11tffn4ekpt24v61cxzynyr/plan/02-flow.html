@@ -1,0 +1,46 @@
+<svg viewBox="0 0 640 300" xmlns="http://www.w3.org/2000/svg" style="font-family: var(--font-sans)">
+  <style>
+    .lbl { font-size: 14px; font-weight: 480; fill: hsl(var(--foreground)); }
+    .note { font-size: 12px; fill: hsl(var(--muted-foreground)); }
+    .mono { font-size: 12px; font-family: var(--font-mono); fill: hsl(var(--muted-foreground)); }
+    .bx { fill: none; stroke: hsl(var(--muted-foreground)); stroke-width: 1; rx: 8; }
+    .wire { stroke: hsl(var(--muted-foreground)); stroke-width: 1; fill: none; }
+    .zone { fill: none; stroke: hsl(var(--border)); stroke-width: 1; stroke-dasharray: 4 3; rx: 8; }
+  </style>
+  <defs>
+    <marker id="a" markerWidth="7" markerHeight="7" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6" fill="none" stroke="hsl(var(--muted-foreground))" stroke-width="1"/>
+    </marker>
+  </defs>
+
+  <rect class="zone" x="8" y="16" width="196" height="120"/>
+  <text class="mono" x="18" y="34">viewers</text>
+  <rect class="bx" x="26" y="46" width="160" height="34"/>
+  <text class="lbl" x="106" y="67" text-anchor="middle">phone at the rink</text>
+  <rect class="bx" x="26" y="92" width="160" height="34"/>
+  <text class="lbl" x="106" y="113" text-anchor="middle">/board/skate-detroit</text>
+
+  <rect class="zone" x="228" y="16" width="196" height="240"/>
+  <text class="mono" x="238" y="34">gradus server</text>
+  <rect class="bx" x="246" y="46" width="160" height="34"/>
+  <text class="lbl" x="326" y="67" text-anchor="middle">getBoard()</text>
+  <rect class="bx" x="246" y="118" width="160" height="46"/>
+  <text class="lbl" x="326" y="139" text-anchor="middle">competition_snapshots</text>
+  <text class="note" x="326" y="155" text-anchor="middle">one cached JSON per comp</text>
+  <rect class="bx" x="246" y="196" width="160" height="34"/>
+  <text class="lbl" x="326" y="217" text-anchor="middle">refresh (30s, single)</text>
+
+  <rect class="bx" x="454" y="196" width="170" height="34"/>
+  <text class="lbl" x="539" y="217" text-anchor="middle">ijs.usfigureskating.org</text>
+  <text class="note" x="539" y="250" text-anchor="middle">HTML, latin-1, no CORS</text>
+
+  <path class="wire" d="M186 63 L242 63" marker-end="url(#a)"/>
+  <path class="wire" d="M326 80 L326 114" marker-end="url(#a)"/>
+  <path class="wire" d="M326 164 L326 192" marker-end="url(#a)" stroke-dasharray="4 3"/>
+  <path class="wire" d="M406 213 L450 213" marker-end="url(#a)"/>
+  <text class="note" x="196" y="286">reads never touch USFS · one refresh serves every viewer</text>
+
+  <circle cx="420" cy="63" r="10" fill="hsl(var(--accent))"/>
+  <text x="420" y="67" text-anchor="middle" style="font-size:12px;font-weight:600;fill:hsl(var(--accent-foreground))">1</text>
+  <text class="note" x="438" y="67">public, no auth</text>
+</svg>
