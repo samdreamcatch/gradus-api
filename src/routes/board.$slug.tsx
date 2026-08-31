@@ -27,14 +27,19 @@ const EXTRA_KEY = "gradus.boardFollowExtra";
 type BoardTab = "mine" | "rinks" | "schedule";
 
 const TABS = [
-  { key: "mine" as const, label: "Mine", id: "board-tab-mine", controls: "board-panel-mine" },
-  { key: "rinks" as const, label: "Rinks", id: "board-tab-rinks", controls: "board-panel-rinks" },
+  {
+    key: "rinks" as const,
+    label: "Locations",
+    id: "board-tab-rinks",
+    controls: "board-panel-rinks",
+  },
   {
     key: "schedule" as const,
     label: "Schedule",
     id: "board-tab-schedule",
     controls: "board-panel-schedule",
   },
+  { key: "mine" as const, label: "Following", id: "board-tab-mine", controls: "board-panel-mine" },
 ];
 
 export const Route = createFileRoute("/board/$slug")({
