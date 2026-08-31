@@ -156,8 +156,6 @@ export async function buildPayload(
     );
     if (done.length && rink.state === "idle") {
       const jf = done.reduce((a, b) => (b.startAt > a.startAt ? b : a));
-      let winner: BoardRink["justFinished"] extends infer T ? never : never;
-      void winner;
       rink.justFinished = { event: jf.name, winner: null };
       try {
         const top = topFinishers(await loadEvent(jf.file), 1);
@@ -224,9 +222,13 @@ export async function refreshCompetition(
   comp: CompetitionRow,
   opts: { force?: boolean } = {},
 ): Promise<BoardPayload | null> {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const mod = await import("@/integrations/supabase/client.server");
+  // The board tables are new; use an untyped handle until types regenerate.
+  const db = mod.supabaseAdmin as unknown as {
+    from: (t: string) => any;
+  };
 
-  const existing = await supabaseAdmin
+  const existing = await db
     .from("competition_snapshots")
     .select("competition_id, venues, generated_at, refreshing_at, fetch_count")
     .eq("competition_id", comp.id)
@@ -243,7 +245,7 @@ export async function refreshCompetition(
   }
 
   // Claim the refresh so concurrent viewers don't stampede the source.
-  await supabaseAdmin
+  await db
     .from("competition_snapshots")
     .upsert(
       { competition_id: comp.id, refreshing_at: nowIso, updated_at: nowIso },
@@ -256,7 +258,7 @@ export async function refreshCompetition(
       comp.year,
       (row?.venues as Record<string, string>) ?? {},
     );
-    await supabaseAdmin.from("competition_snapshots").upsert(
+    await db.from("competition_snapshots").upsert(
       {
         competition_id: comp.id,
         payload: payload as unknown as Record<string, unknown>,
@@ -271,7 +273,7 @@ export async function refreshCompetition(
     );
     return payload;
   } catch (err) {
-    await supabaseAdmin.from("competition_snapshots").upsert(
+    await db.from("competition_snapshots").upsert(
       {
         competition_id: comp.id,
         refreshing_at: null,
