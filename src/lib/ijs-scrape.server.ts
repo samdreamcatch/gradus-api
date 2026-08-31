@@ -435,7 +435,9 @@ export function parseEvent(doc: string): IjsEventPage {
       segPlace,
       total,
       of: 0,
+      protocol: segScore ? parseProtocol(detailBlock) : null,
     });
+
   }
 
   skaters.sort((a, b) => a.start - b.start);
