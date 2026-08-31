@@ -18,6 +18,8 @@ import {
   Megaphone,
   Share2,
   Sparkles,
+  ShieldAlert,
+
   type LucideIcon,
 } from "lucide-react";
 import {
