@@ -203,9 +203,12 @@ function BoardPage() {
     rinks.find((r) => r.state === "live") ??
     rinks[0];
 
+  // Land where the viewer has something to look at: their own skaters if any.
+  const activeTab: BoardTab = tab ?? (matches.length > 0 ? "mine" : "rinks");
+
   const goToRink = useCallback((name: string) => {
     setRinkName(name);
-    setTab("now");
+    setTab("rinks");
   }, []);
 
   // A short spoken version of whatever just flipped on screen.
