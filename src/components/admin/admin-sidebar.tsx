@@ -9,6 +9,7 @@ import {
   ClipboardList,
   History,
   Building2,
+  Trophy,
   CreditCard,
   MessageSquare,
   AlertTriangle,
@@ -58,6 +59,10 @@ const GROUPS: Group[] = [
       { to: "/admin/leads", label: "Waitlist & leads", icon: UserPlus },
       { to: "/admin/impersonation", label: "Impersonation", icon: UserCheck },
     ],
+  },
+  {
+    label: "Competitions",
+    items: [{ to: "/admin/competitions", label: "Live boards", icon: Trophy }],
   },
   {
     label: "Organizations",

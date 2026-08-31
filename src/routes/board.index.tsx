@@ -51,7 +51,7 @@ function BoardIndex() {
     <div className="mx-auto max-w-2xl space-y-6 px-4 py-8">
       <header className="space-y-2">
         <Link to="/" className="press inline-block">
-          <Logo className="h-6" />
+          <Logo className="text-2xl" />
         </Link>
         <h1 className="font-display text-h2 text-text-primary">Live boards</h1>
         <p className="text-sm text-text-secondary">

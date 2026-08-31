@@ -75,6 +75,7 @@ import { Route as AuthenticatedAdminImpersonationRouteImport } from './routes/_a
 import { Route as AuthenticatedAdminFeedbackRouteImport } from './routes/_authenticated/admin.feedback'
 import { Route as AuthenticatedAdminErrorsRouteImport } from './routes/_authenticated/admin.errors'
 import { Route as AuthenticatedAdminEmailHealthRouteImport } from './routes/_authenticated/admin.email-health'
+import { Route as AuthenticatedAdminCompetitionsRouteImport } from './routes/_authenticated/admin.competitions'
 import { Route as AuthenticatedAdminBillingRouteImport } from './routes/_authenticated/admin.billing'
 import { Route as AuthenticatedAdminAskRouteImport } from './routes/_authenticated/admin.ask'
 import { Route as AuthenticatedAdminAnnouncementsRouteImport } from './routes/_authenticated/admin.announcements'
@@ -472,6 +473,12 @@ const AuthenticatedAdminEmailHealthRoute =
     path: '/email-health',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminCompetitionsRoute =
+  AuthenticatedAdminCompetitionsRouteImport.update({
+    id: '/competitions',
+    path: '/competitions',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminBillingRoute =
   AuthenticatedAdminBillingRouteImport.update({
     id: '/billing',
@@ -733,6 +740,7 @@ export interface FileRoutesByFullPath {
   '/admin/announcements': typeof AuthenticatedAdminAnnouncementsRoute
   '/admin/ask': typeof AuthenticatedAdminAskRoute
   '/admin/billing': typeof AuthenticatedAdminBillingRoute
+  '/admin/competitions': typeof AuthenticatedAdminCompetitionsRoute
   '/admin/email-health': typeof AuthenticatedAdminEmailHealthRoute
   '/admin/errors': typeof AuthenticatedAdminErrorsRouteWithChildren
   '/admin/feedback': typeof AuthenticatedAdminFeedbackRoute
@@ -834,6 +842,7 @@ export interface FileRoutesByTo {
   '/admin/announcements': typeof AuthenticatedAdminAnnouncementsRoute
   '/admin/ask': typeof AuthenticatedAdminAskRoute
   '/admin/billing': typeof AuthenticatedAdminBillingRoute
+  '/admin/competitions': typeof AuthenticatedAdminCompetitionsRoute
   '/admin/email-health': typeof AuthenticatedAdminEmailHealthRoute
   '/admin/errors': typeof AuthenticatedAdminErrorsRouteWithChildren
   '/admin/feedback': typeof AuthenticatedAdminFeedbackRoute
@@ -941,6 +950,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/announcements': typeof AuthenticatedAdminAnnouncementsRoute
   '/_authenticated/admin/ask': typeof AuthenticatedAdminAskRoute
   '/_authenticated/admin/billing': typeof AuthenticatedAdminBillingRoute
+  '/_authenticated/admin/competitions': typeof AuthenticatedAdminCompetitionsRoute
   '/_authenticated/admin/email-health': typeof AuthenticatedAdminEmailHealthRoute
   '/_authenticated/admin/errors': typeof AuthenticatedAdminErrorsRouteWithChildren
   '/_authenticated/admin/feedback': typeof AuthenticatedAdminFeedbackRoute
@@ -1049,6 +1059,7 @@ export interface FileRouteTypes {
     | '/admin/announcements'
     | '/admin/ask'
     | '/admin/billing'
+    | '/admin/competitions'
     | '/admin/email-health'
     | '/admin/errors'
     | '/admin/feedback'
@@ -1150,6 +1161,7 @@ export interface FileRouteTypes {
     | '/admin/announcements'
     | '/admin/ask'
     | '/admin/billing'
+    | '/admin/competitions'
     | '/admin/email-health'
     | '/admin/errors'
     | '/admin/feedback'
@@ -1256,6 +1268,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/announcements'
     | '/_authenticated/admin/ask'
     | '/_authenticated/admin/billing'
+    | '/_authenticated/admin/competitions'
     | '/_authenticated/admin/email-health'
     | '/_authenticated/admin/errors'
     | '/_authenticated/admin/feedback'
@@ -1830,6 +1843,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminEmailHealthRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/competitions': {
+      id: '/_authenticated/admin/competitions'
+      path: '/competitions'
+      fullPath: '/admin/competitions'
+      preLoaderRoute: typeof AuthenticatedAdminCompetitionsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/billing': {
       id: '/_authenticated/admin/billing'
       path: '/billing'
@@ -2126,6 +2146,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminAnnouncementsRoute: typeof AuthenticatedAdminAnnouncementsRoute
   AuthenticatedAdminAskRoute: typeof AuthenticatedAdminAskRoute
   AuthenticatedAdminBillingRoute: typeof AuthenticatedAdminBillingRoute
+  AuthenticatedAdminCompetitionsRoute: typeof AuthenticatedAdminCompetitionsRoute
   AuthenticatedAdminEmailHealthRoute: typeof AuthenticatedAdminEmailHealthRoute
   AuthenticatedAdminErrorsRoute: typeof AuthenticatedAdminErrorsRouteWithChildren
   AuthenticatedAdminFeedbackRoute: typeof AuthenticatedAdminFeedbackRoute
@@ -2154,6 +2175,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminAnnouncementsRoute: AuthenticatedAdminAnnouncementsRoute,
   AuthenticatedAdminAskRoute: AuthenticatedAdminAskRoute,
   AuthenticatedAdminBillingRoute: AuthenticatedAdminBillingRoute,
+  AuthenticatedAdminCompetitionsRoute: AuthenticatedAdminCompetitionsRoute,
   AuthenticatedAdminEmailHealthRoute: AuthenticatedAdminEmailHealthRoute,
   AuthenticatedAdminErrorsRoute: AuthenticatedAdminErrorsRouteWithChildren,
   AuthenticatedAdminFeedbackRoute: AuthenticatedAdminFeedbackRoute,

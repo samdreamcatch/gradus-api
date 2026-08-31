@@ -151,7 +151,7 @@ function BoardPage() {
       <header className="space-y-2">
         <div className="flex items-center justify-between gap-3">
           <Link to="/" className="press">
-            <Logo className="h-6" />
+            <Logo className="text-2xl" />
           </Link>
           {data.isLiveWindow ? (
             <Tag size="caption" tone="accent">
