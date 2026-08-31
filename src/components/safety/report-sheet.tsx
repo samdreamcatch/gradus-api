@@ -56,13 +56,13 @@ export function ReportSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="paper-surface max-h-[92dvh] overflow-y-auto">
         <SheetHeader className="px-1 pb-2 text-left">
-          <SheetTitle className="font-display text-2xl">Anonymously Report {targetName}</SheetTitle>
+          <SheetTitle className="font-display text-2xl">Report {targetName}</SheetTitle>
         </SheetHeader>
         <div className="space-y-5 px-1 pb-8">
           <p className="text-sm text-text-secondary">
             {messageId
               ? "Tell us what's wrong with this message. Our safety team reviews every report within 24 hours."
-              : "Tell us what's going on. Our safety team reviews every report within 24 hours."}
+               : "Tell us what's going on. Our safety team reviews every report within 24 hours. You will remain anonymous to the person you are reporting.\u00a0"}
           </p>
 
           <div className="space-y-2">
