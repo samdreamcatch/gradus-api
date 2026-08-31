@@ -15,6 +15,8 @@
  * Cells are read by CSS class, never by index — column layout varies per event.
  */
 
+import type { SkaterProtocol } from "./board-types";
+
 const UA =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
 
