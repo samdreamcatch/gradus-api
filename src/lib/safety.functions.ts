@@ -103,24 +103,63 @@ export const submitReport = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) =>
     z
       .object({
-        targetUserId: z.string().uuid(),
+        targetUserId: z.string().uuid().nullish(),
         messageId: z.string().uuid().nullish(),
+        resourceId: z.string().uuid().nullish(),
         reason: z.enum(REPORT_REASONS),
         note: z.string().trim().max(2000).default(""),
         alsoBlock: z.boolean().default(true),
       })
+      .refine((v) => !!v.targetUserId || !!v.resourceId, {
+        message: "Nothing to report",
+      })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
-    if (data.targetUserId === context.userId) throw new Error("You can't report yourself.");
+    if (data.targetUserId && data.targetUserId === context.userId) {
+      throw new Error("You can't report yourself.");
+    }
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { resolveIdentity, severRelationships, sendReportAlert } =
       await import("./safety.server");
 
-    const [me, them] = await Promise.all([
-      resolveIdentity(supabaseAdmin, context.userId),
-      resolveIdentity(supabaseAdmin, data.targetUserId),
-    ]);
+    // Resource reports are about content, not a person: never block.
+    const alsoBlock = data.resourceId ? false : data.alsoBlock;
+
+    let resourceTitle: string | null = null;
+    let reportedUserId = data.targetUserId ?? null;
+    if (data.resourceId) {
+      // RLS on the caller's client enforces that they can actually see it.
+      const { data: res, error: resErr } = await (context.supabase as any)
+        .from("resources")
+        .select("id, title, kind, coach_id")
+        .eq("id", data.resourceId)
+        .maybeSingle();
+      if (resErr) dbError(resErr);
+      if (!res) throw new Error("Resource not found");
+      resourceTitle = `${res.title ?? "Untitled"} (${res.kind ?? "file"})`;
+
+      if (!reportedUserId && res.coach_id) {
+        const { data: owner } = await supabaseAdmin
+          .from("coach_profiles")
+          .select("user_id")
+          .eq("id", res.coach_id)
+          .maybeSingle();
+        if (owner?.user_id && owner.user_id !== context.userId) reportedUserId = owner.user_id;
+      }
+    }
+
+    const me = await resolveIdentity(supabaseAdmin, context.userId);
+    const them = reportedUserId
+      ? await resolveIdentity(supabaseAdmin, reportedUserId)
+      : {
+          userId: "",
+          coachId: null,
+          parentId: null,
+          athleteId: null,
+          name: "Gradus resource",
+          role: "unknown" as const,
+        };
 
     let messageBody: string | null = null;
     if (data.messageId) {
@@ -136,8 +175,9 @@ export const submitReport = createServerFn({ method: "POST" })
       .from("user_reports")
       .insert({
         reporter_user_id: context.userId,
-        reported_user_id: data.targetUserId,
+        reported_user_id: reportedUserId,
         message_id: data.messageId ?? null,
+        resource_id: data.resourceId ?? null,
         reason: data.reason,
         note: data.note,
       })
@@ -145,11 +185,11 @@ export const submitReport = createServerFn({ method: "POST" })
       .single();
     if (error) dbError(error, "Couldn't submit this report");
 
-    if (data.alsoBlock) {
+    if (alsoBlock && reportedUserId) {
       await supabaseAdmin
         .from("user_blocks")
         .upsert(
-          { blocker_user_id: context.userId, blocked_user_id: data.targetUserId },
+          { blocker_user_id: context.userId, blocked_user_id: reportedUserId },
           { onConflict: "blocker_user_id,blocked_user_id" },
         );
       await severRelationships(supabaseAdmin, me, them);
@@ -162,11 +202,13 @@ export const submitReport = createServerFn({ method: "POST" })
       reporter: me,
       reported: them,
       messageBody,
-      blocked: data.alsoBlock,
+      resourceTitle,
+      blocked: alsoBlock,
     });
 
-    return { ok: true as const, blocked: data.alsoBlock };
+    return { ok: true as const, blocked: alsoBlock };
   });
+
 
 /* ---------------- admin queue ---------------- */
 
