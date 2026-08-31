@@ -29,7 +29,7 @@ type BoardTab = "mine" | "rinks" | "schedule";
 const TABS = [
   {
     key: "rinks" as const,
-    label: "Locations",
+    label: "Live",
     id: "board-tab-rinks",
     controls: "board-panel-rinks",
   },
