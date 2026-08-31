@@ -86,7 +86,7 @@ export interface BoardRink {
   dayEvents: number;
 }
 
-/** One row of the day's departures board. */
+/** One row of the departures board. */
 export interface BoardEvent {
   file: string;
   name: string;
@@ -96,6 +96,10 @@ export interface BoardEvent {
   startIso: string | null;
   status: "scheduled" | "live" | "final";
   count: number | null;
+  /** Day heading as published, e.g. `Sat Aug 22`. */
+  dayLabel: string;
+  /** Venue-local `YYYY-MM-DD`, used to group and pick a day. */
+  dayKey: string;
   /**
    * Start order with any posted scores. Present for events already fetched;
    * protocols are attached only for the live and most recently finished event
@@ -103,6 +107,16 @@ export interface BoardEvent {
    */
   results: BoardSkater[];
 }
+
+/** Results ordered by final placement — unplaced skaters last. */
+export function standingsOf(e: Pick<BoardEvent, "results">): BoardSkater[] {
+  const rank = (s: BoardSkater) => {
+    const p = Number(s.finalPlace || s.place);
+    return Number.isFinite(p) && p > 0 ? p : Number.POSITIVE_INFINITY;
+  };
+  return [...e.results].sort((a, b) => rank(a) - rank(b) || a.start - b.start);
+}
+
 
 export interface BoardPayload {
   generatedAt: string;
