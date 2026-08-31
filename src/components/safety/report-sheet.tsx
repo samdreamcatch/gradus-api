@@ -17,13 +17,15 @@ export function ReportSheet({
   targetUserId,
   targetName,
   messageId,
+  resourceId,
   onDone,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  targetUserId: string;
+  targetUserId?: string | null;
   targetName: string;
   messageId?: string | null;
+  resourceId?: string | null;
   onDone?: () => void;
 }) {
   const [reason, setReason] = useState<ReportReason | null>(null);
@@ -60,7 +62,9 @@ export function ReportSheet({
         </SheetHeader>
         <div className="space-y-5 px-1 pb-8">
           <p className="text-sm text-text-secondary">
-            {messageId
+            {resourceId
+              ? "Tell us what's wrong with this resource. Our safety team reviews every report within 24 hours.\u00a0You will remain anonymous to whoever shared it."
+              : messageId
                ? "Tell us what's wrong with this message. Our safety team reviews every report within 24 hours.\u00a0You will remain anonymous to the person you are reporting."
                : "Tell us what's going on. Our safety team reviews every report within 24 hours. You will remain anonymous to the person you are reporting.\u00a0"}
           </p>
@@ -102,6 +106,7 @@ export function ReportSheet({
             />
           </div>
 
+          {resourceId ? null : (
           <label className="flex items-start gap-3 rounded-md border border-divider p-3">
             <Checkbox
               checked={alsoBlock}
@@ -116,6 +121,7 @@ export function ReportSheet({
               </span>
             </span>
           </label>
+          )}
 
           <Button
             type="button"
@@ -125,11 +131,12 @@ export function ReportSheet({
               reason &&
               mutation.mutate({
                 data: {
-                  targetUserId,
+                  targetUserId: targetUserId ?? null,
                   messageId: messageId ?? null,
+                  resourceId: resourceId ?? null,
                   reason,
                   note: note.trim(),
-                  alsoBlock,
+                  alsoBlock: resourceId ? false : alsoBlock,
                 },
               })
             }
