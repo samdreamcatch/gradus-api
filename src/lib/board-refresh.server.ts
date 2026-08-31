@@ -145,7 +145,7 @@ export async function buildPayload(
           justScored: skaterJson(L.justScored),
           onIce: skaterJson(L.onIce),
           upNext: skaterJson(L.upNext),
-          startOrder: ev.skaters.map((s) => ({ start: s.start, name: s.name, club: s.club })),
+          startOrder: ev.skaters.map((s) => skaterJson(s, true)!),
         };
         rink.alsoLive = live.filter((e) => e.file !== primary.file).map((e) => e.name);
       } catch (err) {
