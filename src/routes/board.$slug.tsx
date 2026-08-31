@@ -17,7 +17,7 @@ import { EventResults } from "@/components/board/event-results";
 import { SegmentedToggle } from "@/components/plans/segmented-toggle";
 import { useChangedKeys } from "@/hooks/use-changed-keys";
 import { getBoard, getMySkaterNames } from "@/lib/board.functions";
-import { normalizeName, type BoardSkater } from "@/lib/board-types";
+import { normalizeName, type BoardEvent, type BoardSkater } from "@/lib/board-types";
 
 const REFRESH_MS = 30_000;
 const HISTORY_KEY = "gradus.boardHistory";
