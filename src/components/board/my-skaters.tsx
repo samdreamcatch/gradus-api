@@ -125,7 +125,7 @@ export function MySkaters({
 
   return (
     <Card variant="section" className="space-y-3">
-      <Eyebrow size="micro" tone="tertiary">
+      <Eyebrow as="h2" size="micro" tone="tertiary">
         {matches.length > 1 ? "YOUR SKATERS" : "YOUR SKATER"}
       </Eyebrow>
 
@@ -139,9 +139,9 @@ export function MySkaters({
             )}
           >
             <div className="flex items-baseline justify-between gap-2">
-              <p className="min-w-0 truncate text-base font-bold text-text-primary">
+              <h3 className="min-w-0 truncate text-base font-bold text-text-primary">
                 {m.skater.name}
-              </p>
+              </h3>
               <Tag size="caption" tone={m.state === "on-ice" ? "accent" : "default"}>
                 {STATE_LABEL[m.state]}
               </Tag>
@@ -156,14 +156,35 @@ export function MySkaters({
             <p className="mt-1 font-mono text-xs text-text-secondary tabular-nums">{line(m)}</p>
 
             <div className="mt-2 flex flex-wrap gap-2">
-              <Chip size="caption" selected={followed(m)} onClick={() => onToggleFollow(m)}>
+              <Chip
+                size="small"
+                className="min-h-11"
+                selected={followed(m)}
+                aria-pressed={followed(m)}
+                aria-label={
+                  followed(m)
+                    ? `Stop following ${m.skater.name}`
+                    : `Follow ${m.skater.name}`
+                }
+                onClick={() => onToggleFollow(m)}
+              >
                 {followed(m) ? "Following" : "Follow"}
               </Chip>
-              <Chip size="caption" onClick={() => onSelectRink(m.event.rink)}>
+              <Chip
+                size="small"
+                className="min-h-11"
+                aria-label={`Show ${m.event.rink}`}
+                onClick={() => onSelectRink(m.event.rink)}
+              >
                 Go to {m.event.rink}
               </Chip>
               {m.skater.protocol ? (
-                <Chip size="caption" onClick={() => onOpenScore(m)}>
+                <Chip
+                  size="small"
+                  className="min-h-11"
+                  aria-label={`Score detail for ${m.skater.name}`}
+                  onClick={() => onOpenScore(m)}
+                >
                   Score detail
                 </Chip>
               ) : null}
@@ -174,3 +195,4 @@ export function MySkaters({
     </Card>
   );
 }
+
