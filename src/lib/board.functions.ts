@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { BoardPayload, BoardResponse } from "./board-types";
+import { DEMO_LIST_ENTRY, DEMO_SLUG, buildDemoBoard } from "./board-demo";
 
 const slugSchema = z.object({ slug: z.string().trim().min(1).max(80) });
 
