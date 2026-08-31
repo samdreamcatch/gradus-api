@@ -13,6 +13,7 @@ import { MySkaters, findMySkaters, type SkaterMatch } from "@/components/board/m
 import { ScheduleBoard } from "@/components/board/schedule-board";
 import { FollowSearch } from "@/components/board/follow-search";
 import { ScoreSheet } from "@/components/board/score-sheet";
+import { SegmentedToggle } from "@/components/plans/segmented-toggle";
 import { useChangedKeys } from "@/hooks/use-changed-keys";
 import { getBoard, getMySkaterNames } from "@/lib/board.functions";
 import { normalizeName, type BoardSkater } from "@/lib/board-types";
