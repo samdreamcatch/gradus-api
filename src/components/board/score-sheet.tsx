@@ -137,7 +137,7 @@ export function ScoreSheet({
 
             {p.deductions.length > 0 ? (
               <section className="space-y-2">
-                <Eyebrow size="micro" tone="tertiary">
+                <Eyebrow size="micro" tone="tertiary" as="h3">
                   DEDUCTIONS
                 </Eyebrow>
                 {p.deductions.map((d) => (
