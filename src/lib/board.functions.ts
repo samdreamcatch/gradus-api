@@ -16,6 +16,9 @@ const slugSchema = z.object({ slug: z.string().trim().min(1).max(80) });
 export const getBoard = createServerFn({ method: "GET" })
   .inputValidator((input: unknown) => slugSchema.parse(input))
   .handler(async ({ data }): Promise<BoardResponse | null> => {
+    // Built-in sample board: no database, no scraper.
+    if (data.slug === DEMO_SLUG) return buildDemoBoard();
+
     const mod = await import("@/integrations/supabase/client.server");
     const db = mod.supabaseAdmin as unknown as { from: (t: string) => any };
     const { REFRESH_INTERVAL_MS, refreshCompetition } = await import("./board-refresh.server");
