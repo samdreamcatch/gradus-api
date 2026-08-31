@@ -179,7 +179,7 @@ export function RinkPanel({
           <p className="font-hand text-base text-text-tertiary">nothing on the ice</p>
           {rink.next ? (
             <>
-              <p className="font-mono text-h2 leading-none text-attention-ink tabular-nums">
+              <p className="font-mono text-h2 leading-none text-text-secondary tabular-nums">
                 {untilLabel(rink.next.startIso)}
               </p>
               <p className="mx-auto max-w-sm font-display text-base text-text-secondary">
