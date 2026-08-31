@@ -2683,6 +2683,74 @@ export type Database = {
           },
         ]
       }
+      user_blocks: {
+        Row: {
+          blocked_user_id: string
+          blocker_user_id: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          blocked_user_id: string
+          blocker_user_id: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          blocked_user_id?: string
+          blocker_user_id?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: []
+      }
+      user_reports: {
+        Row: {
+          admin_notes: string
+          created_at: string
+          id: string
+          message_id: string | null
+          note: string
+          reason: string
+          reported_user_id: string
+          reporter_user_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string
+          created_at?: string
+          id?: string
+          message_id?: string | null
+          note?: string
+          reason: string
+          reported_user_id: string
+          reporter_user_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string
+          created_at?: string
+          id?: string
+          message_id?: string | null
+          note?: string
+          reason?: string
+          reported_user_id?: string
+          reporter_user_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_reports_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -2852,6 +2920,7 @@ export type Database = {
       shares_athlete_window: { Args: { _athlete_id: string }; Returns: boolean }
       team_plan_active: { Args: { _athlete_id: string }; Returns: boolean }
       touch_last_seen: { Args: never; Returns: undefined }
+      users_blocked: { Args: { _a: string; _b: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin"
