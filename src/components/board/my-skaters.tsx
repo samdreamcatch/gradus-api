@@ -98,20 +98,41 @@ const STATE_LABEL: Record<SkaterMatch["state"], string> = {
   scheduled: "SCHEDULED",
 };
 
-function line(m: SkaterMatch): string {
+/** Plain-language meta line: where they skate, in what order, and what's next. */
+function metaParts(m: SkaterMatch): string[] {
+  const of = m.skater.of || m.event.count || 0;
+  const parts = [m.event.rink, of ? `skates ${ordinal(m.skater.start)} of ${of}` : `skates ${ordinal(m.skater.start)}`];
+
   if (m.state === "scored") {
-    return [
-      m.skater.segScore ? `${m.skater.segScore}` : "",
-      m.skater.place ? `currently ${m.skater.place}` : "",
-    ]
-      .filter(Boolean)
-      .join(" · ");
+    if (m.skater.segScore) parts.push(`scored ${m.skater.segScore}`);
+    if (m.skater.place) parts.push(`${ordinal(m.skater.place)} so far`);
+    return parts;
   }
-  if (m.state === "on-ice") return "on the ice now";
-  if (m.state === "scheduled") return `${m.event.timeLabel} · starts ${m.skater.start}`;
+  if (m.state === "on-ice") {
+    parts.push("on the ice now");
+    return parts;
+  }
+  if (m.state === "scheduled") {
+    parts.push(`starts ${m.event.timeLabel}`);
+    return parts;
+  }
   const mins = Math.max(1, Math.round(m.ahead * MINUTES_PER_SKATER));
-  return `${m.ahead} ahead · ~${mins} min`;
+  parts.push(
+    m.ahead === 1 ? "1 skater to go" : `${m.ahead} skaters to go`,
+    `about ${mins} min away`,
+  );
+  return parts;
 }
+
+function ordinal(n: number | string): string {
+  const v = typeof n === "number" ? n : parseInt(String(n), 10);
+  if (!Number.isFinite(v)) return String(n);
+  const rem100 = v % 100;
+  if (rem100 >= 11 && rem100 <= 13) return `${v}th`;
+  const suffix = { 1: "st", 2: "nd", 3: "rd" }[v % 10] ?? "th";
+  return `${v}${suffix}`;
+}
+
 
 /**
  * The viewer's own athletes, first thing on the board — a coach sees the whole
