@@ -79,7 +79,21 @@ function Lane({
 }
 
 
+/** Index in the start order of the skater who represents "now". */
+function liveIndex(current: BoardCurrent): number {
+  const find = (s: BoardSkater | null) =>
+    s ? current.startOrder.findIndex((r) => r.start === s.start && r.name === s.name) : -1;
+  const ice = find(current.onIce);
+  if (ice >= 0) return ice;
+  const just = find(current.justScored);
+  if (just >= 0) return just;
+  const next = find(current.upNext);
+  if (next >= 0) return next;
+  return Math.max(0, Math.min(current.startOrder.length - 1, current.done));
+}
+
 export function RinkPanel({
+
   rink,
   onOpenScore,
 }: {
