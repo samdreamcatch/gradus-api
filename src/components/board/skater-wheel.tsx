@@ -4,12 +4,16 @@ import { LANE_STYLE, SkaterBody, type LaneTone } from "@/components/board/lane-p
 import { cn } from "@/lib/utils";
 import type { BoardSkater } from "@/lib/board-types";
 
-/** Height of one card slot, in px. Drag distance is measured in these units. */
+/** Height of one card slot, in px. */
 const STEP = 84;
+/** Drag distance that advances one card — shorter than a slot so a thumb flick moves it. */
+const DRAG_STEP = 60;
 /** How many cards are rendered on either side of the centre. */
 const WINDOW = 2;
 /** Degrees of tilt per step away from the centre — the subtle arc. */
 const TILT = 2;
+/** Movement past which a gesture counts as a drag, not a tap. */
+const SLOP = 6;
 
 function roleOf(delta: number): { tone: LaneTone; label: string } {
   if (delta === 0) return { tone: "ice", label: "ON THE ICE" };
@@ -37,10 +41,15 @@ export function SkaterWheel({
   const [offset, setOffset] = useState(0);
   /** Keyboard/button stepping, which does not spring back until reset. */
   const [step, setStep] = useState(0);
+  const container = useRef<HTMLDivElement | null>(null);
   const drag = useRef<{ id: number; y: number; moved: number } | null>(null);
   const frame = useRef<number | null>(null);
+  const offsetRef = useRef(0);
+  const boundsRef = useRef({ centre: 0, last: 0 });
 
   const last = startOrder.length - 1;
+  boundsRef.current = { centre: activeIndex - step, last };
+
   // Reset stepping whenever the underlying event or live skater moves on.
   useEffect(() => {
     setStep(0);
@@ -53,22 +62,22 @@ export function SkaterWheel({
     [],
   );
 
-  const clampOffset = useCallback(
-    (raw: number) => {
-      const centre = activeIndex - step;
-      const min = centre - last; // dragging up, toward the end of the order
-      const max = centre; // dragging down, toward the start
-      if (raw > max) return max + (raw - max) * 0.25;
-      if (raw < min) return min + (raw - min) * 0.25;
-      return raw;
-    },
-    [activeIndex, step, last],
-  );
+  const apply = useCallback((raw: number) => {
+    const { centre, last: end } = boundsRef.current;
+    const min = centre - end; // dragging up, toward the end of the order
+    const max = centre; // dragging down, toward the start
+    let next = raw;
+    if (raw > max) next = max + (raw - max) * 0.25;
+    else if (raw < min) next = min + (raw - min) * 0.25;
+    offsetRef.current = next;
+    setOffset(next);
+  }, []);
 
   const settle = useCallback(() => {
-    const from = offset;
+    const from = offsetRef.current;
     if (from === 0) return;
     if (prefersReducedMotion()) {
+      offsetRef.current = 0;
       setOffset(0);
       return;
     }
@@ -78,33 +87,63 @@ export function SkaterWheel({
       const t = Math.min(1, (now - start) / dur);
       // Slight overshoot, then settle — the rotary spring.
       const eased = 1 - Math.pow(1 - t, 3) * Math.cos(t * Math.PI * 0.9);
-      setOffset(from * (1 - eased));
+      const value = t < 1 ? from * (1 - eased) : 0;
+      offsetRef.current = value;
+      setOffset(value);
       if (t < 1) frame.current = requestAnimationFrame(tick);
-      else setOffset(0);
     };
     frame.current = requestAnimationFrame(tick);
-  }, [offset]);
+  }, []);
 
-  const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (frame.current !== null) cancelAnimationFrame(frame.current);
-    drag.current = { id: e.pointerId, y: e.clientY, moved: 0 };
-    e.currentTarget.setPointerCapture(e.pointerId);
-  };
+  // Native, non-passive listeners: React's synthetic handlers can't reliably
+  // preventDefault the scroll on touch, which is what stopped the wheel turning.
+  useEffect(() => {
+    const el = container.current;
+    if (!el) return;
 
-  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    const d = drag.current;
-    if (!d || d.id !== e.pointerId) return;
-    const dy = e.clientY - d.y;
-    d.moved = Math.max(d.moved, Math.abs(dy));
-    setOffset(clampOffset(dy / STEP));
-  };
+    const down = (e: PointerEvent) => {
+      if (frame.current !== null) cancelAnimationFrame(frame.current);
+      drag.current = { id: e.pointerId, y: e.clientY, moved: 0 };
+      el.setPointerCapture(e.pointerId);
+    };
 
-  const endDrag = (e: React.PointerEvent<HTMLDivElement>) => {
-    const d = drag.current;
-    if (!d || d.id !== e.pointerId) return;
-    drag.current = null;
-    settle();
-  };
+    const move = (e: PointerEvent) => {
+      const d = drag.current;
+      if (!d || d.id !== e.pointerId) return;
+      const dy = e.clientY - d.y;
+      d.moved = Math.max(d.moved, Math.abs(dy));
+      if (d.moved < SLOP) return;
+      if (e.cancelable) e.preventDefault();
+      apply(dy / DRAG_STEP);
+    };
+
+    const end = (e: PointerEvent) => {
+      const d = drag.current;
+      if (!d || d.id !== e.pointerId) return;
+      // Keep `moved` readable for one tick so a drag doesn't fire the card's click.
+      window.setTimeout(() => {
+        drag.current = null;
+      }, 0);
+      settle();
+    };
+
+    const block = (e: TouchEvent) => {
+      if ((drag.current?.moved ?? 0) >= SLOP && e.cancelable) e.preventDefault();
+    };
+
+    el.addEventListener("pointerdown", down);
+    el.addEventListener("pointermove", move, { passive: false });
+    el.addEventListener("pointerup", end);
+    el.addEventListener("pointercancel", end);
+    el.addEventListener("touchmove", block, { passive: false });
+    return () => {
+      el.removeEventListener("pointerdown", down);
+      el.removeEventListener("pointermove", move);
+      el.removeEventListener("pointerup", end);
+      el.removeEventListener("pointercancel", end);
+      el.removeEventListener("touchmove", block);
+    };
+  }, [apply, settle]);
 
   const centre = activeIndex - step - offset;
   const nearest = Math.max(0, Math.min(last, Math.round(centre)));
@@ -118,12 +157,9 @@ export function SkaterWheel({
   return (
     <div className="space-y-2">
       <div
-        className="relative touch-pan-x select-none overflow-hidden"
-        style={{ height: STEP * 3 }}
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={endDrag}
-        onPointerCancel={endDrag}
+        ref={container}
+        className="relative select-none overflow-hidden"
+        style={{ height: STEP * 3, touchAction: "none" }}
       >
         <ol className="absolute inset-0 list-none">
           {cards.map(({ skater, index, pos }) => {
@@ -138,17 +174,16 @@ export function SkaterWheel({
                 aria-current={isCentre ? "true" : undefined}
                 className="absolute inset-x-0 top-1/2"
                 style={{
-                  transform: `translateY(calc(-50% + ${pos * STEP}px)) rotate(${pos * TILT}deg) scale(${Math.max(0.86, 1 - away * 0.06)})`,
-                  opacity: Math.max(0, 1 - away * 0.34),
+                  transform: `translateY(calc(-50% + ${pos * (STEP - 6)}px)) rotate(${pos * TILT}deg) scale(${Math.max(0.92, 1 - away * 0.04)})`,
+                  opacity: Math.max(0, 1 - away * 0.26),
                   zIndex: 10 - Math.round(away),
-                  pointerEvents: isCentre ? "auto" : "none",
                 }}
               >
                 <div
                   role={tappable ? "button" : undefined}
                   tabIndex={tappable ? 0 : undefined}
                   onClick={() => {
-                    if (tappable && (drag.current?.moved ?? 0) < 6) onOpenScore!(skater);
+                    if (tappable && (drag.current?.moved ?? 0) < SLOP) onOpenScore!(skater);
                   }}
                   onKeyDown={(e) => {
                     if (tappable && (e.key === "Enter" || e.key === " ")) {
