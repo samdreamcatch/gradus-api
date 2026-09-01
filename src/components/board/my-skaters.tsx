@@ -152,14 +152,24 @@ export function MySkaters({
   // (most recent result first).
   const startOf = (m: SkaterMatch) =>
     m.event.startIso ? new Date(m.event.startIso).getTime() : Number.MAX_SAFE_INTEGER;
-  const rankOf = (rows: SkaterMatch[]): number => {
-    if (rows.some((r) => r.state === "on-ice")) return -Infinity;
+  /** [bucket, time] — bucket 0 live, 1 upcoming, 2 done. */
+  const rankOf = (rows: SkaterMatch[]): [number, number] => {
+    if (rows.some((r) => r.state === "on-ice")) return [0, 0];
     const upcoming = rows.filter((r) => r.state !== "scored");
-    if (upcoming.length > 0) return Math.min(...upcoming.map(startOf));
-    const latest = Math.max(...rows.map((r) => startOf(r)));
-    return Number.MAX_SAFE_INTEGER - (Number.isFinite(latest) ? 0 : 1) + 1 / (latest || 1);
+    if (upcoming.length > 0) return [1, Math.min(...upcoming.map(startOf))];
+    // Done for the day: most recent result first.
+    return [2, -Math.max(...rows.map(startOf))];
   };
-  groups.sort((a, b) => rankOf(a.rows) - rankOf(b.rows));
+  groups.sort((a, b) => {
+    const [ab, at] = rankOf(a.rows);
+    const [bb, bt] = rankOf(b.rows);
+    return ab - bb || at - bt;
+  });
+
+  /** The one row per skater that carries the accent. */
+  const accentKey = (rows: SkaterMatch[]): string | null =>
+    (rows.find((r) => r.state === "on-ice") ?? rows.find((r) => r.state !== "scored"))?.key ?? null;
+
 
 
   return (
