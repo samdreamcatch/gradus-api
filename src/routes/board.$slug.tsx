@@ -352,17 +352,8 @@ function BoardPage() {
           ) : null}
 
           {selected ? (
-            <RinkPanel
-              rink={selected}
-              onOpenScore={(s) =>
-                setScore({
-                  skater: s,
-                  eventLabel: [selected.current?.event, selected.current?.segment]
-                    .filter(Boolean)
-                    .join(" · "),
-                })
-              }
-            />
+            <RinkPanel rink={selected} />
+
           ) : (
             <Card variant="section">
               <p className="text-sm text-text-secondary">
