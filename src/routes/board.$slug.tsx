@@ -253,7 +253,7 @@ function BoardPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-3 px-4 py-4 pb-12">
+    <div className="mx-auto max-w-2xl space-y-3 px-4 py-4 pb-[calc(6rem+env(safe-area-inset-bottom))]">
       <header className="space-y-1">
         <div className="flex items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-2">
@@ -452,6 +452,8 @@ function BoardPage() {
           if (!open) setScore(null);
         }}
       />
+
+      <BoardBottomNav slug={slug} />
     </div>
   );
 }
