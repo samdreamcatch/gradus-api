@@ -12,6 +12,7 @@ import { RinkPanel, untilLabel } from "@/components/board/rink-panel";
 import { MySkaters, findMySkaters, type SkaterMatch } from "@/components/board/my-skaters";
 import { ScheduleBoard } from "@/components/board/schedule-board";
 import { FollowSearch } from "@/components/board/follow-search";
+import { BoardAccountSheet } from "@/components/board/board-account-sheet";
 import { ScoreSheet } from "@/components/board/score-sheet";
 import { EventResults } from "@/components/board/event-results";
 import { SegmentedToggle } from "@/components/plans/segmented-toggle";
@@ -261,13 +262,22 @@ function BoardPage() {
           <Link to="/" className="press">
             <Logo className="text-xl" />
           </Link>
-          {data.isLiveWindow ? (
-            <Tag size="caption" tone="accent">
-              LIVE
-            </Tag>
-          ) : (
-            <Tag size="caption">FINISHED</Tag>
-          )}
+          <div className="flex shrink-0 items-center gap-2">
+            {data.isLiveWindow ? (
+              <Tag size="caption" tone="accent">
+                LIVE
+              </Tag>
+            ) : (
+              <Tag size="caption">FINISHED</Tag>
+            )}
+            {signedIn ? (
+              <Chip size="caption" as={Link} to="/" className="press shrink-0">
+                My Gradus
+              </Chip>
+            ) : (
+              <BoardAccountSheet redirect={`/board/${slug}`} />
+            )}
+          </div>
         </div>
         <h1 className="font-display text-h3 leading-tight text-text-primary">{data.name}</h1>
         <p className="truncate font-mono text-nano uppercase tracking-wider text-text-tertiary">
@@ -315,12 +325,18 @@ function BoardPage() {
           />
 
           {!signedIn ? (
-            <p className="text-center text-sm text-text-secondary">
-              <Link to="/login" className="underline underline-offset-2">
-                Sign in
-              </Link>{" "}
-              to see your own skaters here automatically.
-            </p>
+            <Card variant="section" className="space-y-2 text-center">
+              <p className="font-display text-base text-text-primary">
+                Sign in and your skaters show up here
+              </p>
+              <p className="text-sm text-text-secondary">
+                Your connected athletes appear automatically, and you&apos;ll get live updates
+                while you use the app.
+              </p>
+              <div className="flex justify-center pt-1">
+                <BoardAccountSheet redirect={`/board/${slug}`} label="Sign in or sign up" />
+              </div>
+            </Card>
           ) : null}
         </div>
       ) : activeTab === "rinks" ? (

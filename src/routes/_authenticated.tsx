@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { LessonWrapUpProvider } from "@/components/coach/lesson-wrap-up-provider";
 import { ActiveSessionProvider } from "@/lib/active-session-store";
 import { ActiveSessionBar } from "@/components/plans/active-session-bar";
+import { FollowingBanner } from "@/components/board/following-banner";
 import { FeedbackFab } from "@/components/feedback/feedback-fab";
 import { acceptTerms } from "@/lib/terms.functions";
 import { readPendingTermsAccept, clearPendingTermsAccept } from "@/lib/terms";
@@ -109,6 +110,7 @@ function AuthedLayout() {
   return (
     <ActiveSessionProvider userId={user.id}>
       <ActiveSessionBar />
+      <FollowingBanner />
       <Outlet />
       {isCoach ? <LessonWrapUpProvider /> : null}
       {isAdmin || isOnboarding || isPaywall || isAccountSecurity ? null : <FeedbackFab />}
