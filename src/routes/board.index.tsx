@@ -36,6 +36,7 @@ export const Route = createFileRoute("/board/")({
 
 function BoardIndex() {
   const list = useServerFn(listBoards);
+  const { user, isReady } = useAuthReady();
   const [history, setHistory] = useState<{ slug: string; name: string }[]>([]);
 
   useEffect(() => {
