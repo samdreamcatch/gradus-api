@@ -122,9 +122,10 @@ export function ScheduleBoard({
             ]
               .filter(Boolean)
               .join(", ");
-            const meta = [e.rink, e.count ? `${e.count} skaters` : "", scored ? "results ›" : ""]
+            const meta = [e.rink, e.count ? `${e.count} skaters` : ""]
               .filter(Boolean)
               .join(" · ");
+
             return (
               <button
                 key={`${e.file}-${e.startIso}`}
