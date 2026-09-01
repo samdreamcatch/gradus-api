@@ -182,24 +182,26 @@ export function MySkaters({
         {groups.map((g) => {
           const head = g.rows[0];
           const isFollowed = followed(head);
+          const nextKey = accentKey(g.rows);
           return (
             <div key={normalizeName(g.name)} className="py-2 first:pt-0 last:pb-0">
               <div className="flex items-center justify-between gap-2">
                 <h3 className="min-w-0 truncate text-sm font-bold text-text-primary">{g.name}</h3>
                 <Chip
                   size="nano"
-                  selected={isFollowed}
+                  tone="muted"
                   aria-pressed={isFollowed}
                   aria-label={isFollowed ? `Stop following ${g.name}` : `Follow ${g.name}`}
                   onClick={() => onToggleFollow(head)}
                 >
-                  {isFollowed ? "Following" : "Follow"}
+                  {isFollowed ? "Unfollow" : "Follow"}
                 </Chip>
               </div>
 
               <div className="mt-1 space-y-1">
                 {g.rows.map((m) => {
                   const tappable = !!m.skater.protocol;
+                  const isNext = m.key === nextKey;
                   const Wrapper = tappable ? "button" : "div";
                   return (
                     <Wrapper
@@ -214,15 +216,26 @@ export function MySkaters({
                       className={cn(
                         "block w-full rounded-lg px-2 py-1 text-left transition-colors duration-700",
                         tappable && "press-soft",
-                        changed.has(m.key) ? "bg-accent/10" : "bg-elevated",
+                        isNext && "border-l-[3px] border-accent pl-[5px]",
+                        changed.has(m.key)
+                          ? "bg-accent/10"
+                          : isNext
+                            ? "bg-accent/[0.07]"
+                            : "bg-elevated",
                       )}
                     >
                       <div className="flex items-baseline gap-2">
-                        <span className="min-w-0 flex-1 truncate text-xs text-text-secondary">
+                        <span
+                          className={cn(
+                            "min-w-0 flex-1 truncate text-xs",
+                            isNext ? "text-text-primary" : "text-text-secondary",
+                          )}
+                        >
                           {[m.event.name, m.event.segment].filter(Boolean).join(" · ")}
                         </span>
-                        <Tag size="nano" tone={m.state === "on-ice" ? "accent" : "default"}>
+                        <Tag size="nano" tone={isNext ? "accent" : "default"}>
                           {stateTag(m)}
+
                         </Tag>
 
                       </div>
