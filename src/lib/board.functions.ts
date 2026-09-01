@@ -110,7 +110,7 @@ export const listBoards = createServerFn({ method: "GET" }).handler(
 
     return [
       DEMO_LIST_ENTRY,
-      ...((res.data ?? []) as any[]).map((c) => ({
+      ...rows.map((c) => ({
         slug: c.slug as string,
         name: c.name as string,
         datesLabel: c.dates_label as string,
