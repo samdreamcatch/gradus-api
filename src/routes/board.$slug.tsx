@@ -363,19 +363,28 @@ function BoardPage() {
                       aria-selected={isActive}
                       onClick={() => setRinkName(r.name)}
                       className={cn(
-                        "press-soft relative flex shrink-0 items-center gap-1.5 rounded-t-xl border border-b-0 px-3.5 text-caption uppercase tracking-wide",
+                        "press-soft relative flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-t-xl border border-b-0 px-3.5 text-caption uppercase tracking-wide",
                         isActive
                           ? "z-10 border-divider bg-card pb-3 pt-2.5 text-text-primary shadow-sm"
-                          : "border-divider/70 bg-elevated pb-2 pt-2 text-text-secondary",
+                          : "border-divider bg-divider/45 pb-1.5 pt-1.5 text-text-secondary",
                       )}
                     >
                       <span>{r.name}</span>
                       {r.state === "live" ? (
                         <>
-                          <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-accent" />
+                          <span aria-hidden="true" className="board-live-dot" />
                           <span className="sr-only">live</span>
                         </>
-                      ) : null}
+                      ) : (
+                        <>
+                          <span
+                            aria-hidden="true"
+                            className="h-1.5 w-1.5 rounded-full bg-text-tertiary/70"
+                          />
+                          <span className="sr-only">idle</span>
+                        </>
+                      )}
+
                     </button>
                   );
                 })}
