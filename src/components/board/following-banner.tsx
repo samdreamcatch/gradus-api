@@ -23,14 +23,24 @@ const PRIORITY: Record<SkaterMatch["state"], number> = {
   scheduled: 4,
 };
 
+function ordinal(place: string | number): string {
+  const n = Number(place);
+  if (!Number.isFinite(n)) return String(place);
+  const rem100 = n % 100;
+  if (rem100 >= 11 && rem100 <= 13) return `${n}th`;
+  const suffix = ["th", "st", "nd", "rd"][n % 10] ?? "th";
+  return `${n}${n % 10 <= 3 ? suffix : "th"}`;
+}
+
 function line(m: SkaterMatch): string | null {
   const first = m.skater.name.split(" ")[0] || m.skater.name;
   if (m.state === "on-ice") return `${first} is on the ice — ${m.event.rink}`;
   if (m.state === "up-next") return `${first} is up next — ${m.event.rink}`;
   if (m.state === "scored" && m.skater.segScore)
-    return `${first} scored ${m.skater.segScore}${m.skater.place ? ` — ${m.skater.place}` : ""}`;
+    return `${first} scored ${m.skater.segScore}${m.skater.place ? `, now ${ordinal(m.skater.place)}` : ""}`;
   return null;
 }
+
 
 /**
  * Slim sticky bar shown on any signed-in page while a competition the viewer
