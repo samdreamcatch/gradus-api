@@ -123,16 +123,15 @@ export function MySkaters({
   followed,
   changed,
   onToggleFollow,
-  onSelectRink,
   onOpenScore,
 }: {
   matches: SkaterMatch[];
   followed: (m: SkaterMatch) => boolean;
   changed: Set<string>;
   onToggleFollow: (m: SkaterMatch) => void;
-  onSelectRink: (rink: string) => void;
   onOpenScore: (m: SkaterMatch) => void;
 }) {
+
   if (matches.length === 0) return null;
 
   return (
@@ -179,14 +178,6 @@ export function MySkaters({
                 onClick={() => onToggleFollow(m)}
               >
                 {followed(m) ? "Following" : "Follow"}
-              </Chip>
-              <Chip
-                size="small"
-                className="min-h-11"
-                aria-label={`Show ${m.event.rink}`}
-                onClick={() => onSelectRink(m.event.rink)}
-              >
-                Go to {m.event.rink}
               </Chip>
               {m.skater.protocol ? (
                 <Chip
