@@ -10,8 +10,6 @@ import {
   type BoardSkater,
 } from "@/lib/board-types";
 
-/** Rough pace of an IJS event, used only for the "about" estimate. */
-const MINUTES_PER_SKATER = 4.5;
 
 export interface SkaterMatch {
   key: string;
