@@ -1,0 +1,81 @@
+<svg viewBox="0 0 640 380" xmlns="http://www.w3.org/2000/svg" style="font-family: var(--font-sans); width: 100%; height: auto;">
+  <style>
+    .lbl { font-size: 14px; font-weight: 480; fill: hsl(var(--foreground)); }
+    .sm  { font-size: 12px; fill: hsl(var(--muted-foreground)); }
+    .mono{ font-size: 12px; font-family: var(--font-mono); fill: hsl(var(--muted-foreground)); }
+    .box { fill: none; stroke: hsl(var(--muted-foreground)); stroke-width: 1; }
+    .rail{ stroke: hsl(var(--border)); stroke-width: 1; fill: none; }
+    .greek { fill: hsl(var(--border)); }
+  </style>
+
+  <!-- LEFT: today -->
+  <rect x="20" y="40" width="270" height="310" rx="8" class="rail" stroke-dasharray="4 3"/>
+  <text x="20" y="30" class="mono">today — tilt + scale + fade</text>
+
+  <g transform="translate(155 84) rotate(-4)" opacity="0.3">
+    <rect x="-100" y="-17" width="200" height="34" rx="8" class="box"/>
+    <rect x="-86" y="-6" width="90" height="6" rx="3" class="greek"/>
+  </g>
+  <g transform="translate(155 136) rotate(-2)" opacity="0.55">
+    <rect x="-112" y="-20" width="224" height="40" rx="8" class="box"/>
+    <rect x="-98" y="-9" width="110" height="6" rx="3" class="greek"/>
+    <rect x="-98" y="3" width="64" height="5" rx="2.5" class="greek"/>
+  </g>
+  <g transform="translate(155 196)">
+    <rect x="-120" y="-27" width="240" height="54" rx="8" class="box"/>
+    <rect x="-106" y="-16" width="60" height="5" rx="2.5" class="greek"/>
+    <text x="-106" y="4" class="lbl">8 Nora Donaldson</text>
+    <rect x="-106" y="12" width="96" height="5" rx="2.5" class="greek"/>
+  </g>
+  <g transform="translate(155 256) rotate(2)" opacity="0.55">
+    <rect x="-112" y="-20" width="224" height="40" rx="8" class="box"/>
+    <rect x="-98" y="-9" width="102" height="6" rx="3" class="greek"/>
+  </g>
+  <g transform="translate(155 308) rotate(4)" opacity="0.3">
+    <rect x="-100" y="-17" width="200" height="34" rx="8" class="box"/>
+    <rect x="-86" y="-6" width="80" height="6" rx="3" class="greek"/>
+  </g>
+
+  <!-- RIGHT: proposed -->
+  <defs>
+    <linearGradient id="fadeTop" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="hsl(var(--background))" stop-opacity="1"/>
+      <stop offset="1" stop-color="hsl(var(--background))" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="fadeBot" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0" stop-color="hsl(var(--background))" stop-opacity="1"/>
+      <stop offset="1" stop-color="hsl(var(--background))" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="350" y="40" width="270" height="310" rx="8" class="rail" stroke-dasharray="4 3"/>
+  <text x="350" y="30" class="mono">proposed — flat, snapped, masked</text>
+
+  <g transform="translate(485 88)" opacity="0.42">
+    <rect x="-104" y="-17" width="208" height="34" rx="8" class="box"/>
+    <rect x="-90" y="-6" width="90" height="6" rx="3" class="greek"/>
+  </g>
+  <g transform="translate(485 138)" opacity="0.72">
+    <rect x="-112" y="-20" width="224" height="40" rx="8" class="box"/>
+    <rect x="-98" y="-9" width="110" height="6" rx="3" class="greek"/>
+    <rect x="-98" y="3" width="64" height="5" rx="2.5" class="greek"/>
+  </g>
+  <g transform="translate(485 196)">
+    <rect x="-120" y="-29" width="240" height="58" rx="8" class="box" stroke="hsl(var(--accent))" stroke-width="1.5"/>
+    <text x="-106" y="-10" class="mono" style="font-size:10px; letter-spacing:0.08em;">ON THE ICE</text>
+    <text x="-106" y="8" class="lbl">8 Nora Donaldson</text>
+    <rect x="-106" y="16" width="96" height="5" rx="2.5" class="greek"/>
+  </g>
+  <g transform="translate(485 254)" opacity="0.72">
+    <rect x="-112" y="-20" width="224" height="40" rx="8" class="box"/>
+    <rect x="-98" y="-9" width="102" height="6" rx="3" class="greek"/>
+  </g>
+  <g transform="translate(485 304)" opacity="0.42">
+    <rect x="-104" y="-17" width="208" height="34" rx="8" class="box"/>
+    <rect x="-90" y="-6" width="80" height="6" rx="3" class="greek"/>
+  </g>
+
+  <rect x="351" y="41" width="268" height="46" fill="url(#fadeTop)"/>
+  <rect x="351" y="303" width="268" height="46" fill="url(#fadeBot)"/>
+  <text x="360" y="366" class="sm">edges fade · release snaps to a card, then back to now</text>
+</svg>
