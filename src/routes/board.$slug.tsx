@@ -16,6 +16,7 @@ import { FollowSearch } from "@/components/board/follow-search";
 import { BoardAccountSheet } from "@/components/board/board-account-sheet";
 import { ScoreSheet } from "@/components/board/score-sheet";
 import { EventResults } from "@/components/board/event-results";
+import { BoardBottomNav } from "@/components/board/board-bottom-nav";
 import { SegmentedToggle } from "@/components/plans/segmented-toggle";
 import { useChangedKeys } from "@/hooks/use-changed-keys";
 import { getBoard, getMySkaterNames } from "@/lib/board.functions";
