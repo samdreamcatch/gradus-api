@@ -34,12 +34,13 @@ function ordinal(place: string | number): string {
 
 function line(m: SkaterMatch): string | null {
   const first = m.skater.name.split(" ")[0] || m.skater.name;
-  if (m.state === "on-ice") return `${first} is on the ice — ${m.event.rink}`;
-  if (m.state === "up-next") return `${first} is up next — ${m.event.rink}`;
+  if (m.state === "on-ice") return `${first} on the ice · ${m.event.rink}`;
+  if (m.state === "up-next") return `${first} up next · ${m.event.rink}`;
   if (m.state === "scored" && m.skater.segScore)
-    return `${first} scored ${m.skater.segScore}${m.skater.place ? `, now ${ordinal(m.skater.place)}` : ""}`;
+    return `${first} scored ${m.skater.segScore}${m.skater.place ? ` · ${ordinal(m.skater.place)}` : ""}`;
   return null;
 }
+
 
 
 /**
