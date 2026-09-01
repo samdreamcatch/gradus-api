@@ -12,6 +12,8 @@ const DRAG_STEP = 60;
 const WINDOW = 2;
 /** Movement past which a gesture counts as a drag, not a tap. */
 const SLOP = 6;
+/** Soft fade at the top and bottom of the window so cards enter and leave. */
+const EDGE_MASK = "linear-gradient(to bottom, transparent, black 12%, black 88%, transparent)";
 
 function roleOf(delta: number): { tone: LaneTone; label: string } {
   if (delta === 0) return { tone: "ice", label: "ON THE ICE" };
