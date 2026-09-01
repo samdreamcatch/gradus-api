@@ -17,7 +17,7 @@ function timeOf(iso: string | null, fallback: string): string {
 const STATUS_LABEL: Record<BoardEvent["status"], string> = {
   scheduled: "SCHEDULED",
   live: "LIVE",
-  final: "FINAL",
+  final: "RESULTS\n",
 };
 
 function shortDay(key: string, fallback: string): string {
