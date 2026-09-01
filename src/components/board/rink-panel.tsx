@@ -181,16 +181,25 @@ export function RinkPanel({
             ) : null}
           </div>
 
-          <div className="space-y-2">
-            <Lane
-              tone="just"
-              label="JUST SCORED"
-              skater={current.justScored}
+          {current.startOrder.length > 1 ? (
+            <SkaterWheel
+              startOrder={current.startOrder}
+              activeIndex={liveIndex(current)}
               onOpenScore={onOpenScore}
             />
-            <Lane tone="ice" label="ON THE ICE" skater={current.onIce} awaiting />
-            <Lane tone="next" label="UP NEXT" skater={current.upNext} />
-          </div>
+          ) : (
+            <div className="space-y-2">
+              <Lane
+                tone="just"
+                label="JUST SCORED"
+                skater={current.justScored}
+                onOpenScore={onOpenScore}
+              />
+              <Lane tone="ice" label="ON THE ICE" skater={current.onIce} awaiting />
+              <Lane tone="next" label="UP NEXT" skater={current.upNext} />
+            </div>
+          )}
+
         </>
       ) : (
         <div className="space-y-2 py-4 text-center">
