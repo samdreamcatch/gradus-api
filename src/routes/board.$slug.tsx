@@ -261,7 +261,7 @@ function BoardPage() {
             </Link>
             {data.isLiveWindow ? (
               <Tag size="caption" tone="accent">
-                LIVE
+                LIVE BOARD
               </Tag>
             ) : (
               <Tag size="caption">FINISHED</Tag>
