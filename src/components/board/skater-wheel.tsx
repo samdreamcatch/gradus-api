@@ -71,6 +71,23 @@ export function SkaterWheel({
     setOffset(next);
   }, []);
 
+  /** Animate offset from -> to over dur, then run `then`. */
+  const animate = useCallback(
+    (from: number, to: number, dur: number, ease: (t: number) => number, then?: () => void) => {
+      const start = performance.now();
+      const tick = (now: number) => {
+        const t = Math.min(1, (now - start) / dur);
+        const value = t < 1 ? from + (to - from) * ease(t) : to;
+        offsetRef.current = value;
+        setOffset(value);
+        if (t < 1) frame.current = requestAnimationFrame(tick);
+        else then?.();
+      };
+      frame.current = requestAnimationFrame(tick);
+    },
+    [],
+  );
+
   const settle = useCallback(() => {
     const from = offsetRef.current;
     if (from === 0) return;
@@ -79,19 +96,21 @@ export function SkaterWheel({
       setOffset(0);
       return;
     }
-    const start = performance.now();
-    const dur = 340;
-    const tick = (now: number) => {
-      const t = Math.min(1, (now - start) / dur);
-      // Slight overshoot, then settle — the rotary spring.
-      const eased = 1 - Math.pow(1 - t, 3) * Math.cos(t * Math.PI * 0.9);
-      const value = t < 1 ? from * (1 - eased) : 0;
-      offsetRef.current = value;
-      setOffset(value);
-      if (t < 1) frame.current = requestAnimationFrame(tick);
+    const { centre, last: end } = boundsRef.current;
+    // Snap to a whole card first — the detent — then return to the live skater.
+    const snapped = Math.max(centre - end, Math.min(centre, Math.round(from)));
+    const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
+    const back = () => {
+      const held = offsetRef.current;
+      if (held === 0) return;
+      window.setTimeout(() => {
+        animate(held, 0, 320, (t) => 1 - Math.pow(1 - t, 3) * Math.cos(t * Math.PI * 0.5));
+      }, 110);
     };
-    frame.current = requestAnimationFrame(tick);
-  }, []);
+    if (Math.abs(snapped - from) < 0.01) back();
+    else animate(from, snapped, 180, easeOut, back);
+  }, [animate]);
+
 
   // Native, non-passive listeners: React's synthetic handlers can't reliably
   // preventDefault the scroll on touch, which is what stopped the wheel turning.
