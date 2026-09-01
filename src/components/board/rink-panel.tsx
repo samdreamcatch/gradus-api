@@ -170,20 +170,23 @@ export function RinkPanel({
       {current && rink.next ? (
         <>
           <Separator />
-          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-            <Eyebrow size="micro" tone="tertiary">
-              NEXT
-            </Eyebrow>
-            <span className="font-mono text-sm text-text-secondary tabular-nums">
-              {timeLabel(rink.next.startIso)}
-            </span>
-            <span className="min-w-0 flex-1 truncate text-sm text-text-secondary">
+          <div className="rounded-md bg-elevated px-3 py-2">
+            <div className="flex items-center gap-2">
+              <Eyebrow size="micro" tone="tertiary">
+                NEXT
+              </Eyebrow>
+              <span className="font-mono text-xs text-text-secondary tabular-nums">
+                {timeLabel(rink.next.startIso)}
+              </span>
+              <span className="ml-auto font-mono text-xs text-text-tertiary">
+                {untilLabel(rink.next.startIso)}
+              </span>
+            </div>
+            <p className="mt-1 font-display text-sm leading-snug text-text-primary">
               {rink.next.event}
-            </span>
-            <span className="font-mono text-xs text-text-tertiary">
-              {untilLabel(rink.next.startIso)}
-            </span>
+            </p>
           </div>
+
         </>
       ) : null}
     </Card>
