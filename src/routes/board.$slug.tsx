@@ -214,10 +214,6 @@ function BoardPage() {
   // Land where the viewer has something to look at: their own skaters if any.
   const activeTab: BoardTab = tab ?? (matches.length > 0 ? "mine" : "rinks");
 
-  const goToRink = useCallback((name: string) => {
-    setRinkName(name);
-    setTab("rinks");
-  }, []);
 
   // A short spoken version of whatever just flipped on screen.
   const announcement = useMemo(() => {
