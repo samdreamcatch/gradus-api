@@ -104,12 +104,11 @@ export function ScheduleBoard({
         >
           <span className="w-11">Time</span>
           <span className="min-w-0 flex-1">Event</span>
-          <span className="text-right">Status</span>
         </div>
 
         <div className="divide-y divide-divider">
           {rows.map((e) => {
-            const mine = e.results.some((s) => wanted.has(normalizeName(s.name)));
+            const mine = e.results.filter((s) => wanted.has(normalizeName(s.name)));
             const scored = e.results.some((s) => s.segScore || s.total);
             const label = [
               timeOf(e.startIso, e.timeLabel),
@@ -117,12 +116,11 @@ export function ScheduleBoard({
               STATUS_LABEL[e.status].toLowerCase(),
               e.count ? `${e.count} skaters` : "",
               e.rink,
-              mine ? "your skater" : "",
+              mine.length ? "your skater" : "",
               scored ? "see results" : "",
             ]
               .filter(Boolean)
               .join(", ");
-            const meta = e.rink;
 
             return (
               <button
@@ -132,35 +130,36 @@ export function ScheduleBoard({
                 aria-label={label}
                 className={cn(
                   "press-soft flex min-h-11 w-full items-start gap-2.5 border-l-2 py-2 pl-2 text-left",
-                  mine ? "border-accent bg-accent/10" : "border-transparent",
+                  mine.length ? "border-accent bg-accent/10" : "border-transparent",
                 )}
               >
-                <span className="w-11 shrink-0 pt-0.5 font-mono text-nano text-text-secondary tabular-nums">
+                <span className="flex w-11 shrink-0 items-center gap-1 pt-0.5 font-mono text-nano text-text-secondary tabular-nums">
+                  {e.status === "live" ? (
+                    <span className="board-live-dot shrink-0" aria-hidden="true" />
+                  ) : null}
                   {timeOf(e.startIso, e.timeLabel)}
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block text-sm leading-snug text-text-primary">
                     {[e.name, e.segment].filter(Boolean).join(" · ")}
                   </span>
-                  {meta ? (
-                    <span className="mt-0.5 block font-mono text-nano text-text-tertiary">
-                      {meta}
-                    </span>
-                  ) : null}
-                </span>
-                <span className="flex shrink-0 items-center justify-end gap-1.5 pt-0.5">
-                  {e.status === "live" ? (
-                    <span className="board-live-dot shrink-0" aria-hidden="true" />
-                  ) : null}
-                  <Tag size="nano" tone={e.status === "live" ? "accent" : "default"}>
-                    {STATUS_LABEL[e.status]}
-                  </Tag>
+                  <span className="mt-0.5 flex flex-wrap items-center gap-1.5">
+                    {e.rink ? (
+                      <span className="font-mono text-nano text-text-tertiary">{e.rink}</span>
+                    ) : null}
+                    {mine.length ? (
+                      <Tag size="nano" tone="accent">
+                        {mine.length > 1 ? `${mine.length} OF YOURS` : "YOUR SKATER"}
+                      </Tag>
+                    ) : null}
+                  </span>
                 </span>
               </button>
             );
           })}
         </div>
       </Card>
+
     </div>
   );
 }
