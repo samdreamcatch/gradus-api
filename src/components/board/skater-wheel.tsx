@@ -113,7 +113,6 @@ export function SkaterWheel({
     else animate(from, snapped, 180, easeOut, back);
   }, [animate]);
 
-
   // Native, non-passive listeners: React's synthetic handlers can't reliably
   // preventDefault the scroll on touch, which is what stopped the wheel turning.
   useEffect(() => {
