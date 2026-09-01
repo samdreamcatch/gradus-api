@@ -122,9 +122,7 @@ export function ScheduleBoard({
             ]
               .filter(Boolean)
               .join(", ");
-            const meta = [e.rink, e.count ? `${e.count} skaters` : ""]
-              .filter(Boolean)
-              .join(" · ");
+            const meta = e.rink;
 
             return (
               <button
@@ -133,22 +131,24 @@ export function ScheduleBoard({
                 onClick={() => onOpenEvent(e)}
                 aria-label={label}
                 className={cn(
-                  "press-soft flex min-h-11 w-full items-center gap-3 border-l-2 py-2 pl-2 text-left",
+                  "press-soft flex min-h-11 w-full items-start gap-2.5 border-l-2 py-2 pl-2 text-left",
                   mine ? "border-accent bg-accent/10" : "border-transparent",
                 )}
               >
-                <span className="w-14 shrink-0 font-mono text-sm text-text-primary tabular-nums">
+                <span className="w-11 shrink-0 pt-0.5 font-mono text-nano text-text-secondary tabular-nums">
                   {timeOf(e.startIso, e.timeLabel)}
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm text-text-primary">
+                  <span className="block text-sm leading-snug text-text-primary">
                     {[e.name, e.segment].filter(Boolean).join(" · ")}
                   </span>
-                  <span className="mt-0.5 block truncate font-mono text-nano text-text-tertiary">
-                    {meta}
-                  </span>
+                  {meta ? (
+                    <span className="mt-0.5 block font-mono text-nano text-text-tertiary">
+                      {meta}
+                    </span>
+                  ) : null}
                 </span>
-                <span className="flex w-16 shrink-0 items-center justify-end gap-1.5">
+                <span className="flex shrink-0 items-center justify-end gap-1.5 pt-0.5">
                   {e.status === "live" ? (
                     <span className="board-live-dot shrink-0" aria-hidden="true" />
                   ) : null}
