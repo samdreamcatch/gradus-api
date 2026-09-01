@@ -105,9 +105,7 @@ export function RinkPanel({
           <Tag size="caption" tone="accent">
             LIVE
           </Tag>
-        ) : (
-          <Tag size="caption">IDLE</Tag>
-        )}
+        ) : null}
       </div>
 
       {current ? (
@@ -147,30 +145,12 @@ export function RinkPanel({
           )}
         </>
       ) : (
-        <div className="space-y-2 py-4 text-center">
-          <p className="font-hand text-base text-text-tertiary">nothing on the ice</p>
-          {rink.next ? (
-            <>
-              <p className="font-mono text-h2 leading-none text-text-secondary tabular-nums">
-                {untilLabel(rink.next.startIso)}
-              </p>
-              <p className="mx-auto max-w-sm font-display text-base text-text-secondary">
-                {rink.next.event}
-              </p>
-            </>
-          ) : (
-            <p className="text-sm text-text-tertiary">No more events on this sheet today.</p>
-          )}
-          {rink.justFinished?.winner ? (
-            <p className="font-mono text-xs text-text-tertiary">
-              just finished: {rink.justFinished.winner.name} won with{" "}
-              {rink.justFinished.winner.score}
-            </p>
-          ) : null}
+        <div className="flex justify-center py-6">
+          <Tag size="caption">IDLE</Tag>
         </div>
       )}
 
-      {current && rink.next ? (
+      {rink.next ? (
         <>
           <Separator />
           <div className="rounded-md bg-elevated px-3 py-2">
@@ -189,8 +169,11 @@ export function RinkPanel({
               {rink.next.event}
             </p>
           </div>
-
         </>
+      ) : !current ? (
+        <p className="text-center text-sm text-text-tertiary">
+          No more events on this sheet today.
+        </p>
       ) : null}
     </Card>
   );
