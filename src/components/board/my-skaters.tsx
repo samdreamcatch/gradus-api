@@ -216,10 +216,10 @@ export function MySkaters({
                         </Tag>
                       </div>
                       <p className="font-mono text-nano text-text-tertiary tabular-nums">
-                        {m.event.rink} · {m.skater.start} of {m.skater.of || m.event.count || "?"} ·{" "}
-                        {line(m)}
+                        {metaParts(m).join(" · ")}
                         {tappable ? " ›" : ""}
                       </p>
+
                     </Wrapper>
                   );
                 })}
