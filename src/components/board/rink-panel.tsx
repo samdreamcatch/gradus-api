@@ -27,7 +27,6 @@ function timeLabel(iso: string | null): string {
   }).format(new Date(iso));
 }
 
-
 function Lane({
   tone,
   label,
@@ -65,19 +64,13 @@ function Lane({
       </Eyebrow>
 
       {skater ? (
-        <SkaterBody
-          skater={skater}
-          tone={tone}
-          awaiting={awaiting}
-          showDetailHint={tappable}
-        />
+        <SkaterBody skater={skater} tone={tone} awaiting={awaiting} showDetailHint={tappable} />
       ) : (
         <p className="mt-2 text-sm text-text-tertiary">—</p>
       )}
     </Wrapper>
   );
 }
-
 
 /** Index in the start order of the skater who represents "now". */
 function liveIndex(current: BoardCurrent): number {
@@ -93,7 +86,6 @@ function liveIndex(current: BoardCurrent): number {
 }
 
 export function RinkPanel({
-
   rink,
   onOpenScore,
 }: {
@@ -150,7 +142,6 @@ export function RinkPanel({
               <Lane tone="next" label="UP NEXT" skater={current.upNext} />
             </div>
           )}
-
         </>
       ) : (
         <div className="space-y-2 py-4 text-center">
