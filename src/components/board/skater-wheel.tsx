@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Eyebrow } from "@/components/ui/eyebrow";
-import { LANE_STYLE, SkaterBody, type LaneTone } from "@/components/board/rink-panel";
+import { LANE_STYLE, SkaterBody, type LaneTone } from "@/components/board/lane-parts";
 import { cn } from "@/lib/utils";
 import type { BoardSkater } from "@/lib/board-types";
 
