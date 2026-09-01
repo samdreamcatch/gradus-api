@@ -105,7 +105,7 @@ export function ScheduleBoard({
         >
           <span className="w-14">Time</span>
           <span className="min-w-0 flex-1">Event</span>
-          <span className="w-14 text-right">Rink</span>
+          <span className="w-16 text-right">Status</span>
         </div>
 
         <div className="divide-y divide-divider">
@@ -123,6 +123,9 @@ export function ScheduleBoard({
             ]
               .filter(Boolean)
               .join(", ");
+            const meta = [e.rink, e.count ? `${e.count} skaters` : "", scored ? "results ›" : ""]
+              .filter(Boolean)
+              .join(" · ");
             return (
               <button
                 key={`${e.file}-${e.startIso}`}
@@ -130,8 +133,8 @@ export function ScheduleBoard({
                 onClick={() => onOpenEvent(e)}
                 aria-label={label}
                 className={cn(
-                  "press-soft flex min-h-11 w-full items-baseline gap-3 py-2 text-left",
-                  mine && "bg-accent/10",
+                  "press-soft flex min-h-11 w-full items-center gap-3 border-l-2 py-2 pl-2 text-left",
+                  mine ? "border-accent bg-accent/10" : "border-transparent",
                 )}
               >
                 <span className="w-14 shrink-0 font-mono text-sm text-text-primary tabular-nums">
@@ -141,33 +144,17 @@ export function ScheduleBoard({
                   <span className="block truncate text-sm text-text-primary">
                     {[e.name, e.segment].filter(Boolean).join(" · ")}
                   </span>
-                  <span className="mt-0.5 flex items-center gap-2">
-                    {e.status === "live" ? (
-                      <span className="board-live-dot shrink-0" aria-hidden="true" />
-                    ) : null}
-                    <Tag size="nano" tone={e.status === "live" ? "accent" : "default"}>
-                      {STATUS_LABEL[e.status]}
-                    </Tag>
-
-                    {e.count ? (
-                      <span className="font-mono text-nano text-text-tertiary">
-                        {e.count} skaters
-                      </span>
-                    ) : null}
-                    {scored ? (
-                      <span className="font-mono text-nano uppercase tracking-wider text-text-tertiary">
-                        results
-                      </span>
-                    ) : null}
-                    {mine ? (
-                      <Eyebrow size="nano" className="text-accent-ink">
-                        YOUR SKATER
-                      </Eyebrow>
-                    ) : null}
+                  <span className="mt-0.5 block truncate font-mono text-nano text-text-tertiary">
+                    {meta}
                   </span>
                 </span>
-                <span className="w-14 shrink-0 text-right font-mono text-xs text-text-tertiary">
-                  {e.rink}
+                <span className="flex w-16 shrink-0 items-center justify-end gap-1.5">
+                  {e.status === "live" ? (
+                    <span className="board-live-dot shrink-0" aria-hidden="true" />
+                  ) : null}
+                  <Tag size="nano" tone={e.status === "live" ? "accent" : "default"}>
+                    {STATUS_LABEL[e.status]}
+                  </Tag>
                 </span>
               </button>
             );
