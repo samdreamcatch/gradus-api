@@ -147,6 +147,21 @@ export function MySkaters({
     else groups.push({ name: m.skater.name, rows: [m] });
   }
 
+  // Rank each skater by their own next moment on the ice: live now first, then
+  // by the start of their soonest upcoming event, then finished skaters last
+  // (most recent result first).
+  const startOf = (m: SkaterMatch) =>
+    m.event.startIso ? new Date(m.event.startIso).getTime() : Number.MAX_SAFE_INTEGER;
+  const rankOf = (rows: SkaterMatch[]): number => {
+    if (rows.some((r) => r.state === "on-ice")) return -Infinity;
+    const upcoming = rows.filter((r) => r.state !== "scored");
+    if (upcoming.length > 0) return Math.min(...upcoming.map(startOf));
+    const latest = Math.max(...rows.map((r) => startOf(r)));
+    return Number.MAX_SAFE_INTEGER - (Number.isFinite(latest) ? 0 : 1) + 1 / (latest || 1);
+  };
+  groups.sort((a, b) => rankOf(a.rows) - rankOf(b.rows));
+
+
   return (
     <Card variant="section" className="space-y-3">
       <Eyebrow as="h2" size="micro" tone="tertiary">
