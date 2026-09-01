@@ -1,0 +1,45 @@
+<svg viewBox="0 0 640 300" xmlns="http://www.w3.org/2000/svg" style="font-family: var(--font-sans)">
+  <style>
+    .lbl { font-size: 12px; fill: hsl(var(--muted-foreground)); }
+    .ink { font-size: 14px; font-weight: 480; fill: hsl(var(--foreground)); }
+    .mono { font-family: var(--font-mono); font-size: 12px; fill: hsl(var(--muted-foreground)); }
+    .box { fill: none; stroke: hsl(var(--muted-foreground)); stroke-width: 1; }
+    .rail { stroke: hsl(var(--border)); stroke-width: 1; }
+  </style>
+
+  <text x="8" y="18" class="lbl">now — name truncates</text>
+  <rect x="8" y="30" width="290" height="72" rx="8" class="box"/>
+  <text x="22" y="58" class="ink" style="font-size:16px">5:00 PM</text>
+  <text x="110" y="55" class="ink">Pre-Juvenile Ladies · Fr…</text>
+  <text x="110" y="74" class="mono">B Rink · 6 skaters</text>
+  <rect x="240" y="42" width="48" height="16" rx="8" class="box"/>
+  <text x="248" y="54" class="mono" style="font-size:9px">RESULTS</text>
+
+  <text x="342" y="18" class="lbl">after — full name, two lines</text>
+  <rect x="342" y="30" width="290" height="72" rx="8" class="box"/>
+  <rect x="342" y="30" width="3" height="72" fill="hsl(var(--accent))"/>
+  <text x="356" y="52" class="mono">5:00 PM</text>
+  <text x="412" y="50" class="ink">Pre-Juvenile Ladies ·</text>
+  <text x="412" y="68" class="ink">Free Skate</text>
+  <text x="412" y="86" class="mono">B Rink</text>
+  <rect x="574" y="40" width="48" height="16" rx="8" class="box"/>
+  <text x="582" y="52" class="mono" style="font-size:9px">RESULTS</text>
+
+  <line x1="8" y1="130" x2="632" y2="130" class="rail"/>
+
+  <circle cx="20" cy="160" r="9" fill="hsl(var(--accent))"/>
+  <text x="16" y="164" style="font-size:11px" fill="hsl(var(--accent-foreground))">1</text>
+  <text x="40" y="164" class="lbl">Time drops to small mono in a narrower column.</text>
+
+  <circle cx="20" cy="192" r="9" fill="hsl(var(--accent))"/>
+  <text x="16" y="196" style="font-size:11px" fill="hsl(var(--accent-foreground))">2</text>
+  <text x="40" y="196" class="lbl">Event name wraps instead of truncating — never cut off.</text>
+
+  <circle cx="20" cy="224" r="9" fill="hsl(var(--accent))"/>
+  <text x="16" y="228" style="font-size:11px" fill="hsl(var(--accent-foreground))">3</text>
+  <text x="40" y="228" class="lbl">Meta keeps location only; skater count removed.</text>
+
+  <circle cx="20" cy="256" r="9" fill="hsl(var(--accent))"/>
+  <text x="16" y="260" style="font-size:11px" fill="hsl(var(--accent-foreground))">4</text>
+  <text x="40" y="260" class="lbl">Status tag, live dot and accent edge unchanged.</text>
+</svg>
