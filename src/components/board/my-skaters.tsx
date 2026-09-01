@@ -90,39 +90,26 @@ export function findMySkaters(payload: BoardPayload | null, names: string[]): Sk
   return out.sort((a, b) => a.sortAt - b.sortAt);
 }
 
-const STATE_LABEL: Record<SkaterMatch["state"], string> = {
-  scored: "SCORED",
-  "on-ice": "ON THE ICE",
-  "up-next": "UP NEXT",
-  waiting: "WAITING",
-  scheduled: "SCHEDULED",
-};
+/**
+ * The right-hand tag: a time, not a jargon state. On the ice now and already
+ * scored are the only two cases a clock can't express.
+ */
+function stateTag(m: SkaterMatch): string {
+  if (m.state === "on-ice") return "ON THE ICE";
+  if (m.state === "scored") return m.skater.segScore ? `${m.skater.segScore}` : "SCORED";
+  return m.event.timeLabel || "TBD";
+}
 
-/** Plain-language meta line: where they skate, in what order, and what's next. */
+/** Location · event start · skate order. Nothing else. */
 function metaParts(m: SkaterMatch): string[] {
   const of = m.skater.of || m.event.count || 0;
-  const parts = [m.event.rink, of ? `skates ${ordinal(m.skater.start)} of ${of}` : `skates ${ordinal(m.skater.start)}`];
-
-  if (m.state === "scored") {
-    if (m.skater.segScore) parts.push(`scored ${m.skater.segScore}`);
-    if (m.skater.place) parts.push(`${ordinal(m.skater.place)} so far`);
-    return parts;
-  }
-  if (m.state === "on-ice") {
-    parts.push("on the ice now");
-    return parts;
-  }
-  if (m.state === "scheduled") {
-    parts.push(`starts ${m.event.timeLabel}`);
-    return parts;
-  }
-  const mins = Math.max(1, Math.round(m.ahead * MINUTES_PER_SKATER));
-  parts.push(
-    m.ahead === 1 ? "1 skater to go" : `${m.ahead} skaters to go`,
-    `about ${mins} min away`,
-  );
-  return parts;
+  return [
+    m.event.rink,
+    m.event.timeLabel ? `starts ${m.event.timeLabel}` : "",
+    of ? `skates ${ordinal(m.skater.start)} of ${of}` : `skates ${ordinal(m.skater.start)}`,
+  ].filter(Boolean);
 }
+
 
 function ordinal(n: number | string): string {
   const v = typeof n === "number" ? n : parseInt(String(n), 10);
