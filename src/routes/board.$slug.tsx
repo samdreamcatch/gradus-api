@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 import { Tag } from "@/components/ui/tag";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Logo } from "@/components/logo";
-import { RinkPanel, untilLabel } from "@/components/board/rink-panel";
+import { RinkPanel } from "@/components/board/rink-panel";
 import { MySkaters, findMySkaters, type SkaterMatch } from "@/components/board/my-skaters";
 import { ScheduleBoard } from "@/components/board/schedule-board";
 import { FollowSearch } from "@/components/board/follow-search";
