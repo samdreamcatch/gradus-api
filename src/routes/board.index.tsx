@@ -6,6 +6,9 @@ import { Card } from "@/components/ui/card";
 import { Tag } from "@/components/ui/tag";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { Logo } from "@/components/logo";
+import { Chip } from "@/components/ui/chip";
+import { BoardAccountSheet } from "@/components/board/board-account-sheet";
+import { useAuthReady } from "@/hooks/use-auth-ready";
 import { listBoards } from "@/lib/board.functions";
 
 const HISTORY_KEY = "gradus.boardHistory";
@@ -50,9 +53,17 @@ function BoardIndex() {
   return (
     <div className="mx-auto max-w-2xl space-y-6 px-4 py-8">
       <header className="space-y-2">
-        <Link to="/" className="press inline-block">
-          <Logo className="text-2xl" />
-        </Link>
+        <div className="flex items-center justify-between gap-3">
+          <Link to="/" className="press inline-block">
+            <Logo className="text-2xl" />
+          </Link>
+          {isReady && !user ? <BoardAccountSheet redirect="/board" /> : null}
+          {isReady && user ? (
+            <Chip size="caption" as={Link} to="/" className="press shrink-0">
+              My Gradus
+            </Chip>
+          ) : null}
+        </div>
         <h1 className="font-display text-h2 text-text-primary">Live boards</h1>
         <p className="text-sm text-text-secondary">
           Scan the QR code on the sign at your rink to open that competition&apos;s board.
