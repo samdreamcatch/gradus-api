@@ -15,7 +15,14 @@ type Item = {
   unreadCount?: number;
 };
 
-export function ParentBottomNav() {
+export function ParentBottomNav({
+  disabled = false,
+  onDisabledTap,
+}: {
+  /** Render the bar greyed out and non-navigating (signed-out board). */
+  disabled?: boolean;
+  onDisabledTap?: () => void;
+} = {}) {
   const unread = useMessagesUnread();
   const ITEMS: Item[] = [
     { label: "Plans", icon: ClipboardList, to: "/parent/plans", matchPrefix: "/parent/plans" },
@@ -44,13 +51,13 @@ export function ParentBottomNav() {
       <ul className="mx-auto flex min-h-16 max-w-3xl items-stretch justify-around px-1">
         {ITEMS.map((item) => {
           const Icon = item.icon;
-          const isActive = item.to
+          const isActive = !disabled && item.to
             ? item.matchPrefix
               ? pathname === item.to || pathname.startsWith(item.matchPrefix + "/")
               : pathname === item.to
             : false;
 
-          const hasUnread = (item.unreadCount ?? 0) > 0;
+          const hasUnread = !disabled && (item.unreadCount ?? 0) > 0;
 
           const inner = (
             <span
@@ -58,7 +65,7 @@ export function ParentBottomNav() {
                 "flex flex-1 flex-col items-center justify-center gap-1.5 px-1.5 py-2.5 transition-colors",
                 isActive
                   ? "text-accent-ink"
-                  : item.to
+                  : !disabled && item.to
                     ? "text-text-secondary hover:text-text-primary"
                     : "text-text-tertiary",
               )}
@@ -80,7 +87,7 @@ export function ParentBottomNav() {
                 size="micro"
                 tracking="wide"
                 weight="bold"
-                tone={isActive ? "accent-ink" : item.to ? "secondary" : "tertiary"}
+                tone={isActive ? "accent-ink" : !disabled && item.to ? "secondary" : "tertiary"}
                 className={cn("max-w-full truncate leading-none", isActive && "pen-highlight")}
               >
                 {item.label}
@@ -90,7 +97,7 @@ export function ParentBottomNav() {
 
           return (
             <li key={item.label} className="flex flex-1">
-              {item.to ? (
+              {item.to && !disabled ? (
                 <Link
                   to={item.to}
                   className="focus-surface flex flex-1 cursor-pointer rounded-md"
@@ -101,7 +108,10 @@ export function ParentBottomNav() {
               ) : (
                 <button
                   type="button"
-                  onClick={() => toast(`${item.label} coming soon`)}
+                  aria-disabled={disabled || undefined}
+                  onClick={() =>
+                    disabled ? onDisabledTap?.() : toast(`${item.label} coming soon`)
+                  }
                   className="focus-surface flex flex-1 cursor-pointer rounded-md"
                 >
                   {inner}
