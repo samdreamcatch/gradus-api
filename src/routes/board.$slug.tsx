@@ -343,31 +343,49 @@ function BoardPage() {
           role="tabpanel"
           id="board-panel-rinks"
           aria-labelledby="board-tab-rinks"
-          className="space-y-3"
+          className="space-y-0"
         >
           {rinks.length > 1 ? (
-            <div className="flex flex-wrap gap-2">
-              {rinks.map((r) => (
-                <Chip
-                  key={r.name}
-                  onClick={() => setRinkName(r.name)}
-                  selected={selected?.name === r.name}
-                  aria-pressed={selected?.name === r.name}
-                >
-                  {r.name}
-                  {r.state === "live" ? (
-                    <>
-                      <span aria-hidden="true"> •</span>
-                      <span className="sr-only"> live</span>
-                    </>
-                  ) : null}
-                </Chip>
-              ))}
+            <div
+              role="tablist"
+              aria-label="Rinks"
+              className="-mb-px flex items-end gap-1 overflow-x-auto pt-1"
+            >
+              {rinks.map((r) => {
+                const isActive = selected?.name === r.name;
+                return (
+                  <button
+                    key={r.name}
+                    type="button"
+                    role="tab"
+                    aria-selected={isActive}
+                    onClick={() => setRinkName(r.name)}
+                    className={cn(
+                      "press-soft relative flex shrink-0 items-center gap-1.5 rounded-t-xl border border-b-0 px-3.5 text-caption uppercase tracking-wide",
+                      isActive
+                        ? "z-10 border-divider bg-card pb-3 pt-2.5 text-text-primary shadow-sm"
+                        : "border-divider/70 bg-elevated pb-2 pt-2 text-text-secondary",
+                    )}
+                  >
+                    <span>{r.name}</span>
+                    {r.state === "live" ? (
+                      <>
+                        <span
+                          aria-hidden="true"
+                          className="h-1.5 w-1.5 rounded-full bg-accent"
+                        />
+                        <span className="sr-only">live</span>
+                      </>
+                    ) : null}
+                  </button>
+                );
+              })}
             </div>
           ) : null}
 
           {selected ? (
-            <RinkPanel rink={selected} />
+            <RinkPanel rink={selected} className={rinks.length > 1 ? "rounded-t-none" : undefined} />
+
 
           ) : (
             <Card variant="section">
