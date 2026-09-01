@@ -10,8 +10,6 @@ const STEP = 84;
 const DRAG_STEP = 60;
 /** How many cards are rendered on either side of the centre. */
 const WINDOW = 2;
-/** Degrees of tilt per step away from the centre — the subtle arc. */
-const TILT = 2;
 /** Movement past which a gesture counts as a drag, not a tap. */
 const SLOP = 6;
 
