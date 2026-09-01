@@ -88,14 +88,17 @@ function liveIndex(current: BoardCurrent): number {
 export function RinkPanel({
   rink,
   onOpenScore,
+  className,
 }: {
   rink: BoardRink;
   onOpenScore?: (s: BoardSkater) => void;
+  className?: string;
 }) {
   const current = rink.current;
 
   return (
-    <Card variant="section" className="space-y-4">
+    <Card variant="section" className={cn("space-y-4", className)}>
+
       <div className="flex items-baseline justify-between gap-3">
         <h2 className="font-display text-h3 text-text-primary">{rink.name}</h2>
         {rink.state === "live" ? (
