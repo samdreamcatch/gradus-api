@@ -199,8 +199,9 @@ export function MySkaters({
                           {[m.event.name, m.event.segment].filter(Boolean).join(" · ")}
                         </span>
                         <Tag size="nano" tone={m.state === "on-ice" ? "accent" : "default"}>
-                          {STATE_LABEL[m.state]}
+                          {stateTag(m)}
                         </Tag>
+
                       </div>
                       <p className="font-mono text-nano text-text-tertiary tabular-nums">
                         {metaParts(m).join(" · ")}
