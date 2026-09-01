@@ -406,11 +406,6 @@ function BoardPage() {
           </div>
 
 
-          {selected?.next && !selected.current ? (
-            <p className="text-center font-mono text-xs text-text-tertiary">
-              next event {untilLabel(selected.next.startIso)}
-            </p>
-          ) : null}
 
           <details className="font-mono text-nano text-text-tertiary">
             <summary className="press-soft cursor-pointer uppercase tracking-wider">
