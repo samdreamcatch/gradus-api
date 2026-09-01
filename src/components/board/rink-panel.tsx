@@ -25,9 +25,9 @@ function timeLabel(iso: string | null): string {
   }).format(new Date(iso));
 }
 
-type LaneTone = "just" | "ice" | "next";
+export type LaneTone = "just" | "ice" | "next";
 
-const LANE_STYLE: Record<LaneTone, { border: string; label: string; score: string }> = {
+export const LANE_STYLE: Record<LaneTone, { border: string; label: string; score: string }> = {
   just: {
     border: "border-l-secondary-accent bg-secondary-accent-wash/40",
     label: "text-secondary-accent-ink",
@@ -44,6 +44,52 @@ const LANE_STYLE: Record<LaneTone, { border: string; label: string; score: strin
     score: "text-text-tertiary",
   },
 };
+
+/** The inner row of a lane — shared by the static panel and the rotary wheel. */
+export function SkaterBody({
+  skater,
+  tone,
+  awaiting,
+  showDetailHint,
+}: {
+  skater: BoardSkater;
+  tone: LaneTone;
+  awaiting?: boolean;
+  showDetailHint?: boolean;
+}) {
+  const style = LANE_STYLE[tone];
+  return (
+    <div className="mt-2 flex items-center gap-4">
+      <div className="shrink-0 text-center font-mono tabular-nums">
+        <span className="block text-h3 leading-none text-text-primary">{skater.start}</span>
+        <span className="mt-1 block text-nano text-text-tertiary">of {skater.of}</span>
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-lg font-bold leading-tight text-text-primary">{skater.name}</p>
+        {skater.club ? <p className="truncate text-sm text-text-tertiary">{skater.club}</p> : null}
+      </div>
+      <div className="shrink-0 text-right font-mono tabular-nums">
+        {skater.segScore ? (
+          <>
+            <span className={cn("block text-h3 leading-none", style.score)}>{skater.segScore}</span>
+            {skater.total || skater.place ? (
+              <span className="mt-1 block text-nano text-text-tertiary">
+                {skater.total ? `total ${skater.total}` : ""}
+                {skater.total && skater.place ? " · " : ""}
+                {skater.place ? `${skater.place}` : ""}
+              </span>
+            ) : null}
+            {showDetailHint ? (
+              <span className="mt-1 block text-nano text-text-tertiary">score detail ›</span>
+            ) : null}
+          </>
+        ) : awaiting ? (
+          <span className="font-hand text-sm text-text-tertiary">awaiting score</span>
+        ) : null}
+      </div>
+    </div>
+  );
+}
 
 function Lane({
   tone,
@@ -82,47 +128,19 @@ function Lane({
       </Eyebrow>
 
       {skater ? (
-        <div className="mt-2 flex items-center gap-4">
-          <div className="shrink-0 text-center font-mono tabular-nums">
-            <span className="block text-h3 leading-none text-text-primary">{skater.start}</span>
-            <span className="mt-1 block text-nano text-text-tertiary">of {skater.of}</span>
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-lg font-bold leading-tight text-text-primary">
-              {skater.name}
-            </p>
-            {skater.club ? (
-              <p className="truncate text-sm text-text-tertiary">{skater.club}</p>
-            ) : null}
-          </div>
-          <div className="shrink-0 text-right font-mono tabular-nums">
-            {skater.segScore ? (
-              <>
-                <span className={cn("block text-h3 leading-none", style.score)}>
-                  {skater.segScore}
-                </span>
-                {skater.total || skater.place ? (
-                  <span className="mt-1 block text-nano text-text-tertiary">
-                    {skater.total ? `total ${skater.total}` : ""}
-                    {skater.total && skater.place ? " · " : ""}
-                    {skater.place ? `${skater.place}` : ""}
-                  </span>
-                ) : null}
-                {tappable ? (
-                  <span className="mt-1 block text-nano text-text-tertiary">score detail ›</span>
-                ) : null}
-              </>
-            ) : awaiting ? (
-              <span className="font-hand text-sm text-text-tertiary">awaiting score</span>
-            ) : null}
-          </div>
-        </div>
+        <SkaterBody
+          skater={skater}
+          tone={tone}
+          awaiting={awaiting}
+          showDetailHint={tappable}
+        />
       ) : (
         <p className="mt-2 text-sm text-text-tertiary">—</p>
       )}
     </Wrapper>
   );
 }
+
 
 export function RinkPanel({
   rink,
