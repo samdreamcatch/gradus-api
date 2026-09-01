@@ -24,17 +24,29 @@ const ROLES = [
 export function BoardAccountSheet({
   redirect,
   label = "Sign in",
+  open: controlledOpen,
+  onOpenChange,
+  hideTrigger = false,
 }: {
   redirect: string;
   label?: string;
+  /** Drive the sheet from outside (e.g. a tap on the greyed-out bottom nav). */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  hideTrigger?: boolean;
 }) {
-  const [open, setOpen] = useState(false);
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+  const open = controlledOpen ?? uncontrolledOpen;
+  const setOpen = onOpenChange ?? setUncontrolledOpen;
 
   return (
     <>
-      <Chip size="caption" onClick={() => setOpen(true)} className="press shrink-0">
-        {label}
-      </Chip>
+      {hideTrigger ? null : (
+        <Chip size="caption" onClick={() => setOpen(true)} className="press shrink-0">
+          {label}
+        </Chip>
+      )}
+
 
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent side="bottom" className="paper-surface max-h-[90dvh] overflow-y-auto">
