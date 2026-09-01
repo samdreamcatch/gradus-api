@@ -201,7 +201,6 @@ export function SkaterWheel({
                   zIndex: 10 - Math.round(away),
                 }}
               >
-              >
                 <div
                   role={tappable ? "button" : undefined}
                   tabIndex={tappable ? 0 : undefined}
