@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Chip } from "@/components/ui/chip";
+import { cn } from "@/lib/utils";
 import { Tag } from "@/components/ui/tag";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Logo } from "@/components/logo";
@@ -343,7 +344,7 @@ function BoardPage() {
           role="tabpanel"
           id="board-panel-rinks"
           aria-labelledby="board-tab-rinks"
-          className="space-y-0"
+          className="space-y-3"
         >
           {rinks.length > 1 ? (
             <div
@@ -385,8 +386,6 @@ function BoardPage() {
 
           {selected ? (
             <RinkPanel rink={selected} className={rinks.length > 1 ? "rounded-t-none" : undefined} />
-
-
           ) : (
             <Card variant="section">
               <p className="text-sm text-text-secondary">
