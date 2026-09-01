@@ -121,7 +121,7 @@ export function FollowingBanner() {
         >
           <span className="min-w-0 flex-1 truncate text-[13px] font-semibold">{text}</span>
           <span className="inline-flex shrink-0 items-center gap-1 text-[11px] font-black uppercase tracking-widest">
-            <span className="hidden xs:inline">LIVE </span>BOARD
+            <span className="hidden sm:inline">LIVE&nbsp;</span>BOARD
             <ArrowRight className="size-3.5" />
           </span>
 
