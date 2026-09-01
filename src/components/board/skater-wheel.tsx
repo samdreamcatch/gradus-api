@@ -176,7 +176,12 @@ export function SkaterWheel({
       <div
         ref={container}
         className="relative select-none overflow-hidden"
-        style={{ height: STEP * 3, touchAction: "none" }}
+        style={{
+          height: STEP * 3,
+          touchAction: "none",
+          maskImage: EDGE_MASK,
+          WebkitMaskImage: EDGE_MASK,
+        }}
       >
         <ol className="absolute inset-0 list-none">
           {cards.map(({ skater, index, pos }) => {
@@ -191,10 +196,11 @@ export function SkaterWheel({
                 aria-current={isCentre ? "true" : undefined}
                 className="absolute inset-x-0 top-1/2"
                 style={{
-                  transform: `translateY(calc(-50% + ${pos * (STEP - 6)}px)) rotate(${pos * TILT}deg) scale(${Math.max(0.92, 1 - away * 0.04)})`,
-                  opacity: Math.max(0, 1 - away * 0.26),
+                  transform: `translateY(calc(-50% + ${pos * (STEP - 6)}px)) scale(${Math.max(0.96, 1 - away * 0.02)})`,
+                  opacity: Math.max(0, 1 - away * 0.18),
                   zIndex: 10 - Math.round(away),
                 }}
+              >
               >
                 <div
                   role={tappable ? "button" : undefined}
