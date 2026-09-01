@@ -101,22 +101,22 @@ const STATE_LABEL: Record<SkaterMatch["state"], string> = {
 function line(m: SkaterMatch): string {
   if (m.state === "scored") {
     return [
-      m.skater.segScore ? `scored ${m.skater.segScore}` : "",
+      m.skater.segScore ? `${m.skater.segScore}` : "",
       m.skater.place ? `currently ${m.skater.place}` : "",
     ]
       .filter(Boolean)
       .join(" · ");
   }
-  if (m.state === "on-ice") return "on the ice now — score posts a minute or two late";
-  if (m.state === "scheduled")
-    return `${m.event.timeLabel} · ${m.event.count ?? m.skater.of} skaters`;
+  if (m.state === "on-ice") return "on the ice now";
+  if (m.state === "scheduled") return `${m.event.timeLabel} · starts ${m.skater.start}`;
   const mins = Math.max(1, Math.round(m.ahead * MINUTES_PER_SKATER));
-  return `${m.ahead} ${m.ahead === 1 ? "skater" : "skaters"} ahead · about ${mins} min`;
+  return `${m.ahead} ahead · ~${mins} min`;
 }
 
 /**
  * The viewer's own athletes, first thing on the board — a coach sees the whole
- * roster, a parent sees their children. Ordered by who is closest to the ice.
+ * roster, a parent sees their children. One compact block per skater, with a
+ * row per event they're entered in that day.
  */
 export function MySkaters({
   matches,
@@ -131,67 +131,81 @@ export function MySkaters({
   onToggleFollow: (m: SkaterMatch) => void;
   onOpenScore: (m: SkaterMatch) => void;
 }) {
-
   if (matches.length === 0) return null;
+
+  const groups: { name: string; rows: SkaterMatch[] }[] = [];
+  for (const m of matches) {
+    const key = normalizeName(m.skater.name);
+    const found = groups.find((g) => normalizeName(g.name) === key);
+    if (found) found.rows.push(m);
+    else groups.push({ name: m.skater.name, rows: [m] });
+  }
 
   return (
     <Card variant="section" className="space-y-3">
       <Eyebrow as="h2" size="micro" tone="tertiary">
-        {matches.length > 1 ? "YOUR SKATERS" : "YOUR SKATER"}
+        {groups.length > 1 ? "YOUR SKATERS" : "YOUR SKATER"}
       </Eyebrow>
 
-      <div className="space-y-2">
-        {matches.map((m) => (
-          <div
-            key={m.key}
-            className={cn(
-              "rounded-xl border border-divider px-3 py-2 transition-colors duration-700",
-              changed.has(m.key) ? "border-accent/50 bg-accent/10" : "bg-elevated",
-            )}
-          >
-            <div className="flex items-baseline justify-between gap-2">
-              <h3 className="min-w-0 truncate text-base font-bold text-text-primary">
-                {m.skater.name}
-              </h3>
-              <Tag size="caption" tone={m.state === "on-ice" ? "accent" : "default"}>
-                {STATE_LABEL[m.state]}
-              </Tag>
-            </div>
-
-            <p className="mt-0.5 truncate text-sm text-text-secondary">
-              {[m.event.name, m.event.segment].filter(Boolean).join(" · ")}
-            </p>
-            <p className="font-mono text-xs text-text-tertiary">
-              {m.event.rink} · skates {m.skater.start} of {m.skater.of || m.event.count || "?"}
-            </p>
-            <p className="mt-1 font-mono text-xs text-text-secondary tabular-nums">{line(m)}</p>
-
-            <div className="mt-2 flex flex-wrap gap-2">
-              <Chip
-                size="small"
-                className="min-h-11"
-                selected={followed(m)}
-                aria-pressed={followed(m)}
-                aria-label={
-                  followed(m) ? `Stop following ${m.skater.name}` : `Follow ${m.skater.name}`
-                }
-                onClick={() => onToggleFollow(m)}
-              >
-                {followed(m) ? "Following" : "Follow"}
-              </Chip>
-              {m.skater.protocol ? (
+      <div className="divide-y divide-divider">
+        {groups.map((g) => {
+          const head = g.rows[0];
+          const isFollowed = followed(head);
+          return (
+            <div key={normalizeName(g.name)} className="py-2 first:pt-0 last:pb-0">
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="min-w-0 truncate text-sm font-bold text-text-primary">{g.name}</h3>
                 <Chip
-                  size="small"
-                  className="min-h-11"
-                  aria-label={`Score detail for ${m.skater.name}`}
-                  onClick={() => onOpenScore(m)}
+                  size="nano"
+                  selected={isFollowed}
+                  aria-pressed={isFollowed}
+                  aria-label={isFollowed ? `Stop following ${g.name}` : `Follow ${g.name}`}
+                  onClick={() => onToggleFollow(head)}
                 >
-                  Score detail
+                  {isFollowed ? "Following" : "Follow"}
                 </Chip>
-              ) : null}
+              </div>
+
+              <div className="mt-1 space-y-1">
+                {g.rows.map((m) => {
+                  const tappable = !!m.skater.protocol;
+                  const Wrapper = tappable ? "button" : "div";
+                  return (
+                    <Wrapper
+                      key={m.key}
+                      {...(tappable
+                        ? {
+                            type: "button" as const,
+                            onClick: () => onOpenScore(m),
+                            "aria-label": `Score detail for ${m.skater.name}`,
+                          }
+                        : {})}
+                      className={cn(
+                        "block w-full rounded-lg px-2 py-1 text-left transition-colors duration-700",
+                        tappable && "press-soft",
+                        changed.has(m.key) ? "bg-accent/10" : "bg-elevated",
+                      )}
+                    >
+                      <div className="flex items-baseline gap-2">
+                        <span className="min-w-0 flex-1 truncate text-xs text-text-secondary">
+                          {[m.event.name, m.event.segment].filter(Boolean).join(" · ")}
+                        </span>
+                        <Tag size="nano" tone={m.state === "on-ice" ? "accent" : "default"}>
+                          {STATE_LABEL[m.state]}
+                        </Tag>
+                      </div>
+                      <p className="font-mono text-nano text-text-tertiary tabular-nums">
+                        {m.event.rink} · {m.skater.start} of {m.skater.of || m.event.count || "?"} ·{" "}
+                        {line(m)}
+                        {tappable ? " ›" : ""}
+                      </p>
+                    </Wrapper>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </Card>
   );
