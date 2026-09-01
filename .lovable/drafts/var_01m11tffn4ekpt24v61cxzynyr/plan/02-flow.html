@@ -1,0 +1,51 @@
+<svg viewBox="0 0 640 300" xmlns="http://www.w3.org/2000/svg" style="font-family: var(--font-sans)">
+  <style>
+    .lbl { font-size: 12px; fill: hsl(var(--muted-foreground)); }
+    .ink { font-size: 14px; font-weight: 480; fill: hsl(var(--foreground)); }
+    .box { fill: none; stroke: hsl(var(--muted-foreground)); stroke-width: 1; }
+    .zone { fill: none; stroke: hsl(var(--border)); stroke-width: 1; stroke-dasharray: 4 3; }
+    .wire { stroke: hsl(var(--muted-foreground)); stroke-width: 1; fill: none; }
+    .quiet { fill: hsl(var(--muted)); }
+  </style>
+  <defs>
+    <marker id="a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0 0 L8 4 L0 8 z" fill="hsl(var(--muted-foreground))"/>
+    </marker>
+  </defs>
+
+  <rect x="8" y="30" width="150" height="60" rx="8" class="box"/>
+  <text x="30" y="56" class="ink">Board page</text>
+  <text x="30" y="76" class="lbl">/board/$slug</text>
+
+  <line x1="158" y1="60" x2="215" y2="60" class="wire" marker-end="url(#a)"/>
+
+  <rect x="215" y="26" width="150" height="68" rx="8" class="box"/>
+  <text x="234" y="52" class="ink">useViewerRole()</text>
+  <text x="234" y="72" class="lbl">session + role lookup</text>
+
+  <path d="M365 50 L430 34" class="wire" marker-end="url(#a)"/>
+  <path d="M365 72 L430 96" class="wire" marker-end="url(#a)"/>
+
+  <rect x="430" y="12" width="200" height="46" rx="8" class="box"/>
+  <text x="446" y="32" class="ink">signed in</text>
+  <text x="446" y="49" class="lbl">coach / parent / athlete nav</text>
+
+  <rect x="430" y="76" width="200" height="46" rx="8" class="box"/>
+  <text x="446" y="96" class="ink">signed out</text>
+  <text x="446" y="113" class="lbl">greyed nav → sign-in sheet</text>
+
+  <rect x="8" y="160" width="622" height="120" rx="8" class="zone"/>
+  <text x="22" y="180" class="lbl">greyed state — same bar, no navigation</text>
+
+  <rect x="22" y="196" width="594" height="66" rx="8" class="quiet"/>
+  <g>
+    <rect x="70" y="214" width="26" height="26" rx="6" class="box"/>
+    <rect x="66" y="248" width="34" height="6" rx="3" fill="hsl(var(--border))"/>
+    <rect x="210" y="214" width="26" height="26" rx="6" class="box"/>
+    <rect x="206" y="248" width="34" height="6" rx="3" fill="hsl(var(--border))"/>
+    <rect x="350" y="214" width="26" height="26" rx="6" class="box"/>
+    <rect x="346" y="248" width="34" height="6" rx="3" fill="hsl(var(--border))"/>
+    <rect x="490" y="214" width="26" height="26" rx="6" class="box"/>
+    <rect x="486" y="248" width="34" height="6" rx="3" fill="hsl(var(--border))"/>
+  </g>
+</svg>
