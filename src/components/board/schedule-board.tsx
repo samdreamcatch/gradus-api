@@ -142,9 +142,13 @@ export function ScheduleBoard({
                     {[e.name, e.segment].filter(Boolean).join(" · ")}
                   </span>
                   <span className="mt-0.5 flex items-center gap-2">
+                    {e.status === "live" ? (
+                      <span className="board-live-dot shrink-0" aria-hidden="true" />
+                    ) : null}
                     <Tag size="nano" tone={e.status === "live" ? "accent" : "default"}>
                       {STATUS_LABEL[e.status]}
                     </Tag>
+
                     {e.count ? (
                       <span className="font-mono text-nano text-text-tertiary">
                         {e.count} skaters
