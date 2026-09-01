@@ -3,7 +3,7 @@ import { Eyebrow } from "@/components/ui/eyebrow";
 import { Tag } from "@/components/ui/tag";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
-import type { BoardRink, BoardSkater } from "@/lib/board-types";
+import type { BoardCurrent, BoardRink, BoardSkater } from "@/lib/board-types";
 import { LANE_STYLE, SkaterBody, type LaneTone } from "@/components/board/lane-parts";
 import { SkaterWheel } from "@/components/board/skater-wheel";
 

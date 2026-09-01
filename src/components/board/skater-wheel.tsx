@@ -184,7 +184,7 @@ export function SkaterWheel({
       <div className="flex justify-center gap-2">
         <button
           type="button"
-          onClick={() => setStep((s) => Math.max(activeIndex - last, s - 1))}
+          onClick={() => setStep((s) => Math.min(activeIndex, s + 1))}
           disabled={nearest <= 0}
           className="press-soft rounded-md px-3 py-1 font-mono text-nano uppercase tracking-wider text-text-tertiary disabled:opacity-40"
         >
@@ -192,7 +192,7 @@ export function SkaterWheel({
         </button>
         <button
           type="button"
-          onClick={() => setStep((s) => Math.min(activeIndex, s + 1))}
+          onClick={() => setStep((s) => Math.max(activeIndex - last, s - 1))}
           disabled={nearest >= last}
           className="press-soft rounded-md px-3 py-1 font-mono text-nano uppercase tracking-wider text-text-tertiary disabled:opacity-40"
         >
