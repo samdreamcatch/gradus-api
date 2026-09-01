@@ -61,7 +61,7 @@ function BoardIndex() {
           {isReady && !user ? <BoardAccountSheet redirect="/board" /> : null}
           {isReady && user ? (
             <Chip size="caption" as={Link} to="/" className="press shrink-0">
-              My Gradus
+              Go to My Gradus
             </Chip>
           ) : null}
         </div>

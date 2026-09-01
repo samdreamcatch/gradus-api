@@ -259,10 +259,10 @@ function BoardPage() {
     <div className="mx-auto max-w-2xl space-y-3 px-4 py-4 pb-12">
       <header className="space-y-1">
         <div className="flex items-center justify-between gap-3">
-          <Link to="/" className="press">
-            <Logo className="text-xl" />
-          </Link>
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="flex min-w-0 items-center gap-2">
+            <Link to="/" className="press">
+              <Logo className="text-xl" />
+            </Link>
             {data.isLiveWindow ? (
               <Tag size="caption" tone="accent">
                 LIVE
@@ -270,15 +270,18 @@ function BoardPage() {
             ) : (
               <Tag size="caption">FINISHED</Tag>
             )}
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
             {signedIn ? (
               <Chip size="caption" as={Link} to="/" className="press shrink-0">
-                My Gradus
+                Go to My Gradus
               </Chip>
             ) : (
               <BoardAccountSheet redirect={`/board/${slug}`} />
             )}
           </div>
         </div>
+
         <h1 className="font-display text-h3 leading-tight text-text-primary">{data.name}</h1>
         <p className="truncate font-mono text-nano uppercase tracking-wider text-text-tertiary">
           {[data.datesLabel, data.location].filter(Boolean).join(" · ")}
