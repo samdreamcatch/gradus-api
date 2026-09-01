@@ -1,0 +1,68 @@
+<svg viewBox="0 0 640 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Flow from board sign-in to the app-wide live banner">
+  <style>
+    text { font-family: var(--font-sans); fill: hsl(var(--foreground)); }
+    .lbl { font-size: 14px; font-weight: 480; }
+    .note { font-size: 12px; fill: hsl(var(--muted-foreground)); }
+    .mono { font-family: var(--font-mono); font-size: 12px; fill: hsl(var(--muted-foreground)); }
+    .box { fill: none; stroke: hsl(var(--muted-foreground)); stroke-width: 1; }
+    .zone { fill: none; stroke: hsl(var(--border)); stroke-width: 1; stroke-dasharray: 4 3; }
+    .wire { stroke: hsl(var(--muted-foreground)); stroke-width: 1; fill: none; }
+    .acc { fill: none; stroke: hsl(var(--accent)); stroke-width: 1; }
+  </style>
+  <defs>
+    <marker id="a" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6" fill="none" stroke="hsl(var(--muted-foreground))" stroke-width="1"/>
+    </marker>
+  </defs>
+
+  <rect class="zone" x="8" y="16" width="290" height="176" rx="8"/>
+  <text class="mono" x="20" y="36">public board</text>
+
+  <rect class="box" x="28" y="52" width="120" height="46" rx="8"/>
+  <text class="lbl" x="88" y="72" text-anchor="middle">Board header</text>
+  <text class="note" x="88" y="88" text-anchor="middle">Sign in</text>
+
+  <rect class="box" x="170" y="52" width="110" height="46" rx="8"/>
+  <text class="lbl" x="225" y="72" text-anchor="middle">Sheet</text>
+  <text class="note" x="225" y="88" text-anchor="middle">sign in / sign up</text>
+
+  <rect class="box" x="28" y="126" width="120" height="46" rx="8"/>
+  <text class="lbl" x="88" y="146" text-anchor="middle">Login</text>
+  <text class="note" x="88" y="162" text-anchor="middle">returns to board</text>
+
+  <rect class="box" x="170" y="126" width="110" height="46" rx="8"/>
+  <text class="lbl" x="225" y="146" text-anchor="middle">Signup</text>
+  <text class="note" x="225" y="162" text-anchor="middle">parent/coach/athlete</text>
+
+  <line class="wire" x1="148" y1="75" x2="166" y2="75" marker-end="url(#a)"/>
+  <line class="wire" x1="200" y1="98" x2="150" y2="124" marker-end="url(#a)"/>
+  <line class="wire" x1="240" y1="98" x2="240" y2="122" marker-end="url(#a)"/>
+
+  <rect class="zone" x="330" y="16" width="300" height="176" rx="8"/>
+  <text class="mono" x="342" y="36">signed-in app</text>
+
+  <rect class="acc" x="350" y="52" width="260" height="40" rx="8"/>
+  <circle cx="368" cy="72" r="4" fill="hsl(var(--accent))"/>
+  <text class="lbl" x="382" y="70">Addie is ON THE ICE — A Rink</text>
+  <text class="note" x="382" y="86">sticky, every page, tap to open the board</text>
+
+  <rect class="box" x="350" y="112" width="120" height="60" rx="8"/>
+  <text class="lbl" x="410" y="138" text-anchor="middle">Any app page</text>
+  <text class="note" x="410" y="154" text-anchor="middle">plans, roster, …</text>
+
+  <rect class="box" x="490" y="112" width="120" height="60" rx="8"/>
+  <text class="lbl" x="550" y="132" text-anchor="middle">Board poll</text>
+  <text class="note" x="550" y="148" text-anchor="middle">30s while open</text>
+  <text class="note" x="550" y="164" text-anchor="middle">device follows</text>
+
+  <line class="wire" x1="550" y1="110" x2="550" y2="94" marker-end="url(#a)"/>
+  <line class="wire" x1="298" y1="72" x2="346" y2="72" marker-end="url(#a)"/>
+
+  <circle cx="26" cy="228" r="9" fill="hsl(var(--accent))"/>
+  <text x="26" y="232" text-anchor="middle" style="font-size:11px; fill:hsl(var(--accent-foreground))">1</text>
+  <text class="note" x="44" y="232">Banner shows only while a followed competition is live; dismissible per competition.</text>
+
+  <circle cx="26" cy="256" r="9" fill="hsl(var(--accent))"/>
+  <text x="26" y="260" text-anchor="middle" style="font-size:11px; fill:hsl(var(--accent-foreground))">2</text>
+  <text class="note" x="44" y="260">Follows stay on the device; connected athletes come from the account.</text>
+</svg>
