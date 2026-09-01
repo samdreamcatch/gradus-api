@@ -100,11 +100,11 @@ export function ScheduleBoard({
       <Card variant="section" className="space-y-2">
         <div
           aria-hidden="true"
-          className="flex items-baseline gap-3 font-mono text-nano uppercase tracking-wider text-text-tertiary"
+          className="flex items-baseline gap-2.5 font-mono text-nano uppercase tracking-wider text-text-tertiary"
         >
-          <span className="w-14">Time</span>
+          <span className="w-11">Time</span>
           <span className="min-w-0 flex-1">Event</span>
-          <span className="w-16 text-right">Status</span>
+          <span className="text-right">Status</span>
         </div>
 
         <div className="divide-y divide-divider">
