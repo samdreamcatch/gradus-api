@@ -125,7 +125,14 @@ export function FollowSearch({
                     selected={isFollowed}
                     aria-pressed={isFollowed}
                     aria-label={isFollowed ? `Stop following ${e.name}` : `Follow ${e.name}`}
-                    onClick={() => (isFollowed ? onUnfollow(e.key) : onFollow(e.name))}
+                    onClick={() => {
+                      if (isFollowed) {
+                        onUnfollow(e.key);
+                      } else {
+                        onFollow(e.name);
+                        setQuery("");
+                      }
+                    }}
                   >
                     {isFollowed ? "Following" : "Follow"}
                   </Chip>
