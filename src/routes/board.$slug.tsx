@@ -307,7 +307,7 @@ function BoardPage() {
             followed={isFollowed}
             changed={changed}
             onToggleFollow={toggleFollow}
-            onSelectRink={goToRink}
+            
             onOpenScore={(m) =>
               setScore({
                 skater: m.skater,
