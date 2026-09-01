@@ -152,6 +152,9 @@ export function MySkaters({
   // (most recent result first).
   const startOf = (m: SkaterMatch) =>
     m.event.startIso ? new Date(m.event.startIso).getTime() : Number.MAX_SAFE_INTEGER;
+
+  // Within a skater, rows read as a clock: earliest event first.
+  for (const g of groups) g.rows.sort((a, b) => startOf(a) - startOf(b) || a.skater.start - b.skater.start);
   /** [bucket, time] — bucket 0 live, 1 upcoming, 2 done. */
   const rankOf = (rows: SkaterMatch[]): [number, number] => {
     if (rows.some((r) => r.state === "on-ice")) return [0, 0];
