@@ -92,14 +92,22 @@ export const listBoards = createServerFn({ method: "GET" }).handler(
   async (): Promise<
     { slug: string; name: string; datesLabel: string; location: string; isLiveWindow: boolean }[]
   > => {
-    const mod = await import("@/integrations/supabase/client.server");
-    const db = mod.supabaseAdmin as unknown as { from: (t: string) => any };
-    const res = await db
-      .from("competitions")
-      .select("slug, name, dates_label, location, active, starts_on, ends_on")
-      .eq("active", true)
-      .order("starts_on", { ascending: false, nullsFirst: false });
+    let rows: any[] = [];
+    try {
+      const mod = await import("@/integrations/supabase/client.server");
+      const db = mod.supabaseAdmin as unknown as { from: (t: string) => any };
+      const res = await db
+        .from("competitions")
+        .select("slug, name, dates_label, location, active, starts_on, ends_on")
+        .eq("active", true)
+        .order("starts_on", { ascending: false, nullsFirst: false });
+      rows = (res?.data ?? []) as any[];
+    } catch {
+      // Table not available yet — the built-in sample board still lists.
+      rows = [];
+    }
     const today = new Date().toISOString().slice(0, 10);
+
     return [
       DEMO_LIST_ENTRY,
       ...((res.data ?? []) as any[]).map((c) => ({
