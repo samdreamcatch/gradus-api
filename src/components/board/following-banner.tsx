@@ -10,6 +10,7 @@ import {
   dismissBanner,
   isBannerDismissed,
   readBoardHistory,
+  readBoardReturn,
   readExtraFollows,
   readUnfollowed,
 } from "@/lib/board-follow-store";
