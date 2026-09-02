@@ -102,7 +102,7 @@ export function ScheduleBoard({
           aria-hidden="true"
           className="flex items-baseline gap-2.5 font-mono text-nano uppercase tracking-wider text-text-tertiary"
         >
-          <span className="w-11">Time</span>
+          <span className="w-12">Time</span>
           <span className="min-w-0 flex-1">Event</span>
         </div>
 
@@ -133,7 +133,7 @@ export function ScheduleBoard({
                   mine.length ? "border-accent bg-accent/10" : "border-transparent",
                 )}
               >
-                <span className="flex w-11 shrink-0 items-center gap-1 pt-0.5 font-mono text-nano text-text-secondary tabular-nums">
+                <span className="flex w-12 shrink-0 items-center gap-1 font-mono text-caption text-text-secondary tabular-nums">
                   {e.status === "live" ? (
                     <span className="board-live-dot shrink-0" aria-hidden="true" />
                   ) : null}
