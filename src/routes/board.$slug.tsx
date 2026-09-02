@@ -130,6 +130,13 @@ function BoardPage() {
     if (data?.name) rememberVisit(slug, data.name);
   }, [slug, data?.name]);
 
+  // Opening a board at a competition (the QR scan) is what marks a signed-in
+  // parent or athlete as "there" — that's what earns the recap prompt later.
+  useEffect(() => {
+    if (!signedIn) return;
+    void recordAttendance({ data: { slug } }).catch(() => {});
+  }, [signedIn, slug, recordAttendance]);
+
   const payload = data?.payload ?? null;
   const watched = useMemo(() => [...(myNames ?? []), ...extras], [myNames, extras]);
   const extraKeys = useMemo(() => extras.map(normalizeName), [extras]);
