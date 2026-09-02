@@ -249,7 +249,37 @@ export const dismissCompetitionRecap = createServerFn({ method: "POST" })
     return { ok: true as const };
   });
 
+/* ------------------------------------------------------- coach recipients */
+
+/** The rostered coaches a recap can be sent to for this athlete. */
+export const getRecapCoaches = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ athleteId: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }): Promise<{ id: string; name: string }[]> => {
+    const viewer = await loadViewer(context.userId);
+    if (!viewer) return [];
+    await assertCanWriteAthlete(viewer, data.athleteId);
+
+    const admin = await getAdmin();
+    const links = await admin.from("coach_athletes").select("coach_id").eq("athlete_id", data.athleteId);
+    if (links.error) dbError(links.error);
+    const coachIds = [...new Set((links.data ?? []).map((r: any) => r.coach_id as string))];
+    if (coachIds.length === 0) return [];
+
+    const coaches = await admin
+      .from("coach_profiles")
+      .select("id, first_name, last_name")
+      .in("id", coachIds);
+    if (coaches.error) dbError(coaches.error);
+    return (coaches.data ?? []).map((c: any) => ({
+      id: c.id as string,
+      name: `${c.first_name ?? ""} ${c.last_name ?? ""}`.trim() || "Coach",
+    }));
+  });
+
 /* ------------------------------------------------------------- the recap */
+
+
 
 export const submitCompetitionRecap = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -259,6 +289,9 @@ export const submitCompetitionRecap = createServerFn({ method: "POST" })
         competitionId: z.string().uuid(),
         athleteId: z.string().uuid(),
         body: z.string().trim().min(1).max(2000),
+        /** Omitted means every rostered coach. */
+        coachIds: z.array(z.string().uuid()).optional(),
+
       })
       .parse(input),
   )
@@ -300,23 +333,30 @@ export const submitCompetitionRecap = createServerFn({ method: "POST" })
       context.userId,
       viewer.role,
       `Competition recap — ${comp.data.name || "competition"}\n\n${data.body}`,
+      data.coachIds,
     );
 
     return { ok: true as const };
   });
 
-/** Post the recap into every coach conversation this athlete already has. */
+/** Post the recap into the selected coach conversations (default: all). */
 async function messageCoaches(
   athleteId: string,
   senderUserId: string,
   senderRole: "parent" | "athlete",
   body: string,
+  onlyCoachIds?: string[],
 ) {
   const admin = await getAdmin();
   const links = await admin.from("coach_athletes").select("coach_id").eq("athlete_id", athleteId);
   if (links.error) dbError(links.error);
-  const coachIds = (links.data ?? []).map((r: any) => r.coach_id as string);
+  let coachIds: string[] = [
+    ...new Set<string>((links.data ?? []).map((r: any) => r.coach_id as string)),
+  ];
+
+  if (onlyCoachIds?.length) coachIds = coachIds.filter((id) => onlyCoachIds.includes(id));
   if (coachIds.length === 0) return;
+
 
   const rooms = await admin
     .from("message_rooms")

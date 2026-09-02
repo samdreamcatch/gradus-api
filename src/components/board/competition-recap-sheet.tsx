@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -8,12 +8,13 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
   submitCompetitionRecap,
+  getRecapCoaches,
   type PendingRecapDTO,
 } from "@/lib/competition-recap.functions";
 
 /**
  * One question, one text box. The recap is stored on the athlete's record and
- * sent to their coach, so we keep the ask as small as possible.
+ * sent to the coaches the author picks, so we keep the ask as small as possible.
  */
 export function CompetitionRecapSheet({
   pending,
@@ -27,8 +28,10 @@ export function CompetitionRecapSheet({
   onDone: () => void;
 }) {
   const submit = useServerFn(submitCompetitionRecap);
+  const loadCoaches = useServerFn(getRecapCoaches);
   const [body, setBody] = useState("");
   const [athleteId, setAthleteId] = useState<string | null>(pending.athleteId);
+  const [coachIds, setCoachIds] = useState<string[]>([]);
 
   useEffect(() => {
     if (open) {
@@ -37,20 +40,47 @@ export function CompetitionRecapSheet({
     }
   }, [open, pending.athleteId]);
 
+  const coaches = useQuery({
+    queryKey: ["recap-coaches", athleteId],
+    enabled: open && !!athleteId,
+    queryFn: () => loadCoaches({ data: { athleteId: athleteId! } }),
+  });
+
+  // Default to sending to everyone on the roster.
+  useEffect(() => {
+    if (coaches.data) setCoachIds(coaches.data.map((c) => c.id));
+  }, [coaches.data]);
+
+  const toggleCoach = (id: string) =>
+    setCoachIds((prev) => (prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]));
+
   const send = useMutation({
     mutationFn: () =>
       submit({
-        data: { competitionId: pending.competitionId, athleteId: athleteId!, body: body.trim() },
+        data: {
+          competitionId: pending.competitionId,
+          athleteId: athleteId!,
+          body: body.trim(),
+          coachIds,
+        },
       }),
     onSuccess: () => {
-      toast.success("Recap saved and sent to your coach");
+      toast.success(
+        coachIds.length === 1 ? "Recap saved and sent to your coach" : "Recap saved and sent",
+      );
       onOpenChange(false);
       onDone();
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const canSubmit = !!athleteId && body.trim().length > 0 && !send.isPending;
+  const coachList = coaches.data ?? [];
+  const canSubmit =
+    !!athleteId &&
+    body.trim().length > 0 &&
+    !send.isPending &&
+    (coachList.length === 0 || coachIds.length > 0);
+
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -90,6 +120,36 @@ export function CompetitionRecapSheet({
             </div>
           )}
 
+          {coachList.length > 0 && (
+            <div>
+              <p className="text-[11px] font-black uppercase tracking-widest text-text-secondary">
+                Send to
+              </p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {coachList.map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => toggleCoach(c.id)}
+                    className={cn(
+                      "press-soft rounded-pill border px-3 py-1.5 text-sm",
+                      coachIds.includes(c.id)
+                        ? "border-accent bg-accent text-accent-foreground"
+                        : "border-divider bg-card text-text-secondary",
+                    )}
+                  >
+                    {c.name}
+                  </button>
+                ))}
+              </div>
+              <p className="mt-2 text-sm text-text-tertiary">
+                {coachIds.length === coachList.length
+                  ? "Goes to every coach on the roster. Tap a coach to leave them out."
+                  : `Goes to ${coachIds.length} of ${coachList.length} coaches.`}
+              </p>
+            </div>
+          )}
+
           <div>
             <label
               htmlFor="competition-recap-body"
@@ -117,8 +177,11 @@ export function CompetitionRecapSheet({
             onClick={() => send.mutate()}
           >
             {send.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-            Send to my coach
+            {coachList.length > 1 && coachIds.length !== 1
+              ? `Send to ${coachIds.length} coaches`
+              : "Send to my coach"}
           </Button>
+
         </div>
       </SheetContent>
     </Sheet>
