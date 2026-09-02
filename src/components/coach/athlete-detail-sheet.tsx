@@ -260,6 +260,10 @@ function AthleteDetailBody({ athleteId }: { athleteId: string }) {
         )}
       </section>
 
+      {/* Competition results (private to this athlete's circle) */}
+      <CompetitionResultsSection athleteId={athleteId} firstName={d.firstName} />
+
+
       {/* Billing (Coach Pro & Club) */}
       {effectiveTier === "coach_pro" || effectiveTier === "club" ? (
         <AthleteBillingSection athleteId={athleteId} />
