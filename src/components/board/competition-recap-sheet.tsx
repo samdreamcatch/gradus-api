@@ -98,7 +98,7 @@ export function CompetitionRecapSheet({
               Your recap
             </label>
             <p className="mt-1 text-sm text-text-tertiary">
-              What went well? What didn&apos;t go well? Any feedback?
+              What went well? What didn&apos;t go well? Share any feedback with your coach.
             </p>
             <textarea
               id="competition-recap-body"
