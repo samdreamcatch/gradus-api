@@ -19,6 +19,8 @@ import { PlanCard } from "@/components/plans/plan-card";
 import { AlsoCoachedByList } from "@/components/coach/also-coached-by-list";
 import { OtherCoachPlansSheet } from "@/components/coach/other-coach-plans-sheet";
 import { AthleteBillingSection } from "@/components/coach/athlete-billing-section";
+import { CompetitionResultsSection } from "@/components/coach/competition-results-section";
+
 
 import { cn } from "@/lib/utils";
 import {
