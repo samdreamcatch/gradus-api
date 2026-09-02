@@ -12,7 +12,7 @@ When a parent or athlete follows skaters at a live competition, Gradus should as
    - What didn't go so well?
    - Anything you'd like to share with your coach?
    Only the scale is required; the writing is optional. Submitting saves it and thanks them.
-4. **Who it's about** — if we can match the followed skater to one of their athletes by name we pre-select that athlete; otherwise the sheet asks "Who is this about?" with their athletes listed.
+4. **Who it's about** — we assume it's their athlete in the sport the competition belongs to. The sheet only asks "Who is this about?" when the parent has more than one athlete in that sport; a name match against the followed skater still wins when we have one.
 
 Parent and athlete each get their own prompt and their own recap, attributed by name — one does not close the other's.
 
