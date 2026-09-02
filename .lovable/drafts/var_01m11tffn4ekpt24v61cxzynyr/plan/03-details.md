@@ -26,7 +26,7 @@ Competition end is read from `competitions.ends_on` (already stored) plus the sn
 
 ### Client
 
-- `src/routes/board.$slug.tsx` — where follows are already written to `localStorage`, also fire `recordCompetitionAttendance` when a session exists. Signed-out follows stay device-local; if that visitor signs in later on the same device we replay the stored follow once.
+- `src/routes/board.$slug.tsx` — on mount, where the board is already written to local history, also fire `recordCompetitionAttendance` when a session exists. Signed-out visits stay device-local; if that visitor signs in later on the same device (the board already stashes a return path) we record the visit once at that point.
 - New `src/components/board/competition-recap-prompt.tsx` — the card, rendered from `src/routes/_authenticated.tsx` alongside `FollowingBanner`, only for parent/athlete roles via `useViewerRole`.
 - New `src/components/board/competition-recap-sheet.tsx` — bottom `Sheet` with the `paper-surface` utility, reusing the five-point scale markup from `session-feedback-modal.tsx`, existing textarea styling, and `press` on the submit button. No new design primitives.
 - `src/components/coach/competition-results-section.tsx` — render saved recaps below the linked results, attributed to the writer.
