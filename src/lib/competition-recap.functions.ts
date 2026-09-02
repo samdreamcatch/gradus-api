@@ -333,23 +333,27 @@ export const submitCompetitionRecap = createServerFn({ method: "POST" })
       context.userId,
       viewer.role,
       `Competition recap — ${comp.data.name || "competition"}\n\n${data.body}`,
+      data.coachIds,
     );
 
     return { ok: true as const };
   });
 
-/** Post the recap into every coach conversation this athlete already has. */
+/** Post the recap into the selected coach conversations (default: all). */
 async function messageCoaches(
   athleteId: string,
   senderUserId: string,
   senderRole: "parent" | "athlete",
   body: string,
+  onlyCoachIds?: string[],
 ) {
   const admin = await getAdmin();
   const links = await admin.from("coach_athletes").select("coach_id").eq("athlete_id", athleteId);
   if (links.error) dbError(links.error);
-  const coachIds = (links.data ?? []).map((r: any) => r.coach_id as string);
+  let coachIds = [...new Set((links.data ?? []).map((r: any) => r.coach_id as string))];
+  if (onlyCoachIds?.length) coachIds = coachIds.filter((id) => onlyCoachIds.includes(id));
   if (coachIds.length === 0) return;
+
 
   const rooms = await admin
     .from("message_rooms")
