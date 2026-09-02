@@ -1,10 +1,10 @@
 # Competition recap prompt
 
-When a parent or athlete follows skaters at a live competition, Gradus should ask them afterward how it went — and keep that reflection on the athlete's record where their coach can read it.
+When a parent or athlete scans the QR code at a competition and opens the live board, Gradus should ask them afterward how it went — and keep that reflection on the athlete's record where their coach can read it.
 
 ## What the person sees
 
-1. **During the competition** — nothing new. Following a skater on a board, while signed in, quietly records "this account was at this competition."
+1. **At the competition** — nothing new. Opening the board while signed in quietly records "this account was at this competition." Following a skater is not required; simply viewing the board counts.
 2. **After the competition finishes** — the next time they open Gradus, a card appears at the top of their home screen: *"How did Fall Classic go?"* with **Write recap** and **Not now**. It reappears for up to 7 days, then stops asking.
 3. **The recap sheet** — a bottom sheet in the app's paper style with four short prompts:
    - How did the competition go? (the same five-point scale used for practice sessions — Frustrated → Flowing)

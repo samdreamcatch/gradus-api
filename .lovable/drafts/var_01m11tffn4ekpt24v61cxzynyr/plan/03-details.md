@@ -17,7 +17,7 @@ Two additive tables, in the same draft migrations folder as the live-board and c
 ### Server functions
 
 New `src/lib/competition-recap.functions.ts`, all `requireSupabaseAuth`:
-- `recordCompetitionAttendance({ slug, skaterName })` — upserts the attendance row; resolves `athlete_id` by name match against athletes the caller can write to, else by the single athlete in the competition's sport, leaving it null only when the caller has two or more athletes in that sport.
+- `recordCompetitionAttendance({ slug })` — called once per board view by a signed-in visitor; upserts the attendance row. Resolves `athlete_id` from the single athlete the caller has in the competition's sport, refined by a name match if they later follow a skater, and left null only when the caller has two or more athletes in that sport.
 - `getPendingCompetitionRecap()` — returns at most one attendance row whose competition has ended, is under 7 days old, and has no recap or dismissal; includes the candidate athlete list only when the sport-scoped resolution was ambiguous.
 - `submitCompetitionRecap({ competitionId, athleteId, stateIndex, wentWell, wentPoorly, forCoach })` — re-checks the caller's relationship to the athlete server-side, inserts the recap, stamps `recap_done_at`, then posts a message into the athlete's existing coach room(s) summarizing the recap and linking to the athlete's competition section. The message is sent by the author with their real role, using the existing `messages` insert path — no new messaging surface.
 - `dismissCompetitionRecap({ competitionId })` — sets `dismissed_at`.
