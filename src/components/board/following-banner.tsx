@@ -56,14 +56,18 @@ export function FollowingBanner() {
   const mine = useServerFn(getMySkaterNames);
 
   const [slug, setSlug] = useState<string | null>(null);
+  const [compName, setCompName] = useState<string>("");
+  const [fromBoard, setFromBoard] = useState(false);
   const [extras, setExtras] = useState<string[]>([]);
   const [unfollowed, setUnfollowed] = useState<string[]>([]);
   const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
+    setFromBoard(!!readBoardReturn());
     const recent = readBoardHistory()[0];
     if (!recent) return;
     setSlug(recent.slug);
+    setCompName(recent.name ?? "");
     setExtras(readExtraFollows(recent.slug));
     setUnfollowed(readUnfollowed(recent.slug));
     setDismissed(isBannerDismissed(recent.slug));
