@@ -120,6 +120,36 @@ export function CompetitionRecapSheet({
             </div>
           )}
 
+          {coachList.length > 0 && (
+            <div>
+              <p className="text-[11px] font-black uppercase tracking-widest text-text-secondary">
+                Send to
+              </p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {coachList.map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => toggleCoach(c.id)}
+                    className={cn(
+                      "press-soft rounded-pill border px-3 py-1.5 text-sm",
+                      coachIds.includes(c.id)
+                        ? "border-accent bg-accent text-accent-foreground"
+                        : "border-divider bg-card text-text-secondary",
+                    )}
+                  >
+                    {c.name}
+                  </button>
+                ))}
+              </div>
+              <p className="mt-2 text-sm text-text-tertiary">
+                {coachIds.length === coachList.length
+                  ? "Goes to every coach on the roster. Tap a coach to leave them out."
+                  : `Goes to ${coachIds.length} of ${coachList.length} coaches.`}
+              </p>
+            </div>
+          )}
+
           <div>
             <label
               htmlFor="competition-recap-body"
@@ -147,8 +177,11 @@ export function CompetitionRecapSheet({
             onClick={() => send.mutate()}
           >
             {send.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-            Send to my coach
+            {coachList.length > 1 && coachIds.length !== 1
+              ? `Send to ${coachIds.length} coaches`
+              : "Send to my coach"}
           </Button>
+
         </div>
       </SheetContent>
     </Sheet>
