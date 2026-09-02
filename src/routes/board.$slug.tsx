@@ -21,6 +21,7 @@ import { SegmentedToggle } from "@/components/plans/segmented-toggle";
 import { useChangedKeys } from "@/hooks/use-changed-keys";
 import { getBoard, getMySkaterNames } from "@/lib/board.functions";
 import { normalizeName, type BoardEvent, type BoardSkater } from "@/lib/board-types";
+import { recordCompetitionAttendance } from "@/lib/competition-recap.functions";
 
 const REFRESH_MS = 30_000;
 const HISTORY_KEY = "gradus.boardHistory";
@@ -83,6 +84,7 @@ function BoardPage() {
   const { slug } = Route.useParams();
   const board = useServerFn(getBoard);
   const mine = useServerFn(getMySkaterNames);
+  const recordAttendance = useServerFn(recordCompetitionAttendance);
   const [signedIn, setSignedIn] = useState(false);
   const [rinkName, setRinkName] = useState<string | null>(null);
   const [tab, setTab] = useState<BoardTab | null>(null);
