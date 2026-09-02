@@ -9,6 +9,41 @@ const HISTORY_KEY = "gradus.boardHistory";
 const FOLLOW_KEY = "gradus.boardFollow";
 const EXTRA_KEY = "gradus.boardFollowExtra";
 const DISMISS_KEY = "gradus.boardBannerDismissed";
+const RETURN_KEY = "gradus.boardReturn";
+
+/**
+ * The board path a signed-out visitor left to visit an auth screen, so those
+ * screens can offer a way back. Session-scoped: it never lingers into a later
+ * visit, and it survives the Google OAuth round trip (unlike a URL param).
+ */
+export function writeBoardReturn(path: string) {
+  if (typeof window === "undefined") return;
+  if (!path.startsWith("/board/")) return;
+  try {
+    window.sessionStorage.setItem(RETURN_KEY, path);
+  } catch {
+    // Convenience only; storage failures are silent.
+  }
+}
+
+export function readBoardReturn(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.sessionStorage.getItem(RETURN_KEY);
+    return raw && raw.startsWith("/board/") ? raw : null;
+  } catch {
+    return null;
+  }
+}
+
+export function clearBoardReturn() {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.removeItem(RETURN_KEY);
+  } catch {
+    // no-op
+  }
+}
 
 export interface BoardHistoryEntry {
   slug: string;
