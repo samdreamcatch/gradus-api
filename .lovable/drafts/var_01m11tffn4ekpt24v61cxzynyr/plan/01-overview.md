@@ -18,9 +18,10 @@ Parent and athlete each get their own prompt and their own recap, attributed by 
 
 ## Where it lands
 
-The recap is saved to the athlete's record only. No message is sent. It shows up:
+The recap is saved to the athlete's record **and** sent to the coach as a message, so it can't be missed:
 
 - On the coach's athlete detail sheet, in the competition section next to results, labeled with who wrote it and when.
+- As a message in the existing coach conversation for that athlete, from the parent or athlete who wrote it, carrying the recap text.
 - To the parent/athlete themselves and any co-guardian on a Team Plan.
 
 Nothing appears on the public board, and nobody outside the athlete's existing circle can see it.
