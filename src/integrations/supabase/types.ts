@@ -1031,6 +1031,102 @@ export type Database = {
           },
         ]
       }
+      competition_attendance: {
+        Row: {
+          athlete_id: string | null
+          competition_id: string
+          dismissed_at: string | null
+          first_seen_at: string
+          id: string
+          recap_done_at: string | null
+          skater_name: string
+          user_id: string
+        }
+        Insert: {
+          athlete_id?: string | null
+          competition_id: string
+          dismissed_at?: string | null
+          first_seen_at?: string
+          id?: string
+          recap_done_at?: string | null
+          skater_name?: string
+          user_id: string
+        }
+        Update: {
+          athlete_id?: string | null
+          competition_id?: string
+          dismissed_at?: string | null
+          first_seen_at?: string
+          id?: string
+          recap_done_at?: string | null
+          skater_name?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competition_attendance_athlete_id_fkey"
+            columns: ["athlete_id"]
+            isOneToOne: false
+            referencedRelation: "athletes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competition_attendance_competition_id_fkey"
+            columns: ["competition_id"]
+            isOneToOne: false
+            referencedRelation: "competitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      competition_recaps: {
+        Row: {
+          athlete_id: string
+          author_role: string
+          author_user_id: string
+          body: string
+          competition_id: string
+          created_at: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          athlete_id: string
+          author_role: string
+          author_user_id: string
+          body: string
+          competition_id: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          athlete_id?: string
+          author_role?: string
+          author_user_id?: string
+          body?: string
+          competition_id?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competition_recaps_athlete_id_fkey"
+            columns: ["athlete_id"]
+            isOneToOne: false
+            referencedRelation: "athletes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competition_recaps_competition_id_fkey"
+            columns: ["competition_id"]
+            isOneToOne: false
+            referencedRelation: "competitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       competition_snapshots: {
         Row: {
           competition_id: string
