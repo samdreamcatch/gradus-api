@@ -14,7 +14,6 @@ import { readPendingTermsAccept, clearPendingTermsAccept } from "@/lib/terms";
 import { applyPromoCodeToMyProfile } from "@/lib/promo-codes.functions";
 import { readPendingPromoCode, clearPendingPromoCode } from "@/lib/pending-promo-code";
 import { useTouchLastSeen } from "@/hooks/use-touch-last-seen";
-import { clearBoardReturn } from "@/lib/board-follow-store";
 
 const MAX_PROMO_ATTEMPTS = 5;
 const MAX_TERMS_ATTEMPTS = 5;
