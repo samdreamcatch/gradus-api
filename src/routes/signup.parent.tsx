@@ -26,6 +26,7 @@ import {
 } from "@/lib/terms";
 import { savePendingPromoCode, clearPendingPromoCode } from "@/lib/pending-promo-code";
 import { z } from "zod";
+import { BoardReturnLink } from "@/components/board/board-return-link";
 
 /** sessionStorage key for a coach invite code arriving via `?invite=` — read
  *  by `/signup/parent/athletes` after Google sign-in returns. */
@@ -218,6 +219,7 @@ function ParentSignupPage() {
     <div className="relative flex min-h-dvh items-center justify-center overflow-hidden px-4 py-12">
       <SportsPoster fill opacity={0.08} />
       <div className="relative w-full max-w-md rounded-2xl bg-card p-8 shadow-card">
+        <BoardReturnLink />
         <div className="mb-8 text-center">
           <p className="text-xs font-bold uppercase tracking-widest text-accent-ink">Welcome to</p>
           <h1 className="mt-2">

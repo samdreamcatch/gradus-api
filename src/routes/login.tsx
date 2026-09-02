@@ -14,6 +14,7 @@ import { resolveAthleteLogin } from "@/lib/athlete-signup.functions";
 import { verifyTurnstileToken } from "@/lib/turnstile.functions";
 import { clearPendingTermsAccept } from "@/lib/terms";
 import { clearPendingPromoCode } from "@/lib/pending-promo-code";
+import { BoardReturnLink } from "@/components/board/board-return-link";
 
 export const Route = createFileRoute("/login")({
   validateSearch: (s: Record<string, unknown>): { redirect?: string } => {
@@ -213,6 +214,7 @@ function LoginPage() {
     <div className="relative flex min-h-dvh items-center justify-center overflow-hidden px-4 py-12">
       <SportsPoster fill opacity={0.08} />
       <div className="relative w-full max-w-md rounded-2xl bg-card p-8 shadow-card">
+        <BoardReturnLink />
         <div className="mb-8 text-center">
           <p className="text-xs font-bold uppercase tracking-widest text-accent-ink">
             Welcome back to
