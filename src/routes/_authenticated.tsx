@@ -59,11 +59,6 @@ function AuthedLayout() {
   const applyPromo = useServerFn(applyPromoCodeToMyProfile);
   useTouchLastSeen();
 
-  // They made it in — the auth screens no longer need a way back to the board;
-  // the following banner above covers that from here.
-  useEffect(() => {
-    clearBoardReturn();
-  }, []);
 
   const termsAttemptsRef = useRef(0);
   const promoAttemptsRef = useRef(0);
