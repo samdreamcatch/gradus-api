@@ -289,6 +289,9 @@ export const submitCompetitionRecap = createServerFn({ method: "POST" })
         competitionId: z.string().uuid(),
         athleteId: z.string().uuid(),
         body: z.string().trim().min(1).max(2000),
+        /** Omitted means every rostered coach. */
+        coachIds: z.array(z.string().uuid()).optional(),
+
       })
       .parse(input),
   )
