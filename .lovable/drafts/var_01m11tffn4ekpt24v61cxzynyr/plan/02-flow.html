@@ -1,0 +1,38 @@
+<svg viewBox="0 0 640 300" xmlns="http://www.w3.org/2000/svg" style="font-family: var(--font-sans)">
+  <defs>
+    <marker id="ar" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0 0 L8 4 L0 8" fill="none" stroke="hsl(var(--muted-foreground))" stroke-width="1"/>
+    </marker>
+    <marker id="ara" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0 0 L8 4 L0 8" fill="none" stroke="hsl(var(--accent))" stroke-width="1.2"/>
+    </marker>
+  </defs>
+
+  <rect x="24" y="40" width="140" height="64" rx="8" fill="none" stroke="hsl(var(--muted-foreground))"/>
+  <text x="94" y="66" text-anchor="middle" style="font-size:14px;font-weight:480" fill="hsl(var(--foreground))">Live Board</text>
+  <text x="94" y="86" text-anchor="middle" style="font-size:12px" fill="hsl(var(--muted-foreground))">signed out</text>
+
+  <rect x="250" y="40" width="150" height="64" rx="8" fill="none" stroke="hsl(var(--muted-foreground))"/>
+  <text x="325" y="66" text-anchor="middle" style="font-size:14px;font-weight:480" fill="hsl(var(--foreground))">Sign in</text>
+  <text x="325" y="86" text-anchor="middle" style="font-size:12px" fill="hsl(var(--muted-foreground))">/login</text>
+
+  <rect x="250" y="150" width="150" height="64" rx="8" fill="none" stroke="hsl(var(--muted-foreground))"/>
+  <text x="325" y="176" text-anchor="middle" style="font-size:14px;font-weight:480" fill="hsl(var(--foreground))">Sign up</text>
+  <text x="325" y="196" text-anchor="middle" style="font-size:12px" fill="hsl(var(--muted-foreground))">parent · coach · athlete</text>
+
+  <rect x="480" y="95" width="136" height="64" rx="8" fill="none" stroke="hsl(var(--muted-foreground))"/>
+  <text x="548" y="121" text-anchor="middle" style="font-size:14px;font-weight:480" fill="hsl(var(--foreground))">Signed-in app</text>
+  <text x="548" y="141" text-anchor="middle" style="font-size:12px" fill="hsl(var(--muted-foreground))">board banner on top</text>
+
+  <path d="M164 66 L246 66" fill="none" stroke="hsl(var(--muted-foreground))" marker-end="url(#ar)"/>
+  <path d="M164 84 C 200 84, 210 182, 246 182" fill="none" stroke="hsl(var(--muted-foreground))" marker-end="url(#ar)"/>
+  <path d="M400 72 C 440 72, 448 105, 476 110" fill="none" stroke="hsl(var(--muted-foreground))" marker-end="url(#ar)"/>
+  <path d="M400 182 C 440 182, 448 148, 476 143" fill="none" stroke="hsl(var(--muted-foreground))" marker-end="url(#ar)"/>
+
+  <path d="M250 250 C 180 250, 120 200, 100 108" fill="none" stroke="hsl(var(--accent))" stroke-width="1.2" marker-end="url(#ara)"/>
+  <path d="M325 214 L325 244" fill="none" stroke="hsl(var(--accent))" stroke-width="1.2"/>
+  <path d="M325 108 C 240 112, 236 244, 320 246" fill="none" stroke="hsl(var(--accent))" stroke-width="1.2"/>
+  <circle cx="325" cy="248" r="10" fill="hsl(var(--accent))"/>
+  <text x="325" y="252" text-anchor="middle" style="font-size:11px;font-weight:600" fill="hsl(var(--accent-foreground))">1</text>
+  <text x="352" y="252" style="font-size:12px" fill="hsl(var(--muted-foreground))">new: "Back to the Live Board" on every auth screen</text>
+</svg>
