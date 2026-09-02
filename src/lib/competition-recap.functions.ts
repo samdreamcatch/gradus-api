@@ -350,7 +350,10 @@ async function messageCoaches(
   const admin = await getAdmin();
   const links = await admin.from("coach_athletes").select("coach_id").eq("athlete_id", athleteId);
   if (links.error) dbError(links.error);
-  let coachIds = [...new Set((links.data ?? []).map((r: any) => r.coach_id as string))];
+  let coachIds: string[] = [
+    ...new Set<string>((links.data ?? []).map((r: any) => r.coach_id as string)),
+  ];
+
   if (onlyCoachIds?.length) coachIds = coachIds.filter((id) => onlyCoachIds.includes(id));
   if (coachIds.length === 0) return;
 
