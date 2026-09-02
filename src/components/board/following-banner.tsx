@@ -105,20 +105,34 @@ export function FollowingBanner() {
     return live[0] ?? null;
   }, [matches, unfollowed]);
 
-  if (!enabled || !data?.isLiveWindow || !top || !slug) return null;
-  const text = line(top);
-  if (!text) return null;
+  const isLive = !!data?.isLiveWindow;
+  // The banner is a way back to the board first, a status ticker second: it
+  // stays available for anyone who arrived from a board in this session, even
+  // when nothing is happening on the ice.
+  if (!enabled || !slug || (!isLive && !fromBoard)) return null;
+
+  const newsText = top ? line(top) : null;
+  const text = newsText ?? (isLive && compName ? `${compName} · live` : "Back to the Live Board");
+  const hasNews = !!newsText;
 
   return (
     <div className="sticky top-2 z-40 mx-auto mt-2 flex max-w-2xl px-3">
       <div
         aria-live="polite"
-        className="flex w-full items-center gap-2 rounded-full border border-accent/50 bg-accent/15 px-3 py-1.5 text-accent-ink shadow-card backdrop-blur"
+        className={
+          hasNews
+            ? "flex w-full items-center gap-2 rounded-full border border-accent/50 bg-accent/15 px-3 py-1.5 text-accent-ink shadow-card backdrop-blur"
+            : "flex w-full items-center gap-2 rounded-full border border-divider bg-card px-3 py-1.5 text-text-secondary shadow-card backdrop-blur"
+        }
       >
-        <span className="relative inline-flex size-2 shrink-0">
-          <span className="absolute inset-0 animate-ping rounded-full bg-accent opacity-60" />
-          <span className="relative inline-flex size-2 rounded-full bg-accent" />
-        </span>
+        {hasNews ? (
+          <span className="relative inline-flex size-2 shrink-0">
+            <span className="absolute inset-0 animate-ping rounded-full bg-accent opacity-60" />
+            <span className="relative inline-flex size-2 rounded-full bg-accent" />
+          </span>
+        ) : (
+          <span className="inline-flex size-2 shrink-0 rounded-full bg-text-tertiary" />
+        )}
         <button
           type="button"
           onClick={() => navigate({ to: "/board/$slug", params: { slug } })}
