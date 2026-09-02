@@ -114,6 +114,123 @@ export type Database = {
           },
         ]
       }
+      athlete_competition_results: {
+        Row: {
+          athlete_id: string
+          competition_id: string
+          created_at: string
+          event_file: string
+          event_name: string
+          id: string
+          placement: string
+          protocol: Json | null
+          rink: string
+          segment: string
+          segment_score: string
+          skated_on: string | null
+          start_order: number | null
+          total_score: string
+          updated_at: string
+        }
+        Insert: {
+          athlete_id: string
+          competition_id: string
+          created_at?: string
+          event_file?: string
+          event_name: string
+          id?: string
+          placement?: string
+          protocol?: Json | null
+          rink?: string
+          segment?: string
+          segment_score?: string
+          skated_on?: string | null
+          start_order?: number | null
+          total_score?: string
+          updated_at?: string
+        }
+        Update: {
+          athlete_id?: string
+          competition_id?: string
+          created_at?: string
+          event_file?: string
+          event_name?: string
+          id?: string
+          placement?: string
+          protocol?: Json | null
+          rink?: string
+          segment?: string
+          segment_score?: string
+          skated_on?: string | null
+          start_order?: number | null
+          total_score?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "athlete_competition_results_athlete_id_fkey"
+            columns: ["athlete_id"]
+            isOneToOne: false
+            referencedRelation: "athletes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "athlete_competition_results_competition_id_fkey"
+            columns: ["competition_id"]
+            isOneToOne: false
+            referencedRelation: "competitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      athlete_competition_skaters: {
+        Row: {
+          athlete_id: string
+          club: string
+          competition_id: string
+          created_at: string
+          id: string
+          ijs_key: string | null
+          linked_by: string | null
+          skater_name: string
+        }
+        Insert: {
+          athlete_id: string
+          club?: string
+          competition_id: string
+          created_at?: string
+          id?: string
+          ijs_key?: string | null
+          linked_by?: string | null
+          skater_name: string
+        }
+        Update: {
+          athlete_id?: string
+          club?: string
+          competition_id?: string
+          created_at?: string
+          id?: string
+          ijs_key?: string | null
+          linked_by?: string | null
+          skater_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "athlete_competition_skaters_athlete_id_fkey"
+            columns: ["athlete_id"]
+            isOneToOne: false
+            referencedRelation: "athletes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "athlete_competition_skaters_competition_id_fkey"
+            columns: ["competition_id"]
+            isOneToOne: false
+            referencedRelation: "competitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       athlete_goals: {
         Row: {
           athlete_id: string
@@ -923,6 +1040,7 @@ export type Database = {
           orders: Json
           payload: Json
           refreshing_at: string | null
+          skater_index: Json
           updated_at: string
           venues: Json
           view_count: number
@@ -935,6 +1053,7 @@ export type Database = {
           orders?: Json
           payload?: Json
           refreshing_at?: string | null
+          skater_index?: Json
           updated_at?: string
           venues?: Json
           view_count?: number
@@ -947,6 +1066,7 @@ export type Database = {
           orders?: Json
           payload?: Json
           refreshing_at?: string | null
+          skater_index?: Json
           updated_at?: string
           venues?: Json
           view_count?: number
