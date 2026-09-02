@@ -114,6 +114,123 @@ export type Database = {
           },
         ]
       }
+      athlete_competition_results: {
+        Row: {
+          athlete_id: string
+          competition_id: string
+          created_at: string
+          event_file: string
+          event_name: string
+          id: string
+          placement: string
+          protocol: Json | null
+          rink: string
+          segment: string
+          segment_score: string
+          skated_on: string | null
+          start_order: number | null
+          total_score: string
+          updated_at: string
+        }
+        Insert: {
+          athlete_id: string
+          competition_id: string
+          created_at?: string
+          event_file?: string
+          event_name: string
+          id?: string
+          placement?: string
+          protocol?: Json | null
+          rink?: string
+          segment?: string
+          segment_score?: string
+          skated_on?: string | null
+          start_order?: number | null
+          total_score?: string
+          updated_at?: string
+        }
+        Update: {
+          athlete_id?: string
+          competition_id?: string
+          created_at?: string
+          event_file?: string
+          event_name?: string
+          id?: string
+          placement?: string
+          protocol?: Json | null
+          rink?: string
+          segment?: string
+          segment_score?: string
+          skated_on?: string | null
+          start_order?: number | null
+          total_score?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "athlete_competition_results_athlete_id_fkey"
+            columns: ["athlete_id"]
+            isOneToOne: false
+            referencedRelation: "athletes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "athlete_competition_results_competition_id_fkey"
+            columns: ["competition_id"]
+            isOneToOne: false
+            referencedRelation: "competitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      athlete_competition_skaters: {
+        Row: {
+          athlete_id: string
+          club: string
+          competition_id: string
+          created_at: string
+          id: string
+          ijs_key: string | null
+          linked_by: string | null
+          skater_name: string
+        }
+        Insert: {
+          athlete_id: string
+          club?: string
+          competition_id: string
+          created_at?: string
+          id?: string
+          ijs_key?: string | null
+          linked_by?: string | null
+          skater_name: string
+        }
+        Update: {
+          athlete_id?: string
+          club?: string
+          competition_id?: string
+          created_at?: string
+          id?: string
+          ijs_key?: string | null
+          linked_by?: string | null
+          skater_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "athlete_competition_skaters_athlete_id_fkey"
+            columns: ["athlete_id"]
+            isOneToOne: false
+            referencedRelation: "athletes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "athlete_competition_skaters_competition_id_fkey"
+            columns: ["competition_id"]
+            isOneToOne: false
+            referencedRelation: "competitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       athlete_goals: {
         Row: {
           athlete_id: string
@@ -913,6 +1030,203 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      competition_attendance: {
+        Row: {
+          athlete_id: string | null
+          competition_id: string
+          dismissed_at: string | null
+          first_seen_at: string
+          id: string
+          recap_done_at: string | null
+          skater_name: string
+          user_id: string
+        }
+        Insert: {
+          athlete_id?: string | null
+          competition_id: string
+          dismissed_at?: string | null
+          first_seen_at?: string
+          id?: string
+          recap_done_at?: string | null
+          skater_name?: string
+          user_id: string
+        }
+        Update: {
+          athlete_id?: string | null
+          competition_id?: string
+          dismissed_at?: string | null
+          first_seen_at?: string
+          id?: string
+          recap_done_at?: string | null
+          skater_name?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competition_attendance_athlete_id_fkey"
+            columns: ["athlete_id"]
+            isOneToOne: false
+            referencedRelation: "athletes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competition_attendance_competition_id_fkey"
+            columns: ["competition_id"]
+            isOneToOne: false
+            referencedRelation: "competitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      competition_recaps: {
+        Row: {
+          athlete_id: string
+          author_role: string
+          author_user_id: string
+          body: string
+          competition_id: string
+          created_at: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          athlete_id: string
+          author_role: string
+          author_user_id: string
+          body: string
+          competition_id: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          athlete_id?: string
+          author_role?: string
+          author_user_id?: string
+          body?: string
+          competition_id?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competition_recaps_athlete_id_fkey"
+            columns: ["athlete_id"]
+            isOneToOne: false
+            referencedRelation: "athletes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competition_recaps_competition_id_fkey"
+            columns: ["competition_id"]
+            isOneToOne: false
+            referencedRelation: "competitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      competition_snapshots: {
+        Row: {
+          competition_id: string
+          error: string | null
+          fetch_count: number
+          generated_at: string | null
+          orders: Json
+          payload: Json
+          refreshing_at: string | null
+          skater_index: Json
+          updated_at: string
+          venues: Json
+          view_count: number
+        }
+        Insert: {
+          competition_id: string
+          error?: string | null
+          fetch_count?: number
+          generated_at?: string | null
+          orders?: Json
+          payload?: Json
+          refreshing_at?: string | null
+          skater_index?: Json
+          updated_at?: string
+          venues?: Json
+          view_count?: number
+        }
+        Update: {
+          competition_id?: string
+          error?: string | null
+          fetch_count?: number
+          generated_at?: string | null
+          orders?: Json
+          payload?: Json
+          refreshing_at?: string | null
+          skater_index?: Json
+          updated_at?: string
+          venues?: Json
+          view_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competition_snapshots_competition_id_fkey"
+            columns: ["competition_id"]
+            isOneToOne: true
+            referencedRelation: "competitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      competitions: {
+        Row: {
+          active: boolean
+          comp_id: string
+          created_at: string
+          created_by: string | null
+          dates_label: string
+          ends_on: string | null
+          id: string
+          ijs_base_url: string
+          location: string
+          name: string
+          slug: string
+          starts_on: string | null
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          active?: boolean
+          comp_id: string
+          created_at?: string
+          created_by?: string | null
+          dates_label?: string
+          ends_on?: string | null
+          id?: string
+          ijs_base_url: string
+          location?: string
+          name?: string
+          slug: string
+          starts_on?: string | null
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          active?: boolean
+          comp_id?: string
+          created_at?: string
+          created_by?: string | null
+          dates_label?: string
+          ends_on?: string | null
+          id?: string
+          ijs_base_url?: string
+          location?: string
+          name?: string
+          slug?: string
+          starts_on?: string | null
+          updated_at?: string
+          year?: number
+        }
+        Relationships: []
       }
       deleted_accounts: {
         Row: {
