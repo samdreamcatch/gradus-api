@@ -914,6 +914,104 @@ export type Database = {
           },
         ]
       }
+      competition_snapshots: {
+        Row: {
+          competition_id: string
+          error: string | null
+          fetch_count: number
+          generated_at: string | null
+          orders: Json
+          payload: Json
+          refreshing_at: string | null
+          updated_at: string
+          venues: Json
+          view_count: number
+        }
+        Insert: {
+          competition_id: string
+          error?: string | null
+          fetch_count?: number
+          generated_at?: string | null
+          orders?: Json
+          payload?: Json
+          refreshing_at?: string | null
+          updated_at?: string
+          venues?: Json
+          view_count?: number
+        }
+        Update: {
+          competition_id?: string
+          error?: string | null
+          fetch_count?: number
+          generated_at?: string | null
+          orders?: Json
+          payload?: Json
+          refreshing_at?: string | null
+          updated_at?: string
+          venues?: Json
+          view_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competition_snapshots_competition_id_fkey"
+            columns: ["competition_id"]
+            isOneToOne: true
+            referencedRelation: "competitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      competitions: {
+        Row: {
+          active: boolean
+          comp_id: string
+          created_at: string
+          created_by: string | null
+          dates_label: string
+          ends_on: string | null
+          id: string
+          ijs_base_url: string
+          location: string
+          name: string
+          slug: string
+          starts_on: string | null
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          active?: boolean
+          comp_id: string
+          created_at?: string
+          created_by?: string | null
+          dates_label?: string
+          ends_on?: string | null
+          id?: string
+          ijs_base_url: string
+          location?: string
+          name?: string
+          slug: string
+          starts_on?: string | null
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          active?: boolean
+          comp_id?: string
+          created_at?: string
+          created_by?: string | null
+          dates_label?: string
+          ends_on?: string | null
+          id?: string
+          ijs_base_url?: string
+          location?: string
+          name?: string
+          slug?: string
+          starts_on?: string | null
+          updated_at?: string
+          year?: number
+        }
+        Relationships: []
+      }
       deleted_accounts: {
         Row: {
           created_at: string
