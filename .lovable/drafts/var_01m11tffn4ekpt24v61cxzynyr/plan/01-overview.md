@@ -1,13 +1,26 @@
-# Why adding a competition errors
+# Competition scores as coaching data
 
-The Live Board admin screen is complete, but the two database tables it writes to — the competition list and the cached scoreboard snapshot — do not exist in the live backend yet. I confirmed this by querying the database: neither table is present.
+Today the Live Board is a viewer: each competition keeps one snapshot blob that is
+overwritten on every refresh, and "following" a skater lives only in the browser.
+Nothing in the database says a skater on the board is a Gradus athlete, and no
+score survives the next refresh.
 
-They are staged as a pending change inside this draft. Draft changes to the database structure are only applied when the draft is accepted, so right now every "Add competition" click reads the event fine, then fails the moment it tries to save.
+To later generate practice plans from an athlete's scores, two things must exist
+first: a **claim** that ties a board skater to an athlete, and a **durable score
+history** written for claimed athletes only.
 
-## What to do
+## What gets built
 
-1. Accept this draft. That applies the staged tables, grants, and public-read policies.
-2. Re-try adding the event (for example IJS id `36666`) from Admin → Competitions.
-3. If it still errors after that, the failure is in the results fetch rather than storage, and I will capture the exact message and fix that next.
+1. **Claim a skater.** On the board, a coach, parent, or athlete sees "Is this your
+   skater?" next to a name that plausibly matches an athlete they already have
+   access to. They confirm, and the link is stored. Anyone with write access to that
+   athlete can unlink it later.
+2. **Score history for claimed athletes.** Every snapshot refresh writes durable rows
+   for claimed skaters only — placement, segment scores, and the full judged protocol
+   (elements, base value, GOE, program components, deductions). Unclaimed skaters
+   stay in the ephemeral snapshot exactly as now.
+3. **A scores view on the athlete.** Coaches see a per-athlete competition history
+   with element-level detail. This is the surface a future plan generator reads from.
 
-No code changes are needed for step 1 — the admin page, scraper, refresh job, QR code, and public `/board/<slug>` route are already built and wired to these tables.
+Plan generation itself is not in this phase — but once these rows exist, it is
+ordinary work against the plans and moves tables we already have.
