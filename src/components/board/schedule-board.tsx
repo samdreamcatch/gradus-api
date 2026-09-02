@@ -147,6 +147,11 @@ export function ScheduleBoard({
                     {e.rink ? (
                       <span className="font-mono text-nano text-text-tertiary">{e.rink}</span>
                     ) : null}
+                    {e.status === "live" ? (
+                      <Tag size="nano" tone="accent">
+                        LIVE
+                      </Tag>
+                    ) : null}
                     {mine.length ? (
                       <Tag size="nano" tone="accent">
                         {mine.length > 1 ? `${mine.length} OF YOURS` : "YOUR SKATER"}
