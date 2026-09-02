@@ -10,6 +10,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { writeBoardReturn } from "@/lib/board-follow-store";
 
 const ROLES = [
   { key: "parent", label: "I'm a parent", to: "/signup/parent" as const },
@@ -64,7 +65,10 @@ export function BoardAccountSheet({
             <Link
               to="/login"
               search={{ redirect }}
-              onClick={() => setOpen(false)}
+              onClick={() => {
+                writeBoardReturn(redirect);
+                setOpen(false);
+              }}
               className="press block"
             >
               <Card variant="row" className="text-center">
@@ -80,7 +84,10 @@ export function BoardAccountSheet({
                 <Link
                   key={r.key}
                   to={r.to}
-                  onClick={() => setOpen(false)}
+                  onClick={() => {
+                    writeBoardReturn(redirect);
+                    setOpen(false);
+                  }}
                   className="press block"
                 >
                   <Card variant="row">
