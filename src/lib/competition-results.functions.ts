@@ -47,9 +47,14 @@ export interface AthleteCompetitionLinkDTO {
 
 /* ------------------------------------------------------------- guard rails */
 
-async function getAdmin() {
+/**
+ * The competition tables are created by a staged migration, so they are not in
+ * the generated types yet — reach them through the same loose accessor the
+ * board functions use.
+ */
+async function getAdmin(): Promise<{ from: (t: string) => any }> {
   const m = await import("@/integrations/supabase/client.server");
-  return m.supabaseAdmin;
+  return m.supabaseAdmin as unknown as { from: (t: string) => any };
 }
 
 /**
