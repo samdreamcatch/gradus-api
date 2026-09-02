@@ -1,44 +1,48 @@
-# Competition scores as coaching data
+# Competition results → draft practice plan
 
-Today the Live Board is a viewer: each competition keeps one snapshot blob that is
-overwritten on every refresh, and "following" a skater lives only in the browser.
-Nothing in the database says a skater on the board is a Gradus athlete, and no
-score survives the next refresh.
+A coach-initiated flow, available after a competition finishes. It starts from an
+athlete the coach already coaches — never from the board, never from a name search.
 
-To later generate practice plans from an athlete's scores, two things must exist
-first: a **claim** that ties a board skater to an athlete, and a **durable score
-history** written for claimed athletes only.
+```text
+Athlete page  →  "Link to competition results"  →  likely matches from the board
+              →  coach confirms the match       →  scores + protocol saved
+              →  "Generate draft plan"          →  editable draft plan
+```
 
-## Claiming is an existing-relationship action, not a following action
+## Why this is the safe shape
 
-Following is public and anonymous — anyone at the rink can follow any skater, and
-that stays true. Claiming is different and is gated on a relationship Gradus already
-knows about:
+Following a skater on the board stays public and anonymous. Linking is a different
+act and is locked down three ways:
 
-- The claim starts **from the athlete, not from the board**. The person picks one of
-  their own athletes and attaches a skater to it. Nobody types in a stranger's name.
-- The list of athletes they can pick from is built server-side from the existing
-  access rules: a coach sees only rostered athletes, a parent or guardian only their
-  own, an athlete only themselves. A follower with no relationship sees no claim
-  option at all — the control never renders and the server rejects the call.
-- Nothing about a claim is public. It does not appear on the board, and it does not
-  reveal that a skater has a Gradus account.
+- **Coach-only, and only their own roster.** The entry point lives on the athlete's
+  page inside the coach's roster. There is no way to reach it from the board, so a
+  spectator following a minor has nothing to click and no endpoint to call.
+- **The athlete is chosen before the skater.** The coach picks the athlete they
+  already coach; the app then offers matching skater names from that competition.
+  A coach can never attach results to an athlete outside their roster — the server
+  builds the athlete list from the existing roster link, ignoring anything the client
+  sends.
+- **Nothing is published.** The link is private to that athlete's existing circle. It
+  does not appear on the board and does not reveal that a skater has a Gradus account.
 
-That means a claim can never create a new link between a person and a minor. It can
-only annotate a link that already exists and was already vetted by the invite,
-guardian, and roster flows.
+Because a link can only annotate a coach-athlete relationship that already passed
+through the invite and guardian flows, it cannot create new access to a minor.
 
 ## What gets built
 
-1. **Claim a skater from an athlete.** On the athlete's page (and, for a viewer who
-   already has access, from the board), "link this athlete to a competition skater"
-   shows likely matches in the current event and stores the confirmed link.
-2. **Score history for claimed athletes.** Every snapshot refresh writes durable rows
-   for claimed skaters only — placement, segment scores, and the full judged protocol
-   (elements, base value, GOE, program components, deductions). Unclaimed skaters
-   stay in the ephemeral snapshot exactly as now.
-3. **A scores view on the athlete.** Coaches see a per-athlete competition history
-   with element-level detail. This is the surface a future plan generator reads from.
+1. **Link to competition results** on the athlete page: shows likely skater matches
+   from recent finished competitions, ordered by name similarity, with club and event
+   shown so the coach can tell two same-named skaters apart. Confirm to link; unlink
+   any time.
+2. **Durable score history** for linked athletes only — placement, segment scores, and
+   the full judged protocol (elements, base value, GOE, program components,
+   deductions). Unlinked skaters stay in the ephemeral board snapshot as they are now.
+3. **Generate draft plan**: the coach sends the protocol to the AI plan generator and
+   gets an editable draft plan — weak elements become moves, low components become
+   focus notes. It lands as a draft the coach reviews and edits before sharing, exactly
+   like today's AI-generated plans.
 
-Plan generation itself is not in this phase — but once these rows exist, it is
-ordinary work against the plans and moves tables we already have.
+## Availability
+
+Only after the competition's results are final, so the protocol is complete. Live
+events show nothing to link.
