@@ -1,0 +1,37 @@
+<svg viewBox="0 0 640 220" xmlns="http://www.w3.org/2000/svg" style="font-family: var(--font-sans)">
+  <style>
+    .lbl { font-size: 14px; font-weight: 480; fill: hsl(var(--foreground)); }
+    .note { font-size: 12px; fill: hsl(var(--muted-foreground)); }
+    .bx { fill: none; stroke: hsl(var(--muted-foreground)); stroke-width: 1; }
+    .wire { stroke: hsl(var(--muted-foreground)); stroke-width: 1; fill: none; }
+  </style>
+  <defs>
+    <marker id="a" viewBox="0 0 8 8" refX="6" refY="4" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0 0 L8 4 L0 8" fill="none" stroke="hsl(var(--muted-foreground))" stroke-width="1"/>
+    </marker>
+  </defs>
+
+  <rect class="bx" x="10" y="50" width="140" height="52" rx="8"/>
+  <text class="lbl" x="80" y="72" text-anchor="middle">Add competition</text>
+  <text class="note" x="80" y="90" text-anchor="middle">admin form</text>
+
+  <line class="wire" x1="152" y1="76" x2="196" y2="76" marker-end="url(#a)"/>
+
+  <rect class="bx" x="200" y="50" width="150" height="52" rx="8"/>
+  <text class="lbl" x="275" y="72" text-anchor="middle">Read IJS event</text>
+  <text class="note" x="275" y="90" text-anchor="middle">works today</text>
+
+  <line class="wire" x1="352" y1="76" x2="396" y2="76" marker-end="url(#a)"/>
+
+  <rect x="400" y="50" width="180" height="52" rx="8" fill="hsl(var(--accent))" fill-opacity="0.18" stroke="hsl(var(--accent))"/>
+  <text class="lbl" x="490" y="72" text-anchor="middle">Save to tables</text>
+  <text class="note" x="490" y="90" text-anchor="middle">tables missing — fails here</text>
+
+  <circle cx="24" cy="150" r="10" fill="hsl(var(--accent))"/>
+  <text x="24" y="154" text-anchor="middle" style="font-size:12px" fill="hsl(var(--accent-foreground))">1</text>
+  <text class="note" x="44" y="154">Competition list + snapshot tables are staged in this draft, not yet in the live backend.</text>
+
+  <circle cx="24" cy="184" r="10" fill="hsl(var(--accent))"/>
+  <text x="24" y="188" text-anchor="middle" style="font-size:12px" fill="hsl(var(--accent-foreground))">2</text>
+  <text class="note" x="44" y="188">Accepting the draft applies them; the save step then completes and /board/&lt;slug&gt; goes live.</text>
+</svg>
