@@ -175,25 +175,28 @@ function AthleteDetailBody({ athleteId }: { athleteId: string }) {
 
       {/* AI Summary */}
       <section>
-        <div className="flex items-center justify-between">
-          <SectionHeading>
+        <SectionHeader
+          title={
             <span className="inline-flex items-center gap-1.5">
               <Sparkles className="h-3.5 w-3.5" />
               Last {d.windowDays} days
             </span>
-          </SectionHeading>
-          <button
-            type="button"
-            onClick={() => summary.refetch()}
-            disabled={summary.isFetching || !d.hasAnySignal}
-            className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-text-tertiary hover:text-text-primary disabled:opacity-40"
-          >
-            <RefreshCw className={cn("h-3 w-3", summary.isFetching && "animate-spin")} />
-            Refresh
-          </button>
-        </div>
+          }
+          action={
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => summary.refetch()}
+              disabled={summary.isFetching || !d.hasAnySignal}
+            >
+              <RefreshCw className={cn(summary.isFetching && "animate-spin")} />
+              Refresh
+            </Button>
+          }
+        />
 
-        <div className="mt-2 rounded-xl border border-divider bg-card p-4">
+        <Card variant="row" className="mt-2">
           <ActivityCounts
             practiceMinutesTotal={d.activity.practiceMinutesTotal}
             lessonMinutesTotal={d.activity.lessonMinutesTotal}
@@ -225,18 +228,19 @@ function AthleteDetailBody({ athleteId }: { athleteId: string }) {
               ) : null}
             </>
           ) : null}
-        </div>
+        </Card>
       </section>
 
       {/* Plans */}
       <section className="pb-2">
-        <SectionHeading>Plans</SectionHeading>
+        <SectionHeader title="Plans" />
         {d.plans.length === 0 ? (
           <EmptyLine>No active or benched plans for {d.firstName} yet.</EmptyLine>
         ) : (
           <PlansList plans={d.plans} />
         )}
       </section>
+
 
       {/* Competition results (private to this athlete's circle) */}
       <CompetitionResultsSection athleteId={athleteId} firstName={d.firstName} />
