@@ -537,23 +537,24 @@ function PracticeMetric({ summary }: { summary?: AthletePracticeSummary }) {
   const dash = Math.max(0, Math.min(100, ratio * 100));
 
   return (
-    <div className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-divider/60 bg-card/60 p-3">
+    <div className="mb-3 flex items-center justify-between gap-3 rounded-md border border-divider/60 bg-card/60 px-3 py-2">
       <div className="min-w-0">
-        <div className="mb-1 text-[10px] font-bold uppercase tracking-widest text-text-tertiary">
-          PRACTICE SINCE LAST LESSON
+        <div className="mb-0.5 text-[10px] font-bold uppercase tracking-widest text-text-tertiary">
+          Practice since last lesson
         </div>
         <div className="flex items-baseline gap-1.5">
-          <span className="font-display text-3xl font-black leading-none text-text-primary tabular-nums">
+          <span className="font-display text-xl font-black leading-none text-text-primary tabular-nums">
             {hoursStr}h
           </span>
           {hasGoal ? (
-            <span className="font-display text-base text-text-tertiary tabular-nums">
+            <span className="text-xs text-text-tertiary tabular-nums">
               / {expectedHoursPerWeek}h goal
             </span>
           ) : (
             <span className="text-xs text-text-tertiary">no weekly goal set</span>
           )}
         </div>
+
       </div>
 
       {hasGoal ? (
