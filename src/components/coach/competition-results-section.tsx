@@ -80,6 +80,8 @@ export function CompetitionResultsSection({
   });
 
   const links = results.data ?? [];
+  const visible = showAll ? links : links.slice(0, VISIBLE_LIMIT);
+
 
   return (
     <section>
