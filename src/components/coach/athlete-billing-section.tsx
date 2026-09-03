@@ -106,7 +106,12 @@ export function AthleteBillingSection({ athleteId }: { athleteId: string }) {
               : "No rate set yet"}
           </p>
         </div>
-        <Button type="button" size="sm" onClick={() => setGenerateFor(athleteId)}>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          onClick={() => setGenerateFor(athleteId)}
+        >
           <Receipt className="size-4" aria-hidden />
           Generate invoice
         </Button>
