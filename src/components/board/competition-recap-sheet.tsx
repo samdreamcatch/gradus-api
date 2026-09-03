@@ -156,7 +156,7 @@ export function CompetitionRecapSheet({
               onChange={(e) => setBody(e.target.value)}
               rows={6}
               maxLength={2000}
-              placeholder="A few lines is plenty."
+              placeholder="Feedback from judges can be particularly helpful to document"
             />
           </div>
 
