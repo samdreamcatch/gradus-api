@@ -26,7 +26,7 @@ type CardBaseProps = React.HTMLAttributes<HTMLDivElement> & {
   variant?: CardVariant;
   /** Render as a different element (e.g. `article`, `section`). Default `div`. */
   asChild?: never;
-  as?: "div" | "article" | "section";
+  as?: "div" | "article" | "section" | "li";
 };
 
 const Card = React.forwardRef<HTMLDivElement, CardBaseProps>(

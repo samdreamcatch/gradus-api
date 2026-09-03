@@ -11,8 +11,9 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
-import { Eyebrow } from "@/components/ui/eyebrow";
 import { Tag } from "@/components/ui/tag";
+import { SectionHeader, EmptyLine } from "@/components/coach/athlete-section";
+
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { ScoreSheet } from "@/components/board/score-sheet";
 
@@ -110,15 +111,14 @@ export function CompetitionResultsSection({
 
   return (
     <section>
-      <div className="flex items-center justify-between">
-        <Eyebrow size="micro" tone="tertiary" as="h3">
-          Competition results
-        </Eyebrow>
-
-        <Button type="button" size="sm" variant="outline" onClick={() => setLinkOpen(true)}>
-          Link results
-        </Button>
-      </div>
+      <SectionHeader
+        title="Competition results"
+        action={
+          <Button type="button" size="sm" variant="outline" onClick={() => setLinkOpen(true)}>
+            Link results
+          </Button>
+        }
+      />
 
       {results.isLoading ? (
         <div className="mt-2 flex items-center gap-2 text-sm text-text-tertiary">
@@ -126,17 +126,16 @@ export function CompetitionResultsSection({
           Loading results…
         </div>
       ) : links.length === 0 ? (
-        <p className="mt-2 text-sm text-text-secondary">
-          No competition results linked for {firstName} yet.
-        </p>
+        <EmptyLine>No competition results linked for {firstName} yet.</EmptyLine>
       ) : (
         <>
           <Accordion
             type="single"
             collapsible
             defaultValue={links[0]?.competitionId}
-            className="mt-2 overflow-hidden rounded-xl border border-divider bg-card"
+            className="mt-2 overflow-hidden rounded-2xl border border-divider bg-card shadow-sm"
           >
+
             {visible.map((l) => (
               <AccordionItem
                 key={l.competitionId}

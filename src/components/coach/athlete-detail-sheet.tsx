@@ -20,9 +20,13 @@ import { AlsoCoachedByList } from "@/components/coach/also-coached-by-list";
 import { OtherCoachPlansSheet } from "@/components/coach/other-coach-plans-sheet";
 import { AthleteBillingSection } from "@/components/coach/athlete-billing-section";
 import { CompetitionResultsSection } from "@/components/coach/competition-results-section";
-
+import { SectionHeader, EmptyLine } from "@/components/coach/athlete-section";
+import { Card } from "@/components/ui/card";
+import { Eyebrow } from "@/components/ui/eyebrow";
+import { Tag } from "@/components/ui/tag";
 
 import { cn } from "@/lib/utils";
+
 import {
   getCoachAthleteDetail,
   getCoachAthleteAiSummary,
@@ -140,9 +144,9 @@ function AthleteDetailBody({ athleteId }: { athleteId: string }) {
 
       {/* Goals */}
       <section>
-        <SectionHeading>
-          {d.selfManaged ? "GOALS FROM ATHLETE" : "GOALS FROM PARENT & ATHLETE"}
-        </SectionHeading>
+        <SectionHeader
+          title={d.selfManaged ? "Goals from athlete" : "Goals from parent & athlete"}
+        />
         {d.goals.length === 0 ? (
           <EmptyLine>
             {d.coachedSports.length > 0
@@ -152,39 +156,14 @@ function AthleteDetailBody({ athleteId }: { athleteId: string }) {
                 : `${d.parentFirstName ?? d.firstName} hasn't set goals yet.`}
           </EmptyLine>
         ) : (
-          <ul className="mt-2 space-y-3">
-            {d.goals.map((g) => (
-              <li key={g.sport} className="rounded-xl border border-divider bg-card p-3">
-                <div className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
-                  {g.sportLabel}
-                </div>
-                <div className="mt-1 flex items-baseline gap-2 text-sm">
-                  <span className="font-bold text-text-primary">{g.currentLevelLabel}</span>
-                  <span className="text-text-tertiary">→</span>
-                  <span className="font-bold text-text-primary">{g.seasonGoalLabel}</span>
-                  <span className="text-[10px] uppercase tracking-widest text-text-tertiary">
-                    this season
-                  </span>
-                </div>
-                {g.longTermGoal ? (
-                  <p className="mt-2 text-sm text-text-secondary">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-text-tertiary">
-                      Long-term
-                    </span>
-                    <br />
-                    {g.longTermGoal}
-                  </p>
-                ) : null}
-              </li>
-            ))}
-          </ul>
+          <GoalsList goals={d.goals} />
         )}
       </section>
 
       {/* Practice expectations */}
       {d.practiceTargets.length > 0 ? (
         <section>
-          <SectionHeading>PRACTICE EXPECTATIONS</SectionHeading>
+          <SectionHeader title="Practice expectations" />
           <p className="mt-1 text-xs text-text-tertiary">
             What {d.firstName} should practice on their own each week. Starts from the Gradus
             default for their level.
@@ -197,27 +176,31 @@ function AthleteDetailBody({ athleteId }: { athleteId: string }) {
         </section>
       ) : null}
 
+
       {/* AI Summary */}
       <section>
-        <div className="flex items-center justify-between">
-          <SectionHeading>
+        <SectionHeader
+          title={
             <span className="inline-flex items-center gap-1.5">
               <Sparkles className="h-3.5 w-3.5" />
               Last {d.windowDays} days
             </span>
-          </SectionHeading>
-          <button
-            type="button"
-            onClick={() => summary.refetch()}
-            disabled={summary.isFetching || !d.hasAnySignal}
-            className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-text-tertiary hover:text-text-primary disabled:opacity-40"
-          >
-            <RefreshCw className={cn("h-3 w-3", summary.isFetching && "animate-spin")} />
-            Refresh
-          </button>
-        </div>
+          }
+          action={
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => summary.refetch()}
+              disabled={summary.isFetching || !d.hasAnySignal}
+            >
+              <RefreshCw className={cn(summary.isFetching && "animate-spin")} />
+              Refresh
+            </Button>
+          }
+        />
 
-        <div className="mt-2 rounded-xl border border-divider bg-card p-4">
+        <Card variant="row" className="mt-2">
           <ActivityCounts
             practiceMinutesTotal={d.activity.practiceMinutesTotal}
             lessonMinutesTotal={d.activity.lessonMinutesTotal}
@@ -249,18 +232,19 @@ function AthleteDetailBody({ athleteId }: { athleteId: string }) {
               ) : null}
             </>
           ) : null}
-        </div>
+        </Card>
       </section>
 
       {/* Plans */}
       <section className="pb-2">
-        <SectionHeading>Plans</SectionHeading>
+        <SectionHeader title="Plans" />
         {d.plans.length === 0 ? (
           <EmptyLine>No active or benched plans for {d.firstName} yet.</EmptyLine>
         ) : (
           <PlansList plans={d.plans} />
         )}
       </section>
+
 
       {/* Competition results (private to this athlete's circle) */}
       <CompetitionResultsSection athleteId={athleteId} firstName={d.firstName} />
@@ -318,50 +302,31 @@ function SampleAthleteBody({
       </SheetHeader>
 
       <section>
-        <SectionHeading>GOALS FROM PARENT &amp; ATHLETE</SectionHeading>
-        <ul className="mt-2 space-y-3">
-          <li className="rounded-xl border border-divider bg-card p-3">
-            <div className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
-              {g.sportLabel}
-            </div>
-            <div className="mt-1 flex items-baseline gap-2 text-sm">
-              <span className="font-bold text-text-primary">{g.currentLevelLabel}</span>
-              <span className="text-text-tertiary">→</span>
-              <span className="font-bold text-text-primary">{g.seasonGoalLabel}</span>
-              <span className="text-[10px] uppercase tracking-widest text-text-tertiary">
-                this season
-              </span>
-            </div>
-            <p className="mt-2 text-sm text-text-secondary">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-text-tertiary">
-                Long-term
-              </span>
-              <br />
-              {g.longTermGoal}
-            </p>
-          </li>
-        </ul>
+        <SectionHeader title="Goals from parent &amp; athlete" />
+        <GoalsList goals={[g]} />
       </section>
 
       <section>
-        <SectionHeading>
-          <span className="inline-flex items-center gap-1.5">
-            <Sparkles className="h-3.5 w-3.5" />
-            Last {d.windowDays} days
-          </span>
-        </SectionHeading>
-        <div className="mt-2 rounded-xl border border-divider bg-card p-4">
+        <SectionHeader
+          title={
+            <span className="inline-flex items-center gap-1.5">
+              <Sparkles className="h-3.5 w-3.5" />
+              Last {d.windowDays} days
+            </span>
+          }
+        />
+        <Card variant="row" className="mt-2">
           <ActivityCounts
             practiceMinutesTotal={d.activity.practiceMinutesTotal}
             lessonMinutesTotal={d.activity.lessonMinutesTotal}
           />
           <p className="mt-3 text-sm leading-relaxed text-text-primary">{summary.summary}</p>
           <VerdictPill verdict={summary.verdict} rationale={summary.rationale} />
-        </div>
+        </Card>
       </section>
 
       <section>
-        <SectionHeading>Plans</SectionHeading>
+        <SectionHeader title="Plans" />
         <div className="mt-2">
           <PlanCard
             planId={d.plans[0].planId}
@@ -376,15 +341,15 @@ function SampleAthleteBody({
       {showBilling ? <AthleteBillingSection athleteId={athleteId} /> : null}
 
       <section className="pb-2">
-        <SectionHeading>Session feedback</SectionHeading>
+        <SectionHeader title="Session feedback" />
         <ul className="mt-2 space-y-2">
           {SAMPLE_SESSION_FEEDBACK.map((s) => (
-            <li key={s.daysAgo} className="rounded-xl border border-divider bg-card p-3">
-              <div className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
+            <Card as="li" variant="row" key={s.daysAgo}>
+              <Eyebrow size="micro" tone="tertiary" weight="black">
                 {s.daysAgo === 1 ? "Yesterday" : `${s.daysAgo} days ago`}
-              </div>
+              </Eyebrow>
               <p className="mt-1 text-sm text-text-secondary">{s.note}</p>
-            </li>
+            </Card>
           ))}
         </ul>
       </section>
@@ -399,13 +364,45 @@ function formatSportList(labels: string[]): string {
   return `${labels.slice(0, -1).join(", ")}, or ${labels[labels.length - 1]}`;
 }
 
-function SectionHeading({ children }: { children: React.ReactNode }) {
+type GoalRow = {
+  sport: string;
+  sportLabel: string;
+  currentLevelLabel: string;
+  seasonGoalLabel: string;
+  longTermGoal?: string | null;
+};
+
+/** One card per sport: where they are, where the season is headed, why. */
+function GoalsList({ goals }: { goals: GoalRow[] }) {
   return (
-    <h3 className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
-      {children}
-    </h3>
+    <ul className="mt-2 space-y-2">
+      {goals.map((g) => (
+        <Card as="li" variant="row" key={g.sport}>
+          <Eyebrow size="micro" tone="tertiary" weight="black">
+            {g.sportLabel}
+          </Eyebrow>
+          <div className="mt-1 flex items-baseline gap-2 text-sm">
+            <span className="font-bold text-text-primary">{g.currentLevelLabel}</span>
+            <span className="text-text-tertiary">→</span>
+            <span className="font-bold text-text-primary">{g.seasonGoalLabel}</span>
+            <Eyebrow size="micro" tone="tertiary" as="span">
+              this season
+            </Eyebrow>
+          </div>
+          {g.longTermGoal ? (
+            <div className="mt-2">
+              <Eyebrow size="micro" tone="tertiary">
+                Long-term
+              </Eyebrow>
+              <p className="mt-0.5 text-sm text-text-secondary">{g.longTermGoal}</p>
+            </div>
+          ) : null}
+        </Card>
+      ))}
+    </ul>
   );
 }
+
 
 type PlanRow = {
   planId: string;
@@ -442,7 +439,6 @@ function PlanRowCard({ p }: { p: PlanRow }) {
           <Button
             size="sm"
             variant="outline"
-            className="press h-8 rounded-full text-xs"
             disabled={adoptMutation.isPending}
             onClick={() => adoptMutation.mutate()}
           >
@@ -450,6 +446,7 @@ function PlanRowCard({ p }: { p: PlanRow }) {
           </Button>
         </div>
       ) : null}
+
     </div>
   );
 }
@@ -463,9 +460,9 @@ function PlansList({ plans }: { plans: PlanRow[] }) {
     <div className="mt-2 space-y-4">
       {active.length > 0 ? (
         <div className="space-y-2">
-          <div className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
+          <Eyebrow size="micro" tone="tertiary" weight="black">
             Active
-          </div>
+          </Eyebrow>
           <div className="space-y-3">
             {active.map((p) => (
               <PlanRowCard key={p.planId} p={p} />
@@ -476,10 +473,10 @@ function PlansList({ plans }: { plans: PlanRow[] }) {
 
       {benched.length > 0 ? (
         <Collapsible open={benchedOpen} onOpenChange={setBenchedOpen}>
-          <CollapsibleTrigger className="flex w-full items-center justify-between text-left">
-            <span className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
+          <CollapsibleTrigger className="press-soft flex w-full items-center justify-between text-left">
+            <Eyebrow size="micro" tone="tertiary" weight="black" as="span">
               Benched ({benched.length})
-            </span>
+            </Eyebrow>
             <ChevronDown
               className={cn(
                 "h-3.5 w-3.5 text-text-tertiary transition-transform",
@@ -498,13 +495,6 @@ function PlansList({ plans }: { plans: PlanRow[] }) {
   );
 }
 
-function EmptyLine({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="mt-2 rounded-xl border border-dashed border-divider bg-card/40 px-3 py-4 text-sm text-text-tertiary">
-      {children}
-    </p>
-  );
-}
 
 function ActivityCounts({
   practiceMinutesTotal,
@@ -520,17 +510,17 @@ function ActivityCounts({
         <div className="font-display text-xl font-black tabular-nums text-text-primary">
           {fmt(practiceMinutesTotal)}
         </div>
-        <div className="text-[10px] font-bold uppercase tracking-widest text-text-tertiary">
+        <Eyebrow size="micro" tone="tertiary">
           Total practice hrs
-        </div>
+        </Eyebrow>
       </div>
       <div>
         <div className="font-display text-xl font-black tabular-nums text-text-primary">
           {fmt(lessonMinutesTotal)}
         </div>
-        <div className="text-[10px] font-bold uppercase tracking-widest text-text-tertiary">
+        <Eyebrow size="micro" tone="tertiary">
           Total lesson hrs
-        </div>
+        </Eyebrow>
       </div>
     </div>
   );
@@ -541,35 +531,39 @@ function VerdictPill({ verdict, rationale }: { verdict: Verdict; rationale: stri
     increase: {
       label: "Increase challenge",
       Icon: TrendingUp,
-      tone: "text-[var(--pen-tennis)]",
-      bg: "bg-[var(--pen-tennis)]/10 border-[var(--pen-tennis)]/30",
+      tone: "accent" as const,
+      surface: "border-accent/40 bg-accent/10",
+      ink: "text-accent-ink",
     },
     hold: {
       label: "Hold steady",
       Icon: Minus,
-      tone: "text-text-primary",
-      bg: "bg-elevated border-divider",
+      tone: "default" as const,
+      surface: "border-divider bg-elevated",
+      ink: "text-text-primary",
     },
     reduce: {
       label: "Ease off",
       Icon: TrendingDown,
-      tone: "text-[var(--pen-pool)]",
-      bg: "bg-[var(--pen-pool)]/10 border-[var(--pen-pool)]/30",
+      tone: "muted" as const,
+      surface: "border-divider bg-card",
+      ink: "text-text-secondary",
     },
   }[verdict];
   const Icon = config.Icon;
   return (
-    <div className={cn("mt-3 rounded-xl border p-3", config.bg)}>
+    <div className={cn("mt-3 rounded-2xl border p-4", config.surface)}>
       <div className="flex items-center gap-2">
-        <Icon className={cn("h-4 w-4", config.tone)} />
-        <span className={cn("text-sm font-black uppercase tracking-wider", config.tone)}>
+        <Icon className={cn("h-4 w-4", config.ink)} />
+        <Tag size="caption" tone={config.tone} mono={false}>
           {config.label}
-        </span>
+        </Tag>
       </div>
       <p className="mt-1.5 text-xs leading-relaxed text-text-secondary">{rationale}</p>
     </div>
   );
 }
+
 
 /** One editable weekly practice expectation for an athlete in one sport. */
 function PracticeTargetRow({
@@ -618,16 +612,17 @@ function PracticeTargetRow({
   const busy = saveMutation.isPending || resetMutation.isPending;
 
   return (
-    <div className="rounded-xl border border-divider bg-card p-3">
+    <Card variant="row">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <div className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
+          <Eyebrow size="micro" tone="tertiary" weight="black">
             {target.sportLabel}
-          </div>
+          </Eyebrow>
           <div className="mt-0.5 text-sm text-text-secondary">
             {target.currentLevelLabel ?? "No level set yet"}
           </div>
         </div>
+
         <div className="flex items-baseline gap-1.5">
           <Input
             type="number"
@@ -661,6 +656,7 @@ function PracticeTargetRow({
           </Button>
         </div>
       ) : null}
-    </div>
+    </Card>
+
   );
 }

@@ -4,7 +4,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Tag } from "@/components/ui/tag";
+import { SectionHeader, EmptyLine } from "@/components/coach/athlete-section";
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -95,38 +98,32 @@ export function AthleteBillingSection({ athleteId }: { athleteId: string }) {
 
   return (
     <section className="space-y-3">
-      <div className="flex items-center justify-between gap-3">
-        <div className="min-w-0">
-          <h3 className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
-            Billing
-          </h3>
-          <p className="mt-1 text-sm text-text-secondary">
-            {b.rate
-              ? `${formatMoneyShort(b.rate.rateCents)} ${b.rate.rateKind === "hourly" ? "per hour" : "per session"}`
-              : "No rate set yet"}
-          </p>
-        </div>
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          onClick={() => setGenerateFor(athleteId)}
-        >
-          
-          Generate invoice
-        </Button>
-      </div>
+      <SectionHeader
+        title="Billing"
+        action={
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={() => setGenerateFor(athleteId)}
+          >
+            Generate invoice
+          </Button>
+        }
+      />
+      <p className="text-sm text-text-secondary">
+        {b.rate
+          ? `${formatMoneyShort(b.rate.rateCents)} ${b.rate.rateKind === "hourly" ? "per hour" : "per session"}`
+          : "No rate set yet"}
+      </p>
 
       {b.invoices.length > 0 ? (
         <ul className="space-y-2">
           {b.invoices.map((inv) => (
-            <li
-              key={inv.id}
-              className="flex items-center gap-3 rounded-xl border border-divider bg-card p-3"
-            >
+            <Card as="li" variant="row" key={inv.id} className="flex items-center gap-3">
               <button
                 type="button"
-                className="min-w-0 flex-1 text-left"
+                className="press-soft min-w-0 flex-1 text-left"
                 onClick={() => setOpenInvoice(inv.id)}
               >
                 <div className="text-sm font-bold text-text-primary">
@@ -141,6 +138,7 @@ export function AthleteBillingSection({ athleteId }: { athleteId: string }) {
               </button>
               <button
                 type="button"
+                className="press-soft shrink-0"
                 onClick={() => {
                   const next = inv.status === "paid" ? "unpaid" : "paid";
                   if (isSample) {
@@ -151,7 +149,7 @@ export function AthleteBillingSection({ athleteId }: { athleteId: string }) {
                 }}
                 aria-label={inv.status === "paid" ? "Mark unpaid" : "Mark paid"}
               >
-                <Tag size="nano" tone={inv.status === "paid" ? "accent" : "default"}>
+                <Tag size="micro" tone={inv.status === "paid" ? "accent" : "default"}>
                   {inv.status}
                 </Tag>
               </button>
@@ -174,11 +172,12 @@ export function AthleteBillingSection({ athleteId }: { athleteId: string }) {
                   <Trash2 className="size-4" aria-hidden />
                 </Button>
               ) : null}
-            </li>
+            </Card>
           ))}
         </ul>
       ) : (
-        <p className="text-sm text-text-secondary">No invoices yet.</p>
+        <EmptyLine>No invoices yet.</EmptyLine>
+
       )}
 
       <InvoiceGenerateSheet athleteId={generateFor} onOpenChange={setGenerateFor} />
