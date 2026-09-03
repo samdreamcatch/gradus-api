@@ -649,45 +649,71 @@ export const getCoachPostEventItems = createServerFn({ method: "POST" })
 
     const linkedAthleteIds = [...new Set(linkRows.map((l) => l.athlete_id as string))];
     let names = new Map<string, string>();
+    let handledPlans: any[] = [];
     if (linkedAthleteIds.length) {
-      const ath = await admin
-        .from("athletes")
-        .select("id, first_name, last_name")
-        .in("id", linkedAthleteIds);
+      const [ath, plans] = await Promise.all([
+        admin.from("athletes").select("id, first_name, last_name").in("id", linkedAthleteIds),
+        admin
+          .from("plans")
+          .select("athlete_id, created_at, status")
+          .eq("coach_id", coachId)
+          .eq("source", "competition")
+          .neq("status", "draft")
+          .in("athlete_id", linkedAthleteIds),
+      ]);
       if (ath.error) dbError(ath.error);
+      if (plans.error) dbError(plans.error);
       names = new Map(
         (ath.data ?? []).map((a: any) => [
           a.id as string,
           `${a.first_name ?? ""} ${a.last_name ?? ""}`.trim() || "Athlete",
         ]),
       );
+      handledPlans = plans.data ?? [];
     }
 
-    return finished.map((c: any) => ({
-      competitionId: c.id as string,
-      competitionName: (c.name as string) || "the competition",
-      datesLabel: (c.dates_label as string) ?? "",
-      linked: linkRows
-        .filter((l) => l.competition_id === c.id)
-        .map((l) => {
-          const aid = l.athlete_id as string;
-          const summary = resultRows
-            .filter((r) => r.competition_id === c.id && r.athlete_id === aid)
-            .map((r) =>
-              [r.segment || r.event_name, r.placement ? `${r.placement}` : ""]
-                .filter(Boolean)
-                .join(" "),
-            )
-            .join(" · ");
-          return {
-            athleteId: aid,
-            name: names.get(aid) ?? "Athlete",
-            summary,
-            hasRecap: recapRows.some((r) => r.competition_id === c.id && r.athlete_id === aid),
-          };
-        }),
-    }));
+    /** An athlete is done once the coach activated a competition plan after the event. */
+    const isHandled = (athleteId: string, endsOn: string) =>
+      handledPlans.some(
+        (p) =>
+          p.athlete_id === athleteId &&
+          new Date(p.created_at as string) >= new Date(`${endsOn}T00:00:00Z`),
+      );
+
+    return finished
+      .map((c: any) => {
+        const compLinks = linkRows.filter((l) => l.competition_id === c.id);
+        const linked = compLinks
+          .filter((l) => !isHandled(l.athlete_id as string, c.ends_on as string))
+          .map((l) => {
+            const aid = l.athlete_id as string;
+            const summary = resultRows
+              .filter((r) => r.competition_id === c.id && r.athlete_id === aid)
+              .map((r) =>
+                [r.segment || r.event_name, r.placement ? `${r.placement}` : ""]
+                  .filter(Boolean)
+                  .join(" "),
+              )
+              .join(" · ");
+            return {
+              athleteId: aid,
+              name: names.get(aid) ?? "Athlete",
+              summary,
+              hasRecap: recapRows.some((r) => r.competition_id === c.id && r.athlete_id === aid),
+            };
+          });
+        // Every linked athlete has an activated plan — nothing left to do here.
+        if (compLinks.length && !linked.length) return null;
+        return {
+          competitionId: c.id as string,
+          competitionName: (c.name as string) || "the competition",
+          datesLabel: (c.dates_label as string) ?? "",
+          linked,
+        };
+      })
+      .filter((x: CoachPostEventItemDTO | null): x is CoachPostEventItemDTO => x !== null);
   });
+
 
 /** "No one competed here" — stop asking this coach about this event. */
 export const dismissCoachPostEvent = createServerFn({ method: "POST" })
