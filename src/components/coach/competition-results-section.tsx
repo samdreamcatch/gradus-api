@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Sparkles, Trophy } from "lucide-react";
 import { toast } from "sonner";
@@ -33,6 +34,7 @@ export function CompetitionResultsSection({
   firstName: string;
 }) {
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const fetchResults = useServerFn(getAthleteCompetitionResults);
   const generate = useServerFn(generatePlanFromResults);
   const unlink = useServerFn(unlinkAthleteCompetition);
@@ -55,6 +57,7 @@ export function CompetitionResultsSection({
     onSuccess: (r) => {
       toast.success(`Draft plan "${r.title}" created with ${r.moveCount} moves`);
       invalidate();
+      void navigate({ to: "/coach/plans/$planId", params: { planId: r.planId } });
     },
     onError: (e: Error) => toast.error(e.message),
   });
