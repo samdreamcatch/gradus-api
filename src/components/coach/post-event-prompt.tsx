@@ -63,19 +63,14 @@ export function CoachPostEventPrompt() {
 
   return (
     <>
-      <Card variant="section" className="mb-4">
+      <Card variant="row" className="mb-4">
         <SectionHeader title={`${item.competitionName} has ended`} />
-        <p className="mt-2 text-sm text-text-primary">
-          Did any of your athletes compete at {item.competitionName}?
-        </p>
         {item.linked.length ? (
-          <ul className="mt-3 space-y-2">
+          <ul className="mt-2 divide-y divide-divider">
             {item.linked.map((a) => (
-              <Card
-                as="li"
-                variant="row"
+              <li
                 key={a.athleteId}
-                className="flex flex-wrap items-center justify-between gap-2"
+                className="flex flex-wrap items-center justify-between gap-2 py-1.5 first:pt-0 last:pb-0"
               >
                 <span className="min-w-0 text-sm text-text-secondary">
                   <Check className="mr-1 inline h-3 w-3 text-accent-ink" aria-hidden />
@@ -85,7 +80,7 @@ export function CoachPostEventPrompt() {
                 <Button
                   type="button"
                   size="sm"
-                  variant="outline"
+                  variant="ghost"
                   disabled={draft.isPending}
                   onClick={() =>
                     draft.mutate({ athleteId: a.athleteId, competitionId: item.competitionId })
@@ -98,13 +93,17 @@ export function CoachPostEventPrompt() {
                   )}
                   Draft plan
                 </Button>
-              </Card>
+              </li>
             ))}
           </ul>
-        ) : null}
-        <div className="mt-3 flex flex-wrap gap-2">
-          <Button type="button" size="sm" onClick={() => setActive(item)}>
-            {item.linked.length ? "Link more athletes" : "Yes, link athletes"}
+        ) : (
+          <p className="mt-1 text-sm text-text-secondary">
+            Did any of your athletes compete there?
+          </p>
+        )}
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <Button type="button" size="sm" variant="outline" onClick={() => setActive(item)}>
+            {item.linked.length ? "Link more" : "Yes, link athletes"}
           </Button>
           <Button
             type="button"
@@ -118,6 +117,7 @@ export function CoachPostEventPrompt() {
           </Button>
         </div>
       </Card>
+
 
 
 
