@@ -456,9 +456,9 @@ function PlansList({ plans }: { plans: PlanRow[] }) {
     <div className="mt-2 space-y-4">
       {active.length > 0 ? (
         <div className="space-y-2">
-          <div className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
+          <Eyebrow size="micro" tone="tertiary" weight="black">
             Active
-          </div>
+          </Eyebrow>
           <div className="space-y-3">
             {active.map((p) => (
               <PlanRowCard key={p.planId} p={p} />
@@ -469,10 +469,10 @@ function PlansList({ plans }: { plans: PlanRow[] }) {
 
       {benched.length > 0 ? (
         <Collapsible open={benchedOpen} onOpenChange={setBenchedOpen}>
-          <CollapsibleTrigger className="flex w-full items-center justify-between text-left">
-            <span className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
+          <CollapsibleTrigger className="press-soft flex w-full items-center justify-between text-left">
+            <Eyebrow size="micro" tone="tertiary" weight="black" as="span">
               Benched ({benched.length})
-            </span>
+            </Eyebrow>
             <ChevronDown
               className={cn(
                 "h-3.5 w-3.5 text-text-tertiary transition-transform",
@@ -491,13 +491,6 @@ function PlansList({ plans }: { plans: PlanRow[] }) {
   );
 }
 
-function EmptyLine({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="mt-2 rounded-xl border border-dashed border-divider bg-card/40 px-3 py-4 text-sm text-text-tertiary">
-      {children}
-    </p>
-  );
-}
 
 function ActivityCounts({
   practiceMinutesTotal,
