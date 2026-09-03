@@ -608,16 +608,17 @@ function PracticeTargetRow({
   const busy = saveMutation.isPending || resetMutation.isPending;
 
   return (
-    <div className="rounded-xl border border-divider bg-card p-3">
+    <Card variant="row">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <div className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
+          <Eyebrow size="micro" tone="tertiary" weight="black">
             {target.sportLabel}
-          </div>
+          </Eyebrow>
           <div className="mt-0.5 text-sm text-text-secondary">
             {target.currentLevelLabel ?? "No level set yet"}
           </div>
         </div>
+
         <div className="flex items-baseline gap-1.5">
           <Input
             type="number"
