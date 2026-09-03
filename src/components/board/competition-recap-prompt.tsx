@@ -44,7 +44,7 @@ export function CompetitionRecapPrompt() {
   return (
     <>
       <div className="px-4 pt-4">
-        <div className="rounded-xl border border-divider bg-card p-4 shadow-card">
+        <Card variant="section">
           <div className="flex items-start gap-3">
             <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent/15 text-accent-ink">
               <Trophy className="h-4 w-4" />
@@ -57,24 +57,21 @@ export function CompetitionRecapPrompt() {
                 Share a quick recap with your coach.
               </p>
               <div className="mt-3 flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setOpen(true)}
-                  className="press rounded-pill bg-accent px-4 py-2 text-sm font-bold text-accent-foreground"
-                >
+                <Button type="button" size="sm" onClick={() => setOpen(true)}>
                   Write recap
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
+                  size="sm"
+                  variant="ghost"
                   onClick={() => notNow.mutate(pending.competitionId)}
-                  className="press-soft rounded-pill px-3 py-2 text-[11px] font-black uppercase tracking-widest text-text-tertiary"
                 >
                   Not now
-                </button>
+                </Button>
               </div>
             </div>
           </div>
-        </div>
+        </Card>
       </div>
 
       <CompetitionRecapSheet
