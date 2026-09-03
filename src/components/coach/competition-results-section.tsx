@@ -71,7 +71,9 @@ export function CompetitionResultsSection({
   const unlink = useServerFn(unlinkAthleteCompetition);
 
   const [linkOpen, setLinkOpen] = useState(false);
+  const [showAll, setShowAll] = useState(false);
   const [detail, setDetail] = useState<AthleteResultDTO | null>(null);
+
 
   const results = useQuery({
     queryKey: ["athlete-competition-results", athleteId],
