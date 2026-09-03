@@ -59,9 +59,17 @@ function normalizeUnknownError(error: unknown): Error {
 function ErrorComponent({ error, reset }: { error: unknown; reset: () => void }) {
   const normalizedError = normalizeUnknownError(error);
   console.error(error ?? normalizedError);
+  const staleChunk = isModuleLoadError(error) || isModuleLoadError(normalizedError);
   useEffect(() => {
-    reportError(normalizedError, { metadata: { type: "router.errorComponent" } });
-  }, [normalizedError]);
+    reportError(normalizedError, {
+      metadata: { type: "router.errorComponent", staleChunk },
+    });
+  }, [normalizedError, staleChunk]);
+  // A missing JS chunk means the browser/service worker is holding a previous
+  // deploy. Clear caches and reload once instead of showing an error screen.
+  useEffect(() => {
+    if (staleChunk) recoverFromStaleChunks();
+  }, [staleChunk]);
   const router = useRouter();
   // In production, hide raw error messages — they can leak internal
   // schema names, constraint identifiers, or stack details. Developers
