@@ -20,9 +20,13 @@ import { AlsoCoachedByList } from "@/components/coach/also-coached-by-list";
 import { OtherCoachPlansSheet } from "@/components/coach/other-coach-plans-sheet";
 import { AthleteBillingSection } from "@/components/coach/athlete-billing-section";
 import { CompetitionResultsSection } from "@/components/coach/competition-results-section";
-
+import { SectionHeader, EmptyLine } from "@/components/coach/athlete-section";
+import { Card } from "@/components/ui/card";
+import { Eyebrow } from "@/components/ui/eyebrow";
+import { Tag } from "@/components/ui/tag";
 
 import { cn } from "@/lib/utils";
+
 import {
   getCoachAthleteDetail,
   getCoachAthleteAiSummary,
