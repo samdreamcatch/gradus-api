@@ -55,6 +55,7 @@ export function CompetitionResultsSection({
     onSuccess: (r) => {
       toast.success(`Draft plan "${r.title}" created with ${r.moveCount} moves`);
       invalidate();
+      void navigate({ to: "/coach/plans/$planId", params: { planId: r.planId } });
     },
     onError: (e: Error) => toast.error(e.message),
   });
