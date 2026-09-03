@@ -6,6 +6,8 @@ import type { RosterAthlete } from "@/lib/coach-roster.functions";
 import type { AthletePracticeSummary } from "@/lib/coach-schedule.functions";
 import { PreLessonBriefing } from "./pre-lesson-briefing";
 import { Button } from "@/components/ui/button";
+import { Eyebrow } from "@/components/ui/eyebrow";
+
 import { LessonSlotSheet, type LessonSlotSheetMode } from "./lesson-slot-sheet";
 
 
@@ -459,8 +461,8 @@ function LessonRow({
           <div className="px-4 pb-4">
             <PracticeMetric summary={summary} />
 
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              {onSelect ? (
+            {onSelect ? (
+              <div className="mt-3">
                 <Button
                   type="button"
                   variant="outline"
@@ -470,31 +472,40 @@ function LessonRow({
                 >
                   View athlete
                 </Button>
-              ) : null}
-              {onEditRecurring ? (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="rounded-pill text-text-secondary"
-                  onClick={onEditRecurring}
-                >
-                  <Pencil />
-                  Edit recurring
-                </Button>
-              ) : null}
-              {onEditOccurrence ? (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="rounded-pill text-text-secondary"
-                  onClick={onEditOccurrence}
-                >
-                  Just this date
-                </Button>
-              ) : null}
-            </div>
+              </div>
+            ) : null}
+
+            {onEditRecurring || onEditOccurrence ? (
+              <div className="mt-3 border-t border-divider pt-3">
+                <Eyebrow className="mb-2">Edit lesson</Eyebrow>
+                <div className="grid grid-cols-2 gap-2">
+                  {onEditRecurring ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="rounded-pill text-text-secondary"
+                      onClick={onEditRecurring}
+                    >
+                      <Pencil />
+                      Recurring
+                    </Button>
+                  ) : null}
+                  {onEditOccurrence ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="rounded-pill text-text-secondary"
+                      onClick={onEditOccurrence}
+                    >
+                      This date
+                    </Button>
+                  ) : null}
+                </div>
+              </div>
+            ) : null}
+
 
           </div>
         ) : null}
