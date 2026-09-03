@@ -11,8 +11,9 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
-import { Eyebrow } from "@/components/ui/eyebrow";
 import { Tag } from "@/components/ui/tag";
+import { SectionHeader, EmptyLine } from "@/components/coach/athlete-section";
+
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { ScoreSheet } from "@/components/board/score-sheet";
 
