@@ -60,23 +60,22 @@ export function CoachPostEventPrompt() {
 
   return (
     <>
-      <div className="mb-4 rounded-xl border border-divider bg-card px-4 py-3">
-        <Eyebrow size="micro" tone="tertiary" as="h2">
-          <Trophy className="mr-1 inline h-3 w-3" />
-          {item.competitionName} has ended
-        </Eyebrow>
-        <p className="mt-1 text-sm text-text-primary">
+      <Card variant="section" className="mb-4">
+        <SectionHeader title={`${item.competitionName} has ended`} />
+        <p className="mt-2 text-sm text-text-primary">
           Did any of your athletes compete at {item.competitionName}?
         </p>
         {item.linked.length ? (
-          <ul className="mt-2 space-y-2">
+          <ul className="mt-3 space-y-2">
             {item.linked.map((a) => (
-              <li
+              <Card
+                as="li"
+                variant="row"
                 key={a.athleteId}
                 className="flex flex-wrap items-center justify-between gap-2"
               >
-                <span className="min-w-0 text-xs text-text-secondary">
-                  <Check className="mr-1 inline h-3 w-3 text-accent-ink" />
+                <span className="min-w-0 text-sm text-text-secondary">
+                  <Check className="mr-1 inline h-3 w-3 text-accent-ink" aria-hidden />
                   {a.name}
                   {a.summary ? ` — ${a.summary}` : ""}
                 </span>
@@ -84,7 +83,6 @@ export function CoachPostEventPrompt() {
                   type="button"
                   size="sm"
                   variant="outline"
-                  className="rounded-pill"
                   disabled={draft.isPending}
                   onClick={() =>
                     draft.mutate({ athleteId: a.athleteId, competitionId: item.competitionId })
@@ -97,26 +95,27 @@ export function CoachPostEventPrompt() {
                   )}
                   Draft plan
                 </Button>
-              </li>
+              </Card>
             ))}
           </ul>
         ) : null}
         <div className="mt-3 flex flex-wrap gap-2">
-          <Button type="button" size="sm" className="rounded-pill" onClick={() => setActive(item)}>
+          <Button type="button" size="sm" onClick={() => setActive(item)}>
             {item.linked.length ? "Link more athletes" : "Yes, link athletes"}
           </Button>
           <Button
             type="button"
             variant="ghost"
             size="sm"
-            className="rounded-pill text-text-secondary"
+            className="text-text-secondary"
             disabled={dismissOne.isPending}
             onClick={() => dismissOne.mutate(item.competitionId)}
           >
             {item.linked.length ? "Done" : "No"}
           </Button>
         </div>
-      </div>
+      </Card>
+
 
 
 
