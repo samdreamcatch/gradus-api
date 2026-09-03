@@ -747,11 +747,10 @@ export const listCoachRosterForCompetition = createServerFn({ method: "POST" })
     const linked = new Set((links.data ?? []).map((r: any) => r.athlete_id as string));
     // Boards are figure skating only; if nobody has sport rows yet, don't hide everyone.
     const keep = (ath.data ?? []).filter((a: any) => inSport.size === 0 || inSport.has(a.id));
-    return keep
-      .map((a: any) => ({
-        athleteId: a.id as string,
-        name: `${a.first_name ?? ""} ${a.last_name ?? ""}`.trim() || "Athlete",
-        linked: linked.has(a.id as string),
-      }))
-      .sort((a, b) => a.name.localeCompare(b.name));
+    const out: CoachRosterCandidateDTO[] = keep.map((a: any) => ({
+      athleteId: a.id as string,
+      name: `${a.first_name ?? ""} ${a.last_name ?? ""}`.trim() || "Athlete",
+      linked: linked.has(a.id as string),
+    }));
+    return out.sort((a, b) => a.name.localeCompare(b.name));
   });
