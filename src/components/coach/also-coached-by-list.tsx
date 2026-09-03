@@ -62,25 +62,26 @@ export function AlsoCoachedByList({
                   Coach {c.firstName}{" "}
                   <span className={interactive ? "pen-highlight" : undefined}>{c.lastName}</span>
                 </div>
-                {c.sports.length > 0 ? (
-                  <div className="mt-1 flex flex-wrap gap-1">
-                    {c.sports.map((s) => (
-                      <span
-                        key={s.key}
-                        className="rounded-pill border border-divider bg-elevated px-2 py-0.5 text-[10px] font-medium text-text-secondary"
-                      >
-                        {s.label}
-                      </span>
-                    ))}
-                  </div>
-                ) : null}
-                {hasPlans && !isLocked ? (
-                  <p className="mt-1 font-hand text-[15px] text-text-secondary">{coachMeta(c)}</p>
-                ) : !hasPlans ? (
-                  <p className="mt-1 font-hand text-[15px] text-text-tertiary">
-                    No shared plans yet
-                  </p>
-                ) : null}
+                <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+                  {c.sports.map((s) => (
+                    <span
+                      key={s.key}
+                      className="rounded-pill border border-divider bg-elevated px-2 py-0.5 text-[10px] font-medium text-text-secondary"
+                    >
+                      {s.label}
+                    </span>
+                  ))}
+                  {hasPlans && !isLocked ? (
+                    <span className="font-hand text-[15px] text-text-secondary">
+                      {coachMeta(c)}
+                    </span>
+                  ) : !hasPlans ? (
+                    <span className="font-hand text-[15px] text-text-tertiary">
+                      No shared plans yet
+                    </span>
+                  ) : null}
+                </div>
+
                 {hasPlans && isLocked ? (
                   <div className="mt-2">
                     <span className="rounded-full bg-elevated px-2 py-0.5 text-[11px] font-semibold text-text-secondary">
