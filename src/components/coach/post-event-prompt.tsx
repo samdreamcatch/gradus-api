@@ -70,7 +70,7 @@ export function CoachPostEventPrompt() {
             <Button
               type="button"
               variant="ghost"
-              size="icon-sm"
+              size="icon"
               aria-label="Dismiss"
               className="-mr-1 text-text-tertiary"
               disabled={dismissOne.isPending}

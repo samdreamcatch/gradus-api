@@ -711,7 +711,7 @@ export const getCoachPostEventItems = createServerFn({ method: "POST" })
           linked,
         };
       })
-      .filter((x): x is CoachPostEventItemDTO => x !== null);
+      .filter((x: CoachPostEventItemDTO | null): x is CoachPostEventItemDTO => x !== null);
   });
 
 
