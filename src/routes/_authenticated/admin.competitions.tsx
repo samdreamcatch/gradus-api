@@ -3,7 +3,9 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { QRCodeSVG } from "qrcode.react";
+import { Copy } from "lucide-react";
 import { toast } from "sonner";
+import { ShareInviteButton } from "@/components/share/share-invite-button";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,6 +45,15 @@ export const Route = createFileRoute("/_authenticated/admin/competitions")({
 function boardUrl(slug: string) {
   const origin = typeof window === "undefined" ? "https://gradus.training" : window.location.origin;
   return `${origin}/board/${slug}`;
+}
+
+async function copyBoardLink(slug: string) {
+  try {
+    await navigator.clipboard.writeText(boardUrl(slug));
+    toast.success("Board link copied", { description: boardUrl(slug) });
+  } catch {
+    toast.success("Board link", { description: boardUrl(slug) });
+  }
 }
 
 function AdminCompetitions() {
@@ -174,7 +185,15 @@ function AdminCompetitions() {
                   Refresh now
                 </Button>
                 <Button type="button" size="sm" variant="outline" onClick={() => setQrFor(c)}>
-                  QR code
+                  QR &amp; link
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => copyBoardLink(c.slug)}
+                >
+                  <Copy className="size-4" aria-hidden /> Copy link
                 </Button>
                 <Button
                   type="button"
@@ -195,7 +214,7 @@ function AdminCompetitions() {
           <SheetHeader>
             <SheetTitle>{qrFor?.name}</SheetTitle>
             <SheetDescription>
-              Print this on the rink sign. Scanning it opens the live board.
+              Print the QR on the rink sign, or share the direct link.
             </SheetDescription>
           </SheetHeader>
           {qrFor ? (
@@ -203,7 +222,27 @@ function AdminCompetitions() {
               <div className="rounded-2xl border border-divider bg-card p-4">
                 <QRCodeSVG value={boardUrl(qrFor.slug)} size={220} />
               </div>
-              <p className="font-mono text-xs text-text-tertiary">{boardUrl(qrFor.slug)}</p>
+              <p className="w-full rounded-md border border-divider bg-elevated px-3 py-2 text-center font-mono text-xs break-all text-text-secondary">
+                {boardUrl(qrFor.slug)}
+              </p>
+              <div className="flex w-full flex-col gap-2 sm:flex-row">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => copyBoardLink(qrFor.slug)}
+                >
+                  <Copy className="size-4" aria-hidden /> Copy link
+                </Button>
+                <ShareInviteButton
+                  url={boardUrl(qrFor.slug)}
+                  title={qrFor.name}
+                  text={`Live results board for ${qrFor.name}`}
+                  label="Share link"
+                  variant="outline"
+                  className="flex-1"
+                />
+              </div>
             </div>
           ) : null}
         </SheetContent>
