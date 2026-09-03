@@ -524,6 +524,8 @@ Return an object with exactly these keys: "title" (the plan title, max 8 words, 
         kind: "plan",
         status: "draft",
         source: "competition",
+        source_competition_id: data.competitionId,
+
         title: object.title.trim(),
         notes: object.notes.trim(),
       })
