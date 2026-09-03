@@ -21,6 +21,7 @@ import { BiometricGate } from "@/components/native/biometric-gate";
 import { InstallBannerMount } from "@/components/install-banner-mount";
 import { PwaUpdatePrompt } from "@/components/pwa-update-prompt";
 import { installErrorReporter, reportError } from "@/lib/client-error-reporter";
+import { installChunkErrorRecovery, isModuleLoadError, recoverFromStaleChunks } from "@/pwa/chunk-recovery";
 import { PRE_HYDRATION_SNAPSHOT_SCRIPT } from "@/lib/hydration-diagnostics";
 import { ImpersonationBanner } from "@/components/admin/impersonation-banner";
 
@@ -164,6 +165,7 @@ function RootComponent() {
     registerServiceWorker();
     initNativeShell();
     installErrorReporter();
+    installChunkErrorRecovery();
   }, []);
   return (
     <QueryClientProvider client={queryClient}>
