@@ -506,17 +506,17 @@ function ActivityCounts({
         <div className="font-display text-xl font-black tabular-nums text-text-primary">
           {fmt(practiceMinutesTotal)}
         </div>
-        <div className="text-[10px] font-bold uppercase tracking-widest text-text-tertiary">
+        <Eyebrow size="micro" tone="tertiary">
           Total practice hrs
-        </div>
+        </Eyebrow>
       </div>
       <div>
         <div className="font-display text-xl font-black tabular-nums text-text-primary">
           {fmt(lessonMinutesTotal)}
         </div>
-        <div className="text-[10px] font-bold uppercase tracking-widest text-text-tertiary">
+        <Eyebrow size="micro" tone="tertiary">
           Total lesson hrs
-        </div>
+        </Eyebrow>
       </div>
     </div>
   );
@@ -527,35 +527,39 @@ function VerdictPill({ verdict, rationale }: { verdict: Verdict; rationale: stri
     increase: {
       label: "Increase challenge",
       Icon: TrendingUp,
-      tone: "text-[var(--pen-tennis)]",
-      bg: "bg-[var(--pen-tennis)]/10 border-[var(--pen-tennis)]/30",
+      tone: "accent" as const,
+      surface: "border-accent/40 bg-accent/10",
+      ink: "text-accent-ink",
     },
     hold: {
       label: "Hold steady",
       Icon: Minus,
-      tone: "text-text-primary",
-      bg: "bg-elevated border-divider",
+      tone: "default" as const,
+      surface: "border-divider bg-elevated",
+      ink: "text-text-primary",
     },
     reduce: {
       label: "Ease off",
       Icon: TrendingDown,
-      tone: "text-[var(--pen-pool)]",
-      bg: "bg-[var(--pen-pool)]/10 border-[var(--pen-pool)]/30",
+      tone: "muted" as const,
+      surface: "border-divider bg-card",
+      ink: "text-text-secondary",
     },
   }[verdict];
   const Icon = config.Icon;
   return (
-    <div className={cn("mt-3 rounded-xl border p-3", config.bg)}>
+    <div className={cn("mt-3 rounded-2xl border p-4", config.surface)}>
       <div className="flex items-center gap-2">
-        <Icon className={cn("h-4 w-4", config.tone)} />
-        <span className={cn("text-sm font-black uppercase tracking-wider", config.tone)}>
+        <Icon className={cn("h-4 w-4", config.ink)} />
+        <Tag size="caption" tone={config.tone} mono={false}>
           {config.label}
-        </span>
+        </Tag>
       </div>
       <p className="mt-1.5 text-xs leading-relaxed text-text-secondary">{rationale}</p>
     </div>
   );
 }
+
 
 /** One editable weekly practice expectation for an athlete in one sport. */
 function PracticeTargetRow({
