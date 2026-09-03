@@ -140,9 +140,9 @@ function AthleteDetailBody({ athleteId }: { athleteId: string }) {
 
       {/* Goals */}
       <section>
-        <SectionHeading>
-          {d.selfManaged ? "GOALS FROM ATHLETE" : "GOALS FROM PARENT & ATHLETE"}
-        </SectionHeading>
+        <SectionHeader
+          title={d.selfManaged ? "Goals from athlete" : "Goals from parent & athlete"}
+        />
         {d.goals.length === 0 ? (
           <EmptyLine>
             {d.coachedSports.length > 0
@@ -152,39 +152,14 @@ function AthleteDetailBody({ athleteId }: { athleteId: string }) {
                 : `${d.parentFirstName ?? d.firstName} hasn't set goals yet.`}
           </EmptyLine>
         ) : (
-          <ul className="mt-2 space-y-3">
-            {d.goals.map((g) => (
-              <li key={g.sport} className="rounded-xl border border-divider bg-card p-3">
-                <div className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
-                  {g.sportLabel}
-                </div>
-                <div className="mt-1 flex items-baseline gap-2 text-sm">
-                  <span className="font-bold text-text-primary">{g.currentLevelLabel}</span>
-                  <span className="text-text-tertiary">→</span>
-                  <span className="font-bold text-text-primary">{g.seasonGoalLabel}</span>
-                  <span className="text-[10px] uppercase tracking-widest text-text-tertiary">
-                    this season
-                  </span>
-                </div>
-                {g.longTermGoal ? (
-                  <p className="mt-2 text-sm text-text-secondary">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-text-tertiary">
-                      Long-term
-                    </span>
-                    <br />
-                    {g.longTermGoal}
-                  </p>
-                ) : null}
-              </li>
-            ))}
-          </ul>
+          <GoalsList goals={d.goals} />
         )}
       </section>
 
       {/* Practice expectations */}
       {d.practiceTargets.length > 0 ? (
         <section>
-          <SectionHeading>PRACTICE EXPECTATIONS</SectionHeading>
+          <SectionHeader title="Practice expectations" />
           <p className="mt-1 text-xs text-text-tertiary">
             What {d.firstName} should practice on their own each week. Starts from the Gradus
             default for their level.
@@ -196,6 +171,7 @@ function AthleteDetailBody({ athleteId }: { athleteId: string }) {
           </div>
         </section>
       ) : null}
+
 
       {/* AI Summary */}
       <section>
