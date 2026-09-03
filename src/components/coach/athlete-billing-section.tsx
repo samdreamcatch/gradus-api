@@ -4,7 +4,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Tag } from "@/components/ui/tag";
+import { SectionHeader, EmptyLine } from "@/components/coach/athlete-section";
+
 import {
   AlertDialog,
   AlertDialogAction,
