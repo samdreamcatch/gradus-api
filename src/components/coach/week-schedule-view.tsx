@@ -476,15 +476,15 @@ function LessonRow({
             ) : null}
 
             {onEditRecurring || onEditOccurrence ? (
-              <div className="mt-3 border-t border-divider pt-3">
-                <Eyebrow className="mb-2">Edit lesson</Eyebrow>
-                <div className="grid grid-cols-2 gap-2">
+              <div className="mt-3">
+                <Eyebrow className="mb-1.5">Edit lesson</Eyebrow>
+                <div className="flex flex-wrap items-center gap-2">
                   {onEditRecurring ? (
                     <Button
                       type="button"
-                      variant="ghost"
+                      variant="outline"
                       size="sm"
-                      className="rounded-pill text-text-secondary"
+                      className="rounded-pill"
                       onClick={onEditRecurring}
                     >
                       <Pencil />
@@ -494,16 +494,18 @@ function LessonRow({
                   {onEditOccurrence ? (
                     <Button
                       type="button"
-                      variant="ghost"
+                      variant="outline"
                       size="sm"
-                      className="rounded-pill text-text-secondary"
+                      className="rounded-pill"
                       onClick={onEditOccurrence}
                     >
+                      <Pencil />
                       This date
                     </Button>
                   ) : null}
                 </div>
               </div>
+
             ) : null}
 
 
