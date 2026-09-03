@@ -8,7 +8,9 @@
 
 import { DONE_STATUSES, fetchPage, parseEvent, parseIndex } from "./ijs-scrape.server";
 import { normalizeName } from "./board-types";
+import { DEMO_RESULTS_HOST, demoSkaterResults } from "./demo-competition-results.server";
 import type { SkaterProtocol } from "./board-types";
+
 
 /** One event a named skater appeared in, as published. */
 export interface IndexedSkaterEvent {
@@ -128,6 +130,11 @@ export async function fetchSkaterResults(
 ): Promise<FetchedResult[]> {
   const key = normalizeName(skaterName);
   const out: FetchedResult[] = [];
+
+  if (base.includes(DEMO_RESULTS_HOST)) {
+    return demoSkaterResults(skaterName, files);
+  }
+
 
   await inBatches([...new Set(files)].slice(0, 12), 3, async (file) => {
     let page: ReturnType<typeof parseEvent>;
