@@ -119,7 +119,6 @@ export function CoachPostEventPrompt() {
       </div>
 
 
-      </div>
 
       <LinkRosterSheet
         item={active}
