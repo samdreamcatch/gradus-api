@@ -194,14 +194,31 @@ export function parseIndex(
   doc: string,
   year: number,
 ): { competition: IjsCompetition; events: IjsEvent[] } {
-  const title = /<H2[^>]*class=["']?title["']?[^>]*>(.*?)<\/H2>/is.exec(doc);
-  const dates = /<H3[^>]*class=["']?date["']?[^>]*>(.*?)<\/H3>/is.exec(doc);
+  // Older IJS pages use <H2 class=title> / <H3 class=date>; newer ones (and
+  // pre-start pages) use a bare <H1> title, <H3> dates and <H4> location.
+  const titled = /<H2[^>]*class=["']?title["']?[^>]*>(.*?)<\/H2>/is.exec(doc);
+  const h1 = /<H1[^>]*>(.*?)<\/H1>/is.exec(doc);
+  const h2 = /<H2[^>]*>(.*?)<\/H2>/is.exec(doc);
+  const docTitle = /<TITLE[^>]*>(.*?)<\/TITLE>/is.exec(doc);
+  const dated = /<H3[^>]*class=["']?date["']?[^>]*>(.*?)<\/H3>/is.exec(doc);
   const h3s = matchAll(/<H3[^>]*>(.*?)<\/H3>/gis, doc).map((m) => text(m[1] ?? ""));
-  const competition: IjsCompetition = {
-    name: title ? text(title[1] ?? "") : "Competition",
-    dates: dates ? text(dates[1] ?? "") : "",
-    location: h3s.length ? (h3s[h3s.length - 1] ?? "") : "",
-  };
+  const h4s = matchAll(/<H4[^>]*>(.*?)<\/H4>/gis, doc).map((m) => text(m[1] ?? ""));
+  const looksLikeDates = (s: string) => /\d{1,2}\/\d{1,2}\/\d{2,4}|\d{4}|\b\d{1,2}\b/.test(s);
+
+  const name =
+    text(titled?.[1] ?? "") ||
+    text(h1?.[1] ?? "") ||
+    text(h2?.[1] ?? "") ||
+    text(docTitle?.[1] ?? "") ||
+    "Competition";
+  const dates = text(dated?.[1] ?? "") || h3s.find((s) => looksLikeDates(s)) || h3s[0] || "";
+  const location =
+    (h4s.length ? h4s[h4s.length - 1] : "") ||
+    [...h3s].reverse().find((s) => s && s !== dates) ||
+    "";
+
+  const competition: IjsCompetition = { name, dates, location };
+
 
   const idx = doc.indexOf("id=daySort");
   if (idx < 0) return { competition, events: [] };
