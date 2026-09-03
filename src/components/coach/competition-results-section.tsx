@@ -17,7 +17,7 @@ import {
   type AthleteResultDTO,
   type SkaterMatchDTO,
 } from "@/lib/competition-results.functions";
-import { getAthleteCompetitionRecaps } from "@/lib/competition-recap.functions";
+
 import type { BoardSkater } from "@/lib/board-types";
 
 /**
@@ -189,41 +189,10 @@ export function CompetitionResultsSection({
           if (!v) setDetail(null);
         }}
       />
-
-      <CompetitionRecaps athleteId={athleteId} />
     </section>
   );
 }
 
-/** What the athlete or their parent said about how a competition went. */
-function CompetitionRecaps({ athleteId }: { athleteId: string }) {
-  const fetchRecaps = useServerFn(getAthleteCompetitionRecaps);
-  const { data } = useQuery({
-    queryKey: ["athlete-competition-recaps", athleteId],
-    queryFn: () => fetchRecaps({ data: { athleteId } }),
-  });
-  if (!data?.length) return null;
-
-  return (
-    <div className="mt-6">
-      <Eyebrow size="micro" tone="tertiary" as="h3">
-        Competition recaps
-      </Eyebrow>
-      <div className="mt-2 space-y-2">
-        {data.map((r) => (
-          <div key={r.id} className="rounded-xl border border-divider bg-card px-4 py-3">
-            <p className="font-mono text-[10px] uppercase tracking-widest text-text-tertiary">
-              {[r.competitionName, `${r.authorName} · ${r.authorRole}`].filter(Boolean).join(" · ")}
-            </p>
-            <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-text-primary">
-              {r.body}
-            </p>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 /** Pick a finished competition, then confirm which published skater is theirs. */
 function LinkCompetitionSheet({
