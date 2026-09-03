@@ -203,7 +203,7 @@ function AdminCompetitions() {
           <SheetHeader>
             <SheetTitle>{qrFor?.name}</SheetTitle>
             <SheetDescription>
-              Print this on the rink sign. Scanning it opens the live board.
+              Print the QR on the rink sign, or share the direct link.
             </SheetDescription>
           </SheetHeader>
           {qrFor ? (
@@ -211,7 +211,27 @@ function AdminCompetitions() {
               <div className="rounded-2xl border border-divider bg-card p-4">
                 <QRCodeSVG value={boardUrl(qrFor.slug)} size={220} />
               </div>
-              <p className="font-mono text-xs text-text-tertiary">{boardUrl(qrFor.slug)}</p>
+              <p className="w-full rounded-md border border-divider bg-elevated px-3 py-2 text-center font-mono text-xs break-all text-text-secondary">
+                {boardUrl(qrFor.slug)}
+              </p>
+              <div className="flex w-full flex-col gap-2 sm:flex-row">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => copyBoardLink(qrFor.slug)}
+                >
+                  <Copy className="size-4" aria-hidden /> Copy link
+                </Button>
+                <ShareInviteButton
+                  url={boardUrl(qrFor.slug)}
+                  title={qrFor.name}
+                  text={`Live results board for ${qrFor.name}`}
+                  label="Share link"
+                  variant="outline"
+                  className="flex-1"
+                />
+              </div>
             </div>
           ) : null}
         </SheetContent>
