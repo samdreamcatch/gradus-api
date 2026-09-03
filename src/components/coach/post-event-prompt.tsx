@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, Loader2, Trophy } from "lucide-react";
+import { Check, Loader2, Sparkles, Trophy } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Eyebrow } from "@/components/ui/eyebrow";
@@ -12,9 +13,11 @@ import {
   listCoachRosterForCompetition,
   listSkaterMatches,
   linkAthleteToSkater,
+  generatePlanFromResults,
   type CoachPostEventItemDTO,
   type SkaterMatchDTO,
 } from "@/lib/competition-results.functions";
+
 
 /**
  * Coaches who watched a live board get asked, once the event is over, whether
