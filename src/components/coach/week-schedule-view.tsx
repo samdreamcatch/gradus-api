@@ -6,6 +6,8 @@ import type { RosterAthlete } from "@/lib/coach-roster.functions";
 import type { AthletePracticeSummary } from "@/lib/coach-schedule.functions";
 import { PreLessonBriefing } from "./pre-lesson-briefing";
 import { Button } from "@/components/ui/button";
+import { Eyebrow } from "@/components/ui/eyebrow";
+
 import { LessonSlotSheet, type LessonSlotSheetMode } from "./lesson-slot-sheet";
 
 
