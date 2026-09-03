@@ -387,7 +387,9 @@ export const getAthleteCompetitionResults = createServerFn({ method: "GET" })
             totalScore: r.total_score,
             protocol: (r.protocol ?? null) as SkaterProtocol | null,
           })),
+        existingPlan: planByComp.get(l.competition_id) ?? null,
       };
+
     });
   });
 
