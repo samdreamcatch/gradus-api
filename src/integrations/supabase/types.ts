@@ -1041,6 +1041,7 @@ export type Database = {
           recap_done_at: string | null
           skater_name: string
           user_id: string
+          viewer_role: string
         }
         Insert: {
           athlete_id?: string | null
@@ -1051,6 +1052,7 @@ export type Database = {
           recap_done_at?: string | null
           skater_name?: string
           user_id: string
+          viewer_role?: string
         }
         Update: {
           athlete_id?: string | null
@@ -1061,6 +1063,7 @@ export type Database = {
           recap_done_at?: string | null
           skater_name?: string
           user_id?: string
+          viewer_role?: string
         }
         Relationships: [
           {
