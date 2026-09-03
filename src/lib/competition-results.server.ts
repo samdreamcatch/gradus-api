@@ -8,7 +8,9 @@
 
 import { DONE_STATUSES, fetchPage, parseEvent, parseIndex } from "./ijs-scrape.server";
 import { normalizeName } from "./board-types";
+import { DEMO_RESULTS_HOST, demoSkaterResults } from "./demo-competition-results.server";
 import type { SkaterProtocol } from "./board-types";
+
 
 /** One event a named skater appeared in, as published. */
 export interface IndexedSkaterEvent {
