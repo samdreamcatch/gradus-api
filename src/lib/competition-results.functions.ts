@@ -686,11 +686,12 @@ export const getCoachPostEventItems = createServerFn({ method: "POST" })
         admin.from("athletes").select("id, first_name, last_name").in("id", linkedAthleteIds),
         admin
           .from("plans")
-          .select("athlete_id, created_at, status")
+          .select("athlete_id, source_competition_id, status")
           .eq("coach_id", coachId)
           .eq("source", "competition")
           .neq("status", "draft")
-          .in("athlete_id", linkedAthleteIds),
+          .in("athlete_id", linkedAthleteIds)
+          .in("source_competition_id", finishedIds),
       ]);
       if (ath.error) dbError(ath.error);
       if (plans.error) dbError(plans.error);
@@ -703,19 +704,18 @@ export const getCoachPostEventItems = createServerFn({ method: "POST" })
       handledPlans = plans.data ?? [];
     }
 
-    /** An athlete is done once the coach activated a competition plan after the event. */
-    const isHandled = (athleteId: string, endsOn: string) =>
+    /** An athlete is done once the coach activated a plan drafted from that event. */
+    const isHandled = (athleteId: string, competitionId: string) =>
       handledPlans.some(
-        (p) =>
-          p.athlete_id === athleteId &&
-          new Date(p.created_at as string) >= new Date(`${endsOn}T00:00:00Z`),
+        (p) => p.athlete_id === athleteId && p.source_competition_id === competitionId,
       );
 
     return finished
       .map((c: any) => {
         const compLinks = linkRows.filter((l) => l.competition_id === c.id);
         const linked = compLinks
-          .filter((l) => !isHandled(l.athlete_id as string, c.ends_on as string))
+          .filter((l) => !isHandled(l.athlete_id as string, c.id as string))
+
           .map((l) => {
             const aid = l.athlete_id as string;
             const summary = resultRows
