@@ -83,6 +83,17 @@
   --elevated: oklch(0.982 0.004 250 / 0.62);
   --divider: oklch(0.92 0.005 260); /* #E6E7EB */
 
+  /* Sidebar surface — opaque, because the mobile sidebar floats over content.
+     Values are theme-aware through the tokens they reference. */
+  --sidebar: var(--popover);
+  --sidebar-foreground: var(--text-primary);
+  --sidebar-accent: color-mix(in oklab, var(--accent) 16%, var(--popover));
+  --sidebar-accent-foreground: var(--accent-ink);
+  --sidebar-primary: var(--accent);
+  --sidebar-primary-foreground: var(--accent-foreground);
+  --sidebar-border: var(--divider);
+  --sidebar-ring: var(--accent);
+
   /* Surface simulations — reserved for previewing an external context
      inside our UI (an athlete's phone, an email client, a code editor).
      Never use for our own surfaces; use `bg-card` / `bg-elevated` instead. */
