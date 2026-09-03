@@ -112,7 +112,7 @@ export function AthleteBillingSection({ athleteId }: { athleteId: string }) {
           variant="outline"
           onClick={() => setGenerateFor(athleteId)}
         >
-          <Receipt className="size-4" aria-hidden />
+          
           Generate invoice
         </Button>
       </div>
