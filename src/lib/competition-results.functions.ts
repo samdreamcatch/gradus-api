@@ -302,7 +302,8 @@ export const getAthleteCompetitionResults = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => athleteInput.parse(input))
   .handler(async ({ context, data }): Promise<AthleteCompetitionLinkDTO[]> => {
-    await assertRosteredCoach(context.userId, data.athleteId);
+    const coachId = await assertRosteredCoach(context.userId, data.athleteId);
+
     const admin = await getAdmin();
 
     const links = await admin
