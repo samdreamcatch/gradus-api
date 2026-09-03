@@ -468,16 +468,16 @@ Write 3 to 6 practice moves that target exactly what the protocol shows lost val
 - targetKind: "reps" or "mins"
 - targetValue: a realistic number
 
-Also write a plan title (max 8 words, no emoji) and a 1-2 sentence note summarising the competition takeaway.`;
+Return an object with exactly these keys: "title" (the plan title, max 8 words, no emoji), "notes" (1-2 sentence summary of the competition takeaway), and "moves" (the array of practice moves).`;
 
     let object: { title: string; notes: string; moves: z.infer<typeof moveSchema>[] };
     try {
       const generated = await generateObject({
         model: gateway("google/gemini-2.5-flash"),
         schema: z.object({
-          title: z.string().min(1).max(120),
-          notes: z.string().max(800),
-          moves: z.array(moveSchema).min(1).max(8),
+          title: z.string().min(1).max(120).describe("Plan title, max 8 words, no emoji"),
+          notes: z.string().max(800).describe("1-2 sentence competition takeaway"),
+          moves: z.array(moveSchema).min(1).max(8).describe("The practice moves"),
         }),
         prompt,
       });
