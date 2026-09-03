@@ -275,6 +275,8 @@ function RosterPage() {
             </div>
           </header>
 
+          <CoachPostEventPrompt />
+
           <FirstPlanBanner />
 
           {rosterFull ? (
