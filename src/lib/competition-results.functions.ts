@@ -568,7 +568,7 @@ async function coachAthleteIds(coachId: string): Promise<string[]> {
   const admin = await getAdmin();
   const rows = await admin.from("coach_athletes").select("athlete_id").eq("coach_id", coachId);
   if (rows.error) dbError(rows.error);
-  return [...new Set((rows.data ?? []).map((r: any) => r.athlete_id as string))];
+  return [...new Set<string>((rows.data ?? []).map((r: any) => r.athlete_id as string))];
 }
 
 /**
