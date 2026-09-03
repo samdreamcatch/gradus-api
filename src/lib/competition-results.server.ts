@@ -129,6 +129,11 @@ export async function fetchSkaterResults(
   const key = normalizeName(skaterName);
   const out: FetchedResult[] = [];
 
+  if (base.includes(DEMO_RESULTS_HOST)) {
+    return demoSkaterResults(skaterName, files);
+  }
+
+
   await inBatches([...new Set(files)].slice(0, 12), 3, async (file) => {
     let page: ReturnType<typeof parseEvent>;
     try {
