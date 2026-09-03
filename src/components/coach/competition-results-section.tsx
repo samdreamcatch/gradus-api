@@ -97,77 +97,117 @@ export function CompetitionResultsSection({
           No competition results linked for {firstName} yet.
         </p>
       ) : (
-        <div className="mt-2 space-y-3">
-          {links.map((l) => (
-            <div key={l.competitionId} className="rounded-xl border border-divider bg-card p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="truncate font-display text-base text-text-primary">
-                    {l.competitionName}
-                  </p>
-                  <p className="font-mono text-[11px] text-text-tertiary">
-                    {[l.datesLabel, l.skaterName, l.club].filter(Boolean).join(" · ")}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => remove.mutate(l.competitionId)}
-                  className="press-soft shrink-0 text-[10px] font-bold uppercase tracking-widest text-text-tertiary"
-                >
-                  Unlink
-                </button>
-              </div>
-
-              <div className="mt-3 space-y-1.5">
-                {l.results.length === 0 ? (
-                  <p className="text-sm text-text-secondary">No published scores found.</p>
-                ) : (
-                  l.results.map((r) => (
-                    <button
-                      key={r.id}
-                      type="button"
-                      onClick={() => setDetail(r)}
-                      className="press-soft flex w-full items-center justify-between gap-3 rounded-lg border border-divider bg-elevated px-3 py-2 text-left"
-                    >
-                      <span className="min-w-0">
-                        <span className="block truncate text-sm text-text-primary">
-                          {r.eventName}
-                        </span>
-                        <span className="block font-mono text-[10px] uppercase tracking-widest text-text-tertiary">
-                          {[r.segment, r.rink].filter(Boolean).join(" · ")}
-                        </span>
-                      </span>
-                      <span className="shrink-0 text-right">
-                        <span className="block font-mono text-sm tabular-nums text-text-primary">
-                          {r.totalScore || r.segmentScore || "—"}
-                        </span>
-                        <span className="block font-mono text-[10px] uppercase tracking-widest text-text-tertiary">
-                          {r.placement ? `place ${r.placement}` : ""}
-                        </span>
-                      </span>
-                    </button>
-                  ))
-                )}
-              </div>
-
-              <Button
-                type="button"
-                size="sm"
-                className="mt-3 w-full"
-                disabled={draft.isPending || l.results.length === 0}
-                onClick={() => draft.mutate(l.competitionId)}
+        <>
+          <Accordion
+            type="single"
+            collapsible
+            defaultValue={links[0]?.competitionId}
+            className="mt-2 overflow-hidden rounded-xl border border-divider bg-card"
+          >
+            {visible.map((l) => (
+              <AccordionItem
+                key={l.competitionId}
+                value={l.competitionId}
+                className="border-b border-divider last:border-b-0"
               >
-                {draft.isPending ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Sparkles className="h-4 w-4" />
-                )}
-                Generate draft plan
-              </Button>
-            </div>
-          ))}
-        </div>
+                <AccordionTrigger className="press-soft gap-3 px-4 py-3 hover:no-underline">
+                  <span className="flex min-w-0 flex-1 items-center justify-between gap-3">
+                    <span className="min-w-0">
+                      <span className="block truncate font-display text-base text-text-primary">
+                        {l.competitionName}
+                      </span>
+                      <span className="block font-mono text-[11px] text-text-tertiary">
+                        {l.datesLabel}
+                      </span>
+                    </span>
+                    <Tag size="micro" tone="muted" className="shrink-0">
+                      {summarize(l.results)}
+                    </Tag>
+                  </span>
+                </AccordionTrigger>
+
+                <AccordionContent className="px-4 pb-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="min-w-0 truncate font-mono text-[11px] text-text-tertiary">
+                      {[l.skaterName, l.club].filter(Boolean).join(" · ")}
+                    </p>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      className="shrink-0"
+                      disabled={remove.isPending}
+                      onClick={() => remove.mutate(l.competitionId)}
+                    >
+                      Unlink
+                    </Button>
+                  </div>
+
+                  <div className="mt-2 space-y-1.5">
+                    {l.results.length === 0 ? (
+                      <p className="text-sm text-text-secondary">No published scores found.</p>
+                    ) : (
+                      l.results.map((r) => (
+                        <button
+                          key={r.id}
+                          type="button"
+                          onClick={() => setDetail(r)}
+                          className="press-soft flex w-full items-center justify-between gap-3 rounded-lg border border-divider bg-elevated px-3 py-2 text-left"
+                        >
+                          <span className="min-w-0">
+                            <span className="block truncate text-sm text-text-primary">
+                              {r.eventName}
+                            </span>
+                            <span className="block font-mono text-[10px] uppercase tracking-widest text-text-tertiary">
+                              {[r.segment, r.rink].filter(Boolean).join(" · ")}
+                            </span>
+                          </span>
+                          <span className="shrink-0 text-right">
+                            <span className="block font-mono text-sm tabular-nums text-text-primary">
+                              {r.totalScore || r.segmentScore || "—"}
+                            </span>
+                            <span className="block font-mono text-[10px] uppercase tracking-widest text-text-tertiary">
+                              {r.placement ? `place ${r.placement}` : ""}
+                            </span>
+                          </span>
+                        </button>
+                      ))
+                    )}
+                  </div>
+
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="mt-3 w-full"
+                    disabled={draft.isPending || l.results.length === 0}
+                    onClick={() => draft.mutate(l.competitionId)}
+                  >
+                    {draft.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Sparkles className="h-4 w-4" />
+                    )}
+                    Generate draft plan
+                  </Button>
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+
+          {links.length > VISIBLE_LIMIT ? (
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              className="mt-2"
+              onClick={() => setShowAll((v) => !v)}
+            >
+              {showAll ? "Show recent" : `Show all ${links.length}`}
+            </Button>
+          ) : null}
+        </>
       )}
+
 
       <LinkCompetitionSheet
         athleteId={athleteId}
