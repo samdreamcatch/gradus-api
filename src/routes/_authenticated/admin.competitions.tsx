@@ -101,7 +101,7 @@ function AdminCompetitions() {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-5xl space-y-6 px-4 py-10">
       <header>
         <Eyebrow size="small" tone="accent-ink">
           Internal
