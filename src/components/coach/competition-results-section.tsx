@@ -112,11 +112,9 @@ export function CompetitionResultsSection({
     <section>
       <div className="flex items-center justify-between">
         <Eyebrow size="micro" tone="tertiary" as="h3">
-          <span className="inline-flex items-center gap-1.5">
-            <Trophy className="h-3.5 w-3.5" />
-            Competition results
-          </span>
+          Competition results
         </Eyebrow>
+
         <Button type="button" size="sm" variant="outline" onClick={() => setLinkOpen(true)}>
           Link results
         </Button>
