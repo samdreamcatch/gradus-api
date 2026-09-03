@@ -298,50 +298,31 @@ function SampleAthleteBody({
       </SheetHeader>
 
       <section>
-        <SectionHeading>GOALS FROM PARENT &amp; ATHLETE</SectionHeading>
-        <ul className="mt-2 space-y-3">
-          <li className="rounded-xl border border-divider bg-card p-3">
-            <div className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
-              {g.sportLabel}
-            </div>
-            <div className="mt-1 flex items-baseline gap-2 text-sm">
-              <span className="font-bold text-text-primary">{g.currentLevelLabel}</span>
-              <span className="text-text-tertiary">→</span>
-              <span className="font-bold text-text-primary">{g.seasonGoalLabel}</span>
-              <span className="text-[10px] uppercase tracking-widest text-text-tertiary">
-                this season
-              </span>
-            </div>
-            <p className="mt-2 text-sm text-text-secondary">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-text-tertiary">
-                Long-term
-              </span>
-              <br />
-              {g.longTermGoal}
-            </p>
-          </li>
-        </ul>
+        <SectionHeader title="Goals from parent &amp; athlete" />
+        <GoalsList goals={[g]} />
       </section>
 
       <section>
-        <SectionHeading>
-          <span className="inline-flex items-center gap-1.5">
-            <Sparkles className="h-3.5 w-3.5" />
-            Last {d.windowDays} days
-          </span>
-        </SectionHeading>
-        <div className="mt-2 rounded-xl border border-divider bg-card p-4">
+        <SectionHeader
+          title={
+            <span className="inline-flex items-center gap-1.5">
+              <Sparkles className="h-3.5 w-3.5" />
+              Last {d.windowDays} days
+            </span>
+          }
+        />
+        <Card variant="row" className="mt-2">
           <ActivityCounts
             practiceMinutesTotal={d.activity.practiceMinutesTotal}
             lessonMinutesTotal={d.activity.lessonMinutesTotal}
           />
           <p className="mt-3 text-sm leading-relaxed text-text-primary">{summary.summary}</p>
           <VerdictPill verdict={summary.verdict} rationale={summary.rationale} />
-        </div>
+        </Card>
       </section>
 
       <section>
-        <SectionHeading>Plans</SectionHeading>
+        <SectionHeader title="Plans" />
         <div className="mt-2">
           <PlanCard
             planId={d.plans[0].planId}
@@ -356,15 +337,15 @@ function SampleAthleteBody({
       {showBilling ? <AthleteBillingSection athleteId={athleteId} /> : null}
 
       <section className="pb-2">
-        <SectionHeading>Session feedback</SectionHeading>
+        <SectionHeader title="Session feedback" />
         <ul className="mt-2 space-y-2">
           {SAMPLE_SESSION_FEEDBACK.map((s) => (
-            <li key={s.daysAgo} className="rounded-xl border border-divider bg-card p-3">
-              <div className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
+            <Card as="li" variant="row" key={s.daysAgo}>
+              <Eyebrow size="micro" tone="tertiary" weight="black">
                 {s.daysAgo === 1 ? "Yesterday" : `${s.daysAgo} days ago`}
-              </div>
+              </Eyebrow>
               <p className="mt-1 text-sm text-text-secondary">{s.note}</p>
-            </li>
+            </Card>
           ))}
         </ul>
       </section>
@@ -379,13 +360,45 @@ function formatSportList(labels: string[]): string {
   return `${labels.slice(0, -1).join(", ")}, or ${labels[labels.length - 1]}`;
 }
 
-function SectionHeading({ children }: { children: React.ReactNode }) {
+type GoalRow = {
+  sport: string;
+  sportLabel: string;
+  currentLevelLabel: string;
+  seasonGoalLabel: string;
+  longTermGoal?: string | null;
+};
+
+/** One card per sport: where they are, where the season is headed, why. */
+function GoalsList({ goals }: { goals: GoalRow[] }) {
   return (
-    <h3 className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
-      {children}
-    </h3>
+    <ul className="mt-2 space-y-2">
+      {goals.map((g) => (
+        <Card as="li" variant="row" key={g.sport}>
+          <Eyebrow size="micro" tone="tertiary" weight="black">
+            {g.sportLabel}
+          </Eyebrow>
+          <div className="mt-1 flex items-baseline gap-2 text-sm">
+            <span className="font-bold text-text-primary">{g.currentLevelLabel}</span>
+            <span className="text-text-tertiary">→</span>
+            <span className="font-bold text-text-primary">{g.seasonGoalLabel}</span>
+            <Eyebrow size="micro" tone="tertiary" as="span">
+              this season
+            </Eyebrow>
+          </div>
+          {g.longTermGoal ? (
+            <div className="mt-2">
+              <Eyebrow size="micro" tone="tertiary">
+                Long-term
+              </Eyebrow>
+              <p className="mt-0.5 text-sm text-text-secondary">{g.longTermGoal}</p>
+            </div>
+          ) : null}
+        </Card>
+      ))}
+    </ul>
   );
 }
+
 
 type PlanRow = {
   planId: string;
