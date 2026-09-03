@@ -47,6 +47,15 @@ function boardUrl(slug: string) {
   return `${origin}/board/${slug}`;
 }
 
+async function copyBoardLink(slug: string) {
+  try {
+    await navigator.clipboard.writeText(boardUrl(slug));
+    toast.success("Board link copied", { description: boardUrl(slug) });
+  } catch {
+    toast.success("Board link", { description: boardUrl(slug) });
+  }
+}
+
 function AdminCompetitions() {
   const qc = useQueryClient();
   const list = useServerFn(listCompetitions);
