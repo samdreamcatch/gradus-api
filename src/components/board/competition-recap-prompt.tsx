@@ -7,6 +7,8 @@ import {
   getPendingCompetitionRecap,
 } from "@/lib/competition-recap.functions";
 import { useViewerRole } from "@/hooks/use-viewer-role";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { CompetitionRecapSheet } from "./competition-recap-sheet";
 
 /**
