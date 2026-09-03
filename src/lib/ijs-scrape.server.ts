@@ -97,13 +97,17 @@ function isNum(s: string | undefined): boolean {
   return !!s && /^\d+(\.\d+)?$/.test(s.trim());
 }
 
+/**
+ * Collect every match of a hardcoded global regex literal. The pattern object
+ * is reused (never rebuilt from a string) so no dynamic pattern can be formed.
+ */
 function matchAll(re: RegExp, doc: string): RegExpExecArray[] {
   const out: RegExpExecArray[] = [];
   let m: RegExpExecArray | null;
-  const r = new RegExp(re.source, re.flags.includes("g") ? re.flags : `${re.flags}g`);
-  while ((m = r.exec(doc)) !== null) {
+  re.lastIndex = 0;
+  while ((m = re.exec(doc)) !== null) {
     out.push(m);
-    if (m.index === r.lastIndex) r.lastIndex += 1;
+    if (m.index === re.lastIndex) re.lastIndex += 1;
   }
   return out;
 }
@@ -281,12 +285,20 @@ export interface IjsEventPage {
 
 /* --------------------------------------------------------- score protocol */
 
+/** The four detail tables IJS publishes, each with a hardcoded pattern. */
+const DETAIL_TABLE_RE = {
+  detailScoreSum: /<TABLE[^>]*class=["']?detailScoreSum[^>]*>([\s\S]*?)<\/TABLE>/i,
+  detailScoreElm: /<TABLE[^>]*class=["']?detailScoreElm[^>]*>([\s\S]*?)<\/TABLE>/i,
+  detailScoreCmp: /<TABLE[^>]*class=["']?detailScoreCmp[^>]*>([\s\S]*?)<\/TABLE>/i,
+  detailScoreDed: /<TABLE[^>]*class=["']?detailScoreDed[^>]*>([\s\S]*?)<\/TABLE>/i,
+} as const;
+
 /** Body rows of one detail table, as class-keyed cells. */
-function detailRows(block: string, table: string): { cls: string; val: string }[][] {
-  const m = new RegExp(
-    `<TABLE[^>]*class=["']?${table}[^>]*>([\\s\\S]*?)</TABLE>`,
-    "i",
-  ).exec(block);
+function detailRows(
+  block: string,
+  table: keyof typeof DETAIL_TABLE_RE,
+): { cls: string; val: string }[][] {
+  const m = DETAIL_TABLE_RE[table].exec(block);
   if (!m) return [];
   const body = /<TBODY[^>]*>([\s\S]*?)<\/TBODY>/i.exec(m[1] ?? "")?.[1] ?? m[1] ?? "";
   return matchAll(/<TR[^>]*>([\s\S]*?)<\/TR>/gis, body)
