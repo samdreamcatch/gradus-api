@@ -558,7 +558,7 @@ function PracticeMetric({ summary }: { summary?: AthletePracticeSummary }) {
       </div>
 
       {hasGoal ? (
-        <div className="relative h-12 w-12 shrink-0" aria-label={`${pct}% of weekly goal`}>
+        <div className="relative h-9 w-9 shrink-0" aria-label={`${pct}% of weekly goal`}>
           <svg className="h-full w-full -rotate-90" viewBox="0 0 36 36">
             <path
               d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
