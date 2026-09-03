@@ -29,6 +29,29 @@ import {
 
 import type { BoardSkater } from "@/lib/board-types";
 
+/** Competitions shown before the coach asks for the full season history. */
+const VISIBLE_LIMIT = 5;
+
+function ordinal(n: number): string {
+  const rem100 = n % 100;
+  if (rem100 >= 11 && rem100 <= 13) return `${n}th`;
+  const suffix = ["th", "st", "nd", "rd"][n % 10] ?? "th";
+  return `${n}${suffix}`;
+}
+
+/** Closed-folder summary: how many events, and the best placement of them. */
+function summarize(results: AthleteResultDTO[]): string {
+  const count = results.length;
+  const label = count === 1 ? "1 event" : `${count} events`;
+  const places = results
+    .map((r) => Number.parseInt(r.placement, 10))
+    .filter((n) => Number.isFinite(n) && n > 0);
+  if (!count) return "no scores";
+  if (!places.length) return label;
+  return `${label} · best ${ordinal(Math.min(...places))}`;
+}
+
+
 /**
  * Competition results for one athlete, private to their circle. Linking starts
  * from the coach's own roster — never from the public board — so a follower can
