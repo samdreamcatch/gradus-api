@@ -174,7 +174,15 @@ function AdminCompetitions() {
                   Refresh now
                 </Button>
                 <Button type="button" size="sm" variant="outline" onClick={() => setQrFor(c)}>
-                  QR code
+                  QR &amp; link
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => copyBoardLink(c.slug)}
+                >
+                  <Copy className="size-4" aria-hidden /> Copy link
                 </Button>
                 <Button
                   type="button"
