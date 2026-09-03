@@ -828,6 +828,15 @@ export const getCoachAthleteAiSummary = createServerFn({ method: "GET" })
       })
       .join("\n");
 
+    const recapLines = recaps
+      .map((r) => {
+        const date = new Date(r.created_at).toISOString().slice(0, 10);
+        const event = sanitizeUserContent(r.name, 120);
+        const body = wrapUntrusted("competition_recap", sanitizeUserContent(r.body, 500));
+        return `- ${date} (${r.author_role}, "${event}"): ${body}`;
+      })
+      .join("\n");
+
     const safeName = sanitizeUserContent(firstName, 80);
 
     const prompt = `${PROMPT_INJECTION_GUARD}
@@ -843,10 +852,14 @@ ${planLines || "- (no plans on file)"}
 PRACTICE LOGS (most recent first; each tagged with the plan it was logged against):
 ${sessionLines || "- (none)"}
 
+COMPETITION RECAPS (how a recent event went, written by the athlete or their parent):
+${recapLines || "- (none)"}
+
 MESSAGES FROM ATHLETE OR PARENT (most recent first):
 ${messageLines || "- (none)"}
 
-Write a 2–3 sentence summary of what ${safeName} has been doing based strictly on the data above. Reference only plans, flow states, session notes, and messages that appear explicitly in the context. Do not use hedging language ("appears to," "seems like") as cover for inference — if you cannot point to a specific data entry, do not include it. If data is sparse, write fewer sentences and say so plainly rather than filling in gaps.
+Write a 2–3 sentence summary of what ${safeName} has been doing based strictly on the data above. Reference only plans, flow states, session notes, competition recaps, and messages that appear explicitly in the context. Do not use hedging language ("appears to," "seems like") as cover for inference — if you cannot point to a specific data entry, do not include it. If data is sparse, write fewer sentences and say so plainly rather than filling in gaps.
+
 
 Then decide a verdict:
 - "increase": athlete is clearly showing mastery, explicitly asking for more, or consistently breezing through sessions — you must be able to cite a specific session note or message that supports this
