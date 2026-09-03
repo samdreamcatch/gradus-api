@@ -2585,6 +2585,7 @@ export type Database = {
           share_token: string | null
           shared_at: string | null
           source: string
+          source_competition_id: string | null
           status: string
           title: string
           updated_at: string
@@ -2602,6 +2603,7 @@ export type Database = {
           share_token?: string | null
           shared_at?: string | null
           source?: string
+          source_competition_id?: string | null
           status?: string
           title?: string
           updated_at?: string
@@ -2619,6 +2621,7 @@ export type Database = {
           share_token?: string | null
           shared_at?: string | null
           source?: string
+          source_competition_id?: string | null
           status?: string
           title?: string
           updated_at?: string
@@ -2644,6 +2647,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plans_source_competition_id_fkey"
+            columns: ["source_competition_id"]
+            isOneToOne: false
+            referencedRelation: "competitions"
             referencedColumns: ["id"]
           },
         ]

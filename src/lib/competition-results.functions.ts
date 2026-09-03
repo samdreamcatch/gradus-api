@@ -43,7 +43,10 @@ export interface AthleteCompetitionLinkDTO {
   skaterName: string;
   club: string;
   results: AthleteResultDTO[];
+  /** Newest plan this coach already generated from this competition, if any. */
+  existingPlan: { id: string; title: string; status: string } | null;
 }
+
 
 /* ------------------------------------------------------------- guard rails */
 
@@ -299,7 +302,8 @@ export const getAthleteCompetitionResults = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => athleteInput.parse(input))
   .handler(async ({ context, data }): Promise<AthleteCompetitionLinkDTO[]> => {
-    await assertRosteredCoach(context.userId, data.athleteId);
+    const coachId = await assertRosteredCoach(context.userId, data.athleteId);
+
     const admin = await getAdmin();
 
     const links = await admin
@@ -338,6 +342,29 @@ export const getAthleteCompetitionResults = createServerFn({ method: "GET" })
     if (res.error) dbError(res.error);
     const resultRows = (res.data ?? []) as any[];
 
+    // Plans this coach already drafted from these competitions, newest first.
+    const planRows = await admin
+      .from("plans")
+      .select("id, title, status, source_competition_id, created_at")
+      .eq("coach_id", coachId)
+      .eq("athlete_id", data.athleteId)
+      .in("source_competition_id", compIds)
+      .order("created_at", { ascending: false });
+    if (planRows.error) dbError(planRows.error);
+    const planByComp = new Map<string, { id: string; title: string; status: string }>();
+    for (const p of (planRows.data ?? []) as any[]) {
+      const cid = p.source_competition_id as string;
+      if (!planByComp.has(cid)) {
+        planByComp.set(cid, {
+          id: p.id as string,
+          title: (p.title as string) ?? "Practice plan",
+          status: (p.status as string) ?? "draft",
+        });
+      }
+    }
+
+
+
     return linkRows.map((l) => {
       const c = byComp.get(l.competition_id);
       return {
@@ -360,7 +387,9 @@ export const getAthleteCompetitionResults = createServerFn({ method: "GET" })
             totalScore: r.total_score,
             protocol: (r.protocol ?? null) as SkaterProtocol | null,
           })),
+        existingPlan: planByComp.get(l.competition_id) ?? null,
       };
+
     });
   });
 
@@ -495,6 +524,8 @@ Return an object with exactly these keys: "title" (the plan title, max 8 words, 
         kind: "plan",
         status: "draft",
         source: "competition",
+        source_competition_id: data.competitionId,
+
         title: object.title.trim(),
         notes: object.notes.trim(),
       })
@@ -655,11 +686,12 @@ export const getCoachPostEventItems = createServerFn({ method: "POST" })
         admin.from("athletes").select("id, first_name, last_name").in("id", linkedAthleteIds),
         admin
           .from("plans")
-          .select("athlete_id, created_at, status")
+          .select("athlete_id, source_competition_id, status")
           .eq("coach_id", coachId)
           .eq("source", "competition")
           .neq("status", "draft")
-          .in("athlete_id", linkedAthleteIds),
+          .in("athlete_id", linkedAthleteIds)
+          .in("source_competition_id", finishedIds),
       ]);
       if (ath.error) dbError(ath.error);
       if (plans.error) dbError(plans.error);
@@ -672,19 +704,18 @@ export const getCoachPostEventItems = createServerFn({ method: "POST" })
       handledPlans = plans.data ?? [];
     }
 
-    /** An athlete is done once the coach activated a competition plan after the event. */
-    const isHandled = (athleteId: string, endsOn: string) =>
+    /** An athlete is done once the coach activated a plan drafted from that event. */
+    const isHandled = (athleteId: string, competitionId: string) =>
       handledPlans.some(
-        (p) =>
-          p.athlete_id === athleteId &&
-          new Date(p.created_at as string) >= new Date(`${endsOn}T00:00:00Z`),
+        (p) => p.athlete_id === athleteId && p.source_competition_id === competitionId,
       );
 
     return finished
       .map((c: any) => {
         const compLinks = linkRows.filter((l) => l.competition_id === c.id);
         const linked = compLinks
-          .filter((l) => !isHandled(l.athlete_id as string, c.ends_on as string))
+          .filter((l) => !isHandled(l.athlete_id as string, c.id as string))
+
           .map((l) => {
             const aid = l.athlete_id as string;
             const summary = resultRows

@@ -207,20 +207,42 @@ export function CompetitionResultsSection({
                     )}
                   </div>
 
-                  <Button
-                    type="button"
-                    size="sm"
-                    className="mt-3 w-full"
-                    disabled={draft.isPending || l.results.length === 0}
-                    onClick={() => draft.mutate(l.competitionId)}
-                  >
-                    {draft.isPending ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-4 w-4" />
-                    )}
-                    Generate draft plan
-                  </Button>
+                  {l.existingPlan ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="mt-3 w-full"
+                      onClick={() =>
+                        void navigate({
+                          to: "/coach/plans/$planId",
+                          params: { planId: l.existingPlan!.id },
+                        })
+                      }
+                    >
+                      Go to plan
+                    </Button>
+                  ) : (
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="mt-3 w-full"
+                      disabled={draft.isPending || l.results.length === 0}
+                      onClick={() => draft.mutate(l.competitionId)}
+                    >
+                      {draft.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Sparkles className="h-4 w-4" />
+                      )}
+                      Generate draft plan
+                    </Button>
+                  )}
+                  {l.existingPlan ? (
+                    <p className="mt-1.5 truncate text-center font-mono text-[10px] uppercase tracking-widest text-text-tertiary">
+                      {l.existingPlan.title}
+                    </p>
+                  ) : null}
+
                 </AccordionContent>
               </AccordionItem>
             ))}
