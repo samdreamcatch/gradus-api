@@ -435,7 +435,6 @@ function PlanRowCard({ p }: { p: PlanRow }) {
           <Button
             size="sm"
             variant="outline"
-            className="press h-8 rounded-full text-xs"
             disabled={adoptMutation.isPending}
             onClick={() => adoptMutation.mutate()}
           >
@@ -443,6 +442,7 @@ function PlanRowCard({ p }: { p: PlanRow }) {
           </Button>
         </div>
       ) : null}
+
     </div>
   );
 }
