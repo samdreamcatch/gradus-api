@@ -193,7 +193,8 @@ function AdminCompetitions() {
                   variant="outline"
                   onClick={() => copyBoardLink(c.slug)}
                 >
-                  <Copy className="size-4" aria-hidden /> Copy link
+                  Copy link
+
                 </Button>
                 <Button
                   type="button"
