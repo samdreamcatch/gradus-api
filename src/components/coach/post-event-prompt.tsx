@@ -80,7 +80,6 @@ export function CoachPostEventPrompt() {
                 <Button
                   type="button"
                   size="sm"
-                  variant="ghost"
                   disabled={draft.isPending}
                   onClick={() =>
                     draft.mutate({ athleteId: a.athleteId, competitionId: item.competitionId })
