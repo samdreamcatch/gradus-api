@@ -43,7 +43,10 @@ export interface AthleteCompetitionLinkDTO {
   skaterName: string;
   club: string;
   results: AthleteResultDTO[];
+  /** Newest plan this coach already generated from this competition, if any. */
+  existingPlan: { id: string; title: string; status: string } | null;
 }
+
 
 /* ------------------------------------------------------------- guard rails */
 
