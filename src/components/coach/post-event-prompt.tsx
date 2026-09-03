@@ -2,10 +2,13 @@ import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, Loader2, Sparkles, Trophy } from "lucide-react";
+import { Check, Loader2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Tag } from "@/components/ui/tag";
 import { Eyebrow } from "@/components/ui/eyebrow";
+import { SectionHeader } from "@/components/coach/athlete-section";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import {
   getCoachPostEventItems,
@@ -60,23 +63,22 @@ export function CoachPostEventPrompt() {
 
   return (
     <>
-      <div className="mb-4 rounded-xl border border-divider bg-card px-4 py-3">
-        <Eyebrow size="micro" tone="tertiary" as="h2">
-          <Trophy className="mr-1 inline h-3 w-3" />
-          {item.competitionName} has ended
-        </Eyebrow>
-        <p className="mt-1 text-sm text-text-primary">
+      <Card variant="section" className="mb-4">
+        <SectionHeader title={`${item.competitionName} has ended`} />
+        <p className="mt-2 text-sm text-text-primary">
           Did any of your athletes compete at {item.competitionName}?
         </p>
         {item.linked.length ? (
-          <ul className="mt-2 space-y-2">
+          <ul className="mt-3 space-y-2">
             {item.linked.map((a) => (
-              <li
+              <Card
+                as="li"
+                variant="row"
                 key={a.athleteId}
                 className="flex flex-wrap items-center justify-between gap-2"
               >
-                <span className="min-w-0 text-xs text-text-secondary">
-                  <Check className="mr-1 inline h-3 w-3 text-accent-ink" />
+                <span className="min-w-0 text-sm text-text-secondary">
+                  <Check className="mr-1 inline h-3 w-3 text-accent-ink" aria-hidden />
                   {a.name}
                   {a.summary ? ` — ${a.summary}` : ""}
                 </span>
@@ -84,7 +86,6 @@ export function CoachPostEventPrompt() {
                   type="button"
                   size="sm"
                   variant="outline"
-                  className="rounded-pill"
                   disabled={draft.isPending}
                   onClick={() =>
                     draft.mutate({ athleteId: a.athleteId, competitionId: item.competitionId })
@@ -97,26 +98,27 @@ export function CoachPostEventPrompt() {
                   )}
                   Draft plan
                 </Button>
-              </li>
+              </Card>
             ))}
           </ul>
         ) : null}
         <div className="mt-3 flex flex-wrap gap-2">
-          <Button type="button" size="sm" className="rounded-pill" onClick={() => setActive(item)}>
+          <Button type="button" size="sm" onClick={() => setActive(item)}>
             {item.linked.length ? "Link more athletes" : "Yes, link athletes"}
           </Button>
           <Button
             type="button"
             variant="ghost"
             size="sm"
-            className="rounded-pill text-text-secondary"
+            className="text-text-secondary"
             disabled={dismissOne.isPending}
             onClick={() => dismissOne.mutate(item.competitionId)}
           >
             {item.linked.length ? "Done" : "No"}
           </Button>
         </div>
-      </div>
+      </Card>
+
 
 
 
@@ -204,19 +206,23 @@ function LinkRosterSheet({
               <p className="text-sm text-text-secondary">No athletes on your roster yet.</p>
             ) : (
               roster.data!.map((a) => (
-                <button
+                <Card
                   key={a.athleteId}
-                  type="button"
+                  variant="row"
+                  role="button"
+                  tabIndex={0}
                   onClick={() => setAthlete({ id: a.athleteId, name: a.name })}
-                  className="press-soft flex w-full items-center justify-between gap-2 rounded-xl border border-divider bg-card px-4 py-3 text-left"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setAthlete({ id: a.athleteId, name: a.name });
+                    }
+                  }}
+                  className="press flex w-full cursor-pointer items-center justify-between gap-2 text-left"
                 >
                   <span className="text-sm text-text-primary">{a.name}</span>
-                  {a.linked ? (
-                    <span className="font-mono text-[10px] uppercase tracking-widest text-text-tertiary">
-                      Linked
-                    </span>
-                  ) : null}
-                </button>
+                  {a.linked ? <Tag size="micro">Linked</Tag> : null}
+                </Card>
               ))
             )}
           </div>
@@ -235,32 +241,37 @@ function LinkRosterSheet({
               </p>
             ) : (
               matches.data!.map((m) => (
-                <button
+                <Card
                   key={m.name}
-                  type="button"
-                  disabled={confirm.isPending}
-                  onClick={() => confirm.mutate(m)}
-                  className="press-soft w-full rounded-xl border border-divider bg-card px-4 py-3 text-left disabled:opacity-50"
+                  variant="row"
+                  role="button"
+                  tabIndex={0}
+                  aria-disabled={confirm.isPending}
+                  onClick={() => {
+                    if (!confirm.isPending) confirm.mutate(m);
+                  }}
+                  onKeyDown={(e) => {
+                    if (!confirm.isPending && (e.key === "Enter" || e.key === " ")) {
+                      e.preventDefault();
+                      confirm.mutate(m);
+                    }
+                  }}
+                  className="press w-full cursor-pointer text-left aria-disabled:opacity-50"
                 >
                   <span className="block text-sm text-text-primary">{m.name}</span>
-                  <span className="block font-mono text-[10px] uppercase tracking-widest text-text-tertiary">
+                  <Eyebrow size="micro" tone="tertiary" className="mt-1 font-mono">
                     {[m.club, `${m.events.length} event${m.events.length === 1 ? "" : "s"}`]
                       .filter(Boolean)
                       .join(" · ")}
-                  </span>
-                </button>
+                  </Eyebrow>
+                </Card>
               ))
             )}
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="mt-2 rounded-pill"
-              onClick={() => setAthlete(null)}
-            >
+            <Button type="button" variant="outline" size="sm" onClick={() => setAthlete(null)}>
               Back
             </Button>
           </div>
+
         )}
       </SheetContent>
     </Sheet>
