@@ -203,19 +203,23 @@ function LinkRosterSheet({
               <p className="text-sm text-text-secondary">No athletes on your roster yet.</p>
             ) : (
               roster.data!.map((a) => (
-                <button
+                <Card
                   key={a.athleteId}
-                  type="button"
+                  variant="row"
+                  role="button"
+                  tabIndex={0}
                   onClick={() => setAthlete({ id: a.athleteId, name: a.name })}
-                  className="press-soft flex w-full items-center justify-between gap-2 rounded-xl border border-divider bg-card px-4 py-3 text-left"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setAthlete({ id: a.athleteId, name: a.name });
+                    }
+                  }}
+                  className="press flex w-full cursor-pointer items-center justify-between gap-2 text-left"
                 >
                   <span className="text-sm text-text-primary">{a.name}</span>
-                  {a.linked ? (
-                    <span className="font-mono text-[10px] uppercase tracking-widest text-text-tertiary">
-                      Linked
-                    </span>
-                  ) : null}
-                </button>
+                  {a.linked ? <Tag size="micro">Linked</Tag> : null}
+                </Card>
               ))
             )}
           </div>
@@ -234,32 +238,37 @@ function LinkRosterSheet({
               </p>
             ) : (
               matches.data!.map((m) => (
-                <button
+                <Card
                   key={m.name}
-                  type="button"
-                  disabled={confirm.isPending}
-                  onClick={() => confirm.mutate(m)}
-                  className="press-soft w-full rounded-xl border border-divider bg-card px-4 py-3 text-left disabled:opacity-50"
+                  variant="row"
+                  role="button"
+                  tabIndex={0}
+                  aria-disabled={confirm.isPending}
+                  onClick={() => {
+                    if (!confirm.isPending) confirm.mutate(m);
+                  }}
+                  onKeyDown={(e) => {
+                    if (!confirm.isPending && (e.key === "Enter" || e.key === " ")) {
+                      e.preventDefault();
+                      confirm.mutate(m);
+                    }
+                  }}
+                  className="press w-full cursor-pointer text-left aria-disabled:opacity-50"
                 >
                   <span className="block text-sm text-text-primary">{m.name}</span>
-                  <span className="block font-mono text-[10px] uppercase tracking-widest text-text-tertiary">
+                  <Eyebrow size="micro" tone="tertiary" className="mt-1 font-mono">
                     {[m.club, `${m.events.length} event${m.events.length === 1 ? "" : "s"}`]
                       .filter(Boolean)
                       .join(" · ")}
-                  </span>
-                </button>
+                  </Eyebrow>
+                </Card>
               ))
             )}
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="mt-2 rounded-pill"
-              onClick={() => setAthlete(null)}
-            >
+            <Button type="button" variant="outline" size="sm" onClick={() => setAthlete(null)}>
               Back
             </Button>
           </div>
+
         )}
       </SheetContent>
     </Sheet>
