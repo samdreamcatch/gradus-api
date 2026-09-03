@@ -342,6 +342,29 @@ export const getAthleteCompetitionResults = createServerFn({ method: "GET" })
     if (res.error) dbError(res.error);
     const resultRows = (res.data ?? []) as any[];
 
+    // Plans this coach already drafted from these competitions, newest first.
+    const planRows = await admin
+      .from("plans")
+      .select("id, title, status, source_competition_id, created_at")
+      .eq("coach_id", coachId)
+      .eq("athlete_id", data.athleteId)
+      .in("source_competition_id", compIds)
+      .order("created_at", { ascending: false });
+    if (planRows.error) dbError(planRows.error);
+    const planByComp = new Map<string, { id: string; title: string; status: string }>();
+    for (const p of (planRows.data ?? []) as any[]) {
+      const cid = p.source_competition_id as string;
+      if (!planByComp.has(cid)) {
+        planByComp.set(cid, {
+          id: p.id as string,
+          title: (p.title as string) ?? "Practice plan",
+          status: (p.status as string) ?? "draft",
+        });
+      }
+    }
+
+
+
     return linkRows.map((l) => {
       const c = byComp.get(l.competition_id);
       return {
