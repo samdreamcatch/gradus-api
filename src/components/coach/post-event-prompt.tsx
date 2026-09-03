@@ -64,7 +64,22 @@ export function CoachPostEventPrompt() {
   return (
     <>
       <Card variant="row" className="mb-4">
-        <SectionHeader title={`${item.competitionName} has ended`} />
+        <SectionHeader
+          title={`${item.competitionName} has ended`}
+          action={
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              aria-label="Dismiss"
+              className="-mr-1 text-text-tertiary"
+              disabled={dismissOne.isPending}
+              onClick={() => dismissOne.mutate(item.competitionId)}
+            >
+              <X />
+            </Button>
+          }
+        />
         {item.linked.length ? (
           <ul className="mt-2 divide-y divide-divider">
             {item.linked.map((a) => (
@@ -104,18 +119,9 @@ export function CoachPostEventPrompt() {
           <Button type="button" size="sm" variant="outline" onClick={() => setActive(item)}>
             {item.linked.length ? "Link more" : "Yes, link athletes"}
           </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="text-text-secondary"
-            disabled={dismissOne.isPending}
-            onClick={() => dismissOne.mutate(item.competitionId)}
-          >
-            {item.linked.length ? "Done" : "No"}
-          </Button>
         </div>
       </Card>
+
 
 
 
