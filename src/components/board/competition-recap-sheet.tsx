@@ -5,7 +5,9 @@ import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { Chip } from "@/components/ui/chip";
+import { Eyebrow } from "@/components/ui/eyebrow";
+import { Textarea } from "@/components/ui/textarea";
 import {
   submitCompetitionRecap,
   getRecapCoaches,
@@ -84,65 +86,56 @@ export function CompetitionRecapSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="paper-surface max-h-[85dvh] overflow-y-auto">
-        <SheetHeader className="text-left">
-          <p className="text-[11px] font-black uppercase tracking-widest text-accent-ink">
+      <SheetContent side="bottom" className="paper-surface max-h-[92dvh] overflow-y-auto">
+        <SheetHeader className="px-1 pb-2 text-left">
+          <Eyebrow size="caption" weight="black" tone="accent-ink">
             {pending.competitionName}
-          </p>
-          <SheetTitle className="font-display text-h3 text-text-primary">
-            How did the competition go?
-          </SheetTitle>
+          </Eyebrow>
+          <SheetTitle className="font-display text-2xl">How did the competition go?</SheetTitle>
         </SheetHeader>
 
-        <div className="space-y-4 pb-6">
+        <div className="space-y-5 px-1 pb-8">
           {pending.athleteChoices.length > 0 && (
-            <div>
-              <p className="text-[11px] font-black uppercase tracking-widest text-text-secondary">
+            <div className="space-y-2">
+              <Eyebrow size="caption" weight="black" tone="secondary">
                 Who is this about?
-              </p>
-              <div className="mt-2 flex flex-wrap gap-2">
+              </Eyebrow>
+              <div className="flex flex-wrap gap-2">
                 {pending.athleteChoices.map((a) => (
-                  <button
+                  <Chip
                     key={a.id}
-                    type="button"
+                    caseSensitive
+                    selected={athleteId === a.id}
+                    aria-pressed={athleteId === a.id}
                     onClick={() => setAthleteId(a.id)}
-                    className={cn(
-                      "press-soft rounded-pill border px-3 py-1.5 text-sm",
-                      athleteId === a.id
-                        ? "border-accent bg-accent text-accent-foreground"
-                        : "border-divider bg-card text-text-primary",
-                    )}
                   >
                     {a.name}
-                  </button>
+                  </Chip>
                 ))}
               </div>
             </div>
           )}
 
           {coachList.length > 0 && (
-            <div>
-              <p className="text-[11px] font-black uppercase tracking-widest text-text-secondary">
+            <div className="space-y-2">
+              <Eyebrow size="caption" weight="black" tone="secondary">
                 Send to
-              </p>
-              <div className="mt-2 flex flex-wrap gap-2">
+              </Eyebrow>
+              <div className="flex flex-wrap gap-2">
                 {coachList.map((c) => (
-                  <button
+                  <Chip
                     key={c.id}
-                    type="button"
+                    caseSensitive
+                    tone="muted"
+                    selected={coachIds.includes(c.id)}
+                    aria-pressed={coachIds.includes(c.id)}
                     onClick={() => toggleCoach(c.id)}
-                    className={cn(
-                      "press-soft rounded-pill border px-3 py-1.5 text-sm",
-                      coachIds.includes(c.id)
-                        ? "border-accent bg-accent text-accent-foreground"
-                        : "border-divider bg-card text-text-secondary",
-                    )}
                   >
                     {c.name}
-                  </button>
+                  </Chip>
                 ))}
               </div>
-              <p className="mt-2 text-sm text-text-tertiary">
+              <p className="text-sm text-text-secondary">
                 {coachIds.length === coachList.length
                   ? "Goes to every coach on the roster. Tap a coach to leave them out."
                   : `Goes to ${coachIds.length} of ${coachList.length} coaches.`}
@@ -150,23 +143,20 @@ export function CompetitionRecapSheet({
             </div>
           )}
 
-          <div>
-            <label
-              htmlFor="competition-recap-body"
-              className="text-[11px] font-black uppercase tracking-widest text-text-secondary"
-            >
+          <div className="space-y-2">
+            <Eyebrow as="label" htmlFor="competition-recap-body" size="caption" weight="black" tone="secondary">
               Your recap
-            </label>
-            <p className="mt-1 text-sm text-text-tertiary">
+            </Eyebrow>
+            <p className="text-sm text-text-secondary">
               What went well? What didn&apos;t go well? Share any feedback.
             </p>
-            <textarea
+            <Textarea
               id="competition-recap-body"
               value={body}
               onChange={(e) => setBody(e.target.value)}
               rows={6}
               maxLength={2000}
-              className="focus-input mt-2 w-full resize-none rounded-xl border border-divider bg-elevated px-3 py-2 text-[15px] leading-relaxed text-text-primary placeholder:text-text-tertiary"
+              placeholder="A few lines is plenty."
             />
           </div>
 
