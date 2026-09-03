@@ -652,6 +652,7 @@ function PracticeTargetRow({
           </Button>
         </div>
       ) : null}
-    </div>
+    </Card>
+
   );
 }
