@@ -173,8 +173,8 @@ export function AthleteBillingSection({ athleteId }: { athleteId: string }) {
           ))}
         </ul>
       ) : (
+        <EmptyLine>No invoices yet.</EmptyLine>
 
-        <p className="text-sm text-text-secondary">No invoices yet.</p>
       )}
 
       <InvoiceGenerateSheet athleteId={generateFor} onOpenChange={setGenerateFor} />
