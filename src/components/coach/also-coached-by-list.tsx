@@ -1,5 +1,8 @@
 import { ChevronRight, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Card } from "@/components/ui/card";
+import { Tag } from "@/components/ui/tag";
+import { SectionHeader } from "@/components/coach/athlete-section";
 import type { OtherCoachDTO } from "@/lib/coach-athlete-detail.functions";
 
 function coachMeta(coach: OtherCoachDTO): string {
@@ -42,9 +45,7 @@ export function AlsoCoachedByList({
   if (coaches.length === 0) return null;
   return (
     <section>
-      <h3 className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
-        Also coached by
-      </h3>
+      <SectionHeader title="Also coached by" />
       <ul className="mt-2 space-y-2">
         {coaches.map((c) => {
           const hasPlans = c.plans.length > 0;
@@ -64,31 +65,21 @@ export function AlsoCoachedByList({
                 </div>
                 <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
                   {c.sports.map((s) => (
-                    <span
-                      key={s.key}
-                      className="rounded-pill border border-divider bg-elevated px-2 py-0.5 text-[10px] font-medium text-text-secondary"
-                    >
+                    <Tag key={s.key} size="micro" mono={false}>
                       {s.label}
-                    </span>
+                    </Tag>
                   ))}
                   {hasPlans && !isLocked ? (
-                    <span className="font-hand text-[15px] text-text-secondary">
-                      {coachMeta(c)}
-                    </span>
+                    <span className="text-sm text-text-secondary">{coachMeta(c)}</span>
                   ) : !hasPlans ? (
-                    <span className="font-hand text-[15px] text-text-tertiary">
-                      No shared plans yet
-                    </span>
+                    <span className="text-sm text-text-tertiary">No shared plans yet</span>
+                  ) : null}
+                  {hasPlans && isLocked ? (
+                    <Tag size="micro" tone="muted" mono={false}>
+                      {lockedLabel(c.coachId)}
+                    </Tag>
                   ) : null}
                 </div>
-
-                {hasPlans && isLocked ? (
-                  <div className="mt-2">
-                    <span className="rounded-full bg-elevated px-2 py-0.5 text-[11px] font-semibold text-text-secondary">
-                      {lockedLabel(c.coachId)}
-                    </span>
-                  </div>
-                ) : null}
               </div>
               {hasPlans ? (
                 isLocked ? (
@@ -102,17 +93,29 @@ export function AlsoCoachedByList({
           return (
             <li key={c.coachId}>
               {interactive ? (
-                <button
-                  type="button"
+                <Card
+                  variant="row"
+                  asChild={undefined}
+                  className="press flex w-full cursor-pointer items-center gap-3 text-left"
+                  role="button"
+                  tabIndex={0}
                   onClick={() => onOpenCoach(c.coachId)}
-                  className="press flex w-full items-center gap-3 rounded-2xl border border-divider bg-card p-3 pl-4 text-left shadow-card"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      onOpenCoach(c.coachId);
+                    }
+                  }}
                 >
                   {inner}
-                </button>
+                </Card>
               ) : (
-                <div className="flex w-full items-center gap-3 rounded-2xl border border-dashed border-divider bg-card/40 p-3 pl-4 text-left">
+                <Card
+                  variant="row"
+                  className="flex w-full items-center gap-3 border-dashed bg-card/40 text-left shadow-none"
+                >
                   {inner}
-                </div>
+                </Card>
               )}
             </li>
           );
