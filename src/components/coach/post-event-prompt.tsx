@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, Loader2, Trophy } from "lucide-react";
+import { Check, Loader2, Sparkles, Trophy } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Eyebrow } from "@/components/ui/eyebrow";
@@ -12,9 +13,11 @@ import {
   listCoachRosterForCompetition,
   listSkaterMatches,
   linkAthleteToSkater,
+  generatePlanFromResults,
   type CoachPostEventItemDTO,
   type SkaterMatchDTO,
 } from "@/lib/competition-results.functions";
+
 
 /**
  * Coaches who watched a live board get asked, once the event is over, whether
@@ -24,6 +27,8 @@ import {
 export function CoachPostEventPrompt() {
   const fetchItems = useServerFn(getCoachPostEventItems);
   const dismiss = useServerFn(dismissCoachPostEvent);
+  const generate = useServerFn(generatePlanFromResults);
+  const navigate = useNavigate();
   const qc = useQueryClient();
 
   const [active, setActive] = useState<CoachPostEventItemDTO | null>(null);
@@ -36,6 +41,17 @@ export function CoachPostEventPrompt() {
   const dismissOne = useMutation({
     mutationFn: (competitionId: string) => dismiss({ data: { competitionId } }),
     onSuccess: () => void qc.invalidateQueries({ queryKey: ["coach-post-event-items"] }),
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const draft = useMutation({
+    mutationFn: (v: { athleteId: string; competitionId: string }) =>
+      generate({ data: { athleteId: v.athleteId, competitionId: v.competitionId } }),
+    onSuccess: (r) => {
+      toast.success(`Draft plan "${r.title}" created with ${r.moveCount} moves`);
+      void qc.invalidateQueries({ queryKey: ["coach-post-event-items"] });
+      void navigate({ to: "/coach/plans/$planId", params: { planId: r.planId } });
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -53,12 +69,34 @@ export function CoachPostEventPrompt() {
           Did any of your athletes compete at {item.competitionName}?
         </p>
         {item.linked.length ? (
-          <ul className="mt-2 space-y-1">
+          <ul className="mt-2 space-y-2">
             {item.linked.map((a) => (
-              <li key={a.athleteId} className="text-xs text-text-secondary">
-                <Check className="mr-1 inline h-3 w-3 text-accent-ink" />
-                {a.name}
-                {a.summary ? ` — ${a.summary}` : ""}
+              <li
+                key={a.athleteId}
+                className="flex flex-wrap items-center justify-between gap-2"
+              >
+                <span className="min-w-0 text-xs text-text-secondary">
+                  <Check className="mr-1 inline h-3 w-3 text-accent-ink" />
+                  {a.name}
+                  {a.summary ? ` — ${a.summary}` : ""}
+                </span>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="rounded-pill"
+                  disabled={draft.isPending}
+                  onClick={() =>
+                    draft.mutate({ athleteId: a.athleteId, competitionId: item.competitionId })
+                  }
+                >
+                  {draft.isPending && draft.variables?.athleteId === a.athleteId ? (
+                    <Loader2 className="animate-spin" />
+                  ) : (
+                    <Sparkles />
+                  )}
+                  Draft plan
+                </Button>
               </li>
             ))}
           </ul>
@@ -79,6 +117,8 @@ export function CoachPostEventPrompt() {
           </Button>
         </div>
       </div>
+
+
 
       <LinkRosterSheet
         item={active}
