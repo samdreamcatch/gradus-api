@@ -125,7 +125,7 @@ function AdminCompetitions() {
             />
           </div>
           <div className="space-y-1">
-            <Label htmlFor="slug">Board slug (optional)</Label>
+            <Label htmlFor="slug">Custom board link (optional)</Label>
             <Input
               id="slug"
               value={slug}
@@ -133,7 +133,13 @@ function AdminCompetitions() {
               placeholder="skate-detroit-2026"
               className="focus-input"
             />
+            <p className="text-meta text-text-tertiary break-all">
+              {slug.trim()
+                ? boardUrl(slug.trim())
+                : "Leave blank and we'll create one from the event name."}
+            </p>
           </div>
+
         </div>
         <Button
           type="button"
