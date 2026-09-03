@@ -96,8 +96,8 @@ export function AlsoCoachedByList({
                 <Card
                   variant="row"
                   className="press flex w-full cursor-pointer items-center gap-3 text-left"
-
                   role="button"
+
                   tabIndex={0}
                   onClick={() => onOpenCoach(c.coachId)}
                   onKeyDown={(e) => {
