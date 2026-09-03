@@ -97,13 +97,17 @@ function isNum(s: string | undefined): boolean {
   return !!s && /^\d+(\.\d+)?$/.test(s.trim());
 }
 
+/**
+ * Collect every match of a hardcoded global regex literal. The pattern object
+ * is reused (never rebuilt from a string) so no dynamic pattern can be formed.
+ */
 function matchAll(re: RegExp, doc: string): RegExpExecArray[] {
   const out: RegExpExecArray[] = [];
   let m: RegExpExecArray | null;
-  const r = new RegExp(re.source, re.flags.includes("g") ? re.flags : `${re.flags}g`);
-  while ((m = r.exec(doc)) !== null) {
+  re.lastIndex = 0;
+  while ((m = re.exec(doc)) !== null) {
     out.push(m);
-    if (m.index === r.lastIndex) r.lastIndex += 1;
+    if (m.index === re.lastIndex) re.lastIndex += 1;
   }
   return out;
 }
