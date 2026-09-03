@@ -735,15 +735,57 @@ export const getCoachAthleteAiSummary = createServerFn({ method: "GET" })
       messages = (mRes.data ?? []) as MsgRow[];
     }
 
-    if (sessions.length === 0 && messages.length === 0) {
+    // Competition recaps written by the athlete or a guardian after an event.
+    type RecapRow = { body: string; author_role: string; created_at: string; name: string };
+    let recaps: RecapRow[] = [];
+    {
+      const loose = supabaseAdmin as unknown as { from: (t: string) => any };
+      const rRes = await loose
+        .from("competition_recaps")
+        .select("body, author_role, created_at, competition_id")
+        .eq("athlete_id", data.athleteId)
+        .gte("created_at", since)
+        .order("created_at", { ascending: false })
+        .limit(20);
+      if (rRes.error) dbError(rRes.error);
+      const rows = (rRes.data ?? []) as any[];
+      if (rows.length) {
+        const cRes = await loose
+          .from("competitions")
+          .select("id, name")
+          .in("id", [...new Set(rows.map((r) => r.competition_id as string))]);
+        if (cRes.error) dbError(cRes.error);
+        const nameById = new Map<string, string>(
+          (cRes.data ?? []).map((c: any) => [c.id as string, (c.name as string) ?? ""]),
+        );
+        recaps = rows.map((r) => ({
+          body: r.body as string,
+          author_role: r.author_role as string,
+          created_at: r.created_at as string,
+          name: nameById.get(r.competition_id as string) ?? "competition",
+        }));
+      }
+    }
+
+    // The recap is also posted into the coach conversation — show it once.
+    if (recaps.length) {
+      const bodies = new Set(recaps.map((r) => r.body.trim()));
+      messages = messages.filter((m) => {
+        const tail = m.body.split("\n\n").slice(1).join("\n\n").trim();
+        return !(bodies.has(m.body.trim()) || (tail && bodies.has(tail)));
+      });
+    }
+
+    if (sessions.length === 0 && messages.length === 0 && recaps.length === 0) {
       return {
-        summary: `No practice logs or messages from ${firstName} or their parent in the last ${WINDOW_DAYS} days.`,
+        summary: `No practice logs, messages, or competition recaps from ${firstName} or their parent in the last ${WINDOW_DAYS} days.`,
         verdict: "hold",
         rationale: "Not enough recent activity to recommend a change.",
         generatedAt: new Date().toISOString(),
         empty: true,
       };
     }
+
 
     const goalLines = (goalsRes.data ?? [])
       .map((g) => {
@@ -786,6 +828,15 @@ export const getCoachAthleteAiSummary = createServerFn({ method: "GET" })
       })
       .join("\n");
 
+    const recapLines = recaps
+      .map((r) => {
+        const date = new Date(r.created_at).toISOString().slice(0, 10);
+        const event = sanitizeUserContent(r.name, 120);
+        const body = wrapUntrusted("competition_recap", sanitizeUserContent(r.body, 500));
+        return `- ${date} (${r.author_role}, "${event}"): ${body}`;
+      })
+      .join("\n");
+
     const safeName = sanitizeUserContent(firstName, 80);
 
     const prompt = `${PROMPT_INJECTION_GUARD}
@@ -801,10 +852,14 @@ ${planLines || "- (no plans on file)"}
 PRACTICE LOGS (most recent first; each tagged with the plan it was logged against):
 ${sessionLines || "- (none)"}
 
+COMPETITION RECAPS (how a recent event went, written by the athlete or their parent):
+${recapLines || "- (none)"}
+
 MESSAGES FROM ATHLETE OR PARENT (most recent first):
 ${messageLines || "- (none)"}
 
-Write a 2–3 sentence summary of what ${safeName} has been doing based strictly on the data above. Reference only plans, flow states, session notes, and messages that appear explicitly in the context. Do not use hedging language ("appears to," "seems like") as cover for inference — if you cannot point to a specific data entry, do not include it. If data is sparse, write fewer sentences and say so plainly rather than filling in gaps.
+Write a 2–3 sentence summary of what ${safeName} has been doing based strictly on the data above. Reference only plans, flow states, session notes, competition recaps, and messages that appear explicitly in the context. Do not use hedging language ("appears to," "seems like") as cover for inference — if you cannot point to a specific data entry, do not include it. If data is sparse, write fewer sentences and say so plainly rather than filling in gaps.
+
 
 Then decide a verdict:
 - "increase": athlete is clearly showing mastery, explicitly asking for more, or consistently breezing through sessions — you must be able to cite a specific session note or message that supports this
