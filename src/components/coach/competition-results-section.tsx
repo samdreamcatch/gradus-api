@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Sparkles, Trophy } from "lucide-react";
+import { Loader2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import {
   Accordion,
@@ -112,11 +112,9 @@ export function CompetitionResultsSection({
     <section>
       <div className="flex items-center justify-between">
         <Eyebrow size="micro" tone="tertiary" as="h3">
-          <span className="inline-flex items-center gap-1.5">
-            <Trophy className="h-3.5 w-3.5" />
-            Competition results
-          </span>
+          Competition results
         </Eyebrow>
+
         <Button type="button" size="sm" variant="outline" onClick={() => setLinkOpen(true)}>
           Link results
         </Button>
