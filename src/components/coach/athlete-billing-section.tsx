@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Receipt, Trash2 } from "lucide-react";
+import { Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Tag } from "@/components/ui/tag";
@@ -112,7 +112,7 @@ export function AthleteBillingSection({ athleteId }: { athleteId: string }) {
           variant="outline"
           onClick={() => setGenerateFor(athleteId)}
         >
-          <Receipt className="size-4" aria-hidden />
+          
           Generate invoice
         </Button>
       </div>
