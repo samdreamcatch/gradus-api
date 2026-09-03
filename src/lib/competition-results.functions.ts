@@ -530,3 +530,227 @@ Also write a plan title (max 8 words, no emoji) and a 1-2 sentence note summaris
 
     return { planId, title: object.title.trim(), moveCount: moveRows.length };
   });
+
+/* ------------------------------------------------- coach post-event flow */
+
+export interface CoachPostEventAthleteDTO {
+  athleteId: string;
+  name: string;
+  /** e.g. "Short program 4th · Free skate 2nd" */
+  summary: string;
+  hasRecap: boolean;
+}
+
+export interface CoachPostEventItemDTO {
+  competitionId: string;
+  competitionName: string;
+  datesLabel: string;
+  /** Rostered athletes already linked to this competition. */
+  linked: CoachPostEventAthleteDTO[];
+}
+
+/** How long after an event ends we keep asking the coach about it. */
+const COACH_ASK_WINDOW_DAYS = 7;
+
+async function requireCoachId(userId: string): Promise<string> {
+  const admin = await getAdmin();
+  const coach = await admin
+    .from("coach_profiles")
+    .select("id")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (coach.error) dbError(coach.error);
+  if (!coach.data) throw new Error("Only coaches can do this");
+  return coach.data.id as string;
+}
+
+async function coachAthleteIds(coachId: string): Promise<string[]> {
+  const admin = await getAdmin();
+  const rows = await admin.from("coach_athletes").select("athlete_id").eq("coach_id", coachId);
+  if (rows.error) dbError(rows.error);
+  return [...new Set<string>((rows.data ?? []).map((r: any) => r.athlete_id as string))];
+}
+
+/**
+ * Competitions this coach watched on a live board that have since finished,
+ * with whatever they've already linked. Drives the roster action item.
+ */
+export const getCoachPostEventItems = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<CoachPostEventItemDTO[]> => {
+    const admin = await getAdmin();
+    const coach = await admin
+      .from("coach_profiles")
+      .select("id")
+      .eq("user_id", context.userId)
+      .maybeSingle();
+    if (coach.error) dbError(coach.error);
+    if (!coach.data) return [];
+    const coachId = coach.data.id as string;
+
+    const attend = await admin
+      .from("competition_attendance")
+      .select("competition_id, first_seen_at")
+      .eq("user_id", context.userId)
+      .eq("viewer_role", "coach")
+      .is("dismissed_at", null)
+      .order("first_seen_at", { ascending: false })
+      .limit(10);
+    if (attend.error) dbError(attend.error);
+    const compIds = (attend.data ?? []).map((r: any) => r.competition_id as string);
+    if (!compIds.length) return [];
+
+    const comps = await admin
+      .from("competitions")
+      .select("id, name, dates_label, ends_on")
+      .in("id", compIds);
+    if (comps.error) dbError(comps.error);
+
+    const now = new Date();
+    const windowStart = new Date(now.getTime() - COACH_ASK_WINDOW_DAYS * 86_400_000);
+    const finished = (comps.data ?? []).filter((c: any) => {
+      if (!c.ends_on) return false;
+      const ended = new Date(`${c.ends_on}T23:59:59Z`);
+      return ended <= now && ended >= windowStart;
+    });
+    if (!finished.length) return [];
+
+    const rosterIds = await coachAthleteIds(coachId);
+    const finishedIds = finished.map((c: any) => c.id as string);
+
+    let linkRows: any[] = [];
+    let resultRows: any[] = [];
+    let recapRows: any[] = [];
+    if (rosterIds.length) {
+      const [links, results, recaps] = await Promise.all([
+        admin
+          .from("athlete_competition_skaters")
+          .select("athlete_id, competition_id")
+          .in("athlete_id", rosterIds)
+          .in("competition_id", finishedIds),
+        admin
+          .from("athlete_competition_results")
+          .select("athlete_id, competition_id, segment, event_name, placement")
+          .in("athlete_id", rosterIds)
+          .in("competition_id", finishedIds),
+        admin
+          .from("competition_recaps")
+          .select("athlete_id, competition_id")
+          .in("athlete_id", rosterIds)
+          .in("competition_id", finishedIds),
+      ]);
+      if (links.error) dbError(links.error);
+      if (results.error) dbError(results.error);
+      if (recaps.error) dbError(recaps.error);
+      linkRows = links.data ?? [];
+      resultRows = results.data ?? [];
+      recapRows = recaps.data ?? [];
+    }
+
+    const linkedAthleteIds = [...new Set(linkRows.map((l) => l.athlete_id as string))];
+    let names = new Map<string, string>();
+    if (linkedAthleteIds.length) {
+      const ath = await admin
+        .from("athletes")
+        .select("id, first_name, last_name")
+        .in("id", linkedAthleteIds);
+      if (ath.error) dbError(ath.error);
+      names = new Map(
+        (ath.data ?? []).map((a: any) => [
+          a.id as string,
+          `${a.first_name ?? ""} ${a.last_name ?? ""}`.trim() || "Athlete",
+        ]),
+      );
+    }
+
+    return finished.map((c: any) => ({
+      competitionId: c.id as string,
+      competitionName: (c.name as string) || "the competition",
+      datesLabel: (c.dates_label as string) ?? "",
+      linked: linkRows
+        .filter((l) => l.competition_id === c.id)
+        .map((l) => {
+          const aid = l.athlete_id as string;
+          const summary = resultRows
+            .filter((r) => r.competition_id === c.id && r.athlete_id === aid)
+            .map((r) =>
+              [r.segment || r.event_name, r.placement ? `${r.placement}` : ""]
+                .filter(Boolean)
+                .join(" "),
+            )
+            .join(" · ");
+          return {
+            athleteId: aid,
+            name: names.get(aid) ?? "Athlete",
+            summary,
+            hasRecap: recapRows.some((r) => r.competition_id === c.id && r.athlete_id === aid),
+          };
+        }),
+    }));
+  });
+
+/** "No one competed here" — stop asking this coach about this event. */
+export const dismissCoachPostEvent = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ competitionId: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ context, data }) => {
+    await requireCoachId(context.userId);
+    const admin = await getAdmin();
+    const { error } = await admin
+      .from("competition_attendance")
+      .update({ dismissed_at: new Date().toISOString() })
+      .eq("user_id", context.userId)
+      .eq("competition_id", data.competitionId);
+    if (error) dbError(error);
+    return { ok: true as const };
+  });
+
+export interface CoachRosterCandidateDTO {
+  athleteId: string;
+  name: string;
+  /** Already linked to this competition. */
+  linked: boolean;
+}
+
+/** Rostered figure-skating athletes the coach can link at this competition. */
+export const listCoachRosterForCompetition = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ competitionId: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ context, data }): Promise<CoachRosterCandidateDTO[]> => {
+    const coachId = await requireCoachId(context.userId);
+    const admin = await getAdmin();
+    const ids = await coachAthleteIds(coachId);
+    if (!ids.length) return [];
+
+    const [ath, sports, links] = await Promise.all([
+      admin.from("athletes").select("id, first_name, last_name").in("id", ids),
+      admin
+        .from("coach_athlete_sports")
+        .select("athlete_id")
+        .in("athlete_id", ids)
+        .eq("sport", "figure_skating"),
+      admin
+        .from("athlete_competition_skaters")
+        .select("athlete_id")
+        .in("athlete_id", ids)
+        .eq("competition_id", data.competitionId),
+    ]);
+    if (ath.error) dbError(ath.error);
+    if (sports.error) dbError(sports.error);
+    if (links.error) dbError(links.error);
+
+    const inSport = new Set((sports.data ?? []).map((r: any) => r.athlete_id as string));
+    const linked = new Set((links.data ?? []).map((r: any) => r.athlete_id as string));
+    // Boards are figure skating only; if nobody has sport rows yet, don't hide everyone.
+    const keep = (ath.data ?? []).filter((a: any) => inSport.size === 0 || inSport.has(a.id));
+    const out: CoachRosterCandidateDTO[] = keep.map((a: any) => ({
+      athleteId: a.id as string,
+      name: `${a.first_name ?? ""} ${a.last_name ?? ""}`.trim() || "Athlete",
+      linked: linked.has(a.id as string),
+    }));
+    return out.sort((a, b) => a.name.localeCompare(b.name));
+  });

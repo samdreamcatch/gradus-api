@@ -5,7 +5,9 @@ import { cn } from "@/lib/utils";
 import type { RosterAthlete } from "@/lib/coach-roster.functions";
 import type { AthletePracticeSummary } from "@/lib/coach-schedule.functions";
 import { PreLessonBriefing } from "./pre-lesson-briefing";
+import { Button } from "@/components/ui/button";
 import { LessonSlotSheet, type LessonSlotSheetMode } from "./lesson-slot-sheet";
+
 
 const DAY_LONG = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const WEEKDAY_LETTERS = ["M", "T", "W", "T", "F", "S", "S"]; // Mon..Sun
@@ -457,40 +459,43 @@ function LessonRow({
           <div className="px-4 pb-4">
             <PracticeMetric summary={summary} />
 
-            <div className="mt-3 flex flex-col gap-2">
+            <div className="mt-3 flex flex-wrap items-center gap-2">
               {onSelect ? (
-                <button
+                <Button
                   type="button"
+                  variant="outline"
+                  size="sm"
+                  className="rounded-pill"
                   onClick={() => onSelect(session.athleteId)}
-                  className="press w-full rounded-pill border border-text-primary px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-text-primary"
                 >
                   View athlete
-                </button>
+                </Button>
               ) : null}
-              {onEditRecurring || onEditOccurrence ? (
-                <div className="grid grid-cols-2 gap-2">
-                  {onEditRecurring ? (
-                    <button
-                      type="button"
-                      onClick={onEditRecurring}
-                      className="press inline-flex items-center justify-center gap-1.5 rounded-pill border border-divider/70 px-3 py-2.5 text-[9px] font-black uppercase tracking-[0.15em] text-text-secondary"
-                    >
-                      <Pencil className="h-2.5 w-2.5" />
-                      Edit recurring
-                    </button>
-                  ) : null}
-                  {onEditOccurrence ? (
-                    <button
-                      type="button"
-                      onClick={onEditOccurrence}
-                      className="press inline-flex items-center justify-center rounded-pill border border-divider/70 px-3 py-2.5 text-center text-[9px] font-black uppercase tracking-[0.15em] text-text-secondary"
-                    >
-                      Just this date
-                    </button>
-                  ) : null}
-                </div>
+              {onEditRecurring ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="rounded-pill text-text-secondary"
+                  onClick={onEditRecurring}
+                >
+                  <Pencil />
+                  Edit recurring
+                </Button>
+              ) : null}
+              {onEditOccurrence ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="rounded-pill text-text-secondary"
+                  onClick={onEditOccurrence}
+                >
+                  Just this date
+                </Button>
               ) : null}
             </div>
+
           </div>
         ) : null}
       </div>
@@ -532,27 +537,28 @@ function PracticeMetric({ summary }: { summary?: AthletePracticeSummary }) {
   const dash = Math.max(0, Math.min(100, ratio * 100));
 
   return (
-    <div className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-divider/60 bg-card/60 p-3">
+    <div className="mb-3 flex items-center justify-between gap-3 rounded-md border border-divider/60 bg-card/60 px-3 py-2">
       <div className="min-w-0">
-        <div className="mb-1 text-[10px] font-bold uppercase tracking-widest text-text-tertiary">
-          PRACTICE SINCE LAST LESSON
+        <div className="mb-0.5 text-[10px] font-bold uppercase tracking-widest text-text-tertiary">
+          Practice since last lesson
         </div>
         <div className="flex items-baseline gap-1.5">
-          <span className="font-display text-3xl font-black leading-none text-text-primary tabular-nums">
+          <span className="font-display text-xl font-black leading-none text-text-primary tabular-nums">
             {hoursStr}h
           </span>
           {hasGoal ? (
-            <span className="font-display text-base text-text-tertiary tabular-nums">
+            <span className="text-xs text-text-tertiary tabular-nums">
               / {expectedHoursPerWeek}h goal
             </span>
           ) : (
             <span className="text-xs text-text-tertiary">no weekly goal set</span>
           )}
         </div>
+
       </div>
 
       {hasGoal ? (
-        <div className="relative h-12 w-12 shrink-0" aria-label={`${pct}% of weekly goal`}>
+        <div className="relative h-9 w-9 shrink-0" aria-label={`${pct}% of weekly goal`}>
           <svg className="h-full w-full -rotate-90" viewBox="0 0 36 36">
             <path
               d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"

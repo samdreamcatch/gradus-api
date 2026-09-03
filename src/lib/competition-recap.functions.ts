@@ -150,10 +150,23 @@ export const recordCompetitionAttendance = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const viewer = await loadViewer(context.userId);
-    // Coaches and admins don't get asked for a recap.
-    if (!viewer) return { ok: false as const };
 
     const admin = await getAdmin();
+
+    // A coach at the board isn't asked for a recap, but their attendance is
+    // the trigger for the post-event "did any of your athletes compete?" flow.
+    let isCoach = false;
+    if (!viewer) {
+      const coach = await admin
+        .from("coach_profiles")
+        .select("id")
+        .eq("user_id", context.userId)
+        .maybeSingle();
+      if (coach.error) dbError(coach.error);
+      if (!coach.data) return { ok: false as const };
+      isCoach = true;
+    }
+
     const comp = await admin
       .from("competitions")
       .select("id")
@@ -171,15 +184,17 @@ export const recordCompetitionAttendance = createServerFn({ method: "POST" })
     if (existing.error) dbError(existing.error);
     if (existing.data) return { ok: true as const };
 
-    const candidates = await athletesInBoardSport(viewer);
+    const candidates = viewer ? await athletesInBoardSport(viewer) : [];
     const { error } = await admin.from("competition_attendance").insert({
       user_id: context.userId,
       competition_id: comp.data.id,
       athlete_id: candidates.length === 1 ? candidates[0].id : null,
+      viewer_role: isCoach ? "coach" : viewer!.role,
     });
     if (error) dbError(error);
     return { ok: true as const };
   });
+
 
 /* -------------------------------------------------------- pending prompt */
 
