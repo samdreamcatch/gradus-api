@@ -23,6 +23,7 @@ import { WeekScheduleView, type WeekScheduleHandle } from "@/components/coach/we
 import { AthleteDetailSheet } from "@/components/coach/athlete-detail-sheet";
 import { BillingTab } from "@/components/coach/billing-tab";
 import { ScheduleImportSheet } from "@/components/coach/schedule-import-sheet";
+import { CoachPostEventPrompt } from "@/components/coach/post-event-prompt";
 
 
 import { InviteCard } from "@/components/onboarding/invite-card";
