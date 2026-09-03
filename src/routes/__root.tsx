@@ -21,6 +21,7 @@ import { BiometricGate } from "@/components/native/biometric-gate";
 import { InstallBannerMount } from "@/components/install-banner-mount";
 import { PwaUpdatePrompt } from "@/components/pwa-update-prompt";
 import { installErrorReporter, reportError } from "@/lib/client-error-reporter";
+import { installChunkErrorRecovery, isModuleLoadError, recoverFromStaleChunks } from "@/pwa/chunk-recovery";
 import { PRE_HYDRATION_SNAPSHOT_SCRIPT } from "@/lib/hydration-diagnostics";
 import { ImpersonationBanner } from "@/components/admin/impersonation-banner";
 
@@ -59,9 +60,17 @@ function normalizeUnknownError(error: unknown): Error {
 function ErrorComponent({ error, reset }: { error: unknown; reset: () => void }) {
   const normalizedError = normalizeUnknownError(error);
   console.error(error ?? normalizedError);
+  const staleChunk = isModuleLoadError(error) || isModuleLoadError(normalizedError);
   useEffect(() => {
-    reportError(normalizedError, { metadata: { type: "router.errorComponent" } });
-  }, [normalizedError]);
+    reportError(normalizedError, {
+      metadata: { type: "router.errorComponent", staleChunk },
+    });
+  }, [normalizedError, staleChunk]);
+  // A missing JS chunk means the browser/service worker is holding a previous
+  // deploy. Clear caches and reload once instead of showing an error screen.
+  useEffect(() => {
+    if (staleChunk) recoverFromStaleChunks();
+  }, [staleChunk]);
   const router = useRouter();
   // In production, hide raw error messages — they can leak internal
   // schema names, constraint identifiers, or stack details. Developers
@@ -156,6 +165,7 @@ function RootComponent() {
     registerServiceWorker();
     initNativeShell();
     installErrorReporter();
+    installChunkErrorRecovery();
   }, []);
   return (
     <QueryClientProvider client={queryClient}>

@@ -44,8 +44,15 @@ export default defineConfig({
         },
         workbox: {
           globPatterns: ["**/*.{js,css,html,woff,woff2,ttf,svg,png,jpg,jpeg,webp,ico}"],
-          navigateFallback: "/",
-          navigateFallbackDenylist: [/^\/api\//, /^\/_serverFn\//, /^\/~oauth/, /^\/sw\.js$/],
+          // This app is server-rendered: every route's HTML is produced fresh
+          // by the worker. Falling back to a precached "/" shell means an old
+          // deploy's HTML can be served after a release, pointing at
+          // /assets/*.js files that no longer exist ("Importing a module
+          // script failed"). NetworkFirst navigations below cover offline.
+          navigateFallback: undefined,
+          cleanupOutdatedCaches: true,
+          clientsClaim: true,
+          skipWaiting: false,
           runtimeCaching: [
             // Belt-and-braces: any request to Supabase bypasses the SW
             // entirely so live data and auth always hit the network.
