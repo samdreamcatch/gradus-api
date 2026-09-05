@@ -19,6 +19,8 @@ export interface RateLimitKey {
   route: string;
   ip: string | null;
   userId?: string | null;
+  /** Extra bucket component for keys that aren't IP/user, e.g. a sign-in identifier. */
+  extra?: string | null;
 }
 
 export type RateLimitResult = { allowed: true } | { allowed: false; retryAfterSeconds: number };
@@ -51,7 +53,7 @@ export async function checkRateLimit(
   config: RateLimitConfig,
   key: RateLimitKey,
 ): Promise<RateLimitResult> {
-  const bucket = [key.route, key.userId ?? "anon", key.ip ?? "unknown"].join(":");
+  const bucket = [key.route, key.userId ?? "anon", key.ip ?? "unknown", key.extra ?? ""].join(":");
   const windowMs = config.windowSeconds * 1000;
   const now = Date.now();
   const windowStartMs = Math.floor(now / windowMs) * windowMs;

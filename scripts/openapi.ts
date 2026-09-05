@@ -14,6 +14,13 @@ import "../src/routes/api/v1/meta/config";
 import "../src/routes/api/v1/meta/client-policy";
 import "../src/routes/api/v1/me/presence";
 import "../src/routes/api/v1/me/terms";
+import "../src/routes/api/v1/auth/apple";
+import "../src/routes/api/v1/auth/google";
+import "../src/routes/api/v1/auth/password";
+import "../src/routes/api/v1/auth/recover";
+import "../src/routes/api/v1/auth/signup/coach";
+import "../src/routes/api/v1/auth/username/resolve";
+import "../src/routes/api/v1/auth/username/check";
 
 const outPath = resolve(__dirname, "../docs/api/openapi.json");
 mkdirSync(dirname(outPath), { recursive: true });
