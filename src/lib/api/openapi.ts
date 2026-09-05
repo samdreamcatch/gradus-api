@@ -39,17 +39,76 @@ export interface RegisterRouteOptions {
   auth: "user" | "public";
   input?: ZodType;
   output: ZodType;
+  /** Defaults to `deriveOperationId(method, path)`. */
+  operationId?: string;
+}
+
+/**
+ * Stable, unique operation name derived from the method and path, e.g.
+ * `POST /api/v1/auth/username/check` → `postAuthUsernameCheck` and
+ * `GET /api/v1/boards/{slug}` → `getBoardsBySlug`. Client generators
+ * (swift-openapi-generator for gradus-ios) require an `operationId` on
+ * every operation and use it as the method name, so once published a
+ * derived id is part of the v1 contract: renaming a path is a breaking
+ * change, which §6.2 already forbids within v1.
+ */
+export function deriveOperationId(method: string, path: string): string {
+  const capitalize = (segment: string) =>
+    segment
+      .split(/[-_]/)
+      .filter(Boolean)
+      .map((word) => word[0].toUpperCase() + word.slice(1))
+      .join("");
+  const parts = path
+    .replace(/^\/api\/v1\/?/, "")
+    .split("/")
+    .filter(Boolean)
+    .map((segment) =>
+      segment.startsWith("{") && segment.endsWith("}")
+        ? "By" + capitalize(segment.slice(1, -1))
+        : capitalize(segment),
+    );
+  return method.toLowerCase() + parts.join("");
+}
+
+/** operationId → "METHOD path" that claimed it; re-registering the same route (dev HMR) is a no-op. */
+const registeredOperationIds = new Map<string, string>();
+
+/**
+ * Every `{name}` segment of the path becomes a required string path
+ * parameter. Generators (swift-openapi-generator) reject a templated path
+ * whose parameters are not declared, and file routes receive them as
+ * strings, so the string schema is the truth of the transport.
+ */
+export function pathParamsSchema(
+  path: string,
+): z.ZodObject<Record<string, z.ZodString>> | undefined {
+  const names = [...path.matchAll(/\{([a-zA-Z0-9_-]+)\}/g)].map((m) => m[1]);
+  if (names.length === 0) return undefined;
+  return z.object(Object.fromEntries(names.map((name) => [name, z.string()])));
 }
 
 export function registerApiRoute(route: RegisterRouteOptions): void {
+  const operationId = route.operationId ?? deriveOperationId(route.method, route.path);
+  const routeKey = `${route.method.toUpperCase()} ${route.path}`;
+  const owner = registeredOperationIds.get(operationId);
+  if (owner && owner !== routeKey) {
+    throw new Error(
+      `openapi: duplicate operationId "${operationId}" for ${routeKey}; already used by ${owner}. Set an explicit operationId on one of them.`,
+    );
+  }
+  registeredOperationIds.set(operationId, routeKey);
+
   apiRegistry.registerPath({
     method: route.method,
     path: route.path,
+    operationId,
     summary: route.summary,
     security: route.auth === "user" ? [{ bearerAuth: [] }] : [],
-    request: route.input
-      ? { body: { content: { "application/json": { schema: route.input } } } }
-      : undefined,
+    request: {
+      params: pathParamsSchema(route.path),
+      body: route.input ? { content: { "application/json": { schema: route.input } } } : undefined,
+    },
     responses: {
       200: {
         description: "OK",

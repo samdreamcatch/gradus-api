@@ -49,6 +49,7 @@
   "paths": {
     "/api/v1/meta/config": {
       "get": {
+        "operationId": "getMetaConfig",
         "summary": "Public feature flags and terms version",
         "security": [],
         "responses": {
@@ -97,6 +98,7 @@
     },
     "/api/v1/meta/client-policy": {
       "get": {
+        "operationId": "getMetaClientPolicy",
         "summary": "Minimum supported client version and force-update message",
         "security": [],
         "responses": {
@@ -148,6 +150,7 @@
     },
     "/api/v1/me/presence": {
       "post": {
+        "operationId": "postMePresence",
         "summary": "Bump the caller's last-seen timestamp",
         "security": [
           {
@@ -191,6 +194,7 @@
     },
     "/api/v1/me/terms": {
       "get": {
+        "operationId": "getMeTerms",
         "summary": "Terms-of-service acceptance status for the caller",
         "security": [
           {
@@ -242,6 +246,7 @@
     },
     "/api/v1/auth/apple": {
       "post": {
+        "operationId": "postAuthApple",
         "summary": "Sign in with Apple",
         "security": [],
         "requestBody": {
@@ -327,6 +332,7 @@
     },
     "/api/v1/auth/google": {
       "post": {
+        "operationId": "postAuthGoogle",
         "summary": "Sign in with Google",
         "security": [],
         "requestBody": {
@@ -393,6 +399,7 @@
     },
     "/api/v1/auth/password": {
       "post": {
+        "operationId": "postAuthPassword",
         "summary": "Sign in with email/username and password",
         "security": [],
         "requestBody": {
@@ -460,6 +467,7 @@
     },
     "/api/v1/auth/recover": {
       "post": {
+        "operationId": "postAuthRecover",
         "summary": "Send a password-reset email",
         "security": [],
         "requestBody": {
@@ -517,6 +525,7 @@
     },
     "/api/v1/auth/signup/coach": {
       "post": {
+        "operationId": "postAuthSignupCoach",
         "summary": "Coach email/password sign-up",
         "security": [],
         "requestBody": {
@@ -615,6 +624,7 @@
     },
     "/api/v1/auth/username/resolve": {
       "post": {
+        "operationId": "postAuthUsernameResolve",
         "summary": "Resolve an athlete username to its sign-in email",
         "security": [],
         "requestBody": {
@@ -671,6 +681,7 @@
     },
     "/api/v1/auth/username/check": {
       "post": {
+        "operationId": "postAuthUsernameCheck",
         "summary": "Check whether an athlete username is available",
         "security": [],
         "requestBody": {
@@ -727,6 +738,7 @@
     },
     "/api/v1/public/boards": {
       "get": {
+        "operationId": "getPublicBoards",
         "summary": "Competitions with a Live Board, newest first",
         "security": [],
         "responses": {
@@ -782,8 +794,19 @@
     },
     "/api/v1/public/boards/{slug}": {
       "get": {
+        "operationId": "getPublicBoardsBySlug",
         "summary": "One competition's Live Board",
         "security": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "slug",
+            "in": "path"
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
@@ -2049,6 +2072,7 @@
     },
     "/api/v1/boards/my-skaters": {
       "get": {
+        "operationId": "getBoardsMySkaters",
         "summary": "Names of the caller's own/rostered athletes, for board auto-follow",
         "security": [
           {
@@ -2084,10 +2108,21 @@
     },
     "/api/v1/boards/{slug}/follows": {
       "get": {
+        "operationId": "getBoardsBySlugFollows",
         "summary": "List the caller's followed skaters for a board",
         "security": [
           {
             "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "slug",
+            "in": "path"
           }
         ],
         "responses": {
@@ -2117,10 +2152,21 @@
         }
       },
       "put": {
+        "operationId": "putBoardsBySlugFollows",
         "summary": "Replace the caller's followed skaters for a board",
         "security": [
           {
             "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "slug",
+            "in": "path"
           }
         ],
         "requestBody": {
@@ -2173,10 +2219,29 @@
     },
     "/api/v1/boards/{slug}/follows/{name}": {
       "delete": {
+        "operationId": "deleteBoardsBySlugFollowsByName",
         "summary": "Unfollow one skater on a board",
         "security": [
           {
             "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "slug",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "name",
+            "in": "path"
           }
         ],
         "responses": {
