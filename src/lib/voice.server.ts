@@ -498,12 +498,13 @@ export async function buildDraft(ctx: ParseContext): Promise<VoicePlanDraft> {
       if (err2.statusCode === 429) throw new Error("AI is busy — try again in a moment");
       if (err2.statusCode === 402)
         throw new Error("AI credits exhausted — add credits in workspace settings");
-      throw new Error(
-        "Couldn't turn that recording into a plan. Try again, or record a shorter note.",
-      );
+      // Do NOT throw here: throwing skips applyDraft, and with it the
+      // `voice_transcript` write that keeps the coach's words on the plan.
+      // Return the empty fallback flagged aiFailed so the transcript is
+      // saved and the client can show an honest error instead of a success.
+      return { moves: [], aiFailed: true };
     }
   }
-
 
   const { id: athleteId, unresolved } = resolveAthlete(slotted.athleteName, ctx.athletes);
   const resolvedAthlete = athleteId ? (ctx.athletes.find((a) => a.id === athleteId) ?? null) : null;
@@ -577,6 +578,8 @@ export interface ApplyResult {
   touched: VoiceTouched;
   unresolvedAthleteName: string | null;
   appliedMoveCount: number;
+  /** The AI step failed; the transcript was saved on the plan but nothing was structured. */
+  aiFailed: boolean;
 }
 
 export async function applyDraft(
@@ -841,5 +844,6 @@ export async function applyDraft(
     touched,
     unresolvedAthleteName: draft.unresolvedAthleteName ?? null,
     appliedMoveCount,
+    aiFailed: Boolean(draft.aiFailed),
   };
 }
