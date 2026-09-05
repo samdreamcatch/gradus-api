@@ -52,42 +52,78 @@ async function dropCaches(): Promise<void> {
   }
 }
 
-/**
- * Clears service-worker + cache storage and hard-reloads, at most once per tab
- * session so a genuinely broken deploy cannot cause a reload loop.
- * Returns true when a recovery reload was started.
- */
-export function recoverFromStaleChunks(): boolean {
-  if (typeof window === "undefined") return false;
-  // A chunk can also fail to load simply because the device is offline. Wiping
-  // caches and reloading then leaves the user with a blank page, so never
-  // recover while offline — the import will succeed again once back online.
-  if (typeof navigator !== "undefined" && navigator.onLine === false) return false;
+/** Recent recovery attempt timestamps, oldest first, within the rolling window. */
+function readAttempts(now: number): number[] | null {
   try {
-    if (sessionStorage.getItem(RELOAD_FLAG)) return false;
-    sessionStorage.setItem(RELOAD_FLAG, String(Date.now()));
+    const raw = localStorage.getItem(RELOAD_FLAG);
+    const parsed = raw ? (JSON.parse(raw) as unknown) : [];
+    const list = Array.isArray(parsed) ? parsed.filter((n): n is number => typeof n === "number") : [];
+    return list.filter((t) => now - t < WINDOW_MS).sort((a, b) => a - b);
   } catch {
-    // Storage blocked (private mode) — skip rather than risk a loop.
+    return null;
+  }
+}
+
+function writeAttempts(attempts: number[]): boolean {
+  try {
+    localStorage.setItem(RELOAD_FLAG, JSON.stringify(attempts));
+    return true;
+  } catch {
     return false;
   }
+}
+
+/** True when the network really is reachable (not just `navigator.onLine`). */
+async function isReachable(): Promise<boolean> {
+  try {
+    await fetch("/", { method: "HEAD", cache: "no-store" });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Clears service-worker + cache storage and hard-reloads, rate-limited to one
+ * attempt per minute and three per hour so a genuinely broken deploy cannot
+ * cause a reload loop. Never runs while offline — wiping caches then would
+ * leave the user with a blank page.
+ * Resolves true when a recovery reload was started.
+ */
+export async function recoverFromStaleChunks(): Promise<boolean> {
+  if (typeof window === "undefined") return false;
+  if (typeof navigator !== "undefined" && navigator.onLine === false) return false;
+
+  const now = Date.now();
+  const attempts = readAttempts(now);
+  // Storage blocked (private mode) — skip rather than risk a loop.
+  if (attempts === null) return false;
+  const last = attempts[attempts.length - 1];
+  if (last !== undefined && now - last < MIN_GAP_MS) return false;
+  if (attempts.length >= MAX_ATTEMPTS_PER_WINDOW) return false;
+
+  // `navigator.onLine` lies on captive portals and flaky mobile links.
+  if (!(await isReachable())) return false;
+
+  if (!writeAttempts([...attempts, now])) return false;
+
   void dropCaches().finally(() => {
     window.location.reload();
   });
   return true;
 }
 
-
 /** Listens for uncaught chunk-load failures anywhere in the app. */
 export function installChunkErrorRecovery(): void {
   if (typeof window === "undefined") return;
   window.addEventListener("error", (event) => {
     if (isModuleLoadError((event as ErrorEvent).error ?? event.message)) {
-      recoverFromStaleChunks();
+      void recoverFromStaleChunks();
     }
   });
   window.addEventListener("unhandledrejection", (event) => {
     if (isModuleLoadError((event as PromiseRejectionEvent).reason)) {
-      recoverFromStaleChunks();
+      void recoverFromStaleChunks();
     }
   });
 }
