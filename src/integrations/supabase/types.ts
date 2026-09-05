@@ -657,6 +657,30 @@ export type Database = {
         }
         Relationships: []
       }
+      board_follows: {
+        Row: {
+          competition_slug: string
+          created_at: string
+          id: string
+          skater_name: string
+          user_id: string
+        }
+        Insert: {
+          competition_slug: string
+          created_at?: string
+          id?: string
+          skater_name: string
+          user_id: string
+        }
+        Update: {
+          competition_slug?: string
+          created_at?: string
+          id?: string
+          skater_name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       client_errors: {
         Row: {
           created_at: string
