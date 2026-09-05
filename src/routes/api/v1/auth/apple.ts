@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { defineApiRoute } from "@/lib/api/define-route";
+import { ApiError } from "@/lib/api/errors";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import {
   exchangeAppleAuthorizationCode,
@@ -14,9 +15,10 @@ import { verifyAppleIdentityToken } from "@/lib/api/provider-verify";
 const inputSchema = z.object({
   identityToken: z.string().min(1),
   nonce: z.string().min(1),
-  // Accepted for forward compatibility with the native client's first-time
-  // payload (PRD §6.4) but not yet persisted anywhere — there's no profile
-  // to attach it to until onboarding runs, which is a later phase.
+  // Apple sends the user's name ONLY on the very first authorization; the
+  // client forwards it here and we keep it in user_metadata at account
+  // creation so onboarding can prefill it. It is never used to match an
+  // existing account.
   fullName: z
     .object({ givenName: z.string().optional(), familyName: z.string().optional() })
     .optional(),
@@ -51,6 +53,8 @@ export const Route = createFileRoute("/api/v1/auth/apple")({
           provider: "apple",
           providerSub: identity.sub,
           email: identity.email,
+          emailVerified: identity.emailVerified,
+          name: input.fullName ?? null,
         });
 
         if (input.authorizationCode) {
@@ -60,7 +64,11 @@ export const Route = createFileRoute("/api/v1/auth/apple")({
 
         const email = await getUserEmail(supabaseAdmin, userId);
         if (!email) {
-          throw new Error("This account has no email on file to sign in with.");
+          throw new ApiError({
+            code: "account_email_missing",
+            status: 409,
+            message: "This account has no email on file to sign in with.",
+          });
         }
         const session = await mintSessionForEmail(supabaseAdmin, email);
 

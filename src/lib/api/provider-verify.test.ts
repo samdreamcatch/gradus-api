@@ -48,6 +48,8 @@ describe("verifyAppleIdentityToken", () => {
       sub: "apple-sub-123",
       email: "user@example.com",
       emailVerified: true,
+      givenName: null,
+      familyName: null,
     });
   });
 
@@ -100,7 +102,12 @@ describe("verifyGoogleIdToken", () => {
   it("accepts a validly signed token for the configured client id", async () => {
     process.env.GOOGLE_IOS_CLIENT_ID = "test-client-id.apps.googleusercontent.com";
     const { privateKey, publicKey } = await testKeyPair();
-    const token = await new SignJWT({ email: "user@example.com", email_verified: true })
+    const token = await new SignJWT({
+      email: "user@example.com",
+      email_verified: true,
+      given_name: "Tami",
+      family_name: "Taylor",
+    })
       .setProtectedHeader({ alg: "ES256" })
       .setIssuer("https://accounts.google.com")
       .setAudience("test-client-id.apps.googleusercontent.com")
@@ -114,6 +121,8 @@ describe("verifyGoogleIdToken", () => {
       sub: "google-sub-456",
       email: "user@example.com",
       emailVerified: true,
+      givenName: "Tami",
+      familyName: "Taylor",
     });
 
     if (prevClientId) process.env.GOOGLE_IOS_CLIENT_ID = prevClientId;

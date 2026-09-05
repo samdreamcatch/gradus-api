@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { defineApiRoute } from "@/lib/api/define-route";
+import { ApiError } from "@/lib/api/errors";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { findOrCreateIdentityUser, getUserEmail, mintSessionForEmail } from "@/lib/api/auth-broker";
 import { verifyGoogleIdToken } from "@/lib/api/provider-verify";
@@ -31,11 +32,17 @@ export const Route = createFileRoute("/api/v1/auth/google")({
           provider: "google",
           providerSub: identity.sub,
           email: identity.email,
+          emailVerified: identity.emailVerified,
+          name: { givenName: identity.givenName, familyName: identity.familyName },
         });
 
         const email = await getUserEmail(supabaseAdmin, userId);
         if (!email) {
-          throw new Error("This account has no email on file to sign in with.");
+          throw new ApiError({
+            code: "account_email_missing",
+            status: 409,
+            message: "This account has no email on file to sign in with.",
+          });
         }
         const session = await mintSessionForEmail(supabaseAdmin, email);
 

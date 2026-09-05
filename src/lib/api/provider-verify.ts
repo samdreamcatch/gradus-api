@@ -16,7 +16,19 @@ import { ApiError } from "./errors";
 export interface VerifiedIdentity {
   sub: string;
   email: string | null;
+  /**
+   * Whether the PROVIDER vouches for `email`. The broker only matches an
+   * identity to an existing account by email when this is true; an
+   * unverified provider email must never unlock someone else's account.
+   */
   emailVerified: boolean;
+  /** Name claims when the provider sends them (Google does; Apple sends the name in the client payload instead). */
+  givenName: string | null;
+  familyName: string | null;
+}
+
+function optionalString(value: unknown): string | null {
+  return typeof value === "string" && value.trim() ? value.trim() : null;
 }
 
 const APPLE_ISSUER = "https://appleid.apple.com";
@@ -92,8 +104,10 @@ export async function verifyAppleIdentityToken(
 
   return {
     sub,
-    email: typeof claims.email === "string" ? claims.email : null,
+    email: optionalString(claims.email),
     emailVerified: claims.email_verified === true || claims.email_verified === "true",
+    givenName: null,
+    familyName: null,
   };
 }
 
@@ -140,7 +154,9 @@ export async function verifyGoogleIdToken(
 
   return {
     sub,
-    email: typeof claims.email === "string" ? claims.email : null,
+    email: optionalString(claims.email),
     emailVerified: claims.email_verified === true || claims.email_verified === "true",
+    givenName: optionalString(claims.given_name),
+    familyName: optionalString(claims.family_name),
   };
 }

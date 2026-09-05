@@ -1,9 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { defineApiRoute } from "@/lib/api/define-route";
-import { ApiError } from "@/lib/api/errors";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { goTrueRequest } from "@/lib/api/gotrue";
+import { signUpCoachWithPassword } from "@/lib/api/auth-broker";
 
 const inputSchema = z.object({
   email: z.string().email(),
@@ -37,41 +35,20 @@ export const Route = createFileRoute("/api/v1/auth/signup/coach")({
       output: outputSchema,
       rateLimit: { windowSeconds: 60, max: 10 },
       handler: async ({ input }) => {
-        // email_confirm left false so the account is subject to whatever
-        // this Supabase project's own "Confirm email" setting already is —
-        // same as the web's `supabase.auth.signUp`. We don't force either
-        // way because that setting isn't readable from this repo (see the
-        // B2 PR description).
-        const { data: created, error: createError } = await supabaseAdmin.auth.admin.createUser({
+        // Same GoTrue /signup call the web makes, so the project's own
+        // confirmation setting decides whether a session comes back.
+        const result = await signUpCoachWithPassword({
           email: input.email,
           password: input.password,
-          email_confirm: false,
         });
-        if (createError || !created?.user) {
-          throw new ApiError({
-            code: "signup_failed",
-            status: 409,
-            message: createError?.message ?? "Could not create this account.",
-          });
-        }
-
-        // Mirror `supabase.auth.signUp`'s behavior: if the project doesn't
-        // require confirmation, signing up also signs the user in.
-        const signInResult = await goTrueRequest<{
-          access_token: string;
-          refresh_token: string;
-          expires_in: number;
-        }>("token?grant_type=password", { email: input.email, password: input.password });
-
-        if (!signInResult.ok || !signInResult.data) {
+        if (result.confirmationRequired) {
           return { confirmationRequired: true as const };
         }
-
         return {
           confirmationRequired: false as const,
-          accessToken: signInResult.data.access_token,
-          refreshToken: signInResult.data.refresh_token,
-          expiresIn: signInResult.data.expires_in,
+          accessToken: result.session.accessToken,
+          refreshToken: result.session.refreshToken,
+          expiresIn: result.session.expiresIn,
         };
       },
     }),

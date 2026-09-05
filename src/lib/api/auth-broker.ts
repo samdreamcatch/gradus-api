@@ -130,6 +130,27 @@ export interface IdentityLookupResult {
   isNewUser: boolean;
 }
 
+export interface IdentityName {
+  givenName?: string | null;
+  familyName?: string | null;
+}
+
+export interface ProviderIdentityInput {
+  provider: "apple" | "google";
+  providerSub: string;
+  email: string | null;
+  /** Must come from the verified token (or Apple's payload), never from the client body. */
+  emailVerified: boolean;
+  /** Apple sends the name once, on first sign-in; Google sends it in the token. Stored at creation only. */
+  name?: IdentityName | null;
+}
+
+/** GoTrue stores emails lowercased; providers don't promise any casing. */
+export function normalizeEmail(email: string | null | undefined): string | null {
+  const trimmed = email?.trim().toLowerCase();
+  return trimmed ? trimmed : null;
+}
+
 interface AuthIdentityRow {
   user_id: string;
 }
@@ -152,6 +173,7 @@ type AuthIdentitiesTable = {
       provider: string;
       provider_sub: string;
       email: string | null;
+      email_verified?: boolean;
       apple_refresh_token?: string | null;
     }) => Promise<{ data: unknown; error: unknown }>;
     update: (patch: { apple_refresh_token: string }) => {
@@ -171,12 +193,19 @@ type AuthIdentitiesTable = {
  * Finds the Supabase user for a verified provider identity, matching PRD
  * §6.4's order: known `auth_identities` link, then a confirmed user with
  * the same email, then a brand-new user. Links the identity either way.
+ *
+ * Security invariant: the email match and the new-account path both require
+ * `emailVerified`. Without it, anyone who controls a provider account with
+ * an unverified address equal to a Gradus user's email could sign in as
+ * that user. A known `auth_identities` link is honored regardless, because
+ * it was established under this same rule.
  */
 export async function findOrCreateIdentityUser(
   admin: ApiContext["admin"],
-  identity: { provider: "apple" | "google"; providerSub: string; email: string | null },
+  identity: ProviderIdentityInput,
 ): Promise<IdentityLookupResult> {
   const table = (admin as unknown as AuthIdentitiesTable).from("auth_identities");
+  const email = normalizeEmail(identity.email);
 
   const existing = await table
     .select("user_id")
@@ -195,12 +224,20 @@ export async function findOrCreateIdentityUser(
     return { userId: existing.data.user_id, isNewUser: false };
   }
 
+  if (email && !identity.emailVerified) {
+    throw new ApiError({
+      code: "identity_email_unverified",
+      status: 422,
+      message: "Verify your email with your sign-in provider, then try again.",
+    });
+  }
+
   let userId: string | null = null;
 
-  if (identity.email) {
+  if (email) {
     const { data: matchedId, error: rpcError } = await (
       admin as unknown as AuthIdentitiesTable
-    ).rpc("find_confirmed_user_by_email", { _email: identity.email });
+    ).rpc("find_confirmed_user_by_email", { _email: email });
     if (rpcError) {
       console.error("[api] find_confirmed_user_by_email", rpcError);
       throw new ApiError({
@@ -214,17 +251,26 @@ export async function findOrCreateIdentityUser(
 
   let isNewUser = false;
   if (!userId) {
-    if (!identity.email) {
+    if (!email) {
       throw new ApiError({
         code: "identity_email_required",
         status: 422,
         message: "This provider didn't share an email for a first-time sign-in. Please try again.",
       });
     }
+    const givenName = identity.name?.givenName?.trim() || null;
+    const familyName = identity.name?.familyName?.trim() || null;
+    const fullName = [givenName, familyName].filter(Boolean).join(" ") || null;
     const { data: created, error: createError } = await admin.auth.admin.createUser({
-      email: identity.email,
+      email,
+      // Safe only because emailVerified was checked above.
       email_confirm: true,
-      user_metadata: { signed_up_via: identity.provider },
+      user_metadata: {
+        signed_up_via: identity.provider,
+        ...(givenName ? { given_name: givenName } : {}),
+        ...(familyName ? { family_name: familyName } : {}),
+        ...(fullName ? { full_name: fullName } : {}),
+      },
     });
     if (createError || !created?.user) {
       console.error("[api] createUser for identity", createError);
@@ -242,7 +288,7 @@ export async function findOrCreateIdentityUser(
     user_id: userId,
     provider: identity.provider,
     provider_sub: identity.providerSub,
-    email: identity.email,
+    email,
   });
   if (insertError) {
     console.error("[api] auth_identities insert", insertError);
@@ -296,6 +342,74 @@ export interface MintedSession {
   accessToken: string;
   refreshToken: string;
   expiresIn: number;
+}
+
+export type CoachSignUpResult =
+  | { confirmationRequired: false; session: MintedSession }
+  | { confirmationRequired: true };
+
+/** Where the confirmation email (if the project ever requires one) lands — the same page the web's `emailRedirectTo` uses. */
+export const COACH_SIGNUP_REDIRECT_URL = "https://gradus.training/signup/coach";
+
+/**
+ * Coach email/password sign-up through GoTrue's own `/signup` endpoint with
+ * service-role credentials (captcha-exempt, PRD §4.2). This is the same
+ * call `supabase.auth.signUp` makes on the web, so it inherits the
+ * project's real "Confirm email" setting: with auto-confirm (this
+ * project's current setting) GoTrue returns a session; if confirmation
+ * were ever turned on, GoTrue sends the email and returns a user without
+ * tokens. Creating the user through the admin API instead would leave it
+ * unconfirmed with no email sent, and the follow-up password grant would
+ * fail for every new coach.
+ */
+export async function signUpCoachWithPassword(
+  input: { email: string; password: string },
+  init: { fetchImpl?: typeof fetch; redirectTo?: string } = {},
+): Promise<CoachSignUpResult> {
+  const email = normalizeEmail(input.email);
+  if (!email) {
+    throw new ApiError({ code: "validation_failed", status: 400, message: "Email is required." });
+  }
+  const redirectTo = init.redirectTo ?? COACH_SIGNUP_REDIRECT_URL;
+
+  const result = await goTrueRequest<{
+    access_token?: string;
+    refresh_token?: string;
+    expires_in?: number;
+  }>(
+    `signup?redirect_to=${encodeURIComponent(redirectTo)}`,
+    { email, password: input.password },
+    init,
+  );
+
+  if (!result.ok) {
+    // GoTrue's own message names the failure precisely ("User already
+    // registered", weak password, signups disabled). Don't forward it: the
+    // first is an account-existence oracle. Log it, return one neutral code.
+    console.error("[api] signup/coach", result.status, result.error);
+    throw new ApiError({
+      code: "signup_failed",
+      status: 409,
+      message:
+        "We couldn't create an account with that email and password. If you already have an account, sign in or reset your password.",
+    });
+  }
+
+  const data = result.data;
+  if (data?.access_token && data.refresh_token && typeof data.expires_in === "number") {
+    return {
+      confirmationRequired: false,
+      session: {
+        accessToken: data.access_token,
+        refreshToken: data.refresh_token,
+        expiresIn: data.expires_in,
+      },
+    };
+  }
+  // 200 with a user but no tokens: confirmation required (or GoTrue's
+  // obfuscated reply for an already-registered email when confirmations
+  // are on). Same outcome the web shows: "check your email".
+  return { confirmationRequired: true };
 }
 
 interface GenerateLinkProperties {
