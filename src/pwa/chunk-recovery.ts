@@ -7,6 +7,11 @@
 // its error screen. The only real cure is to drop the caches and reload once.
 
 const RELOAD_FLAG = "gradus:chunk-reload";
+/** Minimum gap between two recovery attempts. */
+const MIN_GAP_MS = 60 * 1000;
+/** Rolling window and cap so a genuinely broken deploy cannot loop forever. */
+const WINDOW_MS = 60 * 60 * 1000;
+const MAX_ATTEMPTS_PER_WINDOW = 3;
 
 const MODULE_ERROR_PATTERNS = [
   "importing a module script failed",
