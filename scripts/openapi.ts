@@ -21,6 +21,11 @@ import "../src/routes/api/v1/auth/recover";
 import "../src/routes/api/v1/auth/signup/coach";
 import "../src/routes/api/v1/auth/username/resolve";
 import "../src/routes/api/v1/auth/username/check";
+import "../src/routes/api/v1/public/boards/index";
+import "../src/routes/api/v1/public/boards/$slug";
+import "../src/routes/api/v1/boards/my-skaters";
+import "../src/routes/api/v1/boards/$slug/follows/index";
+import "../src/routes/api/v1/boards/$slug/follows/$name";
 
 const outPath = resolve(__dirname, "../docs/api/openapi.json");
 mkdirSync(dirname(outPath), { recursive: true });

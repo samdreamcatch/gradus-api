@@ -724,6 +724,1495 @@
           }
         }
       }
+    },
+    "/api/v1/public/boards": {
+      "get": {
+        "summary": "Competitions with a Live Board, newest first",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "slug": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "datesLabel": {
+                        "type": "string"
+                      },
+                      "location": {
+                        "type": "string"
+                      },
+                      "isLiveWindow": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "slug",
+                      "name",
+                      "datesLabel",
+                      "location",
+                      "isLiveWindow"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/public/boards/{slug}": {
+      "get": {
+        "summary": "One competition's Live Board",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "slug": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "datesLabel": {
+                      "type": "string"
+                    },
+                    "location": {
+                      "type": "string"
+                    },
+                    "active": {
+                      "type": "boolean"
+                    },
+                    "isLiveWindow": {
+                      "type": "boolean"
+                    },
+                    "generatedAt": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "error": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "payload": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "generatedAt": {
+                          "type": "string"
+                        },
+                        "competition": {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "type": "string"
+                            },
+                            "dates": {
+                              "type": "string"
+                            },
+                            "location": {
+                              "type": "string"
+                            },
+                            "url": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "name",
+                            "dates",
+                            "location",
+                            "url"
+                          ]
+                        },
+                        "rinks": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "type": "string"
+                              },
+                              "state": {
+                                "type": "string",
+                                "enum": [
+                                  "live",
+                                  "idle"
+                                ]
+                              },
+                              "current": {
+                                "type": [
+                                  "object",
+                                  "null"
+                                ],
+                                "properties": {
+                                  "event": {
+                                    "type": "string"
+                                  },
+                                  "segment": {
+                                    "type": "string"
+                                  },
+                                  "status": {
+                                    "type": "string"
+                                  },
+                                  "skaters": {
+                                    "type": "number"
+                                  },
+                                  "withdrawn": {
+                                    "type": "number"
+                                  },
+                                  "done": {
+                                    "type": "number"
+                                  },
+                                  "startLabel": {
+                                    "type": "string"
+                                  },
+                                  "startIso": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "url": {
+                                    "type": "string"
+                                  },
+                                  "justScored": {
+                                    "type": [
+                                      "object",
+                                      "null"
+                                    ],
+                                    "properties": {
+                                      "start": {
+                                        "type": "number"
+                                      },
+                                      "of": {
+                                        "type": "number"
+                                      },
+                                      "name": {
+                                        "type": "string"
+                                      },
+                                      "club": {
+                                        "type": "string"
+                                      },
+                                      "group": {
+                                        "type": "string"
+                                      },
+                                      "segScore": {
+                                        "type": "string"
+                                      },
+                                      "total": {
+                                        "type": "string"
+                                      },
+                                      "place": {
+                                        "type": "string"
+                                      },
+                                      "finalPlace": {
+                                        "type": "string"
+                                      },
+                                      "segScores": {
+                                        "type": "array",
+                                        "items": {
+                                          "type": "object",
+                                          "properties": {
+                                            "segment": {
+                                              "type": "string"
+                                            },
+                                            "score": {
+                                              "type": "string"
+                                            },
+                                            "place": {
+                                              "type": "string"
+                                            }
+                                          },
+                                          "required": [
+                                            "segment",
+                                            "score",
+                                            "place"
+                                          ]
+                                        }
+                                      },
+                                      "protocol": {
+                                        "type": [
+                                          "object",
+                                          "null"
+                                        ],
+                                        "properties": {
+                                          "total": {
+                                            "type": "string"
+                                          },
+                                          "elementsScore": {
+                                            "type": "string"
+                                          },
+                                          "componentsScore": {
+                                            "type": "string"
+                                          },
+                                          "deductionsScore": {
+                                            "type": "string"
+                                          },
+                                          "elements": {
+                                            "type": "array",
+                                            "items": {
+                                              "type": "object",
+                                              "properties": {
+                                                "planned": {
+                                                  "type": "string"
+                                                },
+                                                "executed": {
+                                                  "type": "string"
+                                                },
+                                                "baseValue": {
+                                                  "type": "string"
+                                                },
+                                                "goe": {
+                                                  "type": "string"
+                                                },
+                                                "score": {
+                                                  "type": "string"
+                                                }
+                                              },
+                                              "required": [
+                                                "planned",
+                                                "executed",
+                                                "baseValue",
+                                                "goe",
+                                                "score"
+                                              ]
+                                            }
+                                          },
+                                          "elementsTotal": {
+                                            "type": [
+                                              "object",
+                                              "null"
+                                            ],
+                                            "properties": {
+                                              "baseValue": {
+                                                "type": "string"
+                                              },
+                                              "score": {
+                                                "type": "string"
+                                              }
+                                            },
+                                            "required": [
+                                              "baseValue",
+                                              "score"
+                                            ]
+                                          },
+                                          "components": {
+                                            "type": "array",
+                                            "items": {
+                                              "type": "object",
+                                              "properties": {
+                                                "name": {
+                                                  "type": "string"
+                                                },
+                                                "unfactored": {
+                                                  "type": "string"
+                                                },
+                                                "factor": {
+                                                  "type": "string"
+                                                }
+                                              },
+                                              "required": [
+                                                "name",
+                                                "unfactored",
+                                                "factor"
+                                              ]
+                                            }
+                                          },
+                                          "deductions": {
+                                            "type": "array",
+                                            "items": {
+                                              "type": "object",
+                                              "properties": {
+                                                "name": {
+                                                  "type": "string"
+                                                },
+                                                "value": {
+                                                  "type": "string"
+                                                }
+                                              },
+                                              "required": [
+                                                "name",
+                                                "value"
+                                              ]
+                                            }
+                                          }
+                                        },
+                                        "required": [
+                                          "total",
+                                          "elementsScore",
+                                          "componentsScore",
+                                          "deductionsScore",
+                                          "elements",
+                                          "elementsTotal",
+                                          "components",
+                                          "deductions"
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "start",
+                                      "of",
+                                      "name",
+                                      "club",
+                                      "group",
+                                      "segScore",
+                                      "total",
+                                      "place"
+                                    ]
+                                  },
+                                  "onIce": {
+                                    "type": [
+                                      "object",
+                                      "null"
+                                    ],
+                                    "properties": {
+                                      "start": {
+                                        "type": "number"
+                                      },
+                                      "of": {
+                                        "type": "number"
+                                      },
+                                      "name": {
+                                        "type": "string"
+                                      },
+                                      "club": {
+                                        "type": "string"
+                                      },
+                                      "group": {
+                                        "type": "string"
+                                      },
+                                      "segScore": {
+                                        "type": "string"
+                                      },
+                                      "total": {
+                                        "type": "string"
+                                      },
+                                      "place": {
+                                        "type": "string"
+                                      },
+                                      "finalPlace": {
+                                        "type": "string"
+                                      },
+                                      "segScores": {
+                                        "type": "array",
+                                        "items": {
+                                          "type": "object",
+                                          "properties": {
+                                            "segment": {
+                                              "type": "string"
+                                            },
+                                            "score": {
+                                              "type": "string"
+                                            },
+                                            "place": {
+                                              "type": "string"
+                                            }
+                                          },
+                                          "required": [
+                                            "segment",
+                                            "score",
+                                            "place"
+                                          ]
+                                        }
+                                      },
+                                      "protocol": {
+                                        "type": [
+                                          "object",
+                                          "null"
+                                        ],
+                                        "properties": {
+                                          "total": {
+                                            "type": "string"
+                                          },
+                                          "elementsScore": {
+                                            "type": "string"
+                                          },
+                                          "componentsScore": {
+                                            "type": "string"
+                                          },
+                                          "deductionsScore": {
+                                            "type": "string"
+                                          },
+                                          "elements": {
+                                            "type": "array",
+                                            "items": {
+                                              "type": "object",
+                                              "properties": {
+                                                "planned": {
+                                                  "type": "string"
+                                                },
+                                                "executed": {
+                                                  "type": "string"
+                                                },
+                                                "baseValue": {
+                                                  "type": "string"
+                                                },
+                                                "goe": {
+                                                  "type": "string"
+                                                },
+                                                "score": {
+                                                  "type": "string"
+                                                }
+                                              },
+                                              "required": [
+                                                "planned",
+                                                "executed",
+                                                "baseValue",
+                                                "goe",
+                                                "score"
+                                              ]
+                                            }
+                                          },
+                                          "elementsTotal": {
+                                            "type": [
+                                              "object",
+                                              "null"
+                                            ],
+                                            "properties": {
+                                              "baseValue": {
+                                                "type": "string"
+                                              },
+                                              "score": {
+                                                "type": "string"
+                                              }
+                                            },
+                                            "required": [
+                                              "baseValue",
+                                              "score"
+                                            ]
+                                          },
+                                          "components": {
+                                            "type": "array",
+                                            "items": {
+                                              "type": "object",
+                                              "properties": {
+                                                "name": {
+                                                  "type": "string"
+                                                },
+                                                "unfactored": {
+                                                  "type": "string"
+                                                },
+                                                "factor": {
+                                                  "type": "string"
+                                                }
+                                              },
+                                              "required": [
+                                                "name",
+                                                "unfactored",
+                                                "factor"
+                                              ]
+                                            }
+                                          },
+                                          "deductions": {
+                                            "type": "array",
+                                            "items": {
+                                              "type": "object",
+                                              "properties": {
+                                                "name": {
+                                                  "type": "string"
+                                                },
+                                                "value": {
+                                                  "type": "string"
+                                                }
+                                              },
+                                              "required": [
+                                                "name",
+                                                "value"
+                                              ]
+                                            }
+                                          }
+                                        },
+                                        "required": [
+                                          "total",
+                                          "elementsScore",
+                                          "componentsScore",
+                                          "deductionsScore",
+                                          "elements",
+                                          "elementsTotal",
+                                          "components",
+                                          "deductions"
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "start",
+                                      "of",
+                                      "name",
+                                      "club",
+                                      "group",
+                                      "segScore",
+                                      "total",
+                                      "place"
+                                    ]
+                                  },
+                                  "upNext": {
+                                    "type": [
+                                      "object",
+                                      "null"
+                                    ],
+                                    "properties": {
+                                      "start": {
+                                        "type": "number"
+                                      },
+                                      "of": {
+                                        "type": "number"
+                                      },
+                                      "name": {
+                                        "type": "string"
+                                      },
+                                      "club": {
+                                        "type": "string"
+                                      },
+                                      "group": {
+                                        "type": "string"
+                                      },
+                                      "segScore": {
+                                        "type": "string"
+                                      },
+                                      "total": {
+                                        "type": "string"
+                                      },
+                                      "place": {
+                                        "type": "string"
+                                      },
+                                      "finalPlace": {
+                                        "type": "string"
+                                      },
+                                      "segScores": {
+                                        "type": "array",
+                                        "items": {
+                                          "type": "object",
+                                          "properties": {
+                                            "segment": {
+                                              "type": "string"
+                                            },
+                                            "score": {
+                                              "type": "string"
+                                            },
+                                            "place": {
+                                              "type": "string"
+                                            }
+                                          },
+                                          "required": [
+                                            "segment",
+                                            "score",
+                                            "place"
+                                          ]
+                                        }
+                                      },
+                                      "protocol": {
+                                        "type": [
+                                          "object",
+                                          "null"
+                                        ],
+                                        "properties": {
+                                          "total": {
+                                            "type": "string"
+                                          },
+                                          "elementsScore": {
+                                            "type": "string"
+                                          },
+                                          "componentsScore": {
+                                            "type": "string"
+                                          },
+                                          "deductionsScore": {
+                                            "type": "string"
+                                          },
+                                          "elements": {
+                                            "type": "array",
+                                            "items": {
+                                              "type": "object",
+                                              "properties": {
+                                                "planned": {
+                                                  "type": "string"
+                                                },
+                                                "executed": {
+                                                  "type": "string"
+                                                },
+                                                "baseValue": {
+                                                  "type": "string"
+                                                },
+                                                "goe": {
+                                                  "type": "string"
+                                                },
+                                                "score": {
+                                                  "type": "string"
+                                                }
+                                              },
+                                              "required": [
+                                                "planned",
+                                                "executed",
+                                                "baseValue",
+                                                "goe",
+                                                "score"
+                                              ]
+                                            }
+                                          },
+                                          "elementsTotal": {
+                                            "type": [
+                                              "object",
+                                              "null"
+                                            ],
+                                            "properties": {
+                                              "baseValue": {
+                                                "type": "string"
+                                              },
+                                              "score": {
+                                                "type": "string"
+                                              }
+                                            },
+                                            "required": [
+                                              "baseValue",
+                                              "score"
+                                            ]
+                                          },
+                                          "components": {
+                                            "type": "array",
+                                            "items": {
+                                              "type": "object",
+                                              "properties": {
+                                                "name": {
+                                                  "type": "string"
+                                                },
+                                                "unfactored": {
+                                                  "type": "string"
+                                                },
+                                                "factor": {
+                                                  "type": "string"
+                                                }
+                                              },
+                                              "required": [
+                                                "name",
+                                                "unfactored",
+                                                "factor"
+                                              ]
+                                            }
+                                          },
+                                          "deductions": {
+                                            "type": "array",
+                                            "items": {
+                                              "type": "object",
+                                              "properties": {
+                                                "name": {
+                                                  "type": "string"
+                                                },
+                                                "value": {
+                                                  "type": "string"
+                                                }
+                                              },
+                                              "required": [
+                                                "name",
+                                                "value"
+                                              ]
+                                            }
+                                          }
+                                        },
+                                        "required": [
+                                          "total",
+                                          "elementsScore",
+                                          "componentsScore",
+                                          "deductionsScore",
+                                          "elements",
+                                          "elementsTotal",
+                                          "components",
+                                          "deductions"
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "start",
+                                      "of",
+                                      "name",
+                                      "club",
+                                      "group",
+                                      "segScore",
+                                      "total",
+                                      "place"
+                                    ]
+                                  },
+                                  "startOrder": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "start": {
+                                          "type": "number"
+                                        },
+                                        "of": {
+                                          "type": "number"
+                                        },
+                                        "name": {
+                                          "type": "string"
+                                        },
+                                        "club": {
+                                          "type": "string"
+                                        },
+                                        "group": {
+                                          "type": "string"
+                                        },
+                                        "segScore": {
+                                          "type": "string"
+                                        },
+                                        "total": {
+                                          "type": "string"
+                                        },
+                                        "place": {
+                                          "type": "string"
+                                        },
+                                        "finalPlace": {
+                                          "type": "string"
+                                        },
+                                        "segScores": {
+                                          "type": "array",
+                                          "items": {
+                                            "type": "object",
+                                            "properties": {
+                                              "segment": {
+                                                "type": "string"
+                                              },
+                                              "score": {
+                                                "type": "string"
+                                              },
+                                              "place": {
+                                                "type": "string"
+                                              }
+                                            },
+                                            "required": [
+                                              "segment",
+                                              "score",
+                                              "place"
+                                            ]
+                                          }
+                                        },
+                                        "protocol": {
+                                          "type": [
+                                            "object",
+                                            "null"
+                                          ],
+                                          "properties": {
+                                            "total": {
+                                              "type": "string"
+                                            },
+                                            "elementsScore": {
+                                              "type": "string"
+                                            },
+                                            "componentsScore": {
+                                              "type": "string"
+                                            },
+                                            "deductionsScore": {
+                                              "type": "string"
+                                            },
+                                            "elements": {
+                                              "type": "array",
+                                              "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                  "planned": {
+                                                    "type": "string"
+                                                  },
+                                                  "executed": {
+                                                    "type": "string"
+                                                  },
+                                                  "baseValue": {
+                                                    "type": "string"
+                                                  },
+                                                  "goe": {
+                                                    "type": "string"
+                                                  },
+                                                  "score": {
+                                                    "type": "string"
+                                                  }
+                                                },
+                                                "required": [
+                                                  "planned",
+                                                  "executed",
+                                                  "baseValue",
+                                                  "goe",
+                                                  "score"
+                                                ]
+                                              }
+                                            },
+                                            "elementsTotal": {
+                                              "type": [
+                                                "object",
+                                                "null"
+                                              ],
+                                              "properties": {
+                                                "baseValue": {
+                                                  "type": "string"
+                                                },
+                                                "score": {
+                                                  "type": "string"
+                                                }
+                                              },
+                                              "required": [
+                                                "baseValue",
+                                                "score"
+                                              ]
+                                            },
+                                            "components": {
+                                              "type": "array",
+                                              "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                  "name": {
+                                                    "type": "string"
+                                                  },
+                                                  "unfactored": {
+                                                    "type": "string"
+                                                  },
+                                                  "factor": {
+                                                    "type": "string"
+                                                  }
+                                                },
+                                                "required": [
+                                                  "name",
+                                                  "unfactored",
+                                                  "factor"
+                                                ]
+                                              }
+                                            },
+                                            "deductions": {
+                                              "type": "array",
+                                              "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                  "name": {
+                                                    "type": "string"
+                                                  },
+                                                  "value": {
+                                                    "type": "string"
+                                                  }
+                                                },
+                                                "required": [
+                                                  "name",
+                                                  "value"
+                                                ]
+                                              }
+                                            }
+                                          },
+                                          "required": [
+                                            "total",
+                                            "elementsScore",
+                                            "componentsScore",
+                                            "deductionsScore",
+                                            "elements",
+                                            "elementsTotal",
+                                            "components",
+                                            "deductions"
+                                          ]
+                                        }
+                                      },
+                                      "required": [
+                                        "start",
+                                        "of",
+                                        "name",
+                                        "club",
+                                        "group",
+                                        "segScore",
+                                        "total",
+                                        "place"
+                                      ]
+                                    }
+                                  }
+                                },
+                                "required": [
+                                  "event",
+                                  "segment",
+                                  "status",
+                                  "skaters",
+                                  "withdrawn",
+                                  "done",
+                                  "startLabel",
+                                  "startIso",
+                                  "url",
+                                  "justScored",
+                                  "onIce",
+                                  "upNext",
+                                  "startOrder"
+                                ]
+                              },
+                              "next": {
+                                "type": [
+                                  "object",
+                                  "null"
+                                ],
+                                "properties": {
+                                  "event": {
+                                    "type": "string"
+                                  },
+                                  "timeLabel": {
+                                    "type": "string"
+                                  },
+                                  "startIso": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "skaters": {
+                                    "type": [
+                                      "number",
+                                      "null"
+                                    ]
+                                  },
+                                  "url": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "event",
+                                  "timeLabel",
+                                  "startIso",
+                                  "skaters",
+                                  "url"
+                                ]
+                              },
+                              "justFinished": {
+                                "type": [
+                                  "object",
+                                  "null"
+                                ],
+                                "properties": {
+                                  "event": {
+                                    "type": "string"
+                                  },
+                                  "winner": {
+                                    "type": [
+                                      "object",
+                                      "null"
+                                    ],
+                                    "properties": {
+                                      "name": {
+                                        "type": "string"
+                                      },
+                                      "club": {
+                                        "type": "string"
+                                      },
+                                      "score": {
+                                        "type": "string"
+                                      }
+                                    },
+                                    "required": [
+                                      "name",
+                                      "club",
+                                      "score"
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "event",
+                                  "winner"
+                                ]
+                              },
+                              "alsoLive": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
+                              },
+                              "dayEvents": {
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "name",
+                              "state",
+                              "current",
+                              "next",
+                              "justFinished",
+                              "alsoLive",
+                              "dayEvents"
+                            ]
+                          }
+                        },
+                        "schedule": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "file": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "segment": {
+                                "type": "string"
+                              },
+                              "rink": {
+                                "type": "string"
+                              },
+                              "timeLabel": {
+                                "type": "string"
+                              },
+                              "startIso": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "status": {
+                                "type": "string",
+                                "enum": [
+                                  "scheduled",
+                                  "live",
+                                  "final"
+                                ]
+                              },
+                              "count": {
+                                "type": [
+                                  "number",
+                                  "null"
+                                ]
+                              },
+                              "dayLabel": {
+                                "type": "string"
+                              },
+                              "dayKey": {
+                                "type": "string"
+                              },
+                              "results": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "start": {
+                                      "type": "number"
+                                    },
+                                    "of": {
+                                      "type": "number"
+                                    },
+                                    "name": {
+                                      "type": "string"
+                                    },
+                                    "club": {
+                                      "type": "string"
+                                    },
+                                    "group": {
+                                      "type": "string"
+                                    },
+                                    "segScore": {
+                                      "type": "string"
+                                    },
+                                    "total": {
+                                      "type": "string"
+                                    },
+                                    "place": {
+                                      "type": "string"
+                                    },
+                                    "finalPlace": {
+                                      "type": "string"
+                                    },
+                                    "segScores": {
+                                      "type": "array",
+                                      "items": {
+                                        "type": "object",
+                                        "properties": {
+                                          "segment": {
+                                            "type": "string"
+                                          },
+                                          "score": {
+                                            "type": "string"
+                                          },
+                                          "place": {
+                                            "type": "string"
+                                          }
+                                        },
+                                        "required": [
+                                          "segment",
+                                          "score",
+                                          "place"
+                                        ]
+                                      }
+                                    },
+                                    "protocol": {
+                                      "type": [
+                                        "object",
+                                        "null"
+                                      ],
+                                      "properties": {
+                                        "total": {
+                                          "type": "string"
+                                        },
+                                        "elementsScore": {
+                                          "type": "string"
+                                        },
+                                        "componentsScore": {
+                                          "type": "string"
+                                        },
+                                        "deductionsScore": {
+                                          "type": "string"
+                                        },
+                                        "elements": {
+                                          "type": "array",
+                                          "items": {
+                                            "type": "object",
+                                            "properties": {
+                                              "planned": {
+                                                "type": "string"
+                                              },
+                                              "executed": {
+                                                "type": "string"
+                                              },
+                                              "baseValue": {
+                                                "type": "string"
+                                              },
+                                              "goe": {
+                                                "type": "string"
+                                              },
+                                              "score": {
+                                                "type": "string"
+                                              }
+                                            },
+                                            "required": [
+                                              "planned",
+                                              "executed",
+                                              "baseValue",
+                                              "goe",
+                                              "score"
+                                            ]
+                                          }
+                                        },
+                                        "elementsTotal": {
+                                          "type": [
+                                            "object",
+                                            "null"
+                                          ],
+                                          "properties": {
+                                            "baseValue": {
+                                              "type": "string"
+                                            },
+                                            "score": {
+                                              "type": "string"
+                                            }
+                                          },
+                                          "required": [
+                                            "baseValue",
+                                            "score"
+                                          ]
+                                        },
+                                        "components": {
+                                          "type": "array",
+                                          "items": {
+                                            "type": "object",
+                                            "properties": {
+                                              "name": {
+                                                "type": "string"
+                                              },
+                                              "unfactored": {
+                                                "type": "string"
+                                              },
+                                              "factor": {
+                                                "type": "string"
+                                              }
+                                            },
+                                            "required": [
+                                              "name",
+                                              "unfactored",
+                                              "factor"
+                                            ]
+                                          }
+                                        },
+                                        "deductions": {
+                                          "type": "array",
+                                          "items": {
+                                            "type": "object",
+                                            "properties": {
+                                              "name": {
+                                                "type": "string"
+                                              },
+                                              "value": {
+                                                "type": "string"
+                                              }
+                                            },
+                                            "required": [
+                                              "name",
+                                              "value"
+                                            ]
+                                          }
+                                        }
+                                      },
+                                      "required": [
+                                        "total",
+                                        "elementsScore",
+                                        "componentsScore",
+                                        "deductionsScore",
+                                        "elements",
+                                        "elementsTotal",
+                                        "components",
+                                        "deductions"
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "start",
+                                    "of",
+                                    "name",
+                                    "club",
+                                    "group",
+                                    "segScore",
+                                    "total",
+                                    "place"
+                                  ]
+                                }
+                              }
+                            },
+                            "required": [
+                              "file",
+                              "name",
+                              "segment",
+                              "rink",
+                              "timeLabel",
+                              "startIso",
+                              "status",
+                              "count",
+                              "dayLabel",
+                              "dayKey",
+                              "results"
+                            ]
+                          }
+                        },
+                        "errors": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "required": [
+                        "generatedAt",
+                        "competition",
+                        "rinks",
+                        "schedule",
+                        "errors"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "slug",
+                    "name",
+                    "datesLabel",
+                    "location",
+                    "active",
+                    "isLiveWindow",
+                    "generatedAt",
+                    "error",
+                    "payload"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/boards/my-skaters": {
+      "get": {
+        "summary": "Names of the caller's own/rostered athletes, for board auto-follow",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/boards/{slug}/follows": {
+      "get": {
+        "summary": "List the caller's followed skaters for a board",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Replace the caller's followed skaters for a board",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "names": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  }
+                },
+                "required": [
+                  "names"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/boards/{slug}/follows/{name}": {
+      "delete": {
+        "summary": "Unfollow one skater on a board",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "webhooks": {}
