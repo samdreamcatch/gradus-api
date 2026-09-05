@@ -58,14 +58,15 @@ Expect ten `200`s followed by `429`s. Twelve `200`s means the limiter is not wor
 **Billing-column guard check** (PRD §4.1 rule 13). Needs a signed-in coach's access token:
 sign in to gradus.training as a coach, open devtools → Application → Local Storage →
 `sb-<project-ref>-auth-token`, and copy the `access_token` value (never paste it into a chat
-or a ticket; it is a live credential). Then:
+or a ticket; it is a live credential). With the token still on the clipboard:
 
 ```bash
 scripts/smoke-guard-check.sh
 ```
 
-It prompts for the token (not echoed, kept in-process), then expects a 403 when setting your
-own `entitlement` and a 204 for a harmless `last_seen_at` update. If the guard is not active it
+It reads the token from the clipboard (a token is longer than the 1,024-character line limit
+of a macOS terminal, so pasting it at a prompt drops the end), keeps it in-process, then expects
+a 403 when setting your own `entitlement` and a 204 for a harmless `last_seen_at` update. If the guard is not active it
 restores the original entitlement. If the token was ever exposed, sign out of gradus.training
 in that browser afterwards; that revokes the refresh token.
 
