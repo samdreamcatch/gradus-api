@@ -96,6 +96,10 @@ import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/l
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
+import { Route as ApiV1MetaConfigRouteImport } from './routes/api/v1/meta/config'
+import { Route as ApiV1MetaClientPolicyRouteImport } from './routes/api/v1/meta/client-policy'
+import { Route as ApiV1MeTermsRouteImport } from './routes/api/v1/me/terms'
+import { Route as ApiV1MePresenceRouteImport } from './routes/api/v1/me/presence'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 import { Route as ApiPublicHooksLifecycleEmailsRouteImport } from './routes/api/public/hooks/lifecycle-emails'
 import { Route as ApiPublicHooksErrorDigestRouteImport } from './routes/api/public/hooks/error-digest'
@@ -596,6 +600,26 @@ const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
   path: '/lovable/email/auth/preview',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiV1MetaConfigRoute = ApiV1MetaConfigRouteImport.update({
+  id: '/api/v1/meta/config',
+  path: '/api/v1/meta/config',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1MetaClientPolicyRoute = ApiV1MetaClientPolicyRouteImport.update({
+  id: '/api/v1/meta/client-policy',
+  path: '/api/v1/meta/client-policy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1MeTermsRoute = ApiV1MeTermsRouteImport.update({
+  id: '/api/v1/me/terms',
+  path: '/api/v1/me/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1MePresenceRoute = ApiV1MePresenceRouteImport.update({
+  id: '/api/v1/me/presence',
+  path: '/api/v1/me/presence',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicPaymentsWebhookRoute =
   ApiPublicPaymentsWebhookRouteImport.update({
     id: '/api/public/payments/webhook',
@@ -801,6 +825,10 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/error-digest': typeof ApiPublicHooksErrorDigestRoute
   '/api/public/hooks/lifecycle-emails': typeof ApiPublicHooksLifecycleEmailsRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
+  '/api/v1/me/presence': typeof ApiV1MePresenceRoute
+  '/api/v1/me/terms': typeof ApiV1MeTermsRoute
+  '/api/v1/meta/client-policy': typeof ApiV1MetaClientPolicyRoute
+  '/api/v1/meta/config': typeof ApiV1MetaConfigRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -902,6 +930,10 @@ export interface FileRoutesByTo {
   '/api/public/hooks/error-digest': typeof ApiPublicHooksErrorDigestRoute
   '/api/public/hooks/lifecycle-emails': typeof ApiPublicHooksLifecycleEmailsRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
+  '/api/v1/me/presence': typeof ApiV1MePresenceRoute
+  '/api/v1/me/terms': typeof ApiV1MeTermsRoute
+  '/api/v1/meta/client-policy': typeof ApiV1MetaClientPolicyRoute
+  '/api/v1/meta/config': typeof ApiV1MetaConfigRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -1011,6 +1043,10 @@ export interface FileRoutesById {
   '/api/public/hooks/error-digest': typeof ApiPublicHooksErrorDigestRoute
   '/api/public/hooks/lifecycle-emails': typeof ApiPublicHooksLifecycleEmailsRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
+  '/api/v1/me/presence': typeof ApiV1MePresenceRoute
+  '/api/v1/me/terms': typeof ApiV1MeTermsRoute
+  '/api/v1/meta/client-policy': typeof ApiV1MetaClientPolicyRoute
+  '/api/v1/meta/config': typeof ApiV1MetaConfigRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -1120,6 +1156,10 @@ export interface FileRouteTypes {
     | '/api/public/hooks/error-digest'
     | '/api/public/hooks/lifecycle-emails'
     | '/api/public/payments/webhook'
+    | '/api/v1/me/presence'
+    | '/api/v1/me/terms'
+    | '/api/v1/meta/client-policy'
+    | '/api/v1/meta/config'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
@@ -1221,6 +1261,10 @@ export interface FileRouteTypes {
     | '/api/public/hooks/error-digest'
     | '/api/public/hooks/lifecycle-emails'
     | '/api/public/payments/webhook'
+    | '/api/v1/me/presence'
+    | '/api/v1/me/terms'
+    | '/api/v1/meta/client-policy'
+    | '/api/v1/meta/config'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
@@ -1329,6 +1373,10 @@ export interface FileRouteTypes {
     | '/api/public/hooks/error-digest'
     | '/api/public/hooks/lifecycle-emails'
     | '/api/public/payments/webhook'
+    | '/api/v1/me/presence'
+    | '/api/v1/me/terms'
+    | '/api/v1/meta/client-policy'
+    | '/api/v1/meta/config'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
@@ -1373,6 +1421,10 @@ export interface RootRouteChildren {
   ApiPublicHooksErrorDigestRoute: typeof ApiPublicHooksErrorDigestRoute
   ApiPublicHooksLifecycleEmailsRoute: typeof ApiPublicHooksLifecycleEmailsRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
+  ApiV1MePresenceRoute: typeof ApiV1MePresenceRoute
+  ApiV1MeTermsRoute: typeof ApiV1MeTermsRoute
+  ApiV1MetaClientPolicyRoute: typeof ApiV1MetaClientPolicyRoute
+  ApiV1MetaConfigRoute: typeof ApiV1MetaConfigRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
@@ -1990,6 +2042,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailAuthPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/v1/meta/config': {
+      id: '/api/v1/meta/config'
+      path: '/api/v1/meta/config'
+      fullPath: '/api/v1/meta/config'
+      preLoaderRoute: typeof ApiV1MetaConfigRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/meta/client-policy': {
+      id: '/api/v1/meta/client-policy'
+      path: '/api/v1/meta/client-policy'
+      fullPath: '/api/v1/meta/client-policy'
+      preLoaderRoute: typeof ApiV1MetaClientPolicyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/me/terms': {
+      id: '/api/v1/me/terms'
+      path: '/api/v1/me/terms'
+      fullPath: '/api/v1/me/terms'
+      preLoaderRoute: typeof ApiV1MeTermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/me/presence': {
+      id: '/api/v1/me/presence'
+      path: '/api/v1/me/presence'
+      fullPath: '/api/v1/me/presence'
+      preLoaderRoute: typeof ApiV1MePresenceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/payments/webhook': {
       id: '/api/public/payments/webhook'
       path: '/api/public/payments/webhook'
@@ -2415,6 +2495,10 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksErrorDigestRoute: ApiPublicHooksErrorDigestRoute,
   ApiPublicHooksLifecycleEmailsRoute: ApiPublicHooksLifecycleEmailsRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
+  ApiV1MePresenceRoute: ApiV1MePresenceRoute,
+  ApiV1MeTermsRoute: ApiV1MeTermsRoute,
+  ApiV1MetaClientPolicyRoute: ApiV1MetaClientPolicyRoute,
+  ApiV1MetaConfigRoute: ApiV1MetaConfigRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
