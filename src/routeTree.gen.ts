@@ -100,6 +100,10 @@ import { Route as ApiV1MetaConfigRouteImport } from './routes/api/v1/meta/config
 import { Route as ApiV1MetaClientPolicyRouteImport } from './routes/api/v1/meta/client-policy'
 import { Route as ApiV1MeTermsRouteImport } from './routes/api/v1/me/terms'
 import { Route as ApiV1MePresenceRouteImport } from './routes/api/v1/me/presence'
+import { Route as ApiV1AuthRecoverRouteImport } from './routes/api/v1/auth/recover'
+import { Route as ApiV1AuthPasswordRouteImport } from './routes/api/v1/auth/password'
+import { Route as ApiV1AuthGoogleRouteImport } from './routes/api/v1/auth/google'
+import { Route as ApiV1AuthAppleRouteImport } from './routes/api/v1/auth/apple'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 import { Route as ApiPublicHooksLifecycleEmailsRouteImport } from './routes/api/public/hooks/lifecycle-emails'
 import { Route as ApiPublicHooksErrorDigestRouteImport } from './routes/api/public/hooks/error-digest'
@@ -119,6 +123,9 @@ import { Route as AuthenticatedAdminPlansPlanIdRouteImport } from './routes/_aut
 import { Route as AuthenticatedAdminListKindRouteImport } from './routes/_authenticated/admin.list.$kind'
 import { Route as AuthenticatedAdminErrorsIdRouteImport } from './routes/_authenticated/admin.errors.$id'
 import { Route as AuthenticatedAdminEmailsNameRouteImport } from './routes/_authenticated/admin.emails.$name'
+import { Route as ApiV1AuthUsernameResolveRouteImport } from './routes/api/v1/auth/username/resolve'
+import { Route as ApiV1AuthUsernameCheckRouteImport } from './routes/api/v1/auth/username/check'
+import { Route as ApiV1AuthSignupCoachRouteImport } from './routes/api/v1/auth/signup/coach'
 
 const UnsubscribeRoute = UnsubscribeRouteImport.update({
   id: '/unsubscribe',
@@ -620,6 +627,26 @@ const ApiV1MePresenceRoute = ApiV1MePresenceRouteImport.update({
   path: '/api/v1/me/presence',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiV1AuthRecoverRoute = ApiV1AuthRecoverRouteImport.update({
+  id: '/api/v1/auth/recover',
+  path: '/api/v1/auth/recover',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1AuthPasswordRoute = ApiV1AuthPasswordRouteImport.update({
+  id: '/api/v1/auth/password',
+  path: '/api/v1/auth/password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1AuthGoogleRoute = ApiV1AuthGoogleRouteImport.update({
+  id: '/api/v1/auth/google',
+  path: '/api/v1/auth/google',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1AuthAppleRoute = ApiV1AuthAppleRouteImport.update({
+  id: '/api/v1/auth/apple',
+  path: '/api/v1/auth/apple',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicPaymentsWebhookRoute =
   ApiPublicPaymentsWebhookRouteImport.update({
     id: '/api/public/payments/webhook',
@@ -733,6 +760,22 @@ const AuthenticatedAdminEmailsNameRoute =
     path: '/emails/$name',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const ApiV1AuthUsernameResolveRoute =
+  ApiV1AuthUsernameResolveRouteImport.update({
+    id: '/api/v1/auth/username/resolve',
+    path: '/api/v1/auth/username/resolve',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1AuthUsernameCheckRoute = ApiV1AuthUsernameCheckRouteImport.update({
+  id: '/api/v1/auth/username/check',
+  path: '/api/v1/auth/username/check',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1AuthSignupCoachRoute = ApiV1AuthSignupCoachRouteImport.update({
+  id: '/api/v1/auth/signup/coach',
+  path: '/api/v1/auth/signup/coach',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -825,6 +868,10 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/error-digest': typeof ApiPublicHooksErrorDigestRoute
   '/api/public/hooks/lifecycle-emails': typeof ApiPublicHooksLifecycleEmailsRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
+  '/api/v1/auth/apple': typeof ApiV1AuthAppleRoute
+  '/api/v1/auth/google': typeof ApiV1AuthGoogleRoute
+  '/api/v1/auth/password': typeof ApiV1AuthPasswordRoute
+  '/api/v1/auth/recover': typeof ApiV1AuthRecoverRoute
   '/api/v1/me/presence': typeof ApiV1MePresenceRoute
   '/api/v1/me/terms': typeof ApiV1MeTermsRoute
   '/api/v1/meta/client-policy': typeof ApiV1MetaClientPolicyRoute
@@ -844,6 +891,9 @@ export interface FileRoutesByFullPath {
   '/parent/messages/': typeof AuthenticatedParentMessagesIndexRoute
   '/parent/plans/': typeof AuthenticatedParentPlansIndexRoute
   '/parent/resources/': typeof AuthenticatedParentResourcesIndexRoute
+  '/api/v1/auth/signup/coach': typeof ApiV1AuthSignupCoachRoute
+  '/api/v1/auth/username/check': typeof ApiV1AuthUsernameCheckRoute
+  '/api/v1/auth/username/resolve': typeof ApiV1AuthUsernameResolveRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -930,6 +980,10 @@ export interface FileRoutesByTo {
   '/api/public/hooks/error-digest': typeof ApiPublicHooksErrorDigestRoute
   '/api/public/hooks/lifecycle-emails': typeof ApiPublicHooksLifecycleEmailsRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
+  '/api/v1/auth/apple': typeof ApiV1AuthAppleRoute
+  '/api/v1/auth/google': typeof ApiV1AuthGoogleRoute
+  '/api/v1/auth/password': typeof ApiV1AuthPasswordRoute
+  '/api/v1/auth/recover': typeof ApiV1AuthRecoverRoute
   '/api/v1/me/presence': typeof ApiV1MePresenceRoute
   '/api/v1/me/terms': typeof ApiV1MeTermsRoute
   '/api/v1/meta/client-policy': typeof ApiV1MetaClientPolicyRoute
@@ -949,6 +1003,9 @@ export interface FileRoutesByTo {
   '/parent/messages': typeof AuthenticatedParentMessagesIndexRoute
   '/parent/plans': typeof AuthenticatedParentPlansIndexRoute
   '/parent/resources': typeof AuthenticatedParentResourcesIndexRoute
+  '/api/v1/auth/signup/coach': typeof ApiV1AuthSignupCoachRoute
+  '/api/v1/auth/username/check': typeof ApiV1AuthUsernameCheckRoute
+  '/api/v1/auth/username/resolve': typeof ApiV1AuthUsernameResolveRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -1043,6 +1100,10 @@ export interface FileRoutesById {
   '/api/public/hooks/error-digest': typeof ApiPublicHooksErrorDigestRoute
   '/api/public/hooks/lifecycle-emails': typeof ApiPublicHooksLifecycleEmailsRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
+  '/api/v1/auth/apple': typeof ApiV1AuthAppleRoute
+  '/api/v1/auth/google': typeof ApiV1AuthGoogleRoute
+  '/api/v1/auth/password': typeof ApiV1AuthPasswordRoute
+  '/api/v1/auth/recover': typeof ApiV1AuthRecoverRoute
   '/api/v1/me/presence': typeof ApiV1MePresenceRoute
   '/api/v1/me/terms': typeof ApiV1MeTermsRoute
   '/api/v1/meta/client-policy': typeof ApiV1MetaClientPolicyRoute
@@ -1062,6 +1123,9 @@ export interface FileRoutesById {
   '/_authenticated/parent/messages/': typeof AuthenticatedParentMessagesIndexRoute
   '/_authenticated/parent/plans/': typeof AuthenticatedParentPlansIndexRoute
   '/_authenticated/parent/resources/': typeof AuthenticatedParentResourcesIndexRoute
+  '/api/v1/auth/signup/coach': typeof ApiV1AuthSignupCoachRoute
+  '/api/v1/auth/username/check': typeof ApiV1AuthUsernameCheckRoute
+  '/api/v1/auth/username/resolve': typeof ApiV1AuthUsernameResolveRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -1156,6 +1220,10 @@ export interface FileRouteTypes {
     | '/api/public/hooks/error-digest'
     | '/api/public/hooks/lifecycle-emails'
     | '/api/public/payments/webhook'
+    | '/api/v1/auth/apple'
+    | '/api/v1/auth/google'
+    | '/api/v1/auth/password'
+    | '/api/v1/auth/recover'
     | '/api/v1/me/presence'
     | '/api/v1/me/terms'
     | '/api/v1/meta/client-policy'
@@ -1175,6 +1243,9 @@ export interface FileRouteTypes {
     | '/parent/messages/'
     | '/parent/plans/'
     | '/parent/resources/'
+    | '/api/v1/auth/signup/coach'
+    | '/api/v1/auth/username/check'
+    | '/api/v1/auth/username/resolve'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -1261,6 +1332,10 @@ export interface FileRouteTypes {
     | '/api/public/hooks/error-digest'
     | '/api/public/hooks/lifecycle-emails'
     | '/api/public/payments/webhook'
+    | '/api/v1/auth/apple'
+    | '/api/v1/auth/google'
+    | '/api/v1/auth/password'
+    | '/api/v1/auth/recover'
     | '/api/v1/me/presence'
     | '/api/v1/me/terms'
     | '/api/v1/meta/client-policy'
@@ -1280,6 +1355,9 @@ export interface FileRouteTypes {
     | '/parent/messages'
     | '/parent/plans'
     | '/parent/resources'
+    | '/api/v1/auth/signup/coach'
+    | '/api/v1/auth/username/check'
+    | '/api/v1/auth/username/resolve'
   id:
     | '__root__'
     | '/'
@@ -1373,6 +1451,10 @@ export interface FileRouteTypes {
     | '/api/public/hooks/error-digest'
     | '/api/public/hooks/lifecycle-emails'
     | '/api/public/payments/webhook'
+    | '/api/v1/auth/apple'
+    | '/api/v1/auth/google'
+    | '/api/v1/auth/password'
+    | '/api/v1/auth/recover'
     | '/api/v1/me/presence'
     | '/api/v1/me/terms'
     | '/api/v1/meta/client-policy'
@@ -1392,6 +1474,9 @@ export interface FileRouteTypes {
     | '/_authenticated/parent/messages/'
     | '/_authenticated/parent/plans/'
     | '/_authenticated/parent/resources/'
+    | '/api/v1/auth/signup/coach'
+    | '/api/v1/auth/username/check'
+    | '/api/v1/auth/username/resolve'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1421,6 +1506,10 @@ export interface RootRouteChildren {
   ApiPublicHooksErrorDigestRoute: typeof ApiPublicHooksErrorDigestRoute
   ApiPublicHooksLifecycleEmailsRoute: typeof ApiPublicHooksLifecycleEmailsRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
+  ApiV1AuthAppleRoute: typeof ApiV1AuthAppleRoute
+  ApiV1AuthGoogleRoute: typeof ApiV1AuthGoogleRoute
+  ApiV1AuthPasswordRoute: typeof ApiV1AuthPasswordRoute
+  ApiV1AuthRecoverRoute: typeof ApiV1AuthRecoverRoute
   ApiV1MePresenceRoute: typeof ApiV1MePresenceRoute
   ApiV1MeTermsRoute: typeof ApiV1MeTermsRoute
   ApiV1MetaClientPolicyRoute: typeof ApiV1MetaClientPolicyRoute
@@ -1429,6 +1518,9 @@ export interface RootRouteChildren {
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
+  ApiV1AuthSignupCoachRoute: typeof ApiV1AuthSignupCoachRoute
+  ApiV1AuthUsernameCheckRoute: typeof ApiV1AuthUsernameCheckRoute
+  ApiV1AuthUsernameResolveRoute: typeof ApiV1AuthUsernameResolveRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -2070,6 +2162,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1MePresenceRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/v1/auth/recover': {
+      id: '/api/v1/auth/recover'
+      path: '/api/v1/auth/recover'
+      fullPath: '/api/v1/auth/recover'
+      preLoaderRoute: typeof ApiV1AuthRecoverRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/auth/password': {
+      id: '/api/v1/auth/password'
+      path: '/api/v1/auth/password'
+      fullPath: '/api/v1/auth/password'
+      preLoaderRoute: typeof ApiV1AuthPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/auth/google': {
+      id: '/api/v1/auth/google'
+      path: '/api/v1/auth/google'
+      fullPath: '/api/v1/auth/google'
+      preLoaderRoute: typeof ApiV1AuthGoogleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/auth/apple': {
+      id: '/api/v1/auth/apple'
+      path: '/api/v1/auth/apple'
+      fullPath: '/api/v1/auth/apple'
+      preLoaderRoute: typeof ApiV1AuthAppleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/payments/webhook': {
       id: '/api/public/payments/webhook'
       path: '/api/public/payments/webhook'
@@ -2202,6 +2322,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/emails/$name'
       preLoaderRoute: typeof AuthenticatedAdminEmailsNameRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/api/v1/auth/username/resolve': {
+      id: '/api/v1/auth/username/resolve'
+      path: '/api/v1/auth/username/resolve'
+      fullPath: '/api/v1/auth/username/resolve'
+      preLoaderRoute: typeof ApiV1AuthUsernameResolveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/auth/username/check': {
+      id: '/api/v1/auth/username/check'
+      path: '/api/v1/auth/username/check'
+      fullPath: '/api/v1/auth/username/check'
+      preLoaderRoute: typeof ApiV1AuthUsernameCheckRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/auth/signup/coach': {
+      id: '/api/v1/auth/signup/coach'
+      path: '/api/v1/auth/signup/coach'
+      fullPath: '/api/v1/auth/signup/coach'
+      preLoaderRoute: typeof ApiV1AuthSignupCoachRouteImport
+      parentRoute: typeof rootRouteImport
     }
   }
 }
@@ -2495,6 +2636,10 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksErrorDigestRoute: ApiPublicHooksErrorDigestRoute,
   ApiPublicHooksLifecycleEmailsRoute: ApiPublicHooksLifecycleEmailsRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
+  ApiV1AuthAppleRoute: ApiV1AuthAppleRoute,
+  ApiV1AuthGoogleRoute: ApiV1AuthGoogleRoute,
+  ApiV1AuthPasswordRoute: ApiV1AuthPasswordRoute,
+  ApiV1AuthRecoverRoute: ApiV1AuthRecoverRoute,
   ApiV1MePresenceRoute: ApiV1MePresenceRoute,
   ApiV1MeTermsRoute: ApiV1MeTermsRoute,
   ApiV1MetaClientPolicyRoute: ApiV1MetaClientPolicyRoute,
@@ -2503,6 +2648,9 @@ const rootRouteChildren: RootRouteChildren = {
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
+  ApiV1AuthSignupCoachRoute: ApiV1AuthSignupCoachRoute,
+  ApiV1AuthUsernameCheckRoute: ApiV1AuthUsernameCheckRoute,
+  ApiV1AuthUsernameResolveRoute: ApiV1AuthUsernameResolveRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
