@@ -1,0 +1,126 @@
+{
+  "description": "Shared vectors for normalizeName (src/lib/board-types.ts): NFD-decompose, strip combining marks U+0300–U+036F, lowercase, keep only a–z and ASCII space, collapse whitespace runs to one space, trim. Both the TypeScript and Swift implementations must produce `expected` for every `input`.",
+  "source": "src/lib/board-types.ts normalizeName",
+  "cases": [
+    {
+      "input": "Harper Lindqvist",
+      "expected": "harper lindqvist"
+    },
+    {
+      "input": "  harper   lindqvist ",
+      "expected": "harper lindqvist"
+    },
+    {
+      "input": "HARPER LINDQVIST",
+      "expected": "harper lindqvist"
+    },
+    {
+      "input": "Talia Bergström",
+      "expected": "talia bergstrom"
+    },
+    {
+      "input": "Renée O'Connor",
+      "expected": "renee oconnor"
+    },
+    {
+      "input": "José Álvarez-Núñez",
+      "expected": "jose alvareznunez"
+    },
+    {
+      "input": "Zoë Ångström",
+      "expected": "zoe angstrom"
+    },
+    {
+      "input": "Mikaela Shiffrin (USA)",
+      "expected": "mikaela shiffrin usa"
+    },
+    {
+      "input": "Li, Wei",
+      "expected": "li wei"
+    },
+    {
+      "input": "Ærø Søren",
+      "expected": "r sren"
+    },
+    {
+      "input": "Łukasz Żółć",
+      "expected": "ukasz zoc"
+    },
+    {
+      "input": "Anne-Marie   St. Pierre",
+      "expected": "annemarie st pierre"
+    },
+    {
+      "input": "",
+      "expected": ""
+    },
+    {
+      "input": "   ",
+      "expected": ""
+    },
+    {
+      "input": "12345",
+      "expected": ""
+    },
+    {
+      "input": "Émilie",
+      "expected": "emilie"
+    },
+    {
+      "input": "naïve café",
+      "expected": "naive cafe"
+    },
+    {
+      "input": "Ünal Öztürk",
+      "expected": "unal ozturk"
+    },
+    {
+      "input": "Nguyễn Văn An",
+      "expected": "nguyen van an"
+    },
+    {
+      "input": "O’Neil",
+      "expected": "oneil"
+    },
+    {
+      "input": "MacDonald",
+      "expected": "macdonald"
+    },
+    {
+      "input": "Иван Петров",
+      "expected": ""
+    },
+    {
+      "input": "山田 太郎",
+      "expected": ""
+    },
+    {
+      "input": "Mary\tJane\nSmith",
+      "expected": "maryjanesmith"
+    },
+    {
+      "input": "Björk Guðmundsdóttir",
+      "expected": "bjork gumundsdottir"
+    },
+    {
+      "input": "Ella  Fitz gerald",
+      "expected": "ella fitzgerald"
+    },
+    {
+      "input": "ﬁona",
+      "expected": "ona"
+    },
+    {
+      "input": "Straße",
+      "expected": "strae"
+    },
+    {
+      "input": "Þóra",
+      "expected": "ora"
+    },
+    {
+      "input": "Kristín Ólafsdóttir",
+      "expected": "kristin olafsdottir"
+    }
+  ]
+}
