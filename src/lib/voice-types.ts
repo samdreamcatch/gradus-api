@@ -13,6 +13,12 @@ export interface VoiceSources {
 }
 
 export type VoicePlanDraft = {
+  /**
+   * True when the AI step failed (after a retry) and this draft is the
+   * empty fallback. The transcript is still persisted on the plan so the
+   * coach's words survive; the client shows an error instead of a success.
+   */
+  aiFailed?: boolean;
   title?: string | null;
   athleteId?: string | null;
   unresolvedAthleteName?: string | null;

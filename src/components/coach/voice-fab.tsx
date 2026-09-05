@@ -70,7 +70,13 @@ export function VoiceFab({
 
       const moveLabel =
         result.appliedMoveCount === 1 ? "1 move" : `${result.appliedMoveCount} moves`;
-      if (result.appliedMoveCount === 0) {
+      if (result.aiFailed) {
+        toast.error(
+          mode === "create"
+            ? "We couldn't turn that dictation into a plan. Your words are saved on the plan — open it to add moves, or try again."
+            : "We couldn't turn that dictation into changes. Your words are saved on the plan — try again, or edit by hand.",
+        );
+      } else if (result.appliedMoveCount === 0) {
         toast.warning(
           mode === "create"
             ? "Couldn't pick out moves from that — your dictation is saved on the plan so you can add moves manually."
