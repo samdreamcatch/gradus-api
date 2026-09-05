@@ -92,6 +92,13 @@ export function createApiRouteHandler<TInput, TOutput>(
         if (!result.allowed) {
           throw ApiError.rateLimited(result.retryAfterSeconds);
         }
+        // Public write routes (sign-in, sign-up, recovery) bypass captcha by
+        // design; this limiter is their only abuse control. If it cannot be
+        // consulted, refuse rather than run unprotected. Public reads and
+        // authenticated routes proceed.
+        if (result.degraded && options.auth === "public" && options.method !== "GET") {
+          throw ApiError.limiterUnavailable();
+        }
       }
 
       if (options.auth === "user" && !ctx) {

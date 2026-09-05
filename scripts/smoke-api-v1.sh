@@ -54,6 +54,16 @@ check "GET /meta/config is 200" 200
 [ -n "$(json paywallEnabled)" ] && ok "config has paywallEnabled" || bad "config missing paywallEnabled"
 req GET /meta/client-policy; check "GET /meta/client-policy is 200" 200
 
+echo "1b. Limiter health (public write routes fail closed when the limiter's table is missing)"
+req POST /auth/password '{"identifier":"smoke-limiter-health@example.com","password":"x"}'
+if [ "$CODE" = "503" ] && [ "$(json error.code)" = "rate_limiter_unavailable" ]; then
+  echo "  ABORT  The rate limiter cannot reach its table (api_rate_limits). The /api/v1 migrations are"
+  echo "         probably not applied in production. Turn the flag off, run the SQL precheck in"
+  echo "         docs/api/SMOKE.md, ask Lovable to apply pending migrations, then rerun."
+  exit 3
+fi
+check "limiter reachable (a plain 401 here, not 503)" 401
+
 echo "2. Auth is required where it should be"
 req POST /me/presence; check "POST /me/presence without bearer is 401" 401
 req GET /me/terms "" "not-a-real-token"; check "GET /me/terms with a garbage bearer is 401" 401

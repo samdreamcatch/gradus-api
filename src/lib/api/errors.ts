@@ -46,6 +46,19 @@ export class ApiError extends Error {
     });
   }
 
+  /**
+   * The rate limiter could not be consulted (its table is missing or the
+   * database call failed). Public write routes refuse rather than run
+   * unprotected, because they bypass captcha by design.
+   */
+  static limiterUnavailable(): ApiError {
+    return new ApiError({
+      code: "rate_limiter_unavailable",
+      status: 503,
+      message: "Please try again in a moment.",
+    });
+  }
+
   static rateLimited(retryAfterSeconds: number): ApiError {
     return new ApiError({
       code: "rate_limited",

@@ -232,3 +232,77 @@ describe("createApiRouteHandler", () => {
     expect(JSON.stringify(body)).not.toContain("secret_column");
   });
 });
+
+/** A fake whose rate-limit table is unreachable (as when a migration was never applied). */
+function createBrokenRateLimitAdmin() {
+  const healthy = createFakeAdmin() as unknown as { from: (table: string) => unknown };
+  const missing = { code: "PGRST205", message: "relation public.api_rate_limits does not exist" };
+  const failing: Record<string, unknown> = {};
+  failing.select = () => failing;
+  failing.eq = () => failing;
+  failing.maybeSingle = async () => ({ data: null, error: missing });
+  failing.update = () => ({ eq: async () => ({ data: null, error: missing }) });
+  failing.upsert = async () => ({ data: null, error: missing });
+  return {
+    from: (table: string) => (table === "api_rate_limits" ? failing : healthy.from(table)),
+  } as unknown as ApiContext["admin"];
+}
+
+describe("rate limiter degraded (table unreachable)", () => {
+  const route = {
+    path: "/api/v1/test",
+    output: outputSchema,
+    rateLimit: { windowSeconds: 60, max: 10 },
+    handler: async () => ({ ok: true }),
+  } as const;
+
+  it("refuses public write routes with 503 rate_limiter_unavailable", async () => {
+    process.env.API_V1_ENABLED = "true";
+    const { POST } = createApiRouteHandler(
+      { ...route, method: "POST", auth: "public" },
+      { admin: createBrokenRateLimitAdmin(), authenticate: async () => null },
+    );
+    const res = await POST!({ request: makeRequest({ method: "POST" }) });
+    expect(res.status).toBe(503);
+    const body = (await res.json()) as { error: { code: string } };
+    expect(body.error.code).toBe("rate_limiter_unavailable");
+  });
+
+  it("lets public reads through", async () => {
+    process.env.API_V1_ENABLED = "true";
+    const { GET } = createApiRouteHandler(
+      { ...route, method: "GET", auth: "public" },
+      { admin: createBrokenRateLimitAdmin(), authenticate: async () => null },
+    );
+    const res = await GET!({ request: makeRequest() });
+    expect(res.status).toBe(200);
+  });
+
+  it("lets authenticated routes through", async () => {
+    process.env.API_V1_ENABLED = "true";
+    const admin = createBrokenRateLimitAdmin();
+    const ctx = { userId: "user-1", supabase: {}, admin } as unknown as ApiContext;
+    const { POST } = createApiRouteHandler(
+      { ...route, method: "POST", auth: "user" },
+      { admin, authenticate: async () => ctx },
+    );
+    const res = await POST!({
+      request: makeRequest({ method: "POST", headers: { Authorization: "Bearer x" } }),
+    });
+    expect(res.status).toBe(200);
+  });
+
+  it("still enforces the limit when the table works", async () => {
+    process.env.API_V1_ENABLED = "true";
+    const admin = createFakeAdmin();
+    const { POST } = createApiRouteHandler(
+      { ...route, method: "POST", auth: "public", rateLimit: { windowSeconds: 60, max: 2 } },
+      { admin, authenticate: async () => null },
+    );
+    const codes: number[] = [];
+    for (let i = 0; i < 3; i += 1) {
+      codes.push((await POST!({ request: makeRequest({ method: "POST" }) })).status);
+    }
+    expect(codes).toEqual([200, 200, 429]);
+  });
+});

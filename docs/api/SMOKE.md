@@ -3,6 +3,33 @@
 Production is the only Supabase environment, so this runs against it, under
 supervision, once per change to the auth broker. Two ways to run it.
 
+## 0. Precheck: are the /api/v1 migrations applied?
+
+Migration files that reach `main` through GitHub are **not necessarily applied by a Lovable
+publish** (observed 2026-09-05: `api_rate_limits` was missing in production after two
+publishes, so the new limiter silently allowed everything). Run this in the Lovable Cloud SQL
+editor before turning the flag on:
+
+```sql
+select to_regclass('public.api_rate_limits')      as rate_limits,
+       to_regclass('public.api_idempotency_keys') as idempotency,
+       to_regclass('public.auth_identities')      as identities,
+       to_regprocedure('public.find_confirmed_user_by_email(text)') as lookup_fn;
+```
+
+Every column must be non-null. If any is null, ask Lovable to apply the pending files in
+`supabase/migrations`, then re-run the query. Public write routes now fail closed
+(`503 rate_limiter_unavailable`) when the limiter's table is unreachable, and the smoke script
+aborts at step 1b in that case instead of passing quietly.
+
+**Limiter probe from the outside** (no email is sent for an unknown address):
+
+```bash
+for i in $(seq 1 12); do curl -s -o /dev/null -w '%{http_code} ' -X POST -H 'Content-Type: application/json' -d '{"email":"smoke-nobody@example.com"}' https://gradus.training/api/v1/auth/recover; done; echo
+```
+
+Expect ten `200`s followed by `429`s. Twelve `200`s means the limiter is not working: turn the flag off.
+
 ## Option A — local dev server against production (preferred; production stays dark)
 
 Needs the project's service-role key in the local `.env` (never commit it).
