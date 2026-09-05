@@ -159,7 +159,11 @@ async function ensureProfile(
     lastName = parts.slice(1).join(" ");
   }
 
-  const created = await supabase
+  // founding_coach is a guarded billing column (trigger in
+  // supabase/migrations/20260905200000_protect_billing_columns.sql), so the
+  // insert goes through the admin client; user_id is still the caller's.
+  const { supabaseAdmin: adminForInsert } = await import("@/integrations/supabase/client.server");
+  const created = await adminForInsert
     .from("coach_profiles")
     .insert({
       user_id: userId,
@@ -284,8 +288,6 @@ export const getCoachProfile = createServerFn({ method: "GET" })
         console.error("getCoachProfile: past_due verification failed", err);
       }
     }
-
-
 
     return {
       profile: {
@@ -424,10 +426,7 @@ export const completeOnboarding = createServerFn({ method: "POST" })
     };
     // entitlement/founding_coach are DB-locked to trusted writers.
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin
-      .from("coach_profiles")
-      .update(patch)
-      .eq("id", profile.id);
+    const { error } = await supabaseAdmin.from("coach_profiles").update(patch).eq("id", profile.id);
     if (error) dbError(error);
     return { ok: true };
   });
