@@ -46,20 +46,24 @@ if [ -z "$USERID" ]; then
 fi
 echo "Signed in as user $USERID"
 ROW="$URL/rest/v1/coach_profiles?user_id=eq.$USERID"
-BEFORE="$(curl -s "${auth[@]}" "$ROW&select=entitlement" | python3 -c 'import sys,json
+STATE="$(curl -s "${auth[@]}" "$ROW&select=entitlement,free_access_until" | python3 -c 'import sys,json
 try:
-  d=json.load(sys.stdin); print(d[0]["entitlement"] if d else "")
-except Exception: print("")')"
+  d=json.load(sys.stdin)[0]; print(d["entitlement"]); print(json.dumps(d.get("free_access_until")))
+except Exception: print(""); print("null")')"
+BEFORE="$(printf '%s\n' "$STATE" | sed -n 1p)"; BEFORE_FAU="$(printf '%s\n' "$STATE" | sed -n 2p)"
 if [ -z "$BEFORE" ]; then echo "FAIL  no coach_profiles row for this user; use a coach account."; exit 1; fi
-echo "Current entitlement: $BEFORE"
+echo "Current entitlement: $BEFORE (free_access_until: $BEFORE_FAU)"
 
-CODE="$(curl -s -o "$TMP" -w '%{http_code}' -X PATCH "${auth[@]}" "${json[@]}" -d '{"entitlement":"paid"}' "$ROW")"
+# The guard rejects a *change*, so the probe must differ from the current
+# value or a no-op update would pass and mask a missing guard.
+if [ "$BEFORE" = "paid" ]; then TRY="promo_free"; else TRY="paid"; fi
+CODE="$(curl -s -o "$TMP" -w '%{http_code}' -X PATCH "${auth[@]}" "${json[@]}" -d "{\"entitlement\":\"$TRY\",\"free_access_until\":\"2099-01-01T00:00:00Z\"}" "$ROW")"
 if [ "$CODE" = "403" ]; then
-  echo "PASS  1) setting your own entitlement is rejected (403): $(python3 -c 'import sys,json; print(json.load(sys.stdin).get("message",""))' < "$TMP" 2>/dev/null)"
+  echo "PASS  1) changing your own entitlement/free access is rejected (403): $(python3 -c 'import sys,json; print(json.load(sys.stdin).get("message",""))' < "$TMP" 2>/dev/null)"
 else
-  echo "FAIL  1) expected 403, got $CODE — the guard is NOT active."
-  echo "      Restoring entitlement=$BEFORE:"
-  curl -s -o /dev/null -w '      restore → %{http_code}\n' -X PATCH "${auth[@]}" "${json[@]}" -d "{\"entitlement\":\"$BEFORE\"}" "$ROW"
+  echo "FAIL  1) expected 403, got $CODE — the guard is NOT active (tried entitlement=$TRY)."
+  echo "      Restoring entitlement=$BEFORE, free_access_until=$BEFORE_FAU:"
+  curl -s -o /dev/null -w '      restore → %{http_code}\n' -X PATCH "${auth[@]}" "${json[@]}" -d "{\"entitlement\":\"$BEFORE\",\"free_access_until\":$BEFORE_FAU}" "$ROW"
 fi
 
 CODE="$(curl -s -o /dev/null -w '%{http_code}' -X PATCH "${auth[@]}" "${json[@]}" -d "{\"last_seen_at\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}" "$ROW")"
