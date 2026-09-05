@@ -94,10 +94,12 @@ export function registerServiceWorker(): void {
   }
 
   window.addEventListener("load", () => {
+    const hadController = Boolean(navigator.serviceWorker.controller);
     navigator.serviceWorker
       .register(SW_URL, { type: "classic", scope: "/" })
       .then((reg) => {
         watchForUpdates(reg);
+        watchForControllerChange(hadController);
       })
       .catch((err) => {
         console.warn("[pwa] service worker registration failed", err);
