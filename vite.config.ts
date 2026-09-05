@@ -16,7 +16,11 @@ export default defineConfig({
   vite: {
     plugins: [
       VitePWA({
-        registerType: "autoUpdate",
+        // "prompt" keeps our workbox `skipWaiting: false` intact. With
+        // "autoUpdate" + `injectRegister: null` the plugin forces
+        // skipWaiting/clientsClaim, so a new worker takes over a page still
+        // running the previous build's chunks.
+        registerType: "prompt",
         injectRegister: null,
         filename: "sw.js",
         devOptions: { enabled: false },
