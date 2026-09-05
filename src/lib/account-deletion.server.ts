@@ -284,6 +284,16 @@ export async function deleteAccountForUser(
     email_hash: email ? await sha256Hex(email) : null,
   });
 
+  // Sign in with Apple: revoke Apple's grant before the auth user (and its
+  // auth_identities rows, which cascade) disappear. Best-effort — a failed
+  // or unconfigured revoke never blocks the deletion.
+  try {
+    const { revokeAppleIdentitiesForUser } = await import("@/lib/api/auth-broker");
+    await revokeAppleIdentitiesForUser(supabaseAdmin, userId);
+  } catch (err) {
+    console.error("[account-deletion] apple revoke failed", err);
+  }
+
   // Last: removing the auth user tombstones their messages via the DB trigger.
   const { error: delErr } = await supabaseAdmin.auth.admin.deleteUser(userId);
   if (delErr) throw new Error(delErr.message);
