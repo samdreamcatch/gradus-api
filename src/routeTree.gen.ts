@@ -100,6 +100,7 @@ import { Route as ApiV1MetaConfigRouteImport } from './routes/api/v1/meta/config
 import { Route as ApiV1MetaClientPolicyRouteImport } from './routes/api/v1/meta/client-policy'
 import { Route as ApiV1MeTermsRouteImport } from './routes/api/v1/me/terms'
 import { Route as ApiV1MePresenceRouteImport } from './routes/api/v1/me/presence'
+import { Route as ApiV1BoardsMySkatersRouteImport } from './routes/api/v1/boards/my-skaters'
 import { Route as ApiV1AuthRecoverRouteImport } from './routes/api/v1/auth/recover'
 import { Route as ApiV1AuthPasswordRouteImport } from './routes/api/v1/auth/password'
 import { Route as ApiV1AuthGoogleRouteImport } from './routes/api/v1/auth/google'
@@ -123,9 +124,13 @@ import { Route as AuthenticatedAdminPlansPlanIdRouteImport } from './routes/_aut
 import { Route as AuthenticatedAdminListKindRouteImport } from './routes/_authenticated/admin.list.$kind'
 import { Route as AuthenticatedAdminErrorsIdRouteImport } from './routes/_authenticated/admin.errors.$id'
 import { Route as AuthenticatedAdminEmailsNameRouteImport } from './routes/_authenticated/admin.emails.$name'
+import { Route as ApiV1PublicBoardsIndexRouteImport } from './routes/api/v1/public/boards/index'
+import { Route as ApiV1PublicBoardsSlugRouteImport } from './routes/api/v1/public/boards/$slug'
 import { Route as ApiV1AuthUsernameResolveRouteImport } from './routes/api/v1/auth/username/resolve'
 import { Route as ApiV1AuthUsernameCheckRouteImport } from './routes/api/v1/auth/username/check'
 import { Route as ApiV1AuthSignupCoachRouteImport } from './routes/api/v1/auth/signup/coach'
+import { Route as ApiV1BoardsSlugFollowsIndexRouteImport } from './routes/api/v1/boards/$slug/follows/index'
+import { Route as ApiV1BoardsSlugFollowsNameRouteImport } from './routes/api/v1/boards/$slug/follows/$name'
 
 const UnsubscribeRoute = UnsubscribeRouteImport.update({
   id: '/unsubscribe',
@@ -627,6 +632,11 @@ const ApiV1MePresenceRoute = ApiV1MePresenceRouteImport.update({
   path: '/api/v1/me/presence',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiV1BoardsMySkatersRoute = ApiV1BoardsMySkatersRouteImport.update({
+  id: '/api/v1/boards/my-skaters',
+  path: '/api/v1/boards/my-skaters',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiV1AuthRecoverRoute = ApiV1AuthRecoverRouteImport.update({
   id: '/api/v1/auth/recover',
   path: '/api/v1/auth/recover',
@@ -760,6 +770,16 @@ const AuthenticatedAdminEmailsNameRoute =
     path: '/emails/$name',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const ApiV1PublicBoardsIndexRoute = ApiV1PublicBoardsIndexRouteImport.update({
+  id: '/api/v1/public/boards/',
+  path: '/api/v1/public/boards/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1PublicBoardsSlugRoute = ApiV1PublicBoardsSlugRouteImport.update({
+  id: '/api/v1/public/boards/$slug',
+  path: '/api/v1/public/boards/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiV1AuthUsernameResolveRoute =
   ApiV1AuthUsernameResolveRouteImport.update({
     id: '/api/v1/auth/username/resolve',
@@ -776,6 +796,18 @@ const ApiV1AuthSignupCoachRoute = ApiV1AuthSignupCoachRouteImport.update({
   path: '/api/v1/auth/signup/coach',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiV1BoardsSlugFollowsIndexRoute =
+  ApiV1BoardsSlugFollowsIndexRouteImport.update({
+    id: '/api/v1/boards/$slug/follows/',
+    path: '/api/v1/boards/$slug/follows/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1BoardsSlugFollowsNameRoute =
+  ApiV1BoardsSlugFollowsNameRouteImport.update({
+    id: '/api/v1/boards/$slug/follows/$name',
+    path: '/api/v1/boards/$slug/follows/$name',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -872,6 +904,7 @@ export interface FileRoutesByFullPath {
   '/api/v1/auth/google': typeof ApiV1AuthGoogleRoute
   '/api/v1/auth/password': typeof ApiV1AuthPasswordRoute
   '/api/v1/auth/recover': typeof ApiV1AuthRecoverRoute
+  '/api/v1/boards/my-skaters': typeof ApiV1BoardsMySkatersRoute
   '/api/v1/me/presence': typeof ApiV1MePresenceRoute
   '/api/v1/me/terms': typeof ApiV1MeTermsRoute
   '/api/v1/meta/client-policy': typeof ApiV1MetaClientPolicyRoute
@@ -894,6 +927,10 @@ export interface FileRoutesByFullPath {
   '/api/v1/auth/signup/coach': typeof ApiV1AuthSignupCoachRoute
   '/api/v1/auth/username/check': typeof ApiV1AuthUsernameCheckRoute
   '/api/v1/auth/username/resolve': typeof ApiV1AuthUsernameResolveRoute
+  '/api/v1/public/boards/$slug': typeof ApiV1PublicBoardsSlugRoute
+  '/api/v1/public/boards/': typeof ApiV1PublicBoardsIndexRoute
+  '/api/v1/boards/$slug/follows/$name': typeof ApiV1BoardsSlugFollowsNameRoute
+  '/api/v1/boards/$slug/follows/': typeof ApiV1BoardsSlugFollowsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -984,6 +1021,7 @@ export interface FileRoutesByTo {
   '/api/v1/auth/google': typeof ApiV1AuthGoogleRoute
   '/api/v1/auth/password': typeof ApiV1AuthPasswordRoute
   '/api/v1/auth/recover': typeof ApiV1AuthRecoverRoute
+  '/api/v1/boards/my-skaters': typeof ApiV1BoardsMySkatersRoute
   '/api/v1/me/presence': typeof ApiV1MePresenceRoute
   '/api/v1/me/terms': typeof ApiV1MeTermsRoute
   '/api/v1/meta/client-policy': typeof ApiV1MetaClientPolicyRoute
@@ -1006,6 +1044,10 @@ export interface FileRoutesByTo {
   '/api/v1/auth/signup/coach': typeof ApiV1AuthSignupCoachRoute
   '/api/v1/auth/username/check': typeof ApiV1AuthUsernameCheckRoute
   '/api/v1/auth/username/resolve': typeof ApiV1AuthUsernameResolveRoute
+  '/api/v1/public/boards/$slug': typeof ApiV1PublicBoardsSlugRoute
+  '/api/v1/public/boards': typeof ApiV1PublicBoardsIndexRoute
+  '/api/v1/boards/$slug/follows/$name': typeof ApiV1BoardsSlugFollowsNameRoute
+  '/api/v1/boards/$slug/follows': typeof ApiV1BoardsSlugFollowsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -1104,6 +1146,7 @@ export interface FileRoutesById {
   '/api/v1/auth/google': typeof ApiV1AuthGoogleRoute
   '/api/v1/auth/password': typeof ApiV1AuthPasswordRoute
   '/api/v1/auth/recover': typeof ApiV1AuthRecoverRoute
+  '/api/v1/boards/my-skaters': typeof ApiV1BoardsMySkatersRoute
   '/api/v1/me/presence': typeof ApiV1MePresenceRoute
   '/api/v1/me/terms': typeof ApiV1MeTermsRoute
   '/api/v1/meta/client-policy': typeof ApiV1MetaClientPolicyRoute
@@ -1126,6 +1169,10 @@ export interface FileRoutesById {
   '/api/v1/auth/signup/coach': typeof ApiV1AuthSignupCoachRoute
   '/api/v1/auth/username/check': typeof ApiV1AuthUsernameCheckRoute
   '/api/v1/auth/username/resolve': typeof ApiV1AuthUsernameResolveRoute
+  '/api/v1/public/boards/$slug': typeof ApiV1PublicBoardsSlugRoute
+  '/api/v1/public/boards/': typeof ApiV1PublicBoardsIndexRoute
+  '/api/v1/boards/$slug/follows/$name': typeof ApiV1BoardsSlugFollowsNameRoute
+  '/api/v1/boards/$slug/follows/': typeof ApiV1BoardsSlugFollowsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -1224,6 +1271,7 @@ export interface FileRouteTypes {
     | '/api/v1/auth/google'
     | '/api/v1/auth/password'
     | '/api/v1/auth/recover'
+    | '/api/v1/boards/my-skaters'
     | '/api/v1/me/presence'
     | '/api/v1/me/terms'
     | '/api/v1/meta/client-policy'
@@ -1246,6 +1294,10 @@ export interface FileRouteTypes {
     | '/api/v1/auth/signup/coach'
     | '/api/v1/auth/username/check'
     | '/api/v1/auth/username/resolve'
+    | '/api/v1/public/boards/$slug'
+    | '/api/v1/public/boards/'
+    | '/api/v1/boards/$slug/follows/$name'
+    | '/api/v1/boards/$slug/follows/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -1336,6 +1388,7 @@ export interface FileRouteTypes {
     | '/api/v1/auth/google'
     | '/api/v1/auth/password'
     | '/api/v1/auth/recover'
+    | '/api/v1/boards/my-skaters'
     | '/api/v1/me/presence'
     | '/api/v1/me/terms'
     | '/api/v1/meta/client-policy'
@@ -1358,6 +1411,10 @@ export interface FileRouteTypes {
     | '/api/v1/auth/signup/coach'
     | '/api/v1/auth/username/check'
     | '/api/v1/auth/username/resolve'
+    | '/api/v1/public/boards/$slug'
+    | '/api/v1/public/boards'
+    | '/api/v1/boards/$slug/follows/$name'
+    | '/api/v1/boards/$slug/follows'
   id:
     | '__root__'
     | '/'
@@ -1455,6 +1512,7 @@ export interface FileRouteTypes {
     | '/api/v1/auth/google'
     | '/api/v1/auth/password'
     | '/api/v1/auth/recover'
+    | '/api/v1/boards/my-skaters'
     | '/api/v1/me/presence'
     | '/api/v1/me/terms'
     | '/api/v1/meta/client-policy'
@@ -1477,6 +1535,10 @@ export interface FileRouteTypes {
     | '/api/v1/auth/signup/coach'
     | '/api/v1/auth/username/check'
     | '/api/v1/auth/username/resolve'
+    | '/api/v1/public/boards/$slug'
+    | '/api/v1/public/boards/'
+    | '/api/v1/boards/$slug/follows/$name'
+    | '/api/v1/boards/$slug/follows/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1510,6 +1572,7 @@ export interface RootRouteChildren {
   ApiV1AuthGoogleRoute: typeof ApiV1AuthGoogleRoute
   ApiV1AuthPasswordRoute: typeof ApiV1AuthPasswordRoute
   ApiV1AuthRecoverRoute: typeof ApiV1AuthRecoverRoute
+  ApiV1BoardsMySkatersRoute: typeof ApiV1BoardsMySkatersRoute
   ApiV1MePresenceRoute: typeof ApiV1MePresenceRoute
   ApiV1MeTermsRoute: typeof ApiV1MeTermsRoute
   ApiV1MetaClientPolicyRoute: typeof ApiV1MetaClientPolicyRoute
@@ -1521,6 +1584,10 @@ export interface RootRouteChildren {
   ApiV1AuthSignupCoachRoute: typeof ApiV1AuthSignupCoachRoute
   ApiV1AuthUsernameCheckRoute: typeof ApiV1AuthUsernameCheckRoute
   ApiV1AuthUsernameResolveRoute: typeof ApiV1AuthUsernameResolveRoute
+  ApiV1PublicBoardsSlugRoute: typeof ApiV1PublicBoardsSlugRoute
+  ApiV1PublicBoardsIndexRoute: typeof ApiV1PublicBoardsIndexRoute
+  ApiV1BoardsSlugFollowsNameRoute: typeof ApiV1BoardsSlugFollowsNameRoute
+  ApiV1BoardsSlugFollowsIndexRoute: typeof ApiV1BoardsSlugFollowsIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -2162,6 +2229,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1MePresenceRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/v1/boards/my-skaters': {
+      id: '/api/v1/boards/my-skaters'
+      path: '/api/v1/boards/my-skaters'
+      fullPath: '/api/v1/boards/my-skaters'
+      preLoaderRoute: typeof ApiV1BoardsMySkatersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/v1/auth/recover': {
       id: '/api/v1/auth/recover'
       path: '/api/v1/auth/recover'
@@ -2323,6 +2397,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminEmailsNameRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/api/v1/public/boards/': {
+      id: '/api/v1/public/boards/'
+      path: '/api/v1/public/boards'
+      fullPath: '/api/v1/public/boards/'
+      preLoaderRoute: typeof ApiV1PublicBoardsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/public/boards/$slug': {
+      id: '/api/v1/public/boards/$slug'
+      path: '/api/v1/public/boards/$slug'
+      fullPath: '/api/v1/public/boards/$slug'
+      preLoaderRoute: typeof ApiV1PublicBoardsSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/v1/auth/username/resolve': {
       id: '/api/v1/auth/username/resolve'
       path: '/api/v1/auth/username/resolve'
@@ -2342,6 +2430,20 @@ declare module '@tanstack/react-router' {
       path: '/api/v1/auth/signup/coach'
       fullPath: '/api/v1/auth/signup/coach'
       preLoaderRoute: typeof ApiV1AuthSignupCoachRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/boards/$slug/follows/': {
+      id: '/api/v1/boards/$slug/follows/'
+      path: '/api/v1/boards/$slug/follows'
+      fullPath: '/api/v1/boards/$slug/follows/'
+      preLoaderRoute: typeof ApiV1BoardsSlugFollowsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/boards/$slug/follows/$name': {
+      id: '/api/v1/boards/$slug/follows/$name'
+      path: '/api/v1/boards/$slug/follows/$name'
+      fullPath: '/api/v1/boards/$slug/follows/$name'
+      preLoaderRoute: typeof ApiV1BoardsSlugFollowsNameRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -2640,6 +2742,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiV1AuthGoogleRoute: ApiV1AuthGoogleRoute,
   ApiV1AuthPasswordRoute: ApiV1AuthPasswordRoute,
   ApiV1AuthRecoverRoute: ApiV1AuthRecoverRoute,
+  ApiV1BoardsMySkatersRoute: ApiV1BoardsMySkatersRoute,
   ApiV1MePresenceRoute: ApiV1MePresenceRoute,
   ApiV1MeTermsRoute: ApiV1MeTermsRoute,
   ApiV1MetaClientPolicyRoute: ApiV1MetaClientPolicyRoute,
@@ -2651,6 +2754,10 @@ const rootRouteChildren: RootRouteChildren = {
   ApiV1AuthSignupCoachRoute: ApiV1AuthSignupCoachRoute,
   ApiV1AuthUsernameCheckRoute: ApiV1AuthUsernameCheckRoute,
   ApiV1AuthUsernameResolveRoute: ApiV1AuthUsernameResolveRoute,
+  ApiV1PublicBoardsSlugRoute: ApiV1PublicBoardsSlugRoute,
+  ApiV1PublicBoardsIndexRoute: ApiV1PublicBoardsIndexRoute,
+  ApiV1BoardsSlugFollowsNameRoute: ApiV1BoardsSlugFollowsNameRoute,
+  ApiV1BoardsSlugFollowsIndexRoute: ApiV1BoardsSlugFollowsIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

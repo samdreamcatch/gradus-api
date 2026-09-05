@@ -35,7 +35,13 @@ export interface DefineApiRouteOptions<TInput, TOutput> {
   /** When true, honors the `Idempotency-Key` header. Requires `auth: "user"`. */
   idempotent?: boolean;
   rateLimit?: RateLimitConfig;
-  handler: (args: { ctx: ApiContext | null; input: TInput; request: Request }) => Promise<TOutput>;
+  handler: (args: {
+    ctx: ApiContext | null;
+    input: TInput;
+    request: Request;
+    /** Dynamic path segments (e.g. `$slug` in the file name) — empty for a static route. */
+    params: Record<string, string>;
+  }) => Promise<TOutput>;
 }
 
 export interface ApiRouteDeps {
@@ -48,7 +54,12 @@ const defaultDeps: ApiRouteDeps = {
   authenticate: authenticateRequest,
 };
 
-type RouteHandlers = Partial<Record<HttpMethod, (args: { request: Request }) => Promise<Response>>>;
+type RouteHandlers = Partial<
+  Record<
+    HttpMethod,
+    (args: { request: Request; params?: Record<string, string> }) => Promise<Response>
+  >
+>;
 
 function getClientIp(request: Request): string | null {
   return (
@@ -67,7 +78,13 @@ export function createApiRouteHandler<TInput, TOutput>(
   options: DefineApiRouteOptions<TInput, TOutput>,
   deps: ApiRouteDeps = defaultDeps,
 ): RouteHandlers {
-  const handle = async ({ request }: { request: Request }): Promise<Response> => {
+  const handle = async ({
+    request,
+    params,
+  }: {
+    request: Request;
+    params?: Record<string, string>;
+  }): Promise<Response> => {
     let response: Response;
 
     try {
@@ -127,7 +144,7 @@ export function createApiRouteHandler<TInput, TOutput>(
       }
 
       const runHandler = async (): Promise<{ status: number; body: unknown }> => {
-        const output = await options.handler({ ctx, input, request });
+        const output = await options.handler({ ctx, input, request, params: params ?? {} });
         const parsedOutput = options.output.parse(output);
         return { status: 200, body: parsedOutput };
       };
