@@ -42,6 +42,22 @@ function watchForUpdates(reg: ServiceWorkerRegistration): void {
   });
 }
 
+let reloadedForNewWorker = false;
+
+/**
+ * When a newer worker takes control of this page, its assets may differ from
+ * the ones this document loaded. Reload exactly once. A first install has no
+ * previous controller, so nothing is stale and no reload is needed.
+ */
+function watchForControllerChange(hadController: boolean): void {
+  if (!hadController) return;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (reloadedForNewWorker) return;
+    reloadedForNewWorker = true;
+    window.location.reload();
+  });
+}
+
 function shouldRefuse(): boolean {
   if (typeof window === "undefined") return true;
   if (!("serviceWorker" in navigator)) return true;
