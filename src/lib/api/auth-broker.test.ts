@@ -1,4 +1,5 @@
 import { describe, expect, it } from "bun:test";
+import { exportPKCS8, generateKeyPair } from "jose";
 import {
   checkUsernameLookupRate,
   findOrCreateIdentityUser,
@@ -7,6 +8,7 @@ import {
   mintSessionForEmail,
   normalizeEmail,
   resolveSignInEmail,
+  revokeAppleIdentitiesForUser,
   signUpCoachWithPassword,
   syntheticEmailForAthlete,
   usernameSchema,
@@ -20,6 +22,11 @@ interface FakeAdminOptions {
   usersById?: Record<string, { email: string | null }>;
   rateLimitReturn?: number;
   generateLinkHashedToken?: string;
+  /** Apple identity rows per user id, for the account-deletion revoke helper. */
+  appleIdentitiesByUser?: Record<
+    string,
+    { provider_sub: string; apple_refresh_token: string | null }[]
+  >;
 }
 
 interface FakeAdminCalls {
@@ -48,13 +55,22 @@ function createFakeAdmin(opts: FakeAdminOptions = {}, calls?: FakeAdminCalls) {
       if (table === "auth_identities") {
         return {
           select: () => ({
-            eq: (_c1: string, provider: string) => ({
-              eq: (_c2: string, sub: string) => ({
-                maybeSingle: async () => ({
-                  data: identities[`${provider}:${sub}`] ?? null,
-                  error: null,
-                }),
-              }),
+            eq: (c1: string, v1: string) => ({
+              eq: (_c2: string, v2: string) => {
+                const single = {
+                  maybeSingle: async () => ({
+                    data: identities[`${v1}:${v2}`] ?? null,
+                    error: null,
+                  }),
+                };
+                if (c1 !== "user_id") return single;
+                // `.eq("user_id", …).eq("provider", …)` awaited as a list.
+                const rows = opts.appleIdentitiesByUser?.[v1] ?? [];
+                return {
+                  ...single,
+                  then: (resolve: (value: unknown) => void) => resolve({ data: rows, error: null }),
+                };
+              },
             }),
           }),
           insert: async (row: { user_id: string; provider: string; provider_sub: string }) => {
@@ -396,5 +412,88 @@ describe("signUpCoachWithPassword", () => {
     ).catch((err: { message: string }) => {
       expect(err.message).not.toContain("already registered");
     });
+  });
+});
+
+describe("revokeAppleIdentitiesForUser", () => {
+  const APPLE_ENV = ["APPLE_TEAM_ID", "APPLE_SIWA_KEY_ID", "APPLE_SIWA_KEY_P8"] as const;
+  function clearAppleEnv() {
+    for (const k of APPLE_ENV) delete process.env[k];
+  }
+  async function setAppleEnv() {
+    const { privateKey } = await generateKeyPair("ES256", { extractable: true });
+    process.env.APPLE_TEAM_ID = "TEAMID1234";
+    process.env.APPLE_SIWA_KEY_ID = "KEYID12345";
+    process.env.APPLE_SIWA_KEY_P8 = await exportPKCS8(privateKey);
+  }
+
+  it("does nothing for a user with no Apple identities", async () => {
+    clearAppleEnv();
+    let calls = 0;
+    const fetchImpl = (async () => {
+      calls += 1;
+      return new Response("", { status: 200 });
+    }) as typeof fetch;
+    const admin = createFakeAdmin({ appleIdentitiesByUser: {} });
+    const summary = await revokeAppleIdentitiesForUser(admin, "user-1", { fetchImpl });
+    expect(summary).toEqual({ found: 0, attempted: 0, revoked: 0 });
+    expect(calls).toBe(0);
+  });
+
+  it("skips (attempted 0) when the Apple key secrets are not configured", async () => {
+    clearAppleEnv();
+    let calls = 0;
+    const fetchImpl = (async () => {
+      calls += 1;
+      return new Response("", { status: 200 });
+    }) as typeof fetch;
+    const admin = createFakeAdmin({
+      appleIdentitiesByUser: {
+        "user-1": [{ provider_sub: "apple-sub", apple_refresh_token: "r1" }],
+      },
+    });
+    const summary = await revokeAppleIdentitiesForUser(admin, "user-1", { fetchImpl });
+    expect(summary).toEqual({ found: 1, attempted: 0, revoked: 0 });
+    expect(calls).toBe(0);
+  });
+
+  it("revokes each stored token at Apple when configured", async () => {
+    await setAppleEnv();
+    const bodies: string[] = [];
+    const urls: string[] = [];
+    const fetchImpl = (async (url: string, init: RequestInit) => {
+      urls.push(url);
+      bodies.push(String(init.body));
+      return new Response("", { status: 200 });
+    }) as typeof fetch;
+    const admin = createFakeAdmin({
+      appleIdentitiesByUser: {
+        "user-1": [
+          { provider_sub: "apple-sub-a", apple_refresh_token: "token-a" },
+          { provider_sub: "apple-sub-b", apple_refresh_token: null },
+          { provider_sub: "apple-sub-c", apple_refresh_token: "token-c" },
+        ],
+      },
+    });
+    const summary = await revokeAppleIdentitiesForUser(admin, "user-1", { fetchImpl });
+    expect(summary).toEqual({ found: 2, attempted: 2, revoked: 2 });
+    expect(urls.every((u) => u === "https://appleid.apple.com/auth/revoke")).toBe(true);
+    expect(bodies[0]).toContain("token=token-a");
+    expect(bodies[1]).toContain("token=token-c");
+    expect(bodies[0]).toContain("token_type_hint=refresh_token");
+    clearAppleEnv();
+  });
+
+  it("counts a rejected revoke without throwing", async () => {
+    await setAppleEnv();
+    const fetchImpl = (async () => new Response("bad", { status: 400 })) as typeof fetch;
+    const admin = createFakeAdmin({
+      appleIdentitiesByUser: {
+        "user-1": [{ provider_sub: "apple-sub", apple_refresh_token: "r1" }],
+      },
+    });
+    const summary = await revokeAppleIdentitiesForUser(admin, "user-1", { fetchImpl });
+    expect(summary).toEqual({ found: 1, attempted: 1, revoked: 0 });
+    clearAppleEnv();
   });
 });

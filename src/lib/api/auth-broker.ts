@@ -578,3 +578,84 @@ export async function revokeAppleIdentity(
   }
   return { attempted: true, ok: response.ok };
 }
+
+// --- Account deletion: revoke every Apple identity linked to a user ----------
+
+type AuthIdentitiesByUserTable = {
+  from: (table: "auth_identities") => {
+    select: (columns: string) => {
+      eq: (
+        column: string,
+        value: string,
+      ) => {
+        eq: (
+          column: string,
+          value: string,
+        ) => Promise<{
+          data: { provider_sub: string; apple_refresh_token: string | null }[] | null;
+          error: unknown;
+        }>;
+      };
+    };
+  };
+};
+
+export interface AppleRevokeSummary {
+  /** Apple identities with a stored refresh token. */
+  found: number;
+  /** Revoke calls actually made (0 when the Apple key secrets are not configured). */
+  attempted: number;
+  /** Revoke calls Apple accepted. */
+  revoked: number;
+}
+
+/**
+ * Revokes Apple's grant for every Apple identity linked to `userId`, per PRD
+ * §6.4 and Apple's requirement for apps offering Sign in with Apple. Called
+ * from account deletion BEFORE the auth user is removed, because the
+ * identity rows cascade away with the user. Best-effort by design: it logs
+ * and returns counts and never throws, so a revoke failure can never block
+ * a deletion the user is entitled to. Without the Apple key secrets it
+ * records `attempted: 0` and moves on.
+ */
+export async function revokeAppleIdentitiesForUser(
+  admin: ApiContext["admin"],
+  userId: string,
+  init: { fetchImpl?: typeof fetch } = {},
+): Promise<AppleRevokeSummary> {
+  let rows: { provider_sub: string; apple_refresh_token: string | null }[] = [];
+  try {
+    const { data, error } = await (admin as unknown as AuthIdentitiesByUserTable)
+      .from("auth_identities")
+      .select("provider_sub, apple_refresh_token")
+      .eq("user_id", userId)
+      .eq("provider", "apple");
+    if (error) {
+      console.error("[api] revokeAppleIdentitiesForUser lookup", error);
+      return { found: 0, attempted: 0, revoked: 0 };
+    }
+    rows = (data ?? []).filter((r) => Boolean(r.apple_refresh_token));
+  } catch (err) {
+    console.error("[api] revokeAppleIdentitiesForUser lookup threw", err);
+    return { found: 0, attempted: 0, revoked: 0 };
+  }
+
+  let attempted = 0;
+  let revoked = 0;
+  for (const row of rows) {
+    try {
+      const result = await revokeAppleIdentity(row.apple_refresh_token as string, init);
+      if (result.attempted) attempted += 1;
+      if (result.ok) revoked += 1;
+    } catch (err) {
+      console.error("[api] revokeAppleIdentitiesForUser revoke threw", err);
+    }
+  }
+  if (rows.length > 0) {
+    console.info(
+      "[api] apple revoke on account deletion",
+      JSON.stringify({ found: rows.length, attempted, revoked }),
+    );
+  }
+  return { found: rows.length, attempted, revoked };
+}
