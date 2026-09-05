@@ -16,11 +16,21 @@ grid renders oddly):
 select to_regclass('public.api_rate_limits')      as rate_limits,
        to_regclass('public.api_idempotency_keys') as idempotency,
        to_regclass('public.auth_identities')      as identities,
+       to_regclass('public.board_follows')        as board_follows,
        to_regprocedure('public.find_confirmed_user_by_email(text)') as lookup_fn;
 ```
 
 Every column must be non-null. If any is null, ask Lovable to apply the pending files in
-`supabase/migrations`, then re-run the query. Public write routes fail closed
+`supabase/migrations`, then re-run the query.
+
+**Version ordering.** Lovable only picks up migrations whose version (the leading timestamp)
+is newer than the latest one it has already applied. A migration written on a branch and
+merged later than a Lovable-generated one can therefore be "not pending" and never run:
+`board_follows` (#61) was stamped `20260905061815`, merged after Lovable had applied
+`20260905160000`, and was skipped (precheck returned NULL, "no pending migrations"). Before
+merging a branch that adds a migration, check that its version is greater than the newest file
+already on `main`; if not, rename it to the current UTC timestamp. Fix for an already-merged
+file: rename it to a fresh version (the migrations are idempotent) and apply again. Public write routes fail closed
 (`503 rate_limiter_unavailable`) when the limiter's table is unreachable, the error is logged as
 `[api] rate limiter degraded` with the database error code, and the smoke script aborts at step
 1b instead of passing quietly.
