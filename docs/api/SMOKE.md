@@ -5,10 +5,8 @@ supervision, once per change to the auth broker. Two ways to run it.
 
 ## 0. Precheck: are the /api/v1 migrations applied?
 
-Migration files that reach `main` through GitHub are **not necessarily applied by a Lovable
-publish** (observed 2026-09-05: `api_rate_limits` was missing in production after two
-publishes, so the new limiter silently allowed everything). Run this in the Lovable Cloud SQL
-editor before turning the flag on:
+Confirm every relation the API depends on exists before turning the flag on. Run this in the
+Lovable Cloud SQL editor (the result grid may render headers oddly; export to CSV if unsure):
 
 ```sql
 select to_regclass('public.api_rate_limits')      as rate_limits,
@@ -18,9 +16,12 @@ select to_regclass('public.api_rate_limits')      as rate_limits,
 ```
 
 Every column must be non-null. If any is null, ask Lovable to apply the pending files in
-`supabase/migrations`, then re-run the query. Public write routes now fail closed
-(`503 rate_limiter_unavailable`) when the limiter's table is unreachable, and the smoke script
-aborts at step 1b in that case instead of passing quietly.
+`supabase/migrations`, then re-run the query. On 2026-09-05 all four existed yet the limiter
+still allowed everything, so existence is necessary, not sufficient: public write routes now
+fail closed (`503 rate_limiter_unavailable`) whenever the limiter's table cannot be read or
+written, the error is logged as `[api] rate limiter degraded` with the database error code, and
+the smoke script aborts at step 1b instead of passing quietly. If step 1b aborts, ask Lovable
+for the most recent `[api] rate limiter degraded` log lines; they name the cause.
 
 **Limiter probe from the outside** (no email is sent for an unknown address):
 
