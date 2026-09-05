@@ -63,13 +63,21 @@ function ErrorComponent({ error, reset }: { error: unknown; reset: () => void })
   const staleChunk = isModuleLoadError(error) || isModuleLoadError(normalizedError);
   useEffect(() => {
     reportError(normalizedError, {
-      metadata: { type: "router.errorComponent", staleChunk },
+      metadata: {
+        type: "router.errorComponent",
+        staleChunk,
+        online: typeof navigator === "undefined" ? null : navigator.onLine,
+        controlled:
+          typeof navigator === "undefined" ? null : Boolean(navigator.serviceWorker?.controller),
+        visibility: typeof document === "undefined" ? null : document.visibilityState,
+      },
     });
   }, [normalizedError, staleChunk]);
-  // A missing JS chunk means the browser/service worker is holding a previous
-  // deploy. Clear caches and reload once instead of showing an error screen.
+  // A missing JS chunk usually means the browser/service worker is holding a
+  // previous deploy. Clear caches and reload — unless we're offline, in which
+  // case the error screen stays put.
   useEffect(() => {
-    if (staleChunk) recoverFromStaleChunks();
+    if (staleChunk) void recoverFromStaleChunks();
   }, [staleChunk]);
   const router = useRouter();
   // In production, hide raw error messages — they can leak internal
