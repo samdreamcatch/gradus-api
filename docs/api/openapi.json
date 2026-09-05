@@ -738,6 +738,7 @@
     },
     "/api/v1/public/boards": {
       "get": {
+        "operationId": "getPublicBoards",
         "summary": "Competitions with a Live Board, newest first",
         "security": [],
         "responses": {
@@ -793,6 +794,7 @@
     },
     "/api/v1/public/boards/{slug}": {
       "get": {
+        "operationId": "getPublicBoardsBySlug",
         "summary": "One competition's Live Board",
         "security": [],
         "responses": {
@@ -2060,6 +2062,7 @@
     },
     "/api/v1/boards/my-skaters": {
       "get": {
+        "operationId": "getBoardsMySkaters",
         "summary": "Names of the caller's own/rostered athletes, for board auto-follow",
         "security": [
           {
@@ -2095,6 +2098,7 @@
     },
     "/api/v1/boards/{slug}/follows": {
       "get": {
+        "operationId": "getBoardsBySlugFollows",
         "summary": "List the caller's followed skaters for a board",
         "security": [
           {
@@ -2128,6 +2132,7 @@
         }
       },
       "put": {
+        "operationId": "putBoardsBySlugFollows",
         "summary": "Replace the caller's followed skaters for a board",
         "security": [
           {
@@ -2184,6 +2189,7 @@
     },
     "/api/v1/boards/{slug}/follows/{name}": {
       "delete": {
+        "operationId": "deleteBoardsBySlugFollowsByName",
         "summary": "Unfollow one skater on a board",
         "security": [
           {
