@@ -46,9 +46,15 @@ export const Route = createFileRoute("/api/v1/auth/password")({
         if (!identifierLimit.allowed) {
           throw ApiError.rateLimited(identifierLimit.retryAfterSeconds);
         }
+        if (identifierLimit.degraded) throw ApiError.limiterUnavailable();
 
+        const viaUsername = !input.identifier.includes("@");
         const email = await resolveSignInEmail(supabaseAdmin, input.identifier);
-        if (!email) throw INVALID_CREDENTIALS;
+        if (!email) {
+          // Server-side only; the client always gets the generic 401.
+          console.warn("[api] password grant: unknown username");
+          throw INVALID_CREDENTIALS;
+        }
 
         const result = await goTrueRequest<{
           access_token: string;
@@ -56,7 +62,21 @@ export const Route = createFileRoute("/api/v1/auth/password")({
           expires_in: number;
         }>("token?grant_type=password", { email, password: input.password });
 
-        if (!result.ok || !result.data) throw INVALID_CREDENTIALS;
+        if (!result.ok || !result.data) {
+          // Server-side only, no identifiers: lets Lovable's logs distinguish a
+          // wrong password from a rejected grant (captcha, unconfirmed email,
+          // disabled provider) without weakening the generic client error.
+          console.warn(
+            "[api] password grant rejected",
+            JSON.stringify({
+              status: result.status,
+              code: result.error?.error_code ?? result.error?.error ?? null,
+              message: result.error?.msg ?? result.error?.error_description ?? null,
+              viaUsername,
+            }),
+          );
+          throw INVALID_CREDENTIALS;
+        }
 
         return {
           accessToken: result.data.access_token,

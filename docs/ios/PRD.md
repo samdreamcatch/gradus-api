@@ -125,6 +125,7 @@ These are the rules that protect current web users. Every backend pull request i
 8. **Observe after every publish.** The admin errors dashboard and email health page are checked after each backend publish; a regression triggers a revert first and a diagnosis second.
 9. **Sunset is a separate decision.** Until the criteria in §10.4 are met and Mariah decides, the web app for all roles is fully supported, including bug fixes.
 10. **No credential or key moves.** The Supabase publishable key, service role key, Stripe keys, and AI keys stay where they are. iOS only ever holds the publishable key.
+11. **New tables and functions are proven to exist before anything depends on them.** Migration files that reach `main` through GitHub are not necessarily applied by a Lovable publish (observed 2026-09-05: the `/api/v1` limiter table was missing in production after two publishes). Before turning on a flag or merging code that reads a new relation, run the precheck in `docs/api/SMOKE.md`; if anything is missing, ask Lovable to apply the pending migrations and re-check. Code guarding public write endpoints fails closed when its table is missing.
 
 ### 4.2 Platform constraints (facts, verified 2026-09-04)
 
