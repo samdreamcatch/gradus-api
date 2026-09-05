@@ -1,6 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+// Billing columns on coach_profiles are guarded by a trigger that only the
+// service role may pass (supabase/migrations/20260905200000_protect_billing_columns.sql),
+// so every write below goes through the admin client. Row targeting stays
+// explicit (.eq on the caller's own profile) because RLS no longer applies.
 import { type StripeEnv, createStripeClient, getStripeErrorMessage } from "@/lib/stripe.server";
 
 const inputSchema = z.object({
@@ -30,6 +34,7 @@ export const startCoachCheckout = createServerFn({ method: "POST" })
       const env = data.environment as StripeEnv;
       const stripe = createStripeClient(env);
       const { userId, supabase } = context;
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
       // Look up email + existing customer id + promo code from coach profile.
       const { data: profile } = await supabase
@@ -64,7 +69,7 @@ export const startCoachCheckout = createServerFn({ method: "POST" })
       }
 
       if (customerId && profile && profile.stripe_customer_id !== customerId) {
-        await supabase
+        await supabaseAdmin
           .from("coach_profiles")
           .update({ stripe_customer_id: customerId, subscription_environment: env })
           .eq("id", profile.id);
@@ -107,8 +112,6 @@ export const startCoachCheckout = createServerFn({ method: "POST" })
       //     (existing behaviour). Attached as a lifetime discount.
       let discountPromoId: string | undefined;
       let promoCodeToPersist: string | undefined;
-
-      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
       const tier: "coach" | "coach_pro" = isProPrice ? "coach_pro" : "coach";
       let cardRequiredForPromo = true;
@@ -219,11 +222,10 @@ export const startCoachCheckout = createServerFn({ method: "POST" })
         }),
       });
 
-
       // Persist the promo attribution onto the profile only if it's empty —
       // never overwrite an earlier code (e.g. WELCOME_BACK).
       if (promoCodeToPersist && profile && !profile.promo_code) {
-        await supabase
+        await supabaseAdmin
           .from("coach_profiles")
           .update({ promo_code: promoCodeToPersist })
           .eq("id", profile.id)
@@ -232,7 +234,7 @@ export const startCoachCheckout = createServerFn({ method: "POST" })
 
       // Mark the founding Pro trial as used so it can't be reused later.
       if (useFoundingProTrial && profile) {
-        await supabase
+        await supabaseAdmin
           .from("coach_profiles")
           .update({
             founding_pro_trial_used: true,
@@ -339,6 +341,7 @@ export const changeCoachSubscription = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }): Promise<ChangeSubscriptionResult> => {
     const { userId, supabase } = context;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: profile } = await supabase
       .from("coach_profiles")
       .select("stripe_customer_id, stripe_subscription_id, subscription_environment")
@@ -487,7 +490,7 @@ export const changeCoachSubscription = createServerFn({ method: "POST" })
       }
 
       // Persist tier immediately for snappy UI; webhook will confirm/refine.
-      await supabase
+      await supabaseAdmin
         .from("coach_profiles")
         .update({
           subscription_tier: newTier,
@@ -529,6 +532,7 @@ export const verifyCheckoutSession = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }): Promise<VerifyCheckoutResult> => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     try {
       const env = data.environment as StripeEnv;
       const stripe = createStripeClient(env);
@@ -553,7 +557,6 @@ export const verifyCheckoutSession = createServerFn({ method: "POST" })
       }
 
       const { syncCoachSubscription } = await import("@/lib/coach-subscription-sync.server");
-      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       await syncCoachSubscription(supabaseAdmin, sub, env);
 
       // Best-effort audit row so support can see the verify path fired.
@@ -589,6 +592,7 @@ export const claimFoundingCoachTier = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<{ ok: true } | { error: string }> => {
     const { userId, supabase } = context;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: profile, error: readErr } = await supabase
       .from("coach_profiles")
       .select("id, founding_coach, entitlement, organization_id")
@@ -610,7 +614,7 @@ export const claimFoundingCoachTier = createServerFn({ method: "POST" })
     ) {
       return { ok: true };
     }
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
       .from("coach_profiles")
       .update({ entitlement: "promo_free" })
       .eq("id", profile.id);
@@ -631,6 +635,7 @@ export const restoreFoundingCoachTier = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }): Promise<{ ok: true } | { error: string }> => {
     const { userId, supabase } = context;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: profile } = await supabase
       .from("coach_profiles")
       .select(
@@ -675,7 +680,7 @@ export const restoreFoundingCoachTier = createServerFn({ method: "POST" })
       }
     }
 
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
       .from("coach_profiles")
       .update({
         entitlement: "promo_free",

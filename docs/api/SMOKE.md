@@ -17,7 +17,9 @@ select to_regclass('public.api_rate_limits')      as rate_limits,
        to_regclass('public.api_idempotency_keys') as idempotency,
        to_regclass('public.auth_identities')      as identities,
        to_regclass('public.board_follows')        as board_follows,
-       to_regprocedure('public.find_confirmed_user_by_email(text)') as lookup_fn;
+       to_regprocedure('public.find_confirmed_user_by_email(text)') as lookup_fn,
+       to_regprocedure('public.protect_coach_billing_columns()')     as coach_guard,
+       to_regprocedure('public.protect_parent_billing_columns()')    as parent_guard;
 ```
 
 Every column must be non-null. If any is null, ask Lovable to apply the pending files in
@@ -52,6 +54,26 @@ for i in $(seq 1 12); do curl -s -o /dev/null -w '%{http_code} ' -X POST -H 'Con
 ```
 
 Expect ten `200`s followed by `429`s. Twelve `200`s means the limiter is not working: turn the flag off.
+
+**Billing-column guard check** (PRD §4.1 rule 13). Needs a real user token: sign in to
+gradus.training as the demo coach, then in the browser's devtools take `access_token` from
+Local Storage → `sb-<project-ref>-auth-token`. Paste it at the prompt; it is never echoed.
+
+```bash
+set -a; source .env; set +a        # VITE_SUPABASE_URL / VITE_SUPABASE_PUBLISHABLE_KEY (public values)
+read -s TOKEN; echo
+UID=$(curl -s -H "apikey: $VITE_SUPABASE_PUBLISHABLE_KEY" -H "Authorization: Bearer $TOKEN" "$VITE_SUPABASE_URL/auth/v1/user" | python3 -c 'import sys,json; print(json.load(sys.stdin)["id"])')
+# 1. Own billing column: expect 403 and "can only be changed by the server".
+curl -s -w ' [%{http_code}]\n' -X PATCH -H "apikey: $VITE_SUPABASE_PUBLISHABLE_KEY" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -H 'Prefer: return=minimal' -d '{"entitlement":"paid"}' "$VITE_SUPABASE_URL/rest/v1/coach_profiles?user_id=eq.$UID"
+# 2. Own safe column: expect 204 (last_seen_at is harmless and overwritten on every visit).
+curl -s -w ' [%{http_code}]\n' -X PATCH -H "apikey: $VITE_SUPABASE_PUBLISHABLE_KEY" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -H 'Prefer: return=minimal' -d "{\"last_seen_at\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}" "$VITE_SUPABASE_URL/rest/v1/coach_profiles?user_id=eq.$UID"
+unset TOKEN
+```
+
+Then, in Lovable preview (the server still writes these columns, now through the admin
+client): open the coach Settings → plan status, start and abandon a checkout, and for a test
+account run change plan, cancel, and a promo code; a new coach's first load must still create
+the profile. Any "can only be changed by the server" error in those flows is a regression.
 
 ## Option A — local dev server against production (preferred; production stays dark)
 
