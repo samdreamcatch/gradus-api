@@ -71,11 +71,24 @@ export function deriveOperationId(method: string, path: string): string {
   return method.toLowerCase() + parts.join("");
 }
 
+/** operationId → "METHOD path" that claimed it; re-registering the same route (dev HMR) is a no-op. */
+const registeredOperationIds = new Map<string, string>();
+
 export function registerApiRoute(route: RegisterRouteOptions): void {
+  const operationId = route.operationId ?? deriveOperationId(route.method, route.path);
+  const routeKey = `${route.method.toUpperCase()} ${route.path}`;
+  const owner = registeredOperationIds.get(operationId);
+  if (owner && owner !== routeKey) {
+    throw new Error(
+      `openapi: duplicate operationId "${operationId}" for ${routeKey}; already used by ${owner}. Set an explicit operationId on one of them.`,
+    );
+  }
+  registeredOperationIds.set(operationId, routeKey);
+
   apiRegistry.registerPath({
     method: route.method,
     path: route.path,
-    operationId: route.operationId ?? deriveOperationId(route.method, route.path),
+    operationId,
     summary: route.summary,
     security: route.auth === "user" ? [{ bearerAuth: [] }] : [],
     request: route.input

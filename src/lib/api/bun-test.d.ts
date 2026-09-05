@@ -1,6 +1,6 @@
 /**
- * Narrow local shim for the `bun:test` types used in this directory's
- * tests. Deliberately not the `@types/bun` package: it declares a global
+ * Narrow local shim for the `bun:test` types used by the tests under
+ * src/ and scripts/. Deliberately not the `@types/bun` package: it declares a global
  * `fetch` that conflicts with the one `src/lib/stripe.server.ts` expects
  * from `@types/node`, which would break `bun run typecheck` project-wide.
  */
@@ -24,6 +24,10 @@ declare module "bun:test" {
     toBeDefined(): void;
     toBeTruthy(): void;
     toBeGreaterThanOrEqual(expected: number): void;
+    toBeGreaterThan(expected: number): void;
+    toBeLessThan(expected: number): void;
+    toBeLessThanOrEqual(expected: number): void;
+    toBeCloseTo(expected: number, numDigits?: number): void;
     toThrow(expected?: unknown): void;
     not: Expectation;
     rejects: AsyncExpectation;
