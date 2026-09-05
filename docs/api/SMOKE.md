@@ -55,20 +55,30 @@ for i in $(seq 1 12); do curl -s -o /dev/null -w '%{http_code} ' -X POST -H 'Con
 
 Expect ten `200`s followed by `429`s. Twelve `200`s means the limiter is not working: turn the flag off.
 
-**Billing-column guard check** (PRD §4.1 rule 13). Needs a real user token: sign in to
-gradus.training as the demo coach, then in the browser's devtools take `access_token` from
-Local Storage → `sb-<project-ref>-auth-token`. Paste it at the prompt; it is never echoed.
+**Billing-column guard check** (PRD §4.1 rule 13). Needs a real signed-in coach token. Sign in
+to gradus.training as a coach, open devtools → Application → Local Storage →
+`sb-<project-ref>-auth-token`, and copy the `access_token` value to the clipboard (never paste
+it into a chat or a ticket; it is a live credential). Then, from the repo root:
 
 ```bash
 set -a; source .env; set +a        # VITE_SUPABASE_URL / VITE_SUPABASE_PUBLISHABLE_KEY (public values)
-read -s TOKEN; echo
-UID=$(curl -s -H "apikey: $VITE_SUPABASE_PUBLISHABLE_KEY" -H "Authorization: Bearer $TOKEN" "$VITE_SUPABASE_URL/auth/v1/user" | python3 -c 'import sys,json; print(json.load(sys.stdin)["id"])')
-# 1. Own billing column: expect 403 and "can only be changed by the server".
-curl -s -w ' [%{http_code}]\n' -X PATCH -H "apikey: $VITE_SUPABASE_PUBLISHABLE_KEY" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -H 'Prefer: return=minimal' -d '{"entitlement":"paid"}' "$VITE_SUPABASE_URL/rest/v1/coach_profiles?user_id=eq.$UID"
-# 2. Own safe column: expect 204 (last_seen_at is harmless and overwritten on every visit).
-curl -s -w ' [%{http_code}]\n' -X PATCH -H "apikey: $VITE_SUPABASE_PUBLISHABLE_KEY" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -H 'Prefer: return=minimal' -d "{\"last_seen_at\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}" "$VITE_SUPABASE_URL/rest/v1/coach_profiles?user_id=eq.$UID"
-unset TOKEN
+TOKEN="$(pbpaste | tr -d '"[:space:]')"
+H=(-H "apikey: $VITE_SUPABASE_PUBLISHABLE_KEY" -H "Authorization: Bearer $TOKEN")
+USERID=$(curl -s "${H[@]}" "$VITE_SUPABASE_URL/auth/v1/user" | python3 -c 'import sys,json; print(json.load(sys.stdin)["id"])')
+ROW="$VITE_SUPABASE_URL/rest/v1/coach_profiles?user_id=eq.$USERID"
+BEFORE=$(curl -s "${H[@]}" "$ROW&select=entitlement" | python3 -c 'import sys,json; print(json.load(sys.stdin)[0]["entitlement"])')
+echo "current entitlement: $BEFORE"
+echo "1) set entitlement=paid on own row — expect 403:"
+CODE=$(curl -s -o /tmp/guard-check.txt -w '%{http_code}' -X PATCH "${H[@]}" -H 'Content-Type: application/json' -H 'Prefer: return=minimal' -d '{"entitlement":"paid"}' "$ROW")
+echo "$CODE $(cat /tmp/guard-check.txt)"
+if [ "$CODE" != 403 ]; then echo "GUARD NOT ACTIVE — restoring entitlement=$BEFORE"; curl -s -o /dev/null -w '%{http_code}\n' -X PATCH "${H[@]}" -H 'Content-Type: application/json' -H 'Prefer: return=minimal' -d "{\"entitlement\":\"$BEFORE\"}" "$ROW"; fi
+echo "2) update last_seen_at — expect 204:"
+curl -s -o /dev/null -w '%{http_code}\n' -X PATCH "${H[@]}" -H 'Content-Type: application/json' -H 'Prefer: return=minimal' -d "{\"last_seen_at\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}" "$ROW"
+unset TOKEN H; rm -f /tmp/guard-check.txt
 ```
+
+If the token was ever exposed (pasted anywhere), sign out of gradus.training in that browser
+afterwards: that revokes the refresh token, and the access token expires within an hour.
 
 Then, in Lovable preview (the server still writes these columns, now through the admin
 client): open the coach Settings → plan status, start and abandon a checkout, and for a test
