@@ -19,7 +19,15 @@ Conventions are defined in `docs/ios/PRD.md` §6.2 (request/response rules) and
 - **Rate limiting.** Fixed-window, keyed by route + IP (+ user id when
   authenticated), via the `rateLimit` option.
 - **OpenAPI.** `bun run openapi` regenerates `docs/api/openapi.json` from
-  the registered zod schemas. CI fails if the committed file is stale.
+  the registered zod schemas. CI fails if the committed file is stale. Every
+  operation carries an `operationId` (derived from method and path unless
+  the route sets one); client generators use it as the method name, so it
+  is part of the v1 contract.
+- **Design tokens.** `bun run design-tokens` regenerates
+  `docs/api/design-tokens.json` from `src/styles.css` (OKLCH → sRGB, light
+  and dark). CI fails if the committed file is stale. `gradus-ios` vendors
+  this file with `openapi.json` and generates its color catalog from it
+  (PRD §8.2, §9.1).
 
 ## Adding a route
 

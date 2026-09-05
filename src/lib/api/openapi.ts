@@ -39,12 +39,43 @@ export interface RegisterRouteOptions {
   auth: "user" | "public";
   input?: ZodType;
   output: ZodType;
+  /** Defaults to `deriveOperationId(method, path)`. */
+  operationId?: string;
+}
+
+/**
+ * Stable, unique operation name derived from the method and path, e.g.
+ * `POST /api/v1/auth/username/check` → `postAuthUsernameCheck` and
+ * `GET /api/v1/boards/{slug}` → `getBoardsBySlug`. Client generators
+ * (swift-openapi-generator for gradus-ios) require an `operationId` on
+ * every operation and use it as the method name, so once published a
+ * derived id is part of the v1 contract: renaming a path is a breaking
+ * change, which §6.2 already forbids within v1.
+ */
+export function deriveOperationId(method: string, path: string): string {
+  const capitalize = (segment: string) =>
+    segment
+      .split(/[-_]/)
+      .filter(Boolean)
+      .map((word) => word[0].toUpperCase() + word.slice(1))
+      .join("");
+  const parts = path
+    .replace(/^\/api\/v1\/?/, "")
+    .split("/")
+    .filter(Boolean)
+    .map((segment) =>
+      segment.startsWith("{") && segment.endsWith("}")
+        ? "By" + capitalize(segment.slice(1, -1))
+        : capitalize(segment),
+    );
+  return method.toLowerCase() + parts.join("");
 }
 
 export function registerApiRoute(route: RegisterRouteOptions): void {
   apiRegistry.registerPath({
     method: route.method,
     path: route.path,
+    operationId: route.operationId ?? deriveOperationId(route.method, route.path),
     summary: route.summary,
     security: route.auth === "user" ? [{ bearerAuth: [] }] : [],
     request: route.input

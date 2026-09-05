@@ -12,7 +12,8 @@
     "typecheck": "tsc --noEmit",
     "format": "prettier --write .",
     "test": "bun test",
-    "openapi": "bun scripts/openapi.ts"
+    "openapi": "bun scripts/openapi.ts",
+    "design-tokens": "bun scripts/export-design-tokens.ts"
   },
   "dependencies": {
     "@ai-sdk/openai-compatible": "^2.0.48",

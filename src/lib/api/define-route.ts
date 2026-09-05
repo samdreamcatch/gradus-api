@@ -30,6 +30,8 @@ export interface DefineApiRouteOptions<TInput, TOutput> {
   path: string;
   auth: "user" | "public";
   summary?: string;
+  /** OpenAPI operation id; defaults to one derived from method and path. */
+  operationId?: string;
   input?: ZodType<TInput>;
   output: ZodType<TOutput>;
   /** When true, honors the `Idempotency-Key` header. Requires `auth: "user"`. */
@@ -178,6 +180,7 @@ export function defineApiRoute<TInput, TOutput>(
     method: options.method.toLowerCase() as "get" | "post" | "put" | "patch" | "delete",
     path: options.path,
     summary: options.summary ?? options.path,
+    operationId: options.operationId,
     auth: options.auth,
     input: options.input,
     output: options.output,
