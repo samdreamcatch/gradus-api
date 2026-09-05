@@ -10,7 +10,9 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "test": "bun test",
+    "openapi": "bun scripts/openapi.ts"
   },
   "dependencies": {
     "@ai-sdk/openai-compatible": "^2.0.48",
@@ -98,6 +100,7 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@asteasolutions/zod-to-openapi": "6.4.0",
     "@capacitor/android": "^8.5.0",
     "@capacitor/cli": "^8.5.0",
     "@capacitor/ios": "^8.5.0",
