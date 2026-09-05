@@ -55,20 +55,19 @@ for i in $(seq 1 12); do curl -s -o /dev/null -w '%{http_code} ' -X POST -H 'Con
 
 Expect ten `200`s followed by `429`s. Twelve `200`s means the limiter is not working: turn the flag off.
 
-**Billing-column guard check** (PRD §4.1 rule 13). Needs a real user token: sign in to
-gradus.training as the demo coach, then in the browser's devtools take `access_token` from
-Local Storage → `sb-<project-ref>-auth-token`. Paste it at the prompt; it is never echoed.
+**Billing-column guard check** (PRD §4.1 rule 13). Needs a signed-in coach's access token:
+sign in to gradus.training as a coach, open devtools → Application → Local Storage →
+`sb-<project-ref>-auth-token`, and copy the `access_token` value (never paste it into a chat
+or a ticket; it is a live credential). Then:
 
 ```bash
-set -a; source .env; set +a        # VITE_SUPABASE_URL / VITE_SUPABASE_PUBLISHABLE_KEY (public values)
-read -s TOKEN; echo
-UID=$(curl -s -H "apikey: $VITE_SUPABASE_PUBLISHABLE_KEY" -H "Authorization: Bearer $TOKEN" "$VITE_SUPABASE_URL/auth/v1/user" | python3 -c 'import sys,json; print(json.load(sys.stdin)["id"])')
-# 1. Own billing column: expect 403 and "can only be changed by the server".
-curl -s -w ' [%{http_code}]\n' -X PATCH -H "apikey: $VITE_SUPABASE_PUBLISHABLE_KEY" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -H 'Prefer: return=minimal' -d '{"entitlement":"paid"}' "$VITE_SUPABASE_URL/rest/v1/coach_profiles?user_id=eq.$UID"
-# 2. Own safe column: expect 204 (last_seen_at is harmless and overwritten on every visit).
-curl -s -w ' [%{http_code}]\n' -X PATCH -H "apikey: $VITE_SUPABASE_PUBLISHABLE_KEY" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -H 'Prefer: return=minimal' -d "{\"last_seen_at\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}" "$VITE_SUPABASE_URL/rest/v1/coach_profiles?user_id=eq.$UID"
-unset TOKEN
+scripts/smoke-guard-check.sh
 ```
+
+It prompts for the token (not echoed, kept in-process), then expects a 403 when setting your
+own `entitlement` and a 204 for a harmless `last_seen_at` update. If the guard is not active it
+restores the original entitlement. If the token was ever exposed, sign out of gradus.training
+in that browser afterwards; that revokes the refresh token.
 
 Then, in Lovable preview (the server still writes these columns, now through the admin
 client): open the coach Settings → plan status, start and abandon a checkout, and for a test
