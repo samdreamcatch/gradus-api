@@ -12,8 +12,10 @@ import { buildOpenApiDocument } from "../src/lib/api/openapi";
 // (defineApiRoute calls registerApiRoute at module load time).
 import "../src/routes/api/v1/meta/config";
 import "../src/routes/api/v1/meta/client-policy";
+import "../src/routes/api/v1/me/index";
 import "../src/routes/api/v1/me/presence";
 import "../src/routes/api/v1/me/terms";
+import "../src/routes/api/v1/me/terms_.accept";
 import "../src/routes/api/v1/auth/apple";
 import "../src/routes/api/v1/auth/google";
 import "../src/routes/api/v1/auth/password";

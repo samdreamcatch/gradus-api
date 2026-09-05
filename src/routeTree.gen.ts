@@ -81,6 +81,7 @@ import { Route as AuthenticatedAdminAskRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedAdminAnnouncementsRouteImport } from './routes/_authenticated/admin.announcements'
 import { Route as AuthenticatedAdminActivityRouteImport } from './routes/_authenticated/admin.activity'
 import { Route as AuthenticatedAdminActiveRouteImport } from './routes/_authenticated/admin.active'
+import { Route as ApiV1MeIndexRouteImport } from './routes/api/v1/me/index'
 import { Route as AuthenticatedParentResourcesIndexRouteImport } from './routes/_authenticated/parent.resources.index'
 import { Route as AuthenticatedParentPlansIndexRouteImport } from './routes/_authenticated/parent.plans.index'
 import { Route as AuthenticatedParentMessagesIndexRouteImport } from './routes/_authenticated/parent.messages.index'
@@ -126,6 +127,7 @@ import { Route as AuthenticatedAdminErrorsIdRouteImport } from './routes/_authen
 import { Route as AuthenticatedAdminEmailsNameRouteImport } from './routes/_authenticated/admin.emails.$name'
 import { Route as ApiV1PublicBoardsIndexRouteImport } from './routes/api/v1/public/boards/index'
 import { Route as ApiV1PublicBoardsSlugRouteImport } from './routes/api/v1/public/boards/$slug'
+import { Route as ApiV1MeTermsAcceptRouteImport } from './routes/api/v1/me/terms_.accept'
 import { Route as ApiV1AuthUsernameResolveRouteImport } from './routes/api/v1/auth/username/resolve'
 import { Route as ApiV1AuthUsernameCheckRouteImport } from './routes/api/v1/auth/username/check'
 import { Route as ApiV1AuthSignupCoachRouteImport } from './routes/api/v1/auth/signup/coach'
@@ -524,6 +526,11 @@ const AuthenticatedAdminActiveRoute =
     path: '/active',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const ApiV1MeIndexRoute = ApiV1MeIndexRouteImport.update({
+  id: '/api/v1/me/',
+  path: '/api/v1/me/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedParentResourcesIndexRoute =
   AuthenticatedParentResourcesIndexRouteImport.update({
     id: '/resources/',
@@ -780,6 +787,11 @@ const ApiV1PublicBoardsSlugRoute = ApiV1PublicBoardsSlugRouteImport.update({
   path: '/api/v1/public/boards/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiV1MeTermsAcceptRoute = ApiV1MeTermsAcceptRouteImport.update({
+  id: '/api/v1/me/terms_/accept',
+  path: '/api/v1/me/terms/accept',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiV1AuthUsernameResolveRoute =
   ApiV1AuthUsernameResolveRouteImport.update({
     id: '/api/v1/auth/username/resolve',
@@ -924,9 +936,11 @@ export interface FileRoutesByFullPath {
   '/parent/messages/': typeof AuthenticatedParentMessagesIndexRoute
   '/parent/plans/': typeof AuthenticatedParentPlansIndexRoute
   '/parent/resources/': typeof AuthenticatedParentResourcesIndexRoute
+  '/api/v1/me/': typeof ApiV1MeIndexRoute
   '/api/v1/auth/signup/coach': typeof ApiV1AuthSignupCoachRoute
   '/api/v1/auth/username/check': typeof ApiV1AuthUsernameCheckRoute
   '/api/v1/auth/username/resolve': typeof ApiV1AuthUsernameResolveRoute
+  '/api/v1/me/terms/accept': typeof ApiV1MeTermsAcceptRoute
   '/api/v1/public/boards/$slug': typeof ApiV1PublicBoardsSlugRoute
   '/api/v1/public/boards/': typeof ApiV1PublicBoardsIndexRoute
   '/api/v1/boards/$slug/follows/$name': typeof ApiV1BoardsSlugFollowsNameRoute
@@ -1041,9 +1055,11 @@ export interface FileRoutesByTo {
   '/parent/messages': typeof AuthenticatedParentMessagesIndexRoute
   '/parent/plans': typeof AuthenticatedParentPlansIndexRoute
   '/parent/resources': typeof AuthenticatedParentResourcesIndexRoute
+  '/api/v1/me': typeof ApiV1MeIndexRoute
   '/api/v1/auth/signup/coach': typeof ApiV1AuthSignupCoachRoute
   '/api/v1/auth/username/check': typeof ApiV1AuthUsernameCheckRoute
   '/api/v1/auth/username/resolve': typeof ApiV1AuthUsernameResolveRoute
+  '/api/v1/me/terms/accept': typeof ApiV1MeTermsAcceptRoute
   '/api/v1/public/boards/$slug': typeof ApiV1PublicBoardsSlugRoute
   '/api/v1/public/boards': typeof ApiV1PublicBoardsIndexRoute
   '/api/v1/boards/$slug/follows/$name': typeof ApiV1BoardsSlugFollowsNameRoute
@@ -1166,9 +1182,11 @@ export interface FileRoutesById {
   '/_authenticated/parent/messages/': typeof AuthenticatedParentMessagesIndexRoute
   '/_authenticated/parent/plans/': typeof AuthenticatedParentPlansIndexRoute
   '/_authenticated/parent/resources/': typeof AuthenticatedParentResourcesIndexRoute
+  '/api/v1/me/': typeof ApiV1MeIndexRoute
   '/api/v1/auth/signup/coach': typeof ApiV1AuthSignupCoachRoute
   '/api/v1/auth/username/check': typeof ApiV1AuthUsernameCheckRoute
   '/api/v1/auth/username/resolve': typeof ApiV1AuthUsernameResolveRoute
+  '/api/v1/me/terms_/accept': typeof ApiV1MeTermsAcceptRoute
   '/api/v1/public/boards/$slug': typeof ApiV1PublicBoardsSlugRoute
   '/api/v1/public/boards/': typeof ApiV1PublicBoardsIndexRoute
   '/api/v1/boards/$slug/follows/$name': typeof ApiV1BoardsSlugFollowsNameRoute
@@ -1291,9 +1309,11 @@ export interface FileRouteTypes {
     | '/parent/messages/'
     | '/parent/plans/'
     | '/parent/resources/'
+    | '/api/v1/me/'
     | '/api/v1/auth/signup/coach'
     | '/api/v1/auth/username/check'
     | '/api/v1/auth/username/resolve'
+    | '/api/v1/me/terms/accept'
     | '/api/v1/public/boards/$slug'
     | '/api/v1/public/boards/'
     | '/api/v1/boards/$slug/follows/$name'
@@ -1408,9 +1428,11 @@ export interface FileRouteTypes {
     | '/parent/messages'
     | '/parent/plans'
     | '/parent/resources'
+    | '/api/v1/me'
     | '/api/v1/auth/signup/coach'
     | '/api/v1/auth/username/check'
     | '/api/v1/auth/username/resolve'
+    | '/api/v1/me/terms/accept'
     | '/api/v1/public/boards/$slug'
     | '/api/v1/public/boards'
     | '/api/v1/boards/$slug/follows/$name'
@@ -1532,9 +1554,11 @@ export interface FileRouteTypes {
     | '/_authenticated/parent/messages/'
     | '/_authenticated/parent/plans/'
     | '/_authenticated/parent/resources/'
+    | '/api/v1/me/'
     | '/api/v1/auth/signup/coach'
     | '/api/v1/auth/username/check'
     | '/api/v1/auth/username/resolve'
+    | '/api/v1/me/terms_/accept'
     | '/api/v1/public/boards/$slug'
     | '/api/v1/public/boards/'
     | '/api/v1/boards/$slug/follows/$name'
@@ -1581,9 +1605,11 @@ export interface RootRouteChildren {
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
+  ApiV1MeIndexRoute: typeof ApiV1MeIndexRoute
   ApiV1AuthSignupCoachRoute: typeof ApiV1AuthSignupCoachRoute
   ApiV1AuthUsernameCheckRoute: typeof ApiV1AuthUsernameCheckRoute
   ApiV1AuthUsernameResolveRoute: typeof ApiV1AuthUsernameResolveRoute
+  ApiV1MeTermsAcceptRoute: typeof ApiV1MeTermsAcceptRoute
   ApiV1PublicBoardsSlugRoute: typeof ApiV1PublicBoardsSlugRoute
   ApiV1PublicBoardsIndexRoute: typeof ApiV1PublicBoardsIndexRoute
   ApiV1BoardsSlugFollowsNameRoute: typeof ApiV1BoardsSlugFollowsNameRoute
@@ -2096,6 +2122,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminActiveRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/api/v1/me/': {
+      id: '/api/v1/me/'
+      path: '/api/v1/me'
+      fullPath: '/api/v1/me/'
+      preLoaderRoute: typeof ApiV1MeIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/parent/resources/': {
       id: '/_authenticated/parent/resources/'
       path: '/resources'
@@ -2409,6 +2442,13 @@ declare module '@tanstack/react-router' {
       path: '/api/v1/public/boards/$slug'
       fullPath: '/api/v1/public/boards/$slug'
       preLoaderRoute: typeof ApiV1PublicBoardsSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/me/terms_/accept': {
+      id: '/api/v1/me/terms_/accept'
+      path: '/api/v1/me/terms/accept'
+      fullPath: '/api/v1/me/terms/accept'
+      preLoaderRoute: typeof ApiV1MeTermsAcceptRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/v1/auth/username/resolve': {
@@ -2751,9 +2791,11 @@ const rootRouteChildren: RootRouteChildren = {
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
+  ApiV1MeIndexRoute: ApiV1MeIndexRoute,
   ApiV1AuthSignupCoachRoute: ApiV1AuthSignupCoachRoute,
   ApiV1AuthUsernameCheckRoute: ApiV1AuthUsernameCheckRoute,
   ApiV1AuthUsernameResolveRoute: ApiV1AuthUsernameResolveRoute,
+  ApiV1MeTermsAcceptRoute: ApiV1MeTermsAcceptRoute,
   ApiV1PublicBoardsSlugRoute: ApiV1PublicBoardsSlugRoute,
   ApiV1PublicBoardsIndexRoute: ApiV1PublicBoardsIndexRoute,
   ApiV1BoardsSlugFollowsNameRoute: ApiV1BoardsSlugFollowsNameRoute,

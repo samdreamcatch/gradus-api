@@ -148,6 +148,90 @@
         }
       }
     },
+    "/api/v1/me": {
+      "get": {
+        "operationId": "getMe",
+        "summary": "Session summary for the caller: role, onboarding state, terms status",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "userId": {
+                      "type": "string"
+                    },
+                    "role": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "enum": [
+                        "coach",
+                        "parent",
+                        "athlete",
+                        "org_admin"
+                      ]
+                    },
+                    "onboardingComplete": {
+                      "type": [
+                        "boolean",
+                        "null"
+                      ]
+                    },
+                    "terms": {
+                      "type": "object",
+                      "properties": {
+                        "accepted": {
+                          "type": "boolean"
+                        },
+                        "version": {
+                          "type": "string"
+                        },
+                        "acceptedAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "accepted",
+                        "version",
+                        "acceptedAt"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "userId",
+                    "role",
+                    "onboardingComplete",
+                    "terms"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/me/presence": {
       "post": {
         "operationId": "postMePresence",
@@ -226,6 +310,55 @@
                     "accepted",
                     "version",
                     "acceptedAt"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/terms/accept": {
+      "post": {
+        "operationId": "postMeTermsAccept",
+        "summary": "Accept the current Terms of Service for the caller",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    },
+                    "version": {
+                      "type": "string"
+                    },
+                    "deferred": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "version",
+                    "deferred"
                   ]
                 }
               }
