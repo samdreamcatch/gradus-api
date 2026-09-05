@@ -485,8 +485,25 @@ export async function buildDraft(ctx: ParseContext): Promise<VoicePlanDraft> {
     if (err.statusCode === 429) throw new Error("AI is busy — try again in a moment");
     if (err.statusCode === 402)
       throw new Error("AI credits exhausted — add credits in workspace settings");
-    return { moves: [] };
+    // Schema/parse failures are common on long dictations — retry once before
+    // giving up, and never return a silent empty draft.
+    try {
+      slotted = await slotTranscript(ctx);
+    } catch (e2) {
+      const err2 = e2 as { statusCode?: number; message?: string };
+      console.error(
+        "[voice] slot failed (retry)",
+        JSON.stringify({ transcriptLen: ctx.transcript.length, message: err2.message }),
+      );
+      if (err2.statusCode === 429) throw new Error("AI is busy — try again in a moment");
+      if (err2.statusCode === 402)
+        throw new Error("AI credits exhausted — add credits in workspace settings");
+      throw new Error(
+        "Couldn't turn that recording into a plan. Try again, or record a shorter note.",
+      );
+    }
   }
+
 
   const { id: athleteId, unresolved } = resolveAthlete(slotted.athleteName, ctx.athletes);
   const resolvedAthlete = athleteId ? (ctx.athletes.find((a) => a.id === athleteId) ?? null) : null;

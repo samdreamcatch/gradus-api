@@ -54,6 +54,10 @@ async function dropCaches(): Promise<void> {
  */
 export function recoverFromStaleChunks(): boolean {
   if (typeof window === "undefined") return false;
+  // A chunk can also fail to load simply because the device is offline. Wiping
+  // caches and reloading then leaves the user with a blank page, so never
+  // recover while offline — the import will succeed again once back online.
+  if (typeof navigator !== "undefined" && navigator.onLine === false) return false;
   try {
     if (sessionStorage.getItem(RELOAD_FLAG)) return false;
     sessionStorage.setItem(RELOAD_FLAG, String(Date.now()));
@@ -66,6 +70,7 @@ export function recoverFromStaleChunks(): boolean {
   });
   return true;
 }
+
 
 /** Listens for uncaught chunk-load failures anywhere in the app. */
 export function installChunkErrorRecovery(): void {

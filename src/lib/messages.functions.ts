@@ -151,8 +151,15 @@ export const listMyRooms = createServerFn({ method: "GET" })
     const out: RoomSummary[] = rooms
       .filter((r) => {
         const parts = participantsByRoom.get(r.id) ?? [];
-        return !parts.some((p) => p.userId && p.userId !== userId && blocked.has(p.userId));
+        const hasBlocked = parts.some(
+          (p) => p.userId && p.userId !== userId && blocked.has(p.userId),
+        );
+        // Blocking severs the connection but must not erase history: keep the
+        // thread visible when it has messages (sending is blocked separately in
+        // sendMessage). Only hide empty rooms with a blocked participant.
+        return !hasBlocked || lastByRoom.has(r.id);
       })
+
       .map((r) => {
         const participants = participantsByRoom.get(r.id) ?? [];
         return {
