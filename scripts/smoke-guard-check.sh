@@ -3,9 +3,10 @@
 #
 #   scripts/smoke-guard-check.sh
 #
-# Prompts for a signed-in coach's access_token (devtools → Application →
-# Local Storage → sb-<project-ref>-auth-token → access_token). The token is
-# read without echo, kept in this process only, and never written anywhere.
+# Reads a signed-in coach's access_token from the clipboard (devtools →
+# Application → Local Storage → sb-<project-ref>-auth-token → copy the
+# access_token value, then run this). The token is kept in this process
+# only and never written anywhere.
 # Proves: (1) a user cannot change their own billing columns through the
 # data API (403); (2) ordinary profile updates still work (204). If the
 # guard turns out not to be active, the original entitlement is restored.
@@ -16,9 +17,23 @@ URL="${VITE_SUPABASE_URL:?VITE_SUPABASE_URL missing from .env}"
 KEY="${VITE_SUPABASE_PUBLISHABLE_KEY:?VITE_SUPABASE_PUBLISHABLE_KEY missing from .env}"
 TMP="$(mktemp)"; trap 'rm -f "$TMP"; unset TOKEN' EXIT
 
-echo "Paste the access_token (it starts with eyJ) and press Enter. Nothing is echoed."
-IFS= read -r -s -p "access_token: " TOKEN; echo
-TOKEN="${TOKEN//\"/}"; TOKEN="${TOKEN//[[:space:]]/}"; TOKEN="${TOKEN#access_token:}"
+# A Supabase access token is ~1,100 characters, longer than the 1,024-character
+# line limit of a macOS terminal in canonical mode, so pasting it at a normal
+# prompt silently drops the tail and the Return. Read it from the clipboard
+# instead (copy the access_token value, then run this), with a raw-mode
+# prompt as the fallback. GUARD_TOKEN=<token> overrides both (automation).
+TOKEN="${GUARD_TOKEN:-}"
+if [ -z "$TOKEN" ] && command -v pbpaste >/dev/null; then
+  TOKEN="$(pbpaste 2>/dev/null | tr -d '"[:space:]')"; TOKEN="${TOKEN#access_token:}"
+  if [[ "$TOKEN" == eyJ* ]]; then echo "Using the access token from the clipboard."; else TOKEN=""; fi
+fi
+if [ -z "$TOKEN" ]; then
+  echo "The clipboard does not hold an access token. Paste it here and press Return (nothing is echoed):"
+  if [ -t 0 ]; then saved_stty="$(stty -g)"; stty -icanon -echo; fi
+  IFS= read -r -d $'\n' TOKEN || true
+  if [ -t 0 ]; then stty "$saved_stty"; echo; fi
+  TOKEN="${TOKEN//\"/}"; TOKEN="${TOKEN//[[:space:]]/}"; TOKEN="${TOKEN#access_token:}"
+fi
 if [ -z "$TOKEN" ]; then echo "No token entered."; exit 2; fi
 
 auth=(-H "apikey: $KEY" -H "Authorization: Bearer $TOKEN")
