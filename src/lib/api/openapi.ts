@@ -74,6 +74,20 @@ export function deriveOperationId(method: string, path: string): string {
 /** operationId → "METHOD path" that claimed it; re-registering the same route (dev HMR) is a no-op. */
 const registeredOperationIds = new Map<string, string>();
 
+/**
+ * Every `{name}` segment of the path becomes a required string path
+ * parameter. Generators (swift-openapi-generator) reject a templated path
+ * whose parameters are not declared, and file routes receive them as
+ * strings, so the string schema is the truth of the transport.
+ */
+export function pathParamsSchema(
+  path: string,
+): z.ZodObject<Record<string, z.ZodString>> | undefined {
+  const names = [...path.matchAll(/\{([a-zA-Z0-9_-]+)\}/g)].map((m) => m[1]);
+  if (names.length === 0) return undefined;
+  return z.object(Object.fromEntries(names.map((name) => [name, z.string()])));
+}
+
 export function registerApiRoute(route: RegisterRouteOptions): void {
   const operationId = route.operationId ?? deriveOperationId(route.method, route.path);
   const routeKey = `${route.method.toUpperCase()} ${route.path}`;
@@ -91,9 +105,10 @@ export function registerApiRoute(route: RegisterRouteOptions): void {
     operationId,
     summary: route.summary,
     security: route.auth === "user" ? [{ bearerAuth: [] }] : [],
-    request: route.input
-      ? { body: { content: { "application/json": { schema: route.input } } } }
-      : undefined,
+    request: {
+      params: pathParamsSchema(route.path),
+      body: route.input ? { content: { "application/json": { schema: route.input } } } : undefined,
+    },
     responses: {
       200: {
         description: "OK",

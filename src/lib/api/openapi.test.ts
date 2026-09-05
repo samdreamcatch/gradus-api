@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import { z } from "zod";
-import { deriveOperationId, registerApiRoute } from "./openapi";
+import { deriveOperationId, pathParamsSchema, registerApiRoute } from "./openapi";
 
 describe("deriveOperationId", () => {
   it("derives stable camelCase ids from method and path", () => {
@@ -61,5 +61,14 @@ describe("registerApiRoute", () => {
         output,
       }),
     ).not.toThrow();
+  });
+});
+
+describe("pathParamsSchema", () => {
+  it("declares every templated segment as a required string", () => {
+    expect(pathParamsSchema("/api/v1/meta/config")).toBeUndefined();
+    const schema = pathParamsSchema("/api/v1/boards/{slug}/follows/{name}")!;
+    expect(schema.parse({ slug: "a", name: "b" })).toEqual({ slug: "a", name: "b" });
+    expect(() => schema.parse({ slug: "a" })).toThrow();
   });
 });
