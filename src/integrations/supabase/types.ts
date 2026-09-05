@@ -3248,6 +3248,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      column_default_text: {
+        Args: { col: unknown; tbl: unknown }
+        Returns: string
+      }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
@@ -3315,6 +3319,7 @@ export type Database = {
         Args: { _athlete_id: string }
         Returns: boolean
       }
+      is_service_caller: { Args: never; Returns: boolean }
       move_to_dlq: {
         Args: {
           dlq_name: string
