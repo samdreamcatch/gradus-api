@@ -68,6 +68,48 @@ export type Database = {
           },
         ]
       }
+      api_idempotency_keys: {
+        Row: {
+          created_at: string
+          key: string
+          response_body: Json
+          response_status: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          key: string
+          response_body: Json
+          response_status: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          key?: string
+          response_body?: Json
+          response_status?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      api_rate_limits: {
+        Row: {
+          bucket: string
+          count: number
+          window_start: string
+        }
+        Insert: {
+          bucket: string
+          count?: number
+          window_start: string
+        }
+        Update: {
+          bucket?: string
+          count?: number
+          window_start?: string
+        }
+        Relationships: []
+      }
       athlete_coach_visibility: {
         Row: {
           athlete_id: string
@@ -530,6 +572,36 @@ export type Database = {
             referencedColumns: ["code"]
           },
         ]
+      }
+      auth_identities: {
+        Row: {
+          apple_refresh_token: string | null
+          created_at: string
+          email: string | null
+          id: string
+          provider: string
+          provider_sub: string
+          user_id: string
+        }
+        Insert: {
+          apple_refresh_token?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          provider: string
+          provider_sub: string
+          user_id: string
+        }
+        Update: {
+          apple_refresh_token?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          provider?: string
+          provider_sub?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       billing_events: {
         Row: {
@@ -3164,6 +3236,10 @@ export type Database = {
       enqueue_lifecycle_email: {
         Args: { _kind: string; _user_id: string }
         Returns: undefined
+      }
+      find_confirmed_user_by_email: {
+        Args: { _email: string }
+        Returns: string
       }
       get_adult_athlete_by_invite_code: {
         Args: { _code: string }
