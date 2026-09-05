@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import { z } from "zod";
-import { createApiRouteHandler } from "./define-route";
+import { createApiRouteHandler, ifNoneMatchMatches, weakETag } from "./define-route";
 import { ApiError } from "./errors";
 import type { ApiContext } from "./auth";
 
@@ -306,3 +306,64 @@ describe("rate limiter degraded (table unreachable)", () => {
     expect(codes).toEqual([200, 200, 429]);
   });
 });
+
+describe("conditional GET (etag)", () => {
+  const boardSchema = z.object({ slug: z.string(), generatedAt: z.string().nullable() });
+
+  function handler(generatedAt: string | null) {
+    process.env.API_V1_ENABLED = "true";
+    return createApiRouteHandler(
+      {
+        method: "GET",
+        path: "/api/v1/test",
+        auth: "public",
+        output: boardSchema,
+        etag: (b) => (b.generatedAt ? weakETag([b.slug, b.generatedAt]) : null),
+        handler: async () => ({ slug: "demo", generatedAt }),
+      },
+      { admin: createFakeAdmin(), authenticate: async () => null },
+    ).GET!;
+  }
+
+  it("sends a weak ETag with the body", async () => {
+    const res = await handler("2026-09-05T21:16:35.374Z")({ request: makeRequest() });
+    expect(res.status).toBe(200);
+    expect(res.headers.get("ETag")).toBe('W/"demo.2026-09-05T21:16:35.374Z"');
+    expect(res.headers.get("Cache-Control")).toBe("no-store");
+    expect(await res.json()).toEqual({ slug: "demo", generatedAt: "2026-09-05T21:16:35.374Z" });
+  });
+
+  it("answers a matching If-None-Match with an empty 304 that repeats the ETag", async () => {
+    const GET = handler("2026-09-05T21:16:35.374Z");
+    const res = await GET({
+      request: makeRequest({ headers: { "if-none-match": 'W/"demo.2026-09-05T21:16:35.374Z"' } }),
+    });
+    expect(res.status).toBe(304);
+    expect(res.headers.get("ETag")).toBe('W/"demo.2026-09-05T21:16:35.374Z"');
+    expect(await res.text()).toBe("");
+  });
+
+  it("serves the body again when the validator differs or is absent", async () => {
+    const GET = handler("2026-09-05T21:17:05.000Z");
+    const stale = await GET({
+      request: makeRequest({ headers: { "if-none-match": 'W/"demo.2026-09-05T21:16:35.374Z"' } }),
+    });
+    expect(stale.status).toBe(200);
+    const never = await handler(null)({
+      request: makeRequest({ headers: { "if-none-match": "*" } }),
+    });
+    expect(never.status).toBe(200);
+    expect(never.headers.get("ETag")).toBeNull();
+  });
+
+  it("matches weakly, across lists, and on *", () => {
+    expect(ifNoneMatchMatches('W/"a"', 'W/"a"')).toBe(true);
+    expect(ifNoneMatchMatches('"a"', 'W/"a"')).toBe(true);
+    expect(ifNoneMatchMatches('"x", W/"a"', 'W/"a"')).toBe(true);
+    expect(ifNoneMatchMatches("*", 'W/"a"')).toBe(true);
+    expect(ifNoneMatchMatches('"b"', 'W/"a"')).toBe(false);
+    expect(ifNoneMatchMatches(null, 'W/"a"')).toBe(false);
+    expect(weakETag(["slug", 'we"ird stamp'])).toBe('W/"slug.we_ird_stamp"');
+  });
+});
+

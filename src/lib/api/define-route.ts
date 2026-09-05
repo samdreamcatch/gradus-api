@@ -37,6 +37,12 @@ export interface DefineApiRouteOptions<TInput, TOutput> {
   /** When true, honors the `Idempotency-Key` header. Requires `auth: "user"`. */
   idempotent?: boolean;
   rateLimit?: RateLimitConfig;
+  /**
+   * Conditional GET (PRD Appendix A `[etag]`). Returns a validator for the
+   * output — see `weakETag` — or null when nothing stable identifies it. The
+   * route then sends `ETag` and answers a matching `If-None-Match` with 304.
+   */
+  etag?: (output: TOutput) => string | null;
   handler: (args: {
     ctx: ApiContext | null;
     input: TInput;
@@ -62,6 +68,27 @@ type RouteHandlers = Partial<
     (args: { request: Request; params?: Record<string, string> }) => Promise<Response>
   >
 >;
+
+/**
+ * A weak validator built from stable parts of a response, e.g. a board's slug
+ * and snapshot time. Weak because two snapshots with the same stamp are
+ * semantically equal even if serialized differently. Quoted-string safe.
+ */
+export function weakETag(parts: string[]): string {
+  const safe = parts.join(".").replace(/[^\x21\x23-\x7e]/g, "_");
+  return `W/"${safe}"`;
+}
+
+/** RFC 9110 §13.1.2: any listed validator matches weakly, and `*` matches everything. */
+export function ifNoneMatchMatches(header: string | null, etag: string): boolean {
+  if (!header) return false;
+  const strip = (v: string) => v.trim().replace(/^W\//, "");
+  const wanted = strip(etag);
+  return header.split(",").some((candidate) => {
+    const value = candidate.trim();
+    return value === "*" || strip(value) === wanted;
+  });
+}
 
 function getClientIp(request: Request): string | null {
   return (
@@ -160,7 +187,14 @@ export function createApiRouteHandler<TInput, TOutput>(
         result = await runHandler();
       }
 
-      response = Response.json(result.body, { status: result.status });
+      const etag =
+        options.etag && result.status === 200 ? options.etag(result.body as TOutput) : null;
+      if (etag && ifNoneMatchMatches(request.headers.get("if-none-match"), etag)) {
+        response = new Response(null, { status: 304, headers: { ETag: etag } });
+      } else {
+        response = Response.json(result.body, { status: result.status });
+        if (etag) response.headers.set("ETag", etag);
+      }
     } catch (err) {
       response = toResponse(normalizeError(err));
     }
@@ -184,6 +218,7 @@ export function defineApiRoute<TInput, TOutput>(
     auth: options.auth,
     input: options.input,
     output: options.output,
+    etag: !!options.etag,
   });
 
   return createApiRouteHandler(options);

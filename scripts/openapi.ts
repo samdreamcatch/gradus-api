@@ -28,6 +28,7 @@ import "../src/routes/api/v1/public/boards/$slug";
 import "../src/routes/api/v1/boards/my-skaters";
 import "../src/routes/api/v1/boards/$slug/follows/index";
 import "../src/routes/api/v1/boards/$slug/follows/$name";
+import "../src/routes/api/v1/competitions/$id/attendance";
 
 const outPath = resolve(__dirname, "../docs/api/openapi.json");
 mkdirSync(dirname(outPath), { recursive: true });

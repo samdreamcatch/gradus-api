@@ -89,6 +89,7 @@ export async function fetchBoard(admin: AdminDb, slug: string): Promise<BoardRes
 
   return {
     slug: c.slug,
+    competitionId: c.id,
     name: c.name,
     datesLabel: c.dates_label,
     location: c.location,
