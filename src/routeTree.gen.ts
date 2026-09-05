@@ -46,6 +46,7 @@ import { Route as SignupAthleteConfirmRouteImport } from './routes/signup.athlet
 import { Route as SignupAthleteAdultRouteImport } from './routes/signup.athlete.adult'
 import { Route as SignupAthleteAccountRouteImport } from './routes/signup.athlete.account'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
+import { Route as ApiV1MessageTargetsRouteImport } from './routes/api/v1/message-targets'
 import { Route as AuthenticatedParentTeamRouteImport } from './routes/_authenticated/parent.team'
 import { Route as AuthenticatedParentSettingsRouteImport } from './routes/_authenticated/parent.settings'
 import { Route as AuthenticatedOrgAdminTemplatesRouteImport } from './routes/_authenticated/org-admin.templates'
@@ -81,6 +82,7 @@ import { Route as AuthenticatedAdminAskRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedAdminAnnouncementsRouteImport } from './routes/_authenticated/admin.announcements'
 import { Route as AuthenticatedAdminActivityRouteImport } from './routes/_authenticated/admin.activity'
 import { Route as AuthenticatedAdminActiveRouteImport } from './routes/_authenticated/admin.active'
+import { Route as ApiV1RoomsIndexRouteImport } from './routes/api/v1/rooms/index'
 import { Route as ApiV1MeIndexRouteImport } from './routes/api/v1/me/index'
 import { Route as AuthenticatedParentResourcesIndexRouteImport } from './routes/_authenticated/parent.resources.index'
 import { Route as AuthenticatedParentPlansIndexRouteImport } from './routes/_authenticated/parent.plans.index'
@@ -97,8 +99,11 @@ import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/l
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
+import { Route as ApiV1SafetyReportsRouteImport } from './routes/api/v1/safety/reports'
+import { Route as ApiV1RoomsEnsureRouteImport } from './routes/api/v1/rooms/ensure'
 import { Route as ApiV1MetaConfigRouteImport } from './routes/api/v1/meta/config'
 import { Route as ApiV1MetaClientPolicyRouteImport } from './routes/api/v1/meta/client-policy'
+import { Route as ApiV1MessagesUnreadTotalRouteImport } from './routes/api/v1/messages/unread-total'
 import { Route as ApiV1MeTermsRouteImport } from './routes/api/v1/me/terms'
 import { Route as ApiV1MePresenceRouteImport } from './routes/api/v1/me/presence'
 import { Route as ApiV1BoardsMySkatersRouteImport } from './routes/api/v1/boards/my-skaters'
@@ -125,7 +130,13 @@ import { Route as AuthenticatedAdminPlansPlanIdRouteImport } from './routes/_aut
 import { Route as AuthenticatedAdminListKindRouteImport } from './routes/_authenticated/admin.list.$kind'
 import { Route as AuthenticatedAdminErrorsIdRouteImport } from './routes/_authenticated/admin.errors.$id'
 import { Route as AuthenticatedAdminEmailsNameRouteImport } from './routes/_authenticated/admin.emails.$name'
+import { Route as ApiV1SafetyBlocksIndexRouteImport } from './routes/api/v1/safety/blocks/index'
+import { Route as ApiV1RoomsIdIndexRouteImport } from './routes/api/v1/rooms/$id/index'
 import { Route as ApiV1PublicBoardsIndexRouteImport } from './routes/api/v1/public/boards/index'
+import { Route as ApiV1SafetyBlocksUserIdRouteImport } from './routes/api/v1/safety/blocks/$userId'
+import { Route as ApiV1RoomsIdReadRouteImport } from './routes/api/v1/rooms/$id/read'
+import { Route as ApiV1RoomsIdMessagesRouteImport } from './routes/api/v1/rooms/$id/messages'
+import { Route as ApiV1RoomsIdActivePlansRouteImport } from './routes/api/v1/rooms/$id/active-plans'
 import { Route as ApiV1PublicBoardsSlugRouteImport } from './routes/api/v1/public/boards/$slug'
 import { Route as ApiV1MeTermsAcceptRouteImport } from './routes/api/v1/me/terms_.accept'
 import { Route as ApiV1CompetitionsIdAttendanceRouteImport } from './routes/api/v1/competitions/$id/attendance'
@@ -320,6 +331,11 @@ const SignupAthleteAccountRoute = SignupAthleteAccountRouteImport.update({
 const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
   id: '/lovable/email/suppression',
   path: '/lovable/email/suppression',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1MessageTargetsRoute = ApiV1MessageTargetsRouteImport.update({
+  id: '/api/v1/message-targets',
+  path: '/api/v1/message-targets',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedParentTeamRoute = AuthenticatedParentTeamRouteImport.update({
@@ -527,6 +543,11 @@ const AuthenticatedAdminActiveRoute =
     path: '/active',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const ApiV1RoomsIndexRoute = ApiV1RoomsIndexRouteImport.update({
+  id: '/api/v1/rooms/',
+  path: '/api/v1/rooms/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiV1MeIndexRoute = ApiV1MeIndexRouteImport.update({
   id: '/api/v1/me/',
   path: '/api/v1/me/',
@@ -620,6 +641,16 @@ const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
   path: '/lovable/email/auth/preview',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiV1SafetyReportsRoute = ApiV1SafetyReportsRouteImport.update({
+  id: '/api/v1/safety/reports',
+  path: '/api/v1/safety/reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1RoomsEnsureRoute = ApiV1RoomsEnsureRouteImport.update({
+  id: '/api/v1/rooms/ensure',
+  path: '/api/v1/rooms/ensure',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiV1MetaConfigRoute = ApiV1MetaConfigRouteImport.update({
   id: '/api/v1/meta/config',
   path: '/api/v1/meta/config',
@@ -630,6 +661,12 @@ const ApiV1MetaClientPolicyRoute = ApiV1MetaClientPolicyRouteImport.update({
   path: '/api/v1/meta/client-policy',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiV1MessagesUnreadTotalRoute =
+  ApiV1MessagesUnreadTotalRouteImport.update({
+    id: '/api/v1/messages/unread-total',
+    path: '/api/v1/messages/unread-total',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiV1MeTermsRoute = ApiV1MeTermsRouteImport.update({
   id: '/api/v1/me/terms',
   path: '/api/v1/me/terms',
@@ -778,9 +815,39 @@ const AuthenticatedAdminEmailsNameRoute =
     path: '/emails/$name',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const ApiV1SafetyBlocksIndexRoute = ApiV1SafetyBlocksIndexRouteImport.update({
+  id: '/api/v1/safety/blocks/',
+  path: '/api/v1/safety/blocks/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1RoomsIdIndexRoute = ApiV1RoomsIdIndexRouteImport.update({
+  id: '/api/v1/rooms/$id/',
+  path: '/api/v1/rooms/$id/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiV1PublicBoardsIndexRoute = ApiV1PublicBoardsIndexRouteImport.update({
   id: '/api/v1/public/boards/',
   path: '/api/v1/public/boards/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1SafetyBlocksUserIdRoute = ApiV1SafetyBlocksUserIdRouteImport.update({
+  id: '/api/v1/safety/blocks/$userId',
+  path: '/api/v1/safety/blocks/$userId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1RoomsIdReadRoute = ApiV1RoomsIdReadRouteImport.update({
+  id: '/api/v1/rooms/$id/read',
+  path: '/api/v1/rooms/$id/read',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1RoomsIdMessagesRoute = ApiV1RoomsIdMessagesRouteImport.update({
+  id: '/api/v1/rooms/$id/messages',
+  path: '/api/v1/rooms/$id/messages',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1RoomsIdActivePlansRoute = ApiV1RoomsIdActivePlansRouteImport.update({
+  id: '/api/v1/rooms/$id/active-plans',
+  path: '/api/v1/rooms/$id/active-plans',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiV1PublicBoardsSlugRoute = ApiV1PublicBoardsSlugRouteImport.update({
@@ -888,6 +955,7 @@ export interface FileRoutesByFullPath {
   '/org-admin/templates': typeof AuthenticatedOrgAdminTemplatesRoute
   '/parent/settings': typeof AuthenticatedParentSettingsRoute
   '/parent/team': typeof AuthenticatedParentTeamRoute
+  '/api/v1/message-targets': typeof ApiV1MessageTargetsRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/signup/athlete/account': typeof SignupAthleteAccountRoute
   '/signup/athlete/adult': typeof SignupAthleteAdultRoute
@@ -926,8 +994,11 @@ export interface FileRoutesByFullPath {
   '/api/v1/boards/my-skaters': typeof ApiV1BoardsMySkatersRoute
   '/api/v1/me/presence': typeof ApiV1MePresenceRoute
   '/api/v1/me/terms': typeof ApiV1MeTermsRoute
+  '/api/v1/messages/unread-total': typeof ApiV1MessagesUnreadTotalRoute
   '/api/v1/meta/client-policy': typeof ApiV1MetaClientPolicyRoute
   '/api/v1/meta/config': typeof ApiV1MetaConfigRoute
+  '/api/v1/rooms/ensure': typeof ApiV1RoomsEnsureRoute
+  '/api/v1/safety/reports': typeof ApiV1SafetyReportsRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -944,13 +1015,20 @@ export interface FileRoutesByFullPath {
   '/parent/plans/': typeof AuthenticatedParentPlansIndexRoute
   '/parent/resources/': typeof AuthenticatedParentResourcesIndexRoute
   '/api/v1/me/': typeof ApiV1MeIndexRoute
+  '/api/v1/rooms/': typeof ApiV1RoomsIndexRoute
   '/api/v1/auth/signup/coach': typeof ApiV1AuthSignupCoachRoute
   '/api/v1/auth/username/check': typeof ApiV1AuthUsernameCheckRoute
   '/api/v1/auth/username/resolve': typeof ApiV1AuthUsernameResolveRoute
   '/api/v1/competitions/$id/attendance': typeof ApiV1CompetitionsIdAttendanceRoute
   '/api/v1/me/terms/accept': typeof ApiV1MeTermsAcceptRoute
   '/api/v1/public/boards/$slug': typeof ApiV1PublicBoardsSlugRoute
+  '/api/v1/rooms/$id/active-plans': typeof ApiV1RoomsIdActivePlansRoute
+  '/api/v1/rooms/$id/messages': typeof ApiV1RoomsIdMessagesRoute
+  '/api/v1/rooms/$id/read': typeof ApiV1RoomsIdReadRoute
+  '/api/v1/safety/blocks/$userId': typeof ApiV1SafetyBlocksUserIdRoute
   '/api/v1/public/boards/': typeof ApiV1PublicBoardsIndexRoute
+  '/api/v1/rooms/$id/': typeof ApiV1RoomsIdIndexRoute
+  '/api/v1/safety/blocks/': typeof ApiV1SafetyBlocksIndexRoute
   '/api/v1/boards/$slug/follows/$name': typeof ApiV1BoardsSlugFollowsNameRoute
   '/api/v1/boards/$slug/follows/': typeof ApiV1BoardsSlugFollowsIndexRoute
 }
@@ -1008,6 +1086,7 @@ export interface FileRoutesByTo {
   '/org-admin/templates': typeof AuthenticatedOrgAdminTemplatesRoute
   '/parent/settings': typeof AuthenticatedParentSettingsRoute
   '/parent/team': typeof AuthenticatedParentTeamRoute
+  '/api/v1/message-targets': typeof ApiV1MessageTargetsRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/signup/athlete/account': typeof SignupAthleteAccountRoute
   '/signup/athlete/adult': typeof SignupAthleteAdultRoute
@@ -1046,8 +1125,11 @@ export interface FileRoutesByTo {
   '/api/v1/boards/my-skaters': typeof ApiV1BoardsMySkatersRoute
   '/api/v1/me/presence': typeof ApiV1MePresenceRoute
   '/api/v1/me/terms': typeof ApiV1MeTermsRoute
+  '/api/v1/messages/unread-total': typeof ApiV1MessagesUnreadTotalRoute
   '/api/v1/meta/client-policy': typeof ApiV1MetaClientPolicyRoute
   '/api/v1/meta/config': typeof ApiV1MetaConfigRoute
+  '/api/v1/rooms/ensure': typeof ApiV1RoomsEnsureRoute
+  '/api/v1/safety/reports': typeof ApiV1SafetyReportsRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -1064,13 +1146,20 @@ export interface FileRoutesByTo {
   '/parent/plans': typeof AuthenticatedParentPlansIndexRoute
   '/parent/resources': typeof AuthenticatedParentResourcesIndexRoute
   '/api/v1/me': typeof ApiV1MeIndexRoute
+  '/api/v1/rooms': typeof ApiV1RoomsIndexRoute
   '/api/v1/auth/signup/coach': typeof ApiV1AuthSignupCoachRoute
   '/api/v1/auth/username/check': typeof ApiV1AuthUsernameCheckRoute
   '/api/v1/auth/username/resolve': typeof ApiV1AuthUsernameResolveRoute
   '/api/v1/competitions/$id/attendance': typeof ApiV1CompetitionsIdAttendanceRoute
   '/api/v1/me/terms/accept': typeof ApiV1MeTermsAcceptRoute
   '/api/v1/public/boards/$slug': typeof ApiV1PublicBoardsSlugRoute
+  '/api/v1/rooms/$id/active-plans': typeof ApiV1RoomsIdActivePlansRoute
+  '/api/v1/rooms/$id/messages': typeof ApiV1RoomsIdMessagesRoute
+  '/api/v1/rooms/$id/read': typeof ApiV1RoomsIdReadRoute
+  '/api/v1/safety/blocks/$userId': typeof ApiV1SafetyBlocksUserIdRoute
   '/api/v1/public/boards': typeof ApiV1PublicBoardsIndexRoute
+  '/api/v1/rooms/$id': typeof ApiV1RoomsIdIndexRoute
+  '/api/v1/safety/blocks': typeof ApiV1SafetyBlocksIndexRoute
   '/api/v1/boards/$slug/follows/$name': typeof ApiV1BoardsSlugFollowsNameRoute
   '/api/v1/boards/$slug/follows': typeof ApiV1BoardsSlugFollowsIndexRoute
 }
@@ -1136,6 +1225,7 @@ export interface FileRoutesById {
   '/_authenticated/org-admin/templates': typeof AuthenticatedOrgAdminTemplatesRoute
   '/_authenticated/parent/settings': typeof AuthenticatedParentSettingsRoute
   '/_authenticated/parent/team': typeof AuthenticatedParentTeamRoute
+  '/api/v1/message-targets': typeof ApiV1MessageTargetsRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/signup/athlete/account': typeof SignupAthleteAccountRoute
   '/signup/athlete/adult': typeof SignupAthleteAdultRoute
@@ -1174,8 +1264,11 @@ export interface FileRoutesById {
   '/api/v1/boards/my-skaters': typeof ApiV1BoardsMySkatersRoute
   '/api/v1/me/presence': typeof ApiV1MePresenceRoute
   '/api/v1/me/terms': typeof ApiV1MeTermsRoute
+  '/api/v1/messages/unread-total': typeof ApiV1MessagesUnreadTotalRoute
   '/api/v1/meta/client-policy': typeof ApiV1MetaClientPolicyRoute
   '/api/v1/meta/config': typeof ApiV1MetaConfigRoute
+  '/api/v1/rooms/ensure': typeof ApiV1RoomsEnsureRoute
+  '/api/v1/safety/reports': typeof ApiV1SafetyReportsRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -1192,13 +1285,20 @@ export interface FileRoutesById {
   '/_authenticated/parent/plans/': typeof AuthenticatedParentPlansIndexRoute
   '/_authenticated/parent/resources/': typeof AuthenticatedParentResourcesIndexRoute
   '/api/v1/me/': typeof ApiV1MeIndexRoute
+  '/api/v1/rooms/': typeof ApiV1RoomsIndexRoute
   '/api/v1/auth/signup/coach': typeof ApiV1AuthSignupCoachRoute
   '/api/v1/auth/username/check': typeof ApiV1AuthUsernameCheckRoute
   '/api/v1/auth/username/resolve': typeof ApiV1AuthUsernameResolveRoute
   '/api/v1/competitions/$id/attendance': typeof ApiV1CompetitionsIdAttendanceRoute
   '/api/v1/me/terms_/accept': typeof ApiV1MeTermsAcceptRoute
   '/api/v1/public/boards/$slug': typeof ApiV1PublicBoardsSlugRoute
+  '/api/v1/rooms/$id/active-plans': typeof ApiV1RoomsIdActivePlansRoute
+  '/api/v1/rooms/$id/messages': typeof ApiV1RoomsIdMessagesRoute
+  '/api/v1/rooms/$id/read': typeof ApiV1RoomsIdReadRoute
+  '/api/v1/safety/blocks/$userId': typeof ApiV1SafetyBlocksUserIdRoute
   '/api/v1/public/boards/': typeof ApiV1PublicBoardsIndexRoute
+  '/api/v1/rooms/$id/': typeof ApiV1RoomsIdIndexRoute
+  '/api/v1/safety/blocks/': typeof ApiV1SafetyBlocksIndexRoute
   '/api/v1/boards/$slug/follows/$name': typeof ApiV1BoardsSlugFollowsNameRoute
   '/api/v1/boards/$slug/follows/': typeof ApiV1BoardsSlugFollowsIndexRoute
 }
@@ -1264,6 +1364,7 @@ export interface FileRouteTypes {
     | '/org-admin/templates'
     | '/parent/settings'
     | '/parent/team'
+    | '/api/v1/message-targets'
     | '/lovable/email/suppression'
     | '/signup/athlete/account'
     | '/signup/athlete/adult'
@@ -1302,8 +1403,11 @@ export interface FileRouteTypes {
     | '/api/v1/boards/my-skaters'
     | '/api/v1/me/presence'
     | '/api/v1/me/terms'
+    | '/api/v1/messages/unread-total'
     | '/api/v1/meta/client-policy'
     | '/api/v1/meta/config'
+    | '/api/v1/rooms/ensure'
+    | '/api/v1/safety/reports'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
@@ -1320,13 +1424,20 @@ export interface FileRouteTypes {
     | '/parent/plans/'
     | '/parent/resources/'
     | '/api/v1/me/'
+    | '/api/v1/rooms/'
     | '/api/v1/auth/signup/coach'
     | '/api/v1/auth/username/check'
     | '/api/v1/auth/username/resolve'
     | '/api/v1/competitions/$id/attendance'
     | '/api/v1/me/terms/accept'
     | '/api/v1/public/boards/$slug'
+    | '/api/v1/rooms/$id/active-plans'
+    | '/api/v1/rooms/$id/messages'
+    | '/api/v1/rooms/$id/read'
+    | '/api/v1/safety/blocks/$userId'
     | '/api/v1/public/boards/'
+    | '/api/v1/rooms/$id/'
+    | '/api/v1/safety/blocks/'
     | '/api/v1/boards/$slug/follows/$name'
     | '/api/v1/boards/$slug/follows/'
   fileRoutesByTo: FileRoutesByTo
@@ -1384,6 +1495,7 @@ export interface FileRouteTypes {
     | '/org-admin/templates'
     | '/parent/settings'
     | '/parent/team'
+    | '/api/v1/message-targets'
     | '/lovable/email/suppression'
     | '/signup/athlete/account'
     | '/signup/athlete/adult'
@@ -1422,8 +1534,11 @@ export interface FileRouteTypes {
     | '/api/v1/boards/my-skaters'
     | '/api/v1/me/presence'
     | '/api/v1/me/terms'
+    | '/api/v1/messages/unread-total'
     | '/api/v1/meta/client-policy'
     | '/api/v1/meta/config'
+    | '/api/v1/rooms/ensure'
+    | '/api/v1/safety/reports'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
@@ -1440,13 +1555,20 @@ export interface FileRouteTypes {
     | '/parent/plans'
     | '/parent/resources'
     | '/api/v1/me'
+    | '/api/v1/rooms'
     | '/api/v1/auth/signup/coach'
     | '/api/v1/auth/username/check'
     | '/api/v1/auth/username/resolve'
     | '/api/v1/competitions/$id/attendance'
     | '/api/v1/me/terms/accept'
     | '/api/v1/public/boards/$slug'
+    | '/api/v1/rooms/$id/active-plans'
+    | '/api/v1/rooms/$id/messages'
+    | '/api/v1/rooms/$id/read'
+    | '/api/v1/safety/blocks/$userId'
     | '/api/v1/public/boards'
+    | '/api/v1/rooms/$id'
+    | '/api/v1/safety/blocks'
     | '/api/v1/boards/$slug/follows/$name'
     | '/api/v1/boards/$slug/follows'
   id:
@@ -1511,6 +1633,7 @@ export interface FileRouteTypes {
     | '/_authenticated/org-admin/templates'
     | '/_authenticated/parent/settings'
     | '/_authenticated/parent/team'
+    | '/api/v1/message-targets'
     | '/lovable/email/suppression'
     | '/signup/athlete/account'
     | '/signup/athlete/adult'
@@ -1549,8 +1672,11 @@ export interface FileRouteTypes {
     | '/api/v1/boards/my-skaters'
     | '/api/v1/me/presence'
     | '/api/v1/me/terms'
+    | '/api/v1/messages/unread-total'
     | '/api/v1/meta/client-policy'
     | '/api/v1/meta/config'
+    | '/api/v1/rooms/ensure'
+    | '/api/v1/safety/reports'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
@@ -1567,13 +1693,20 @@ export interface FileRouteTypes {
     | '/_authenticated/parent/plans/'
     | '/_authenticated/parent/resources/'
     | '/api/v1/me/'
+    | '/api/v1/rooms/'
     | '/api/v1/auth/signup/coach'
     | '/api/v1/auth/username/check'
     | '/api/v1/auth/username/resolve'
     | '/api/v1/competitions/$id/attendance'
     | '/api/v1/me/terms_/accept'
     | '/api/v1/public/boards/$slug'
+    | '/api/v1/rooms/$id/active-plans'
+    | '/api/v1/rooms/$id/messages'
+    | '/api/v1/rooms/$id/read'
+    | '/api/v1/safety/blocks/$userId'
     | '/api/v1/public/boards/'
+    | '/api/v1/rooms/$id/'
+    | '/api/v1/safety/blocks/'
     | '/api/v1/boards/$slug/follows/$name'
     | '/api/v1/boards/$slug/follows/'
   fileRoutesById: FileRoutesById
@@ -1599,6 +1732,7 @@ export interface RootRouteChildren {
   SignupParentRoute: typeof SignupParentRouteWithChildren
   TeamTokenRoute: typeof TeamTokenRoute
   BoardIndexRoute: typeof BoardIndexRoute
+  ApiV1MessageTargetsRoute: typeof ApiV1MessageTargetsRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicBoardRefreshRoute: typeof ApiPublicBoardRefreshRoute
   ApiPublicHooksBillingNoticesRoute: typeof ApiPublicHooksBillingNoticesRoute
@@ -1612,20 +1746,30 @@ export interface RootRouteChildren {
   ApiV1BoardsMySkatersRoute: typeof ApiV1BoardsMySkatersRoute
   ApiV1MePresenceRoute: typeof ApiV1MePresenceRoute
   ApiV1MeTermsRoute: typeof ApiV1MeTermsRoute
+  ApiV1MessagesUnreadTotalRoute: typeof ApiV1MessagesUnreadTotalRoute
   ApiV1MetaClientPolicyRoute: typeof ApiV1MetaClientPolicyRoute
   ApiV1MetaConfigRoute: typeof ApiV1MetaConfigRoute
+  ApiV1RoomsEnsureRoute: typeof ApiV1RoomsEnsureRoute
+  ApiV1SafetyReportsRoute: typeof ApiV1SafetyReportsRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
   ApiV1MeIndexRoute: typeof ApiV1MeIndexRoute
+  ApiV1RoomsIndexRoute: typeof ApiV1RoomsIndexRoute
   ApiV1AuthSignupCoachRoute: typeof ApiV1AuthSignupCoachRoute
   ApiV1AuthUsernameCheckRoute: typeof ApiV1AuthUsernameCheckRoute
   ApiV1AuthUsernameResolveRoute: typeof ApiV1AuthUsernameResolveRoute
   ApiV1CompetitionsIdAttendanceRoute: typeof ApiV1CompetitionsIdAttendanceRoute
   ApiV1MeTermsAcceptRoute: typeof ApiV1MeTermsAcceptRoute
   ApiV1PublicBoardsSlugRoute: typeof ApiV1PublicBoardsSlugRoute
+  ApiV1RoomsIdActivePlansRoute: typeof ApiV1RoomsIdActivePlansRoute
+  ApiV1RoomsIdMessagesRoute: typeof ApiV1RoomsIdMessagesRoute
+  ApiV1RoomsIdReadRoute: typeof ApiV1RoomsIdReadRoute
+  ApiV1SafetyBlocksUserIdRoute: typeof ApiV1SafetyBlocksUserIdRoute
   ApiV1PublicBoardsIndexRoute: typeof ApiV1PublicBoardsIndexRoute
+  ApiV1RoomsIdIndexRoute: typeof ApiV1RoomsIdIndexRoute
+  ApiV1SafetyBlocksIndexRoute: typeof ApiV1SafetyBlocksIndexRoute
   ApiV1BoardsSlugFollowsNameRoute: typeof ApiV1BoardsSlugFollowsNameRoute
   ApiV1BoardsSlugFollowsIndexRoute: typeof ApiV1BoardsSlugFollowsIndexRoute
 }
@@ -1891,6 +2035,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailSuppressionRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/v1/message-targets': {
+      id: '/api/v1/message-targets'
+      path: '/api/v1/message-targets'
+      fullPath: '/api/v1/message-targets'
+      preLoaderRoute: typeof ApiV1MessageTargetsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/parent/team': {
       id: '/_authenticated/parent/team'
       path: '/team'
@@ -2136,6 +2287,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminActiveRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/api/v1/rooms/': {
+      id: '/api/v1/rooms/'
+      path: '/api/v1/rooms'
+      fullPath: '/api/v1/rooms/'
+      preLoaderRoute: typeof ApiV1RoomsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/v1/me/': {
       id: '/api/v1/me/'
       path: '/api/v1/me'
@@ -2248,6 +2406,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailAuthPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/v1/safety/reports': {
+      id: '/api/v1/safety/reports'
+      path: '/api/v1/safety/reports'
+      fullPath: '/api/v1/safety/reports'
+      preLoaderRoute: typeof ApiV1SafetyReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/rooms/ensure': {
+      id: '/api/v1/rooms/ensure'
+      path: '/api/v1/rooms/ensure'
+      fullPath: '/api/v1/rooms/ensure'
+      preLoaderRoute: typeof ApiV1RoomsEnsureRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/v1/meta/config': {
       id: '/api/v1/meta/config'
       path: '/api/v1/meta/config'
@@ -2260,6 +2432,13 @@ declare module '@tanstack/react-router' {
       path: '/api/v1/meta/client-policy'
       fullPath: '/api/v1/meta/client-policy'
       preLoaderRoute: typeof ApiV1MetaClientPolicyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/messages/unread-total': {
+      id: '/api/v1/messages/unread-total'
+      path: '/api/v1/messages/unread-total'
+      fullPath: '/api/v1/messages/unread-total'
+      preLoaderRoute: typeof ApiV1MessagesUnreadTotalRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/v1/me/terms': {
@@ -2444,11 +2623,53 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminEmailsNameRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/api/v1/safety/blocks/': {
+      id: '/api/v1/safety/blocks/'
+      path: '/api/v1/safety/blocks'
+      fullPath: '/api/v1/safety/blocks/'
+      preLoaderRoute: typeof ApiV1SafetyBlocksIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/rooms/$id/': {
+      id: '/api/v1/rooms/$id/'
+      path: '/api/v1/rooms/$id'
+      fullPath: '/api/v1/rooms/$id/'
+      preLoaderRoute: typeof ApiV1RoomsIdIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/v1/public/boards/': {
       id: '/api/v1/public/boards/'
       path: '/api/v1/public/boards'
       fullPath: '/api/v1/public/boards/'
       preLoaderRoute: typeof ApiV1PublicBoardsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/safety/blocks/$userId': {
+      id: '/api/v1/safety/blocks/$userId'
+      path: '/api/v1/safety/blocks/$userId'
+      fullPath: '/api/v1/safety/blocks/$userId'
+      preLoaderRoute: typeof ApiV1SafetyBlocksUserIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/rooms/$id/read': {
+      id: '/api/v1/rooms/$id/read'
+      path: '/api/v1/rooms/$id/read'
+      fullPath: '/api/v1/rooms/$id/read'
+      preLoaderRoute: typeof ApiV1RoomsIdReadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/rooms/$id/messages': {
+      id: '/api/v1/rooms/$id/messages'
+      path: '/api/v1/rooms/$id/messages'
+      fullPath: '/api/v1/rooms/$id/messages'
+      preLoaderRoute: typeof ApiV1RoomsIdMessagesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/rooms/$id/active-plans': {
+      id: '/api/v1/rooms/$id/active-plans'
+      path: '/api/v1/rooms/$id/active-plans'
+      fullPath: '/api/v1/rooms/$id/active-plans'
+      preLoaderRoute: typeof ApiV1RoomsIdActivePlansRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/v1/public/boards/$slug': {
@@ -2793,6 +3014,7 @@ const rootRouteChildren: RootRouteChildren = {
   SignupParentRoute: SignupParentRouteWithChildren,
   TeamTokenRoute: TeamTokenRoute,
   BoardIndexRoute: BoardIndexRoute,
+  ApiV1MessageTargetsRoute: ApiV1MessageTargetsRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicBoardRefreshRoute: ApiPublicBoardRefreshRoute,
   ApiPublicHooksBillingNoticesRoute: ApiPublicHooksBillingNoticesRoute,
@@ -2806,20 +3028,30 @@ const rootRouteChildren: RootRouteChildren = {
   ApiV1BoardsMySkatersRoute: ApiV1BoardsMySkatersRoute,
   ApiV1MePresenceRoute: ApiV1MePresenceRoute,
   ApiV1MeTermsRoute: ApiV1MeTermsRoute,
+  ApiV1MessagesUnreadTotalRoute: ApiV1MessagesUnreadTotalRoute,
   ApiV1MetaClientPolicyRoute: ApiV1MetaClientPolicyRoute,
   ApiV1MetaConfigRoute: ApiV1MetaConfigRoute,
+  ApiV1RoomsEnsureRoute: ApiV1RoomsEnsureRoute,
+  ApiV1SafetyReportsRoute: ApiV1SafetyReportsRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
   ApiV1MeIndexRoute: ApiV1MeIndexRoute,
+  ApiV1RoomsIndexRoute: ApiV1RoomsIndexRoute,
   ApiV1AuthSignupCoachRoute: ApiV1AuthSignupCoachRoute,
   ApiV1AuthUsernameCheckRoute: ApiV1AuthUsernameCheckRoute,
   ApiV1AuthUsernameResolveRoute: ApiV1AuthUsernameResolveRoute,
   ApiV1CompetitionsIdAttendanceRoute: ApiV1CompetitionsIdAttendanceRoute,
   ApiV1MeTermsAcceptRoute: ApiV1MeTermsAcceptRoute,
   ApiV1PublicBoardsSlugRoute: ApiV1PublicBoardsSlugRoute,
+  ApiV1RoomsIdActivePlansRoute: ApiV1RoomsIdActivePlansRoute,
+  ApiV1RoomsIdMessagesRoute: ApiV1RoomsIdMessagesRoute,
+  ApiV1RoomsIdReadRoute: ApiV1RoomsIdReadRoute,
+  ApiV1SafetyBlocksUserIdRoute: ApiV1SafetyBlocksUserIdRoute,
   ApiV1PublicBoardsIndexRoute: ApiV1PublicBoardsIndexRoute,
+  ApiV1RoomsIdIndexRoute: ApiV1RoomsIdIndexRoute,
+  ApiV1SafetyBlocksIndexRoute: ApiV1SafetyBlocksIndexRoute,
   ApiV1BoardsSlugFollowsNameRoute: ApiV1BoardsSlugFollowsNameRoute,
   ApiV1BoardsSlugFollowsIndexRoute: ApiV1BoardsSlugFollowsIndexRoute,
 }

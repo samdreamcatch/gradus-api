@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { dbError } from "./db-error";
-import { REPORT_REASONS, type ReportReason } from "./safety-types";
+import { REPORT_REASONS, reportInput, type ReportReason } from "./safety-types";
 
 export type { ReportReason };
 export { REPORT_REASONS };
@@ -18,195 +18,56 @@ async function assertAdmin(context: { userId: string; supabase: any }) {
   if (!data) throw new Error("Forbidden");
 }
 
-export type BlockedUser = {
-  userId: string;
-  name: string;
-  role: "coach" | "parent" | "athlete" | "unknown";
-  blockedAt: string;
-};
+export type { BlockedUser } from "./safety.server";
 
 /* ---------------- blockUser ---------------- */
 
+/** Thin wrapper over the shared `blockUser` (src/lib/safety.server.ts). */
 export const blockUser = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ targetUserId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
-    if (data.targetUserId === context.userId) throw new Error("You can't block yourself.");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { resolveIdentity, severRelationships } = await import("./safety.server");
-
-    const [me, them] = await Promise.all([
-      resolveIdentity(supabaseAdmin, context.userId),
-      resolveIdentity(supabaseAdmin, data.targetUserId),
-    ]);
-
-    const { error } = await supabaseAdmin
-      .from("user_blocks")
-      .upsert(
-        { blocker_user_id: context.userId, blocked_user_id: data.targetUserId },
-        { onConflict: "blocker_user_id,blocked_user_id" },
-      );
-    if (error) dbError(error, "Couldn't block this person");
-
-    await severRelationships(supabaseAdmin, me, them);
-    return { ok: true as const };
+    const { blockUser: block } = await import("./safety.server");
+    return block({ userId: context.userId, admin: supabaseAdmin }, data);
   });
 
 /* ---------------- unblockUser ---------------- */
 
+/** Thin wrapper over the shared `unblockUser` (src/lib/safety.server.ts). */
 export const unblockUser = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ targetUserId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin
-      .from("user_blocks")
-      .delete()
-      .eq("blocker_user_id", context.userId)
-      .eq("blocked_user_id", data.targetUserId);
-    if (error) dbError(error, "Couldn't unblock this person");
-    return { ok: true as const };
+    const { unblockUser: unblock } = await import("./safety.server");
+    return unblock({ userId: context.userId, admin: supabaseAdmin }, data);
   });
 
 /* ---------------- listMyBlocks ---------------- */
 
+/** Thin wrapper over the shared `listBlocks` (src/lib/safety.server.ts). */
 export const listMyBlocks = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { resolveIdentity } = await import("./safety.server");
-
-    const { data: rows, error } = await supabaseAdmin
-      .from("user_blocks")
-      .select("blocked_user_id, created_at")
-      .eq("blocker_user_id", context.userId)
-      .order("created_at", { ascending: false });
-    if (error) dbError(error);
-
-    const blocks: BlockedUser[] = [];
-    for (const row of rows ?? []) {
-      const who = await resolveIdentity(supabaseAdmin, row.blocked_user_id);
-      blocks.push({
-        userId: row.blocked_user_id,
-        name: who.name,
-        role: who.role,
-        blockedAt: row.created_at,
-      });
-    }
-    return { blocks };
+    const { listBlocks } = await import("./safety.server");
+    return listBlocks({ userId: context.userId, admin: supabaseAdmin });
   });
 
 /* ---------------- submitReport ---------------- */
 
+/** Thin wrapper over the shared `submitReport` (src/lib/safety.server.ts). */
 export const submitReport = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z
-      .object({
-        targetUserId: z.string().uuid().nullish(),
-        messageId: z.string().uuid().nullish(),
-        resourceId: z.string().uuid().nullish(),
-        reason: z.enum(REPORT_REASONS),
-        note: z.string().trim().max(2000).default(""),
-        alsoBlock: z.boolean().default(true),
-      })
-      .refine((v) => !!v.targetUserId || !!v.resourceId, {
-        message: "Nothing to report",
-      })
-      .parse(input),
-  )
+  .inputValidator((input: unknown) => reportInput.parse(input))
   .handler(async ({ data, context }) => {
-    if (data.targetUserId && data.targetUserId === context.userId) {
-      throw new Error("You can't report yourself.");
-    }
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { resolveIdentity, severRelationships, sendReportAlert } =
-      await import("./safety.server");
-
-    // Resource reports are about content, not a person: never block.
-    const alsoBlock = data.resourceId ? false : data.alsoBlock;
-
-    let resourceTitle: string | null = null;
-    let reportedUserId = data.targetUserId ?? null;
-    if (data.resourceId) {
-      // RLS on the caller's client enforces that they can actually see it.
-      const { data: res, error: resErr } = await (context.supabase as any)
-        .from("resources")
-        .select("id, title, kind, coach_id")
-        .eq("id", data.resourceId)
-        .maybeSingle();
-      if (resErr) dbError(resErr);
-      if (!res) throw new Error("Resource not found");
-      resourceTitle = `${res.title ?? "Untitled"} (${res.kind ?? "file"})`;
-
-      if (!reportedUserId && res.coach_id) {
-        const { data: owner } = await supabaseAdmin
-          .from("coach_profiles")
-          .select("user_id")
-          .eq("id", res.coach_id)
-          .maybeSingle();
-        if (owner?.user_id && owner.user_id !== context.userId) reportedUserId = owner.user_id;
-      }
-    }
-
-    const me = await resolveIdentity(supabaseAdmin, context.userId);
-    const them = reportedUserId
-      ? await resolveIdentity(supabaseAdmin, reportedUserId)
-      : {
-          userId: "",
-          coachId: null,
-          parentId: null,
-          athleteId: null,
-          name: "Gradus resource",
-          role: "unknown" as const,
-        };
-
-    let messageBody: string | null = null;
-    if (data.messageId) {
-      const { data: msg } = await supabaseAdmin
-        .from("messages")
-        .select("body, kind")
-        .eq("id", data.messageId)
-        .maybeSingle();
-      if (msg) messageBody = msg.kind === "voice" ? "(voice note)" : (msg.body ?? "");
-    }
-
-    const { data: inserted, error } = await supabaseAdmin
-      .from("user_reports")
-      .insert({
-        reporter_user_id: context.userId,
-        reported_user_id: reportedUserId,
-        message_id: data.messageId ?? null,
-        resource_id: data.resourceId ?? null,
-        reason: data.reason,
-        note: data.note,
-      })
-      .select("id")
-      .single();
-    if (error) dbError(error, "Couldn't submit this report");
-
-    if (alsoBlock && reportedUserId) {
-      await supabaseAdmin
-        .from("user_blocks")
-        .upsert(
-          { blocker_user_id: context.userId, blocked_user_id: reportedUserId },
-          { onConflict: "blocker_user_id,blocked_user_id" },
-        );
-      await severRelationships(supabaseAdmin, me, them);
-    }
-
-    await sendReportAlert(supabaseAdmin, {
-      reportId: inserted!.id,
-      reason: data.reason,
-      note: data.note,
-      reporter: me,
-      reported: them,
-      messageBody,
-      resourceTitle,
-      blocked: alsoBlock,
-    });
-
-    return { ok: true as const, blocked: alsoBlock };
+    const { submitReport: report } = await import("./safety.server");
+    return report(
+      { userId: context.userId, admin: supabaseAdmin, supabase: context.supabase as any },
+      data,
+    );
   });
 
 /* ---------------- admin queue ---------------- */

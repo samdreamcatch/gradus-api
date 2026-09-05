@@ -38,6 +38,8 @@ export interface RegisterRouteOptions {
   summary: string;
   auth: "user" | "public";
   input?: ZodType;
+  /** Query-string parameters (an object schema; every value is a string on the wire). */
+  query?: ZodType;
   output: ZodType;
   /** Defaults to `deriveOperationId(method, path)`. */
   operationId?: string;
@@ -115,6 +117,7 @@ export function registerApiRoute(route: RegisterRouteOptions): void {
     security: route.auth === "user" ? [{ bearerAuth: [] }] : [],
     request: {
       params: pathParamsSchema(route.path),
+      query: route.query as z.AnyZodObject | undefined,
       headers: route.etag
         ? z.object({
             "If-None-Match": z.string().optional().openapi({

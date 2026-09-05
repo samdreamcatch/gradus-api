@@ -29,6 +29,17 @@ import "../src/routes/api/v1/boards/my-skaters";
 import "../src/routes/api/v1/boards/$slug/follows/index";
 import "../src/routes/api/v1/boards/$slug/follows/$name";
 import "../src/routes/api/v1/competitions/$id/attendance";
+import "../src/routes/api/v1/rooms/index";
+import "../src/routes/api/v1/rooms/ensure";
+import "../src/routes/api/v1/rooms/$id/index";
+import "../src/routes/api/v1/rooms/$id/messages";
+import "../src/routes/api/v1/rooms/$id/read";
+import "../src/routes/api/v1/rooms/$id/active-plans";
+import "../src/routes/api/v1/messages/unread-total";
+import "../src/routes/api/v1/message-targets";
+import "../src/routes/api/v1/safety/blocks/index";
+import "../src/routes/api/v1/safety/blocks/$userId";
+import "../src/routes/api/v1/safety/reports";
 
 const outPath = resolve(__dirname, "../docs/api/openapi.json");
 mkdirSync(dirname(outPath), { recursive: true });

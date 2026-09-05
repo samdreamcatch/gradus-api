@@ -5,8 +5,11 @@
  * and any coaching relationship between the two people is severed. History is
  * preserved — nothing is deleted from `messages`.
  */
+import { z } from "zod";
+import { ApiError } from "./api/errors";
+import { dbError } from "./db-error";
 import { buildAppEmailPayload } from "./email-queue-payload";
-import { REPORT_REASON_LABELS, type ReportReason } from "./safety-types";
+import { REPORT_REASON_LABELS, reportInput, type ReportReason } from "./safety-types";
 
 const ALERT_RECIPIENTS = ["alyson@gradussports.com"];
 const SITE_NAME = "gradustraining";
@@ -184,3 +187,183 @@ export async function sendReportAlert(
     console.error("[safety] report alert failed", err);
   }
 }
+
+/* ------------------------------------------------------------------------ */
+/* Shared block / report logic — the single source of truth for the web      */
+/* server functions (safety.functions.ts) and the /api/v1/safety routes      */
+/* (PRD §6.2 pattern, Appendix A "Messaging and safety"). Extracted from the  */
+/* server functions without behavior changes; user-facing messages are kept  */
+/* verbatim and carried on ApiError so the API gets stable codes.            */
+/* ------------------------------------------------------------------------ */
+
+export type BlockedUser = {
+  userId: string;
+  name: string;
+  role: "coach" | "parent" | "athlete" | "unknown";
+  blockedAt: string;
+};
+
+export type SafetyContext = { userId: string; admin: any };
+
+export const blockInput = z.object({ targetUserId: z.string().uuid() });
+
+/** Blocking is a full disconnect (see the header). */
+export async function blockUser(
+  ctx: SafetyContext,
+  input: z.infer<typeof blockInput>,
+): Promise<{ ok: true }> {
+  if (input.targetUserId === ctx.userId) {
+    throw new ApiError({ code: "unprocessable", status: 422, message: "You can't block yourself." });
+  }
+  const [me, them] = await Promise.all([
+    resolveIdentity(ctx.admin, ctx.userId),
+    resolveIdentity(ctx.admin, input.targetUserId),
+  ]);
+
+  const { error } = await ctx.admin
+    .from("user_blocks")
+    .upsert(
+      { blocker_user_id: ctx.userId, blocked_user_id: input.targetUserId },
+      { onConflict: "blocker_user_id,blocked_user_id" },
+    );
+  if (error) dbError(error, "Couldn't block this person");
+
+  await severRelationships(ctx.admin, me, them);
+  return { ok: true as const };
+}
+
+export async function unblockUser(
+  ctx: SafetyContext,
+  input: z.infer<typeof blockInput>,
+): Promise<{ ok: true }> {
+  const { error } = await ctx.admin
+    .from("user_blocks")
+    .delete()
+    .eq("blocker_user_id", ctx.userId)
+    .eq("blocked_user_id", input.targetUserId);
+  if (error) dbError(error, "Couldn't unblock this person");
+  return { ok: true as const };
+}
+
+export async function listBlocks(ctx: SafetyContext): Promise<{ blocks: BlockedUser[] }> {
+  const { data: rows, error } = await ctx.admin
+    .from("user_blocks")
+    .select("blocked_user_id, created_at")
+    .eq("blocker_user_id", ctx.userId)
+    .order("created_at", { ascending: false });
+  if (error) dbError(error);
+
+  const blocks: BlockedUser[] = [];
+  for (const row of rows ?? []) {
+    const who = await resolveIdentity(ctx.admin, row.blocked_user_id);
+    blocks.push({
+      userId: row.blocked_user_id,
+      name: who.name,
+      role: who.role,
+      blockedAt: row.created_at,
+    });
+  }
+  return { blocks };
+}
+
+export { reportInput };
+
+/**
+ * Needs the caller's RLS client too: a resource report is only accepted for
+ * a resource the caller can actually see.
+ */
+export async function submitReport(
+  ctx: SafetyContext & { supabase: any },
+  input: z.infer<typeof reportInput>,
+): Promise<{ ok: true; blocked: boolean }> {
+  if (input.targetUserId && input.targetUserId === ctx.userId) {
+    throw new ApiError({ code: "unprocessable", status: 422, message: "You can't report yourself." });
+  }
+  const admin = ctx.admin;
+
+  // Resource reports are about content, not a person: never block.
+  const alsoBlock = input.resourceId ? false : input.alsoBlock;
+
+  let resourceTitle: string | null = null;
+  let reportedUserId = input.targetUserId ?? null;
+  if (input.resourceId) {
+    // RLS on the caller's client enforces that they can actually see it.
+    const { data: res, error: resErr } = await ctx.supabase
+      .from("resources")
+      .select("id, title, kind, coach_id")
+      .eq("id", input.resourceId)
+      .maybeSingle();
+    if (resErr) dbError(resErr);
+    if (!res) throw new ApiError({ code: "not_found", status: 404, message: "Resource not found" });
+    resourceTitle = `${res.title ?? "Untitled"} (${res.kind ?? "file"})`;
+
+    if (!reportedUserId && res.coach_id) {
+      const { data: owner } = await admin
+        .from("coach_profiles")
+        .select("user_id")
+        .eq("id", res.coach_id)
+        .maybeSingle();
+      if (owner?.user_id && owner.user_id !== ctx.userId) reportedUserId = owner.user_id;
+    }
+  }
+
+  const me = await resolveIdentity(admin, ctx.userId);
+  const them = reportedUserId
+    ? await resolveIdentity(admin, reportedUserId)
+    : {
+        userId: "",
+        coachId: null,
+        parentId: null,
+        athleteId: null,
+        name: "Gradus resource",
+        role: "unknown" as const,
+      };
+
+  let messageBody: string | null = null;
+  if (input.messageId) {
+    const { data: msg } = await admin
+      .from("messages")
+      .select("body, kind")
+      .eq("id", input.messageId)
+      .maybeSingle();
+    if (msg) messageBody = msg.kind === "voice" ? "(voice note)" : (msg.body ?? "");
+  }
+
+  const { data: inserted, error } = await admin
+    .from("user_reports")
+    .insert({
+      reporter_user_id: ctx.userId,
+      reported_user_id: reportedUserId,
+      message_id: input.messageId ?? null,
+      resource_id: input.resourceId ?? null,
+      reason: input.reason,
+      note: input.note,
+    })
+    .select("id")
+    .single();
+  if (error) dbError(error, "Couldn't submit this report");
+
+  if (alsoBlock && reportedUserId) {
+    await admin
+      .from("user_blocks")
+      .upsert(
+        { blocker_user_id: ctx.userId, blocked_user_id: reportedUserId },
+        { onConflict: "blocker_user_id,blocked_user_id" },
+      );
+    await severRelationships(admin, me, them);
+  }
+
+  await sendReportAlert(admin, {
+    reportId: inserted!.id,
+    reason: input.reason,
+    note: input.note,
+    reporter: me,
+    reported: them,
+    messageBody,
+    resourceTitle,
+    blocked: alsoBlock,
+  });
+
+  return { ok: true as const, blocked: alsoBlock };
+}
+
