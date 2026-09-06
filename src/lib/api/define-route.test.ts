@@ -459,3 +459,31 @@ describe("multipart bodies", () => {
     expect((await response.json()).error.code).toBe("validation_failed");
   });
 });
+
+describe("multipart body cap", () => {
+  it("refuses an oversized upload before reading it", async () => {
+    process.env.API_V1_ENABLED = "true";
+    const { POST } = createApiRouteHandler(
+      {
+        method: "POST",
+        path: "/api/v1/test",
+        auth: "public",
+        body: "multipart",
+        maxBodyBytes: 1024,
+        input: z.object({ mode: z.string() }),
+        output: z.object({ ok: z.boolean() }),
+        handler: async () => ({ ok: true }),
+      },
+      { admin: createFakeAdmin(), authenticate: async () => null },
+    );
+    const response = await POST!({
+      request: makeRequest({
+        method: "POST",
+        headers: { "content-type": "multipart/form-data; boundary=x", "content-length": "5000000" },
+        body: "ignored",
+      }),
+    });
+    expect(response.status).toBe(413);
+    expect((await response.json()).error.code).toBe("payload_too_large");
+  });
+});

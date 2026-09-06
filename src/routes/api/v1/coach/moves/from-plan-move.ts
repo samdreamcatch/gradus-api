@@ -13,6 +13,7 @@ export const Route = createFileRoute("/api/v1/coach/moves/from-plan-move")({
       path: "/api/v1/coach/moves/from-plan-move",
       operationId: "addPlanMoveToLibrary",
       auth: "user",
+      idempotent: true,
       summary: "Save a plan move into the library",
       input: addPlanMoveToLibraryInput,
       output: libraryLinkResultSchema,

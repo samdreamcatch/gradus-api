@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { createHash } from "crypto";
 import { z } from "zod";
 import { defineApiRoute, weakETag } from "@/lib/api/define-route";
 import { ApiError } from "@/lib/api/errors";
@@ -21,7 +22,12 @@ export const Route = createFileRoute("/api/v1/public/plans/$token")({
       summary: "A shared plan, by its share token",
       rateLimit: { windowSeconds: 60, max: 30 },
       output: sharedPlanSchema,
-      etag: (plan) => (plan.sharedAt ? weakETag(["shared-plan", plan.sharedAt]) : null),
+      // The snapshot changes whenever the coach edits the plan, so the validator is the body itself.
+      etag: (plan) =>
+        weakETag([
+          "shared-plan",
+          createHash("sha256").update(JSON.stringify(plan)).digest("hex").slice(0, 16),
+        ]),
       handler: async ({ params }) => {
         const plan = await getSharedPlanPublic(z.string().min(1).max(200).parse(params.token));
         if (!plan) {

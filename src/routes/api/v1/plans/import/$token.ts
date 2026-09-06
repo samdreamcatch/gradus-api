@@ -13,6 +13,7 @@ export const Route = createFileRoute("/api/v1/plans/import/$token")({
       path: "/api/v1/plans/import/{token}",
       operationId: "importSharedPlan",
       auth: "user",
+      idempotent: true,
       summary: "Import a shared plan as a template",
       output: importedPlanSchema,
       handler: async ({ ctx, params }) => {

@@ -34,6 +34,7 @@ export const Route = createFileRoute("/api/v1/coach/moves/")({
         path: "/api/v1/coach/moves",
         operationId: "upsertMove",
         auth: "user",
+        idempotent: true,
         summary: "Create or update a library move",
         input: moveInput,
         output: upsertMoveResultSchema,

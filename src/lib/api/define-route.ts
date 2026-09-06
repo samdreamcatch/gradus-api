@@ -25,6 +25,9 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
+/** Just above the 18 MB voice cap (voice.server.ts `MAX_AUDIO_BYTES`) plus form overhead. */
+const DEFAULT_MAX_MULTIPART_BYTES = 20 * 1024 * 1024;
+
 export interface DefineApiRouteOptions<TInput, TOutput, TQuery = undefined> {
   method: HttpMethod;
   path: string;
@@ -51,6 +54,13 @@ export interface DefineApiRouteOptions<TInput, TOutput, TQuery = undefined> {
    * label the part; the route itself accepts any type.
    */
   partContentTypes?: Record<string, string>;
+  /**
+   * Multipart only: the largest request body accepted, checked against
+   * `Content-Length` before the body is read (413 `payload_too_large`).
+   * Defaults to 20 MB, just above the voice cap; the handler still enforces
+   * its own per-file limit.
+   */
+  maxBodyBytes?: number;
   /** When true, honors the `Idempotency-Key` header. Requires `auth: "user"`. */
   idempotent?: boolean;
   rateLimit?: RateLimitConfig;
@@ -172,6 +182,17 @@ export function createApiRouteHandler<TInput, TOutput, TQuery = undefined>(
 
       let rawBody: unknown;
       if (options.input && options.body === "multipart") {
+        const declared = Number(request.headers.get("content-length") ?? "");
+        if (
+          Number.isFinite(declared) &&
+          declared > (options.maxBodyBytes ?? DEFAULT_MAX_MULTIPART_BYTES)
+        ) {
+          throw new ApiError({
+            code: "payload_too_large",
+            status: 413,
+            message: "That upload is too large.",
+          });
+        }
         let form: FormData;
         try {
           form = await request.formData();

@@ -14,6 +14,7 @@ export const Route = createFileRoute("/api/v1/plans/$id/moves/from-library")({
       path: "/api/v1/plans/{id}/moves/from-library",
       operationId: "addLibraryMovesToPlan",
       auth: "user",
+      idempotent: true,
       summary: "Add several library moves to a plan",
       input: addLibraryMovesInput,
       output: insertedSchema,

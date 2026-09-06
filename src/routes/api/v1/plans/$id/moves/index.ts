@@ -14,6 +14,7 @@ export const Route = createFileRoute("/api/v1/plans/$id/moves/")({
       path: "/api/v1/plans/{id}/moves",
       operationId: "addPlanMove",
       auth: "user",
+      idempotent: true,
       summary: "Add a library move to a plan",
       input: z.object({ moveId: z.string().uuid() }),
       output: addMoveResultSchema,

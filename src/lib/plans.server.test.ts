@@ -3,7 +3,7 @@ import { ApiError } from "./api/errors";
 import { addPlanMoveToLibrary, updateLibraryMoveFromPlanMove } from "./moves.server";
 import { resolvePlanViewerRole } from "./plan-detail.server";
 import { listPlanSessionsQuery, submitSessionInput } from "./plan-sessions.server";
-import { deletePlan, setPlanStatus, updatePlanMove } from "./plans.server";
+import { deletePlan, savePlan, setPlanStatus, updatePlanMove } from "./plans.server";
 import { assertAudioSize, audioFilename } from "./voice.server";
 
 /** A chainable fake: `rows[table]` answers `maybeSingle`/`single`; `lists[table]` answers awaited selects. */
@@ -107,6 +107,21 @@ describe("deletePlan", () => {
       plans: { id: "p1", kind: "plan", status: "draft", athlete_id: null },
     });
     await expect(deletePlan({ userId: "u", supabase: draft }, "p1")).resolves.toEqual({ ok: true });
+  });
+});
+
+describe("savePlan", () => {
+  it("refuses to replace another coach's plan", async () => {
+    // plans lookups answer null: the row is not owned by coach-1.
+    const supabase = fakeClient({ ...coach, plans: null });
+    const err = await caught(() =>
+      savePlan(
+        { userId: "u", supabase },
+        { id: "p-other", title: "T", notes: "", kind: "plan", athleteId: "a1", moves: [] },
+      ),
+    );
+    expect(err?.status).toBe(404);
+    expect(err?.message).toBe("Plan not found");
   });
 });
 

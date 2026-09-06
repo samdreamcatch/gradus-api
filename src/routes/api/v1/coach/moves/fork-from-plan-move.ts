@@ -13,6 +13,7 @@ export const Route = createFileRoute("/api/v1/coach/moves/fork-from-plan-move")(
       path: "/api/v1/coach/moves/fork-from-plan-move",
       operationId: "forkPlanMoveToLibrary",
       auth: "user",
+      idempotent: true,
       summary: "Fork a plan move into a new library move",
       input: forkPlanMoveToLibraryInput,
       output: libraryLinkResultSchema,

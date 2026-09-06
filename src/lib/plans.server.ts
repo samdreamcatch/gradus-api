@@ -430,6 +430,8 @@ export async function savePlan(
 
   let planId = data.id;
   if (planId) {
+    // Another coach's id must not reach the move replacement below.
+    await assertPlanOwned(supabase, planId, coachId);
     const { error } = await supabase
       .from("plans")
       .update(planRow)

@@ -13,6 +13,7 @@ export const Route = createFileRoute("/api/v1/plans/$id/sessions/summary")({
       path: "/api/v1/plans/{id}/sessions/summary",
       operationId: "getPlanSessionsSummary",
       auth: "user",
+      rateLimit: { windowSeconds: 60, max: 10 },
       summary: "An AI summary of the sessions logged on a plan",
       output: planSessionsSummarySchema,
       handler: async ({ ctx, params }) => {
