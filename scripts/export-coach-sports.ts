@@ -5,7 +5,7 @@
  * src/lib/coach-sports.test.ts fails when the file drifts from the source.
  */
 import { writeFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { DEFAULT_SUGGESTED_HOURS, SPORTS } from "../src/lib/coach-sports";
 
 export const COACH_SPORTS_VECTOR = {
@@ -17,7 +17,7 @@ export const COACH_SPORTS_VECTOR = {
 };
 
 if (import.meta.main) {
-  const out = resolve(import.meta.dir, "../docs/api/vectors/coach-sports.json");
+  const out = fileURLToPath(new URL("../docs/api/vectors/coach-sports.json", import.meta.url));
   writeFileSync(out, `${JSON.stringify(COACH_SPORTS_VECTOR, null, 2)}\n`);
   console.log(`Wrote ${out}`);
 }
