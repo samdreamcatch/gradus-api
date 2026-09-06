@@ -101,11 +101,24 @@ import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/em
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as ApiV1SafetyReportsRouteImport } from './routes/api/v1/safety/reports'
 import { Route as ApiV1RoomsEnsureRouteImport } from './routes/api/v1/rooms/ensure'
+import { Route as ApiV1PromoCodesValidateRouteImport } from './routes/api/v1/promo-codes/validate'
+import { Route as ApiV1OrgsVerifyCodeRouteImport } from './routes/api/v1/orgs/verify-code'
+import { Route as ApiV1OrgsSearchRouteImport } from './routes/api/v1/orgs/search'
+import { Route as ApiV1OrgsPopularRouteImport } from './routes/api/v1/orgs/popular'
+import { Route as ApiV1OrgsLookupCodeRouteImport } from './routes/api/v1/orgs/lookup-code'
+import { Route as ApiV1OrgsLeadRouteImport } from './routes/api/v1/orgs/lead'
+import { Route as ApiV1OrgsJoinRouteImport } from './routes/api/v1/orgs/join'
+import { Route as ApiV1OrgsClaimCodeRouteImport } from './routes/api/v1/orgs/claim-code'
 import { Route as ApiV1MetaConfigRouteImport } from './routes/api/v1/meta/config'
 import { Route as ApiV1MetaClientPolicyRouteImport } from './routes/api/v1/meta/client-policy'
 import { Route as ApiV1MessagesUnreadTotalRouteImport } from './routes/api/v1/messages/unread-total'
 import { Route as ApiV1MeTermsRouteImport } from './routes/api/v1/me/terms'
+import { Route as ApiV1MePromoCodeRouteImport } from './routes/api/v1/me/promo-code'
 import { Route as ApiV1MePresenceRouteImport } from './routes/api/v1/me/presence'
+import { Route as ApiV1InvitesResolveRouteImport } from './routes/api/v1/invites/resolve'
+import { Route as ApiV1CoachProfileRouteImport } from './routes/api/v1/coach/profile'
+import { Route as ApiV1CoachOrgRouteImport } from './routes/api/v1/coach/org'
+import { Route as ApiV1CoachLevelsRouteImport } from './routes/api/v1/coach/levels'
 import { Route as ApiV1BoardsMySkatersRouteImport } from './routes/api/v1/boards/my-skaters'
 import { Route as ApiV1AuthRecoverRouteImport } from './routes/api/v1/auth/recover'
 import { Route as ApiV1AuthPasswordRouteImport } from './routes/api/v1/auth/password'
@@ -133,13 +146,20 @@ import { Route as AuthenticatedAdminEmailsNameRouteImport } from './routes/_auth
 import { Route as ApiV1SafetyBlocksIndexRouteImport } from './routes/api/v1/safety/blocks/index'
 import { Route as ApiV1RoomsIdIndexRouteImport } from './routes/api/v1/rooms/$id/index'
 import { Route as ApiV1PublicBoardsIndexRouteImport } from './routes/api/v1/public/boards/index'
+import { Route as ApiV1CoachInviteCodeIndexRouteImport } from './routes/api/v1/coach/invite-code/index'
 import { Route as ApiV1SafetyBlocksUserIdRouteImport } from './routes/api/v1/safety/blocks/$userId'
 import { Route as ApiV1RoomsIdReadRouteImport } from './routes/api/v1/rooms/$id/read'
 import { Route as ApiV1RoomsIdMessagesRouteImport } from './routes/api/v1/rooms/$id/messages'
 import { Route as ApiV1RoomsIdActivePlansRouteImport } from './routes/api/v1/rooms/$id/active-plans'
 import { Route as ApiV1PublicBoardsSlugRouteImport } from './routes/api/v1/public/boards/$slug'
 import { Route as ApiV1MeTermsAcceptRouteImport } from './routes/api/v1/me/terms_.accept'
+import { Route as ApiV1InvitesParentPreviewRouteImport } from './routes/api/v1/invites/parent/preview'
+import { Route as ApiV1InvitesParentClaimRouteImport } from './routes/api/v1/invites/parent/claim'
+import { Route as ApiV1InvitesAdultAthletePreviewRouteImport } from './routes/api/v1/invites/adult-athlete/preview'
+import { Route as ApiV1InvitesAdultAthleteClaimRouteImport } from './routes/api/v1/invites/adult-athlete/claim'
 import { Route as ApiV1CompetitionsIdAttendanceRouteImport } from './routes/api/v1/competitions/$id/attendance'
+import { Route as ApiV1CoachOnboardingCompleteRouteImport } from './routes/api/v1/coach/onboarding/complete'
+import { Route as ApiV1CoachInviteCodeRotateRouteImport } from './routes/api/v1/coach/invite-code/rotate'
 import { Route as ApiV1AuthUsernameResolveRouteImport } from './routes/api/v1/auth/username/resolve'
 import { Route as ApiV1AuthUsernameCheckRouteImport } from './routes/api/v1/auth/username/check'
 import { Route as ApiV1AuthSignupCoachRouteImport } from './routes/api/v1/auth/signup/coach'
@@ -651,6 +671,46 @@ const ApiV1RoomsEnsureRoute = ApiV1RoomsEnsureRouteImport.update({
   path: '/api/v1/rooms/ensure',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiV1PromoCodesValidateRoute = ApiV1PromoCodesValidateRouteImport.update({
+  id: '/api/v1/promo-codes/validate',
+  path: '/api/v1/promo-codes/validate',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1OrgsVerifyCodeRoute = ApiV1OrgsVerifyCodeRouteImport.update({
+  id: '/api/v1/orgs/verify-code',
+  path: '/api/v1/orgs/verify-code',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1OrgsSearchRoute = ApiV1OrgsSearchRouteImport.update({
+  id: '/api/v1/orgs/search',
+  path: '/api/v1/orgs/search',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1OrgsPopularRoute = ApiV1OrgsPopularRouteImport.update({
+  id: '/api/v1/orgs/popular',
+  path: '/api/v1/orgs/popular',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1OrgsLookupCodeRoute = ApiV1OrgsLookupCodeRouteImport.update({
+  id: '/api/v1/orgs/lookup-code',
+  path: '/api/v1/orgs/lookup-code',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1OrgsLeadRoute = ApiV1OrgsLeadRouteImport.update({
+  id: '/api/v1/orgs/lead',
+  path: '/api/v1/orgs/lead',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1OrgsJoinRoute = ApiV1OrgsJoinRouteImport.update({
+  id: '/api/v1/orgs/join',
+  path: '/api/v1/orgs/join',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1OrgsClaimCodeRoute = ApiV1OrgsClaimCodeRouteImport.update({
+  id: '/api/v1/orgs/claim-code',
+  path: '/api/v1/orgs/claim-code',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiV1MetaConfigRoute = ApiV1MetaConfigRouteImport.update({
   id: '/api/v1/meta/config',
   path: '/api/v1/meta/config',
@@ -672,9 +732,34 @@ const ApiV1MeTermsRoute = ApiV1MeTermsRouteImport.update({
   path: '/api/v1/me/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiV1MePromoCodeRoute = ApiV1MePromoCodeRouteImport.update({
+  id: '/api/v1/me/promo-code',
+  path: '/api/v1/me/promo-code',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiV1MePresenceRoute = ApiV1MePresenceRouteImport.update({
   id: '/api/v1/me/presence',
   path: '/api/v1/me/presence',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1InvitesResolveRoute = ApiV1InvitesResolveRouteImport.update({
+  id: '/api/v1/invites/resolve',
+  path: '/api/v1/invites/resolve',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1CoachProfileRoute = ApiV1CoachProfileRouteImport.update({
+  id: '/api/v1/coach/profile',
+  path: '/api/v1/coach/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1CoachOrgRoute = ApiV1CoachOrgRouteImport.update({
+  id: '/api/v1/coach/org',
+  path: '/api/v1/coach/org',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1CoachLevelsRoute = ApiV1CoachLevelsRouteImport.update({
+  id: '/api/v1/coach/levels',
+  path: '/api/v1/coach/levels',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiV1BoardsMySkatersRoute = ApiV1BoardsMySkatersRouteImport.update({
@@ -830,6 +915,12 @@ const ApiV1PublicBoardsIndexRoute = ApiV1PublicBoardsIndexRouteImport.update({
   path: '/api/v1/public/boards/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiV1CoachInviteCodeIndexRoute =
+  ApiV1CoachInviteCodeIndexRouteImport.update({
+    id: '/api/v1/coach/invite-code/',
+    path: '/api/v1/coach/invite-code/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiV1SafetyBlocksUserIdRoute = ApiV1SafetyBlocksUserIdRouteImport.update({
   id: '/api/v1/safety/blocks/$userId',
   path: '/api/v1/safety/blocks/$userId',
@@ -860,10 +951,45 @@ const ApiV1MeTermsAcceptRoute = ApiV1MeTermsAcceptRouteImport.update({
   path: '/api/v1/me/terms/accept',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiV1InvitesParentPreviewRoute =
+  ApiV1InvitesParentPreviewRouteImport.update({
+    id: '/api/v1/invites/parent/preview',
+    path: '/api/v1/invites/parent/preview',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1InvitesParentClaimRoute = ApiV1InvitesParentClaimRouteImport.update({
+  id: '/api/v1/invites/parent/claim',
+  path: '/api/v1/invites/parent/claim',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1InvitesAdultAthletePreviewRoute =
+  ApiV1InvitesAdultAthletePreviewRouteImport.update({
+    id: '/api/v1/invites/adult-athlete/preview',
+    path: '/api/v1/invites/adult-athlete/preview',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1InvitesAdultAthleteClaimRoute =
+  ApiV1InvitesAdultAthleteClaimRouteImport.update({
+    id: '/api/v1/invites/adult-athlete/claim',
+    path: '/api/v1/invites/adult-athlete/claim',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiV1CompetitionsIdAttendanceRoute =
   ApiV1CompetitionsIdAttendanceRouteImport.update({
     id: '/api/v1/competitions/$id/attendance',
     path: '/api/v1/competitions/$id/attendance',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1CoachOnboardingCompleteRoute =
+  ApiV1CoachOnboardingCompleteRouteImport.update({
+    id: '/api/v1/coach/onboarding/complete',
+    path: '/api/v1/coach/onboarding/complete',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1CoachInviteCodeRotateRoute =
+  ApiV1CoachInviteCodeRotateRouteImport.update({
+    id: '/api/v1/coach/invite-code/rotate',
+    path: '/api/v1/coach/invite-code/rotate',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiV1AuthUsernameResolveRoute =
@@ -992,11 +1118,24 @@ export interface FileRoutesByFullPath {
   '/api/v1/auth/password': typeof ApiV1AuthPasswordRoute
   '/api/v1/auth/recover': typeof ApiV1AuthRecoverRoute
   '/api/v1/boards/my-skaters': typeof ApiV1BoardsMySkatersRoute
+  '/api/v1/coach/levels': typeof ApiV1CoachLevelsRoute
+  '/api/v1/coach/org': typeof ApiV1CoachOrgRoute
+  '/api/v1/coach/profile': typeof ApiV1CoachProfileRoute
+  '/api/v1/invites/resolve': typeof ApiV1InvitesResolveRoute
   '/api/v1/me/presence': typeof ApiV1MePresenceRoute
+  '/api/v1/me/promo-code': typeof ApiV1MePromoCodeRoute
   '/api/v1/me/terms': typeof ApiV1MeTermsRoute
   '/api/v1/messages/unread-total': typeof ApiV1MessagesUnreadTotalRoute
   '/api/v1/meta/client-policy': typeof ApiV1MetaClientPolicyRoute
   '/api/v1/meta/config': typeof ApiV1MetaConfigRoute
+  '/api/v1/orgs/claim-code': typeof ApiV1OrgsClaimCodeRoute
+  '/api/v1/orgs/join': typeof ApiV1OrgsJoinRoute
+  '/api/v1/orgs/lead': typeof ApiV1OrgsLeadRoute
+  '/api/v1/orgs/lookup-code': typeof ApiV1OrgsLookupCodeRoute
+  '/api/v1/orgs/popular': typeof ApiV1OrgsPopularRoute
+  '/api/v1/orgs/search': typeof ApiV1OrgsSearchRoute
+  '/api/v1/orgs/verify-code': typeof ApiV1OrgsVerifyCodeRoute
+  '/api/v1/promo-codes/validate': typeof ApiV1PromoCodesValidateRoute
   '/api/v1/rooms/ensure': typeof ApiV1RoomsEnsureRoute
   '/api/v1/safety/reports': typeof ApiV1SafetyReportsRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -1019,13 +1158,20 @@ export interface FileRoutesByFullPath {
   '/api/v1/auth/signup/coach': typeof ApiV1AuthSignupCoachRoute
   '/api/v1/auth/username/check': typeof ApiV1AuthUsernameCheckRoute
   '/api/v1/auth/username/resolve': typeof ApiV1AuthUsernameResolveRoute
+  '/api/v1/coach/invite-code/rotate': typeof ApiV1CoachInviteCodeRotateRoute
+  '/api/v1/coach/onboarding/complete': typeof ApiV1CoachOnboardingCompleteRoute
   '/api/v1/competitions/$id/attendance': typeof ApiV1CompetitionsIdAttendanceRoute
+  '/api/v1/invites/adult-athlete/claim': typeof ApiV1InvitesAdultAthleteClaimRoute
+  '/api/v1/invites/adult-athlete/preview': typeof ApiV1InvitesAdultAthletePreviewRoute
+  '/api/v1/invites/parent/claim': typeof ApiV1InvitesParentClaimRoute
+  '/api/v1/invites/parent/preview': typeof ApiV1InvitesParentPreviewRoute
   '/api/v1/me/terms/accept': typeof ApiV1MeTermsAcceptRoute
   '/api/v1/public/boards/$slug': typeof ApiV1PublicBoardsSlugRoute
   '/api/v1/rooms/$id/active-plans': typeof ApiV1RoomsIdActivePlansRoute
   '/api/v1/rooms/$id/messages': typeof ApiV1RoomsIdMessagesRoute
   '/api/v1/rooms/$id/read': typeof ApiV1RoomsIdReadRoute
   '/api/v1/safety/blocks/$userId': typeof ApiV1SafetyBlocksUserIdRoute
+  '/api/v1/coach/invite-code/': typeof ApiV1CoachInviteCodeIndexRoute
   '/api/v1/public/boards/': typeof ApiV1PublicBoardsIndexRoute
   '/api/v1/rooms/$id/': typeof ApiV1RoomsIdIndexRoute
   '/api/v1/safety/blocks/': typeof ApiV1SafetyBlocksIndexRoute
@@ -1123,11 +1269,24 @@ export interface FileRoutesByTo {
   '/api/v1/auth/password': typeof ApiV1AuthPasswordRoute
   '/api/v1/auth/recover': typeof ApiV1AuthRecoverRoute
   '/api/v1/boards/my-skaters': typeof ApiV1BoardsMySkatersRoute
+  '/api/v1/coach/levels': typeof ApiV1CoachLevelsRoute
+  '/api/v1/coach/org': typeof ApiV1CoachOrgRoute
+  '/api/v1/coach/profile': typeof ApiV1CoachProfileRoute
+  '/api/v1/invites/resolve': typeof ApiV1InvitesResolveRoute
   '/api/v1/me/presence': typeof ApiV1MePresenceRoute
+  '/api/v1/me/promo-code': typeof ApiV1MePromoCodeRoute
   '/api/v1/me/terms': typeof ApiV1MeTermsRoute
   '/api/v1/messages/unread-total': typeof ApiV1MessagesUnreadTotalRoute
   '/api/v1/meta/client-policy': typeof ApiV1MetaClientPolicyRoute
   '/api/v1/meta/config': typeof ApiV1MetaConfigRoute
+  '/api/v1/orgs/claim-code': typeof ApiV1OrgsClaimCodeRoute
+  '/api/v1/orgs/join': typeof ApiV1OrgsJoinRoute
+  '/api/v1/orgs/lead': typeof ApiV1OrgsLeadRoute
+  '/api/v1/orgs/lookup-code': typeof ApiV1OrgsLookupCodeRoute
+  '/api/v1/orgs/popular': typeof ApiV1OrgsPopularRoute
+  '/api/v1/orgs/search': typeof ApiV1OrgsSearchRoute
+  '/api/v1/orgs/verify-code': typeof ApiV1OrgsVerifyCodeRoute
+  '/api/v1/promo-codes/validate': typeof ApiV1PromoCodesValidateRoute
   '/api/v1/rooms/ensure': typeof ApiV1RoomsEnsureRoute
   '/api/v1/safety/reports': typeof ApiV1SafetyReportsRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -1150,13 +1309,20 @@ export interface FileRoutesByTo {
   '/api/v1/auth/signup/coach': typeof ApiV1AuthSignupCoachRoute
   '/api/v1/auth/username/check': typeof ApiV1AuthUsernameCheckRoute
   '/api/v1/auth/username/resolve': typeof ApiV1AuthUsernameResolveRoute
+  '/api/v1/coach/invite-code/rotate': typeof ApiV1CoachInviteCodeRotateRoute
+  '/api/v1/coach/onboarding/complete': typeof ApiV1CoachOnboardingCompleteRoute
   '/api/v1/competitions/$id/attendance': typeof ApiV1CompetitionsIdAttendanceRoute
+  '/api/v1/invites/adult-athlete/claim': typeof ApiV1InvitesAdultAthleteClaimRoute
+  '/api/v1/invites/adult-athlete/preview': typeof ApiV1InvitesAdultAthletePreviewRoute
+  '/api/v1/invites/parent/claim': typeof ApiV1InvitesParentClaimRoute
+  '/api/v1/invites/parent/preview': typeof ApiV1InvitesParentPreviewRoute
   '/api/v1/me/terms/accept': typeof ApiV1MeTermsAcceptRoute
   '/api/v1/public/boards/$slug': typeof ApiV1PublicBoardsSlugRoute
   '/api/v1/rooms/$id/active-plans': typeof ApiV1RoomsIdActivePlansRoute
   '/api/v1/rooms/$id/messages': typeof ApiV1RoomsIdMessagesRoute
   '/api/v1/rooms/$id/read': typeof ApiV1RoomsIdReadRoute
   '/api/v1/safety/blocks/$userId': typeof ApiV1SafetyBlocksUserIdRoute
+  '/api/v1/coach/invite-code': typeof ApiV1CoachInviteCodeIndexRoute
   '/api/v1/public/boards': typeof ApiV1PublicBoardsIndexRoute
   '/api/v1/rooms/$id': typeof ApiV1RoomsIdIndexRoute
   '/api/v1/safety/blocks': typeof ApiV1SafetyBlocksIndexRoute
@@ -1262,11 +1428,24 @@ export interface FileRoutesById {
   '/api/v1/auth/password': typeof ApiV1AuthPasswordRoute
   '/api/v1/auth/recover': typeof ApiV1AuthRecoverRoute
   '/api/v1/boards/my-skaters': typeof ApiV1BoardsMySkatersRoute
+  '/api/v1/coach/levels': typeof ApiV1CoachLevelsRoute
+  '/api/v1/coach/org': typeof ApiV1CoachOrgRoute
+  '/api/v1/coach/profile': typeof ApiV1CoachProfileRoute
+  '/api/v1/invites/resolve': typeof ApiV1InvitesResolveRoute
   '/api/v1/me/presence': typeof ApiV1MePresenceRoute
+  '/api/v1/me/promo-code': typeof ApiV1MePromoCodeRoute
   '/api/v1/me/terms': typeof ApiV1MeTermsRoute
   '/api/v1/messages/unread-total': typeof ApiV1MessagesUnreadTotalRoute
   '/api/v1/meta/client-policy': typeof ApiV1MetaClientPolicyRoute
   '/api/v1/meta/config': typeof ApiV1MetaConfigRoute
+  '/api/v1/orgs/claim-code': typeof ApiV1OrgsClaimCodeRoute
+  '/api/v1/orgs/join': typeof ApiV1OrgsJoinRoute
+  '/api/v1/orgs/lead': typeof ApiV1OrgsLeadRoute
+  '/api/v1/orgs/lookup-code': typeof ApiV1OrgsLookupCodeRoute
+  '/api/v1/orgs/popular': typeof ApiV1OrgsPopularRoute
+  '/api/v1/orgs/search': typeof ApiV1OrgsSearchRoute
+  '/api/v1/orgs/verify-code': typeof ApiV1OrgsVerifyCodeRoute
+  '/api/v1/promo-codes/validate': typeof ApiV1PromoCodesValidateRoute
   '/api/v1/rooms/ensure': typeof ApiV1RoomsEnsureRoute
   '/api/v1/safety/reports': typeof ApiV1SafetyReportsRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -1289,13 +1468,20 @@ export interface FileRoutesById {
   '/api/v1/auth/signup/coach': typeof ApiV1AuthSignupCoachRoute
   '/api/v1/auth/username/check': typeof ApiV1AuthUsernameCheckRoute
   '/api/v1/auth/username/resolve': typeof ApiV1AuthUsernameResolveRoute
+  '/api/v1/coach/invite-code/rotate': typeof ApiV1CoachInviteCodeRotateRoute
+  '/api/v1/coach/onboarding/complete': typeof ApiV1CoachOnboardingCompleteRoute
   '/api/v1/competitions/$id/attendance': typeof ApiV1CompetitionsIdAttendanceRoute
+  '/api/v1/invites/adult-athlete/claim': typeof ApiV1InvitesAdultAthleteClaimRoute
+  '/api/v1/invites/adult-athlete/preview': typeof ApiV1InvitesAdultAthletePreviewRoute
+  '/api/v1/invites/parent/claim': typeof ApiV1InvitesParentClaimRoute
+  '/api/v1/invites/parent/preview': typeof ApiV1InvitesParentPreviewRoute
   '/api/v1/me/terms_/accept': typeof ApiV1MeTermsAcceptRoute
   '/api/v1/public/boards/$slug': typeof ApiV1PublicBoardsSlugRoute
   '/api/v1/rooms/$id/active-plans': typeof ApiV1RoomsIdActivePlansRoute
   '/api/v1/rooms/$id/messages': typeof ApiV1RoomsIdMessagesRoute
   '/api/v1/rooms/$id/read': typeof ApiV1RoomsIdReadRoute
   '/api/v1/safety/blocks/$userId': typeof ApiV1SafetyBlocksUserIdRoute
+  '/api/v1/coach/invite-code/': typeof ApiV1CoachInviteCodeIndexRoute
   '/api/v1/public/boards/': typeof ApiV1PublicBoardsIndexRoute
   '/api/v1/rooms/$id/': typeof ApiV1RoomsIdIndexRoute
   '/api/v1/safety/blocks/': typeof ApiV1SafetyBlocksIndexRoute
@@ -1401,11 +1587,24 @@ export interface FileRouteTypes {
     | '/api/v1/auth/password'
     | '/api/v1/auth/recover'
     | '/api/v1/boards/my-skaters'
+    | '/api/v1/coach/levels'
+    | '/api/v1/coach/org'
+    | '/api/v1/coach/profile'
+    | '/api/v1/invites/resolve'
     | '/api/v1/me/presence'
+    | '/api/v1/me/promo-code'
     | '/api/v1/me/terms'
     | '/api/v1/messages/unread-total'
     | '/api/v1/meta/client-policy'
     | '/api/v1/meta/config'
+    | '/api/v1/orgs/claim-code'
+    | '/api/v1/orgs/join'
+    | '/api/v1/orgs/lead'
+    | '/api/v1/orgs/lookup-code'
+    | '/api/v1/orgs/popular'
+    | '/api/v1/orgs/search'
+    | '/api/v1/orgs/verify-code'
+    | '/api/v1/promo-codes/validate'
     | '/api/v1/rooms/ensure'
     | '/api/v1/safety/reports'
     | '/lovable/email/auth/preview'
@@ -1428,13 +1627,20 @@ export interface FileRouteTypes {
     | '/api/v1/auth/signup/coach'
     | '/api/v1/auth/username/check'
     | '/api/v1/auth/username/resolve'
+    | '/api/v1/coach/invite-code/rotate'
+    | '/api/v1/coach/onboarding/complete'
     | '/api/v1/competitions/$id/attendance'
+    | '/api/v1/invites/adult-athlete/claim'
+    | '/api/v1/invites/adult-athlete/preview'
+    | '/api/v1/invites/parent/claim'
+    | '/api/v1/invites/parent/preview'
     | '/api/v1/me/terms/accept'
     | '/api/v1/public/boards/$slug'
     | '/api/v1/rooms/$id/active-plans'
     | '/api/v1/rooms/$id/messages'
     | '/api/v1/rooms/$id/read'
     | '/api/v1/safety/blocks/$userId'
+    | '/api/v1/coach/invite-code/'
     | '/api/v1/public/boards/'
     | '/api/v1/rooms/$id/'
     | '/api/v1/safety/blocks/'
@@ -1532,11 +1738,24 @@ export interface FileRouteTypes {
     | '/api/v1/auth/password'
     | '/api/v1/auth/recover'
     | '/api/v1/boards/my-skaters'
+    | '/api/v1/coach/levels'
+    | '/api/v1/coach/org'
+    | '/api/v1/coach/profile'
+    | '/api/v1/invites/resolve'
     | '/api/v1/me/presence'
+    | '/api/v1/me/promo-code'
     | '/api/v1/me/terms'
     | '/api/v1/messages/unread-total'
     | '/api/v1/meta/client-policy'
     | '/api/v1/meta/config'
+    | '/api/v1/orgs/claim-code'
+    | '/api/v1/orgs/join'
+    | '/api/v1/orgs/lead'
+    | '/api/v1/orgs/lookup-code'
+    | '/api/v1/orgs/popular'
+    | '/api/v1/orgs/search'
+    | '/api/v1/orgs/verify-code'
+    | '/api/v1/promo-codes/validate'
     | '/api/v1/rooms/ensure'
     | '/api/v1/safety/reports'
     | '/lovable/email/auth/preview'
@@ -1559,13 +1778,20 @@ export interface FileRouteTypes {
     | '/api/v1/auth/signup/coach'
     | '/api/v1/auth/username/check'
     | '/api/v1/auth/username/resolve'
+    | '/api/v1/coach/invite-code/rotate'
+    | '/api/v1/coach/onboarding/complete'
     | '/api/v1/competitions/$id/attendance'
+    | '/api/v1/invites/adult-athlete/claim'
+    | '/api/v1/invites/adult-athlete/preview'
+    | '/api/v1/invites/parent/claim'
+    | '/api/v1/invites/parent/preview'
     | '/api/v1/me/terms/accept'
     | '/api/v1/public/boards/$slug'
     | '/api/v1/rooms/$id/active-plans'
     | '/api/v1/rooms/$id/messages'
     | '/api/v1/rooms/$id/read'
     | '/api/v1/safety/blocks/$userId'
+    | '/api/v1/coach/invite-code'
     | '/api/v1/public/boards'
     | '/api/v1/rooms/$id'
     | '/api/v1/safety/blocks'
@@ -1670,11 +1896,24 @@ export interface FileRouteTypes {
     | '/api/v1/auth/password'
     | '/api/v1/auth/recover'
     | '/api/v1/boards/my-skaters'
+    | '/api/v1/coach/levels'
+    | '/api/v1/coach/org'
+    | '/api/v1/coach/profile'
+    | '/api/v1/invites/resolve'
     | '/api/v1/me/presence'
+    | '/api/v1/me/promo-code'
     | '/api/v1/me/terms'
     | '/api/v1/messages/unread-total'
     | '/api/v1/meta/client-policy'
     | '/api/v1/meta/config'
+    | '/api/v1/orgs/claim-code'
+    | '/api/v1/orgs/join'
+    | '/api/v1/orgs/lead'
+    | '/api/v1/orgs/lookup-code'
+    | '/api/v1/orgs/popular'
+    | '/api/v1/orgs/search'
+    | '/api/v1/orgs/verify-code'
+    | '/api/v1/promo-codes/validate'
     | '/api/v1/rooms/ensure'
     | '/api/v1/safety/reports'
     | '/lovable/email/auth/preview'
@@ -1697,13 +1936,20 @@ export interface FileRouteTypes {
     | '/api/v1/auth/signup/coach'
     | '/api/v1/auth/username/check'
     | '/api/v1/auth/username/resolve'
+    | '/api/v1/coach/invite-code/rotate'
+    | '/api/v1/coach/onboarding/complete'
     | '/api/v1/competitions/$id/attendance'
+    | '/api/v1/invites/adult-athlete/claim'
+    | '/api/v1/invites/adult-athlete/preview'
+    | '/api/v1/invites/parent/claim'
+    | '/api/v1/invites/parent/preview'
     | '/api/v1/me/terms_/accept'
     | '/api/v1/public/boards/$slug'
     | '/api/v1/rooms/$id/active-plans'
     | '/api/v1/rooms/$id/messages'
     | '/api/v1/rooms/$id/read'
     | '/api/v1/safety/blocks/$userId'
+    | '/api/v1/coach/invite-code/'
     | '/api/v1/public/boards/'
     | '/api/v1/rooms/$id/'
     | '/api/v1/safety/blocks/'
@@ -1744,11 +1990,24 @@ export interface RootRouteChildren {
   ApiV1AuthPasswordRoute: typeof ApiV1AuthPasswordRoute
   ApiV1AuthRecoverRoute: typeof ApiV1AuthRecoverRoute
   ApiV1BoardsMySkatersRoute: typeof ApiV1BoardsMySkatersRoute
+  ApiV1CoachLevelsRoute: typeof ApiV1CoachLevelsRoute
+  ApiV1CoachOrgRoute: typeof ApiV1CoachOrgRoute
+  ApiV1CoachProfileRoute: typeof ApiV1CoachProfileRoute
+  ApiV1InvitesResolveRoute: typeof ApiV1InvitesResolveRoute
   ApiV1MePresenceRoute: typeof ApiV1MePresenceRoute
+  ApiV1MePromoCodeRoute: typeof ApiV1MePromoCodeRoute
   ApiV1MeTermsRoute: typeof ApiV1MeTermsRoute
   ApiV1MessagesUnreadTotalRoute: typeof ApiV1MessagesUnreadTotalRoute
   ApiV1MetaClientPolicyRoute: typeof ApiV1MetaClientPolicyRoute
   ApiV1MetaConfigRoute: typeof ApiV1MetaConfigRoute
+  ApiV1OrgsClaimCodeRoute: typeof ApiV1OrgsClaimCodeRoute
+  ApiV1OrgsJoinRoute: typeof ApiV1OrgsJoinRoute
+  ApiV1OrgsLeadRoute: typeof ApiV1OrgsLeadRoute
+  ApiV1OrgsLookupCodeRoute: typeof ApiV1OrgsLookupCodeRoute
+  ApiV1OrgsPopularRoute: typeof ApiV1OrgsPopularRoute
+  ApiV1OrgsSearchRoute: typeof ApiV1OrgsSearchRoute
+  ApiV1OrgsVerifyCodeRoute: typeof ApiV1OrgsVerifyCodeRoute
+  ApiV1PromoCodesValidateRoute: typeof ApiV1PromoCodesValidateRoute
   ApiV1RoomsEnsureRoute: typeof ApiV1RoomsEnsureRoute
   ApiV1SafetyReportsRoute: typeof ApiV1SafetyReportsRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
@@ -1760,13 +2019,20 @@ export interface RootRouteChildren {
   ApiV1AuthSignupCoachRoute: typeof ApiV1AuthSignupCoachRoute
   ApiV1AuthUsernameCheckRoute: typeof ApiV1AuthUsernameCheckRoute
   ApiV1AuthUsernameResolveRoute: typeof ApiV1AuthUsernameResolveRoute
+  ApiV1CoachInviteCodeRotateRoute: typeof ApiV1CoachInviteCodeRotateRoute
+  ApiV1CoachOnboardingCompleteRoute: typeof ApiV1CoachOnboardingCompleteRoute
   ApiV1CompetitionsIdAttendanceRoute: typeof ApiV1CompetitionsIdAttendanceRoute
+  ApiV1InvitesAdultAthleteClaimRoute: typeof ApiV1InvitesAdultAthleteClaimRoute
+  ApiV1InvitesAdultAthletePreviewRoute: typeof ApiV1InvitesAdultAthletePreviewRoute
+  ApiV1InvitesParentClaimRoute: typeof ApiV1InvitesParentClaimRoute
+  ApiV1InvitesParentPreviewRoute: typeof ApiV1InvitesParentPreviewRoute
   ApiV1MeTermsAcceptRoute: typeof ApiV1MeTermsAcceptRoute
   ApiV1PublicBoardsSlugRoute: typeof ApiV1PublicBoardsSlugRoute
   ApiV1RoomsIdActivePlansRoute: typeof ApiV1RoomsIdActivePlansRoute
   ApiV1RoomsIdMessagesRoute: typeof ApiV1RoomsIdMessagesRoute
   ApiV1RoomsIdReadRoute: typeof ApiV1RoomsIdReadRoute
   ApiV1SafetyBlocksUserIdRoute: typeof ApiV1SafetyBlocksUserIdRoute
+  ApiV1CoachInviteCodeIndexRoute: typeof ApiV1CoachInviteCodeIndexRoute
   ApiV1PublicBoardsIndexRoute: typeof ApiV1PublicBoardsIndexRoute
   ApiV1RoomsIdIndexRoute: typeof ApiV1RoomsIdIndexRoute
   ApiV1SafetyBlocksIndexRoute: typeof ApiV1SafetyBlocksIndexRoute
@@ -2420,6 +2686,62 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1RoomsEnsureRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/v1/promo-codes/validate': {
+      id: '/api/v1/promo-codes/validate'
+      path: '/api/v1/promo-codes/validate'
+      fullPath: '/api/v1/promo-codes/validate'
+      preLoaderRoute: typeof ApiV1PromoCodesValidateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/orgs/verify-code': {
+      id: '/api/v1/orgs/verify-code'
+      path: '/api/v1/orgs/verify-code'
+      fullPath: '/api/v1/orgs/verify-code'
+      preLoaderRoute: typeof ApiV1OrgsVerifyCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/orgs/search': {
+      id: '/api/v1/orgs/search'
+      path: '/api/v1/orgs/search'
+      fullPath: '/api/v1/orgs/search'
+      preLoaderRoute: typeof ApiV1OrgsSearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/orgs/popular': {
+      id: '/api/v1/orgs/popular'
+      path: '/api/v1/orgs/popular'
+      fullPath: '/api/v1/orgs/popular'
+      preLoaderRoute: typeof ApiV1OrgsPopularRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/orgs/lookup-code': {
+      id: '/api/v1/orgs/lookup-code'
+      path: '/api/v1/orgs/lookup-code'
+      fullPath: '/api/v1/orgs/lookup-code'
+      preLoaderRoute: typeof ApiV1OrgsLookupCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/orgs/lead': {
+      id: '/api/v1/orgs/lead'
+      path: '/api/v1/orgs/lead'
+      fullPath: '/api/v1/orgs/lead'
+      preLoaderRoute: typeof ApiV1OrgsLeadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/orgs/join': {
+      id: '/api/v1/orgs/join'
+      path: '/api/v1/orgs/join'
+      fullPath: '/api/v1/orgs/join'
+      preLoaderRoute: typeof ApiV1OrgsJoinRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/orgs/claim-code': {
+      id: '/api/v1/orgs/claim-code'
+      path: '/api/v1/orgs/claim-code'
+      fullPath: '/api/v1/orgs/claim-code'
+      preLoaderRoute: typeof ApiV1OrgsClaimCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/v1/meta/config': {
       id: '/api/v1/meta/config'
       path: '/api/v1/meta/config'
@@ -2448,11 +2770,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1MeTermsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/v1/me/promo-code': {
+      id: '/api/v1/me/promo-code'
+      path: '/api/v1/me/promo-code'
+      fullPath: '/api/v1/me/promo-code'
+      preLoaderRoute: typeof ApiV1MePromoCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/v1/me/presence': {
       id: '/api/v1/me/presence'
       path: '/api/v1/me/presence'
       fullPath: '/api/v1/me/presence'
       preLoaderRoute: typeof ApiV1MePresenceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/invites/resolve': {
+      id: '/api/v1/invites/resolve'
+      path: '/api/v1/invites/resolve'
+      fullPath: '/api/v1/invites/resolve'
+      preLoaderRoute: typeof ApiV1InvitesResolveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/coach/profile': {
+      id: '/api/v1/coach/profile'
+      path: '/api/v1/coach/profile'
+      fullPath: '/api/v1/coach/profile'
+      preLoaderRoute: typeof ApiV1CoachProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/coach/org': {
+      id: '/api/v1/coach/org'
+      path: '/api/v1/coach/org'
+      fullPath: '/api/v1/coach/org'
+      preLoaderRoute: typeof ApiV1CoachOrgRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/coach/levels': {
+      id: '/api/v1/coach/levels'
+      path: '/api/v1/coach/levels'
+      fullPath: '/api/v1/coach/levels'
+      preLoaderRoute: typeof ApiV1CoachLevelsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/v1/boards/my-skaters': {
@@ -2644,6 +3001,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1PublicBoardsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/v1/coach/invite-code/': {
+      id: '/api/v1/coach/invite-code/'
+      path: '/api/v1/coach/invite-code'
+      fullPath: '/api/v1/coach/invite-code/'
+      preLoaderRoute: typeof ApiV1CoachInviteCodeIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/v1/safety/blocks/$userId': {
       id: '/api/v1/safety/blocks/$userId'
       path: '/api/v1/safety/blocks/$userId'
@@ -2686,11 +3050,53 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1MeTermsAcceptRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/v1/invites/parent/preview': {
+      id: '/api/v1/invites/parent/preview'
+      path: '/api/v1/invites/parent/preview'
+      fullPath: '/api/v1/invites/parent/preview'
+      preLoaderRoute: typeof ApiV1InvitesParentPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/invites/parent/claim': {
+      id: '/api/v1/invites/parent/claim'
+      path: '/api/v1/invites/parent/claim'
+      fullPath: '/api/v1/invites/parent/claim'
+      preLoaderRoute: typeof ApiV1InvitesParentClaimRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/invites/adult-athlete/preview': {
+      id: '/api/v1/invites/adult-athlete/preview'
+      path: '/api/v1/invites/adult-athlete/preview'
+      fullPath: '/api/v1/invites/adult-athlete/preview'
+      preLoaderRoute: typeof ApiV1InvitesAdultAthletePreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/invites/adult-athlete/claim': {
+      id: '/api/v1/invites/adult-athlete/claim'
+      path: '/api/v1/invites/adult-athlete/claim'
+      fullPath: '/api/v1/invites/adult-athlete/claim'
+      preLoaderRoute: typeof ApiV1InvitesAdultAthleteClaimRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/v1/competitions/$id/attendance': {
       id: '/api/v1/competitions/$id/attendance'
       path: '/api/v1/competitions/$id/attendance'
       fullPath: '/api/v1/competitions/$id/attendance'
       preLoaderRoute: typeof ApiV1CompetitionsIdAttendanceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/coach/onboarding/complete': {
+      id: '/api/v1/coach/onboarding/complete'
+      path: '/api/v1/coach/onboarding/complete'
+      fullPath: '/api/v1/coach/onboarding/complete'
+      preLoaderRoute: typeof ApiV1CoachOnboardingCompleteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/coach/invite-code/rotate': {
+      id: '/api/v1/coach/invite-code/rotate'
+      path: '/api/v1/coach/invite-code/rotate'
+      fullPath: '/api/v1/coach/invite-code/rotate'
+      preLoaderRoute: typeof ApiV1CoachInviteCodeRotateRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/v1/auth/username/resolve': {
@@ -3026,11 +3432,24 @@ const rootRouteChildren: RootRouteChildren = {
   ApiV1AuthPasswordRoute: ApiV1AuthPasswordRoute,
   ApiV1AuthRecoverRoute: ApiV1AuthRecoverRoute,
   ApiV1BoardsMySkatersRoute: ApiV1BoardsMySkatersRoute,
+  ApiV1CoachLevelsRoute: ApiV1CoachLevelsRoute,
+  ApiV1CoachOrgRoute: ApiV1CoachOrgRoute,
+  ApiV1CoachProfileRoute: ApiV1CoachProfileRoute,
+  ApiV1InvitesResolveRoute: ApiV1InvitesResolveRoute,
   ApiV1MePresenceRoute: ApiV1MePresenceRoute,
+  ApiV1MePromoCodeRoute: ApiV1MePromoCodeRoute,
   ApiV1MeTermsRoute: ApiV1MeTermsRoute,
   ApiV1MessagesUnreadTotalRoute: ApiV1MessagesUnreadTotalRoute,
   ApiV1MetaClientPolicyRoute: ApiV1MetaClientPolicyRoute,
   ApiV1MetaConfigRoute: ApiV1MetaConfigRoute,
+  ApiV1OrgsClaimCodeRoute: ApiV1OrgsClaimCodeRoute,
+  ApiV1OrgsJoinRoute: ApiV1OrgsJoinRoute,
+  ApiV1OrgsLeadRoute: ApiV1OrgsLeadRoute,
+  ApiV1OrgsLookupCodeRoute: ApiV1OrgsLookupCodeRoute,
+  ApiV1OrgsPopularRoute: ApiV1OrgsPopularRoute,
+  ApiV1OrgsSearchRoute: ApiV1OrgsSearchRoute,
+  ApiV1OrgsVerifyCodeRoute: ApiV1OrgsVerifyCodeRoute,
+  ApiV1PromoCodesValidateRoute: ApiV1PromoCodesValidateRoute,
   ApiV1RoomsEnsureRoute: ApiV1RoomsEnsureRoute,
   ApiV1SafetyReportsRoute: ApiV1SafetyReportsRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
@@ -3042,13 +3461,20 @@ const rootRouteChildren: RootRouteChildren = {
   ApiV1AuthSignupCoachRoute: ApiV1AuthSignupCoachRoute,
   ApiV1AuthUsernameCheckRoute: ApiV1AuthUsernameCheckRoute,
   ApiV1AuthUsernameResolveRoute: ApiV1AuthUsernameResolveRoute,
+  ApiV1CoachInviteCodeRotateRoute: ApiV1CoachInviteCodeRotateRoute,
+  ApiV1CoachOnboardingCompleteRoute: ApiV1CoachOnboardingCompleteRoute,
   ApiV1CompetitionsIdAttendanceRoute: ApiV1CompetitionsIdAttendanceRoute,
+  ApiV1InvitesAdultAthleteClaimRoute: ApiV1InvitesAdultAthleteClaimRoute,
+  ApiV1InvitesAdultAthletePreviewRoute: ApiV1InvitesAdultAthletePreviewRoute,
+  ApiV1InvitesParentClaimRoute: ApiV1InvitesParentClaimRoute,
+  ApiV1InvitesParentPreviewRoute: ApiV1InvitesParentPreviewRoute,
   ApiV1MeTermsAcceptRoute: ApiV1MeTermsAcceptRoute,
   ApiV1PublicBoardsSlugRoute: ApiV1PublicBoardsSlugRoute,
   ApiV1RoomsIdActivePlansRoute: ApiV1RoomsIdActivePlansRoute,
   ApiV1RoomsIdMessagesRoute: ApiV1RoomsIdMessagesRoute,
   ApiV1RoomsIdReadRoute: ApiV1RoomsIdReadRoute,
   ApiV1SafetyBlocksUserIdRoute: ApiV1SafetyBlocksUserIdRoute,
+  ApiV1CoachInviteCodeIndexRoute: ApiV1CoachInviteCodeIndexRoute,
   ApiV1PublicBoardsIndexRoute: ApiV1PublicBoardsIndexRoute,
   ApiV1RoomsIdIndexRoute: ApiV1RoomsIdIndexRoute,
   ApiV1SafetyBlocksIndexRoute: ApiV1SafetyBlocksIndexRoute,

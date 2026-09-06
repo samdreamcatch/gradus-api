@@ -377,6 +377,1931 @@
         }
       }
     },
+    "/api/v1/coach/profile": {
+      "get": {
+        "operationId": "getCoachProfile",
+        "summary": "The caller's coach profile, entitlement, and sports",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "profile": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "firstName": {
+                          "type": "string"
+                        },
+                        "lastName": {
+                          "type": "string"
+                        },
+                        "onboardedAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "entitlement": {
+                          "type": "string",
+                          "enum": [
+                            "pending",
+                            "club_covered",
+                            "paid",
+                            "promo_free"
+                          ]
+                        },
+                        "organizationId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "organizationName": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "subscriptionTier": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "enum": [
+                            "coach",
+                            "coach_pro"
+                          ]
+                        },
+                        "subscriptionStatus": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "trialEndsAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "currentPeriodEnd": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "hasStripeCustomer": {
+                          "type": "boolean"
+                        },
+                        "promoCode": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "promoLabel": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "promoPercentOff": {
+                          "type": "number"
+                        },
+                        "effectiveTier": {
+                          "type": "string",
+                          "enum": [
+                            "coach",
+                            "coach_pro",
+                            "club"
+                          ]
+                        },
+                        "athleteLimit": {
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        },
+                        "athleteCount": {
+                          "type": "number"
+                        },
+                        "foundingCoach": {
+                          "type": "boolean"
+                        },
+                        "foundingProTrialUsed": {
+                          "type": "boolean"
+                        },
+                        "freeAccessUntil": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "trialNeedsCard": {
+                          "type": "boolean"
+                        },
+                        "subscriptionEnvironment": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "enum": [
+                            "sandbox",
+                            "live"
+                          ]
+                        },
+                        "billingPastDue": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "firstName",
+                        "lastName",
+                        "onboardedAt",
+                        "entitlement",
+                        "organizationId",
+                        "organizationName",
+                        "subscriptionTier",
+                        "subscriptionStatus",
+                        "trialEndsAt",
+                        "currentPeriodEnd",
+                        "hasStripeCustomer",
+                        "promoCode",
+                        "promoLabel",
+                        "promoPercentOff",
+                        "effectiveTier",
+                        "athleteLimit",
+                        "athleteCount",
+                        "foundingCoach",
+                        "foundingProTrialUsed",
+                        "freeAccessUntil",
+                        "trialNeedsCard",
+                        "subscriptionEnvironment",
+                        "billingPastDue"
+                      ]
+                    },
+                    "levels": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "sport": {
+                            "type": "string"
+                          },
+                          "levelKey": {
+                            "type": "string"
+                          },
+                          "hoursPerWeek": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "sport",
+                          "levelKey",
+                          "hoursPerWeek"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "profile",
+                    "levels"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "putCoachProfile",
+        "summary": "Set the coach's first and last name",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "firstName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  "lastName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  }
+                },
+                "required": [
+                  "firstName",
+                  "lastName"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/coach/levels": {
+      "put": {
+        "operationId": "putCoachLevels",
+        "summary": "Replace the coach's sports and levels",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "entries": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "sport": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 64,
+                          "pattern": "^[a-z0-9_]+$"
+                        },
+                        "levelKey": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 64,
+                          "pattern": "^[a-z0-9_]+$"
+                        },
+                        "hoursPerWeek": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 40
+                        }
+                      },
+                      "required": [
+                        "sport",
+                        "levelKey",
+                        "hoursPerWeek"
+                      ]
+                    },
+                    "maxItems": 200
+                  }
+                },
+                "required": [
+                  "entries"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/coach/onboarding/complete": {
+      "post": {
+        "operationId": "postCoachOnboardingComplete",
+        "summary": "Finish coach onboarding",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/coach/invite-code": {
+      "get": {
+        "operationId": "getCoachInviteCode",
+        "summary": "The coach's shareable invite code",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "code"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/coach/invite-code/rotate": {
+      "post": {
+        "operationId": "postCoachInviteCodeRotate",
+        "summary": "Replace the coach's invite code",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "code"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/coach/org": {
+      "delete": {
+        "operationId": "deleteCoachOrg",
+        "summary": "Leave the coach's club",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "welcomeBackGranted": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "welcomeBackGranted"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/invites/resolve": {
+      "post": {
+        "operationId": "postInvitesResolve",
+        "summary": "Which kind of invite an 8-character code is, and whether it is still valid",
+        "security": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "minLength": 8,
+                    "maxLength": 8,
+                    "pattern": "^[A-Z2-9]+$"
+                  }
+                },
+                "required": [
+                  "code"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "coach"
+                          ]
+                        },
+                        "valid": {
+                          "type": "boolean",
+                          "enum": [
+                            true
+                          ]
+                        },
+                        "promoCode": {
+                          "type": "null"
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "valid",
+                        "promoCode"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "parent"
+                          ]
+                        },
+                        "valid": {
+                          "type": "boolean",
+                          "enum": [
+                            true
+                          ]
+                        },
+                        "promoCode": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "valid",
+                        "promoCode"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "adult-athlete"
+                          ]
+                        },
+                        "valid": {
+                          "type": "boolean",
+                          "enum": [
+                            true
+                          ]
+                        },
+                        "promoCode": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "valid",
+                        "promoCode"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "athlete"
+                          ]
+                        },
+                        "valid": {
+                          "type": "boolean"
+                        },
+                        "used": {
+                          "type": "boolean"
+                        },
+                        "expired": {
+                          "type": "boolean"
+                        },
+                        "promoCode": {
+                          "type": "null"
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "valid",
+                        "used",
+                        "expired",
+                        "promoCode"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "guardian"
+                          ]
+                        },
+                        "valid": {
+                          "type": "boolean"
+                        },
+                        "used": {
+                          "type": "boolean"
+                        },
+                        "guardianToken": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "promoCode": {
+                          "type": "null"
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "valid",
+                        "used",
+                        "guardianToken",
+                        "promoCode"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "null"
+                        },
+                        "valid": {
+                          "type": "boolean",
+                          "enum": [
+                            false
+                          ]
+                        },
+                        "promoCode": {
+                          "type": "null"
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "valid",
+                        "promoCode"
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/invites/parent/preview": {
+      "post": {
+        "operationId": "postInvitesParentPreview",
+        "summary": "The parent behind a parent invite code",
+        "security": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "minLength": 8,
+                    "maxLength": 8,
+                    "pattern": "^[A-Z2-9]+$"
+                  }
+                },
+                "required": [
+                  "code"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "parentId": {
+                      "type": "string"
+                    },
+                    "firstName": {
+                      "type": "string"
+                    },
+                    "lastName": {
+                      "type": "string"
+                    },
+                    "athleteCount": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "parentId",
+                    "firstName",
+                    "lastName",
+                    "athleteCount"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/invites/parent/claim": {
+      "post": {
+        "operationId": "postInvitesParentClaim",
+        "summary": "Claim a parent invite as a coach",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "minLength": 8,
+                    "maxLength": 8,
+                    "pattern": "^[A-Z2-9]+$"
+                  },
+                  "autoAckCoach": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "code"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "athletes": {
+                      "type": "number"
+                    },
+                    "sports": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "athletes",
+                    "sports"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/invites/adult-athlete/preview": {
+      "post": {
+        "operationId": "postInvitesAdultAthletePreview",
+        "summary": "The athlete behind an adult-athlete invite code",
+        "security": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "minLength": 8,
+                    "maxLength": 8,
+                    "pattern": "^[A-Z2-9]+$"
+                  }
+                },
+                "required": [
+                  "code"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "athleteId": {
+                      "type": "string"
+                    },
+                    "firstName": {
+                      "type": "string"
+                    },
+                    "lastName": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "athleteId",
+                    "firstName",
+                    "lastName"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/invites/adult-athlete/claim": {
+      "post": {
+        "operationId": "postInvitesAdultAthleteClaim",
+        "summary": "Claim an adult-athlete invite as a coach",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "minLength": 8,
+                    "maxLength": 8,
+                    "pattern": "^[A-Z2-9]+$"
+                  },
+                  "autoAckCoach": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "code"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "sports": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "sports"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/promo-codes/validate": {
+      "post": {
+        "operationId": "postPromoCodesValidate",
+        "summary": "Check a promo code",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "code"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "valid": {
+                          "type": "boolean",
+                          "enum": [
+                            false
+                          ]
+                        },
+                        "label": {
+                          "type": "null"
+                        },
+                        "percentOff": {
+                          "type": "number",
+                          "enum": [
+                            0
+                          ]
+                        },
+                        "duration": {
+                          "type": "string",
+                          "enum": [
+                            "forever"
+                          ]
+                        },
+                        "durationInMonths": {
+                          "type": "null"
+                        }
+                      },
+                      "required": [
+                        "valid",
+                        "label",
+                        "percentOff",
+                        "duration",
+                        "durationInMonths"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "valid": {
+                          "type": "boolean",
+                          "enum": [
+                            true
+                          ]
+                        },
+                        "label": {
+                          "type": "string"
+                        },
+                        "percentOff": {
+                          "type": "number"
+                        },
+                        "duration": {
+                          "type": "string",
+                          "enum": [
+                            "forever",
+                            "repeating"
+                          ]
+                        },
+                        "durationInMonths": {
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "valid",
+                        "label",
+                        "percentOff",
+                        "duration",
+                        "durationInMonths"
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/promo-code": {
+      "post": {
+        "operationId": "postMePromoCode",
+        "summary": "Apply a promo code to the caller's profile",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "applied": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "applied"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/orgs/search": {
+      "post": {
+        "operationId": "postOrgsSearch",
+        "summary": "Search clubs by name or city",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "query": {
+                    "type": "string",
+                    "maxLength": 80
+                  }
+                },
+                "required": [
+                  "query"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "organizations": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "city": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "region": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "logoUrl": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name",
+                          "city",
+                          "region",
+                          "logoUrl"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "organizations"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/orgs/popular": {
+      "get": {
+        "operationId": "getOrgsPopular",
+        "summary": "Popular clubs",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "organizations": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "city": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "region": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "logoUrl": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "count": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name",
+                          "city",
+                          "region",
+                          "logoUrl",
+                          "count"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "organizations"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/orgs/lookup-code": {
+      "post": {
+        "operationId": "postOrgsLookupCode",
+        "summary": "The club behind an invite code",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "code"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "found": {
+                          "type": "boolean",
+                          "enum": [
+                            false
+                          ]
+                        }
+                      },
+                      "required": [
+                        "found"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "found": {
+                          "type": "boolean",
+                          "enum": [
+                            true
+                          ]
+                        },
+                        "organizationId": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "found",
+                        "organizationId",
+                        "name"
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/orgs/verify-code": {
+      "post": {
+        "operationId": "postOrgsVerifyCode",
+        "summary": "Check an invite code against a chosen club",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "orgId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "code": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "orgId",
+                  "code"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "ok": {
+                          "type": "boolean",
+                          "enum": [
+                            false
+                          ]
+                        },
+                        "reason": {
+                          "type": "string",
+                          "enum": [
+                            "unknown",
+                            "inactive",
+                            "mismatch"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "ok",
+                        "reason"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "ok": {
+                          "type": "boolean",
+                          "enum": [
+                            true
+                          ]
+                        },
+                        "name": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "ok",
+                        "name"
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/orgs/claim-code": {
+      "post": {
+        "operationId": "postOrgsClaimCode",
+        "summary": "Join a club with its invite code",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "code"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "organizationId": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "organizationId",
+                    "name"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/orgs/join": {
+      "post": {
+        "operationId": "postOrgsJoin",
+        "summary": "Join a club from Settings",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string"
+                  },
+                  "environment": {
+                    "type": "string",
+                    "enum": [
+                      "sandbox",
+                      "live"
+                    ]
+                  }
+                },
+                "required": [
+                  "code",
+                  "environment"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "ok": {
+                          "type": "boolean",
+                          "enum": [
+                            true
+                          ]
+                        },
+                        "organizationId": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "subscriptionOutcome": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "enum": [
+                                    "none"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "kind"
+                              ]
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "enum": [
+                                    "already_joined"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "kind"
+                              ]
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "enum": [
+                                    "canceled_immediately"
+                                  ]
+                                },
+                                "refundedCents": {
+                                  "type": "number"
+                                },
+                                "currency": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "refundedCents",
+                                "currency"
+                              ]
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "enum": [
+                                    "canceled_at_period_end"
+                                  ]
+                                },
+                                "periodEnd": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "periodEnd"
+                              ]
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "enum": [
+                                    "trial_canceled"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "kind"
+                              ]
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "ok",
+                        "organizationId",
+                        "name",
+                        "subscriptionOutcome"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "ok": {
+                          "type": "boolean",
+                          "enum": [
+                            false
+                          ]
+                        },
+                        "error": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "ok",
+                        "error"
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/orgs/lead": {
+      "post": {
+        "operationId": "postOrgsLead",
+        "summary": "Record that a coach could not find or unlock their club",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "source": {
+                    "type": "string",
+                    "enum": [
+                      "not_listed",
+                      "no_code"
+                    ]
+                  },
+                  "typedQuery": {
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "orgId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "uuid"
+                  },
+                  "orgName": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 200
+                  },
+                  "orgCity": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 120
+                  }
+                },
+                "required": [
+                  "source"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/auth/apple": {
       "post": {
         "operationId": "postAuthApple",

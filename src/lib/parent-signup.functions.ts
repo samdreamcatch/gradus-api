@@ -4,6 +4,11 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { SPORT_KEYS } from "@/lib/coach-sports";
 import { dbError } from "./db-error";
+import {
+  claimInviteInput,
+  claimParentInvite as claimParentInviteShared,
+  previewParentInvite,
+} from "./invites.server";
 
 const codeSchema = z
   .string()
@@ -740,151 +745,18 @@ export const getParentByInviteCode = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => z.object({ code: codeSchema }).parse(input))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const ip = clientIp();
-
-    const limit = await supabaseAdmin.rpc("record_invite_lookup_attempt", {
-      _ip: ip,
-      _code: data.code,
-      _max_per_window: RATE_MAX_PER_WINDOW,
-      _window_seconds: RATE_WINDOW_SECONDS,
-    });
-    if (limit.error) dbError(limit.error);
-    if (limit.data === -1) {
-      throw new Error("Too many attempts. Please wait a minute and try again.");
-    }
-
-    const lookup = await supabaseAdmin.rpc("get_parent_by_invite_code", { _code: data.code });
-    if (lookup.error) dbError(lookup.error);
-    const row = (lookup.data ?? [])[0];
-    if (!row) throw new Error("That parent invite code isn't valid.");
-    return {
-      parentId: row.parent_id as string,
-      firstName: row.first_name as string,
-      lastName: row.last_name as string,
-      athleteCount: row.athlete_count as number,
-    };
+    return previewParentInvite(supabaseAdmin, clientIp(), data.code);
   });
 
 /**
- * Called by an authenticated, onboarded coach to claim a parent invite:
- * - Adds coach_athletes links for every athlete under the parent.
- * - Enables every sport the coach offers on each athlete (coach_athlete_sports).
- * - Fills the coach_id on any of the parent's coach-less athlete_goals /
- *   athlete_lesson_slots rows that match a sport the coach offers.
- * - Sets athlete_primary_coaches for each (athlete, sport) when missing.
- *
- * Idempotent: re-running it for the same coach is a no-op.
+ * Called by an authenticated, onboarded coach to claim a parent invite.
+ * Thin wrapper over src/lib/invites.server.ts, shared with
+ * `POST /api/v1/invites/parent/claim`. Idempotent.
  */
 export const claimParentInvite = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z
-      .object({
-        code: codeSchema,
-        // When true, marks the coach side as already acknowledged so the
-        // celebration modal doesn't appear on the coach's first page load
-        // after the signup wizard. Used by /signup/coach?invite=...
-        autoAckCoach: z.boolean().optional(),
-      })
-      .parse(input),
-  )
+  .inputValidator((input: unknown) => claimInviteInput.parse(input))
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const userId = context.userId;
-
-    const coach = await supabaseAdmin
-      .from("coach_profiles")
-      .select("id, promo_code")
-      .eq("user_id", userId)
-      .maybeSingle();
-    if (coach.error) dbError(coach.error);
-    if (!coach.data) throw new Error("Coach profile not found.");
-    const coachId = coach.data.id;
-
-    const inviteRow = await supabaseAdmin
-      .from("parent_invite_codes")
-      .select("parent_id, promo_code")
-      .eq("code", data.code)
-      .maybeSingle();
-    if (inviteRow.error) dbError(inviteRow.error);
-    if (!inviteRow.data) throw new Error("That parent invite code isn't valid.");
-    const parentId = inviteRow.data.parent_id;
-
-    // Propagate the inviter's promo code onto the coach's own row so it
-    // becomes their attribution + auto-applies at Stripe checkout.
-    // First-invite-wins: only stamp when the coach doesn't already have one.
-    if (inviteRow.data.promo_code && !coach.data.promo_code) {
-      await supabaseAdmin
-        .from("coach_profiles")
-        .update({ promo_code: inviteRow.data.promo_code })
-        .eq("id", coachId)
-        .is("promo_code", null);
-    }
-
-    // Athletes under this parent
-    const athletesRes = await supabaseAdmin.from("athletes").select("id").eq("parent_id", parentId);
-    if (athletesRes.error) dbError(athletesRes.error);
-    const athleteIds = (athletesRes.data ?? []).map((a) => a.id);
-    if (athleteIds.length === 0) return { ok: true, athletes: 0, sports: 0 };
-
-    // Sports this coach offers
-    const levelsRes = await supabaseAdmin
-      .from("coach_levels")
-      .select("sport")
-      .eq("coach_id", coachId);
-    if (levelsRes.error) dbError(levelsRes.error);
-    const coachSports = Array.from(new Set((levelsRes.data ?? []).map((l) => l.sport)));
-
-    // 1. coach_athletes (skip duplicates). Ack coach side when the caller
-    //    is the signup wizard (celebration modal would duplicate the
-    //    wizard's own confirmation screen).
-    const ackIso = data.autoAckCoach ? new Date().toISOString() : null;
-    const linkRows = athleteIds.map((athlete_id) => ({
-      coach_id: coachId,
-      athlete_id,
-      ...(ackIso ? { coach_ack_at: ackIso } : {}),
-    }));
-    const linksIns = await supabaseAdmin
-      .from("coach_athletes")
-      .upsert(linkRows, { onConflict: "coach_id,athlete_id", ignoreDuplicates: true });
-    if (linksIns.error) dbError(linksIns.error);
-
-    if (coachSports.length === 0) return { ok: true, athletes: athleteIds.length, sports: 0 };
-
-    // 2. coach_athlete_sports for each (athlete, sport)
-    const scopeRows = athleteIds.flatMap((athlete_id) =>
-      coachSports.map((sport) => ({ athlete_id, coach_id: coachId, sport })),
-    );
-    const scopeIns = await supabaseAdmin
-      .from("coach_athlete_sports")
-      .upsert(scopeRows, { onConflict: "athlete_id,coach_id,sport", ignoreDuplicates: true });
-    if (scopeIns.error) dbError(scopeIns.error);
-
-    // 3. Fill coach_id on pending parent-owned goals/slots that match a
-    //    sport this coach offers.
-    const goalsUpd = await supabaseAdmin
-      .from("athlete_goals")
-      .update({ coach_id: coachId })
-      .in("athlete_id", athleteIds)
-      .in("sport", coachSports)
-      .is("coach_id", null);
-    if (goalsUpd.error) dbError(goalsUpd.error);
-
-    const slotsUpd = await supabaseAdmin
-      .from("athlete_lesson_slots")
-      .update({ coach_id: coachId })
-      .in("athlete_id", athleteIds)
-      .is("coach_id", null);
-    if (slotsUpd.error) dbError(slotsUpd.error);
-
-    // 4. athlete_primary_coaches — set missing (athlete, sport) → coach.
-    const primaryRows = athleteIds.flatMap((athlete_id) =>
-      coachSports.map((sport) => ({ athlete_id, sport, coach_id: coachId })),
-    );
-    const primaryIns = await supabaseAdmin
-      .from("athlete_primary_coaches")
-      .upsert(primaryRows, { onConflict: "athlete_id,sport", ignoreDuplicates: true });
-    if (primaryIns.error) dbError(primaryIns.error);
-
-    return { ok: true, athletes: athleteIds.length, sports: coachSports.length };
+    return claimParentInviteShared({ userId: context.userId, admin: supabaseAdmin }, data);
   });

@@ -1,8 +1,16 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/integrations/supabase/types";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { createStripeClient, getStripeErrorMessage, type StripeEnv } from "@/lib/stripe.server";
 import { dbError } from "./db-error";
+import {
+  applyPromoCodeToMyProfile as applyPromoCodeToMyProfileShared,
+  validatePromoCode as validatePromoCodeShared,
+} from "./promo.server";
+
+type Client = SupabaseClient<Database>;
 
 const codeSchema = z
   .string()
@@ -20,78 +28,29 @@ async function assertAdmin(context: { userId: string; supabase: any }) {
 }
 
 /** Validate a code (any signed-in user). Returns { valid, label, percentOff }. */
+/*
+ * Member-facing promo functions are thin wrappers over
+ * src/lib/promo.server.ts, shared with `POST /api/v1/promo-codes/validate`
+ * and `POST /api/v1/me/promo-code`.
+ */
 export const validatePromoCode = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ code: codeSchema }).parse(input))
-  .handler(async ({ data, context }) => {
-    const { data: row, error } = await context.supabase
-      .from("promo_codes")
-      .select("code, label, active, percent_off, duration, duration_in_months")
-      .eq("code", data.code)
-      .maybeSingle();
-    if (error) dbError(error);
-    if (!row || !row.active)
-      return {
-        valid: false as const,
-        label: null,
-        percentOff: 0,
-        duration: "forever" as const,
-        durationInMonths: null,
-      };
-    return {
-      valid: true as const,
-      label: row.label as string,
-      percentOff: (row.percent_off as number | null) ?? 0,
-      duration: ((row.duration as string | null) ?? "forever") as "forever" | "repeating",
-      durationInMonths: (row.duration_in_months as number | null) ?? null,
-    };
-  });
+  .handler(async ({ data, context }) =>
+    validatePromoCodeShared({ supabase: context.supabase as Client }, data.code),
+  );
 
-/**
- * Apply a promo code to the current user's profile rows (parent/coach/athlete).
- * Silently no-ops if the code is missing/inactive or the user has no matching
- * profile row yet. Safe to call after any signup flow completes.
- */
 export const applyPromoCodeToMyProfile = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ code: codeSchema.optional() }).parse(input ?? {}))
   .handler(async ({ data, context }) => {
-    if (!data.code) return { applied: false as const };
-
-    const { data: row, error: lookupErr } = await context.supabase
-      .from("promo_codes")
-      .select("code, active")
-      .eq("code", data.code)
-      .maybeSingle();
-    if (lookupErr) dbError(lookupErr);
-    if (!row || !row.active) return { applied: false as const };
-
-    const userId = context.userId;
-    // promo_code is DB-locked to trusted writers on profile tables.
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const [p, c, a] = await Promise.all([
-      supabaseAdmin
-        .from("parent_profiles")
-        .update({ promo_code: row.code })
-        .eq("user_id", userId)
-        .is("promo_code", null),
-      supabaseAdmin
-        .from("coach_profiles")
-        .update({ promo_code: row.code })
-        .eq("user_id", userId)
-        .is("promo_code", null),
-      context.supabase
-        .from("athletes")
-        .update({ promo_code: row.code })
-        .eq("user_id", userId)
-        .is("promo_code", null),
-    ]);
-    // Ignore individual errors — user may only own one of these rows.
-    const targets = [p, c, a].filter((r) => !r.error).length;
-    return { applied: targets > 0 };
+    return applyPromoCodeToMyProfileShared(
+      { userId: context.userId, supabase: context.supabase as Client, admin: supabaseAdmin },
+      data.code,
+    );
   });
 
-/** Admin: list all promo codes. */
 export const listPromoCodes = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {

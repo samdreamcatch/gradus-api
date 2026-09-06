@@ -96,7 +96,7 @@ export function ifNoneMatchMatches(header: string | null, etag: string): boolean
   });
 }
 
-function getClientIp(request: Request): string | null {
+export function getClientIp(request: Request): string | null {
   return (
     request.headers.get("cf-connecting-ip") ??
     request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
