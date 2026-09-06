@@ -128,6 +128,7 @@ import { Route as AuthenticatedAdminEmailsNameRouteImport } from './routes/_auth
 import { Route as ApiV1PublicBoardsIndexRouteImport } from './routes/api/v1/public/boards/index'
 import { Route as ApiV1PublicBoardsSlugRouteImport } from './routes/api/v1/public/boards/$slug'
 import { Route as ApiV1MeTermsAcceptRouteImport } from './routes/api/v1/me/terms_.accept'
+import { Route as ApiV1CompetitionsIdAttendanceRouteImport } from './routes/api/v1/competitions/$id/attendance'
 import { Route as ApiV1AuthUsernameResolveRouteImport } from './routes/api/v1/auth/username/resolve'
 import { Route as ApiV1AuthUsernameCheckRouteImport } from './routes/api/v1/auth/username/check'
 import { Route as ApiV1AuthSignupCoachRouteImport } from './routes/api/v1/auth/signup/coach'
@@ -792,6 +793,12 @@ const ApiV1MeTermsAcceptRoute = ApiV1MeTermsAcceptRouteImport.update({
   path: '/api/v1/me/terms/accept',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiV1CompetitionsIdAttendanceRoute =
+  ApiV1CompetitionsIdAttendanceRouteImport.update({
+    id: '/api/v1/competitions/$id/attendance',
+    path: '/api/v1/competitions/$id/attendance',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiV1AuthUsernameResolveRoute =
   ApiV1AuthUsernameResolveRouteImport.update({
     id: '/api/v1/auth/username/resolve',
@@ -940,6 +947,7 @@ export interface FileRoutesByFullPath {
   '/api/v1/auth/signup/coach': typeof ApiV1AuthSignupCoachRoute
   '/api/v1/auth/username/check': typeof ApiV1AuthUsernameCheckRoute
   '/api/v1/auth/username/resolve': typeof ApiV1AuthUsernameResolveRoute
+  '/api/v1/competitions/$id/attendance': typeof ApiV1CompetitionsIdAttendanceRoute
   '/api/v1/me/terms/accept': typeof ApiV1MeTermsAcceptRoute
   '/api/v1/public/boards/$slug': typeof ApiV1PublicBoardsSlugRoute
   '/api/v1/public/boards/': typeof ApiV1PublicBoardsIndexRoute
@@ -1059,6 +1067,7 @@ export interface FileRoutesByTo {
   '/api/v1/auth/signup/coach': typeof ApiV1AuthSignupCoachRoute
   '/api/v1/auth/username/check': typeof ApiV1AuthUsernameCheckRoute
   '/api/v1/auth/username/resolve': typeof ApiV1AuthUsernameResolveRoute
+  '/api/v1/competitions/$id/attendance': typeof ApiV1CompetitionsIdAttendanceRoute
   '/api/v1/me/terms/accept': typeof ApiV1MeTermsAcceptRoute
   '/api/v1/public/boards/$slug': typeof ApiV1PublicBoardsSlugRoute
   '/api/v1/public/boards': typeof ApiV1PublicBoardsIndexRoute
@@ -1186,6 +1195,7 @@ export interface FileRoutesById {
   '/api/v1/auth/signup/coach': typeof ApiV1AuthSignupCoachRoute
   '/api/v1/auth/username/check': typeof ApiV1AuthUsernameCheckRoute
   '/api/v1/auth/username/resolve': typeof ApiV1AuthUsernameResolveRoute
+  '/api/v1/competitions/$id/attendance': typeof ApiV1CompetitionsIdAttendanceRoute
   '/api/v1/me/terms_/accept': typeof ApiV1MeTermsAcceptRoute
   '/api/v1/public/boards/$slug': typeof ApiV1PublicBoardsSlugRoute
   '/api/v1/public/boards/': typeof ApiV1PublicBoardsIndexRoute
@@ -1313,6 +1323,7 @@ export interface FileRouteTypes {
     | '/api/v1/auth/signup/coach'
     | '/api/v1/auth/username/check'
     | '/api/v1/auth/username/resolve'
+    | '/api/v1/competitions/$id/attendance'
     | '/api/v1/me/terms/accept'
     | '/api/v1/public/boards/$slug'
     | '/api/v1/public/boards/'
@@ -1432,6 +1443,7 @@ export interface FileRouteTypes {
     | '/api/v1/auth/signup/coach'
     | '/api/v1/auth/username/check'
     | '/api/v1/auth/username/resolve'
+    | '/api/v1/competitions/$id/attendance'
     | '/api/v1/me/terms/accept'
     | '/api/v1/public/boards/$slug'
     | '/api/v1/public/boards'
@@ -1558,6 +1570,7 @@ export interface FileRouteTypes {
     | '/api/v1/auth/signup/coach'
     | '/api/v1/auth/username/check'
     | '/api/v1/auth/username/resolve'
+    | '/api/v1/competitions/$id/attendance'
     | '/api/v1/me/terms_/accept'
     | '/api/v1/public/boards/$slug'
     | '/api/v1/public/boards/'
@@ -1609,6 +1622,7 @@ export interface RootRouteChildren {
   ApiV1AuthSignupCoachRoute: typeof ApiV1AuthSignupCoachRoute
   ApiV1AuthUsernameCheckRoute: typeof ApiV1AuthUsernameCheckRoute
   ApiV1AuthUsernameResolveRoute: typeof ApiV1AuthUsernameResolveRoute
+  ApiV1CompetitionsIdAttendanceRoute: typeof ApiV1CompetitionsIdAttendanceRoute
   ApiV1MeTermsAcceptRoute: typeof ApiV1MeTermsAcceptRoute
   ApiV1PublicBoardsSlugRoute: typeof ApiV1PublicBoardsSlugRoute
   ApiV1PublicBoardsIndexRoute: typeof ApiV1PublicBoardsIndexRoute
@@ -2451,6 +2465,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1MeTermsAcceptRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/v1/competitions/$id/attendance': {
+      id: '/api/v1/competitions/$id/attendance'
+      path: '/api/v1/competitions/$id/attendance'
+      fullPath: '/api/v1/competitions/$id/attendance'
+      preLoaderRoute: typeof ApiV1CompetitionsIdAttendanceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/v1/auth/username/resolve': {
       id: '/api/v1/auth/username/resolve'
       path: '/api/v1/auth/username/resolve'
@@ -2795,6 +2816,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiV1AuthSignupCoachRoute: ApiV1AuthSignupCoachRoute,
   ApiV1AuthUsernameCheckRoute: ApiV1AuthUsernameCheckRoute,
   ApiV1AuthUsernameResolveRoute: ApiV1AuthUsernameResolveRoute,
+  ApiV1CompetitionsIdAttendanceRoute: ApiV1CompetitionsIdAttendanceRoute,
   ApiV1MeTermsAcceptRoute: ApiV1MeTermsAcceptRoute,
   ApiV1PublicBoardsSlugRoute: ApiV1PublicBoardsSlugRoute,
   ApiV1PublicBoardsIndexRoute: ApiV1PublicBoardsIndexRoute,

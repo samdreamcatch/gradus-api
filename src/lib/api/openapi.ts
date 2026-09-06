@@ -41,6 +41,8 @@ export interface RegisterRouteOptions {
   output: ZodType;
   /** Defaults to `deriveOperationId(method, path)`. */
   operationId?: string;
+  /** Conditional GET: declares `If-None-Match`, the `ETag` header, and the 304 response. */
+  etag?: boolean;
 }
 
 /**
@@ -99,6 +101,12 @@ export function registerApiRoute(route: RegisterRouteOptions): void {
   }
   registeredOperationIds.set(operationId, routeKey);
 
+  const etagHeader = z.object({
+    ETag: z.string().openapi({
+      description: "Weak validator for this response; send it back as If-None-Match.",
+    }),
+  });
+
   apiRegistry.registerPath({
     method: route.method,
     path: route.path,
@@ -107,13 +115,29 @@ export function registerApiRoute(route: RegisterRouteOptions): void {
     security: route.auth === "user" ? [{ bearerAuth: [] }] : [],
     request: {
       params: pathParamsSchema(route.path),
+      headers: route.etag
+        ? z.object({
+            "If-None-Match": z.string().optional().openapi({
+              description: "The ETag of the copy the client holds; a match answers 304.",
+            }),
+          })
+        : undefined,
       body: route.input ? { content: { "application/json": { schema: route.input } } } : undefined,
     },
     responses: {
       200: {
         description: "OK",
+        headers: route.etag ? etagHeader : undefined,
         content: { "application/json": { schema: route.output } },
       },
+      ...(route.etag
+        ? {
+            304: {
+              description: "Not Modified: unchanged since the ETag sent in If-None-Match.",
+              headers: etagHeader,
+            },
+          }
+        : {}),
       default: {
         description: "Error",
         content: { "application/json": { schema: errorSchema } },

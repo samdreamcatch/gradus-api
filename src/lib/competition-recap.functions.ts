@@ -2,15 +2,18 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { dbError } from "./db-error";
+import {
+  athletesInBoardSport as athletesInBoardSportFor,
+  loadBoardViewer,
+  recordAttendance,
+  type BoardViewer,
+} from "./competitions.server";
 
 /**
  * End-of-competition recap. A signed-in parent or athlete who opens a live
  * board at a competition is asked, once it finishes, how it went. The answer
  * is stored on the athlete's record and sent to their coach as a message.
  */
-
-/** Live boards are figure skating only, so attendance resolves in that sport. */
-const BOARD_SPORT = "figure_skating";
 
 /** How long we keep asking after a competition wraps. */
 const ASK_WINDOW_DAYS = 7;
@@ -44,76 +47,18 @@ async function getAdmin(): Promise<{ from: (t: string) => any }> {
   return m.supabaseAdmin as unknown as { from: (t: string) => any };
 }
 
-type Viewer =
-  | { role: "parent"; parentId: string; name: string }
-  | { role: "athlete"; athleteId: string; name: string }
-  | null;
+type Viewer = BoardViewer;
 
-/** Which kind of account is asking, and under which profile row. */
+/** Which kind of account is asking, and under which profile row (shared logic in competitions.server.ts). */
 async function loadViewer(userId: string): Promise<Viewer> {
-  const admin = await getAdmin();
-  const [parent, athlete] = await Promise.all([
-    admin.from("parent_profiles").select("id, first_name, last_name").eq("user_id", userId).maybeSingle(),
-    admin.from("athletes").select("id, first_name, last_name").eq("user_id", userId).maybeSingle(),
-  ]);
-  if (parent.error) dbError(parent.error);
-  if (athlete.error) dbError(athlete.error);
-  if (parent.data) {
-    return {
-      role: "parent",
-      parentId: parent.data.id as string,
-      name: `${parent.data.first_name ?? ""} ${parent.data.last_name ?? ""}`.trim() || "Parent",
-    };
-  }
-  if (athlete.data) {
-    return {
-      role: "athlete",
-      athleteId: athlete.data.id as string,
-      name: `${athlete.data.first_name ?? ""} ${athlete.data.last_name ?? ""}`.trim() || "Athlete",
-    };
-  }
-  return null;
+  return loadBoardViewer(await getAdmin(), userId);
 }
 
-/** Athletes the viewer may write about, narrowed to the board's sport. */
+/** Athletes the viewer may write about, narrowed to the board's sport (shared logic in competitions.server.ts). */
 async function athletesInBoardSport(
   viewer: NonNullable<Viewer>,
 ): Promise<{ id: string; name: string }[]> {
-  const admin = await getAdmin();
-
-  let ids: string[] = [];
-  if (viewer.role === "athlete") {
-    ids = [viewer.athleteId];
-  } else {
-    const [owned, guarded] = await Promise.all([
-      admin.from("athletes").select("id").eq("parent_id", viewer.parentId),
-      admin.from("athlete_guardians").select("athlete_id").eq("parent_id", viewer.parentId),
-    ]);
-    if (owned.error) dbError(owned.error);
-    if (guarded.error) dbError(guarded.error);
-    ids = [
-      ...new Set([
-        ...(owned.data ?? []).map((r: any) => r.id as string),
-        ...(guarded.data ?? []).map((r: any) => r.athlete_id as string),
-      ]),
-    ];
-  }
-  if (ids.length === 0) return [];
-
-  const [rows, sports] = await Promise.all([
-    admin.from("athletes").select("id, first_name, last_name").in("id", ids),
-    admin.from("coach_athlete_sports").select("athlete_id").in("athlete_id", ids).eq("sport", BOARD_SPORT),
-  ]);
-  if (rows.error) dbError(rows.error);
-  if (sports.error) dbError(sports.error);
-
-  const inSport = new Set((sports.data ?? []).map((r: any) => r.athlete_id as string));
-  // A single athlete with no sport rows yet is still the obvious subject.
-  const keep = (rows.data ?? []).filter((r: any) => inSport.has(r.id) || inSport.size === 0);
-  return keep.map((r: any) => ({
-    id: r.id as string,
-    name: `${r.first_name ?? ""} ${r.last_name ?? ""}`.trim(),
-  }));
+  return athletesInBoardSportFor(await getAdmin(), viewer);
 }
 
 /** The viewer must be able to write about this athlete before anything lands. */
@@ -143,56 +88,14 @@ async function assertCanWriteAthlete(viewer: NonNullable<Viewer>, athleteId: str
 
 /* ----------------------------------------------------------- attendance */
 
+/** Thin wrapper over the shared `recordAttendance` (src/lib/competitions.server.ts). */
 export const recordCompetitionAttendance = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
     z.object({ slug: z.string().min(1).max(120) }).parse(input),
   )
   .handler(async ({ data, context }) => {
-    const viewer = await loadViewer(context.userId);
-
-    const admin = await getAdmin();
-
-    // A coach at the board isn't asked for a recap, but their attendance is
-    // the trigger for the post-event "did any of your athletes compete?" flow.
-    let isCoach = false;
-    if (!viewer) {
-      const coach = await admin
-        .from("coach_profiles")
-        .select("id")
-        .eq("user_id", context.userId)
-        .maybeSingle();
-      if (coach.error) dbError(coach.error);
-      if (!coach.data) return { ok: false as const };
-      isCoach = true;
-    }
-
-    const comp = await admin
-      .from("competitions")
-      .select("id")
-      .eq("slug", data.slug)
-      .maybeSingle();
-    if (comp.error) dbError(comp.error);
-    if (!comp.data) return { ok: false as const };
-
-    const existing = await admin
-      .from("competition_attendance")
-      .select("id, athlete_id")
-      .eq("user_id", context.userId)
-      .eq("competition_id", comp.data.id)
-      .maybeSingle();
-    if (existing.error) dbError(existing.error);
-    if (existing.data) return { ok: true as const };
-
-    const candidates = viewer ? await athletesInBoardSport(viewer) : [];
-    const { error } = await admin.from("competition_attendance").insert({
-      user_id: context.userId,
-      competition_id: comp.data.id,
-      athlete_id: candidates.length === 1 ? candidates[0].id : null,
-      viewer_role: isCoach ? "coach" : viewer!.role,
-    });
-    if (error) dbError(error);
-    return { ok: true as const };
+    return recordAttendance(await getAdmin(), context.userId, { slug: data.slug });
   });
 
 

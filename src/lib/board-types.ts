@@ -131,6 +131,8 @@ export interface BoardPayload {
 
 export interface BoardResponse {
   slug: string;
+  /** The competition row's id, for `POST /competitions/{id}/attendance`. Absent for the built-in demo. */
+  competitionId?: string;
   name: string;
   datesLabel: string;
   location: string;
