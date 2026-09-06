@@ -3,6 +3,7 @@ import { doubleMetaphone } from "double-metaphone";
 import { generateText, Output } from "ai";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
+import { ApiError } from "./api/errors";
 import { dbError } from "./db-error";
 import { createLovableAiGatewayProvider } from "./ai-gateway.server";
 import type { FieldSource, VoicePlanDraft, VoiceSources, VoiceTouched } from "./voice-types";
@@ -19,11 +20,35 @@ export async function getCoachId(supabase: Client, userId: string): Promise<stri
     .eq("user_id", userId)
     .maybeSingle();
   if (error) dbError(error);
-  if (!data) throw new Error("Coach profile not found");
+  if (!data) {
+    throw new ApiError({ code: "unprocessable", status: 422, message: "Coach profile not found" });
+  }
   return data.id;
 }
 
 /* ---------------- Transcription (ElevenLabs Scribe) ---------------- */
+
+/**
+ * The upload's filename, from its MIME type: browsers record WebM/Opus and
+ * iOS records M4A/AAC (PRD §6.7), and the transcription service reads the
+ * container from the name. Unknown or empty types keep the historical name.
+ */
+const AUDIO_FILENAMES: Record<string, string> = {
+  "audio/mp4": "voice.m4a",
+  "audio/x-m4a": "voice.m4a",
+  "audio/m4a": "voice.m4a",
+  "audio/aac": "voice.aac",
+  "audio/mpeg": "voice.mp3",
+  "audio/wav": "voice.wav",
+  "audio/x-wav": "voice.wav",
+  "audio/ogg": "voice.ogg",
+  "audio/webm": "voice.webm",
+};
+
+export function audioFilename(audio: Blob): string {
+  const type = (audio.type || "").split(";")[0].trim().toLowerCase();
+  return AUDIO_FILENAMES[type] ?? "voice.webm";
+}
 
 export async function transcribeWithElevenLabs(
   audio: Blob,
@@ -33,7 +58,7 @@ export async function transcribeWithElevenLabs(
   if (!apiKey) throw new Error("Voice service not configured");
 
   const form = new FormData();
-  form.append("file", audio, "voice.webm");
+  form.append("file", audio, audioFilename(audio));
   form.append("model_id", "scribe_v2");
   form.append("language_code", "eng");
   form.append("tag_audio_events", "false");
@@ -846,4 +871,140 @@ export async function applyDraft(
     appliedMoveCount,
     aiFailed: Boolean(draft.aiFailed),
   };
+}
+
+/* ---------------- Shared entry points (voice.functions.ts and /api/v1/voice) ---------------- */
+
+export type VoiceContext = { userId: string; supabase: Client };
+
+export function assertAudioSize(audio: Blob): void {
+  if (audio.size > MAX_AUDIO_BYTES) {
+    throw new ApiError({
+      code: "payload_too_large",
+      status: 413,
+      message: "Recording too long — please keep voice notes under 3 minutes",
+    });
+  }
+}
+
+/** The transcription service's own failures become 503 `voice_unavailable`, message intact. */
+async function transcribeOrFail(audio: Blob, vocabularyHints?: string[]): Promise<string> {
+  try {
+    return await transcribeWithElevenLabs(audio, vocabularyHints);
+  } catch (err) {
+    if (err instanceof ApiError) throw err;
+    throw new ApiError({
+      code: "voice_unavailable",
+      status: 503,
+      message: err instanceof Error ? err.message : "Couldn't transcribe that — please try again",
+    });
+  }
+}
+
+const didntCatchThat = () =>
+  new ApiError({ code: "unprocessable", status: 422, message: "Didn't catch that — try again" });
+
+/** `voiceTranscribe`: speech to text only (PRD §7.4 voice notes and dictation). */
+export async function transcribeAudio(audio: Blob): Promise<{ text: string }> {
+  assertAudioSize(audio);
+  const transcript = await transcribeOrFail(audio);
+  if (!transcript || transcript.length < 1) throw didntCatchThat();
+  return { text: transcript };
+}
+
+export interface VoiceBuildData {
+  audio: Blob;
+  mode: "create" | "edit";
+  planId?: string;
+}
+
+/**
+ * `voiceBuildPlan`: transcribe with the coach's move names as vocabulary
+ * hints, parse into a plan draft (create) or edits to the open plan (edit),
+ * and apply it. The transcript is kept on the plan even when the AI step
+ * fails (`aiFailed`).
+ */
+export async function buildPlanFromVoice(
+  ctx: VoiceContext,
+  data: VoiceBuildData,
+): Promise<ApplyResult> {
+  assertAudioSize(data.audio);
+  const supabase = ctx.supabase;
+  const coachId = await getCoachId(supabase, ctx.userId);
+
+  const { data: libRows } = await supabase
+    .from("moves")
+    .select("id, name, category, description, cue, why, default_target_kind, default_target_value")
+    .eq("coach_id", coachId)
+    .is("archived_at", null);
+
+  const library: LibraryMove[] = (libRows ?? []).map((r) => ({
+    id: r.id as string,
+    name: r.name as string,
+    category: r.category as string,
+    description: (r.description as string) ?? "",
+    cue: (r.cue as string) ?? "",
+    why: (r.why as string) ?? "",
+    defaultTargetKind: (r.default_target_kind as "reps" | "mins") ?? "reps",
+    defaultTargetValue: Number(r.default_target_value ?? 10),
+  }));
+
+  const [transcript, { data: rosterRows }] = await Promise.all([
+    transcribeOrFail(
+      data.audio,
+      library.map((m) => m.name),
+    ),
+    supabase
+      .from("coach_athletes")
+      .select("athlete_id, athletes!inner(id, first_name, last_name)")
+      .eq("coach_id", coachId),
+  ]);
+  if (!transcript || transcript.length < 2) throw didntCatchThat();
+
+  const athletes = (rosterRows ?? []).map((row) => {
+    const a = (
+      row as unknown as {
+        athletes: { id: string; first_name: string; last_name: string };
+      }
+    ).athletes;
+    return { id: a.id, name: `${a.first_name} ${a.last_name}`.trim() };
+  });
+
+  let currentPlan: ParseContext["currentPlan"];
+  if (data.mode === "edit" && data.planId) {
+    const { data: plan, error } = await supabase
+      .from("plans")
+      .select("title, notes, athlete_id")
+      .eq("id", data.planId)
+      .eq("coach_id", coachId)
+      .maybeSingle();
+    if (error) dbError(error);
+    if (!plan) throw new ApiError({ code: "not_found", status: 404, message: "Plan not found" });
+    const { data: pm } = await supabase
+      .from("plan_moves")
+      .select("id, name, target_kind, target_value")
+      .eq("plan_id", data.planId)
+      .order("position", { ascending: true });
+    currentPlan = {
+      title: plan.title,
+      athleteId: plan.athlete_id,
+      notes: plan.notes,
+      moves: (pm ?? []).map((m) => ({
+        id: m.id as string,
+        name: m.name as string,
+        targetKind: m.target_kind as string,
+        targetValue: Number(m.target_value),
+      })),
+    };
+  }
+
+  const draft = await buildDraft({
+    mode: data.mode,
+    transcript,
+    athletes,
+    library,
+    currentPlan,
+  });
+
+  return applyDraft(supabase, coachId, data.mode, data.planId, draft, transcript);
 }

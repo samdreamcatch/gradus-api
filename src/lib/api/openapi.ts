@@ -45,6 +45,30 @@ export interface RegisterRouteOptions {
   operationId?: string;
   /** Conditional GET: declares `If-None-Match`, the `ETag` header, and the 304 response. */
   etag?: boolean;
+  /** Request body encoding; `"multipart"` declares `multipart/form-data` (file parts use `binaryPart`). */
+  body?: "json" | "multipart";
+}
+
+/**
+ * A file part of a `multipart/form-data` body: validated as a `Blob` at
+ * runtime and declared as a binary string in OpenAPI, so the generated Swift
+ * client sends it as a multipart file part.
+ */
+export const binaryPart = z
+  .custom<Blob>((value) => value instanceof Blob, "Expected a file")
+  .openapi({ type: "string", format: "binary" });
+
+/**
+ * `z.custom` sits on `ZodAny`, which the generator reads as optional; a file
+ * part declared with `binaryPart` is required unless wrapped in `.optional()`,
+ * so multipart object schemas get their `required` list computed here.
+ */
+function withMultipartRequired(schema: ZodType): ZodType {
+  if (!(schema instanceof z.ZodObject)) return schema;
+  const required = Object.entries(schema.shape as Record<string, ZodType>)
+    .filter(([, field]) => field === binaryPart || !field.isOptional())
+    .map(([name]) => name);
+  return required.length ? schema.openapi({ required }) : schema;
 }
 
 /**
@@ -125,7 +149,16 @@ export function registerApiRoute(route: RegisterRouteOptions): void {
             }),
           })
         : undefined,
-      body: route.input ? { content: { "application/json": { schema: route.input } } } : undefined,
+      body: route.input
+        ? {
+            content: {
+              [route.body === "multipart" ? "multipart/form-data" : "application/json"]: {
+                schema:
+                  route.body === "multipart" ? withMultipartRequired(route.input) : route.input,
+              },
+            },
+          }
+        : undefined,
     },
     responses: {
       200: {

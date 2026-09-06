@@ -38,6 +38,13 @@ export interface DefineApiRouteOptions<TInput, TOutput, TQuery = undefined> {
   /** Query-string schema (GET routes); parsed from `?a=b` and declared in OpenAPI. */
   query?: ZodType<TQuery, ZodTypeDef, unknown>;
   output: ZodType<TOutput>;
+  /**
+   * Request body encoding. `"json"` (default) parses the body as JSON;
+   * `"multipart"` reads `multipart/form-data` and hands `input` the fields as
+   * a plain object — text parts as strings, file parts as `Blob`s — for the
+   * voice uploads (PRD §6.7). Declared as `multipart/form-data` in OpenAPI.
+   */
+  body?: "json" | "multipart";
   /** When true, honors the `Idempotency-Key` header. Requires `auth: "user"`. */
   idempotent?: boolean;
   rateLimit?: RateLimitConfig;
@@ -158,7 +165,21 @@ export function createApiRouteHandler<TInput, TOutput, TQuery = undefined>(
       }
 
       let rawBody: unknown;
-      if (options.input) {
+      if (options.input && options.body === "multipart") {
+        let form: FormData;
+        try {
+          form = await request.formData();
+        } catch {
+          throw new ApiError({
+            code: "validation_failed",
+            status: 400,
+            message: "Request body is not valid multipart form data.",
+          });
+        }
+        const fields: Record<string, unknown> = {};
+        for (const [key, value] of form.entries()) fields[key] = value;
+        rawBody = fields;
+      } else if (options.input) {
         const text = await request.text();
         if (text) {
           try {
@@ -235,6 +256,7 @@ export function defineApiRoute<TInput, TOutput, TQuery = undefined>(
     query: options.query,
     output: options.output,
     etag: !!options.etag,
+    body: options.body,
   });
 
   return createApiRouteHandler(options);

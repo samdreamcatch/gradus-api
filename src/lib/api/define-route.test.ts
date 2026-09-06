@@ -384,16 +384,78 @@ describe("query strings", () => {
       },
       { admin: createFakeAdmin(), authenticate: async () => null },
     );
-    const ok = await GET!({ request: new Request("https://gradus.training/api/v1/test?limit=5&cursor=abc") });
+    const ok = await GET!({
+      request: new Request("https://gradus.training/api/v1/test?limit=5&cursor=abc"),
+    });
     expect(ok.status).toBe(200);
     expect(await ok.json()).toEqual({ limit: 5, cursor: "abc" });
 
     const defaults = await GET!({ request: new Request("https://gradus.training/api/v1/test") });
     expect(await defaults.json()).toEqual({ limit: 50, cursor: null });
 
-    const bad = await GET!({ request: new Request("https://gradus.training/api/v1/test?limit=999") });
+    const bad = await GET!({
+      request: new Request("https://gradus.training/api/v1/test?limit=999"),
+    });
     expect(bad.status).toBe(400);
     expect((await bad.json()).error.code).toBe("validation_failed");
   });
 });
 
+describe("multipart bodies", () => {
+  it("hands the handler the form fields, files as Blobs", async () => {
+    process.env.API_V1_ENABLED = "true";
+    const { POST } = createApiRouteHandler(
+      {
+        method: "POST",
+        path: "/api/v1/test",
+        auth: "public",
+        body: "multipart",
+        input: z.object({
+          audio: z.custom<Blob>((v) => v instanceof Blob),
+          mode: z.enum(["create", "edit"]),
+        }),
+        output: z.object({ mode: z.string(), bytes: z.number(), type: z.string() }),
+        handler: async ({ input }) => ({
+          mode: input.mode,
+          bytes: input.audio.size,
+          type: input.audio.type,
+        }),
+      },
+      { admin: createFakeAdmin(), authenticate: async () => null },
+    );
+    const form = new FormData();
+    form.append("audio", new Blob([new Uint8Array(1234)], { type: "audio/mp4" }), "voice.m4a");
+    form.append("mode", "create");
+    const response = await POST!({ request: makeRequest({ method: "POST", body: form }) });
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    // Bun derives the part's type from the filename (audio/x-m4a); browsers keep audio/mp4.
+    expect(body).toMatchObject({ mode: "create", bytes: 1234 });
+    expect(body.type).toMatch(/^audio\//);
+  });
+
+  it("a JSON body on a multipart route is 400 validation_failed", async () => {
+    process.env.API_V1_ENABLED = "true";
+    const { POST } = createApiRouteHandler(
+      {
+        method: "POST",
+        path: "/api/v1/test",
+        auth: "public",
+        body: "multipart",
+        input: z.object({ mode: z.string() }),
+        output: z.object({ ok: z.boolean() }),
+        handler: async () => ({ ok: true }),
+      },
+      { admin: createFakeAdmin(), authenticate: async () => null },
+    );
+    const response = await POST!({
+      request: makeRequest({
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ mode: "create" }),
+      }),
+    });
+    expect(response.status).toBe(400);
+    expect((await response.json()).error.code).toBe("validation_failed");
+  });
+});

@@ -69,6 +69,16 @@ export class ApiError extends Error {
   }
 }
 
+/**
+ * For `createServerFn` wrappers over shared server modules: the web keeps
+ * its original plain `Error` messages (its UI matches on them), while the
+ * API gets the coded `ApiError`. Rethrows anything else untouched.
+ */
+export function rethrowPlain(err: unknown): never {
+  if (err instanceof ApiError) throw new Error(err.message);
+  throw err;
+}
+
 /** Serializes an ApiError into the PRD §6.2 JSON error shape. */
 export function toResponse(error: ApiError): Response {
   const headers = new Headers();

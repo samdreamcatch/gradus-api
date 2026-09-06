@@ -1,8 +1,8 @@
-import {
-  STARTER_PROGRAMS,
-  resolveStarterPrograms,
-  starterMoveCopy,
-} from "@/data/starter-programs";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/integrations/supabase/types";
+import { ApiError } from "./api/errors";
+import { dbError } from "./db-error";
+import { STARTER_PROGRAMS, resolveStarterPrograms, starterMoveCopy } from "@/data/starter-programs";
 
 /** Every title this sport could ever produce, used for the "already has one" check. */
 function titlesForSport(sport: string): Set<string> {
@@ -133,4 +133,65 @@ export async function ensureStarterProgramsForAthlete(athleteId: string): Promis
   } catch {
     // never block the caller
   }
+}
+
+/**
+ * A coach adopts a Gradus starter plan for one of their rostered athletes
+ * (PRD §7.3 "Starter programs"). Ownership transfers to the coach and the
+ * plan becomes an ordinary coach plan. Shared by starter-programs.functions.ts
+ * and `POST /api/v1/coach/starter-plans/{id}/adopt`.
+ */
+export async function adoptStarterPlan(
+  ctx: { userId: string; admin: SupabaseClient<Database> },
+  planId: string,
+): Promise<{ ok: true }> {
+  const coachRes = await ctx.admin
+    .from("coach_profiles")
+    .select("id")
+    .eq("user_id", ctx.userId)
+    .maybeSingle();
+  if (coachRes.error) dbError(coachRes.error);
+  const coachId = coachRes.data?.id;
+  if (!coachId) {
+    throw new ApiError({ code: "unprocessable", status: 422, message: "Coach profile not found" });
+  }
+
+  const planRes = await ctx.admin
+    .from("plans")
+    .select("id, athlete_id, source, coach_id")
+    .eq("id", planId)
+    .maybeSingle();
+  if (planRes.error) dbError(planRes.error);
+  const plan = planRes.data;
+  if (!plan || plan.source !== "gradus" || plan.coach_id || !plan.athlete_id) {
+    throw new ApiError({
+      code: "unprocessable",
+      status: 422,
+      message: "Plan is not available to adopt",
+    });
+  }
+
+  const rosterRes = await ctx.admin
+    .from("coach_athletes")
+    .select("athlete_id")
+    .eq("coach_id", coachId)
+    .eq("athlete_id", plan.athlete_id)
+    .maybeSingle();
+  if (rosterRes.error) dbError(rosterRes.error);
+  if (!rosterRes.data) {
+    throw new ApiError({
+      code: "unprocessable",
+      status: 422,
+      message: "Athlete is not on your roster",
+    });
+  }
+
+  const upd = await ctx.admin
+    .from("plans")
+    .update({ coach_id: coachId, source: "coach" })
+    .eq("id", plan.id)
+    .eq("source", "gradus");
+  if (upd.error) dbError(upd.error);
+
+  return { ok: true };
 }
