@@ -1,0 +1,251 @@
+{
+  "description": "Every date a recurring lesson slot lands on inside an inclusive window. Weekly fires every matching weekday; biweekly every other one, phased from the first matching weekday on or after startsOn (no anchor: every week); twice_monthly and monthly fire on the listed 1-based ordinals of the weekday within the month (a 5th ordinal exists only in some months). Dates before startsOn are never returned; from > to returns nothing. Dates are calendar dates with no time zone.",
+  "source": "src/lib/lesson-recurrence.ts",
+  "cases": [
+    {
+      "name": "weekly: every Tuesday in a window that starts on a Sunday",
+      "input": {
+        "slot": {
+          "dayOfWeek": 2,
+          "frequency": "weekly",
+          "weeksOfMonth": [],
+          "startsOn": null
+        },
+        "from": "2026-09-06",
+        "to": "2026-10-04"
+      },
+      "expected": ["2026-09-08", "2026-09-15", "2026-09-22", "2026-09-29"]
+    },
+    {
+      "name": "weekly: the window starts on the matching weekday",
+      "input": {
+        "slot": {
+          "dayOfWeek": 1,
+          "frequency": "weekly",
+          "weeksOfMonth": [],
+          "startsOn": null
+        },
+        "from": "2026-09-07",
+        "to": "2026-09-21"
+      },
+      "expected": ["2026-09-07", "2026-09-14", "2026-09-21"]
+    },
+    {
+      "name": "weekly: startsOn floors the first occurrence",
+      "input": {
+        "slot": {
+          "dayOfWeek": 4,
+          "frequency": "weekly",
+          "weeksOfMonth": [],
+          "startsOn": "2026-09-18"
+        },
+        "from": "2026-09-01",
+        "to": "2026-10-01"
+      },
+      "expected": ["2026-09-24", "2026-10-01"]
+    },
+    {
+      "name": "weekly: startsOn after the window yields nothing",
+      "input": {
+        "slot": {
+          "dayOfWeek": 4,
+          "frequency": "weekly",
+          "weeksOfMonth": [],
+          "startsOn": "2026-11-01"
+        },
+        "from": "2026-09-01",
+        "to": "2026-10-01"
+      },
+      "expected": []
+    },
+    {
+      "name": "weekly: from after to yields nothing",
+      "input": {
+        "slot": {
+          "dayOfWeek": 0,
+          "frequency": "weekly",
+          "weeksOfMonth": [],
+          "startsOn": null
+        },
+        "from": "2026-09-20",
+        "to": "2026-09-10"
+      },
+      "expected": []
+    },
+    {
+      "name": "weekly: single-day window on the weekday",
+      "input": {
+        "slot": {
+          "dayOfWeek": 6,
+          "frequency": "weekly",
+          "weeksOfMonth": [],
+          "startsOn": null
+        },
+        "from": "2026-09-12",
+        "to": "2026-09-12"
+      },
+      "expected": ["2026-09-12"]
+    },
+    {
+      "name": "biweekly: anchored on a Monday, window starts on the anchor",
+      "input": {
+        "slot": {
+          "dayOfWeek": 1,
+          "frequency": "biweekly",
+          "weeksOfMonth": [],
+          "startsOn": "2026-09-07"
+        },
+        "from": "2026-09-07",
+        "to": "2026-11-02"
+      },
+      "expected": ["2026-09-07", "2026-09-21", "2026-10-05", "2026-10-19", "2026-11-02"]
+    },
+    {
+      "name": "biweekly: anchor on a different weekday than the slot (phase from the anchor's next Wednesday)",
+      "input": {
+        "slot": {
+          "dayOfWeek": 3,
+          "frequency": "biweekly",
+          "weeksOfMonth": [],
+          "startsOn": "2026-09-04"
+        },
+        "from": "2026-09-01",
+        "to": "2026-10-31"
+      },
+      "expected": ["2026-09-09", "2026-09-23", "2026-10-07", "2026-10-21"]
+    },
+    {
+      "name": "biweekly: window starts on an off week",
+      "input": {
+        "slot": {
+          "dayOfWeek": 1,
+          "frequency": "biweekly",
+          "weeksOfMonth": [],
+          "startsOn": "2026-09-07"
+        },
+        "from": "2026-09-14",
+        "to": "2026-10-12"
+      },
+      "expected": ["2026-09-21", "2026-10-05"]
+    },
+    {
+      "name": "biweekly: no anchor falls back to every matching week",
+      "input": {
+        "slot": {
+          "dayOfWeek": 5,
+          "frequency": "biweekly",
+          "weeksOfMonth": [],
+          "startsOn": null
+        },
+        "from": "2026-09-01",
+        "to": "2026-09-30"
+      },
+      "expected": ["2026-09-04", "2026-09-11", "2026-09-18", "2026-09-25"]
+    },
+    {
+      "name": "biweekly: across the DST end (first Sunday of November, US)",
+      "input": {
+        "slot": {
+          "dayOfWeek": 0,
+          "frequency": "biweekly",
+          "weeksOfMonth": [],
+          "startsOn": "2026-10-18"
+        },
+        "from": "2026-10-18",
+        "to": "2026-12-13"
+      },
+      "expected": ["2026-10-18", "2026-11-01", "2026-11-15", "2026-11-29", "2026-12-13"]
+    },
+    {
+      "name": "twice monthly: 1st and 3rd Thursdays",
+      "input": {
+        "slot": {
+          "dayOfWeek": 4,
+          "frequency": "twice_monthly",
+          "weeksOfMonth": [1, 3],
+          "startsOn": null
+        },
+        "from": "2026-09-01",
+        "to": "2026-11-30"
+      },
+      "expected": [
+        "2026-09-03",
+        "2026-09-17",
+        "2026-10-01",
+        "2026-10-15",
+        "2026-11-05",
+        "2026-11-19"
+      ]
+    },
+    {
+      "name": "twice monthly: 2nd and 4th Saturdays with a floor",
+      "input": {
+        "slot": {
+          "dayOfWeek": 6,
+          "frequency": "twice_monthly",
+          "weeksOfMonth": [2, 4],
+          "startsOn": "2026-09-15"
+        },
+        "from": "2026-09-01",
+        "to": "2026-10-31"
+      },
+      "expected": ["2026-09-26", "2026-10-10", "2026-10-24"]
+    },
+    {
+      "name": "monthly: 2nd Wednesday",
+      "input": {
+        "slot": {
+          "dayOfWeek": 3,
+          "frequency": "monthly",
+          "weeksOfMonth": [2],
+          "startsOn": null
+        },
+        "from": "2026-09-01",
+        "to": "2027-01-31"
+      },
+      "expected": ["2026-09-09", "2026-10-14", "2026-11-11", "2026-12-09", "2027-01-13"]
+    },
+    {
+      "name": "monthly: 5th Friday only in months that have one",
+      "input": {
+        "slot": {
+          "dayOfWeek": 5,
+          "frequency": "monthly",
+          "weeksOfMonth": [5],
+          "startsOn": null
+        },
+        "from": "2026-09-01",
+        "to": "2027-02-28"
+      },
+      "expected": ["2026-10-30", "2027-01-29"]
+    },
+    {
+      "name": "monthly: empty weeksOfMonth never fires",
+      "input": {
+        "slot": {
+          "dayOfWeek": 2,
+          "frequency": "monthly",
+          "weeksOfMonth": [],
+          "startsOn": null
+        },
+        "from": "2026-09-01",
+        "to": "2026-12-31"
+      },
+      "expected": []
+    },
+    {
+      "name": "weekly across a leap day",
+      "input": {
+        "slot": {
+          "dayOfWeek": 0,
+          "frequency": "weekly",
+          "weeksOfMonth": [],
+          "startsOn": null
+        },
+        "from": "2028-02-20",
+        "to": "2028-03-12"
+      },
+      "expected": ["2028-02-20", "2028-02-27", "2028-03-05", "2028-03-12"]
+    }
+  ]
+}
