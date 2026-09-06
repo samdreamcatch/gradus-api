@@ -151,6 +151,8 @@ export function registerApiRoute(route: RegisterRouteOptions): void {
         : undefined,
       body: route.input
         ? {
+            // swift-openapi-generator only generates multipart bodies that are required.
+            required: route.body === "multipart" ? true : undefined,
             content: {
               [route.body === "multipart" ? "multipart/form-data" : "application/json"]: {
                 schema:
