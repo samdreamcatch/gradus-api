@@ -72,6 +72,9 @@ export function buildSampleRosterAthlete(now: Date = new Date()): RosterAthlete 
         dayOfWeek: now.getDay(),
         startMinute,
         endMinute,
+        frequency: "weekly",
+        weeksOfMonth: [],
+        startsOn: null,
         overrides: [],
       },
     ],
@@ -149,7 +152,6 @@ export function buildSampleAthleteDetail(): CoachAthleteDetailDTO {
     otherCoaches: [],
     sharedCoachIds: [],
     coachVisibility: {},
-
   };
 }
 

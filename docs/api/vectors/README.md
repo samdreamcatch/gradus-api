@@ -20,11 +20,10 @@ top level. Keep the cases small and readable — they are documentation as
 much as tests. Regenerate `expected` from the TypeScript implementation (it
 is the source of truth); never hand-edit an expected value.
 
-| File | Function | `input` | `expected` |
-|---|---|---|---|
-| `name-normalization.json` | `normalizeName` (`src/lib/board-types.ts`) — Live Board follow matching | string | string |
-| `session-labels.json` (I6) | session label formatting (the plan-session label helper; file named when the vectors land) | `{ "date": ISO string, "timeZone": IANA zone, "locale"?: BCP 47 }` | string |
-| `lesson-recurrence.json` (I5) | `expandSlotOccurrences` (`src/lib/lesson-recurrence.ts`) | `{ "slot": { "dayOfWeek": 0–6, "frequency": "weekly" \| "biweekly" \| "twice_monthly" \| "monthly", "weeksOfMonth": [1–5], "startsOn": "YYYY-MM-DD" \| null }, "from": "YYYY-MM-DD", "to": "YYYY-MM-DD" }` | array of `"YYYY-MM-DD"` |
+| File                       | Function                                                                                               | `input`                                                                                                                                                                                                    | `expected`              |
+| -------------------------- | ------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
+| `name-normalization.json`  | `normalizeName` (`src/lib/board-types.ts`) — Live Board follow matching                                | string                                                                                                                                                                                                     | string                  |
+| `session-labels.json` (I6) | session label formatting (the plan-session label helper; file named when the vectors land)             | `{ "date": ISO string, "timeZone": IANA zone, "locale"?: BCP 47 }`                                                                                                                                         | string                  |
+| `lesson-recurrence.json`   | `expandSlotOccurrences` (`src/lib/lesson-recurrence.ts`) — lesson slot expansion for the week schedule | `{ "slot": { "dayOfWeek": 0–6, "frequency": "weekly" \| "biweekly" \| "twice_monthly" \| "monthly", "weeksOfMonth": [1–5], "startsOn": "YYYY-MM-DD" \| null }, "from": "YYYY-MM-DD", "to": "YYYY-MM-DD" }` | array of `"YYYY-MM-DD"` |
 
-The last two rows record the agreed shape ahead of I5/I6; the files land with
-those milestones.
+The `session-labels.json` row records the agreed shape ahead of I6; the file lands with that milestone. Cases in `lesson-recurrence.json` also carry a `name`.
