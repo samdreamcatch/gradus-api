@@ -2495,6 +2495,1480 @@
           }
         }
       }
+    },
+    "/api/v1/rooms": {
+      "get": {
+        "operationId": "getRooms",
+        "summary": "The caller's conversations, most recent activity first",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "coach",
+                "athlete",
+                "parent"
+              ]
+            },
+            "required": false,
+            "name": "viewerRole",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "The ETag of the copy the client holds; a match answers 304."
+            },
+            "required": false,
+            "name": "If-None-Match",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "headers": {
+              "ETag": {
+                "schema": {
+                  "type": "string",
+                  "description": "Weak validator for this response; send it back as If-None-Match."
+                },
+                "required": true
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "rooms": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "kind": {
+                            "type": "string",
+                            "enum": [
+                              "athlete",
+                              "coach_coach",
+                              "coach_parent"
+                            ]
+                          },
+                          "coachId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "athleteId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "participants": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "userId": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "role": {
+                                  "type": "string",
+                                  "enum": [
+                                    "coach",
+                                    "athlete",
+                                    "parent"
+                                  ]
+                                },
+                                "firstName": {
+                                  "type": "string"
+                                },
+                                "lastName": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "userId",
+                                "role",
+                                "firstName",
+                                "lastName"
+                              ]
+                            }
+                          },
+                          "myRole": {
+                            "type": "string",
+                            "enum": [
+                              "coach",
+                              "athlete",
+                              "parent"
+                            ]
+                          },
+                          "myUserId": {
+                            "type": "string"
+                          },
+                          "lastMessage": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "text",
+                                  "voice"
+                                ]
+                              },
+                              "body": {
+                                "type": "string"
+                              },
+                              "senderRole": {
+                                "type": "string",
+                                "enum": [
+                                  "coach",
+                                  "athlete",
+                                  "parent"
+                                ]
+                              },
+                              "senderFirstName": {
+                                "type": "string"
+                              },
+                              "senderDeletedAt": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "createdAt": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "kind",
+                              "body",
+                              "senderRole",
+                              "senderFirstName",
+                              "senderDeletedAt",
+                              "createdAt"
+                            ]
+                          },
+                          "unreadCount": {
+                            "type": "number"
+                          },
+                          "updatedAt": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "kind",
+                          "coachId",
+                          "athleteId",
+                          "participants",
+                          "myRole",
+                          "myUserId",
+                          "lastMessage",
+                          "unreadCount",
+                          "updatedAt"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "rooms"
+                  ]
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "Not Modified: unchanged since the ETag sent in If-None-Match.",
+            "headers": {
+              "ETag": {
+                "schema": {
+                  "type": "string",
+                  "description": "Weak validator for this response; send it back as If-None-Match."
+                },
+                "required": true
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/rooms/ensure": {
+      "post": {
+        "operationId": "postRoomsEnsure",
+        "summary": "Open (or find) a conversation",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "enum": [
+                          "athlete"
+                        ]
+                      },
+                      "coachId": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "athleteId": {
+                        "type": "string",
+                        "format": "uuid"
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "athleteId"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "enum": [
+                          "coach_coach"
+                        ]
+                      },
+                      "otherCoachId": {
+                        "type": "string",
+                        "format": "uuid"
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "otherCoachId"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "enum": [
+                          "coach_parent"
+                        ]
+                      },
+                      "parentId": {
+                        "type": "string",
+                        "format": "uuid"
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "parentId"
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/rooms/{id}": {
+      "get": {
+        "operationId": "getRoomsById",
+        "summary": "A conversation and one page of its messages",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "coach",
+                "athlete",
+                "parent"
+              ]
+            },
+            "required": false,
+            "name": "viewerRole",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "required": false,
+            "name": "cursor",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "room": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "athlete",
+                            "coach_coach",
+                            "coach_parent"
+                          ]
+                        },
+                        "coachId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "athleteId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "participants": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "userId": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "role": {
+                                "type": "string",
+                                "enum": [
+                                  "coach",
+                                  "athlete",
+                                  "parent"
+                                ]
+                              },
+                              "firstName": {
+                                "type": "string"
+                              },
+                              "lastName": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "userId",
+                              "role",
+                              "firstName",
+                              "lastName"
+                            ]
+                          }
+                        },
+                        "myRole": {
+                          "type": "string",
+                          "enum": [
+                            "coach",
+                            "athlete",
+                            "parent"
+                          ]
+                        },
+                        "myUserId": {
+                          "type": "string"
+                        },
+                        "myCoachId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "kind",
+                        "coachId",
+                        "athleteId",
+                        "participants",
+                        "myRole",
+                        "myUserId",
+                        "myCoachId"
+                      ]
+                    },
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "roomId": {
+                            "type": "string"
+                          },
+                          "senderUserId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "senderDeletedAt": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "senderRole": {
+                            "type": "string",
+                            "enum": [
+                              "coach",
+                              "athlete",
+                              "parent"
+                            ]
+                          },
+                          "senderFirstName": {
+                            "type": "string"
+                          },
+                          "senderLastName": {
+                            "type": "string"
+                          },
+                          "kind": {
+                            "type": "string",
+                            "enum": [
+                              "text",
+                              "voice"
+                            ]
+                          },
+                          "body": {
+                            "type": "string"
+                          },
+                          "audioUrl": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "durationSeconds": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "readBy": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "userId": {
+                                  "type": "string"
+                                },
+                                "readAt": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "userId",
+                                "readAt"
+                              ]
+                            }
+                          },
+                          "plan": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "title": {
+                                "type": "string"
+                              },
+                              "coachId": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "title",
+                              "coachId"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "roomId",
+                          "senderUserId",
+                          "senderDeletedAt",
+                          "senderRole",
+                          "senderFirstName",
+                          "senderLastName",
+                          "kind",
+                          "body",
+                          "audioUrl",
+                          "durationSeconds",
+                          "createdAt",
+                          "readBy",
+                          "plan"
+                        ]
+                      }
+                    },
+                    "nextCursor": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "room",
+                    "items",
+                    "nextCursor"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/rooms/{id}/messages": {
+      "post": {
+        "operationId": "postRoomsByIdMessages",
+        "summary": "Send a text or voice message",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "enum": [
+                          "text"
+                        ]
+                      },
+                      "body": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 4000
+                      },
+                      "planId": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "format": "uuid"
+                      },
+                      "viewerRole": {
+                        "type": "string",
+                        "enum": [
+                          "coach",
+                          "athlete",
+                          "parent"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "body"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "enum": [
+                          "voice"
+                        ]
+                      },
+                      "audioBase64": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "audioPath": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 300
+                      },
+                      "mimeType": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100
+                      },
+                      "durationSeconds": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 180
+                      },
+                      "planId": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "format": "uuid"
+                      },
+                      "viewerRole": {
+                        "type": "string",
+                        "enum": [
+                          "coach",
+                          "athlete",
+                          "parent"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "mimeType",
+                      "durationSeconds"
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "ok": {
+                          "type": "boolean",
+                          "enum": [
+                            true
+                          ]
+                        },
+                        "id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "ok",
+                        "id"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "ok": {
+                          "type": "boolean",
+                          "enum": [
+                            false
+                          ]
+                        },
+                        "reason": {
+                          "type": "string",
+                          "enum": [
+                            "blocked",
+                            "coach_unlinked"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "ok",
+                        "reason",
+                        "message"
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/rooms/{id}/read": {
+      "post": {
+        "operationId": "postRoomsByIdRead",
+        "summary": "Mark every message from others in a conversation as read",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "viewerRole": {
+                    "type": "string",
+                    "enum": [
+                      "coach",
+                      "athlete",
+                      "parent"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "marked": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "marked"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/rooms/{id}/active-plans": {
+      "get": {
+        "operationId": "getRoomsByIdActivePlans",
+        "summary": "Active plans that can be tagged in an athlete conversation",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "coach",
+                "athlete",
+                "parent"
+              ]
+            },
+            "required": false,
+            "name": "viewerRole",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "plans": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "title"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "plans"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/messages/unread-total": {
+      "get": {
+        "operationId": "getMessagesUnreadTotal",
+        "summary": "Unread messages across the caller's conversations (tab badge)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "coach",
+                "athlete",
+                "parent"
+              ]
+            },
+            "required": false,
+            "name": "viewerRole",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "total": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "total"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/message-targets": {
+      "get": {
+        "operationId": "getMessageTargets",
+        "summary": "Who the caller can start a conversation with (new-conversation picker)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "targets": {
+                      "type": "array",
+                      "items": {
+                        "oneOf": [
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "athlete"
+                                ]
+                              },
+                              "group": {
+                                "type": "string",
+                                "enum": [
+                                  "Athletes",
+                                  "Coaches"
+                                ]
+                              },
+                              "coachId": {
+                                "type": "string"
+                              },
+                              "athleteId": {
+                                "type": "string"
+                              },
+                              "primaryLabel": {
+                                "type": "string"
+                              },
+                              "secondaryLabel": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "group",
+                              "coachId",
+                              "athleteId",
+                              "primaryLabel",
+                              "secondaryLabel"
+                            ]
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "coach_coach"
+                                ]
+                              },
+                              "group": {
+                                "type": "string",
+                                "enum": [
+                                  "Coaches"
+                                ]
+                              },
+                              "otherCoachId": {
+                                "type": "string"
+                              },
+                              "primaryLabel": {
+                                "type": "string"
+                              },
+                              "secondaryLabel": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "group",
+                              "otherCoachId",
+                              "primaryLabel",
+                              "secondaryLabel"
+                            ]
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "coach_parent"
+                                ]
+                              },
+                              "group": {
+                                "type": "string",
+                                "enum": [
+                                  "Parents"
+                                ]
+                              },
+                              "parentId": {
+                                "type": "string"
+                              },
+                              "primaryLabel": {
+                                "type": "string"
+                              },
+                              "secondaryLabel": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "group",
+                              "parentId",
+                              "primaryLabel",
+                              "secondaryLabel"
+                            ]
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "targets"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/safety/blocks": {
+      "get": {
+        "operationId": "getSafetyBlocks",
+        "summary": "People the caller has blocked",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "blocks": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "userId": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "role": {
+                            "type": "string",
+                            "enum": [
+                              "coach",
+                              "parent",
+                              "athlete",
+                              "unknown"
+                            ]
+                          },
+                          "blockedAt": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "userId",
+                          "name",
+                          "role",
+                          "blockedAt"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "blocks"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "postSafetyBlocks",
+        "summary": "Block a person",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "targetUserId": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                },
+                "required": [
+                  "targetUserId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/safety/blocks/{userId}": {
+      "delete": {
+        "operationId": "deleteSafetyBlocksByUserId",
+        "summary": "Unblock a person",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "userId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/safety/reports": {
+      "post": {
+        "operationId": "postSafetyReports",
+        "summary": "Report a person, a message, or a resource (optionally blocking)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "targetUserId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "uuid"
+                  },
+                  "messageId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "uuid"
+                  },
+                  "resourceId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "uuid"
+                  },
+                  "reason": {
+                    "type": "string",
+                    "enum": [
+                      "harassment",
+                      "inappropriate",
+                      "spam",
+                      "minor_safety",
+                      "other"
+                    ]
+                  },
+                  "note": {
+                    "type": "string",
+                    "maxLength": 2000,
+                    "default": ""
+                  },
+                  "alsoBlock": {
+                    "type": "boolean",
+                    "default": true
+                  }
+                },
+                "required": [
+                  "reason"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "blocked": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "blocked"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "webhooks": {}

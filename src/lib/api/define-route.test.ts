@@ -367,3 +367,33 @@ describe("conditional GET (etag)", () => {
   });
 });
 
+describe("query strings", () => {
+  it("parses and coerces the query into the handler, and 400s bad values", async () => {
+    process.env.API_V1_ENABLED = "true";
+    const { GET } = createApiRouteHandler(
+      {
+        method: "GET",
+        path: "/api/v1/test",
+        auth: "public",
+        query: z.object({
+          limit: z.coerce.number().int().min(1).max(200).default(50),
+          cursor: z.string().optional(),
+        }),
+        output: z.object({ limit: z.number(), cursor: z.string().nullable() }),
+        handler: async ({ query }) => ({ limit: query.limit, cursor: query.cursor ?? null }),
+      },
+      { admin: createFakeAdmin(), authenticate: async () => null },
+    );
+    const ok = await GET!({ request: new Request("https://gradus.training/api/v1/test?limit=5&cursor=abc") });
+    expect(ok.status).toBe(200);
+    expect(await ok.json()).toEqual({ limit: 5, cursor: "abc" });
+
+    const defaults = await GET!({ request: new Request("https://gradus.training/api/v1/test") });
+    expect(await defaults.json()).toEqual({ limit: 50, cursor: null });
+
+    const bad = await GET!({ request: new Request("https://gradus.training/api/v1/test?limit=999") });
+    expect(bad.status).toBe(400);
+    expect((await bad.json()).error.code).toBe("validation_failed");
+  });
+});
+

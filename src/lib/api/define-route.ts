@@ -15,7 +15,7 @@
  * 401, matching the brief's ordering, without a second network round trip
  * to Supabase for the same token.
  */
-import { z, type ZodType } from "zod";
+import { z, type ZodType, type ZodTypeDef } from "zod";
 import { ApiError, normalizeError, toResponse } from "./errors";
 import { authenticateRequest, type ApiContext } from "./auth";
 import { withIdempotency } from "./idempotency";
@@ -25,14 +25,18 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
-export interface DefineApiRouteOptions<TInput, TOutput> {
+export interface DefineApiRouteOptions<TInput, TOutput, TQuery = undefined> {
   method: HttpMethod;
   path: string;
   auth: "user" | "public";
   summary?: string;
   /** OpenAPI operation id; defaults to one derived from method and path. */
   operationId?: string;
-  input?: ZodType<TInput>;
+  // `ZodType<Out, Def, unknown>` infers the parsed (output) type even when the
+  // schema has defaults or coercions, whose input types differ.
+  input?: ZodType<TInput, ZodTypeDef, unknown>;
+  /** Query-string schema (GET routes); parsed from `?a=b` and declared in OpenAPI. */
+  query?: ZodType<TQuery, ZodTypeDef, unknown>;
   output: ZodType<TOutput>;
   /** When true, honors the `Idempotency-Key` header. Requires `auth: "user"`. */
   idempotent?: boolean;
@@ -46,6 +50,8 @@ export interface DefineApiRouteOptions<TInput, TOutput> {
   handler: (args: {
     ctx: ApiContext | null;
     input: TInput;
+    /** Parsed query string when `query` is set; `undefined` otherwise. */
+    query: TQuery;
     request: Request;
     /** Dynamic path segments (e.g. `$slug` in the file name) — empty for a static route. */
     params: Record<string, string>;
@@ -103,8 +109,8 @@ function getClientIp(request: Request): string | null {
  * real Supabase clients — used directly by `defineApiRoute` and by tests,
  * which pass an in-memory fake `admin` and a fake `authenticate`.
  */
-export function createApiRouteHandler<TInput, TOutput>(
-  options: DefineApiRouteOptions<TInput, TOutput>,
+export function createApiRouteHandler<TInput, TOutput, TQuery = undefined>(
+  options: DefineApiRouteOptions<TInput, TOutput, TQuery>,
   deps: ApiRouteDeps = defaultDeps,
 ): RouteHandlers {
   const handle = async ({
@@ -172,8 +178,17 @@ export function createApiRouteHandler<TInput, TOutput>(
         input = options.input.parse(rawBody);
       }
 
+      let query: TQuery = undefined as TQuery;
+      if (options.query) {
+        // Repeated keys keep the last value; every value arrives as a string
+        // (schemas use z.coerce for numbers).
+        const raw: Record<string, string> = {};
+        for (const [k, v] of new URL(request.url).searchParams) raw[k] = v;
+        query = options.query.parse(raw);
+      }
+
       const runHandler = async (): Promise<{ status: number; body: unknown }> => {
-        const output = await options.handler({ ctx, input, request, params: params ?? {} });
+        const output = await options.handler({ ctx, input, query, request, params: params ?? {} });
         const parsedOutput = options.output.parse(output);
         return { status: 200, body: parsedOutput };
       };
@@ -207,8 +222,8 @@ export function createApiRouteHandler<TInput, TOutput>(
 }
 
 /** Builds route handlers and registers the route in the OpenAPI registry. */
-export function defineApiRoute<TInput, TOutput>(
-  options: DefineApiRouteOptions<TInput, TOutput>,
+export function defineApiRoute<TInput, TOutput, TQuery = undefined>(
+  options: DefineApiRouteOptions<TInput, TOutput, TQuery>,
 ): RouteHandlers {
   registerApiRoute({
     method: options.method.toLowerCase() as "get" | "post" | "put" | "patch" | "delete",
@@ -217,6 +232,7 @@ export function defineApiRoute<TInput, TOutput>(
     operationId: options.operationId,
     auth: options.auth,
     input: options.input,
+    query: options.query,
     output: options.output,
     etag: !!options.etag,
   });

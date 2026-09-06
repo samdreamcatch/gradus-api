@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import { z } from "zod";
-import { deriveOperationId, pathParamsSchema, registerApiRoute } from "./openapi";
+import { buildOpenApiDocument, deriveOperationId, pathParamsSchema, registerApiRoute } from "./openapi";
 
 describe("deriveOperationId", () => {
   it("derives stable camelCase ids from method and path", () => {
@@ -72,3 +72,25 @@ describe("pathParamsSchema", () => {
     expect(() => schema.parse({ slug: "a" })).toThrow();
   });
 });
+
+describe("query parameters", () => {
+  it("declares each query field as a query parameter", () => {
+    registerApiRoute({
+      method: "get",
+      path: "/api/v1/zz-test/paged",
+      summary: "paged",
+      auth: "user",
+      query: z.object({ limit: z.coerce.number().optional(), cursor: z.string().optional() }),
+      output: z.object({ ok: z.boolean() }),
+    });
+    const doc = buildOpenApiDocument() as {
+      paths: Record<string, { get: { parameters?: { name: string; in: string; required?: boolean }[] } }>;
+    };
+    const params = doc.paths["/api/v1/zz-test/paged"].get.parameters ?? [];
+    expect(params.map((p) => [p.name, p.in, !!p.required])).toEqual([
+      ["limit", "query", false],
+      ["cursor", "query", false],
+    ]);
+  });
+});
+
