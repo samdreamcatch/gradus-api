@@ -72,7 +72,9 @@ export async function fetchBoard(admin: AdminDb, slug: string): Promise<BoardRes
     c.active && (!c.starts_on || c.starts_on <= today) && (!c.ends_on || c.ends_on >= today);
 
   let payload = cached?.payload ?? null;
-  let generatedAt = cached?.generated_at ?? null;
+  // The cache row comes back as `+00:00`, a fresh refresh as `Z`. One shape,
+  // or the ETag (slug + generatedAt) flips between the two on every poll.
+  let generatedAt = cached?.generated_at ? new Date(cached.generated_at).toISOString() : null;
   const stale = !generatedAt || Date.now() - new Date(generatedAt).getTime() > REFRESH_INTERVAL_MS;
 
   if ((isLiveWindow && stale) || !payload) {
