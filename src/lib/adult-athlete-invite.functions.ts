@@ -4,6 +4,11 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { dbError } from "./db-error";
 import { ageInYears } from "./pending-athlete-dob";
+import {
+  claimAdultAthleteInvite as claimAdultAthleteInviteShared,
+  claimInviteInput,
+  previewAdultAthleteInvite,
+} from "./invites.server";
 
 const codeSchema = z
   .string()
@@ -100,129 +105,25 @@ export const getOrCreateAdultAthleteInviteCode = createServerFn({ method: "GET" 
 
 /**
  * Public: preview the athlete an adult-athlete invite belongs to. Rate-limited
- * per IP. Used by /signup/coach so the coach sees who they're linking to.
+ * per IP. Thin wrapper over src/lib/invites.server.ts, shared with
+ * `POST /api/v1/invites/adult-athlete/preview`.
  */
 export const getAdultAthleteByInviteCode = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => z.object({ code: codeSchema }).parse(input))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const limit = await supabaseAdmin.rpc("record_invite_lookup_attempt", {
-      _ip: clientIp(),
-      _code: data.code,
-      _max_per_window: RATE_MAX_PER_WINDOW,
-      _window_seconds: RATE_WINDOW_SECONDS,
-    });
-    if (limit.error) dbError(limit.error);
-    if (limit.data === -1) {
-      throw new Error("Too many attempts. Please wait a minute and try again.");
-    }
-
-    const lookup = await supabaseAdmin.rpc("get_adult_athlete_by_invite_code", {
-      _code: data.code,
-    });
-    if (lookup.error) dbError(lookup.error);
-    const row = (lookup.data ?? [])[0];
-    if (!row) throw new Error("That adult-athlete invite code isn't valid.");
-    return {
-      athleteId: row.athlete_id as string,
-      firstName: row.first_name as string,
-      lastName: row.last_name as string,
-    };
+    return previewAdultAthleteInvite(supabaseAdmin, clientIp(), data.code);
   });
 
 /**
  * Called by an authenticated, onboarded coach to claim an adult-athlete
- * invite. Links the coach to just this one athlete, enables every sport the
- * coach offers, and sets primary coach for those sports when missing.
- * Idempotent.
+ * invite. Thin wrapper over src/lib/invites.server.ts, shared with
+ * `POST /api/v1/invites/adult-athlete/claim`. Idempotent.
  */
 export const claimAdultAthleteInvite = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z
-      .object({
-        code: codeSchema,
-        // When true, marks the coach side as already acknowledged so the
-        // celebration modal doesn't appear on the coach's first page load
-        // after the signup wizard. Used by /signup/coach?invite=...
-        autoAckCoach: z.boolean().optional(),
-      })
-      .parse(input),
-  )
+  .inputValidator((input: unknown) => claimInviteInput.parse(input))
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const userId = context.userId;
-
-    const coach = await supabaseAdmin
-      .from("coach_profiles")
-      .select("id, promo_code")
-      .eq("user_id", userId)
-      .maybeSingle();
-    if (coach.error) dbError(coach.error);
-    if (!coach.data) throw new Error("Coach profile not found.");
-    const coachId = coach.data.id;
-
-    const inviteRow = await supabaseAdmin
-      .from("adult_athlete_invite_codes")
-      .select("athlete_id, promo_code")
-      .eq("code", data.code)
-      .maybeSingle();
-    if (inviteRow.error) dbError(inviteRow.error);
-    if (!inviteRow.data) throw new Error("That adult-athlete invite code isn't valid.");
-    const athleteId = inviteRow.data.athlete_id;
-
-    // Propagate the athlete's promo code onto the coach for attribution and
-    // Stripe checkout discount. First-invite-wins.
-    if (inviteRow.data.promo_code && !coach.data.promo_code) {
-      await supabaseAdmin
-        .from("coach_profiles")
-        .update({ promo_code: inviteRow.data.promo_code })
-        .eq("id", coachId)
-        .is("promo_code", null);
-    }
-
-    const ackIso = data.autoAckCoach ? new Date().toISOString() : null;
-    const linkIns = await supabaseAdmin.from("coach_athletes").upsert(
-      [
-        {
-          coach_id: coachId,
-          athlete_id: athleteId,
-          ...(ackIso ? { coach_ack_at: ackIso } : {}),
-        },
-      ],
-      { onConflict: "coach_id,athlete_id", ignoreDuplicates: true },
-    );
-    if (linkIns.error) dbError(linkIns.error);
-
-    const levelsRes = await supabaseAdmin
-      .from("coach_levels")
-      .select("sport")
-      .eq("coach_id", coachId);
-    if (levelsRes.error) dbError(levelsRes.error);
-    const coachSports = Array.from(new Set((levelsRes.data ?? []).map((l) => l.sport)));
-    if (coachSports.length === 0) return { ok: true, sports: 0 };
-
-    const scopeRows = coachSports.map((sport) => ({
-      athlete_id: athleteId,
-      coach_id: coachId,
-      sport,
-    }));
-    const scopeIns = await supabaseAdmin.from("coach_athlete_sports").upsert(scopeRows, {
-      onConflict: "athlete_id,coach_id,sport",
-      ignoreDuplicates: true,
-    });
-    if (scopeIns.error) dbError(scopeIns.error);
-
-    const primaryRows = coachSports.map((sport) => ({
-      athlete_id: athleteId,
-      sport,
-      coach_id: coachId,
-    }));
-    const primaryIns = await supabaseAdmin.from("athlete_primary_coaches").upsert(primaryRows, {
-      onConflict: "athlete_id,sport",
-      ignoreDuplicates: true,
-    });
-    if (primaryIns.error) dbError(primaryIns.error);
-
-    return { ok: true, sports: coachSports.length };
+    return claimAdultAthleteInviteShared({ userId: context.userId, admin: supabaseAdmin }, data);
   });

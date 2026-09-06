@@ -12,12 +12,21 @@ import type { Database } from "@/integrations/supabase/types";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { ApiError } from "./errors";
 
+/** The few JWT claims domain code reads (the web reads them off `context.claims`). */
+export interface ApiClaims {
+  email: string | null;
+  /** `user_metadata` from the token: first/last/full name seeded at sign-up. */
+  userMetadata: Record<string, unknown>;
+}
+
 export interface ApiContext {
   userId: string;
   /** User-scoped client (RLS applies), authenticated as the caller. */
   supabase: SupabaseClient<Database>;
   /** Service-role client (RLS bypassed). */
   admin: typeof supabaseAdmin;
+  /** Absent only in tests that build a context by hand. */
+  claims?: ApiClaims;
 }
 
 /**
@@ -59,7 +68,15 @@ export async function authenticateRequest(request: Request): Promise<ApiContext 
     throw ApiError.unauthenticated("Invalid token.");
   }
 
-  return { userId: data.claims.sub, supabase, admin: supabaseAdmin };
+  const raw = data.claims as { email?: unknown; user_metadata?: unknown };
+  const claims: ApiClaims = {
+    email: typeof raw.email === "string" ? raw.email : null,
+    userMetadata:
+      raw.user_metadata && typeof raw.user_metadata === "object"
+        ? (raw.user_metadata as Record<string, unknown>)
+        : {},
+  };
+  return { userId: data.claims.sub, supabase, admin: supabaseAdmin, claims };
 }
 
 /** Narrows `ApiContext | null` to `ApiContext`, throwing 401 if absent. */
