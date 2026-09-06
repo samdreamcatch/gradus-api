@@ -51,7 +51,7 @@ function generateCode(): string {
  * Per-IP lookup throttle backed by `record_invite_lookup_attempt` (same
  * RPC and limits as the web). `-1` means the window is exhausted.
  */
-async function throttleLookup(admin: Admin, ip: string, key: string, maxPerWindow: number) {
+export async function throttleLookup(admin: Admin, ip: string, key: string, maxPerWindow: number) {
   const limit = await admin.rpc("record_invite_lookup_attempt", {
     _ip: ip,
     _code: key,
