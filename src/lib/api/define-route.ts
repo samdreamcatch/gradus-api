@@ -45,6 +45,12 @@ export interface DefineApiRouteOptions<TInput, TOutput, TQuery = undefined> {
    * voice uploads (PRD §6.7). Declared as `multipart/form-data` in OpenAPI.
    */
   body?: "json" | "multipart";
+  /**
+   * Multipart only: the content type each file part is declared with in
+   * OpenAPI (`encoding`), e.g. `{ audio: "audio/mp4" }`, so generated clients
+   * label the part; the route itself accepts any type.
+   */
+  partContentTypes?: Record<string, string>;
   /** When true, honors the `Idempotency-Key` header. Requires `auth: "user"`. */
   idempotent?: boolean;
   rateLimit?: RateLimitConfig;
@@ -257,6 +263,7 @@ export function defineApiRoute<TInput, TOutput, TQuery = undefined>(
     output: options.output,
     etag: !!options.etag,
     body: options.body,
+    partContentTypes: options.partContentTypes,
   });
 
   return createApiRouteHandler(options);

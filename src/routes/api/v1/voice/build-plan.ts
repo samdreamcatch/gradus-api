@@ -21,6 +21,7 @@ export const Route = createFileRoute("/api/v1/voice/build-plan")({
       auth: "user",
       idempotent: true,
       body: "multipart",
+      partContentTypes: { audio: "audio/mp4" },
       rateLimit: { windowSeconds: 60, max: 10 },
       summary: "Build or edit a plan from a voice recording",
       input: voiceBuildInput,

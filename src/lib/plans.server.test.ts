@@ -198,6 +198,9 @@ describe("voice uploads", () => {
     expect(audioFilename(new Blob([], { type: "audio/mp4" }))).toBe("voice.m4a");
     expect(audioFilename(new Blob([], { type: "audio/webm;codecs=opus" }))).toBe("voice.webm");
     expect(audioFilename(new Blob([]))).toBe("voice.webm");
+    expect(audioFilename(new File([], "voice.m4a", { type: "application/octet-stream" }))).toBe(
+      "voice.m4a",
+    );
   });
 
   it("refuse recordings over the 18 MB cap with 413", () => {

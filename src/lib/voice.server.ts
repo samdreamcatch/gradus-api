@@ -46,6 +46,14 @@ const AUDIO_FILENAMES: Record<string, string> = {
 };
 
 export function audioFilename(audio: Blob): string {
+  // A multipart part that arrived as a File keeps its filename; trust a known extension first.
+  const named = (audio as { name?: unknown }).name;
+  if (typeof named === "string") {
+    const ext = named.split(".").pop()?.toLowerCase();
+    if (ext && ["m4a", "mp4", "aac", "mp3", "wav", "ogg", "webm"].includes(ext)) {
+      return `voice.${ext === "mp4" ? "m4a" : ext}`;
+    }
+  }
   const type = (audio.type || "").split(";")[0].trim().toLowerCase();
   return AUDIO_FILENAMES[type] ?? "voice.webm";
 }

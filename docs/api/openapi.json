@@ -9014,6 +9014,11 @@
                 "required": [
                   "audio"
                 ]
+              },
+              "encoding": {
+                "audio": {
+                  "contentType": "audio/mp4"
+                }
               }
             }
           }
@@ -9086,6 +9091,11 @@
                   "audio",
                   "mode"
                 ]
+              },
+              "encoding": {
+                "audio": {
+                  "contentType": "audio/mp4"
+                }
               }
             }
           }

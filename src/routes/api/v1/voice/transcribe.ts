@@ -19,6 +19,7 @@ export const Route = createFileRoute("/api/v1/voice/transcribe")({
       operationId: "voiceTranscribe",
       auth: "user",
       body: "multipart",
+      partContentTypes: { audio: "audio/mp4" },
       rateLimit: { windowSeconds: 60, max: 10 },
       summary: "Transcribe a voice recording",
       input: voiceTranscribeInput,

@@ -47,6 +47,8 @@ export interface RegisterRouteOptions {
   etag?: boolean;
   /** Request body encoding; `"multipart"` declares `multipart/form-data` (file parts use `binaryPart`). */
   body?: "json" | "multipart";
+  /** Multipart only: `encoding[part].contentType` for file parts, e.g. `{ audio: "audio/mp4" }`. */
+  partContentTypes?: Record<string, string>;
 }
 
 /**
@@ -157,6 +159,16 @@ export function registerApiRoute(route: RegisterRouteOptions): void {
               [route.body === "multipart" ? "multipart/form-data" : "application/json"]: {
                 schema:
                   route.body === "multipart" ? withMultipartRequired(route.input) : route.input,
+                ...(route.body === "multipart" && route.partContentTypes
+                  ? {
+                      encoding: Object.fromEntries(
+                        Object.entries(route.partContentTypes).map(([part, contentType]) => [
+                          part,
+                          { contentType },
+                        ]),
+                      ),
+                    }
+                  : {}),
               },
             },
           }
