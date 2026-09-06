@@ -25,6 +25,9 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
+/** Just above the 18 MB voice cap (voice.server.ts `MAX_AUDIO_BYTES`) plus form overhead. */
+const DEFAULT_MAX_MULTIPART_BYTES = 20 * 1024 * 1024;
+
 export interface DefineApiRouteOptions<TInput, TOutput, TQuery = undefined> {
   method: HttpMethod;
   path: string;
@@ -38,6 +41,26 @@ export interface DefineApiRouteOptions<TInput, TOutput, TQuery = undefined> {
   /** Query-string schema (GET routes); parsed from `?a=b` and declared in OpenAPI. */
   query?: ZodType<TQuery, ZodTypeDef, unknown>;
   output: ZodType<TOutput>;
+  /**
+   * Request body encoding. `"json"` (default) parses the body as JSON;
+   * `"multipart"` reads `multipart/form-data` and hands `input` the fields as
+   * a plain object — text parts as strings, file parts as `Blob`s — for the
+   * voice uploads (PRD §6.7). Declared as `multipart/form-data` in OpenAPI.
+   */
+  body?: "json" | "multipart";
+  /**
+   * Multipart only: the content type each file part is declared with in
+   * OpenAPI (`encoding`), e.g. `{ audio: "audio/mp4" }`, so generated clients
+   * label the part; the route itself accepts any type.
+   */
+  partContentTypes?: Record<string, string>;
+  /**
+   * Multipart only: the largest request body accepted, checked against
+   * `Content-Length` before the body is read (413 `payload_too_large`).
+   * Defaults to 20 MB, just above the voice cap; the handler still enforces
+   * its own per-file limit.
+   */
+  maxBodyBytes?: number;
   /** When true, honors the `Idempotency-Key` header. Requires `auth: "user"`. */
   idempotent?: boolean;
   rateLimit?: RateLimitConfig;
@@ -158,7 +181,32 @@ export function createApiRouteHandler<TInput, TOutput, TQuery = undefined>(
       }
 
       let rawBody: unknown;
-      if (options.input) {
+      if (options.input && options.body === "multipart") {
+        const declared = Number(request.headers.get("content-length") ?? "");
+        if (
+          Number.isFinite(declared) &&
+          declared > (options.maxBodyBytes ?? DEFAULT_MAX_MULTIPART_BYTES)
+        ) {
+          throw new ApiError({
+            code: "payload_too_large",
+            status: 413,
+            message: "That upload is too large.",
+          });
+        }
+        let form: FormData;
+        try {
+          form = await request.formData();
+        } catch {
+          throw new ApiError({
+            code: "validation_failed",
+            status: 400,
+            message: "Request body is not valid multipart form data.",
+          });
+        }
+        const fields: Record<string, unknown> = {};
+        for (const [key, value] of form.entries()) fields[key] = value;
+        rawBody = fields;
+      } else if (options.input) {
         const text = await request.text();
         if (text) {
           try {
@@ -235,6 +283,8 @@ export function defineApiRoute<TInput, TOutput, TQuery = undefined>(
     query: options.query,
     output: options.output,
     etag: !!options.etag,
+    body: options.body,
+    partContentTypes: options.partContentTypes,
   });
 
   return createApiRouteHandler(options);

@@ -6318,6 +6318,3347 @@
         }
       }
     },
+    "/api/v1/coach/plans": {
+      "get": {
+        "operationId": "listCoachPlans",
+        "summary": "The coach's plans, filtered",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "active",
+                "benched",
+                "draft"
+              ]
+            },
+            "required": false,
+            "name": "status",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": false,
+            "name": "athleteId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "plan",
+                "template"
+              ]
+            },
+            "required": false,
+            "name": "kind",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "sport",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "The ETag of the copy the client holds; a match answers 304."
+            },
+            "required": false,
+            "name": "If-None-Match",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "headers": {
+              "ETag": {
+                "schema": {
+                  "type": "string",
+                  "description": "Weak validator for this response; send it back as If-None-Match."
+                },
+                "required": true
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "plans": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "kind": {
+                            "type": "string",
+                            "enum": [
+                              "plan",
+                              "template"
+                            ]
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "active",
+                              "benched",
+                              "draft"
+                            ]
+                          },
+                          "athleteId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "athleteName": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "moveCount": {
+                            "type": "integer"
+                          },
+                          "totalMinutes": {
+                            "type": "number"
+                          },
+                          "updatedAt": {
+                            "type": "string"
+                          },
+                          "sessionsByState": {
+                            "type": "object",
+                            "properties": {
+                              "frustrated": {
+                                "type": "integer"
+                              },
+                              "pushing": {
+                                "type": "integer"
+                              },
+                              "steady": {
+                                "type": "integer"
+                              },
+                              "lockedIn": {
+                                "type": "integer"
+                              },
+                              "flowing": {
+                                "type": "integer"
+                              }
+                            },
+                            "required": [
+                              "frustrated",
+                              "pushing",
+                              "steady",
+                              "lockedIn",
+                              "flowing"
+                            ]
+                          },
+                          "sessionsTotal": {
+                            "type": "integer"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "title",
+                          "kind",
+                          "status",
+                          "athleteId",
+                          "athleteName",
+                          "moveCount",
+                          "totalMinutes",
+                          "updatedAt",
+                          "sessionsByState",
+                          "sessionsTotal"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "plans"
+                  ]
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "Not Modified: unchanged since the ETag sent in If-None-Match.",
+            "headers": {
+              "ETag": {
+                "schema": {
+                  "type": "string",
+                  "description": "Weak validator for this response; send it back as If-None-Match."
+                },
+                "required": true
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createPlan",
+        "summary": "Create a draft plan or a template, optionally cloned",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "plan",
+                      "template"
+                    ],
+                    "default": "plan"
+                  },
+                  "athleteId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "uuid"
+                  },
+                  "fromPlanId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "fromTemplateId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 160
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/plans/{id}": {
+      "get": {
+        "operationId": "getPlan",
+        "summary": "A plan, as the caller's role sees it",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "notes": {
+                      "type": "string"
+                    },
+                    "kind": {
+                      "type": "string",
+                      "enum": [
+                        "plan",
+                        "template"
+                      ]
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "active",
+                        "benched",
+                        "draft"
+                      ]
+                    },
+                    "athleteId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "athleteName": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "athleteFirstName": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "coach": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "firstName": {
+                          "type": "string"
+                        },
+                        "isGradus": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "name",
+                        "firstName",
+                        "isGradus"
+                      ]
+                    },
+                    "viewerRole": {
+                      "type": "string",
+                      "enum": [
+                        "coach",
+                        "parent",
+                        "athlete"
+                      ]
+                    },
+                    "isOwner": {
+                      "type": "boolean"
+                    },
+                    "moveCount": {
+                      "type": "integer"
+                    },
+                    "totalMinutes": {
+                      "type": "number"
+                    },
+                    "updatedAt": {
+                      "type": "string"
+                    },
+                    "moves": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "position": {
+                            "type": "integer"
+                          },
+                          "moveId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "description": {
+                            "type": "string"
+                          },
+                          "cue": {
+                            "type": "string"
+                          },
+                          "why": {
+                            "type": "string"
+                          },
+                          "targetKind": {
+                            "type": "string",
+                            "enum": [
+                              "reps",
+                              "mins"
+                            ]
+                          },
+                          "targetValue": {
+                            "type": "number"
+                          },
+                          "libraryMove": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "description": {
+                                "type": "string"
+                              },
+                              "cue": {
+                                "type": "string"
+                              },
+                              "why": {
+                                "type": "string"
+                              },
+                              "defaultTargetKind": {
+                                "type": "string",
+                                "enum": [
+                                  "reps",
+                                  "mins"
+                                ]
+                              },
+                              "defaultTargetValue": {
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "name",
+                              "description",
+                              "cue",
+                              "why",
+                              "defaultTargetKind",
+                              "defaultTargetValue"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "position",
+                          "moveId",
+                          "name",
+                          "description",
+                          "cue",
+                          "why",
+                          "targetKind",
+                          "targetValue",
+                          "libraryMove"
+                        ]
+                      }
+                    },
+                    "voiceTranscript": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "sessionsByState": {
+                      "type": "object",
+                      "properties": {
+                        "frustrated": {
+                          "type": "integer"
+                        },
+                        "pushing": {
+                          "type": "integer"
+                        },
+                        "steady": {
+                          "type": "integer"
+                        },
+                        "lockedIn": {
+                          "type": "integer"
+                        },
+                        "flowing": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "frustrated",
+                        "pushing",
+                        "steady",
+                        "lockedIn",
+                        "flowing"
+                      ]
+                    },
+                    "sessionsTotal": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "title",
+                    "notes",
+                    "kind",
+                    "status",
+                    "athleteId",
+                    "athleteName",
+                    "athleteFirstName",
+                    "coach",
+                    "viewerRole",
+                    "isOwner",
+                    "moveCount",
+                    "totalMinutes",
+                    "updatedAt",
+                    "moves",
+                    "voiceTranscript",
+                    "sessionsByState",
+                    "sessionsTotal"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "savePlan",
+        "summary": "Replace a plan's fields and moves",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 160
+                  },
+                  "notes": {
+                    "type": "string",
+                    "maxLength": 4000,
+                    "default": ""
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "plan",
+                      "template"
+                    ]
+                  },
+                  "athleteId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "uuid"
+                  },
+                  "moves": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "moveId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "format": "uuid"
+                        },
+                        "name": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 160
+                        },
+                        "description": {
+                          "type": "string",
+                          "maxLength": 2000,
+                          "default": ""
+                        },
+                        "cue": {
+                          "type": "string",
+                          "maxLength": 1000,
+                          "default": ""
+                        },
+                        "why": {
+                          "type": "string",
+                          "maxLength": 1000,
+                          "default": ""
+                        },
+                        "targetKind": {
+                          "type": "string",
+                          "enum": [
+                            "reps",
+                            "mins"
+                          ]
+                        },
+                        "targetValue": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 10000
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "targetKind",
+                        "targetValue"
+                      ]
+                    },
+                    "maxItems": 200
+                  }
+                },
+                "required": [
+                  "title",
+                  "kind",
+                  "moves"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "operationId": "updatePlan",
+        "summary": "Update a plan's title, notes, kind, or athlete",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "maxLength": 160
+                  },
+                  "notes": {
+                    "type": "string",
+                    "maxLength": 4000
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "plan",
+                      "template"
+                    ]
+                  },
+                  "athleteId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "uuid"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "forkedId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deletePlan",
+        "summary": "Delete a template or draft plan",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/plans/{id}/status": {
+      "post": {
+        "operationId": "setPlanStatus",
+        "summary": "Activate, bench, or draft a plan",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "active",
+                      "benched",
+                      "draft"
+                    ]
+                  },
+                  "replaceId": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                },
+                "required": [
+                  "status"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/plans/{id}/moves": {
+      "post": {
+        "operationId": "addPlanMove",
+        "summary": "Add a library move to a plan",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "moveId": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                },
+                "required": [
+                  "moveId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "planId": {
+                      "type": "string"
+                    },
+                    "planTitle": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "planId",
+                    "planTitle"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/plans/{id}/moves/from-library": {
+      "post": {
+        "operationId": "addLibraryMovesToPlan",
+        "summary": "Add several library moves to a plan",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "moveIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "minItems": 1,
+                    "maxItems": 50
+                  }
+                },
+                "required": [
+                  "moveIds"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "inserted": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "inserted"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/plans/{id}/moves/order": {
+      "put": {
+        "operationId": "reorderPlanMoves",
+        "summary": "Reorder a plan's moves",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "orderedIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "maxItems": 200
+                  }
+                },
+                "required": [
+                  "orderedIds"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/plans/{id}/moves/{moveId}": {
+      "patch": {
+        "operationId": "updatePlanMove",
+        "summary": "Edit a move inside a plan",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "moveId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 160
+                  },
+                  "description": {
+                    "type": "string",
+                    "maxLength": 2000
+                  },
+                  "cue": {
+                    "type": "string",
+                    "maxLength": 1000
+                  },
+                  "why": {
+                    "type": "string",
+                    "maxLength": 1000
+                  },
+                  "targetKind": {
+                    "type": "string",
+                    "enum": [
+                      "reps",
+                      "mins"
+                    ]
+                  },
+                  "targetValue": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 10000
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "removePlanMove",
+        "summary": "Remove a move from a plan",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "moveId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/coach/athletes/{id}/active-plans": {
+      "get": {
+        "operationId": "getAthleteActivePlans",
+        "summary": "An athlete's active plans from this coach",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": false,
+            "name": "excludePlanId",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "plans": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "title"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "plans"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/coach/moves": {
+      "get": {
+        "operationId": "listMoves",
+        "summary": "The coach's move library",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "The ETag of the copy the client holds; a match answers 304."
+            },
+            "required": false,
+            "name": "If-None-Match",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "headers": {
+              "ETag": {
+                "schema": {
+                  "type": "string",
+                  "description": "Weak validator for this response; send it back as If-None-Match."
+                },
+                "required": true
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "moves": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "sport": {
+                            "type": "string"
+                          },
+                          "category": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "description": {
+                            "type": "string"
+                          },
+                          "cue": {
+                            "type": "string"
+                          },
+                          "why": {
+                            "type": "string"
+                          },
+                          "defaultTargetKind": {
+                            "type": "string",
+                            "enum": [
+                              "reps",
+                              "mins"
+                            ]
+                          },
+                          "defaultTargetValue": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "sport",
+                          "category",
+                          "name",
+                          "description",
+                          "cue",
+                          "why",
+                          "defaultTargetKind",
+                          "defaultTargetValue"
+                        ]
+                      }
+                    },
+                    "seedCategories": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "sport": {
+                            "type": "string"
+                          },
+                          "category": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "sport",
+                          "category"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "moves",
+                    "seedCategories"
+                  ]
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "Not Modified: unchanged since the ETag sent in If-None-Match.",
+            "headers": {
+              "ETag": {
+                "schema": {
+                  "type": "string",
+                  "description": "Weak validator for this response; send it back as If-None-Match."
+                },
+                "required": true
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "upsertMove",
+        "summary": "Create or update a library move",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "sport": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64
+                  },
+                  "category": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "description": {
+                    "type": "string",
+                    "maxLength": 2000,
+                    "default": ""
+                  },
+                  "cue": {
+                    "type": "string",
+                    "maxLength": 1000,
+                    "default": ""
+                  },
+                  "why": {
+                    "type": "string",
+                    "maxLength": 1000,
+                    "default": ""
+                  },
+                  "defaultTargetKind": {
+                    "type": "string",
+                    "enum": [
+                      "reps",
+                      "mins"
+                    ]
+                  },
+                  "defaultTargetValue": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 10000
+                  },
+                  "overwriteMoveId": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                },
+                "required": [
+                  "sport",
+                  "category",
+                  "name",
+                  "defaultTargetKind",
+                  "defaultTargetValue"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    },
+                    "move": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "sport": {
+                          "type": "string"
+                        },
+                        "category": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "description": {
+                          "type": "string"
+                        },
+                        "cue": {
+                          "type": "string"
+                        },
+                        "why": {
+                          "type": "string"
+                        },
+                        "defaultTargetKind": {
+                          "type": "string",
+                          "enum": [
+                            "reps",
+                            "mins"
+                          ]
+                        },
+                        "defaultTargetValue": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "sport",
+                        "category",
+                        "name",
+                        "description",
+                        "cue",
+                        "why",
+                        "defaultTargetKind",
+                        "defaultTargetValue"
+                      ]
+                    },
+                    "conflict": {
+                      "type": "object",
+                      "properties": {
+                        "existingMoveId": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "existingMoveId",
+                        "name"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/coach/moves/{id}/archive": {
+      "post": {
+        "operationId": "archiveMove",
+        "summary": "Archive a library move",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/coach/moves/{id}/update-from-plan-move": {
+      "post": {
+        "operationId": "updateLibraryMoveFromPlanMove",
+        "summary": "Update a library move from a plan move's fields",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "planMoveId": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                },
+                "required": [
+                  "planMoveId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "moveId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "moveId"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/coach/moves/from-plan-move": {
+      "post": {
+        "operationId": "addPlanMoveToLibrary",
+        "summary": "Save a plan move into the library",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "planMoveId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "sport": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64
+                  },
+                  "category": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64
+                  },
+                  "overwriteMoveId": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                },
+                "required": [
+                  "planMoveId",
+                  "sport",
+                  "category"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    },
+                    "moveId": {
+                      "type": "string"
+                    },
+                    "conflict": {
+                      "type": "object",
+                      "properties": {
+                        "existingMoveId": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "existingMoveId",
+                        "name"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/coach/moves/fork-from-plan-move": {
+      "post": {
+        "operationId": "forkPlanMoveToLibrary",
+        "summary": "Fork a plan move into a new library move",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "planMoveId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "sport": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64
+                  },
+                  "category": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "overwriteMoveId": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                },
+                "required": [
+                  "planMoveId",
+                  "sport",
+                  "category"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    },
+                    "moveId": {
+                      "type": "string"
+                    },
+                    "conflict": {
+                      "type": "object",
+                      "properties": {
+                        "existingMoveId": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "existingMoveId",
+                        "name"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/parent/plans": {
+      "get": {
+        "operationId": "listParentPlans",
+        "summary": "Plans for the parent's athletes",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "active",
+                "benched"
+              ]
+            },
+            "required": false,
+            "name": "status",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": false,
+            "name": "coachId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": false,
+            "name": "athleteId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "The ETag of the copy the client holds; a match answers 304."
+            },
+            "required": false,
+            "name": "If-None-Match",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "headers": {
+              "ETag": {
+                "schema": {
+                  "type": "string",
+                  "description": "Weak validator for this response; send it back as If-None-Match."
+                },
+                "required": true
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "athletes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name"
+                        ]
+                      }
+                    },
+                    "plans": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "active",
+                              "benched"
+                            ]
+                          },
+                          "athleteId": {
+                            "type": "string"
+                          },
+                          "athleteName": {
+                            "type": "string"
+                          },
+                          "coachId": {
+                            "type": "string"
+                          },
+                          "coachName": {
+                            "type": "string"
+                          },
+                          "isGradus": {
+                            "type": "boolean"
+                          },
+                          "moveCount": {
+                            "type": "integer"
+                          },
+                          "totalMinutes": {
+                            "type": "number"
+                          },
+                          "updatedAt": {
+                            "type": "string"
+                          },
+                          "sessionsByState": {
+                            "type": "object",
+                            "properties": {
+                              "frustrated": {
+                                "type": "integer"
+                              },
+                              "pushing": {
+                                "type": "integer"
+                              },
+                              "steady": {
+                                "type": "integer"
+                              },
+                              "lockedIn": {
+                                "type": "integer"
+                              },
+                              "flowing": {
+                                "type": "integer"
+                              }
+                            },
+                            "required": [
+                              "frustrated",
+                              "pushing",
+                              "steady",
+                              "lockedIn",
+                              "flowing"
+                            ]
+                          },
+                          "sessionsTotal": {
+                            "type": "integer"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "title",
+                          "status",
+                          "athleteId",
+                          "athleteName",
+                          "coachId",
+                          "coachName",
+                          "isGradus",
+                          "moveCount",
+                          "totalMinutes",
+                          "updatedAt",
+                          "sessionsByState",
+                          "sessionsTotal"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "athletes",
+                    "plans"
+                  ]
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "Not Modified: unchanged since the ETag sent in If-None-Match.",
+            "headers": {
+              "ETag": {
+                "schema": {
+                  "type": "string",
+                  "description": "Weak validator for this response; send it back as If-None-Match."
+                },
+                "required": true
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/athlete/plans": {
+      "get": {
+        "operationId": "listAthletePlans",
+        "summary": "The athlete's own plans",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "The ETag of the copy the client holds; a match answers 304."
+            },
+            "required": false,
+            "name": "If-None-Match",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "headers": {
+              "ETag": {
+                "schema": {
+                  "type": "string",
+                  "description": "Weak validator for this response; send it back as If-None-Match."
+                },
+                "required": true
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "athlete": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "firstName": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "firstName"
+                      ]
+                    },
+                    "plans": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "active",
+                              "benched"
+                            ]
+                          },
+                          "coachId": {
+                            "type": "string"
+                          },
+                          "coachName": {
+                            "type": "string"
+                          },
+                          "isGradus": {
+                            "type": "boolean"
+                          },
+                          "sport": {
+                            "type": "string"
+                          },
+                          "moveCount": {
+                            "type": "integer"
+                          },
+                          "totalMinutes": {
+                            "type": "number"
+                          },
+                          "updatedAt": {
+                            "type": "string"
+                          },
+                          "sessionsByState": {
+                            "type": "object",
+                            "properties": {
+                              "frustrated": {
+                                "type": "integer"
+                              },
+                              "pushing": {
+                                "type": "integer"
+                              },
+                              "steady": {
+                                "type": "integer"
+                              },
+                              "lockedIn": {
+                                "type": "integer"
+                              },
+                              "flowing": {
+                                "type": "integer"
+                              }
+                            },
+                            "required": [
+                              "frustrated",
+                              "pushing",
+                              "steady",
+                              "lockedIn",
+                              "flowing"
+                            ]
+                          },
+                          "sessionsTotal": {
+                            "type": "integer"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "title",
+                          "status",
+                          "coachId",
+                          "coachName",
+                          "isGradus",
+                          "sport",
+                          "moveCount",
+                          "totalMinutes",
+                          "updatedAt",
+                          "sessionsByState",
+                          "sessionsTotal"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "athlete",
+                    "plans"
+                  ]
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "Not Modified: unchanged since the ETag sent in If-None-Match.",
+            "headers": {
+              "ETag": {
+                "schema": {
+                  "type": "string",
+                  "description": "Weak validator for this response; send it back as If-None-Match."
+                },
+                "required": true
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/plans/{id}/sessions": {
+      "get": {
+        "operationId": "listPlanSessions",
+        "summary": "Logged sessions on a plan",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 100
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "required": false,
+            "name": "before",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "sessions": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "loggedAt": {
+                            "type": "string"
+                          },
+                          "durationSeconds": {
+                            "type": "integer"
+                          },
+                          "stateIndex": {
+                            "type": "integer"
+                          },
+                          "note": {
+                            "type": "string"
+                          },
+                          "loggedByKind": {
+                            "type": "string",
+                            "enum": [
+                              "parent",
+                              "athlete"
+                            ]
+                          },
+                          "loggedByFirstName": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "loggedAt",
+                          "durationSeconds",
+                          "stateIndex",
+                          "note",
+                          "loggedByKind",
+                          "loggedByFirstName"
+                        ]
+                      }
+                    },
+                    "athleteFirstName": {
+                      "type": "string"
+                    },
+                    "loggedByAthlete": {
+                      "type": "integer"
+                    },
+                    "loggedByParent": {
+                      "type": "integer"
+                    },
+                    "total": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "sessions",
+                    "athleteFirstName",
+                    "loggedByAthlete",
+                    "loggedByParent",
+                    "total"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "submitPlanSession",
+        "summary": "Log a practice session on a plan",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "stateIndex": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 4
+                  },
+                  "note": {
+                    "type": "string",
+                    "maxLength": 2000,
+                    "default": ""
+                  },
+                  "durationSeconds": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 86400,
+                    "default": 0
+                  }
+                },
+                "required": [
+                  "stateIndex"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "loggedAs": {
+                      "type": "string",
+                      "enum": [
+                        "parent",
+                        "athlete"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "loggedAs"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/plans/{id}/sessions/summary": {
+      "get": {
+        "operationId": "getPlanSessionsSummary",
+        "summary": "An AI summary of the sessions logged on a plan",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "summary": {
+                      "type": "string"
+                    },
+                    "generatedAt": {
+                      "type": "string"
+                    },
+                    "empty": {
+                      "type": "boolean"
+                    },
+                    "sessionsTotal": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "summary",
+                    "generatedAt",
+                    "empty",
+                    "sessionsTotal"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/voice/transcribe": {
+      "post": {
+        "operationId": "voiceTranscribe",
+        "summary": "Transcribe a voice recording",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "audio": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                },
+                "required": [
+                  "audio"
+                ]
+              },
+              "encoding": {
+                "audio": {
+                  "contentType": "audio/mp4"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "text": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "text"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/voice/build-plan": {
+      "post": {
+        "operationId": "voiceBuildPlan",
+        "summary": "Build or edit a plan from a voice recording",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "audio": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "mode": {
+                    "type": "string",
+                    "enum": [
+                      "create",
+                      "edit"
+                    ]
+                  },
+                  "planId": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                },
+                "required": [
+                  "audio",
+                  "mode"
+                ]
+              },
+              "encoding": {
+                "audio": {
+                  "contentType": "audio/mp4"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "planId": {
+                      "type": "string"
+                    },
+                    "transcript": {
+                      "type": "string"
+                    },
+                    "touched": {
+                      "type": "object",
+                      "properties": {
+                        "plan": {
+                          "type": "object",
+                          "properties": {
+                            "title": {
+                              "type": "boolean"
+                            },
+                            "athleteId": {
+                              "type": "boolean"
+                            },
+                            "notes": {
+                              "type": "boolean"
+                            }
+                          }
+                        },
+                        "moves": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "newMoveIds": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "transcript": {
+                          "type": "string"
+                        },
+                        "sources": {
+                          "type": "object",
+                          "properties": {
+                            "plan": {
+                              "type": "object",
+                              "properties": {
+                                "title": {
+                                  "type": "object",
+                                  "properties": {
+                                    "quote": {
+                                      "type": "string"
+                                    },
+                                    "start": {
+                                      "type": "integer"
+                                    },
+                                    "end": {
+                                      "type": "integer"
+                                    }
+                                  },
+                                  "required": [
+                                    "quote",
+                                    "start",
+                                    "end"
+                                  ]
+                                },
+                                "athleteId": {
+                                  "type": "object",
+                                  "properties": {
+                                    "quote": {
+                                      "type": "string"
+                                    },
+                                    "start": {
+                                      "type": "integer"
+                                    },
+                                    "end": {
+                                      "type": "integer"
+                                    }
+                                  },
+                                  "required": [
+                                    "quote",
+                                    "start",
+                                    "end"
+                                  ]
+                                },
+                                "notes": {
+                                  "type": "object",
+                                  "properties": {
+                                    "quote": {
+                                      "type": "string"
+                                    },
+                                    "start": {
+                                      "type": "integer"
+                                    },
+                                    "end": {
+                                      "type": "integer"
+                                    }
+                                  },
+                                  "required": [
+                                    "quote",
+                                    "start",
+                                    "end"
+                                  ]
+                                }
+                              }
+                            },
+                            "moves": {
+                              "type": "object",
+                              "additionalProperties": {
+                                "type": "object",
+                                "properties": {
+                                  "name": {
+                                    "type": "object",
+                                    "properties": {
+                                      "quote": {
+                                        "type": "string"
+                                      },
+                                      "start": {
+                                        "type": "integer"
+                                      },
+                                      "end": {
+                                        "type": "integer"
+                                      }
+                                    },
+                                    "required": [
+                                      "quote",
+                                      "start",
+                                      "end"
+                                    ]
+                                  },
+                                  "description": {
+                                    "type": "object",
+                                    "properties": {
+                                      "quote": {
+                                        "type": "string"
+                                      },
+                                      "start": {
+                                        "type": "integer"
+                                      },
+                                      "end": {
+                                        "type": "integer"
+                                      }
+                                    },
+                                    "required": [
+                                      "quote",
+                                      "start",
+                                      "end"
+                                    ]
+                                  },
+                                  "cue": {
+                                    "type": "object",
+                                    "properties": {
+                                      "quote": {
+                                        "type": "string"
+                                      },
+                                      "start": {
+                                        "type": "integer"
+                                      },
+                                      "end": {
+                                        "type": "integer"
+                                      }
+                                    },
+                                    "required": [
+                                      "quote",
+                                      "start",
+                                      "end"
+                                    ]
+                                  },
+                                  "why": {
+                                    "type": "object",
+                                    "properties": {
+                                      "quote": {
+                                        "type": "string"
+                                      },
+                                      "start": {
+                                        "type": "integer"
+                                      },
+                                      "end": {
+                                        "type": "integer"
+                                      }
+                                    },
+                                    "required": [
+                                      "quote",
+                                      "start",
+                                      "end"
+                                    ]
+                                  },
+                                  "target": {
+                                    "type": "object",
+                                    "properties": {
+                                      "quote": {
+                                        "type": "string"
+                                      },
+                                      "start": {
+                                        "type": "integer"
+                                      },
+                                      "end": {
+                                        "type": "integer"
+                                      }
+                                    },
+                                    "required": [
+                                      "quote",
+                                      "start",
+                                      "end"
+                                    ]
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "required": [
+                        "plan",
+                        "moves",
+                        "newMoveIds"
+                      ]
+                    },
+                    "unresolvedAthleteName": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "appliedMoveCount": {
+                      "type": "integer"
+                    },
+                    "aiFailed": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "planId",
+                    "transcript",
+                    "touched",
+                    "unresolvedAthleteName",
+                    "appliedMoveCount",
+                    "aiFailed"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/plans/{id}/share-token": {
+      "post": {
+        "operationId": "createPlanShareToken",
+        "summary": "Get or create a plan's share token",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "token": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "token"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/plans/import/{token}": {
+      "post": {
+        "operationId": "importSharedPlan",
+        "summary": "Import a shared plan as a template",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "token",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "planId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "planId"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/coach/starter-plans/{id}/adopt": {
+      "post": {
+        "operationId": "adoptStarterPlan",
+        "summary": "Adopt a Gradus starter plan",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/public/plans/{token}": {
+      "get": {
+        "operationId": "getSharedPlan",
+        "summary": "A shared plan, by its share token",
+        "security": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "token",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "The ETag of the copy the client holds; a match answers 304."
+            },
+            "required": false,
+            "name": "If-None-Match",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "headers": {
+              "ETag": {
+                "schema": {
+                  "type": "string",
+                  "description": "Weak validator for this response; send it back as If-None-Match."
+                },
+                "required": true
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "title": {
+                      "type": "string"
+                    },
+                    "notes": {
+                      "type": "string"
+                    },
+                    "coachFirstName": {
+                      "type": "string"
+                    },
+                    "coachLastName": {
+                      "type": "string"
+                    },
+                    "sharedAt": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "moves": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "position": {
+                            "type": "integer"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "description": {
+                            "type": "string"
+                          },
+                          "cue": {
+                            "type": "string"
+                          },
+                          "why": {
+                            "type": "string"
+                          },
+                          "targetKind": {
+                            "type": "string",
+                            "enum": [
+                              "reps",
+                              "mins"
+                            ]
+                          },
+                          "targetValue": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "position",
+                          "name",
+                          "description",
+                          "cue",
+                          "why",
+                          "targetKind",
+                          "targetValue"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "title",
+                    "notes",
+                    "coachFirstName",
+                    "coachLastName",
+                    "sharedAt",
+                    "moves"
+                  ]
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "Not Modified: unchanged since the ETag sent in If-None-Match.",
+            "headers": {
+              "ETag": {
+                "schema": {
+                  "type": "string",
+                  "description": "Weak validator for this response; send it back as If-None-Match."
+                },
+                "required": true
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/auth/apple": {
       "post": {
         "operationId": "postAuthApple",
