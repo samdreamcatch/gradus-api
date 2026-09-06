@@ -77,7 +77,7 @@ the profile. Any "can only be changed by the server" error in those flows is a r
 
 ## Option A — local dev server against production (preferred; production stays dark)
 
-Needs the project's service-role key in the local `.env` (never commit it).
+Needs the project's service-role key in `.env.local` (git-ignored). Not `.env`: that file is tracked and Lovable-managed, so a key put there would be committed.
 
 ```bash
 API_V1_ENABLED=true bun run dev                       # terminal 1
