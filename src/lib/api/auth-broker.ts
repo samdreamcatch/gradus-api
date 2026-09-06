@@ -344,12 +344,15 @@ export interface MintedSession {
   expiresIn: number;
 }
 
-export type CoachSignUpResult =
+export type SignUpResult =
   | { confirmationRequired: false; session: MintedSession }
   | { confirmationRequired: true };
+export type CoachSignUpResult = SignUpResult;
 
-/** Where the confirmation email (if the project ever requires one) lands — the same page the web's `emailRedirectTo` uses. */
+/** Where the confirmation email (if the project ever requires one) lands — the same pages the web's `emailRedirectTo` uses. */
 export const COACH_SIGNUP_REDIRECT_URL = "https://gradus.training/signup/coach";
+export const PARENT_SIGNUP_REDIRECT_URL = "https://gradus.training/signup/parent/athletes";
+export const ADULT_ATHLETE_SIGNUP_REDIRECT_URL = "https://gradus.training/athlete/onboarding";
 
 /**
  * Coach email/password sign-up through GoTrue's own `/signup` endpoint with
@@ -366,11 +369,27 @@ export async function signUpCoachWithPassword(
   input: { email: string; password: string },
   init: { fetchImpl?: typeof fetch; redirectTo?: string } = {},
 ): Promise<CoachSignUpResult> {
+  return signUpWithPassword(input, {
+    ...init,
+    redirectTo: init.redirectTo ?? COACH_SIGNUP_REDIRECT_URL,
+  });
+}
+
+/**
+ * Email/password account creation for any role. The role is decided by the
+ * profile row the follow-up flow creates (coach_profiles, parent_profiles,
+ * or a self-managed athlete), exactly as `supabase.auth.signUp` on the web
+ * carries no role either.
+ */
+export async function signUpWithPassword(
+  input: { email: string; password: string },
+  init: { fetchImpl?: typeof fetch; redirectTo: string },
+): Promise<SignUpResult> {
   const email = normalizeEmail(input.email);
   if (!email) {
     throw new ApiError({ code: "validation_failed", status: 400, message: "Email is required." });
   }
-  const redirectTo = init.redirectTo ?? COACH_SIGNUP_REDIRECT_URL;
+  const redirectTo = init.redirectTo;
 
   const result = await goTrueRequest<{
     access_token?: string;

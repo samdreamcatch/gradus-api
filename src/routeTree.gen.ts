@@ -99,9 +99,11 @@ import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/l
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
+import { Route as ApiV1SignupAdultAthleteRouteImport } from './routes/api/v1/signup/adult-athlete'
 import { Route as ApiV1SafetyReportsRouteImport } from './routes/api/v1/safety/reports'
 import { Route as ApiV1RoomsEnsureRouteImport } from './routes/api/v1/rooms/ensure'
 import { Route as ApiV1PromoCodesValidateRouteImport } from './routes/api/v1/promo-codes/validate'
+import { Route as ApiV1ParentInviteCodeRouteImport } from './routes/api/v1/parent/invite-code'
 import { Route as ApiV1OrgsVerifyCodeRouteImport } from './routes/api/v1/orgs/verify-code'
 import { Route as ApiV1OrgsSearchRouteImport } from './routes/api/v1/orgs/search'
 import { Route as ApiV1OrgsPopularRouteImport } from './routes/api/v1/orgs/popular'
@@ -124,6 +126,9 @@ import { Route as ApiV1AuthRecoverRouteImport } from './routes/api/v1/auth/recov
 import { Route as ApiV1AuthPasswordRouteImport } from './routes/api/v1/auth/password'
 import { Route as ApiV1AuthGoogleRouteImport } from './routes/api/v1/auth/google'
 import { Route as ApiV1AuthAppleRouteImport } from './routes/api/v1/auth/apple'
+import { Route as ApiV1AthleteMeRouteImport } from './routes/api/v1/athlete/me'
+import { Route as ApiV1AdultAthleteOnboardingRouteImport } from './routes/api/v1/adult-athlete/onboarding'
+import { Route as ApiV1AdultAthleteGoalsRouteImport } from './routes/api/v1/adult-athlete/goals'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 import { Route as ApiPublicHooksLifecycleEmailsRouteImport } from './routes/api/public/hooks/lifecycle-emails'
 import { Route as ApiPublicHooksErrorDigestRouteImport } from './routes/api/public/hooks/error-digest'
@@ -147,6 +152,19 @@ import { Route as ApiV1SafetyBlocksIndexRouteImport } from './routes/api/v1/safe
 import { Route as ApiV1RoomsIdIndexRouteImport } from './routes/api/v1/rooms/$id/index'
 import { Route as ApiV1PublicBoardsIndexRouteImport } from './routes/api/v1/public/boards/index'
 import { Route as ApiV1CoachInviteCodeIndexRouteImport } from './routes/api/v1/coach/invite-code/index'
+import { Route as ApiV1AdultAthleteSchedulesIndexRouteImport } from './routes/api/v1/adult-athlete/schedules/index'
+import { Route as ApiV1AdultAthleteCoachesIndexRouteImport } from './routes/api/v1/adult-athlete/coaches/index'
+import { Route as ApiV1SignupParentValidateCodeRouteImport } from './routes/api/v1/signup/parent/validate-code'
+import { Route as ApiV1SignupParentStatusRouteImport } from './routes/api/v1/signup/parent/status'
+import { Route as ApiV1SignupParentStartRouteImport } from './routes/api/v1/signup/parent/start'
+import { Route as ApiV1SignupParentScheduleRouteImport } from './routes/api/v1/signup/parent/schedule'
+import { Route as ApiV1SignupParentLinkCoachRouteImport } from './routes/api/v1/signup/parent/link-coach'
+import { Route as ApiV1SignupParentGoalsRouteImport } from './routes/api/v1/signup/parent/goals'
+import { Route as ApiV1SignupParentCoachPreviewRouteImport } from './routes/api/v1/signup/parent/coach-preview'
+import { Route as ApiV1SignupParentAthletesForCodeRouteImport } from './routes/api/v1/signup/parent/athletes-for-code'
+import { Route as ApiV1SignupAthleteUsernameRouteImport } from './routes/api/v1/signup/athlete/username'
+import { Route as ApiV1SignupAthleteInviteSummaryRouteImport } from './routes/api/v1/signup/athlete/invite-summary'
+import { Route as ApiV1SignupAthleteClaimRouteImport } from './routes/api/v1/signup/athlete/claim'
 import { Route as ApiV1SafetyBlocksUserIdRouteImport } from './routes/api/v1/safety/blocks/$userId'
 import { Route as ApiV1RoomsIdReadRouteImport } from './routes/api/v1/rooms/$id/read'
 import { Route as ApiV1RoomsIdMessagesRouteImport } from './routes/api/v1/rooms/$id/messages'
@@ -162,9 +180,17 @@ import { Route as ApiV1CoachOnboardingCompleteRouteImport } from './routes/api/v
 import { Route as ApiV1CoachInviteCodeRotateRouteImport } from './routes/api/v1/coach/invite-code/rotate'
 import { Route as ApiV1AuthUsernameResolveRouteImport } from './routes/api/v1/auth/username/resolve'
 import { Route as ApiV1AuthUsernameCheckRouteImport } from './routes/api/v1/auth/username/check'
+import { Route as ApiV1AuthSignupParentRouteImport } from './routes/api/v1/auth/signup/parent'
 import { Route as ApiV1AuthSignupCoachRouteImport } from './routes/api/v1/auth/signup/coach'
+import { Route as ApiV1AuthSignupAdultAthleteRouteImport } from './routes/api/v1/auth/signup/adult-athlete'
+import { Route as ApiV1AdultAthleteSchedulesCoachIdRouteImport } from './routes/api/v1/adult-athlete/schedules/$coachId'
+import { Route as ApiV1AdultAthleteCoachSportsOfferedRouteImport } from './routes/api/v1/adult-athlete/coach/sports-offered'
+import { Route as ApiV1AdultAthleteCoachPreviewRouteImport } from './routes/api/v1/adult-athlete/coach/preview'
+import { Route as ApiV1AdultAthleteCoachLinkRouteImport } from './routes/api/v1/adult-athlete/coach/link'
 import { Route as ApiV1BoardsSlugFollowsIndexRouteImport } from './routes/api/v1/boards/$slug/follows/index'
+import { Route as ApiV1AdultAthleteCoachesIdIndexRouteImport } from './routes/api/v1/adult-athlete/coaches/$id/index'
 import { Route as ApiV1BoardsSlugFollowsNameRouteImport } from './routes/api/v1/boards/$slug/follows/$name'
+import { Route as ApiV1AdultAthleteCoachesIdSportsRouteImport } from './routes/api/v1/adult-athlete/coaches/$id/sports'
 
 const UnsubscribeRoute = UnsubscribeRouteImport.update({
   id: '/unsubscribe',
@@ -661,6 +687,11 @@ const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
   path: '/lovable/email/auth/preview',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiV1SignupAdultAthleteRoute = ApiV1SignupAdultAthleteRouteImport.update({
+  id: '/api/v1/signup/adult-athlete',
+  path: '/api/v1/signup/adult-athlete',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiV1SafetyReportsRoute = ApiV1SafetyReportsRouteImport.update({
   id: '/api/v1/safety/reports',
   path: '/api/v1/safety/reports',
@@ -674,6 +705,11 @@ const ApiV1RoomsEnsureRoute = ApiV1RoomsEnsureRouteImport.update({
 const ApiV1PromoCodesValidateRoute = ApiV1PromoCodesValidateRouteImport.update({
   id: '/api/v1/promo-codes/validate',
   path: '/api/v1/promo-codes/validate',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1ParentInviteCodeRoute = ApiV1ParentInviteCodeRouteImport.update({
+  id: '/api/v1/parent/invite-code',
+  path: '/api/v1/parent/invite-code',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiV1OrgsVerifyCodeRoute = ApiV1OrgsVerifyCodeRouteImport.update({
@@ -785,6 +821,22 @@ const ApiV1AuthGoogleRoute = ApiV1AuthGoogleRouteImport.update({
 const ApiV1AuthAppleRoute = ApiV1AuthAppleRouteImport.update({
   id: '/api/v1/auth/apple',
   path: '/api/v1/auth/apple',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1AthleteMeRoute = ApiV1AthleteMeRouteImport.update({
+  id: '/api/v1/athlete/me',
+  path: '/api/v1/athlete/me',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1AdultAthleteOnboardingRoute =
+  ApiV1AdultAthleteOnboardingRouteImport.update({
+    id: '/api/v1/adult-athlete/onboarding',
+    path: '/api/v1/adult-athlete/onboarding',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1AdultAthleteGoalsRoute = ApiV1AdultAthleteGoalsRouteImport.update({
+  id: '/api/v1/adult-athlete/goals',
+  path: '/api/v1/adult-athlete/goals',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicPaymentsWebhookRoute =
@@ -921,6 +973,80 @@ const ApiV1CoachInviteCodeIndexRoute =
     path: '/api/v1/coach/invite-code/',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiV1AdultAthleteSchedulesIndexRoute =
+  ApiV1AdultAthleteSchedulesIndexRouteImport.update({
+    id: '/api/v1/adult-athlete/schedules/',
+    path: '/api/v1/adult-athlete/schedules/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1AdultAthleteCoachesIndexRoute =
+  ApiV1AdultAthleteCoachesIndexRouteImport.update({
+    id: '/api/v1/adult-athlete/coaches/',
+    path: '/api/v1/adult-athlete/coaches/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1SignupParentValidateCodeRoute =
+  ApiV1SignupParentValidateCodeRouteImport.update({
+    id: '/api/v1/signup/parent/validate-code',
+    path: '/api/v1/signup/parent/validate-code',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1SignupParentStatusRoute = ApiV1SignupParentStatusRouteImport.update({
+  id: '/api/v1/signup/parent/status',
+  path: '/api/v1/signup/parent/status',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1SignupParentStartRoute = ApiV1SignupParentStartRouteImport.update({
+  id: '/api/v1/signup/parent/start',
+  path: '/api/v1/signup/parent/start',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1SignupParentScheduleRoute =
+  ApiV1SignupParentScheduleRouteImport.update({
+    id: '/api/v1/signup/parent/schedule',
+    path: '/api/v1/signup/parent/schedule',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1SignupParentLinkCoachRoute =
+  ApiV1SignupParentLinkCoachRouteImport.update({
+    id: '/api/v1/signup/parent/link-coach',
+    path: '/api/v1/signup/parent/link-coach',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1SignupParentGoalsRoute = ApiV1SignupParentGoalsRouteImport.update({
+  id: '/api/v1/signup/parent/goals',
+  path: '/api/v1/signup/parent/goals',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1SignupParentCoachPreviewRoute =
+  ApiV1SignupParentCoachPreviewRouteImport.update({
+    id: '/api/v1/signup/parent/coach-preview',
+    path: '/api/v1/signup/parent/coach-preview',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1SignupParentAthletesForCodeRoute =
+  ApiV1SignupParentAthletesForCodeRouteImport.update({
+    id: '/api/v1/signup/parent/athletes-for-code',
+    path: '/api/v1/signup/parent/athletes-for-code',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1SignupAthleteUsernameRoute =
+  ApiV1SignupAthleteUsernameRouteImport.update({
+    id: '/api/v1/signup/athlete/username',
+    path: '/api/v1/signup/athlete/username',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1SignupAthleteInviteSummaryRoute =
+  ApiV1SignupAthleteInviteSummaryRouteImport.update({
+    id: '/api/v1/signup/athlete/invite-summary',
+    path: '/api/v1/signup/athlete/invite-summary',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1SignupAthleteClaimRoute = ApiV1SignupAthleteClaimRouteImport.update({
+  id: '/api/v1/signup/athlete/claim',
+  path: '/api/v1/signup/athlete/claim',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiV1SafetyBlocksUserIdRoute = ApiV1SafetyBlocksUserIdRouteImport.update({
   id: '/api/v1/safety/blocks/$userId',
   path: '/api/v1/safety/blocks/$userId',
@@ -1003,21 +1129,68 @@ const ApiV1AuthUsernameCheckRoute = ApiV1AuthUsernameCheckRouteImport.update({
   path: '/api/v1/auth/username/check',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiV1AuthSignupParentRoute = ApiV1AuthSignupParentRouteImport.update({
+  id: '/api/v1/auth/signup/parent',
+  path: '/api/v1/auth/signup/parent',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiV1AuthSignupCoachRoute = ApiV1AuthSignupCoachRouteImport.update({
   id: '/api/v1/auth/signup/coach',
   path: '/api/v1/auth/signup/coach',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiV1AuthSignupAdultAthleteRoute =
+  ApiV1AuthSignupAdultAthleteRouteImport.update({
+    id: '/api/v1/auth/signup/adult-athlete',
+    path: '/api/v1/auth/signup/adult-athlete',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1AdultAthleteSchedulesCoachIdRoute =
+  ApiV1AdultAthleteSchedulesCoachIdRouteImport.update({
+    id: '/api/v1/adult-athlete/schedules/$coachId',
+    path: '/api/v1/adult-athlete/schedules/$coachId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1AdultAthleteCoachSportsOfferedRoute =
+  ApiV1AdultAthleteCoachSportsOfferedRouteImport.update({
+    id: '/api/v1/adult-athlete/coach/sports-offered',
+    path: '/api/v1/adult-athlete/coach/sports-offered',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1AdultAthleteCoachPreviewRoute =
+  ApiV1AdultAthleteCoachPreviewRouteImport.update({
+    id: '/api/v1/adult-athlete/coach/preview',
+    path: '/api/v1/adult-athlete/coach/preview',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1AdultAthleteCoachLinkRoute =
+  ApiV1AdultAthleteCoachLinkRouteImport.update({
+    id: '/api/v1/adult-athlete/coach/link',
+    path: '/api/v1/adult-athlete/coach/link',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiV1BoardsSlugFollowsIndexRoute =
   ApiV1BoardsSlugFollowsIndexRouteImport.update({
     id: '/api/v1/boards/$slug/follows/',
     path: '/api/v1/boards/$slug/follows/',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiV1AdultAthleteCoachesIdIndexRoute =
+  ApiV1AdultAthleteCoachesIdIndexRouteImport.update({
+    id: '/api/v1/adult-athlete/coaches/$id/',
+    path: '/api/v1/adult-athlete/coaches/$id/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiV1BoardsSlugFollowsNameRoute =
   ApiV1BoardsSlugFollowsNameRouteImport.update({
     id: '/api/v1/boards/$slug/follows/$name',
     path: '/api/v1/boards/$slug/follows/$name',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1AdultAthleteCoachesIdSportsRoute =
+  ApiV1AdultAthleteCoachesIdSportsRouteImport.update({
+    id: '/api/v1/adult-athlete/coaches/$id/sports',
+    path: '/api/v1/adult-athlete/coaches/$id/sports',
     getParentRoute: () => rootRouteImport,
   } as any)
 
@@ -1113,6 +1286,9 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/error-digest': typeof ApiPublicHooksErrorDigestRoute
   '/api/public/hooks/lifecycle-emails': typeof ApiPublicHooksLifecycleEmailsRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
+  '/api/v1/adult-athlete/goals': typeof ApiV1AdultAthleteGoalsRoute
+  '/api/v1/adult-athlete/onboarding': typeof ApiV1AdultAthleteOnboardingRoute
+  '/api/v1/athlete/me': typeof ApiV1AthleteMeRoute
   '/api/v1/auth/apple': typeof ApiV1AuthAppleRoute
   '/api/v1/auth/google': typeof ApiV1AuthGoogleRoute
   '/api/v1/auth/password': typeof ApiV1AuthPasswordRoute
@@ -1135,9 +1311,11 @@ export interface FileRoutesByFullPath {
   '/api/v1/orgs/popular': typeof ApiV1OrgsPopularRoute
   '/api/v1/orgs/search': typeof ApiV1OrgsSearchRoute
   '/api/v1/orgs/verify-code': typeof ApiV1OrgsVerifyCodeRoute
+  '/api/v1/parent/invite-code': typeof ApiV1ParentInviteCodeRoute
   '/api/v1/promo-codes/validate': typeof ApiV1PromoCodesValidateRoute
   '/api/v1/rooms/ensure': typeof ApiV1RoomsEnsureRoute
   '/api/v1/safety/reports': typeof ApiV1SafetyReportsRoute
+  '/api/v1/signup/adult-athlete': typeof ApiV1SignupAdultAthleteRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -1155,7 +1333,13 @@ export interface FileRoutesByFullPath {
   '/parent/resources/': typeof AuthenticatedParentResourcesIndexRoute
   '/api/v1/me/': typeof ApiV1MeIndexRoute
   '/api/v1/rooms/': typeof ApiV1RoomsIndexRoute
+  '/api/v1/adult-athlete/coach/link': typeof ApiV1AdultAthleteCoachLinkRoute
+  '/api/v1/adult-athlete/coach/preview': typeof ApiV1AdultAthleteCoachPreviewRoute
+  '/api/v1/adult-athlete/coach/sports-offered': typeof ApiV1AdultAthleteCoachSportsOfferedRoute
+  '/api/v1/adult-athlete/schedules/$coachId': typeof ApiV1AdultAthleteSchedulesCoachIdRoute
+  '/api/v1/auth/signup/adult-athlete': typeof ApiV1AuthSignupAdultAthleteRoute
   '/api/v1/auth/signup/coach': typeof ApiV1AuthSignupCoachRoute
+  '/api/v1/auth/signup/parent': typeof ApiV1AuthSignupParentRoute
   '/api/v1/auth/username/check': typeof ApiV1AuthUsernameCheckRoute
   '/api/v1/auth/username/resolve': typeof ApiV1AuthUsernameResolveRoute
   '/api/v1/coach/invite-code/rotate': typeof ApiV1CoachInviteCodeRotateRoute
@@ -1171,11 +1355,26 @@ export interface FileRoutesByFullPath {
   '/api/v1/rooms/$id/messages': typeof ApiV1RoomsIdMessagesRoute
   '/api/v1/rooms/$id/read': typeof ApiV1RoomsIdReadRoute
   '/api/v1/safety/blocks/$userId': typeof ApiV1SafetyBlocksUserIdRoute
+  '/api/v1/signup/athlete/claim': typeof ApiV1SignupAthleteClaimRoute
+  '/api/v1/signup/athlete/invite-summary': typeof ApiV1SignupAthleteInviteSummaryRoute
+  '/api/v1/signup/athlete/username': typeof ApiV1SignupAthleteUsernameRoute
+  '/api/v1/signup/parent/athletes-for-code': typeof ApiV1SignupParentAthletesForCodeRoute
+  '/api/v1/signup/parent/coach-preview': typeof ApiV1SignupParentCoachPreviewRoute
+  '/api/v1/signup/parent/goals': typeof ApiV1SignupParentGoalsRoute
+  '/api/v1/signup/parent/link-coach': typeof ApiV1SignupParentLinkCoachRoute
+  '/api/v1/signup/parent/schedule': typeof ApiV1SignupParentScheduleRoute
+  '/api/v1/signup/parent/start': typeof ApiV1SignupParentStartRoute
+  '/api/v1/signup/parent/status': typeof ApiV1SignupParentStatusRoute
+  '/api/v1/signup/parent/validate-code': typeof ApiV1SignupParentValidateCodeRoute
+  '/api/v1/adult-athlete/coaches/': typeof ApiV1AdultAthleteCoachesIndexRoute
+  '/api/v1/adult-athlete/schedules/': typeof ApiV1AdultAthleteSchedulesIndexRoute
   '/api/v1/coach/invite-code/': typeof ApiV1CoachInviteCodeIndexRoute
   '/api/v1/public/boards/': typeof ApiV1PublicBoardsIndexRoute
   '/api/v1/rooms/$id/': typeof ApiV1RoomsIdIndexRoute
   '/api/v1/safety/blocks/': typeof ApiV1SafetyBlocksIndexRoute
+  '/api/v1/adult-athlete/coaches/$id/sports': typeof ApiV1AdultAthleteCoachesIdSportsRoute
   '/api/v1/boards/$slug/follows/$name': typeof ApiV1BoardsSlugFollowsNameRoute
+  '/api/v1/adult-athlete/coaches/$id/': typeof ApiV1AdultAthleteCoachesIdIndexRoute
   '/api/v1/boards/$slug/follows/': typeof ApiV1BoardsSlugFollowsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -1264,6 +1463,9 @@ export interface FileRoutesByTo {
   '/api/public/hooks/error-digest': typeof ApiPublicHooksErrorDigestRoute
   '/api/public/hooks/lifecycle-emails': typeof ApiPublicHooksLifecycleEmailsRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
+  '/api/v1/adult-athlete/goals': typeof ApiV1AdultAthleteGoalsRoute
+  '/api/v1/adult-athlete/onboarding': typeof ApiV1AdultAthleteOnboardingRoute
+  '/api/v1/athlete/me': typeof ApiV1AthleteMeRoute
   '/api/v1/auth/apple': typeof ApiV1AuthAppleRoute
   '/api/v1/auth/google': typeof ApiV1AuthGoogleRoute
   '/api/v1/auth/password': typeof ApiV1AuthPasswordRoute
@@ -1286,9 +1488,11 @@ export interface FileRoutesByTo {
   '/api/v1/orgs/popular': typeof ApiV1OrgsPopularRoute
   '/api/v1/orgs/search': typeof ApiV1OrgsSearchRoute
   '/api/v1/orgs/verify-code': typeof ApiV1OrgsVerifyCodeRoute
+  '/api/v1/parent/invite-code': typeof ApiV1ParentInviteCodeRoute
   '/api/v1/promo-codes/validate': typeof ApiV1PromoCodesValidateRoute
   '/api/v1/rooms/ensure': typeof ApiV1RoomsEnsureRoute
   '/api/v1/safety/reports': typeof ApiV1SafetyReportsRoute
+  '/api/v1/signup/adult-athlete': typeof ApiV1SignupAdultAthleteRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -1306,7 +1510,13 @@ export interface FileRoutesByTo {
   '/parent/resources': typeof AuthenticatedParentResourcesIndexRoute
   '/api/v1/me': typeof ApiV1MeIndexRoute
   '/api/v1/rooms': typeof ApiV1RoomsIndexRoute
+  '/api/v1/adult-athlete/coach/link': typeof ApiV1AdultAthleteCoachLinkRoute
+  '/api/v1/adult-athlete/coach/preview': typeof ApiV1AdultAthleteCoachPreviewRoute
+  '/api/v1/adult-athlete/coach/sports-offered': typeof ApiV1AdultAthleteCoachSportsOfferedRoute
+  '/api/v1/adult-athlete/schedules/$coachId': typeof ApiV1AdultAthleteSchedulesCoachIdRoute
+  '/api/v1/auth/signup/adult-athlete': typeof ApiV1AuthSignupAdultAthleteRoute
   '/api/v1/auth/signup/coach': typeof ApiV1AuthSignupCoachRoute
+  '/api/v1/auth/signup/parent': typeof ApiV1AuthSignupParentRoute
   '/api/v1/auth/username/check': typeof ApiV1AuthUsernameCheckRoute
   '/api/v1/auth/username/resolve': typeof ApiV1AuthUsernameResolveRoute
   '/api/v1/coach/invite-code/rotate': typeof ApiV1CoachInviteCodeRotateRoute
@@ -1322,11 +1532,26 @@ export interface FileRoutesByTo {
   '/api/v1/rooms/$id/messages': typeof ApiV1RoomsIdMessagesRoute
   '/api/v1/rooms/$id/read': typeof ApiV1RoomsIdReadRoute
   '/api/v1/safety/blocks/$userId': typeof ApiV1SafetyBlocksUserIdRoute
+  '/api/v1/signup/athlete/claim': typeof ApiV1SignupAthleteClaimRoute
+  '/api/v1/signup/athlete/invite-summary': typeof ApiV1SignupAthleteInviteSummaryRoute
+  '/api/v1/signup/athlete/username': typeof ApiV1SignupAthleteUsernameRoute
+  '/api/v1/signup/parent/athletes-for-code': typeof ApiV1SignupParentAthletesForCodeRoute
+  '/api/v1/signup/parent/coach-preview': typeof ApiV1SignupParentCoachPreviewRoute
+  '/api/v1/signup/parent/goals': typeof ApiV1SignupParentGoalsRoute
+  '/api/v1/signup/parent/link-coach': typeof ApiV1SignupParentLinkCoachRoute
+  '/api/v1/signup/parent/schedule': typeof ApiV1SignupParentScheduleRoute
+  '/api/v1/signup/parent/start': typeof ApiV1SignupParentStartRoute
+  '/api/v1/signup/parent/status': typeof ApiV1SignupParentStatusRoute
+  '/api/v1/signup/parent/validate-code': typeof ApiV1SignupParentValidateCodeRoute
+  '/api/v1/adult-athlete/coaches': typeof ApiV1AdultAthleteCoachesIndexRoute
+  '/api/v1/adult-athlete/schedules': typeof ApiV1AdultAthleteSchedulesIndexRoute
   '/api/v1/coach/invite-code': typeof ApiV1CoachInviteCodeIndexRoute
   '/api/v1/public/boards': typeof ApiV1PublicBoardsIndexRoute
   '/api/v1/rooms/$id': typeof ApiV1RoomsIdIndexRoute
   '/api/v1/safety/blocks': typeof ApiV1SafetyBlocksIndexRoute
+  '/api/v1/adult-athlete/coaches/$id/sports': typeof ApiV1AdultAthleteCoachesIdSportsRoute
   '/api/v1/boards/$slug/follows/$name': typeof ApiV1BoardsSlugFollowsNameRoute
+  '/api/v1/adult-athlete/coaches/$id': typeof ApiV1AdultAthleteCoachesIdIndexRoute
   '/api/v1/boards/$slug/follows': typeof ApiV1BoardsSlugFollowsIndexRoute
 }
 export interface FileRoutesById {
@@ -1423,6 +1648,9 @@ export interface FileRoutesById {
   '/api/public/hooks/error-digest': typeof ApiPublicHooksErrorDigestRoute
   '/api/public/hooks/lifecycle-emails': typeof ApiPublicHooksLifecycleEmailsRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
+  '/api/v1/adult-athlete/goals': typeof ApiV1AdultAthleteGoalsRoute
+  '/api/v1/adult-athlete/onboarding': typeof ApiV1AdultAthleteOnboardingRoute
+  '/api/v1/athlete/me': typeof ApiV1AthleteMeRoute
   '/api/v1/auth/apple': typeof ApiV1AuthAppleRoute
   '/api/v1/auth/google': typeof ApiV1AuthGoogleRoute
   '/api/v1/auth/password': typeof ApiV1AuthPasswordRoute
@@ -1445,9 +1673,11 @@ export interface FileRoutesById {
   '/api/v1/orgs/popular': typeof ApiV1OrgsPopularRoute
   '/api/v1/orgs/search': typeof ApiV1OrgsSearchRoute
   '/api/v1/orgs/verify-code': typeof ApiV1OrgsVerifyCodeRoute
+  '/api/v1/parent/invite-code': typeof ApiV1ParentInviteCodeRoute
   '/api/v1/promo-codes/validate': typeof ApiV1PromoCodesValidateRoute
   '/api/v1/rooms/ensure': typeof ApiV1RoomsEnsureRoute
   '/api/v1/safety/reports': typeof ApiV1SafetyReportsRoute
+  '/api/v1/signup/adult-athlete': typeof ApiV1SignupAdultAthleteRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -1465,7 +1695,13 @@ export interface FileRoutesById {
   '/_authenticated/parent/resources/': typeof AuthenticatedParentResourcesIndexRoute
   '/api/v1/me/': typeof ApiV1MeIndexRoute
   '/api/v1/rooms/': typeof ApiV1RoomsIndexRoute
+  '/api/v1/adult-athlete/coach/link': typeof ApiV1AdultAthleteCoachLinkRoute
+  '/api/v1/adult-athlete/coach/preview': typeof ApiV1AdultAthleteCoachPreviewRoute
+  '/api/v1/adult-athlete/coach/sports-offered': typeof ApiV1AdultAthleteCoachSportsOfferedRoute
+  '/api/v1/adult-athlete/schedules/$coachId': typeof ApiV1AdultAthleteSchedulesCoachIdRoute
+  '/api/v1/auth/signup/adult-athlete': typeof ApiV1AuthSignupAdultAthleteRoute
   '/api/v1/auth/signup/coach': typeof ApiV1AuthSignupCoachRoute
+  '/api/v1/auth/signup/parent': typeof ApiV1AuthSignupParentRoute
   '/api/v1/auth/username/check': typeof ApiV1AuthUsernameCheckRoute
   '/api/v1/auth/username/resolve': typeof ApiV1AuthUsernameResolveRoute
   '/api/v1/coach/invite-code/rotate': typeof ApiV1CoachInviteCodeRotateRoute
@@ -1481,11 +1717,26 @@ export interface FileRoutesById {
   '/api/v1/rooms/$id/messages': typeof ApiV1RoomsIdMessagesRoute
   '/api/v1/rooms/$id/read': typeof ApiV1RoomsIdReadRoute
   '/api/v1/safety/blocks/$userId': typeof ApiV1SafetyBlocksUserIdRoute
+  '/api/v1/signup/athlete/claim': typeof ApiV1SignupAthleteClaimRoute
+  '/api/v1/signup/athlete/invite-summary': typeof ApiV1SignupAthleteInviteSummaryRoute
+  '/api/v1/signup/athlete/username': typeof ApiV1SignupAthleteUsernameRoute
+  '/api/v1/signup/parent/athletes-for-code': typeof ApiV1SignupParentAthletesForCodeRoute
+  '/api/v1/signup/parent/coach-preview': typeof ApiV1SignupParentCoachPreviewRoute
+  '/api/v1/signup/parent/goals': typeof ApiV1SignupParentGoalsRoute
+  '/api/v1/signup/parent/link-coach': typeof ApiV1SignupParentLinkCoachRoute
+  '/api/v1/signup/parent/schedule': typeof ApiV1SignupParentScheduleRoute
+  '/api/v1/signup/parent/start': typeof ApiV1SignupParentStartRoute
+  '/api/v1/signup/parent/status': typeof ApiV1SignupParentStatusRoute
+  '/api/v1/signup/parent/validate-code': typeof ApiV1SignupParentValidateCodeRoute
+  '/api/v1/adult-athlete/coaches/': typeof ApiV1AdultAthleteCoachesIndexRoute
+  '/api/v1/adult-athlete/schedules/': typeof ApiV1AdultAthleteSchedulesIndexRoute
   '/api/v1/coach/invite-code/': typeof ApiV1CoachInviteCodeIndexRoute
   '/api/v1/public/boards/': typeof ApiV1PublicBoardsIndexRoute
   '/api/v1/rooms/$id/': typeof ApiV1RoomsIdIndexRoute
   '/api/v1/safety/blocks/': typeof ApiV1SafetyBlocksIndexRoute
+  '/api/v1/adult-athlete/coaches/$id/sports': typeof ApiV1AdultAthleteCoachesIdSportsRoute
   '/api/v1/boards/$slug/follows/$name': typeof ApiV1BoardsSlugFollowsNameRoute
+  '/api/v1/adult-athlete/coaches/$id/': typeof ApiV1AdultAthleteCoachesIdIndexRoute
   '/api/v1/boards/$slug/follows/': typeof ApiV1BoardsSlugFollowsIndexRoute
 }
 export interface FileRouteTypes {
@@ -1582,6 +1833,9 @@ export interface FileRouteTypes {
     | '/api/public/hooks/error-digest'
     | '/api/public/hooks/lifecycle-emails'
     | '/api/public/payments/webhook'
+    | '/api/v1/adult-athlete/goals'
+    | '/api/v1/adult-athlete/onboarding'
+    | '/api/v1/athlete/me'
     | '/api/v1/auth/apple'
     | '/api/v1/auth/google'
     | '/api/v1/auth/password'
@@ -1604,9 +1858,11 @@ export interface FileRouteTypes {
     | '/api/v1/orgs/popular'
     | '/api/v1/orgs/search'
     | '/api/v1/orgs/verify-code'
+    | '/api/v1/parent/invite-code'
     | '/api/v1/promo-codes/validate'
     | '/api/v1/rooms/ensure'
     | '/api/v1/safety/reports'
+    | '/api/v1/signup/adult-athlete'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
@@ -1624,7 +1880,13 @@ export interface FileRouteTypes {
     | '/parent/resources/'
     | '/api/v1/me/'
     | '/api/v1/rooms/'
+    | '/api/v1/adult-athlete/coach/link'
+    | '/api/v1/adult-athlete/coach/preview'
+    | '/api/v1/adult-athlete/coach/sports-offered'
+    | '/api/v1/adult-athlete/schedules/$coachId'
+    | '/api/v1/auth/signup/adult-athlete'
     | '/api/v1/auth/signup/coach'
+    | '/api/v1/auth/signup/parent'
     | '/api/v1/auth/username/check'
     | '/api/v1/auth/username/resolve'
     | '/api/v1/coach/invite-code/rotate'
@@ -1640,11 +1902,26 @@ export interface FileRouteTypes {
     | '/api/v1/rooms/$id/messages'
     | '/api/v1/rooms/$id/read'
     | '/api/v1/safety/blocks/$userId'
+    | '/api/v1/signup/athlete/claim'
+    | '/api/v1/signup/athlete/invite-summary'
+    | '/api/v1/signup/athlete/username'
+    | '/api/v1/signup/parent/athletes-for-code'
+    | '/api/v1/signup/parent/coach-preview'
+    | '/api/v1/signup/parent/goals'
+    | '/api/v1/signup/parent/link-coach'
+    | '/api/v1/signup/parent/schedule'
+    | '/api/v1/signup/parent/start'
+    | '/api/v1/signup/parent/status'
+    | '/api/v1/signup/parent/validate-code'
+    | '/api/v1/adult-athlete/coaches/'
+    | '/api/v1/adult-athlete/schedules/'
     | '/api/v1/coach/invite-code/'
     | '/api/v1/public/boards/'
     | '/api/v1/rooms/$id/'
     | '/api/v1/safety/blocks/'
+    | '/api/v1/adult-athlete/coaches/$id/sports'
     | '/api/v1/boards/$slug/follows/$name'
+    | '/api/v1/adult-athlete/coaches/$id/'
     | '/api/v1/boards/$slug/follows/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -1733,6 +2010,9 @@ export interface FileRouteTypes {
     | '/api/public/hooks/error-digest'
     | '/api/public/hooks/lifecycle-emails'
     | '/api/public/payments/webhook'
+    | '/api/v1/adult-athlete/goals'
+    | '/api/v1/adult-athlete/onboarding'
+    | '/api/v1/athlete/me'
     | '/api/v1/auth/apple'
     | '/api/v1/auth/google'
     | '/api/v1/auth/password'
@@ -1755,9 +2035,11 @@ export interface FileRouteTypes {
     | '/api/v1/orgs/popular'
     | '/api/v1/orgs/search'
     | '/api/v1/orgs/verify-code'
+    | '/api/v1/parent/invite-code'
     | '/api/v1/promo-codes/validate'
     | '/api/v1/rooms/ensure'
     | '/api/v1/safety/reports'
+    | '/api/v1/signup/adult-athlete'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
@@ -1775,7 +2057,13 @@ export interface FileRouteTypes {
     | '/parent/resources'
     | '/api/v1/me'
     | '/api/v1/rooms'
+    | '/api/v1/adult-athlete/coach/link'
+    | '/api/v1/adult-athlete/coach/preview'
+    | '/api/v1/adult-athlete/coach/sports-offered'
+    | '/api/v1/adult-athlete/schedules/$coachId'
+    | '/api/v1/auth/signup/adult-athlete'
     | '/api/v1/auth/signup/coach'
+    | '/api/v1/auth/signup/parent'
     | '/api/v1/auth/username/check'
     | '/api/v1/auth/username/resolve'
     | '/api/v1/coach/invite-code/rotate'
@@ -1791,11 +2079,26 @@ export interface FileRouteTypes {
     | '/api/v1/rooms/$id/messages'
     | '/api/v1/rooms/$id/read'
     | '/api/v1/safety/blocks/$userId'
+    | '/api/v1/signup/athlete/claim'
+    | '/api/v1/signup/athlete/invite-summary'
+    | '/api/v1/signup/athlete/username'
+    | '/api/v1/signup/parent/athletes-for-code'
+    | '/api/v1/signup/parent/coach-preview'
+    | '/api/v1/signup/parent/goals'
+    | '/api/v1/signup/parent/link-coach'
+    | '/api/v1/signup/parent/schedule'
+    | '/api/v1/signup/parent/start'
+    | '/api/v1/signup/parent/status'
+    | '/api/v1/signup/parent/validate-code'
+    | '/api/v1/adult-athlete/coaches'
+    | '/api/v1/adult-athlete/schedules'
     | '/api/v1/coach/invite-code'
     | '/api/v1/public/boards'
     | '/api/v1/rooms/$id'
     | '/api/v1/safety/blocks'
+    | '/api/v1/adult-athlete/coaches/$id/sports'
     | '/api/v1/boards/$slug/follows/$name'
+    | '/api/v1/adult-athlete/coaches/$id'
     | '/api/v1/boards/$slug/follows'
   id:
     | '__root__'
@@ -1891,6 +2194,9 @@ export interface FileRouteTypes {
     | '/api/public/hooks/error-digest'
     | '/api/public/hooks/lifecycle-emails'
     | '/api/public/payments/webhook'
+    | '/api/v1/adult-athlete/goals'
+    | '/api/v1/adult-athlete/onboarding'
+    | '/api/v1/athlete/me'
     | '/api/v1/auth/apple'
     | '/api/v1/auth/google'
     | '/api/v1/auth/password'
@@ -1913,9 +2219,11 @@ export interface FileRouteTypes {
     | '/api/v1/orgs/popular'
     | '/api/v1/orgs/search'
     | '/api/v1/orgs/verify-code'
+    | '/api/v1/parent/invite-code'
     | '/api/v1/promo-codes/validate'
     | '/api/v1/rooms/ensure'
     | '/api/v1/safety/reports'
+    | '/api/v1/signup/adult-athlete'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
@@ -1933,7 +2241,13 @@ export interface FileRouteTypes {
     | '/_authenticated/parent/resources/'
     | '/api/v1/me/'
     | '/api/v1/rooms/'
+    | '/api/v1/adult-athlete/coach/link'
+    | '/api/v1/adult-athlete/coach/preview'
+    | '/api/v1/adult-athlete/coach/sports-offered'
+    | '/api/v1/adult-athlete/schedules/$coachId'
+    | '/api/v1/auth/signup/adult-athlete'
     | '/api/v1/auth/signup/coach'
+    | '/api/v1/auth/signup/parent'
     | '/api/v1/auth/username/check'
     | '/api/v1/auth/username/resolve'
     | '/api/v1/coach/invite-code/rotate'
@@ -1949,11 +2263,26 @@ export interface FileRouteTypes {
     | '/api/v1/rooms/$id/messages'
     | '/api/v1/rooms/$id/read'
     | '/api/v1/safety/blocks/$userId'
+    | '/api/v1/signup/athlete/claim'
+    | '/api/v1/signup/athlete/invite-summary'
+    | '/api/v1/signup/athlete/username'
+    | '/api/v1/signup/parent/athletes-for-code'
+    | '/api/v1/signup/parent/coach-preview'
+    | '/api/v1/signup/parent/goals'
+    | '/api/v1/signup/parent/link-coach'
+    | '/api/v1/signup/parent/schedule'
+    | '/api/v1/signup/parent/start'
+    | '/api/v1/signup/parent/status'
+    | '/api/v1/signup/parent/validate-code'
+    | '/api/v1/adult-athlete/coaches/'
+    | '/api/v1/adult-athlete/schedules/'
     | '/api/v1/coach/invite-code/'
     | '/api/v1/public/boards/'
     | '/api/v1/rooms/$id/'
     | '/api/v1/safety/blocks/'
+    | '/api/v1/adult-athlete/coaches/$id/sports'
     | '/api/v1/boards/$slug/follows/$name'
+    | '/api/v1/adult-athlete/coaches/$id/'
     | '/api/v1/boards/$slug/follows/'
   fileRoutesById: FileRoutesById
 }
@@ -1985,6 +2314,9 @@ export interface RootRouteChildren {
   ApiPublicHooksErrorDigestRoute: typeof ApiPublicHooksErrorDigestRoute
   ApiPublicHooksLifecycleEmailsRoute: typeof ApiPublicHooksLifecycleEmailsRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
+  ApiV1AdultAthleteGoalsRoute: typeof ApiV1AdultAthleteGoalsRoute
+  ApiV1AdultAthleteOnboardingRoute: typeof ApiV1AdultAthleteOnboardingRoute
+  ApiV1AthleteMeRoute: typeof ApiV1AthleteMeRoute
   ApiV1AuthAppleRoute: typeof ApiV1AuthAppleRoute
   ApiV1AuthGoogleRoute: typeof ApiV1AuthGoogleRoute
   ApiV1AuthPasswordRoute: typeof ApiV1AuthPasswordRoute
@@ -2007,16 +2339,24 @@ export interface RootRouteChildren {
   ApiV1OrgsPopularRoute: typeof ApiV1OrgsPopularRoute
   ApiV1OrgsSearchRoute: typeof ApiV1OrgsSearchRoute
   ApiV1OrgsVerifyCodeRoute: typeof ApiV1OrgsVerifyCodeRoute
+  ApiV1ParentInviteCodeRoute: typeof ApiV1ParentInviteCodeRoute
   ApiV1PromoCodesValidateRoute: typeof ApiV1PromoCodesValidateRoute
   ApiV1RoomsEnsureRoute: typeof ApiV1RoomsEnsureRoute
   ApiV1SafetyReportsRoute: typeof ApiV1SafetyReportsRoute
+  ApiV1SignupAdultAthleteRoute: typeof ApiV1SignupAdultAthleteRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
   ApiV1MeIndexRoute: typeof ApiV1MeIndexRoute
   ApiV1RoomsIndexRoute: typeof ApiV1RoomsIndexRoute
+  ApiV1AdultAthleteCoachLinkRoute: typeof ApiV1AdultAthleteCoachLinkRoute
+  ApiV1AdultAthleteCoachPreviewRoute: typeof ApiV1AdultAthleteCoachPreviewRoute
+  ApiV1AdultAthleteCoachSportsOfferedRoute: typeof ApiV1AdultAthleteCoachSportsOfferedRoute
+  ApiV1AdultAthleteSchedulesCoachIdRoute: typeof ApiV1AdultAthleteSchedulesCoachIdRoute
+  ApiV1AuthSignupAdultAthleteRoute: typeof ApiV1AuthSignupAdultAthleteRoute
   ApiV1AuthSignupCoachRoute: typeof ApiV1AuthSignupCoachRoute
+  ApiV1AuthSignupParentRoute: typeof ApiV1AuthSignupParentRoute
   ApiV1AuthUsernameCheckRoute: typeof ApiV1AuthUsernameCheckRoute
   ApiV1AuthUsernameResolveRoute: typeof ApiV1AuthUsernameResolveRoute
   ApiV1CoachInviteCodeRotateRoute: typeof ApiV1CoachInviteCodeRotateRoute
@@ -2032,11 +2372,26 @@ export interface RootRouteChildren {
   ApiV1RoomsIdMessagesRoute: typeof ApiV1RoomsIdMessagesRoute
   ApiV1RoomsIdReadRoute: typeof ApiV1RoomsIdReadRoute
   ApiV1SafetyBlocksUserIdRoute: typeof ApiV1SafetyBlocksUserIdRoute
+  ApiV1SignupAthleteClaimRoute: typeof ApiV1SignupAthleteClaimRoute
+  ApiV1SignupAthleteInviteSummaryRoute: typeof ApiV1SignupAthleteInviteSummaryRoute
+  ApiV1SignupAthleteUsernameRoute: typeof ApiV1SignupAthleteUsernameRoute
+  ApiV1SignupParentAthletesForCodeRoute: typeof ApiV1SignupParentAthletesForCodeRoute
+  ApiV1SignupParentCoachPreviewRoute: typeof ApiV1SignupParentCoachPreviewRoute
+  ApiV1SignupParentGoalsRoute: typeof ApiV1SignupParentGoalsRoute
+  ApiV1SignupParentLinkCoachRoute: typeof ApiV1SignupParentLinkCoachRoute
+  ApiV1SignupParentScheduleRoute: typeof ApiV1SignupParentScheduleRoute
+  ApiV1SignupParentStartRoute: typeof ApiV1SignupParentStartRoute
+  ApiV1SignupParentStatusRoute: typeof ApiV1SignupParentStatusRoute
+  ApiV1SignupParentValidateCodeRoute: typeof ApiV1SignupParentValidateCodeRoute
+  ApiV1AdultAthleteCoachesIndexRoute: typeof ApiV1AdultAthleteCoachesIndexRoute
+  ApiV1AdultAthleteSchedulesIndexRoute: typeof ApiV1AdultAthleteSchedulesIndexRoute
   ApiV1CoachInviteCodeIndexRoute: typeof ApiV1CoachInviteCodeIndexRoute
   ApiV1PublicBoardsIndexRoute: typeof ApiV1PublicBoardsIndexRoute
   ApiV1RoomsIdIndexRoute: typeof ApiV1RoomsIdIndexRoute
   ApiV1SafetyBlocksIndexRoute: typeof ApiV1SafetyBlocksIndexRoute
+  ApiV1AdultAthleteCoachesIdSportsRoute: typeof ApiV1AdultAthleteCoachesIdSportsRoute
   ApiV1BoardsSlugFollowsNameRoute: typeof ApiV1BoardsSlugFollowsNameRoute
+  ApiV1AdultAthleteCoachesIdIndexRoute: typeof ApiV1AdultAthleteCoachesIdIndexRoute
   ApiV1BoardsSlugFollowsIndexRoute: typeof ApiV1BoardsSlugFollowsIndexRoute
 }
 
@@ -2672,6 +3027,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailAuthPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/v1/signup/adult-athlete': {
+      id: '/api/v1/signup/adult-athlete'
+      path: '/api/v1/signup/adult-athlete'
+      fullPath: '/api/v1/signup/adult-athlete'
+      preLoaderRoute: typeof ApiV1SignupAdultAthleteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/v1/safety/reports': {
       id: '/api/v1/safety/reports'
       path: '/api/v1/safety/reports'
@@ -2691,6 +3053,13 @@ declare module '@tanstack/react-router' {
       path: '/api/v1/promo-codes/validate'
       fullPath: '/api/v1/promo-codes/validate'
       preLoaderRoute: typeof ApiV1PromoCodesValidateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/parent/invite-code': {
+      id: '/api/v1/parent/invite-code'
+      path: '/api/v1/parent/invite-code'
+      fullPath: '/api/v1/parent/invite-code'
+      preLoaderRoute: typeof ApiV1ParentInviteCodeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/v1/orgs/verify-code': {
@@ -2845,6 +3214,27 @@ declare module '@tanstack/react-router' {
       path: '/api/v1/auth/apple'
       fullPath: '/api/v1/auth/apple'
       preLoaderRoute: typeof ApiV1AuthAppleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/athlete/me': {
+      id: '/api/v1/athlete/me'
+      path: '/api/v1/athlete/me'
+      fullPath: '/api/v1/athlete/me'
+      preLoaderRoute: typeof ApiV1AthleteMeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/adult-athlete/onboarding': {
+      id: '/api/v1/adult-athlete/onboarding'
+      path: '/api/v1/adult-athlete/onboarding'
+      fullPath: '/api/v1/adult-athlete/onboarding'
+      preLoaderRoute: typeof ApiV1AdultAthleteOnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/adult-athlete/goals': {
+      id: '/api/v1/adult-athlete/goals'
+      path: '/api/v1/adult-athlete/goals'
+      fullPath: '/api/v1/adult-athlete/goals'
+      preLoaderRoute: typeof ApiV1AdultAthleteGoalsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/payments/webhook': {
@@ -3008,6 +3398,97 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1CoachInviteCodeIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/v1/adult-athlete/schedules/': {
+      id: '/api/v1/adult-athlete/schedules/'
+      path: '/api/v1/adult-athlete/schedules'
+      fullPath: '/api/v1/adult-athlete/schedules/'
+      preLoaderRoute: typeof ApiV1AdultAthleteSchedulesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/adult-athlete/coaches/': {
+      id: '/api/v1/adult-athlete/coaches/'
+      path: '/api/v1/adult-athlete/coaches'
+      fullPath: '/api/v1/adult-athlete/coaches/'
+      preLoaderRoute: typeof ApiV1AdultAthleteCoachesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/signup/parent/validate-code': {
+      id: '/api/v1/signup/parent/validate-code'
+      path: '/api/v1/signup/parent/validate-code'
+      fullPath: '/api/v1/signup/parent/validate-code'
+      preLoaderRoute: typeof ApiV1SignupParentValidateCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/signup/parent/status': {
+      id: '/api/v1/signup/parent/status'
+      path: '/api/v1/signup/parent/status'
+      fullPath: '/api/v1/signup/parent/status'
+      preLoaderRoute: typeof ApiV1SignupParentStatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/signup/parent/start': {
+      id: '/api/v1/signup/parent/start'
+      path: '/api/v1/signup/parent/start'
+      fullPath: '/api/v1/signup/parent/start'
+      preLoaderRoute: typeof ApiV1SignupParentStartRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/signup/parent/schedule': {
+      id: '/api/v1/signup/parent/schedule'
+      path: '/api/v1/signup/parent/schedule'
+      fullPath: '/api/v1/signup/parent/schedule'
+      preLoaderRoute: typeof ApiV1SignupParentScheduleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/signup/parent/link-coach': {
+      id: '/api/v1/signup/parent/link-coach'
+      path: '/api/v1/signup/parent/link-coach'
+      fullPath: '/api/v1/signup/parent/link-coach'
+      preLoaderRoute: typeof ApiV1SignupParentLinkCoachRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/signup/parent/goals': {
+      id: '/api/v1/signup/parent/goals'
+      path: '/api/v1/signup/parent/goals'
+      fullPath: '/api/v1/signup/parent/goals'
+      preLoaderRoute: typeof ApiV1SignupParentGoalsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/signup/parent/coach-preview': {
+      id: '/api/v1/signup/parent/coach-preview'
+      path: '/api/v1/signup/parent/coach-preview'
+      fullPath: '/api/v1/signup/parent/coach-preview'
+      preLoaderRoute: typeof ApiV1SignupParentCoachPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/signup/parent/athletes-for-code': {
+      id: '/api/v1/signup/parent/athletes-for-code'
+      path: '/api/v1/signup/parent/athletes-for-code'
+      fullPath: '/api/v1/signup/parent/athletes-for-code'
+      preLoaderRoute: typeof ApiV1SignupParentAthletesForCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/signup/athlete/username': {
+      id: '/api/v1/signup/athlete/username'
+      path: '/api/v1/signup/athlete/username'
+      fullPath: '/api/v1/signup/athlete/username'
+      preLoaderRoute: typeof ApiV1SignupAthleteUsernameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/signup/athlete/invite-summary': {
+      id: '/api/v1/signup/athlete/invite-summary'
+      path: '/api/v1/signup/athlete/invite-summary'
+      fullPath: '/api/v1/signup/athlete/invite-summary'
+      preLoaderRoute: typeof ApiV1SignupAthleteInviteSummaryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/signup/athlete/claim': {
+      id: '/api/v1/signup/athlete/claim'
+      path: '/api/v1/signup/athlete/claim'
+      fullPath: '/api/v1/signup/athlete/claim'
+      preLoaderRoute: typeof ApiV1SignupAthleteClaimRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/v1/safety/blocks/$userId': {
       id: '/api/v1/safety/blocks/$userId'
       path: '/api/v1/safety/blocks/$userId'
@@ -3113,11 +3594,53 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1AuthUsernameCheckRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/v1/auth/signup/parent': {
+      id: '/api/v1/auth/signup/parent'
+      path: '/api/v1/auth/signup/parent'
+      fullPath: '/api/v1/auth/signup/parent'
+      preLoaderRoute: typeof ApiV1AuthSignupParentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/v1/auth/signup/coach': {
       id: '/api/v1/auth/signup/coach'
       path: '/api/v1/auth/signup/coach'
       fullPath: '/api/v1/auth/signup/coach'
       preLoaderRoute: typeof ApiV1AuthSignupCoachRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/auth/signup/adult-athlete': {
+      id: '/api/v1/auth/signup/adult-athlete'
+      path: '/api/v1/auth/signup/adult-athlete'
+      fullPath: '/api/v1/auth/signup/adult-athlete'
+      preLoaderRoute: typeof ApiV1AuthSignupAdultAthleteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/adult-athlete/schedules/$coachId': {
+      id: '/api/v1/adult-athlete/schedules/$coachId'
+      path: '/api/v1/adult-athlete/schedules/$coachId'
+      fullPath: '/api/v1/adult-athlete/schedules/$coachId'
+      preLoaderRoute: typeof ApiV1AdultAthleteSchedulesCoachIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/adult-athlete/coach/sports-offered': {
+      id: '/api/v1/adult-athlete/coach/sports-offered'
+      path: '/api/v1/adult-athlete/coach/sports-offered'
+      fullPath: '/api/v1/adult-athlete/coach/sports-offered'
+      preLoaderRoute: typeof ApiV1AdultAthleteCoachSportsOfferedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/adult-athlete/coach/preview': {
+      id: '/api/v1/adult-athlete/coach/preview'
+      path: '/api/v1/adult-athlete/coach/preview'
+      fullPath: '/api/v1/adult-athlete/coach/preview'
+      preLoaderRoute: typeof ApiV1AdultAthleteCoachPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/adult-athlete/coach/link': {
+      id: '/api/v1/adult-athlete/coach/link'
+      path: '/api/v1/adult-athlete/coach/link'
+      fullPath: '/api/v1/adult-athlete/coach/link'
+      preLoaderRoute: typeof ApiV1AdultAthleteCoachLinkRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/v1/boards/$slug/follows/': {
@@ -3127,11 +3650,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1BoardsSlugFollowsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/v1/adult-athlete/coaches/$id/': {
+      id: '/api/v1/adult-athlete/coaches/$id/'
+      path: '/api/v1/adult-athlete/coaches/$id'
+      fullPath: '/api/v1/adult-athlete/coaches/$id/'
+      preLoaderRoute: typeof ApiV1AdultAthleteCoachesIdIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/v1/boards/$slug/follows/$name': {
       id: '/api/v1/boards/$slug/follows/$name'
       path: '/api/v1/boards/$slug/follows/$name'
       fullPath: '/api/v1/boards/$slug/follows/$name'
       preLoaderRoute: typeof ApiV1BoardsSlugFollowsNameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/adult-athlete/coaches/$id/sports': {
+      id: '/api/v1/adult-athlete/coaches/$id/sports'
+      path: '/api/v1/adult-athlete/coaches/$id/sports'
+      fullPath: '/api/v1/adult-athlete/coaches/$id/sports'
+      preLoaderRoute: typeof ApiV1AdultAthleteCoachesIdSportsRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -3427,6 +3964,9 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksErrorDigestRoute: ApiPublicHooksErrorDigestRoute,
   ApiPublicHooksLifecycleEmailsRoute: ApiPublicHooksLifecycleEmailsRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
+  ApiV1AdultAthleteGoalsRoute: ApiV1AdultAthleteGoalsRoute,
+  ApiV1AdultAthleteOnboardingRoute: ApiV1AdultAthleteOnboardingRoute,
+  ApiV1AthleteMeRoute: ApiV1AthleteMeRoute,
   ApiV1AuthAppleRoute: ApiV1AuthAppleRoute,
   ApiV1AuthGoogleRoute: ApiV1AuthGoogleRoute,
   ApiV1AuthPasswordRoute: ApiV1AuthPasswordRoute,
@@ -3449,16 +3989,26 @@ const rootRouteChildren: RootRouteChildren = {
   ApiV1OrgsPopularRoute: ApiV1OrgsPopularRoute,
   ApiV1OrgsSearchRoute: ApiV1OrgsSearchRoute,
   ApiV1OrgsVerifyCodeRoute: ApiV1OrgsVerifyCodeRoute,
+  ApiV1ParentInviteCodeRoute: ApiV1ParentInviteCodeRoute,
   ApiV1PromoCodesValidateRoute: ApiV1PromoCodesValidateRoute,
   ApiV1RoomsEnsureRoute: ApiV1RoomsEnsureRoute,
   ApiV1SafetyReportsRoute: ApiV1SafetyReportsRoute,
+  ApiV1SignupAdultAthleteRoute: ApiV1SignupAdultAthleteRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
   ApiV1MeIndexRoute: ApiV1MeIndexRoute,
   ApiV1RoomsIndexRoute: ApiV1RoomsIndexRoute,
+  ApiV1AdultAthleteCoachLinkRoute: ApiV1AdultAthleteCoachLinkRoute,
+  ApiV1AdultAthleteCoachPreviewRoute: ApiV1AdultAthleteCoachPreviewRoute,
+  ApiV1AdultAthleteCoachSportsOfferedRoute:
+    ApiV1AdultAthleteCoachSportsOfferedRoute,
+  ApiV1AdultAthleteSchedulesCoachIdRoute:
+    ApiV1AdultAthleteSchedulesCoachIdRoute,
+  ApiV1AuthSignupAdultAthleteRoute: ApiV1AuthSignupAdultAthleteRoute,
   ApiV1AuthSignupCoachRoute: ApiV1AuthSignupCoachRoute,
+  ApiV1AuthSignupParentRoute: ApiV1AuthSignupParentRoute,
   ApiV1AuthUsernameCheckRoute: ApiV1AuthUsernameCheckRoute,
   ApiV1AuthUsernameResolveRoute: ApiV1AuthUsernameResolveRoute,
   ApiV1CoachInviteCodeRotateRoute: ApiV1CoachInviteCodeRotateRoute,
@@ -3474,11 +4024,26 @@ const rootRouteChildren: RootRouteChildren = {
   ApiV1RoomsIdMessagesRoute: ApiV1RoomsIdMessagesRoute,
   ApiV1RoomsIdReadRoute: ApiV1RoomsIdReadRoute,
   ApiV1SafetyBlocksUserIdRoute: ApiV1SafetyBlocksUserIdRoute,
+  ApiV1SignupAthleteClaimRoute: ApiV1SignupAthleteClaimRoute,
+  ApiV1SignupAthleteInviteSummaryRoute: ApiV1SignupAthleteInviteSummaryRoute,
+  ApiV1SignupAthleteUsernameRoute: ApiV1SignupAthleteUsernameRoute,
+  ApiV1SignupParentAthletesForCodeRoute: ApiV1SignupParentAthletesForCodeRoute,
+  ApiV1SignupParentCoachPreviewRoute: ApiV1SignupParentCoachPreviewRoute,
+  ApiV1SignupParentGoalsRoute: ApiV1SignupParentGoalsRoute,
+  ApiV1SignupParentLinkCoachRoute: ApiV1SignupParentLinkCoachRoute,
+  ApiV1SignupParentScheduleRoute: ApiV1SignupParentScheduleRoute,
+  ApiV1SignupParentStartRoute: ApiV1SignupParentStartRoute,
+  ApiV1SignupParentStatusRoute: ApiV1SignupParentStatusRoute,
+  ApiV1SignupParentValidateCodeRoute: ApiV1SignupParentValidateCodeRoute,
+  ApiV1AdultAthleteCoachesIndexRoute: ApiV1AdultAthleteCoachesIndexRoute,
+  ApiV1AdultAthleteSchedulesIndexRoute: ApiV1AdultAthleteSchedulesIndexRoute,
   ApiV1CoachInviteCodeIndexRoute: ApiV1CoachInviteCodeIndexRoute,
   ApiV1PublicBoardsIndexRoute: ApiV1PublicBoardsIndexRoute,
   ApiV1RoomsIdIndexRoute: ApiV1RoomsIdIndexRoute,
   ApiV1SafetyBlocksIndexRoute: ApiV1SafetyBlocksIndexRoute,
+  ApiV1AdultAthleteCoachesIdSportsRoute: ApiV1AdultAthleteCoachesIdSportsRoute,
   ApiV1BoardsSlugFollowsNameRoute: ApiV1BoardsSlugFollowsNameRoute,
+  ApiV1AdultAthleteCoachesIdIndexRoute: ApiV1AdultAthleteCoachesIdIndexRoute,
   ApiV1BoardsSlugFollowsIndexRoute: ApiV1BoardsSlugFollowsIndexRoute,
 }
 export const routeTree = rootRouteImport
