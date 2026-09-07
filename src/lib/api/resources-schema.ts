@@ -69,7 +69,7 @@ export const athleteResourcesSchema = z.object({
   resources: z.array(resourceSchema),
 }) satisfies z.ZodType<AthleteResourcesDTO>;
 
-export const roleAwareResourcesSchema = z.union([
+export const roleAwareResourcesSchema = z.discriminatedUnion("role", [
   coachResourcesSchema.extend({ role: z.literal("coach") }),
   parentResourcesSchema.extend({ role: z.literal("parent") }),
   athleteResourcesSchema.extend({ role: z.literal("athlete") }),

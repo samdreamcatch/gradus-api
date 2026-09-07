@@ -13,8 +13,13 @@ function fakeClient(config: {
   deleteError?: { message: string } | null;
 }) {
   const deletedIds: string[] = [];
+  let insertedPayload: unknown;
   const self: Record<string, unknown> = {};
-  for (const m of ["select", "order", "insert"]) self[m] = () => self;
+  for (const m of ["select", "order"]) self[m] = () => self;
+  self.insert = (payload: unknown) => {
+    insertedPayload = payload;
+    return self;
+  };
   self.eq = (_col: string, id: string) => {
     deletedIds.push(id);
     return {
@@ -27,6 +32,9 @@ function fakeClient(config: {
   return {
     client: { from: () => self } as any, // eslint-disable-line @typescript-eslint/no-explicit-any
     deletedIds,
+    get insertedPayload() {
+      return insertedPayload;
+    },
   };
 }
 
@@ -74,12 +82,18 @@ describe("listSavedAnswers", () => {
 
 describe("saveAnswer", () => {
   it("inserts scoped to the caller and returns the new id", async () => {
-    const { client } = fakeClient({ insertResult: { data: { id: "a1" }, error: null } });
+    const fake = fakeClient({ insertResult: { data: { id: "a1" }, error: null } });
     const result = await saveAnswer(
-      { userId: "u1", supabase: client },
+      { userId: "u1", supabase: fake.client },
       saveAnswerInput.parse({ sport: "hockey", question: "why?", answer: "because" }),
     );
     expect(result).toEqual({ id: "a1" });
+    expect(fake.insertedPayload).toEqual({
+      user_id: "u1",
+      sport: "hockey",
+      question: "why?",
+      answer: "because",
+    });
   });
 });
 

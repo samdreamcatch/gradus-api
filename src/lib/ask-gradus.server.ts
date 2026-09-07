@@ -10,6 +10,18 @@
  * to the real Lovable AI gateway call — the same technique other extracted
  * modules use to isolate a side effect for tests (there is no way to
  * exercise `generateText` against a real network call in unit tests).
+ *
+ * The `ask(...)` call itself is wrapped in try/catch and mapped to the same
+ * `ai_unavailable` 503 as the missing-key precondition, matching the
+ * established convention of every other AI-gateway-calling server module
+ * (`pre-lesson-briefing.server.ts`, `coach-athlete-detail.server.ts`,
+ * `plan-sessions.server.ts`) — a network error, gateway 5xx, or rate limit
+ * becomes a coded, user-safe, retryable error instead of a raw exception.
+ * This is a deliberate (small) behavior change from the pre-extraction web
+ * handler, which let such an error propagate raw: `POST /api/v1/ask` is a
+ * brand-new endpoint with no prior behavior to preserve, and it needs this
+ * mapping so the iOS client gets a specific, coded error instead of a
+ * generic 500.
  */
 import { z } from "zod";
 import { generateText } from "ai";
@@ -66,7 +78,17 @@ export async function askGradus(
         `Use plain language and short paragraphs. Use markdown for structure (bold, bullets) when it helps. ` +
         `If a question is outside ${sportLabel}, politely redirect.`;
 
-  const { text } = await ask({ model, system, prompt: data.question });
+  let text: string;
+  try {
+    ({ text } = await ask({ model, system, prompt: data.question }));
+  } catch (err) {
+    console.error("[ask-gradus] AI gateway error", err);
+    throw new ApiError({
+      code: "ai_unavailable",
+      status: 503,
+      message: "AI service is unavailable. Please try again later.",
+    });
+  }
 
   return { answer: text };
 }

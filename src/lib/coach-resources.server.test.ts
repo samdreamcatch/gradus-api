@@ -9,29 +9,42 @@ import {
   listCoachResources,
 } from "./coach-resources.server";
 
-/** A chainable fake: `rows[table]` answers `maybeSingle`/`single`; `lists[table]` answers awaited selects. */
+/**
+ * A chainable fake: `rows[table]` answers `maybeSingle`/`single`; `lists[table]` answers
+ * awaited selects; `writeErrors[table]` fails that table's `single`/awaited-insert only
+ * (so one table can succeed while another fails, e.g. resources insert vs. resource_sports
+ * insert). Also records each table's `insert()` payloads and the ids passed to
+ * `delete().eq('id', ...)`, so tests can assert on the actual write, not just the outcome.
+ */
 function fakeClient(
   rows: Record<string, unknown | null> = {},
   lists: Record<string, unknown[]> = {},
-  writeError: { message: string } | null = null,
+  writeErrors: Record<string, { message: string } | null | undefined> = {},
 ) {
+  const insertedPayloads: Record<string, unknown[]> = {};
+  const deletedIds: Record<string, string[]> = {};
   const chain = (table: string) => {
     const self: Record<string, unknown> = {};
-    for (const m of [
-      "select",
-      "eq",
-      "neq",
-      "in",
-      "is",
-      "not",
-      "order",
-      "limit",
-      "delete",
-      "insert",
-      "upsert",
-    ]) {
+    let deleting = false;
+    for (const m of ["select", "neq", "in", "is", "not", "order", "limit", "upsert"]) {
       self[m] = () => self;
     }
+    self.insert = (payload: unknown) => {
+      (insertedPayloads[table] ??= []).push(payload);
+      return self;
+    };
+    self.delete = () => {
+      deleting = true;
+      return self;
+    };
+    self.eq = (_col: string, value: string) => {
+      if (deleting) {
+        (deletedIds[table] ??= []).push(value);
+        deleting = false;
+      }
+      return self;
+    };
+    const writeError = writeErrors[table] ?? null;
     self.maybeSingle = async () => ({ data: rows[table] ?? null, error: null });
     self.single = async () =>
       writeError ? { data: null, error: writeError } : { data: rows[table] ?? null, error: null };
@@ -41,8 +54,12 @@ function fakeClient(
       );
     return self;
   };
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return { from: (table: string) => chain(table) } as any;
+  return {
+    from: (table: string) => chain(table),
+    insertedPayloads,
+    deletedIds,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } as any;
 }
 
 async function caught(run: () => Promise<unknown>): Promise<ApiError | null> {
@@ -51,6 +68,16 @@ async function caught(run: () => Promise<unknown>): Promise<ApiError | null> {
     return null;
   } catch (err) {
     return err instanceof ApiError ? err : null;
+  }
+}
+
+/** Like `caught`, but returns any thrown Error (used for `dbError`'s plain-Error fallback). */
+async function caughtAny(run: () => Promise<unknown>): Promise<Error | null> {
+  try {
+    await run();
+    return null;
+  } catch (err) {
+    return err instanceof Error ? err : null;
   }
 }
 
@@ -144,6 +171,47 @@ describe("createCoachResourceUploadUrlInput", () => {
       createCoachResourceUploadUrlInput.safeParse({ ext: ".pdf", contentType: "application/pdf" })
         .success,
     ).toBe(false);
+  });
+
+  it("rejects an empty extension and one longer than 8 characters", () => {
+    expect(
+      createCoachResourceUploadUrlInput.safeParse({ ext: "", contentType: "application/pdf" })
+        .success,
+    ).toBe(false);
+    expect(
+      createCoachResourceUploadUrlInput.safeParse({
+        ext: "a".repeat(9),
+        contentType: "application/pdf",
+      }).success,
+    ).toBe(false);
+    expect(
+      createCoachResourceUploadUrlInput.safeParse({
+        ext: "a".repeat(8),
+        contentType: "application/pdf",
+      }).success,
+    ).toBe(true);
+  });
+
+  it("enforces contentType's 3-120 character bounds", () => {
+    expect(
+      createCoachResourceUploadUrlInput.safeParse({ ext: "pdf", contentType: "ab" }).success,
+    ).toBe(false);
+    expect(
+      createCoachResourceUploadUrlInput.safeParse({ ext: "pdf", contentType: "a".repeat(121) })
+        .success,
+    ).toBe(false);
+    expect(
+      createCoachResourceUploadUrlInput.safeParse({ ext: "pdf", contentType: "a".repeat(120) })
+        .success,
+    ).toBe(true);
+  });
+
+  it("accepts (and silently ignores) a contentType unrelated to ext — not cross-checked or allowlisted", () => {
+    // Documents current behavior, not a design endorsement (see coach-resources.server.ts:
+    // createCoachResourceUploadUrl never reads `data.contentType`).
+    expect(
+      createCoachResourceUploadUrlInput.safeParse({ ext: "pdf", contentType: "text/html" }).success,
+    ).toBe(true);
   });
 });
 
@@ -250,6 +318,70 @@ describe("createCoachResource", () => {
       }),
     );
     expect(result).toEqual({ id: "r1" });
+    expect(supabase.insertedPayloads.resources).toEqual([
+      {
+        coach_id: "c1",
+        kind: "link",
+        title: "t",
+        description: "",
+        sport: "figure_skating",
+        storage_path: null,
+        external_url: "https://example.com",
+        published: true,
+        display_order: 0,
+        updated_by: "u1",
+      },
+    ]);
+    expect(supabase.insertedPayloads.resource_sports).toEqual([
+      [{ resource_id: "r1", sport: "figure_skating" }],
+    ]);
+  });
+
+  it("inserts and returns the new id for a Club (org) coach with an allowed sport", async () => {
+    const supabase = fakeClient(
+      {
+        coach_profiles: { id: "c1", organization_id: "org1", subscription_tier: null },
+        resources: { id: "c1res" },
+      },
+      { coach_levels: [{ sport: "hockey" }], resource_sports: [] },
+    );
+    const result = await createCoachResource(
+      { userId: "u1", supabase },
+      createCoachResourceInput.parse({
+        title: "t",
+        kind: "link",
+        sports: ["hockey"],
+        externalUrl: "https://example.com",
+      }),
+    );
+    expect(result).toEqual({ id: "c1res" });
+  });
+
+  it("rolls back the inserted resource row when tagging it with resource_sports fails", async () => {
+    const supabase = fakeClient(
+      {
+        coach_profiles: { id: "c1", organization_id: null, subscription_tier: "coach_pro" },
+        resources: { id: "r1" },
+      },
+      { coach_levels: [{ sport: "figure_skating" }] },
+      { resource_sports: { message: "tag insert failed" } },
+    );
+    const err = await caughtAny(() =>
+      createCoachResource(
+        { userId: "u1", supabase },
+        createCoachResourceInput.parse({
+          title: "t",
+          kind: "link",
+          sports: ["figure_skating"],
+          externalUrl: "https://example.com",
+        }),
+      ),
+    );
+    // resource_sports's error isn't in `dbError`'s passthrough list, so it surfaces as the
+    // generic fallback message rather than the raw db error.
+    expect(err?.message).toBe("Something went wrong. Please try again.");
+    // The compensating delete of the just-inserted resources row actually happened.
+    expect(supabase.deletedIds.resources).toEqual(["r1"]);
   });
 });
 

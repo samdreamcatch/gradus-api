@@ -4,11 +4,17 @@
  * the caller's role and returns the shape that role's existing resource
  * feed already produces, tagged with a `role` field.
  *
- * Role resolution reproduces the precedence `GET /api/v1/me` uses
- * (`coach_profiles` → `parent_profiles` → `athletes`, via the admin client,
- * same as `src/routes/api/v1/me/index.ts`'s `getMe`) rather than importing
- * it, since that route's precedence also considers onboarding completeness
- * and terms, which this endpoint doesn't need.
+ * Role resolution reproduces the precedence `GET /api/v1/me` and the web's
+ * `getMyRole` (`src/lib/parent-signup.functions.ts`) use, onboarding
+ * included: an *onboarded* coach wins outright, otherwise parent, then
+ * athlete, then an un-onboarded coach still counts as "coach" (there's no
+ * other feed to show them). Onboarding has to be factored in here, not just
+ * at `/me` — a caller with a not-yet-onboarded `coach_profiles` row *and* a
+ * `parent_profiles`/`athletes` row must resolve to the same role this
+ * endpoint and `GET /api/v1/me` both report, or the two disagree about who
+ * the caller is. (No `org_admin` branch, since there's no resources feed
+ * for that role — a pure org admin falls through to the no-profile case
+ * below, same as before.)
  *
  * A caller with no profile at all gets the same empty shape
  * `getParentResources` returns for "no parent profile" (`{ sports: [],
@@ -38,16 +44,17 @@ async function resolveRole(
   userId: string,
 ): Promise<"coach" | "parent" | "athlete" | null> {
   const [coach, parent, athlete] = await Promise.all([
-    admin.from("coach_profiles").select("id").eq("user_id", userId).maybeSingle(),
+    admin.from("coach_profiles").select("id, onboarded_at").eq("user_id", userId).maybeSingle(),
     admin.from("parent_profiles").select("id").eq("user_id", userId).maybeSingle(),
     admin.from("athletes").select("id").eq("user_id", userId).limit(1).maybeSingle(),
   ]);
   const failed = [coach, parent, athlete].find((r) => r.error);
   if (failed?.error) dbError(failed.error);
 
-  if (coach.data) return "coach";
+  if (coach.data?.onboarded_at) return "coach";
   if (parent.data) return "parent";
   if (athlete.data) return "athlete";
+  if (coach.data) return "coach";
   return null;
 }
 

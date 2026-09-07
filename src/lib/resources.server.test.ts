@@ -55,11 +55,41 @@ describe("getResourcesForCaller", () => {
     expect(result).toEqual({ role: "parent", sports: [], resources: [] });
   });
 
-  it("prefers coach over parent and athlete when more than one profile exists", async () => {
+  it("prefers an onboarded coach over parent and athlete when more than one profile exists", async () => {
     const admin = fakeAdmin({
-      coach_profiles: { id: "c1" },
+      coach_profiles: { id: "c1", onboarded_at: "2026-01-01T00:00:00Z" },
       parent_profiles: { id: "p1" },
       athletes: { id: "a1" },
+    });
+    const result = await getResourcesForCaller({ userId: "u1", supabase: emptySupabase(), admin });
+    expect(result.role).toBe("coach");
+  });
+
+  it("prefers parent over an un-onboarded coach, matching GET /api/v1/me's precedence", async () => {
+    const admin = fakeAdmin({
+      coach_profiles: { id: "c1", onboarded_at: null },
+      parent_profiles: { id: "p1" },
+      athletes: null,
+    });
+    const result = await getResourcesForCaller({ userId: "u1", supabase: emptySupabase(), admin });
+    expect(result.role).toBe("parent");
+  });
+
+  it("prefers athlete over an un-onboarded coach when there is no parent profile", async () => {
+    const admin = fakeAdmin({
+      coach_profiles: { id: "c1", onboarded_at: null },
+      parent_profiles: null,
+      athletes: { id: "a1" },
+    });
+    const result = await getResourcesForCaller({ userId: "u1", supabase: emptySupabase(), admin });
+    expect(result.role).toBe("athlete");
+  });
+
+  it("still falls back to coach when the coach is un-onboarded and no other profile exists", async () => {
+    const admin = fakeAdmin({
+      coach_profiles: { id: "c1", onboarded_at: null },
+      parent_profiles: null,
+      athletes: null,
     });
     const result = await getResourcesForCaller({ userId: "u1", supabase: emptySupabase(), admin });
     expect(result.role).toBe("coach");

@@ -56,6 +56,23 @@ describe("askGradus", () => {
     expect(err?.message).toBe("AI service is unavailable. Please try again later.");
   });
 
+  it("maps a thrown gateway/model error to ai_unavailable 503, not a raw exception", async () => {
+    const failingAsk: AskFn = async () => {
+      throw new Error("gateway timed out");
+    };
+    const err = await withApiKey("test-key", () =>
+      caught(() =>
+        askGradus(
+          askGradusInput.parse({ sport: "hockey", question: "how do I skate?" }),
+          failingAsk,
+        ),
+      ),
+    );
+    expect(err?.code).toBe("ai_unavailable");
+    expect(err?.status).toBe(503);
+    expect(err?.message).toBe("AI service is unavailable. Please try again later.");
+  });
+
   it("returns the injected ask function's text as the answer", async () => {
     const fakeAsk: AskFn = async () => ({ text: "Keep your knees bent." });
     const result = await withApiKey("test-key", () =>
