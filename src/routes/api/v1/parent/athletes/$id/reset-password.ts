@@ -9,8 +9,9 @@ import { athletePasswordInput, resetParentAthletePassword } from "@/lib/parent-s
  * Thin wrapper over the shared `resetParentAthletePassword` (PRD §7.7):
  * set a new password for an athlete who has an account. Rate-limited, as
  * every credential-changing route is. `parentManagedOnly` refuses (403
- * `forbidden`) self-managed athletes, adults, and athletes with no birthdate
- * on file, so a guardian link over an adult's login is never a takeover.
+ * `forbidden`) a self-managed athlete, so a guardian link is never a way to
+ * take over someone's own login; parent-managed accounts (the only ones a
+ * parent can reach) stay resettable at any age, as on the web.
  */
 export const Route = createFileRoute("/api/v1/parent/athletes/$id/reset-password")({
   server: {

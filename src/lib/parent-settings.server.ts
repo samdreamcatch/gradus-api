@@ -16,7 +16,6 @@
 import { z } from "zod";
 import type { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { ApiError } from "./api/errors";
-import { isMinorBirthdate } from "./athlete-age";
 import { dbError } from "./db-error";
 import { inviteCodeSchema } from "./invites.server";
 import { lessonSlotSchema } from "./parent-signup.server";
@@ -46,11 +45,14 @@ export type ApiContractOptions = {
 
 export type ResetPasswordOptions = {
   /**
-   * Only athletes under 18 whose account the parent manages are resettable:
-   * a self-managed athlete, an adult, or an athlete with no birthdate on
-   * file is refused (403 `forbidden`) instead of having their login taken
-   * over. The API sets this; the web keeps its original behavior until the
-   * shared function is gated for both (a follow-up needing a product call).
+   * Only athletes whose account the parent manages are resettable: a
+   * self-managed athlete (their own login) is refused (403 `forbidden`)
+   * instead of having it taken over. Age is not a criterion: a
+   * parent-managed athlete signs in with a synthetic email and has no other
+   * recovery path, even after turning 18 (and the `athletes_self_managed_shape`
+   * constraint already keeps `parent_id` off self-managed rows). The API sets
+   * this; the web keeps its original behavior until the shared function is
+   * gated for both (a follow-up needing a product call on 18+ logins).
    */
   parentManagedOnly?: boolean;
 };
@@ -847,7 +849,7 @@ export async function removeParentAthlete(
  * `resetAthletePassword`: reset (or set) the password for one of the
  * parent's athletes. Only works for athletes that have an account (user_id
  * is set); username-only athletes have no email-based recovery. See
- * `ResetPasswordOptions` for the API's minor-only gate.
+ * `ResetPasswordOptions` for the API's parent-managed-only gate.
  */
 export async function resetParentAthletePassword(
   ctx: ParentSettingsContext,
@@ -859,20 +861,15 @@ export async function resetParentAthletePassword(
   await assertOwnsAthlete(admin, userId, athleteId);
   const row = await admin
     .from("athletes")
-    .select("user_id, username, birthdate, self_managed")
+    .select("user_id, username, self_managed")
     .eq("id", athleteId)
     .single();
   if (row.error) dbError(row.error);
   if (!row.data.user_id) {
     throw unprocessable("This athlete hasn't created their account yet.");
   }
-  if (opts.parentManagedOnly) {
-    const managed = !row.data.self_managed && isMinorBirthdate(row.data.birthdate as string | null);
-    if (!managed) {
-      throw forbidden(
-        "Only athletes under 18 whose account you manage can have their password reset.",
-      );
-    }
+  if (opts.parentManagedOnly && row.data.self_managed) {
+    throw forbidden("Only athletes whose account you manage can have their password reset.");
   }
   const upd = await admin.auth.admin.updateUserById(row.data.user_id, {
     password: data.password,

@@ -1006,20 +1006,25 @@ describe("resetParentAthletePassword", () => {
       expect(err?.status).toBe(403);
       expect(err?.code).toBe("forbidden");
       expect(err?.message).toBe(
-        "Only athletes under 18 whose account you manage can have their password reset.",
+        "Only athletes whose account you manage can have their password reset.",
       );
       expect(calls).toEqual([]);
     });
 
-    it("refuses a self-managed minor, an adult who is not self-managed, and an athlete with no birthdate", async () => {
+    it("refuses a self-managed minor too", async () => {
+      const { calls, run } = reset({ ...withAccount, birthdate: MINOR_DOB, self_managed: true });
+      expect((await caught(run))?.code).toBe("forbidden");
+      expect(calls).toEqual([]);
+    });
+
+    it("still resets a parent-managed athlete who is 18 or has no birthdate on file (no other recovery path)", async () => {
       for (const athlete of [
-        { ...withAccount, birthdate: MINOR_DOB, self_managed: true },
         { ...withAccount, birthdate: ADULT_DOB, self_managed: false },
         { ...withAccount, birthdate: null, self_managed: false },
       ]) {
         const { calls, run } = reset(athlete);
-        expect((await caught(run))?.code).toBe("forbidden");
-        expect(calls).toEqual([]);
+        expect(await run()).toEqual({ ok: true, username: "rory" });
+        expect(calls.map((c) => c.op)).toEqual(["updateUserById"]);
       }
     });
 
