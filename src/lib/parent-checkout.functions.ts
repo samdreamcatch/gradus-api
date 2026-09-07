@@ -8,6 +8,9 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { type StripeEnv, createStripeClient, getStripeErrorMessage } from "@/lib/stripe.server";
+import { getTeamPlanStatus as getTeamPlanStatusShared } from "@/lib/team.server";
+
+export type { TeamPlanStatusDTO } from "@/lib/team.server";
 
 type CheckoutResult = { clientSecret: string; sessionId: string } | { error: string };
 type PortalResult = { url: string } | { error: string };
@@ -125,24 +128,12 @@ export const createParentBillingPortalSession = createServerFn({ method: "POST" 
     }
   });
 
-/** Team plan status for the signed-in parent (drives the settings UI). */
+/**
+ * Thin wrapper over the shared `getTeamPlanStatus` in team.server.ts,
+ * shared with `GET /api/v1/parent/team`. Behavior is unchanged.
+ */
 export const getTeamPlanStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    const { data: profile } = await context.supabase
-      .from("parent_profiles")
-      .select("subscription_status, current_period_end, stripe_customer_id")
-      .eq("user_id", context.userId)
-      .maybeSingle();
-    const status = (profile as any)?.subscription_status as string | null;
-    const periodEnd = (profile as any)?.current_period_end as string | null;
-    const notExpired = !periodEnd || new Date(periodEnd).getTime() > Date.now();
-    const active =
-      !!status && ["active", "trialing", "past_due", "canceled"].includes(status) && notExpired;
-    return {
-      active,
-      status: status ?? null,
-      currentPeriodEnd: periodEnd,
-      hasBillingAccount: !!(profile as any)?.stripe_customer_id,
-    };
-  });
+  .handler(async ({ context }) =>
+    getTeamPlanStatusShared({ userId: context.userId, supabase: context.supabase }),
+  );
