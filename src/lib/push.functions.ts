@@ -1,11 +1,16 @@
 import { createServerFn } from "@tanstack/react-start";
-import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import {
+  registerDeviceToken as registerDeviceTokenShared,
+  registerDeviceTokenInput,
+  unregisterDeviceToken as unregisterDeviceTokenShared,
+  unregisterDeviceTokenInput,
+} from "./push.server";
 
-const registerSchema = z.object({
-  token: z.string().min(8).max(512),
-  platform: z.enum(["ios", "android"]),
-});
+/*
+ * Thin wrappers over src/lib/push.server.ts, shared with `POST /api/v1/devices`
+ * and `DELETE /api/v1/devices/{token}`. Behavior is unchanged.
+ */
 
 /**
  * Store (or refresh) the APNs/FCM token for the signed-in user's device.
@@ -14,30 +19,18 @@ const registerSchema = z.object({
  */
 export const registerDeviceToken = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => registerSchema.parse(input))
+  .inputValidator((input: unknown) => registerDeviceTokenInput.parse(input))
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase.from("device_tokens").upsert(
-      {
-        user_id: context.userId,
-        token: data.token,
-        platform: data.platform,
-        last_seen_at: new Date().toISOString(),
-      },
-      { onConflict: "token" },
-    );
-    if (error) throw new Error("Couldn't register this device for notifications.");
-    return { ok: true as const };
+    return registerDeviceTokenShared({ userId: context.userId, supabase: context.supabase }, data);
   });
 
 /** Drop a device registration — used on sign-out and when push is turned off. */
 export const unregisterDeviceToken = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ token: z.string().min(8) }).parse(input))
+  .inputValidator((input: unknown) => unregisterDeviceTokenInput.parse(input))
   .handler(async ({ data, context }) => {
-    await context.supabase
-      .from("device_tokens")
-      .delete()
-      .eq("token", data.token)
-      .eq("user_id", context.userId);
-    return { ok: true as const };
+    return unregisterDeviceTokenShared(
+      { userId: context.userId, supabase: context.supabase },
+      data.token,
+    );
   });
