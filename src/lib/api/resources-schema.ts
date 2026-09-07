@@ -62,11 +62,13 @@ export const resourceSchema = z.object({
 export const parentResourcesSchema = z.object({
   sports: z.array(z.string()),
   resources: z.array(resourceSchema),
+  canAskGradus: z.boolean(),
 }) satisfies z.ZodType<ParentResourcesDTO>;
 
 export const athleteResourcesSchema = z.object({
   sports: z.array(z.string()),
   resources: z.array(resourceSchema),
+  canAskGradus: z.boolean(),
 }) satisfies z.ZodType<AthleteResourcesDTO>;
 
 export const roleAwareResourcesSchema = z.object({

@@ -96,6 +96,7 @@ describe("getParentResources", () => {
     expect(await getParentResources({ userId: "u1", supabase })).toEqual({
       sports: [],
       resources: [],
+      canAskGradus: true,
     });
   });
 
@@ -104,6 +105,7 @@ describe("getParentResources", () => {
     expect(await getParentResources({ userId: "u1", supabase })).toEqual({
       sports: [],
       resources: [],
+      canAskGradus: true,
     });
   });
 
@@ -112,6 +114,7 @@ describe("getParentResources", () => {
     expect(await getParentResources({ userId: "u1", supabase })).toEqual({
       sports: [],
       resources: [],
+      canAskGradus: true,
     });
   });
 

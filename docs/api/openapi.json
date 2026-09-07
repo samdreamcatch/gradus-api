@@ -15796,11 +15796,15 @@
                               "coachName"
                             ]
                           }
+                        },
+                        "canAskGradus": {
+                          "type": "boolean"
                         }
                       },
                       "required": [
                         "sports",
-                        "resources"
+                        "resources",
+                        "canAskGradus"
                       ]
                     },
                     "athlete": {
@@ -15878,11 +15882,15 @@
                               "coachName"
                             ]
                           }
+                        },
+                        "canAskGradus": {
+                          "type": "boolean"
                         }
                       },
                       "required": [
                         "sports",
-                        "resources"
+                        "resources",
+                        "canAskGradus"
                       ]
                     }
                   },

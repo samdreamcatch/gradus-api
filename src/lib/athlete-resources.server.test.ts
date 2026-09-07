@@ -2,7 +2,7 @@ import { describe, expect, it } from "bun:test";
 import { getAthleteResources } from "./athlete-resources.server";
 
 type Config = {
-  athlete?: { id: string } | null;
+  athlete?: { id: string; birthdate?: string | null } | null;
   goals?: { sport: string }[];
   coachSports?: { sport: string }[];
   libraryRows?: unknown[];
@@ -56,20 +56,53 @@ describe("getAthleteResources", () => {
     expect(await getAthleteResources({ userId: "u1", supabase })).toEqual({
       sports: [],
       resources: [],
+      canAskGradus: false,
     });
   });
 
-  it("returns empty when the athlete has no sports", async () => {
-    const supabase = fakeClient({ athlete: { id: "a1" } });
+  it("returns empty when the athlete has no sports, still reporting canAskGradus", async () => {
+    const supabase = fakeClient({ athlete: { id: "a1", birthdate: null } });
     expect(await getAthleteResources({ userId: "u1", supabase })).toEqual({
       sports: [],
       resources: [],
+      canAskGradus: false,
     });
+  });
+
+  it("reports canAskGradus: false when the athlete has no birthdate on file, even with sports/resources", async () => {
+    const supabase = fakeClient({
+      athlete: { id: "a1", birthdate: null },
+      goals: [{ sport: "figure_skating" }],
+    });
+    const result = await getAthleteResources({ userId: "u1", supabase });
+    expect(result.canAskGradus).toBe(false);
+  });
+
+  it("reports canAskGradus: false when the athlete's birthdate confirms under 18", async () => {
+    const tenYearsAgo = new Date();
+    tenYearsAgo.setUTCFullYear(tenYearsAgo.getUTCFullYear() - 10);
+    const supabase = fakeClient({
+      athlete: { id: "a1", birthdate: tenYearsAgo.toISOString().slice(0, 10) },
+      goals: [{ sport: "figure_skating" }],
+    });
+    const result = await getAthleteResources({ userId: "u1", supabase });
+    expect(result.canAskGradus).toBe(false);
+  });
+
+  it("reports canAskGradus: true when the athlete's birthdate confirms 18+", async () => {
+    const thirtyYearsAgo = new Date();
+    thirtyYearsAgo.setUTCFullYear(thirtyYearsAgo.getUTCFullYear() - 30);
+    const supabase = fakeClient({
+      athlete: { id: "a1", birthdate: thirtyYearsAgo.toISOString().slice(0, 10) },
+      goals: [{ sport: "figure_skating" }],
+    });
+    const result = await getAthleteResources({ userId: "u1", supabase });
+    expect(result.canAskGradus).toBe(true);
   });
 
   it("combines coach uploads (first) and library resources (second)", async () => {
     const supabase = fakeClient({
-      athlete: { id: "a1" },
+      athlete: { id: "a1", birthdate: null },
       goals: [{ sport: "figure_skating" }],
       coachSports: [{ sport: "hockey" }],
       libraryRows: [

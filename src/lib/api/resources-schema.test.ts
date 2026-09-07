@@ -39,20 +39,40 @@ describe("roleAwareResourcesSchema", () => {
     const parent = roleAwareResourcesSchema.parse({
       role: "parent",
       coach: null,
-      parent: { sports: [], resources: [] },
+      parent: { sports: [], resources: [], canAskGradus: true },
       athlete: null,
     });
     expect(parent.role).toBe("parent");
-    expect(parent.parent).toEqual({ sports: [], resources: [] });
+    expect(parent.parent).toEqual({ sports: [], resources: [], canAskGradus: true });
 
     const athlete = roleAwareResourcesSchema.parse({
       role: "athlete",
       coach: null,
       parent: null,
-      athlete: { sports: [], resources: [] },
+      athlete: { sports: [], resources: [], canAskGradus: false },
     });
     expect(athlete.role).toBe("athlete");
-    expect(athlete.athlete).toEqual({ sports: [], resources: [] });
+    expect(athlete.athlete).toEqual({ sports: [], resources: [], canAskGradus: false });
+  });
+
+  it("requires canAskGradus on both the parent and athlete payloads", () => {
+    expect(() =>
+      roleAwareResourcesSchema.parse({
+        role: "parent",
+        coach: null,
+        parent: { sports: [], resources: [] },
+        athlete: null,
+      }),
+    ).toThrow();
+
+    expect(() =>
+      roleAwareResourcesSchema.parse({
+        role: "athlete",
+        coach: null,
+        parent: null,
+        athlete: { sports: [], resources: [] },
+      }),
+    ).toThrow();
   });
 
   it("rejects a role tag outside the three known roles", () => {

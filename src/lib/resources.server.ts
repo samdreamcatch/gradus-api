@@ -4,8 +4,10 @@
  * the caller's role and returns the shape that role's existing resource
  * feed already produces, tagged with a `role` field.
  *
- * Role resolution reproduces the precedence `GET /api/v1/me` and the web's
- * `getMyRole` (`src/lib/parent-signup.functions.ts`) use, onboarding
+ * Role resolution (`resolveCallerRole` in `caller-role.server.ts`, shared
+ * with `POST /api/v1/ask`'s audience resolver so both endpoints agree on
+ * who the caller is) reproduces the precedence `GET /api/v1/me` and the
+ * web's `getMyRole` (`src/lib/parent-signup.functions.ts`) use, onboarding
  * included: an *onboarded* coach wins outright, otherwise parent, then
  * athlete, then an un-onboarded coach still counts as "coach" (there's no
  * other feed to show them). Onboarding has to be factored in here, not just
@@ -18,8 +20,8 @@
  *
  * A caller with no profile at all gets the same empty shape
  * `getParentResources` returns for "no parent profile" (`{ sports: [],
- * resources: [] }`), tagged as role `"parent"` — arbitrary but harmless,
- * since there is nothing to show either way.
+ * resources: [], canAskGradus: true }`), tagged as role `"parent"` —
+ * arbitrary but harmless, since there is nothing to show either way.
  *
  * The response is `{ role, coach, parent, athlete }` with exactly one of
  * the three payload fields set (matching `role`) and the other two `null`,
@@ -33,7 +35,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import type { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { dbError } from "./db-error";
+import { resolveCallerRole, type CallerRole } from "./caller-role.server";
 import { listCoachResources, type CoachResourcesDTO } from "./coach-resources.server";
 import { getParentResources, type ParentResourcesDTO } from "./parent-resources.server";
 import { getAthleteResources, type AthleteResourcesDTO } from "./athlete-resources.server";
@@ -43,7 +45,7 @@ type Admin = typeof supabaseAdmin;
 
 export type ResourcesContext = { userId: string; supabase: Client; admin: Admin };
 
-export type ResourcesRole = "coach" | "parent" | "athlete";
+export type ResourcesRole = CallerRole;
 
 export type RoleAwareResourcesDTO = {
   role: ResourcesRole;
@@ -52,27 +54,8 @@ export type RoleAwareResourcesDTO = {
   athlete: AthleteResourcesDTO | null;
 };
 
-async function resolveRole(
-  admin: Admin,
-  userId: string,
-): Promise<"coach" | "parent" | "athlete" | null> {
-  const [coach, parent, athlete] = await Promise.all([
-    admin.from("coach_profiles").select("id, onboarded_at").eq("user_id", userId).maybeSingle(),
-    admin.from("parent_profiles").select("id").eq("user_id", userId).maybeSingle(),
-    admin.from("athletes").select("id").eq("user_id", userId).limit(1).maybeSingle(),
-  ]);
-  const failed = [coach, parent, athlete].find((r) => r.error);
-  if (failed?.error) dbError(failed.error);
-
-  if (coach.data?.onboarded_at) return "coach";
-  if (parent.data) return "parent";
-  if (athlete.data) return "athlete";
-  if (coach.data) return "coach";
-  return null;
-}
-
 export async function getResourcesForCaller(ctx: ResourcesContext): Promise<RoleAwareResourcesDTO> {
-  const role = await resolveRole(ctx.admin, ctx.userId);
+  const role = await resolveCallerRole(ctx.admin, ctx.userId);
   const inner = { userId: ctx.userId, supabase: ctx.supabase };
   const empty = { role: "parent" as const, coach: null, parent: null, athlete: null };
 

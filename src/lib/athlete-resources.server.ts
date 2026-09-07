@@ -10,6 +10,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { dbError } from "./db-error";
+import { canAskGradus } from "./athlete-age";
 import type { ResourceDTO, ResourceKind } from "./parent-resources.server";
 
 type Client = SupabaseClient<Database>;
@@ -19,6 +20,15 @@ export type AthleteResourcesContext = { userId: string; supabase: Client };
 export interface AthleteResourcesDTO {
   sports: string[];
   resources: ResourceDTO[];
+  /**
+   * Whether this athlete is eligible for Ask Gradus's athlete persona
+   * (`canAskGradus` in `athlete-age.ts`: birthdate on file AND confirmed
+   * 18+). Exposed so the client can hide the feature — advisory only:
+   * `POST /api/v1/ask` re-derives eligibility itself from a fresh,
+   * authoritative read rather than trusting this or anything else
+   * client-supplied.
+   */
+  canAskGradus: boolean;
 }
 
 export async function getAthleteResources(
@@ -28,11 +38,12 @@ export async function getAthleteResources(
 
   const { data: athlete, error: aErr } = await supabase
     .from("athletes")
-    .select("id")
+    .select("id, birthdate")
     .eq("user_id", userId)
     .maybeSingle();
   if (aErr) dbError(aErr);
-  if (!athlete) return { sports: [], resources: [] };
+  if (!athlete) return { sports: [], resources: [], canAskGradus: false };
+  const eligibleForAskGradus = canAskGradus(athlete.birthdate as string | null);
 
   const { data: goalRows, error: gErr } = await supabase
     .from("athlete_goals")
@@ -52,7 +63,7 @@ export async function getAthleteResources(
       ...(coachSportRows ?? []).map((c) => c.sport),
     ]),
   ).sort();
-  if (!sports.length) return { sports: [], resources: [] };
+  if (!sports.length) return { sports: [], resources: [], canAskGradus: eligibleForAskGradus };
 
   // Gradus library rows (coach_id IS NULL, published, sport in scope)
   const { data: libraryRows, error: rErr } = await supabase
@@ -103,5 +114,5 @@ export async function getAthleteResources(
     };
   });
 
-  return { sports, resources: [...coach, ...library] };
+  return { sports, resources: [...coach, ...library], canAskGradus: eligibleForAskGradus };
 }

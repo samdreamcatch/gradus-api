@@ -40,6 +40,15 @@ export interface ParentResourcesDTO {
   /** Distinct sports the parent has at least one athlete in. */
   sports: string[];
   resources: ResourceDTO[];
+  /**
+   * Always `true` at runtime: a parent account is always an adult. Typed as
+   * `boolean` (not the literal `true`) to stay symmetric with
+   * `AthleteResourcesDTO.canAskGradus` (athlete-resources.server.ts) — the
+   * same DTO shape serves both audiences, per this file's doc comment
+   * above, so both need the identical field shape even though a parent's
+   * value never varies.
+   */
+  canAskGradus: boolean;
 }
 
 const unprocessable = (message: string) =>
@@ -55,11 +64,11 @@ export async function getParentResources(ctx: ParentResourcesContext): Promise<P
     .eq("user_id", userId)
     .maybeSingle();
   if (pErr) dbError(pErr);
-  if (!parent) return { sports: [], resources: [] };
+  if (!parent) return { sports: [], resources: [], canAskGradus: true };
 
   const { guardianAthleteIds } = await import("./team.server");
   const athleteIds = await guardianAthleteIds(supabase as any, parent.id);
-  if (!athleteIds.length) return { sports: [], resources: [] };
+  if (!athleteIds.length) return { sports: [], resources: [], canAskGradus: true };
 
   const { data: goalRows, error: gErr } = await supabase
     .from("athlete_goals")
@@ -79,7 +88,7 @@ export async function getParentResources(ctx: ParentResourcesContext): Promise<P
       ...(coachSportRows ?? []).map((c) => c.sport),
     ]),
   ).sort();
-  if (!sports.length) return { sports: [], resources: [] };
+  if (!sports.length) return { sports: [], resources: [], canAskGradus: true };
 
   // Library rows (coach_id IS NULL, published, sport in scope)
   const { data: libraryRows, error: rErr } = await supabase
@@ -130,7 +139,7 @@ export async function getParentResources(ctx: ParentResourcesContext): Promise<P
     };
   });
 
-  return { sports, resources: [...coach, ...library] };
+  return { sports, resources: [...coach, ...library], canAskGradus: true };
 }
 
 export async function getResourceSignedUrl(
