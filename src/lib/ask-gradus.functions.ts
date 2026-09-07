@@ -2,7 +2,9 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { generateText } from "ai";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { createLovableAiGatewayProvider } from "./ai-gateway.server";
+import { canAskGradus } from "./athlete-age";
 import { getSport } from "./coach-sports";
 
 const input = z.object({
@@ -11,10 +13,36 @@ const input = z.object({
   audience: z.enum(["parent", "athlete"]).default("parent"),
 });
 
+type Admin = typeof supabaseAdmin;
+type TrustedAudience = "parent" | "athlete";
+
+/**
+ * The persona a caller is actually allowed to reach, resolved server-side
+ * from their own athlete profile — never from the client-supplied
+ * `audience` field. Ask Gradus is refused outright (thrown, not
+ * re-persona'd) for a confirmed-or-unconfirmed-age minor athlete.
+ */
+export async function resolveAskGradusAudience(
+  userId: string,
+  admin: Pick<Admin, "from">,
+): Promise<TrustedAudience> {
+  const { data: athlete } = await admin
+    .from("athletes")
+    .select("id, birthdate")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (!athlete) return "parent";
+  if (canAskGradus(athlete.birthdate)) return "athlete";
+  throw new Error("Ask Gradus isn't available for this account.");
+}
+
 export const askGradus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => input.parse(data))
-  .handler(async ({ data }): Promise<{ answer: string }> => {
+  .handler(async ({ data, context }): Promise<{ answer: string }> => {
+    const audience = await resolveAskGradusAudience(context.userId, supabaseAdmin);
+
     const key = process.env.LOVABLE_API_KEY;
     if (!key) {
       console.error("[ask-gradus] LOVABLE_API_KEY not set");
@@ -26,7 +54,7 @@ export const askGradus = createServerFn({ method: "POST" })
     const model = gateway("google/gemini-3-flash-preview");
 
     const system =
-      data.audience === "athlete"
+      audience === "athlete"
         ? `You are Gradus, an experienced ${sportLabel} coach speaking directly to a young athlete (roughly ages 10–18). ` +
           `Talk to them, not about them — use "you" and "your". Never address a parent or refer to "your child." ` +
           `Be encouraging, age-appropriate, and concrete: give cues, drills, and what to focus on in practice. ` +

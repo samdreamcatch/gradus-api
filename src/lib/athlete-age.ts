@@ -12,3 +12,15 @@ export function isMinorBirthdate(birthdate?: string | null): boolean {
   if (beforeBirthday) age -= 1;
   return age < 18;
 }
+
+/**
+ * Whether Ask Gradus's athlete persona may be shown to this caller. Unlike
+ * `isMinorBirthdate`, a missing or unparseable birthdate is treated as
+ * UNCONFIRMED age and refused (`false`) rather than assumed adult — this
+ * gates a feature, not just a display label.
+ */
+export function canAskGradus(birthdate: string | null | undefined): boolean {
+  if (!birthdate) return false;
+  if (Number.isNaN(new Date(birthdate).getTime())) return false;
+  return !isMinorBirthdate(birthdate);
+}
