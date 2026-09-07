@@ -2,7 +2,13 @@
  * Server-only account deletion. Removes the caller's identity and personal
  * data while keeping shared history (threads, plans, invoices) coherent for
  * the other participants. See the account-deletion plan for the full rules.
+ *
+ * Shared by the web server functions (account-deletion.functions.ts) and the
+ * `GET /api/v1/me/deletion-impact` and `DELETE /api/v1/me` routes (PRD §6.4
+ * "Delete account", §7.12). The confirmation phrase, its input schema, and
+ * the phrase check live here so both callers agree on them.
  */
+import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 export type DeletionRole = "coach" | "parent" | "athlete" | "unknown";
@@ -12,6 +18,31 @@ export type DeletionResult = {
   athletesDeleted: number;
   athletesTransferred: number;
 };
+
+/** What the caller must type to confirm deletion (web and API alike). */
+export const DELETE_CONFIRM_PHRASE = "DELETE ACCOUNT";
+
+export const deleteAccountInput = z.object({
+  confirmPhrase: z.string().min(1),
+  minorChoices: z
+    .array(
+      z.object({
+        athleteId: z.string().uuid(),
+        action: z.enum(["keep", "delete"]),
+      }),
+    )
+    .default([]),
+});
+
+export type DeleteAccountInput = z.infer<typeof deleteAccountInput>;
+
+/** True when the typed phrase matches `DELETE_CONFIRM_PHRASE`, ignoring surrounding whitespace and case. */
+export function isDeleteConfirmed(phrase: string): boolean {
+  return phrase.trim().toUpperCase() === DELETE_CONFIRM_PHRASE;
+}
+
+/** A minor who would be left without an adult on file — see `listOrphanedMinors`. */
+export type OrphanedMinor = { id: string; firstName: string; guardianEmail: string | null };
 
 async function sha256Hex(value: string): Promise<string> {
   const bytes = new TextEncoder().encode(value.trim().toLowerCase());
@@ -135,9 +166,7 @@ function isMinor(birthdate: string | null): boolean {
  * Athletes under 18 who sign in themselves and whose only guardian is this
  * user — deleting the guardian would leave them with no adult on file.
  */
-export async function listOrphanedMinors(
-  userId: string,
-): Promise<{ id: string; firstName: string; guardianEmail: string | null }[]> {
+export async function listOrphanedMinors(userId: string): Promise<OrphanedMinor[]> {
   const { data: parent } = await supabaseAdmin
     .from("parent_profiles")
     .select("id")
@@ -150,7 +179,7 @@ export async function listOrphanedMinors(
     .select("id, first_name, birthdate, user_id, guardian_email")
     .eq("parent_id", parent.id);
 
-  const out: { id: string; firstName: string; guardianEmail: string | null }[] = [];
+  const out: OrphanedMinor[] = [];
   for (const a of athletes ?? []) {
     if (!a.user_id || !isMinor(a.birthdate)) continue;
     const { data: coGuardians } = await supabaseAdmin

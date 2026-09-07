@@ -1,14 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { rethrowPlain } from "./api/errors";
 import { dbError } from "./db-error";
+import { feedbackInput, submitFeedback as submitFeedbackShared } from "./feedback.server";
 
-const submitSchema = z.object({
-  message: z.string().trim().min(1).max(2000),
-  path: z.string().max(500).optional().nullable(),
-  userAgent: z.string().max(500).optional().nullable(),
-  viewport: z.string().max(32).optional().nullable(),
-});
+export { feedbackInput };
 
 async function assertAdmin(context: { userId: string; supabase: any }) {
   const { data, error } = await context.supabase.rpc("has_role", {
@@ -19,52 +16,21 @@ async function assertAdmin(context: { userId: string; supabase: any }) {
   if (!data) throw new Error("Forbidden");
 }
 
-async function detectRole(
-  supabaseAdmin: any,
-  userId: string,
-): Promise<"coach" | "parent" | "athlete" | "admin" | "unknown"> {
-  const [coach, parent, athlete, admin] = await Promise.all([
-    supabaseAdmin
-      .from("coach_profiles")
-      .select("id", { head: true, count: "exact" })
-      .eq("user_id", userId),
-    supabaseAdmin
-      .from("parent_profiles")
-      .select("id", { head: true, count: "exact" })
-      .eq("user_id", userId),
-    supabaseAdmin
-      .from("athletes")
-      .select("id", { head: true, count: "exact" })
-      .eq("user_id", userId),
-    supabaseAdmin
-      .from("user_roles")
-      .select("role", { head: true, count: "exact" })
-      .eq("user_id", userId)
-      .eq("role", "admin"),
-  ]);
-  if ((coach.count ?? 0) > 0) return "coach";
-  if ((parent.count ?? 0) > 0) return "parent";
-  if ((athlete.count ?? 0) > 0) return "athlete";
-  if ((admin.count ?? 0) > 0) return "admin";
-  return "unknown";
-}
-
+/*
+ * `submitFeedback` is a thin wrapper over src/lib/feedback.server.ts, shared
+ * with `POST /api/v1/feedback` (PRD §7.12). Behavior is unchanged.
+ * `listFeedback` and `setFeedbackResolved` are admin-only and stay web-only.
+ */
 export const submitFeedback = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => submitSchema.parse(input))
+  .inputValidator((input: unknown) => feedbackInput.parse(input))
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const role = await detectRole(supabaseAdmin, context.userId);
-    const { error } = await supabaseAdmin.from("feedback").insert({
-      user_id: context.userId,
-      role,
-      message: data.message,
-      path: data.path ?? null,
-      user_agent: data.userAgent ?? null,
-      viewport: data.viewport ?? null,
-    });
-    if (error) dbError(error);
-    return { ok: true };
+    try {
+      return await submitFeedbackShared({ userId: context.userId, admin: supabaseAdmin }, data);
+    } catch (err) {
+      rethrowPlain(err);
+    }
   });
 
 const listSchema = z.object({
