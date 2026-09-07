@@ -4347,13 +4347,13 @@
                               "type": "object",
                               "properties": {
                                 "dayOfWeek": {
-                                  "type": "number"
+                                  "type": "integer"
                                 },
                                 "startMinute": {
-                                  "type": "number"
+                                  "type": "integer"
                                 },
                                 "endMinute": {
-                                  "type": "number"
+                                  "type": "integer"
                                 },
                                 "frequency": {
                                   "type": "string",
@@ -4367,7 +4367,7 @@
                                 "weeksOfMonth": {
                                   "type": "array",
                                   "items": {
-                                    "type": "number"
+                                    "type": "integer"
                                   }
                                 },
                                 "startsOn": {
@@ -13628,13 +13628,13 @@
                                     "type": "object",
                                     "properties": {
                                       "dayOfWeek": {
-                                        "type": "number"
+                                        "type": "integer"
                                       },
                                       "startMinute": {
-                                        "type": "number"
+                                        "type": "integer"
                                       },
                                       "endMinute": {
-                                        "type": "number"
+                                        "type": "integer"
                                       },
                                       "frequency": {
                                         "type": "string",
@@ -13648,7 +13648,7 @@
                                       "weeksOfMonth": {
                                         "type": "array",
                                         "items": {
-                                          "type": "number"
+                                          "type": "integer"
                                         }
                                       },
                                       "startsOn": {

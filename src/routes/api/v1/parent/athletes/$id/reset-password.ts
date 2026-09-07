@@ -8,7 +8,9 @@ import { athletePasswordInput, resetParentAthletePassword } from "@/lib/parent-s
 /**
  * Thin wrapper over the shared `resetParentAthletePassword` (PRD §7.7):
  * set a new password for an athlete who has an account. Rate-limited, as
- * every credential-changing route is.
+ * every credential-changing route is. `parentManagedOnly` refuses (403
+ * `forbidden`) self-managed athletes, adults, and athletes with no birthdate
+ * on file, so a guardian link over an adult's login is never a takeover.
  */
 export const Route = createFileRoute("/api/v1/parent/athletes/$id/reset-password")({
   server: {
@@ -23,7 +25,9 @@ export const Route = createFileRoute("/api/v1/parent/athletes/$id/reset-password
       rateLimit: { windowSeconds: 3600, max: 10 },
       handler: async ({ ctx, input, params }) => {
         const { userId, admin } = requireContext(ctx);
-        return resetParentAthletePassword({ userId, admin }, athleteIdParam(params), input);
+        return resetParentAthletePassword({ userId, admin }, athleteIdParam(params), input, {
+          parentManagedOnly: true,
+        });
       },
     }),
   },

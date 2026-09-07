@@ -9,7 +9,8 @@ import { athleteSelfInput, updateAthleteSelf } from "@/lib/athlete-settings.serv
 /**
  * Thin wrappers over the shared `getMyAthlete` (the signed-in athlete's own
  * row, or null) and `updateAthleteSelf` (PRD §7.12: the caller edits their
- * own name and birthdate).
+ * own name and birthdate; `apiContract` answers 404 for a caller with no
+ * athlete row and 422 when the DB age rule rejects the birthdate).
  */
 export const Route = createFileRoute("/api/v1/athlete/me")({
   server: {
@@ -35,7 +36,7 @@ export const Route = createFileRoute("/api/v1/athlete/me")({
         output: okSchema,
         handler: async ({ ctx, input }) => {
           const { userId, admin } = requireContext(ctx);
-          return updateAthleteSelf({ userId, admin }, input);
+          return updateAthleteSelf({ userId, admin }, input, { apiContract: true });
         },
       }),
     },

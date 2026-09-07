@@ -28,6 +28,15 @@ export type AthleteGoalsContext = { userId: string; supabase: Client; admin: Adm
 
 const notFound = (message: string) => new ApiError({ code: "not_found", status: 404, message });
 
+/**
+ * API-only strictness (PRD §6.2 stable codes). The web wrapper leaves this
+ * off and keeps its original behavior, per PRD §4.1 rule 1.
+ */
+export type MotivationOptions = {
+  /** 404 `not_found` for a caller with no athlete row instead of a silent no-op (as `updateAthleteLongTermGoal` already answers). */
+  apiContract?: boolean;
+};
+
 export interface AthleteGoalsDashboardDTO {
   athleteId: string;
   athleteName: string;
@@ -69,12 +78,22 @@ export async function updateAthleteLongTermGoal(
   return { ok: true };
 }
 
-/** Set the caller's motivation line. */
+/** Set the caller's motivation line. See `MotivationOptions` for the API's 404. */
 export async function updateAthleteMotivation(
   ctx: Pick<AthleteGoalsContext, "userId" | "supabase">,
   input: MotivationInput,
+  opts: MotivationOptions = {},
 ): Promise<{ ok: true }> {
   const { userId, supabase } = ctx;
+  if (opts.apiContract) {
+    const { data: athlete, error: aErr } = await supabase
+      .from("athletes")
+      .select("id")
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (aErr) dbError(aErr);
+    if (!athlete) throw notFound("Athlete not found");
+  }
   const { error } = await supabase
     .from("athletes")
     .update({ motivation: input.motivation })

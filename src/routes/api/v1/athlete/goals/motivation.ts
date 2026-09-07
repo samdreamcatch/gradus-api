@@ -4,7 +4,7 @@ import { requireContext } from "@/lib/api/auth";
 import { okSchema } from "@/lib/api/onboarding-schema";
 import { motivationInput, updateAthleteMotivation } from "@/lib/athlete-goals.server";
 
-/** Thin wrapper over the shared `updateAthleteMotivation` (PRD §7.7): the caller's motivation line. */
+/** Thin wrapper over the shared `updateAthleteMotivation` (PRD §7.7): the caller's motivation line; 404 without an athlete row, like `long-term`. */
 export const Route = createFileRoute("/api/v1/athlete/goals/motivation")({
   server: {
     handlers: defineApiRoute({
@@ -17,7 +17,7 @@ export const Route = createFileRoute("/api/v1/athlete/goals/motivation")({
       output: okSchema,
       handler: async ({ ctx, input }) => {
         const { userId, supabase } = requireContext(ctx);
-        return updateAthleteMotivation({ userId, supabase }, input);
+        return updateAthleteMotivation({ userId, supabase }, input, { apiContract: true });
       },
     }),
   },

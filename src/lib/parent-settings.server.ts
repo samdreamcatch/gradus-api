@@ -16,6 +16,7 @@
 import { z } from "zod";
 import type { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { ApiError } from "./api/errors";
+import { isMinorBirthdate } from "./athlete-age";
 import { dbError } from "./db-error";
 import { inviteCodeSchema } from "./invites.server";
 import { lessonSlotSchema } from "./parent-signup.server";
@@ -30,8 +31,29 @@ const unprocessable = (message: string) =>
   new ApiError({ code: "unprocessable", status: 422, message });
 const notFound = (message: string) => new ApiError({ code: "not_found", status: 404, message });
 const wrongRole = (message: string) => new ApiError({ code: "wrong_role", status: 403, message });
+const forbidden = (message: string) => new ApiError({ code: "forbidden", status: 403, message });
 const alreadyLinked = (message: string) =>
   new ApiError({ code: "already_linked", status: 409, message });
+
+/**
+ * API-only strictness (PRD §6.2 stable codes). The web wrappers leave this
+ * off and keep their original behavior, per PRD §4.1 rule 1.
+ */
+export type ApiContractOptions = {
+  /** Refuse with a coded error instead of a silent no-op when the caller has no row to update. */
+  apiContract?: boolean;
+};
+
+export type ResetPasswordOptions = {
+  /**
+   * Only athletes under 18 whose account the parent manages are resettable:
+   * a self-managed athlete, an adult, or an athlete with no birthdate on
+   * file is refused (403 `forbidden`) instead of having their login taken
+   * over. The API sets this; the web keeps its original behavior until the
+   * shared function is gated for both (a follow-up needing a product call).
+   */
+  parentManagedOnly?: boolean;
+};
 
 // ---------------------------------------------------------------------------
 // DTOs
@@ -416,12 +438,18 @@ export async function getParentSettings(ctx: ParentSettingsContext): Promise<Par
   };
 }
 
-/** `updateParentProfile`: the parent's own name. */
+/**
+ * `updateParentProfile`: the parent's own name. With `apiContract`, a caller
+ * without a parent profile is 403 `wrong_role` (the web layout already
+ * guarantees one, so its update is never a no-op).
+ */
 export async function updateParentProfile(
   ctx: ParentSettingsContext,
   data: z.infer<typeof parentProfileInput>,
+  opts: ApiContractOptions = {},
 ): Promise<{ ok: true }> {
   const { admin, userId } = ctx;
+  if (opts.apiContract) await getParentProfile(admin, userId);
   const upd = await admin
     .from("parent_profiles")
     .update({ first_name: data.firstName, last_name: data.lastName })
@@ -818,19 +846,33 @@ export async function removeParentAthlete(
 /**
  * `resetAthletePassword`: reset (or set) the password for one of the
  * parent's athletes. Only works for athletes that have an account (user_id
- * is set); username-only athletes have no email-based recovery.
+ * is set); username-only athletes have no email-based recovery. See
+ * `ResetPasswordOptions` for the API's minor-only gate.
  */
 export async function resetParentAthletePassword(
   ctx: ParentSettingsContext,
   athleteId: string,
   data: z.infer<typeof athletePasswordInput>,
+  opts: ResetPasswordOptions = {},
 ): Promise<{ ok: true; username: string | null }> {
   const { admin, userId } = ctx;
   await assertOwnsAthlete(admin, userId, athleteId);
-  const row = await admin.from("athletes").select("user_id, username").eq("id", athleteId).single();
+  const row = await admin
+    .from("athletes")
+    .select("user_id, username, birthdate, self_managed")
+    .eq("id", athleteId)
+    .single();
   if (row.error) dbError(row.error);
   if (!row.data.user_id) {
     throw unprocessable("This athlete hasn't created their account yet.");
+  }
+  if (opts.parentManagedOnly) {
+    const managed = !row.data.self_managed && isMinorBirthdate(row.data.birthdate as string | null);
+    if (!managed) {
+      throw forbidden(
+        "Only athletes under 18 whose account you manage can have their password reset.",
+      );
+    }
   }
   const upd = await admin.auth.admin.updateUserById(row.data.user_id, {
     password: data.password,

@@ -10,11 +10,33 @@
  */
 import { z } from "zod";
 import type { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { ApiError } from "./api/errors";
 import { dbError } from "./db-error";
 
 type Admin = typeof supabaseAdmin;
 
 export type AthleteSettingsContext = { userId: string; admin: Admin };
+
+/**
+ * API-only strictness (PRD §6.2 stable codes). The web wrapper leaves this
+ * off and keeps its original behavior, per PRD §4.1 rule 1.
+ */
+export type AthleteSelfOptions = {
+  /**
+   * 404 `not_found` for a caller with no athlete row (instead of a silent
+   * no-op), and 422 `unprocessable` when the `enforce_adult_self_managed`
+   * trigger rejects the birthdate (instead of the generic 500 the web's
+   * generic toast maps to).
+   */
+  apiContract?: boolean;
+};
+
+const notFound = (message: string) => new ApiError({ code: "not_found", status: 404, message });
+const unprocessable = (message: string) =>
+  new ApiError({ code: "unprocessable", status: 422, message });
+
+/** Same message `createSelfManagedAthlete` gives the trigger's check violation (adult-athlete.server.ts). */
+export const UNDER_18_NEEDS_GUARDIAN = "Athletes under 18 need a parent or guardian email.";
 
 export type AthleteSettingsDTO = {
   id: string;
@@ -66,12 +88,18 @@ export async function getAthleteSettings(
   };
 }
 
-/** Update the caller's own name and birthdate. */
+/** Update the caller's own name and birthdate. See `AthleteSelfOptions` for the API's stricter answers. */
 export async function updateAthleteSelf(
   ctx: AthleteSettingsContext,
   input: AthleteSelfInput,
+  opts: AthleteSelfOptions = {},
 ): Promise<{ ok: true }> {
   const { userId, admin } = ctx;
+  if (opts.apiContract) {
+    const row = await admin.from("athletes").select("id").eq("user_id", userId).maybeSingle();
+    if (row.error) dbError(row.error);
+    if (!row.data) throw notFound("Athlete not found");
+  }
   const upd = await admin
     .from("athletes")
     .update({
@@ -80,6 +108,13 @@ export async function updateAthleteSelf(
       birthdate: input.birthdate,
     })
     .eq("user_id", userId);
-  if (upd.error) dbError(upd.error);
+  if (upd.error) {
+    // 23514 = check_violation: the age trigger (a self-managed athlete's
+    // birthdate moved under 18 with no guardian on file).
+    if (opts.apiContract && (upd.error as { code?: string }).code === "23514") {
+      throw unprocessable(UNDER_18_NEEDS_GUARDIAN);
+    }
+    dbError(upd.error);
+  }
   return { ok: true };
 }
