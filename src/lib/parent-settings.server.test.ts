@@ -937,10 +937,25 @@ describe("setParentAthleteGoals", () => {
 });
 
 describe("resetParentAthletePassword", () => {
+  const withAccount = { ...ownedAthlete, user_id: "user-rory", username: "rory" };
+  const reset = (athlete: Record<string, unknown>) => {
+    const calls: WriteCall[] = [];
+    const admin = fakeClient({ athletes: athlete }, {}, { calls });
+    return {
+      calls,
+      run: () => resetParentAthletePassword({ userId: "u", admin }, A, { password: "longenough" }),
+    };
+  };
+
   it("an athlete without an account is 422", async () => {
-    const admin = fakeClient({ athletes: { ...ownedAthlete, user_id: null, username: null } });
-    const err = await caught(() =>
-      resetParentAthletePassword({ userId: "u", admin }, A, { password: "longenough" }),
+    const err = await caught(
+      reset({
+        ...withAccount,
+        user_id: null,
+        username: null,
+        birthdate: MINOR_DOB,
+        self_managed: false,
+      }).run,
     );
     expect(err?.status).toBe(422);
     expect(err?.message).toBe("This athlete hasn't created their account yet.");
@@ -948,7 +963,7 @@ describe("resetParentAthletePassword", () => {
 
   it("a GoTrue failure surfaces its message as 422", async () => {
     const admin = fakeClient(
-      { athletes: { ...ownedAthlete, user_id: "user-rory", username: "rory" } },
+      { athletes: { ...withAccount, birthdate: MINOR_DOB, self_managed: false } },
       {},
       { updateUser: { error: { message: "Password is too weak" } } },
     );
@@ -959,105 +974,55 @@ describe("resetParentAthletePassword", () => {
     expect(err?.message).toBe("Password is too weak");
   });
 
-  it("returns the athlete's username on success", async () => {
-    const admin = fakeClient({
-      athletes: { ...ownedAthlete, user_id: "user-rory", username: "rory" },
-    });
-    expect(
-      await resetParentAthletePassword({ userId: "u", admin }, A, { password: "longenough" }),
-    ).toEqual({ ok: true, username: "rory" });
+  it("resets a parent-managed minor's password and returns the username", async () => {
+    const { calls, run } = reset({ ...withAccount, birthdate: MINOR_DOB, self_managed: false });
+    expect(await run()).toEqual({ ok: true, username: "rory" });
+    expect(calls).toEqual([
+      {
+        op: "updateUserById",
+        table: "user-rory",
+        payload: { password: "longenough" },
+        filters: [],
+      },
+    ]);
   });
 
-  describe("parentManagedOnly (the API's gate)", () => {
-    const withAccount = { ...ownedAthlete, user_id: "user-rory", username: "rory" };
-    const reset = (athlete: Record<string, unknown>) => {
-      const calls: WriteCall[] = [];
-      const admin = fakeClient({ athletes: athlete }, {}, { calls });
-      return {
-        calls,
-        run: () =>
-          resetParentAthletePassword(
-            { userId: "u", admin },
-            A,
-            { password: "longenough" },
-            {
-              parentManagedOnly: true,
-            },
-          ),
-      };
-    };
+  it("refuses an adult self-managed athlete with a claimed guardian (403 forbidden, no password change)", async () => {
+    const { calls, run } = reset({ ...withAccount, birthdate: ADULT_DOB, self_managed: true });
+    const err = await caught(run);
+    expect(err?.status).toBe(403);
+    expect(err?.code).toBe("forbidden");
+    expect(err?.message).toBe("Only a minor athlete's password can be reset from here.");
+    expect(calls).toEqual([]);
+  });
 
-    it("resets a parent-managed minor's password", async () => {
-      const { calls, run } = reset({ ...withAccount, birthdate: MINOR_DOB, self_managed: false });
-      expect(await run()).toEqual({ ok: true, username: "rory" });
-      expect(calls).toEqual([
-        {
-          op: "updateUserById",
-          table: "user-rory",
-          payload: { password: "longenough" },
-          filters: [],
-        },
-      ]);
-    });
+  it("refuses a self-managed minor too", async () => {
+    const { calls, run } = reset({ ...withAccount, birthdate: MINOR_DOB, self_managed: true });
+    expect((await caught(run))?.code).toBe("forbidden");
+    expect(calls).toEqual([]);
+  });
 
-    it("refuses an adult self-managed athlete with a claimed guardian (403 forbidden, no password change)", async () => {
-      const { calls, run } = reset({ ...withAccount, birthdate: ADULT_DOB, self_managed: true });
-      const err = await caught(run);
-      expect(err?.status).toBe(403);
-      expect(err?.code).toBe("forbidden");
-      expect(err?.message).toBe(
-        "Only athletes whose account you manage can have their password reset.",
-      );
-      expect(calls).toEqual([]);
-    });
+  it("refuses a parent-managed athlete who has turned 18 (Mariah's call, 2026-09-07)", async () => {
+    const { calls, run } = reset({ ...withAccount, birthdate: ADULT_DOB, self_managed: false });
+    const err = await caught(run);
+    expect(err?.code).toBe("forbidden");
+    expect(calls).toEqual([]);
+  });
 
-    it("refuses a self-managed minor too", async () => {
-      const { calls, run } = reset({ ...withAccount, birthdate: MINOR_DOB, self_managed: true });
-      expect((await caught(run))?.code).toBe("forbidden");
-      expect(calls).toEqual([]);
-    });
+  it("refuses an athlete with no birthdate on file — age can't be confirmed", async () => {
+    const { calls, run } = reset({ ...withAccount, birthdate: null, self_managed: false });
+    expect((await caught(run))?.code).toBe("forbidden");
+    expect(calls).toEqual([]);
+  });
 
-    it("still resets a parent-managed athlete who is 18 or has no birthdate on file (no other recovery path)", async () => {
-      for (const athlete of [
-        { ...withAccount, birthdate: ADULT_DOB, self_managed: false },
-        { ...withAccount, birthdate: null, self_managed: false },
-      ]) {
-        const { calls, run } = reset(athlete);
-        expect(await run()).toEqual({ ok: true, username: "rory" });
-        expect(calls.map((c) => c.op)).toEqual(["updateUserById"]);
-      }
+  it("still answers 404 for another parent's adult athlete (ownership first)", async () => {
+    const { run } = reset({
+      ...foreignAthlete,
+      user_id: "x",
+      birthdate: ADULT_DOB,
+      self_managed: true,
     });
-
-    it("still answers 404 for another parent's adult athlete (ownership first)", async () => {
-      const { run } = reset({
-        ...foreignAthlete,
-        user_id: "x",
-        birthdate: ADULT_DOB,
-        self_managed: true,
-      });
-      expect((await caught(run))?.status).toBe(404);
-    });
-
-    it("still answers 422 for an athlete without an account", async () => {
-      const { run } = reset({
-        ...ownedAthlete,
-        user_id: null,
-        birthdate: ADULT_DOB,
-        self_managed: false,
-      });
-      const err = await caught(run);
-      expect(err?.status).toBe(422);
-      expect(err?.message).toBe("This athlete hasn't created their account yet.");
-    });
-
-    it("without the option (the web), an adult self-managed athlete is still reset (parity, gated in a follow-up)", async () => {
-      const admin = fakeClient({
-        athletes: { ...withAccount, birthdate: ADULT_DOB, self_managed: true },
-      });
-      expect(
-        await resetParentAthletePassword({ userId: "u", admin }, A, { password: "longenough" }),
-      ).toEqual({ ok: true, username: "rory" });
-    });
+    expect((await caught(run))?.status).toBe(404);
   });
 });
 
