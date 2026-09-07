@@ -60,12 +60,17 @@ export const adultCoachListSchema = z.object({
 
 export const sportsResponseSchema = z.object({ sports: z.array(z.string()) });
 
+/**
+ * Integers, like the SMALLINT columns they come from and the `lessonSlotSchema`
+ * write side, so the Swift client reads and writes the same `Int` fields
+ * (a `number` here would have generated `Double` on the read side only).
+ */
 export const scheduleSlotSchema = z.object({
-  dayOfWeek: z.number(),
-  startMinute: z.number(),
-  endMinute: z.number(),
+  dayOfWeek: z.number().int(),
+  startMinute: z.number().int(),
+  endMinute: z.number().int(),
   frequency: z.enum(["weekly", "biweekly", "twice_monthly", "monthly"]),
-  weeksOfMonth: z.array(z.number()),
+  weeksOfMonth: z.array(z.number().int()),
   startsOn: z.string().nullable(),
 });
 

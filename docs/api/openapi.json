@@ -230,6 +230,108 @@
             }
           }
         }
+      },
+      "delete": {
+        "operationId": "deleteMyAccount",
+        "summary": "Permanently delete the caller's account (body: confirmPhrase, minorChoices)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "confirmPhrase": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "minorChoices": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "athleteId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "action": {
+                          "type": "string",
+                          "enum": [
+                            "keep",
+                            "delete"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "athleteId",
+                        "action"
+                      ]
+                    },
+                    "default": []
+                  }
+                },
+                "required": [
+                  "confirmPhrase"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "role": {
+                      "type": "string",
+                      "enum": [
+                        "coach",
+                        "parent",
+                        "athlete",
+                        "unknown"
+                      ]
+                    },
+                    "athletesDeleted": {
+                      "type": "integer"
+                    },
+                    "athletesTransferred": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "role",
+                    "athletesDeleted",
+                    "athletesTransferred"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/me/presence": {
@@ -3506,6 +3608,81 @@
             }
           }
         }
+      },
+      "patch": {
+        "operationId": "updateAthleteMe",
+        "summary": "Update the caller's name and birthdate",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "firstName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  "lastName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  "birthdate": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  }
+                },
+                "required": [
+                  "firstName",
+                  "lastName",
+                  "birthdate"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/signup/adult-athlete": {
@@ -4170,13 +4347,13 @@
                               "type": "object",
                               "properties": {
                                 "dayOfWeek": {
-                                  "type": "number"
+                                  "type": "integer"
                                 },
                                 "startMinute": {
-                                  "type": "number"
+                                  "type": "integer"
                                 },
                                 "endMinute": {
-                                  "type": "number"
+                                  "type": "integer"
                                 },
                                 "frequency": {
                                   "type": "string",
@@ -4190,7 +4367,7 @@
                                 "weeksOfMonth": {
                                   "type": "array",
                                   "items": {
-                                    "type": "number"
+                                    "type": "integer"
                                   }
                                 },
                                 "startsOn": {
@@ -13234,6 +13411,2018 @@
                   "required": [
                     "ok",
                     "blocked"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/parent/settings": {
+      "get": {
+        "operationId": "getParentSettings",
+        "summary": "The parent's settings snapshot",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "The ETag of the copy the client holds; a match answers 304."
+            },
+            "required": false,
+            "name": "If-None-Match",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "headers": {
+              "ETag": {
+                "schema": {
+                  "type": "string",
+                  "description": "Weak validator for this response; send it back as If-None-Match."
+                },
+                "required": true
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "profile": {
+                      "type": "object",
+                      "properties": {
+                        "firstName": {
+                          "type": "string"
+                        },
+                        "lastName": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "firstName",
+                        "lastName"
+                      ]
+                    },
+                    "athletes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "firstName": {
+                            "type": "string"
+                          },
+                          "lastName": {
+                            "type": "string"
+                          },
+                          "birthdate": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "username": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "hasAccount": {
+                            "type": "boolean"
+                          },
+                          "inviteCode": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "coaches": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "coachId": {
+                                  "type": "string"
+                                },
+                                "coachName": {
+                                  "type": "string"
+                                },
+                                "sports": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string"
+                                  }
+                                }
+                              },
+                              "required": [
+                                "coachId",
+                                "coachName",
+                                "sports"
+                              ]
+                            }
+                          },
+                          "sports": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "sport": {
+                                  "type": "string"
+                                },
+                                "primaryCoachId": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "primaryCoachName": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "eligibleCoaches": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "coachId": {
+                                        "type": "string"
+                                      },
+                                      "coachName": {
+                                        "type": "string"
+                                      }
+                                    },
+                                    "required": [
+                                      "coachId",
+                                      "coachName"
+                                    ]
+                                  }
+                                },
+                                "goals": {
+                                  "type": [
+                                    "object",
+                                    "null"
+                                  ],
+                                  "properties": {
+                                    "currentLevelKey": {
+                                      "type": "string"
+                                    },
+                                    "seasonGoalKey": {
+                                      "type": "string"
+                                    },
+                                    "longTermGoal": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "currentLevelKey",
+                                    "seasonGoalKey",
+                                    "longTermGoal"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "sport",
+                                "primaryCoachId",
+                                "primaryCoachName",
+                                "eligibleCoaches",
+                                "goals"
+                              ]
+                            }
+                          },
+                          "schedulesByCoach": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "coachId": {
+                                  "type": "string"
+                                },
+                                "coachName": {
+                                  "type": "string"
+                                },
+                                "slots": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "dayOfWeek": {
+                                        "type": "integer"
+                                      },
+                                      "startMinute": {
+                                        "type": "integer"
+                                      },
+                                      "endMinute": {
+                                        "type": "integer"
+                                      },
+                                      "frequency": {
+                                        "type": "string",
+                                        "enum": [
+                                          "weekly",
+                                          "biweekly",
+                                          "twice_monthly",
+                                          "monthly"
+                                        ]
+                                      },
+                                      "weeksOfMonth": {
+                                        "type": "array",
+                                        "items": {
+                                          "type": "integer"
+                                        }
+                                      },
+                                      "startsOn": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "dayOfWeek",
+                                      "startMinute",
+                                      "endMinute",
+                                      "frequency",
+                                      "weeksOfMonth",
+                                      "startsOn"
+                                    ]
+                                  }
+                                }
+                              },
+                              "required": [
+                                "coachId",
+                                "coachName",
+                                "slots"
+                              ]
+                            }
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "firstName",
+                          "lastName",
+                          "birthdate",
+                          "username",
+                          "hasAccount",
+                          "inviteCode",
+                          "coaches",
+                          "sports",
+                          "schedulesByCoach"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "profile",
+                    "athletes"
+                  ]
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "Not Modified: unchanged since the ETag sent in If-None-Match.",
+            "headers": {
+              "ETag": {
+                "schema": {
+                  "type": "string",
+                  "description": "Weak validator for this response; send it back as If-None-Match."
+                },
+                "required": true
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/parent/profile": {
+      "patch": {
+        "operationId": "updateParentProfile",
+        "summary": "Update the parent's name",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "firstName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  "lastName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  }
+                },
+                "required": [
+                  "firstName",
+                  "lastName"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/parent/athletes": {
+      "post": {
+        "operationId": "addParentAthlete",
+        "summary": "Add an athlete to the parent's account",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "firstName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  "lastName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  "birthdate": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  }
+                },
+                "required": [
+                  "firstName",
+                  "lastName",
+                  "birthdate"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "athleteId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "athleteId"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/parent/athletes/{id}": {
+      "patch": {
+        "operationId": "updateParentAthlete",
+        "summary": "Update an athlete's name and birthdate",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "firstName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  "lastName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  "birthdate": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  }
+                },
+                "required": [
+                  "firstName",
+                  "lastName",
+                  "birthdate"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "removeParentAthlete",
+        "summary": "Remove an athlete (never the last one)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/parent/athletes/{id}/goals": {
+      "put": {
+        "operationId": "setParentAthleteGoals",
+        "summary": "Set an athlete's goals for a sport",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "sport": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64
+                  },
+                  "currentLevelKey": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64
+                  },
+                  "seasonGoalKey": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64
+                  },
+                  "longTermGoal": {
+                    "type": "string",
+                    "maxLength": 2000,
+                    "default": ""
+                  }
+                },
+                "required": [
+                  "sport",
+                  "currentLevelKey",
+                  "seasonGoalKey"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/parent/athletes/{id}/reset-password": {
+      "post": {
+        "operationId": "resetParentAthletePassword",
+        "summary": "Reset an athlete's password",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "password": {
+                    "type": "string",
+                    "minLength": 8
+                  }
+                },
+                "required": [
+                  "password"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "username": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "username"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/parent/athletes/{id}/coaches": {
+      "post": {
+        "operationId": "linkParentAthleteCoach",
+        "summary": "Link an athlete to a coach by invite code",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "minLength": 8,
+                    "maxLength": 8,
+                    "pattern": "^[A-Z2-9]+$"
+                  },
+                  "sports": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 64
+                    },
+                    "minItems": 1,
+                    "maxItems": 20
+                  }
+                },
+                "required": [
+                  "code",
+                  "sports"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/parent/athletes/{id}/coaches/{coachId}": {
+      "delete": {
+        "operationId": "unlinkParentAthleteCoach",
+        "summary": "Unlink a coach from an athlete",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "coachId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/parent/athletes/{id}/coaches/{coachId}/sports": {
+      "put": {
+        "operationId": "setParentAthleteCoachSports",
+        "summary": "Replace the sports an athlete does with a coach",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "coachId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "sports": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 64
+                    },
+                    "minItems": 1,
+                    "maxItems": 20
+                  }
+                },
+                "required": [
+                  "sports"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/parent/athletes/{id}/primary-coach": {
+      "put": {
+        "operationId": "setParentAthletePrimaryCoach",
+        "summary": "Set an athlete's primary coach for a sport",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "sport": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64
+                  },
+                  "coachId": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                },
+                "required": [
+                  "sport",
+                  "coachId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/parent/athletes/{id}/schedule": {
+      "put": {
+        "operationId": "replaceParentAthleteSchedule",
+        "summary": "Replace an athlete's lesson schedule with a coach",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "coachId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "slots": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "dayOfWeek": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 6
+                        },
+                        "startMinute": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 1439
+                        },
+                        "endMinute": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 1440
+                        },
+                        "frequency": {
+                          "type": "string",
+                          "enum": [
+                            "weekly",
+                            "biweekly",
+                            "twice_monthly",
+                            "monthly"
+                          ],
+                          "default": "weekly"
+                        },
+                        "weeksOfMonth": {
+                          "type": "array",
+                          "items": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 5
+                          },
+                          "default": []
+                        },
+                        "startsOn": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                        }
+                      },
+                      "required": [
+                        "dayOfWeek",
+                        "startMinute",
+                        "endMinute"
+                      ]
+                    },
+                    "maxItems": 20
+                  }
+                },
+                "required": [
+                  "coachId",
+                  "slots"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/parent/goals": {
+      "get": {
+        "operationId": "getParentGoals",
+        "summary": "The parent's goals dashboard",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "athletes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "athleteId": {
+                            "type": "string"
+                          },
+                          "athleteName": {
+                            "type": "string"
+                          },
+                          "sports": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "sport": {
+                                  "type": "string"
+                                },
+                                "currentLevelKey": {
+                                  "type": "string"
+                                },
+                                "seasonGoalKey": {
+                                  "type": "string"
+                                },
+                                "longTermGoal": {
+                                  "type": "string"
+                                },
+                                "primaryCoachId": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "hoursAtCurrent": {
+                                  "type": [
+                                    "number",
+                                    "null"
+                                  ]
+                                },
+                                "hoursAtGoal": {
+                                  "type": [
+                                    "number",
+                                    "null"
+                                  ]
+                                },
+                                "loggedHoursPerWeek": {
+                                  "type": "number"
+                                },
+                                "sessionsCount": {
+                                  "type": "integer"
+                                },
+                                "firstSessionAt": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "sport",
+                                "currentLevelKey",
+                                "seasonGoalKey",
+                                "longTermGoal",
+                                "primaryCoachId",
+                                "hoursAtCurrent",
+                                "hoursAtGoal",
+                                "loggedHoursPerWeek",
+                                "sessionsCount",
+                                "firstSessionAt"
+                              ]
+                            }
+                          }
+                        },
+                        "required": [
+                          "athleteId",
+                          "athleteName",
+                          "sports"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "athletes"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/parent/team": {
+      "get": {
+        "operationId": "getParentTeamPlan",
+        "summary": "The parent's Team plan status",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "active": {
+                      "type": "boolean"
+                    },
+                    "status": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "currentPeriodEnd": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "hasBillingAccount": {
+                      "type": "boolean"
+                    },
+                    "manageUrl": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "active",
+                    "status",
+                    "currentPeriodEnd",
+                    "hasBillingAccount",
+                    "manageUrl"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/athlete/settings": {
+      "get": {
+        "operationId": "getAthleteSettings",
+        "summary": "The caller's athlete settings",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "settings": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "firstName": {
+                          "type": "string"
+                        },
+                        "lastName": {
+                          "type": "string"
+                        },
+                        "birthdate": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "username": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "guardianEmail": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "guardianInvitedAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "guardianClaimed": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "firstName",
+                        "lastName",
+                        "birthdate",
+                        "username",
+                        "guardianEmail",
+                        "guardianInvitedAt",
+                        "guardianClaimed"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "settings"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/athlete/goals": {
+      "get": {
+        "operationId": "getAthleteGoals",
+        "summary": "The athlete's goals dashboard",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "dashboard": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "athleteId": {
+                          "type": "string"
+                        },
+                        "athleteName": {
+                          "type": "string"
+                        },
+                        "motivation": {
+                          "type": "string"
+                        },
+                        "sports": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "sport": {
+                                "type": "string"
+                              },
+                              "currentLevelKey": {
+                                "type": "string"
+                              },
+                              "seasonGoalKey": {
+                                "type": "string"
+                              },
+                              "longTermGoal": {
+                                "type": "string"
+                              },
+                              "primaryCoachId": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "hoursAtCurrent": {
+                                "type": [
+                                  "number",
+                                  "null"
+                                ]
+                              },
+                              "hoursAtGoal": {
+                                "type": [
+                                  "number",
+                                  "null"
+                                ]
+                              },
+                              "loggedHoursPerWeek": {
+                                "type": "number"
+                              },
+                              "sessionsCount": {
+                                "type": "integer"
+                              },
+                              "firstSessionAt": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "sport",
+                              "currentLevelKey",
+                              "seasonGoalKey",
+                              "longTermGoal",
+                              "primaryCoachId",
+                              "hoursAtCurrent",
+                              "hoursAtGoal",
+                              "loggedHoursPerWeek",
+                              "sessionsCount",
+                              "firstSessionAt"
+                            ]
+                          }
+                        }
+                      },
+                      "required": [
+                        "athleteId",
+                        "athleteName",
+                        "motivation",
+                        "sports"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "dashboard"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/athlete/goals/long-term": {
+      "put": {
+        "operationId": "setAthleteLongTermGoal",
+        "summary": "Set the caller's long-term goal for a sport",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "sport": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64
+                  },
+                  "longTermGoal": {
+                    "type": "string",
+                    "maxLength": 280
+                  }
+                },
+                "required": [
+                  "sport",
+                  "longTermGoal"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/athlete/goals/motivation": {
+      "put": {
+        "operationId": "setAthleteMotivation",
+        "summary": "Set the caller's motivation",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "motivation": {
+                    "type": "string",
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "motivation"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/deletion-impact": {
+      "get": {
+        "operationId": "getDeletionImpact",
+        "summary": "Minors who would be left without a guardian if the caller deletes their account",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "minors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "firstName": {
+                            "type": "string"
+                          },
+                          "guardianEmail": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "firstName",
+                          "guardianEmail"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "minors"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/feedback": {
+      "post": {
+        "operationId": "submitFeedback",
+        "summary": "Send in-app feedback",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2000
+                  },
+                  "path": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 500
+                  },
+                  "userAgent": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 500
+                  },
+                  "viewport": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 32
+                  }
+                },
+                "required": [
+                  "message"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/coach/billing": {
+      "get": {
+        "operationId": "getCoachBilling",
+        "summary": "The coach's billing summary (display only)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "entitlement": {
+                      "type": "string",
+                      "enum": [
+                        "pending",
+                        "club_covered",
+                        "paid",
+                        "promo_free"
+                      ]
+                    },
+                    "effectiveTier": {
+                      "type": "string",
+                      "enum": [
+                        "coach",
+                        "coach_pro",
+                        "club"
+                      ]
+                    },
+                    "subscriptionTier": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "enum": [
+                        "coach",
+                        "coach_pro"
+                      ]
+                    },
+                    "subscriptionStatus": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "trialEndsAt": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "currentPeriodEnd": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "hasStripeCustomer": {
+                      "type": "boolean"
+                    },
+                    "foundingCoach": {
+                      "type": "boolean"
+                    },
+                    "foundingProTrialUsed": {
+                      "type": "boolean"
+                    },
+                    "freeAccessUntil": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "trialNeedsCard": {
+                      "type": "boolean"
+                    },
+                    "billingPastDue": {
+                      "type": "boolean"
+                    },
+                    "athleteLimit": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "athleteCount": {
+                      "type": "integer"
+                    },
+                    "organizationName": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "promoLabel": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "promoPercentOff": {
+                      "type": "number"
+                    },
+                    "manageUrl": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "entitlement",
+                    "effectiveTier",
+                    "subscriptionTier",
+                    "subscriptionStatus",
+                    "trialEndsAt",
+                    "currentPeriodEnd",
+                    "hasStripeCustomer",
+                    "foundingCoach",
+                    "foundingProTrialUsed",
+                    "freeAccessUntil",
+                    "trialNeedsCard",
+                    "billingPastDue",
+                    "athleteLimit",
+                    "athleteCount",
+                    "organizationName",
+                    "promoLabel",
+                    "promoPercentOff",
+                    "manageUrl"
                   ]
                 }
               }

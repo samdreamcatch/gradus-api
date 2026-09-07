@@ -28,6 +28,8 @@ declare module "bun:test" {
     toBeLessThan(expected: number): void;
     toBeLessThanOrEqual(expected: number): void;
     toBeCloseTo(expected: number, numDigits?: number): void;
+    toHaveLength(expected: number): void;
+    toBeInstanceOf(expected: unknown): void;
     toThrow(expected?: unknown): void;
     not: Expectation;
     rejects: AsyncExpectation;
@@ -35,4 +37,8 @@ declare module "bun:test" {
   }
 
   export function expect(actual: unknown): Expectation;
+  export namespace expect {
+    /** Asymmetric matcher for use inside `toEqual`/`toMatchObject` payloads. */
+    function stringMatching(expected: string | RegExp): unknown;
+  }
 }

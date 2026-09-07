@@ -1,20 +1,19 @@
 import { createServerFn } from "@tanstack/react-start";
-import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import {
+  DELETE_CONFIRM_PHRASE,
+  deleteAccountInput,
+  isDeleteConfirmed,
+} from "./account-deletion-shared";
 
-export const DELETE_CONFIRM_PHRASE = "DELETE ACCOUNT";
+export { DELETE_CONFIRM_PHRASE, deleteAccountInput };
 
-const deleteSchema = z.object({
-  confirmPhrase: z.string().min(1),
-  minorChoices: z
-    .array(
-      z.object({
-        athleteId: z.string().uuid(),
-        action: z.enum(["keep", "delete"]),
-      }),
-    )
-    .default([]),
-});
+/*
+ * Thin wrappers over src/lib/account-deletion.server.ts, shared with
+ * `GET /api/v1/me/deletion-impact` and `DELETE /api/v1/me` (PRD §6.4).
+ * Behavior is unchanged: a wrong confirmation phrase still answers
+ * `{ ok: false, message }` rather than throwing.
+ */
 
 /**
  * Minor athletes who sign in themselves and would be left without any adult on
@@ -33,12 +32,12 @@ export const getDeletionImpact = createServerFn({ method: "POST" })
  */
 export const deleteMyAccount = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => deleteSchema.parse(input))
+  .inputValidator((input: unknown) => deleteAccountInput.parse(input))
   .handler(async ({ data, context }) => {
     const { userId, claims } = context;
     const email = (claims as { email?: string } | null)?.email ?? null;
 
-    if (data.confirmPhrase.trim().toUpperCase() !== DELETE_CONFIRM_PHRASE) {
+    if (!isDeleteConfirmed(data.confirmPhrase)) {
       return { ok: false as const, message: `Type ${DELETE_CONFIRM_PHRASE} to confirm.` };
     }
 

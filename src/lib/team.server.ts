@@ -11,6 +11,7 @@
  * *primary* parent — see `canWriteAthlete`.
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/integrations/supabase/types";
 
 const NIL = "00000000-0000-0000-0000-000000000000";
 
@@ -50,13 +51,51 @@ export async function teamPlanActive(admin: Admin, parentId: string): Promise<bo
     .select("subscription_status, current_period_end")
     .eq("id", parentId)
     .maybeSingle();
-  const row = res.data as { subscription_status: string | null; current_period_end: string | null } | null;
+  const row = res.data as {
+    subscription_status: string | null;
+    current_period_end: string | null;
+  } | null;
   if (!row?.subscription_status) return false;
   const end = row.current_period_end ? new Date(row.current_period_end).getTime() : null;
   const notExpired = end === null || end > Date.now();
   if (["active", "trialing", "past_due"].includes(row.subscription_status)) return notExpired;
   if (row.subscription_status === "canceled") return notExpired;
   return false;
+}
+
+export type TeamPlanStatusDTO = {
+  active: boolean;
+  status: string | null;
+  currentPeriodEnd: string | null;
+  hasBillingAccount: boolean;
+};
+
+/**
+ * Team plan status for the signed-in parent (drives the settings UI). Single
+ * source of truth for parent-checkout.functions.ts `getTeamPlanStatus` and
+ * `GET /api/v1/parent/team`. Reads through the caller's RLS client, as on
+ * the web; a user without a parent profile is simply inactive.
+ */
+export async function getTeamPlanStatus(
+  ctx: { userId: string; supabase: SupabaseClient<Database> },
+  now: Date = new Date(),
+): Promise<TeamPlanStatusDTO> {
+  const { data: profile } = await ctx.supabase
+    .from("parent_profiles")
+    .select("subscription_status, current_period_end, stripe_customer_id")
+    .eq("user_id", ctx.userId)
+    .maybeSingle();
+  const status = (profile as any)?.subscription_status as string | null;
+  const periodEnd = (profile as any)?.current_period_end as string | null;
+  const notExpired = !periodEnd || new Date(periodEnd).getTime() > now.getTime();
+  const active =
+    !!status && ["active", "trialing", "past_due", "canceled"].includes(status) && notExpired;
+  return {
+    active,
+    status: status ?? null,
+    currentPeriodEnd: periodEnd ?? null,
+    hasBillingAccount: !!(profile as any)?.stripe_customer_id,
+  };
 }
 
 export type AthleteAccess = {
