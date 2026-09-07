@@ -145,6 +145,8 @@ import "../src/routes/api/v1/athlete/goals/motivation";
 import "../src/routes/api/v1/me/deletion-impact";
 import "../src/routes/api/v1/feedback";
 import "../src/routes/api/v1/coach/billing";
+import "../src/routes/api/v1/devices/index";
+import "../src/routes/api/v1/devices/$token";
 
 const outPath = resolve(__dirname, "../docs/api/openapi.json");
 mkdirSync(dirname(outPath), { recursive: true });

@@ -85,6 +85,7 @@ import { Route as AuthenticatedAdminActivityRouteImport } from './routes/_authen
 import { Route as AuthenticatedAdminActiveRouteImport } from './routes/_authenticated/admin.active'
 import { Route as ApiV1RoomsIndexRouteImport } from './routes/api/v1/rooms/index'
 import { Route as ApiV1MeIndexRouteImport } from './routes/api/v1/me/index'
+import { Route as ApiV1DevicesIndexRouteImport } from './routes/api/v1/devices/index'
 import { Route as AuthenticatedParentResourcesIndexRouteImport } from './routes/_authenticated/parent.resources.index'
 import { Route as AuthenticatedParentPlansIndexRouteImport } from './routes/_authenticated/parent.plans.index'
 import { Route as AuthenticatedParentMessagesIndexRouteImport } from './routes/_authenticated/parent.messages.index'
@@ -127,6 +128,7 @@ import { Route as ApiV1MePromoCodeRouteImport } from './routes/api/v1/me/promo-c
 import { Route as ApiV1MePresenceRouteImport } from './routes/api/v1/me/presence'
 import { Route as ApiV1MeDeletionImpactRouteImport } from './routes/api/v1/me/deletion-impact'
 import { Route as ApiV1InvitesResolveRouteImport } from './routes/api/v1/invites/resolve'
+import { Route as ApiV1DevicesTokenRouteImport } from './routes/api/v1/devices/$token'
 import { Route as ApiV1CoachProfileRouteImport } from './routes/api/v1/coach/profile'
 import { Route as ApiV1CoachOrgRouteImport } from './routes/api/v1/coach/org'
 import { Route as ApiV1CoachLevelsRouteImport } from './routes/api/v1/coach/levels'
@@ -663,6 +665,11 @@ const ApiV1MeIndexRoute = ApiV1MeIndexRouteImport.update({
   path: '/api/v1/me/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiV1DevicesIndexRoute = ApiV1DevicesIndexRouteImport.update({
+  id: '/api/v1/devices/',
+  path: '/api/v1/devices/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedParentResourcesIndexRoute =
   AuthenticatedParentResourcesIndexRouteImport.update({
     id: '/resources/',
@@ -885,6 +892,11 @@ const ApiV1MeDeletionImpactRoute = ApiV1MeDeletionImpactRouteImport.update({
 const ApiV1InvitesResolveRoute = ApiV1InvitesResolveRouteImport.update({
   id: '/api/v1/invites/resolve',
   path: '/api/v1/invites/resolve',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1DevicesTokenRoute = ApiV1DevicesTokenRouteImport.update({
+  id: '/api/v1/devices/$token',
+  path: '/api/v1/devices/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiV1CoachProfileRoute = ApiV1CoachProfileRouteImport.update({
@@ -1689,6 +1701,7 @@ export interface FileRoutesByFullPath {
   '/api/v1/coach/levels': typeof ApiV1CoachLevelsRoute
   '/api/v1/coach/org': typeof ApiV1CoachOrgRoute
   '/api/v1/coach/profile': typeof ApiV1CoachProfileRoute
+  '/api/v1/devices/$token': typeof ApiV1DevicesTokenRoute
   '/api/v1/invites/resolve': typeof ApiV1InvitesResolveRoute
   '/api/v1/me/deletion-impact': typeof ApiV1MeDeletionImpactRoute
   '/api/v1/me/presence': typeof ApiV1MePresenceRoute
@@ -1731,6 +1744,7 @@ export interface FileRoutesByFullPath {
   '/parent/messages/': typeof AuthenticatedParentMessagesIndexRoute
   '/parent/plans/': typeof AuthenticatedParentPlansIndexRoute
   '/parent/resources/': typeof AuthenticatedParentResourcesIndexRoute
+  '/api/v1/devices/': typeof ApiV1DevicesIndexRoute
   '/api/v1/me/': typeof ApiV1MeIndexRoute
   '/api/v1/rooms/': typeof ApiV1RoomsIndexRoute
   '/api/v1/adult-athlete/coach/link': typeof ApiV1AdultAthleteCoachLinkRoute
@@ -1925,6 +1939,7 @@ export interface FileRoutesByTo {
   '/api/v1/coach/levels': typeof ApiV1CoachLevelsRoute
   '/api/v1/coach/org': typeof ApiV1CoachOrgRoute
   '/api/v1/coach/profile': typeof ApiV1CoachProfileRoute
+  '/api/v1/devices/$token': typeof ApiV1DevicesTokenRoute
   '/api/v1/invites/resolve': typeof ApiV1InvitesResolveRoute
   '/api/v1/me/deletion-impact': typeof ApiV1MeDeletionImpactRoute
   '/api/v1/me/presence': typeof ApiV1MePresenceRoute
@@ -1967,6 +1982,7 @@ export interface FileRoutesByTo {
   '/parent/messages': typeof AuthenticatedParentMessagesIndexRoute
   '/parent/plans': typeof AuthenticatedParentPlansIndexRoute
   '/parent/resources': typeof AuthenticatedParentResourcesIndexRoute
+  '/api/v1/devices': typeof ApiV1DevicesIndexRoute
   '/api/v1/me': typeof ApiV1MeIndexRoute
   '/api/v1/rooms': typeof ApiV1RoomsIndexRoute
   '/api/v1/adult-athlete/coach/link': typeof ApiV1AdultAthleteCoachLinkRoute
@@ -2169,6 +2185,7 @@ export interface FileRoutesById {
   '/api/v1/coach/levels': typeof ApiV1CoachLevelsRoute
   '/api/v1/coach/org': typeof ApiV1CoachOrgRoute
   '/api/v1/coach/profile': typeof ApiV1CoachProfileRoute
+  '/api/v1/devices/$token': typeof ApiV1DevicesTokenRoute
   '/api/v1/invites/resolve': typeof ApiV1InvitesResolveRoute
   '/api/v1/me/deletion-impact': typeof ApiV1MeDeletionImpactRoute
   '/api/v1/me/presence': typeof ApiV1MePresenceRoute
@@ -2211,6 +2228,7 @@ export interface FileRoutesById {
   '/_authenticated/parent/messages/': typeof AuthenticatedParentMessagesIndexRoute
   '/_authenticated/parent/plans/': typeof AuthenticatedParentPlansIndexRoute
   '/_authenticated/parent/resources/': typeof AuthenticatedParentResourcesIndexRoute
+  '/api/v1/devices/': typeof ApiV1DevicesIndexRoute
   '/api/v1/me/': typeof ApiV1MeIndexRoute
   '/api/v1/rooms/': typeof ApiV1RoomsIndexRoute
   '/api/v1/adult-athlete/coach/link': typeof ApiV1AdultAthleteCoachLinkRoute
@@ -2413,6 +2431,7 @@ export interface FileRouteTypes {
     | '/api/v1/coach/levels'
     | '/api/v1/coach/org'
     | '/api/v1/coach/profile'
+    | '/api/v1/devices/$token'
     | '/api/v1/invites/resolve'
     | '/api/v1/me/deletion-impact'
     | '/api/v1/me/presence'
@@ -2455,6 +2474,7 @@ export interface FileRouteTypes {
     | '/parent/messages/'
     | '/parent/plans/'
     | '/parent/resources/'
+    | '/api/v1/devices/'
     | '/api/v1/me/'
     | '/api/v1/rooms/'
     | '/api/v1/adult-athlete/coach/link'
@@ -2649,6 +2669,7 @@ export interface FileRouteTypes {
     | '/api/v1/coach/levels'
     | '/api/v1/coach/org'
     | '/api/v1/coach/profile'
+    | '/api/v1/devices/$token'
     | '/api/v1/invites/resolve'
     | '/api/v1/me/deletion-impact'
     | '/api/v1/me/presence'
@@ -2691,6 +2712,7 @@ export interface FileRouteTypes {
     | '/parent/messages'
     | '/parent/plans'
     | '/parent/resources'
+    | '/api/v1/devices'
     | '/api/v1/me'
     | '/api/v1/rooms'
     | '/api/v1/adult-athlete/coach/link'
@@ -2892,6 +2914,7 @@ export interface FileRouteTypes {
     | '/api/v1/coach/levels'
     | '/api/v1/coach/org'
     | '/api/v1/coach/profile'
+    | '/api/v1/devices/$token'
     | '/api/v1/invites/resolve'
     | '/api/v1/me/deletion-impact'
     | '/api/v1/me/presence'
@@ -2934,6 +2957,7 @@ export interface FileRouteTypes {
     | '/_authenticated/parent/messages/'
     | '/_authenticated/parent/plans/'
     | '/_authenticated/parent/resources/'
+    | '/api/v1/devices/'
     | '/api/v1/me/'
     | '/api/v1/rooms/'
     | '/api/v1/adult-athlete/coach/link'
@@ -3071,6 +3095,7 @@ export interface RootRouteChildren {
   ApiV1CoachLevelsRoute: typeof ApiV1CoachLevelsRoute
   ApiV1CoachOrgRoute: typeof ApiV1CoachOrgRoute
   ApiV1CoachProfileRoute: typeof ApiV1CoachProfileRoute
+  ApiV1DevicesTokenRoute: typeof ApiV1DevicesTokenRoute
   ApiV1InvitesResolveRoute: typeof ApiV1InvitesResolveRoute
   ApiV1MeDeletionImpactRoute: typeof ApiV1MeDeletionImpactRoute
   ApiV1MePresenceRoute: typeof ApiV1MePresenceRoute
@@ -3102,6 +3127,7 @@ export interface RootRouteChildren {
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
+  ApiV1DevicesIndexRoute: typeof ApiV1DevicesIndexRoute
   ApiV1MeIndexRoute: typeof ApiV1MeIndexRoute
   ApiV1RoomsIndexRoute: typeof ApiV1RoomsIndexRoute
   ApiV1AdultAthleteCoachLinkRoute: typeof ApiV1AdultAthleteCoachLinkRoute
@@ -3730,6 +3756,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1MeIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/v1/devices/': {
+      id: '/api/v1/devices/'
+      path: '/api/v1/devices'
+      fullPath: '/api/v1/devices/'
+      preLoaderRoute: typeof ApiV1DevicesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/parent/resources/': {
       id: '/_authenticated/parent/resources/'
       path: '/resources'
@@ -4022,6 +4055,13 @@ declare module '@tanstack/react-router' {
       path: '/api/v1/invites/resolve'
       fullPath: '/api/v1/invites/resolve'
       preLoaderRoute: typeof ApiV1InvitesResolveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/devices/$token': {
+      id: '/api/v1/devices/$token'
+      path: '/api/v1/devices/$token'
+      fullPath: '/api/v1/devices/$token'
+      preLoaderRoute: typeof ApiV1DevicesTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/v1/coach/profile': {
@@ -5193,6 +5233,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiV1CoachLevelsRoute: ApiV1CoachLevelsRoute,
   ApiV1CoachOrgRoute: ApiV1CoachOrgRoute,
   ApiV1CoachProfileRoute: ApiV1CoachProfileRoute,
+  ApiV1DevicesTokenRoute: ApiV1DevicesTokenRoute,
   ApiV1InvitesResolveRoute: ApiV1InvitesResolveRoute,
   ApiV1MeDeletionImpactRoute: ApiV1MeDeletionImpactRoute,
   ApiV1MePresenceRoute: ApiV1MePresenceRoute,
@@ -5224,6 +5265,7 @@ const rootRouteChildren: RootRouteChildren = {
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
+  ApiV1DevicesIndexRoute: ApiV1DevicesIndexRoute,
   ApiV1MeIndexRoute: ApiV1MeIndexRoute,
   ApiV1RoomsIndexRoute: ApiV1RoomsIndexRoute,
   ApiV1AdultAthleteCoachLinkRoute: ApiV1AdultAthleteCoachLinkRoute,
