@@ -28,14 +28,18 @@ describe("getResourcesForCaller", () => {
     const admin = fakeAdmin({ coach_profiles: { id: "c1" } });
     const result = await getResourcesForCaller({ userId: "u1", supabase: emptySupabase(), admin });
     expect(result.role).toBe("coach");
-    expect(result).toMatchObject({ sports: [], resources: [], canUpload: false });
+    expect(result.parent).toBeNull();
+    expect(result.athlete).toBeNull();
+    expect(result.coach).toMatchObject({ sports: [], resources: [], canUpload: false });
   });
 
   it("dispatches to the parent feed, tagged role: parent, when only parent_profiles has a row", async () => {
     const admin = fakeAdmin({ coach_profiles: null, parent_profiles: { id: "p1" } });
     const result = await getResourcesForCaller({ userId: "u1", supabase: emptySupabase(), admin });
     expect(result.role).toBe("parent");
-    expect(result).toMatchObject({ sports: [], resources: [] });
+    expect(result.coach).toBeNull();
+    expect(result.athlete).toBeNull();
+    expect(result.parent).toMatchObject({ sports: [], resources: [] });
   });
 
   it("dispatches to the athlete feed, tagged role: athlete, when only athletes has a row", async () => {
@@ -46,13 +50,15 @@ describe("getResourcesForCaller", () => {
     });
     const result = await getResourcesForCaller({ userId: "u1", supabase: emptySupabase(), admin });
     expect(result.role).toBe("athlete");
-    expect(result).toMatchObject({ sports: [], resources: [] });
+    expect(result.coach).toBeNull();
+    expect(result.parent).toBeNull();
+    expect(result.athlete).toMatchObject({ sports: [], resources: [] });
   });
 
   it("falls back to an empty parent-shaped feed when the caller has no profile at all", async () => {
     const admin = fakeAdmin({ coach_profiles: null, parent_profiles: null, athletes: null });
     const result = await getResourcesForCaller({ userId: "u1", supabase: emptySupabase(), admin });
-    expect(result).toEqual({ role: "parent", sports: [], resources: [] });
+    expect(result).toEqual({ role: "parent", coach: null, parent: null, athlete: null });
   });
 
   it("prefers an onboarded coach over parent and athlete when more than one profile exists", async () => {

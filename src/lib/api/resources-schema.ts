@@ -69,11 +69,12 @@ export const athleteResourcesSchema = z.object({
   resources: z.array(resourceSchema),
 }) satisfies z.ZodType<AthleteResourcesDTO>;
 
-export const roleAwareResourcesSchema = z.discriminatedUnion("role", [
-  coachResourcesSchema.extend({ role: z.literal("coach") }),
-  parentResourcesSchema.extend({ role: z.literal("parent") }),
-  athleteResourcesSchema.extend({ role: z.literal("athlete") }),
-]) satisfies z.ZodType<RoleAwareResourcesDTO>;
+export const roleAwareResourcesSchema = z.object({
+  role: z.enum(["coach", "parent", "athlete"]),
+  coach: coachResourcesSchema.nullable(),
+  parent: parentResourcesSchema.nullable(),
+  athlete: athleteResourcesSchema.nullable(),
+}) satisfies z.ZodType<RoleAwareResourcesDTO>;
 
 export const resourceIdResultSchema = z.object({ id: z.string() });
 

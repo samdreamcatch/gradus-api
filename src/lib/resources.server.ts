@@ -20,6 +20,15 @@
  * `getParentResources` returns for "no parent profile" (`{ sports: [],
  * resources: [] }`), tagged as role `"parent"` — arbitrary but harmless,
  * since there is nothing to show either way.
+ *
+ * The response is `{ role, coach, parent, athlete }` with exactly one of
+ * the three payload fields set (matching `role`) and the other two `null`,
+ * rather than a tagged union of three shapes. `zod-to-openapi` does not
+ * emit an OpenAPI `discriminator` for `z.discriminatedUnion`, so
+ * swift-openapi-generator would otherwise generate an unlabeled
+ * case1/case2/case3 enum instead of named cases — a plain object with
+ * three named optional fields decodes cleanly on every client with no
+ * generator-specific behavior to rely on.
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
@@ -34,10 +43,14 @@ type Admin = typeof supabaseAdmin;
 
 export type ResourcesContext = { userId: string; supabase: Client; admin: Admin };
 
-export type RoleAwareResourcesDTO =
-  | ({ role: "coach" } & CoachResourcesDTO)
-  | ({ role: "parent" } & ParentResourcesDTO)
-  | ({ role: "athlete" } & AthleteResourcesDTO);
+export type ResourcesRole = "coach" | "parent" | "athlete";
+
+export type RoleAwareResourcesDTO = {
+  role: ResourcesRole;
+  coach: CoachResourcesDTO | null;
+  parent: ParentResourcesDTO | null;
+  athlete: AthleteResourcesDTO | null;
+};
 
 async function resolveRole(
   admin: Admin,
@@ -61,16 +74,22 @@ async function resolveRole(
 export async function getResourcesForCaller(ctx: ResourcesContext): Promise<RoleAwareResourcesDTO> {
   const role = await resolveRole(ctx.admin, ctx.userId);
   const inner = { userId: ctx.userId, supabase: ctx.supabase };
+  const empty = { role: "parent" as const, coach: null, parent: null, athlete: null };
 
   if (role === "coach") {
-    return { role: "coach", ...(await listCoachResources(inner)) };
+    return { role: "coach", coach: await listCoachResources(inner), parent: null, athlete: null };
   }
   if (role === "athlete") {
-    return { role: "athlete", ...(await getAthleteResources(inner)) };
+    return {
+      role: "athlete",
+      coach: null,
+      parent: null,
+      athlete: await getAthleteResources(inner),
+    };
   }
   if (role === "parent") {
-    return { role: "parent", ...(await getParentResources(inner)) };
+    return { role: "parent", coach: null, parent: await getParentResources(inner), athlete: null };
   }
   // No profile at all: nothing to show either way (judgment call — see file doc comment).
-  return { role: "parent", sports: [], resources: [] };
+  return empty;
 }

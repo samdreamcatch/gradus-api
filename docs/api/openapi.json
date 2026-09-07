@@ -15581,9 +15581,21 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "oneOf": [
-                    {
-                      "type": "object",
+                  "type": "object",
+                  "properties": {
+                    "role": {
+                      "type": "string",
+                      "enum": [
+                        "coach",
+                        "parent",
+                        "athlete"
+                      ]
+                    },
+                    "coach": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
                       "properties": {
                         "sports": {
                           "type": "array",
@@ -15699,12 +15711,6 @@
                             "coach_pro",
                             "club"
                           ]
-                        },
-                        "role": {
-                          "type": "string",
-                          "enum": [
-                            "coach"
-                          ]
                         }
                       },
                       "required": [
@@ -15712,12 +15718,14 @@
                         "resources",
                         "libraryResources",
                         "canUpload",
-                        "effectiveTier",
-                        "role"
+                        "effectiveTier"
                       ]
                     },
-                    {
-                      "type": "object",
+                    "parent": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
                       "properties": {
                         "sports": {
                           "type": "array",
@@ -15788,22 +15796,18 @@
                               "coachName"
                             ]
                           }
-                        },
-                        "role": {
-                          "type": "string",
-                          "enum": [
-                            "parent"
-                          ]
                         }
                       },
                       "required": [
                         "sports",
-                        "resources",
-                        "role"
+                        "resources"
                       ]
                     },
-                    {
-                      "type": "object",
+                    "athlete": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
                       "properties": {
                         "sports": {
                           "type": "array",
@@ -15874,20 +15878,19 @@
                               "coachName"
                             ]
                           }
-                        },
-                        "role": {
-                          "type": "string",
-                          "enum": [
-                            "athlete"
-                          ]
                         }
                       },
                       "required": [
                         "sports",
-                        "resources",
-                        "role"
+                        "resources"
                       ]
                     }
+                  },
+                  "required": [
+                    "role",
+                    "coach",
+                    "parent",
+                    "athlete"
                   ]
                 }
               }
