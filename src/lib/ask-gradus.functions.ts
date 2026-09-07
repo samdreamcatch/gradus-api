@@ -26,12 +26,17 @@ export async function resolveAskGradusAudience(
   userId: string,
   admin: Pick<Admin, "from">,
 ): Promise<TrustedAudience> {
-  const { data: athlete } = await admin
+  const { data: athlete, error } = await admin
     .from("athletes")
     .select("id, birthdate")
     .eq("user_id", userId)
     .maybeSingle();
 
+  // Fail closed: a lookup error (e.g. PGRST116 from `.maybeSingle()` when more
+  // than one athletes row matches this user) must never be treated as "no
+  // athletes row" — that would silently resolve to the parent persona for an
+  // account we couldn't actually verify.
+  if (error) throw new Error("Ask Gradus isn't available for this account.");
   if (!athlete) return "parent";
   if (canAskGradus(athlete.birthdate)) return "athlete";
   throw new Error("Ask Gradus isn't available for this account.");

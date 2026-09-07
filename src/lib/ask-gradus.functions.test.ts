@@ -19,6 +19,28 @@ function fakeAdmin(row: { id: string; birthdate: string | null } | null) {
   } as any;
 }
 
+/**
+ * Simulates `.maybeSingle()` returning a non-null `error` alongside null
+ * `data` — what PostgREST sends back (PGRST116) when more than one row
+ * matches the filter, since `.maybeSingle()` can only collapse the
+ * zero-rows case to a clean `null`.
+ */
+function fakeAdminWithError() {
+  return {
+    from: () => ({
+      select: () => ({
+        eq: () => ({
+          maybeSingle: async () => ({
+            data: null,
+            error: { code: "PGRST116", message: "multiple (or no) rows returned" },
+          }),
+        }),
+      }),
+    }),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } as any;
+}
+
 const daysAgo = (days: number) =>
   new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 const ADULT_DOB = daysAgo(25 * 365);
@@ -55,5 +77,9 @@ describe("resolveAskGradusAudience", () => {
     await expect(
       resolveAskGradusAudience("u1", fakeAdmin({ id: "a1", birthdate: "not-a-date" })),
     ).rejects.toThrow(REFUSAL);
+  });
+
+  it("a lookup error (e.g. duplicate athletes rows for this user) -> refused, not parent", async () => {
+    await expect(resolveAskGradusAudience("u1", fakeAdminWithError())).rejects.toThrow(REFUSAL);
   });
 });
