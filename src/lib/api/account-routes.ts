@@ -11,12 +11,11 @@ import { ApiError } from "./errors";
 import { deleteAccountResultSchema } from "./account-schema";
 import {
   DELETE_CONFIRM_PHRASE,
-  deleteAccountForUser,
   deleteAccountInput,
   isDeleteConfirmed,
   type DeleteAccountInput,
-  type DeletionResult,
-} from "@/lib/account-deletion.server";
+} from "@/lib/account-deletion-shared";
+import { deleteAccountForUser, type DeletionResult } from "@/lib/account-deletion.server";
 
 export type DeleteMyAccountDeps = { deleteAccount: typeof deleteAccountForUser };
 

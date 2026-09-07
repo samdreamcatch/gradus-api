@@ -4,7 +4,7 @@ import {
   DELETE_CONFIRM_PHRASE,
   deleteAccountInput,
   isDeleteConfirmed,
-} from "./account-deletion.server";
+} from "./account-deletion-shared";
 
 export { DELETE_CONFIRM_PHRASE, deleteAccountInput };
 

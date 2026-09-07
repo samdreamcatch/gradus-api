@@ -6,9 +6,9 @@
  * Shared by the web server functions (account-deletion.functions.ts) and the
  * `GET /api/v1/me/deletion-impact` and `DELETE /api/v1/me` routes (PRD §6.4
  * "Delete account", §7.12). The confirmation phrase, its input schema, and
- * the phrase check live here so both callers agree on them.
+ * the phrase check live in account-deletion-shared.ts (browser-safe) so the
+ * web dialog can import them without reaching this module.
  */
-import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 export type DeletionRole = "coach" | "parent" | "athlete" | "unknown";
@@ -18,28 +18,6 @@ export type DeletionResult = {
   athletesDeleted: number;
   athletesTransferred: number;
 };
-
-/** What the caller must type to confirm deletion (web and API alike). */
-export const DELETE_CONFIRM_PHRASE = "DELETE ACCOUNT";
-
-export const deleteAccountInput = z.object({
-  confirmPhrase: z.string().min(1),
-  minorChoices: z
-    .array(
-      z.object({
-        athleteId: z.string().uuid(),
-        action: z.enum(["keep", "delete"]),
-      }),
-    )
-    .default([]),
-});
-
-export type DeleteAccountInput = z.infer<typeof deleteAccountInput>;
-
-/** True when the typed phrase matches `DELETE_CONFIRM_PHRASE`, ignoring surrounding whitespace and case. */
-export function isDeleteConfirmed(phrase: string): boolean {
-  return phrase.trim().toUpperCase() === DELETE_CONFIRM_PHRASE;
-}
 
 /** A minor who would be left without an adult on file — see `listOrphanedMinors`. */
 export type OrphanedMinor = { id: string; firstName: string; guardianEmail: string | null };
