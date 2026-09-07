@@ -15,6 +15,7 @@
  */
 import { z } from "zod";
 import type { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { isMinorBirthdate } from "./athlete-age";
 import { ApiError } from "./api/errors";
 import { dbError } from "./db-error";
 import { inviteCodeSchema } from "./invites.server";
@@ -41,20 +42,6 @@ const alreadyLinked = (message: string) =>
 export type ApiContractOptions = {
   /** Refuse with a coded error instead of a silent no-op when the caller has no row to update. */
   apiContract?: boolean;
-};
-
-export type ResetPasswordOptions = {
-  /**
-   * Only athletes whose account the parent manages are resettable: a
-   * self-managed athlete (their own login) is refused (403 `forbidden`)
-   * instead of having it taken over. Age is not a criterion: a
-   * parent-managed athlete signs in with a synthetic email and has no other
-   * recovery path, even after turning 18 (and the `athletes_self_managed_shape`
-   * constraint already keeps `parent_id` off self-managed rows). The API sets
-   * this; the web keeps its original behavior until the shared function is
-   * gated for both (a follow-up needing a product call on 18+ logins).
-   */
-  parentManagedOnly?: boolean;
 };
 
 // ---------------------------------------------------------------------------
@@ -848,28 +835,39 @@ export async function removeParentAthlete(
 /**
  * `resetAthletePassword`: reset (or set) the password for one of the
  * parent's athletes. Only works for athletes that have an account (user_id
- * is set); username-only athletes have no email-based recovery. See
- * `ResetPasswordOptions` for the API's parent-managed-only gate.
+ * is set); username-only athletes have no email-based recovery.
+ *
+ * Confirmed minors only: a self-managed athlete (their own login) or an
+ * athlete who is 18 or older — or whose birthdate isn't on file, so age
+ * can't be confirmed — is refused (403 `forbidden`) instead of having their
+ * login taken over. This is a deliberate behavior change for the web too
+ * (Mariah's call, 2026-09-07), not just the API: a parent-managed athlete
+ * who has turned 18 still signs in with a synthetic email and has no
+ * self-service recovery path, so they'll need another way to reset a
+ * forgotten password (a support-assisted flow, or the athlete setting a
+ * password before their birthday) — that gap is a known follow-up, not
+ * solved here.
  */
 export async function resetParentAthletePassword(
   ctx: ParentSettingsContext,
   athleteId: string,
   data: z.infer<typeof athletePasswordInput>,
-  opts: ResetPasswordOptions = {},
 ): Promise<{ ok: true; username: string | null }> {
   const { admin, userId } = ctx;
   await assertOwnsAthlete(admin, userId, athleteId);
   const row = await admin
     .from("athletes")
-    .select("user_id, username, self_managed")
+    .select("user_id, username, birthdate, self_managed")
     .eq("id", athleteId)
     .single();
   if (row.error) dbError(row.error);
   if (!row.data.user_id) {
     throw unprocessable("This athlete hasn't created their account yet.");
   }
-  if (opts.parentManagedOnly && row.data.self_managed) {
-    throw forbidden("Only athletes whose account you manage can have their password reset.");
+  const confirmedMinor =
+    !row.data.self_managed && isMinorBirthdate(row.data.birthdate as string | null);
+  if (!confirmedMinor) {
+    throw forbidden("Only a minor athlete's password can be reset from here.");
   }
   const upd = await admin.auth.admin.updateUserById(row.data.user_id, {
     password: data.password,
