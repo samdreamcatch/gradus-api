@@ -73,4 +73,20 @@ describe("resolveCallerRole", () => {
     });
     expect(await resolveCallerRole(admin, "u1")).toBe("coach");
   });
+
+  it("fails closed (throws) rather than silently resolving to null when a lookup errors", async () => {
+    const admin = {
+      from: (table: string) => {
+        const self: Record<string, unknown> = {};
+        for (const m of ["select", "eq", "limit"]) self[m] = () => self;
+        self.maybeSingle = async () =>
+          table === "athletes"
+            ? { data: null, error: { code: "PGRST116", message: "multiple rows returned" } }
+            : { data: null, error: null };
+        return self;
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any;
+    await expect(resolveCallerRole(admin, "u1")).rejects.toThrow();
+  });
 });

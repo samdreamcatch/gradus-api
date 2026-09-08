@@ -1,6 +1,10 @@
 import { describe, expect, it } from "bun:test";
 import { canAskGradus, isMinorBirthdate } from "./athlete-age";
 
+/** An ISO date (UTC) exactly `days` before right now. */
+const daysAgo = (days: number) => new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+const isoDateAgo = (days: number) => daysAgo(days).toISOString().slice(0, 10);
+
 /** Formats a UTC date as `YYYY-MM-DD`, matching the `birthdate` column's format. */
 function ymd(date: Date): string {
   return date.toISOString().slice(0, 10);
@@ -68,5 +72,19 @@ describe("canAskGradus", () => {
 
   it("is false for a young athlete (10 years old)", () => {
     expect(canAskGradus(birthdateYearsAgo(10))).toBe(false);
+  });
+
+  it("is false for a missing (undefined) birthdate — unconfirmed age", () => {
+    expect(canAskGradus(undefined)).toBe(false);
+  });
+
+  it("never contradicts isMinorBirthdate for a confirmed adult (unlike bare negation, still refuses unconfirmed ages)", () => {
+    const adultDob = isoDateAgo(20 * 365);
+    expect(isMinorBirthdate(adultDob)).toBe(false);
+    expect(canAskGradus(adultDob)).toBe(true);
+    // The gap this function closes: isMinorBirthdate(null) is also false,
+    // but canAskGradus must NOT follow it to "allowed" for a missing DOB.
+    expect(isMinorBirthdate(null)).toBe(false);
+    expect(canAskGradus(null)).toBe(false);
   });
 });

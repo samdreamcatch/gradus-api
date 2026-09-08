@@ -29,7 +29,7 @@ export function isMinorBirthdate(birthdate?: string | null): boolean {
  * deliberately not just `!isMinorBirthdate`, which would (wrongly) treat an
  * unparseable birthdate as eligible.
  */
-export function canAskGradus(birthdate: string | null): boolean {
+export function canAskGradus(birthdate: string | null | undefined): boolean {
   if (!birthdate) return false;
   const dob = new Date(birthdate);
   if (Number.isNaN(dob.getTime())) return false;

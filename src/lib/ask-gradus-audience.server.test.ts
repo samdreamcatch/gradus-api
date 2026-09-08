@@ -31,6 +31,42 @@ function birthdateYearsAgo(years: number): string {
   return d.toISOString().slice(0, 10);
 }
 
+/**
+ * Admin fake for the case where the caller's role resolves to "athlete"
+ * (the `athletes` row exists for the `.select("id")` role check) but the
+ * follow-up `.select("birthdate")` eligibility read on that same table
+ * errors — e.g. a duplicate-rows PGRST116 from `.maybeSingle()`. Ported
+ * from the since-superseded `ask-gradus.functions.ts` local
+ * `resolveAskGradusAudience`'s own regression test for this: a query error
+ * must never be treated the same as "no matching row" and silently
+ * resolved to the parent persona.
+ */
+function fakeAdminWithAthleteLookupError() {
+  const passthrough = () => {
+    const self: Record<string, unknown> = {};
+    for (const m of ["select", "eq", "limit"]) self[m] = () => self;
+    self.maybeSingle = async () => ({ data: null, error: null });
+    return self;
+  };
+  return {
+    from: (table: string) => {
+      if (table !== "athletes") return passthrough();
+      return {
+        select: (columns: string) => {
+          const self: Record<string, unknown> = {};
+          for (const m of ["eq", "limit"]) self[m] = () => self;
+          self.maybeSingle = async () =>
+            columns === "id"
+              ? { data: { id: "a1" }, error: null } // role resolution: caller is an athlete
+              : { data: null, error: { code: "PGRST116", message: "multiple rows returned" } };
+          return self;
+        },
+      };
+    },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } as any;
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const fakeSupabase = {} as any;
 
@@ -107,5 +143,25 @@ describe("resolveAskGradusAudience", () => {
       "athlete",
     );
     expect(result).toBe("parent");
+  });
+
+  it("refuses an athlete with an unparseable birthdate on file", async () => {
+    const admin = fakeAdmin({
+      coach_profiles: null,
+      parent_profiles: null,
+      athletes: { id: "a1", birthdate: "not-a-date" },
+    });
+    const err = await caught(() =>
+      resolveAskGradusAudience({ userId: "u1", supabase: fakeSupabase, admin }, "athlete"),
+    );
+    expect(err?.code).toBe("ask_gradus_unavailable");
+    expect(err?.status).toBe(403);
+  });
+
+  it("fails closed — not to 'parent' — when the athlete birthdate lookup itself errors", async () => {
+    const admin = fakeAdminWithAthleteLookupError();
+    await expect(
+      resolveAskGradusAudience({ userId: "u1", supabase: fakeSupabase, admin }, "athlete"),
+    ).rejects.toThrow();
   });
 });
