@@ -17309,6 +17309,1210 @@
           }
         }
       }
+    },
+    "/api/v1/competitions/finished": {
+      "get": {
+        "operationId": "listFinishedCompetitions",
+        "summary": "Finished competitions a coach can link a rostered athlete to",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "athleteId",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "datesLabel": {
+                        "type": "string"
+                      },
+                      "location": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "name",
+                      "datesLabel",
+                      "location"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/competitions/{id}/skater-matches": {
+      "post": {
+        "operationId": "listSkaterMatches",
+        "summary": "Likely skater matches for a rostered athlete in a finished competition",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "athleteId": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                },
+                "required": [
+                  "athleteId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "club": {
+                        "type": "string"
+                      },
+                      "score": {
+                        "type": "number"
+                      },
+                      "events": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "file": {
+                              "type": "string"
+                            },
+                            "event": {
+                              "type": "string"
+                            },
+                            "segment": {
+                              "type": "string"
+                            },
+                            "place": {
+                              "type": "string"
+                            },
+                            "score": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "file",
+                            "event",
+                            "segment",
+                            "place",
+                            "score"
+                          ]
+                        }
+                      }
+                    },
+                    "required": [
+                      "name",
+                      "club",
+                      "score",
+                      "events"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/athletes/{id}/competition-links": {
+      "post": {
+        "operationId": "linkAthleteToSkater",
+        "summary": "Link a rostered athlete to a skater in a finished competition",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "competitionId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "skaterName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "club": {
+                    "type": "string",
+                    "maxLength": 160,
+                    "default": ""
+                  },
+                  "files": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z0-9_]+\\.html$"
+                    },
+                    "minItems": 1,
+                    "maxItems": 12
+                  }
+                },
+                "required": [
+                  "competitionId",
+                  "skaterName",
+                  "files"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "linked": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "linked"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/athletes/{id}/competition-links/{linkId}": {
+      "delete": {
+        "operationId": "unlinkAthleteCompetition",
+        "summary": "Unlink a rostered athlete from a competition",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "linkId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/athletes/{id}/competition-results": {
+      "get": {
+        "operationId": "getAthleteCompetitionResults",
+        "summary": "An athlete's linked competitions and stored results, as stacked folders",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "competitionId": {
+                        "type": "string"
+                      },
+                      "competitionName": {
+                        "type": "string"
+                      },
+                      "datesLabel": {
+                        "type": "string"
+                      },
+                      "skaterName": {
+                        "type": "string"
+                      },
+                      "club": {
+                        "type": "string"
+                      },
+                      "results": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "competitionId": {
+                              "type": "string"
+                            },
+                            "competitionName": {
+                              "type": "string"
+                            },
+                            "eventName": {
+                              "type": "string"
+                            },
+                            "segment": {
+                              "type": "string"
+                            },
+                            "rink": {
+                              "type": "string"
+                            },
+                            "placement": {
+                              "type": "string"
+                            },
+                            "segmentScore": {
+                              "type": "string"
+                            },
+                            "totalScore": {
+                              "type": "string"
+                            },
+                            "protocol": {
+                              "type": [
+                                "object",
+                                "null"
+                              ],
+                              "properties": {
+                                "total": {
+                                  "type": "string"
+                                },
+                                "elementsScore": {
+                                  "type": "string"
+                                },
+                                "componentsScore": {
+                                  "type": "string"
+                                },
+                                "deductionsScore": {
+                                  "type": "string"
+                                },
+                                "elements": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "planned": {
+                                        "type": "string"
+                                      },
+                                      "executed": {
+                                        "type": "string"
+                                      },
+                                      "baseValue": {
+                                        "type": "string"
+                                      },
+                                      "goe": {
+                                        "type": "string"
+                                      },
+                                      "score": {
+                                        "type": "string"
+                                      }
+                                    },
+                                    "required": [
+                                      "planned",
+                                      "executed",
+                                      "baseValue",
+                                      "goe",
+                                      "score"
+                                    ]
+                                  }
+                                },
+                                "elementsTotal": {
+                                  "type": [
+                                    "object",
+                                    "null"
+                                  ],
+                                  "properties": {
+                                    "baseValue": {
+                                      "type": "string"
+                                    },
+                                    "score": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "baseValue",
+                                    "score"
+                                  ]
+                                },
+                                "components": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "name": {
+                                        "type": "string"
+                                      },
+                                      "unfactored": {
+                                        "type": "string"
+                                      },
+                                      "factor": {
+                                        "type": "string"
+                                      }
+                                    },
+                                    "required": [
+                                      "name",
+                                      "unfactored",
+                                      "factor"
+                                    ]
+                                  }
+                                },
+                                "deductions": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "name": {
+                                        "type": "string"
+                                      },
+                                      "value": {
+                                        "type": "string"
+                                      }
+                                    },
+                                    "required": [
+                                      "name",
+                                      "value"
+                                    ]
+                                  }
+                                }
+                              },
+                              "required": [
+                                "total",
+                                "elementsScore",
+                                "componentsScore",
+                                "deductionsScore",
+                                "elements",
+                                "elementsTotal",
+                                "components",
+                                "deductions"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "competitionId",
+                            "competitionName",
+                            "eventName",
+                            "segment",
+                            "rink",
+                            "placement",
+                            "segmentScore",
+                            "totalScore",
+                            "protocol"
+                          ]
+                        }
+                      },
+                      "existingPlan": {
+                        "type": [
+                          "object",
+                          "null"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "status": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "title",
+                          "status"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "competitionId",
+                      "competitionName",
+                      "datesLabel",
+                      "skaterName",
+                      "club",
+                      "results",
+                      "existingPlan"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/athletes/{id}/competition-results/{resultId}/generate-plan": {
+      "post": {
+        "operationId": "generatePlanFromResults",
+        "summary": "Draft a practice plan from an athlete's judged competition protocol",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "resultId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "planId": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "moveCount": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "planId",
+                    "title",
+                    "moveCount"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/coach/post-event": {
+      "get": {
+        "operationId": "getCoachPostEventItems",
+        "summary": "Recently finished competitions the coach watched, with linked athletes to handle",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "competitionId": {
+                        "type": "string"
+                      },
+                      "competitionName": {
+                        "type": "string"
+                      },
+                      "datesLabel": {
+                        "type": "string"
+                      },
+                      "linked": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "athleteId": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "summary": {
+                              "type": "string"
+                            },
+                            "hasRecap": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": [
+                            "athleteId",
+                            "name",
+                            "summary",
+                            "hasRecap"
+                          ]
+                        }
+                      }
+                    },
+                    "required": [
+                      "competitionId",
+                      "competitionName",
+                      "datesLabel",
+                      "linked"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/coach/post-event/{id}/dismiss": {
+      "post": {
+        "operationId": "dismissCoachPostEvent",
+        "summary": "Stop asking the coach about a competition — no one competed",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/coach/competitions/{id}/roster": {
+      "get": {
+        "operationId": "listCoachRosterForCompetition",
+        "summary": "Rostered figure-skating athletes the coach can link at this competition",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "athleteId": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "linked": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "athleteId",
+                      "name",
+                      "linked"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/recaps/pending": {
+      "get": {
+        "operationId": "getPendingCompetitionRecap",
+        "summary": "A finished competition the caller was just at, awaiting a recap",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": [
+                    "object",
+                    "null"
+                  ],
+                  "properties": {
+                    "competitionId": {
+                      "type": "string"
+                    },
+                    "competitionName": {
+                      "type": "string"
+                    },
+                    "datesLabel": {
+                      "type": "string"
+                    },
+                    "athleteId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "athleteChoices": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "competitionId",
+                    "competitionName",
+                    "datesLabel",
+                    "athleteId",
+                    "athleteChoices"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/recaps/{id}/dismiss": {
+      "post": {
+        "operationId": "dismissCompetitionRecap",
+        "summary": "Dismiss the pending recap prompt for a competition",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/recaps/coaches": {
+      "get": {
+        "operationId": "getRecapCoaches",
+        "summary": "The rostered coaches a recap can be sent to for this athlete",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "athleteId",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "name"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/recaps": {
+      "post": {
+        "operationId": "submitCompetitionRecap",
+        "summary": "Submit a competition recap; posts into the athlete's coach message threads",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "competitionId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "athleteId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "body": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2000
+                  },
+                  "coachIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                },
+                "required": [
+                  "competitionId",
+                  "athleteId",
+                  "body"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/athletes/{id}/recaps": {
+      "get": {
+        "operationId": "getAthleteCompetitionRecaps",
+        "summary": "An athlete's competition recaps — their circle only",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "competitionId": {
+                        "type": "string"
+                      },
+                      "competitionName": {
+                        "type": "string"
+                      },
+                      "body": {
+                        "type": "string"
+                      },
+                      "authorRole": {
+                        "type": "string",
+                        "enum": [
+                          "parent",
+                          "athlete"
+                        ]
+                      },
+                      "authorName": {
+                        "type": "string"
+                      },
+                      "createdAt": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "competitionId",
+                      "competitionName",
+                      "body",
+                      "authorRole",
+                      "authorName",
+                      "createdAt"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "webhooks": {}
