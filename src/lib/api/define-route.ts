@@ -18,7 +18,7 @@
 import { z, type ZodType, type ZodTypeDef } from "zod";
 import { ApiError, normalizeError, toResponse } from "./errors";
 import { authenticateRequest, type ApiContext } from "./auth";
-import { withIdempotency } from "./idempotency";
+import { hashRequestBody, withIdempotency } from "./idempotency";
 import { checkRateLimit, type RateLimitConfig } from "./rate-limit";
 import { registerApiRoute } from "./openapi";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
@@ -180,6 +180,14 @@ export function createApiRouteHandler<TInput, TOutput, TQuery = undefined>(
         throw authError ?? ApiError.unauthenticated();
       }
 
+      // Hashed from a clone, before anything below reads the body, so it
+      // reflects the exact request bytes regardless of `body` encoding —
+      // `withIdempotency` uses it to reject the same Idempotency-Key reused
+      // with a different request instead of replaying the first response.
+      const idempotencyBodyHash = options.idempotent
+        ? hashRequestBody(await request.clone().arrayBuffer())
+        : "";
+
       let rawBody: unknown;
       if (options.input && options.body === "multipart") {
         const declared = Number(request.headers.get("content-length") ?? "");
@@ -245,7 +253,7 @@ export function createApiRouteHandler<TInput, TOutput, TQuery = undefined>(
       if (options.idempotent) {
         if (!ctx) throw authError ?? ApiError.unauthenticated();
         const key = request.headers.get("idempotency-key");
-        result = await withIdempotency(ctx, key, runHandler);
+        result = await withIdempotency(ctx, key, idempotencyBodyHash, runHandler);
       } else {
         result = await runHandler();
       }

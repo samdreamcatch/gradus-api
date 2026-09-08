@@ -5,12 +5,16 @@ import { ApiError } from "./errors";
 import type { ApiContext } from "./auth";
 
 /**
- * Minimal in-memory Supabase-shaped fake for `.from(table).select().eq().eq()
- * .maybeSingle()`, `.update().eq()`, and `.upsert()` — the only shapes
- * idempotency.ts and rate-limit.ts use. Test-only; never shipped.
+ * Minimal in-memory Supabase-shaped fake for `.from(table).select().eq()
+ * .maybeSingle()`, `.update().eq()`, and `.upsert()` — the shapes
+ * rate-limit.ts uses — plus `.rpc()` simulating the three
+ * `*_idempotency_key` Postgres functions idempotency.ts calls (see
+ * supabase/migrations/20260908030000_idempotency_key_reservation.sql for
+ * the real ones this mirrors). Test-only; never shipped.
  */
 function createFakeAdmin() {
   const store = new Map<string, Record<string, unknown>[]>();
+  const idempotencyKeys = new Map<string, Record<string, unknown>>();
 
   function rowsFor(table: string) {
     if (!store.has(table)) store.set(table, []);
@@ -58,7 +62,80 @@ function createFakeAdmin() {
     };
   }
 
-  return { from } as unknown as ApiContext["admin"];
+  async function rpc(fn: string, params: Record<string, unknown>) {
+    const rowKey = `${params._user_id}::${params._key}`;
+    if (fn === "reserve_idempotency_key") {
+      const now = Date.now();
+      const existing = idempotencyKeys.get(rowKey);
+      if (!existing) {
+        idempotencyKeys.set(rowKey, {
+          request_hash: params._request_hash,
+          response_status: null,
+          response_body: null,
+          created_at: new Date(now).toISOString(),
+        });
+        return {
+          data: [{ state: "reserved", response_status: null, response_body: null }],
+          error: null,
+        };
+      }
+      const ageSeconds = (now - new Date(existing.created_at as string).getTime()) / 1000;
+      const expired =
+        existing.response_status != null
+          ? ageSeconds > (params._replay_window_seconds as number)
+          : ageSeconds > (params._pending_timeout_seconds as number);
+      if (expired) {
+        Object.assign(existing, {
+          request_hash: params._request_hash,
+          response_status: null,
+          response_body: null,
+          created_at: new Date(now).toISOString(),
+        });
+        return {
+          data: [{ state: "reserved", response_status: null, response_body: null }],
+          error: null,
+        };
+      }
+      if (existing.response_status == null) {
+        return {
+          data: [{ state: "in_progress", response_status: null, response_body: null }],
+          error: null,
+        };
+      }
+      if (existing.request_hash !== params._request_hash) {
+        return {
+          data: [{ state: "key_reused", response_status: null, response_body: null }],
+          error: null,
+        };
+      }
+      return {
+        data: [
+          {
+            state: "replay",
+            response_status: existing.response_status,
+            response_body: existing.response_body,
+          },
+        ],
+        error: null,
+      };
+    }
+    if (fn === "complete_idempotency_key") {
+      const row = idempotencyKeys.get(rowKey);
+      if (row) {
+        row.response_status = params._response_status;
+        row.response_body = params._response_body;
+      }
+      return { data: null, error: null };
+    }
+    if (fn === "release_idempotency_key") {
+      const row = idempotencyKeys.get(rowKey);
+      if (row && row.response_status == null) idempotencyKeys.delete(rowKey);
+      return { data: null, error: null };
+    }
+    return { data: null, error: { message: `unknown rpc: ${fn}` } };
+  }
+
+  return { from, rpc } as unknown as ApiContext["admin"];
 }
 
 function makeRequest(init?: RequestInit): Request {
@@ -182,6 +259,92 @@ describe("createApiRouteHandler", () => {
     expect(first.status).toBe(200);
     expect(second.status).toBe(200);
     expect(await second.json()).toEqual(await first.json());
+    expect(calls).toBe(1);
+  });
+
+  it("rejects a concurrent duplicate with the same Idempotency-Key instead of also running the handler", async () => {
+    process.env.API_V1_ENABLED = "true";
+    let calls = 0;
+    const admin = createFakeAdmin();
+    const ctx: ApiContext = { userId: "user-1", supabase: {} as ApiContext["supabase"], admin };
+    let releaseFirst: () => void = () => {};
+    const gate = new Promise<void>((resolve) => {
+      releaseFirst = resolve;
+    });
+    const { POST } = createApiRouteHandler(
+      {
+        method: "POST",
+        path: "/api/v1/test",
+        auth: "user",
+        idempotent: true,
+        output: outputSchema,
+        handler: async () => {
+          calls += 1;
+          await gate;
+          return { ok: true };
+        },
+      },
+      { admin, authenticate: async () => ctx },
+    );
+
+    const req = () =>
+      makeRequest({
+        method: "POST",
+        headers: { authorization: "Bearer t", "idempotency-key": "concurrent-1" },
+      });
+
+    const firstPromise = POST!({ request: req() });
+    // Give the first call's reservation a tick to land before firing the second.
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    const second = await POST!({ request: req() });
+    releaseFirst();
+    const first = await firstPromise;
+
+    expect(first.status).toBe(200);
+    expect(second.status).toBe(409);
+    expect((await second.json()).error.code).toBe("idempotency_key_in_progress");
+    expect(calls).toBe(1);
+  });
+
+  it("rejects the same Idempotency-Key reused with a different request body", async () => {
+    process.env.API_V1_ENABLED = "true";
+    let calls = 0;
+    const admin = createFakeAdmin();
+    const ctx: ApiContext = { userId: "user-1", supabase: {} as ApiContext["supabase"], admin };
+    const inputSchema = z.object({ amountCents: z.number() });
+    const { POST } = createApiRouteHandler(
+      {
+        method: "POST",
+        path: "/api/v1/test",
+        auth: "user",
+        idempotent: true,
+        input: inputSchema,
+        output: outputSchema,
+        handler: async () => {
+          calls += 1;
+          return { ok: true };
+        },
+      },
+      { admin, authenticate: async () => ctx },
+    );
+
+    const req = (amountCents: number) =>
+      makeRequest({
+        method: "POST",
+        headers: {
+          authorization: "Bearer t",
+          "idempotency-key": "reused-1",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({ amountCents }),
+      });
+
+    const first = await POST!({ request: req(5000) });
+    const second = await POST!({ request: req(20000) });
+
+    expect(first.status).toBe(200);
+    expect(second.status).toBe(409);
+    expect((await second.json()).error.code).toBe("idempotency_key_reused");
     expect(calls).toBe(1);
   });
 
