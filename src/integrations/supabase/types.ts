@@ -1782,6 +1782,8 @@ export type Database = {
       invoice_lines: {
         Row: {
           amount_cents: number
+          athlete_id: string
+          coach_id: string
           created_at: string
           end_minute: number | null
           id: string
@@ -1793,6 +1795,8 @@ export type Database = {
         }
         Insert: {
           amount_cents: number
+          athlete_id: string
+          coach_id: string
           created_at?: string
           end_minute?: number | null
           id?: string
@@ -1804,6 +1808,8 @@ export type Database = {
         }
         Update: {
           amount_cents?: number
+          athlete_id?: string
+          coach_id?: string
           created_at?: string
           end_minute?: number | null
           id?: string
@@ -1814,6 +1820,20 @@ export type Database = {
           start_minute?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "invoice_lines_athlete_id_fkey"
+            columns: ["athlete_id"]
+            isOneToOne: false
+            referencedRelation: "athletes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_lines_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "coach_profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "invoice_lines_invoice_id_fkey"
             columns: ["invoice_id"]
