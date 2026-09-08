@@ -644,6 +644,14 @@ export async function createInvoice(
   if (lErr) {
     // Don't leave a header with no lines behind.
     await supabase.from("invoices").delete().eq("id", invoice!.id);
+    // 23505 = unique_violation on invoice_lines_unique_athlete_occurrence_idx
+    // (coach_id, athlete_id, occurrence_date, slot_id): a concurrent create
+    // for this athlete billed one of these dates onto another invoice
+    // between the check above and this insert. Same friendly error as the
+    // non-concurrent case, not a raw DB error.
+    if (lErr.code === "23505") {
+      throw unprocessable("Those sessions have already been invoiced.");
+    }
     dbError(lErr);
   }
 
@@ -663,15 +671,18 @@ export async function setInvoiceStatus(
   const { supabase, userId } = ctx;
   const { coachId } = await requireCoach(supabase, userId);
 
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from("invoices")
     .update({
       status: data.status,
       paid_at: data.status === "paid" ? new Date().toISOString() : null,
     })
     .eq("id", invoiceId)
-    .eq("coach_id", coachId);
+    .eq("coach_id", coachId)
+    .select("id")
+    .maybeSingle();
   if (error) dbError(error);
+  if (!updated) throw notFound("Invoice not found");
   return { ok: true as const };
 }
 

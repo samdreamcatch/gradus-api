@@ -225,6 +225,11 @@ function makeDb() {
           tables[table]!.push(...rows);
           return { data: rows[0] ?? null, error: null };
         }
+        if (mode === "update") {
+          const matched = tables[table]!.filter((r) => matches(r, filters));
+          for (const r of matched) Object.assign(r, payload as Row);
+          return { data: matched.length ? project(matched[0]!) : null, error: null };
+        }
         const rows = computeSelected();
         return { data: rows[0] ?? null, error: null };
       },
@@ -404,6 +409,34 @@ function seedInvoiceLine(
     end_minute: null,
     included_reason: "completed",
   });
+}
+
+/**
+ * Makes `db.client.from(table).insert(...)` fail with the given error,
+ * simulating a DB-level rejection (e.g. the 23505 unique-violation a
+ * concurrent create can now hit on invoice_lines_unique_athlete_occurrence_idx)
+ * that this in-memory fake otherwise has no concurrency to produce for real.
+ */
+function forceInsertError(
+  db: ReturnType<typeof makeDb>,
+  table: string,
+  error: { code: string; message: string },
+) {
+  const realFrom = db.client.from;
+  db.client.from = ((t: string) => {
+    if (t !== table) return realFrom(t);
+    return {
+      ...realFrom(t),
+      insert() {
+        return {
+          then(resolve: (v: { data: null; error: typeof error }) => void) {
+            resolve({ data: null, error });
+          },
+        };
+      },
+    };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  }) as any;
 }
 
 describe("getCoachInvoices", () => {
@@ -727,6 +760,45 @@ describe("createInvoice", () => {
     // Only the pre-existing invoice remains.
     expect(db.tables.invoices).toHaveLength(1);
   });
+
+  it("rolls back the header and gives the friendly 'already invoiced' error when the DB rejects a concurrent duplicate line", async () => {
+    // Simulates two concurrent createInvoice() calls for the same athlete
+    // and date: both pass the read-then-filter "already billed" check
+    // before either has inserted, so the loser's insert now hits
+    // invoice_lines_unique_athlete_occurrence_idx (23505) instead of
+    // silently creating a second invoice for the same lesson.
+    const db = makeDb();
+    seedCoach(db);
+    seedRoster(db, ATHLETE);
+    forceInsertError(db, "invoice_lines", {
+      code: "23505",
+      message:
+        'duplicate key value violates unique constraint "invoice_lines_unique_athlete_occurrence_idx"',
+    });
+
+    const err = await caught(() =>
+      createInvoice(ctxFor(db), {
+        athleteId: ATHLETE,
+        periodStart: "2026-05-01",
+        periodEnd: "2026-05-31",
+        lines: [
+          {
+            occurrenceDate: "2026-05-01",
+            amountCents: 5000,
+            slotId: null,
+            startMinute: null,
+            endMinute: null,
+            includedReason: "completed",
+          },
+        ],
+      }),
+    );
+
+    expect(err?.code).toBe("unprocessable");
+    expect(err?.message).toBe("Those sessions have already been invoiced.");
+    // No orphaned header left behind.
+    expect(db.tables.invoices).toHaveLength(0);
+  });
 });
 
 /* -------------------------------------------------------------------------- */
@@ -750,6 +822,24 @@ describe("setInvoiceStatus", () => {
     row = db.tables.invoices.find((r) => r.id === "inv-a")!;
     expect(row.status).toBe("unpaid");
     expect(row.paid_at).toBeNull();
+  });
+
+  it("404s instead of silently no-op'ing when the invoice doesn't exist (or belongs to another coach)", async () => {
+    const db = makeDb();
+    seedCoach(db);
+    seedInvoice(db, { id: "inv-a", status: "unpaid", paidAt: null, coachId: "some-other-coach" });
+
+    const err = await caught(() => setInvoiceStatus(ctxFor(db), "inv-a", { status: "paid" }));
+    expect(err?.code).toBe("not_found");
+    expect(err?.message).toBe("Invoice not found");
+    // Untouched — it belongs to a different coach.
+    const row = db.tables.invoices.find((r) => r.id === "inv-a")!;
+    expect(row.status).toBe("unpaid");
+
+    const missing = await caught(() =>
+      setInvoiceStatus(ctxFor(db), "does-not-exist", { status: "paid" }),
+    );
+    expect(missing?.code).toBe("not_found");
   });
 });
 
@@ -835,35 +925,86 @@ describe("getCoachInvoicesPage", () => {
 /* -------------------------------------------------------------------------- */
 
 /**
- * Minimal in-memory Supabase-shaped fake for the idempotency-keys table —
- * the same shape `src/lib/api/define-route.test.ts` uses for this.
+ * Minimal fake `.rpc()` simulating the three `*_idempotency_key` Postgres
+ * functions idempotency.ts calls — the same shape
+ * `src/lib/api/define-route.test.ts` uses for this. See
+ * supabase/migrations/20260908030000_idempotency_key_reservation.sql for
+ * the real functions this mirrors.
  */
 function createFakeAdmin() {
   const store = new Map<string, Record<string, unknown>>();
-  function builder(filters: Array<[string, unknown]> = []) {
-    return {
-      select(_columns?: string) {
-        return builder(filters);
-      },
-      eq(column: string, value: unknown) {
-        return builder([...filters, [column, value]]);
-      },
-      async maybeSingle() {
-        const match = [...store.values()].find((row) => filters.every(([c, v]) => row[c] === v));
-        return { data: match ?? null, error: null };
-      },
-    };
-  }
   return {
-    from(_table: string) {
-      return {
-        ...builder(),
-        async upsert(row: Record<string, unknown>, opts: { onConflict: string }) {
-          const keys = opts.onConflict.split(",");
-          store.set(keys.map((k) => row[k]).join("::"), row);
-          return { data: null, error: null };
-        },
-      };
+    async rpc(fn: string, params: Record<string, unknown>) {
+      const rowKey = `${params._user_id}::${params._key}`;
+      if (fn === "reserve_idempotency_key") {
+        const now = Date.now();
+        const existing = store.get(rowKey);
+        if (!existing) {
+          store.set(rowKey, {
+            request_hash: params._request_hash,
+            response_status: null,
+            response_body: null,
+            created_at: new Date(now).toISOString(),
+          });
+          return {
+            data: [{ state: "reserved", response_status: null, response_body: null }],
+            error: null,
+          };
+        }
+        const ageSeconds = (now - new Date(existing.created_at as string).getTime()) / 1000;
+        const expired =
+          existing.response_status != null
+            ? ageSeconds > (params._replay_window_seconds as number)
+            : ageSeconds > (params._pending_timeout_seconds as number);
+        if (expired) {
+          Object.assign(existing, {
+            request_hash: params._request_hash,
+            response_status: null,
+            response_body: null,
+            created_at: new Date(now).toISOString(),
+          });
+          return {
+            data: [{ state: "reserved", response_status: null, response_body: null }],
+            error: null,
+          };
+        }
+        if (existing.response_status == null) {
+          return {
+            data: [{ state: "in_progress", response_status: null, response_body: null }],
+            error: null,
+          };
+        }
+        if (existing.request_hash !== params._request_hash) {
+          return {
+            data: [{ state: "key_reused", response_status: null, response_body: null }],
+            error: null,
+          };
+        }
+        return {
+          data: [
+            {
+              state: "replay",
+              response_status: existing.response_status,
+              response_body: existing.response_body,
+            },
+          ],
+          error: null,
+        };
+      }
+      if (fn === "complete_idempotency_key") {
+        const row = store.get(rowKey);
+        if (row) {
+          row.response_status = params._response_status;
+          row.response_body = params._response_body;
+        }
+        return { data: null, error: null };
+      }
+      if (fn === "release_idempotency_key") {
+        const row = store.get(rowKey);
+        if (row && row.response_status == null) store.delete(rowKey);
+        return { data: null, error: null };
+      }
+      return { data: null, error: { message: `unknown rpc: ${fn}` } };
     },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } as any as ApiContext["admin"];
