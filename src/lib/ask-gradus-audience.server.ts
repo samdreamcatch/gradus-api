@@ -62,7 +62,6 @@ export async function resolveAskGradusAudience(
     .from("athletes")
     .select("birthdate")
     .eq("user_id", ctx.userId)
-    .limit(1)
     .maybeSingle();
   if (error) dbError(error);
 

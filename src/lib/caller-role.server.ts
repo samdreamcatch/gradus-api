@@ -25,7 +25,7 @@ export async function resolveCallerRole(admin: Admin, userId: string): Promise<C
   const [coach, parent, athlete] = await Promise.all([
     admin.from("coach_profiles").select("id, onboarded_at").eq("user_id", userId).maybeSingle(),
     admin.from("parent_profiles").select("id").eq("user_id", userId).maybeSingle(),
-    admin.from("athletes").select("id").eq("user_id", userId).limit(1).maybeSingle(),
+    admin.from("athletes").select("id").eq("user_id", userId).maybeSingle(),
   ]);
   const failed = [coach, parent, athlete].find((r) => r.error);
   if (failed?.error) dbError(failed.error);
