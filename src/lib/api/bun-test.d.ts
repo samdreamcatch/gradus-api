@@ -41,4 +41,13 @@ declare module "bun:test" {
     /** Asymmetric matcher for use inside `toEqual`/`toMatchObject` payloads. */
     function stringMatching(expected: string | RegExp): unknown;
   }
+
+  /**
+   * Narrow surface for `mock.module`, used to fake the dynamic
+   * `import("@/integrations/supabase/client.server")` inside the resources
+   * server modules' storage-signing calls for the duration of one test.
+   */
+  export const mock: {
+    module(id: string, factory: () => unknown): void;
+  };
 }

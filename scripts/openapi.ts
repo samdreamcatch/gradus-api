@@ -147,6 +147,14 @@ import "../src/routes/api/v1/feedback";
 import "../src/routes/api/v1/coach/billing";
 import "../src/routes/api/v1/devices/index";
 import "../src/routes/api/v1/devices/$token";
+import "../src/routes/api/v1/resources/index";
+import "../src/routes/api/v1/resources/$id/signed-url";
+import "../src/routes/api/v1/coach/resources/index";
+import "../src/routes/api/v1/coach/resources/upload-url";
+import "../src/routes/api/v1/coach/resources/$id";
+import "../src/routes/api/v1/ask";
+import "../src/routes/api/v1/saved-answers/index";
+import "../src/routes/api/v1/saved-answers/$id";
 
 const outPath = resolve(__dirname, "../docs/api/openapi.json");
 mkdirSync(dirname(outPath), { recursive: true });

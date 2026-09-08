@@ -15565,6 +15565,899 @@
           }
         }
       }
+    },
+    "/api/v1/resources": {
+      "get": {
+        "operationId": "getResources",
+        "summary": "The caller's resource feed (coach, parent, or athlete)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "role": {
+                      "type": "string",
+                      "enum": [
+                        "coach",
+                        "parent",
+                        "athlete"
+                      ]
+                    },
+                    "coach": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "sports": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "resources": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "title": {
+                                "type": "string"
+                              },
+                              "description": {
+                                "type": "string"
+                              },
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "pdf",
+                                  "image",
+                                  "link"
+                                ]
+                              },
+                              "sports": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
+                              },
+                              "externalUrl": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "storagePath": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "createdAt": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "title",
+                              "description",
+                              "kind",
+                              "sports",
+                              "externalUrl",
+                              "storagePath",
+                              "createdAt"
+                            ]
+                          }
+                        },
+                        "libraryResources": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "sport": {
+                                "type": "string"
+                              },
+                              "title": {
+                                "type": "string"
+                              },
+                              "description": {
+                                "type": "string"
+                              },
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "pdf",
+                                  "image",
+                                  "link"
+                                ]
+                              },
+                              "externalUrl": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "sport",
+                              "title",
+                              "description",
+                              "kind",
+                              "externalUrl"
+                            ]
+                          }
+                        },
+                        "canUpload": {
+                          "type": "boolean"
+                        },
+                        "effectiveTier": {
+                          "type": "string",
+                          "enum": [
+                            "coach",
+                            "coach_pro",
+                            "club"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "sports",
+                        "resources",
+                        "libraryResources",
+                        "canUpload",
+                        "effectiveTier"
+                      ]
+                    },
+                    "parent": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "sports": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "resources": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "sport": {
+                                "type": "string"
+                              },
+                              "sports": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
+                              },
+                              "title": {
+                                "type": "string"
+                              },
+                              "description": {
+                                "type": "string"
+                              },
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "pdf",
+                                  "image",
+                                  "link"
+                                ]
+                              },
+                              "source": {
+                                "type": "string",
+                                "enum": [
+                                  "library",
+                                  "coach"
+                                ]
+                              },
+                              "externalUrl": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "coachName": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "sport",
+                              "sports",
+                              "title",
+                              "description",
+                              "kind",
+                              "source",
+                              "externalUrl",
+                              "coachName"
+                            ]
+                          }
+                        },
+                        "canAskGradus": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "sports",
+                        "resources",
+                        "canAskGradus"
+                      ]
+                    },
+                    "athlete": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "sports": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "resources": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "sport": {
+                                "type": "string"
+                              },
+                              "sports": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
+                              },
+                              "title": {
+                                "type": "string"
+                              },
+                              "description": {
+                                "type": "string"
+                              },
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "pdf",
+                                  "image",
+                                  "link"
+                                ]
+                              },
+                              "source": {
+                                "type": "string",
+                                "enum": [
+                                  "library",
+                                  "coach"
+                                ]
+                              },
+                              "externalUrl": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "coachName": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "sport",
+                              "sports",
+                              "title",
+                              "description",
+                              "kind",
+                              "source",
+                              "externalUrl",
+                              "coachName"
+                            ]
+                          }
+                        },
+                        "canAskGradus": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "sports",
+                        "resources",
+                        "canAskGradus"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "role",
+                    "coach",
+                    "parent",
+                    "athlete"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/resources/{id}/signed-url": {
+      "post": {
+        "operationId": "getResourceSignedUrl",
+        "summary": "A signed URL (or the link URL) for one resource",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "url": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "url"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/coach/resources": {
+      "post": {
+        "operationId": "createCoachResource",
+        "summary": "Upload or link a resource for the coach's own athletes",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 160
+                  },
+                  "description": {
+                    "type": "string",
+                    "maxLength": 600,
+                    "default": ""
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "pdf",
+                      "image",
+                      "link"
+                    ]
+                  },
+                  "sports": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "minItems": 1,
+                    "maxItems": 10
+                  },
+                  "storagePath": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "minLength": 1
+                  },
+                  "externalUrl": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "uri"
+                  }
+                },
+                "required": [
+                  "title",
+                  "kind",
+                  "sports"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/coach/resources/upload-url": {
+      "post": {
+        "operationId": "createCoachResourceUploadUrl",
+        "summary": "Mint a signed upload URL for a new coach resource file",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "ext": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9]{1,8}$"
+                  },
+                  "contentType": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 120
+                  }
+                },
+                "required": [
+                  "ext",
+                  "contentType"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "path": {
+                      "type": "string"
+                    },
+                    "token": {
+                      "type": "string"
+                    },
+                    "url": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "path",
+                    "token",
+                    "url"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/coach/resources/{id}": {
+      "delete": {
+        "operationId": "deleteCoachResource",
+        "summary": "Delete one of the coach's own uploaded resources",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ask": {
+      "post": {
+        "operationId": "askGradus",
+        "summary": "Ask Gradus a sport-specific coaching question",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "sport": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64
+                  },
+                  "question": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 2000
+                  },
+                  "audience": {
+                    "type": "string",
+                    "enum": [
+                      "parent",
+                      "athlete"
+                    ],
+                    "default": "parent"
+                  }
+                },
+                "required": [
+                  "sport",
+                  "question"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "answer": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "answer"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/saved-answers": {
+      "get": {
+        "operationId": "listSavedAnswers",
+        "summary": "The caller's saved Ask Gradus answers",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "answers": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "sport": {
+                            "type": "string"
+                          },
+                          "question": {
+                            "type": "string"
+                          },
+                          "answer": {
+                            "type": "string"
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "sport",
+                          "question",
+                          "answer",
+                          "createdAt"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "answers"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "saveAnswer",
+        "summary": "Save an Ask Gradus answer",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "sport": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64
+                  },
+                  "question": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 2000
+                  },
+                  "answer": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 20000
+                  }
+                },
+                "required": [
+                  "sport",
+                  "question",
+                  "answer"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/saved-answers/{id}": {
+      "delete": {
+        "operationId": "deleteSavedAnswer",
+        "summary": "Delete one of the caller's saved Ask Gradus answers",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "webhooks": {}
