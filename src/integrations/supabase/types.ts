@@ -72,22 +72,25 @@ export type Database = {
         Row: {
           created_at: string
           key: string
-          response_body: Json
-          response_status: number
+          request_hash: string | null
+          response_body: Json | null
+          response_status: number | null
           user_id: string
         }
         Insert: {
           created_at?: string
           key: string
-          response_body: Json
-          response_status: number
+          request_hash?: string | null
+          response_body?: Json | null
+          response_status?: number | null
           user_id: string
         }
         Update: {
           created_at?: string
           key?: string
-          response_body?: Json
-          response_status?: number
+          request_hash?: string | null
+          response_body?: Json | null
+          response_status?: number | null
           user_id?: string
         }
         Relationships: []
@@ -1779,6 +1782,8 @@ export type Database = {
       invoice_lines: {
         Row: {
           amount_cents: number
+          athlete_id: string
+          coach_id: string
           created_at: string
           end_minute: number | null
           id: string
@@ -1790,6 +1795,8 @@ export type Database = {
         }
         Insert: {
           amount_cents: number
+          athlete_id: string
+          coach_id: string
           created_at?: string
           end_minute?: number | null
           id?: string
@@ -1801,6 +1808,8 @@ export type Database = {
         }
         Update: {
           amount_cents?: number
+          athlete_id?: string
+          coach_id?: string
           created_at?: string
           end_minute?: number | null
           id?: string
@@ -1811,6 +1820,20 @@ export type Database = {
           start_minute?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "invoice_lines_athlete_id_fkey"
+            columns: ["athlete_id"]
+            isOneToOne: false
+            referencedRelation: "athletes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_lines_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "coach_profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "invoice_lines_invoice_id_fkey"
             columns: ["invoice_id"]
@@ -3252,6 +3275,15 @@ export type Database = {
         Args: { col: unknown; tbl: unknown }
         Returns: string
       }
+      complete_idempotency_key: {
+        Args: {
+          _key: string
+          _response_body: Json
+          _response_status: number
+          _user_id: string
+        }
+        Returns: undefined
+      }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
@@ -3357,6 +3389,24 @@ export type Database = {
           _window_seconds: number
         }
         Returns: number
+      }
+      release_idempotency_key: {
+        Args: { _key: string; _user_id: string }
+        Returns: undefined
+      }
+      reserve_idempotency_key: {
+        Args: {
+          _key: string
+          _pending_timeout_seconds: number
+          _replay_window_seconds: number
+          _request_hash: string
+          _user_id: string
+        }
+        Returns: {
+          response_body: Json
+          response_status: number
+          state: string
+        }[]
       }
       seed_coach_library: { Args: { _coach_id: string }; Returns: number }
       shares_athlete_window: { Args: { _athlete_id: string }; Returns: boolean }

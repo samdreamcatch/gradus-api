@@ -633,6 +633,10 @@ export async function createInvoice(
   const { error: lErr } = await supabase.from("invoice_lines").insert(
     fresh.map((l) => ({
       invoice_id: invoice!.id,
+      // Also set by the invoice_lines_set_billing_ids trigger; included so
+      // the generated NOT NULL column types are satisfied.
+      coach_id: coachId,
+      athlete_id: data.athleteId,
       slot_id: l.slotId,
       occurrence_date: l.occurrenceDate,
       start_minute: l.startMinute,
