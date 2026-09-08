@@ -147,6 +147,12 @@ import "../src/routes/api/v1/feedback";
 import "../src/routes/api/v1/coach/billing";
 import "../src/routes/api/v1/devices/index";
 import "../src/routes/api/v1/devices/$token";
+import "../src/routes/api/v1/coach/athletes/$id/rate";
+import "../src/routes/api/v1/coach/athletes/$id/billing";
+import "../src/routes/api/v1/coach/invoices/index";
+import "../src/routes/api/v1/coach/invoices/preview";
+import "../src/routes/api/v1/coach/invoices/$id/index";
+import "../src/routes/api/v1/coach/invoices/$id/status";
 
 const outPath = resolve(__dirname, "../docs/api/openapi.json");
 mkdirSync(dirname(outPath), { recursive: true });
