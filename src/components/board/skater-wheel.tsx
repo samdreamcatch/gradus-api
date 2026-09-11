@@ -260,6 +260,24 @@ export function SkaterWheel({
           later skater ›
         </button>
       </div>
+
+      {nearest !== activeIndex ? (
+        <div className="flex justify-center">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              if (frame.current !== null) cancelAnimationFrame(frame.current);
+              offsetRef.current = 0;
+              setOffset(0);
+              setStep(0);
+            }}
+          >
+            Back to now
+          </Button>
+        </div>
+      ) : null}
+
     </div>
   );
 }
