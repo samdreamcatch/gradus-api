@@ -222,10 +222,12 @@ export async function buildPayload(
 
   // The departures board. Every event of the whole competition, in start order,
   // with its results when we already know them. Pages are fetched once per
-  // status change and then read from the cache, so past days cost nothing after
-  // the first pass; future events on other days are not fetched at all.
+  // status change and then read from the cache, so past days cost nothing
+  // after the first pass. Every row here already has a start-order link (see
+  // parseIndex), so it's always safe to fetch — a multi-day meet needs every
+  // day's start order available up front, or Follow a Skater can't find
+  // anyone who isn't competing on whichever single day happens to be shown.
   const schedule: BoardEvent[] = [];
-  const dayKeys = new Set(day.map((e) => dayKeyOf(e.startAt)));
   for (const e of dated) {
     const raw = e.status.toLowerCase();
     const status: BoardEvent["status"] = DONE_STATUSES.includes(raw)
@@ -235,8 +237,6 @@ export async function buildPayload(
         : "scheduled";
     const key = `${e.file}:${raw}`;
     const withProtocol = +e.startAt >= Date.now() - PROTOCOL_WINDOW_MS;
-    const onShownDay = dayKeys.has(dayKeyOf(e.startAt));
-    const worthFetching = onShownDay || status !== "scheduled";
 
     let entry: CachedEvent | null = null;
     const loaded = pageCache.get(e.file);
@@ -247,7 +247,7 @@ export async function buildPayload(
       };
     } else if (orderCache[key]) {
       entry = orderCache[key]!;
-    } else if (worthFetching) {
+    } else {
       try {
         const ev = await loadEvent(e.file);
         entry = { count: ev.count, results: ev.skaters.map((s) => skaterJson(s, withProtocol)!) };
