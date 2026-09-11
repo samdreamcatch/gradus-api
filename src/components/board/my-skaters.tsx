@@ -193,7 +193,21 @@ export function MySkaters({
           return (
             <div key={normalizeName(g.name)} className="py-2 first:pt-0 last:pb-0">
               <div className="flex items-center justify-between gap-2">
-                <h3 className="min-w-0 truncate text-sm font-bold text-text-primary">{g.name}</h3>
+                <h3 className="min-w-0 flex-1 truncate text-sm font-bold text-text-primary">
+                  {onOpenName ? (
+                    <button
+                      type="button"
+                      onClick={() => onOpenName(g.rows)}
+                      aria-label={`Scores for ${g.name}`}
+                      className="press-soft block max-w-full truncate text-left"
+                    >
+                      {g.name} <span className="text-text-tertiary">›</span>
+                    </button>
+                  ) : (
+                    g.name
+                  )}
+                </h3>
+
                 <Chip
                   size="nano"
                   tone="muted"
