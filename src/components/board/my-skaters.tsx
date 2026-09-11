@@ -130,12 +130,16 @@ export function MySkaters({
   changed,
   onToggleFollow,
   onOpenScore,
+  onOpenName,
 }: {
   matches: SkaterMatch[];
   followed: (m: SkaterMatch) => boolean;
   changed: Set<string>;
   onToggleFollow: (m: SkaterMatch) => void;
   onOpenScore: (m: SkaterMatch) => void;
+  /** Tapping the athlete's name opens every event they're entered in. */
+  onOpenName?: (rows: SkaterMatch[]) => void;
+
 }) {
   if (matches.length === 0) return null;
 
