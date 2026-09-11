@@ -219,7 +219,7 @@ export function SkaterWheel({
                       onOpenScore!(skater);
                     }
                   }}
-                  aria-label={tappable ? `${label}: ${skater.name} — open score detail` : undefined}
+                  aria-label={tappable ? `${label}: ${skater.name} — open scores` : undefined}
                   className={cn(
                     "mx-1 rounded-xl border-l-4 bg-card/60 px-4 py-3 text-left shadow-sm",
                     style.border,
