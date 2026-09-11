@@ -233,7 +233,7 @@ export function SkaterWheel({
                     skater={skater}
                     tone={tone}
                     awaiting={index === activeIndex}
-                    showDetailHint={tappable}
+                    showDetailHint={tappable && !!skater.protocol}
                   />
                 </div>
               </li>
