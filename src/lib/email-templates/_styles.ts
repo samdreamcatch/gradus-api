@@ -10,7 +10,7 @@
 //   - Pill CTA in tennis lime with dark ink + dark hairline border
 
 export const fonts = {
-  display: 'Fraunces, Georgia, "Times New Roman", serif',
+  display: '"EB Garamond", Garamond, Georgia, "Times New Roman", serif',
   body: '"Atkinson Hyperlegible", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif',
   hand: '"Atkinson Hyperlegible", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif',
 };
