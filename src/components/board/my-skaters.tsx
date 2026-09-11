@@ -255,11 +255,10 @@ export function MySkaters({
 
                       </div>
                       <p className="font-mono text-nano text-text-tertiary tabular-nums">
-                        {metaParts(m).join(" · ")}
-                        {tappable ? " ›" : ""}
+                        {metaParts(m).join(" · ")} ›
                       </p>
+                    </button>
 
-                    </Wrapper>
                   );
                 })}
               </div>
