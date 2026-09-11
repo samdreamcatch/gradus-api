@@ -157,7 +157,7 @@ describe("buildDesignTokens on the real stylesheet", () => {
   });
 
   it("carries fonts, radii, and aliases", () => {
-    expect(tokens.fonts.display[0]).toBe("Fraunces");
+    expect(tokens.fonts.display[0]).toBe("EB Garamond");
     expect(tokens.fonts.mono[0]).toBe("JetBrains Mono");
     expect(tokens.radii).toMatchObject({
       sm: 8,
