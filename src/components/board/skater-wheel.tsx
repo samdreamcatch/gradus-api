@@ -195,7 +195,7 @@ export function SkaterWheel({
             const { tone, label } = roleOf(index - activeIndex);
             const style = LANE_STYLE[tone];
             const isCentre = index === nearest;
-            const tappable = isCentre && !!skater.protocol && !!onOpenScore;
+            const tappable = !!onOpenScore;
             return (
               <li
                 key={`${skater.start}-${skater.name}`}
