@@ -84,11 +84,23 @@ function decodeCborItem(bytes: Uint8Array, offset: number): [CborValue, number] 
     case 2: {
       // byte string
       const [len, next] = readUintOrLength(bytes, offset, additionalInfo);
+      // `.slice` clamps silently past the buffer end instead of throwing, so
+      // a declared length longer than what's actually present (truncated or
+      // malformed input) would otherwise come back as a shorter-than-
+      // declared value with no error at all — checked explicitly here so
+      // truncation always fails loudly, at the point of truncation, rather
+      // than maybe surfacing confusingly further down the call stack.
+      if (next + len > bytes.length) {
+        throw new Error("CBOR: byte string length exceeds the remaining input");
+      }
       return [bytes.slice(next, next + len), next + len];
     }
     case 3: {
       // text string
       const [len, next] = readUintOrLength(bytes, offset, additionalInfo);
+      if (next + len > bytes.length) {
+        throw new Error("CBOR: text string length exceeds the remaining input");
+      }
       return [new TextDecoder().decode(bytes.slice(next, next + len)), next + len];
     }
     case 4: {
@@ -253,6 +265,7 @@ export function extractRawPublicKeyFromCose(coseKeyBytes: Uint8Array): Uint8Arra
 
 type AppAttestKeyRow = {
   key_id: string;
+  user_id: string | null;
   public_key: string;
   sign_count: number;
   revoked_at: string | null;
@@ -300,6 +313,13 @@ export interface RegisterAppAttestKeyInput {
  * it fails loudly (throws) rather than swallowing errors — nothing that
  * calls it is allowed to be on a path that blocks the user if it fails;
  * that's enforced client-side, not here.
+ *
+ * `key_id` is globally unique (not scoped per user), so before upserting
+ * this checks that any existing row for this `key_id` already belongs to
+ * the caller — otherwise a second user who learns or brute-forces someone
+ * else's `keyId` could overwrite that row's `user_id`/`public_key` and
+ * silently hijack their device-attestation record (caught in adversarial
+ * review of this PR).
  */
 export async function registerAppAttestKey(
   admin: ApiContext["admin"],
@@ -314,6 +334,21 @@ export async function registerAppAttestKey(
     // Sign in with Apple already relies on (src/lib/api/auth-broker.ts).
     // Deviation from decisions.md's literal input list; see PR body.
     throw new Error("[app-attest] APPLE_TEAM_ID is not configured; cannot register a key");
+  }
+
+  const { data: existing, error: lookupError } = await (admin as unknown as AppAttestKeysTable)
+    .from("app_attest_keys")
+    .select("key_id, user_id, public_key, sign_count, revoked_at")
+    .eq("key_id", input.keyId)
+    .maybeSingle();
+  if (lookupError) {
+    console.error("[app-attest] register lookup failed", JSON.stringify(lookupError));
+    throw new Error("[app-attest] failed to check the existing attestation key");
+  }
+  if (existing && existing.user_id !== null && existing.user_id !== input.userId) {
+    // Same keyId, different owner: refuse rather than silently reassigning
+    // someone else's row (see the doc comment above).
+    throw new Error("[app-attest] keyId is already registered to a different user");
   }
 
   const { authData } = parseAttestationObject(input.attestationObjectB64);

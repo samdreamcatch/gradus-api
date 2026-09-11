@@ -151,6 +151,17 @@ describe("parseAttestationObject / parseAuthenticatorData / extractRawPublicKeyF
     ]);
     expect(() => extractRawPublicKeyFromCose(badCoseKey)).toThrow(/unsupported kty/);
   });
+
+  it("throws immediately on a truncated byte string instead of silently returning fewer bytes", () => {
+    // A map whose only entry's byte-string length (32) is declared longer
+    // than the 10 bytes actually following it — and, being the map's last
+    // entry, there's no subsequent decode to otherwise catch the
+    // truncation.
+    const truncatedTop = cMap([
+      [cText("authData"), concatBytes(encodeHead(2, 32), new Uint8Array(10))],
+    ]);
+    expect(() => parseAttestationObject(b64(truncatedTop))).toThrow(/exceeds the remaining input/);
+  });
 });
 
 // --- Registration (upsert on key_id) ---------------------------------------
@@ -260,6 +271,45 @@ describe("registerAppAttestKey", () => {
     expect(rows.length).toBe(1);
     expect(rows[0].environment).toBe("production");
     expect(rows[0].public_key).toBe(Buffer.from(second.raw).toString("base64"));
+  });
+
+  it("refuses to reassign a keyId already registered to a different user", async () => {
+    process.env.APPLE_TEAM_ID = "TEAMID1234";
+    const admin = createFakeAdmin();
+    const owner = generateP256();
+    const attacker = generateP256();
+
+    await registerAppAttestKey(admin as unknown as ApiContext["admin"], {
+      userId: "user-owner",
+      keyId: "shared-key-id",
+      attestationObjectB64: buildAttestationObjectB64({
+        credentialId: "shared-key-id",
+        x: owner.x,
+        y: owner.y,
+      }),
+      bundleId: "training.gradus.app",
+      environment: "development",
+    });
+
+    await expect(
+      registerAppAttestKey(admin as unknown as ApiContext["admin"], {
+        userId: "user-attacker",
+        keyId: "shared-key-id",
+        attestationObjectB64: buildAttestationObjectB64({
+          credentialId: "shared-key-id",
+          x: attacker.x,
+          y: attacker.y,
+        }),
+        bundleId: "training.gradus.app",
+        environment: "development",
+      }),
+    ).rejects.toThrow(/already registered to a different user/);
+
+    // The owner's row must be untouched by the rejected attempt.
+    const rows = admin.rowsFor("app_attest_keys");
+    expect(rows.length).toBe(1);
+    expect(rows[0].user_id).toBe("user-owner");
+    expect(rows[0].public_key).toBe(Buffer.from(owner.raw).toString("base64"));
   });
 });
 
