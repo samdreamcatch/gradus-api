@@ -146,6 +146,23 @@ export const PHOTO_TYPE_REJECTED = "Upload a JPEG or PNG photo.";
 /** What the parse route accepts on `blob.type`; iOS transcodes HEIC to JPEG before upload. */
 export const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
 
+/**
+ * Per-file cap on the uploaded image, enforced by the handler itself. The
+ * route's `maxBodyBytes` (same value) is only a Content-Length pre-check; a
+ * chunked upload carries no Content-Length, so the handler is the bound that
+ * always holds before the bytes reach the paid gateway (precedent:
+ * `assertAudioSize` in voice.server.ts).
+ */
+export const MAX_IMAGE_BYTES = 12 * 1024 * 1024;
+const PHOTO_TOO_LARGE = "That upload is too large.";
+
+/** 413 `payload_too_large` when the uploaded part exceeds `MAX_IMAGE_BYTES`. */
+export function assertImageSize(image: Blob): void {
+  if (image.size > MAX_IMAGE_BYTES) {
+    throw new ApiError({ code: "payload_too_large", status: 413, message: PHOTO_TOO_LARGE });
+  }
+}
+
 const str = z.union([z.string(), z.number()]).nullish();
 
 // The model sometimes answers with snake_case keys, so accept both spellings
@@ -354,17 +371,20 @@ export function normalizeParsedLessons(lessons: ParsedLesson[]): NormalizedLesso
 export type ParseScheduleImageUploadInput = { image: Blob };
 
 /**
- * `parseScheduleImageUpload`: the API composition over the raw parse —
- * coach-only (422 `unprocessable` "Coach profile not found", an API-only
- * tightening; the web wrapper stays auth-only), a MIME allowlist on the
- * uploaded part (400 `validation_failed`), then the AI parse and the server
- * normalizer. No database writes; one paid AI call.
+ * `parseScheduleImageUpload`: the API composition over the raw parse — a
+ * per-file size cap (413 `payload_too_large`, checked first so an oversized
+ * upload costs no database read), coach-only (422 `unprocessable` "Coach
+ * profile not found", an API-only tightening; the web wrapper stays
+ * auth-only), a MIME allowlist on the uploaded part (400
+ * `validation_failed`), then the AI parse and the server normalizer. No
+ * database writes; one paid AI call.
  */
 export async function parseScheduleImageUpload(
   ctx: ScheduleImportContext,
   input: ParseScheduleImageUploadInput,
   deps: ParseScheduleImageDeps = {},
 ): Promise<ParseScheduleResultDTO> {
+  assertImageSize(input.image);
   await requireCoachProfile(ctx.admin, ctx.userId);
   const mimeType = (input.image.type || "").split(";")[0].trim().toLowerCase();
   if (!(ACCEPTED_IMAGE_TYPES as readonly string[]).includes(mimeType)) {

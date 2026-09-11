@@ -5,14 +5,14 @@ import {
   parseScheduleImageInput,
   parseScheduleResultSchema,
 } from "@/lib/api/schedule-import-schema";
-import { parseScheduleImageUpload } from "@/lib/schedule-import.server";
+import { MAX_IMAGE_BYTES, parseScheduleImageUpload } from "@/lib/schedule-import.server";
 
 /**
  * Thin wrapper over the shared `parseScheduleImageUpload` (PRD §3.6,
  * Appendix A "Schedule import"): a `multipart/form-data` upload named
  * `image` (JPEG, PNG or WebP on `blob.type` — 400 `validation_failed`
- * otherwise; iOS transcodes HEIC before upload; 12 MB cap, 413
- * `payload_too_large`) is transcribed by the AI gateway and answered as
+ * otherwise; iOS transcodes HEIC before upload; 12 MiB cap enforced on the
+ * part itself as well as on Content-Length, 413 `payload_too_large`) is transcribed by the AI gateway and answered as
  * SERVER-NORMALIZED rows (day/time as integers, unreadable flags, raw text
  * kept) so the client never ports the parsers. Coach-only (422
  * `unprocessable` "Coach profile not found"). 503 `ai_unavailable` when the
@@ -30,7 +30,7 @@ export const Route = createFileRoute("/api/v1/coach/schedule-import/parse")({
       auth: "user",
       body: "multipart",
       partContentTypes: { image: "image/jpeg" },
-      maxBodyBytes: 12 * 1024 * 1024,
+      maxBodyBytes: MAX_IMAGE_BYTES,
       rateLimit: { windowSeconds: 60, max: 10 },
       summary: "Transcribe a photo of a lesson schedule into normalized rows",
       input: parseScheduleImageInput,

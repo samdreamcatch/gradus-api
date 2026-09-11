@@ -13,6 +13,7 @@ import {
   commitScheduleImportInput,
   imageBytesFromDataUrl,
   lessonsFromModelText,
+  MAX_IMAGE_BYTES,
   normalizeParsedLessons,
   parseScheduleImageBytes,
   parseScheduleImageUpload,
@@ -521,6 +522,45 @@ describe("parseScheduleImageUpload (API composition)", () => {
     expect(calls).toBe(0);
   });
 
+  it("refuses a part over MAX_IMAGE_BYTES with 413 before the coach read or an AI call", async () => {
+    // No coach profile on purpose: the size cap must fire before the DB read.
+    const { admin } = fakeAdmin({ coach_profiles: [] });
+    let calls = 0;
+    const generate: ScheduleImageGenerate = async (a) => {
+      calls += 1;
+      return okReply(a);
+    };
+    const err = await caught(() =>
+      parseScheduleImageUpload(
+        { admin, userId: USER },
+        { image: new Blob([new Uint8Array(MAX_IMAGE_BYTES + 1)], { type: "image/jpeg" }) },
+        { apiKey: "k", generate },
+      ),
+    );
+    expect(err).toMatchObject({
+      code: "payload_too_large",
+      status: 413,
+      message: "That upload is too large.",
+    });
+    expect(calls).toBe(0);
+  });
+
+  it("accepts a part of exactly MAX_IMAGE_BYTES", async () => {
+    const { admin } = fakeAdmin({ coach_profiles: [COACH] });
+    let calls = 0;
+    const generate: ScheduleImageGenerate = async (a) => {
+      calls += 1;
+      return okReply(a);
+    };
+    const out = await parseScheduleImageUpload(
+      { admin, userId: USER },
+      { image: new Blob([new Uint8Array(MAX_IMAGE_BYTES)], { type: "image/jpeg" }) },
+      { apiKey: "k", generate },
+    );
+    expect(out.lessons).toHaveLength(1);
+    expect(calls).toBe(1);
+  });
+
   it("answers server-normalized rows for a coach's JPEG", async () => {
     const { admin } = fakeAdmin({ coach_profiles: [COACH] });
     const out = await parseScheduleImageUpload(
@@ -561,7 +601,7 @@ function parseRoute(admin: Admin, generate: ScheduleImageGenerate = okReply) {
       auth: "user",
       body: "multipart",
       partContentTypes: { image: "image/jpeg" },
-      maxBodyBytes: 12 * 1024 * 1024,
+      maxBodyBytes: MAX_IMAGE_BYTES,
       input: parseScheduleImageInput,
       output: parseScheduleResultSchema,
       handler: async ({ ctx, input }) =>
@@ -615,13 +655,43 @@ describe("POST /coach/schedule-import/parse pipeline", () => {
         headers: {
           authorization: "Bearer t",
           "content-type": "multipart/form-data; boundary=x",
-          "content-length": String(12 * 1024 * 1024 + 1),
+          "content-length": String(MAX_IMAGE_BYTES + 1),
         },
         body: "ignored",
       }),
     });
     expect(res.status).toBe(413);
     expect((await res.json()).error.code).toBe("payload_too_large");
+  });
+
+  it("an oversized part with no Content-Length (chunked upload) is still 413 and spends no AI call", async () => {
+    const { admin } = fakeAdmin({ coach_profiles: [COACH] });
+    let calls = 0;
+    const generate: ScheduleImageGenerate = async (a) => {
+      calls += 1;
+      return okReply(a);
+    };
+    const form = new FormData();
+    form.append(
+      "image",
+      new Blob([new Uint8Array(13 * 1024 * 1024)], { type: "image/jpeg" }),
+      "IMG_0002.jpg",
+    );
+    const request = new Request(parseUrl, {
+      method: "POST",
+      headers: { authorization: "Bearer t" },
+      body: form,
+    });
+    // The route's Content-Length pre-check cannot see this upload; the
+    // handler's own per-file cap is what holds.
+    expect(request.headers.get("content-length")).toBeNull();
+    const res = await parseRoute(admin, generate)({ request });
+    expect(res.status).toBe(413);
+    expect((await res.json()).error).toMatchObject({
+      code: "payload_too_large",
+      message: "That upload is too large.",
+    });
+    expect(calls).toBe(0);
   });
 
   it("an image/heic part is 400 validation_failed with the upload hint", async () => {
