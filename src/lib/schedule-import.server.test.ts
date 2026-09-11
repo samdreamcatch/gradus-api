@@ -472,6 +472,9 @@ describe("imageBytesFromDataUrl", () => {
     expect(() => imageBytesFromDataUrl("data:image/png")).toThrow(
       "Couldn't read that photo. Try a clearer picture, or enter rows manually.",
     );
+    expect(() => imageBytesFromDataUrl("data:image/png,%E0%A4%A")).toThrow(
+      "Couldn't read that photo. Try a clearer picture, or enter rows manually.",
+    );
   });
 });
 

@@ -386,10 +386,16 @@ export function imageBytesFromDataUrl(dataUrl: string): ScheduleImageInput {
   const mimeType = m[1].trim().toLowerCase();
   const isBase64 = (m[2] ?? "").split(";").includes("base64");
   const payload = m[3];
-  const bytes = isBase64
-    ? new Uint8Array(Buffer.from(payload, "base64"))
-    : new TextEncoder().encode(decodeURIComponent(payload));
-  return { bytes, mimeType };
+  try {
+    const bytes = isBase64
+      ? new Uint8Array(Buffer.from(payload, "base64"))
+      : new TextEncoder().encode(decodeURIComponent(payload));
+    return { bytes, mimeType };
+  } catch {
+    // A percent-encoded payload that doesn't decode: the web flow mapped
+    // every pre-parse failure to the same "couldn't read" string.
+    throw unprocessable(PHOTO_UNREADABLE);
+  }
 }
 
 /* ----------------------------------------------------------------- commit */
