@@ -104,6 +104,7 @@ import "../src/routes/api/v1/public/plans/$token";
 import "../src/routes/api/v1/auth/apple";
 import "../src/routes/api/v1/auth/google";
 import "../src/routes/api/v1/auth/password";
+import "../src/routes/api/v1/auth/attest/register";
 import "../src/routes/api/v1/auth/recover";
 import "../src/routes/api/v1/auth/signup/coach";
 import "../src/routes/api/v1/auth/username/resolve";

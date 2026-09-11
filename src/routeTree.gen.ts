@@ -232,6 +232,7 @@ import { Route as ApiV1AuthUsernameCheckRouteImport } from './routes/api/v1/auth
 import { Route as ApiV1AuthSignupParentRouteImport } from './routes/api/v1/auth/signup/parent'
 import { Route as ApiV1AuthSignupCoachRouteImport } from './routes/api/v1/auth/signup/coach'
 import { Route as ApiV1AuthSignupAdultAthleteRouteImport } from './routes/api/v1/auth/signup/adult-athlete'
+import { Route as ApiV1AuthAttestRegisterRouteImport } from './routes/api/v1/auth/attest/register'
 import { Route as ApiV1AthletesIdRecapsRouteImport } from './routes/api/v1/athletes/$id/recaps'
 import { Route as ApiV1AthleteGoalsMotivationRouteImport } from './routes/api/v1/athlete/goals/motivation'
 import { Route as ApiV1AthleteGoalsLongTermRouteImport } from './routes/api/v1/athlete/goals/long-term'
@@ -1495,6 +1496,11 @@ const ApiV1AuthSignupAdultAthleteRoute =
     path: '/api/v1/auth/signup/adult-athlete',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiV1AuthAttestRegisterRoute = ApiV1AuthAttestRegisterRouteImport.update({
+  id: '/api/v1/auth/attest/register',
+  path: '/api/v1/auth/attest/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiV1AthletesIdRecapsRoute = ApiV1AthletesIdRecapsRouteImport.update({
   id: '/api/v1/athletes/$id/recaps',
   path: '/api/v1/athletes/$id/recaps',
@@ -1955,6 +1961,7 @@ export interface FileRoutesByFullPath {
   '/api/v1/athlete/goals/long-term': typeof ApiV1AthleteGoalsLongTermRoute
   '/api/v1/athlete/goals/motivation': typeof ApiV1AthleteGoalsMotivationRoute
   '/api/v1/athletes/$id/recaps': typeof ApiV1AthletesIdRecapsRoute
+  '/api/v1/auth/attest/register': typeof ApiV1AuthAttestRegisterRoute
   '/api/v1/auth/signup/adult-athlete': typeof ApiV1AuthSignupAdultAthleteRoute
   '/api/v1/auth/signup/coach': typeof ApiV1AuthSignupCoachRoute
   '/api/v1/auth/signup/parent': typeof ApiV1AuthSignupParentRoute
@@ -2222,6 +2229,7 @@ export interface FileRoutesByTo {
   '/api/v1/athlete/goals/long-term': typeof ApiV1AthleteGoalsLongTermRoute
   '/api/v1/athlete/goals/motivation': typeof ApiV1AthleteGoalsMotivationRoute
   '/api/v1/athletes/$id/recaps': typeof ApiV1AthletesIdRecapsRoute
+  '/api/v1/auth/attest/register': typeof ApiV1AuthAttestRegisterRoute
   '/api/v1/auth/signup/adult-athlete': typeof ApiV1AuthSignupAdultAthleteRoute
   '/api/v1/auth/signup/coach': typeof ApiV1AuthSignupCoachRoute
   '/api/v1/auth/signup/parent': typeof ApiV1AuthSignupParentRoute
@@ -2497,6 +2505,7 @@ export interface FileRoutesById {
   '/api/v1/athlete/goals/long-term': typeof ApiV1AthleteGoalsLongTermRoute
   '/api/v1/athlete/goals/motivation': typeof ApiV1AthleteGoalsMotivationRoute
   '/api/v1/athletes/$id/recaps': typeof ApiV1AthletesIdRecapsRoute
+  '/api/v1/auth/attest/register': typeof ApiV1AuthAttestRegisterRoute
   '/api/v1/auth/signup/adult-athlete': typeof ApiV1AuthSignupAdultAthleteRoute
   '/api/v1/auth/signup/coach': typeof ApiV1AuthSignupCoachRoute
   '/api/v1/auth/signup/parent': typeof ApiV1AuthSignupParentRoute
@@ -2772,6 +2781,7 @@ export interface FileRouteTypes {
     | '/api/v1/athlete/goals/long-term'
     | '/api/v1/athlete/goals/motivation'
     | '/api/v1/athletes/$id/recaps'
+    | '/api/v1/auth/attest/register'
     | '/api/v1/auth/signup/adult-athlete'
     | '/api/v1/auth/signup/coach'
     | '/api/v1/auth/signup/parent'
@@ -3039,6 +3049,7 @@ export interface FileRouteTypes {
     | '/api/v1/athlete/goals/long-term'
     | '/api/v1/athlete/goals/motivation'
     | '/api/v1/athletes/$id/recaps'
+    | '/api/v1/auth/attest/register'
     | '/api/v1/auth/signup/adult-athlete'
     | '/api/v1/auth/signup/coach'
     | '/api/v1/auth/signup/parent'
@@ -3313,6 +3324,7 @@ export interface FileRouteTypes {
     | '/api/v1/athlete/goals/long-term'
     | '/api/v1/athlete/goals/motivation'
     | '/api/v1/athletes/$id/recaps'
+    | '/api/v1/auth/attest/register'
     | '/api/v1/auth/signup/adult-athlete'
     | '/api/v1/auth/signup/coach'
     | '/api/v1/auth/signup/parent'
@@ -3511,6 +3523,7 @@ export interface RootRouteChildren {
   ApiV1AthleteGoalsLongTermRoute: typeof ApiV1AthleteGoalsLongTermRoute
   ApiV1AthleteGoalsMotivationRoute: typeof ApiV1AthleteGoalsMotivationRoute
   ApiV1AthletesIdRecapsRoute: typeof ApiV1AthletesIdRecapsRoute
+  ApiV1AuthAttestRegisterRoute: typeof ApiV1AuthAttestRegisterRoute
   ApiV1AuthSignupAdultAthleteRoute: typeof ApiV1AuthSignupAdultAthleteRoute
   ApiV1AuthSignupCoachRoute: typeof ApiV1AuthSignupCoachRoute
   ApiV1AuthSignupParentRoute: typeof ApiV1AuthSignupParentRoute
@@ -5179,6 +5192,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1AuthSignupAdultAthleteRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/v1/auth/attest/register': {
+      id: '/api/v1/auth/attest/register'
+      path: '/api/v1/auth/attest/register'
+      fullPath: '/api/v1/auth/attest/register'
+      preLoaderRoute: typeof ApiV1AuthAttestRegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/v1/athletes/$id/recaps': {
       id: '/api/v1/athletes/$id/recaps'
       path: '/api/v1/athletes/$id/recaps'
@@ -5884,6 +5904,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiV1AthleteGoalsLongTermRoute: ApiV1AthleteGoalsLongTermRoute,
   ApiV1AthleteGoalsMotivationRoute: ApiV1AthleteGoalsMotivationRoute,
   ApiV1AthletesIdRecapsRoute: ApiV1AthletesIdRecapsRoute,
+  ApiV1AuthAttestRegisterRoute: ApiV1AuthAttestRegisterRoute,
   ApiV1AuthSignupAdultAthleteRoute: ApiV1AuthSignupAdultAthleteRoute,
   ApiV1AuthSignupCoachRoute: ApiV1AuthSignupCoachRoute,
   ApiV1AuthSignupParentRoute: ApiV1AuthSignupParentRoute,
