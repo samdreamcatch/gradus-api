@@ -170,6 +170,7 @@ import { Route as AuthenticatedAdminPlansPlanIdRouteImport } from './routes/_aut
 import { Route as AuthenticatedAdminListKindRouteImport } from './routes/_authenticated/admin.list.$kind'
 import { Route as AuthenticatedAdminErrorsIdRouteImport } from './routes/_authenticated/admin.errors.$id'
 import { Route as AuthenticatedAdminEmailsNameRouteImport } from './routes/_authenticated/admin.emails.$name'
+import { Route as AuthenticatedAdminBoardSlugRouteImport } from './routes/_authenticated/admin.board.$slug'
 import { Route as ApiV1SafetyBlocksIndexRouteImport } from './routes/api/v1/safety/blocks/index'
 import { Route as ApiV1RoomsIdIndexRouteImport } from './routes/api/v1/rooms/$id/index'
 import { Route as ApiV1PublicBoardsIndexRouteImport } from './routes/api/v1/public/boards/index'
@@ -1152,6 +1153,12 @@ const AuthenticatedAdminEmailsNameRoute =
     path: '/emails/$name',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminBoardSlugRoute =
+  AuthenticatedAdminBoardSlugRouteImport.update({
+    id: '/board/$slug',
+    path: '/board/$slug',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const ApiV1SafetyBlocksIndexRoute = ApiV1SafetyBlocksIndexRouteImport.update({
   id: '/api/v1/safety/blocks/',
   path: '/api/v1/safety/blocks/',
@@ -1854,6 +1861,7 @@ export interface FileRoutesByFullPath {
   '/coach/': typeof AuthenticatedCoachIndexRoute
   '/org-admin/': typeof AuthenticatedOrgAdminIndexRoute
   '/parent/': typeof AuthenticatedParentIndexRoute
+  '/admin/board/$slug': typeof AuthenticatedAdminBoardSlugRoute
   '/admin/emails/$name': typeof AuthenticatedAdminEmailsNameRoute
   '/admin/errors/$id': typeof AuthenticatedAdminErrorsIdRoute
   '/admin/list/$kind': typeof AuthenticatedAdminListKindRoute
@@ -2120,6 +2128,7 @@ export interface FileRoutesByTo {
   '/coach': typeof AuthenticatedCoachIndexRoute
   '/org-admin': typeof AuthenticatedOrgAdminIndexRoute
   '/parent': typeof AuthenticatedParentIndexRoute
+  '/admin/board/$slug': typeof AuthenticatedAdminBoardSlugRoute
   '/admin/emails/$name': typeof AuthenticatedAdminEmailsNameRoute
   '/admin/errors/$id': typeof AuthenticatedAdminErrorsIdRoute
   '/admin/list/$kind': typeof AuthenticatedAdminListKindRoute
@@ -2394,6 +2403,7 @@ export interface FileRoutesById {
   '/_authenticated/coach/': typeof AuthenticatedCoachIndexRoute
   '/_authenticated/org-admin/': typeof AuthenticatedOrgAdminIndexRoute
   '/_authenticated/parent/': typeof AuthenticatedParentIndexRoute
+  '/_authenticated/admin/board/$slug': typeof AuthenticatedAdminBoardSlugRoute
   '/_authenticated/admin/emails/$name': typeof AuthenticatedAdminEmailsNameRoute
   '/_authenticated/admin/errors/$id': typeof AuthenticatedAdminErrorsIdRoute
   '/_authenticated/admin/list/$kind': typeof AuthenticatedAdminListKindRoute
@@ -2668,6 +2678,7 @@ export interface FileRouteTypes {
     | '/coach/'
     | '/org-admin/'
     | '/parent/'
+    | '/admin/board/$slug'
     | '/admin/emails/$name'
     | '/admin/errors/$id'
     | '/admin/list/$kind'
@@ -2934,6 +2945,7 @@ export interface FileRouteTypes {
     | '/coach'
     | '/org-admin'
     | '/parent'
+    | '/admin/board/$slug'
     | '/admin/emails/$name'
     | '/admin/errors/$id'
     | '/admin/list/$kind'
@@ -3207,6 +3219,7 @@ export interface FileRouteTypes {
     | '/_authenticated/coach/'
     | '/_authenticated/org-admin/'
     | '/_authenticated/parent/'
+    | '/_authenticated/admin/board/$slug'
     | '/_authenticated/admin/emails/$name'
     | '/_authenticated/admin/errors/$id'
     | '/_authenticated/admin/list/$kind'
@@ -4732,6 +4745,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminEmailsNameRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/board/$slug': {
+      id: '/_authenticated/admin/board/$slug'
+      path: '/board/$slug'
+      fullPath: '/admin/board/$slug'
+      preLoaderRoute: typeof AuthenticatedAdminBoardSlugRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/api/v1/safety/blocks/': {
       id: '/api/v1/safety/blocks/'
       path: '/api/v1/safety/blocks'
@@ -5540,6 +5560,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminSessionsRoute: typeof AuthenticatedAdminSessionsRoute
   AuthenticatedAdminSocialPlansRoute: typeof AuthenticatedAdminSocialPlansRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
+  AuthenticatedAdminBoardSlugRoute: typeof AuthenticatedAdminBoardSlugRoute
   AuthenticatedAdminEmailsNameRoute: typeof AuthenticatedAdminEmailsNameRoute
   AuthenticatedAdminListKindRoute: typeof AuthenticatedAdminListKindRoute
   AuthenticatedAdminPlansPlanIdRoute: typeof AuthenticatedAdminPlansPlanIdRoute
@@ -5569,6 +5590,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminSessionsRoute: AuthenticatedAdminSessionsRoute,
   AuthenticatedAdminSocialPlansRoute: AuthenticatedAdminSocialPlansRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
+  AuthenticatedAdminBoardSlugRoute: AuthenticatedAdminBoardSlugRoute,
   AuthenticatedAdminEmailsNameRoute: AuthenticatedAdminEmailsNameRoute,
   AuthenticatedAdminListKindRoute: AuthenticatedAdminListKindRoute,
   AuthenticatedAdminPlansPlanIdRoute: AuthenticatedAdminPlansPlanIdRoute,
