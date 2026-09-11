@@ -171,14 +171,14 @@ export function SkaterWheel({
 
     el.addEventListener("pointerdown", down);
     el.addEventListener("pointermove", move, { passive: false });
-    el.addEventListener("pointerup", end);
-    el.addEventListener("pointercancel", end);
+    el.addEventListener("pointerup", up);
+    el.addEventListener("pointercancel", cancel);
     el.addEventListener("touchmove", block, { passive: false });
     return () => {
       el.removeEventListener("pointerdown", down);
       el.removeEventListener("pointermove", move);
-      el.removeEventListener("pointerup", end);
-      el.removeEventListener("pointercancel", end);
+      el.removeEventListener("pointerup", up);
+      el.removeEventListener("pointercancel", cancel);
       el.removeEventListener("touchmove", block);
     };
   }, [apply, settle]);
