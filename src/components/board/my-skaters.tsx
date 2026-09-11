@@ -221,22 +221,16 @@ export function MySkaters({
 
               <div className="mt-1 space-y-1">
                 {g.rows.map((m) => {
-                  const tappable = true;
                   const isNext = m.key === nextKey;
-                  const Wrapper = tappable ? "button" : "div";
                   return (
-                    <Wrapper
+                    <button
                       key={m.key}
-                      {...(tappable
-                        ? {
-                            type: "button" as const,
-                            onClick: () => onOpenScore(m),
-                            "aria-label": `Score detail for ${m.skater.name}`,
-                          }
-                        : {})}
+                      type="button"
+                      onClick={() => onOpenScore(m)}
+                      aria-label={`Scores for ${m.skater.name}`}
                       className={cn(
-                        "block w-full rounded-lg px-2 py-1 text-left transition-colors duration-700",
-                        tappable && "press-soft",
+                        "press-soft block w-full rounded-lg px-2 py-1 text-left transition-colors duration-700",
+
                         isNext && "border-l-[3px] border-accent pl-[5px]",
                         changed.has(m.key)
                           ? "bg-accent/10"
