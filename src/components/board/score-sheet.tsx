@@ -1,7 +1,7 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { Separator } from "@/components/ui/separator";
-import type { BoardSkater, BoardProtocol } from "@/lib/board-types";
+import type { BoardSkater, SkaterProtocol } from "@/lib/board-types";
 
 /** One skate: an event plus the skater's row in it, scored or not yet. */
 export interface ScoreEntry {
@@ -12,7 +12,7 @@ export interface ScoreEntry {
 }
 
 /** The judged detail behind one posted score. */
-function ProtocolDetail({ p }: { p: BoardProtocol }) {
+function ProtocolDetail({ p }: { p: SkaterProtocol }) {
   return (
     <div className="space-y-5">
       <div className="grid grid-cols-4 gap-2 text-center">
