@@ -6,10 +6,11 @@
  * `restoreFoundingCoachTier` server functions in
  * `coach-checkout.functions.ts` and the `/api/v1/coach/founding/…` routes.
  * Extracted without behavior changes except the ones called out inline,
- * which are API-only behind `opts.apiContract` (E1: claim also clears
- * `free_access_until`; restore refuses with `nothing_to_restore` unless the
- * coach is actually on a paid plan). The web wrappers turn `ApiError`s back
- * into their original `{ error: message }` results.
+ * which are API-only behind `opts.apiContract` (E1: claim decides on the
+ * EFFECTIVE entitlement and clears `free_access_until`; restore refuses with
+ * `nothing_to_restore` unless the coach is actually on a paid plan). The web
+ * wrappers turn `ApiError`s back into their original `{ error: message }`
+ * results.
  *
  * Billing columns on `coach_profiles` are guarded by a trigger that only the
  * service role may pass (supabase/migrations/20260905200000_protect_billing_columns.sql),
@@ -46,9 +47,12 @@ export type FoundingTierContext = {
  */
 export type FoundingTierOptions = {
   /**
-   * `claimFoundingCoachTier` (E1): when granting `promo_free`, also clear
-   * `free_access_until`, so a founding coach whose 90-day club-exit grace
-   * lapsed (club-exit.server.ts) no longer reads as `pending` forever.
+   * `claimFoundingCoachTier` (E1): decide on the EFFECTIVE entitlement — the
+   * one `getCoachProfile` and `GET /coach/billing` report — so a founding
+   * coach whose 90-day club-exit grace lapsed (club-exit.server.ts writes raw
+   * `promo_free` + `free_access_until`; nothing ever rewrites that row) is
+   * re-granted instead of no-op'd, and clear `free_access_until` on the
+   * write so they no longer read as `pending` forever.
    * `restoreFoundingCoachTier`: refuse (409 `nothing_to_restore`) unless the
    * coach's entitlement is `paid`, instead of the web's unconditional write of
    * `subscription_status: "canceled"` on an already-free coach.
@@ -128,10 +132,16 @@ export type RestoreFoundingCoachTierInput = z.infer<typeof restoreFoundingCoachT
  * Stripe so a brand-new coach can proceed through onboarding without a
  * checkout session. Idempotent — safe to call repeatedly.
  *
- * Decision table (unchanged): not a founding coach → 409 `not_founding_coach`;
- * club-linked, or already `promo_free`/`paid`/`club_covered` → `{ ok }`
- * without a write; otherwise `entitlement: "promo_free"`. A caller with no
- * coach row answers 403 `wrong_role`; nothing here ever creates one.
+ * Decision table (unchanged on the web): not a founding coach → 409
+ * `not_founding_coach`; club-linked, or already `promo_free`/`paid`/
+ * `club_covered` → `{ ok }` without a write; otherwise
+ * `entitlement: "promo_free"`. A caller with no coach row answers 403
+ * `wrong_role`; nothing here ever creates one.
+ *
+ * E1 (API only): "already `promo_free`" is judged the way `getCoachProfile`
+ * judges it — a `promo_free` row whose `free_access_until` is in the past is
+ * effectively `pending`, so it falls through to the write, which also clears
+ * the date. A second claim after that is the usual no-op.
  */
 export async function claimFoundingCoachTier(
   ctx: FoundingTierContext,
@@ -139,7 +149,7 @@ export async function claimFoundingCoachTier(
 ): Promise<FoundingTierResultDTO> {
   const { data: profile, error: readErr } = await ctx.supabase
     .from("coach_profiles")
-    .select("id, founding_coach, entitlement, organization_id")
+    .select("id, founding_coach, entitlement, organization_id, free_access_until")
     .eq("user_id", ctx.userId)
     .maybeSingle();
   if (readErr) dbError(readErr);
@@ -149,11 +159,20 @@ export async function claimFoundingCoachTier(
     // Already covered by a club — no change needed.
     return { ok: true };
   }
-  if (
+  const alreadyEntitled =
     profile.entitlement === "promo_free" ||
     profile.entitlement === "paid" ||
-    profile.entitlement === "club_covered"
-  ) {
+    profile.entitlement === "club_covered";
+  // E1 (API only): the same derivation as coach-onboarding.server.ts's
+  // getCoachProfile — raw `promo_free` with a past `free_access_until` is
+  // effectively `pending` (a lapsed club-exit grace), so the claim must
+  // still write. A future or absent date means the coach is entitled today.
+  const graceLapsed =
+    Boolean(opts.apiContract) &&
+    profile.entitlement === "promo_free" &&
+    Boolean(profile.free_access_until) &&
+    new Date(profile.free_access_until as string) < new Date();
+  if (alreadyEntitled && !graceLapsed) {
     return { ok: true };
   }
   const { error } = await ctx.admin

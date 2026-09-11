@@ -199,6 +199,36 @@ describe("POST /api/v1/coach/founding/claim", () => {
     });
   });
 
+  it("E1: heals a lapsed club-exit grace (raw promo_free + past date) on the first claim; the second claim is a no-op", async () => {
+    const { db, claim, request } = setup(
+      founding({ entitlement: "promo_free", free_access_until: "2026-01-01T00:00:00Z" }),
+    );
+    const first = await claim({ request: request("claim") });
+    expect(first.status).toBe(200);
+    expect(await first.json()).toEqual({ ok: true });
+    expect(db.updates.admin).toEqual([
+      { table: "coach_profiles", patch: { entitlement: "promo_free", free_access_until: null } },
+    ]);
+    expect(db.rows("coach_profiles")[0]).toMatchObject({
+      entitlement: "promo_free",
+      free_access_until: null,
+    });
+    // Distinct request (no Idempotency-Key): now genuinely entitled, so nothing to write.
+    const second = await claim({ request: request("claim") });
+    expect(second.status).toBe(200);
+    expect(await second.json()).toEqual({ ok: true });
+    expect(db.updates.admin).toHaveLength(1);
+  });
+
+  it("leaves a promo_free coach whose grace is still running alone", async () => {
+    const { db, claim, request } = setup(
+      founding({ entitlement: "promo_free", free_access_until: "2099-01-01T00:00:00Z" }),
+    );
+    const res = await claim({ request: request("claim") });
+    expect(res.status).toBe(200);
+    expect(db.updates.admin).toEqual([]);
+  });
+
   it("ignores any request body: no input is declared", async () => {
     const { db, claim, request } = setup(founding());
     const res = await claim({

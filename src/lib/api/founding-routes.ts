@@ -21,9 +21,12 @@ import {
 /**
  * Claim the free Founding Coach tier. No body; `{ ok: true }` whether the
  * entitlement was just granted or was already in place — the client
- * re-fetches `GET /coach/billing` afterwards. 403 `wrong_role` without a
- * coach row (never creates one), 409 `not_founding_coach` otherwise.
- * `[idem]`: naturally idempotent, and honors `Idempotency-Key`.
+ * re-fetches `GET /coach/billing` afterwards. Judged on the effective
+ * entitlement `GET /coach/billing` reports: a founding coach whose 90-day
+ * club-exit grace lapsed (reads `pending`) is re-granted with the grace date
+ * cleared, so the claim action goes away after one call. 403 `wrong_role`
+ * without a coach row (never creates one), 409 `not_founding_coach`
+ * otherwise. `[idem]`: naturally idempotent, and honors `Idempotency-Key`.
  */
 export function claimFoundingCoachTierRoute(): DefineApiRouteOptions<
   undefined,

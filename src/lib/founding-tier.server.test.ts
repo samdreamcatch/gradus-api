@@ -169,6 +169,47 @@ describe("claimFoundingCoachTier", () => {
     ]);
   });
 
+  it("E1 (apiContract): re-grants a founding coach whose club-exit grace lapsed (raw promo_free + past free_access_until), clearing the date", async () => {
+    // applyClubExitGrace writes raw `promo_free` + a +90-day date and nothing
+    // rewrites the row once it passes; getCoachProfile reports `pending`.
+    const { ctx, supabase, admin } = context(
+      founding({ entitlement: "promo_free", free_access_until: "2026-01-01T00:00:00Z" }),
+    );
+    expect(await claimFoundingCoachTier(ctx, { apiContract: true })).toEqual({ ok: true });
+    expect(admin.updates).toEqual([
+      {
+        table: "coach_profiles",
+        patch: { entitlement: "promo_free", free_access_until: null },
+        filters: [["id", "coach-1"]],
+      },
+    ]);
+    expect(supabase.updates).toEqual([]);
+  });
+
+  it("E1 (apiContract): a promo_free coach whose grace is still running is entitled today — no write", async () => {
+    const { ctx, admin } = context(
+      founding({ entitlement: "promo_free", free_access_until: "2099-01-01T00:00:00Z" }),
+    );
+    expect(await claimFoundingCoachTier(ctx, { apiContract: true })).toEqual({ ok: true });
+    expect(admin.updates).toEqual([]);
+  });
+
+  it("E1 (apiContract): a promo_free coach with no grace date at all stays a no-op", async () => {
+    const { ctx, admin } = context(
+      founding({ entitlement: "promo_free", free_access_until: null }),
+    );
+    expect(await claimFoundingCoachTier(ctx, { apiContract: true })).toEqual({ ok: true });
+    expect(admin.updates).toEqual([]);
+  });
+
+  it("web parity: without apiContract a lapsed club-exit grace is still the silent no-op the web has today", async () => {
+    const { ctx, admin } = context(
+      founding({ entitlement: "promo_free", free_access_until: "2026-01-01T00:00:00Z" }),
+    );
+    expect(await claimFoundingCoachTier(ctx)).toEqual({ ok: true });
+    expect(admin.updates).toEqual([]);
+  });
+
   it("refuses a non-founding coach with 409 not_founding_coach and the web's message", async () => {
     const { ctx, admin } = context(founding({ founding_coach: false }));
     const err = await caught(() => claimFoundingCoachTier(ctx));
