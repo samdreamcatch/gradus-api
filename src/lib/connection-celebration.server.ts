@@ -22,7 +22,9 @@
  *   role; the web wrapper maps that back to `{ ok: false }`.
  * - The three profile lookups in `acknowledgeConnection` now check `.error`
  *   (the web omitted them; a failed lookup used to fall through to
- *   `{ ok: false }`).
+ *   `{ ok: false }`). Likewise the parent branch's owned-athletes and link
+ *   lookups: a failed query used to read as "owns nothing" and return
+ *   `{ ok: true }` without writing; it now surfaces as the generic db error.
  */
 import { z } from "zod";
 import type { ApiContext } from "./api/auth";

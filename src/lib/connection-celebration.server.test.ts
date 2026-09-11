@@ -703,6 +703,39 @@ describe("acknowledgeConnection", () => {
       acknowledgeConnection(admin, COACH.user_id, { linkIds: ["l-mine"] }),
     ).rejects.toThrow("Something went wrong. Please try again.");
   });
+
+  it("parent: surfaces a failed owned-athletes lookup instead of silently returning ok (writes nothing)", async () => {
+    // The profile lookup (athletes by user_id) must succeed so the parent
+    // branch is reached; only the second athletes query — the ownership
+    // lookup by parent_id — fails. The web used to treat that as "owns
+    // nothing" and return { ok: true } without writing.
+    const seed = { ...base, coach_athletes: [link("l-ava", COACH.id, AVA.id, T1)] };
+    const healthy = fakeAdmin(seed);
+    const broken = fakeAdmin(seed, ["athletes"]);
+    let athletesQueries = 0;
+    const admin = {
+      from: (table: Parameters<ApiContext["admin"]["from"]>[0]) =>
+        table === "athletes" && ++athletesQueries === 2
+          ? broken.admin.from(table)
+          : healthy.admin.from(table),
+    } as unknown as ApiContext["admin"];
+    await expect(
+      acknowledgeConnection(admin, PARENT.user_id, { linkIds: ["l-ava"] }),
+    ).rejects.toThrow("Something went wrong. Please try again.");
+    expect(athletesQueries).toBe(2);
+    expect(healthy.tables.coach_athletes![0]!.other_ack_at).toBeNull();
+  });
+
+  it("parent: surfaces a failed link lookup instead of silently returning ok (writes nothing)", async () => {
+    const { admin, tables } = fakeAdmin(
+      { ...base, coach_athletes: [link("l-ava", COACH.id, AVA.id, T1)] },
+      ["coach_athletes"],
+    );
+    await expect(
+      acknowledgeConnection(admin, PARENT.user_id, { linkIds: ["l-ava"] }),
+    ).rejects.toThrow("Something went wrong. Please try again.");
+    expect(tables.coach_athletes![0]!.other_ack_at).toBeNull();
+  });
 });
 
 describe("mergeAckLinkIds", () => {
