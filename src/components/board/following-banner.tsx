@@ -97,7 +97,7 @@ export function FollowingBanner() {
   const { data: myNames } = useQuery({
     queryKey: ["board-my-skaters"],
     queryFn: () => mine(),
-    enabled,
+    enabled: enabled && signedIn,
     staleTime: 5 * 60_000,
   });
 
