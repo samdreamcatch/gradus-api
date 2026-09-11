@@ -144,8 +144,14 @@ export function RinkPanel({
                 skater={current.justScored}
                 onOpenScore={onOpenScore}
               />
-              <Lane tone="ice" label="ON THE ICE" skater={current.onIce} awaiting />
-              <Lane tone="next" label="UP NEXT" skater={current.upNext} />
+              <Lane
+                tone="ice"
+                label="ON THE ICE"
+                skater={current.onIce}
+                awaiting
+                onOpenScore={onOpenScore}
+              />
+              <Lane tone="next" label="UP NEXT" skater={current.upNext} onOpenScore={onOpenScore} />
             </div>
           )}
         </>
