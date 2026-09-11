@@ -13,7 +13,7 @@ export function PageTitle({ children, subtitle }: PageTitleProps) {
   return (
     <>
       <h1
-        className="font-display text-[28px] font-medium leading-[1.08] tracking-tight text-text-primary"
+        className="font-display text-[31px] font-medium leading-[1.06] tracking-tight text-text-primary"
         style={{ letterSpacing: "-0.015em" }}
       >
         <span
