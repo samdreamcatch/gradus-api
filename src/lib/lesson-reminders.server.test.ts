@@ -1,5 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import { computeLessonReminders, nowInRinkTz } from "./lesson-reminders.server";
+import { addDays, parseIsoDate, toIsoDate } from "./lesson-recurrence";
 
 type SlotRow = {
   id: string;
@@ -24,7 +25,7 @@ type OverrideRow = {
 type SentRow = {
   slot_id: string;
   athlete_id: string;
-  coach_id: string;
+  coach_id: string | null;
   lesson_date: string;
   sent_at: string | null;
 };
@@ -315,16 +316,147 @@ describe("computeLessonReminders", () => {
   it("ignores a biweekly slot on an off week even though it matches today's weekday", async () => {
     const now = nowAtRinkTime(9, 0);
     const { dateIso } = nowInRinkTz(now);
-    // Anchor the slot's biweekly cycle one week after today, so today falls
-    // on the "off" week.
+    // Anchor the slot's biweekly cycle one week *before* today, so today is
+    // the "off" week (an un-paired cycle back) — this actually reaches the
+    // `weeksBetween(anchor, cursor) % 2 === 0` parity check in
+    // expandSlotOccurrences, unlike a future `starts_on`, which would short-
+    // circuit via the "hasn't started yet" guard before the parity check
+    // ever runs and pass for the wrong reason.
     const anchor = new Date(dateIso + "T12:00:00");
-    anchor.setDate(anchor.getDate() + 7);
+    anchor.setDate(anchor.getDate() - 7);
     const startsOn = anchor.toISOString().slice(0, 10);
     const slot = {
       ...BASE_SLOT,
       start_minute: 10 * 60,
       frequency: "biweekly",
       starts_on: startsOn,
+    };
+    const { admin } = fakeDb({ slots: [slot] });
+    const result = await computeLessonReminders({ admin }, now);
+    expect(result).toEqual({ scanned: 0, wouldSend: 0 });
+  });
+
+  it("finds a biweekly slot on an on week (two cycles back)", async () => {
+    const now = nowAtRinkTime(9, 0);
+    const { dateIso } = nowInRinkTz(now);
+    // Anchor two weeks back — an on-week, so the parity check's `include`
+    // branch should fire (the companion case to the off-week test above:
+    // together they cover both sides of the biweekly parity check).
+    const anchor = new Date(dateIso + "T12:00:00");
+    anchor.setDate(anchor.getDate() - 14);
+    const startsOn = anchor.toISOString().slice(0, 10);
+    const slot = {
+      ...BASE_SLOT,
+      start_minute: 10 * 60,
+      frequency: "biweekly",
+      starts_on: startsOn,
+    };
+    const { admin } = fakeDb({
+      slots: [slot],
+      coaches: [{ id: "coach-1", user_id: null }],
+      athletes: [{ id: "athlete-1", user_id: null, self_managed: false, parent_id: null }],
+    });
+    const result = await computeLessonReminders({ admin }, now);
+    expect(result).toEqual({ scanned: 1, wouldSend: 1 });
+  });
+
+  it("still reminds the parent/athlete when the slot has no assigned coach", async () => {
+    // coach_id is nulled out (not deleted) when a coach is unlinked from an
+    // athlete's roster — see coach-roster.server.ts's removeAthleteFromRoster.
+    // The parent/athlete side of the reminder must survive that.
+    const now = nowAtRinkTime(9, 0);
+    const slot = { ...BASE_SLOT, coach_id: null, start_minute: 10 * 60 };
+    const { admin, sent } = fakeDb({
+      slots: [slot],
+      athletes: [
+        { id: "athlete-1", user_id: "athlete-user-1", self_managed: true, parent_id: null },
+      ],
+      deviceTokens: [{ user_id: "athlete-user-1", token: "athlete-tok", platform: "ios" }],
+    });
+    const logs: unknown[][] = [];
+    const originalLog = console.log;
+    console.log = (...args: unknown[]) => logs.push(args);
+    try {
+      const result = await computeLessonReminders({ admin }, now);
+      expect(result).toEqual({ scanned: 1, wouldSend: 1 });
+      // Dedupe row is still recorded (with a null coach_id) so this
+      // coachless occurrence isn't re-scanned on the next tick.
+      expect(sent).toHaveLength(1);
+      expect(sent[0]?.coach_id).toBeNull();
+
+      const line = logs.find((l) => l[0] === "[api] lesson-reminders would-send");
+      const payload = JSON.parse(line![1] as string);
+      expect(payload.coach.userId).toBeNull();
+      expect(payload.coach.tokenCount).toBe(0);
+      expect(payload.recipient.userId).toBe("athlete-user-1");
+      expect(payload.recipient.tokenCount).toBe(1);
+    } finally {
+      console.log = originalLog;
+    }
+  });
+
+  it("finds an occurrence starting shortly after midnight, from the night before", async () => {
+    // A slot starting 00:20 tomorrow (Wednesday) is 65 minutes out at
+    // 23:15pm tonight (Tuesday) — the day-boundary case: `nowInRinkTz`
+    // reports Tuesday as today, so this occurrence only exists in the
+    // "tomorrow" bucket, never in a same-day query on either side of
+    // midnight.
+    const now = nowAtRinkTime(23, 15);
+    const { dayOfWeek } = nowInRinkTz(now);
+    const slot = {
+      ...BASE_SLOT,
+      day_of_week: (dayOfWeek + 1) % 7,
+      start_minute: 20,
+    };
+    const { admin } = fakeDb({
+      slots: [slot],
+      coaches: [{ id: "coach-1", user_id: null }],
+      athletes: [{ id: "athlete-1", user_id: null, self_managed: false, parent_id: null }],
+    });
+    const result = await computeLessonReminders({ admin }, now);
+    expect(result).toEqual({ scanned: 1, wouldSend: 1 });
+  });
+
+  it("dedupes a just-after-midnight occurrence against its own (tomorrow's) lesson_date", async () => {
+    const now = nowAtRinkTime(23, 15);
+    const { dayOfWeek, dateIso } = nowInRinkTz(now);
+    const tomorrowIso = toIsoDate(addDays(parseIsoDate(dateIso), 1));
+    const slot = {
+      ...BASE_SLOT,
+      day_of_week: (dayOfWeek + 1) % 7,
+      start_minute: 20,
+    };
+    const { admin, sent } = fakeDb({
+      slots: [slot],
+      coaches: [{ id: "coach-1", user_id: null }],
+      athletes: [{ id: "athlete-1", user_id: null, self_managed: false, parent_id: null }],
+      // Already recorded for tomorrow's date — must be skipped, not
+      // re-sent, and must NOT be mistaken for a dedupe row on tonight's date.
+      alreadySent: [
+        {
+          slot_id: "slot-1",
+          athlete_id: "athlete-1",
+          coach_id: "coach-1",
+          lesson_date: tomorrowIso,
+          sent_at: null,
+        },
+      ],
+    });
+    const result = await computeLessonReminders({ admin }, now);
+    expect(result).toEqual({ scanned: 1, wouldSend: 0 });
+    expect(sent).toHaveLength(1);
+  });
+
+  it("does not treat a lesson well before midnight as a day-boundary candidate", async () => {
+    // At 22:00pm, nothing tomorrow can be in the 55-65 minute window (the
+    // earliest possible tomorrow start, 00:00, would be 120 minutes out) —
+    // guards against the day-boundary bucket over-firing.
+    const now = nowAtRinkTime(22, 0);
+    const { dayOfWeek } = nowInRinkTz(now);
+    const slot = {
+      ...BASE_SLOT,
+      day_of_week: (dayOfWeek + 1) % 7,
+      start_minute: 0,
     };
     const { admin } = fakeDb({ slots: [slot] });
     const result = await computeLessonReminders({ admin }, now);

@@ -1907,7 +1907,7 @@ export type Database = {
       lesson_reminders_sent: {
         Row: {
           athlete_id: string
-          coach_id: string
+          coach_id: string | null
           created_at: string
           id: string
           lesson_date: string
@@ -1916,7 +1916,7 @@ export type Database = {
         }
         Insert: {
           athlete_id: string
-          coach_id: string
+          coach_id?: string | null
           created_at?: string
           id?: string
           lesson_date: string
@@ -1925,7 +1925,7 @@ export type Database = {
         }
         Update: {
           athlete_id?: string
-          coach_id?: string
+          coach_id?: string | null
           created_at?: string
           id?: string
           lesson_date?: string

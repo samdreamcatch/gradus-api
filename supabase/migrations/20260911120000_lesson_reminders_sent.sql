@@ -11,7 +11,12 @@ CREATE TABLE IF NOT EXISTS public.lesson_reminders_sent (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   slot_id uuid NOT NULL,
   athlete_id uuid NOT NULL,
-  coach_id uuid NOT NULL,
+  -- Nullable: a slot's coach_id is nulled out when a coach is unlinked from
+  -- an athlete's roster (see coach-roster.server.ts's removeAthleteFromRoster,
+  -- which keeps the recurring schedule alive for a future re-link). The
+  -- parent/athlete reminder must still be dedup-recorded for such a slot, so
+  -- this column can't require a coach.
+  coach_id uuid,
   lesson_date date NOT NULL,
   sent_at timestamptz,
   created_at timestamptz NOT NULL DEFAULT now(),

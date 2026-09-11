@@ -20,7 +20,13 @@ import { dbError } from "./db-error";
 // RINK_TZ is the one timezone constant this project already has; reused here
 // rather than re-declared, per the ijs-scrape.server.ts precedent.
 import { RINK_TZ } from "./ijs-scrape.server";
-import { expandSlotOccurrences, parseIsoDate, type LessonFrequency } from "./lesson-recurrence";
+import {
+  addDays,
+  expandSlotOccurrences,
+  parseIsoDate,
+  toIsoDate,
+  type LessonFrequency,
+} from "./lesson-recurrence";
 
 type Client = SupabaseClient<Database>;
 
@@ -54,10 +60,21 @@ type OverrideRow = {
 
 type CandidateOccurrence = {
   slotId: string;
-  coachId: string;
+  // Nullable: a coach can be unlinked from an athlete's roster without
+  // deleting the slot (coach-roster.server.ts nulls coach_id so the
+  // recurring schedule survives a future re-link) — the parent/athlete
+  // reminder must still go out for a coachless slot, so this can't require
+  // a coach.
+  coachId: string | null;
   athleteId: string;
   lessonDate: string;
 };
+
+/** One calendar day's worth of candidate slots, with "now" expressed relative
+ * to that day's midnight (negative for a day queried as "tomorrow" from
+ * today's clock) so the same startMinute-minus-now window math applies
+ * unchanged in both cases. */
+type Bucket = { slots: SlotRow[]; dateIso: string; effectiveNowMinutes: number };
 
 /** The wall-clock "now" in RINK_TZ, as a calendar date + minutes-since-midnight + day-of-week. */
 export function nowInRinkTz(now: Date): { dateIso: string; minutes: number; dayOfWeek: number } {
@@ -90,6 +107,64 @@ function reminderPayload(route: "roster" | "plans") {
 }
 
 /**
+ * Slots on the right weekday for `bucket.dateIso` aren't necessarily active
+ * on that date — biweekly / monthly / twice-monthly slots only land on some
+ * of their weekday's dates — and a slot may be canceled/rescheduled by an
+ * override. Resolve both, then keep whatever lands in the reminder window.
+ */
+async function candidatesForBucket(admin: Client, bucket: Bucket): Promise<CandidateOccurrence[]> {
+  const activeSlots = bucket.slots.filter((s) => {
+    const occurrences = expandSlotOccurrences(
+      {
+        dayOfWeek: s.day_of_week,
+        frequency: (s.frequency as LessonFrequency) || "weekly",
+        weeksOfMonth: s.weeks_of_month,
+        startsOn: s.starts_on,
+      },
+      bucket.dateIso,
+      bucket.dateIso,
+    );
+    return occurrences.length > 0;
+  });
+  if (activeSlots.length === 0) return [];
+
+  const slotIds = activeSlots.map((s) => s.id);
+  const overridesRes = await admin
+    .from("lesson_slot_overrides")
+    .select("slot_id, occurrence_date, status, start_minute, end_minute")
+    .in("slot_id", slotIds)
+    .eq("occurrence_date", bucket.dateIso);
+  if (overridesRes.error) dbError(overridesRes.error);
+
+  const overrideBySlot = new Map<string, OverrideRow>();
+  for (const o of (overridesRes.data ?? []) as unknown as OverrideRow[]) {
+    overrideBySlot.set(o.slot_id, o);
+  }
+
+  const candidates: CandidateOccurrence[] = [];
+  for (const s of activeSlots) {
+    const override = overrideBySlot.get(s.id);
+    if (override?.status === "canceled") continue;
+    const startMinute =
+      override?.status === "rescheduled" && override.start_minute != null
+        ? override.start_minute
+        : s.start_minute;
+    const minutesOut = startMinute - bucket.effectiveNowMinutes;
+    if (minutesOut < WINDOW_MIN || minutesOut > WINDOW_MAX) continue;
+    // coach_id may be null (a coach unlinked from the athlete's roster keeps
+    // the slot, per coach-roster.server.ts) — the parent/athlete side is
+    // still a valid candidate, so don't drop the occurrence here.
+    candidates.push({
+      slotId: s.id,
+      coachId: s.coach_id,
+      athleteId: s.athlete_id,
+      lessonDate: bucket.dateIso,
+    });
+  }
+  return candidates;
+}
+
+/**
  * Compute this tick's lesson-reminder occurrences, dedupe against
  * `lesson_reminders_sent`, and log (never send) what would go out.
  */
@@ -100,86 +175,77 @@ export async function computeLessonReminders(
   const { admin } = ctx;
   const { dateIso, minutes: nowMinutes, dayOfWeek } = nowInRinkTz(now);
 
+  const slotColumns =
+    "id, coach_id, athlete_id, day_of_week, start_minute, end_minute, frequency, weeks_of_month, starts_on";
+
   const slotsRes = await admin
     .from("athlete_lesson_slots")
-    .select(
-      "id, coach_id, athlete_id, day_of_week, start_minute, end_minute, frequency, weeks_of_month, starts_on",
-    )
+    .select(slotColumns)
     .eq("day_of_week", dayOfWeek);
   if (slotsRes.error) dbError(slotsRes.error);
 
-  const allSlots = (slotsRes.data ?? []) as unknown as SlotRow[];
-  const slotsWithCoach = allSlots.filter((s): s is SlotRow & { coach_id: string } => !!s.coach_id);
-
-  // A slot on the right weekday isn't necessarily active today — biweekly /
-  // monthly / twice-monthly slots only land on some of their weekday's dates.
-  const todaysSlots = slotsWithCoach.filter((s) => {
-    const occurrences = expandSlotOccurrences(
-      {
-        dayOfWeek: s.day_of_week,
-        frequency: (s.frequency as LessonFrequency) || "weekly",
-        weeksOfMonth: s.weeks_of_month,
-        startsOn: s.starts_on,
-      },
+  const buckets: Bucket[] = [
+    {
+      slots: (slotsRes.data ?? []) as unknown as SlotRow[],
       dateIso,
-      dateIso,
-    );
-    return occurrences.length > 0;
-  });
+      effectiveNowMinutes: nowMinutes,
+    },
+  ];
 
-  if (todaysSlots.length === 0) return { scanned: 0, wouldSend: 0 };
-
-  const slotIds = todaysSlots.map((s) => s.id);
-  const overridesRes = await admin
-    .from("lesson_slot_overrides")
-    .select("slot_id, occurrence_date, status, start_minute, end_minute")
-    .in("slot_id", slotIds)
-    .eq("occurrence_date", dateIso);
-  if (overridesRes.error) dbError(overridesRes.error);
-
-  const overrideBySlot = new Map<string, OverrideRow>();
-  for (const o of (overridesRes.data ?? []) as unknown as OverrideRow[]) {
-    overrideBySlot.set(o.slot_id, o);
-  }
-
-  const candidates: CandidateOccurrence[] = [];
-  for (const s of todaysSlots) {
-    const override = overrideBySlot.get(s.id);
-    if (override?.status === "canceled") continue;
-    const startMinute =
-      override?.status === "rescheduled" && override.start_minute != null
-        ? override.start_minute
-        : s.start_minute;
-    const minutesOut = startMinute - nowMinutes;
-    if (minutesOut < WINDOW_MIN || minutesOut > WINDOW_MAX) continue;
-    candidates.push({
-      slotId: s.id,
-      coachId: s.coach_id,
-      athleteId: s.athlete_id,
-      lessonDate: dateIso,
+  // A lesson starting shortly after midnight belongs to TOMORROW's
+  // day_of_week and date, but its reminder window (55-65 minutes out) can
+  // only ever be reached from TODAY's clock, in the WINDOW_MAX minutes
+  // right before midnight. Whenever we're that close, also fetch tomorrow's
+  // slots and treat "now" as negative minutes-into-tomorrow, so the same
+  // startMinute-minus-now window check works unchanged for both buckets.
+  if (nowMinutes >= 1440 - WINDOW_MAX) {
+    const tomorrowDayOfWeek = (dayOfWeek + 1) % 7;
+    const tomorrowDateIso = toIsoDate(addDays(parseIsoDate(dateIso), 1));
+    const tomorrowSlotsRes = await admin
+      .from("athlete_lesson_slots")
+      .select(slotColumns)
+      .eq("day_of_week", tomorrowDayOfWeek);
+    if (tomorrowSlotsRes.error) dbError(tomorrowSlotsRes.error);
+    buckets.push({
+      slots: (tomorrowSlotsRes.data ?? []) as unknown as SlotRow[],
+      dateIso: tomorrowDateIso,
+      effectiveNowMinutes: nowMinutes - 1440,
     });
   }
+
+  const candidateLists = await Promise.all(buckets.map((b) => candidatesForBucket(admin, b)));
+  const candidates = candidateLists.flat();
 
   const scanned = candidates.length;
   if (scanned === 0) return { scanned: 0, wouldSend: 0 };
 
+  // Candidates can span two different lesson dates (today and, near
+  // midnight, tomorrow), so dedupe on the (slot_id, lesson_date) pair rather
+  // than filtering the query to a single date.
   const alreadySentRes = await admin
     .from("lesson_reminders_sent")
-    .select("slot_id")
+    .select("slot_id, lesson_date")
     .in(
       "slot_id",
       candidates.map((c) => c.slotId),
-    )
-    .eq("lesson_date", dateIso);
+    );
   if (alreadySentRes.error) dbError(alreadySentRes.error);
-  const alreadySent = new Set((alreadySentRes.data ?? []).map((r) => r.slot_id as string));
+  const alreadySent = new Set(
+    ((alreadySentRes.data ?? []) as { slot_id: string; lesson_date: string }[]).map(
+      (r) => `${r.slot_id}|${r.lesson_date}`,
+    ),
+  );
 
-  const toProcess = candidates.filter((c) => !alreadySent.has(c.slotId));
+  const toProcess = candidates.filter((c) => !alreadySent.has(`${c.slotId}|${c.lessonDate}`));
   if (toProcess.length === 0) return { scanned, wouldSend: 0 };
 
-  // Resolve recipients: the coach's own user_id, and — for the parent/athlete
-  // side — the athlete's own user_id if self-managed, else their parent's.
-  const coachIds = Array.from(new Set(toProcess.map((c) => c.coachId)));
+  // Resolve recipients: the coach's own user_id (when a coach is still
+  // assigned — a slot can be coachless, see CandidateOccurrence.coachId),
+  // and — for the parent/athlete side — the athlete's own user_id if
+  // self-managed, else their parent's.
+  const coachIds = Array.from(
+    new Set(toProcess.map((c) => c.coachId).filter((id): id is string => !!id)),
+  );
   const athleteIds = Array.from(new Set(toProcess.map((c) => c.athleteId)));
 
   const [coachesRes, athletesRes] = await Promise.all([
@@ -233,7 +299,7 @@ export async function computeLessonReminders(
   const allUserIds = Array.from(
     new Set(
       [
-        ...toProcess.map((c) => coachUserById.get(c.coachId) ?? null),
+        ...toProcess.map((c) => (c.coachId ? (coachUserById.get(c.coachId) ?? null) : null)),
         ...toProcess.map((c) => recipientUserFor(c.athleteId)),
       ].filter((id): id is string => !!id),
     ),
@@ -274,20 +340,27 @@ export async function computeLessonReminders(
   const upsertRes = await admin
     .from("lesson_reminders_sent")
     .upsert(rows, { onConflict: "slot_id,lesson_date", ignoreDuplicates: true })
-    .select("slot_id");
+    .select("slot_id, lesson_date");
   if (upsertRes.error && (upsertRes.error as { code?: string }).code !== "23505") {
     dbError(upsertRes.error);
   }
-  const insertedSlotIds = new Set(
-    ((upsertRes.data ?? []) as { slot_id: string }[]).map((r) => r.slot_id),
+  // Keyed on the (slot_id, lesson_date) pair, not slot_id alone — a slot can
+  // only land in one bucket per tick (today or tomorrow, never both, since
+  // the two buckets query disjoint day_of_week values), but keying on the
+  // pair keeps this correct rather than relying on that invariant.
+  const insertedKeys = new Set(
+    ((upsertRes.data ?? []) as { slot_id: string; lesson_date: string }[]).map(
+      (r) => `${r.slot_id}|${r.lesson_date}`,
+    ),
   );
 
   let wouldSend = 0;
   for (const c of toProcess) {
-    if (!insertedSlotIds.has(c.slotId)) continue; // lost a race with another tick; already handled
+    // lost a race with another tick; already handled
+    if (!insertedKeys.has(`${c.slotId}|${c.lessonDate}`)) continue;
     wouldSend += 1;
 
-    const coachUserId = coachUserById.get(c.coachId) ?? null;
+    const coachUserId = c.coachId ? (coachUserById.get(c.coachId) ?? null) : null;
     const recipientUserId = recipientUserFor(c.athleteId);
     const coachTokens = coachUserId ? (tokensByUser.get(coachUserId) ?? []) : [];
     const recipientTokens = recipientUserId ? (tokensByUser.get(recipientUserId) ?? []) : [];
