@@ -5,7 +5,8 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --font-display: "Fraunces", Georgia, serif;
+  --font-display: "EB Garamond", Garamond, Georgia, serif;
+  --font-wordmark: "Fraunces", Georgia, serif;
   --font-sans: "Atkinson Hyperlegible", system-ui, sans-serif;
   --font-hand: "Atkinson Hyperlegible", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;

@@ -601,7 +601,7 @@ Admin panel, org admin, email admin and previews, dev tools and paywall preview,
 
 | Role | Web token | iOS |
 |---|---|---|
-| Display / headings | `--font-display: Fraunces` | Bundle **Fraunces** (variable, OFL). `Font.custom("Fraunces", size:, relativeTo:)` mapped to `.largeTitle`, `.title`, `.title2`, `.title3`. Optical size axis follows point size. |
+| Display / headings | `--font-display: EB Garamond` | Bundle **EB Garamond** (OFL). `Font.custom("EBGaramond-Regular", size:, relativeTo:)` mapped to `.largeTitle`, `.title`, `.title2`, `.title3`. Fraunces stays bundled for the Gradus wordmark only. |
 | Body / UI | `--font-sans: Atkinson Hyperlegible` | Bundle **Atkinson Hyperlegible** (regular, bold, italics). Mapped to `.body`, `.callout`, `.subheadline`, `.footnote`, `.caption`. |
 | Numbers / labels | `--font-mono: JetBrains Mono` | Bundle **JetBrains Mono** for scores, timers, invite codes, start positions. Tabular figures for the timer. |
 | Hand accent | `--font-hand` (currently aliased to Atkinson in the app) | Not bundled. If the hand style returns, add Caveat later. |
