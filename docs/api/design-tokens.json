@@ -3,7 +3,8 @@
   "source": "src/styles.css",
   "fonts": {
     "display": [
-      "Fraunces",
+      "EB Garamond",
+      "Garamond",
       "Georgia",
       "serif"
     ],
@@ -21,6 +22,11 @@
       "Atkinson Hyperlegible",
       "system-ui",
       "sans-serif"
+    ],
+    "wordmark": [
+      "Fraunces",
+      "Georgia",
+      "serif"
     ]
   },
   "radii": {
