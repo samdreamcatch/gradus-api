@@ -43,6 +43,12 @@ export function SkaterWheel({
   /** Keyboard/button stepping, which does not spring back until reset. */
   const [step, setStep] = useState(0);
   const container = useRef<HTMLDivElement | null>(null);
+  /** Latest order/handler, read by the native pointer listeners without re-binding. */
+  const tap = useRef<{ order: BoardSkater[]; onOpen?: (s: BoardSkater) => void }>({
+    order: startOrder,
+    onOpen: onOpenScore,
+  });
+  tap.current = { order: startOrder, onOpen: onOpenScore };
   const drag = useRef<{ id: number; y: number; moved: number } | null>(null);
   const frame = useRef<number | null>(null);
   const offsetRef = useRef(0);
