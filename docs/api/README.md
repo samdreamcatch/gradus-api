@@ -14,6 +14,15 @@ Conventions are defined in `docs/ios/PRD.md` §6.2 (request/response rules) and
   `ApiContext | null`.
 - **Errors.** `{"error": {"code", "message", "details"}}` with stable
   snake_case codes. See `src/lib/api/errors.ts`.
+  Pipeline codes: `api_disabled` (503), `unauthenticated` (401),
+  `validation_failed` (400), `rate_limited` (429),
+  `rate_limiter_unavailable` (503), `payload_too_large` (413),
+  `idempotency_key_reused` / `idempotency_key_in_progress` (409),
+  `roster_full` (409), `internal` (500). Common domain codes: `not_found`
+  (404), `forbidden` / `wrong_role` / `plan_required` (403), `unprocessable`
+  (422), `ai_unavailable` (503). Founding Coach tier
+  (`POST /coach/founding/claim|restore`): `not_founding_coach` (409),
+  `club_covered` (409), `nothing_to_restore` (409), `stripe_error` (502).
 - **Idempotency.** Creating POSTs may accept `Idempotency-Key` and set
   `idempotent: true`; replays are scoped by `(user_id, key)` for 24h.
 - **Rate limiting.** Fixed-window, keyed by route + IP (+ user id when

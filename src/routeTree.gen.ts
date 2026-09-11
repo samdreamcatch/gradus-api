@@ -226,6 +226,8 @@ import { Route as ApiV1CoachMovesFromPlanMoveRouteImport } from './routes/api/v1
 import { Route as ApiV1CoachMovesForkFromPlanMoveRouteImport } from './routes/api/v1/coach/moves/fork-from-plan-move'
 import { Route as ApiV1CoachInvoicesPreviewRouteImport } from './routes/api/v1/coach/invoices/preview'
 import { Route as ApiV1CoachInviteCodeRotateRouteImport } from './routes/api/v1/coach/invite-code/rotate'
+import { Route as ApiV1CoachFoundingRestoreRouteImport } from './routes/api/v1/coach/founding/restore'
+import { Route as ApiV1CoachFoundingClaimRouteImport } from './routes/api/v1/coach/founding/claim'
 import { Route as ApiV1AuthUsernameResolveRouteImport } from './routes/api/v1/auth/username/resolve'
 import { Route as ApiV1AuthUsernameCheckRouteImport } from './routes/api/v1/auth/username/check'
 import { Route as ApiV1AuthSignupParentRouteImport } from './routes/api/v1/auth/signup/parent'
@@ -1461,6 +1463,17 @@ const ApiV1CoachInviteCodeRotateRoute =
     path: '/api/v1/coach/invite-code/rotate',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiV1CoachFoundingRestoreRoute =
+  ApiV1CoachFoundingRestoreRouteImport.update({
+    id: '/api/v1/coach/founding/restore',
+    path: '/api/v1/coach/founding/restore',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1CoachFoundingClaimRoute = ApiV1CoachFoundingClaimRouteImport.update({
+  id: '/api/v1/coach/founding/claim',
+  path: '/api/v1/coach/founding/claim',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiV1AuthUsernameResolveRoute =
   ApiV1AuthUsernameResolveRouteImport.update({
     id: '/api/v1/auth/username/resolve',
@@ -1952,6 +1965,8 @@ export interface FileRoutesByFullPath {
   '/api/v1/auth/signup/parent': typeof ApiV1AuthSignupParentRoute
   '/api/v1/auth/username/check': typeof ApiV1AuthUsernameCheckRoute
   '/api/v1/auth/username/resolve': typeof ApiV1AuthUsernameResolveRoute
+  '/api/v1/coach/founding/claim': typeof ApiV1CoachFoundingClaimRoute
+  '/api/v1/coach/founding/restore': typeof ApiV1CoachFoundingRestoreRoute
   '/api/v1/coach/invite-code/rotate': typeof ApiV1CoachInviteCodeRotateRoute
   '/api/v1/coach/invoices/preview': typeof ApiV1CoachInvoicesPreviewRoute
   '/api/v1/coach/moves/fork-from-plan-move': typeof ApiV1CoachMovesForkFromPlanMoveRoute
@@ -2218,6 +2233,8 @@ export interface FileRoutesByTo {
   '/api/v1/auth/signup/parent': typeof ApiV1AuthSignupParentRoute
   '/api/v1/auth/username/check': typeof ApiV1AuthUsernameCheckRoute
   '/api/v1/auth/username/resolve': typeof ApiV1AuthUsernameResolveRoute
+  '/api/v1/coach/founding/claim': typeof ApiV1CoachFoundingClaimRoute
+  '/api/v1/coach/founding/restore': typeof ApiV1CoachFoundingRestoreRoute
   '/api/v1/coach/invite-code/rotate': typeof ApiV1CoachInviteCodeRotateRoute
   '/api/v1/coach/invoices/preview': typeof ApiV1CoachInvoicesPreviewRoute
   '/api/v1/coach/moves/fork-from-plan-move': typeof ApiV1CoachMovesForkFromPlanMoveRoute
@@ -2492,6 +2509,8 @@ export interface FileRoutesById {
   '/api/v1/auth/signup/parent': typeof ApiV1AuthSignupParentRoute
   '/api/v1/auth/username/check': typeof ApiV1AuthUsernameCheckRoute
   '/api/v1/auth/username/resolve': typeof ApiV1AuthUsernameResolveRoute
+  '/api/v1/coach/founding/claim': typeof ApiV1CoachFoundingClaimRoute
+  '/api/v1/coach/founding/restore': typeof ApiV1CoachFoundingRestoreRoute
   '/api/v1/coach/invite-code/rotate': typeof ApiV1CoachInviteCodeRotateRoute
   '/api/v1/coach/invoices/preview': typeof ApiV1CoachInvoicesPreviewRoute
   '/api/v1/coach/moves/fork-from-plan-move': typeof ApiV1CoachMovesForkFromPlanMoveRoute
@@ -2766,6 +2785,8 @@ export interface FileRouteTypes {
     | '/api/v1/auth/signup/parent'
     | '/api/v1/auth/username/check'
     | '/api/v1/auth/username/resolve'
+    | '/api/v1/coach/founding/claim'
+    | '/api/v1/coach/founding/restore'
     | '/api/v1/coach/invite-code/rotate'
     | '/api/v1/coach/invoices/preview'
     | '/api/v1/coach/moves/fork-from-plan-move'
@@ -3032,6 +3053,8 @@ export interface FileRouteTypes {
     | '/api/v1/auth/signup/parent'
     | '/api/v1/auth/username/check'
     | '/api/v1/auth/username/resolve'
+    | '/api/v1/coach/founding/claim'
+    | '/api/v1/coach/founding/restore'
     | '/api/v1/coach/invite-code/rotate'
     | '/api/v1/coach/invoices/preview'
     | '/api/v1/coach/moves/fork-from-plan-move'
@@ -3305,6 +3328,8 @@ export interface FileRouteTypes {
     | '/api/v1/auth/signup/parent'
     | '/api/v1/auth/username/check'
     | '/api/v1/auth/username/resolve'
+    | '/api/v1/coach/founding/claim'
+    | '/api/v1/coach/founding/restore'
     | '/api/v1/coach/invite-code/rotate'
     | '/api/v1/coach/invoices/preview'
     | '/api/v1/coach/moves/fork-from-plan-move'
@@ -3503,6 +3528,8 @@ export interface RootRouteChildren {
   ApiV1AuthSignupParentRoute: typeof ApiV1AuthSignupParentRoute
   ApiV1AuthUsernameCheckRoute: typeof ApiV1AuthUsernameCheckRoute
   ApiV1AuthUsernameResolveRoute: typeof ApiV1AuthUsernameResolveRoute
+  ApiV1CoachFoundingClaimRoute: typeof ApiV1CoachFoundingClaimRoute
+  ApiV1CoachFoundingRestoreRoute: typeof ApiV1CoachFoundingRestoreRoute
   ApiV1CoachInviteCodeRotateRoute: typeof ApiV1CoachInviteCodeRotateRoute
   ApiV1CoachInvoicesPreviewRoute: typeof ApiV1CoachInvoicesPreviewRoute
   ApiV1CoachMovesForkFromPlanMoveRoute: typeof ApiV1CoachMovesForkFromPlanMoveRoute
@@ -5124,6 +5151,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1CoachInviteCodeRotateRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/v1/coach/founding/restore': {
+      id: '/api/v1/coach/founding/restore'
+      path: '/api/v1/coach/founding/restore'
+      fullPath: '/api/v1/coach/founding/restore'
+      preLoaderRoute: typeof ApiV1CoachFoundingRestoreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/coach/founding/claim': {
+      id: '/api/v1/coach/founding/claim'
+      path: '/api/v1/coach/founding/claim'
+      fullPath: '/api/v1/coach/founding/claim'
+      preLoaderRoute: typeof ApiV1CoachFoundingClaimRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/v1/auth/username/resolve': {
       id: '/api/v1/auth/username/resolve'
       path: '/api/v1/auth/username/resolve'
@@ -5867,6 +5908,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiV1AuthSignupParentRoute: ApiV1AuthSignupParentRoute,
   ApiV1AuthUsernameCheckRoute: ApiV1AuthUsernameCheckRoute,
   ApiV1AuthUsernameResolveRoute: ApiV1AuthUsernameResolveRoute,
+  ApiV1CoachFoundingClaimRoute: ApiV1CoachFoundingClaimRoute,
+  ApiV1CoachFoundingRestoreRoute: ApiV1CoachFoundingRestoreRoute,
   ApiV1CoachInviteCodeRotateRoute: ApiV1CoachInviteCodeRotateRoute,
   ApiV1CoachInvoicesPreviewRoute: ApiV1CoachInvoicesPreviewRoute,
   ApiV1CoachMovesForkFromPlanMoveRoute: ApiV1CoachMovesForkFromPlanMoveRoute,

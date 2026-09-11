@@ -175,6 +175,9 @@ import "../src/routes/api/v1/recaps/$id/dismiss";
 import "../src/routes/api/v1/recaps/coaches";
 import "../src/routes/api/v1/recaps/index";
 import "../src/routes/api/v1/athletes/$id/recaps";
+// I14 founding (Founding Coach tier claim and restore)
+import "../src/routes/api/v1/coach/founding/claim";
+import "../src/routes/api/v1/coach/founding/restore";
 
 const outPath = resolve(__dirname, "../docs/api/openapi.json");
 mkdirSync(dirname(outPath), { recursive: true });
