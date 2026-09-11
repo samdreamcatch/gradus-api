@@ -22,17 +22,32 @@ export interface SkaterMatch {
   sortAt: number;
 }
 
+/** Loose identity for an event: the schedule and the rink panel often label the
+ *  same event slightly differently ("Name / Free Skate" vs name + segment). */
+function eventKey(name: string, segment: string, rink: string): string {
+  const text = `${name} ${segment}`
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+    .split(" ")
+    .filter((w, i, a) => a.indexOf(w) === i)
+    .join(" ");
+  return `${rink.toLowerCase().trim()}|${text}`;
+}
+
 /** Every event on the day, plus the live events held in the rink panels. */
 export function allEvents(payload: BoardPayload): BoardEvent[] {
   const list = [...(payload.schedule ?? [])];
   for (const rink of payload.rinks) {
     const c = rink.current;
     if (!c) continue;
-    const known = list.find((e) => e.name === c.event && e.rink === rink.name);
+    const key = eventKey(c.event, c.segment, rink.name);
+    const known = list.find((e) => eventKey(e.name, e.segment, e.rink) === key);
     if (known) {
       if (known.results.length === 0) known.results = c.startOrder;
       continue;
     }
+
     list.push({
       file: `${rink.name}:${c.event}`,
       name: c.event,
