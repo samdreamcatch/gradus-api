@@ -43,6 +43,12 @@ export function SkaterWheel({
   /** Keyboard/button stepping, which does not spring back until reset. */
   const [step, setStep] = useState(0);
   const container = useRef<HTMLDivElement | null>(null);
+  /** Latest order/handler, read by the native pointer listeners without re-binding. */
+  const tap = useRef<{ order: BoardSkater[]; onOpen?: (s: BoardSkater) => void }>({
+    order: startOrder,
+    onOpen: onOpenScore,
+  });
+  tap.current = { order: startOrder, onOpen: onOpenScore };
   const drag = useRef<{ id: number; y: number; moved: number } | null>(null);
   const frame = useRef<number | null>(null);
   const offsetRef = useRef(0);
@@ -139,15 +145,26 @@ export function SkaterWheel({
       apply(dy / DRAG_STEP);
     };
 
-    const end = (e: PointerEvent) => {
+    const end = (e: PointerEvent, allowTap: boolean) => {
       const d = drag.current;
       if (!d || d.id !== e.pointerId) return;
+      // The container holds pointer capture, so pointer events retarget to it and
+      // the card is never the event target. Resolve the card by hit-testing.
+      if (allowTap && d.moved < SLOP) {
+        const hit = document.elementFromPoint(e.clientX, e.clientY);
+        const card = hit?.closest?.("[data-skater-index]");
+        const index = card ? Number(card.getAttribute("data-skater-index")) : NaN;
+        const skater = Number.isInteger(index) ? tap.current.order[index] : undefined;
+        if (skater) tap.current.onOpen?.(skater);
+      }
       // Keep `moved` readable for one tick so a drag doesn't fire the card's click.
       window.setTimeout(() => {
         drag.current = null;
       }, 0);
       settle();
     };
+    const up = (e: PointerEvent) => end(e, true);
+    const cancel = (e: PointerEvent) => end(e, false);
 
     const block = (e: TouchEvent) => {
       if ((drag.current?.moved ?? 0) >= SLOP && e.cancelable) e.preventDefault();
@@ -155,14 +172,14 @@ export function SkaterWheel({
 
     el.addEventListener("pointerdown", down);
     el.addEventListener("pointermove", move, { passive: false });
-    el.addEventListener("pointerup", end);
-    el.addEventListener("pointercancel", end);
+    el.addEventListener("pointerup", up);
+    el.addEventListener("pointercancel", cancel);
     el.addEventListener("touchmove", block, { passive: false });
     return () => {
       el.removeEventListener("pointerdown", down);
       el.removeEventListener("pointermove", move);
-      el.removeEventListener("pointerup", end);
-      el.removeEventListener("pointercancel", end);
+      el.removeEventListener("pointerup", up);
+      el.removeEventListener("pointercancel", cancel);
       el.removeEventListener("touchmove", block);
     };
   }, [apply, settle]);
@@ -207,11 +224,9 @@ export function SkaterWheel({
                 }}
               >
                 <div
+                  data-skater-index={index}
                   role={tappable ? "button" : undefined}
                   tabIndex={tappable ? 0 : undefined}
-                  onClick={() => {
-                    if (tappable && (drag.current?.moved ?? 0) < SLOP) onOpenScore!(skater);
-                  }}
                   onKeyDown={(e) => {
                     if (tappable && (e.key === "Enter" || e.key === " ")) {
                       e.preventDefault();
