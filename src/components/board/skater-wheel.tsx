@@ -223,11 +223,9 @@ export function SkaterWheel({
                 }}
               >
                 <div
+                  data-skater-index={index}
                   role={tappable ? "button" : undefined}
                   tabIndex={tappable ? 0 : undefined}
-                  onClick={() => {
-                    if (tappable && (drag.current?.moved ?? 0) < SLOP) onOpenScore!(skater);
-                  }}
                   onKeyDown={(e) => {
                     if (tappable && (e.key === "Enter" || e.key === " ")) {
                       e.preventDefault();
