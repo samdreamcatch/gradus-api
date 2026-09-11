@@ -221,7 +221,7 @@ export function MySkaters({
 
               <div className="mt-1 space-y-1">
                 {g.rows.map((m) => {
-                  const tappable = !!m.skater.protocol;
+                  const tappable = true;
                   const isNext = m.key === nextKey;
                   const Wrapper = tappable ? "button" : "div";
                   return (
