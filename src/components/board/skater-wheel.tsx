@@ -104,25 +104,19 @@ export function SkaterWheel({
   const settle = useCallback(() => {
     const from = offsetRef.current;
     if (from === 0) return;
-    if (prefersReducedMotion()) {
+    const { centre, last: end } = boundsRef.current;
+    // Settle onto a whole card — the detent — and stay there. Where the reader
+    // let go is where the wheel rests; "back to now" is theirs to press.
+    const snapped = Math.max(centre - end, Math.min(centre, Math.round(from)));
+    const commit = () => {
       offsetRef.current = 0;
       setOffset(0);
-      return;
-    }
-    const { centre, last: end } = boundsRef.current;
-    // Snap to a whole card first — the detent — then return to the live skater.
-    const snapped = Math.max(centre - end, Math.min(centre, Math.round(from)));
-    const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
-    const back = () => {
-      const held = offsetRef.current;
-      if (held === 0) return;
-      window.setTimeout(() => {
-        animate(held, 0, 320, (t) => 1 - Math.pow(1 - t, 3) * Math.cos(t * Math.PI * 0.5));
-      }, 110);
+      setStep((s) => s + snapped);
     };
-    if (Math.abs(snapped - from) < 0.01) back();
-    else animate(from, snapped, 180, easeOut, back);
+    if (prefersReducedMotion() || Math.abs(snapped - from) < 0.01) commit();
+    else animate(from, snapped, 180, (t) => 1 - Math.pow(1 - t, 3), commit);
   }, [animate]);
+
 
   // Native, non-passive listeners: React's synthetic handlers can't reliably
   // preventDefault the scroll on touch, which is what stopped the wheel turning.
