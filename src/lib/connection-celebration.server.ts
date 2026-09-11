@@ -331,7 +331,8 @@ export const ackCelebrationInput = z.object({
  * acks `{id} ∪ linkIds` — see `mergeAckLinkIds`.
  */
 export const ackCelebrationBodyInput = z.object({
-  linkIds: z.array(z.string().uuid()).optional(),
+  /** API only: capped — a group is at most a family's siblings. The web's input stays unbounded (parity). */
+  linkIds: z.array(z.string().uuid()).max(100).optional(),
 });
 
 /** `{id} ∪ linkIds`, de-duplicated, the path id first. */

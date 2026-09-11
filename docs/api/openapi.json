@@ -18640,7 +18640,8 @@
                     "items": {
                       "type": "string",
                       "format": "uuid"
-                    }
+                    },
+                    "maxItems": 100
                   }
                 }
               }

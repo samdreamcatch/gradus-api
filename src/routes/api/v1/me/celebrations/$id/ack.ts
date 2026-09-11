@@ -29,7 +29,9 @@ export const Route = createFileRoute("/api/v1/me/celebrations/$id/ack")({
       idempotent: true,
       summary:
         "Acknowledge a connection celebration ({id} = a coach_athletes link id; body linkIds = the rest of the group)",
-      input: ackCelebrationBodyInput,
+      // Optional: JSON bodies are declared non-required in the contract, so a
+      // generated client may send none — the path id alone is a complete ack.
+      input: ackCelebrationBodyInput.optional(),
       output: okSchema,
       handler: async ({ ctx, input, params }) => {
         const { admin, userId } = requireContext(ctx);
@@ -37,7 +39,7 @@ export const Route = createFileRoute("/api/v1/me/celebrations/$id/ack")({
         return acknowledgeConnection(
           admin,
           userId,
-          { linkIds: mergeAckLinkIds(id, input.linkIds) },
+          { linkIds: mergeAckLinkIds(id, input?.linkIds) },
           { apiContract: true },
         );
       },
