@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { ArrowRight, X } from "lucide-react";
 import { getBoard, getMySkaterNames } from "@/lib/board.functions";
 import { normalizeName } from "@/lib/board-types";
+import { supabase } from "@/integrations/supabase/client";
 import { findMySkaters, type SkaterMatch } from "@/components/board/my-skaters";
 import {
   dismissBanner,
