@@ -50,10 +50,21 @@ export function SkaterWheel({
   const last = startOrder.length - 1;
   boundsRef.current = { centre: activeIndex - step, last };
 
-  // Reset stepping whenever the underlying event or live skater moves on.
+  // A new event resets the wheel; a new live skater does not yank the viewer
+  // back — their position is kept on the same skater they were reading.
+  const prevActive = useRef(activeIndex);
   useEffect(() => {
     setStep(0);
-  }, [activeIndex, startOrder.length]);
+    prevActive.current = activeIndex;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [startOrder.length]);
+
+  useEffect(() => {
+    const delta = activeIndex - prevActive.current;
+    prevActive.current = activeIndex;
+    if (delta !== 0) setStep((s) => (s === 0 ? 0 : s + delta));
+  }, [activeIndex]);
+
 
   useEffect(
     () => () => {
