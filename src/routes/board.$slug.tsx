@@ -10,11 +10,16 @@ import { Tag } from "@/components/ui/tag";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Logo } from "@/components/logo";
 import { RinkPanel } from "@/components/board/rink-panel";
-import { MySkaters, findMySkaters, type SkaterMatch } from "@/components/board/my-skaters";
+import {
+  MySkaters,
+  findMySkaters,
+  allEvents,
+  type SkaterMatch,
+} from "@/components/board/my-skaters";
 import { ScheduleBoard } from "@/components/board/schedule-board";
 import { FollowSearch } from "@/components/board/follow-search";
 import { BoardAccountSheet } from "@/components/board/board-account-sheet";
-import { ScoreSheet } from "@/components/board/score-sheet";
+import { ScoreSheet, type ScoreEntry } from "@/components/board/score-sheet";
 import { EventResults } from "@/components/board/event-results";
 import { BoardBottomNav } from "@/components/board/board-bottom-nav";
 import { SegmentedToggle } from "@/components/plans/segmented-toggle";
@@ -88,7 +93,12 @@ function BoardPage() {
   const [signedIn, setSignedIn] = useState(false);
   const [rinkName, setRinkName] = useState<string | null>(null);
   const [tab, setTab] = useState<BoardTab | null>(null);
-  const [score, setScore] = useState<{ skater: BoardSkater; eventLabel: string } | null>(null);
+  const [score, setScore] = useState<{
+    skater: BoardSkater;
+    eventLabel: string;
+    entries?: ScoreEntry[];
+  } | null>(null);
+
   const [resultsEvent, setResultsEvent] = useState<BoardEvent | null>(null);
   /** Names the viewer has muted for this competition. Absent = following. */
   const [unfollowed, setUnfollowed] = useState<string[]>([]);
@@ -151,6 +161,26 @@ function BoardPage() {
     return sig;
   }, [matches]);
   const changed = useChangedKeys(signature);
+
+  /** Open every skate this athlete has on the day, scored or still pending. */
+  const openByName = useCallback(
+    (skater: BoardSkater) => {
+      const key = normalizeName(skater.name);
+      const entries: ScoreEntry[] = payload
+        ? allEvents(payload).flatMap((e) =>
+            e.results
+              .filter((r) => normalizeName(r.name) === key)
+              .map((r) => ({
+                skater: r,
+                eventLabel: [e.name, e.segment].filter(Boolean).join(" \u00b7 "),
+                pendingLabel: e.timeLabel,
+              })),
+          )
+        : [];
+      setScore({ skater, eventLabel: entries[0]?.eventLabel ?? "", entries });
+    },
+    [payload],
+  );
 
   const isFollowed = useCallback(
     (m: SkaterMatch) => !unfollowed.includes(normalizeName(m.skater.name)),
@@ -224,7 +254,6 @@ function BoardPage() {
 
   // Land where the viewer has something to look at: their own skaters if any.
   const activeTab: BoardTab = tab ?? (matches.length > 0 ? "mine" : "rinks");
-
 
   // A short spoken version of whatever just flipped on screen.
   const announcement = useMemo(() => {
@@ -318,13 +347,20 @@ function BoardPage() {
             followed={isFollowed}
             changed={changed}
             onToggleFollow={toggleFollow}
-            
             onOpenScore={(m) =>
               setScore({
                 skater: m.skater,
                 eventLabel: [m.event.name, m.event.segment].filter(Boolean).join(" · "),
+                entries: [
+                  {
+                    skater: m.skater,
+                    eventLabel: [m.event.name, m.event.segment].filter(Boolean).join(" · "),
+                    pendingLabel: m.event.timeLabel,
+                  },
+                ],
               })
             }
+            onOpenName={(rows) => openByName(rows[0].skater)}
           />
 
           <FollowSearch
@@ -340,8 +376,8 @@ function BoardPage() {
                 Sign in and your skaters show up here
               </p>
               <p className="text-sm text-text-secondary">
-                Your connected athletes appear automatically, and you&apos;ll get live updates
-                while you use the app.
+                Your connected athletes appear automatically, and you&apos;ll get live updates while
+                you use the app.
               </p>
               <div className="flex justify-center pt-1">
                 <BoardAccountSheet redirect={`/board/${slug}`} label="Sign in or sign up" />
@@ -394,7 +430,6 @@ function BoardPage() {
                           <span className="sr-only">idle</span>
                         </>
                       )}
-
                     </button>
                   );
                 })}
@@ -404,6 +439,7 @@ function BoardPage() {
             {selected ? (
               <RinkPanel
                 rink={selected}
+                onOpenScore={openByName}
                 className={rinks.length > 1 ? "rounded-t-none" : undefined}
               />
             ) : (
@@ -414,8 +450,6 @@ function BoardPage() {
               </Card>
             )}
           </div>
-
-
 
           <details className="font-mono text-nano text-text-tertiary">
             <summary className="press-soft cursor-pointer uppercase tracking-wider">
@@ -458,6 +492,7 @@ function BoardPage() {
       <ScoreSheet
         skater={score?.skater ?? null}
         eventLabel={score?.eventLabel ?? ""}
+        entries={score?.entries}
         onOpenChange={(open) => {
           if (!open) setScore(null);
         }}
