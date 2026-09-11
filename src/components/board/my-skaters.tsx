@@ -10,7 +10,6 @@ import {
   type BoardSkater,
 } from "@/lib/board-types";
 
-
 export interface SkaterMatch {
   key: string;
   skater: BoardSkater;
@@ -46,7 +45,6 @@ export function allEvents(payload: BoardPayload): BoardEvent[] {
       dayLabel: "",
       dayKey: c.startIso ? c.startIso.slice(0, 10) : "",
       results: c.startOrder,
-
     });
   }
   return list;
@@ -108,7 +106,6 @@ function metaParts(m: SkaterMatch): string[] {
   ].filter(Boolean);
 }
 
-
 function ordinal(n: number | string): string {
   const v = typeof n === "number" ? n : parseInt(String(n), 10);
   if (!Number.isFinite(v)) return String(n);
@@ -117,7 +114,6 @@ function ordinal(n: number | string): string {
   const suffix = { 1: "st", 2: "nd", 3: "rd" }[v % 10] ?? "th";
   return `${v}${suffix}`;
 }
-
 
 /**
  * The viewer's own athletes, first thing on the board — a coach sees the whole
@@ -139,7 +135,6 @@ export function MySkaters({
   onOpenScore: (m: SkaterMatch) => void;
   /** Tapping the athlete's name opens every event they're entered in. */
   onOpenName?: (rows: SkaterMatch[]) => void;
-
 }) {
   if (matches.length === 0) return null;
 
@@ -158,7 +153,8 @@ export function MySkaters({
     m.event.startIso ? new Date(m.event.startIso).getTime() : Number.MAX_SAFE_INTEGER;
 
   // Within a skater, rows read as a clock: earliest event first.
-  for (const g of groups) g.rows.sort((a, b) => startOf(a) - startOf(b) || a.skater.start - b.skater.start);
+  for (const g of groups)
+    g.rows.sort((a, b) => startOf(a) - startOf(b) || a.skater.start - b.skater.start);
   /** [bucket, time] — bucket 0 live, 1 upcoming, 2 done. */
   const rankOf = (rows: SkaterMatch[]): [number, number] => {
     if (rows.some((r) => r.state === "on-ice")) return [0, 0];
@@ -176,8 +172,6 @@ export function MySkaters({
   /** The one row per skater that carries the accent. */
   const accentKey = (rows: SkaterMatch[]): string | null =>
     (rows.find((r) => r.state === "on-ice") ?? rows.find((r) => r.state !== "scored"))?.key ?? null;
-
-
 
   return (
     <Card variant="section" className="space-y-3">
@@ -250,15 +244,12 @@ export function MySkaters({
                         </span>
                         <Tag size="nano" tone={isNext ? "accent" : "default"}>
                           {stateTag(m)}
-
                         </Tag>
-
                       </div>
                       <p className="font-mono text-nano text-text-tertiary tabular-nums">
                         {metaParts(m).join(" · ")} ›
                       </p>
                     </button>
-
                   );
                 })}
               </div>

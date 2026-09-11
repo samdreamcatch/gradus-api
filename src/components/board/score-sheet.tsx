@@ -146,11 +146,7 @@ export function ScoreSheet({
   onOpenChange: (open: boolean) => void;
 }) {
   const list: ScoreEntry[] =
-    entries && entries.length > 0
-      ? entries
-      : skater
-        ? [{ skater, eventLabel }]
-        : [];
+    entries && entries.length > 0 ? entries : skater ? [{ skater, eventLabel }] : [];
   const multiple = list.length > 1;
 
   return (

@@ -66,7 +66,6 @@ export function SkaterWheel({
     if (delta !== 0) setStep((s) => (s === 0 ? 0 : s + delta));
   }, [activeIndex]);
 
-
   useEffect(
     () => () => {
       if (frame.current !== null) cancelAnimationFrame(frame.current);
@@ -117,7 +116,6 @@ export function SkaterWheel({
     if (prefersReducedMotion() || Math.abs(snapped - from) < 0.01) commit();
     else animate(from, snapped, 180, (t) => 1 - Math.pow(1 - t, 3), commit);
   }, [animate]);
-
 
   // Native, non-passive listeners: React's synthetic handlers can't reliably
   // preventDefault the scroll on touch, which is what stopped the wheel turning.
@@ -278,7 +276,6 @@ export function SkaterWheel({
           </Button>
         </div>
       ) : null}
-
     </div>
   );
 }

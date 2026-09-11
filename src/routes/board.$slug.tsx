@@ -255,7 +255,6 @@ function BoardPage() {
   // Land where the viewer has something to look at: their own skaters if any.
   const activeTab: BoardTab = tab ?? (matches.length > 0 ? "mine" : "rinks");
 
-
   // A short spoken version of whatever just flipped on screen.
   const announcement = useMemo(() => {
     const moved = matches.filter((m) => changed.has(m.key));
@@ -348,7 +347,6 @@ function BoardPage() {
             followed={isFollowed}
             changed={changed}
             onToggleFollow={toggleFollow}
-            
             onOpenScore={(m) =>
               setScore({
                 skater: m.skater,
@@ -378,8 +376,8 @@ function BoardPage() {
                 Sign in and your skaters show up here
               </p>
               <p className="text-sm text-text-secondary">
-                Your connected athletes appear automatically, and you&apos;ll get live updates
-                while you use the app.
+                Your connected athletes appear automatically, and you&apos;ll get live updates while
+                you use the app.
               </p>
               <div className="flex justify-center pt-1">
                 <BoardAccountSheet redirect={`/board/${slug}`} label="Sign in or sign up" />
@@ -432,7 +430,6 @@ function BoardPage() {
                           <span className="sr-only">idle</span>
                         </>
                       )}
-
                     </button>
                   );
                 })}
@@ -453,8 +450,6 @@ function BoardPage() {
               </Card>
             )}
           </div>
-
-
 
           <details className="font-mono text-nano text-text-tertiary">
             <summary className="press-soft cursor-pointer uppercase tracking-wider">
