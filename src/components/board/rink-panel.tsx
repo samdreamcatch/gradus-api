@@ -41,7 +41,7 @@ function Lane({
   onOpenScore?: (s: BoardSkater) => void;
 }) {
   const style = LANE_STYLE[tone];
-  const tappable = !!skater?.protocol && !!onOpenScore;
+  const tappable = !!skater && !!onOpenScore;
   const Wrapper = tappable ? "button" : "div";
 
   return (
