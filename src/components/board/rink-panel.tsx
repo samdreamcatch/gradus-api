@@ -64,7 +64,12 @@ function Lane({
       </Eyebrow>
 
       {skater ? (
-        <SkaterBody skater={skater} tone={tone} awaiting={awaiting} showDetailHint={tappable} />
+        <SkaterBody
+          skater={skater}
+          tone={tone}
+          awaiting={awaiting}
+          showDetailHint={tappable && !!skater.protocol}
+        />
       ) : (
         <p className="mt-2 text-sm text-text-tertiary">—</p>
       )}
