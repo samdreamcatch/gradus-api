@@ -61,6 +61,15 @@ export function FollowingBanner() {
   const [extras, setExtras] = useState<string[]>([]);
   const [unfollowed, setUnfollowed] = useState<string[]>([]);
   const [dismissed, setDismissed] = useState(false);
+  const [signedIn, setSignedIn] = useState(false);
+
+  useEffect(() => {
+    void supabase.auth.getSession().then(({ data }) => setSignedIn(!!data.session));
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) =>
+      setSignedIn(!!session),
+    );
+    return () => sub.subscription.unsubscribe();
+  }, []);
 
   useEffect(() => {
     setFromBoard(!!readBoardReturn());
