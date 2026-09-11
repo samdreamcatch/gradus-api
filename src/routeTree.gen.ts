@@ -217,6 +217,8 @@ import { Route as ApiV1InvitesAdultAthleteClaimRouteImport } from './routes/api/
 import { Route as ApiV1CompetitionsIdSkaterMatchesRouteImport } from './routes/api/v1/competitions/$id/skater-matches'
 import { Route as ApiV1CompetitionsIdAttendanceRouteImport } from './routes/api/v1/competitions/$id/attendance'
 import { Route as ApiV1CoachWrapUpsPendingRouteImport } from './routes/api/v1/coach/wrap-ups/pending'
+import { Route as ApiV1CoachScheduleImportParseRouteImport } from './routes/api/v1/coach/schedule-import/parse'
+import { Route as ApiV1CoachScheduleImportCommitRouteImport } from './routes/api/v1/coach/schedule-import/commit'
 import { Route as ApiV1CoachRosterPracticeSummariesRouteImport } from './routes/api/v1/coach/roster/practice-summaries'
 import { Route as ApiV1CoachResourcesUploadUrlRouteImport } from './routes/api/v1/coach/resources/upload-url'
 import { Route as ApiV1CoachResourcesIdRouteImport } from './routes/api/v1/coach/resources/$id'
@@ -1408,6 +1410,18 @@ const ApiV1CoachWrapUpsPendingRoute =
     path: '/api/v1/coach/wrap-ups/pending',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiV1CoachScheduleImportParseRoute =
+  ApiV1CoachScheduleImportParseRouteImport.update({
+    id: '/api/v1/coach/schedule-import/parse',
+    path: '/api/v1/coach/schedule-import/parse',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1CoachScheduleImportCommitRoute =
+  ApiV1CoachScheduleImportCommitRouteImport.update({
+    id: '/api/v1/coach/schedule-import/commit',
+    path: '/api/v1/coach/schedule-import/commit',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiV1CoachRosterPracticeSummariesRoute =
   ApiV1CoachRosterPracticeSummariesRouteImport.update({
     id: '/api/v1/coach/roster/practice-summaries',
@@ -1961,6 +1975,8 @@ export interface FileRoutesByFullPath {
   '/api/v1/coach/resources/$id': typeof ApiV1CoachResourcesIdRoute
   '/api/v1/coach/resources/upload-url': typeof ApiV1CoachResourcesUploadUrlRoute
   '/api/v1/coach/roster/practice-summaries': typeof ApiV1CoachRosterPracticeSummariesRoute
+  '/api/v1/coach/schedule-import/commit': typeof ApiV1CoachScheduleImportCommitRoute
+  '/api/v1/coach/schedule-import/parse': typeof ApiV1CoachScheduleImportParseRoute
   '/api/v1/coach/wrap-ups/pending': typeof ApiV1CoachWrapUpsPendingRoute
   '/api/v1/competitions/$id/attendance': typeof ApiV1CompetitionsIdAttendanceRoute
   '/api/v1/competitions/$id/skater-matches': typeof ApiV1CompetitionsIdSkaterMatchesRoute
@@ -2227,6 +2243,8 @@ export interface FileRoutesByTo {
   '/api/v1/coach/resources/$id': typeof ApiV1CoachResourcesIdRoute
   '/api/v1/coach/resources/upload-url': typeof ApiV1CoachResourcesUploadUrlRoute
   '/api/v1/coach/roster/practice-summaries': typeof ApiV1CoachRosterPracticeSummariesRoute
+  '/api/v1/coach/schedule-import/commit': typeof ApiV1CoachScheduleImportCommitRoute
+  '/api/v1/coach/schedule-import/parse': typeof ApiV1CoachScheduleImportParseRoute
   '/api/v1/coach/wrap-ups/pending': typeof ApiV1CoachWrapUpsPendingRoute
   '/api/v1/competitions/$id/attendance': typeof ApiV1CompetitionsIdAttendanceRoute
   '/api/v1/competitions/$id/skater-matches': typeof ApiV1CompetitionsIdSkaterMatchesRoute
@@ -2501,6 +2519,8 @@ export interface FileRoutesById {
   '/api/v1/coach/resources/$id': typeof ApiV1CoachResourcesIdRoute
   '/api/v1/coach/resources/upload-url': typeof ApiV1CoachResourcesUploadUrlRoute
   '/api/v1/coach/roster/practice-summaries': typeof ApiV1CoachRosterPracticeSummariesRoute
+  '/api/v1/coach/schedule-import/commit': typeof ApiV1CoachScheduleImportCommitRoute
+  '/api/v1/coach/schedule-import/parse': typeof ApiV1CoachScheduleImportParseRoute
   '/api/v1/coach/wrap-ups/pending': typeof ApiV1CoachWrapUpsPendingRoute
   '/api/v1/competitions/$id/attendance': typeof ApiV1CompetitionsIdAttendanceRoute
   '/api/v1/competitions/$id/skater-matches': typeof ApiV1CompetitionsIdSkaterMatchesRoute
@@ -2775,6 +2795,8 @@ export interface FileRouteTypes {
     | '/api/v1/coach/resources/$id'
     | '/api/v1/coach/resources/upload-url'
     | '/api/v1/coach/roster/practice-summaries'
+    | '/api/v1/coach/schedule-import/commit'
+    | '/api/v1/coach/schedule-import/parse'
     | '/api/v1/coach/wrap-ups/pending'
     | '/api/v1/competitions/$id/attendance'
     | '/api/v1/competitions/$id/skater-matches'
@@ -3041,6 +3063,8 @@ export interface FileRouteTypes {
     | '/api/v1/coach/resources/$id'
     | '/api/v1/coach/resources/upload-url'
     | '/api/v1/coach/roster/practice-summaries'
+    | '/api/v1/coach/schedule-import/commit'
+    | '/api/v1/coach/schedule-import/parse'
     | '/api/v1/coach/wrap-ups/pending'
     | '/api/v1/competitions/$id/attendance'
     | '/api/v1/competitions/$id/skater-matches'
@@ -3314,6 +3338,8 @@ export interface FileRouteTypes {
     | '/api/v1/coach/resources/$id'
     | '/api/v1/coach/resources/upload-url'
     | '/api/v1/coach/roster/practice-summaries'
+    | '/api/v1/coach/schedule-import/commit'
+    | '/api/v1/coach/schedule-import/parse'
     | '/api/v1/coach/wrap-ups/pending'
     | '/api/v1/competitions/$id/attendance'
     | '/api/v1/competitions/$id/skater-matches'
@@ -3512,6 +3538,8 @@ export interface RootRouteChildren {
   ApiV1CoachResourcesIdRoute: typeof ApiV1CoachResourcesIdRoute
   ApiV1CoachResourcesUploadUrlRoute: typeof ApiV1CoachResourcesUploadUrlRoute
   ApiV1CoachRosterPracticeSummariesRoute: typeof ApiV1CoachRosterPracticeSummariesRoute
+  ApiV1CoachScheduleImportCommitRoute: typeof ApiV1CoachScheduleImportCommitRoute
+  ApiV1CoachScheduleImportParseRoute: typeof ApiV1CoachScheduleImportParseRoute
   ApiV1CoachWrapUpsPendingRoute: typeof ApiV1CoachWrapUpsPendingRoute
   ApiV1CompetitionsIdAttendanceRoute: typeof ApiV1CompetitionsIdAttendanceRoute
   ApiV1CompetitionsIdSkaterMatchesRoute: typeof ApiV1CompetitionsIdSkaterMatchesRoute
@@ -5061,6 +5089,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1CoachWrapUpsPendingRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/v1/coach/schedule-import/parse': {
+      id: '/api/v1/coach/schedule-import/parse'
+      path: '/api/v1/coach/schedule-import/parse'
+      fullPath: '/api/v1/coach/schedule-import/parse'
+      preLoaderRoute: typeof ApiV1CoachScheduleImportParseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/coach/schedule-import/commit': {
+      id: '/api/v1/coach/schedule-import/commit'
+      path: '/api/v1/coach/schedule-import/commit'
+      fullPath: '/api/v1/coach/schedule-import/commit'
+      preLoaderRoute: typeof ApiV1CoachScheduleImportCommitRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/v1/coach/roster/practice-summaries': {
       id: '/api/v1/coach/roster/practice-summaries'
       path: '/api/v1/coach/roster/practice-summaries'
@@ -5877,6 +5919,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiV1CoachResourcesUploadUrlRoute: ApiV1CoachResourcesUploadUrlRoute,
   ApiV1CoachRosterPracticeSummariesRoute:
     ApiV1CoachRosterPracticeSummariesRoute,
+  ApiV1CoachScheduleImportCommitRoute: ApiV1CoachScheduleImportCommitRoute,
+  ApiV1CoachScheduleImportParseRoute: ApiV1CoachScheduleImportParseRoute,
   ApiV1CoachWrapUpsPendingRoute: ApiV1CoachWrapUpsPendingRoute,
   ApiV1CompetitionsIdAttendanceRoute: ApiV1CompetitionsIdAttendanceRoute,
   ApiV1CompetitionsIdSkaterMatchesRoute: ApiV1CompetitionsIdSkaterMatchesRoute,
