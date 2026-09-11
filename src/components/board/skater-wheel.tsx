@@ -145,15 +145,25 @@ export function SkaterWheel({
       apply(dy / DRAG_STEP);
     };
 
-    const end = (e: PointerEvent) => {
+    const end = (e: PointerEvent, allowTap: boolean) => {
       const d = drag.current;
       if (!d || d.id !== e.pointerId) return;
+      // The container holds pointer capture, so the browser retargets the click
+      // to it and per-card onClick never fires on touch. Resolve the tap here.
+      if (allowTap && d.moved < SLOP) {
+        const card = (e.target as Element | null)?.closest?.("[data-skater-index]");
+        const index = card ? Number(card.getAttribute("data-skater-index")) : NaN;
+        const skater = Number.isInteger(index) ? tap.current.order[index] : undefined;
+        if (skater) tap.current.onOpen?.(skater);
+      }
       // Keep `moved` readable for one tick so a drag doesn't fire the card's click.
       window.setTimeout(() => {
         drag.current = null;
       }, 0);
       settle();
     };
+    const up = (e: PointerEvent) => end(e, true);
+    const cancel = (e: PointerEvent) => end(e, false);
 
     const block = (e: TouchEvent) => {
       if ((drag.current?.moved ?? 0) >= SLOP && e.cancelable) e.preventDefault();
