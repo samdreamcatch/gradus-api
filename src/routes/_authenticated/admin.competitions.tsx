@@ -200,8 +200,13 @@ function AdminCompetitions() {
                   onClick={() => copyBoardLink(c.slug)}
                 >
                   Copy link
-
                 </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  asChild
+                  render={undefined as never}
+                ></Button>
                 <Button
                   type="button"
                   size="sm"
