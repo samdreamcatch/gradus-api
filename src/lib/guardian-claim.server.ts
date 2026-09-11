@@ -25,7 +25,6 @@ import { z } from "zod";
 import type { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { ApiError } from "./api/errors";
 import { dbError } from "./db-error";
-import { throttleLookup } from "./invites.server";
 import { ageInYears } from "./pending-athlete-dob";
 
 type Admin = typeof supabaseAdmin;
@@ -36,10 +35,13 @@ type Admin = typeof supabaseAdmin;
  */
 export type GuardianClaimOptions = {
   /**
-   * `claimAthleteSelf`: refuse a token whose invite was addressed to a
-   * parent or guardian (D4). `getMyGuardianStatus`: compute `isMinor` with
-   * the calendar `ageInYears` and treat a missing or unparseable birthdate
-   * as a minor (D8).
+   * `claimGuardianAthlete`: refuse a caller whose own athlete row is a
+   * minor (a child account can't become anyone's parent). `claimAthleteSelf`:
+   * refuse a token whose invite was addressed to a parent or guardian (D4),
+   * apply the calendar age rule the database trigger uses, and map the
+   * trigger's refusal to the same 422. `getMyGuardianStatus`: compute
+   * `isMinor` with the calendar `ageInYears` and treat a missing or
+   * unparseable birthdate as a minor (D8).
    */
   apiContract?: boolean;
 };
@@ -71,14 +73,8 @@ const birthdateInput = (message: string) =>
     .regex(/^\d{4}-\d{2}-\d{2}$/, message);
 
 const INVALID_LINK = "This link is no longer valid. Ask the coach to resend it.";
-
-/**
- * Per-IP throttle key for the public summary lookup (same
- * `record_invite_lookup_attempt` window `resolveInviteCode` uses). A
- * constant — the token itself must never be part of a rate-limit key.
- */
-const SUMMARY_LOOKUP_KEY = "guardian-claim-summary";
-const SUMMARY_MAX_PER_WINDOW = 30;
+const UNDER_18_SELF =
+  "You're under 18 — ask a parent or guardian to open this link and set the account up.";
 
 /* ------------------------------------------------------------------ DTOs */
 
@@ -145,6 +141,16 @@ export const resendGuardianInviteInput = z.object({
   guardianEmail: guardianEmailSchema.optional(),
 });
 
+/**
+ * `POST /guardian/invites/{id}/resend` body: the athlete comes from the
+ * path, and every field is optional, so a request with no body at all
+ * (what a generated client sends for "re-send to the address on file")
+ * parses as `{}` instead of failing validation.
+ */
+export const resendGuardianInviteBodyInput = resendGuardianInviteInput
+  .omit({ athleteId: true })
+  .default({});
+
 export const getGuardianClaimMergeOptionsInput = z.object({ token: tokenSchema });
 
 export const mergeGuardianClaimInput = z.object({
@@ -184,19 +190,15 @@ async function isCoachAccount(admin: Admin, userId: string): Promise<boolean> {
 /**
  * `POST /guardian/claim/summary` (public). Returns only what the claim page
  * shows — enough to recognize the athlete, never enough to enumerate
- * accounts. `ipKey` (the API passes `lookupIpKey(request)`) adds the same
- * per-IP lookup throttle the invite resolver uses; the web wrapper passes
- * none and keeps its un-throttled behavior.
+ * accounts. Abuse control is the API route's own per-IP limiter (which
+ * fails closed); this function deliberately does not consume the shared
+ * `record_invite_lookup_attempt` window, so summary opens never lock out
+ * invite-code entry from the same network.
  */
 export async function getGuardianClaimSummary(
   admin: Admin,
   input: z.infer<typeof getGuardianClaimSummaryInput>,
-  opts: { ipKey?: string } = {},
 ): Promise<GuardianClaimSummaryDTO> {
-  if (opts.ipKey) {
-    await throttleLookup(admin, opts.ipKey, SUMMARY_LOOKUP_KEY, SUMMARY_MAX_PER_WINDOW);
-  }
-
   const res = await admin
     .from("athletes")
     .select(
@@ -232,15 +234,25 @@ export async function getGuardianClaimSummary(
  * in the same update that sets `parent_id`, which the CHECK constraint
  * `athletes_self_managed_shape` requires — before, that claim failed with the
  * generic "Something went wrong".
+ *
+ * The other half of that fix: the athlete behind the link can never be
+ * their own guardian. The only unclaimed row that carries a login is a
+ * minor who signed up with a guardian address they typed themselves, and
+ * before D3 their own claim happened to fail on that same CHECK constraint.
+ * It is now refused explicitly (on the web too), so a child can't turn
+ * their session into a parent session over their own row. In `apiContract`
+ * mode a caller whose own athlete row is a minor is refused for any token —
+ * a child account can't become a sibling's parent either.
  */
 export async function claimGuardianAthlete(
   admin: Admin,
   userId: string,
   input: z.infer<typeof claimGuardianAthleteInput>,
+  opts: GuardianClaimOptions = {},
 ): Promise<GuardianClaimResultDTO> {
   const athlete = await admin
     .from("athletes")
-    .select("id, first_name, birthdate, parent_id, guardian_claimed_at, self_managed")
+    .select("id, first_name, birthdate, parent_id, guardian_claimed_at, self_managed, user_id")
     .eq("guardian_claim_token", input.token)
     .maybeSingle();
   if (athlete.error) dbError(athlete.error);
@@ -255,6 +267,25 @@ export async function claimGuardianAthlete(
     throw wrongRole(
       "You're signed in as a coach. Sign out and use a personal email to claim this athlete.",
     );
+  }
+
+  // The athlete can't claim themselves as their own parent or guardian.
+  if (athlete.data.user_id != null && athlete.data.user_id === userId) {
+    throw forbidden("This link is for your parent or guardian — ask them to open it.");
+  }
+
+  if (opts.apiContract) {
+    const own = await admin
+      .from("athletes")
+      .select("birthdate")
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (own.error) dbError(own.error);
+    if (own.data && isMinorConservative(own.data.birthdate)) {
+      throw wrongRole(
+        "You're signed in as an athlete under 18. Ask a parent or guardian to open this link.",
+      );
+    }
   }
 
   const existing = await admin
@@ -648,7 +679,11 @@ export async function mergeGuardianClaim(
  * (parity).
  *
  * D4 (`apiContract`): a token whose invite was addressed to a parent or
- * guardian is refused; the web keeps today's behavior (no check).
+ * guardian is refused; the web keeps today's behavior (no check). The API
+ * also judges "under 18" by calendar age — the rule the
+ * `enforce_adult_self_managed` trigger applies — and maps that trigger's
+ * refusal (23514) to the same 422, so the two rules can't disagree into a
+ * 500 in the last hours before an 18th birthday.
  */
 export async function claimAthleteSelf(
   admin: Admin,
@@ -657,13 +692,11 @@ export async function claimAthleteSelf(
   opts: GuardianClaimOptions = {},
 ): Promise<GuardianClaimResultDTO> {
   const dob = new Date(`${input.birthdate}T00:00:00Z`);
-  const eighteen = new Date(Date.now() - 18 * 365.25 * 24 * 3600 * 1000);
   if (Number.isNaN(dob.getTime())) throw unprocessable("Enter your date of birth");
-  if (dob > eighteen) {
-    throw unprocessable(
-      "You're under 18 — ask a parent or guardian to open this link and set the account up.",
-    );
-  }
+  const underEighteen = opts.apiContract
+    ? isMinorConservative(input.birthdate)
+    : dob > new Date(Date.now() - 18 * 365.25 * 24 * 3600 * 1000);
+  if (underEighteen) throw unprocessable(UNDER_18_SELF);
 
   const athlete = await admin
     .from("athletes")
@@ -699,7 +732,15 @@ export async function claimAthleteSelf(
       guardian_claimed_at: new Date().toISOString(),
     })
     .eq("id", athlete.data.id);
-  if (upd.error) dbError(upd.error);
+  if (upd.error) {
+    // 23514 = check_violation: the age trigger refused a self-managed row
+    // whose birthday it counts as under 18 (same precedent as
+    // athlete-settings.server.ts). The web keeps dbError (parity).
+    if (opts.apiContract && (upd.error as { code?: string }).code === "23514") {
+      throw unprocessable(UNDER_18_SELF);
+    }
+    dbError(upd.error);
+  }
 
   return { ok: true, athleteFirstName: athlete.data.first_name };
 }

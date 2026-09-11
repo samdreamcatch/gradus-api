@@ -18973,6 +18973,7 @@
             "application/json": {
               "schema": {
                 "type": "object",
+                "default": {},
                 "properties": {
                   "guardianEmail": {
                     "type": "string",

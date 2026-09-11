@@ -1,4 +1,8 @@
 import { describe, expect, it, mock } from "bun:test";
+import { z } from "zod";
+import type { ApiContext } from "./api/auth";
+import { createApiRouteHandler } from "./api/define-route";
+import { ApiError } from "./api/errors";
 import {
   claimAthleteSelf,
   claimGuardianAthlete,
@@ -9,11 +13,12 @@ import {
   isMinorConservative,
   mergeGuardianClaim,
   resendGuardianInvite,
+  resendGuardianInviteBodyInput,
 } from "./guardian-claim.server";
 
 /* -------------------------------------------------------------------------- */
 /* Same small, stateful, in-memory Supabase-shaped fake as                    */
-/* competition-recap.server.test.ts, plus `rpc` for the lookup throttle.      */
+/* competition-recap.server.test.ts, plus `rpc` and an update-error injector.  */
 /* -------------------------------------------------------------------------- */
 
 type Row = Record<string, any>;
@@ -27,7 +32,15 @@ function nextId(): string {
 
 type RpcCall = { name: string; args: Record<string, unknown> };
 
-function fakeAdmin(seed: Record<string, Row[]>, opts: { rpcResult?: unknown } = {}) {
+/**
+ * `updateError` makes every `.update()` on that table fail with the given
+ * Postgres-shaped error without touching the rows — stands in for a trigger
+ * or CHECK refusal.
+ */
+function fakeAdmin(
+  seed: Record<string, Row[]>,
+  opts: { rpcResult?: unknown; updateError?: { table: string; error: Row } } = {},
+) {
   const tables: Record<string, Row[]> = {};
   for (const [k, v] of Object.entries(seed)) tables[k] = v.map((r) => ({ ...r }));
   const inserted: Record<string, Row[]> = {};
@@ -141,8 +154,15 @@ function fakeAdmin(seed: Record<string, Row[]>, opts: { rpcResult?: unknown } = 
       delete: () => builder(table, filters, "delete", null, onConflict, order, limitN),
       maybeSingle: async () => ({ data: execute()[0] ?? null, error: null }),
       single: async () => ({ data: execute()[0] ?? null, error: null }),
-      then: (resolve: (v: { data: Row[]; error: null }) => unknown, reject?: unknown) =>
-        Promise.resolve({ data: execute(), error: null }).then(resolve, reject as never),
+      then: (resolve: (v: { data: Row[]; error: Row | null }) => unknown, reject?: unknown) => {
+        if (mode === "update" && opts.updateError?.table === table) {
+          return Promise.resolve({ data: [], error: opts.updateError.error }).then(
+            resolve,
+            reject as never,
+          );
+        }
+        return Promise.resolve({ data: execute(), error: null }).then(resolve, reject as never);
+      },
     };
     return api;
   }
@@ -225,6 +245,12 @@ function yearsAgo(years: number): string {
   return d.toISOString().slice(0, 10);
 }
 
+function shiftDays(iso: string, days: number): string {
+  const d = new Date(`${iso}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
 /* ================================================================ summary */
 
 describe("getGuardianClaimSummary", () => {
@@ -278,22 +304,10 @@ describe("getGuardianClaimSummary", () => {
     });
   });
 
-  it("throttles per IP with a constant key — never the token — when an ipKey is given", async () => {
-    const ok = fakeAdmin({ athletes: [pendingAthlete()] });
-    await getGuardianClaimSummary(ok.admin, { token: TOKEN }, { ipKey: "1.2.3.4" });
-    expect(ok.rpcCalls).toHaveLength(1);
-    expect(ok.rpcCalls[0]!.name).toBe("record_invite_lookup_attempt");
-    expect(ok.rpcCalls[0]!.args._ip).toBe("1.2.3.4");
-    expect(JSON.stringify(ok.rpcCalls[0]!.args)).not.toContain(TOKEN);
-
-    const limited = fakeAdmin({ athletes: [pendingAthlete()] }, { rpcResult: -1 });
-    await expect(
-      getGuardianClaimSummary(limited.admin, { token: TOKEN }, { ipKey: "1.2.3.4" }),
-    ).rejects.toMatchObject({ code: "rate_limited", status: 429 });
-
-    const web = fakeAdmin({ athletes: [pendingAthlete()] });
-    await getGuardianClaimSummary(web.admin, { token: TOKEN });
-    expect(web.rpcCalls).toHaveLength(0);
+  it("never consumes the shared invite-lookup window — the route limiter alone throttles it", async () => {
+    const { admin, rpcCalls } = fakeAdmin({ athletes: [pendingAthlete()] });
+    await getGuardianClaimSummary(admin, { token: TOKEN });
+    expect(rpcCalls).toHaveLength(0);
   });
 });
 
@@ -418,6 +432,89 @@ describe("claimGuardianAthlete", () => {
     expect(out.ok).toBe(true);
     expect(tables.athletes![0]!.guardian_claim_token).toBeNull();
   });
+
+  it("refuses the athlete behind the link claiming themselves (web and API): 403, nothing written", async () => {
+    for (const opts of [undefined, { apiContract: true }]) {
+      const { admin, inserted, tables } = fakeAdmin({
+        athletes: [pendingAthlete({ self_managed: true, user_id: USER, added_by_coach_id: null })],
+      });
+      await expect(claimGuardianAthlete(admin, USER, { token: TOKEN }, opts)).rejects.toMatchObject(
+        {
+          code: "forbidden",
+          status: 403,
+          message: "This link is for your parent or guardian — ask them to open it.",
+        },
+      );
+      expect(inserted.parent_profiles).toBeUndefined();
+      expect(tables.athletes![0]).toMatchObject({
+        self_managed: true,
+        parent_id: null,
+        user_id: USER,
+        guardian_claim_token: TOKEN,
+        guardian_claimed_at: null,
+      });
+    }
+  });
+
+  it("API: a minor athlete account can't claim anyone else's link either (403 wrong_role)", async () => {
+    for (const birthdate of [yearsAgo(15), null]) {
+      const { admin, inserted, tables } = fakeAdmin({
+        athletes: [
+          pendingAthlete(),
+          {
+            id: MINE_ID,
+            user_id: USER,
+            first_name: "Kid",
+            last_name: "Lee",
+            birthdate,
+            self_managed: false,
+            parent_id: OTHER_PARENT.id,
+          },
+        ],
+      });
+      await expect(
+        claimGuardianAthlete(admin, USER, { token: TOKEN }, { apiContract: true }),
+      ).rejects.toMatchObject({
+        code: "wrong_role",
+        status: 403,
+        message:
+          "You're signed in as an athlete under 18. Ask a parent or guardian to open this link.",
+      });
+      expect(inserted.parent_profiles).toBeUndefined();
+      expect(tables.athletes![0]).toMatchObject({ parent_id: null, guardian_claim_token: TOKEN });
+    }
+  });
+
+  it("an adult athlete account may still claim as a parent; the web keeps parity for a minor account", async () => {
+    const adult = fakeAdmin({
+      athletes: [
+        pendingAthlete(),
+        { id: MINE_ID, user_id: USER, first_name: "Me", last_name: "Lee", birthdate: yearsAgo(30) },
+      ],
+    });
+    const out = await claimGuardianAthlete(
+      adult.admin,
+      USER,
+      { token: TOKEN },
+      { apiContract: true },
+    );
+    expect(out.ok).toBe(true);
+    expect(adult.tables.athletes![0]!.parent_id).toBe(adult.inserted.parent_profiles![0]!.id);
+
+    const web = fakeAdmin({
+      athletes: [
+        pendingAthlete(),
+        {
+          id: MINE_ID,
+          user_id: USER,
+          first_name: "Kid",
+          last_name: "Lee",
+          birthdate: yearsAgo(15),
+        },
+      ],
+    });
+    expect((await claimGuardianAthlete(web.admin, USER, { token: TOKEN })).ok).toBe(true);
+  });
 });
 
 /* ================================================================= resend */
@@ -526,6 +623,46 @@ describe("resendGuardianInvite", () => {
       status: 409,
       message: "This athlete's parent has already joined.",
     });
+  });
+
+  it("route body: no body at all means 're-send to the address on file' and parses as {}", () => {
+    expect(resendGuardianInviteBodyInput.parse(undefined)).toEqual({});
+    expect(resendGuardianInviteBodyInput.parse({})).toEqual({});
+    expect(resendGuardianInviteBodyInput.parse({ guardianEmail: " New@Example.com " })).toEqual({
+      guardianEmail: "new@example.com",
+    });
+    expect(() => resendGuardianInviteBodyInput.parse({ guardianEmail: "nope" })).toThrow();
+  });
+
+  it("route: POST with an empty body reaches the handler as {} and answers 200", async () => {
+    process.env.API_V1_ENABLED = "true";
+    const { admin } = fakeAdmin({});
+    const ctx = { userId: USER, supabase: {} as ApiContext["supabase"], admin } as ApiContext;
+    const received: unknown[] = [];
+    const { POST } = createApiRouteHandler(
+      {
+        method: "POST",
+        path: "/api/v1/guardian/invites/{id}/resend",
+        auth: "user",
+        input: resendGuardianInviteBodyInput,
+        output: z.object({ ok: z.literal(true), guardianEmail: z.string() }),
+        handler: async ({ input, params }) => {
+          received.push({ input, params });
+          return { ok: true as const, guardianEmail: "guardian@example.com" };
+        },
+      },
+      { admin: admin as ApiContext["admin"], authenticate: async () => ctx },
+    );
+    const res = await POST!({
+      request: new Request(`https://gradus.training/api/v1/guardian/invites/${ATHLETE_ID}/resend`, {
+        method: "POST",
+        headers: { authorization: "Bearer t" },
+      }),
+      params: { id: ATHLETE_ID },
+    });
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ ok: true, guardianEmail: "guardian@example.com" });
+    expect(received).toEqual([{ input: {}, params: { id: ATHLETE_ID } }]);
   });
 
   it("422s when no address is on file and none is supplied", async () => {
@@ -826,6 +963,76 @@ describe("claimAthleteSelf", () => {
       status: 422,
       message: "Enter your date of birth",
     });
+  });
+
+  it("API: 'under 18' is calendar age — the day before the 18th birthday is refused, the birthday itself passes", async () => {
+    const turnsEighteenTomorrow = shiftDays(yearsAgo(18), 1);
+    const minor = fakeAdmin({
+      athletes: [pendingAthlete({ invite_recipient: "athlete" })],
+    });
+    await expect(
+      claimAthleteSelf(
+        minor.admin,
+        USER,
+        { token: TOKEN, birthdate: turnsEighteenTomorrow },
+        { apiContract: true },
+      ),
+    ).rejects.toMatchObject({
+      code: "unprocessable",
+      status: 422,
+      message:
+        "You're under 18 — ask a parent or guardian to open this link and set the account up.",
+    });
+    expect(minor.tables.athletes![0]!.user_id).toBeNull();
+
+    const adult = fakeAdmin({ athletes: [pendingAthlete({ invite_recipient: "athlete" })] });
+    const out = await claimAthleteSelf(
+      adult.admin,
+      USER,
+      { token: TOKEN, birthdate: yearsAgo(18) },
+      { apiContract: true },
+    );
+    expect(out.ok).toBe(true);
+    expect(adult.tables.athletes![0]).toMatchObject({ user_id: USER, birthdate: yearsAgo(18) });
+  });
+
+  it("API: the age trigger's refusal (23514) is the same 422, not a 500; the web keeps dbError", async () => {
+    const updateError = {
+      table: "athletes",
+      error: {
+        code: "23514",
+        message: "Athletes under 18 need a parent or guardian email on file",
+      },
+    };
+    const api = fakeAdmin(
+      { athletes: [pendingAthlete({ invite_recipient: "athlete" })] },
+      { updateError },
+    );
+    await expect(
+      claimAthleteSelf(
+        api.admin,
+        USER,
+        { token: TOKEN, birthdate: ADULT_DOB },
+        { apiContract: true },
+      ),
+    ).rejects.toMatchObject({
+      code: "unprocessable",
+      status: 422,
+      message:
+        "You're under 18 — ask a parent or guardian to open this link and set the account up.",
+    });
+
+    const web = fakeAdmin(
+      { athletes: [pendingAthlete({ invite_recipient: "athlete" })] },
+      { updateError },
+    );
+    const webErr = await claimAthleteSelf(web.admin, USER, {
+      token: TOKEN,
+      birthdate: ADULT_DOB,
+    }).catch((e: unknown) => e);
+    expect(webErr).toBeInstanceOf(Error);
+    expect(webErr).not.toBeInstanceOf(ApiError);
+    expect((webErr as Error).message).toBe("Something went wrong. Please try again.");
   });
 
   it("404s an unknown token", async () => {
