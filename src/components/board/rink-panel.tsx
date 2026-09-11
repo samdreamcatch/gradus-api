@@ -103,7 +103,6 @@ export function RinkPanel({
 
   return (
     <Card variant="section" className={cn("space-y-4", className)}>
-
       <div className="flex items-baseline justify-between gap-3">
         <h2 className="font-display text-h3 text-text-primary">{rink.name}</h2>
         {rink.state === "live" ? (
