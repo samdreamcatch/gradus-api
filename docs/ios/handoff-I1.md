@@ -62,7 +62,7 @@ I1 is packages 1.1–1.5 in PRD Appendix F. Build them in the new `gradus-ios` r
 - **Never change the web repo's behavior.** iOS work lives in `gradus-ios`. The only touch to `gradus-coach-start` is additive: pulling `openapi.json`, and building the missing token/vector exports (§5). No web server function, migration on an existing table, or auth setting changes.
 - **iOS 18 minimum, Swift 6, SwiftUI, `@Observable`.** iPhone-first, adaptive iPad. No Combine unless a framework forces it.
 - **Dependencies stay minimal, all SPM:** `supabase-swift`, `swift-openapi-generator`/`-urlsession`, `GoogleSignIn-iOS` (only if the native Google path is chosen — else `ASWebAuthenticationSession`). No Firebase, no analytics, no crash SDK. Markdown via `AttributedString`, PDFs via `PDFKit`, audio via `AVFoundation`.
-- **Keep the Gradus look:** bundle Fraunces (display), Atkinson Hyperlegible (body), JetBrains Mono (numbers). Colors come from the design tokens (§5). Native navigation and gestures, not a web port.
+- **Keep the Gradus look:** bundle EB Garamond (display; Fraunces stays bundled for the Gradus wordmark only), Atkinson Hyperlegible (body), JetBrains Mono (numbers). Colors come from the design tokens (§5). Native navigation and gestures, not a web port.
 - **Secrets on device:** only the Supabase publishable key and (if used) the Google iOS client ID. Everything else is server-side. Tokens in Keychain.
 - **No In-App Purchase.** Plan status is display-only; link out to the web only on the US storefront (PRD §6.8).
 

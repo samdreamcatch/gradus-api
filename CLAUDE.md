@@ -29,7 +29,7 @@ Package manager: **bun**. Scripts: `bun run dev`, `bun run build`,
 Coach's-notebook / editorial print aesthetic. All colors, radii, and shadows
 are semantic tokens in `src/styles.css` (`bg-card`, `text-text-secondary`,
 `bg-accent`, …). Never hardcode `text-white`, `bg-black`, or hex classes.
-Fonts: Fraunces (display), Atkinson Hyperlegible (body), Caveat (hand),
+Fonts: EB Garamond (display; Fraunces only for the Gradus wordmark), Atkinson Hyperlegible (body), Caveat (hand),
 JetBrains Mono. Buttons use the `press` / `press-soft` utilities, not `hover:`.
 Overlays: Sheet, Popover/Dropdown, AlertDialog only — plain `Dialog` is retired.
 
