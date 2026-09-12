@@ -1,13 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { Check, ChevronRight, X } from "lucide-react";
+import { Check, ChevronRight } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Eyebrow } from "@/components/ui/eyebrow";
 import { cn } from "@/lib/utils";
 import { getCoachChecklist } from "@/lib/coach-checklist.functions";
-import iconMark from "@/assets/icon-mark.png.asset.json";
+import { HelpBubble } from "@/components/coach/help-bubble";
 
 export const coachChecklistQueryKey = ["coach", "getting-started"] as const;
 
@@ -36,19 +35,6 @@ function writeStored(coachId: string, next: Stored) {
   }
 }
 
-/** The Gradus bar mark, on a paper chip so it reads in both themes. */
-function Mark({ className }: { className?: string }) {
-  return (
-    <span
-      className={cn(
-        "flex size-7 shrink-0 items-center justify-center rounded-md bg-card",
-        className,
-      )}
-    >
-      <img src={iconMark.url} alt="" aria-hidden className="size-5" />
-    </span>
-  );
-}
 
 /**
  * Three-step getting-started checklist for new coaches. It opens as an anchored
@@ -171,63 +157,24 @@ export function CoachGettingStarted({
       className="fixed right-4 bottom-24 z-30 flex max-w-[calc(100vw-2rem)] flex-col items-end"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
-      {minimized ? (
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          onClick={restore}
-          aria-label={`Get set up — ${remaining} steps left`}
-          className="motion-safe:animate-scale-in relative size-14 rounded-2xl rounded-bl-md bg-accent text-accent-foreground shadow-card"
-        >
-          <Mark />
-          <span
-            className="absolute -top-1 -right-1 flex size-5 items-center justify-center rounded-full bg-attention text-[10px] font-black text-attention-foreground shadow-card"
-            aria-hidden
-          >
-            {remaining}
-          </span>
-        </Button>
-      ) : (
-        <div className="motion-safe:animate-scale-in w-80 max-w-full origin-bottom-right">
-          <div className="overflow-hidden rounded-md border border-accent bg-accent shadow-card">
-            <div className="flex items-center justify-between gap-3 px-4 py-3">
-              <div className="flex min-w-0 items-center gap-2">
-                <Mark />
-                <Eyebrow as="h2" size="caption" className="text-accent-foreground">
-                  Get set up
-                </Eyebrow>
-                <span className="text-xs text-accent-foreground/80">
-                  {doneCount} / {steps.length}
-                </span>
-              </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                aria-label="Minimize getting started"
-                onClick={minimize}
-                className="-mr-2 shrink-0 text-accent-foreground"
-              >
-                <X className="size-4" aria-hidden />
-              </Button>
-            </div>
-            <div className="border-t border-accent/40 bg-card">{body}</div>
-          </div>
-          {/* bubble tail */}
-          <div
-            aria-hidden
-            className="mr-5 ml-auto size-0 border-t-[12px] border-l-[14px] border-t-accent border-l-transparent"
-          />
-
-        </div>
-      )}
+      <HelpBubble
+        open={!minimized}
+        onOpen={restore}
+        onClose={minimize}
+        title="Get set up"
+        meta={`${doneCount} / ${steps.length}`}
+        badge={remaining}
+        openLabel={`Get set up — ${remaining} steps left`}
+        closeLabel="Minimize getting started"
+      >
+        {body}
+      </HelpBubble>
     </div>
   );
 }
 
-type Step = {
-  key: StepKey;
+export type Step = {
+  key: string;
   title: string;
   description: string;
   cta: string;
@@ -235,13 +182,13 @@ type Step = {
   action: () => void;
 };
 
-function ChecklistBody({
+export function ChecklistBody({
   steps,
   currentKey,
   onAct,
 }: {
   steps: Step[];
-  currentKey: StepKey | null;
+  currentKey: string | null;
   onAct: (fn: () => void) => void;
 }) {
   return (

@@ -34,6 +34,7 @@ import { FilterPill } from "@/components/ui/filter-pill";
 import { getSport } from "@/lib/coach-sports";
 import { SegmentedToggle } from "@/components/plans/segmented-toggle";
 import { FilterBar } from "@/components/plans/filter-bar";
+import { PlanHelpBubble } from "@/components/coach/plan-help-bubble";
 
 export const Route = createFileRoute("/_authenticated/coach/plans")({
   codeSplitGroupings: [["component"]],
@@ -63,6 +64,14 @@ function PlansPage() {
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  // "No plans of any kind" — drives the how-to bubble.
+  const fetchAllPlans = useServerFn(listPlans);
+  const { data: allPlans } = useQuery({
+    queryKey: ["plans", {}],
+    queryFn: () => fetchAllPlans({ data: {} }),
+  });
+  const hasNoPlans = allPlans ? allPlans.plans.length === 0 : false;
 
   return (
     <>
@@ -94,7 +103,14 @@ function PlansPage() {
 
         <main className="flex-1 pt-2">
           {tab === "plans" ? (
-            <PlansList filter={planFilter} athleteId={athleteId} sport={sport} />
+            hasNoPlans ? (
+              <PlanHelpBubble
+                onCreatePlan={() => createDraft.mutate({ data: { kind: "plan" } })}
+                onOpenLibrary={() => setTab("library")}
+              />
+            ) : (
+              <PlansList filter={planFilter} athleteId={athleteId} sport={sport} />
+            )
           ) : (
             <LibraryView query={libraryQuery} onSelectMove={(id) => setMoveSelection(id)} />
           )}
