@@ -202,9 +202,8 @@ export function competitionTimeZone(doc: string): string {
   const label = /Competition local time[\s\S]{0,200}?/i.test(doc)
     ? text(/<FONT[^>]*SIZE\s*=\s*[-"']?1[^>]*>(.*?)<\/FONT>\s*<!--\s*Competition local time/is.exec(doc)?.[1] ?? "")
     : "";
-  const family = Object.keys(PUBLISHED_ZONE).find((name) =>
-    new RegExp(`\\b${name}\\b`, "i").test(label),
-  );
+  const normalized = label.toLowerCase();
+  const family = Object.keys(PUBLISHED_ZONE).find((name) => normalized.includes(name));
   return family ? PUBLISHED_ZONE[family]! : RINK_TZ;
 }
 
