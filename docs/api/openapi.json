@@ -5421,6 +5421,359 @@
         }
       }
     },
+    "/api/v1/coach/schedule-import/parse": {
+      "post": {
+        "operationId": "parseScheduleImage",
+        "summary": "Transcribe a photo of a lesson schedule into normalized rows",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "image": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                },
+                "required": [
+                  "image"
+                ]
+              },
+              "encoding": {
+                "image": {
+                  "contentType": "image/jpeg"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "lessons": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "firstName": {
+                            "type": "string"
+                          },
+                          "lastName": {
+                            "type": "string"
+                          },
+                          "dayOfWeek": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ],
+                            "minimum": 0,
+                            "maximum": 6
+                          },
+                          "startMinute": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ],
+                            "minimum": 0,
+                            "maximum": 1439
+                          },
+                          "lengthMinutes": {
+                            "type": "number"
+                          },
+                          "frequency": {
+                            "type": "string",
+                            "enum": [
+                              "weekly",
+                              "biweekly",
+                              "twice_monthly",
+                              "monthly"
+                            ]
+                          },
+                          "guardianEmail": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "athleteEmail": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "rawDay": {
+                            "type": "string"
+                          },
+                          "rawStartTime": {
+                            "type": "string"
+                          },
+                          "dayUnreadable": {
+                            "type": "boolean"
+                          },
+                          "startTimeUnreadable": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "firstName",
+                          "lastName",
+                          "dayOfWeek",
+                          "startMinute",
+                          "lengthMinutes",
+                          "frequency",
+                          "guardianEmail",
+                          "athleteEmail",
+                          "rawDay",
+                          "rawStartTime",
+                          "dayUnreadable",
+                          "startTimeUnreadable"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "lessons"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/coach/schedule-import/commit": {
+      "post": {
+        "operationId": "commitScheduleImport",
+        "summary": "Commit reviewed schedule rows onto the coach's roster",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "groups": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "key": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 300
+                        },
+                        "firstName": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 80
+                        },
+                        "lastName": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 80
+                        },
+                        "guardianEmail": {
+                          "type": "string",
+                          "maxLength": 255,
+                          "default": ""
+                        },
+                        "athleteEmail": {
+                          "type": "string",
+                          "maxLength": 255,
+                          "default": ""
+                        },
+                        "sport": {
+                          "type": "string",
+                          "maxLength": 40,
+                          "default": ""
+                        },
+                        "emailRecipient": {
+                          "type": "string",
+                          "enum": [
+                            "guardian",
+                            "athlete"
+                          ],
+                          "default": "guardian"
+                        },
+                        "slots": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "dayOfWeek": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 6
+                              },
+                              "startMinute": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 1439
+                              },
+                              "endMinute": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 1440
+                              },
+                              "frequency": {
+                                "type": "string",
+                                "enum": [
+                                  "weekly",
+                                  "biweekly",
+                                  "twice_monthly",
+                                  "monthly"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "dayOfWeek",
+                              "startMinute",
+                              "endMinute",
+                              "frequency"
+                            ]
+                          },
+                          "minItems": 1,
+                          "maxItems": 20
+                        }
+                      },
+                      "required": [
+                        "key",
+                        "firstName",
+                        "lastName",
+                        "slots"
+                      ]
+                    },
+                    "minItems": 1,
+                    "maxItems": 100
+                  }
+                },
+                "required": [
+                  "groups"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "outcomes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "key": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "created",
+                              "linked",
+                              "failed",
+                              "skipped"
+                            ]
+                          },
+                          "slotsAdded": {
+                            "type": "integer"
+                          },
+                          "invited": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "message": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "reason": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "enum": [
+                              "roster_full",
+                              "ends_before_start",
+                              "link_failed"
+                            ]
+                          },
+                          "limit": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "key",
+                          "name",
+                          "status",
+                          "slotsAdded",
+                          "invited",
+                          "message",
+                          "reason",
+                          "limit"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "outcomes"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/coach/athletes/{id}": {
       "get": {
         "operationId": "getCoachAthleteDetail",

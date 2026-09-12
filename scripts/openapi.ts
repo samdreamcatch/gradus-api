@@ -71,6 +71,9 @@ import "../src/routes/api/v1/coach/lesson-slots/$id/index";
 import "../src/routes/api/v1/coach/lesson-slots/$id/occurrences/$date/cancel";
 import "../src/routes/api/v1/coach/lesson-slots/$id/occurrences/$date/reschedule";
 import "../src/routes/api/v1/coach/lesson-slots/$id/occurrences/$date/override";
+// I14 schedule-import
+import "../src/routes/api/v1/coach/schedule-import/parse";
+import "../src/routes/api/v1/coach/schedule-import/commit";
 import "../src/routes/api/v1/coach/athletes/$id/index";
 import "../src/routes/api/v1/coach/athletes/$id/ai-summary";
 import "../src/routes/api/v1/coach/athletes/$id/briefing";
