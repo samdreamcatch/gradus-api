@@ -40,40 +40,50 @@ export const getCoachChecklist = createServerFn({ method: "GET" })
     }
 
     const [slots, links, plans] = await Promise.all([
-      admin
-        .from("athlete_lesson_slots")
-        .select("id, athletes!inner(added_by_coach_id)")
-        .eq("coach_id", coachId)
-        .limit(200),
-      admin
-        .from("coach_athletes")
-        .select("athlete_id, athletes!inner(user_id, parent_id, guardian_invited_at)")
-        .eq("coach_id", coachId)
-        .limit(200),
+      admin.from("athlete_lesson_slots").select("athlete_id").eq("coach_id", coachId).limit(200),
+      admin.from("coach_athletes").select("athlete_id").eq("coach_id", coachId).limit(200),
       admin.from("plans").select("id").eq("coach_id", coachId).limit(1),
     ]);
     if (slots.error) throw new Error(slots.error.message);
     if (links.error) throw new Error(links.error.message);
     if (plans.error) throw new Error(plans.error.message);
 
-    const rows = links.data ?? [];
-    const inviteDone = rows.some((r) => {
-      const a = r.athletes as unknown as {
-        user_id: string | null;
-        parent_id: string | null;
-        guardian_invited_at: string | null;
-      } | null;
+    const slotAthleteIds = Array.from(
+      new Set((slots.data ?? []).map((r) => r.athlete_id).filter(Boolean) as string[]),
+    );
+    const rosterAthleteIds = Array.from(
+      new Set((links.data ?? []).map((r) => r.athlete_id).filter(Boolean) as string[]),
+    );
+    const allIds = Array.from(new Set([...slotAthleteIds, ...rosterAthleteIds]));
+
+    let athletes: {
+      id: string;
+      user_id: string | null;
+      parent_id: string | null;
+      guardian_invited_at: string | null;
+      added_by_coach_id: string | null;
+    }[] = [];
+    if (allIds.length > 0) {
+      const res = await admin
+        .from("athletes")
+        .select("id, user_id, parent_id, guardian_invited_at, added_by_coach_id")
+        .in("id", allIds);
+      if (res.error) throw new Error(res.error.message);
+      athletes = res.data ?? [];
+    }
+    const byId = new Map(athletes.map((a) => [a.id, a]));
+
+    const inviteDone = rosterAthleteIds.some((id) => {
+      const a = byId.get(id);
       return Boolean(a && (a.user_id || a.parent_id || a.guardian_invited_at));
     });
 
-    const slotRows = slots.data ?? [];
-    const scheduleDone = slotRows.length > 0;
+    const scheduleDone = slotAthleteIds.length > 0;
     // Lessons on athletes this coach never added came from a connected parent
     // or adult athlete entering their own times.
-    const scheduleFromFamilies = slotRows.some((r) => {
-      const a = r.athletes as unknown as { added_by_coach_id: string | null } | null;
-      return a?.added_by_coach_id !== coachId;
-    });
+    const scheduleFromFamilies = slotAthleteIds.some(
+      (id) => byId.get(id)?.added_by_coach_id !== coachId,
+    );
 
     return {
       coachId,
