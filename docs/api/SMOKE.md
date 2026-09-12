@@ -55,6 +55,8 @@ for i in $(seq 1 12); do curl -s -o /dev/null -w '%{http_code} ' -X POST -H 'Con
 
 Expect ten `200`s followed by `429`s. Twelve `200`s means the limiter is not working: turn the flag off.
 
+The optional `"client":"app"` body field (I14) makes the emailed link land on `gradus://reset-password`; it is inert (GoTrue silently falls back to the Site URL) until that exact value is on the Supabase Auth **Redirect URLs** allow-list in Lovable Cloud — add it on the preview project first, then production.
+
 **Billing-column guard check** (PRD §4.1 rule 13). Needs a signed-in coach's access token:
 sign in to gradus.training as a coach, open devtools → Application → Local Storage →
 `sb-<project-ref>-auth-token`, and copy the `access_token` value (never paste it into a chat

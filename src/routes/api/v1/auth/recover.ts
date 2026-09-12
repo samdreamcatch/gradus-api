@@ -1,38 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { z } from "zod";
 import { defineApiRoute } from "@/lib/api/define-route";
-import { goTrueRequest } from "@/lib/api/gotrue";
-
-const inputSchema = z.object({ email: z.string().email() });
+import { recoverRoute } from "@/lib/api/auth-recover-route";
 
 /**
- * Same landing page the web's forgot-password flow passes as `redirectTo`:
- * /reset-password listens for the PASSWORD_RECOVERY event and shows the
- * new-password form. Without this, GoTrue falls back to the Site URL and the
- * link lands on the home page with a recovery session and nowhere to use it.
+ * `POST /api/v1/auth/recover` — the options live in
+ * `src/lib/api/auth-recover-route.ts` so the redirect selection (`client`
+ * omitted or `"web"` → the web reset page; `"app"` → `gradus://reset-password`)
+ * is covered by auth-recover-route.test.ts with a fake GoTrue client. The
+ * `client: "app"` value is inert until `gradus://reset-password` is on the
+ * Supabase Auth redirect allow-list (docs/api/SMOKE.md).
  */
-const RECOVERY_REDIRECT_URL = "https://gradus.training/reset-password";
-const outputSchema = z.object({ ok: z.literal(true) });
-
 export const Route = createFileRoute("/api/v1/auth/recover")({
   server: {
-    handlers: defineApiRoute({
-      method: "POST",
-      path: "/api/v1/auth/recover",
-      auth: "public",
-      summary: "Send a password-reset email",
-      input: inputSchema,
-      output: outputSchema,
-      rateLimit: { windowSeconds: 60, max: 10 },
-      handler: async ({ input }) => {
-        // Always report success regardless of whether the email exists or
-        // GoTrue's own reply — a recovery endpoint that says "not found"
-        // is an account-enumeration oracle.
-        await goTrueRequest(`recover?redirect_to=${encodeURIComponent(RECOVERY_REDIRECT_URL)}`, {
-          email: input.email,
-        });
-        return { ok: true as const };
-      },
-    }),
+    handlers: defineApiRoute(recoverRoute()),
   },
 });

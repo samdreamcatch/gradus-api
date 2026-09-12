@@ -12,7 +12,7 @@ import { getTeamPlanStatus } from "@/lib/team.server";
 const MANAGE_URL = "https://gradus.training/parent/team";
 
 /** Thin wrapper over the shared `getTeamPlanStatus` (PRD §7.8): the parent's Team plan status. */
-export const Route = createFileRoute("/api/v1/parent/team")({
+export const Route = createFileRoute("/api/v1/parent/team/")({
   server: {
     handlers: defineApiRoute({
       method: "GET",
