@@ -182,7 +182,7 @@ export function CoachGettingStarted({
         >
           <Mark />
           <span
-            className="absolute -top-1 -right-1 flex size-5 items-center justify-center rounded-full border border-divider bg-popover text-[10px] font-bold text-text-primary shadow-card"
+            className="absolute -top-1 -right-1 flex size-5 items-center justify-center rounded-full bg-attention text-[10px] font-black text-attention-foreground shadow-card"
             aria-hidden
           >
             {remaining}
