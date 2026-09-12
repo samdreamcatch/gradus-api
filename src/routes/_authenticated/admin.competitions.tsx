@@ -47,6 +47,15 @@ function boardUrl(slug: string) {
   return `${origin}/board/${slug}`;
 }
 
+function openWallDisplay(slug: string) {
+  window.open(
+    `${boardUrl(slug)}/wall`,
+    "gradus-wall",
+    "noopener,noreferrer,popup=yes,width=1080,height=1920",
+  );
+}
+
+
 async function copyBoardLink(slug: string) {
   try {
     await navigator.clipboard.writeText(boardUrl(slug));
