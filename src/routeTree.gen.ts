@@ -156,6 +156,7 @@ import { Route as ApiV1AdultAthleteOnboardingRouteImport } from './routes/api/v1
 import { Route as ApiV1AdultAthleteGoalsRouteImport } from './routes/api/v1/adult-athlete/goals'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 import { Route as ApiPublicHooksLifecycleEmailsRouteImport } from './routes/api/public/hooks/lifecycle-emails'
+import { Route as ApiPublicHooksLessonRemindersRouteImport } from './routes/api/public/hooks/lesson-reminders'
 import { Route as ApiPublicHooksErrorDigestRouteImport } from './routes/api/public/hooks/error-digest'
 import { Route as ApiPublicHooksBillingNoticesRouteImport } from './routes/api/public/hooks/billing-notices'
 import { Route as ApiPublicBoardRefreshRouteImport } from './routes/api/public/board/refresh'
@@ -1084,6 +1085,12 @@ const ApiPublicHooksLifecycleEmailsRoute =
     path: '/api/public/hooks/lifecycle-emails',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksLessonRemindersRoute =
+  ApiPublicHooksLessonRemindersRouteImport.update({
+    id: '/api/public/hooks/lesson-reminders',
+    path: '/api/public/hooks/lesson-reminders',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksErrorDigestRoute =
   ApiPublicHooksErrorDigestRouteImport.update({
     id: '/api/public/hooks/error-digest',
@@ -1986,6 +1993,7 @@ export interface FileRoutesByFullPath {
   '/api/public/board/refresh': typeof ApiPublicBoardRefreshRoute
   '/api/public/hooks/billing-notices': typeof ApiPublicHooksBillingNoticesRoute
   '/api/public/hooks/error-digest': typeof ApiPublicHooksErrorDigestRoute
+  '/api/public/hooks/lesson-reminders': typeof ApiPublicHooksLessonRemindersRoute
   '/api/public/hooks/lifecycle-emails': typeof ApiPublicHooksLifecycleEmailsRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/v1/adult-athlete/goals': typeof ApiV1AdultAthleteGoalsRoute
@@ -2269,6 +2277,7 @@ export interface FileRoutesByTo {
   '/api/public/board/refresh': typeof ApiPublicBoardRefreshRoute
   '/api/public/hooks/billing-notices': typeof ApiPublicHooksBillingNoticesRoute
   '/api/public/hooks/error-digest': typeof ApiPublicHooksErrorDigestRoute
+  '/api/public/hooks/lesson-reminders': typeof ApiPublicHooksLessonRemindersRoute
   '/api/public/hooks/lifecycle-emails': typeof ApiPublicHooksLifecycleEmailsRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/v1/adult-athlete/goals': typeof ApiV1AdultAthleteGoalsRoute
@@ -2560,6 +2569,7 @@ export interface FileRoutesById {
   '/api/public/board/refresh': typeof ApiPublicBoardRefreshRoute
   '/api/public/hooks/billing-notices': typeof ApiPublicHooksBillingNoticesRoute
   '/api/public/hooks/error-digest': typeof ApiPublicHooksErrorDigestRoute
+  '/api/public/hooks/lesson-reminders': typeof ApiPublicHooksLessonRemindersRoute
   '/api/public/hooks/lifecycle-emails': typeof ApiPublicHooksLifecycleEmailsRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/v1/adult-athlete/goals': typeof ApiV1AdultAthleteGoalsRoute
@@ -2851,6 +2861,7 @@ export interface FileRouteTypes {
     | '/api/public/board/refresh'
     | '/api/public/hooks/billing-notices'
     | '/api/public/hooks/error-digest'
+    | '/api/public/hooks/lesson-reminders'
     | '/api/public/hooks/lifecycle-emails'
     | '/api/public/payments/webhook'
     | '/api/v1/adult-athlete/goals'
@@ -3134,6 +3145,7 @@ export interface FileRouteTypes {
     | '/api/public/board/refresh'
     | '/api/public/hooks/billing-notices'
     | '/api/public/hooks/error-digest'
+    | '/api/public/hooks/lesson-reminders'
     | '/api/public/hooks/lifecycle-emails'
     | '/api/public/payments/webhook'
     | '/api/v1/adult-athlete/goals'
@@ -3424,6 +3436,7 @@ export interface FileRouteTypes {
     | '/api/public/board/refresh'
     | '/api/public/hooks/billing-notices'
     | '/api/public/hooks/error-digest'
+    | '/api/public/hooks/lesson-reminders'
     | '/api/public/hooks/lifecycle-emails'
     | '/api/public/payments/webhook'
     | '/api/v1/adult-athlete/goals'
@@ -3650,6 +3663,7 @@ export interface RootRouteChildren {
   ApiPublicBoardRefreshRoute: typeof ApiPublicBoardRefreshRoute
   ApiPublicHooksBillingNoticesRoute: typeof ApiPublicHooksBillingNoticesRoute
   ApiPublicHooksErrorDigestRoute: typeof ApiPublicHooksErrorDigestRoute
+  ApiPublicHooksLessonRemindersRoute: typeof ApiPublicHooksLessonRemindersRoute
   ApiPublicHooksLifecycleEmailsRoute: typeof ApiPublicHooksLifecycleEmailsRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
   ApiV1AdultAthleteGoalsRoute: typeof ApiV1AdultAthleteGoalsRoute
@@ -4865,6 +4879,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/hooks/lifecycle-emails'
       fullPath: '/api/public/hooks/lifecycle-emails'
       preLoaderRoute: typeof ApiPublicHooksLifecycleEmailsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/lesson-reminders': {
+      id: '/api/public/hooks/lesson-reminders'
+      path: '/api/public/hooks/lesson-reminders'
+      fullPath: '/api/public/hooks/lesson-reminders'
+      preLoaderRoute: typeof ApiPublicHooksLessonRemindersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/hooks/error-digest': {
@@ -6148,6 +6169,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicBoardRefreshRoute: ApiPublicBoardRefreshRoute,
   ApiPublicHooksBillingNoticesRoute: ApiPublicHooksBillingNoticesRoute,
   ApiPublicHooksErrorDigestRoute: ApiPublicHooksErrorDigestRoute,
+  ApiPublicHooksLessonRemindersRoute: ApiPublicHooksLessonRemindersRoute,
   ApiPublicHooksLifecycleEmailsRoute: ApiPublicHooksLifecycleEmailsRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
   ApiV1AdultAthleteGoalsRoute: ApiV1AdultAthleteGoalsRoute,
