@@ -94,3 +94,22 @@ export function dismissBanner(slug: string) {
     // Dismissal is a convenience; storage failures are silent.
   }
 }
+
+const DEVICE_KEY = "gradus.boardDeviceId";
+
+/**
+ * A stable, anonymous per-browser id so follows can be counted server-side
+ * even when the viewer never signs in. Not tied to any identity.
+ */
+export function getBoardDeviceId(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const existing = window.localStorage.getItem(DEVICE_KEY);
+    if (existing) return existing;
+    const id = crypto.randomUUID();
+    window.localStorage.setItem(DEVICE_KEY, id);
+    return id;
+  } catch {
+    return null;
+  }
+}
