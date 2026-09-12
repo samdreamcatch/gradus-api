@@ -18514,6 +18514,571 @@
         }
       }
     },
+    "/api/v1/parent/coach-visibility": {
+      "get": {
+        "operationId": "listParentCoachVisibility",
+        "summary": "Coach visibility per athlete and coach, as the parent sees it",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "The ETag of the copy the client holds; a match answers 304."
+            },
+            "required": false,
+            "name": "If-None-Match",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "headers": {
+              "ETag": {
+                "schema": {
+                  "type": "string",
+                  "description": "Weak validator for this response; send it back as If-None-Match."
+                },
+                "required": true
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "planActive": {
+                      "type": "boolean"
+                    },
+                    "athletes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "firstName": {
+                            "type": "string"
+                          },
+                          "lastName": {
+                            "type": "string"
+                          },
+                          "coaches": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "coachId": {
+                                  "type": "string"
+                                },
+                                "name": {
+                                  "type": "string"
+                                },
+                                "enabled": {
+                                  "type": "boolean"
+                                },
+                                "status": {
+                                  "type": "string",
+                                  "enum": [
+                                    "off",
+                                    "waiting",
+                                    "pending",
+                                    "connected",
+                                    "declined"
+                                  ]
+                                },
+                                "pairs": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "otherCoachId": {
+                                        "type": "string"
+                                      },
+                                      "otherName": {
+                                        "type": "string"
+                                      },
+                                      "coachStatus": {
+                                        "type": "string",
+                                        "enum": [
+                                          "pending",
+                                          "accepted",
+                                          "declined"
+                                        ]
+                                      },
+                                      "otherStatus": {
+                                        "type": "string",
+                                        "enum": [
+                                          "pending",
+                                          "accepted",
+                                          "declined"
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "otherCoachId",
+                                      "otherName",
+                                      "coachStatus",
+                                      "otherStatus"
+                                    ]
+                                  }
+                                }
+                              },
+                              "required": [
+                                "coachId",
+                                "name",
+                                "enabled",
+                                "status",
+                                "pairs"
+                              ]
+                            }
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "firstName",
+                          "lastName",
+                          "coaches"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "planActive",
+                    "athletes"
+                  ]
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "Not Modified: unchanged since the ETag sent in If-None-Match.",
+            "headers": {
+              "ETag": {
+                "schema": {
+                  "type": "string",
+                  "description": "Weak validator for this response; send it back as If-None-Match."
+                },
+                "required": true
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "setParentCoachVisibility",
+        "summary": "Turn one coach's visibility on or off for one athlete (Team plan)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "athleteId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "coachId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "enabled": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "athleteId",
+                  "coachId",
+                  "enabled"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/coach/visibility/mine": {
+      "get": {
+        "operationId": "listMyCoachVisibility",
+        "summary": "Visibility requests and connections for the signed-in coach",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "The ETag of the copy the client holds; a match answers 304."
+            },
+            "required": false,
+            "name": "If-None-Match",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "headers": {
+              "ETag": {
+                "schema": {
+                  "type": "string",
+                  "description": "Weak validator for this response; send it back as If-None-Match."
+                },
+                "required": true
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "pending": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "athleteId": {
+                            "type": "string"
+                          },
+                          "athleteName": {
+                            "type": "string"
+                          },
+                          "coachName": {
+                            "type": "string"
+                          },
+                          "myStatus": {
+                            "type": "string",
+                            "enum": [
+                              "pending",
+                              "accepted",
+                              "declined"
+                            ]
+                          },
+                          "theirStatus": {
+                            "type": "string",
+                            "enum": [
+                              "pending",
+                              "accepted",
+                              "declined"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "athleteId",
+                          "athleteName",
+                          "coachName",
+                          "myStatus",
+                          "theirStatus"
+                        ]
+                      }
+                    },
+                    "connected": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "athleteId": {
+                            "type": "string"
+                          },
+                          "athleteName": {
+                            "type": "string"
+                          },
+                          "coachName": {
+                            "type": "string"
+                          },
+                          "myStatus": {
+                            "type": "string",
+                            "enum": [
+                              "pending",
+                              "accepted",
+                              "declined"
+                            ]
+                          },
+                          "theirStatus": {
+                            "type": "string",
+                            "enum": [
+                              "pending",
+                              "accepted",
+                              "declined"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "athleteId",
+                          "athleteName",
+                          "coachName",
+                          "myStatus",
+                          "theirStatus"
+                        ]
+                      }
+                    },
+                    "awaiting": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "athleteId": {
+                            "type": "string"
+                          },
+                          "athleteName": {
+                            "type": "string"
+                          },
+                          "coachName": {
+                            "type": "string"
+                          },
+                          "myStatus": {
+                            "type": "string",
+                            "enum": [
+                              "pending",
+                              "accepted",
+                              "declined"
+                            ]
+                          },
+                          "theirStatus": {
+                            "type": "string",
+                            "enum": [
+                              "pending",
+                              "accepted",
+                              "declined"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "athleteId",
+                          "athleteName",
+                          "coachName",
+                          "myStatus",
+                          "theirStatus"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "pending",
+                    "connected",
+                    "awaiting"
+                  ]
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "Not Modified: unchanged since the ETag sent in If-None-Match.",
+            "headers": {
+              "ETag": {
+                "schema": {
+                  "type": "string",
+                  "description": "Weak validator for this response; send it back as If-None-Match."
+                },
+                "required": true
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/coach/visibility/{id}": {
+      "delete": {
+        "operationId": "disconnectCoachVisibility",
+        "summary": "Turn a coach visibility connection off (soft decline of the caller's side)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/coach/visibility/{id}/respond": {
+      "post": {
+        "operationId": "respondToCoachVisibility",
+        "summary": "Accept or decline a coach visibility request",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "accept": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "accept"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/me/celebrations": {
       "get": {
         "operationId": "getMeCelebrations",
