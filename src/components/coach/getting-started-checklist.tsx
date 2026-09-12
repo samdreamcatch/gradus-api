@@ -166,7 +166,7 @@ export function CoachGettingStarted({
             type="button"
             onClick={restore}
             aria-label={`Get set up — ${remaining} steps left`}
-            className="press motion-safe:animate-scale-in relative flex size-14 items-center justify-center rounded-2xl rounded-bl-md bg-pen-tennis text-pen-tennis-ink shadow-card"
+            className="press motion-safe:animate-scale-in relative flex size-14 items-center justify-center rounded-2xl rounded-bl-md bg-accent text-accent-foreground shadow-card"
           >
             <Mark />
             <span className="absolute -top-1 -right-1 flex size-5 items-center justify-center rounded-full bg-card text-[10px] font-bold text-text-primary shadow-card">
@@ -176,14 +176,14 @@ export function CoachGettingStarted({
         </div>
       ) : (
         <div className="motion-safe:animate-scale-in mt-4">
-          <div className="overflow-hidden rounded-md border border-pen-tennis bg-pen-tennis-wash shadow-card">
+          <div className="overflow-hidden rounded-md border border-accent bg-accent shadow-card">
             <div className="flex items-center justify-between gap-3 px-4 py-3">
               <div className="flex min-w-0 items-center gap-2">
                 <Mark />
-                <Eyebrow as="h2" size="caption" tone="tertiary">
+                <Eyebrow as="h2" size="caption" className="text-accent-foreground">
                   Get set up
                 </Eyebrow>
-                <span className="text-xs text-text-tertiary">
+                <span className="text-xs text-accent-foreground/80">
                   {doneCount} / {steps.length}
                 </span>
               </div>
@@ -193,17 +193,17 @@ export function CoachGettingStarted({
                 size="icon"
                 aria-label="Minimize getting started"
                 onClick={minimize}
-                className="-mr-2 shrink-0"
+                className="-mr-2 shrink-0 text-accent-foreground"
               >
                 <X className="size-4" aria-hidden />
               </Button>
             </div>
-            <div className="border-t border-pen-tennis/40 bg-card">{body}</div>
+            <div className="border-t border-accent/40 bg-card">{body}</div>
           </div>
           {/* bubble tail */}
           <div
             aria-hidden
-            className="ml-6 size-0 border-t-[12px] border-r-[14px] border-t-pen-tennis border-r-transparent"
+            className="ml-6 size-0 border-t-[12px] border-r-[14px] border-t-accent border-r-transparent"
           />
         </div>
       )}
@@ -220,7 +220,7 @@ export function CoachGettingStarted({
               Three steps to get your athletes training in Gradus.
             </SheetDescription>
           </SheetHeader>
-          <div className="mt-4 overflow-hidden rounded-md border border-pen-tennis bg-card">
+          <div className="mt-4 overflow-hidden rounded-md border border-accent bg-card">
             {body}
           </div>
           <div className="mt-3 flex justify-center">
