@@ -193,7 +193,7 @@ export function CoachGettingStarted({
                 size="icon"
                 aria-label="Minimize getting started"
                 onClick={minimize}
-                className="-mr-2 shrink-0"
+                className="-mr-2 shrink-0 text-accent-foreground"
               >
                 <X className="size-4" aria-hidden />
               </Button>
