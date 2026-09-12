@@ -120,7 +120,7 @@ export function standingsOf(e: Pick<BoardEvent, "results">): BoardSkater[] {
 
 export interface BoardPayload {
   generatedAt: string;
-  competition: { name: string; dates: string; location: string; url: string };
+  competition: { name: string; dates: string; location: string; url: string; timeZone?: string };
   rinks: BoardRink[];
   /** Every event on the competition's current day, in start-time order. */
   schedule: BoardEvent[];

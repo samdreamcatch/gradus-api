@@ -5,10 +5,10 @@ import { Tag } from "@/components/ui/tag";
 import { cn } from "@/lib/utils";
 import { normalizeName, type BoardEvent } from "@/lib/board-types";
 
-function timeOf(iso: string | null, fallback: string): string {
+function timeOf(iso: string | null, fallback: string, timeZone: string): string {
   if (!iso) return fallback;
   return new Intl.DateTimeFormat("en-US", {
-    timeZone: "America/New_York",
+    timeZone,
     hour: "numeric",
     minute: "2-digit",
   }).format(new Date(iso));
@@ -41,10 +41,12 @@ export function ScheduleBoard({
   schedule,
   myNames,
   onOpenEvent,
+  timeZone = "America/New_York",
 }: {
   schedule: BoardEvent[];
   myNames: string[];
   onOpenEvent: (event: BoardEvent) => void;
+  timeZone?: string;
 }) {
   const days = useMemo(() => {
     const seen = new Map<string, string>();
@@ -111,7 +113,7 @@ export function ScheduleBoard({
             const mine = e.results.filter((s) => wanted.has(normalizeName(s.name)));
             const scored = e.results.some((s) => s.segScore || s.total);
             const label = [
-              timeOf(e.startIso, e.timeLabel),
+              timeOf(e.startIso, e.timeLabel, timeZone),
               [e.name, e.segment].filter(Boolean).join(" "),
               STATUS_LABEL[e.status].toLowerCase(),
               e.count ? `${e.count} skaters` : "",
@@ -137,7 +139,7 @@ export function ScheduleBoard({
                   {e.status === "live" ? (
                     <span className="board-live-dot shrink-0" aria-hidden="true" />
                   ) : null}
-                  {timeOf(e.startIso, e.timeLabel)}
+                  {timeOf(e.startIso, e.timeLabel, timeZone)}
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block text-sm leading-snug text-text-primary">

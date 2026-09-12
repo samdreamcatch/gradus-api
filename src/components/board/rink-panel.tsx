@@ -18,10 +18,10 @@ export function untilLabel(iso: string | null): string {
   return `in ${h}h ${mins % 60}m`;
 }
 
-function timeLabel(iso: string | null): string {
+function timeLabel(iso: string | null, timeZone: string): string {
   if (!iso) return "";
   return new Intl.DateTimeFormat("en-US", {
-    timeZone: "America/New_York",
+    timeZone,
     hour: "numeric",
     minute: "2-digit",
   }).format(new Date(iso));
@@ -94,10 +94,12 @@ export function RinkPanel({
   rink,
   onOpenScore,
   className,
+  timeZone = "America/New_York",
 }: {
   rink: BoardRink;
   onOpenScore?: (s: BoardSkater) => void;
   className?: string;
+  timeZone?: string;
 }) {
   const current = rink.current;
 
@@ -169,7 +171,7 @@ export function RinkPanel({
                 NEXT
               </Eyebrow>
               <span className="font-mono text-xs text-text-secondary tabular-nums">
-                {timeLabel(rink.next.startIso)}
+                {timeLabel(rink.next.startIso, timeZone)}
               </span>
               <span className="ml-auto font-mono text-xs text-text-tertiary">
                 {untilLabel(rink.next.startIso)}

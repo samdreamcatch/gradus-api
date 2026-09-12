@@ -24,6 +24,15 @@ export const LIVE_STATUS = "live unofficial";
 export const DONE_STATUSES = ["final", "unofficial"];
 export const RINK_TZ = "America/New_York";
 
+const PUBLISHED_ZONE: Record<string, string> = {
+  eastern: "America/New_York",
+  central: "America/Chicago",
+  mountain: "America/Denver",
+  pacific: "America/Los_Angeles",
+  alaska: "America/Anchorage",
+  hawaii: "Pacific/Honolulu",
+};
+
 /* ------------------------------------------------------------------ fetch */
 
 /**
@@ -134,11 +143,18 @@ const MONTHS = [
  * in venue time (Eastern for these competitions), so guess the UTC offset and
  * correct it by formatting the guess back in the venue zone.
  */
-function zonedToUtc(y: number, mo: number, d: number, h: number, mi: number): Date {
+function zonedToUtc(
+  y: number,
+  mo: number,
+  d: number,
+  h: number,
+  mi: number,
+  timeZone: string,
+): Date {
   let guess = Date.UTC(y, mo, d, h + 4, mi);
   for (let i = 0; i < 2; i += 1) {
     const parts = new Intl.DateTimeFormat("en-US", {
-      timeZone: RINK_TZ,
+      timeZone,
       year: "numeric",
       month: "numeric",
       day: "numeric",
@@ -162,7 +178,12 @@ function zonedToUtc(y: number, mo: number, d: number, h: number, mi: number): Da
 }
 
 /** `'Sat Aug 22'` + `'11:55 AM'` -> instant, in venue time. */
-export function toDate(dayLabel: string, timeLabel: string, year: number): Date | null {
+export function toDate(
+  dayLabel: string,
+  timeLabel: string,
+  year: number,
+  timeZone = RINK_TZ,
+): Date | null {
   if (!dayLabel || !timeLabel) return null;
   const dm = /([A-Za-z]{3})[a-z]*\s+(\d{1,2})/.exec(dayLabel);
   const tm = /(\d{1,2}):(\d{2})\s*([AaPp])/.exec(timeLabel.replace(/\./g, ""));
@@ -173,7 +194,18 @@ export function toDate(dayLabel: string, timeLabel: string, year: number): Date 
   const isPm = tm[3]!.toLowerCase() === "p";
   if (hour === 12) hour = 0;
   if (isPm) hour += 12;
-  return zonedToUtc(year, mo, Number(dm[2]), hour, Number(tm[2]));
+  return zonedToUtc(year, mo, Number(dm[2]), hour, Number(tm[2]), timeZone);
+}
+
+/** IJS prints the competition-local zone in its generated-at footer. */
+export function competitionTimeZone(doc: string): string {
+  const label = /Competition local time[\s\S]{0,200}?/i.test(doc)
+    ? text(/<FONT[^>]*SIZE\s*=\s*[-"']?1[^>]*>(.*?)<\/FONT>\s*<!--\s*Competition local time/is.exec(doc)?.[1] ?? "")
+    : "";
+  const family = Object.keys(PUBLISHED_ZONE).find((name) =>
+    new RegExp(`\\b${name}\\b`, "i").test(label),
+  );
+  return family ? PUBLISHED_ZONE[family]! : RINK_TZ;
 }
 
 /* -------------------------------------------------------------- index.asp */
@@ -182,6 +214,7 @@ export interface IjsCompetition {
   name: string;
   dates: string;
   location: string;
+  timeZone: string;
 }
 
 export interface IjsEvent {
@@ -221,7 +254,8 @@ export function parseIndex(
     [...h3s].reverse().find((s) => s && s !== dates) ||
     "";
 
-  const competition: IjsCompetition = { name, dates, location };
+  const timeZone = competitionTimeZone(doc);
+  const competition: IjsCompetition = { name, dates, location, timeZone };
 
 
   const idx = doc.indexOf("id=daySort");
@@ -247,7 +281,7 @@ export function parseIndex(
       name: cells["event"] ?? "",
       status: cells["stat"] ?? "",
       file: link[1]!,
-      startAt: toDate(day, timeLabel, year),
+      startAt: toDate(day, timeLabel, year, timeZone),
     });
   }
   return { competition, events };

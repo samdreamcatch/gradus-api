@@ -41,20 +41,18 @@ function skaterJson(s: IjsSkater | null, withProtocol = false): BoardSkater | nu
   };
 }
 
-const DAY_FMT = new Intl.DateTimeFormat("en-CA", {
-  timeZone: RINK_TZ,
-  year: "numeric",
-  month: "2-digit",
-  day: "2-digit",
-});
-
 /** Venue-local `YYYY-MM-DD` for grouping a competition into days. */
-function dayKeyOf(d: Date): string {
-  return DAY_FMT.format(d);
+function dayKeyOf(d: Date, timeZone = RINK_TZ): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(d);
 }
 
-function sameRinkDay(a: Date, b: Date): boolean {
-  return dayKeyOf(a) === dayKeyOf(b);
+function sameRinkDay(a: Date, b: Date, timeZone: string): boolean {
+  return dayKeyOf(a, timeZone) === dayKeyOf(b, timeZone);
 }
 
 /** Lean, cached results for one event file at one status. */
@@ -82,6 +80,7 @@ export async function buildPayload(
   orders: Record<string, CachedEvent>;
 }> {
   const { competition, events } = parseIndex(await fetchPage(`${base}/index.asp`), year);
+  const timeZone = competition.timeZone;
   const now = new Date();
   const errors: string[] = [];
   const venues = { ...venueCache };
@@ -100,14 +99,14 @@ export async function buildPayload(
   const dated = events.filter((e): e is IjsEvent & { startAt: Date } => e.startAt !== null);
 
   // Pick the day to show: today, else the next day with events, else the last.
-  let day = dated.filter((e) => sameRinkDay(e.startAt, now));
+  let day = dated.filter((e) => sameRinkDay(e.startAt, now, timeZone));
   if (day.length === 0) {
     const future = dated.filter((e) => e.startAt > now).sort((a, b) => +a.startAt - +b.startAt);
     if (future.length) {
-      day = dated.filter((e) => sameRinkDay(e.startAt, future[0]!.startAt));
+      day = dated.filter((e) => sameRinkDay(e.startAt, future[0]!.startAt, timeZone));
     } else if (dated.length) {
       const last = dated.reduce((a, b) => (b.startAt > a.startAt ? b : a));
-      day = dated.filter((e) => sameRinkDay(e.startAt, last.startAt));
+      day = dated.filter((e) => sameRinkDay(e.startAt, last.startAt, timeZone));
     }
   }
 
@@ -267,7 +266,7 @@ export async function buildPayload(
       status,
       count: entry?.count ?? null,
       dayLabel: e.day,
-      dayKey: dayKeyOf(e.startAt),
+      dayKey: dayKeyOf(e.startAt, timeZone),
       results: entry?.results ?? [],
     });
   }
@@ -281,6 +280,7 @@ export async function buildPayload(
         dates: competition.dates,
         location: competition.location,
         url: `${base}/index.asp`,
+        timeZone,
       },
       rinks,
       schedule,
