@@ -164,6 +164,9 @@ function RosterPage() {
 
   const scheduleRef = useRef<WeekScheduleHandle>(null);
   const vv = useVisualViewport();
+  const queryClient = useQueryClient();
+  const refreshChecklist = () =>
+    queryClient.invalidateQueries({ queryKey: coachChecklistQueryKey });
 
   const athleteLimit = coachProfile?.profile.athleteLimit ?? null;
   const rosterFull = athleteLimit !== null && roster.athletes.length >= athleteLimit;
@@ -204,6 +207,7 @@ function RosterPage() {
           onOpenChange={(o) => {
             setInviteOpen(o);
             setInviteStep("hub");
+            if (!o) void refreshChecklist();
           }}
         >
           <header className="sticky top-0 z-20 -mx-3 bg-background/90 px-3 pb-2 pt-1 backdrop-blur supports-[backdrop-filter]:bg-background/70">
@@ -448,7 +452,10 @@ function RosterPage() {
       <CoachVisibilityAutoPrompt />
       <ScheduleImportSheet
         open={importOpen}
-        onOpenChange={setImportOpen}
+        onOpenChange={(o) => {
+          setImportOpen(o);
+          if (!o) void refreshChecklist();
+        }}
         coachSports={coachSports}
         athleteLimit={athleteLimit}
         rosterCount={roster.athletes.length}
