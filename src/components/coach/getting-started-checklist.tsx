@@ -187,7 +187,7 @@ export function ChecklistBody({
   onAct,
 }: {
   steps: Step[];
-  currentKey: StepKey | null;
+  currentKey: string | null;
   onAct: (fn: () => void) => void;
 }) {
   return (
