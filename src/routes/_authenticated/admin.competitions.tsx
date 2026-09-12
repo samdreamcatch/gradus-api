@@ -201,11 +201,15 @@ function AdminCompetitions() {
                 >
                   Copy link
                 </Button>
-                <Button size="sm" variant="outline" asChild>
-                  <Link to="/admin/board/$slug" params={{ slug: c.slug }} target="_blank">
-                    Wall display
-                  </Link>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => openWallDisplay(c.slug)}
+                >
+                  Wall display
                 </Button>
+
                 <Button
                   type="button"
                   size="sm"
