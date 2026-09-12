@@ -34,6 +34,7 @@ import { FilterPill } from "@/components/ui/filter-pill";
 import { getSport } from "@/lib/coach-sports";
 import { SegmentedToggle } from "@/components/plans/segmented-toggle";
 import { FilterBar } from "@/components/plans/filter-bar";
+import { PlanHelpBubble } from "@/components/coach/plan-help-bubble";
 
 export const Route = createFileRoute("/_authenticated/coach/plans")({
   codeSplitGroupings: [["component"]],
