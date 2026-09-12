@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { LANE_STYLE, SkaterBody, type LaneTone } from "@/components/board/lane-parts";
 import { cn } from "@/lib/utils";
@@ -42,6 +43,12 @@ export function SkaterWheel({
   /** Keyboard/button stepping, which does not spring back until reset. */
   const [step, setStep] = useState(0);
   const container = useRef<HTMLDivElement | null>(null);
+  /** Latest order/handler, read by the native pointer listeners without re-binding. */
+  const tap = useRef<{ order: BoardSkater[]; onOpen?: (s: BoardSkater) => void }>({
+    order: startOrder,
+    onOpen: onOpenScore,
+  });
+  tap.current = { order: startOrder, onOpen: onOpenScore };
   const drag = useRef<{ id: number; y: number; moved: number } | null>(null);
   const frame = useRef<number | null>(null);
   const offsetRef = useRef(0);
@@ -50,10 +57,20 @@ export function SkaterWheel({
   const last = startOrder.length - 1;
   boundsRef.current = { centre: activeIndex - step, last };
 
-  // Reset stepping whenever the underlying event or live skater moves on.
+  // A new event resets the wheel; a new live skater does not yank the viewer
+  // back — their position is kept on the same skater they were reading.
+  const prevActive = useRef(activeIndex);
   useEffect(() => {
     setStep(0);
-  }, [activeIndex, startOrder.length]);
+    prevActive.current = activeIndex;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [startOrder.length]);
+
+  useEffect(() => {
+    const delta = activeIndex - prevActive.current;
+    prevActive.current = activeIndex;
+    if (delta !== 0) setStep((s) => (s === 0 ? 0 : s + delta));
+  }, [activeIndex]);
 
   useEffect(
     () => () => {
@@ -93,24 +110,17 @@ export function SkaterWheel({
   const settle = useCallback(() => {
     const from = offsetRef.current;
     if (from === 0) return;
-    if (prefersReducedMotion()) {
+    const { centre, last: end } = boundsRef.current;
+    // Settle onto a whole card — the detent — and stay there. Where the reader
+    // let go is where the wheel rests; "back to now" is theirs to press.
+    const snapped = Math.max(centre - end, Math.min(centre, Math.round(from)));
+    const commit = () => {
       offsetRef.current = 0;
       setOffset(0);
-      return;
-    }
-    const { centre, last: end } = boundsRef.current;
-    // Snap to a whole card first — the detent — then return to the live skater.
-    const snapped = Math.max(centre - end, Math.min(centre, Math.round(from)));
-    const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
-    const back = () => {
-      const held = offsetRef.current;
-      if (held === 0) return;
-      window.setTimeout(() => {
-        animate(held, 0, 320, (t) => 1 - Math.pow(1 - t, 3) * Math.cos(t * Math.PI * 0.5));
-      }, 110);
+      setStep((s) => s + snapped);
     };
-    if (Math.abs(snapped - from) < 0.01) back();
-    else animate(from, snapped, 180, easeOut, back);
+    if (prefersReducedMotion() || Math.abs(snapped - from) < 0.01) commit();
+    else animate(from, snapped, 180, (t) => 1 - Math.pow(1 - t, 3), commit);
   }, [animate]);
 
   // Native, non-passive listeners: React's synthetic handlers can't reliably
@@ -135,15 +145,26 @@ export function SkaterWheel({
       apply(dy / DRAG_STEP);
     };
 
-    const end = (e: PointerEvent) => {
+    const end = (e: PointerEvent, allowTap: boolean) => {
       const d = drag.current;
       if (!d || d.id !== e.pointerId) return;
+      // The container holds pointer capture, so pointer events retarget to it and
+      // the card is never the event target. Resolve the card by hit-testing.
+      if (allowTap && d.moved < SLOP) {
+        const hit = document.elementFromPoint(e.clientX, e.clientY);
+        const card = hit?.closest?.("[data-skater-index]");
+        const index = card ? Number(card.getAttribute("data-skater-index")) : NaN;
+        const skater = Number.isInteger(index) ? tap.current.order[index] : undefined;
+        if (skater) tap.current.onOpen?.(skater);
+      }
       // Keep `moved` readable for one tick so a drag doesn't fire the card's click.
       window.setTimeout(() => {
         drag.current = null;
       }, 0);
       settle();
     };
+    const up = (e: PointerEvent) => end(e, true);
+    const cancel = (e: PointerEvent) => end(e, false);
 
     const block = (e: TouchEvent) => {
       if ((drag.current?.moved ?? 0) >= SLOP && e.cancelable) e.preventDefault();
@@ -151,14 +172,14 @@ export function SkaterWheel({
 
     el.addEventListener("pointerdown", down);
     el.addEventListener("pointermove", move, { passive: false });
-    el.addEventListener("pointerup", end);
-    el.addEventListener("pointercancel", end);
+    el.addEventListener("pointerup", up);
+    el.addEventListener("pointercancel", cancel);
     el.addEventListener("touchmove", block, { passive: false });
     return () => {
       el.removeEventListener("pointerdown", down);
       el.removeEventListener("pointermove", move);
-      el.removeEventListener("pointerup", end);
-      el.removeEventListener("pointercancel", end);
+      el.removeEventListener("pointerup", up);
+      el.removeEventListener("pointercancel", cancel);
       el.removeEventListener("touchmove", block);
     };
   }, [apply, settle]);
@@ -190,7 +211,7 @@ export function SkaterWheel({
             const { tone, label } = roleOf(index - activeIndex);
             const style = LANE_STYLE[tone];
             const isCentre = index === nearest;
-            const tappable = isCentre && !!skater.protocol && !!onOpenScore;
+            const tappable = !!onOpenScore;
             return (
               <li
                 key={`${skater.start}-${skater.name}`}
@@ -203,18 +224,16 @@ export function SkaterWheel({
                 }}
               >
                 <div
+                  data-skater-index={index}
                   role={tappable ? "button" : undefined}
                   tabIndex={tappable ? 0 : undefined}
-                  onClick={() => {
-                    if (tappable && (drag.current?.moved ?? 0) < SLOP) onOpenScore!(skater);
-                  }}
                   onKeyDown={(e) => {
                     if (tappable && (e.key === "Enter" || e.key === " ")) {
                       e.preventDefault();
                       onOpenScore!(skater);
                     }
                   }}
-                  aria-label={tappable ? `${label}: ${skater.name} — open score detail` : undefined}
+                  aria-label={tappable ? `${label}: ${skater.name} — open scores` : undefined}
                   className={cn(
                     "mx-1 rounded-xl border-l-4 bg-card/60 px-4 py-3 text-left shadow-sm",
                     style.border,
@@ -228,7 +247,7 @@ export function SkaterWheel({
                     skater={skater}
                     tone={tone}
                     awaiting={index === activeIndex}
-                    showDetailHint={tappable}
+                    showDetailHint={tappable && !!skater.protocol}
                   />
                 </div>
               </li>
@@ -255,6 +274,23 @@ export function SkaterWheel({
           later skater ›
         </button>
       </div>
+
+      {nearest !== activeIndex ? (
+        <div className="flex justify-center">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              if (frame.current !== null) cancelAnimationFrame(frame.current);
+              offsetRef.current = 0;
+              setOffset(0);
+              setStep(0);
+            }}
+          >
+            Back to now
+          </Button>
+        </div>
+      ) : null}
     </div>
   );
 }
