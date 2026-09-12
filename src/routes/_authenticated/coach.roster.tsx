@@ -1,7 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import {
   UserPlus,
-  Sparkles,
   Plus,
   Share2,
   KeyRound,
@@ -10,8 +9,8 @@ import {
   ChevronLeft,
 } from "lucide-react";
 
-import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
-import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
+import { useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
 import { CoachBottomNav } from "@/components/coach/bottom-nav";
 import { CoachVisibilityAutoPrompt } from "@/components/coach/coach-visibility-sheet";
 import { PageTitle } from "@/components/page-title";
@@ -25,7 +24,6 @@ import { BillingTab } from "@/components/coach/billing-tab";
 import { ScheduleImportSheet } from "@/components/coach/schedule-import-sheet";
 import { CoachPostEventPrompt } from "@/components/coach/post-event-prompt";
 
-
 import { InviteCard } from "@/components/onboarding/invite-card";
 import { EnterInviteCodeCard } from "@/components/coach/enter-invite-code-card";
 
@@ -36,7 +34,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
 
 import {
   Sheet,
@@ -49,7 +46,10 @@ import {
 
 import { cn } from "@/lib/utils";
 import { rosterQueryOptions } from "@/lib/roster-queries";
-import { listPlans } from "@/lib/plans.functions";
+import {
+  CoachGettingStarted,
+  coachChecklistQueryKey,
+} from "@/components/coach/getting-started-checklist";
 import {
   getRosterPracticeSummaries,
   type AthletePracticeSummary,
@@ -89,7 +89,6 @@ const INVITE_STEPS: {
   },
 ];
 
-
 function SegmentedToggle({ tab, onChange }: { tab: RosterTab; onChange: (t: RosterTab) => void }) {
   const tabs: { key: RosterTab; label: string }[] = [
     { key: "schedule", label: "Schedule" },
@@ -115,7 +114,6 @@ function SegmentedToggle({ tab, onChange }: { tab: RosterTab; onChange: (t: Rost
     </div>
   );
 }
-
 
 export const Route = createFileRoute("/_authenticated/coach/roster")({
   loader: ({ context }) => context.queryClient.ensureQueryData(rosterQueryOptions),
@@ -162,6 +160,9 @@ function RosterPage() {
 
   const scheduleRef = useRef<WeekScheduleHandle>(null);
   const vv = useVisualViewport();
+  const queryClient = useQueryClient();
+  const refreshChecklist = () =>
+    queryClient.invalidateQueries({ queryKey: coachChecklistQueryKey });
 
   const athleteLimit = coachProfile?.profile.athleteLimit ?? null;
   const rosterFull = athleteLimit !== null && roster.athletes.length >= athleteLimit;
@@ -202,6 +203,7 @@ function RosterPage() {
           onOpenChange={(o) => {
             setInviteOpen(o);
             setInviteStep("hub");
+            if (!o) void refreshChecklist();
           }}
         >
           <header className="sticky top-0 z-20 -mx-3 bg-background/90 px-3 pb-2 pt-1 backdrop-blur supports-[backdrop-filter]:bg-background/70">
@@ -272,13 +274,18 @@ function RosterPage() {
                   </DropdownMenu>
                 ) : null}
               </div>
-
             </div>
           </header>
 
           <CoachPostEventPrompt />
 
-          <FirstPlanBanner />
+          <CoachGettingStarted
+            onStartSchedule={() => setImportOpen(true)}
+            onStartInvite={() => {
+              setInviteStep("hub");
+              setInviteOpen(true);
+            }}
+          />
 
           {rosterFull ? (
             <div className="mt-3 flex items-center justify-between gap-3 rounded-lg border border-divider bg-elevated px-3 py-2">
@@ -354,7 +361,6 @@ function RosterPage() {
                     <ChevronRight className="size-4 shrink-0 text-text-tertiary" aria-hidden />
                   </button>
                 </div>
-
               </>
             ) : (
               <>
@@ -440,36 +446,15 @@ function RosterPage() {
       <CoachVisibilityAutoPrompt />
       <ScheduleImportSheet
         open={importOpen}
-        onOpenChange={setImportOpen}
+        onOpenChange={(o) => {
+          setImportOpen(o);
+          if (!o) void refreshChecklist();
+        }}
         coachSports={coachSports}
         athleteLimit={athleteLimit}
         rosterCount={roster.athletes.length}
         rosterNames={roster.athletes.map((a) => `${a.firstName} ${a.lastName}`)}
       />
-
     </>
-  );
-}
-
-function FirstPlanBanner() {
-  const { data: plans } = useQuery({
-    queryKey: ["coach", "plans", "any"],
-    queryFn: () => listPlans({ data: {} }),
-    staleTime: 60_000,
-  });
-  if (!plans || plans.plans.length > 0) return null;
-  return (
-    <Link
-      to="/coach/plans"
-      className="press mt-4 flex items-center gap-3 rounded-xl border border-accent/40 bg-accent/10 px-4 py-3 text-sm"
-    >
-      <Sparkles className="size-5 shrink-0 text-accent-ink" aria-hidden />
-      <div>
-        <p className="font-semibold text-text-primary">Create your first plan</p>
-        <p className="mt-0.5 text-text-secondary">
-          Build a training plan to share with an athlete.
-        </p>
-      </div>
-    </Link>
   );
 }
