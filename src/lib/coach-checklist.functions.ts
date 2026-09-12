@@ -40,7 +40,11 @@ export const getCoachChecklist = createServerFn({ method: "GET" })
     }
 
     const [slots, links, plans] = await Promise.all([
-      admin.from("athlete_lesson_slots").select("id").eq("coach_id", coachId).limit(1),
+      admin
+        .from("athlete_lesson_slots")
+        .select("id, athletes!inner(added_by_coach_id)")
+        .eq("coach_id", coachId)
+        .limit(200),
       admin
         .from("coach_athletes")
         .select("athlete_id, athletes!inner(user_id, parent_id, guardian_invited_at)")
@@ -62,14 +66,19 @@ export const getCoachChecklist = createServerFn({ method: "GET" })
       return Boolean(a && (a.user_id || a.parent_id || a.guardian_invited_at));
     });
 
-    const scheduleDone = (slots.data?.length ?? 0) > 0;
+    const slotRows = slots.data ?? [];
+    const scheduleDone = slotRows.length > 0;
+    // Lessons on athletes this coach never added came from a connected parent
+    // or adult athlete entering their own times.
+    const scheduleFromFamilies = slotRows.some((r) => {
+      const a = r.athletes as unknown as { added_by_coach_id: string | null } | null;
+      return a?.added_by_coach_id !== coachId;
+    });
 
     return {
       coachId,
       scheduleDone,
-      // If the coach already has lessons before doing anything else, they came
-      // in through a connected parent or adult athlete.
-      scheduleFromFamilies: scheduleDone && inviteDone,
+      scheduleFromFamilies,
       inviteDone,
       planDone: (plans.data?.length ?? 0) > 0,
     };
