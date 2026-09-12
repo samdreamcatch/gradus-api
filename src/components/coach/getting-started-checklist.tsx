@@ -176,7 +176,7 @@ export function CoachGettingStarted({
         </div>
       ) : (
         <div className="motion-safe:animate-scale-in mt-4">
-          <div className="overflow-hidden rounded-md border border-pen-tennis bg-pen-tennis-wash shadow-card">
+          <div className="overflow-hidden rounded-md border border-accent bg-accent shadow-card">
             <div className="flex items-center justify-between gap-3 px-4 py-3">
               <div className="flex min-w-0 items-center gap-2">
                 <Mark />
