@@ -179,6 +179,9 @@ import "../src/routes/api/v1/recaps/$id/dismiss";
 import "../src/routes/api/v1/recaps/coaches";
 import "../src/routes/api/v1/recaps/index";
 import "../src/routes/api/v1/athletes/$id/recaps";
+// I14 founding (Founding Coach tier claim and restore)
+import "../src/routes/api/v1/coach/founding/claim";
+import "../src/routes/api/v1/coach/founding/restore";
 // I13 team — guardians and team invites
 import "../src/routes/api/v1/parent/team/guardians/index";
 import "../src/routes/api/v1/parent/team/guardians/invites/index";

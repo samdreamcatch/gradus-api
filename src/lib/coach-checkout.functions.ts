@@ -6,6 +6,11 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 // so every write below goes through the admin client. Row targeting stays
 // explicit (.eq on the caller's own profile) because RLS no longer applies.
 import { type StripeEnv, createStripeClient, getStripeErrorMessage } from "@/lib/stripe.server";
+import {
+  claimFoundingCoachTier as claimFoundingCoachTierImpl,
+  restoreFoundingCoachTier as restoreFoundingCoachTierImpl,
+  restoreFoundingCoachTierInput,
+} from "@/lib/founding-tier.server";
 
 const inputSchema = z.object({
   priceId: z.enum(["coach_monthly", "coach_yearly", "coach_pro_monthly", "coach_pro_yearly"]),
@@ -584,6 +589,19 @@ export const verifyCheckoutSession = createServerFn({ method: "POST" })
   });
 
 /**
+ * Founding Coach tier claim/restore — thin wrappers over the shared entry
+ * points in src/lib/founding-tier.server.ts, shared with the
+ * `/api/v1/coach/founding/…` routes (PRD §3.6/§3.7, Appendix A). Names,
+ * methods, input schemas and the `{ ok } | { error }` results are unchanged:
+ * the paywall matches on `"error" in res`, so the shared module's `ApiError`s
+ * come back as `{ error: message }` here instead of being thrown.
+ */
+function toFoundingResult(err: unknown): { error: string } {
+  if (err instanceof Error) return { error: err.message };
+  throw err;
+}
+
+/**
  * Founding-coach free-Coach-tier claim. Grants entitlement without touching
  * Stripe so a brand-new coach can proceed through onboarding without a
  * checkout session. Idempotent — safe to call repeatedly.
@@ -593,33 +611,11 @@ export const claimFoundingCoachTier = createServerFn({ method: "POST" })
   .handler(async ({ context }): Promise<{ ok: true } | { error: string }> => {
     const { userId, supabase } = context;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: profile, error: readErr } = await supabase
-      .from("coach_profiles")
-      .select("id, founding_coach, entitlement, organization_id")
-      .eq("user_id", userId)
-      .maybeSingle();
-    if (readErr) return { error: readErr.message };
-    if (!profile) return { error: "Coach profile not found." };
-    if (!profile.founding_coach) {
-      return { error: "This account isn't a founding coach." };
+    try {
+      return await claimFoundingCoachTierImpl({ userId, supabase, admin: supabaseAdmin });
+    } catch (err) {
+      return toFoundingResult(err);
     }
-    if (profile.organization_id) {
-      // Already covered by a club — no change needed.
-      return { ok: true };
-    }
-    if (
-      profile.entitlement === "promo_free" ||
-      profile.entitlement === "paid" ||
-      profile.entitlement === "club_covered"
-    ) {
-      return { ok: true };
-    }
-    const { error } = await supabaseAdmin
-      .from("coach_profiles")
-      .update({ entitlement: "promo_free" })
-      .eq("id", profile.id);
-    if (error) return { error: error.message };
-    return { ok: true };
   });
 
 /**
@@ -630,67 +626,13 @@ export const claimFoundingCoachTier = createServerFn({ method: "POST" })
  */
 export const restoreFoundingCoachTier = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z.object({ environment: z.enum(["sandbox", "live"]) }).parse(input),
-  )
+  .inputValidator((input: unknown) => restoreFoundingCoachTierInput.parse(input))
   .handler(async ({ data, context }): Promise<{ ok: true } | { error: string }> => {
     const { userId, supabase } = context;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: profile } = await supabase
-      .from("coach_profiles")
-      .select(
-        "id, founding_coach, organization_id, stripe_customer_id, stripe_subscription_id, subscription_environment",
-      )
-      .eq("user_id", userId)
-      .maybeSingle();
-    if (!profile) return { error: "Coach profile not found." };
-    if (!profile.founding_coach) {
-      return { error: "This account isn't a founding coach." };
+    try {
+      return await restoreFoundingCoachTierImpl({ userId, supabase, admin: supabaseAdmin }, data);
+    } catch (err) {
+      return toFoundingResult(err);
     }
-    if (profile.organization_id) {
-      return { error: "You're on a club plan. Leave the club before switching tiers." };
-    }
-
-    const env: StripeEnv =
-      (profile.subscription_environment as StripeEnv | null) === "live" ||
-      (profile.subscription_environment as StripeEnv | null) === "sandbox"
-        ? (profile.subscription_environment as StripeEnv)
-        : data.environment;
-
-    // Cancel any active-ish subscription on this customer immediately.
-    if (profile.stripe_customer_id) {
-      try {
-        const stripe = createStripeClient(env);
-        const list = await stripe.subscriptions.list({
-          customer: profile.stripe_customer_id,
-          status: "all",
-          limit: 20,
-        });
-        for (const sub of list.data) {
-          if (["active", "trialing", "past_due"].includes(sub.status)) {
-            try {
-              await stripe.subscriptions.cancel(sub.id);
-            } catch (e) {
-              console.warn("restoreFoundingCoachTier: cancel failed", sub.id, e);
-            }
-          }
-        }
-      } catch (error) {
-        return { error: getStripeErrorMessage(error) };
-      }
-    }
-
-    const { error } = await supabaseAdmin
-      .from("coach_profiles")
-      .update({
-        entitlement: "promo_free",
-        subscription_tier: null,
-        subscription_status: "canceled",
-        stripe_subscription_id: null,
-        trial_ends_at: null,
-        current_period_end: null,
-      })
-      .eq("id", profile.id);
-    if (error) return { error: error.message };
-    return { ok: true };
   });
