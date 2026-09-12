@@ -1033,8 +1033,6 @@ function PlanEditorBody({
             >
               Bench
             </button>
-          ) : plan.status === "benched" ? (
-            <span />
           ) : (
             <button
               type="button"
