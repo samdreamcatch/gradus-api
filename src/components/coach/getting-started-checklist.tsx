@@ -219,16 +219,7 @@ export function CoachGettingStarted({
             aria-hidden
             className="mr-5 ml-auto size-0 border-t-[12px] border-l-[14px] border-t-accent border-l-transparent"
           />
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            onClick={minimize}
-            aria-label="Minimize getting started"
-            className="mt-1 size-14 rounded-2xl rounded-bl-md bg-accent text-accent-foreground shadow-card"
-          >
-            <Mark />
-          </Button>
+
         </div>
       )}
     </div>
