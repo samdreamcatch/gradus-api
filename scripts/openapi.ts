@@ -140,7 +140,7 @@ import "../src/routes/api/v1/parent/athletes/$id/coaches/$coachId/sports";
 import "../src/routes/api/v1/parent/athletes/$id/primary-coach";
 import "../src/routes/api/v1/parent/athletes/$id/schedule";
 import "../src/routes/api/v1/parent/goals";
-import "../src/routes/api/v1/parent/team";
+import "../src/routes/api/v1/parent/team/index";
 import "../src/routes/api/v1/athlete/settings";
 import "../src/routes/api/v1/athlete/goals/index";
 import "../src/routes/api/v1/athlete/goals/long-term";
@@ -178,6 +178,14 @@ import "../src/routes/api/v1/recaps/$id/dismiss";
 import "../src/routes/api/v1/recaps/coaches";
 import "../src/routes/api/v1/recaps/index";
 import "../src/routes/api/v1/athletes/$id/recaps";
+// I13 team — guardians and team invites
+import "../src/routes/api/v1/parent/team/guardians/index";
+import "../src/routes/api/v1/parent/team/guardians/invites/index";
+import "../src/routes/api/v1/parent/team/guardians/invites/$id/index";
+import "../src/routes/api/v1/parent/team/guardians/invites/$id/resend";
+import "../src/routes/api/v1/parent/team/guardians/$id";
+import "../src/routes/api/v1/team-invites/preview";
+import "../src/routes/api/v1/team-invites/claim";
 // I13 guardians (guardian claims and athlete guardian)
 import "../src/routes/api/v1/guardian/claim/summary";
 import "../src/routes/api/v1/guardian/claim/context";
