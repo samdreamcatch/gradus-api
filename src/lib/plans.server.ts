@@ -611,12 +611,13 @@ export async function deletePlan(ctx: PlansContext, id: string): Promise<{ ok: t
   const coachId = await ensureCoachId(supabase, ctx.userId);
 
   const plan = await assertPlanOwned(supabase, id, coachId);
-  const deletable = plan.kind === "template" || plan.status === "draft";
+  const deletable =
+    plan.kind === "template" || plan.status === "draft" || plan.status === "benched";
   if (!deletable) {
     throw new ApiError({
       code: "not_deletable",
       status: 422,
-      message: "Active or benched plans can't be deleted — bench the plan instead.",
+      message: "Active plans can't be deleted — bench the plan first.",
     });
   }
 
