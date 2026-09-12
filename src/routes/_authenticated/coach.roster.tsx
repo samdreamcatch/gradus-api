@@ -1,7 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import {
   UserPlus,
-  Sparkles,
   Plus,
   Share2,
   KeyRound,
@@ -10,8 +9,8 @@ import {
   ChevronLeft,
 } from "lucide-react";
 
-import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
-import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
+import { useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
 import { CoachBottomNav } from "@/components/coach/bottom-nav";
 import { CoachVisibilityAutoPrompt } from "@/components/coach/coach-visibility-sheet";
 import { PageTitle } from "@/components/page-title";
@@ -49,7 +48,10 @@ import {
 
 import { cn } from "@/lib/utils";
 import { rosterQueryOptions } from "@/lib/roster-queries";
-import { listPlans } from "@/lib/plans.functions";
+import {
+  CoachGettingStarted,
+  coachChecklistQueryKey,
+} from "@/components/coach/getting-started-checklist";
 import {
   getRosterPracticeSummaries,
   type AthletePracticeSummary,
@@ -278,7 +280,13 @@ function RosterPage() {
 
           <CoachPostEventPrompt />
 
-          <FirstPlanBanner />
+          <CoachGettingStarted
+            onStartSchedule={() => setImportOpen(true)}
+            onStartInvite={() => {
+              setInviteStep("hub");
+              setInviteOpen(true);
+            }}
+          />
 
           {rosterFull ? (
             <div className="mt-3 flex items-center justify-between gap-3 rounded-lg border border-divider bg-elevated px-3 py-2">
@@ -451,25 +459,3 @@ function RosterPage() {
   );
 }
 
-function FirstPlanBanner() {
-  const { data: plans } = useQuery({
-    queryKey: ["coach", "plans", "any"],
-    queryFn: () => listPlans({ data: {} }),
-    staleTime: 60_000,
-  });
-  if (!plans || plans.plans.length > 0) return null;
-  return (
-    <Link
-      to="/coach/plans"
-      className="press mt-4 flex items-center gap-3 rounded-xl border border-accent/40 bg-accent/10 px-4 py-3 text-sm"
-    >
-      <Sparkles className="size-5 shrink-0 text-accent-ink" aria-hidden />
-      <div>
-        <p className="font-semibold text-text-primary">Create your first plan</p>
-        <p className="mt-0.5 text-text-secondary">
-          Build a training plan to share with an athlete.
-        </p>
-      </div>
-    </Link>
-  );
-}
