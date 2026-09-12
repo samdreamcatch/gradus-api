@@ -171,11 +171,13 @@ import { Route as AuthenticatedAdminPlansPlanIdRouteImport } from './routes/_aut
 import { Route as AuthenticatedAdminListKindRouteImport } from './routes/_authenticated/admin.list.$kind'
 import { Route as AuthenticatedAdminErrorsIdRouteImport } from './routes/_authenticated/admin.errors.$id'
 import { Route as AuthenticatedAdminEmailsNameRouteImport } from './routes/_authenticated/admin.emails.$name'
+import { Route as AuthenticatedAdminBoardSlugRouteImport } from './routes/_authenticated/admin.board.$slug'
 import { Route as ApiV1SafetyBlocksIndexRouteImport } from './routes/api/v1/safety/blocks/index'
 import { Route as ApiV1RoomsIdIndexRouteImport } from './routes/api/v1/rooms/$id/index'
 import { Route as ApiV1PublicBoardsIndexRouteImport } from './routes/api/v1/public/boards/index'
 import { Route as ApiV1PlansIdIndexRouteImport } from './routes/api/v1/plans/$id/index'
 import { Route as ApiV1ParentAthletesIndexRouteImport } from './routes/api/v1/parent/athletes/index'
+import { Route as ApiV1MeCelebrationsIndexRouteImport } from './routes/api/v1/me/celebrations/index'
 import { Route as ApiV1GuardianClaimIndexRouteImport } from './routes/api/v1/guardian/claim/index'
 import { Route as ApiV1CoachWrapUpsIndexRouteImport } from './routes/api/v1/coach/wrap-ups/index'
 import { Route as ApiV1CoachRosterIndexRouteImport } from './routes/api/v1/coach/roster/index'
@@ -264,6 +266,7 @@ import { Route as ApiV1ParentAthletesIdScheduleRouteImport } from './routes/api/
 import { Route as ApiV1ParentAthletesIdResetPasswordRouteImport } from './routes/api/v1/parent/athletes/$id/reset-password'
 import { Route as ApiV1ParentAthletesIdPrimaryCoachRouteImport } from './routes/api/v1/parent/athletes/$id/primary-coach'
 import { Route as ApiV1ParentAthletesIdGoalsRouteImport } from './routes/api/v1/parent/athletes/$id/goals'
+import { Route as ApiV1MeCelebrationsIdAckRouteImport } from './routes/api/v1/me/celebrations/$id/ack'
 import { Route as ApiV1GuardianInvitesIdResendRouteImport } from './routes/api/v1/guardian/invites/$id/resend'
 import { Route as ApiV1CoachStarterPlansIdAdoptRouteImport } from './routes/api/v1/coach/starter-plans/$id/adopt'
 import { Route as ApiV1CoachRosterAthletesAthleteIdRouteImport } from './routes/api/v1/coach/roster/athletes/$athleteId'
@@ -1165,6 +1168,12 @@ const AuthenticatedAdminEmailsNameRoute =
     path: '/emails/$name',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminBoardSlugRoute =
+  AuthenticatedAdminBoardSlugRouteImport.update({
+    id: '/board/$slug',
+    path: '/board/$slug',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const ApiV1SafetyBlocksIndexRoute = ApiV1SafetyBlocksIndexRouteImport.update({
   id: '/api/v1/safety/blocks/',
   path: '/api/v1/safety/blocks/',
@@ -1189,6 +1198,12 @@ const ApiV1ParentAthletesIndexRoute =
   ApiV1ParentAthletesIndexRouteImport.update({
     id: '/api/v1/parent/athletes/',
     path: '/api/v1/parent/athletes/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1MeCelebrationsIndexRoute =
+  ApiV1MeCelebrationsIndexRouteImport.update({
+    id: '/api/v1/me/celebrations/',
+    path: '/api/v1/me/celebrations/',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiV1GuardianClaimIndexRoute = ApiV1GuardianClaimIndexRouteImport.update({
@@ -1686,6 +1701,12 @@ const ApiV1ParentAthletesIdGoalsRoute =
     path: '/api/v1/parent/athletes/$id/goals',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiV1MeCelebrationsIdAckRoute =
+  ApiV1MeCelebrationsIdAckRouteImport.update({
+    id: '/api/v1/me/celebrations/$id/ack',
+    path: '/api/v1/me/celebrations/$id/ack',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiV1GuardianInvitesIdResendRoute =
   ApiV1GuardianInvitesIdResendRouteImport.update({
     id: '/api/v1/guardian/invites/$id/resend',
@@ -1906,6 +1927,7 @@ export interface FileRoutesByFullPath {
   '/coach/': typeof AuthenticatedCoachIndexRoute
   '/org-admin/': typeof AuthenticatedOrgAdminIndexRoute
   '/parent/': typeof AuthenticatedParentIndexRoute
+  '/admin/board/$slug': typeof AuthenticatedAdminBoardSlugRoute
   '/admin/emails/$name': typeof AuthenticatedAdminEmailsNameRoute
   '/admin/errors/$id': typeof AuthenticatedAdminErrorsIdRoute
   '/admin/list/$kind': typeof AuthenticatedAdminListKindRoute
@@ -2062,6 +2084,7 @@ export interface FileRoutesByFullPath {
   '/api/v1/coach/roster/': typeof ApiV1CoachRosterIndexRoute
   '/api/v1/coach/wrap-ups/': typeof ApiV1CoachWrapUpsIndexRoute
   '/api/v1/guardian/claim/': typeof ApiV1GuardianClaimIndexRoute
+  '/api/v1/me/celebrations/': typeof ApiV1MeCelebrationsIndexRoute
   '/api/v1/parent/athletes/': typeof ApiV1ParentAthletesIndexRoute
   '/api/v1/plans/$id/': typeof ApiV1PlansIdIndexRoute
   '/api/v1/public/boards/': typeof ApiV1PublicBoardsIndexRoute
@@ -2084,6 +2107,7 @@ export interface FileRoutesByFullPath {
   '/api/v1/coach/roster/athletes/$athleteId': typeof ApiV1CoachRosterAthletesAthleteIdRoute
   '/api/v1/coach/starter-plans/$id/adopt': typeof ApiV1CoachStarterPlansIdAdoptRoute
   '/api/v1/guardian/invites/$id/resend': typeof ApiV1GuardianInvitesIdResendRoute
+  '/api/v1/me/celebrations/$id/ack': typeof ApiV1MeCelebrationsIdAckRoute
   '/api/v1/parent/athletes/$id/goals': typeof ApiV1ParentAthletesIdGoalsRoute
   '/api/v1/parent/athletes/$id/primary-coach': typeof ApiV1ParentAthletesIdPrimaryCoachRoute
   '/api/v1/parent/athletes/$id/reset-password': typeof ApiV1ParentAthletesIdResetPasswordRoute
@@ -2180,6 +2204,7 @@ export interface FileRoutesByTo {
   '/coach': typeof AuthenticatedCoachIndexRoute
   '/org-admin': typeof AuthenticatedOrgAdminIndexRoute
   '/parent': typeof AuthenticatedParentIndexRoute
+  '/admin/board/$slug': typeof AuthenticatedAdminBoardSlugRoute
   '/admin/emails/$name': typeof AuthenticatedAdminEmailsNameRoute
   '/admin/errors/$id': typeof AuthenticatedAdminErrorsIdRoute
   '/admin/list/$kind': typeof AuthenticatedAdminListKindRoute
@@ -2336,6 +2361,7 @@ export interface FileRoutesByTo {
   '/api/v1/coach/roster': typeof ApiV1CoachRosterIndexRoute
   '/api/v1/coach/wrap-ups': typeof ApiV1CoachWrapUpsIndexRoute
   '/api/v1/guardian/claim': typeof ApiV1GuardianClaimIndexRoute
+  '/api/v1/me/celebrations': typeof ApiV1MeCelebrationsIndexRoute
   '/api/v1/parent/athletes': typeof ApiV1ParentAthletesIndexRoute
   '/api/v1/plans/$id': typeof ApiV1PlansIdIndexRoute
   '/api/v1/public/boards': typeof ApiV1PublicBoardsIndexRoute
@@ -2358,6 +2384,7 @@ export interface FileRoutesByTo {
   '/api/v1/coach/roster/athletes/$athleteId': typeof ApiV1CoachRosterAthletesAthleteIdRoute
   '/api/v1/coach/starter-plans/$id/adopt': typeof ApiV1CoachStarterPlansIdAdoptRoute
   '/api/v1/guardian/invites/$id/resend': typeof ApiV1GuardianInvitesIdResendRoute
+  '/api/v1/me/celebrations/$id/ack': typeof ApiV1MeCelebrationsIdAckRoute
   '/api/v1/parent/athletes/$id/goals': typeof ApiV1ParentAthletesIdGoalsRoute
   '/api/v1/parent/athletes/$id/primary-coach': typeof ApiV1ParentAthletesIdPrimaryCoachRoute
   '/api/v1/parent/athletes/$id/reset-password': typeof ApiV1ParentAthletesIdResetPasswordRoute
@@ -2462,6 +2489,7 @@ export interface FileRoutesById {
   '/_authenticated/coach/': typeof AuthenticatedCoachIndexRoute
   '/_authenticated/org-admin/': typeof AuthenticatedOrgAdminIndexRoute
   '/_authenticated/parent/': typeof AuthenticatedParentIndexRoute
+  '/_authenticated/admin/board/$slug': typeof AuthenticatedAdminBoardSlugRoute
   '/_authenticated/admin/emails/$name': typeof AuthenticatedAdminEmailsNameRoute
   '/_authenticated/admin/errors/$id': typeof AuthenticatedAdminErrorsIdRoute
   '/_authenticated/admin/list/$kind': typeof AuthenticatedAdminListKindRoute
@@ -2618,6 +2646,7 @@ export interface FileRoutesById {
   '/api/v1/coach/roster/': typeof ApiV1CoachRosterIndexRoute
   '/api/v1/coach/wrap-ups/': typeof ApiV1CoachWrapUpsIndexRoute
   '/api/v1/guardian/claim/': typeof ApiV1GuardianClaimIndexRoute
+  '/api/v1/me/celebrations/': typeof ApiV1MeCelebrationsIndexRoute
   '/api/v1/parent/athletes/': typeof ApiV1ParentAthletesIndexRoute
   '/api/v1/plans/$id/': typeof ApiV1PlansIdIndexRoute
   '/api/v1/public/boards/': typeof ApiV1PublicBoardsIndexRoute
@@ -2640,6 +2669,7 @@ export interface FileRoutesById {
   '/api/v1/coach/roster/athletes/$athleteId': typeof ApiV1CoachRosterAthletesAthleteIdRoute
   '/api/v1/coach/starter-plans/$id/adopt': typeof ApiV1CoachStarterPlansIdAdoptRoute
   '/api/v1/guardian/invites/$id/resend': typeof ApiV1GuardianInvitesIdResendRoute
+  '/api/v1/me/celebrations/$id/ack': typeof ApiV1MeCelebrationsIdAckRoute
   '/api/v1/parent/athletes/$id/goals': typeof ApiV1ParentAthletesIdGoalsRoute
   '/api/v1/parent/athletes/$id/primary-coach': typeof ApiV1ParentAthletesIdPrimaryCoachRoute
   '/api/v1/parent/athletes/$id/reset-password': typeof ApiV1ParentAthletesIdResetPasswordRoute
@@ -2744,6 +2774,7 @@ export interface FileRouteTypes {
     | '/coach/'
     | '/org-admin/'
     | '/parent/'
+    | '/admin/board/$slug'
     | '/admin/emails/$name'
     | '/admin/errors/$id'
     | '/admin/list/$kind'
@@ -2900,6 +2931,7 @@ export interface FileRouteTypes {
     | '/api/v1/coach/roster/'
     | '/api/v1/coach/wrap-ups/'
     | '/api/v1/guardian/claim/'
+    | '/api/v1/me/celebrations/'
     | '/api/v1/parent/athletes/'
     | '/api/v1/plans/$id/'
     | '/api/v1/public/boards/'
@@ -2922,6 +2954,7 @@ export interface FileRouteTypes {
     | '/api/v1/coach/roster/athletes/$athleteId'
     | '/api/v1/coach/starter-plans/$id/adopt'
     | '/api/v1/guardian/invites/$id/resend'
+    | '/api/v1/me/celebrations/$id/ack'
     | '/api/v1/parent/athletes/$id/goals'
     | '/api/v1/parent/athletes/$id/primary-coach'
     | '/api/v1/parent/athletes/$id/reset-password'
@@ -3018,6 +3051,7 @@ export interface FileRouteTypes {
     | '/coach'
     | '/org-admin'
     | '/parent'
+    | '/admin/board/$slug'
     | '/admin/emails/$name'
     | '/admin/errors/$id'
     | '/admin/list/$kind'
@@ -3174,6 +3208,7 @@ export interface FileRouteTypes {
     | '/api/v1/coach/roster'
     | '/api/v1/coach/wrap-ups'
     | '/api/v1/guardian/claim'
+    | '/api/v1/me/celebrations'
     | '/api/v1/parent/athletes'
     | '/api/v1/plans/$id'
     | '/api/v1/public/boards'
@@ -3196,6 +3231,7 @@ export interface FileRouteTypes {
     | '/api/v1/coach/roster/athletes/$athleteId'
     | '/api/v1/coach/starter-plans/$id/adopt'
     | '/api/v1/guardian/invites/$id/resend'
+    | '/api/v1/me/celebrations/$id/ack'
     | '/api/v1/parent/athletes/$id/goals'
     | '/api/v1/parent/athletes/$id/primary-coach'
     | '/api/v1/parent/athletes/$id/reset-password'
@@ -3299,6 +3335,7 @@ export interface FileRouteTypes {
     | '/_authenticated/coach/'
     | '/_authenticated/org-admin/'
     | '/_authenticated/parent/'
+    | '/_authenticated/admin/board/$slug'
     | '/_authenticated/admin/emails/$name'
     | '/_authenticated/admin/errors/$id'
     | '/_authenticated/admin/list/$kind'
@@ -3455,6 +3492,7 @@ export interface FileRouteTypes {
     | '/api/v1/coach/roster/'
     | '/api/v1/coach/wrap-ups/'
     | '/api/v1/guardian/claim/'
+    | '/api/v1/me/celebrations/'
     | '/api/v1/parent/athletes/'
     | '/api/v1/plans/$id/'
     | '/api/v1/public/boards/'
@@ -3477,6 +3515,7 @@ export interface FileRouteTypes {
     | '/api/v1/coach/roster/athletes/$athleteId'
     | '/api/v1/coach/starter-plans/$id/adopt'
     | '/api/v1/guardian/invites/$id/resend'
+    | '/api/v1/me/celebrations/$id/ack'
     | '/api/v1/parent/athletes/$id/goals'
     | '/api/v1/parent/athletes/$id/primary-coach'
     | '/api/v1/parent/athletes/$id/reset-password'
@@ -3661,6 +3700,7 @@ export interface RootRouteChildren {
   ApiV1CoachRosterIndexRoute: typeof ApiV1CoachRosterIndexRoute
   ApiV1CoachWrapUpsIndexRoute: typeof ApiV1CoachWrapUpsIndexRoute
   ApiV1GuardianClaimIndexRoute: typeof ApiV1GuardianClaimIndexRoute
+  ApiV1MeCelebrationsIndexRoute: typeof ApiV1MeCelebrationsIndexRoute
   ApiV1ParentAthletesIndexRoute: typeof ApiV1ParentAthletesIndexRoute
   ApiV1PlansIdIndexRoute: typeof ApiV1PlansIdIndexRoute
   ApiV1PublicBoardsIndexRoute: typeof ApiV1PublicBoardsIndexRoute
@@ -3683,6 +3723,7 @@ export interface RootRouteChildren {
   ApiV1CoachRosterAthletesAthleteIdRoute: typeof ApiV1CoachRosterAthletesAthleteIdRoute
   ApiV1CoachStarterPlansIdAdoptRoute: typeof ApiV1CoachStarterPlansIdAdoptRoute
   ApiV1GuardianInvitesIdResendRoute: typeof ApiV1GuardianInvitesIdResendRoute
+  ApiV1MeCelebrationsIdAckRoute: typeof ApiV1MeCelebrationsIdAckRoute
   ApiV1ParentAthletesIdGoalsRoute: typeof ApiV1ParentAthletesIdGoalsRoute
   ApiV1ParentAthletesIdPrimaryCoachRoute: typeof ApiV1ParentAthletesIdPrimaryCoachRoute
   ApiV1ParentAthletesIdResetPasswordRoute: typeof ApiV1ParentAthletesIdResetPasswordRoute
@@ -4847,6 +4888,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminEmailsNameRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/board/$slug': {
+      id: '/_authenticated/admin/board/$slug'
+      path: '/board/$slug'
+      fullPath: '/admin/board/$slug'
+      preLoaderRoute: typeof AuthenticatedAdminBoardSlugRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/api/v1/safety/blocks/': {
       id: '/api/v1/safety/blocks/'
       path: '/api/v1/safety/blocks'
@@ -4880,6 +4928,13 @@ declare module '@tanstack/react-router' {
       path: '/api/v1/parent/athletes'
       fullPath: '/api/v1/parent/athletes/'
       preLoaderRoute: typeof ApiV1ParentAthletesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/me/celebrations/': {
+      id: '/api/v1/me/celebrations/'
+      path: '/api/v1/me/celebrations'
+      fullPath: '/api/v1/me/celebrations/'
+      preLoaderRoute: typeof ApiV1MeCelebrationsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/v1/guardian/claim/': {
@@ -5498,6 +5553,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1ParentAthletesIdGoalsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/v1/me/celebrations/$id/ack': {
+      id: '/api/v1/me/celebrations/$id/ack'
+      path: '/api/v1/me/celebrations/$id/ack'
+      fullPath: '/api/v1/me/celebrations/$id/ack'
+      preLoaderRoute: typeof ApiV1MeCelebrationsIdAckRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/v1/guardian/invites/$id/resend': {
       id: '/api/v1/guardian/invites/$id/resend'
       path: '/api/v1/guardian/invites/$id/resend'
@@ -5704,6 +5766,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminSessionsRoute: typeof AuthenticatedAdminSessionsRoute
   AuthenticatedAdminSocialPlansRoute: typeof AuthenticatedAdminSocialPlansRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
+  AuthenticatedAdminBoardSlugRoute: typeof AuthenticatedAdminBoardSlugRoute
   AuthenticatedAdminEmailsNameRoute: typeof AuthenticatedAdminEmailsNameRoute
   AuthenticatedAdminListKindRoute: typeof AuthenticatedAdminListKindRoute
   AuthenticatedAdminPlansPlanIdRoute: typeof AuthenticatedAdminPlansPlanIdRoute
@@ -5733,6 +5796,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminSessionsRoute: AuthenticatedAdminSessionsRoute,
   AuthenticatedAdminSocialPlansRoute: AuthenticatedAdminSocialPlansRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
+  AuthenticatedAdminBoardSlugRoute: AuthenticatedAdminBoardSlugRoute,
   AuthenticatedAdminEmailsNameRoute: AuthenticatedAdminEmailsNameRoute,
   AuthenticatedAdminListKindRoute: AuthenticatedAdminListKindRoute,
   AuthenticatedAdminPlansPlanIdRoute: AuthenticatedAdminPlansPlanIdRoute,
@@ -6090,6 +6154,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiV1CoachRosterIndexRoute: ApiV1CoachRosterIndexRoute,
   ApiV1CoachWrapUpsIndexRoute: ApiV1CoachWrapUpsIndexRoute,
   ApiV1GuardianClaimIndexRoute: ApiV1GuardianClaimIndexRoute,
+  ApiV1MeCelebrationsIndexRoute: ApiV1MeCelebrationsIndexRoute,
   ApiV1ParentAthletesIndexRoute: ApiV1ParentAthletesIndexRoute,
   ApiV1PlansIdIndexRoute: ApiV1PlansIdIndexRoute,
   ApiV1PublicBoardsIndexRoute: ApiV1PublicBoardsIndexRoute,
@@ -6116,6 +6181,7 @@ const rootRouteChildren: RootRouteChildren = {
     ApiV1CoachRosterAthletesAthleteIdRoute,
   ApiV1CoachStarterPlansIdAdoptRoute: ApiV1CoachStarterPlansIdAdoptRoute,
   ApiV1GuardianInvitesIdResendRoute: ApiV1GuardianInvitesIdResendRoute,
+  ApiV1MeCelebrationsIdAckRoute: ApiV1MeCelebrationsIdAckRoute,
   ApiV1ParentAthletesIdGoalsRoute: ApiV1ParentAthletesIdGoalsRoute,
   ApiV1ParentAthletesIdPrimaryCoachRoute:
     ApiV1ParentAthletesIdPrimaryCoachRoute,
