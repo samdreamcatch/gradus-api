@@ -24,7 +24,8 @@ import { EventResults } from "@/components/board/event-results";
 import { BoardBottomNav } from "@/components/board/board-bottom-nav";
 import { SegmentedToggle } from "@/components/plans/segmented-toggle";
 import { useChangedKeys } from "@/hooks/use-changed-keys";
-import { getBoard, getMySkaterNames } from "@/lib/board.functions";
+import { getBoard, getMySkaterNames, setBoardFollow } from "@/lib/board.functions";
+import { getBoardDeviceId } from "@/lib/board-follow-store";
 import { normalizeName, type BoardEvent, type BoardSkater } from "@/lib/board-types";
 import { recordCompetitionAttendance } from "@/lib/competition-recap.functions";
 
@@ -90,6 +91,7 @@ function BoardPage() {
   const board = useServerFn(getBoard);
   const mine = useServerFn(getMySkaterNames);
   const recordAttendance = useServerFn(recordCompetitionAttendance);
+  const setFollow = useServerFn(setBoardFollow);
   const [signedIn, setSignedIn] = useState(false);
   const [rinkName, setRinkName] = useState<string | null>(null);
   const [tab, setTab] = useState<BoardTab | null>(null);
