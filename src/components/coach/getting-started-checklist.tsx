@@ -53,7 +53,7 @@ function Mark({ className }: { className?: string }) {
         className,
       )}
     >
-      <img src={iconMark.url} alt="" aria-hidden className="size-5" />
+      <img src={iconMark.url} alt="" aria-hidden className="size-5 dark:invert" />
     </span>
   );
 }
