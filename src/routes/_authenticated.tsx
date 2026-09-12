@@ -51,11 +51,9 @@ function AuthedLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isCoach = pathname.startsWith("/coach");
 
-
   const accept = useServerFn(acceptTerms);
   const applyPromo = useServerFn(applyPromoCodeToMyProfile);
   useTouchLastSeen();
-
 
   const termsAttemptsRef = useRef(0);
   const promoAttemptsRef = useRef(0);
@@ -113,7 +111,6 @@ function AuthedLayout() {
       <CompetitionRecapPrompt />
       <Outlet />
       {isCoach ? <LessonWrapUpProvider /> : null}
-      
     </ActiveSessionProvider>
   );
 }

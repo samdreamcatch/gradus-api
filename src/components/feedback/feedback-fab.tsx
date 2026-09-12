@@ -95,7 +95,6 @@ function FeedbackDialog({ trigger }: { trigger: ReactNode }) {
   );
 }
 
-
 export function FeedbackSettingsRow() {
   return (
     <FeedbackDialog
