@@ -1,20 +1,12 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { Check, ChevronRight, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Eyebrow } from "@/components/ui/eyebrow";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { getCoachChecklist } from "@/lib/coach-checklist.functions";
-import { useVisualViewport } from "@/hooks/use-visual-viewport";
 import iconMark from "@/assets/icon-mark.png.asset.json";
 
 export const coachChecklistQueryKey = ["coach", "getting-started"] as const;
@@ -53,15 +45,14 @@ function Mark({ className }: { className?: string }) {
         className,
       )}
     >
-      <img src={iconMark.url} alt="" aria-hidden className="size-5 dark:invert" />
+      <img src={iconMark.url} alt="" aria-hidden className="size-5" />
     </span>
   );
 }
 
 /**
- * Three-step getting-started checklist for new coaches. It pops up as a bottom
- * sheet the first time a coach reaches the roster, then lives as a squared
- * thought bubble that minimizes into a small chat button and can be reopened.
+ * Three-step getting-started checklist for new coaches. It opens as an anchored
+ * thought bubble, then minimizes into a small chat button and can be reopened.
  * Progress is derived from real data, so a step ticks itself off wherever the
  * coach did it.
  */
@@ -73,7 +64,6 @@ export function CoachGettingStarted({
   onStartInvite: () => void;
 }) {
   const navigate = useNavigate();
-  const vv = useVisualViewport();
   const { data } = useQuery({
     queryKey: coachChecklistQueryKey,
     queryFn: () => getCoachChecklist(),
@@ -81,18 +71,39 @@ export function CoachGettingStarted({
   });
 
   const [minimized, setMinimized] = useState(false);
-  const [sheetOpen, setSheetOpen] = useState(false);
+  const bubbleRef = useRef<HTMLDivElement>(null);
   const coachId = data?.coachId ?? null;
 
   useEffect(() => {
     if (!coachId) return;
     const stored = readStored(coachId);
-    if (stored.minimized) setMinimized(true);
+    setMinimized(Boolean(stored.minimized));
     if (!stored.seen) {
-      setSheetOpen(true);
       writeStored(coachId, { seen: true });
     }
   }, [coachId]);
+
+  useEffect(() => {
+    if (minimized) return;
+
+    const onPointerDown = (event: PointerEvent) => {
+      if (bubbleRef.current?.contains(event.target as Node)) return;
+      setMinimized(true);
+      if (coachId) writeStored(coachId, { minimized: true });
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      setMinimized(true);
+      if (coachId) writeStored(coachId, { minimized: true });
+    };
+
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [coachId, minimized]);
 
   const steps = useMemo(() => {
     if (!data) return [];
@@ -133,7 +144,6 @@ export function CoachGettingStarted({
 
   const minimize = () => {
     setMinimized(true);
-    setSheetOpen(false);
     if (coachId) writeStored(coachId, { minimized: true });
   };
 
@@ -149,33 +159,37 @@ export function CoachGettingStarted({
       steps={steps}
       currentKey={currentKey}
       onAct={(fn) => {
-        setSheetOpen(false);
+        minimize();
         fn();
       }}
     />
   );
 
   return (
-    <>
+    <div
+      ref={bubbleRef}
+      className="fixed right-4 bottom-24 z-30 flex max-w-[calc(100vw-2rem)] flex-col items-end"
+      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+    >
       {minimized ? (
-        <div
-          className="fixed right-4 bottom-24 z-30"
-          style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          onClick={restore}
+          aria-label={`Get set up — ${remaining} steps left`}
+          className="motion-safe:animate-scale-in relative size-14 rounded-2xl rounded-bl-md bg-accent text-accent-foreground shadow-card"
         >
-          <button
-            type="button"
-            onClick={restore}
-            aria-label={`Get set up — ${remaining} steps left`}
-            className="press motion-safe:animate-scale-in relative flex size-14 items-center justify-center rounded-2xl rounded-bl-md bg-accent text-accent-foreground shadow-card"
+          <Mark />
+          <span
+            className="absolute -top-1 -right-1 flex size-5 items-center justify-center rounded-full border border-divider bg-popover text-[10px] font-bold text-text-primary shadow-card"
+            aria-hidden
           >
-            <Mark />
-            <span className="absolute -top-1 -right-1 flex size-5 items-center justify-center rounded-full bg-card text-[10px] font-bold text-text-primary shadow-card">
-              {remaining}
-            </span>
-          </button>
-        </div>
+            {remaining}
+          </span>
+        </Button>
       ) : (
-        <div className="motion-safe:animate-scale-in mt-4">
+        <div className="motion-safe:animate-scale-in w-80 max-w-full origin-bottom-right">
           <div className="overflow-hidden rounded-md border border-accent bg-accent shadow-card">
             <div className="flex items-center justify-between gap-3 px-4 py-3">
               <div className="flex min-w-0 items-center gap-2">
@@ -203,34 +217,21 @@ export function CoachGettingStarted({
           {/* bubble tail */}
           <div
             aria-hidden
-            className="ml-6 size-0 border-t-[12px] border-r-[14px] border-t-accent border-r-transparent"
+            className="mr-5 ml-auto size-0 border-t-[12px] border-l-[14px] border-t-accent border-l-transparent"
           />
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={minimize}
+            aria-label="Minimize getting started"
+            className="mt-1 size-14 rounded-2xl rounded-bl-md bg-accent text-accent-foreground shadow-card"
+          >
+            <Mark />
+          </Button>
         </div>
       )}
-
-      <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-        <SheetContent
-          side="bottom"
-          className="paper-surface overflow-y-auto"
-          style={{ bottom: vv.keyboardInset, maxHeight: Math.round(vv.height * 0.9) }}
-        >
-          <SheetHeader>
-            <SheetTitle>Get set up</SheetTitle>
-            <SheetDescription>
-              Three steps to get your athletes training in Gradus.
-            </SheetDescription>
-          </SheetHeader>
-          <div className="mt-4 overflow-hidden rounded-md border border-accent bg-card">
-            {body}
-          </div>
-          <div className="mt-3 flex justify-center">
-            <Button type="button" variant="ghost" size="sm" onClick={() => setSheetOpen(false)}>
-              I'll do this later
-            </Button>
-          </div>
-        </SheetContent>
-      </Sheet>
-    </>
+    </div>
   );
 }
 
