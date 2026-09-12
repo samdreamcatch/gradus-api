@@ -113,7 +113,7 @@ function AuthedLayout() {
       <CompetitionRecapPrompt />
       <Outlet />
       {isCoach ? <LessonWrapUpProvider /> : null}
-      {isAdmin || isOnboarding || isPaywall || isAccountSecurity ? null : <FeedbackFab />}
+      
     </ActiveSessionProvider>
   );
 }
