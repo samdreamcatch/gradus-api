@@ -175,6 +175,15 @@ import "../src/routes/api/v1/recaps/$id/dismiss";
 import "../src/routes/api/v1/recaps/coaches";
 import "../src/routes/api/v1/recaps/index";
 import "../src/routes/api/v1/athletes/$id/recaps";
+// I13 guardians (guardian claims and athlete guardian)
+import "../src/routes/api/v1/guardian/claim/summary";
+import "../src/routes/api/v1/guardian/claim/context";
+import "../src/routes/api/v1/guardian/claim/index";
+import "../src/routes/api/v1/guardian/claim/merge-options";
+import "../src/routes/api/v1/guardian/claim/merge";
+import "../src/routes/api/v1/guardian/claim/self";
+import "../src/routes/api/v1/guardian/invites/$id/resend";
+import "../src/routes/api/v1/guardian/status";
 // I13 visibility (PRD 3.5): parent coach-visibility + coach visibility
 import "../src/routes/api/v1/parent/coach-visibility";
 import "../src/routes/api/v1/coach/visibility/mine";
