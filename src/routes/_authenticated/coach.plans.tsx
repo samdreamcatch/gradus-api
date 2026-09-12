@@ -102,7 +102,14 @@ function PlansPage() {
 
         <main className="flex-1 pt-2">
           {tab === "plans" ? (
-            <PlansList filter={planFilter} athleteId={athleteId} sport={sport} />
+            hasNoPlans ? (
+              <PlanHelpBubble
+                onCreatePlan={() => createDraft.mutate({ data: { kind: "plan" } })}
+                onOpenLibrary={() => setTab("library")}
+              />
+            ) : (
+              <PlansList filter={planFilter} athleteId={athleteId} sport={sport} />
+            )
           ) : (
             <LibraryView query={libraryQuery} onSelectMove={(id) => setMoveSelection(id)} />
           )}
