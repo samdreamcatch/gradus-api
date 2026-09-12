@@ -1,13 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { Check, ChevronRight, X } from "lucide-react";
+import { Check, ChevronRight } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
-import { Eyebrow } from "@/components/ui/eyebrow";
 import { cn } from "@/lib/utils";
 import { getCoachChecklist } from "@/lib/coach-checklist.functions";
-import iconMark from "@/assets/icon-mark.png.asset.json";
+import { HelpBubble } from "@/components/coach/help-bubble";
 
 export const coachChecklistQueryKey = ["coach", "getting-started"] as const;
 
