@@ -46,6 +46,7 @@ import { Route as SignupAthleteConfirmRouteImport } from './routes/signup.athlet
 import { Route as SignupAthleteAdultRouteImport } from './routes/signup.athlete.adult'
 import { Route as SignupAthleteAccountRouteImport } from './routes/signup.athlete.account'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
+import { Route as BoardSlugWallRouteImport } from './routes/board.$slug.wall'
 import { Route as ApiV1MessageTargetsRouteImport } from './routes/api/v1/message-targets'
 import { Route as ApiV1FeedbackRouteImport } from './routes/api/v1/feedback'
 import { Route as ApiV1AskRouteImport } from './routes/api/v1/ask'
@@ -474,6 +475,11 @@ const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
   id: '/lovable/email/suppression',
   path: '/lovable/email/suppression',
   getParentRoute: () => rootRouteImport,
+} as any)
+const BoardSlugWallRoute = BoardSlugWallRouteImport.update({
+  id: '/wall',
+  path: '/wall',
+  getParentRoute: () => BoardSlugRoute,
 } as any)
 const ApiV1MessageTargetsRoute = ApiV1MessageTargetsRouteImport.update({
   id: '/api/v1/message-targets',
@@ -1841,7 +1847,7 @@ export interface FileRoutesByFullPath {
   '/coach': typeof AuthenticatedCoachRouteWithChildren
   '/org-admin': typeof AuthenticatedOrgAdminRouteWithChildren
   '/parent': typeof AuthenticatedParentRouteWithChildren
-  '/board/$slug': typeof BoardSlugRoute
+  '/board/$slug': typeof BoardSlugRouteWithChildren
   '/dev/paywall-preview': typeof DevPaywallPreviewRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/g/$token': typeof GTokenRoute
@@ -1891,6 +1897,7 @@ export interface FileRoutesByFullPath {
   '/api/v1/ask': typeof ApiV1AskRoute
   '/api/v1/feedback': typeof ApiV1FeedbackRoute
   '/api/v1/message-targets': typeof ApiV1MessageTargetsRoute
+  '/board/$slug/wall': typeof BoardSlugWallRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/signup/athlete/account': typeof SignupAthleteAccountRoute
   '/signup/athlete/adult': typeof SignupAthleteAdultRoute
@@ -2115,7 +2122,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
   '/unsubscribe': typeof UnsubscribeRoute
-  '/board/$slug': typeof BoardSlugRoute
+  '/board/$slug': typeof BoardSlugRouteWithChildren
   '/dev/paywall-preview': typeof DevPaywallPreviewRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/g/$token': typeof GTokenRoute
@@ -2164,6 +2171,7 @@ export interface FileRoutesByTo {
   '/api/v1/ask': typeof ApiV1AskRoute
   '/api/v1/feedback': typeof ApiV1FeedbackRoute
   '/api/v1/message-targets': typeof ApiV1MessageTargetsRoute
+  '/board/$slug/wall': typeof BoardSlugWallRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/signup/athlete/account': typeof SignupAthleteAccountRoute
   '/signup/athlete/adult': typeof SignupAthleteAdultRoute
@@ -2395,7 +2403,7 @@ export interface FileRoutesById {
   '/_authenticated/coach': typeof AuthenticatedCoachRouteWithChildren
   '/_authenticated/org-admin': typeof AuthenticatedOrgAdminRouteWithChildren
   '/_authenticated/parent': typeof AuthenticatedParentRouteWithChildren
-  '/board/$slug': typeof BoardSlugRoute
+  '/board/$slug': typeof BoardSlugRouteWithChildren
   '/dev/paywall-preview': typeof DevPaywallPreviewRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/g/$token': typeof GTokenRoute
@@ -2445,6 +2453,7 @@ export interface FileRoutesById {
   '/api/v1/ask': typeof ApiV1AskRoute
   '/api/v1/feedback': typeof ApiV1FeedbackRoute
   '/api/v1/message-targets': typeof ApiV1MessageTargetsRoute
+  '/board/$slug/wall': typeof BoardSlugWallRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/signup/athlete/account': typeof SignupAthleteAccountRoute
   '/signup/athlete/adult': typeof SignupAthleteAdultRoute
@@ -2726,6 +2735,7 @@ export interface FileRouteTypes {
     | '/api/v1/ask'
     | '/api/v1/feedback'
     | '/api/v1/message-targets'
+    | '/board/$slug/wall'
     | '/lovable/email/suppression'
     | '/signup/athlete/account'
     | '/signup/athlete/adult'
@@ -2999,6 +3009,7 @@ export interface FileRouteTypes {
     | '/api/v1/ask'
     | '/api/v1/feedback'
     | '/api/v1/message-targets'
+    | '/board/$slug/wall'
     | '/lovable/email/suppression'
     | '/signup/athlete/account'
     | '/signup/athlete/adult'
@@ -3279,6 +3290,7 @@ export interface FileRouteTypes {
     | '/api/v1/ask'
     | '/api/v1/feedback'
     | '/api/v1/message-targets'
+    | '/board/$slug/wall'
     | '/lovable/email/suppression'
     | '/signup/athlete/account'
     | '/signup/athlete/adult'
@@ -3505,7 +3517,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   TermsRoute: typeof TermsRoute
   UnsubscribeRoute: typeof UnsubscribeRoute
-  BoardSlugRoute: typeof BoardSlugRoute
+  BoardSlugRoute: typeof BoardSlugRouteWithChildren
   DevPaywallPreviewRoute: typeof DevPaywallPreviewRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   GTokenRoute: typeof GTokenRoute
@@ -3960,6 +3972,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/lovable/email/suppression'
       preLoaderRoute: typeof LovableEmailSuppressionRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/board/$slug/wall': {
+      id: '/board/$slug/wall'
+      path: '/wall'
+      fullPath: '/board/$slug/wall'
+      preLoaderRoute: typeof BoardSlugWallRouteImport
+      parentRoute: typeof BoardSlugRoute
     }
     '/api/v1/message-targets': {
       id: '/api/v1/message-targets'
@@ -5883,6 +5902,18 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
   AuthenticatedRouteChildren,
 )
 
+interface BoardSlugRouteChildren {
+  BoardSlugWallRoute: typeof BoardSlugWallRoute
+}
+
+const BoardSlugRouteChildren: BoardSlugRouteChildren = {
+  BoardSlugWallRoute: BoardSlugWallRoute,
+}
+
+const BoardSlugRouteWithChildren = BoardSlugRoute._addFileChildren(
+  BoardSlugRouteChildren,
+)
+
 interface SignupAthleteRouteChildren {
   SignupAthleteAccountRoute: typeof SignupAthleteAccountRoute
   SignupAthleteAdultRoute: typeof SignupAthleteAdultRoute
@@ -5924,7 +5955,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   TermsRoute: TermsRoute,
   UnsubscribeRoute: UnsubscribeRoute,
-  BoardSlugRoute: BoardSlugRoute,
+  BoardSlugRoute: BoardSlugRouteWithChildren,
   DevPaywallPreviewRoute: DevPaywallPreviewRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   GTokenRoute: GTokenRoute,

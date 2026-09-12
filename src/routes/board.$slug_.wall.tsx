@@ -29,7 +29,7 @@ const TABS = [
   },
 ];
 
-export const Route = createFileRoute("/board/$slug/wall")({
+export const Route = createFileRoute("/board/$slug_/wall")({
   head: () => ({
     meta: [
       { title: "Wall Display — Gradus" },
