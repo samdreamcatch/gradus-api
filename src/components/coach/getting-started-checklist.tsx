@@ -198,12 +198,12 @@ export function CoachGettingStarted({
                 <X className="size-4" aria-hidden />
               </Button>
             </div>
-            <div className="border-t border-pen-tennis/40 bg-card">{body}</div>
+            <div className="border-t border-accent/40 bg-card">{body}</div>
           </div>
           {/* bubble tail */}
           <div
             aria-hidden
-            className="ml-6 size-0 border-t-[12px] border-r-[14px] border-t-pen-tennis border-r-transparent"
+            className="ml-6 size-0 border-t-[12px] border-r-[14px] border-t-accent border-r-transparent"
           />
         </div>
       )}
