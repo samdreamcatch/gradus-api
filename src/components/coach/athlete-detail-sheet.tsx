@@ -101,12 +101,7 @@ function AthleteDetailBody({ athleteId }: { athleteId: string }) {
   }, [detail.data?.hasAnySignal, summary]);
 
   if (isSample) {
-    return (
-      <SampleAthleteBody
-        athleteId={athleteId}
-        showBilling={effectiveTier === "coach_pro" || effectiveTier === "club"}
-      />
-    );
+    return <SampleAthleteBody athleteId={athleteId} showBilling />;
   }
 
   if (detail.isLoading) {
@@ -250,10 +245,8 @@ function AthleteDetailBody({ athleteId }: { athleteId: string }) {
       <CompetitionResultsSection athleteId={athleteId} firstName={d.firstName} />
 
 
-      {/* Billing (Coach Pro & Club) */}
-      {effectiveTier === "coach_pro" || effectiveTier === "club" ? (
-        <AthleteBillingSection athleteId={athleteId} />
-      ) : null}
+      {/* Billing — available on every coach tier (2026-09-12) */}
+      <AthleteBillingSection athleteId={athleteId} />
 
       {/* Also coached by */}
       <AlsoCoachedByList
