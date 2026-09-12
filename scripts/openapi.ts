@@ -178,6 +178,14 @@ import "../src/routes/api/v1/recaps/$id/dismiss";
 import "../src/routes/api/v1/recaps/coaches";
 import "../src/routes/api/v1/recaps/index";
 import "../src/routes/api/v1/athletes/$id/recaps";
+// I13 visibility (PRD 3.5): parent coach-visibility + coach visibility
+import "../src/routes/api/v1/parent/coach-visibility";
+import "../src/routes/api/v1/coach/visibility/mine";
+import "../src/routes/api/v1/coach/visibility/$id/index";
+import "../src/routes/api/v1/coach/visibility/$id/respond";
+// I13 celebration (PRD §7.14, Appendix A "Me")
+import "../src/routes/api/v1/me/celebrations/index";
+import "../src/routes/api/v1/me/celebrations/$id/ack";
 
 const outPath = resolve(__dirname, "../docs/api/openapi.json");
 mkdirSync(dirname(outPath), { recursive: true });

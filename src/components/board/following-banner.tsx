@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { ArrowRight, X } from "lucide-react";
 import { getBoard, getMySkaterNames } from "@/lib/board.functions";
 import { normalizeName } from "@/lib/board-types";
+import { supabase } from "@/integrations/supabase/client";
 import { findMySkaters, type SkaterMatch } from "@/components/board/my-skaters";
 import {
   dismissBanner,
@@ -61,6 +62,15 @@ export function FollowingBanner() {
   const [extras, setExtras] = useState<string[]>([]);
   const [unfollowed, setUnfollowed] = useState<string[]>([]);
   const [dismissed, setDismissed] = useState(false);
+  const [signedIn, setSignedIn] = useState(false);
+
+  useEffect(() => {
+    void supabase.auth.getSession().then(({ data }) => setSignedIn(!!data.session));
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) =>
+      setSignedIn(!!session),
+    );
+    return () => sub.subscription.unsubscribe();
+  }, []);
 
   useEffect(() => {
     setFromBoard(!!readBoardReturn());
@@ -87,7 +97,7 @@ export function FollowingBanner() {
   const { data: myNames } = useQuery({
     queryKey: ["board-my-skaters"],
     queryFn: () => mine(),
-    enabled,
+    enabled: enabled && signedIn,
     staleTime: 5 * 60_000,
   });
 
