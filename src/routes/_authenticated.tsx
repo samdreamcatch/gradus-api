@@ -9,7 +9,7 @@ import { ActiveSessionProvider } from "@/lib/active-session-store";
 import { ActiveSessionBar } from "@/components/plans/active-session-bar";
 import { FollowingBanner } from "@/components/board/following-banner";
 import { CompetitionRecapPrompt } from "@/components/board/competition-recap-prompt";
-import { FeedbackFab } from "@/components/feedback/feedback-fab";
+
 import { acceptTerms } from "@/lib/terms.functions";
 import { readPendingTermsAccept, clearPendingTermsAccept } from "@/lib/terms";
 import { applyPromoCodeToMyProfile } from "@/lib/promo-codes.functions";
@@ -50,15 +50,10 @@ function AuthedLayout() {
   const { user } = Route.useRouteContext();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isCoach = pathname.startsWith("/coach");
-  const isAdmin = pathname.startsWith("/admin");
-  const isOnboarding = pathname.endsWith("/onboarding");
-  const isPaywall = pathname.startsWith("/coach/paywall") || pathname.startsWith("/parent/team");
-  const isAccountSecurity = pathname.endsWith("/settings/account");
 
   const accept = useServerFn(acceptTerms);
   const applyPromo = useServerFn(applyPromoCodeToMyProfile);
   useTouchLastSeen();
-
 
   const termsAttemptsRef = useRef(0);
   const promoAttemptsRef = useRef(0);
@@ -116,7 +111,6 @@ function AuthedLayout() {
       <CompetitionRecapPrompt />
       <Outlet />
       {isCoach ? <LessonWrapUpProvider /> : null}
-      {isAdmin || isOnboarding || isPaywall || isAccountSecurity ? null : <FeedbackFab />}
     </ActiveSessionProvider>
   );
 }
