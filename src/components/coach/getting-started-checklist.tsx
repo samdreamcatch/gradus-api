@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { Check, ChevronRight } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { getCoachChecklist } from "@/lib/coach-checklist.functions";
 import { HelpBubble } from "@/components/coach/help-bubble";
