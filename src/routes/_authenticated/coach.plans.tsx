@@ -64,6 +64,14 @@ function PlansPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  // "No plans of any kind" — drives the how-to bubble.
+  const fetchAllPlans = useServerFn(listPlans);
+  const { data: allPlans } = useQuery({
+    queryKey: ["plans", {}],
+    queryFn: () => fetchAllPlans({ data: {} }),
+  });
+  const hasNoPlans = allPlans ? allPlans.plans.length === 0 : false;
+
   return (
     <>
       <div className="mx-auto flex min-h-dvh max-w-3xl flex-col px-3 pt-4 pb-app-chrome">
