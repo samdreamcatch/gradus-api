@@ -97,31 +97,6 @@ function FeedbackDialog({ trigger }: { trigger: ReactNode }) {
   );
 }
 
-export function FeedbackFab() {
-  const bannerLocked = useBottomBannerLocked();
-  const pathname = useRouterState({ select: (s) => s.location.pathname });
-  // Hide the persistent banner on settings pages — it overlaps the sign-out
-  // button on mobile. Settings pages get a dedicated feedback row instead.
-  if (pathname.endsWith("/settings")) return null;
-
-  return (
-    <FeedbackDialog
-      trigger={
-        <button
-          type="button"
-          aria-label="Gradus is in beta, share feedback"
-          className={cn(
-            "fixed bottom-24 left-4 z-30 inline-flex items-center gap-2 rounded-pill bg-attention px-3.5 py-2 text-[11px] font-bold uppercase tracking-wider text-[#0A2540] shadow-card transition-all hover:scale-105 active:scale-95 md:bottom-6",
-            bannerLocked && "pointer-events-none translate-y-4 opacity-0",
-          )}
-        >
-          <MessageSquarePlus className="size-4" />
-          <span>Gradus is in beta, share feedback</span>
-        </button>
-      }
-    />
-  );
-}
 
 export function FeedbackSettingsRow() {
   return (
