@@ -2,7 +2,7 @@ import { forwardRef, useImperativeHandle, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Plus, Pencil } from "lucide-react";
 import { isSampleAthlete } from "@/data/sample-athlete";
 import { cn } from "@/lib/utils";
-import type { RosterAthlete } from "@/lib/coach-roster.functions";
+import type { RosterAthlete, RosterSlot } from "@/lib/coach-roster.functions";
 import type { AthletePracticeSummary } from "@/lib/coach-schedule.functions";
 import { PreLessonBriefing } from "./pre-lesson-briefing";
 import { Button } from "@/components/ui/button";
@@ -73,6 +73,9 @@ interface DaySession {
   startMinute: number;
   endMinute: number;
   overrideStatus: "canceled" | "rescheduled" | null;
+  frequency: RosterSlot["frequency"];
+  weeksOfMonth: number[];
+  startsOn: string | null;
 }
 
 function toIsoDate(d: Date): string {
@@ -154,6 +157,9 @@ export const WeekScheduleView = forwardRef<
           startMinute,
           endMinute,
           overrideStatus: override?.status ?? null,
+          frequency: s.frequency,
+          weeksOfMonth: s.weeksOfMonth,
+          startsOn: s.startsOn,
         });
       }
     }
@@ -344,6 +350,9 @@ export const WeekScheduleView = forwardRef<
                               dayOfWeek: s.dayOfWeek,
                               startMinute: s.startMinute,
                               endMinute: s.endMinute,
+                              frequency: s.frequency,
+                              weeksOfMonth: s.weeksOfMonth,
+                              startsOn: s.startsOn,
                             })
                     }
                     onEditOccurrence={

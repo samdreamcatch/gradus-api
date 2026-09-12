@@ -35,7 +35,6 @@ function formatTime(minute: number): string {
   return m === 0 ? `${h12}${ampm}` : `${h12}:${String(m).padStart(2, "0")}${ampm}`;
 }
 
-
 export function RosterSettingsSection() {
   const { data, isLoading } = useQuery(rosterQueryOptions);
   const [sheetMode, setSheetMode] = useState<LessonSlotSheetMode | null>(null);
@@ -76,6 +75,9 @@ export function RosterSettingsSection() {
                     dayOfWeek: s.dayOfWeek,
                     startMinute: s.startMinute,
                     endMinute: s.endMinute,
+                    frequency: s.frequency,
+                    weeksOfMonth: s.weeksOfMonth,
+                    startsOn: s.startsOn,
                   })
                 }
               />

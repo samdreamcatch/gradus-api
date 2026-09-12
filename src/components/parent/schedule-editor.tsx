@@ -34,14 +34,14 @@ const DAYS = [
   { value: 6, label: "Saturday" },
 ];
 
-const FREQUENCIES: { value: Frequency; label: string }[] = [
+export const FREQUENCIES: { value: Frequency; label: string }[] = [
   { value: "weekly", label: "Weekly" },
   { value: "biweekly", label: "Every other week" },
   { value: "twice_monthly", label: "2x per month" },
   { value: "monthly", label: "1x per month" },
 ];
 
-const WEEK_OPTIONS: { value: number; label: string }[] = [
+export const WEEK_OPTIONS: { value: number; label: string }[] = [
   { value: 1, label: "1st" },
   { value: 2, label: "2nd" },
   { value: 3, label: "3rd" },
@@ -77,7 +77,7 @@ export function weeksRequired(f: Frequency): number {
   if (f === "monthly") return 1;
   return 0;
 }
-function weeksHelpText(f: Frequency): string {
+export function weeksHelpText(f: Frequency): string {
   if (f === "twice_monthly") return "Pick the 2 weeks of the month for this lesson.";
   if (f === "monthly") return "Pick the week of the month for this lesson.";
   return "";
