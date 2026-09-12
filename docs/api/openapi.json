@@ -10410,6 +10410,86 @@
         }
       }
     },
+    "/api/v1/auth/attest/register": {
+      "post": {
+        "operationId": "registerAppAttestKey",
+        "summary": "Register an App Attest public key for this device",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "keyId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "attestationObject": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "bundleId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "environment": {
+                    "type": "string",
+                    "enum": [
+                      "development",
+                      "production"
+                    ]
+                  }
+                },
+                "required": [
+                  "keyId",
+                  "attestationObject",
+                  "bundleId",
+                  "environment"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/auth/recover": {
       "post": {
         "operationId": "postAuthRecover",
