@@ -41,7 +41,7 @@ function Lane({
   onOpenScore?: (s: BoardSkater) => void;
 }) {
   const style = LANE_STYLE[tone];
-  const tappable = !!skater?.protocol && !!onOpenScore;
+  const tappable = !!skater && !!onOpenScore;
   const Wrapper = tappable ? "button" : "div";
 
   return (
@@ -64,7 +64,12 @@ function Lane({
       </Eyebrow>
 
       {skater ? (
-        <SkaterBody skater={skater} tone={tone} awaiting={awaiting} showDetailHint={tappable} />
+        <SkaterBody
+          skater={skater}
+          tone={tone}
+          awaiting={awaiting}
+          showDetailHint={tappable && !!skater.protocol}
+        />
       ) : (
         <p className="mt-2 text-sm text-text-tertiary">—</p>
       )}
@@ -98,7 +103,6 @@ export function RinkPanel({
 
   return (
     <Card variant="section" className={cn("space-y-4", className)}>
-
       <div className="flex items-baseline justify-between gap-3">
         <h2 className="font-display text-h3 text-text-primary">{rink.name}</h2>
         {rink.state === "live" ? (
@@ -139,8 +143,14 @@ export function RinkPanel({
                 skater={current.justScored}
                 onOpenScore={onOpenScore}
               />
-              <Lane tone="ice" label="ON THE ICE" skater={current.onIce} awaiting />
-              <Lane tone="next" label="UP NEXT" skater={current.upNext} />
+              <Lane
+                tone="ice"
+                label="ON THE ICE"
+                skater={current.onIce}
+                awaiting
+                onOpenScore={onOpenScore}
+              />
+              <Lane tone="next" label="UP NEXT" skater={current.upNext} onOpenScore={onOpenScore} />
             </div>
           )}
         </>

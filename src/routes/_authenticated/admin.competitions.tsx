@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { QRCodeSVG } from "qrcode.react";
@@ -200,7 +200,11 @@ function AdminCompetitions() {
                   onClick={() => copyBoardLink(c.slug)}
                 >
                   Copy link
-
+                </Button>
+                <Button size="sm" variant="outline" asChild>
+                  <Link to="/admin/board/$slug" params={{ slug: c.slug }} target="_blank">
+                    Wall display
+                  </Link>
                 </Button>
                 <Button
                   type="button"
