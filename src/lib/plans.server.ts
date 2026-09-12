@@ -605,18 +605,19 @@ async function assertPlanOwned(supabase: Client, planId: string, coachId: string
   return data;
 }
 
-/** Only templates and drafts may be hard-deleted; active and benched plans must be benched instead. */
+/** Only templates, drafts, and benched plans may be hard-deleted; active plans must be benched first. */
 export async function deletePlan(ctx: PlansContext, id: string): Promise<{ ok: true }> {
   const supabase = ctx.supabase;
   const coachId = await ensureCoachId(supabase, ctx.userId);
 
   const plan = await assertPlanOwned(supabase, id, coachId);
-  const deletable = plan.kind === "template" || plan.status === "draft";
+  const deletable =
+    plan.kind === "template" || plan.status === "draft" || plan.status === "benched";
   if (!deletable) {
     throw new ApiError({
       code: "not_deletable",
       status: 422,
-      message: "Active or benched plans can't be deleted — bench the plan instead.",
+      message: "Active plans can't be deleted — bench the plan first.",
     });
   }
 
