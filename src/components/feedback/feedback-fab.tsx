@@ -1,7 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation } from "@tanstack/react-query";
-import { useRouterState } from "@tanstack/react-router";
 import { MessageSquarePlus } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -15,7 +14,6 @@ import {
 import { Eyebrow } from "@/components/ui/eyebrow";
 
 import { submitFeedback } from "@/lib/feedback.functions";
-import { useBottomBannerLocked } from "@/lib/bottom-banner-store";
 import { cn } from "@/lib/utils";
 
 function FeedbackDialog({ trigger }: { trigger: ReactNode }) {
