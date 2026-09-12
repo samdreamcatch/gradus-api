@@ -24,7 +24,6 @@ import { BillingTab } from "@/components/coach/billing-tab";
 import { ScheduleImportSheet } from "@/components/coach/schedule-import-sheet";
 import { CoachPostEventPrompt } from "@/components/coach/post-event-prompt";
 
-
 import { InviteCard } from "@/components/onboarding/invite-card";
 import { EnterInviteCodeCard } from "@/components/coach/enter-invite-code-card";
 
@@ -35,7 +34,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
 
 import {
   Sheet,
@@ -91,7 +89,6 @@ const INVITE_STEPS: {
   },
 ];
 
-
 function SegmentedToggle({ tab, onChange }: { tab: RosterTab; onChange: (t: RosterTab) => void }) {
   const tabs: { key: RosterTab; label: string }[] = [
     { key: "schedule", label: "Schedule" },
@@ -117,7 +114,6 @@ function SegmentedToggle({ tab, onChange }: { tab: RosterTab; onChange: (t: Rost
     </div>
   );
 }
-
 
 export const Route = createFileRoute("/_authenticated/coach/roster")({
   loader: ({ context }) => context.queryClient.ensureQueryData(rosterQueryOptions),
@@ -278,7 +274,6 @@ function RosterPage() {
                   </DropdownMenu>
                 ) : null}
               </div>
-
             </div>
           </header>
 
@@ -366,7 +361,6 @@ function RosterPage() {
                     <ChevronRight className="size-4 shrink-0 text-text-tertiary" aria-hidden />
                   </button>
                 </div>
-
               </>
             ) : (
               <>
@@ -461,8 +455,6 @@ function RosterPage() {
         rosterCount={roster.athletes.length}
         rosterNames={roster.athletes.map((a) => `${a.firstName} ${a.lastName}`)}
       />
-
     </>
   );
 }
-
