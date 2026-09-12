@@ -220,7 +220,7 @@ export function CoachGettingStarted({
               Three steps to get your athletes training in Gradus.
             </SheetDescription>
           </SheetHeader>
-          <div className="mt-4 overflow-hidden rounded-md border border-pen-tennis bg-card">
+          <div className="mt-4 overflow-hidden rounded-md border border-accent bg-card">
             {body}
           </div>
           <div className="mt-3 flex justify-center">
