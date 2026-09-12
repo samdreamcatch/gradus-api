@@ -34,19 +34,6 @@ function writeStored(coachId: string, next: Stored) {
   }
 }
 
-/** The Gradus bar mark, on a paper chip so it reads in both themes. */
-function Mark({ className }: { className?: string }) {
-  return (
-    <span
-      className={cn(
-        "flex size-7 shrink-0 items-center justify-center rounded-md bg-card",
-        className,
-      )}
-    >
-      <img src={iconMark.url} alt="" aria-hidden className="size-5" />
-    </span>
-  );
-}
 
 /**
  * Three-step getting-started checklist for new coaches. It opens as an anchored
