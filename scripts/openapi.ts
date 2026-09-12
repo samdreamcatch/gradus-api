@@ -183,6 +183,9 @@ import "../src/routes/api/v1/parent/team/guardians/invites/$id/resend";
 import "../src/routes/api/v1/parent/team/guardians/$id";
 import "../src/routes/api/v1/team-invites/preview";
 import "../src/routes/api/v1/team-invites/claim";
+// I13 celebration (PRD §7.14, Appendix A "Me")
+import "../src/routes/api/v1/me/celebrations/index";
+import "../src/routes/api/v1/me/celebrations/$id/ack";
 
 const outPath = resolve(__dirname, "../docs/api/openapi.json");
 mkdirSync(dirname(outPath), { recursive: true });
