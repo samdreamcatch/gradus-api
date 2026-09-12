@@ -8,11 +8,24 @@ table, and it stays correct even if they do a step from somewhere else in the ap
   a parent/athlete account attached.
 - Plan: the coach has created at least one practice plan.
 
+## Lesson times entered by a parent or athlete
+
+When a parent or adult athlete has already entered their lesson times with this
+coach, those lessons are stored against the coach and the coach's schedule
+already reads every lesson attached to them, whoever entered it — so they show
+up as soon as the connection exists, including connections made later.
+
+The checklist uses that same signal, so a coach who joins through an existing
+parent or athlete sees step 1 already ticked off, with a short line in the card
+saying the schedule came from their connected families and can be edited.
+The card re-checks on each roster visit, so a later connection ticks it too.
+
 ## Technical notes
 
 - New server function `getCoachOnboardingChecklist` in
   `src/lib/coach-checklist.functions.ts` (auth middleware), one count query per
-  signal against `athlete_lesson_slots`, `athletes`/`coach_athletes`, and
+  signal against `athlete_lesson_slots` (filtered by `coach_id`, which already
+  covers parent- and athlete-entered slots), `athletes`/`coach_athletes`, and
   `plans`. No schema change.
 - New component `src/components/coach/getting-started-checklist.tsx`, rendered
   from `src/routes/_authenticated/coach.roster.tsx`. It reuses Card, Button,
@@ -25,5 +38,7 @@ table, and it stays correct even if they do a step from somewhere else in the ap
   the coach dismisses it with the top-right ×.
 - Step actions reuse what already exists: the schedule import sheet, the invite
   hub sheet, and navigation to the plan builder.
-- Query invalidated after import/invite/plan mutations so a step ticks over
-  without a refresh.
+- Query invalidated after import/invite/plan mutations, and refetched on roster
+  mount, so a step ticks over without a manual refresh.
+- The existing one-off "Create your first plan" banner on the roster is removed,
+  since the checklist covers it.
