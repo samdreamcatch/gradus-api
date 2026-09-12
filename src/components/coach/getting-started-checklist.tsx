@@ -4,7 +4,6 @@ import { useNavigate } from "@tanstack/react-router";
 import { Check, ChevronRight, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import {
   Sheet,
@@ -16,6 +15,7 @@ import {
 import { cn } from "@/lib/utils";
 import { getCoachChecklist } from "@/lib/coach-checklist.functions";
 import { useVisualViewport } from "@/hooks/use-visual-viewport";
+import iconMark from "@/assets/icon-mark.png.asset.json";
 
 export const coachChecklistQueryKey = ["coach", "getting-started"] as const;
 
@@ -25,7 +25,7 @@ function storageKey(coachId: string) {
   return `gradus.coachChecklist.${coachId}`;
 }
 
-type Stored = { seen?: boolean; dismissed?: boolean };
+type Stored = { seen?: boolean; minimized?: boolean };
 
 function readStored(coachId: string): Stored {
   try {
@@ -44,11 +44,26 @@ function writeStored(coachId: string, next: Stored) {
   }
 }
 
+/** The Gradus bar mark, on a paper chip so it reads in both themes. */
+function Mark({ className }: { className?: string }) {
+  return (
+    <span
+      className={cn(
+        "flex size-7 shrink-0 items-center justify-center rounded-md bg-card",
+        className,
+      )}
+    >
+      <img src={iconMark.url} alt="" aria-hidden className="size-5" />
+    </span>
+  );
+}
+
 /**
  * Three-step getting-started checklist for new coaches. It pops up as a bottom
- * sheet the first time a coach reaches the roster, then lives as a compact card
- * until every step is done or the coach dismisses it. Progress is derived from
- * real data, so a step ticks itself off wherever the coach did it.
+ * sheet the first time a coach reaches the roster, then lives as a squared
+ * thought bubble that minimizes into a small chat button and can be reopened.
+ * Progress is derived from real data, so a step ticks itself off wherever the
+ * coach did it.
  */
 export function CoachGettingStarted({
   onStartSchedule,
@@ -65,17 +80,14 @@ export function CoachGettingStarted({
     staleTime: 30_000,
   });
 
-  const [dismissed, setDismissed] = useState(false);
+  const [minimized, setMinimized] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const coachId = data?.coachId ?? null;
 
   useEffect(() => {
     if (!coachId) return;
     const stored = readStored(coachId);
-    if (stored.dismissed) {
-      setDismissed(true);
-      return;
-    }
+    if (stored.minimized) setMinimized(true);
     if (!stored.seen) {
       setSheetOpen(true);
       writeStored(coachId, { seen: true });
@@ -115,16 +127,22 @@ export function CoachGettingStarted({
   }, [data, navigate, onStartInvite, onStartSchedule]);
 
   const doneCount = steps.filter((s) => s.done).length;
-  const allDone = steps.length > 0 && doneCount === steps.length;
+  const remaining = steps.length - doneCount;
+  const allDone = steps.length > 0 && remaining === 0;
   const currentKey = steps.find((s) => !s.done)?.key ?? null;
 
-  const dismiss = () => {
-    setDismissed(true);
+  const minimize = () => {
+    setMinimized(true);
     setSheetOpen(false);
-    if (coachId) writeStored(coachId, { dismissed: true });
+    if (coachId) writeStored(coachId, { minimized: true });
   };
 
-  if (!data || !coachId || allDone || dismissed) return null;
+  const restore = () => {
+    setMinimized(false);
+    if (coachId) writeStored(coachId, { minimized: false });
+  };
+
+  if (!data || !coachId || allDone) return null;
 
   const body = (
     <ChecklistBody
@@ -139,29 +157,56 @@ export function CoachGettingStarted({
 
   return (
     <>
-      <Card variant="row" className="mt-4 p-0">
-        <div className="flex items-center justify-between gap-3 px-4 py-3">
-          <div className="flex min-w-0 items-center gap-2">
-            <Eyebrow as="h2" size="caption" tone="tertiary">
-              Get set up
-            </Eyebrow>
-            <span className="text-xs text-text-tertiary">
-              {doneCount} / {steps.length} steps
-            </span>
-          </div>
-          <Button
+      {minimized ? (
+        <div
+          className="fixed right-4 bottom-24 z-30"
+          style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+        >
+          <button
             type="button"
-            variant="ghost"
-            size="icon"
-            aria-label="Dismiss getting started"
-            onClick={dismiss}
-            className="-mr-2 shrink-0"
+            onClick={restore}
+            aria-label={`Get set up — ${remaining} steps left`}
+            className="press motion-safe:animate-scale-in relative flex size-14 items-center justify-center rounded-2xl rounded-bl-md bg-pen-tennis text-pen-tennis-ink shadow-card"
           >
-            <X className="size-4" aria-hidden />
-          </Button>
+            <Mark />
+            <span className="absolute -top-1 -right-1 flex size-5 items-center justify-center rounded-full bg-card text-[10px] font-bold text-text-primary shadow-card">
+              {remaining}
+            </span>
+          </button>
         </div>
-        <div className="border-t border-divider">{body}</div>
-      </Card>
+      ) : (
+        <div className="motion-safe:animate-scale-in mt-4">
+          <div className="overflow-hidden rounded-md border border-pen-tennis bg-pen-tennis-wash shadow-card">
+            <div className="flex items-center justify-between gap-3 px-4 py-3">
+              <div className="flex min-w-0 items-center gap-2">
+                <Mark />
+                <Eyebrow as="h2" size="caption" tone="tertiary">
+                  Get set up
+                </Eyebrow>
+                <span className="text-xs text-text-tertiary">
+                  {doneCount} / {steps.length}
+                </span>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label="Minimize getting started"
+                onClick={minimize}
+                className="-mr-2 shrink-0"
+              >
+                <X className="size-4" aria-hidden />
+              </Button>
+            </div>
+            <div className="border-t border-pen-tennis/40 bg-card">{body}</div>
+          </div>
+          {/* bubble tail */}
+          <div
+            aria-hidden
+            className="ml-6 size-0 border-t-[12px] border-r-[14px] border-t-pen-tennis border-r-transparent"
+          />
+        </div>
+      )}
 
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
         <SheetContent
@@ -175,7 +220,7 @@ export function CoachGettingStarted({
               Three steps to get your athletes training in Gradus.
             </SheetDescription>
           </SheetHeader>
-          <div className="mt-4 overflow-hidden rounded-2xl border border-divider bg-elevated">
+          <div className="mt-4 overflow-hidden rounded-md border border-pen-tennis bg-card">
             {body}
           </div>
           <div className="mt-3 flex justify-center">
