@@ -211,24 +211,48 @@ function BoardPage() {
     [slug],
   );
 
+  /**
+   * Mirror the device-local follow to the server so follows can be counted
+   * even for signed-out visitors. Best-effort: never blocks the UI.
+   */
+  const recordFollow = useCallback(
+    (name: string, following: boolean) => {
+      const deviceId = getBoardDeviceId();
+      if (!deviceId) return;
+      void setFollow({ data: { slug, skaterName: name, deviceId, following } }).catch(() => {});
+    },
+    [slug, setFollow],
+  );
+
+  /** Best display name we know for a normalized key. */
+  const nameForKey = useCallback(
+    (key: string) =>
+      extras.find((n) => normalizeName(n) === key) ??
+      matches.find((m) => normalizeName(m.skater.name) === key)?.skater.name ??
+      key,
+    [extras, matches],
+  );
+
   const followByName = useCallback(
     (name: string) => {
       const key = normalizeName(name);
       if (!extraKeys.includes(key)) saveExtras([...extras, name]);
       saveUnfollowed(unfollowed.filter((n) => n !== key));
+      recordFollow(name, true);
     },
-    [extras, extraKeys, unfollowed, saveExtras, saveUnfollowed],
+    [extras, extraKeys, unfollowed, saveExtras, saveUnfollowed, recordFollow],
   );
 
   const unfollowByKey = useCallback(
     (key: string) => {
+      recordFollow(nameForKey(key), false);
       if (extraKeys.includes(key)) {
         saveExtras(extras.filter((n) => normalizeName(n) !== key));
         return;
       }
       if (!unfollowed.includes(key)) saveUnfollowed([...unfollowed, key]);
     },
-    [extras, extraKeys, unfollowed, saveExtras, saveUnfollowed],
+    [extras, extraKeys, unfollowed, saveExtras, saveUnfollowed, recordFollow, nameForKey],
   );
 
   const toggleFollow = useCallback(
@@ -236,11 +260,12 @@ function BoardPage() {
       const key = normalizeName(m.skater.name);
       if (unfollowed.includes(key)) {
         saveUnfollowed(unfollowed.filter((n) => n !== key));
+        recordFollow(m.skater.name, true);
         return;
       }
       unfollowByKey(key);
     },
-    [unfollowed, saveUnfollowed, unfollowByKey],
+    [unfollowed, saveUnfollowed, unfollowByKey, recordFollow],
   );
 
   const followedMatches = useMemo(() => matches.filter(isFollowed), [matches, isFollowed]);
