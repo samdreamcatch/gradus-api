@@ -55,7 +55,6 @@ function openWallDisplay(slug: string) {
   );
 }
 
-
 async function copyBoardLink(slug: string) {
   try {
     await navigator.clipboard.writeText(boardUrl(slug));
@@ -148,7 +147,6 @@ function AdminCompetitions() {
                 : "Leave blank and we'll create one from the event name."}
             </p>
           </div>
-
         </div>
         <Button
           type="button"

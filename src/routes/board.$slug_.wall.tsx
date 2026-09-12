@@ -132,12 +132,7 @@ function WallBoardPage() {
         </p>
       </header>
 
-      <SegmentedToggle
-        label="Board view"
-        value={tab}
-        onChange={(v) => setTab(v)}
-        options={TABS}
-      />
+      <SegmentedToggle label="Board view" value={tab} onChange={(v) => setTab(v)} options={TABS} />
 
       {tab === "rinks" ? (
         <div
