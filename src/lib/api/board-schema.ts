@@ -119,6 +119,7 @@ export const boardPayloadSchema = z.object({
     dates: z.string(),
     location: z.string(),
     url: z.string(),
+      timeZone: z.string().optional(),
   }),
   rinks: z.array(boardRinkSchema),
   schedule: z.array(boardEventSchema),

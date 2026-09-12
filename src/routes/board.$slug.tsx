@@ -467,6 +467,7 @@ function BoardPage() {
               <RinkPanel
                 rink={selected}
                 onOpenScore={openByName}
+                timeZone={payload?.competition.timeZone}
                 className={rinks.length > 1 ? "rounded-t-none" : undefined}
               />
             ) : (
@@ -499,6 +500,7 @@ function BoardPage() {
             schedule={payload?.schedule ?? []}
             myNames={watched}
             onOpenEvent={(e) => setResultsEvent(e)}
+            timeZone={payload?.competition.timeZone}
           />
         </div>
       )}

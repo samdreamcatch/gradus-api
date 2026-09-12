@@ -142,7 +142,14 @@ function WallBoardPage() {
           className="space-y-3"
         >
           {rinks.length > 0 ? (
-            rinks.map((r) => <RinkPanel key={r.name} rink={r} onOpenScore={openByName} />)
+            rinks.map((r) => (
+              <RinkPanel
+                key={r.name}
+                rink={r}
+                onOpenScore={openByName}
+                timeZone={payload?.competition.timeZone}
+              />
+            ))
           ) : (
             <Card variant="section">
               <p className="text-sm text-text-secondary">
@@ -163,6 +170,7 @@ function WallBoardPage() {
             schedule={payload?.schedule ?? []}
             myNames={[]}
             onOpenEvent={(e) => setResultsEvent(e)}
+            timeZone={payload?.competition.timeZone}
           />
         </div>
       )}
