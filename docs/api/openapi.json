@@ -10071,6 +10071,13 @@
                   "email": {
                     "type": "string",
                     "format": "email"
+                  },
+                  "client": {
+                    "type": "string",
+                    "enum": [
+                      "web",
+                      "app"
+                    ]
                   }
                 },
                 "required": [
