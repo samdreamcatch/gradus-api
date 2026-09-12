@@ -19075,6 +19075,590 @@
         }
       }
     },
+    "/api/v1/guardian/claim/summary": {
+      "post": {
+        "operationId": "getGuardianClaimSummary",
+        "summary": "Who a guardian claim link is for, and whether it is still open",
+        "security": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "token": {
+                    "type": "string",
+                    "pattern": "^[a-f0-9]{16,64}$"
+                  }
+                },
+                "required": [
+                  "token"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "athleteFirstName": {
+                      "type": "string"
+                    },
+                    "athleteLastName": {
+                      "type": "string"
+                    },
+                    "coachName": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "needsBirthdate": {
+                      "type": "boolean"
+                    },
+                    "inviteRecipient": {
+                      "type": "string",
+                      "enum": [
+                        "guardian",
+                        "athlete"
+                      ]
+                    },
+                    "alreadyClaimed": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "athleteFirstName",
+                    "athleteLastName",
+                    "coachName",
+                    "needsBirthdate",
+                    "inviteRecipient",
+                    "alreadyClaimed"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/guardian/claim/context": {
+      "get": {
+        "operationId": "getGuardianClaimContext",
+        "summary": "Whether the signed-in claimer already has a parent profile, and their name",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "hasParentProfile": {
+                      "type": "boolean"
+                    },
+                    "parentName": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "hasParentProfile",
+                    "parentName"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/guardian/claim": {
+      "post": {
+        "operationId": "claimGuardianAthlete",
+        "summary": "Claim the athlete behind a guardian link into the caller's parent profile",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "token": {
+                    "type": "string",
+                    "pattern": "^[a-f0-9]{16,64}$"
+                  },
+                  "firstName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  "lastName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  "birthdate": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  }
+                },
+                "required": [
+                  "token"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "athleteFirstName": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "athleteFirstName"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/guardian/claim/merge-options": {
+      "post": {
+        "operationId": "getGuardianClaimMergeOptions",
+        "summary": "The caller's own athletes that may be the same person as the pending athlete",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "token": {
+                    "type": "string",
+                    "pattern": "^[a-f0-9]{16,64}$"
+                  }
+                },
+                "required": [
+                  "token"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "options": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "athleteId": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "rank": {
+                            "type": "string",
+                            "enum": [
+                              "exact",
+                              "close",
+                              "other"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "athleteId",
+                          "name",
+                          "rank"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "options"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/guardian/claim/merge": {
+      "post": {
+        "operationId": "mergeGuardianClaim",
+        "summary": "Merge the pending athlete behind a guardian link into one of the caller's athletes",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "token": {
+                    "type": "string",
+                    "pattern": "^[a-f0-9]{16,64}$"
+                  },
+                  "athleteId": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                },
+                "required": [
+                  "token",
+                  "athleteId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "athleteFirstName": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "athleteFirstName"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/guardian/claim/self": {
+      "post": {
+        "operationId": "claimAthleteSelf",
+        "summary": "Take over the athlete behind an athlete-addressed invite as the signed-in adult",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "token": {
+                    "type": "string",
+                    "pattern": "^[a-f0-9]{16,64}$"
+                  },
+                  "birthdate": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  }
+                },
+                "required": [
+                  "token",
+                  "birthdate"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "athleteFirstName": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "athleteFirstName"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/guardian/invites/{id}/resend": {
+      "post": {
+        "operationId": "resendGuardianInvite",
+        "summary": "Re-send an athlete's guardian invite, optionally to a new address ({id} = athlete id)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "default": {},
+                "properties": {
+                  "guardianEmail": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "format": "email"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "guardianEmail": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "guardianEmail"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/guardian/status": {
+      "get": {
+        "operationId": "getMyGuardianStatus",
+        "summary": "The signed-in athlete's guardian-on-file status (isMinor, email, claimed, invitedAt)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "athleteId": {
+                          "type": "string"
+                        },
+                        "isMinor": {
+                          "type": "boolean"
+                        },
+                        "guardianEmail": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "claimed": {
+                          "type": "boolean"
+                        },
+                        "invitedAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "athleteId",
+                        "isMinor",
+                        "guardianEmail",
+                        "claimed",
+                        "invitedAt"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/parent/coach-visibility": {
       "get": {
         "operationId": "listParentCoachVisibility",

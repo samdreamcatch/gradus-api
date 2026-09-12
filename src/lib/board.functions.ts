@@ -33,3 +33,43 @@ export const getMySkaterNames = createServerFn({ method: "GET" })
   .handler(async ({ context }): Promise<string[]> => {
     return fetchMySkaterNames(context.supabase);
   });
+
+const followSchema = z.object({
+  slug: z.string().trim().min(1).max(80),
+  skaterName: z.string().trim().min(1).max(120),
+  deviceId: z.string().trim().min(8).max(64),
+  following: z.boolean(),
+});
+
+/**
+ * Public: records that a viewer (signed in or not) followed/unfollowed a
+ * skater on a board. Anonymous viewers are identified only by a random
+ * per-browser device id, so "how many people followed this skater" is
+ * answerable without an account.
+ */
+export const setBoardFollow = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => followSchema.parse(input))
+  .handler(async ({ data }): Promise<{ ok: true }> => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const table = (supabaseAdmin as unknown as { from: (t: string) => any }).from("board_follows");
+    if (data.following) {
+      await table.upsert(
+        {
+          user_id: null,
+          device_id: data.deviceId,
+          competition_slug: data.slug,
+          skater_name: data.skaterName,
+          source: "web",
+        },
+        { onConflict: "device_id,competition_slug,skater_name", ignoreDuplicates: true },
+      );
+    } else {
+      await table
+        .delete()
+        .is("user_id", null)
+        .eq("device_id", data.deviceId)
+        .eq("competition_slug", data.slug)
+        .eq("skater_name", data.skaterName);
+    }
+    return { ok: true };
+  });

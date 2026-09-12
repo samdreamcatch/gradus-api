@@ -664,23 +664,29 @@ export type Database = {
         Row: {
           competition_slug: string
           created_at: string
+          device_id: string | null
           id: string
           skater_name: string
-          user_id: string
+          source: string
+          user_id: string | null
         }
         Insert: {
           competition_slug: string
           created_at?: string
+          device_id?: string | null
           id?: string
           skater_name: string
-          user_id: string
+          source?: string
+          user_id?: string | null
         }
         Update: {
           competition_slug?: string
           created_at?: string
+          device_id?: string | null
           id?: string
           skater_name?: string
-          user_id?: string
+          source?: string
+          user_id?: string | null
         }
         Relationships: []
       }
