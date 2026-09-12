@@ -166,7 +166,7 @@ export function CoachGettingStarted({
             type="button"
             onClick={restore}
             aria-label={`Get set up — ${remaining} steps left`}
-            className="press motion-safe:animate-scale-in relative flex size-14 items-center justify-center rounded-2xl rounded-bl-md bg-pen-tennis text-pen-tennis-ink shadow-card"
+            className="press motion-safe:animate-scale-in relative flex size-14 items-center justify-center rounded-2xl rounded-bl-md bg-accent text-accent-foreground shadow-card"
           >
             <Mark />
             <span className="absolute -top-1 -right-1 flex size-5 items-center justify-center rounded-full bg-card text-[10px] font-bold text-text-primary shadow-card">
