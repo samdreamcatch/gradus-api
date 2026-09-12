@@ -9,7 +9,7 @@ import { ActiveSessionProvider } from "@/lib/active-session-store";
 import { ActiveSessionBar } from "@/components/plans/active-session-bar";
 import { FollowingBanner } from "@/components/board/following-banner";
 import { CompetitionRecapPrompt } from "@/components/board/competition-recap-prompt";
-import { FeedbackFab } from "@/components/feedback/feedback-fab";
+
 import { acceptTerms } from "@/lib/terms.functions";
 import { readPendingTermsAccept, clearPendingTermsAccept } from "@/lib/terms";
 import { applyPromoCodeToMyProfile } from "@/lib/promo-codes.functions";
