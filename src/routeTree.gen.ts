@@ -46,6 +46,7 @@ import { Route as SignupAthleteConfirmRouteImport } from './routes/signup.athlet
 import { Route as SignupAthleteAdultRouteImport } from './routes/signup.athlete.adult'
 import { Route as SignupAthleteAccountRouteImport } from './routes/signup.athlete.account'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
+import { Route as BoardSlugWallRouteImport } from './routes/board.$slug_.wall'
 import { Route as ApiV1MessageTargetsRouteImport } from './routes/api/v1/message-targets'
 import { Route as ApiV1FeedbackRouteImport } from './routes/api/v1/feedback'
 import { Route as ApiV1AskRouteImport } from './routes/api/v1/ask'
@@ -171,7 +172,6 @@ import { Route as AuthenticatedAdminPlansPlanIdRouteImport } from './routes/_aut
 import { Route as AuthenticatedAdminListKindRouteImport } from './routes/_authenticated/admin.list.$kind'
 import { Route as AuthenticatedAdminErrorsIdRouteImport } from './routes/_authenticated/admin.errors.$id'
 import { Route as AuthenticatedAdminEmailsNameRouteImport } from './routes/_authenticated/admin.emails.$name'
-import { Route as AuthenticatedAdminBoardSlugRouteImport } from './routes/_authenticated/admin.board.$slug'
 import { Route as ApiV1SafetyBlocksIndexRouteImport } from './routes/api/v1/safety/blocks/index'
 import { Route as ApiV1RoomsIdIndexRouteImport } from './routes/api/v1/rooms/$id/index'
 import { Route as ApiV1PublicBoardsIndexRouteImport } from './routes/api/v1/public/boards/index'
@@ -473,6 +473,11 @@ const SignupAthleteAccountRoute = SignupAthleteAccountRouteImport.update({
 const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
   id: '/lovable/email/suppression',
   path: '/lovable/email/suppression',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BoardSlugWallRoute = BoardSlugWallRouteImport.update({
+  id: '/board/$slug_/wall',
+  path: '/board/$slug/wall',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiV1MessageTargetsRoute = ApiV1MessageTargetsRouteImport.update({
@@ -1163,12 +1168,6 @@ const AuthenticatedAdminEmailsNameRoute =
   AuthenticatedAdminEmailsNameRouteImport.update({
     id: '/emails/$name',
     path: '/emails/$name',
-    getParentRoute: () => AuthenticatedAdminRoute,
-  } as any)
-const AuthenticatedAdminBoardSlugRoute =
-  AuthenticatedAdminBoardSlugRouteImport.update({
-    id: '/board/$slug',
-    path: '/board/$slug',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
 const ApiV1SafetyBlocksIndexRoute = ApiV1SafetyBlocksIndexRouteImport.update({
@@ -1891,6 +1890,7 @@ export interface FileRoutesByFullPath {
   '/api/v1/ask': typeof ApiV1AskRoute
   '/api/v1/feedback': typeof ApiV1FeedbackRoute
   '/api/v1/message-targets': typeof ApiV1MessageTargetsRoute
+  '/board/$slug/wall': typeof BoardSlugWallRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/signup/athlete/account': typeof SignupAthleteAccountRoute
   '/signup/athlete/adult': typeof SignupAthleteAdultRoute
@@ -1903,7 +1903,6 @@ export interface FileRoutesByFullPath {
   '/coach/': typeof AuthenticatedCoachIndexRoute
   '/org-admin/': typeof AuthenticatedOrgAdminIndexRoute
   '/parent/': typeof AuthenticatedParentIndexRoute
-  '/admin/board/$slug': typeof AuthenticatedAdminBoardSlugRoute
   '/admin/emails/$name': typeof AuthenticatedAdminEmailsNameRoute
   '/admin/errors/$id': typeof AuthenticatedAdminErrorsIdRoute
   '/admin/list/$kind': typeof AuthenticatedAdminListKindRoute
@@ -2164,6 +2163,7 @@ export interface FileRoutesByTo {
   '/api/v1/ask': typeof ApiV1AskRoute
   '/api/v1/feedback': typeof ApiV1FeedbackRoute
   '/api/v1/message-targets': typeof ApiV1MessageTargetsRoute
+  '/board/$slug/wall': typeof BoardSlugWallRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/signup/athlete/account': typeof SignupAthleteAccountRoute
   '/signup/athlete/adult': typeof SignupAthleteAdultRoute
@@ -2176,7 +2176,6 @@ export interface FileRoutesByTo {
   '/coach': typeof AuthenticatedCoachIndexRoute
   '/org-admin': typeof AuthenticatedOrgAdminIndexRoute
   '/parent': typeof AuthenticatedParentIndexRoute
-  '/admin/board/$slug': typeof AuthenticatedAdminBoardSlugRoute
   '/admin/emails/$name': typeof AuthenticatedAdminEmailsNameRoute
   '/admin/errors/$id': typeof AuthenticatedAdminErrorsIdRoute
   '/admin/list/$kind': typeof AuthenticatedAdminListKindRoute
@@ -2445,6 +2444,7 @@ export interface FileRoutesById {
   '/api/v1/ask': typeof ApiV1AskRoute
   '/api/v1/feedback': typeof ApiV1FeedbackRoute
   '/api/v1/message-targets': typeof ApiV1MessageTargetsRoute
+  '/board/$slug_/wall': typeof BoardSlugWallRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/signup/athlete/account': typeof SignupAthleteAccountRoute
   '/signup/athlete/adult': typeof SignupAthleteAdultRoute
@@ -2457,7 +2457,6 @@ export interface FileRoutesById {
   '/_authenticated/coach/': typeof AuthenticatedCoachIndexRoute
   '/_authenticated/org-admin/': typeof AuthenticatedOrgAdminIndexRoute
   '/_authenticated/parent/': typeof AuthenticatedParentIndexRoute
-  '/_authenticated/admin/board/$slug': typeof AuthenticatedAdminBoardSlugRoute
   '/_authenticated/admin/emails/$name': typeof AuthenticatedAdminEmailsNameRoute
   '/_authenticated/admin/errors/$id': typeof AuthenticatedAdminErrorsIdRoute
   '/_authenticated/admin/list/$kind': typeof AuthenticatedAdminListKindRoute
@@ -2726,6 +2725,7 @@ export interface FileRouteTypes {
     | '/api/v1/ask'
     | '/api/v1/feedback'
     | '/api/v1/message-targets'
+    | '/board/$slug/wall'
     | '/lovable/email/suppression'
     | '/signup/athlete/account'
     | '/signup/athlete/adult'
@@ -2738,7 +2738,6 @@ export interface FileRouteTypes {
     | '/coach/'
     | '/org-admin/'
     | '/parent/'
-    | '/admin/board/$slug'
     | '/admin/emails/$name'
     | '/admin/errors/$id'
     | '/admin/list/$kind'
@@ -2999,6 +2998,7 @@ export interface FileRouteTypes {
     | '/api/v1/ask'
     | '/api/v1/feedback'
     | '/api/v1/message-targets'
+    | '/board/$slug/wall'
     | '/lovable/email/suppression'
     | '/signup/athlete/account'
     | '/signup/athlete/adult'
@@ -3011,7 +3011,6 @@ export interface FileRouteTypes {
     | '/coach'
     | '/org-admin'
     | '/parent'
-    | '/admin/board/$slug'
     | '/admin/emails/$name'
     | '/admin/errors/$id'
     | '/admin/list/$kind'
@@ -3279,6 +3278,7 @@ export interface FileRouteTypes {
     | '/api/v1/ask'
     | '/api/v1/feedback'
     | '/api/v1/message-targets'
+    | '/board/$slug_/wall'
     | '/lovable/email/suppression'
     | '/signup/athlete/account'
     | '/signup/athlete/adult'
@@ -3291,7 +3291,6 @@ export interface FileRouteTypes {
     | '/_authenticated/coach/'
     | '/_authenticated/org-admin/'
     | '/_authenticated/parent/'
-    | '/_authenticated/admin/board/$slug'
     | '/_authenticated/admin/emails/$name'
     | '/_authenticated/admin/errors/$id'
     | '/_authenticated/admin/list/$kind'
@@ -3520,6 +3519,7 @@ export interface RootRouteChildren {
   ApiV1AskRoute: typeof ApiV1AskRoute
   ApiV1FeedbackRoute: typeof ApiV1FeedbackRoute
   ApiV1MessageTargetsRoute: typeof ApiV1MessageTargetsRoute
+  BoardSlugWallRoute: typeof BoardSlugWallRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicBoardRefreshRoute: typeof ApiPublicBoardRefreshRoute
   ApiPublicHooksBillingNoticesRoute: typeof ApiPublicHooksBillingNoticesRoute
@@ -3959,6 +3959,13 @@ declare module '@tanstack/react-router' {
       path: '/lovable/email/suppression'
       fullPath: '/lovable/email/suppression'
       preLoaderRoute: typeof LovableEmailSuppressionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/board/$slug_/wall': {
+      id: '/board/$slug_/wall'
+      path: '/board/$slug/wall'
+      fullPath: '/board/$slug/wall'
+      preLoaderRoute: typeof BoardSlugWallRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/v1/message-targets': {
@@ -4836,13 +4843,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminEmailsNameRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
-    '/_authenticated/admin/board/$slug': {
-      id: '/_authenticated/admin/board/$slug'
-      path: '/board/$slug'
-      fullPath: '/admin/board/$slug'
-      preLoaderRoute: typeof AuthenticatedAdminBoardSlugRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
     '/api/v1/safety/blocks/': {
       id: '/api/v1/safety/blocks/'
       path: '/api/v1/safety/blocks'
@@ -5686,7 +5686,6 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminSessionsRoute: typeof AuthenticatedAdminSessionsRoute
   AuthenticatedAdminSocialPlansRoute: typeof AuthenticatedAdminSocialPlansRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
-  AuthenticatedAdminBoardSlugRoute: typeof AuthenticatedAdminBoardSlugRoute
   AuthenticatedAdminEmailsNameRoute: typeof AuthenticatedAdminEmailsNameRoute
   AuthenticatedAdminListKindRoute: typeof AuthenticatedAdminListKindRoute
   AuthenticatedAdminPlansPlanIdRoute: typeof AuthenticatedAdminPlansPlanIdRoute
@@ -5716,7 +5715,6 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminSessionsRoute: AuthenticatedAdminSessionsRoute,
   AuthenticatedAdminSocialPlansRoute: AuthenticatedAdminSocialPlansRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
-  AuthenticatedAdminBoardSlugRoute: AuthenticatedAdminBoardSlugRoute,
   AuthenticatedAdminEmailsNameRoute: AuthenticatedAdminEmailsNameRoute,
   AuthenticatedAdminListKindRoute: AuthenticatedAdminListKindRoute,
   AuthenticatedAdminPlansPlanIdRoute: AuthenticatedAdminPlansPlanIdRoute,
@@ -5939,6 +5937,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiV1AskRoute: ApiV1AskRoute,
   ApiV1FeedbackRoute: ApiV1FeedbackRoute,
   ApiV1MessageTargetsRoute: ApiV1MessageTargetsRoute,
+  BoardSlugWallRoute: BoardSlugWallRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicBoardRefreshRoute: ApiPublicBoardRefreshRoute,
   ApiPublicHooksBillingNoticesRoute: ApiPublicHooksBillingNoticesRoute,

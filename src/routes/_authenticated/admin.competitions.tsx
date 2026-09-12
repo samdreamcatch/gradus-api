@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { QRCodeSVG } from "qrcode.react";
@@ -45,6 +45,14 @@ export const Route = createFileRoute("/_authenticated/admin/competitions")({
 function boardUrl(slug: string) {
   const origin = typeof window === "undefined" ? "https://gradus.training" : window.location.origin;
   return `${origin}/board/${slug}`;
+}
+
+function openWallDisplay(slug: string) {
+  window.open(
+    `${boardUrl(slug)}/wall`,
+    "gradus-wall",
+    "noopener,noreferrer,popup=yes,width=1080,height=1920",
+  );
 }
 
 async function copyBoardLink(slug: string) {
@@ -139,7 +147,6 @@ function AdminCompetitions() {
                 : "Leave blank and we'll create one from the event name."}
             </p>
           </div>
-
         </div>
         <Button
           type="button"
@@ -201,11 +208,15 @@ function AdminCompetitions() {
                 >
                   Copy link
                 </Button>
-                <Button size="sm" variant="outline" asChild>
-                  <Link to="/admin/board/$slug" params={{ slug: c.slug }} target="_blank">
-                    Wall display
-                  </Link>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => openWallDisplay(c.slug)}
+                >
+                  Wall display
                 </Button>
+
                 <Button
                   type="button"
                   size="sm"
