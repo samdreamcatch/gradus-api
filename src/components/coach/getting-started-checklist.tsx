@@ -180,10 +180,10 @@ export function CoachGettingStarted({
             <div className="flex items-center justify-between gap-3 px-4 py-3">
               <div className="flex min-w-0 items-center gap-2">
                 <Mark />
-                <Eyebrow as="h2" size="caption" tone="tertiary">
+                <Eyebrow as="h2" size="caption" className="text-accent-foreground">
                   Get set up
                 </Eyebrow>
-                <span className="text-xs text-text-tertiary">
+                <span className="text-xs text-accent-foreground/80">
                   {doneCount} / {steps.length}
                 </span>
               </div>
