@@ -50,10 +50,7 @@ function AuthedLayout() {
   const { user } = Route.useRouteContext();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isCoach = pathname.startsWith("/coach");
-  const isAdmin = pathname.startsWith("/admin");
-  const isOnboarding = pathname.endsWith("/onboarding");
-  const isPaywall = pathname.startsWith("/coach/paywall") || pathname.startsWith("/parent/team");
-  const isAccountSecurity = pathname.endsWith("/settings/account");
+
 
   const accept = useServerFn(acceptTerms);
   const applyPromo = useServerFn(applyPromoCodeToMyProfile);
