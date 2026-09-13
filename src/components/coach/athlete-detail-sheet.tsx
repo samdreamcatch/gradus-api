@@ -19,6 +19,7 @@ import { PlanCard } from "@/components/plans/plan-card";
 import { AlsoCoachedByList } from "@/components/coach/also-coached-by-list";
 import { OtherCoachPlansSheet } from "@/components/coach/other-coach-plans-sheet";
 import { AthleteBillingSection } from "@/components/coach/athlete-billing-section";
+import { getAthleteBilling } from "@/lib/invoicing.functions";
 import { CompetitionResultsSection } from "@/components/coach/competition-results-section";
 import { SectionHeader, EmptyLine } from "@/components/coach/athlete-section";
 import { Card } from "@/components/ui/card";
@@ -71,6 +72,7 @@ export function AthleteDetailSheet({
 function AthleteDetailBody({ athleteId }: { athleteId: string }) {
   const fetchDetail = useServerFn(getCoachAthleteDetail);
   const fetchSummary = useServerFn(getCoachAthleteAiSummary);
+  const fetchBilling = useServerFn(getAthleteBilling);
   const [openOtherCoachId, setOpenOtherCoachId] = useState<string | null>(null);
   const profile = useCoachProfile();
   const effectiveTier = profile.data?.profile.effectiveTier;
@@ -92,6 +94,16 @@ function AthleteDetailBody({ athleteId }: { athleteId: string }) {
     retry: false,
   });
 
+  // Prefetch billing in parallel with `detail` instead of leaving it to
+  // AthleteBillingSection's own useQuery, which otherwise can't start until
+  // this component clears the `detail.isLoading` early-return below — same
+  // queryKey/queryFn, so this just warms the cache React Query dedupes into.
+  useQuery({
+    queryKey: ["coach", "billing", athleteId],
+    queryFn: () => fetchBilling({ data: { athleteId } }),
+    enabled: !isSample,
+  });
+
   // Auto-run AI summary once we know there's at least some signal.
   useEffect(() => {
     if (isSample) return;
@@ -101,7 +113,7 @@ function AthleteDetailBody({ athleteId }: { athleteId: string }) {
   }, [detail.data?.hasAnySignal, summary]);
 
   if (isSample) {
-    return <SampleAthleteBody athleteId={athleteId} showBilling />;
+    return <SampleAthleteBody athleteId={athleteId} />;
   }
 
   if (detail.isLoading) {
@@ -272,13 +284,7 @@ function AthleteDetailBody({ athleteId }: { athleteId: string }) {
 }
 
 /** Read-only rendering of the sample athlete — same sections, fixture data. */
-function SampleAthleteBody({
-  athleteId,
-  showBilling,
-}: {
-  athleteId: string;
-  showBilling: boolean;
-}) {
+function SampleAthleteBody({ athleteId }: { athleteId: string }) {
   const d = buildSampleAthleteDetail();
   const summary = buildSampleAiSummary();
   const g = d.goals[0];
@@ -331,7 +337,7 @@ function SampleAthleteBody({
         </div>
       </section>
 
-      {showBilling ? <AthleteBillingSection athleteId={athleteId} /> : null}
+      <AthleteBillingSection athleteId={athleteId} />
 
       <section className="pb-2">
         <SectionHeader title="Session feedback" />
