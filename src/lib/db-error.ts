@@ -11,6 +11,8 @@
  *   if (error) dbError(error);                            // generic fallback
  *   if (error) dbError(error, "Couldn't load plans");     // custom fallback
  */
+import { isRosterFullError } from "./roster-limits";
+
 // Messages raised by our own PL/pgSQL triggers that are safe (and useful) to
 // surface verbatim to end users. These are intentional, user-facing validation
 // errors — not internal schema details.
@@ -31,6 +33,12 @@ export function dbError(
     if (msg.includes(allowed)) {
       throw new Error(allowed);
     }
+  }
+  // The roster-cap trigger's message varies by tier/cap (see roster-limits.ts)
+  // so it can't be an exact PASSTHROUGH_MESSAGES entry — pass it through
+  // verbatim so normalizeError's isRosterFullError check still recognizes it.
+  if (isRosterFullError(msg)) {
+    throw new Error(msg);
   }
   const wrapped = new Error(fallback);
   // Keep the raw database detail attached (never serialized to the client —

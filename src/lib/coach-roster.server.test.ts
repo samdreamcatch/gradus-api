@@ -221,6 +221,33 @@ describe("addAthleteWithGuardian", () => {
     );
     expect(err?.message).toBe("Enter a valid birthdate");
   });
+
+  it("a basic-tier coach at the 5-athlete cap is refused before any row is written", async () => {
+    const data = addAthleteInput.parse({ firstName: "R", lastName: "G" });
+    const admin = fakeClient(
+      { coach_profiles: { id: "coach-1" } },
+      { coach_athletes: [1, 2, 3, 4, 5].map((n) => ({ athlete_id: `a${n}` })) },
+    );
+    let message: string | null = null;
+    try {
+      await addAthleteWithGuardian({ userId: "u", admin }, data);
+    } catch (err) {
+      message = err instanceof Error ? err.message : null;
+    }
+    expect(message).toBe(
+      "Roster full: the coach plan is limited to 5 athletes. Upgrade to add more.",
+    );
+  });
+
+  it("a coach_pro coach under their 50-athlete cap is not blocked", async () => {
+    const data = addAthleteInput.parse({ firstName: "R", lastName: "G" });
+    const admin = fakeClient(
+      { coach_profiles: { id: "coach-1", subscription_tier: "coach_pro" }, athletes: { id: "new-athlete" } },
+      { coach_athletes: [1, 2, 3, 4, 5].map((n) => ({ athlete_id: `a${n}` })) },
+    );
+    const result = await addAthleteWithGuardian({ userId: "u", admin }, data);
+    expect(result.athleteId).toBe("new-athlete");
+  });
 });
 
 describe("getPendingLessonWrapUps", () => {
