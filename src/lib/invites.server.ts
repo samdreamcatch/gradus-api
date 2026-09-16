@@ -12,6 +12,7 @@ import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
 import type { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { ApiError } from "./api/errors";
+import { athleteLimitForTier, computeEffectiveTier } from "./coach-profile-types";
 import { dbError } from "./db-error";
 
 type Client = SupabaseClient<Database>;
@@ -372,7 +373,7 @@ export async function claimAdultAthleteInvite(
 
   const coach = await admin
     .from("coach_profiles")
-    .select("id, promo_code")
+    .select("id, promo_code, organization_id, subscription_tier")
     .eq("user_id", userId)
     .maybeSingle();
   if (coach.error) dbError(coach.error);
@@ -402,6 +403,34 @@ export async function claimAdultAthleteInvite(
       .update({ promo_code: inviteRow.data.promo_code })
       .eq("id", coachId)
       .is("promo_code", null);
+  }
+
+  // Plan cap: the DB trigger (enforce_coach_roster_cap) is the backstop, but
+  // we stop short of it so the coach gets a friendly "Roster full" message
+  // instead of a raw database error. Idempotent re-claims of an athlete
+  // already on this coach's roster never count against the cap.
+  const existingLink = await admin
+    .from("coach_athletes")
+    .select("athlete_id")
+    .eq("coach_id", coachId)
+    .eq("athlete_id", athleteId)
+    .maybeSingle();
+  if (existingLink.error) dbError(existingLink.error);
+  if (!existingLink.data) {
+    const tier = computeEffectiveTier({
+      organizationId: coach.data.organization_id ?? null,
+      subscriptionTier: (coach.data.subscription_tier as "coach" | "coach_pro" | null) ?? null,
+    });
+    const athleteLimit = athleteLimitForTier(tier);
+    if (athleteLimit !== null) {
+      const roster = await admin.from("coach_athletes").select("athlete_id").eq("coach_id", coachId);
+      if (roster.error) dbError(roster.error);
+      if ((roster.data ?? []).length >= athleteLimit) {
+        throw new Error(
+          `Roster full: the ${tier} plan is limited to ${athleteLimit} athletes. Upgrade to add more.`,
+        );
+      }
+    }
   }
 
   const ackIso = data.autoAckCoach ? new Date().toISOString() : null;
