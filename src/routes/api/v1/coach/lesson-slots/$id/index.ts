@@ -16,7 +16,7 @@ export const Route = createFileRoute("/api/v1/coach/lesson-slots/$id/")({
         path: "/api/v1/coach/lesson-slots/{id}",
         operationId: "updateLessonSlot",
         auth: "user",
-        summary: "Move a recurring lesson",
+        summary: "Move a recurring lesson or change its cadence",
         input: slotTimesInput,
         output: okSchema,
         handler: async ({ ctx, input, params }) => {

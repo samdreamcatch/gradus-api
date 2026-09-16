@@ -4999,7 +4999,7 @@
     "/api/v1/coach/lesson-slots": {
       "post": {
         "operationId": "addLessonSlot",
-        "summary": "Add a weekly lesson for a rostered athlete",
+        "summary": "Add a recurring lesson for a rostered athlete",
         "security": [
           {
             "bearerAuth": []
@@ -5029,6 +5029,32 @@
                     "type": "integer",
                     "minimum": 0,
                     "maximum": 1440
+                  },
+                  "frequency": {
+                    "type": "string",
+                    "enum": [
+                      "weekly",
+                      "biweekly",
+                      "twice_monthly",
+                      "monthly"
+                    ],
+                    "default": "weekly"
+                  },
+                  "weeksOfMonth": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 5
+                    },
+                    "default": []
+                  },
+                  "startsOn": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
                   }
                 },
                 "required": [
@@ -5076,7 +5102,7 @@
     "/api/v1/coach/lesson-slots/{id}": {
       "patch": {
         "operationId": "updateLessonSlot",
-        "summary": "Move a recurring lesson",
+        "summary": "Move a recurring lesson or change its cadence",
         "security": [
           {
             "bearerAuth": []
@@ -5112,6 +5138,32 @@
                     "type": "integer",
                     "minimum": 0,
                     "maximum": 1440
+                  },
+                  "frequency": {
+                    "type": "string",
+                    "enum": [
+                      "weekly",
+                      "biweekly",
+                      "twice_monthly",
+                      "monthly"
+                    ],
+                    "default": "weekly"
+                  },
+                  "weeksOfMonth": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 5
+                    },
+                    "default": []
+                  },
+                  "startsOn": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
                   }
                 },
                 "required": [
@@ -10920,6 +10972,9 @@
                               "type": "string"
                             },
                             "url": {
+                              "type": "string"
+                            },
+                            "timeZone": {
                               "type": "string"
                             }
                           },

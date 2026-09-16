@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ChevronLeft, Trash2, UserPlus } from "lucide-react";
+import { ChevronLeft, Trash2, UserPlus, CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
 import {
   Sheet,
   SheetContent,
@@ -11,6 +12,9 @@ import {
   SheetFooter,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -43,6 +47,14 @@ import {
   rescheduleLessonOccurrence,
   updateLessonSlot,
 } from "@/lib/coach-roster-mutations.functions";
+import {
+  FREQUENCIES,
+  WEEK_OPTIONS,
+  weeksRequired,
+  weeksHelpText,
+  toISODate,
+  type Frequency,
+} from "@/components/parent/schedule-editor";
 
 const DAYS = [
   { value: 1, short: "Mon" },
@@ -78,6 +90,9 @@ export type LessonSlotSheetMode =
       dayOfWeek: number;
       startMinute: number;
       endMinute: number;
+      frequency: Frequency;
+      weeksOfMonth: number[];
+      startsOn: string | null;
     }
   | {
       kind: "occurrence";
@@ -107,6 +122,9 @@ export function LessonSlotSheet({
   const [startStr, setStartStr] = useState<string>("16:00");
   const [endStr, setEndStr] = useState<string>("17:00");
   const [addingAthlete, setAddingAthlete] = useState(false);
+  const [frequency, setFrequency] = useState<Frequency>("weekly");
+  const [weeksOfMonth, setWeeksOfMonth] = useState<number[]>([]);
+  const [startsOn, setStartsOn] = useState<Date | null>(null);
 
   useEffect(() => {
     if (!open) setAddingAthlete(false);
@@ -119,11 +137,23 @@ export function LessonSlotSheet({
       setDayOfWeek(mode.defaultDayOfWeek ?? 1);
       setStartStr("16:00");
       setEndStr("17:00");
+      setFrequency("weekly");
+      setWeeksOfMonth([]);
+      setStartsOn(null);
     } else {
       setAthleteId(mode.athleteId);
       setDayOfWeek(mode.dayOfWeek);
       setStartStr(minutesToHHMM(mode.startMinute));
       setEndStr(minutesToHHMM(mode.endMinute));
+      if (mode.kind === "edit") {
+        setFrequency(mode.frequency);
+        setWeeksOfMonth(mode.weeksOfMonth);
+        setStartsOn(mode.startsOn ? new Date(`${mode.startsOn}T00:00:00`) : null);
+      } else {
+        setFrequency("weekly");
+        setWeeksOfMonth([]);
+        setStartsOn(null);
+      }
     }
   }, [open, mode, athletes]);
 
@@ -139,15 +169,42 @@ export function LessonSlotSheet({
       const endMinute = hhmmToMinutes(endStr);
       if (startMinute == null || endMinute == null) throw new Error("Invalid time");
       if (startMinute >= endMinute) throw new Error("Start must be before end");
+      if (mode.kind === "create" || mode.kind === "edit") {
+        const need = weeksRequired(frequency);
+        if (need > 0 && weeksOfMonth.length !== need) {
+          throw new Error(
+            `Pick exactly ${need} week${need === 1 ? "" : "s"} of the month for this cadence`,
+          );
+        }
+        if (frequency === "biweekly" && !startsOn) {
+          throw new Error("Pick a starting date for a biweekly lesson");
+        }
+      }
       if (mode.kind === "create") {
         if (!athleteId) throw new Error("Pick an athlete");
         return addLessonSlot({
-          data: { athleteId, dayOfWeek, startMinute, endMinute },
+          data: {
+            athleteId,
+            dayOfWeek,
+            startMinute,
+            endMinute,
+            frequency,
+            weeksOfMonth,
+            startsOn: startsOn ? toISODate(startsOn) : null,
+          },
         });
       }
       if (mode.kind === "edit") {
         return updateLessonSlot({
-          data: { slotId: mode.slotId, dayOfWeek, startMinute, endMinute },
+          data: {
+            slotId: mode.slotId,
+            dayOfWeek,
+            startMinute,
+            endMinute,
+            frequency,
+            weeksOfMonth,
+            startsOn: startsOn ? toISODate(startsOn) : null,
+          },
         });
       }
       return rescheduleLessonOccurrence({
@@ -222,7 +279,7 @@ export function LessonSlotSheet({
   const description =
     mode.kind === "occurrence"
       ? `Affects ${mode.date} only — other weeks stay on the regular schedule.`
-      : "Recurring weekly lesson.";
+      : "A recurring lesson — pick how often it repeats below.";
 
   if (mode.kind === "create" && addingAthlete) {
     return (
@@ -357,6 +414,108 @@ export function LessonSlotSheet({
               />
             </div>
           </div>
+
+          {/* Cadence (create/edit only — a one-off occurrence doesn't have its own frequency) */}
+          {mode.kind === "create" || mode.kind === "edit" ? (
+            <div className="space-y-3">
+              <div>
+                <label className="mb-1 block text-[11px] font-bold uppercase tracking-widest text-text-tertiary">
+                  Frequency
+                </label>
+                <Select
+                  value={frequency}
+                  onValueChange={(v) => {
+                    const f = v as Frequency;
+                    setFrequency(f);
+                    setWeeksOfMonth([]);
+                    setStartsOn(null);
+                  }}
+                >
+                  <SelectTrigger className="w-full bg-card">
+                    <SelectValue placeholder="Frequency" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {FREQUENCIES.map((f) => (
+                      <SelectItem key={f.value} value={f.value}>
+                        {f.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {frequency === "biweekly" ? (
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-text-tertiary">
+                    Starting from — the lesson repeats every 2 weeks from this date.
+                  </Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !startsOn && "text-text-tertiary",
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 size-4" />
+                        {startsOn ? format(startsOn, "EEE, MMM d, yyyy") : "Pick a start date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={startsOn ?? undefined}
+                        onSelect={(d) => setStartsOn(d ?? null)}
+                        disabled={(date) => date.getDay() !== dayOfWeek}
+                        autoFocus
+                        className="pointer-events-auto p-3"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              ) : null}
+
+              {frequency === "twice_monthly" || frequency === "monthly" ? (
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-text-tertiary">{weeksHelpText(frequency)}</Label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {WEEK_OPTIONS.map((w) => {
+                      const selected = weeksOfMonth.includes(w.value);
+                      const max = weeksRequired(frequency);
+                      const toggle = () => {
+                        if (selected) {
+                          setWeeksOfMonth(weeksOfMonth.filter((x) => x !== w.value));
+                        } else {
+                          setWeeksOfMonth(
+                            weeksOfMonth.length >= max
+                              ? [...weeksOfMonth.slice(1), w.value]
+                              : [...weeksOfMonth, w.value],
+                          );
+                        }
+                      };
+                      return (
+                        <button
+                          key={w.value}
+                          type="button"
+                          onClick={toggle}
+                          className={cn(
+                            "rounded-full border px-3 py-1 text-xs font-bold transition",
+                            selected
+                              ? "border-accent bg-accent text-accent-foreground"
+                              : "border-divider bg-card text-text-secondary hover:border-accent/40",
+                          )}
+                        >
+                          {w.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
 
           {/* Mode-specific destructive actions */}
           {mode.kind === "edit" ? (

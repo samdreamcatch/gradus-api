@@ -487,12 +487,40 @@ const timeRange = z
   .object({ startMinute: minuteSchema, endMinute: minuteSchema })
   .refine((v) => v.startMinute < v.endMinute, { message: "Invalid time range" });
 
+const frequencySchema = z.enum(["weekly", "biweekly", "twice_monthly", "monthly"]).default("weekly");
+const weeksOfMonthSchema = z.array(z.number().int().min(1).max(5)).default([]);
+const startsOnSchema = isoDateSchema.nullable().default(null);
+
+/** Same cardinality/anchor rules as the web's `schedule-editor.tsx` `validateSlots()`, enforced server-side here for the first time. */
+function refineCadence<T extends { frequency: string; weeksOfMonth: number[]; startsOn: string | null }>(
+  v: T,
+  ctx: z.RefinementCtx,
+) {
+  if (v.frequency === "twice_monthly" && v.weeksOfMonth.length !== 2) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Pick exactly 2 weeks of the month", path: ["weeksOfMonth"] });
+  }
+  if (v.frequency === "monthly" && v.weeksOfMonth.length !== 1) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Pick exactly 1 week of the month", path: ["weeksOfMonth"] });
+  }
+  if (v.frequency === "biweekly" && !v.startsOn) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Pick a starting date for a biweekly lesson", path: ["startsOn"] });
+  }
+}
+
 export const slotTimesInput = z
-  .object({ dayOfWeek: dayOfWeekSchema, startMinute: minuteSchema, endMinute: minuteSchema })
+  .object({
+    dayOfWeek: dayOfWeekSchema,
+    startMinute: minuteSchema,
+    endMinute: minuteSchema,
+    frequency: frequencySchema,
+    weeksOfMonth: weeksOfMonthSchema,
+    startsOn: startsOnSchema,
+  })
   .refine((v) => v.startMinute < v.endMinute, {
     message: "Invalid time range",
     path: ["endMinute"],
-  });
+  })
+  .superRefine(refineCadence);
 
 export const addLessonSlotInput = z
   .object({
@@ -500,11 +528,15 @@ export const addLessonSlotInput = z
     dayOfWeek: dayOfWeekSchema,
     startMinute: minuteSchema,
     endMinute: minuteSchema,
+    frequency: frequencySchema,
+    weeksOfMonth: weeksOfMonthSchema,
+    startsOn: startsOnSchema,
   })
   .refine((v) => v.startMinute < v.endMinute, {
     message: "Invalid time range",
     path: ["endMinute"],
-  });
+  })
+  .superRefine(refineCadence);
 
 export const occurrenceTimesInput = timeRange;
 
@@ -551,8 +583,9 @@ export async function addLessonSlot(
       day_of_week: data.dayOfWeek,
       start_minute: data.startMinute,
       end_minute: data.endMinute,
-      frequency: "weekly",
-      weeks_of_month: [],
+      frequency: data.frequency,
+      weeks_of_month: data.frequency === "biweekly" || data.frequency === "weekly" ? [] : data.weeksOfMonth,
+      starts_on: data.frequency === "biweekly" ? data.startsOn : null,
     })
     .select("id")
     .single();
@@ -560,7 +593,7 @@ export async function addLessonSlot(
   return { id: res.data!.id };
 }
 
-/** `updateLessonSlot`: move a recurring lesson's day and times. */
+/** `updateLessonSlot`: move a recurring lesson's day, times, and cadence. */
 export async function updateLessonSlot(
   ctx: RosterContext,
   slotId: string,
@@ -575,6 +608,9 @@ export async function updateLessonSlot(
       day_of_week: data.dayOfWeek,
       start_minute: data.startMinute,
       end_minute: data.endMinute,
+      frequency: data.frequency,
+      weeks_of_month: data.frequency === "biweekly" || data.frequency === "weekly" ? [] : data.weeksOfMonth,
+      starts_on: data.frequency === "biweekly" ? data.startsOn : null,
     })
     .eq("id", slotId);
   if (res.error) dbError(res.error);

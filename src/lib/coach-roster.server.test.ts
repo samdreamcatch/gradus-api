@@ -72,6 +72,81 @@ describe("lesson slot inputs", () => {
       }).success,
     ).toBe(false);
   });
+
+  it("defaults to weekly with no weeks-of-month and no anchor date when cadence is omitted", () => {
+    const parsed = slotTimesInput.parse({ dayOfWeek: 1, startMinute: 600, endMinute: 660 });
+    expect(parsed.frequency).toBe("weekly");
+    expect(parsed.weeksOfMonth).toEqual([]);
+    expect(parsed.startsOn).toBeNull();
+  });
+
+  it("accepts biweekly, twice-monthly, and monthly with their required extra fields", () => {
+    expect(
+      slotTimesInput.safeParse({
+        dayOfWeek: 1,
+        startMinute: 600,
+        endMinute: 660,
+        frequency: "biweekly",
+        startsOn: "2026-09-07",
+      }).success,
+    ).toBe(true);
+    expect(
+      slotTimesInput.safeParse({
+        dayOfWeek: 1,
+        startMinute: 600,
+        endMinute: 660,
+        frequency: "twice_monthly",
+        weeksOfMonth: [1, 3],
+      }).success,
+    ).toBe(true);
+    expect(
+      slotTimesInput.safeParse({
+        dayOfWeek: 1,
+        startMinute: 600,
+        endMinute: 660,
+        frequency: "monthly",
+        weeksOfMonth: [2],
+      }).success,
+    ).toBe(true);
+  });
+
+  it("rejects a cadence missing its required extra fields (the schedule-editor's own validateSlots rules, now enforced server-side)", () => {
+    expect(
+      slotTimesInput.safeParse({
+        dayOfWeek: 1,
+        startMinute: 600,
+        endMinute: 660,
+        frequency: "biweekly",
+      }).success,
+    ).toBe(false);
+    expect(
+      slotTimesInput.safeParse({
+        dayOfWeek: 1,
+        startMinute: 600,
+        endMinute: 660,
+        frequency: "twice_monthly",
+        weeksOfMonth: [1],
+      }).success,
+    ).toBe(false);
+    expect(
+      slotTimesInput.safeParse({
+        dayOfWeek: 1,
+        startMinute: 600,
+        endMinute: 660,
+        frequency: "twice_monthly",
+        weeksOfMonth: [1, 2, 3],
+      }).success,
+    ).toBe(false);
+    expect(
+      slotTimesInput.safeParse({
+        dayOfWeek: 1,
+        startMinute: 600,
+        endMinute: 660,
+        frequency: "monthly",
+        weeksOfMonth: [],
+      }).success,
+    ).toBe(false);
+  });
 });
 
 describe("slot ownership", () => {
@@ -89,7 +164,14 @@ describe("slot ownership", () => {
 
   it("another coach's slot is 'Lesson not found' (404) for update, delete, and overrides", async () => {
     const ctx = { userId: "u", admin: fakeClient(foreignSlot) };
-    const times = { dayOfWeek: 2, startMinute: 600, endMinute: 660 };
+    const times = {
+      dayOfWeek: 2,
+      startMinute: 600,
+      endMinute: 660,
+      frequency: "weekly" as const,
+      weeksOfMonth: [] as number[],
+      startsOn: null,
+    };
     for (const run of [
       () => updateLessonSlot(ctx, "slot-1", times),
       () => deleteLessonSlot(ctx, "slot-1"),

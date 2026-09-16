@@ -13,7 +13,7 @@ export const Route = createFileRoute("/api/v1/coach/lesson-slots/")({
       operationId: "addLessonSlot",
       auth: "user",
       idempotent: true,
-      summary: "Add a weekly lesson for a rostered athlete",
+      summary: "Add a recurring lesson for a rostered athlete",
       input: addLessonSlotInput,
       output: slotIdSchema,
       handler: async ({ ctx, input }) => {
