@@ -519,7 +519,7 @@ Each table lists the web behavior being ported and what is specifically required
 |---|---|---|---|
 | My athletes | Edit name and birthdate; athlete invite code and claim link (minors only); account status; add and remove athletes | Native disclosure per athlete. | P0 |
 | Coaches per athlete | Link by coach invite code with preview; unlink; update sports; primary coach per sport; coach visibility toggles | Native. | P0 (visibility toggles P1) |
-| Goals editor | Per sport: current level, season goal, long-term goal | Native form. | P0 |
+| Goals editor | Per sport: current level, season goal, long-term goal | Native form. Current level and season goal are also self-editable by the athlete regardless of age — see §7.8. | P0 |
 | Practice schedule | Per coach: days, times, frequency, start date | Native editor with the same rules as the coach side. | P0 |
 | Reset athlete password | Parent-issued | Native with confirmation. | P0 |
 | Goals dashboard | Plans / Goals tabs on the Plans screen | Native. | P0 |
@@ -532,6 +532,7 @@ Each table lists the web behavior being ported and what is specifically required
 |---|---|---|---|
 | Plans / Goals tabs | Same as parent minus management | Native. | P0 |
 | Motivation card | Editable "What motivates you?" up to 500 chars; editable long-term goal | Native. | P0 |
+| Goal editor (self) | Current level and season goal were parent-only in the original scope | **Mariah's call, 2026-09-16: wrong — editable by the athlete too, minor or adult.** Native level/season-goal picker on the athlete's own goal card, same fields as the parent's editor (§7.7). Uses the existing `PUT /adult-athlete/goals`: despite the path name, its RLS check (`athlete_can_self_connect`) is ownership-only (`athletes.user_id = auth.uid()`), not gated on `self_managed` or age — so it already authorizes a minor's own session. No backend change needed, only the iOS client and this doc were behind. | P0 |
 | Coaches | Add a coach by code (parent-managed and adult athletes) | Native. | P0 |
 | Parent or guardian | Guardian email on file, invite a guardian (adult athletes) | Native. | P1 |
 
