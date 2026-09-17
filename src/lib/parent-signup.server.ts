@@ -11,6 +11,7 @@ import { SPORT_KEYS } from "@/lib/coach-sports";
 import { ApiError } from "./api/errors";
 import { dbError } from "./db-error";
 import { inviteCodeSchema } from "./invites.server";
+import { checkRosterRoom } from "./roster-limits";
 
 type Admin = typeof supabaseAdmin;
 
@@ -252,6 +253,33 @@ export async function linkAthletesToCoach(
   if (athletesIns.error) dbError(athletesIns.error);
 
   if (coachId) {
+    // Plan cap: the DB trigger (enforce_coach_roster_cap) is the backstop,
+    // but we stop short of it so the parent gets one friendly "Roster full"
+    // message up front instead of this whole batch aborting partway through
+    // on a raw database error. These athletes were just created for this
+    // signup, so none of them can already be on the coach's roster.
+    const coachRow = await admin
+      .from("coach_profiles")
+      .select("organization_id, subscription_tier")
+      .eq("id", coachId)
+      .maybeSingle();
+    if (coachRow.error) dbError(coachRow.error);
+    if (coachRow.data) {
+      const rosterCount = await admin
+        .from("coach_athletes")
+        .select("athlete_id", { count: "exact", head: true })
+        .eq("coach_id", coachId);
+      if (rosterCount.error) dbError(rosterCount.error);
+      checkRosterRoom(
+        {
+          organizationId: coachRow.data.organization_id ?? null,
+          subscriptionTier: (coachRow.data.subscription_tier as "coach" | "coach_pro" | null) ?? null,
+        },
+        rosterCount.count ?? 0,
+        (athletesIns.data ?? []).length,
+      );
+    }
+
     // Auto-ack the parent side — the signup wizard's final screen already
     // shows the connection confirmation, so suppress the celebration modal
     // on first load of /parent/plans. The coach still sees theirs.

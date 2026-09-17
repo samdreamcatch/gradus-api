@@ -16,10 +16,10 @@
 import { z } from "zod";
 import type { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { ApiError } from "./api/errors";
-import { athleteLimitForTier, computeEffectiveTier } from "./coach-profile-types";
 import { getSportLevel } from "./coach-sports";
 import { dbError } from "./db-error";
 import type { LessonFrequency } from "./lesson-recurrence";
+import { checkRosterRoom } from "./roster-limits";
 
 type Admin = typeof supabaseAdmin;
 
@@ -370,33 +370,33 @@ export async function addAthleteWithGuardian(
   now: Date = new Date(),
 ): Promise<AddAthleteResult> {
   const { admin, userId } = ctx;
-  const coachId = await requireCoachId(admin, userId);
+  const coachRow = await admin
+    .from("coach_profiles")
+    .select("id, organization_id, subscription_tier")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (coachRow.error) dbError(coachRow.error);
+  if (!coachRow.data) throw unprocessable("Coach profile not found");
+  const coachId = coachRow.data.id;
   const { newGuardianToken, sendGuardianInvite } = await import("./guardian.server");
 
   // Plan cap: the DB trigger (enforce_coach_roster_cap) is the backstop, but
   // we stop short of it so the coach gets a friendly "Roster full" message
   // instead of a raw database error. Mirrors the same pre-check in
   // commitScheduleImport (schedule-import.server.ts).
-  const coachRow = await admin
-    .from("coach_profiles")
-    .select("organization_id, subscription_tier")
-    .eq("id", coachId)
-    .single();
-  if (coachRow.error) dbError(coachRow.error);
-  const tier = computeEffectiveTier({
-    organizationId: coachRow.data.organization_id ?? null,
-    subscriptionTier: (coachRow.data.subscription_tier as "coach" | "coach_pro" | null) ?? null,
-  });
-  const athleteLimit = athleteLimitForTier(tier);
-  if (athleteLimit !== null) {
-    const roster = await admin.from("coach_athletes").select("athlete_id").eq("coach_id", coachId);
-    if (roster.error) dbError(roster.error);
-    if ((roster.data ?? []).length >= athleteLimit) {
-      throw new Error(
-        `Roster full: the ${tier} plan is limited to ${athleteLimit} athletes. Upgrade to add more.`,
-      );
-    }
-  }
+  const rosterCount = await admin
+    .from("coach_athletes")
+    .select("athlete_id", { count: "exact", head: true })
+    .eq("coach_id", coachId);
+  if (rosterCount.error) dbError(rosterCount.error);
+  checkRosterRoom(
+    {
+      organizationId: coachRow.data.organization_id ?? null,
+      subscriptionTier: (coachRow.data.subscription_tier as "coach" | "coach_pro" | null) ?? null,
+    },
+    rosterCount.count ?? 0,
+    1,
+  );
 
   if (data.birthdate) {
     const [y, m, d] = data.birthdate.split("-").map(Number);

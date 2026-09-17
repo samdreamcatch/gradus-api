@@ -12,8 +12,8 @@ import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
 import type { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { ApiError } from "./api/errors";
-import { athleteLimitForTier, computeEffectiveTier } from "./coach-profile-types";
 import { dbError } from "./db-error";
+import { checkRosterRoom } from "./roster-limits";
 
 type Client = SupabaseClient<Database>;
 type Admin = typeof supabaseAdmin;
@@ -260,7 +260,7 @@ export async function claimParentInvite(
 
   const coach = await admin
     .from("coach_profiles")
-    .select("id, promo_code")
+    .select("id, promo_code, organization_id, subscription_tier")
     .eq("user_id", userId)
     .maybeSingle();
   if (coach.error) dbError(coach.error);
@@ -298,6 +298,27 @@ export async function claimParentInvite(
   if (athletesRes.error) dbError(athletesRes.error);
   const athleteIds = (athletesRes.data ?? []).map((a) => a.id);
   if (athleteIds.length === 0) return { ok: true as const, athletes: 0, sports: 0 };
+
+  // Plan cap: the DB trigger (enforce_coach_roster_cap) is the backstop, but
+  // we stop short of it so the coach gets one friendly "Roster full" message
+  // up front instead of this whole batch aborting partway through on a raw
+  // database error. Athletes already on this coach's roster (a repeat claim)
+  // never count against the cap.
+  const existingRoster = await admin
+    .from("coach_athletes")
+    .select("athlete_id")
+    .eq("coach_id", coachId);
+  if (existingRoster.error) dbError(existingRoster.error);
+  const existingIds = new Set((existingRoster.data ?? []).map((r) => r.athlete_id));
+  const newLinksCount = athleteIds.filter((id) => !existingIds.has(id)).length;
+  checkRosterRoom(
+    {
+      organizationId: coach.data.organization_id ?? null,
+      subscriptionTier: (coach.data.subscription_tier as "coach" | "coach_pro" | null) ?? null,
+    },
+    existingIds.size,
+    newLinksCount,
+  );
 
   // Sports this coach offers
   const levelsRes = await admin.from("coach_levels").select("sport").eq("coach_id", coachId);
@@ -408,30 +429,20 @@ export async function claimAdultAthleteInvite(
   // Plan cap: the DB trigger (enforce_coach_roster_cap) is the backstop, but
   // we stop short of it so the coach gets a friendly "Roster full" message
   // instead of a raw database error. Idempotent re-claims of an athlete
-  // already on this coach's roster never count against the cap.
-  const existingLink = await admin
-    .from("coach_athletes")
-    .select("athlete_id")
-    .eq("coach_id", coachId)
-    .eq("athlete_id", athleteId)
-    .maybeSingle();
-  if (existingLink.error) dbError(existingLink.error);
-  if (!existingLink.data) {
-    const tier = computeEffectiveTier({
+  // already on this coach's roster never count against the cap — one fetch
+  // of the roster answers both that and the count.
+  const roster = await admin.from("coach_athletes").select("athlete_id").eq("coach_id", coachId);
+  if (roster.error) dbError(roster.error);
+  const rosterRows = roster.data ?? [];
+  const alreadyLinked = rosterRows.some((r) => r.athlete_id === athleteId);
+  checkRosterRoom(
+    {
       organizationId: coach.data.organization_id ?? null,
       subscriptionTier: (coach.data.subscription_tier as "coach" | "coach_pro" | null) ?? null,
-    });
-    const athleteLimit = athleteLimitForTier(tier);
-    if (athleteLimit !== null) {
-      const roster = await admin.from("coach_athletes").select("athlete_id").eq("coach_id", coachId);
-      if (roster.error) dbError(roster.error);
-      if ((roster.data ?? []).length >= athleteLimit) {
-        throw new Error(
-          `Roster full: the ${tier} plan is limited to ${athleteLimit} athletes. Upgrade to add more.`,
-        );
-      }
-    }
-  }
+    },
+    rosterRows.length,
+    alreadyLinked ? 0 : 1,
+  );
 
   const ackIso = data.autoAckCoach ? new Date().toISOString() : null;
   const linkIns = await admin.from("coach_athletes").upsert(

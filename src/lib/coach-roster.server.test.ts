@@ -35,8 +35,10 @@ function fakeClient(rows: Record<string, unknown | null>, lists: Record<string, 
     self.maybeSingle = async () => ({ data: rows[table] ?? null, error: null });
     self.single = async () => ({ data: rows[table] ?? null, error: null });
     // Awaiting the chain itself (list reads and writes) resolves to the list.
+    // `count` mirrors the list length so a `{ count: "exact", head: true }`
+    // query reads the same size a full-row select would have.
     self.then = (resolve: (v: unknown) => void) =>
-      resolve({ data: lists[table] ?? [], error: null });
+      resolve({ data: lists[table] ?? [], count: (lists[table] ?? []).length, error: null });
     return self;
   };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
