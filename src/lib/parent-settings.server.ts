@@ -193,6 +193,11 @@ async function getParentProfile(
   };
 }
 
+/**
+ * Matches the read side (`getParentSettings` via `guardianAthleteIdsSafe`):
+ * a shared guardian (`athlete_guardians`), not just the primary parent
+ * (`athletes.parent_id`), may act on an athlete.
+ */
 async function assertOwnsAthlete(admin: Admin, userId: string, athleteId: string) {
   const row = await admin
     .from("athletes")
@@ -201,7 +206,19 @@ async function assertOwnsAthlete(admin: Admin, userId: string, athleteId: string
     .maybeSingle();
   if (row.error) dbError(row.error);
   const pp = row.data?.parent_profiles as unknown as { user_id: string } | undefined;
-  if (!row.data || pp?.user_id !== userId) throw notFound("Athlete not found.");
+  if (row.data && pp?.user_id === userId) return;
+
+  const guardians = await admin
+    .from("athlete_guardians")
+    .select("parent_profiles!inner(user_id)")
+    .eq("athlete_id", athleteId);
+  if (guardians.error) dbError(guardians.error);
+  const isGuardian = (guardians.data ?? []).some(
+    (g) =>
+      (g as unknown as { parent_profiles: { user_id: string } }).parent_profiles?.user_id ===
+      userId,
+  );
+  if (!isGuardian) throw notFound("Athlete not found.");
 }
 
 /** Resolve primary coach for (athlete, sport); auto-pick earliest eligible coach if none. */
