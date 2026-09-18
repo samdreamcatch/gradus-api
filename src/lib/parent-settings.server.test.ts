@@ -296,6 +296,7 @@ describe("parent profile", () => {
         username: "rory",
         hasAccount: true,
         inviteCode: "ABCDEFGH",
+        locked: false,
         coaches: [{ coachId: C, coachName: "Dean Forester", sports: ["figure_skating"] }],
         sports: [
           {
@@ -322,6 +323,79 @@ describe("parent profile", () => {
             ],
           },
         ],
+      },
+    ]);
+  });
+
+  it("a co-guardian's athlete stays in the list but redacted once the primary's Team plan has lapsed", async () => {
+    const kid = {
+      id: "99999999-9999-4999-8999-999999999999",
+      first_name: "Kid",
+      last_name: "Guardianed",
+      birthdate: "2015-01-01",
+      username: "kiddo",
+      user_id: "user-kid",
+      parent_id: "primary-1",
+    };
+    const caller = { id: "p2", first_name: "Guardian", last_name: "Two", promo_code: null };
+    // A bespoke fake: unlike the shared `fakeClient` above, this one applies
+    // enough filtering to tell the "own athletes" query (empty, this caller
+    // isn't primary for anyone) apart from the later "athlete detail by id"
+    // query (returns the guarded kid) — both hit `.from("athletes")`.
+    const admin = {
+      from(table: string) {
+        const self: Record<string, unknown> = {};
+        let mode: string | null = null;
+        self.select = () => self;
+        self.order = () => self;
+        self.in = () => {
+          if (table === "athletes") mode = "detail";
+          return self;
+        };
+        self.eq = (col: string) => {
+          if (table === "athletes" && col === "parent_id") mode = "own";
+          if (table === "parent_profiles" && col === "user_id") mode = "caller";
+          if (table === "parent_profiles" && col === "id") mode = "primaryPlan";
+          return self;
+        };
+        self.maybeSingle = async () => {
+          if (mode === "caller") return { data: caller, error: null };
+          if (mode === "primaryPlan") {
+            return { data: { subscription_status: null, current_period_end: null }, error: null };
+          }
+          return { data: null, error: null };
+        };
+        self.then = (resolve: (v: unknown) => void) => {
+          if (table === "athletes" && mode === "detail") {
+            return resolve({ data: [kid], error: null });
+          }
+          if (table === "athlete_guardians") {
+            return resolve({
+              data: [{ athlete_id: kid.id, athletes: { parent_id: "primary-1" } }],
+              error: null,
+            });
+          }
+          return resolve({ data: [], error: null });
+        };
+        return self;
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any;
+
+    const settings = await getParentSettings({ userId: "u2", admin });
+    expect(settings.athletes).toEqual([
+      {
+        id: kid.id,
+        firstName: "Kid",
+        lastName: "Guardianed",
+        birthdate: null,
+        username: null,
+        hasAccount: false,
+        inviteCode: null,
+        coaches: [],
+        sports: [],
+        schedulesByCoach: [],
+        locked: true,
       },
     ]);
   });

@@ -45,6 +45,7 @@ export const parentSettingsAthleteSchema = z.object({
   coaches: z.array(parentSettingsCoachSchema),
   sports: z.array(parentSettingsSportSchema),
   schedulesByCoach: z.array(parentSettingsScheduleSchema),
+  locked: z.boolean(),
 });
 
 export const parentSettingsSchema = z.object({
