@@ -22,6 +22,8 @@ export type TargetKind = "reps" | "mins";
 export interface ParentAthleteOptionDTO {
   id: string;
   name: string;
+  /** True for a co-guardian once the primary parent's Team plan has lapsed — this athlete's plans are withheld. */
+  locked: boolean;
 }
 
 export interface ParentPlanSummaryDTO {
@@ -74,6 +76,12 @@ export interface ParentPlansDTO {
 }
 
 const notFound = () => new ApiError({ code: "not_found", status: 404, message: "Plan not found" });
+const teamPlanRequired = () =>
+  new ApiError({
+    code: "team_plan_required",
+    status: 403,
+    message: "This family's Team plan needs to be reactivated to view this.",
+  });
 
 async function getParentId(supabase: Client, userId: string): Promise<string | null> {
   const { data, error } = await supabase
@@ -92,8 +100,17 @@ export async function listParentPlans(ctx: ParentPlansContext): Promise<ParentPl
   const parentId = await getParentId(supabase, ctx.userId);
   if (!parentId) return { athletes: [], plans: [] };
 
-  const { guardianAthleteIdsSafe } = await import("./team.server");
-  const accessibleIds = await guardianAthleteIdsSafe(supabase as any, parentId);
+  const { guardianAthleteAccess } = await import("./team.server");
+  // The plan-active check inside guardianAthleteAccess reads another
+  // parent's parent_profiles row (the primary's), which RLS only allows for
+  // that parent's own auth.uid() — so this one lookup goes through the admin
+  // client even though the rest of this function stays on the caller's RLS
+  // client.
+  const access = await guardianAthleteAccess(admin as any, parentId);
+  const lockedById = new Map(access.map((a) => [a.athleteId, a.locked]));
+  const accessibleIds = access.length
+    ? access.map((a) => a.athleteId)
+    : ["00000000-0000-0000-0000-000000000000"];
   const { data: athleteRows, error: aErr } = await supabase
     .from("athletes")
     .select("id, first_name, last_name")
@@ -104,12 +121,15 @@ export async function listParentPlans(ctx: ParentPlansContext): Promise<ParentPl
     .map((a) => ({
       id: a.id,
       name: `${a.first_name} ${a.last_name}`.trim(),
+      locked: lockedById.get(a.id) ?? false,
     }))
     .sort((x, y) => x.name.localeCompare(y.name));
 
   if (!athletes.length) return { athletes, plans: [] };
 
-  const athleteIds = athletes.map((a) => a.id);
+  // Locked athletes' plans stay withheld — only their identity is listed above.
+  const athleteIds = athletes.filter((a) => !a.locked).map((a) => a.id);
+  if (!athleteIds.length) return { athletes, plans: [] };
 
   const { data: planRows, error: pErr } = await supabase
     .from("plans")
@@ -206,11 +226,14 @@ export async function getParentPlan(
   if (!plan || plan.kind !== "plan" || !plan.athlete_id) throw notFound();
   if (plan.status !== "active" && plan.status !== "benched") throw notFound();
 
-  // Explicit defense-in-depth: ensure the plan's athlete belongs to this parent,
-  // independent of any RLS policy state on `plans`.
-  const { canAccessAthlete } = await import("./team.server");
-  const allowed = await canAccessAthlete(supabase as any, parentId, plan.athlete_id);
-  if (!allowed) throw notFound();
+  // Explicit defense-in-depth: ensure the plan's athlete belongs to this
+  // parent, independent of any RLS policy state on `plans`. Goes through the
+  // admin client (not supabase) because a co-guardian's plan-active check
+  // reads the *primary* parent's parent_profiles row, which RLS won't allow.
+  const { resolveGuardianAthleteAccess } = await import("./team.server");
+  const access = await resolveGuardianAthleteAccess(admin as any, parentId, plan.athlete_id);
+  if (!access) throw notFound();
+  if (access.locked) throw teamPlanRequired();
 
   const [movesRes, athleteRes, coachRes] = await Promise.all([
     supabase
