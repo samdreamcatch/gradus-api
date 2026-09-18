@@ -17,7 +17,7 @@ import type { Database } from "@/integrations/supabase/types";
 import type { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { dbError } from "./db-error";
 import { getSuggestedHours } from "./coach-sports";
-import { guardianAthleteIdsSafe } from "./team.server";
+import { guardianAthleteAccess } from "./team.server";
 
 type Client = SupabaseClient<Database>;
 type Admin = typeof supabaseAdmin;
@@ -45,6 +45,8 @@ export interface ParentGoalAthleteDTO {
   athleteId: string;
   athleteName: string;
   sports: ParentGoalSportDTO[];
+  /** True for a co-guardian once the primary parent's Team plan has lapsed — `sports` is empty. */
+  locked: boolean;
 }
 
 /** Every accessible athlete's goals, sorted by name. `[]` when the caller has no parent profile. */
@@ -62,7 +64,16 @@ export async function getParentGoalsDashboard(
   if (pErr) dbError(pErr);
   if (!parent) return [];
 
-  const accessibleIds = await guardianAthleteIdsSafe(supabase as any, parent.id);
+  // The plan-active check inside guardianAthleteAccess reads another
+  // parent's parent_profiles row (the primary's), which RLS only allows for
+  // that parent's own auth.uid() — so this one lookup goes through the admin
+  // client even though the rest of this function stays on the caller's RLS
+  // client.
+  const access = await guardianAthleteAccess(admin as any, parent.id);
+  const lockedById = new Map(access.map((a) => [a.athleteId, a.locked]));
+  const accessibleIds = access.length
+    ? access.map((a) => a.athleteId)
+    : ["00000000-0000-0000-0000-000000000000"];
   const { data: athleteRows, error: aErr } = await supabase
     .from("athletes")
     .select("id, first_name, last_name")
@@ -163,6 +174,15 @@ export async function getParentGoalsDashboard(
 
   const result: ParentGoalAthleteDTO[] = athleteRows
     .map((a) => {
+      if (lockedById.get(a.id)) {
+        return {
+          athleteId: a.id,
+          athleteName: `${a.first_name} ${a.last_name}`.trim(),
+          sports: [],
+          locked: true,
+        };
+      }
+
       const goals = goalsByAthlete.get(a.id) ?? [];
       const sports: ParentGoalSportDTO[] = goals.map((g) => {
         const coachId = primaryByKey.get(`${a.id}|${g.sport}`) ?? null;
@@ -196,6 +216,7 @@ export async function getParentGoalsDashboard(
         athleteId: a.id,
         athleteName: `${a.first_name} ${a.last_name}`.trim(),
         sports,
+        locked: false,
       };
     })
     .sort((x, y) => x.athleteName.localeCompare(y.athleteName));
