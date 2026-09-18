@@ -935,23 +935,15 @@ describe("setParentAthleteGoals", () => {
     expect(err?.message).toBe("Link a coach who teaches this sport before setting goals.");
   });
 
-  it("a shared guardian (not the primary parent) can set goals too", async () => {
-    const calls: WriteCall[] = [];
-    const admin = fakeClient(
-      { athletes: foreignAthlete, athlete_primary_coaches: { coach_id: C } },
-      { athlete_guardians: [{ parent_profiles: { user_id: "u" } }] },
-      { calls },
+  it("refuses a shared guardian (not the primary parent) — writes stay primary-only", async () => {
+    const err = await caught(() =>
+      setParentAthleteGoals(
+        { userId: "u", admin: fakeClient({ athletes: foreignAthlete }) },
+        A,
+        goals,
+      ),
     );
-    expect(await setParentAthleteGoals({ userId: "u", admin }, A, goals)).toEqual({ ok: true });
-    expect(calls).toEqual([
-      {
-        op: "upsert",
-        table: "athlete_goals",
-        payload: goalRow(C),
-        opts: { onConflict: "athlete_id,sport" },
-        filters: [],
-      },
-    ]);
+    expect(err?.status).toBe(404);
   });
 });
 
