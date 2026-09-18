@@ -139,7 +139,7 @@ describe("getParentPlan", () => {
     });
     const err = await caught(() => getParentPlan({ userId: "u2", supabase, admin }, "plan-1"));
     expect(err?.status).toBe(403);
-    expect(err?.code).toBe("team_plan_required");
+    expect(err?.code).toBe("plan_required");
   });
 
   it("404s for a plan whose athlete the caller has no link to at all", async () => {

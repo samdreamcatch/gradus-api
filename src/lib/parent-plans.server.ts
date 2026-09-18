@@ -76,12 +76,8 @@ export interface ParentPlansDTO {
 }
 
 const notFound = () => new ApiError({ code: "not_found", status: 404, message: "Plan not found" });
-const teamPlanRequired = () =>
-  new ApiError({
-    code: "team_plan_required",
-    status: 403,
-    message: "This family's Team plan needs to be reactivated to view this.",
-  });
+const planRequired = (message: string) =>
+  new ApiError({ code: "plan_required", status: 403, message });
 
 async function getParentId(supabase: Client, userId: string): Promise<string | null> {
   const { data, error } = await supabase
@@ -233,7 +229,9 @@ export async function getParentPlan(
   const { resolveGuardianAthleteAccess } = await import("./team.server");
   const access = await resolveGuardianAthleteAccess(admin as any, parentId, plan.athlete_id);
   if (!access) throw notFound();
-  if (access.locked) throw teamPlanRequired();
+  if (access.locked) {
+    throw planRequired("This family's Team plan needs to be reactivated to view this.");
+  }
 
   const [movesRes, athleteRes, coachRes] = await Promise.all([
     supabase
