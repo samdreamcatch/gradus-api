@@ -118,8 +118,12 @@ export async function listMyRoomIds(
     }
   }
   if (me.parent) {
-    const { guardianAthleteIds } = await import("./team.server");
-    const ids = await guardianAthleteIds(supabaseAdmin as any, me.parent.id);
+    const { guardianAthleteAccess } = await import("./team.server");
+    const access = await guardianAthleteAccess(supabaseAdmin as any, me.parent.id);
+    // A locked co-guardian athlete's room drops out of the list entirely —
+    // unlike the redacted-but-listed pattern elsewhere, there's no natural
+    // "locked room" entry to show here.
+    const ids = access.filter((a) => !a.locked).map((a) => a.athleteId);
     if (ids.length > 0) {
       const { data, error } = await supabaseAdmin
         .from("message_rooms")
@@ -1173,8 +1177,13 @@ export async function ensureAthleteRoom(
   const isAthlete = me.athlete?.id === data.athleteId;
   const isParent = me.parent
     ? await (async () => {
-        const { canAccessAthlete } = await import("./team.server");
-        return canAccessAthlete(supabaseAdmin as any, me.parent!.id, data.athleteId);
+        const { resolveGuardianAthleteAccess } = await import("./team.server");
+        const access = await resolveGuardianAthleteAccess(
+          supabaseAdmin as any,
+          me.parent!.id,
+          data.athleteId,
+        );
+        return !!access && !access.locked;
       })()
     : false;
 
@@ -1526,8 +1535,13 @@ export async function listMessageTargets(
   }
 
   if (me.parent) {
-    const { guardianAthleteIdsSafe } = await import("./team.server");
-    const ids = await guardianAthleteIdsSafe(supabaseAdmin as any, me.parent.id);
+    const { guardianAthleteAccess } = await import("./team.server");
+    const access = await guardianAthleteAccess(supabaseAdmin as any, me.parent.id);
+    // A locked co-guardian athlete's coaches drop out of the target list
+    // entirely, same as the room list above — there's no natural "locked
+    // target" entry to show here.
+    const unlockedIds = access.filter((a) => !a.locked).map((a) => a.athleteId);
+    const ids = unlockedIds.length ? unlockedIds : ["00000000-0000-0000-0000-000000000000"];
     const { data, error } = await supabaseAdmin
       .from("athletes")
       .select(
