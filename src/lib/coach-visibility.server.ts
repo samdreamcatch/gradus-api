@@ -23,7 +23,7 @@ import { z } from "zod";
 import type { ApiContext } from "./api/auth";
 import { ApiError } from "./api/errors";
 import { dbError } from "./db-error";
-import { guardianAthleteIdsSafe, teamPlanActive } from "./team.server";
+import { guardianAthleteAccess, guardianAthleteIdsSafe, teamPlanActive } from "./team.server";
 
 type Admin = ApiContext["admin"];
 
@@ -68,6 +68,8 @@ export interface CoachVisibilityAthleteDTO {
   firstName: string;
   lastName: string;
   coaches: CoachVisibilityCoachDTO[];
+  /** True for a co-guardian once the primary parent's Team plan has lapsed — `coaches` is empty. */
+  locked: boolean;
 }
 
 export interface CoachVisibilityDTO {
@@ -96,6 +98,8 @@ export interface ParentCoachVisibilityAthleteDTO {
   firstName: string;
   lastName: string;
   coaches: ParentCoachVisibilityCoachDTO[];
+  /** True for a co-guardian once the primary parent's Team plan has lapsed — `coaches` is empty. */
+  locked: boolean;
 }
 
 export interface ParentCoachVisibilityDTO {
@@ -187,6 +191,7 @@ export function toParentCoachVisibility(dto: CoachVisibilityDTO): ParentCoachVis
       id: a.id,
       firstName: a.firstName,
       lastName: a.lastName,
+      locked: a.locked,
       coaches: a.coaches.map((c) => ({
         coachId: c.coachId,
         name: c.name,
@@ -232,7 +237,9 @@ export async function listCoachVisibility(
 async function listCoachVisibilityWeb(admin: Admin, userId: string): Promise<CoachVisibilityDTO> {
   const parent = await parentProfile(admin, userId);
 
-  const reachableIds = await guardianAthleteIdsSafe(admin, parent.id);
+  const access = await guardianAthleteAccess(admin, parent.id);
+  const lockedById = new Map(access.map((a) => [a.athleteId, a.locked]));
+  const reachableIds = access.map((a) => a.athleteId);
   const athletesRes = await admin
     .from("athletes")
     .select("id, first_name, last_name, parent_id")
@@ -293,11 +300,15 @@ async function listCoachVisibilityWeb(admin: Admin, userId: string): Promise<Coa
   return {
     planActive,
     athletes: athletes.map((a) => {
+      if (lockedById.get(a.id)) {
+        return { id: a.id, firstName: a.first_name, lastName: a.last_name, locked: true, coaches: [] };
+      }
       const mine = coachLinks.filter((l) => l.athlete_id === a.id);
       return {
         id: a.id,
         firstName: a.first_name,
         lastName: a.last_name,
+        locked: false,
         coaches: mine.map((l) => {
           const enabled = optIns.some((o) => o.athlete_id === a.id && o.coach_id === l.coach_id);
           const related = pairs.filter(
