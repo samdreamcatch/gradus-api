@@ -35,6 +35,8 @@ export type VoicePlanDraft = {
     targetFromVoice?: boolean;
     sources?: Partial<Record<"name" | "description" | "cue" | "why" | "target", string>>;
   }[];
+  /** Moves the AI returned that we couldn't read, and skipped. */
+  droppedMoveCount?: number;
   sources?: {
     title?: string;
     athleteName?: string;
