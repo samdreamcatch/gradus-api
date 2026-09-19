@@ -104,38 +104,159 @@ export async function transcribeWithElevenLabs(
 
 /* ---------------- Pass 1: Slotting ---------------- */
 
+/*
+ * Strict-compatible shapes: every property is declared and *nullable* rather
+ * than optional, so the gateway can enforce the schema with a real
+ * `json_schema` response format instead of hoping the model returns the right
+ * shape. `.nullish()` here would serialize to an optional property, which
+ * strict mode rejects.
+ */
 const slotMoveSchema = z.object({
   matchExistingMoveId: z
     .string()
-    .nullish()
+    .nullable()
     .describe("Existing plan_move id if the coach is modifying it; else null."),
-  name: z.string().nullish(),
-  nameQuote: z.string().nullish().describe("Verbatim transcript phrase the name came from."),
-  description: z.string().nullish(),
-  descriptionQuote: z.string().nullish(),
-  cue: z.string().nullish().describe("ONE short phrase the athlete can repeat."),
-  cueQuote: z.string().nullish(),
-  why: z.string().nullish().describe("ONE sentence on why this move matters."),
-  whyQuote: z.string().nullish(),
-  targetKind: z.enum(["reps", "mins"]).nullish(),
-  targetValue: z.number().min(0).max(10000).nullish(),
-  targetQuote: z.string().nullish(),
+  name: z.string().nullable(),
+  nameQuote: z.string().nullable().describe("Verbatim transcript phrase the name came from."),
+  description: z.string().nullable(),
+  descriptionQuote: z.string().nullable(),
+  cue: z.string().nullable().describe("ONE short phrase the athlete can repeat."),
+  cueQuote: z.string().nullable(),
+  why: z.string().nullable().describe("ONE sentence on why this move matters."),
+  whyQuote: z.string().nullable(),
+  targetKind: z.enum(["reps", "mins"]).nullable(),
+  targetValue: z.number().min(0).max(10000).nullable(),
+  targetQuote: z.string().nullable(),
+});
+
+/** Retry shape: the same slots without the per-field source quotes. */
+const slotMoveSchemaSimple = z.object({
+  matchExistingMoveId: z.string().nullable(),
+  name: z.string().nullable(),
+  description: z.string().nullable(),
+  cue: z.string().nullable(),
+  why: z.string().nullable(),
+  targetKind: z.enum(["reps", "mins"]).nullable(),
+  targetValue: z.number().min(0).max(10000).nullable(),
 });
 
 const slotSchema = z.object({
-  title: z.string().nullish(),
-  titleQuote: z.string().nullish(),
+  title: z.string().nullable(),
+  titleQuote: z.string().nullable(),
   athleteName: z
     .string()
-    .nullish()
+    .nullable()
     .describe("RAW spoken athlete name as the coach said it (no id lookups)."),
-  athleteQuote: z.string().nullish(),
-  moves: z.array(slotMoveSchema).max(30).nullish(),
+  athleteQuote: z.string().nullable(),
+  moves: z.array(slotMoveSchema).max(30).nullable(),
   leftover: z
     .string()
-    .nullish()
+    .nullable()
     .describe("Verbatim transcript fragments NOT slotted anywhere — for downstream notes cleanup."),
 });
+
+const slotSchemaSimple = z.object({
+  title: z.string().nullable(),
+  athleteName: z.string().nullable(),
+  moves: z.array(slotMoveSchemaSimple).max(30).nullable(),
+  leftover: z.string().nullable(),
+});
+
+export type SlotMove = z.infer<typeof slotMoveSchema>;
+export type Slots = z.infer<typeof slotSchema>;
+
+/* ---------------- Lenient salvage ---------------- */
+
+const str = (v: unknown): string | null => (typeof v === "string" && v.trim() ? v : null);
+const num = (v: unknown): number | null => {
+  if (typeof v === "number" && Number.isFinite(v) && v >= 0) return v;
+  if (typeof v === "string") {
+    const n = Number(v.replace(/[^\d.]/g, ""));
+    if (Number.isFinite(n) && n >= 0) return n;
+  }
+  return null;
+};
+
+/**
+ * Pull the first balanced JSON object out of a model answer that may be
+ * wrapped in prose or a code fence.
+ */
+function extractJsonObject(raw: string | undefined | null): unknown {
+  if (!raw) return null;
+  const text = raw.replace(/```(?:json)?/gi, "");
+  const start = text.indexOf("{");
+  if (start < 0) return null;
+  let depth = 0;
+  let inStr = false;
+  let esc = false;
+  for (let i = start; i < text.length; i++) {
+    const c = text[i];
+    if (inStr) {
+      if (esc) esc = false;
+      else if (c === "\\") esc = true;
+      else if (c === '"') inStr = false;
+      continue;
+    }
+    if (c === '"') inStr = true;
+    else if (c === "{") depth++;
+    else if (c === "}") {
+      depth--;
+      if (depth === 0) {
+        try {
+          return JSON.parse(text.slice(start, i + 1));
+        } catch {
+          return null;
+        }
+      }
+    }
+  }
+  return null;
+}
+
+/**
+ * Coerce whatever the model returned into our slot shape, field by field.
+ * A malformed move is dropped on its own; it never discards the dictation.
+ */
+function salvageSlots(value: unknown): Slots | null {
+  if (!value || typeof value !== "object") return null;
+  const o = value as Record<string, unknown>;
+  const rawMoves = Array.isArray(o.moves) ? o.moves : [];
+  const moves: SlotMove[] = [];
+  for (const entry of rawMoves.slice(0, 30)) {
+    if (!entry || typeof entry !== "object") continue;
+    const m = entry as Record<string, unknown>;
+    const name = str(m.name);
+    const matchExistingMoveId = str(m.matchExistingMoveId);
+    if (!name && !matchExistingMoveId) continue;
+    const kind = str(m.targetKind);
+    moves.push({
+      matchExistingMoveId,
+      name,
+      nameQuote: str(m.nameQuote),
+      description: str(m.description),
+      descriptionQuote: str(m.descriptionQuote),
+      cue: str(m.cue),
+      cueQuote: str(m.cueQuote),
+      why: str(m.why),
+      whyQuote: str(m.whyQuote),
+      targetKind: kind === "mins" || kind === "reps" ? kind : null,
+      targetValue: num(m.targetValue),
+      targetQuote: str(m.targetQuote),
+    });
+  }
+  const title = str(o.title);
+  const athleteName = str(o.athleteName);
+  const leftover = str(o.leftover);
+  if (!title && !athleteName && !leftover && moves.length === 0) return null;
+  return {
+    title,
+    titleQuote: str(o.titleQuote),
+    athleteName,
+    athleteQuote: str(o.athleteQuote),
+    moves,
+    leftover,
+  };
+}
 
 export interface LibraryMove {
   id: string;
