@@ -304,7 +304,9 @@ async function slotTranscript(ctx: ParseContext, variant: "full" | "simple" = "f
   const system = [
     "You convert a sports coach's spoken instructions into structured slots.",
     "Map every meaningful piece of the transcript into exactly one slot: title, athleteName, or a move field (name/description/cue/why/target).",
-    "For EVERY filled field, also fill its *Quote field with the verbatim transcript phrase that produced it (a clean substring of the transcript, not paraphrased).",
+    variant === "full"
+      ? "For EVERY filled field, also fill its *Quote field with the verbatim transcript phrase that produced it (a clean substring of the transcript, not paraphrased)."
+      : "Keep it simple: fill the slots only. There are no quote fields in this shape.",
     "RULES:",
     "- Do NOT invent drills, names, or numbers the coach did not say.",
     "- athleteName is the RAW name spoken (e.g. 'Sarah'). Do NOT try to resolve IDs.",
