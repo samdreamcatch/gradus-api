@@ -15,21 +15,19 @@ type Row = Record<string, unknown>;
 function fakeAdmin(messages: Row[], files: Record<string, Uint8Array> = {}) {
   const updates: { id: string; patch: Row }[] = [];
   const downloads: string[] = [];
+  type Filter = (r: Row) => boolean;
+  const orFilter = (expr: string): Filter => {
+    // "transcript_failed_at.is.null,transcript_failed_at.lt.<iso>"
+    const lt = expr.split("transcript_failed_at.lt.")[1];
+    return (r) => r.transcript_failed_at == null || (r.transcript_failed_at as string) < lt;
+  };
   const query = (rows: Row[]) => {
     const self = {
       eq: (col: string, val: unknown) => query(rows.filter((r) => r[col] === val)),
       is: (col: string, val: unknown) => query(rows.filter((r) => (r[col] ?? null) === val)),
       not: (col: string, op: string, val: unknown) =>
         query(rows.filter((r) => (op === "is" && val === null ? r[col] != null : true))),
-      or: (expr: string) => {
-        // "transcript_failed_at.is.null,transcript_failed_at.lt.<iso>"
-        const lt = expr.split("transcript_failed_at.lt.")[1];
-        return query(
-          rows.filter(
-            (r) => r.transcript_failed_at == null || (r.transcript_failed_at as string) < lt,
-          ),
-        );
-      },
+      or: (expr: string) => query(rows.filter(orFilter(expr))),
       order: (col: string, opts: { ascending: boolean }) =>
         query(
           [...rows].sort((a, b) =>
@@ -44,18 +42,41 @@ function fakeAdmin(messages: Row[], files: Record<string, Uint8Array> = {}) {
     };
     return self;
   };
+  /** `update(patch)` with chained filters; applies on await or `.select()`, returning the rows it touched. */
+  const update = (patch: Row) => {
+    const filters: Filter[] = [];
+    const apply = () => {
+      const hit = messages.filter((m) => filters.every((f) => f(m)));
+      for (const row of hit) {
+        updates.push({ id: row.id as string, patch });
+        Object.assign(row, patch);
+      }
+      return { data: hit.map((r) => ({ id: r.id })), error: null };
+    };
+    const chain = {
+      eq: (col: string, val: unknown) => {
+        filters.push((r) => r[col] === val);
+        return chain;
+      },
+      is: (col: string, val: unknown) => {
+        filters.push((r) => (r[col] ?? null) === val);
+        return chain;
+      },
+      not: (col: string, op: string, val: unknown) => {
+        filters.push((r) => (op === "is" && val === null ? r[col] != null : true));
+        return chain;
+      },
+      or: (expr: string) => {
+        filters.push(orFilter(expr));
+        return chain;
+      },
+      select: () => Promise.resolve(apply()),
+      then: (resolve: (v: { data: Row[]; error: null }) => void) => resolve(apply()),
+    };
+    return chain;
+  };
   const admin = {
-    from: () => ({
-      select: () => query(messages),
-      update: (patch: Row) => ({
-        eq: (_col: string, id: string) => {
-          updates.push({ id, patch });
-          const row = messages.find((m) => m.id === id);
-          if (row) Object.assign(row, patch);
-          return Promise.resolve({ error: null });
-        },
-      }),
-    }),
+    from: () => ({ select: () => query(messages), update }),
     storage: {
       from: () => ({
         download: (path: string) => {
@@ -78,7 +99,9 @@ const NOW = Date.UTC(2026, 8, 19, 16, 0, 0);
 
 describe("transcribeVoiceNote", () => {
   it("uses bytes already in hand, stores the trimmed transcript, and clears any failure stamp", async () => {
-    const { admin, updates, downloads } = fakeAdmin([{ id: "m1", kind: "voice" }]);
+    const { admin, updates, downloads } = fakeAdmin([
+      { id: "m1", kind: "voice", audio_url: "r/u/a.m4a" },
+    ]);
     const seen: { type: string; size: number }[] = [];
     const text = await transcribeVoiceNote(
       admin,
@@ -98,13 +121,20 @@ describe("transcribeVoiceNote", () => {
     expect(text).toBe("Nice loop today.");
     expect(seen).toEqual([{ type: "audio/mp4", size: 3 }]);
     expect(downloads).toEqual([]);
-    expect(updates).toEqual([
-      { id: "m1", patch: { transcript: "Nice loop today.", transcript_failed_at: null } },
+    // the claim stamps a lease first, then the transcript lands and clears it
+    expect(updates.map((u) => Object.keys(u.patch).sort())).toEqual([
+      ["transcript_failed_at"],
+      ["transcript", "transcript_failed_at"],
     ]);
+    expect(typeof updates[0].patch.transcript_failed_at).toBe("string");
+    expect(updates[1].patch).toEqual({
+      transcript: "Nice loop today.",
+      transcript_failed_at: null,
+    });
   });
 
   it("downloads a client-uploaded note from the bucket when no bytes are given", async () => {
-    const { admin, downloads } = fakeAdmin([{ id: "m1", kind: "voice" }], {
+    const { admin, downloads } = fakeAdmin([{ id: "m1", kind: "voice", audio_url: "r/u/a.webm" }], {
       "r/u/a.webm": new Uint8Array([9]),
     });
     const text = await transcribeVoiceNote(
@@ -117,7 +147,7 @@ describe("transcribeVoiceNote", () => {
   });
 
   it("records a failure instead of throwing when the service or the download fails", async () => {
-    const { admin, updates } = fakeAdmin([{ id: "m1", kind: "voice" }]);
+    const { admin, updates } = fakeAdmin([{ id: "m1", kind: "voice", audio_url: "x" }]);
     const original = console.error;
     console.error = () => {};
     try {
@@ -127,8 +157,17 @@ describe("transcribeVoiceNote", () => {
         { transcribe: async () => "never", now: () => NOW },
       );
       expect(a).toBeNull();
+      // A second attempt on the same row inside the back-off is refused by the claim.
+      expect(
+        await transcribeVoiceNote(
+          admin,
+          { messageId: "m1", audioPath: "x", mimeType: "audio/webm", bytes: new Uint8Array([1]) },
+          { transcribe: async () => "never", now: () => NOW },
+        ),
+      ).toBeNull();
+      const second = fakeAdmin([{ id: "m1", kind: "voice", audio_url: "x" }]);
       const b = await transcribeVoiceNote(
-        admin,
+        second.admin,
         { messageId: "m1", audioPath: "x", mimeType: "audio/webm", bytes: new Uint8Array([1]) },
         {
           transcribe: async () => {
@@ -141,7 +180,12 @@ describe("transcribeVoiceNote", () => {
     } finally {
       console.error = original;
     }
+    // claim + stamp for the first attempt; the refused retry writes nothing
     expect(updates.map((u) => u.patch)).toEqual([
+      { transcript_failed_at: new Date(NOW).toISOString() },
+      { transcript_failed_at: new Date(NOW).toISOString() },
+    ]);
+    expect(second.updates.map((u) => u.patch)).toEqual([
       { transcript_failed_at: new Date(NOW).toISOString() },
       { transcript_failed_at: new Date(NOW).toISOString() },
     ]);
@@ -254,5 +298,94 @@ describe("sweepVoiceTranscripts", () => {
     } finally {
       console.error = original;
     }
+  });
+});
+
+describe("transcribeVoiceNote claims and guards", () => {
+  it("skips a note that already has a transcript or is inside another attempt's back-off", async () => {
+    const done = fakeAdmin([{ id: "m1", kind: "voice", audio_url: "x", transcript: "already" }]);
+    let calls = 0;
+    const transcribe = async () => {
+      calls += 1;
+      return "again";
+    };
+    expect(
+      await transcribeVoiceNote(
+        done.admin,
+        { messageId: "m1", audioPath: "x", mimeType: "audio/webm", bytes: new Uint8Array([1]) },
+        { transcribe },
+      ),
+    ).toBeNull();
+    const leased = fakeAdmin([
+      {
+        id: "m1",
+        kind: "voice",
+        audio_url: "x",
+        transcript: null,
+        transcript_failed_at: new Date(NOW - 60_000).toISOString(),
+      },
+    ]);
+    expect(
+      await transcribeVoiceNote(
+        leased.admin,
+        { messageId: "m1", audioPath: "x", mimeType: "audio/webm", bytes: new Uint8Array([1]) },
+        { transcribe, now: () => NOW },
+      ),
+    ).toBeNull();
+    expect(calls).toBe(0);
+    expect(done.updates).toEqual([]);
+  });
+
+  it("does not write a transcript onto a note tombstoned meanwhile, and a failure never overwrites a transcript", async () => {
+    const tomb = fakeAdmin([{ id: "m1", kind: "voice", audio_url: "x" }]);
+    const original = console.error;
+    console.error = () => {};
+    try {
+      await transcribeVoiceNote(
+        tomb.admin,
+        { messageId: "m1", audioPath: "x", mimeType: "audio/webm", bytes: new Uint8Array([1]) },
+        {
+          transcribe: async () => {
+            // account deletion lands while ElevenLabs is working
+            await tomb.admin.from().update({ audio_url: null }).eq("id", "m1");
+            return "secret";
+          },
+        },
+      );
+    } finally {
+      console.error = original;
+    }
+    expect(
+      tomb.updates.some((u) => "transcript" in u.patch && u.patch.transcript === "secret"),
+    ).toBe(false);
+  });
+
+  it("maps every stored extension to the container ElevenLabs expects", async () => {
+    const files = {
+      "r/u/a.aac": new Uint8Array([1]),
+      "r/u/b.mp3": new Uint8Array([2]),
+      "r/u/c.wav": new Uint8Array([3]),
+    };
+    const rows = Object.keys(files).map((p, i) => ({
+      id: `m${i}`,
+      kind: "voice",
+      audio_url: p,
+      transcript: null,
+      transcript_failed_at: null,
+      created_at: `2026-09-19T15:0${i}:00Z`,
+    }));
+    const { admin } = fakeAdmin(rows, files);
+    const mimes: string[] = [];
+    await sweepVoiceTranscripts(
+      { admin },
+      {
+        transcribe: async (a) => {
+          mimes.push(a.type);
+          return "x";
+        },
+        now: () => NOW,
+      },
+    );
+    expect(mimes.sort()).toEqual(["audio/aac", "audio/mpeg", "audio/wav"]);
   });
 });

@@ -39,7 +39,8 @@ export type VoiceNoteRef = {
   bytes?: Uint8Array | null;
 };
 
-export const SWEEP_BATCH = 10;
+/** Small on purpose: the sweep runs after the hook's response, inside the Worker's post-response budget. */
+export const SWEEP_BATCH = 3;
 /** A failed attempt is retried after this long. */
 export const RETRY_AFTER_MS = 6 * 60 * 60 * 1000;
 
@@ -58,6 +59,25 @@ export async function transcribeVoiceNote(
   deps: TranscriptDeps = {},
 ): Promise<string | null> {
   const db = admin as unknown as Untyped;
+  const now = deps.now?.() ?? Date.now();
+  const nowIso = new Date(now).toISOString();
+  const retryBefore = new Date(now - RETRY_AFTER_MS).toISOString();
+  // Claim the note first: the stamp doubles as a lease, so an overlapping sweep
+  // or a concurrent send-time attempt skips it instead of paying ElevenLabs twice.
+  let claimed: { data: unknown[] | null; error: { message?: string } | null };
+  try {
+    claimed = await db
+      .from("messages")
+      .update({ transcript_failed_at: nowIso })
+      .eq("id", note.messageId)
+      .is("transcript", null)
+      .or(`transcript_failed_at.is.null,transcript_failed_at.lt.${retryBefore}`)
+      .select("id");
+  } catch (err) {
+    console.error("[transcripts] claim failed", err instanceof Error ? err.message : String(err));
+    return null;
+  }
+  if (claimed.error || !claimed.data?.length) return null;
   try {
     let bytes = note.bytes ?? null;
     if (!bytes) {
@@ -69,10 +89,13 @@ export async function transcribeVoiceNote(
     const text = (
       await transcribe(new Blob([bytes as unknown as BlobPart], { type: note.mimeType }))
     ).trim();
+    // `audio_url IS NOT NULL`: a note tombstoned by account deletion while
+    // this ran must not get its text written back.
     const { error } = await db
       .from("messages")
       .update({ transcript: text, transcript_failed_at: null })
-      .eq("id", note.messageId);
+      .eq("id", note.messageId)
+      .not("audio_url", "is", null);
     if (error) throw error;
     return text;
   } catch (err) {
@@ -80,8 +103,20 @@ export async function transcribeVoiceNote(
       messageId: note.messageId,
       error: err instanceof Error ? err.message : String(err),
     });
-    const failedAt = new Date(deps.now?.() ?? Date.now()).toISOString();
-    await db.from("messages").update({ transcript_failed_at: failedAt }).eq("id", note.messageId);
+    // The claim already stamped `transcript_failed_at`; leave it so the sweep
+    // backs off, but never over a transcript that landed meanwhile.
+    try {
+      await db
+        .from("messages")
+        .update({ transcript_failed_at: nowIso })
+        .eq("id", note.messageId)
+        .is("transcript", null);
+    } catch (stampErr) {
+      console.error(
+        "[transcripts] failure stamp failed",
+        stampErr instanceof Error ? stampErr.message : String(stampErr),
+      );
+    }
     return null;
   }
 }
@@ -95,6 +130,12 @@ function mimeFromPath(path: string): string {
       return "audio/mp4";
     case "ogg":
       return "audio/ogg";
+    case "aac":
+      return "audio/aac";
+    case "mp3":
+      return "audio/mpeg";
+    case "wav":
+      return "audio/wav";
     default:
       return "audio/webm";
   }
@@ -122,7 +163,16 @@ export async function sweepVoiceTranscripts(
     .or(`transcript_failed_at.is.null,transcript_failed_at.lt.${retryBefore}`)
     .order("created_at", { ascending: false })
     .limit(SWEEP_BATCH);
-  if (res.error) dbError(res.error);
+  if (res.error) {
+    // Until migration 20260919200000 is applied the column does not exist; that is not an error worth a 500.
+    if (res.error.code === "42703") {
+      console.error(
+        "[transcripts] messages.transcript is missing; sweep skipped until the migration is applied",
+      );
+      return { scanned: 0, transcribed: 0, failed: 0 };
+    }
+    dbError(res.error);
+  }
   const rows = (res.data ?? []) as { id: string; audio_url: string }[];
 
   let transcribed = 0;

@@ -590,7 +590,7 @@ export function toMessageDTO(
     body: m.body ?? "",
     audioUrl,
     durationSeconds: m.duration_seconds,
-    transcript: m.kind === "voice" ? (m.transcript ?? null) : null,
+    transcript: m.kind === "voice" ? m.transcript || null : null,
     createdAt: m.created_at,
     readBy,
     plan,
@@ -638,6 +638,37 @@ async function fetchMessagesForRooms(
 
 const MESSAGE_COLS =
   "id, room_id, direct_room_id, sender_user_id, sender_deleted_at, sender_role, kind, body, audio_url, duration_seconds, transcript, created_at, plan_id";
+
+/**
+ * `messages.transcript` arrives with migration 20260919200000. Lovable does
+ * not apply migrations on publish (PRD §4.1 rule 11), so until Mariah applies
+ * it the thread reads must keep working: on the first "column does not exist"
+ * the column is dropped from the select for the rest of this isolate's life.
+ */
+let transcriptColumnAvailable = true;
+function messageColumns(): string {
+  return transcriptColumnAvailable ? MESSAGE_COLS : MESSAGE_COLS.replace(", transcript", "");
+}
+type DbResult = { data: unknown; error: { code?: string; message?: string } | null };
+function isMissingTranscriptColumn(error: DbResult["error"]): boolean {
+  return (
+    transcriptColumnAvailable &&
+    !!error &&
+    (error.code === "42703" || /transcript/.test(error.message ?? "")) &&
+    /transcript/.test(error.message ?? "")
+  );
+}
+async function selectMessages(build: (cols: string) => Promise<DbResult>): Promise<DbResult> {
+  let res = await build(messageColumns());
+  if (res.error && isMissingTranscriptColumn(res.error)) {
+    transcriptColumnAvailable = false;
+    console.error(
+      "[messages] messages.transcript is missing; reading without it until migration 20260919200000 is applied",
+    );
+    res = await build(messageColumns());
+  }
+  return res;
+}
 
 async function findMyRoom(
   userId: string,
@@ -876,11 +907,12 @@ export async function getRoomDetail(
   const participantsByRoom = await loadParticipants([room]);
   const participants = participantsByRoom.get(room.id) ?? [];
 
-  const q = supabaseAdmin.from("messages").select(MESSAGE_COLS);
-  const { data: msgs, error } =
-    room.kind === "athlete"
+  const { data: msgs, error } = await selectMessages(async (cols) => {
+    const q = supabaseAdmin.from("messages").select(cols);
+    return room.kind === "athlete"
       ? await q.eq("room_id", room.id).order("created_at", { ascending: true }).limit(500)
       : await q.eq("direct_room_id", room.id).order("created_at", { ascending: true }).limit(500);
+  });
   if (error) dbError(error, "Couldn't load messages");
 
   const messages = await hydrateMessages(room, participants, (msgs ?? []) as unknown as MsgRow[]);
@@ -904,12 +936,12 @@ export async function getRoomPage(
   const participantsByRoom = await loadParticipants([room]);
   const participants = participantsByRoom.get(room.id) ?? [];
 
-  let q = supabaseAdmin.from("messages").select(MESSAGE_COLS);
-  q = room.kind === "athlete" ? q.eq("room_id", room.id) : q.eq("direct_room_id", room.id);
-  if (before) q = q.lt("created_at", before.createdAt);
-  const { data: msgs, error } = await q
-    .order("created_at", { ascending: false })
-    .limit(input.limit + 1);
+  const { data: msgs, error } = await selectMessages(async (cols) => {
+    let q = supabaseAdmin.from("messages").select(cols);
+    q = room.kind === "athlete" ? q.eq("room_id", room.id) : q.eq("direct_room_id", room.id);
+    if (before) q = q.lt("created_at", before.createdAt);
+    return await q.order("created_at", { ascending: false }).limit(input.limit + 1);
+  });
   if (error) dbError(error, "Couldn't load messages");
 
   const rows = (msgs ?? []) as unknown as MsgRow[];
@@ -1020,6 +1052,10 @@ export async function sendMessage(
       const path = data.audioPath!;
       if (!path.startsWith(`${room.id}/${userId}/`) || path.includes("..")) {
         throw unprocessable("Voice note path must be inside your folder for this conversation.");
+      }
+      // The transcription sweep reads the container from the extension (PRD §6.7).
+      if (!/\.(m4a|mp4|webm|ogg)$/i.test(path)) {
+        throw unprocessable("Voice note path must end in .m4a, .mp4, .webm, or .ogg.");
       }
       if (!(await voiceNoteExists(path))) {
         throw unprocessable("Voice note upload not found. Upload it first, then send.");

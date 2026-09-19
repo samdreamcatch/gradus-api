@@ -2,10 +2,12 @@
 //
 // Transcribes a few voice notes that still have no transcript (send-time
 // attempts that failed, and every note recorded before transcripts existed),
-// newest first. Same auth as the other hooks: the Supabase publishable key.
+// newest first, after replying 202. Same auth as the other hooks: the
+// Supabase publishable key.
 
 import { createClient } from "@supabase/supabase-js";
 import { createFileRoute } from "@tanstack/react-router";
+import { inBackground } from "@/lib/background";
 import { sweepVoiceTranscripts } from "@/lib/voice-transcripts.server";
 
 export const Route = createFileRoute("/api/public/hooks/voice-transcripts")({
@@ -32,14 +34,14 @@ export const Route = createFileRoute("/api/public/hooks/voice-transcripts")({
           auth: { persistSession: false, autoRefreshToken: false },
         });
 
-        try {
+        // Transcribing a batch takes longer than pg_net waits for a response,
+        // so answer now and do the work in the request's post-response budget
+        // (the claim inside transcribeVoiceNote keeps overlapping ticks apart).
+        await inBackground("voice-transcripts:sweep", async () => {
           const result = await sweepVoiceTranscripts({ admin });
-          return Response.json({ ok: true, ...result });
-        } catch (error) {
-          console.error("[api] voice-transcripts failed", error);
-          const message = error instanceof Error ? error.message : "unknown error";
-          return Response.json({ error: message }, { status: 500 });
-        }
+          console.log("[api] voice-transcripts", JSON.stringify(result));
+        });
+        return Response.json({ ok: true, accepted: true }, { status: 202 });
       },
     },
   },
