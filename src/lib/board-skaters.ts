@@ -22,7 +22,7 @@ export interface SkaterMatch {
 
 /** Loose identity for an event: the schedule and the rink panel often label the
  *  same event slightly differently ("Name / Free Skate" vs name + segment). */
-function eventKey(name: string, segment: string, rink: string): string {
+export function eventKey(name: string, segment: string, rink: string): string {
   const text = `${name} ${segment}`
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, " ")

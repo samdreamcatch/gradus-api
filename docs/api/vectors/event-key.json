@@ -1,0 +1,78 @@
+{
+  "description": "Shared vectors for eventKey (src/lib/board-skaters.ts): the loose identity that lets a rink panel's live event match its schedule row when the two label it differently. `${name} ${segment}` lowercased, every non [a-z0-9] run collapsed to one space, trimmed, split on spaces, duplicate words dropped keeping first occurrence, joined by single spaces; prefixed by the rink lowercased and trimmed plus a pipe. Both the TypeScript and Swift implementations (BoardLogic.eventKey) must produce `expected` for every case, or the two sides compute different Live Activity keys.",
+  "source": "src/lib/board-skaters.ts eventKey",
+  "cases": [
+    {
+      "input": {
+        "name": "Juvenile Girls",
+        "segment": "Free Skate",
+        "rink": "Main Rink"
+      },
+      "expected": "main rink|juvenile girls free skate"
+    },
+    {
+      "input": {
+        "name": "Juvenile Girls / Free Skate",
+        "segment": "",
+        "rink": "Main Rink"
+      },
+      "expected": "main rink|juvenile girls free skate"
+    },
+    {
+      "input": {
+        "name": "Juvenile Girls Free Skate",
+        "segment": "Free Skate",
+        "rink": "  Main Rink "
+      },
+      "expected": "main rink|juvenile girls free skate"
+    },
+    {
+      "input": {
+        "name": "Intermediate Ladies",
+        "segment": "Short Program",
+        "rink": "A Rink"
+      },
+      "expected": "a rink|intermediate ladies short program"
+    },
+    {
+      "input": {
+        "name": "Senior Men - FS",
+        "segment": "FS",
+        "rink": "B"
+      },
+      "expected": "b|senior men fs"
+    },
+    {
+      "input": {
+        "name": "Pre-Juvenile Boys (Group 2)",
+        "segment": "Free Skate",
+        "rink": "Olympic"
+      },
+      "expected": "olympic|pre juvenile boys group 2 free skate"
+    },
+    {
+      "input": {
+        "name": "",
+        "segment": "",
+        "rink": ""
+      },
+      "expected": "|"
+    },
+    {
+      "input": {
+        "name": "Novice   Pairs",
+        "segment": "Pairs",
+        "rink": "MAIN"
+      },
+      "expected": "main|novice pairs"
+    },
+    {
+      "input": {
+        "name": "Junior Dance",
+        "segment": "Rhythm Dance",
+        "rink": "Rink 1"
+      },
+      "expected": "rink 1|junior dance rhythm"
+    }
+  ]
+}
