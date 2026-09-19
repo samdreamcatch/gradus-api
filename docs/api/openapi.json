@@ -8989,11 +8989,15 @@
                           },
                           "name": {
                             "type": "string"
+                          },
+                          "locked": {
+                            "type": "boolean"
                           }
                         },
                         "required": [
                           "id",
-                          "name"
+                          "name",
+                          "locked"
                         ]
                       }
                     },
@@ -14170,6 +14174,9 @@
                                 "slots"
                               ]
                             }
+                          },
+                          "locked": {
+                            "type": "boolean"
                           }
                         },
                         "required": [
@@ -14182,7 +14189,8 @@
                           "inviteCode",
                           "coaches",
                           "sports",
-                          "schedulesByCoach"
+                          "schedulesByCoach",
+                          "locked"
                         ]
                       }
                     }
@@ -15203,12 +15211,16 @@
                                 "firstSessionAt"
                               ]
                             }
+                          },
+                          "locked": {
+                            "type": "boolean"
                           }
                         },
                         "required": [
                           "athleteId",
                           "athleteName",
-                          "sports"
+                          "sports",
+                          "locked"
                         ]
                       }
                     }
@@ -19226,6 +19238,9 @@
                                 "expiresAt"
                               ]
                             }
+                          },
+                          "locked": {
+                            "type": "boolean"
                           }
                         },
                         "required": [
@@ -19234,7 +19249,8 @@
                           "lastName",
                           "isPrimary",
                           "guardians",
-                          "invites"
+                          "invites",
+                          "locked"
                         ]
                       }
                     }
@@ -20365,13 +20381,17 @@
                                 "pairs"
                               ]
                             }
+                          },
+                          "locked": {
+                            "type": "boolean"
                           }
                         },
                         "required": [
                           "id",
                           "firstName",
                           "lastName",
-                          "coaches"
+                          "coaches",
+                          "locked"
                         ]
                       }
                     }
