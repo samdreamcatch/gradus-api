@@ -148,7 +148,10 @@ const slotSchema = z.object({
     .nullable()
     .describe("RAW spoken athlete name as the coach said it (no id lookups)."),
   athleteQuote: z.string().nullable(),
-  moves: z.array(slotMoveSchema).max(30).nullable(),
+  // Plain, unbounded array: Gemini's strict json_schema rejects a nullable
+  // array that also carries `maxItems`, which fails the whole request with
+  // "Request contains an invalid argument". Length is capped after salvage.
+  moves: z.array(slotMoveSchema),
   leftover: z
     .string()
     .nullable()
@@ -158,7 +161,7 @@ const slotSchema = z.object({
 const slotSchemaSimple = z.object({
   title: z.string().nullable(),
   athleteName: z.string().nullable(),
-  moves: z.array(slotMoveSchemaSimple).max(30).nullable(),
+  moves: z.array(slotMoveSchemaSimple),
   leftover: z.string().nullable(),
 });
 
@@ -181,7 +184,7 @@ const num = (v: unknown): number | null => {
  * Pull the first balanced JSON object out of a model answer that may be
  * wrapped in prose or a code fence.
  */
-function extractJsonObject(raw: string | undefined | null): unknown {
+export function extractJsonObject(raw: string | undefined | null): unknown {
   if (!raw) return null;
   const text = raw.replace(/```(?:json)?/gi, "");
   const start = text.indexOf("{");
@@ -217,7 +220,7 @@ function extractJsonObject(raw: string | undefined | null): unknown {
  * Coerce whatever the model returned into our slot shape, field by field.
  * A malformed move is dropped on its own; it never discards the dictation.
  */
-function salvageSlots(value: unknown): Slots | null {
+export function salvageSlots(value: unknown): Slots | null {
   if (!value || typeof value !== "object") return null;
   const o = value as Record<string, unknown>;
   const rawMoves = Array.isArray(o.moves) ? o.moves : [];
@@ -295,7 +298,7 @@ SLOTS: athleteName "Leon"; moves[0].name "Single axel landings", description "La
 
 Cue = ONE short phrase. Why = ONE sentence. Don't lump everything into description. Every move needs a name.`;
 
-async function slotTranscript(ctx: ParseContext, variant: "full" | "simple" = "full") {
+export async function slotTranscript(ctx: ParseContext, variant: "full" | "simple" = "full") {
   const apiKey = process.env.LOVABLE_API_KEY;
   if (!apiKey) throw new Error("AI not configured");
   const gateway = createLovableAiGatewayProvider(apiKey, { structuredOutputs: true });

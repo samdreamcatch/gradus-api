@@ -1,0 +1,105 @@
+{
+  "library": [
+    { "name": "Layback spin", "category": "Spins" },
+    { "name": "Sit spin", "category": "Spins" },
+    { "name": "Camel spin", "category": "Spins" },
+    { "name": "Backward stroking", "category": "Skating skills" },
+    { "name": "Single axel", "category": "Jumps" },
+    { "name": "Double salchow", "category": "Jumps" },
+    { "name": "Double toe loop", "category": "Jumps" },
+    { "name": "Three-turn sequence", "category": "Skating skills" },
+    { "name": "Edge pulls", "category": "Skating skills" },
+    { "name": "Spiral sequence", "category": "Skating skills" }
+  ],
+  "athletes": ["Leon Gillespie", "Jamie Carter", "Sarah Nguyen"],
+  "cases": [
+    {
+      "id": "clean-multi",
+      "mode": "create",
+      "expect": { "minMoves": 4, "athlete": "Leon", "title": true },
+      "transcript": "Okay, new plan for Leon. Let's call it Fall jump consistency. I want single axel landings five times every session, then double salchow eight times working on the tempo of the entry, double toe loop five times, and finish with camel spin for two minutes holding the position."
+    },
+    {
+      "id": "rambling-self-correction",
+      "mode": "create",
+      "expect": { "minMoves": 3, "athlete": "Jamie" },
+      "transcript": "So, uh, for Jamie — she's been off all week, her mom said she was sick — anyway let's do, um, backward stroking for five minutes, no wait, make that ten minutes, she needs the endurance. Then sit spin, maybe eight of them? Eight. And, I don't know, some edge pulls, a couple laps worth, keep the knee soft."
+    },
+    {
+      "id": "mixed-and-vague-targets",
+      "mode": "create",
+      "expect": { "minMoves": 3 },
+      "transcript": "Let's get a few minutes of spiral sequence in, then twelve three-turn sequences, and just a handful of layback spins at the end. Don't overthink the arms."
+    },
+    {
+      "id": "misheard-move-names",
+      "mode": "create",
+      "expect": { "minMoves": 3 },
+      "transcript": "Plan for Sarah: lay back spins, about six. Then a sitspin, six as well. Then backwards stroking, five minutes. Keep the free leg turned out on the lay back."
+    },
+    {
+      "id": "unknown-athlete",
+      "mode": "create",
+      "expect": { "minMoves": 2, "unresolvedAthlete": true },
+      "transcript": "This one is for Marguerite Ellsworth-Bay. Give her ten single axels and three minutes of camel spin. She's landing short on the axel, so cue her to check out strong."
+    },
+    {
+      "id": "notes-no-moves",
+      "mode": "create",
+      "expect": { "minMoves": 0, "title": true },
+      "transcript": "Make a plan called Competition week taper. Nothing new this week, just keep it light, plenty of rest, and we'll talk Thursday about the program layout."
+    },
+    {
+      "id": "cut-off-midsentence",
+      "mode": "create",
+      "expect": { "minMoves": 1 },
+      "transcript": "Alright for Leon, start with eight double salchows, keep the shoulders quiet, and then after that we should probably do the"
+    },
+    {
+      "id": "long-ten-move",
+      "mode": "create",
+      "expect": { "minMoves": 7, "athlete": "Leon" },
+      "transcript": "Big session plan for Leon this week. Warm up with backward stroking, five minutes, deep knee bend. Then edge pulls, twenty each side, push from the ankle. Three-turn sequence, twelve reps, quiet upper body. Single axel, ten landings, check out strong. Double salchow, eight, hold the entry tempo. Double toe loop, six, don't twist too early. Camel spin, six entries, reach through the free leg. Sit spin, six, sit lower than feels comfortable. Layback spin, four, open the shoulders. And finish with a spiral sequence, two minutes, hold each position five seconds."
+    },
+    {
+      "id": "target-only-no-cues",
+      "mode": "create",
+      "expect": { "minMoves": 3 },
+      "transcript": "Twenty edge pulls. Ten three-turns. Five minutes of stroking. That's it."
+    },
+    {
+      "id": "edit-two-moves",
+      "mode": "edit",
+      "expect": { "minMoves": 2 },
+      "currentPlan": {
+        "title": "Fall jump consistency",
+        "notes": "",
+        "moves": [
+          { "id": "11111111-1111-4111-8111-111111111111", "name": "Single axel", "targetKind": "reps", "targetValue": 5 },
+          { "id": "22222222-2222-4222-8222-222222222222", "name": "Double salchow", "targetKind": "reps", "targetValue": 8 },
+          { "id": "33333333-3333-4333-8333-333333333333", "name": "Camel spin", "targetKind": "mins", "targetValue": 2 }
+        ]
+      },
+      "transcript": "Bump the single axels up to twelve, he's handling them fine. And change the camel spin to four minutes, he needs the time in position. Leave the salchow alone."
+    },
+    {
+      "id": "edit-add-one",
+      "mode": "edit",
+      "expect": { "minMoves": 1 },
+      "currentPlan": {
+        "title": "Fall jump consistency",
+        "notes": "",
+        "moves": [
+          { "id": "11111111-1111-4111-8111-111111111111", "name": "Single axel", "targetKind": "reps", "targetValue": 5 }
+        ]
+      },
+      "transcript": "Add layback spin, six of them, open the shoulders and keep the head back. That's the only change."
+    },
+    {
+      "id": "conversational-noise",
+      "mode": "create",
+      "expect": { "minMoves": 2 },
+      "transcript": "Hey — sorry, one sec — okay. Yeah so for this week, honestly whatever, let's just do sit spins, like eight, and then, uh, what else, oh, backward stroking, ten minutes, that's the one she actually needs. Tell her mom I said hi."
+    }
+  ]
+}
