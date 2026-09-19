@@ -3,6 +3,7 @@ import { ApiError } from "./api/errors";
 import {
   athleteScheduleInput,
   lessonSlotSchema,
+  linkAthletesToCoach,
   optionalInviteCodeSchema,
   saveAthleteSchedule,
   validateSignupCode,
@@ -24,6 +25,37 @@ function fakeAdmin(rows: Record<string, unknown | null>) {
   };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return admin as any;
+}
+
+/**
+ * A chainable fake for tests that need list reads, head counts, and inserts:
+ * `rows[table]` answers `maybeSingle`/`single`; `lists[table]` answers
+ * awaited selects, with `count` mirroring the list length for a
+ * `{ count: "exact", head: true }` query; every insert/update/delete/upsert
+ * is recorded in `writes` as `method:table`, in call order.
+ */
+function fakeClient(
+  rows: Record<string, unknown | null>,
+  lists: Record<string, unknown[]> = {},
+  writes: string[] = [],
+) {
+  const chain = (table: string) => {
+    const self: Record<string, unknown> = {};
+    for (const m of ["select", "eq", "order", "limit"]) self[m] = () => self;
+    for (const m of ["insert", "update", "delete", "upsert"] as const) {
+      self[m] = () => {
+        writes.push(`${m}:${table}`);
+        return self;
+      };
+    }
+    self.maybeSingle = async () => ({ data: rows[table] ?? null, error: null });
+    self.single = async () => ({ data: rows[table] ?? null, error: null });
+    self.then = (resolve: (v: unknown) => void) =>
+      resolve({ data: lists[table] ?? [], count: (lists[table] ?? []).length, error: null });
+    return self;
+  };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return { from: (table: string) => chain(table) } as any;
 }
 
 async function caught(run: () => Promise<unknown>): Promise<ApiError | null> {
@@ -79,6 +111,46 @@ describe("validateSignupCode", () => {
     expect(missing?.message).toBe(
       "That code isn't valid. Check with your coach, or use your Gradus beta code.",
     );
+  });
+});
+
+describe("linkAthletesToCoach", () => {
+  const input = {
+    code: "COACHAAA",
+    athletes: [{ firstName: "Nora", lastName: "G", birthdate: "2015-01-01" }],
+  };
+
+  it("refuses a full roster before creating any athlete rows", async () => {
+    const writes: string[] = [];
+    const admin = fakeClient(
+      {
+        coach_invite_codes: { coach_id: "coach-1" },
+        parent_profiles: { id: "parent-1" },
+        coach_profiles: { organization_id: null, subscription_tier: null },
+      },
+      { coach_athletes: [1, 2, 3, 4, 5] },
+      writes,
+    );
+    await expect(linkAthletesToCoach({ userId: "u", admin }, input)).rejects.toThrow(
+      /Roster full/i,
+    );
+    expect(writes).not.toContain("insert:athletes");
+  });
+
+  it("creates and links the athlete when there's room on the roster", async () => {
+    const writes: string[] = [];
+    const admin = fakeClient(
+      {
+        coach_invite_codes: { coach_id: "coach-1" },
+        parent_profiles: { id: "parent-1" },
+        coach_profiles: { organization_id: null, subscription_tier: null },
+      },
+      { coach_athletes: [1, 2], athletes: [{ id: "athlete-1" }] },
+      writes,
+    );
+    expect(await linkAthletesToCoach({ userId: "u", admin }, input)).toEqual({ ok: true });
+    expect(writes).toContain("insert:athletes");
+    expect(writes).toContain("insert:coach_athletes");
   });
 });
 
