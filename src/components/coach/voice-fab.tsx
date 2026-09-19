@@ -83,9 +83,15 @@ export function VoiceFab({
             : "Couldn't pick out moves from that — your dictation is saved on the plan.",
         );
       } else {
-        toast.success(
-          mode === "create" ? `New plan from voice · ${moveLabel}` : `Updated · ${moveLabel}`,
-        );
+        const dropped = result.droppedMoveCount ?? 0;
+        const base = mode === "create" ? `New plan from voice · ${moveLabel}` : `Updated · ${moveLabel}`;
+        if (dropped > 0) {
+          toast.warning(
+            `${base} · ${dropped === 1 ? "one move we couldn't read was skipped" : `${dropped} moves we couldn't read were skipped`}`,
+          );
+        } else {
+          toast.success(base);
+        }
       }
 
       if (result.unresolvedAthleteName) {

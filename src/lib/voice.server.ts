@@ -1046,6 +1046,7 @@ export async function applyDraft(
     touched,
     unresolvedAthleteName: draft.unresolvedAthleteName ?? null,
     appliedMoveCount,
+    droppedMoveCount: draft.droppedMoveCount ?? 0,
     aiFailed: Boolean(draft.aiFailed),
   };
 }
