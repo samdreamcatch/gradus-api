@@ -36,7 +36,8 @@
   --color-primary-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
-  /* `text-destructive` uses the readable ink token; `bg-destructive` uses the fill. */
+  /* Both `text-destructive` and `bg-destructive` use the readable ink token (the same red in light mode);
+     `bg-destructive-fill` is the fill, which carries `text-destructive-foreground`. */
   --color-destructive: var(--destructive-ink);
   --color-destructive-fill: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
