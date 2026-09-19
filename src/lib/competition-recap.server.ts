@@ -313,17 +313,13 @@ export async function getAthleteCompetitionRecaps(
   userId: string,
   input: z.infer<typeof athleteRecapsInput>,
 ): Promise<CompetitionRecapDTO[]> {
-  const [coach, parentOwned, guarded, self] = await Promise.all([
+  const [coach, parentOwned, self] = await Promise.all([
     admin.from("coach_profiles").select("id").eq("user_id", userId).maybeSingle(),
     admin
       .from("parent_profiles")
       .select("id, athletes:athletes!athletes_parent_id_fkey(id)")
       .eq("user_id", userId)
       .maybeSingle(),
-    admin
-      .from("athlete_guardians")
-      .select("athlete_id, parent_id")
-      .eq("athlete_id", input.athleteId),
     admin
       .from("athletes")
       .select("id")
@@ -333,7 +329,6 @@ export async function getAthleteCompetitionRecaps(
   ]);
   if (coach.error) dbError(coach.error);
   if (parentOwned.error) dbError(parentOwned.error);
-  if (guarded.error) dbError(guarded.error);
   if (self.error) dbError(self.error);
 
   let allowed = !!self.data;
@@ -352,7 +347,15 @@ export async function getAthleteCompetitionRecaps(
     const owned = ((parentOwned.data.athletes ?? []) as any[]).some(
       (a) => a.id === input.athleteId,
     );
-    allowed = owned || (guarded.data ?? []).some((g: any) => g.parent_id === parentId);
+    if (owned) {
+      allowed = true;
+    } else {
+      // A co-guardian only keeps read access while the primary parent's
+      // Team plan is active — same rule as every other parent-facing read.
+      const { resolveGuardianAthleteAccess } = await import("./team.server");
+      const access = await resolveGuardianAthleteAccess(admin as any, parentId, input.athleteId);
+      allowed = !!access && !access.locked;
+    }
   }
   if (!allowed) return [];
 

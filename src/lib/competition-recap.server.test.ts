@@ -345,4 +345,51 @@ describe("getAthleteCompetitionRecaps", () => {
     });
     expect(await getAthleteCompetitionRecaps(admin, "stranger-u", { athleteId: ATHLETE.id })).toEqual([]);
   });
+
+  const CO_PARENT = { id: "p2", user_id: "co-parent-u", first_name: "Cam", last_name: "G" };
+  const CO_LINK = { id: "g1", athlete_id: ATHLETE.id, parent_id: CO_PARENT.id, role: "co" };
+  const recap = {
+    id: "rec1",
+    competition_id: "c1",
+    athlete_id: ATHLETE.id,
+    body: "Great day",
+    author_role: "athlete",
+    author_user_id: ATHLETE.user_id,
+    created_at: "2024-01-01T00:00:00Z",
+  };
+
+  it("a co-guardian reads recaps while the primary's Team plan is active", async () => {
+    const { admin } = fakeAdmin({
+      coach_profiles: [],
+      parent_profiles: [
+        { ...PARENT, subscription_status: "active", current_period_end: null },
+        CO_PARENT,
+      ],
+      athlete_guardians: [CO_LINK],
+      athletes: [ATHLETE],
+      competition_recaps: [recap],
+      competitions: [{ id: "c1", name: "Regionals" }],
+    });
+    const out = await getAthleteCompetitionRecaps(admin, CO_PARENT.user_id, {
+      athleteId: ATHLETE.id,
+    });
+    expect(out).toHaveLength(1);
+  });
+
+  it("a co-guardian gets nothing once the primary's Team plan has lapsed", async () => {
+    const { admin } = fakeAdmin({
+      coach_profiles: [],
+      parent_profiles: [
+        { ...PARENT, subscription_status: null, current_period_end: null },
+        CO_PARENT,
+      ],
+      athlete_guardians: [CO_LINK],
+      athletes: [ATHLETE],
+      competition_recaps: [recap],
+      competitions: [{ id: "c1", name: "Regionals" }],
+    });
+    expect(
+      await getAthleteCompetitionRecaps(admin, CO_PARENT.user_id, { athleteId: ATHLETE.id }),
+    ).toEqual([]);
+  });
 });
