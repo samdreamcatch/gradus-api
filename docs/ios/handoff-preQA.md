@@ -73,6 +73,33 @@ Also in gradus-ios `docs/enrollment-checklist.md` and PRD §10.6.
 
 ---
 
+## 2a. Execution status (end of 2026-09-19)
+
+All nine milestones have code or docs open; nothing is merged yet. Merge in this order (each iOS PR targets the previous branch, so merge bottom-up and let GitHub retarget):
+
+| Milestone | Web | iOS | State |
+|---|---|---|---|
+| P1 docs | #115 (this branch) | — | open |
+| P2 Apple wiring | — | #42 | open; `DEVELOPMENT_TEAM` + AASA still wait for the Team ID |
+| P3 push / Live Activity | #116 ← #117 ← #118 | #43 (on #42) | open; migrations apply after merge |
+| P4 voice transcripts | #119 (on #116) | #44 (on #43) | open; migration applies after merge |
+| P5 reflow / targets / landscape | — | #45 | open; audit numbers in its comment |
+| P6 tokens / Increase Contrast / lock | #120 (visible light-red change) | #46 (on #45) | open; merge #120 before the contract-sync bot runs again |
+| P7 rest of the audit | — | #47 (on #46) | open |
+| P8 device pass | — | #49 (on #47): device script; harness matrix numbers in its comment | live device pass waits for TestFlight |
+| P9 QA prep | #121 QA.md, #122 `POST /api/v1/errors` | #48 (on #49): `ErrorReporter` + MetricKit | Google provider and native reset blocked on Mariah (client ID; Supabase allow-list) |
+
+Two independent iOS stacks: **#42 ← #43 ← #44** (Apple/push/transcripts, contract synced to web main) and **#45 ← #46 ← #47 ← #49 ← #48** (accessibility + error reporting, off `main`; #48 carries a full contract sync from `feat/ios-error-reporting`). When both land, run `scripts/sync-contract.sh` once more from web `main` and regenerate.
+
+Gotchas that earned a line since §6 was written:
+- A bare `frame(width: 44, height: 44)` on an icon button still reports the glyph (7 × 13 pt) as the button's accessibility frame; `gradusTapTarget()` sets `contentShape([.interaction, .accessibility])` and must sit **inside** the label.
+- `RoleTabsView.liveIsTab` is idiom-gated: a Max/Plus iPhone is `.regular` in landscape and grew a sixth Live tab.
+- Full-screen covers are presentation layers above the root overlay: every cover is `lockGated(model)`.
+- `ErrorLine(announces:)` defaults to silent because `ToastCenter` already announces toasted errors; pass `true` only where the inline line is the only surface.
+- The audit harness must run with no concurrent `xcodebuild` on the machine; under contention a 3-minute role pass took 30.
+- `-only-testing:` needs one flag per test; a single quoted string silently matches nothing ("Executed 0 tests", TEST SUCCEEDED).
+- The P5–P7 branches took only `design-tokens.json` from the web (partial sync) because `main`'s API contract predates #42; #48 does the full sync.
+
 ## 3. Working conventions (Mariah's rules plus the ones that earned their place)
 
 Mariah's rules, verbatim in spirit:
