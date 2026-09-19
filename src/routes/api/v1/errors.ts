@@ -8,8 +8,8 @@ import { reportIosError } from "@/lib/errors.server";
  * iOS error and MetricKit diagnostic intake (PRD §6.10, §10.6 P9). Public,
  * like the web's `reportClientError`: a crash on the sign-in screen has no
  * session to attach. A bearer token, when present, attributes the row to
- * the caller. Rate-limited per address so a crash loop cannot flood the
- * table.
+ * the caller. Rate-limited (per user when signed in, per address
+ * otherwise) so a crash loop cannot flood the table.
  */
 export const Route = createFileRoute("/api/v1/errors")({
   server: {

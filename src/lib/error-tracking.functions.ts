@@ -189,7 +189,9 @@ export const listAdminErrorGroups = createServerFn({ method: "POST" })
 
     const { data: rows, error } = await supabaseAdmin
       .from("client_errors")
-      .select("id,source,message,route,user_id,user_email,user_name,user_role,created_at")
+      .select(
+        "id,source,message,route,user_id,user_email,user_name,user_role,created_at,platform:metadata->>platform",
+      )
       .order("created_at", { ascending: false })
       .limit(data.limit);
     if (error) dbError(error);
@@ -231,6 +233,8 @@ export const listAdminErrorGroups = createServerFn({ method: "POST" })
     type Group = {
       signature: string;
       source: string;
+      /** `metadata.platform` of the latest row ("ios" for the app; null for the web). */
+      platform: string | null;
       sampleMessage: string;
       count: number;
       lastSeen: string;
@@ -250,6 +254,7 @@ export const listAdminErrorGroups = createServerFn({ method: "POST" })
         g = {
           signature: sig,
           source: r.source ?? "unknown",
+          platform: r.platform ?? null,
           sampleMessage: r.message ?? "",
           count: 0,
           lastSeen: r.created_at,
@@ -307,6 +312,7 @@ export const listAdminErrorGroups = createServerFn({ method: "POST" })
       .map((g) => ({
         signature: g.signature,
         source: g.source,
+        platform: g.platform,
         sampleMessage: g.sampleMessage,
         count: g.count,
         uniqueUsers: g.users.size,

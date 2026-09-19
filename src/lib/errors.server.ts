@@ -6,7 +6,9 @@ import type { ErrorLogInput } from "./error-tracking.server";
  * web's `reportClientError` uses, so it lands in the existing admin errors
  * dashboard (PRD §6.10). Tagged `platform: "ios"` with version and build in
  * `metadata`; `source` stays `"client"` because the table's CHECK only knows
- * client and server, and the dashboard filters on metadata.
+ * client and server. The admin list and the hourly digest read
+ * `metadata->>platform` to label iOS rows; version, build, OS and device are
+ * in the row's metadata on the detail page.
  *
  * Test users are dropped inside `logError`, as on the web.
  */

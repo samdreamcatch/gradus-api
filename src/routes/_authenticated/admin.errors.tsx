@@ -106,7 +106,7 @@ function GroupCard({ group }: { group: any }) {
                 : "bg-pen-pool-wash text-pen-pool-ink",
             )}
           >
-            {group.source}
+            {group.platform === "ios" ? "iOS app" : group.source}
           </span>
           <span className="text-sm font-semibold text-text-primary break-all">
             {group.sampleMessage}

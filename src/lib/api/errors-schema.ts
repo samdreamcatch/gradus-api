@@ -18,7 +18,11 @@ export const errorReportInput = z.object({
   device: z.string().max(64).optional().nullable(),
   /** When the error happened on the device (MetricKit diagnostics arrive on the next launch). */
   occurredAt: z.string().datetime({ offset: true }).optional().nullable(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z
+    .record(z.unknown())
+    .optional()
+    // A public route: the app sends a few short strings, so anything large is not ours.
+    .refine((m) => !m || JSON.stringify(m).length <= 8_000, "metadata too large"),
 });
 
 export type ErrorReportInput = z.infer<typeof errorReportInput>;

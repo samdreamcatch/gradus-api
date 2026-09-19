@@ -86,7 +86,7 @@ export const Route = createFileRoute("/api/public/hooks/error-digest")({
         const { data: rows, error } = await supabaseAdmin
           .from("client_errors")
           .select(
-            "id, source, message, route, user_id, user_email, user_role, user_name, created_at, environment",
+            "id, source, message, route, user_id, user_email, user_role, user_name, created_at, environment, platform:metadata->>platform",
           )
           .eq("environment", "production")
           .gte("created_at", since)
@@ -124,7 +124,7 @@ export const Route = createFileRoute("/api/public/hooks/error-digest")({
           if (!entry) {
             entry = {
               g: {
-                message: r.message as string,
+                message: ((r as any).platform === "ios" ? "[iOS] " : "") + (r.message as string),
                 count: 0,
                 source: r.source as "client" | "server",
                 lastRoute: (r.route as string | null) ?? null,
