@@ -295,6 +295,9 @@ interface CompetitionRow {
   id: string;
   ijs_base_url: string;
   year: number;
+  /** Passed through to the Live Activity sync so it need not look them up on every refresh. */
+  slug?: string | null;
+  name?: string | null;
 }
 
 /**

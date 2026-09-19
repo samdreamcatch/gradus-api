@@ -7,16 +7,21 @@ import {
   planActivities,
   registerLiveActivityToken,
   stateFingerprint,
-  swiftDate,
   syncBoardLiveActivities,
+  unixSeconds,
 } from "./live-activities.server";
 
 type Row = Record<string, unknown>;
 
-/** Row-store fake: select/eq/in/is/maybeSingle chains, recorded upserts and deletes. */
+/**
+ * Row-store fake. `live_activity_sessions` is a live store: upserts honour
+ * `ignoreDuplicates` on (user_id, activity_key) and `.select()` returns only
+ * the rows actually inserted, like PostgREST's `ON CONFLICT DO NOTHING
+ * RETURNING`; deletes remove rows. Other tables are read-only fixtures.
+ */
 function fakeAdmin(tables: Record<string, Row[]>) {
-  const upserts: { table: string; rows: Row[] }[] = [];
-  const deletes: { table: string; col: string; vals: unknown[] }[] = [];
+  const sessions: Row[] = [...(tables.live_activity_sessions ?? [])];
+  const deletes: { table: string; where: Record<string, unknown> }[] = [];
   const query = (rows: Row[]) => {
     const self = {
       eq: (col: string, val: unknown) => query(rows.filter((r) => r[col] === val)),
@@ -28,30 +33,65 @@ function fakeAdmin(tables: Record<string, Row[]>) {
     };
     return self;
   };
+  const sessionKey = (r: Row) => `${r.user_id}|${r.activity_key}`;
   const admin = {
     from: (table: string) => ({
-      select: () => query(tables[table] ?? []),
-      upsert: (payload: Row | Row[]) => {
+      select: () => query(table === "live_activity_sessions" ? sessions : (tables[table] ?? [])),
+      upsert: (
+        payload: Row | Row[],
+        opts?: { onConflict?: string; ignoreDuplicates?: boolean },
+      ) => {
         const rows = Array.isArray(payload) ? payload : [payload];
-        upserts.push({ table, rows });
-        return Promise.resolve({ error: null });
+        const inserted: Row[] = [];
+        if (table === "live_activity_sessions") {
+          for (const row of rows) {
+            const idx = sessions.findIndex((s) => sessionKey(s) === sessionKey(row));
+            if (idx >= 0) {
+              if (!opts?.ignoreDuplicates) sessions[idx] = { ...sessions[idx], ...row };
+              continue;
+            }
+            sessions.push({ ...row });
+            inserted.push(row);
+          }
+        } else {
+          (tables[table] ??= []).push(...rows);
+          inserted.push(...rows);
+        }
+        const result = { data: inserted, error: null };
+        return {
+          select: () => Promise.resolve(result),
+          then: (resolve: (v: typeof result) => void) => resolve(result),
+        };
       },
-      delete: () => ({
-        in: (col: string, vals: unknown[]) => {
-          deletes.push({ table, col, vals });
+      delete: () => {
+        const where: Record<string, unknown> = {};
+        const apply = () => {
+          deletes.push({ table, where });
+          if (table === "live_activity_sessions") {
+            for (let i = sessions.length - 1; i >= 0; i -= 1) {
+              if (Object.entries(where).every(([k, v]) => sessions[i][k] === v))
+                sessions.splice(i, 1);
+            }
+          }
           return Promise.resolve({ error: null });
-        },
-        eq: (col: string, val: unknown) => ({
-          eq: (col2: string, val2: unknown) => {
-            deletes.push({ table, col: `${col},${col2}`, vals: [val, val2] });
-            return Promise.resolve({ error: null });
+        };
+        const chain: Record<string, unknown> = {
+          eq: (col: string, val: unknown) => {
+            where[col] = val;
+            return chain;
           },
-        }),
-      }),
+          in: (col: string, vals: unknown[]) => {
+            where[col] = vals;
+            return apply();
+          },
+          then: (resolve: (v: { error: null }) => void) => apply().then(resolve),
+        };
+        return chain;
+      },
     }),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } as any;
-  return { admin, upserts, deletes };
+  return { admin, sessions, deletes };
 }
 
 const config: ApnsConfig = {
@@ -116,7 +156,18 @@ function payloadWith(done: number, status: "live" | "final" = "live"): BoardPayl
 }
 
 const NOW = Date.UTC(2026, 8, 19, 15, 0, 30);
+const NOW_SEC = Math.floor(NOW / 1000);
 const NORA_KEY = "winter|ev1|nora donaldson";
+const ON_ICE = stateFingerprint({
+  lane: "onIce",
+  startPosition: 2,
+  of: 4,
+  ahead: 0,
+  updatedAt: 0,
+  done: 1,
+});
+type SendFn = (c: ApnsConfig, r: ApnsRequest) => Promise<ApnsOutcome>;
+const deps = (send: SendFn) => ({ config, send, now: () => NOW });
 
 describe("planActivities", () => {
   it("mirrors the app's planner: live events only, ranked by lane, keyed by slug|file|normalized name", () => {
@@ -136,7 +187,7 @@ describe("planActivities", () => {
       startPosition: 2,
       of: 4,
       ahead: 0,
-      updatedAt: swiftDate(Date.parse("2026-09-19T15:00:00.000Z")),
+      updatedAt: unixSeconds(Date.parse("2026-09-19T15:00:00.000Z")),
       done: 1,
     });
     expect(plans[1].state.score).toBe("60.10");
@@ -150,11 +201,10 @@ describe("planActivities", () => {
     ).toEqual([]);
   });
 
-  it("encodes dates the way Swift's default JSONDecoder reads them and ignores updatedAt in the fingerprint", () => {
-    expect(swiftDate(Date.UTC(2001, 0, 1))).toBe(0);
+  it("uses unix seconds for updatedAt and ignores it in the fingerprint", () => {
+    expect(unixSeconds(Date.UTC(1970, 0, 1))).toBe(0);
     const a = { lane: "onIce" as const, startPosition: 2, of: 4, ahead: 0, updatedAt: 1, done: 1 };
-    const b = { ...a, updatedAt: 999 };
-    expect(stateFingerprint(a)).toBe(stateFingerprint(b));
+    expect(stateFingerprint(a)).toBe(stateFingerprint({ ...a, updatedAt: 999 }));
     expect(stateFingerprint({ ...a, lane: "upNext" })).not.toBe(stateFingerprint(a));
     expect(laneFor({ state: "scored", ahead: -1 } as never)).toBe("justScored");
     expect(laneFor({ state: "scored", ahead: -3 } as never)).toBe("scored");
@@ -173,21 +223,27 @@ describe("syncBoardLiveActivities", () => {
     ] as Row[],
     live_activity_sessions: [] as Row[],
   });
+  const openSession = (lastState = ON_ICE): Row => ({
+    user_id: "u1",
+    competition_slug: "winter",
+    activity_key: NORA_KEY,
+    last_state: lastState,
+    started_at: new Date(NOW - 60_000).toISOString(),
+    ended_at: null,
+  });
 
-  it("starts an activity with push-to-start when a followed skater's event is live", async () => {
-    const { admin, upserts } = fakeAdmin(base());
+  it("starts an activity with push-to-start when a followed skater's event is live, claiming the session first", async () => {
+    const { admin, sessions } = fakeAdmin(base());
     const { send, sent } = sendSpy();
-    const report = await syncBoardLiveActivities(admin, { id: "c1" }, payloadWith(1), {
-      config,
-      send,
-      now: () => NOW,
-    });
-    expect(report).toEqual({ followers: 1, started: 1, updated: 0, ended: 0 });
+    const report = await syncBoardLiveActivities(admin, { id: "c1" }, payloadWith(1), deps(send));
+    expect(report).toEqual({ followers: 1, started: 1, adopted: 0, updated: 0, ended: 0 });
     expect(sent).toHaveLength(1);
     expect(sent[0].token).toBe("start-tok");
     expect(sent[0].pushType).toBe("liveactivity");
     expect(sent[0].priority).toBe(10);
+    expect(sent[0].expiration).toBe(NOW_SEC + 3 * 60 * 60);
     const aps = sent[0].payload.aps as Record<string, unknown>;
+    expect(aps.timestamp).toBe(NOW_SEC);
     expect(aps.event).toBe("start");
     expect(aps["attributes-type"]).toBe("BoardActivityAttributes");
     expect(aps.attributes).toEqual({
@@ -200,10 +256,11 @@ describe("syncBoardLiveActivities", () => {
       rink: "Main Rink",
     });
     expect((aps["content-state"] as { lane: string }).lane).toBe("onIce");
+    expect(aps["stale-date"]).toBe(NOW_SEC + 180);
     expect(aps.alert).toEqual({ title: "Nora: On the ice", body: "Juvenile Girls · Main Rink" });
     expect(aps["input-push-token"]).toBe(1);
-    expect(upserts).toHaveLength(1);
-    expect(upserts[0].rows[0]).toMatchObject({
+    expect(sessions).toHaveLength(1);
+    expect(sessions[0]).toMatchObject({
       user_id: "u1",
       activity_key: NORA_KEY,
       competition_slug: "winter",
@@ -211,43 +268,78 @@ describe("syncBoardLiveActivities", () => {
     });
   });
 
+  it("skips the competitions lookup when slug and name are passed in", async () => {
+    const fixtures = base();
+    fixtures.competitions = [];
+    const { send, sent } = sendSpy();
+    const report = await syncBoardLiveActivities(
+      fakeAdmin(fixtures).admin,
+      { id: "c1", slug: "winter", name: "Winter Classic" },
+      payloadWith(1),
+      deps(send),
+    );
+    expect(report.started).toBe(1);
+    expect(
+      (sent[0].payload.aps as { attributes: { competitionName: string } }).attributes
+        .competitionName,
+    ).toBe("Winter Classic");
+  });
+
   it("does nothing without a start token, and never starts the same activity twice", async () => {
     const noToken = base();
     noToken.live_activity_tokens = [];
     const { send, sent } = sendSpy();
     expect(
-      await syncBoardLiveActivities(fakeAdmin(noToken).admin, { id: "c1" }, payloadWith(1), {
-        config,
-        send,
-        now: () => NOW,
-      }),
-    ).toEqual({ followers: 1, started: 0, updated: 0, ended: 0 });
+      await syncBoardLiveActivities(
+        fakeAdmin(noToken).admin,
+        { id: "c1" },
+        payloadWith(1),
+        deps(send),
+      ),
+    ).toEqual({ followers: 1, started: 0, adopted: 0, updated: 0, ended: 0 });
 
     const tracked = base();
-    tracked.live_activity_sessions = [
-      {
-        user_id: "u1",
-        competition_slug: "winter",
-        activity_key: NORA_KEY,
-        last_state: stateFingerprint({
-          lane: "onIce",
-          startPosition: 2,
-          of: 4,
-          ahead: 0,
-          updatedAt: 0,
-          done: 1,
-        }),
-        ended_at: null,
-      },
-    ];
+    tracked.live_activity_sessions = [openSession()];
     expect(
-      await syncBoardLiveActivities(fakeAdmin(tracked).admin, { id: "c1" }, payloadWith(1), {
-        config,
-        send,
-        now: () => NOW,
-      }),
-    ).toEqual({ followers: 1, started: 0, updated: 0, ended: 0 });
+      await syncBoardLiveActivities(
+        fakeAdmin(tracked).admin,
+        { id: "c1" },
+        payloadWith(1),
+        deps(send),
+      ),
+    ).toEqual({ followers: 1, started: 0, adopted: 0, updated: 0, ended: 0 });
     expect(sent).toHaveLength(0);
+  });
+
+  it("adopts an activity the app started locally instead of push-starting a duplicate", async () => {
+    const fixtures = base();
+    fixtures.live_activity_tokens.push({
+      user_id: "u1",
+      token: "upd-tok",
+      kind: "board_update",
+      activity_key: NORA_KEY,
+    });
+    const { admin, sessions } = fakeAdmin(fixtures);
+    const { send, sent } = sendSpy();
+    const report = await syncBoardLiveActivities(admin, { id: "c1" }, payloadWith(1), deps(send));
+    expect(report).toEqual({ followers: 1, started: 0, adopted: 1, updated: 0, ended: 0 });
+    expect(sent).toHaveLength(1);
+    expect(sent[0].token).toBe("upd-tok");
+    expect((sent[0].payload.aps as { event: string }).event).toBe("update");
+    expect(sessions).toHaveLength(1);
+  });
+
+  it("releases the claimed session when the start push fails transiently, so the next refresh retries", async () => {
+    const { admin, sessions } = fakeAdmin(base());
+    const { send } = sendSpy(() => ({
+      ok: false,
+      status: 503,
+      reason: "ServiceUnavailable",
+      dead: false,
+    }));
+    const report = await syncBoardLiveActivities(admin, { id: "c1" }, payloadWith(1), deps(send));
+    expect(report.started).toBe(0);
+    expect(sessions).toHaveLength(0);
   });
 
   it("updates through the activity's update token only when the state really changed", async () => {
@@ -258,42 +350,25 @@ describe("syncBoardLiveActivities", () => {
       kind: "board_update",
       activity_key: NORA_KEY,
     });
-    tracked.live_activity_sessions = [
-      {
-        user_id: "u1",
-        competition_slug: "winter",
-        activity_key: NORA_KEY,
-        last_state: stateFingerprint({
-          lane: "onIce",
-          startPosition: 2,
-          of: 4,
-          ahead: 0,
-          updatedAt: 0,
-          done: 1,
-        }),
-        ended_at: null,
-      },
-    ];
+    tracked.live_activity_sessions = [openSession()];
     const { send, sent } = sendSpy();
     // Same lane, later refresh: no push.
     expect(
-      await syncBoardLiveActivities(fakeAdmin(tracked).admin, { id: "c1" }, payloadWith(1), {
-        config,
-        send,
-        now: () => NOW,
-      }),
+      await syncBoardLiveActivities(
+        fakeAdmin(tracked).admin,
+        { id: "c1" },
+        payloadWith(1),
+        deps(send),
+      ),
     ).toMatchObject({ updated: 0 });
     // Nora scores: justScored → one update, urgent.
-    const { admin, upserts } = fakeAdmin(tracked);
-    const report = await syncBoardLiveActivities(admin, { id: "c1" }, payloadWith(2), {
-      config,
-      send,
-      now: () => NOW,
-    });
-    expect(report).toEqual({ followers: 1, started: 0, updated: 1, ended: 0 });
+    const { admin, sessions } = fakeAdmin(tracked);
+    const report = await syncBoardLiveActivities(admin, { id: "c1" }, payloadWith(2), deps(send));
+    expect(report).toEqual({ followers: 1, started: 0, adopted: 0, updated: 1, ended: 0 });
     expect(sent).toHaveLength(1);
     expect(sent[0].token).toBe("upd-tok");
     expect(sent[0].priority).toBe(10);
+    expect(sent[0].expiration).toBe(NOW_SEC + 10 * 60);
     const aps = sent[0].payload.aps as Record<string, unknown>;
     expect(aps.event).toBe("update");
     expect(aps["content-state"]).toMatchObject({
@@ -302,7 +377,20 @@ describe("syncBoardLiveActivities", () => {
       ahead: -1,
       done: 2,
     });
-    expect(upserts[0].rows[0]).toMatchObject({ activity_key: NORA_KEY, ended_at: null });
+    expect(sessions[0]).toMatchObject({
+      activity_key: NORA_KEY,
+      ended_at: null,
+      last_state: stateFingerprint({
+        lane: "justScored",
+        startPosition: 2,
+        of: 4,
+        ahead: -1,
+        score: "62.41",
+        place: "1",
+        updatedAt: 0,
+        done: 2,
+      }),
+    });
   });
 
   it("ends a tracked activity once its event is final, with a dismissal date, and marks the session ended", async () => {
@@ -314,11 +402,8 @@ describe("syncBoardLiveActivities", () => {
       activity_key: NORA_KEY,
     });
     tracked.live_activity_sessions = [
-      {
-        user_id: "u1",
-        competition_slug: "winter",
-        activity_key: NORA_KEY,
-        last_state: stateFingerprint({
+      openSession(
+        stateFingerprint({
           lane: "justScored",
           startPosition: 2,
           of: 4,
@@ -327,29 +412,72 @@ describe("syncBoardLiveActivities", () => {
           updatedAt: 0,
           done: 2,
         }),
-        ended_at: null,
-      },
+      ),
     ];
-    const { admin, upserts } = fakeAdmin(tracked);
+    const { admin, sessions } = fakeAdmin(tracked);
     const { send, sent } = sendSpy();
-    const report = await syncBoardLiveActivities(admin, { id: "c1" }, payloadWith(4, "final"), {
-      config,
-      send,
-      now: () => NOW,
-    });
-    expect(report).toEqual({ followers: 1, started: 0, updated: 0, ended: 1 });
+    const report = await syncBoardLiveActivities(
+      admin,
+      { id: "c1" },
+      payloadWith(4, "final"),
+      deps(send),
+    );
+    expect(report).toEqual({ followers: 1, started: 0, adopted: 0, updated: 0, ended: 1 });
     expect(sent).toHaveLength(1);
+    expect(sent[0].expiration).toBe(NOW_SEC + 60 * 60);
     const aps = sent[0].payload.aps as Record<string, unknown>;
     expect(aps.event).toBe("end");
-    expect(aps["dismissal-date"]).toBe(Math.floor(NOW / 1000) + 15 * 60);
+    expect(aps["dismissal-date"]).toBe(NOW_SEC + 15 * 60);
     expect(aps["content-state"]).toMatchObject({ lane: "ended", score: "62.41", startPosition: 2 });
-    expect(upserts[0].rows[0]).toMatchObject({
+    expect(sessions[0]).toMatchObject({
       activity_key: NORA_KEY,
       ended_at: new Date(NOW).toISOString(),
     });
   });
 
-  it("prunes tokens APNs rejects as dead and skips cleanly with no config or no followers", async () => {
+  it("ends the activities of a user who unfollowed everything, and keeps a token-less session open until it is stale", async () => {
+    const unfollowed = base();
+    unfollowed.board_follows = [];
+    unfollowed.live_activity_tokens.push({
+      user_id: "u1",
+      token: "upd-tok",
+      kind: "board_update",
+      activity_key: NORA_KEY,
+    });
+    unfollowed.live_activity_sessions = [openSession()];
+    const { send, sent } = sendSpy();
+    const report = await syncBoardLiveActivities(
+      fakeAdmin(unfollowed).admin,
+      { id: "c1" },
+      payloadWith(1),
+      deps(send),
+    );
+    expect(report).toEqual({ followers: 0, started: 0, adopted: 0, updated: 0, ended: 1 });
+    expect((sent[0].payload.aps as { event: string }).event).toBe("end");
+
+    // No update token yet: a young session stays open (the app may still upload one)…
+    const young = base();
+    young.board_follows = [];
+    young.live_activity_sessions = [openSession()];
+    const fresh = fakeAdmin(young);
+    expect(
+      await syncBoardLiveActivities(fresh.admin, { id: "c1" }, payloadWith(1), deps(send)),
+    ).toMatchObject({ ended: 0 });
+    expect(fresh.sessions[0].ended_at).toBeNull();
+    // …and an eight-hour-old one is given up on.
+    const old = base();
+    old.board_follows = [];
+    old.live_activity_sessions = [
+      { ...openSession(), started_at: new Date(NOW - 9 * 60 * 60 * 1000).toISOString() },
+    ];
+    const stale = fakeAdmin(old);
+    expect(
+      await syncBoardLiveActivities(stale.admin, { id: "c1" }, payloadWith(1), deps(send)),
+    ).toMatchObject({ ended: 1 });
+    expect(stale.sessions[0].ended_at).not.toBeNull();
+  });
+
+  it("prunes tokens APNs rejects as dead and skips cleanly with no config, no followers, or no payload", async () => {
     const { admin, deletes } = fakeAdmin(base());
     const { send } = sendSpy(() => ({
       ok: false,
@@ -357,13 +485,14 @@ describe("syncBoardLiveActivities", () => {
       reason: "Unregistered",
       dead: true,
     }));
-    const report = await syncBoardLiveActivities(admin, { id: "c1" }, payloadWith(1), {
-      config,
-      send,
-      now: () => NOW,
-    });
-    expect(report).toEqual({ followers: 1, started: 0, updated: 0, ended: 0 });
-    expect(deletes).toEqual([{ table: "live_activity_tokens", col: "token", vals: ["start-tok"] }]);
+    const report = await syncBoardLiveActivities(admin, { id: "c1" }, payloadWith(1), deps(send));
+    expect(report.started).toBe(0);
+    expect(
+      deletes.some(
+        (d) =>
+          d.table === "live_activity_tokens" && (d.where.token as unknown[])?.includes("start-tok"),
+      ),
+    ).toBe(true);
 
     expect(
       (await syncBoardLiveActivities(admin, { id: "c1" }, payloadWith(1), { config: null, send }))
@@ -373,44 +502,44 @@ describe("syncBoardLiveActivities", () => {
     lonely.board_follows = [];
     expect(
       (
-        await syncBoardLiveActivities(fakeAdmin(lonely).admin, { id: "c1" }, payloadWith(1), {
-          config,
-          send,
-        })
+        await syncBoardLiveActivities(
+          fakeAdmin(lonely).admin,
+          { id: "c1" },
+          payloadWith(1),
+          deps(send),
+        )
       ).skipped,
     ).toBe("no_followers");
-    expect(
-      (await syncBoardLiveActivities(admin, { id: "c1" }, null, { config, send })).skipped,
-    ).toBe("no_payload");
+    expect((await syncBoardLiveActivities(admin, { id: "c1" }, null, deps(send))).skipped).toBe(
+      "no_payload",
+    );
+  });
+
+  it("survives a sender that throws", async () => {
+    const { admin, sessions } = fakeAdmin(base());
+    const send = async () => {
+      throw new Error("boom");
+    };
+    const report = await syncBoardLiveActivities(admin, { id: "c1" }, payloadWith(1), deps(send));
+    expect(report.started).toBe(0);
+    expect(sessions).toHaveLength(0);
   });
 });
 
 describe("registerLiveActivityToken", () => {
-  it("upserts on the token with the caller's user id and clears activity_key for start tokens", async () => {
-    const { admin, upserts } = fakeAdmin({});
+  it("upserts on the token through the admin client and clears activity_key for start tokens", async () => {
+    const store = fakeAdmin({ live_activity_tokens: [] });
     await registerLiveActivityToken(
-      { userId: "u1", supabase: admin },
+      { userId: "u1", admin: store.admin },
       { token: "abcdefgh", kind: "board_start" },
     );
     await registerLiveActivityToken(
-      { userId: "u1", supabase: admin },
+      { userId: "u1", admin: store.admin },
       { token: "ijklmnop", kind: "board_update", activityKey: NORA_KEY },
     );
-    expect(upserts[0].rows[0]).toMatchObject({
-      user_id: "u1",
-      token: "abcdefgh",
-      kind: "board_start",
-      activity_key: null,
-    });
-    expect(upserts[1].rows[0]).toMatchObject({
-      user_id: "u1",
-      token: "ijklmnop",
-      kind: "board_update",
-      activity_key: NORA_KEY,
-    });
     await expect(
       registerLiveActivityToken(
-        { userId: "u1", supabase: admin },
+        { userId: "u1", admin: store.admin },
         { token: "ijklmnop", kind: "board_update" },
       ),
     ).rejects.toThrow();

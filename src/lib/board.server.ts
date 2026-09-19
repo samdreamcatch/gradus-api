@@ -82,6 +82,8 @@ export async function fetchBoard(admin: AdminDb, slug: string): Promise<BoardRes
       id: c.id,
       ijs_base_url: c.ijs_base_url,
       year: c.year,
+      slug: c.slug,
+      name: c.name,
     });
     if (fresh) {
       payload = fresh;

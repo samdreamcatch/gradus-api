@@ -5,35 +5,42 @@
  * when the event is final).
  *
  * Token lifecycle: the app uploads its push-to-start token (`board_start`)
- * and, for every activity it holds, that activity's update token
- * (`board_update` + `activity_key`). `syncBoardLiveActivities` runs after
- * every snapshot refresh (`board-refresh.server.ts`), inside `inBackground`,
- * and mirrors the app's own `BoardActivityPlanner`: live events only,
- * ranked on-ice → up-next → just-scored → waiting → scored, at most five
- * activities per follower. `live_activity_sessions` remembers what was
- * pushed so a refresh only sends real changes.
+ * and, for every activity it holds — started locally or by us — that
+ * activity's update token (`board_update` + `activity_key`).
+ * `syncBoardLiveActivities` runs after every snapshot refresh
+ * (`board-refresh.server.ts`, inside `inBackground`) and mirrors the app's
+ * own `BoardActivityPlanner`: live events only, ranked on-ice → up-next →
+ * just-scored → waiting → scored, at most five activities per follower.
+ * `live_activity_sessions` remembers what was pushed so a refresh only
+ * sends real changes and two overlapping syncs cannot start the same
+ * activity twice (the session row is claimed before the push).
  *
  * Only signed-in follows (`board_follows.user_id`) can be pushed; anonymous
  * device follows have no tokens.
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
+import { ApiError } from "./api/errors";
+import type { RegisterLiveActivityTokenInput } from "./api/live-activities-schema";
 import {
   apnsConfigFromEnv,
   sendApnsRequest,
   type ApnsConfig,
+  type ApnsOutcome,
   type ApnsRequest,
 } from "./apns.server";
 import { findMySkaters, type SkaterMatch } from "./board-skaters";
 import { normalizeName, type BoardPayload } from "./board-types";
 import { dbError } from "./db-error";
-import type { RegisterLiveActivityTokenInput } from "./api/live-activities-schema";
 
 type Client = SupabaseClient<Database>;
 /** The new tables are not in the generated Database types until Lovable regenerates them. */
 type Untyped = { from: (table: string) => any };
 
-export type LiveActivityContext = { userId: string; supabase: Client };
+/** Token writes go through the admin client: a push-to-start token is per
+ *  device, so account B may need to re-point a row account A left behind,
+ *  which the user-scoped client cannot see under RLS. */
+export type LiveActivityContext = { userId: string; admin: Client };
 
 /* ------------------------------------------------------------ token CRUD */
 
@@ -42,10 +49,13 @@ export async function registerLiveActivityToken(
   data: RegisterLiveActivityTokenInput,
 ): Promise<{ ok: true }> {
   if (data.kind === "board_update" && !data.activityKey) {
-    // Mirrors the route's validation error shape without importing ApiError here.
-    throw new Error("activityKey is required for a board_update token.");
+    throw new ApiError({
+      code: "validation_failed",
+      status: 400,
+      message: "activityKey is required for a board_update token.",
+    });
   }
-  const { error } = await (ctx.supabase as unknown as Untyped).from("live_activity_tokens").upsert(
+  const { error } = await (ctx.admin as unknown as Untyped).from("live_activity_tokens").upsert(
     {
       user_id: ctx.userId,
       token: data.token,
@@ -63,7 +73,7 @@ export async function unregisterLiveActivityToken(
   ctx: LiveActivityContext,
   token: string,
 ): Promise<{ ok: true }> {
-  await (ctx.supabase as unknown as Untyped)
+  await (ctx.admin as unknown as Untyped)
     .from("live_activity_tokens")
     .delete()
     .eq("token", token)
@@ -75,7 +85,11 @@ export async function unregisterLiveActivityToken(
 
 export type Lane = "scheduled" | "waiting" | "upNext" | "onIce" | "justScored" | "scored" | "ended";
 
-/** Mirrors `BoardActivityAttributes.ContentState` (GradusActivities) key for key. */
+/**
+ * Mirrors `BoardActivityAttributes.ContentState` (GradusActivities) key for
+ * key. `updatedAt` is unix seconds; the Swift side encodes its `Date` the
+ * same way with a custom `Codable` so local and pushed states agree.
+ */
 export type ContentState = {
   lane: Lane;
   startPosition: number;
@@ -83,7 +97,6 @@ export type ContentState = {
   ahead: number;
   score?: string;
   place?: string;
-  /** Seconds since 2001-01-01 — Swift's default `Date` JSON encoding. */
   updatedAt: number;
   done: number;
 };
@@ -101,11 +114,9 @@ export type ActivityAttributes = {
 
 export type ActivityPlan = { attributes: ActivityAttributes; state: ContentState };
 
-const SWIFT_REFERENCE_EPOCH_MS = Date.UTC(2001, 0, 1);
-
-/** Swift `Date` → the number `JSONEncoder` writes by default (seconds since 2001). */
-export function swiftDate(ms: number): number {
-  return (ms - SWIFT_REFERENCE_EPOCH_MS) / 1000;
+/** Unix seconds, as the Swift `ContentState` encodes `updatedAt`. */
+export function unixSeconds(ms: number): number {
+  return Math.floor(ms / 1000);
 }
 
 /** `BoardActivityPlanner.lane(for:)`. */
@@ -149,7 +160,7 @@ export function planActivities(
   now: number,
   limit = ACTIVITY_LIMIT,
 ): ActivityPlan[] {
-  const updatedAt = swiftDate(board.generatedAt ? Date.parse(board.generatedAt) || now : now);
+  const updatedAt = unixSeconds(board.generatedAt ? Date.parse(board.generatedAt) || now : now);
   const live = matches.filter((m) => m.event.status === "live");
   const ranked = [...live].sort((a, b) => priorityOf(a) - priorityOf(b));
   const seen = new Set<string>();
@@ -184,13 +195,13 @@ export function planActivities(
   return out;
 }
 
-/** Stable JSON for change detection (sorted keys). */
+/** Stable JSON for change detection (sorted keys); `updatedAt` changes every refresh and is ignored. */
 export function stateFingerprint(state: ContentState): string {
   const ordered: Record<string, unknown> = {};
-  for (const key of Object.keys(state).sort())
+  for (const key of Object.keys(state).sort()) {
+    if (key === "updatedAt") continue;
     ordered[key] = (state as Record<string, unknown>)[key];
-  // `updatedAt` changes on every refresh; the fingerprint deliberately ignores it.
-  delete ordered.updatedAt;
+  }
   return JSON.stringify(ordered);
 }
 
@@ -213,17 +224,41 @@ function laneLabel(lane: Lane, ahead: number): string {
   }
 }
 
+/** End-of-activity content: the last pushed state with the lane set to `ended`. */
+function endedState(lastState: string, now: number): ContentState {
+  let parsed: Partial<ContentState> = {};
+  try {
+    parsed = JSON.parse(lastState) as Partial<ContentState>;
+  } catch {
+    /* an unreadable fingerprint still lets us end the activity */
+  }
+  return {
+    lane: "ended",
+    startPosition: parsed.startPosition ?? 0,
+    of: parsed.of ?? 0,
+    ahead: parsed.ahead ?? -1,
+    ...(parsed.score ? { score: parsed.score } : {}),
+    ...(parsed.place ? { place: parsed.place } : {}),
+    updatedAt: unixSeconds(now),
+    done: parsed.done ?? 0,
+  };
+}
+
 /* -------------------------------------------------------------- the sync */
 
 export type LiveActivitySyncDeps = {
   config?: ApnsConfig | null;
   send?: typeof sendApnsRequest;
   now?: () => number;
+  /** How many followers are reconciled at once. */
+  concurrency?: number;
 };
 
 export type LiveActivitySyncReport = {
   followers: number;
   started: number;
+  /** Activities the app started locally that the server now tracks. */
+  adopted: number;
   updated: number;
   ended: number;
   skipped?: "no_config" | "no_followers" | "no_payload";
@@ -239,27 +274,34 @@ type SessionRow = {
   user_id: string;
   activity_key: string;
   last_state: string;
+  started_at: string;
   ended_at: string | null;
 };
 
-/** End-of-activity content: the last known state with the lane set to `ended`. */
-function endedState(lastState: string, now: number): ContentState {
-  let parsed: Partial<ContentState> = {};
-  try {
-    parsed = JSON.parse(lastState) as Partial<ContentState>;
-  } catch {
-    /* an unreadable fingerprint still lets us end the activity */
-  }
-  return {
-    lane: "ended",
-    startPosition: parsed.startPosition ?? 0,
-    of: parsed.of ?? 0,
-    ahead: parsed.ahead ?? -1,
-    ...(parsed.score ? { score: parsed.score } : {}),
-    ...(parsed.place ? { place: parsed.place } : {}),
-    updatedAt: swiftDate(now),
-    done: parsed.done ?? 0,
-  };
+/** Content becomes stale on the Lock Screen if no update arrives in this long (matches the app's local `staleDate`). */
+const STALE_AFTER_SECONDS = 180;
+/** A start push is worth delivering for a good part of the event; an update only briefly. */
+const START_EXPIRY_SECONDS = 3 * 60 * 60;
+const UPDATE_EXPIRY_SECONDS = 10 * 60;
+/** Lock Screen dismissal after the event ended, and how long APNs keeps trying to deliver that `end`. */
+const DISMISS_AFTER_SECONDS = 15 * 60;
+const END_EXPIRY_SECONDS = 60 * 60;
+/** A session we could never end (the app never uploaded its update token) is given up on after this long. */
+const ORPHAN_SESSION_MS = 8 * 60 * 60 * 1000;
+
+async function mapLimit<T>(
+  items: T[],
+  limit: number,
+  fn: (item: T) => Promise<void>,
+): Promise<void> {
+  const queue = [...items];
+  const workers = Array.from({ length: Math.max(1, Math.min(limit, queue.length)) }, async () => {
+    while (queue.length) {
+      const next = queue.shift();
+      if (next !== undefined) await fn(next);
+    }
+  });
+  await Promise.all(workers);
 }
 
 /**
@@ -272,12 +314,20 @@ export async function syncBoardLiveActivities(
   payload: BoardPayload | null,
   deps: LiveActivitySyncDeps = {},
 ): Promise<LiveActivitySyncReport> {
-  const report: LiveActivitySyncReport = { followers: 0, started: 0, updated: 0, ended: 0 };
+  const report: LiveActivitySyncReport = {
+    followers: 0,
+    started: 0,
+    adopted: 0,
+    updated: 0,
+    ended: 0,
+  };
   if (!payload) return { ...report, skipped: "no_payload" };
   const config = deps.config === undefined ? apnsConfigFromEnv() : deps.config;
   if (!config) return { ...report, skipped: "no_config" };
   const send = deps.send ?? sendApnsRequest;
   const now = deps.now?.() ?? Date.now();
+  const nowIso = new Date(now).toISOString();
+  const nowSec = unixSeconds(now);
   const db = admin as unknown as Untyped;
 
   let slug = comp.slug ?? null;
@@ -290,58 +340,61 @@ export async function syncBoardLiveActivities(
   }
   if (!slug) return { ...report, skipped: "no_followers" };
   const board = { slug, name: name ?? slug, generatedAt: payload.generatedAt ?? null };
+  const keyPrefix = `${slug}|`;
 
-  const followsRes = await db
-    .from("board_follows")
-    .select("user_id, skater_name")
-    .eq("competition_slug", slug);
+  const [followsRes, sessionsRes] = await Promise.all([
+    db.from("board_follows").select("user_id, skater_name").eq("competition_slug", slug),
+    db
+      .from("live_activity_sessions")
+      .select("user_id, activity_key, last_state, started_at, ended_at")
+      .eq("competition_slug", slug)
+      .is("ended_at", null),
+  ]);
   if (followsRes.error) dbError(followsRes.error);
+  if (sessionsRes.error) dbError(sessionsRes.error);
+
   const namesByUser = new Map<string, string[]>();
   for (const f of (followsRes.data ?? []) as { user_id: string | null; skater_name: string }[]) {
     if (!f.user_id) continue;
     namesByUser.set(f.user_id, [...(namesByUser.get(f.user_id) ?? []), f.skater_name]);
   }
   report.followers = namesByUser.size;
-  if (namesByUser.size === 0) return { ...report, skipped: "no_followers" };
-  const userIds = Array.from(namesByUser.keys());
+  const openSessions = (sessionsRes.data ?? []) as SessionRow[];
+  // Users who unfollowed everything still have activities to end.
+  const userIds = Array.from(
+    new Set([...namesByUser.keys(), ...openSessions.map((s) => s.user_id)]),
+  );
+  if (userIds.length === 0) return { ...report, skipped: "no_followers" };
 
-  const [tokensRes, sessionsRes] = await Promise.all([
-    db
-      .from("live_activity_tokens")
-      .select("user_id, token, kind, activity_key")
-      .in("user_id", userIds),
-    db
-      .from("live_activity_sessions")
-      .select("user_id, activity_key, last_state, ended_at")
-      .eq("competition_slug", slug)
-      .in("user_id", userIds)
-      .is("ended_at", null),
-  ]);
+  const tokensRes = await db
+    .from("live_activity_tokens")
+    .select("user_id, token, kind, activity_key")
+    .in("user_id", userIds);
   if (tokensRes.error) dbError(tokensRes.error);
-  if (sessionsRes.error) dbError(sessionsRes.error);
-
   const startTokens = new Map<string, string[]>();
   const updateTokens = new Map<string, string[]>(); // `${user}|${key}` → tokens
   for (const t of (tokensRes.data ?? []) as TokenRow[]) {
     if (t.kind === "board_start") {
       startTokens.set(t.user_id, [...(startTokens.get(t.user_id) ?? []), t.token]);
-    } else if (t.activity_key) {
+    } else if (t.activity_key?.startsWith(keyPrefix)) {
       const k = `${t.user_id}|${t.activity_key}`;
       updateTokens.set(k, [...(updateTokens.get(k) ?? []), t.token]);
     }
   }
   const sessions = new Map<string, SessionRow>();
-  for (const s of (sessionsRes.data ?? []) as SessionRow[])
-    sessions.set(`${s.user_id}|${s.activity_key}`, s);
+  for (const s of openSessions) sessions.set(`${s.user_id}|${s.activity_key}`, s);
 
   const dead: string[] = [];
-  const nowSec = Math.floor(now / 1000);
+  const sessionRows: Record<string, unknown>[] = [];
+
   const sendAll = async (
     tokens: string[],
     aps: Record<string, unknown>,
     priority: 5 | 10,
-  ): Promise<boolean> => {
-    let any = false;
+    expiresInSeconds: number,
+  ): Promise<{ delivered: number; transient: number }> => {
+    let delivered = 0;
+    let transient = 0;
     await Promise.all(
       tokens.map(async (token) => {
         const req: ApnsRequest = {
@@ -349,99 +402,164 @@ export async function syncBoardLiveActivities(
           payload: { aps: { timestamp: nowSec, ...aps } },
           pushType: "liveactivity",
           priority,
-          expiration: nowSec + 10 * 60,
+          expiration: nowSec + expiresInSeconds,
         };
-        const outcome = await send(config, req);
-        if (outcome.ok) any = true;
+        let outcome: ApnsOutcome;
+        try {
+          outcome = await send(config, req);
+        } catch (err) {
+          outcome = {
+            ok: false,
+            status: 0,
+            reason: `SenderError: ${err instanceof Error ? err.message : String(err)}`,
+            dead: false,
+          };
+        }
+        if (outcome.ok) delivered += 1;
         else if (outcome.dead) dead.push(token);
-        else
+        else {
+          transient += 1;
           console.warn("[live-activities] send failed", {
             status: outcome.status,
             reason: outcome.reason,
           });
+        }
       }),
     );
-    return any;
+    return { delivered, transient };
   };
-  const sessionRows: Record<string, unknown>[] = [];
 
-  for (const [userId, names] of namesByUser) {
-    const plans = planActivities(findMySkaters(payload, names), board, now);
+  const claimSession = async (
+    userId: string,
+    key: string,
+    fingerprint: string,
+  ): Promise<boolean> => {
+    // The row is the lock: two overlapping syncs both try to insert, only one succeeds.
+    const res = await db
+      .from("live_activity_sessions")
+      .upsert(
+        {
+          user_id: userId,
+          competition_slug: slug,
+          activity_key: key,
+          last_state: fingerprint,
+          started_at: nowIso,
+          updated_at: nowIso,
+          ended_at: null,
+        },
+        { onConflict: "user_id,activity_key", ignoreDuplicates: true },
+      )
+      .select("activity_key");
+    if (res.error) {
+      console.error("[live-activities] session claim failed", res.error);
+      return false;
+    }
+    return ((res.data ?? []) as { activity_key: string }[]).length > 0;
+  };
+
+  const releaseSession = async (userId: string, key: string): Promise<void> => {
+    await db.from("live_activity_sessions").delete().eq("user_id", userId).eq("activity_key", key);
+  };
+
+  const reconcileUser = async (userId: string): Promise<void> => {
+    const names = namesByUser.get(userId) ?? [];
+    const plans = names.length ? planActivities(findMySkaters(payload, names), board, now) : [];
     const wanted = new Set(plans.map((p) => p.attributes.activityKey));
 
     for (const plan of plans) {
-      const key = `${userId}|${plan.attributes.activityKey}`;
+      const key = plan.attributes.activityKey;
+      const sessionKey = `${userId}|${key}`;
       const fingerprint = stateFingerprint(plan.state);
-      const session = sessions.get(key);
-      if (!session) {
-        const tokens = startTokens.get(userId) ?? [];
-        if (tokens.length === 0) continue; // app-driven only until the device uploads a start token
-        const first = plan.attributes.skaterName.split(" ")[0] || plan.attributes.skaterName;
-        const ok = await sendAll(
-          tokens,
-          {
-            event: "start",
-            "content-state": plan.state,
-            "attributes-type": "BoardActivityAttributes",
-            attributes: plan.attributes,
-            alert: {
-              title: `${first}: ${laneLabel(plan.state.lane, plan.state.ahead)}`,
-              body: `${plan.attributes.eventName} · ${plan.attributes.rink}`,
-            },
-            "input-push-token": 1,
-          },
-          10,
+      const session = sessions.get(sessionKey);
+      const updateTo = updateTokens.get(sessionKey) ?? [];
+      const content = {
+        "content-state": plan.state,
+        "stale-date": nowSec + STALE_AFTER_SECONDS,
+      };
+      const urgent = plan.state.lane === "onIce" || plan.state.lane === "justScored";
+
+      if (session) {
+        if (session.last_state === fingerprint || updateTo.length === 0) continue;
+        const { delivered } = await sendAll(
+          updateTo,
+          { event: "update", ...content },
+          urgent ? 10 : 5,
+          UPDATE_EXPIRY_SECONDS,
         );
-        if (ok) {
-          report.started += 1;
+        if (delivered > 0) {
+          report.updated += 1;
           sessionRows.push({
             user_id: userId,
             competition_slug: slug,
-            activity_key: plan.attributes.activityKey,
+            activity_key: key,
             last_state: fingerprint,
-            started_at: new Date(now).toISOString(),
-            updated_at: new Date(now).toISOString(),
+            updated_at: nowIso,
             ended_at: null,
           });
         }
         continue;
       }
-      if (session.last_state === fingerprint) continue;
-      const tokens = updateTokens.get(key) ?? [];
-      if (tokens.length === 0) continue; // the app has not reported this activity's update token yet
-      const urgent = plan.state.lane === "onIce" || plan.state.lane === "justScored";
-      const ok = await sendAll(
-        tokens,
-        { event: "update", "content-state": plan.state },
-        urgent ? 10 : 5,
+
+      if (updateTo.length > 0) {
+        // The app started this activity itself and told us its update token:
+        // adopt it rather than push-to-start a duplicate, and bring it up to date.
+        if (!(await claimSession(userId, key, fingerprint))) continue;
+        report.adopted += 1;
+        await sendAll(
+          updateTo,
+          { event: "update", ...content },
+          urgent ? 10 : 5,
+          UPDATE_EXPIRY_SECONDS,
+        );
+        continue;
+      }
+
+      const startTo = startTokens.get(userId) ?? [];
+      if (startTo.length === 0) continue; // app-driven only until the device uploads a start token
+      if (!(await claimSession(userId, key, fingerprint))) continue; // another sync got there first
+      const first = plan.attributes.skaterName.split(" ")[0] || plan.attributes.skaterName;
+      const { delivered, transient } = await sendAll(
+        startTo,
+        {
+          event: "start",
+          ...content,
+          "attributes-type": "BoardActivityAttributes",
+          attributes: plan.attributes,
+          alert: {
+            title: `${first}: ${laneLabel(plan.state.lane, plan.state.ahead)}`,
+            body: `${plan.attributes.eventName} · ${plan.attributes.rink}`,
+          },
+          "input-push-token": 1,
+        },
+        10,
+        START_EXPIRY_SECONDS,
       );
-      if (ok) {
-        report.updated += 1;
-        sessionRows.push({
-          user_id: userId,
-          competition_slug: slug,
-          activity_key: plan.attributes.activityKey,
-          last_state: fingerprint,
-          updated_at: new Date(now).toISOString(),
-          ended_at: null,
-        });
+      if (delivered > 0) {
+        report.started += 1;
+      } else if (transient > 0) {
+        await releaseSession(userId, key); // let the next refresh retry
       }
     }
 
-    // Anything we were tracking that is no longer wanted is over: the event went final or the skater skated.
-    for (const [key, session] of sessions) {
+    // Anything we track that is no longer wanted is over: the event went
+    // final, the skater skated, or the user unfollowed.
+    for (const [sessionKey, session] of sessions) {
       if (session.user_id !== userId || wanted.has(session.activity_key)) continue;
-      const tokens = updateTokens.get(key) ?? [];
-      if (tokens.length) {
-        await sendAll(
-          tokens,
+      const updateTo = updateTokens.get(sessionKey) ?? [];
+      if (updateTo.length > 0) {
+        const { delivered, transient } = await sendAll(
+          updateTo,
           {
             event: "end",
             "content-state": endedState(session.last_state, now),
-            "dismissal-date": nowSec + 15 * 60,
+            "dismissal-date": nowSec + DISMISS_AFTER_SECONDS,
           },
           5,
+          END_EXPIRY_SECONDS,
         );
+        if (delivered === 0 && transient > 0) continue; // retry on the next refresh
+      } else if (now - Date.parse(session.started_at) < ORPHAN_SESSION_MS) {
+        continue; // no token yet; the app may still upload one, so keep the session open for now
       }
       report.ended += 1;
       sessionRows.push({
@@ -449,11 +567,13 @@ export async function syncBoardLiveActivities(
         competition_slug: slug,
         activity_key: session.activity_key,
         last_state: session.last_state,
-        updated_at: new Date(now).toISOString(),
-        ended_at: new Date(now).toISOString(),
+        updated_at: nowIso,
+        ended_at: nowIso,
       });
     }
-  }
+  };
+
+  await mapLimit(userIds, deps.concurrency ?? 8, reconcileUser);
 
   if (sessionRows.length) {
     const up = await db

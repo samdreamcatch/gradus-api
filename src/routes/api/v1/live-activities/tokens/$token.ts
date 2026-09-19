@@ -29,8 +29,8 @@ export const Route = createFileRoute("/api/v1/live-activities/tokens/$token")({
       summary: "Drop a Live Activity push token",
       output: okSchema,
       handler: async ({ ctx, params }) => {
-        const { userId, supabase } = requireContext(ctx);
-        return unregisterLiveActivityToken({ userId, supabase }, tokenParam(params.token));
+        const { userId, admin } = requireContext(ctx);
+        return unregisterLiveActivityToken({ userId, admin }, tokenParam(params.token));
       },
     }),
   },

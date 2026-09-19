@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { defineApiRoute } from "@/lib/api/define-route";
-import { ApiError } from "@/lib/api/errors";
 import { requireContext } from "@/lib/api/auth";
 import { registerLiveActivityTokenInput } from "@/lib/api/live-activities-schema";
 import { okSchema } from "@/lib/api/onboarding-schema";
@@ -23,15 +22,8 @@ export const Route = createFileRoute("/api/v1/live-activities/tokens/")({
       output: okSchema,
       idempotent: true,
       handler: async ({ ctx, input }) => {
-        const { userId, supabase } = requireContext(ctx);
-        if (input.kind === "board_update" && !input.activityKey) {
-          throw new ApiError({
-            code: "validation_failed",
-            status: 400,
-            message: "activityKey is required for a board_update token.",
-          });
-        }
-        return registerLiveActivityToken({ userId, supabase }, input);
+        const { userId, admin } = requireContext(ctx);
+        return registerLiveActivityToken({ userId, admin }, input);
       },
     }),
   },

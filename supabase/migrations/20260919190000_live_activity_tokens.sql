@@ -15,10 +15,16 @@ CREATE TABLE IF NOT EXISTS public.live_activity_tokens (
   kind text NOT NULL CHECK (kind IN ('board_start', 'board_update')),
   activity_key text,
   updated_at timestamptz NOT NULL DEFAULT now(),
-  created_at timestamptz NOT NULL DEFAULT now()
+  created_at timestamptz NOT NULL DEFAULT now(),
+  -- A push-to-start token is per device (no key); an update token is per activity (key required).
+  CHECK ((kind = 'board_start') = (activity_key IS NULL))
 );
 
 CREATE INDEX IF NOT EXISTS live_activity_tokens_user_id_idx ON public.live_activity_tokens (user_id);
+-- One user can hold the same activity on several devices, each with its own
+-- update token, so (user_id, activity_key) is indexed, not unique.
+CREATE INDEX IF NOT EXISTS live_activity_tokens_user_key_idx
+  ON public.live_activity_tokens (user_id, activity_key) WHERE kind = 'board_update';
 
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.live_activity_tokens TO authenticated;
 GRANT ALL ON public.live_activity_tokens TO service_role;
