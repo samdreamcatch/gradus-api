@@ -684,7 +684,9 @@ export async function buildDraft(ctx: ParseContext): Promise<VoicePlanDraft> {
     // Schema/parse failures are common on long dictations — retry once before
     // giving up, and never return a silent empty draft.
     try {
-      slotted = await slotTranscript(ctx);
+      // Retry asks for the reduced shape (no per-field source quotes), so a
+      // long dictation gets a genuinely easier second chance.
+      slotted = await slotTranscript(ctx, "simple");
     } catch (e2) {
       const err2 = e2 as { statusCode?: number; message?: string };
       console.error(
