@@ -715,7 +715,16 @@ export async function buildDraft(ctx: ParseContext): Promise<VoicePlanDraft> {
     athleteFirstName,
   });
 
-  const rawMoves = slotted.moves ?? [];
+  // Only trust an existing-move id that really is one of this plan's moves —
+  // models sometimes invent slug-like ids ("double_axel").
+  const currentMoveIds = new Set((ctx.currentPlan?.moves ?? []).map((m) => m.id));
+  const rawMoves = (slotted.moves ?? []).map((m) => ({
+    ...m,
+    matchExistingMoveId:
+      m.matchExistingMoveId && currentMoveIds.has(m.matchExistingMoveId)
+        ? m.matchExistingMoveId
+        : null,
+  }));
   const keptMoves = rawMoves.filter((m) => m && (m.name?.trim() || m.matchExistingMoveId));
   const droppedCount = rawMoves.length - keptMoves.length;
   if (droppedCount > 0) {
