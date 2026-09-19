@@ -150,6 +150,7 @@ describe("transcribeVoiceNote", () => {
     const { admin, updates } = fakeAdmin([{ id: "m1", kind: "voice", audio_url: "x" }]);
     const original = console.error;
     console.error = () => {};
+    const second = fakeAdmin([{ id: "m1", kind: "voice", audio_url: "x" }]);
     try {
       const a = await transcribeVoiceNote(
         admin,
@@ -165,7 +166,6 @@ describe("transcribeVoiceNote", () => {
           { transcribe: async () => "never", now: () => NOW },
         ),
       ).toBeNull();
-      const second = fakeAdmin([{ id: "m1", kind: "voice", audio_url: "x" }]);
       const b = await transcribeVoiceNote(
         second.admin,
         { messageId: "m1", audioPath: "x", mimeType: "audio/webm", bytes: new Uint8Array([1]) },
