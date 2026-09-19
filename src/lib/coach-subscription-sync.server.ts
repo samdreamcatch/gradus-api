@@ -1,6 +1,20 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import type { StripeEnv } from "@/lib/stripe.server";
+import { inBackground } from "./background";
+import { notifyUsers } from "./push-notify.server";
+
+/** Silent push so the app refreshes `/me` after Stripe changed the entitlement (PRD §6.6). */
+async function pushEntitlementChanged(supabase: AdminClient, userId: string): Promise<void> {
+  await inBackground("push:entitlement", () =>
+    notifyUsers(supabase, [userId], {
+      type: "entitlement",
+      route: "settings/plan",
+      silent: true,
+      collapseId: `entitlement:${userId}`,
+    }),
+  );
+}
 
 type AdminClient = SupabaseClient<Database>;
 
@@ -93,6 +107,7 @@ export async function syncCoachSubscription(
     console.error("syncCoachSubscription: failed to update coach_profiles", error);
     throw error;
   }
+  if (nextEnt !== currentEnt) await pushEntitlementChanged(supabase, userId);
 }
 
 export async function markCoachSubscriptionDeleted(
@@ -119,4 +134,5 @@ export async function markCoachSubscriptionDeleted(
       entitlement: preserve ? currentEnt : "pending",
     })
     .eq("user_id", userId);
+  if (!preserve && currentEnt !== "pending") await pushEntitlementChanged(supabase, userId);
 }

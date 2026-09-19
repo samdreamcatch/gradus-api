@@ -12,7 +12,9 @@ import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
 import type { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { ApiError } from "./api/errors";
+import { inBackground } from "./background";
 import { dbError } from "./db-error";
+import { athleteHouseholdUserIds, notifyUsers, parentUserId } from "./push-notify.server";
 import { checkRosterRoom } from "./roster-limits";
 
 type Client = SupabaseClient<Database>;
@@ -339,6 +341,23 @@ export async function claimParentInvite(
     .upsert(linkRows, { onConflict: "coach_id,athlete_id", ignoreDuplicates: true });
   if (linksIns.error) dbError(linksIns.error);
 
+  // The parent issued the code; tell them a coach used it (PRD §6.6 "connection accepted").
+  if (newLinksCount > 0) {
+    await inBackground("push:parent-invite-claimed", async () => {
+      const parentUser = await parentUserId(admin, parentId);
+      if (!parentUser) return;
+      await notifyUsers(admin, [parentUser], {
+        type: "connection",
+        route: "settings/connections",
+        title: "New coach connection",
+        body:
+          newLinksCount === 1
+            ? "A coach connected with your athlete."
+            : `A coach connected with ${newLinksCount} of your athletes.`,
+      });
+    });
+  }
+
   if (coachSports.length === 0) {
     return { ok: true as const, athletes: athleteIds.length, sports: 0 };
   }
@@ -456,6 +475,19 @@ export async function claimAdultAthleteInvite(
     { onConflict: "coach_id,athlete_id", ignoreDuplicates: true },
   );
   if (linkIns.error) dbError(linkIns.error);
+
+  // The adult athlete issued the code; tell them a coach used it.
+  if (!alreadyLinked) {
+    await inBackground("push:adult-invite-claimed", async () => {
+      const recipients = await athleteHouseholdUserIds(admin, athleteId);
+      await notifyUsers(admin, recipients, {
+        type: "connection",
+        route: "settings/connections",
+        title: "New coach connection",
+        body: "A coach connected with you using your invite code.",
+      });
+    });
+  }
 
   const levelsRes = await admin.from("coach_levels").select("sport").eq("coach_id", coachId);
   if (levelsRes.error) dbError(levelsRes.error);

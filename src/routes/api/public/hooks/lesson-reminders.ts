@@ -3,10 +3,9 @@
 // Finds recurring lesson-slot occurrences starting 55-65 minutes out (in
 // America/New_York — see the "Known limitations" note in this milestone's
 // PR body) and, for anything not already recorded in
-// `lesson_reminders_sent`, computes and logs the push payload that WOULD go
-// to the coach and to the parent/athlete. This v1 does not call APNs; it
-// only computes and dedupes, so a future real sender has a table it can
-// trust ("row present" = "already handled").
+// `lesson_reminders_sent`, sends the push to the coach and to the
+// parent/athlete through `notifyUsers` (APNs). The table stays the dedupe
+// boundary: "row present" = "already handled".
 
 import { createClient } from "@supabase/supabase-js";
 import { createFileRoute } from "@tanstack/react-router";
@@ -37,8 +36,8 @@ export const Route = createFileRoute("/api/public/hooks/lesson-reminders")({
         });
 
         try {
-          const { scanned, wouldSend } = await computeLessonReminders({ admin });
-          return Response.json({ ok: true, scanned, wouldSend });
+          const { scanned, wouldSend, sent } = await computeLessonReminders({ admin });
+          return Response.json({ ok: true, scanned, wouldSend, sent });
         } catch (error) {
           console.error("[api] lesson-reminders failed", error);
           const message = error instanceof Error ? error.message : "unknown error";

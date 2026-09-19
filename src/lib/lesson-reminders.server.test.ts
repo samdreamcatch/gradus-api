@@ -156,7 +156,7 @@ describe("computeLessonReminders", () => {
       athletes: [{ id: "athlete-1", user_id: null, self_managed: false, parent_id: null }],
     });
     const result = await computeLessonReminders({ admin }, now);
-    expect(result).toEqual({ scanned: 1, wouldSend: 1 });
+    expect(result).toEqual({ scanned: 1, wouldSend: 1, sent: 0 });
   });
 
   it("does not find an occurrence 30 minutes out", async () => {
@@ -164,7 +164,7 @@ describe("computeLessonReminders", () => {
     const slot = { ...BASE_SLOT, start_minute: 9 * 60 + 30 };
     const { admin } = fakeDb({ slots: [slot] });
     const result = await computeLessonReminders({ admin }, now);
-    expect(result).toEqual({ scanned: 0, wouldSend: 0 });
+    expect(result).toEqual({ scanned: 0, wouldSend: 0, sent: 0 });
   });
 
   it("does not find an occurrence 90 minutes out", async () => {
@@ -172,7 +172,7 @@ describe("computeLessonReminders", () => {
     const slot = { ...BASE_SLOT, start_minute: 10 * 60 + 30 };
     const { admin } = fakeDb({ slots: [slot] });
     const result = await computeLessonReminders({ admin }, now);
-    expect(result).toEqual({ scanned: 0, wouldSend: 0 });
+    expect(result).toEqual({ scanned: 0, wouldSend: 0, sent: 0 });
   });
 
   it("does not double-upsert on a re-run within the same tick window", async () => {
@@ -185,11 +185,11 @@ describe("computeLessonReminders", () => {
     });
 
     const first = await computeLessonReminders({ admin }, now);
-    expect(first).toEqual({ scanned: 1, wouldSend: 1 });
+    expect(first).toEqual({ scanned: 1, wouldSend: 1, sent: 0 });
     expect(sent).toHaveLength(1);
 
     const second = await computeLessonReminders({ admin }, now);
-    expect(second).toEqual({ scanned: 1, wouldSend: 0 });
+    expect(second).toEqual({ scanned: 1, wouldSend: 0, sent: 0 });
     expect(sent).toHaveLength(1);
   });
 
@@ -210,7 +210,7 @@ describe("computeLessonReminders", () => {
       ],
     });
     const result = await computeLessonReminders({ admin }, now);
-    expect(result).toEqual({ scanned: 0, wouldSend: 0 });
+    expect(result).toEqual({ scanned: 0, wouldSend: 0, sent: 0 });
   });
 
   it("uses a rescheduled override's start_minute instead of the slot's own", async () => {
@@ -234,7 +234,7 @@ describe("computeLessonReminders", () => {
       athletes: [{ id: "athlete-1", user_id: null, self_managed: false, parent_id: null }],
     });
     const result = await computeLessonReminders({ admin }, now);
-    expect(result).toEqual({ scanned: 1, wouldSend: 1 });
+    expect(result).toEqual({ scanned: 1, wouldSend: 1, sent: 0 });
   });
 
   it("still records the dedupe row when neither recipient has a device token", async () => {
@@ -248,7 +248,7 @@ describe("computeLessonReminders", () => {
       deviceTokens: [], // no tokens registered for anyone
     });
     const result = await computeLessonReminders({ admin }, now);
-    expect(result).toEqual({ scanned: 1, wouldSend: 1 });
+    expect(result).toEqual({ scanned: 1, wouldSend: 1, sent: 0 });
     expect(sent).toHaveLength(1);
   });
 
@@ -271,13 +271,13 @@ describe("computeLessonReminders", () => {
         ],
       });
       await computeLessonReminders({ admin }, now);
-      const line = logs.find((l) => l[0] === "[api] lesson-reminders would-send");
+      const line = logs.find((l) => l[0] === "[api] lesson-reminders sending");
       expect(line).toBeDefined();
       const payload = JSON.parse(line![1] as string);
       expect(payload.coach.userId).toBe("coach-user-1");
       expect(payload.coach.tokenCount).toBe(1);
       expect(payload.coach.payload).toEqual({
-        gradus: { type: "lesson_reminder", route: "roster", v: 1 },
+        gradus: { type: "lesson_reminder", route: "coach/roster", v: 1 },
       });
       expect(payload.recipient.userId).toBe("athlete-user-1");
       expect(payload.recipient.tokenCount).toBe(1);
@@ -303,14 +303,72 @@ describe("computeLessonReminders", () => {
         parents: [{ id: "parent-1", user_id: "parent-user-1" }],
       });
       await computeLessonReminders({ admin }, now);
-      const line = logs.find((l) => l[0] === "[api] lesson-reminders would-send");
+      const line = logs.find((l) => l[0] === "[api] lesson-reminders sending");
       const payload = JSON.parse(line![1] as string);
       expect(payload.recipient.userId).toBe("parent-user-1");
       expect(payload.recipient.payload.gradus.route).toBe("plans");
-      expect(payload.coach.payload.gradus.route).toBe("roster");
+      expect(payload.coach.payload.gradus.route).toBe("coach/roster");
     } finally {
       console.log = originalLog;
     }
+  });
+
+  it("delivers one push per token to the coach and the recipient with lesson-scoped collapse ids", async () => {
+    const now = nowAtRinkTime(9, 0);
+    const { admin } = fakeDb({
+      slots: [{ ...BASE_SLOT, start_minute: 10 * 60 }],
+      coaches: [{ id: "coach-1", user_id: "coach-user-1" }],
+      athletes: [
+        { id: "athlete-1", user_id: "athlete-user-1", self_managed: true, parent_id: null },
+      ],
+      deviceTokens: [
+        { user_id: "coach-user-1", token: "coach-tok", platform: "ios" },
+        { user_id: "athlete-user-1", token: "athlete-tok", platform: "ios" },
+      ],
+    });
+    const sent: { token: string; route: unknown; collapseId?: string }[] = [];
+    const originalLog = console.log;
+    console.log = () => {};
+    try {
+      const result = await computeLessonReminders(
+        {
+          admin,
+          push: {
+            config: {
+              teamId: "T",
+              keyId: "K",
+              privateKeyPem: "unused",
+              bundleId: "training.gradus.app",
+              host: "https://apns.test",
+            },
+            send: async (_config, req) => {
+              sent.push({
+                token: req.token,
+                route: (req.payload.gradus as { route: string }).route,
+                collapseId: req.collapseId,
+              });
+              return { ok: true, apnsId: null };
+            },
+          },
+        },
+        now,
+      );
+      expect(result).toEqual({ scanned: 1, wouldSend: 1, sent: 2 });
+    } finally {
+      console.log = originalLog;
+    }
+    expect(sent).toEqual([
+      {
+        token: "coach-tok",
+        route: "coach/roster",
+        collapseId: "lesson:slot-1:" + nowInRinkTz(now).dateIso + ":coach",
+      },
+      {
+        token: "athlete-tok",
+        route: "plans",
+        collapseId: "lesson:slot-1:" + nowInRinkTz(now).dateIso + ":athlete",
+      },
+    ]);
   });
 
   it("ignores a biweekly slot on an off week even though it matches today's weekday", async () => {
@@ -333,7 +391,7 @@ describe("computeLessonReminders", () => {
     };
     const { admin } = fakeDb({ slots: [slot] });
     const result = await computeLessonReminders({ admin }, now);
-    expect(result).toEqual({ scanned: 0, wouldSend: 0 });
+    expect(result).toEqual({ scanned: 0, wouldSend: 0, sent: 0 });
   });
 
   it("finds a biweekly slot on an on week (two cycles back)", async () => {
@@ -357,7 +415,7 @@ describe("computeLessonReminders", () => {
       athletes: [{ id: "athlete-1", user_id: null, self_managed: false, parent_id: null }],
     });
     const result = await computeLessonReminders({ admin }, now);
-    expect(result).toEqual({ scanned: 1, wouldSend: 1 });
+    expect(result).toEqual({ scanned: 1, wouldSend: 1, sent: 0 });
   });
 
   it("still reminds the parent/athlete when the slot has no assigned coach", async () => {
@@ -378,13 +436,13 @@ describe("computeLessonReminders", () => {
     console.log = (...args: unknown[]) => logs.push(args);
     try {
       const result = await computeLessonReminders({ admin }, now);
-      expect(result).toEqual({ scanned: 1, wouldSend: 1 });
+      expect(result).toEqual({ scanned: 1, wouldSend: 1, sent: 0 });
       // Dedupe row is still recorded (with a null coach_id) so this
       // coachless occurrence isn't re-scanned on the next tick.
       expect(sent).toHaveLength(1);
       expect(sent[0]?.coach_id).toBeNull();
 
-      const line = logs.find((l) => l[0] === "[api] lesson-reminders would-send");
+      const line = logs.find((l) => l[0] === "[api] lesson-reminders sending");
       const payload = JSON.parse(line![1] as string);
       expect(payload.coach.userId).toBeNull();
       expect(payload.coach.tokenCount).toBe(0);
@@ -414,7 +472,7 @@ describe("computeLessonReminders", () => {
       athletes: [{ id: "athlete-1", user_id: null, self_managed: false, parent_id: null }],
     });
     const result = await computeLessonReminders({ admin }, now);
-    expect(result).toEqual({ scanned: 1, wouldSend: 1 });
+    expect(result).toEqual({ scanned: 1, wouldSend: 1, sent: 0 });
   });
 
   it("dedupes a just-after-midnight occurrence against its own (tomorrow's) lesson_date", async () => {
@@ -443,7 +501,7 @@ describe("computeLessonReminders", () => {
       ],
     });
     const result = await computeLessonReminders({ admin }, now);
-    expect(result).toEqual({ scanned: 1, wouldSend: 0 });
+    expect(result).toEqual({ scanned: 1, wouldSend: 0, sent: 0 });
     expect(sent).toHaveLength(1);
   });
 
@@ -460,7 +518,7 @@ describe("computeLessonReminders", () => {
     };
     const { admin } = fakeDb({ slots: [slot] });
     const result = await computeLessonReminders({ admin }, now);
-    expect(result).toEqual({ scanned: 0, wouldSend: 0 });
+    expect(result).toEqual({ scanned: 0, wouldSend: 0, sent: 0 });
   });
 });
 

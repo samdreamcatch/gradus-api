@@ -11,8 +11,11 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
 import type { SessionsByState } from "@/components/plans/flow-state-bars";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { ApiError } from "./api/errors";
+import { inBackground } from "./background";
 import { dbError } from "./db-error";
+import { athleteHouseholdUserIds, notifyUsers } from "./push-notify.server";
 import { emptySessionsByState, loadSessionsByPlanIds } from "./plan-sessions.server";
 
 export type PlanKind = "plan" | "template";
@@ -581,6 +584,20 @@ export async function setPlanStatus(
       } catch (e) {
         console.error("[plans] guardian plan mirror failed", e);
       }
+
+      // Push the athlete and their guardians (PRD §6.6 "Plan activated or assigned").
+      const athleteId = owned.athlete_id;
+      const planTitle = owned.title ?? "Untitled plan";
+      await inBackground("push:plan-activated", async () => {
+        const recipients = await athleteHouseholdUserIds(supabaseAdmin, athleteId);
+        await notifyUsers(supabaseAdmin, recipients, {
+          type: "plan_assigned",
+          route: `plans/${id}`,
+          title: "New plan",
+          body: `${planTitle} is ready to practice.`,
+          collapseId: `plan:${id}`,
+        });
+      });
     }
   } else {
     const { error } = await supabase

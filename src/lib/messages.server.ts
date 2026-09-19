@@ -11,6 +11,8 @@
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { ApiError } from "./api/errors";
+import { inBackground } from "./background";
+import { athleteHouseholdUserIds, notifyUsers, withoutBlocked } from "./push-notify.server";
 import { dbError } from "./db-error";
 import type {
   MessageDTO,
@@ -1103,6 +1105,34 @@ export async function sendMessage(
       .update({ updated_at: new Date().toISOString() })
       .eq("id", room.id);
   }
+
+  // Push the other participants (PRD §6.6 "New message in a room"). Deferred
+  // past the response and never allowed to fail the send. Athlete rooms also
+  // reach co-guardians, whom `loadParticipants` leaves out.
+  const messageId = inserted?.id ?? null;
+  await inBackground("push:message", async () => {
+    const participants = (await loadParticipants([room])).get(room.id) ?? [];
+    const ids = new Set(participants.map((p) => p.userId).filter((id): id is string => !!id));
+    if (room.kind === "athlete" && room.athleteId) {
+      for (const id of await athleteHouseholdUserIds(supabaseAdmin, room.athleteId)) ids.add(id);
+    }
+    const recipients = await withoutBlocked(supabaseAdmin, userId, Array.from(ids));
+    if (recipients.length === 0) return;
+    const sender = participants.find((p) => p.userId === userId);
+    const senderName = sender ? `${sender.firstName} ${sender.lastName}`.trim() : "";
+    const title =
+      role === "coach" && sender?.firstName
+        ? `Coach ${sender.firstName}`
+        : senderName || "New message";
+    await notifyUsers(supabaseAdmin, recipients, {
+      type: "message",
+      route: `rooms/${room.id}`,
+      title,
+      body: data.kind === "text" ? data.body : "Sent a voice note",
+      threadId: `room:${room.id}`,
+      ...(messageId ? { collapseId: `message:${messageId}` } : {}),
+    });
+  });
 
   return { ok: true as const, id: inserted!.id };
 }

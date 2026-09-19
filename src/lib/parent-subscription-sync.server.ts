@@ -5,8 +5,24 @@
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { StripeEnv } from "@/lib/stripe.server";
+import { inBackground } from "./background";
+import { notifyUsers, parentUserId } from "./push-notify.server";
 
 type Client = SupabaseClient<any, any, any>;
+
+/** Silent push so the app refreshes `/me` after Stripe changed the Team plan (PRD §6.6). */
+async function pushTeamPlanChanged(supabase: Client, parentId: string): Promise<void> {
+  await inBackground("push:team-entitlement", async () => {
+    const userId = await parentUserId(supabase, parentId);
+    if (!userId) return;
+    await notifyUsers(supabase, [userId], {
+      type: "entitlement",
+      route: "settings/plan",
+      silent: true,
+      collapseId: `entitlement:${userId}`,
+    });
+  });
+}
 
 function customerIdOf(subscription: any): string | null {
   return typeof subscription.customer === "string"
@@ -71,6 +87,7 @@ export async function syncParentSubscription(
     })
     .eq("id", parentId);
   if (error) console.error("[team] parent subscription sync failed", error);
+  else await pushTeamPlanChanged(supabase, parentId);
 }
 
 export async function markParentSubscriptionDeleted(
@@ -84,4 +101,5 @@ export async function markParentSubscriptionDeleted(
     .update({ subscription_status: "canceled" })
     .eq("id", parentId);
   if (error) console.error("[team] parent subscription delete failed", error);
+  else await pushTeamPlanChanged(supabase, parentId);
 }
