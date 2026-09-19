@@ -39,7 +39,7 @@
   /* `text-destructive` uses the readable ink token; `bg-destructive` uses the fill. */
   --color-destructive: var(--destructive-ink);
   --color-destructive-fill: var(--destructive);
-  --color-destructive-foreground: oklch(0.98 0 0);
+  --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--divider);
   --color-input: var(--divider);
   --color-ring: var(--accent);
@@ -105,7 +105,7 @@
 
   --text-primary: oklch(0.24 0.08 260);
   --text-secondary: oklch(0.42 0.02 260); /* AAA: ~7.2:1 on background */
-  --text-tertiary: oklch(0.44 0.015 260); /* AAA at any size on paper */
+  --text-tertiary: oklch(0.43 0.015 260); /* AAA (7:1) at any size on paper and on every wash */
   --text-disabled: oklch(0.72 0.01 260);
 
   /* Tennis pen — default accent */
@@ -156,8 +156,11 @@
 
   --cream: oklch(0.975 0.022 85); /* warm parchment wash */
 
-  --destructive: oklch(0.58 0.22 25);
-  --destructive-ink: var(--destructive); /* readable on light surfaces */
+  /* Destructive: one red for fill and text in light mode, dark enough for
+     AAA (7:1) as text on every light surface and for white text on the fill. */
+  --destructive: oklch(0.45 0.18 25);
+  --destructive-ink: var(--destructive);
+  --destructive-foreground: oklch(0.98 0 0);
 }
 
 .dark {
@@ -179,7 +182,7 @@
 
   --pen-tennis: oklch(0.78 0.165 119);
   --pen-tennis-wash: oklch(0.3 0.095 119);
-  --pen-tennis-ink: oklch(0.78 0.165 119);
+  --pen-tennis-ink: oklch(0.82 0.165 119); /* 7:1 on cream and on its own wash */
 
   /* Navy ink — replaces the near-black used on bright accent/attention surfaces in dark mode */
   --ink-navy: oklch(0.22 0.09 255);
@@ -226,13 +229,15 @@
   /* Pink pen (dark) */
   --pen-pink: oklch(0.86 0.16 8);
   --pen-pink-wash: oklch(0.28 0.08 8);
-  --pen-pink-ink: oklch(0.86 0.16 8);
+  --pen-pink-ink: oklch(0.88 0.16 8); /* 7:1 on cream */
 
   --cream: oklch(0.32 0.015 85);
 
-  /* Destructive — fill stays toned-down; ink is brightened to pass AAA on dark surfaces. */
-  --destructive: oklch(0.7 0.17 25);
-  --destructive-ink: oklch(0.82 0.15 25);
+  /* Destructive — a light fill with dark ink on it (7:1), and a brighter ink
+     that passes AAA as text on every dark surface, cream and washes included. */
+  --destructive: oklch(0.74 0.16 25);
+  --destructive-ink: oklch(0.88 0.15 25);
+  --destructive-foreground: oklch(0.16 0.028 226);
 }
 
 @layer base {
