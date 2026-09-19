@@ -13,6 +13,7 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { ApiError } from "./api/errors";
 import { inBackground } from "./background";
 import { athleteHouseholdUserIds, notifyUsers, withoutBlocked } from "./push-notify.server";
+import { transcribeVoiceNote } from "./voice-transcripts.server";
 import { dbError } from "./db-error";
 import type {
   MessageDTO,
@@ -558,6 +559,7 @@ type MsgRow = {
   body: string | null;
   audio_url: string | null;
   duration_seconds: number | null;
+  transcript?: string | null;
   created_at: string;
   plan_id: string | null;
 };
@@ -588,6 +590,7 @@ export function toMessageDTO(
     body: m.body ?? "",
     audioUrl,
     durationSeconds: m.duration_seconds,
+    transcript: m.kind === "voice" ? (m.transcript ?? null) : null,
     createdAt: m.created_at,
     readBy,
     plan,
@@ -634,7 +637,7 @@ async function fetchMessagesForRooms(
 }
 
 const MESSAGE_COLS =
-  "id, room_id, direct_room_id, sender_user_id, sender_deleted_at, sender_role, kind, body, audio_url, duration_seconds, created_at, plan_id";
+  "id, room_id, direct_room_id, sender_user_id, sender_deleted_at, sender_role, kind, body, audio_url, duration_seconds, transcript, created_at, plan_id";
 
 async function findMyRoom(
   userId: string,
@@ -880,7 +883,7 @@ export async function getRoomDetail(
       : await q.eq("direct_room_id", room.id).order("created_at", { ascending: true }).limit(500);
   if (error) dbError(error, "Couldn't load messages");
 
-  const messages = await hydrateMessages(room, participants, (msgs ?? []) as MsgRow[]);
+  const messages = await hydrateMessages(room, participants, (msgs ?? []) as unknown as MsgRow[]);
   const header = await roomHeader(userId, room, myRoleByRoom, participants);
   return { room: header, messages };
 }
@@ -909,7 +912,7 @@ export async function getRoomPage(
     .limit(input.limit + 1);
   if (error) dbError(error, "Couldn't load messages");
 
-  const rows = (msgs ?? []) as MsgRow[];
+  const rows = (msgs ?? []) as unknown as MsgRow[];
   const hasMore = rows.length > input.limit;
   const page = hasMore ? rows.slice(0, input.limit) : rows;
   const oldest = page[page.length - 1];
@@ -1045,6 +1048,20 @@ export async function sendMessage(
     .single();
   if (error) dbError(error, "Couldn't send message");
 
+  // Voice notes get a server-side transcript (PRD §6.7 item 3). Started now so
+  // the guardian mirror below can reuse it; deferred past the response otherwise.
+  const transcription: Promise<string | null> | null =
+    data.kind === "voice" && inserted?.id && audioPath
+      ? transcribeVoiceNote(supabaseAdmin, {
+          messageId: inserted.id,
+          audioPath,
+          mimeType: data.mimeType,
+          bytes: voiceBytes,
+        })
+      : null;
+
+  if (transcription) await inBackground("transcript:voice-note", () => transcription);
+
   // Push the other participants (PRD §6.6 "New message in a room"). Deferred
   // past the response and never allowed to fail the send. Athlete rooms also
   // reach co-guardians, whom `loadParticipants` leaves out.
@@ -1088,26 +1105,8 @@ export async function sendMessage(
           } else {
             const secs = data.durationSeconds;
             const stamp = `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, "0")}`;
-            let transcript: string | null = null;
-            try {
-              if (!voiceBytes && audioPath) {
-                // Client-uploaded note: fetch it once for the transcript.
-                const { data: blob } = await supabaseAdmin.storage
-                  .from("voice-notes")
-                  .download(audioPath);
-                if (blob) voiceBytes = new Uint8Array(await blob.arrayBuffer());
-              }
-              if (voiceBytes) {
-                const { transcribeWithElevenLabs } = await import("./voice.server");
-                const blob = new Blob([voiceBytes as unknown as BlobPart], {
-                  type: data.mimeType,
-                });
-                const text = await transcribeWithElevenLabs(blob);
-                transcript = text.trim() || null;
-              }
-            } catch (te) {
-              console.error("[messages] guardian voice transcription failed", te);
-            }
+            // The same transcription that lands on the message row (never throws).
+            const transcript = transcription ? (await transcription) || null : null;
             mirrorBody = transcript
               ? `Voice note (${stamp}) — transcript:\n\n${transcript}`
               : `Voice note (${stamp}) — transcript unavailable. Sign in to listen.`;
