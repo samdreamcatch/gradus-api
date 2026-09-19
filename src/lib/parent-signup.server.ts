@@ -242,22 +242,13 @@ export async function linkAthletesToCoach(
   }
   const parentId = parent.data.id;
 
-  const athleteRows = data.athletes.map((a) => ({
-    parent_id: parentId,
-    first_name: a.firstName,
-    last_name: a.lastName,
-    birthdate: a.birthdate,
-  }));
-
-  const athletesIns = await admin.from("athletes").insert(athleteRows).select("id");
-  if (athletesIns.error) dbError(athletesIns.error);
-
   if (coachId) {
     // Plan cap: the DB trigger (enforce_coach_roster_cap) is the backstop,
     // but we stop short of it so the parent gets one friendly "Roster full"
-    // message up front instead of this whole batch aborting partway through
-    // on a raw database error. These athletes were just created for this
-    // signup, so none of them can already be on the coach's roster.
+    // message up front instead of creating athlete rows we'd have to leave
+    // behind, unlinked, when the batch then aborts on a raw database error.
+    // These athletes don't exist yet, so none of them can already be on the
+    // coach's roster — every one of them is a new link.
     const coachRow = await admin
       .from("coach_profiles")
       .select("organization_id, subscription_tier")
@@ -276,10 +267,22 @@ export async function linkAthletesToCoach(
           subscriptionTier: (coachRow.data.subscription_tier as "coach" | "coach_pro" | null) ?? null,
         },
         rosterCount.count ?? 0,
-        (athletesIns.data ?? []).length,
+        data.athletes.length,
       );
     }
+  }
 
+  const athleteRows = data.athletes.map((a) => ({
+    parent_id: parentId,
+    first_name: a.firstName,
+    last_name: a.lastName,
+    birthdate: a.birthdate,
+  }));
+
+  const athletesIns = await admin.from("athletes").insert(athleteRows).select("id");
+  if (athletesIns.error) dbError(athletesIns.error);
+
+  if (coachId) {
     // Auto-ack the parent side — the signup wizard's final screen already
     // shows the connection confirmation, so suppress the celebration modal
     // on first load of /parent/plans. The coach still sees theirs.
