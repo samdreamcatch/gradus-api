@@ -1,0 +1,61 @@
+<svg viewBox="0 0 640 330" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Voice pipeline: where it breaks today and what changes">
+<style>
+  text { font-family: var(--font-sans); fill: var(--fg-primary); }
+  .lbl { font-size: 14px; font-weight: 480; }
+  .sm  { font-size: 12px; fill: var(--fg-secondary); }
+  .tag { font-size: 11px; fill: var(--fg-secondary); text-transform: lowercase; }
+  .bx  { fill: none; stroke: var(--fg-secondary); stroke-width: 1; rx: 8; }
+  .zn  { fill: none; stroke: var(--border-translucent); stroke-width: 1; stroke-dasharray: 4 3; rx: 8; }
+  .w   { stroke: var(--fg-secondary); stroke-width: 1; fill: none; }
+</style>
+<defs>
+  <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+    <path d="M0 0 L10 5 L0 10 z" fill="var(--fg-secondary)"/>
+  </marker>
+</defs>
+
+<text class="tag" x="16" y="20">today</text>
+<rect class="zn" x="8" y="28" width="624" height="108"/>
+
+<rect class="bx" x="24" y="52" width="118" height="56"/>
+<text class="lbl" x="83" y="76" text-anchor="middle">Recording</text>
+<text class="sm" x="83" y="94" text-anchor="middle">works</text>
+
+<line class="w" x1="142" y1="80" x2="180" y2="80" marker-end="url(#ar)"/>
+<rect class="bx" x="182" y="52" width="118" height="56"/>
+<text class="lbl" x="241" y="76" text-anchor="middle">Transcript</text>
+<text class="sm" x="241" y="94" text-anchor="middle">works</text>
+
+<line class="w" x1="300" y1="80" x2="338" y2="80" marker-end="url(#ar)"/>
+<rect class="bx" x="340" y="52" width="118" height="56"/>
+<text class="lbl" x="399" y="76" text-anchor="middle">AI answer</text>
+<text class="sm" x="399" y="94" text-anchor="middle">returns 200 OK</text>
+
+<line class="w" x1="458" y1="80" x2="496" y2="80" marker-end="url(#ar)"/>
+<rect x="498" y="52" width="118" height="56" rx="8" fill="var(--bg-accent-translucent)" stroke="var(--fg-accent)" stroke-width="1"/>
+<text class="lbl" x="557" y="76" text-anchor="middle" style="fill: var(--fg-accent)">Shape check</text>
+<text class="sm" x="557" y="94" text-anchor="middle" style="fill: var(--fg-accent)">discards all</text>
+
+<text class="tag" x="16" y="176">after the fix</text>
+<rect class="zn" x="8" y="184" width="624" height="132"/>
+
+<rect class="bx" x="24" y="212" width="150" height="72"/>
+<text class="lbl" x="99" y="240" text-anchor="middle">Strict shape</text>
+<text class="sm" x="99" y="258" text-anchor="middle">required up front,</text>
+<text class="sm" x="99" y="272" text-anchor="middle">not requested</text>
+
+<line class="w" x1="174" y1="248" x2="212" y2="248" marker-end="url(#ar)"/>
+<rect class="bx" x="214" y="212" width="150" height="72"/>
+<text class="lbl" x="289" y="240" text-anchor="middle">Keep what's good</text>
+<text class="sm" x="289" y="258" text-anchor="middle">drop only the one</text>
+<text class="sm" x="289" y="272" text-anchor="middle">bad move, not all</text>
+
+<line class="w" x1="364" y1="248" x2="402" y2="248" marker-end="url(#ar)"/>
+<rect class="bx" x="404" y="212" width="150" height="72"/>
+<text class="lbl" x="479" y="240" text-anchor="middle">Simpler retry</text>
+<text class="sm" x="479" y="258" text-anchor="middle">second attempt asks</text>
+<text class="sm" x="479" y="272" text-anchor="middle">for less detail</text>
+
+<circle cx="596" cy="248" r="11" fill="var(--bg-accent)"/>
+<text x="596" y="252" text-anchor="middle" style="font-size:11px; font-weight:600; fill: var(--fg-emphasis); font-family: var(--font-sans)">1</text>
+</svg>
