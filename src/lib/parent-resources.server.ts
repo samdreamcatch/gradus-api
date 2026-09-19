@@ -14,10 +14,12 @@
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
+import type { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { ApiError } from "./api/errors";
 import { dbError } from "./db-error";
 
 type Client = SupabaseClient<Database>;
+type Admin = typeof supabaseAdmin;
 
 export type ParentResourcesContext = { userId: string; supabase: Client };
 
@@ -55,8 +57,10 @@ const unprocessable = (message: string) =>
   new ApiError({ code: "unprocessable", status: 422, message });
 const notFound = (message: string) => new ApiError({ code: "not_found", status: 404, message });
 
-export async function getParentResources(ctx: ParentResourcesContext): Promise<ParentResourcesDTO> {
-  const { supabase, userId } = ctx;
+export async function getParentResources(
+  ctx: ParentResourcesContext & { admin: Admin },
+): Promise<ParentResourcesDTO> {
+  const { supabase, admin, userId } = ctx;
 
   const { data: parent, error: pErr } = await supabase
     .from("parent_profiles")
@@ -66,8 +70,15 @@ export async function getParentResources(ctx: ParentResourcesContext): Promise<P
   if (pErr) dbError(pErr);
   if (!parent) return { sports: [], resources: [], canAskGradus: true };
 
-  const { guardianAthleteIds } = await import("./team.server");
-  const athleteIds = await guardianAthleteIds(supabase as any, parent.id);
+  // The plan-active check inside guardianAthleteAccess reads another
+  // parent's parent_profiles row (the primary's), which RLS only allows for
+  // that parent's own auth.uid() — so this one lookup goes through the admin
+  // client even though the rest of this function stays on the caller's RLS
+  // client. A locked athlete's sports/resources are hard-filtered out —
+  // there's no per-athlete entry in this feed to redact instead.
+  const { guardianAthleteAccess } = await import("./team.server");
+  const access = await guardianAthleteAccess(admin as any, parent.id);
+  const athleteIds = access.filter((a) => !a.locked).map((a) => a.athleteId);
   if (!athleteIds.length) return { sports: [], resources: [], canAskGradus: true };
 
   const { data: goalRows, error: gErr } = await supabase

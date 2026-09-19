@@ -56,7 +56,7 @@ export type RoleAwareResourcesDTO = {
 
 export async function getResourcesForCaller(ctx: ResourcesContext): Promise<RoleAwareResourcesDTO> {
   const role = await resolveCallerRole(ctx.admin, ctx.userId);
-  const inner = { userId: ctx.userId, supabase: ctx.supabase };
+  const inner = { userId: ctx.userId, supabase: ctx.supabase, admin: ctx.admin };
   const empty = { role: "parent" as const, coach: null, parent: null, athlete: null };
 
   if (role === "coach") {

@@ -93,7 +93,7 @@ async function withFakeAdminStorage<T>(
 describe("getParentResources", () => {
   it("returns empty when the caller has no parent profile", async () => {
     const supabase = fakeClient({ parent: null });
-    expect(await getParentResources({ userId: "u1", supabase })).toEqual({
+    expect(await getParentResources({ userId: "u1", supabase, admin: supabase })).toEqual({
       sports: [],
       resources: [],
       canAskGradus: true,
@@ -102,7 +102,7 @@ describe("getParentResources", () => {
 
   it("returns empty when the parent has no athletes", async () => {
     const supabase = fakeClient({ parent: { id: "p1" } });
-    expect(await getParentResources({ userId: "u1", supabase })).toEqual({
+    expect(await getParentResources({ userId: "u1", supabase, admin: supabase })).toEqual({
       sports: [],
       resources: [],
       canAskGradus: true,
@@ -111,7 +111,7 @@ describe("getParentResources", () => {
 
   it("returns empty when the parent's athletes have no sports", async () => {
     const supabase = fakeClient({ parent: { id: "p1" }, ownAthletes: [{ id: "a1" }] });
-    expect(await getParentResources({ userId: "u1", supabase })).toEqual({
+    expect(await getParentResources({ userId: "u1", supabase, admin: supabase })).toEqual({
       sports: [],
       resources: [],
       canAskGradus: true,
@@ -149,7 +149,7 @@ describe("getParentResources", () => {
         },
       ],
     });
-    const result = await getParentResources({ userId: "u1", supabase });
+    const result = await getParentResources({ userId: "u1", supabase, admin: supabase });
     expect(result.sports).toEqual(["figure_skating", "hockey"]);
     expect(result.resources).toEqual([
       {
@@ -175,6 +175,58 @@ describe("getParentResources", () => {
         coachName: null,
       },
     ]);
+  });
+});
+
+describe("getParentResources locking", () => {
+  it("a co-guardian's locked athlete contributes no sports or resources", async () => {
+    // Bespoke fake: the shared fakeClient above doesn't apply real filters
+    // (its parent_profiles maybeSingle can't tell the caller's own profile
+    // apart from the primary's), so it can't express "this primary's plan
+    // has lapsed." This one can, tracking which column was queried.
+    let athleteGoalsQueried = false;
+    const client = {
+      from(table: string) {
+        const self: Record<string, unknown> = {};
+        let mode: string | null = null;
+        self.select = () => self;
+        self.order = () => self;
+        self.in = () => self;
+        self.is = () => self;
+        self.not = () => self;
+        self.eq = (col: string) => {
+          if (table === "parent_profiles" && col === "user_id") mode = "caller";
+          if (table === "parent_profiles" && col === "id") mode = "primaryPlan";
+          if (table === "athletes" && col === "parent_id") mode = "own";
+          return self;
+        };
+        self.maybeSingle = async () => {
+          if (mode === "caller") return { data: { id: "parent-2" }, error: null };
+          if (mode === "primaryPlan") {
+            return { data: { subscription_status: null, current_period_end: null }, error: null };
+          }
+          return { data: null, error: null };
+        };
+        self.then = (resolve: (v: unknown) => void) => {
+          if (table === "athletes" && mode === "own") return resolve({ data: [], error: null });
+          if (table === "athlete_guardians") {
+            return resolve({
+              data: [{ athlete_id: "a2", athletes: { parent_id: "primary-1" } }],
+              error: null,
+            });
+          }
+          if (table === "athlete_goals") athleteGoalsQueried = true;
+          return resolve({ data: [], error: null });
+        };
+        return self;
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any;
+
+    expect(
+      await getParentResources({ userId: "u2", supabase: client, admin: client }),
+    ).toEqual({ sports: [], resources: [], canAskGradus: true });
+    expect(athleteGoalsQueried).toBe(false);
   });
 });
 
