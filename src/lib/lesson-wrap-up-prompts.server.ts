@@ -97,10 +97,14 @@ export async function computeLessonWrapUpPrompts(
   const justEnded = active.filter((s) => {
     const override = overrideBySlot.get(s.id);
     if (override?.status === "canceled") return false;
-    const endMinute =
+    // The read-time card ignores overrides and shows once the *base* end time
+    // has passed, so a lesson rescheduled earlier is prompted at the later of
+    // the two; rescheduled later is prompted when it actually ends.
+    const overrideEnd =
       override?.status === "rescheduled" && override.end_minute != null
         ? override.end_minute
-        : s.end_minute;
+        : null;
+    const endMinute = overrideEnd == null ? s.end_minute : Math.max(s.end_minute, overrideEnd);
     const ago = nowMinutes - endMinute;
     return ago >= 0 && ago < WINDOW_MINUTES;
   });
@@ -192,6 +196,15 @@ export async function computeLessonWrapUpPrompts(
       ctx.push,
     );
     sent += report.sent;
+    // Nothing got through and a failure was transient: release the dedupe row so
+    // the next tick inside the window retries.
+    if (report.sent === 0 && report.failed - report.pruned > 0) {
+      await bookkeeping
+        .from("lesson_wrap_up_prompts_sent")
+        .delete()
+        .eq("slot_id", s.id)
+        .eq("lesson_date", dateIso);
+    }
   }
 
   return { scanned, prompted: fresh.length, sent };

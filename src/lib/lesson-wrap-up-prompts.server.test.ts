@@ -34,7 +34,10 @@ function fakeDb(tables: Record<string, Row[]>) {
           return Promise.resolve({ data: inserted, error: null });
         },
       }),
-      delete: () => ({ in: () => Promise.resolve({ error: null }) }),
+      delete: () => ({
+        in: () => Promise.resolve({ error: null }),
+        eq: () => ({ eq: () => Promise.resolve({ error: null }) }),
+      }),
     }),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } as any;
@@ -164,56 +167,44 @@ describe("computeLessonWrapUpPrompts", () => {
     ).toEqual({ scanned: 0, prompted: 0, sent: 0 });
   });
 
-  it("honours overrides: a canceled occurrence is skipped and a rescheduled end time is used", async () => {
+  it("honours overrides: canceled is skipped; rescheduled later prompts when it ends; rescheduled earlier waits for the base end (the card ignores overrides)", async () => {
     const { push } = pushSpy();
-    const canceled = fakeDb(
-      baseTables({
-        lesson_slot_overrides: [
-          {
-            slot_id: "slot-1",
-            occurrence_date: "2026-09-15",
-            status: "canceled",
-            start_minute: null,
-            end_minute: null,
-          },
-        ],
-      }),
-    );
+    const override = (start_minute: number, end_minute: number, status = "rescheduled") => ({
+      lesson_slot_overrides: [
+        { slot_id: "slot-1", occurrence_date: "2026-09-15", status, start_minute, end_minute },
+      ],
+    });
+    const canceled = fakeDb(baseTables(override(0, 0, "canceled")));
     expect(
       await computeLessonWrapUpPrompts({ admin: canceled.admin, push }, rinkTime(10, 3)),
     ).toEqual({ scanned: 1, prompted: 0, sent: 0 });
 
-    const moved = fakeDb(
-      baseTables({
-        lesson_slot_overrides: [
-          {
-            slot_id: "slot-1",
-            occurrence_date: "2026-09-15",
-            status: "rescheduled",
-            start_minute: 13 * 60,
-            end_minute: 14 * 60,
-          },
-        ],
-      }),
-    );
-    expect(await computeLessonWrapUpPrompts({ admin: moved.admin, push }, rinkTime(10, 3))).toEqual(
-      { scanned: 1, prompted: 0, sent: 0 },
-    );
-    const movedLater = fakeDb(
-      baseTables({
-        lesson_slot_overrides: [
-          {
-            slot_id: "slot-1",
-            occurrence_date: "2026-09-15",
-            status: "rescheduled",
-            start_minute: 13 * 60,
-            end_minute: 14 * 60,
-          },
-        ],
-      }),
-    );
+    // Moved to 13:00-14:00: nothing at the old end, prompt at the new one.
     expect(
-      await computeLessonWrapUpPrompts({ admin: movedLater.admin, push }, rinkTime(14, 2)),
+      await computeLessonWrapUpPrompts(
+        { admin: fakeDb(baseTables(override(13 * 60, 14 * 60))).admin, push },
+        rinkTime(10, 3),
+      ),
+    ).toEqual({ scanned: 1, prompted: 0, sent: 0 });
+    expect(
+      await computeLessonWrapUpPrompts(
+        { admin: fakeDb(baseTables(override(13 * 60, 14 * 60))).admin, push },
+        rinkTime(14, 2),
+      ),
+    ).toEqual({ scanned: 1, prompted: 1, sent: 1 });
+
+    // Moved to 07:00-08:00: the card only appears after the base 10:00 end, so no push at 08:03.
+    expect(
+      await computeLessonWrapUpPrompts(
+        { admin: fakeDb(baseTables(override(7 * 60, 8 * 60))).admin, push },
+        rinkTime(8, 3),
+      ),
+    ).toEqual({ scanned: 1, prompted: 0, sent: 0 });
+    expect(
+      await computeLessonWrapUpPrompts(
+        { admin: fakeDb(baseTables(override(7 * 60, 8 * 60))).admin, push },
+        rinkTime(10, 3),
+      ),
     ).toEqual({ scanned: 1, prompted: 1, sent: 1 });
   });
 

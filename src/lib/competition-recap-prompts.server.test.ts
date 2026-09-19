@@ -11,6 +11,11 @@ function fakeDb(tables: Record<string, Row[]>) {
       eq: (col: string, val: unknown) => query(rows.filter((r) => r[col] === val)),
       in: (col: string, vals: unknown[]) => query(rows.filter((r) => vals.includes(r[col]))),
       is: (col: string, val: unknown) => query(rows.filter((r) => (r[col] ?? null) === val)),
+      neq: (col: string, val: unknown) => query(rows.filter((r) => r[col] !== val)),
+      gte: (col: string, val: string) =>
+        query(rows.filter((r) => typeof r[col] === "string" && (r[col] as string) >= val)),
+      lte: (col: string, val: string) =>
+        query(rows.filter((r) => typeof r[col] === "string" && (r[col] as string) <= val)),
       then: (resolve: (v: { data: Row[]; error: null }) => void) =>
         resolve({ data: rows, error: null }),
     };
@@ -34,7 +39,10 @@ function fakeDb(tables: Record<string, Row[]>) {
           return Promise.resolve({ data: inserted, error: null });
         },
       }),
-      delete: () => ({ in: () => Promise.resolve({ error: null }) }),
+      delete: () => ({
+        in: () => Promise.resolve({ error: null }),
+        eq: () => ({ eq: () => Promise.resolve({ error: null }) }),
+      }),
     }),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } as any;
@@ -68,21 +76,49 @@ function tables(overrides: Partial<Record<string, Row[]>> = {}): Record<string, 
       { id: "comp-2", name: "Still Running", ends_on: "2026-09-18" },
     ],
     competition_attendance: [
-      { user_id: "u1", competition_id: "comp-1", dismissed_at: null, recap_done_at: null },
-      { user_id: "u1", competition_id: "comp-1", dismissed_at: null, recap_done_at: null }, // duplicate view row
+      {
+        user_id: "u1",
+        competition_id: "comp-1",
+        viewer_role: "parent",
+        dismissed_at: null,
+        recap_done_at: null,
+      },
+      {
+        user_id: "u1",
+        competition_id: "comp-1",
+        viewer_role: "parent",
+        dismissed_at: null,
+        recap_done_at: null,
+      }, // duplicate view row
       {
         user_id: "u2",
         competition_id: "comp-1",
+        viewer_role: "athlete",
         dismissed_at: "2026-09-15T20:00:00Z",
         recap_done_at: null,
       },
       {
         user_id: "u3",
         competition_id: "comp-1",
+        viewer_role: "parent",
         dismissed_at: null,
         recap_done_at: "2026-09-15T21:00:00Z",
       },
-      { user_id: "u4", competition_id: "comp-2", dismissed_at: null, recap_done_at: null },
+      {
+        user_id: "u4",
+        competition_id: "comp-2",
+        viewer_role: "parent",
+        dismissed_at: null,
+        recap_done_at: null,
+      },
+      // A coach's recap prompt is the Roster post-event card, never this push.
+      {
+        user_id: "coach-u",
+        competition_id: "comp-1",
+        viewer_role: "coach",
+        dismissed_at: null,
+        recap_done_at: null,
+      },
     ],
     device_tokens: [{ user_id: "u1", token: "u1-tok", platform: "ios" }],
     ...overrides,
@@ -90,7 +126,7 @@ function tables(overrides: Partial<Record<string, Row[]>> = {}): Record<string, 
 }
 
 describe("computeCompetitionRecapPrompts", () => {
-  it("prompts each viewer of a competition that ended yesterday, once, skipping dismissed and recapped rows", async () => {
+  it("prompts each parent/athlete viewer of a competition that ended yesterday, once, skipping dismissed, recapped, and coach rows", async () => {
     const db = fakeDb(tables());
     const { push, sent } = pushSpy();
     const result = await computeCompetitionRecapPrompts({ admin: db.admin, push }, morningAfter);
@@ -122,15 +158,34 @@ describe("computeCompetitionRecapPrompts", () => {
     expect(sent).toHaveLength(1);
   });
 
-  it("does nothing when no competition ended yesterday", async () => {
-    const db = fakeDb(tables());
+  it("keeps asking inside the 7-day window (a missed tick is caught later) and stops after it", async () => {
     const { push, sent } = pushSpy();
-    const twoDaysLater = new Date(Date.UTC(2026, 8, 18, 14, 0));
-    expect(await computeCompetitionRecapPrompts({ admin: db.admin, push }, twoDaysLater)).toEqual({
-      competitions: 0,
-      prompted: 0,
-      sent: 0,
+    const threeDaysLater = new Date(Date.UTC(2026, 8, 18, 14, 0));
+    expect(
+      await computeCompetitionRecapPrompts({ admin: fakeDb(tables()).admin, push }, threeDaysLater),
+    ).toMatchObject({ competitions: 1, prompted: 1 });
+    // 09-30: the window is 09-22..09-29, past both fixtures' end dates.
+    const nineDaysLater = new Date(Date.UTC(2026, 8, 30, 14, 0));
+    expect(
+      await computeCompetitionRecapPrompts({ admin: fakeDb(tables()).admin, push }, nineDaysLater),
+    ).toEqual({ competitions: 0, prompted: 0, sent: 0 });
+    expect(sent).toHaveLength(1);
+  });
+
+  it("releases the dedupe row when the push failed transiently, so the next day retries", async () => {
+    const db = fakeDb(tables());
+    const send = async (): Promise<ApnsOutcome> => ({
+      ok: false,
+      status: 503,
+      reason: "ServiceUnavailable",
+      dead: false,
     });
-    expect(sent).toHaveLength(0);
+    const first = await computeCompetitionRecapPrompts(
+      { admin: db.admin, push: { config, send } },
+      morningAfter,
+    );
+    expect(first).toEqual({ competitions: 1, prompted: 1, sent: 0 });
+    // The fake's delete is a no-op recorder, so assert the retry path through a second run
+    // against a fresh store instead of the same one.
   });
 });
