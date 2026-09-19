@@ -1,6 +1,6 @@
 # Gradus for iOS — Product Requirements Document
 
-**Status:** Draft v1 for review · **Owner:** Mariah Gillespie · **Author:** Claude Code · **Date:** 2026-09-04
+**Status:** Draft v1 for review · **Owner:** Mariah Gillespie · **Author:** Claude Code · **Date:** 2026-09-04 · **Amended:** 2026-09-19 (native-only release and the pre-QA gate, §10.6)
 **Repos:** backend and web `mariah-gill/gradus-coach-start` · native app `mariah-gill/gradus-ios` (to be created) · **Web app:** https://gradus.training · **Bundle ID:** `training.gradus.app`
 
 This document specifies the native Swift rebuild of the Gradus progressive web app for iPhone. It is written to be executed by Claude Code with Mariah reviewing, so it is deliberately concrete: it names the endpoints, screens, data, and guarantees, and it records the decisions already made so future sessions do not re-litigate them.
@@ -22,9 +22,9 @@ Decisions confirmed with Mariah on 2026-09-04. Treat these as settled.
 
 | # | Decision | Choice |
 |---|---|---|
-| 1 | Relationship to the Capacitor shell | The Capacitor iOS shell ships to the App Store as **1.0** as soon as Apple enrollment completes, for store presence; the native app **replaces it as 2.0** under the same bundle ID. The Capacitor Android shell ships to Play after that as the interim Android app; a native Kotlin rebuild replaces it once iOS 2.0 is complete. The web app stays for the internal admin panel and org admins. |
+| 1 | Relationship to the Capacitor shell | **Superseded 2026-09-19 (Mariah):** the Capacitor iOS shell never ships. The native app is the first App Store release, versioned **1.0** (§9.1, §10.5). Whether the Capacitor Android shell ships at all is reopened under §12 #14. The web app stays for the internal admin panel and org admins. *Original 2026-09-04 decision, for the record:* the shell ships as 1.0 for store presence and the native app replaces it as 2.0 under the same bundle ID; the Android shell follows and a Kotlin rebuild replaces it. |
 | 2 | Roles in v1 | **Coach, Parent, Athlete** (including adult self-managed athletes). Org admin and internal admin stay web-only. |
-| 3 | Native release scope | **Full feature parity in the first native release (2.0).** No partial native launch; the shell covers store presence meanwhile. The P0/P1 tags in §7 order the build, not the releases. |
+| 3 | Native release scope | **Full feature parity in the first native release**, versioned **1.0** since 2026-09-19 (2.0 while a shell was planned). No partial native launch. The P0/P1 tags in §7 order the build, not the releases. |
 | 4 | Live Board | **In native 2.0**, built in the first (P0) wave, with Live Activities. |
 | 5 | Backend | One backend shared by web and iOS: the existing Lovable Cloud (Supabase) project plus the server logic in this repo, exposed to iOS through a versioned JSON API added to this repo. No data migration. See §6. |
 | 6 | Web sunset | Once **both** native apps (iOS, then Android in Kotlin) are live with feature parity, the web app is sunset for coaches, parents, and athletes, and product development moves from Lovable to Claude Code. Until then, **no interruption or degradation of the web experience is acceptable.** See §4 and §10.4. |
@@ -32,7 +32,7 @@ Decisions confirmed with Mariah on 2026-09-04. Treat these as settled.
 | 8 | Payments | **No In-App Purchase.** Subscriptions are purchased on the web. The app shows entitlement and, where Apple's rules allow, links out. See §6.8. |
 | 9 | Offline | **Yes.** Offline-first for plans, schedule, sessions, and message drafts, with background sync. See §6.5. |
 | 10 | Design | Keep Gradus typography and color tokens; adopt native navigation and gestures. See §8. |
-| 11 | Team and format | Claude Code builds it with Mariah reviewing once a day. PRD lives in the repo as Markdown. First TestFlight as soon as Apple enrollment lands. |
+| 11 | Team and format | Claude Code builds it with Mariah reviewing once a day. PRD lives in the repo as Markdown. First TestFlight as soon as App Store Connect is set up (enrollment approved 2026-09-19); the pre-QA gate in §10.6 comes first. |
 | 12 | Pace | **Milestone-driven, no time estimates.** One daytime Claude Code stream on iOS plus overnight backend runs; the next milestone starts when the current one is done (§10.1). |
 | 13 | Repositories | The native Swift app lives in a **new repo, `mariah-gill/gradus-ios`**. The backend API stays in `gradus-coach-start` because it runs in the Worker Lovable deploys. The OpenAPI document is the contract between them, pinned by commit. Kotlin later gets `gradus-android`. |
 
@@ -46,7 +46,7 @@ Today Gradus ships as a server-rendered React web app (TanStack Start on Cloudfl
 
 This project rebuilds the coach, parent, and athlete experience as a native SwiftUI app while **keeping exactly one backend**. The web app is not forked, migrated, or changed in any user-visible way during the build. iOS reaches the same database, the same auth users, the same storage buckets, and the same server logic through a new versioned API that lives in the web repository and deploys through the same Lovable publish the web uses today. The Swift app itself lives in its own repository, `gradus-ios`, and consumes that API through a generated client. When the Kotlin app follows, it consumes the same API from `gradus-android`.
 
-**Store presence in the meantime** comes from the existing Capacitor shell, which ships as version 1.0 on iOS as soon as Apple enrollment completes, and on Android after that. Because an App Store app is identified by its bundle ID, the native app later arrives as an ordinary 2.0 update; users sign in once more and everything else is already on the server (§10.5).
+**Store presence.** *Amended 2026-09-19:* the native app is the first store release, version 1.0. The earlier plan to ship the Capacitor shell as 1.0 and replace it with native 2.0 is dropped; §10.5 stays only as the record of that decision. No user ever migrates from a shell.
 
 **What changes for users:** the app works offline, the session timer survives the phone locking, messages and plan assignments arrive as push notifications, Face ID unlocks the app, the Live Board shows up in the Dynamic Island, and everything feels like an iPhone app rather than a web page. **What does not change:** their account, their data, their coach connections, their subscription, and the web app they use today.
 
@@ -137,7 +137,7 @@ These are the rules that protect current web users. Every backend pull request i
 - **Server logic depends on the service role.** 49 of 67 server-function files use the admin client. Row Level Security alone cannot power a native client; an API layer is required.
 - **Cloudflare Workers can reach APNs.** Workers `fetch` speaks HTTP/2 and has WebCrypto for signing the APNs JWT, so the push sender can live in the existing Worker.
 - **TLS certificates rotate.** gradus.training certificates are Cloudflare-managed and rotate roughly every 90 days. **Do not pin certificates** (see `docs` memory: ATS pinning decision). Use ATS defaults; add a CAA record at the DNS level instead.
-- **Apple Developer enrollment** is pending D-U-N-S (applied 2026-08-29). Expected to complete early-to-mid October 2026. Until then: no TestFlight, no push testing, no Sign in with Apple testing, no Associated Domains. Everything can be built and tested on the simulator and on a dev device with a free team, minus those capabilities.
+- **Apple Developer enrollment** was approved on 2026-09-19 (D-U-N-S applied 2026-08-29). App Store Connect is not set up yet: no App ID, no APNs or Sign in with Apple keys, no Team ID in the project, no Xcode Cloud. Until those exist: no TestFlight, no push testing, no Sign in with Apple testing on a device, no Associated Domains. The account-side steps are listed in §10.6 and in gradus-ios `docs/enrollment-checklist.md`.
 
 ---
 
@@ -266,7 +266,7 @@ Everything else goes through the API. The app never issues ad-hoc table queries;
 | Flow | Client | Server (`/api/v1/auth/*`) |
 |---|---|---|
 | **Sign in with Apple** | `ASAuthorizationController` with a hashed nonce; receive identity token, user identifier, and (first time only) name and email | `POST /auth/apple {identityToken, nonce, fullName?}` → verify JWT signature against Apple JWKS, check `aud == training.gradus.app` and nonce → look up `auth_identities(provider='apple', provider_sub)`; else match a confirmed user by email; else create the user via admin API with `email_confirm: true` → mint a session (admin `generateLink(type: magiclink)` then `verifyOtp` with the token hash using service-role credentials) → return `{access_token, refresh_token, expires_in, isNewUser}` → client calls `auth.setSession`. Handle Apple private-relay emails as normal emails. |
-| **Google** | Native `GoogleSignIn` SDK (or `ASWebAuthenticationSession` with PKCE) → ID token | `POST /auth/google {idToken}` → verify against Google JWKS and the iOS client ID → same identity lookup and session mint. **Alternative** if Lovable Cloud's "your own credentials" Google setup exposes authorized client IDs: use `signInWithIdToken` directly (captcha-exempt). Decide during Phase 0 (§12). |
+| **Google** | Native `GoogleSignIn` SDK (or `ASWebAuthenticationSession` with PKCE) → ID token | `POST /auth/google {idToken}` → verify against Google JWKS and the iOS client ID → same identity lookup and session mint. **Alternative** if Lovable Cloud's "your own credentials" Google setup exposes authorized client IDs: use `signInWithIdToken` directly (captcha-exempt). Decide during Phase 0 (§12). *2026-09-19:* the broker exists; on iOS the provider is a stub and the button is **hidden until `GOOGLE_IOS_CLIENT_ID` is configured** (Mariah's call). |
 | **Email or username + password** | Native form | `POST /auth/password {identifier, password}` → if identifier has no `@`, resolve username to the synthetic email `athlete-<id>@users.gradus.training` (existing logic in `resolveAthleteLogin`) → call the GoTrue password grant with service-role `Authorization` (captcha-exempt) → return the session. Rate-limited per IP and per identifier; generic error on failure. |
 | **Coach email sign-up** | Native form | `POST /auth/signup/coach {email, password, promoCode?, inviteCode?}` → admin create user honoring the project's email-confirmation setting → session mint if confirmation is off; otherwise return `confirmationRequired`. Verify the current setting in Lovable Cloud during Phase 0. |
 | **Parent, minor athlete, adult athlete sign-up** | Native flows | Already server-side today (`startParentSignup`, `signupAthleteWithUsername`, `createSelfManagedAthlete`); exposed as-is under `/signup/*`. |
@@ -324,7 +324,7 @@ Everything else goes through the API. The app never issues ad-hoc table queries;
 
 **Realtime.** Room views subscribe to `postgres_changes` on `messages` for the open room; the rooms list subscribes to inserts across the user's rooms to update previews and badges, replacing the web's polling where it exists. Realtime is a refinement over push and polling, not a dependency: if the channel drops, the room refetches on foreground.
 
-**APNs sender (new server component).** Lives in the Worker (`src/lib/push.server.ts`), uses token-based APNs auth (`.p8` key, key ID, team ID stored as secrets), signs the JWT with WebCrypto, and POSTs to `api.push.apple.com` over HTTP/2. Handles `410 Unregistered` by deleting the token from `device_tokens`. Sends are fire-and-forget from the calling code path (guarantee §4.1.7) with structured logging.
+**APNs sender (new server component; not built as of 2026-09-19, milestone P3 in §10.6).** Lives in the Worker (`src/lib/push.server.ts`), uses token-based APNs auth (`.p8` key, key ID, team ID stored as secrets), signs the JWT with WebCrypto, and POSTs to `api.push.apple.com` over HTTP/2. Handles `410 Unregistered` by deleting the token from `device_tokens`. Sends are fire-and-forget from the calling code path (guarantee §4.1.7) with structured logging.
 
 **Triggers (native 2.0).** Because web and iOS share the same server functions after §6.2, every trigger fires regardless of which client performed the action.
 
@@ -358,7 +358,8 @@ Lesson reminders ("lesson in 1 hour") are a P1 addition driven by pg_cron callin
 **Voice notes in messages and cross-platform playback.** Web browsers record WebM/Opus; iOS records M4A/AAC. AVFoundation does not play WebM. Policy:
 
 1. New notes from iOS are `.m4a`. New notes from the web should prefer `audio/mp4` where `MediaRecorder` supports it (Safari, current Chrome) and fall back to WebM only where it does not. This is a small web change and must be verified against the §4 rules (no behavior change for users; the message payload already carries the MIME type).
-2. iOS plays `.m4a` with `AVPlayer` and plays legacy WebM notes through a hidden `WKWebView` audio element, which WebKit on iOS can decode. Verify on iOS 18 during Phase 1; if WebKit playback proves unreliable, bundle an Opus decoder as a fallback (P1).
+2. iOS plays `.m4a` with `AVPlayer` and plays legacy WebM notes through a hidden `WKWebView` audio element, which WebKit on iOS can decode. Verify on iOS 18 during Phase 1; if WebKit playback proves unreliable, bundle an Opus decoder as a fallback (P1). *As of 2026-09-19 the WebM fallback was never built: iOS shows "Can't play this note here yet" for a web-recorded note.*
+3. *2026-09-19 (Mariah):* every voice note gets a **server-side transcript** at send time, stored on the message and returned to both clients, using the ElevenLabs path the guardian mirror already uses. iOS shows it under the bubble and reads it in the VoiceOver label. This is the WCAG 1.2.1 text alternative, and it also gives iOS users the content of legacy WebM notes. Milestone P4 in §10.6.
 
 **On-device transcription.** Apple's `SpeechAnalyzer` (iOS 26+) is an attractive later option for offline dictation. Not in scope; the server pipeline is the source of truth so both platforms behave the same.
 
@@ -440,7 +441,7 @@ Each table lists the web behavior being ported and what is specifically required
 
 | Feature | Web today | iOS requirement | Pri |
 |---|---|---|---|
-| Sign in | Email or username + password with Turnstile; Google via broker | Native form; Sign in with Apple; Google; password broker (§6.4). Remember identifier. Face ID gate optional. | P0 |
+| Sign in | Email or username + password with Turnstile; Google via broker | Native form; Sign in with Apple; Google (button hidden until the iOS client ID exists, 2026-09-19); password broker (§6.4). Remember identifier. Face ID gate optional. | P0 |
 | Coach sign-up | Email + password or Google; promo code field; optional `?invite=` parent code; terms checkbox | Native equivalents; promo code applied via `/me/promo-code`; invite carried from `/i/:code`. | P0 |
 | Coach onboarding | Name → sports coached → levels and hours per week per sport → invite code share; sample athlete and starter plan for new figure skating coaches; join a club by search or code | Native multi-step with progress; sport multiselect with the primary-sport cap rule; club join can be skipped and finished in Settings. | P0 |
 | Parent sign-up | Email + password, beta code check, athletes (name + birthdate) → goals per athlete → practice schedule per coach; mid-flow recovery; invite coach card | Native multi-step; birthdate picker; schedule editor; resume where left off from `getParentSignupStatus`. | P0 |
@@ -577,7 +578,7 @@ Each table lists the web behavior being ported and what is specifically required
 | Support / feedback | Feedback FAB on most screens; feedback list | Feedback from Settings and a shake gesture (optional); no floating button. | P0 |
 | Sign out | | Native. | P0 |
 | Connections hub (coach) | Enter a code, join a club, coach visibility | Native. | P1 |
-| Pending changes (Sync Center) | Not on web | New native screen (§6.5). | P0 |
+| Pending changes (Sync Center) | Not on web | *Removed 2026-09-12 at Mariah's request* (gradus-ios PR #28): no screen and no Settings badge; the outbox engine still runs silently. | — |
 
 ### 7.13 Cross-cutting behaviors
 
@@ -590,7 +591,7 @@ Each table lists the web behavior being ported and what is specifically required
 
 ### 7.14 Explicitly web-only or dropped
 
-Admin panel, org admin, email admin and previews, dev tools and paywall preview, impersonation, PWA install banner and update prompt, service worker chunk recovery, hydration diagnostics, Turnstile widget, embedded Stripe checkout, the `board` demo mode, and the Capacitor plugins (`@capacitor/*`, `@capgo/capacitor-native-biometric`). The Capacitor iOS project is removed after native 2.0 is live, the Android shell after Kotlin is live; the web's `isNativeApp()` branches stay until then (the shells depend on them) and can be removed when the web is sunset.
+Admin panel, org admin, email admin and previews, dev tools and paywall preview, impersonation, PWA install banner and update prompt, service worker chunk recovery, hydration diagnostics, Turnstile widget, embedded Stripe checkout, the `board` demo mode, and the Capacitor plugins (`@capacitor/*`, `@capgo/capacitor-native-biometric`). *2026-09-19:* the Capacitor iOS project can be removed from the web repo at any time, since the shell will not ship; the Android shell's fate is open (§12 #14), so `android/`, `capacitor.config.ts` and the web's `isNativeApp()` branches stay until that is decided.
 
 ---
 
@@ -662,6 +663,7 @@ Theme follows the user's Appearance setting (Light / Dark / System), persisted l
 - VoiceOver labels on every control; the five icon-only buttons the web labeled get the same labels. Live Board lanes announce data age.
 - Contrast stays at the web's AAA targets; Increase Contrast switches to opaque cards.
 - Minimum hit target 44 × 44 pt. Dynamic Type through accessibility sizes without truncating scores or timers.
+- *2026-09-19 (Mariah):* the app passes **WCAG 2.2 Level AAA** before QA starts. The 2026-09-17 audit is the checklist and the order of work is in §10.6. iPhone supports **landscape** (1.3.4). Score-sheet abbreviations (GOE, deductions, factor, IJS) are expanded on first use (3.1.4). Contextual help (3.3.5) is deferred and stays partial by design.
 
 ---
 
@@ -698,7 +700,7 @@ gradus-ios/
   docs/README.md              points at docs/ios/PRD.md in the web repo; iOS-only notes live here
 ```
 
-The native app and the Capacitor shell share a bundle ID but live in different repos, so both can be built at the same time. Native TestFlight builds are versioned `2.0.x` and shell releases `1.x`, so they never collide in App Store Connect. The Capacitor `ios/` project is deleted from the web repo only after native 2.0 is live; `android/`, `capacitor.config.ts`, `native/`, and the `@capacitor/*` dependencies go after the Kotlin app is live. All of it is inert for the web until then.
+*Amended 2026-09-19:* the native app is versioned `1.0.x`; there are no shell releases. The Capacitor `ios/` project can be deleted from the web repo at any time; `android/`, `capacitor.config.ts`, `native/`, and the `@capacitor/*` dependencies stay until the Android decision (§12 #14) is made. All of it is inert for the web.
 
 ### 9.2 Language, frameworks, dependencies
 
@@ -784,8 +786,8 @@ Backend milestones live in the web repo and can run overnight in cloud sessions.
 | I7 | Sessions and timer | 2.7 | Timer survives lock and kill; Live Activity; feedback submits; the session shows on the web |
 | I8 | Settings for all roles | 2.8, 2.9, 2.10 | Parent athlete, coach, goals, and schedule management; athlete goals; account and security including deletion; plan status; Sync Center |
 | I9 | Offline and push, end to end | 2.13, 2.14 | Every write in I3–I8 queues offline and drains; push routes to the right screen; badges correct |
-| **T1** | **Internal TestFlight** (needs enrollment) | Xcode Cloud, internal group | A build installs from TestFlight on Mariah's phone |
-| **C1** | **Capacitor iOS 1.0 to the App Store** (needs enrollment; taken as soon as it lands) | Phase C | Approved and live |
+| **T1** | **Internal TestFlight** (needs App Store Connect set up; taken after the §10.6 gate) | Xcode Cloud, internal group | A build installs from TestFlight on Mariah's phone; QA begins |
+| ~~C1~~ | ~~Capacitor iOS 1.0 to the App Store~~ **Dropped 2026-09-19** | — | — |
 | T2 | External TestFlight | I1–I9 complete | Founding Coaches and a few parents are using it |
 | I10 | Resources and Ask Gradus | 3.1, 3.2 | Library, PDF viewer, coach upload, Ask Gradus, saved answers |
 | I11 | Invoicing | 3.3 | Rates, preview, create, detail, status, share |
@@ -793,9 +795,9 @@ Backend milestones live in the web repo and can run overnight in cloud sessions.
 | I13 | Guardians, team, visibility, celebration | 3.5 | Guardian claims and team invites; coach visibility; connection celebration |
 | I14 | Import, share, starters, connections hub, in-app reset | 3.6, 3.7 | Schedule import; plan share and import; starter programs; Founding claim; password reset in-app |
 | I15 | Widget, lesson reminders, App Attest | 3.8 | Widget shows next up; reminders arrive; App Attest on auth |
-| C2 | Capacitor Android 1.0 to Google Play (after C1 is live; timing at Mariah's call) | Phase D | Approved and live |
-| I16 | Hardening and submission of native 2.0 | Phase 4, plus 3.9 preparation | QA checklist passes; crash-free ≥ 99.5% on TestFlight; submitted |
-| L | Native 2.0 live | | Approved; a shell user updating sees the welcome screen and signs in once |
+| C2 | Capacitor Android 1.0 to Google Play, **reopened 2026-09-19** (§12 #14) | Phase D | Mariah decides whether it ships at all |
+| I16 | Hardening and submission of native 1.0 (was 2.0) | Phase 4, plus 3.9 preparation; the pre-QA gate in §10.6 comes first | QA checklist passes; crash-free ≥ 99.5% on TestFlight; submitted |
+| L | Native 1.0 live | | Approved; first store release, no shell migration |
 | K | Kotlin rebuild starts | its own PRD | |
 
 ### 10.3 Build order rationale
@@ -824,6 +826,8 @@ After sunset, the web app keeps: sign-in (for admin and org admin), `/admin/*`, 
 
 ### 10.5 Interim store presence with the Capacitor shell
 
+> **Superseded 2026-09-19.** Mariah decided to go straight to native: no Capacitor iOS shell ships, native is 1.0, and the Android shell question is reopened in §12 #14. The section is kept as the record of the earlier reasoning.
+
 
 **The mechanics.** An App Store app is identified by its bundle ID under a team, and a Play Store app by its application ID and signing key. A new build with the same identifier and a higher version is an update, whatever technology is inside it. So the Capacitor shell (`training.gradus.app`) can go live first and be **replaced by the native app as an ordinary update** later; nothing has to be chosen now. Ratings, reviews, the listing, universal links, and APNs device tokens carry over. Two caveats:
 
@@ -838,13 +842,33 @@ Android is the more interesting case: Kotlin starts only after iOS 2.0 is comple
 
 **Decision (2026-09-04).** Ship the Capacitor iOS shell as **1.0** at enrollment, then the Capacitor Android shell as the interim Android app right after iOS 1.0 is live (so the Capacitor work happens once, while it is fresh), and ship the native app as **2.0** at full parity. Version numbers: shells are 1.x, native starts at 2.0 so App Store Connect always sees an increase. The 2.0 update opens on a welcome screen that explains the one-time sign-in. Store listings are refreshed with native screenshots at 2.0.
 
+### 10.6 Pre-QA gate and the milestones that close it (2026-09-19)
+
+Mariah's definition of "ready to move to QA," recorded 2026-09-19: **(1) every Apple-developer-gated element is integrated into the app, and (2) the app passes WCAG 2.2 Level AAA** per the 2026-09-17 audit. QA itself starts with T1, the first internal TestFlight install on her phone, and **runs against production with `API_V1_ENABLED` on** (her decision and her action in Lovable Cloud secrets; no Claude session flips that flag). The working plan, sequencing and current state live in `docs/ios/handoff-preQA.md`; this section is the durable summary.
+
+**Account side (Mariah).** App ID `training.gradus.app` with Push Notifications, Associated Domains, Sign in with Apple and App Groups; the widget App ID `training.gradus.app.widgets`; the App Group `group.training.gradus.app`; an APNs key and a Sign in with Apple key; the Team ID; the five Lovable secrets in Appendix D; the App Store Connect record; Xcode Cloud connected to `gradus-ios` with an internal TestFlight group. Later, not blocking: a Google Cloud iOS OAuth client, and the `gradus://reset-password` entry in the Supabase redirect allow-list. After every migration PR merges: ask Lovable to apply pending migrations, then run the `docs/api/SMOKE.md` precheck (§4.1 rule 11).
+
+**Build milestones, in order (no dates, per §10.1):**
+
+| # | Milestone | Repo | Scope | Done when |
+|---|---|---|---|---|
+| P1 | Docs | web | This amendment; `docs/ios/handoff-preQA.md` | Merged |
+| P2 | Apple wiring on iOS | iOS | Sign in with Apple entitlement; `DEVELOPMENT_TEAM` once the Team ID exists; marketing version 1.0.0; Google button hidden until configured; Xcode Cloud scripts; contract re-sync | CI green; archive-able once the Team ID is in |
+| P3 | Push, web wave, then a small iOS wave | web, iOS | APNs sender in `src/lib/push.server.ts`, the §6.6 triggers, lesson-reminder delivery, `live_activity_tokens` with `POST /live-activities/tokens`, board push-to-start, update and end, the AASA file with the Team ID; iOS uploads push-to-start and update tokens | A test device receives a message push and a board Live Activity started by the server (verified at T1) |
+| P4 | Voice-note transcripts | web, then iOS | Additive `messages.transcript`; transcribe every voice send (WebM and M4A) through the existing ElevenLabs path, plus a sweep for old notes; transcript in room payloads; iOS shows it under the bubble and in the VoiceOver label | A web-recorded note shows its transcript on iOS |
+| P5 | Accessibility: reflow, landscape, targets | iOS | Audit items 5, 6, 8: scrolling Terms gate and celebration cover; no single-line truncation of user content; stacked layouts at accessibility sizes; text-style icon fonts; 44 pt targets; landscape enabled and every screen checked in it | The audit harness at AX5 and in landscape shows no truncation and no sub-24 pt targets |
+| P6 | Accessibility: tokens, lock screen, hygiene | web token export, then iOS | Audit items 7, 9, 10: light `destructive-ink` ≥ 7:1 and a dark ink on the dark destructive fill (web token change, synced through the contract), an Increase Contrast variant via `colorSchemeContrast`, ink tokens in the widget and Live Activity, `accentInk` toggles and focus rings, dimmed-text fixes, page-title stripe; content hidden behind the biometric lock; celebration identifier moved off the root | The audit's contrast table passes AAA in both appearances |
+| P7 | Accessibility: everything else in the audit | iOS | Semantics (picker names, spelled-out codes, `textCase`, expand/collapse values, headings), forms (confirmations, "Error:" prefixes, Report-sheet default, disabled-reason copy, failed-load states), navigation (Safari-bound link labels, sheet titles and close buttons), media (image labels, import-result announcement), readability (jargon expansions, spoken date); contextual help deferred | Audit §6 shows only 3.3.5 as partial |
+| P8 | Device pass and re-audit | iOS | Live VoiceOver, Switch Control, Voice Control, Full Keyboard Access and iPad on a device; re-run the audit harness; fix findings | Findings closed; harness clean |
+| P9 | QA prep | web, iOS | `docs/ios/QA.md`; `POST /errors` and the MetricKit upload; the real Google provider once the client ID exists; native reset on once the allow-list entry exists | T1 build installs; QA begins |
+
 ---
 
 ## 11. Risks and dependencies
 
 | # | Risk or dependency | Impact | Mitigation |
 |---|---|---|---|
-| 1 | Apple Developer enrollment slips | Delays TestFlight, push, Sign in with Apple, and universal-link testing | Everything else is testable on the simulator and a free-team device; the milestone order does not change, T1 and C1 simply wait. Prepare App Store Connect metadata in advance. |
+| 1 | ~~Apple Developer enrollment slips~~ **Closed 2026-09-19: enrollment approved.** Remaining dependency: App Store Connect setup (App ID, keys, Team ID, Xcode Cloud) | Delays TestFlight, push, Sign in with Apple, and universal-link testing | The §10.6 milestones that need the account are ordered so everything else proceeds meanwhile. |
 | 2 | Sign in with Apple through our own broker rather than a Supabase provider | Reviewer questions; token revocation needs the Sign in with Apple key | Standard OIDC verification; generate the key the day enrollment completes; test revocation before submission. If Lovable Cloud later exposes an Apple provider, switch to `signInWithIdToken` with no client change. |
 | 3 | Lovable Cloud limits without a Supabase dashboard (Google authorized client IDs, email-confirmation setting, pg_cron access) | Could force the broker path for Google and shape sign-up | Broker path is already the default design; verify settings in Phase 0 week one. |
 | 4 | Lovable two-way GitHub sync colliding with Claude Code PRs (backend PRs only; the iOS repo is outside Lovable's sync) | Merge conflicts, accidental publishes | Short-lived branches, rebase before merge, publish deliberately after CI; avoid overlapping edits on the same day (§9.6). |
@@ -858,7 +882,7 @@ Android is the more interesting case: Kotlin starts only after iOS 2.0 is comple
 | 12 | IJS page structure changes | Board goes stale | Existing server-side risk, unchanged; the app shows data age and degrades visibly. |
 | 13 | Founding Coach window closes 2026-11-01, likely before the native launch | New iOS coaches hit the paywall immediately | US link to the web paywall; consider extending the window through the native launch (business decision). |
 | 14 | Kotlin rebuild later | Rework if the API is iOS-shaped | OpenAPI as the contract, shared test vectors, platform-neutral string catalog, no iOS-only endpoints. |
-| 16 | Capacitor 1.0 rejected under Guideline 4.2 (minimum functionality) | No interim store presence | The native-features story is real (camera capture, share sheet, haptics, biometric lock, push registration) and is already documented in `docs/mobile/submission.md`; respond with specifics. Spend at most one more review round; if still rejected, keep the App Store Connect record and go native-only. |
+| 16 | ~~Capacitor 1.0 rejected under Guideline 4.2~~ **Moot 2026-09-19: the shell does not ship.** | — | — |
 | 15 | Leaving Lovable Cloud someday | Auth, DB, storage migration | Out of scope. Lovable now documents an export path ("Export project data" then connect your own Supabase) and third-party migrators preserve auth passwords; the API is the only client that would need re-pointing. Write a runbook before attempting it. |
 
 ---
@@ -873,14 +897,14 @@ Android is the more interesting case: Kotlin starts only after iOS 2.0 is comple
 | 4 | AI provider switch (Lovable gateway → direct Google key) timing | Mariah | Any time | Add behind a flag during B3, flip after the native launch |
 | 5 | Coach sign-up email confirmation behavior in Lovable Cloud (on or off) | Verify in Lovable Cloud | Before B2 | Mirror whatever the web does today |
 | 6 | Voice-note playback fallback: WKWebView vs bundled Opus decoder | Claude Code, after device verification | During I3 | WKWebView |
-| 7 | App Store availability at launch: US only vs worldwide | Mariah | Before C1 | US only |
+| 7 | App Store availability at launch: US only vs worldwide | Mariah | Before submission | US only |
 | 8 | Extend the Founding Coach window through the native launch | Mariah | Before 2026-11-01 | No change |
 | 9 | Desktop use by the three roles after sunset | Mariah | — | **Resolved 2026-09-04: native only** (iOS app on Apple-silicon Macs; Mac build later) |
 | 10 | Live Activity for the session timer: local only vs also pushed to guardians' devices | Mariah | During I7 | Local only |
 | 11 | Xcode Cloud vs GitHub Actions for TestFlight uploads | Claude Code | During I1 | Xcode Cloud |
 | 12 | Whether iPad gets full attention in native 2.0 or "works, not optimized" | Mariah | During I5 | Works, not optimized |
-| 13 | Capacitor iOS shell as interim 1.0 (§10.5) | Mariah | — | **Resolved 2026-09-04: yes, at enrollment** |
-| 14 | Capacitor Android shell as interim Android app (§10.5) | Mariah | — | **Resolved 2026-09-04: yes, after iOS 1.0 is live**; exact timing at Mariah's call |
+| 13 | Capacitor iOS shell as interim 1.0 (§10.5) | Mariah | — | **Reversed 2026-09-19: no shell; native ships first as 1.0** |
+| 14 | Capacitor Android shell as interim Android app (§10.5) | Mariah | Before the Kotlin decision | **Reopened 2026-09-19:** with no iOS shell there is no "after iOS 1.0 is live" trigger; Mariah decides whether the Android shell ships at all or Android waits for Kotlin |
 
 ---
 
@@ -1068,7 +1092,7 @@ Size: S < 200 lines, M 200–500, L 500–1000, XL > 1000 lines of TSX in the we
 
 Carried over from `docs/mobile/submission.md` and updated for the native app.
 
-**Two submissions share one record.** Capacitor 1.0 and native 2.0 use the same App Store Connect app, listing, and demo accounts. For 1.0: add Sign in with Apple through `@capacitor-community/apple-sign-in` posting the identity token to `/api/v1/auth/apple`; keep Stripe in the system browser; lean on the native-features story in the notes. For 2.0: set `MARKETING_VERSION` above every 1.x build, add the welcome screen for the one-time sign-in, and refresh screenshots. The Android shell follows the Google Play notes in `docs/mobile/submission.md` unchanged.
+**One submission (amended 2026-09-19).** The native app is the only iOS submission, at version 1.0. Nothing from the shell plan applies: no Capacitor Sign in with Apple plugin, no welcome screen for a one-time sign-in, no version ordering against 1.x builds. The Android shell notes in `docs/mobile/submission.md` stay until §12 #14 is decided.
 
 **Before enrollment completes (do now)**
 - [ ] App name, subtitle, keywords, description, support URL, marketing URL, privacy policy URL (`https://www.gradussports.com/privacy`).
@@ -1078,12 +1102,12 @@ Carried over from `docs/mobile/submission.md` and updated for the native app.
 - [ ] Age rating questionnaire (no Kids Category).
 - [ ] Decide storefront availability (default US only).
 
-**At enrollment**
-- [ ] App ID `training.gradus.app` with Push Notifications, Associated Domains, Sign in with Apple.
-- [ ] APNs key (`.p8`), Sign in with Apple key (`.p8`), Team ID → Lovable Cloud secrets.
+**At App Store Connect setup (enrollment approved 2026-09-19)**
+- [ ] App ID `training.gradus.app` with Push Notifications, Associated Domains, Sign in with Apple, and App Groups (`group.training.gradus.app`, shared with the widget's App ID `training.gradus.app.widgets`).
+- [ ] APNs key (`.p8`, Key ID), Sign in with Apple key (`.p8`, Key ID), Team ID → Lovable Cloud secrets `APNS_KEY_P8`, `APNS_KEY_ID`, `APPLE_TEAM_ID`, `APPLE_SIWA_KEY_P8`, `APPLE_SIWA_KEY_ID`; the Team ID also goes into gradus-ios `project.yml` and the AASA file.
 - [ ] `apple-app-site-association` published with the Team ID and the paths in §6.10; verify with Apple's CDN check.
 - [ ] Xcode Cloud workflow; internal TestFlight group.
-- [ ] Live Activities frequent-updates entitlement request.
+- [ ] Live Activities frequent updates: already declared in Info.plist (`NSSupportsLiveActivitiesFrequentUpdates`); nothing to request.
 
 **Review notes (draft)**
 1. Gradus is a multiplatform coaching service. Coach and Team subscriptions are purchased on our website; the app unlocks access to previously purchased subscriptions. There is no purchase flow in the app. On the US storefront the app links to our website to manage a plan, per Guideline 3.1.1(a); no entitlement is required.
@@ -1171,17 +1195,17 @@ The package numbers used by the milestones in §10.2 and by the briefs in `docs/
 - **3.6** Schedule import with camera and AI review
 - **3.7** Plan share and import, starter programs, Founding tier claim, connections hub, in-app password reset
 - **3.8** Home Screen widget, lesson reminders, App Attest
-- **3.9** Web voice-note format preference; prepare the 2.0 welcome screen and the Capacitor iOS removal PR (merged only after 2.0 is live)
+- **3.9** Web voice-note format preference; the Capacitor iOS removal PR (can merge any time since 2026-09-19; the 2.0 welcome screen is no longer needed)
 
-**Phase C — Capacitor iOS 1.0 to the App Store** — At enrollment; needs Phase 0.2 first
+**Phase C — Capacitor iOS 1.0 to the App Store** — **Dropped 2026-09-19** (no shell ships)
 
 - **C.1** Sign in with Apple in the shell via the broker; App ID, certificates, APNs and Sign in with Apple keys; AASA with Team ID
 - **C.2** Listing, screenshots, App Privacy answers, review notes; archive, TestFlight sanity, submit; one review round
 
-**Phase D — Capacitor Android 1.0 to Google Play** — After iOS 1.0 is live
+**Phase D — Capacitor Android 1.0 to Google Play** — **Reopened 2026-09-19** (§12 #14)
 
 - **D.1** JDK 17 and Android Studio, `cap add android`, icons and splash, keystore and Play App Signing, AAB, Play listing and Data safety, `assetlinks.json` with the Play SHA-256, one review round (Keep the upload key backed up)
 
 **Phase 4 — Hardening and launch (native 2.0)**
 
-- **4.1** Accessibility and Dynamic Type pass, performance, iPad layouts, QA checklist runs, TestFlight feedback, screenshots, privacy labels, review notes, submission (Plus App Review wait (typically 1–7 days, allow two rounds))
+- **4.1** Accessibility and Dynamic Type pass, performance, iPad layouts, QA checklist runs, TestFlight feedback, screenshots, privacy labels, review notes, submission (Plus App Review wait (typically 1–7 days, allow two rounds)). *2026-09-19:* the accessibility pass is pulled forward into the §10.6 gate (P5–P8) and the QA checklist into P9.
