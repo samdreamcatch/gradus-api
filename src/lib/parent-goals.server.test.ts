@@ -192,7 +192,8 @@ describe("getParentGoalsDashboard", () => {
           return { data: null, error: null };
         };
         self.then = (resolve: (v: unknown) => void) => {
-          if (table === "athletes" && mode === "detail") return resolve({ data: [kid], error: null });
+          if (table === "athletes" && mode === "detail")
+            return resolve({ data: [kid], error: null });
           if (table === "athlete_guardians") {
             return resolve({
               data: [{ athlete_id: kid.id, athletes: { parent_id: "primary-1" } }],
@@ -206,8 +207,8 @@ describe("getParentGoalsDashboard", () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any;
 
-    expect(await getParentGoalsDashboard({ userId: "u2", supabase: client, admin: client })).toEqual(
-      [{ athleteId: "a1", athleteName: "Rory Gilmore", sports: [], locked: true }],
-    );
+    expect(
+      await getParentGoalsDashboard({ userId: "u2", supabase: client, admin: client }),
+    ).toEqual([{ athleteId: "a1", athleteName: "Rory Gilmore", sports: [], locked: true }]);
   });
 });

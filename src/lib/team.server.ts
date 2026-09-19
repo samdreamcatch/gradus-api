@@ -136,7 +136,9 @@ export async function guardianAthleteAccess(
   );
   const activeByPrimaryId = new Map<string, boolean>(
     await Promise.all(
-      primaryIds.map(async (id): Promise<[string, boolean]> => [id, await teamPlanActive(admin, id)]),
+      primaryIds.map(
+        async (id): Promise<[string, boolean]> => [id, await teamPlanActive(admin, id)],
+      ),
     ),
   );
 

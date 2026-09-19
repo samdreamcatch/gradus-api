@@ -12,7 +12,14 @@ import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { ApiError } from "./api/errors";
 import { dbError } from "./db-error";
-import type { MessageDTO, RoleInRoom, RoomDetail, RoomKind, RoomParticipant, RoomSummary } from "./messages-types";
+import type {
+  MessageDTO,
+  RoleInRoom,
+  RoomDetail,
+  RoomKind,
+  RoomParticipant,
+  RoomSummary,
+} from "./messages-types";
 
 export type ContextEnvelope = { supabase: unknown; userId: string };
 
@@ -627,7 +634,12 @@ async function fetchMessagesForRooms(
 const MESSAGE_COLS =
   "id, room_id, direct_room_id, sender_user_id, sender_deleted_at, sender_role, kind, body, audio_url, duration_seconds, created_at, plan_id";
 
-async function findMyRoom(userId: string, roomId: string, viewerRole?: RoleInRoom, missing = "Conversation not found") {
+async function findMyRoom(
+  userId: string,
+  roomId: string,
+  viewerRole?: RoleInRoom,
+  missing = "Conversation not found",
+) {
   const { rooms, myRoleByRoom } = await listMyRoomIds(userId, viewerRole);
   const room = rooms.find((r) => r.id === roomId);
   if (!room) throw notFound(missing);
@@ -1112,7 +1124,9 @@ export async function markRoomRead(
     .not("sender_user_id", "is", null)
     .neq("sender_user_id", userId);
   const { data: unread, error } =
-    room.kind === "athlete" ? await q.eq("room_id", room.id) : await q.eq("direct_room_id", room.id);
+    room.kind === "athlete"
+      ? await q.eq("room_id", room.id)
+      : await q.eq("direct_room_id", room.id);
   if (error) dbError(error, "Couldn't update read status");
 
   const ids = (unread ?? []).map((m) => m.id);
@@ -1372,7 +1386,8 @@ export async function ensureRoomForTarget(
       throw forbidden("Athlete is not on your account");
     }
   } else if (me.athlete) {
-    if (me.athlete.id !== data.athleteId) throw forbidden("Not authorized to open this conversation");
+    if (me.athlete.id !== data.athleteId)
+      throw forbidden("Not authorized to open this conversation");
   } else {
     throw forbidden("You don't have a profile that can start conversations");
   }

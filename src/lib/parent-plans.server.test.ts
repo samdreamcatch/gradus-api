@@ -93,9 +93,7 @@ describe("listParentPlans", () => {
   it("a locked co-guardian's athlete is listed by name but contributes no plans", async () => {
     const { supabase, admin } = fakePlansClient({
       callerParentId: "parent-2",
-      guardianRows: [
-        { athlete_id: "a1", athletes: { parent_id: "primary-1" } },
-      ],
+      guardianRows: [{ athlete_id: "a1", athletes: { parent_id: "primary-1" } }],
       athleteDetails: [{ id: "a1", first_name: "Kid", last_name: "Guardianed" }],
       primaryPlanStatus: { "primary-1": { subscription_status: null, current_period_end: null } },
     });

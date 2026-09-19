@@ -301,7 +301,13 @@ async function listCoachVisibilityWeb(admin: Admin, userId: string): Promise<Coa
     planActive,
     athletes: athletes.map((a) => {
       if (lockedById.get(a.id)) {
-        return { id: a.id, firstName: a.first_name, lastName: a.last_name, locked: true, coaches: [] };
+        return {
+          id: a.id,
+          firstName: a.first_name,
+          lastName: a.last_name,
+          locked: true,
+          coaches: [],
+        };
       }
       const mine = coachLinks.filter((l) => l.athlete_id === a.id);
       return {

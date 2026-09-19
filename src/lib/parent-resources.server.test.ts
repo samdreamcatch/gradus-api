@@ -223,9 +223,11 @@ describe("getParentResources locking", () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any;
 
-    expect(
-      await getParentResources({ userId: "u2", supabase: client, admin: client }),
-    ).toEqual({ sports: [], resources: [], canAskGradus: true });
+    expect(await getParentResources({ userId: "u2", supabase: client, admin: client })).toEqual({
+      sports: [],
+      resources: [],
+      canAskGradus: true,
+    });
     expect(athleteGoalsQueried).toBe(false);
   });
 });

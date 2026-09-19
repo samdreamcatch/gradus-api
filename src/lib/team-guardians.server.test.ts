@@ -324,7 +324,15 @@ describe("listTeamGuardians", () => {
     const { admin } = fakeAdmin(seed);
     const out = await listTeamGuardians(admin, CO.user_id, { apiContract: true });
     expect(out.athletes).toEqual([
-      { id: "a1", firstName: "Ava", lastName: "Lee", isPrimary: false, locked: true, guardians: [], invites: [] },
+      {
+        id: "a1",
+        firstName: "Ava",
+        lastName: "Lee",
+        isPrimary: false,
+        locked: true,
+        guardians: [],
+        invites: [],
+      },
     ]);
   });
 

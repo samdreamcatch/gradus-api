@@ -1,5 +1,9 @@
 import { describe, expect, it } from "bun:test";
-import { getTeamPlanStatus, guardianAthleteAccess, resolveGuardianAthleteAccess } from "./team.server";
+import {
+  getTeamPlanStatus,
+  guardianAthleteAccess,
+  resolveGuardianAthleteAccess,
+} from "./team.server";
 
 /** A chainable fake: `rows[table]` answers `maybeSingle`/`single`; `lists[table]` answers awaited selects. */
 function fakeClient(rows: Record<string, unknown | null>, lists: Record<string, unknown[]> = {}) {
