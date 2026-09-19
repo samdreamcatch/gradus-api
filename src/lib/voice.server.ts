@@ -760,6 +760,7 @@ export async function buildDraft(ctx: ParseContext): Promise<VoicePlanDraft> {
     unresolvedAthleteName: unresolved,
     notes,
     moves,
+    droppedMoveCount: droppedCount > 0 ? droppedCount : undefined,
     sources: {
       title: slotted.titleQuote ?? undefined,
       athleteName: slotted.athleteQuote ?? undefined,
@@ -776,9 +777,12 @@ export interface ApplyResult {
   touched: VoiceTouched;
   unresolvedAthleteName: string | null;
   appliedMoveCount: number;
+  /** Moves the AI returned that we couldn't read, and skipped. */
+  droppedMoveCount: number;
   /** The AI step failed; the transcript was saved on the plan but nothing was structured. */
   aiFailed: boolean;
 }
+
 
 export async function applyDraft(
   supabase: Client,

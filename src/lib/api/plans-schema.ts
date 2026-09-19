@@ -320,5 +320,6 @@ export const voiceApplyResultSchema = z.object({
   touched: voiceTouchedSchema,
   unresolvedAthleteName: z.string().nullable(),
   appliedMoveCount: z.number().int(),
+  droppedMoveCount: z.number().int(),
   aiFailed: z.boolean(),
 }) satisfies z.ZodType<ApplyResult>;
