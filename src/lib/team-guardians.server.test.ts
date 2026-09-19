@@ -218,12 +218,16 @@ const ATHLETE = {
   last_name: "Lee",
   created_at: "2026-01-01T00:00:00Z",
 };
+// `athletes` is the embedded-select shape guardianAthleteAccess reads (this
+// fake's `select()` is a no-op, so the join must be baked into the seed row
+// itself, same as other embeds elsewhere in this file's fakes).
 const PRIMARY_LINK = {
   id: "g-primary",
   athlete_id: ATHLETE.id,
   parent_id: PAYER.id,
   role: "primary",
   created_at: "2026-01-01T00:00:00Z",
+  athletes: { parent_id: ATHLETE.parent_id },
 };
 const CO_LINK = {
   id: "g-co",
@@ -231,6 +235,7 @@ const CO_LINK = {
   parent_id: CO.id,
   role: "co",
   created_at: "2026-01-02T00:00:00Z",
+  athletes: { parent_id: ATHLETE.parent_id },
 };
 const PENDING = {
   id: "inv1",
@@ -275,6 +280,7 @@ describe("listTeamGuardians", () => {
           firstName: "Ava",
           lastName: "Lee",
           isPrimary: true,
+          locked: false,
           guardians: [
             { id: "g-primary", parentId: "p1", name: "Pat Lee", role: "primary", isSelf: true },
             { id: "g-co", parentId: "p2", name: "Sam Rivera", role: "co", isSelf: false },
@@ -306,6 +312,20 @@ describe("listTeamGuardians", () => {
     const web = await listTeamGuardians(admin, CO.user_id);
     expect(web.athletes[0].invites).toHaveLength(1);
     expect(web.athletes[0].invites[0].code).toBe("ABCD2345");
+  });
+
+  it("a co-guardian's athlete is locked, with no guardians or invites listed, once the primary's plan lapses", async () => {
+    const seed = seedTeam();
+    seed.parent_profiles = [
+      { ...PAYER, subscription_status: null, current_period_end: null },
+      CO,
+      OTHER,
+    ];
+    const { admin } = fakeAdmin(seed);
+    const out = await listTeamGuardians(admin, CO.user_id, { apiContract: true });
+    expect(out.athletes).toEqual([
+      { id: "a1", firstName: "Ava", lastName: "Lee", isPrimary: false, locked: true, guardians: [], invites: [] },
+    ]);
   });
 
   it("no plan anywhere → planActive false; a parent with no athletes gets an empty list", async () => {
