@@ -783,7 +783,6 @@ export interface ApplyResult {
   aiFailed: boolean;
 }
 
-
 export async function applyDraft(
   supabase: Client,
   coachId: string,

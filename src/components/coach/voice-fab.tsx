@@ -84,7 +84,8 @@ export function VoiceFab({
         );
       } else {
         const dropped = result.droppedMoveCount ?? 0;
-        const base = mode === "create" ? `New plan from voice · ${moveLabel}` : `Updated · ${moveLabel}`;
+        const base =
+          mode === "create" ? `New plan from voice · ${moveLabel}` : `Updated · ${moveLabel}`;
         if (dropped > 0) {
           toast.warning(
             `${base} · ${dropped === 1 ? "one move we couldn't read was skipped" : `${dropped} moves we couldn't read were skipped`}`,
