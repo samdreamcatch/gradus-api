@@ -59,8 +59,13 @@ const PRODUCTION_HOST = "https://api.push.apple.com";
 const SANDBOX_HOST = "https://api.sandbox.push.apple.com";
 /** Refresh the provider token after this long (Apple: valid ≤ 60 min, refresh ≥ 20 min apart). */
 const TOKEN_TTL_MS = 50 * 60 * 1000;
-/** APNs reasons that mean the token is permanently unusable for this app. */
-const DEAD_TOKEN_REASONS = new Set(["BadDeviceToken", "DeviceTokenNotForTopic", "Unregistered"]);
+/**
+ * Only 410 Unregistered proves a token is gone for good. `BadDeviceToken` and
+ * `DeviceTokenNotForTopic` (400) usually mean *our* configuration is wrong
+ * (a sandbox token sent to the production host, a wrong `APNS_BUNDLE_ID`);
+ * deleting tokens on those would empty `device_tokens` on one bad deploy.
+ */
+const CONFIG_ERROR_REASONS = new Set(["BadDeviceToken", "DeviceTokenNotForTopic"]);
 
 export function apnsConfigFromEnv(env: NodeJS.ProcessEnv = process.env): ApnsConfig | null {
   const teamId = env.APPLE_TEAM_ID;
@@ -83,24 +88,34 @@ export function apnsTopic(bundleId: string, pushType: ApnsPushType): string {
 
 type CachedToken = { jwt: string; issuedAt: number; keyId: string };
 let cached: CachedToken | null = null;
+/** One in-flight mint at a time: a cold cache under a parallel fan-out must not sign N tokens. */
+let minting: Promise<CachedToken> | null = null;
 
 /** Test hook: forget the cached provider token. */
 export function resetApnsTokenCache(): void {
   cached = null;
+  minting = null;
 }
 
 async function providerToken(config: ApnsConfig, now: number): Promise<string> {
   if (cached && cached.keyId === config.keyId && now - cached.issuedAt < TOKEN_TTL_MS) {
     return cached.jwt;
   }
-  const key = await importPKCS8(config.privateKeyPem, "ES256");
-  const jwt = await new SignJWT({})
-    .setProtectedHeader({ alg: "ES256", kid: config.keyId })
-    .setIssuer(config.teamId)
-    .setIssuedAt(Math.floor(now / 1000))
-    .sign(key);
-  cached = { jwt, issuedAt: now, keyId: config.keyId };
-  return jwt;
+  if (!minting) {
+    minting = (async () => {
+      const key = await importPKCS8(config.privateKeyPem, "ES256");
+      const jwt = await new SignJWT({})
+        .setProtectedHeader({ alg: "ES256", kid: config.keyId })
+        .setIssuer(config.teamId)
+        .setIssuedAt(Math.floor(now / 1000))
+        .sign(key);
+      return { jwt, issuedAt: now, keyId: config.keyId };
+    })().finally(() => {
+      minting = null;
+    });
+  }
+  cached = await minting;
+  return cached.jwt;
 }
 
 async function fetchWithTimeout(deps: ApnsDeps, url: string, init: RequestInit): Promise<Response> {
@@ -128,8 +143,21 @@ export async function sendApnsRequest(
     timeoutMs: deps.timeoutMs ?? 4000,
   };
 
+  let usedJwt: string | null = null;
   const attempt = async (): Promise<ApnsOutcome> => {
-    const jwt = await providerToken(config, d.now());
+    const startedAt = d.now();
+    let jwt: string;
+    try {
+      jwt = await providerToken(config, startedAt);
+      usedJwt = jwt;
+    } catch (err) {
+      // A malformed APNS_KEY_P8 (the usual secret-paste failure) must not turn into a thrown error.
+      console.error(
+        "[apns] provider token could not be signed",
+        err instanceof Error ? err.message : err,
+      );
+      return { ok: false, status: 0, reason: "ProviderKeyError", dead: false };
+    }
     const headers: Record<string, string> = {
       authorization: `bearer ${jwt}`,
       "apns-topic": req.topic ?? apnsTopic(config.bundleId, req.pushType),
@@ -148,7 +176,10 @@ export async function sendApnsRequest(
         body: JSON.stringify(req.payload),
       });
     } catch (err) {
-      const reason = err instanceof Error && err.name === "AbortError" ? "Timeout" : "NetworkError";
+      const reason =
+        err instanceof Error && err.name === "AbortError"
+          ? "Timeout"
+          : `NetworkError: ${err instanceof Error ? err.message : String(err)}`;
       return { ok: false, status: 0, reason, dead: false };
     }
 
@@ -162,7 +193,15 @@ export async function sendApnsRequest(
     } catch {
       /* APNs always sends JSON on errors; tolerate anything else */
     }
-    const dead = response.status === 410 || DEAD_TOKEN_REASONS.has(reason);
+    if (CONFIG_ERROR_REASONS.has(reason)) {
+      console.error("[apns] configuration error from APNs", {
+        status: response.status,
+        reason,
+        host: config.host,
+        topic: headers["apns-topic"],
+      });
+    }
+    const dead = response.status === 410 || reason === "Unregistered";
     return { ok: false, status: response.status, reason, dead };
   };
 
@@ -172,7 +211,10 @@ export async function sendApnsRequest(
     first.status === 403 &&
     (first.reason === "ExpiredProviderToken" || first.reason === "InvalidProviderToken")
   ) {
-    resetApnsTokenCache();
+    // Only discard the token that actually failed; a parallel send may have
+    // replaced it already, and re-minting again would trip Apple's
+    // TooManyProviderTokenUpdates.
+    if (cached && cached.jwt === usedJwt) resetApnsTokenCache();
     return attempt();
   }
   return first;

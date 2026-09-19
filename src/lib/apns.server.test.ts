@@ -154,7 +154,7 @@ describe("sendApnsRequest", () => {
     expect(bearer(2)).not.toBe(bearer(0));
   });
 
-  it("marks 410 Unregistered and 400 BadDeviceToken as dead tokens, other failures as retryable", async () => {
+  it("marks only 410 Unregistered as a dead token; 400s and 5xx stay retryable", async () => {
     resetApnsTokenCache();
     const config = await testConfig();
     const { fetchImpl } = fetchStub([
@@ -175,13 +175,13 @@ describe("sendApnsRequest", () => {
       ok: false,
       status: 400,
       reason: "BadDeviceToken",
-      dead: true,
+      dead: false,
     });
     expect(await sendApnsRequest(config, req, { fetch: fetchImpl })).toEqual({
       ok: false,
       status: 400,
       reason: "DeviceTokenNotForTopic",
-      dead: true,
+      dead: false,
     });
     expect(await sendApnsRequest(config, req, { fetch: fetchImpl })).toEqual({
       ok: false,
@@ -237,5 +237,37 @@ describe("sendApnsRequest", () => {
       },
     );
     expect(outcome).toEqual({ ok: false, status: 0, reason: "Timeout", dead: false });
+  });
+});
+
+describe("sendApnsRequest never rejects", () => {
+  it("returns ProviderKeyError for a malformed APNS_KEY_P8 instead of throwing", async () => {
+    resetApnsTokenCache();
+    const { fetchImpl, calls } = fetchStub([ok]);
+    const outcome = await sendApnsRequest(
+      {
+        teamId: "T",
+        keyId: "K",
+        privateKeyPem: "not a pem",
+        bundleId: "x",
+        host: "https://apns.test",
+      },
+      { token: "t", payload: {}, pushType: "alert" },
+      { fetch: fetchImpl },
+    );
+    expect(outcome).toEqual({ ok: false, status: 0, reason: "ProviderKeyError", dead: false });
+    expect(calls).toHaveLength(0);
+  });
+
+  it("treats 400 BadDeviceToken as a configuration error, not a dead token", async () => {
+    resetApnsTokenCache();
+    const config = await testConfig();
+    const { fetchImpl } = fetchStub([apnsError(400, "BadDeviceToken")]);
+    const outcome = await sendApnsRequest(
+      config,
+      { token: "t", payload: {}, pushType: "alert" },
+      { fetch: fetchImpl },
+    );
+    expect(outcome).toEqual({ ok: false, status: 400, reason: "BadDeviceToken", dead: false });
   });
 });

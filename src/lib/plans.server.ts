@@ -11,11 +11,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
 import type { SessionsByState } from "@/components/plans/flow-state-bars";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { ApiError } from "./api/errors";
-import { inBackground } from "./background";
 import { dbError } from "./db-error";
-import { athleteHouseholdUserIds, notifyUsers } from "./push-notify.server";
 import { emptySessionsByState, loadSessionsByPlanIds } from "./plan-sessions.server";
 
 export type PlanKind = "plan" | "template";
@@ -586,14 +583,21 @@ export async function setPlanStatus(
       }
 
       // Push the athlete and their guardians (PRD §6.6 "Plan activated or assigned").
+      // Dynamic imports: this module is re-exported into the client bundle
+      // (MAX_ACTIVE_PLANS_PER_ATHLETE), so the push stack must not join its
+      // static import graph — same reason `guardian.server` is imported lazily above.
       const athleteId = owned.athlete_id;
       const planTitle = owned.title ?? "Untitled plan";
+      const wasDraft = owned.status === "draft";
+      const { inBackground } = await import("./background");
       await inBackground("push:plan-activated", async () => {
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const { athleteHouseholdUserIds, notifyUsers } = await import("./push-notify.server");
         const recipients = await athleteHouseholdUserIds(supabaseAdmin, athleteId);
         await notifyUsers(supabaseAdmin, recipients, {
           type: "plan_assigned",
           route: `plans/${id}`,
-          title: "New plan",
+          title: wasDraft ? "New plan" : "Plan activated",
           body: `${planTitle} is ready to practice.`,
           collapseId: `plan:${id}`,
         });

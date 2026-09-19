@@ -38,7 +38,12 @@ export type PushMessage = {
   collapseId?: string;
   /** Background push: no alert, `content-available: 1`, low priority. The app refreshes silently. */
   silent?: boolean;
+  /** How long APNs keeps trying while the phone is offline. Alerts default to a day; silent pushes to "once". */
+  expiresInSeconds?: number;
 };
+
+/** Rink phones are offline for hours at a time; an alert is still worth delivering the same day. */
+export const DEFAULT_ALERT_EXPIRY_SECONDS = 24 * 60 * 60;
 
 export type PushReport = {
   recipients: number;
@@ -103,7 +108,22 @@ export async function notifyUsers(
   const ids = Array.from(new Set(Array.from(userIds).filter((id) => !!id)));
   const report: PushReport = { recipients: ids.length, tokens: 0, sent: 0, failed: 0, pruned: 0 };
   if (ids.length === 0) return { ...report, skipped: "no_recipients" };
+  try {
+    return await notifyUsersUnguarded(admin, ids, message, deps, report);
+  } catch (err) {
+    // "Never throws" is the contract every trigger relies on.
+    console.error("[push] notifyUsers failed", err instanceof Error ? err.message : err);
+    return report;
+  }
+}
 
+async function notifyUsersUnguarded(
+  admin: Admin,
+  ids: string[],
+  message: PushMessage,
+  deps: PushDeps,
+  report: PushReport,
+): Promise<PushReport> {
   const config = deps.config === undefined ? apnsConfigFromEnv() : deps.config;
   if (!config) {
     if (!warnedNoConfig) {
@@ -130,6 +150,8 @@ export async function notifyUsers(
 
   const { payload, pushType, priority } = pushPayload(message);
   const send = deps.send ?? sendApnsRequest;
+  const ttl = message.expiresInSeconds ?? (message.silent ? 0 : DEFAULT_ALERT_EXPIRY_SECONDS);
+  const expiration = ttl > 0 ? Math.floor(Date.now() / 1000) + ttl : 0;
   const outcomes = await Promise.all(
     tokens.map(async (row) => {
       const req: ApnsRequest = {
@@ -137,7 +159,7 @@ export async function notifyUsers(
         payload,
         pushType,
         priority,
-        expiration: 0,
+        expiration,
         ...(message.collapseId ? { collapseId: message.collapseId } : {}),
       };
       return { row, outcome: await send(config, req) };

@@ -107,7 +107,9 @@ export async function syncCoachSubscription(
     console.error("syncCoachSubscription: failed to update coach_profiles", error);
     throw error;
   }
-  if (nextEnt !== currentEnt) await pushEntitlementChanged(supabase, userId);
+  if (nextEnt !== currentEnt || tier !== (currentTier ?? null)) {
+    await pushEntitlementChanged(supabase, userId);
+  }
 }
 
 export async function markCoachSubscriptionDeleted(
@@ -127,12 +129,16 @@ export async function markCoachSubscriptionDeleted(
   const currentSubId = (existing as any)?.stripe_subscription_id as string | undefined;
   if (currentSubId && currentSubId !== subscription.id) return;
 
-  await supabase
+  const { error } = await supabase
     .from("coach_profiles")
     .update({
       subscription_status: "canceled",
       entitlement: preserve ? currentEnt : "pending",
     })
     .eq("user_id", userId);
+  if (error) {
+    console.error("markCoachSubscriptionDeleted: failed to update coach_profiles", error);
+    return;
+  }
   if (!preserve && currentEnt !== "pending") await pushEntitlementChanged(supabase, userId);
 }

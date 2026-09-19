@@ -389,6 +389,10 @@ export async function computeLessonReminders(
     // Real delivery (PRD §6.6 "Lesson reminders"). `notifyUsers` resolves tokens
     // itself; the maps above stay for the log line and the existing tests.
     const collapse = `lesson:${c.slotId}:${c.lessonDate}`;
+    // The reminder is only useful before the lesson; stop retrying at its start.
+    const expiresInSeconds = WINDOW_MAX * 60;
+    let occurrenceSent = 0;
+    let transientFailures = 0;
     if (coachUserId && coachTokens.length) {
       const r = await notifyUsers(
         admin,
@@ -399,10 +403,12 @@ export async function computeLessonReminders(
           title: "Lesson in about an hour",
           body: "Open Roster to see who is up and check their plan.",
           collapseId: `${collapse}:coach`,
+          expiresInSeconds,
         },
         ctx.push,
       );
-      sent += r.sent;
+      occurrenceSent += r.sent;
+      transientFailures += r.failed - r.pruned;
     }
     if (recipientUserId && recipientTokens.length) {
       const r = await notifyUsers(
@@ -414,10 +420,22 @@ export async function computeLessonReminders(
           title: "Lesson in about an hour",
           body: "Time to warm up. Your plan is in the app.",
           collapseId: `${collapse}:athlete`,
+          expiresInSeconds,
         },
         ctx.push,
       );
-      sent += r.sent;
+      occurrenceSent += r.sent;
+      transientFailures += r.failed - r.pruned;
+    }
+    sent += occurrenceSent;
+    // Nothing got through and at least one failure was transient (APNs outage,
+    // timeout): release the dedupe row so the next tick inside the window retries.
+    if (occurrenceSent === 0 && transientFailures > 0) {
+      await admin
+        .from("lesson_reminders_sent")
+        .delete()
+        .eq("slot_id", c.slotId)
+        .eq("lesson_date", c.lessonDate);
     }
   }
 

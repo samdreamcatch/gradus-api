@@ -55,7 +55,9 @@ export async function runWithRequestContext<T>(ctx: unknown, fn: () => Promise<T
 export async function inBackground(label: string, task: () => Promise<unknown>): Promise<void> {
   let guarded: Promise<unknown>;
   try {
-    guarded = task().catch((err) => console.error(`[background] ${label} failed`, err));
+    guarded = task().catch((err) =>
+      console.error(`[background] ${label} failed`, err instanceof Error ? err.message : err),
+    );
   } catch (err) {
     console.error(`[background] ${label} threw synchronously`, err);
     return;

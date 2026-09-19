@@ -608,6 +608,14 @@ export async function linkParentAthleteToCoach(
     .insert({ athlete_id: athleteId, coach_id: coachId });
   if (ins.error) dbError(ins.error);
 
+  const scopeRows = chosen.map((sport) => ({
+    athlete_id: athleteId,
+    coach_id: coachId,
+    sport,
+  }));
+  const scopeIns = await admin.from("coach_athlete_sports").insert(scopeRows);
+  if (scopeIns.error) dbError(scopeIns.error);
+
   // The coach issued the code; tell them a parent used it (PRD §6.6 "connection accepted").
   await inBackground("push:coach-code-used", async () => {
     const coachUser = await coachUserId(admin, coachId);
@@ -619,14 +627,6 @@ export async function linkParentAthleteToCoach(
       body: "A parent connected an athlete to you with your invite code.",
     });
   });
-
-  const scopeRows = chosen.map((sport) => ({
-    athlete_id: athleteId,
-    coach_id: coachId,
-    sport,
-  }));
-  const scopeIns = await admin.from("coach_athlete_sports").insert(scopeRows);
-  if (scopeIns.error) dbError(scopeIns.error);
 
   return { ok: true };
 }

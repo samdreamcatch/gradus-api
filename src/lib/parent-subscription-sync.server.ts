@@ -75,6 +75,22 @@ export async function syncParentSubscription(
 
   const item = subscription.items?.data?.[0];
   const periodEnd = item?.current_period_end ?? subscription.current_period_end ?? null;
+  const nextPeriodEnd = periodEnd ? new Date(periodEnd * 1000).toISOString() : null;
+
+  const { data: before } = await supabase
+    .from("parent_profiles")
+    .select("subscription_status, current_period_end")
+    .eq("id", parentId)
+    .maybeSingle();
+  const prev = before as {
+    subscription_status: string | null;
+    current_period_end: string | null;
+  } | null;
+  const changed =
+    !prev ||
+    prev.subscription_status !== subscription.status ||
+    (prev.current_period_end ? new Date(prev.current_period_end).toISOString() : null) !==
+      nextPeriodEnd;
 
   const { error } = await supabase
     .from("parent_profiles")
@@ -82,12 +98,12 @@ export async function syncParentSubscription(
       stripe_customer_id: customerIdOf(subscription),
       stripe_subscription_id: subscription.id,
       subscription_status: subscription.status,
-      current_period_end: periodEnd ? new Date(periodEnd * 1000).toISOString() : null,
+      current_period_end: nextPeriodEnd,
       subscription_environment: env,
     })
     .eq("id", parentId);
   if (error) console.error("[team] parent subscription sync failed", error);
-  else await pushTeamPlanChanged(supabase, parentId);
+  else if (changed) await pushTeamPlanChanged(supabase, parentId);
 }
 
 export async function markParentSubscriptionDeleted(

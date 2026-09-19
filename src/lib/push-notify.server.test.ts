@@ -239,3 +239,41 @@ describe("withoutBlocked", () => {
     expect(await withoutBlocked(admin, "sender", ["sender"])).toEqual([]);
   });
 });
+
+describe("notifyUsers never throws", () => {
+  it("returns a report when the sender itself rejects", async () => {
+    const { admin } = fakeAdmin({
+      device_tokens: [{ user_id: "u1", token: "tok", platform: "ios" }],
+    });
+    const send = async () => {
+      throw new Error("boom");
+    };
+    const report = await notifyUsers(
+      admin,
+      ["u1"],
+      { type: "x", route: "plans" },
+      { config, send },
+    );
+    expect(report.sent).toBe(0);
+  });
+
+  it("gives alerts a day to be delivered and silent pushes none", async () => {
+    const { admin } = fakeAdmin({
+      device_tokens: [{ user_id: "u1", token: "tok", platform: "ios" }],
+    });
+    const { send, sent } = sendSpy(() => ({ ok: true, apnsId: null }));
+    const before = Math.floor(Date.now() / 1000);
+    await notifyUsers(admin, ["u1"], { type: "x", route: "plans", body: "hi" }, { config, send });
+    await notifyUsers(admin, ["u1"], { type: "x", route: "plans", silent: true }, { config, send });
+    await notifyUsers(
+      admin,
+      ["u1"],
+      { type: "x", route: "plans", expiresInSeconds: 60 },
+      { config, send },
+    );
+    expect(sent[0].expiration).toBeGreaterThanOrEqual(before + 24 * 60 * 60);
+    expect(sent[1].expiration).toBe(0);
+    expect(sent[2].expiration).toBeGreaterThanOrEqual(before + 60);
+    expect(sent[2].expiration).toBeLessThan(before + 120);
+  });
+});
