@@ -42,6 +42,7 @@ export const teamGuardianAthleteSchema = z.object({
   isPrimary: z.boolean(),
   guardians: z.array(teamGuardianSchema),
   invites: z.array(teamGuardianInviteSchema),
+  locked: z.boolean(),
 }) satisfies z.ZodType<TeamGuardianAthleteDTO>;
 
 export const teamGuardiansSchema = z.object({

@@ -243,7 +243,12 @@ function seed(extra: Record<string, Row[]> = {}) {
     {
       parent_profiles: [PAYER, NO_PLAN, CO],
       athletes: [A1, A2],
-      athlete_guardians: [{ id: "g1", athlete_id: "a1", parent_id: "p3", role: "co" }],
+      // `athletes` is the embedded-select shape guardianAthleteAccess reads
+      // (this fake's `select()` is a no-op, so the join must be baked into
+      // the seed row itself, same as the coach_profiles embeds below).
+      athlete_guardians: [
+        { id: "g1", athlete_id: "a1", parent_id: "p3", role: "co", athletes: { parent_id: "p1" } },
+      ],
       coach_profiles: [C1, C2, C3],
       coach_athletes: [
         { athlete_id: "a1", coach_id: "c1" },
@@ -303,6 +308,7 @@ describe("listCoachVisibility", () => {
           id: "a1",
           firstName: "Jamie",
           lastName: "Lee",
+          locked: false,
           coaches: [
             {
               coachId: "c1",
@@ -389,6 +395,16 @@ describe("listCoachVisibility", () => {
     const out = await listCoachVisibility(admin, "co-u");
     expect(out.planActive).toBe(true);
     expect(out.athletes.map((a) => a.id)).toEqual(["a1"]);
+    expect(out.athletes[0]!.locked).toBe(false);
+  });
+
+  it("a co-guardian's athlete is locked, with no coaches listed, once the primary's Team plan lapses", async () => {
+    const lapsedPayer = { ...PAYER, subscription_status: null };
+    const { admin } = seed({ parent_profiles: [lapsedPayer, NO_PLAN, CO] });
+    const out = await listCoachVisibility(admin, "co-u");
+    expect(out.athletes).toEqual([
+      { id: "a1", firstName: "Jamie", lastName: "Lee", locked: true, coaches: [] },
+    ]);
   });
 
   it("planActive is false for a primary parent without a plan; athletes still listed", async () => {

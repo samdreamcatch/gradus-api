@@ -47,6 +47,7 @@ export const parentCoachVisibilityAthleteSchema = z.object({
   firstName: z.string(),
   lastName: z.string(),
   coaches: z.array(parentCoachVisibilityCoachSchema),
+  locked: z.boolean(),
 }) satisfies z.ZodType<ParentCoachVisibilityAthleteDTO>;
 
 export const parentCoachVisibilitySchema = z.object({

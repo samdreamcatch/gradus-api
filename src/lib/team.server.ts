@@ -98,6 +98,87 @@ export async function getTeamPlanStatus(
   };
 }
 
+export type GuardianAthleteAccess = {
+  athleteId: string;
+  role: "primary" | "co";
+  /** Always false for role "primary". For "co", true once the primary's Team plan has lapsed. */
+  locked: boolean;
+};
+
+/**
+ * Every athlete this parent profile can reach (primary + co-guardian), each
+ * flagged with whether the read side is currently locked. A primary parent
+ * is never locked. A co-guardian is locked once the athlete's primary
+ * parent's Team plan is no longer active — mirrors `resolveAthleteAccess`'s
+ * write-side rule, but for reads and across the whole reachable set.
+ */
+export async function guardianAthleteAccess(
+  admin: Admin,
+  parentId: string,
+): Promise<GuardianAthleteAccess[]> {
+  const [own, joined] = await Promise.all([
+    admin.from("athletes").select("id").eq("parent_id", parentId),
+    admin
+      .from("athlete_guardians")
+      .select("athlete_id, athletes!inner(parent_id)")
+      .eq("parent_id", parentId),
+  ]);
+
+  const byId = new Map<string, GuardianAthleteAccess>();
+  for (const r of own.data ?? []) {
+    byId.set(r.id as string, { athleteId: r.id as string, role: "primary", locked: false });
+  }
+
+  type JoinedRow = { athlete_id: string; athletes: { parent_id: string | null } | null };
+  const coRows = (joined.data ?? []) as unknown as JoinedRow[];
+  const primaryIds = Array.from(
+    new Set(coRows.map((r) => r.athletes?.parent_id).filter((id): id is string => !!id)),
+  );
+  const activeByPrimaryId = new Map<string, boolean>(
+    await Promise.all(
+      primaryIds.map(
+        async (id): Promise<[string, boolean]> => [id, await teamPlanActive(admin, id)],
+      ),
+    ),
+  );
+
+  for (const r of coRows) {
+    if (byId.has(r.athlete_id)) continue; // primary role wins on overlap
+    const primaryId = r.athletes?.parent_id ?? null;
+    const locked = primaryId ? !activeByPrimaryId.get(primaryId) : true;
+    byId.set(r.athlete_id, { athleteId: r.athlete_id, role: "co", locked });
+  }
+
+  return Array.from(byId.values());
+}
+
+/** Single-athlete form of `guardianAthleteAccess` — null when the caller has no link to this athlete at all. */
+export async function resolveGuardianAthleteAccess(
+  admin: Admin,
+  parentId: string,
+  athleteId: string,
+): Promise<GuardianAthleteAccess | null> {
+  const athlete = await admin
+    .from("athletes")
+    .select("id, parent_id")
+    .eq("id", athleteId)
+    .maybeSingle();
+  if (!athlete.data) return null;
+  const primaryId = (athlete.data as { parent_id: string | null }).parent_id;
+  if (primaryId === parentId) return { athleteId, role: "primary", locked: false };
+
+  const link = await admin
+    .from("athlete_guardians")
+    .select("id")
+    .eq("athlete_id", athleteId)
+    .eq("parent_id", parentId)
+    .maybeSingle();
+  if (!link.data) return null;
+
+  const locked = primaryId ? !(await teamPlanActive(admin, primaryId)) : true;
+  return { athleteId, role: "co", locked };
+}
+
 export type AthleteAccess = {
   athleteId: string;
   /** 'primary' | 'co' */

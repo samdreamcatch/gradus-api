@@ -178,7 +178,7 @@ export const parentPlanSummarySchema = z.object({
 }) satisfies z.ZodType<ParentPlanSummaryDTO>;
 
 export const parentPlansSchema = z.object({
-  athletes: z.array(z.object({ id: z.string(), name: z.string() })),
+  athletes: z.array(z.object({ id: z.string(), name: z.string(), locked: z.boolean() })),
   plans: z.array(parentPlanSummarySchema),
 }) satisfies z.ZodType<ParentPlansDTO>;
 

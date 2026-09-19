@@ -12,7 +12,14 @@ import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { ApiError } from "./api/errors";
 import { dbError } from "./db-error";
-import type { MessageDTO, RoleInRoom, RoomDetail, RoomKind, RoomParticipant, RoomSummary } from "./messages-types";
+import type {
+  MessageDTO,
+  RoleInRoom,
+  RoomDetail,
+  RoomKind,
+  RoomParticipant,
+  RoomSummary,
+} from "./messages-types";
 
 export type ContextEnvelope = { supabase: unknown; userId: string };
 
@@ -118,8 +125,12 @@ export async function listMyRoomIds(
     }
   }
   if (me.parent) {
-    const { guardianAthleteIds } = await import("./team.server");
-    const ids = await guardianAthleteIds(supabaseAdmin as any, me.parent.id);
+    const { guardianAthleteAccess } = await import("./team.server");
+    const access = await guardianAthleteAccess(supabaseAdmin as any, me.parent.id);
+    // A locked co-guardian athlete's room drops out of the list entirely —
+    // unlike the redacted-but-listed pattern elsewhere, there's no natural
+    // "locked room" entry to show here.
+    const ids = access.filter((a) => !a.locked).map((a) => a.athleteId);
     if (ids.length > 0) {
       const { data, error } = await supabaseAdmin
         .from("message_rooms")
@@ -623,7 +634,12 @@ async function fetchMessagesForRooms(
 const MESSAGE_COLS =
   "id, room_id, direct_room_id, sender_user_id, sender_deleted_at, sender_role, kind, body, audio_url, duration_seconds, created_at, plan_id";
 
-async function findMyRoom(userId: string, roomId: string, viewerRole?: RoleInRoom, missing = "Conversation not found") {
+async function findMyRoom(
+  userId: string,
+  roomId: string,
+  viewerRole?: RoleInRoom,
+  missing = "Conversation not found",
+) {
   const { rooms, myRoleByRoom } = await listMyRoomIds(userId, viewerRole);
   const room = rooms.find((r) => r.id === roomId);
   if (!room) throw notFound(missing);
@@ -1108,7 +1124,9 @@ export async function markRoomRead(
     .not("sender_user_id", "is", null)
     .neq("sender_user_id", userId);
   const { data: unread, error } =
-    room.kind === "athlete" ? await q.eq("room_id", room.id) : await q.eq("direct_room_id", room.id);
+    room.kind === "athlete"
+      ? await q.eq("room_id", room.id)
+      : await q.eq("direct_room_id", room.id);
   if (error) dbError(error, "Couldn't update read status");
 
   const ids = (unread ?? []).map((m) => m.id);
@@ -1173,8 +1191,13 @@ export async function ensureAthleteRoom(
   const isAthlete = me.athlete?.id === data.athleteId;
   const isParent = me.parent
     ? await (async () => {
-        const { canAccessAthlete } = await import("./team.server");
-        return canAccessAthlete(supabaseAdmin as any, me.parent!.id, data.athleteId);
+        const { resolveGuardianAthleteAccess } = await import("./team.server");
+        const access = await resolveGuardianAthleteAccess(
+          supabaseAdmin as any,
+          me.parent!.id,
+          data.athleteId,
+        );
+        return !!access && !access.locked;
       })()
     : false;
 
@@ -1363,7 +1386,8 @@ export async function ensureRoomForTarget(
       throw forbidden("Athlete is not on your account");
     }
   } else if (me.athlete) {
-    if (me.athlete.id !== data.athleteId) throw forbidden("Not authorized to open this conversation");
+    if (me.athlete.id !== data.athleteId)
+      throw forbidden("Not authorized to open this conversation");
   } else {
     throw forbidden("You don't have a profile that can start conversations");
   }
@@ -1526,8 +1550,13 @@ export async function listMessageTargets(
   }
 
   if (me.parent) {
-    const { guardianAthleteIdsSafe } = await import("./team.server");
-    const ids = await guardianAthleteIdsSafe(supabaseAdmin as any, me.parent.id);
+    const { guardianAthleteAccess } = await import("./team.server");
+    const access = await guardianAthleteAccess(supabaseAdmin as any, me.parent.id);
+    // A locked co-guardian athlete's coaches drop out of the target list
+    // entirely, same as the room list above — there's no natural "locked
+    // target" entry to show here.
+    const unlockedIds = access.filter((a) => !a.locked).map((a) => a.athleteId);
+    const ids = unlockedIds.length ? unlockedIds : ["00000000-0000-0000-0000-000000000000"];
     const { data, error } = await supabaseAdmin
       .from("athletes")
       .select(

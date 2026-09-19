@@ -27,7 +27,7 @@ import { ApiError } from "./api/errors";
 import { dbError } from "./db-error";
 import { throttleLookup } from "./invites.server";
 import {
-  guardianAthleteIdsSafe,
+  guardianAthleteAccess,
   newInviteCode,
   newInviteToken,
   teamPlanActive,
@@ -82,6 +82,8 @@ export interface TeamGuardianAthleteDTO {
   isPrimary: boolean;
   guardians: TeamGuardianDTO[];
   invites: TeamGuardianInviteDTO[];
+  /** True for a co-guardian once the primary parent's Team plan has lapsed — `guardians`/`invites` are empty. */
+  locked: boolean;
 }
 
 export interface TeamGuardiansDTO {
@@ -216,7 +218,9 @@ export async function listTeamGuardians(
   const isPayer = await teamPlanActive(admin, parent.id);
 
   // Every athlete this parent can reach — as primary parent or co-guardian.
-  const reachableIds = await guardianAthleteIdsSafe(admin, parent.id);
+  const access = await guardianAthleteAccess(admin, parent.id);
+  const lockedById = new Map(access.map((a) => [a.athleteId, a.locked]));
+  const reachableIds = access.length ? access.map((a) => a.athleteId) : [NIL_UUID];
   const athletesRes = await admin
     .from("athletes")
     .select("id, first_name, last_name, parent_id")
@@ -284,6 +288,17 @@ export async function listTeamGuardians(
     isPayer,
     athletes: athletes.map((a) => {
       const isPrimary = a.parent_id === parent.id;
+      if (lockedById.get(a.id)) {
+        return {
+          id: a.id,
+          firstName: a.first_name,
+          lastName: a.last_name,
+          isPrimary,
+          guardians: [],
+          invites: [],
+          locked: true,
+        };
+      }
       // D6 (API only): co-guardians never see another parent's pending
       // invite codes. The web keeps listing them (parity).
       const showInvites = isPrimary || !opts.apiContract;
@@ -292,6 +307,7 @@ export async function listTeamGuardians(
         firstName: a.first_name,
         lastName: a.last_name,
         isPrimary,
+        locked: false,
         guardians: links
           .filter((l) => l.athlete_id === a.id)
           .map((l) => ({

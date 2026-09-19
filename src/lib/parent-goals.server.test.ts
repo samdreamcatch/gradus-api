@@ -158,4 +158,57 @@ describe("getParentGoalsDashboard", () => {
     expect(a.sports[0].sessionsCount).toBe(0);
     expect(a.sports[0].firstSessionAt).toBeNull();
   });
+
+  it("a co-guardian's athlete keeps its name but reports no sports once the primary's Team plan lapses", async () => {
+    const kid = { id: "a1", first_name: "Rory", last_name: "Gilmore" };
+    // Bespoke fake: the shared `fakeClient` above doesn't apply `eq`
+    // filters, so it can't tell the "own athletes" query (must be empty —
+    // this caller isn't primary for anyone) apart from the later
+    // "athlete detail by id" query (must return the guarded kid), and it
+    // can't answer parent_profiles differently for the caller vs. the
+    // primary. This one can.
+    const client = {
+      from(table: string) {
+        const self: Record<string, unknown> = {};
+        let mode: string | null = null;
+        self.select = () => self;
+        self.order = () => self;
+        self.gte = () => self;
+        self.in = () => {
+          if (table === "athletes") mode = "detail";
+          return self;
+        };
+        self.eq = (col: string) => {
+          if (table === "parent_profiles" && col === "user_id") mode = "caller";
+          if (table === "parent_profiles" && col === "id") mode = "primaryPlan";
+          if (table === "athletes" && col === "parent_id") mode = "own";
+          return self;
+        };
+        self.maybeSingle = async () => {
+          if (mode === "caller") return { data: { id: "parent-2" }, error: null };
+          if (mode === "primaryPlan") {
+            return { data: { subscription_status: null, current_period_end: null }, error: null };
+          }
+          return { data: null, error: null };
+        };
+        self.then = (resolve: (v: unknown) => void) => {
+          if (table === "athletes" && mode === "detail")
+            return resolve({ data: [kid], error: null });
+          if (table === "athlete_guardians") {
+            return resolve({
+              data: [{ athlete_id: kid.id, athletes: { parent_id: "primary-1" } }],
+              error: null,
+            });
+          }
+          return resolve({ data: [], error: null });
+        };
+        return self;
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any;
+
+    expect(
+      await getParentGoalsDashboard({ userId: "u2", supabase: client, admin: client }),
+    ).toEqual([{ athleteId: "a1", athleteName: "Rory Gilmore", sports: [], locked: true }]);
+  });
 });

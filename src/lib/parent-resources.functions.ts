@@ -29,9 +29,11 @@ export const getParentResources = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     try {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       return await getParentResourcesImpl({
         userId: context.userId,
         supabase: context.supabase as Client,
+        admin: supabaseAdmin,
       });
     } catch (err) {
       rethrowPlain(err);

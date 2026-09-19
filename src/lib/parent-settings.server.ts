@@ -21,7 +21,7 @@ import { dbError } from "./db-error";
 import { inviteCodeSchema } from "./invites.server";
 import { lessonSlotSchema } from "./parent-signup.server";
 import { ensureStarterPrograms } from "./starter-programs.server";
-import { guardianAthleteIdsSafe } from "./team.server";
+import { guardianAthleteAccess } from "./team.server";
 
 type Admin = typeof supabaseAdmin;
 
@@ -88,6 +88,8 @@ export type ParentSettingsAthleteDTO = {
   coaches: ParentSettingsCoachDTO[];
   sports: ParentSettingsSportDTO[];
   schedulesByCoach: ParentSettingsScheduleDTO[];
+  /** True for a co-guardian once the primary parent's Team plan has lapsed — every field above is redacted to its empty/neutral value. */
+  locked: boolean;
 };
 
 export type ParentSettingsDTO = {
@@ -193,6 +195,14 @@ async function getParentProfile(
   };
 }
 
+/**
+ * Deliberately primary-parent-only, unlike the read side (`getParentSettings`
+ * via `guardianAthleteAccess`): editing/removing an athlete, linking or
+ * unlinking a coach, changing sports, replacing the schedule, setting goals,
+ * and resetting the athlete's password are all primary-parent actions. A
+ * shared guardian's own goal-editing capability (if any) belongs on a
+ * separate, explicitly plan-gated path — not by widening this check.
+ */
 async function assertOwnsAthlete(admin: Admin, userId: string, athleteId: string) {
   const row = await admin
     .from("athletes")
@@ -268,7 +278,11 @@ export async function getParentSettings(ctx: ParentSettingsContext): Promise<Par
   const parent = await getParentProfile(admin, userId);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const accessibleAthleteIds = await guardianAthleteIdsSafe(admin as any, parent.id);
+  const access = await guardianAthleteAccess(admin as any, parent.id);
+  const lockedById = new Map(access.map((a) => [a.athleteId, a.locked]));
+  const accessibleAthleteIds = access.length
+    ? access.map((a) => a.athleteId)
+    : ["00000000-0000-0000-0000-000000000000"];
   const athletesRes = await admin
     .from("athletes")
     .select("id, first_name, last_name, birthdate, username, user_id, parent_id")
@@ -352,6 +366,22 @@ export async function getParentSettings(ctx: ParentSettingsContext): Promise<Par
       lastName: parent.last_name,
     },
     athletes: athletes.map((a) => {
+      if (lockedById.get(a.id)) {
+        return {
+          id: a.id,
+          firstName: a.first_name,
+          lastName: a.last_name,
+          birthdate: null,
+          username: null,
+          hasAccount: false,
+          inviteCode: null,
+          coaches: [],
+          sports: [],
+          schedulesByCoach: [],
+          locked: true,
+        };
+      }
+
       const myLinks = (linksRes.data ?? []).filter((l) => l.athlete_id === a.id);
       const coaches: ParentSettingsCoachDTO[] = myLinks.map((l) => {
         const cp = l.coach_profiles as unknown as { first_name: string; last_name: string };
@@ -422,6 +452,7 @@ export async function getParentSettings(ctx: ParentSettingsContext): Promise<Par
         coaches,
         sports,
         schedulesByCoach,
+        locked: false,
       };
     }),
   };
