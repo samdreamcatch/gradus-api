@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, it } from "bun:test";
 import type { ErrorLogInput } from "./error-tracking.server";
 import { reportIosError } from "./errors.server";
 
@@ -14,7 +14,7 @@ function capture() {
 }
 
 describe("reportIosError", () => {
-  test("tags the row as iOS with version, build, and the caller", async () => {
+  it("tags the row as iOS with version, build, and the caller", async () => {
     const c = capture();
     const result = await reportIosError(
       { userId: "user-1", userAgent: "Gradus/1.0.0 iOS", host: "gradus.training", log: c.log },
@@ -40,7 +40,7 @@ describe("reportIosError", () => {
     expect(row.metadata?.kind).toBe("error");
   });
 
-  test("prefixes crashes and hangs, keeps caller metadata, and detects preview hosts", async () => {
+  it("prefixes crashes and hangs, keeps caller metadata, and detects preview hosts", async () => {
     const c = capture();
     await reportIosError(
       { userId: null, userAgent: null, host: "id-preview--abc.lovable.app", log: c.log },
