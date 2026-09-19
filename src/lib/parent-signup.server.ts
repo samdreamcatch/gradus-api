@@ -264,7 +264,8 @@ export async function linkAthletesToCoach(
       checkRosterRoom(
         {
           organizationId: coachRow.data.organization_id ?? null,
-          subscriptionTier: (coachRow.data.subscription_tier as "coach" | "coach_pro" | null) ?? null,
+          subscriptionTier:
+            (coachRow.data.subscription_tier as "coach" | "coach_pro" | null) ?? null,
         },
         rosterCount.count ?? 0,
         data.athletes.length,
