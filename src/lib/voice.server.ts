@@ -351,24 +351,64 @@ async function slotTranscript(ctx: ParseContext, variant: "full" | "simple" = "f
     );
   }
 
-  const { experimental_output } = await generateText({
-    model,
-    system,
-    prompt: promptParts.join("\n\n"),
-    experimental_output: Output.object({ schema: slotSchema }),
-  });
+  let slots: Slots | null = null;
+  let rawText = "";
+  let shapeError: string | null = null;
+
+  try {
+    const result = await generateText({
+      model,
+      system,
+      prompt: promptParts.join("\n\n"),
+      experimental_output: Output.object({
+        schema: variant === "full" ? slotSchema : slotSchemaSimple,
+      }),
+    });
+    rawText = result.text ?? "";
+    try {
+      slots = salvageSlots(result.experimental_output);
+    } catch (e) {
+      shapeError = (e as Error)?.message ?? "output did not match the schema";
+    }
+  } catch (e) {
+    const err = e as { statusCode?: number; message?: string; text?: string };
+    // A transport/quota failure has to bubble; only a shape failure is salvageable.
+    if (typeof err.statusCode === "number") throw e;
+    shapeError = err.message ?? "output did not match the schema";
+    rawText = err.text ?? "";
+  }
+
+  // Last resort: read the raw answer ourselves, keeping every usable move.
+  if (!slots) slots = salvageSlots(extractJsonObject(rawText));
+
+  if (!slots) {
+    console.error(
+      "[voice] slot unusable",
+      JSON.stringify({
+        mode: ctx.mode,
+        variant,
+        transcriptLen: ctx.transcript.length,
+        shapeError,
+        rawPreview: rawText.slice(0, 600),
+      }),
+    );
+    throw new Error("Couldn't structure that dictation");
+  }
+
   console.info(
     "[voice] slot",
     JSON.stringify({
       mode: ctx.mode,
-      title: experimental_output.title ?? null,
-      athleteName: experimental_output.athleteName ?? null,
-      moveCount: experimental_output.moves?.length ?? 0,
-      moveNames: (experimental_output.moves ?? []).map((m) => m?.name ?? null),
-      leftoverLen: (experimental_output.leftover ?? "").length,
+      variant,
+      salvaged: Boolean(shapeError),
+      title: slots.title,
+      athleteName: slots.athleteName,
+      moveCount: slots.moves?.length ?? 0,
+      moveNames: (slots.moves ?? []).map((m) => m.name),
+      leftoverLen: (slots.leftover ?? "").length,
     }),
   );
-  return experimental_output;
+  return slots;
 }
 
 /* ---------------- Pass 2: Deterministic resolution ---------------- */
