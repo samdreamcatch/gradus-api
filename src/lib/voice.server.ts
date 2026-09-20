@@ -327,10 +327,11 @@ export class VoiceAiError extends Error {}
 
 /**
  * Runs the attempts in order until one returns slots. A 429 or 402 from the
- * gateway stops the run at once with the coach-facing message (waiting will
- * not fix either); anything else moves on to the next attempt after its
- * pause. Returns null when every attempt failed. Pure apart from `deps`, so
- * the policy is unit-tested without a model call.
+ * gateway stops the run at once with the coach-facing message, and so does a
+ * `VoiceAiError` thrown by the attempt itself (a missing gateway key): none
+ * of those is fixed by waiting. Anything else moves on to the next attempt
+ * after its pause. Returns null when every attempt failed. Pure apart from
+ * `deps`, so the policy is unit-tested without a model call.
  */
 export async function slotWithRetries(
   ctx: ParseContext,
@@ -338,22 +339,23 @@ export async function slotWithRetries(
     attempt: (ctx: ParseContext, attempt: SlotAttempt) => Promise<Slots>;
     sleep: (ms: number) => Promise<void>;
     attempts?: readonly SlotAttempt[];
-    log?: (event: string, detail: Record<string, unknown>) => void;
+    log?: (level: "info" | "error", event: string, detail: Record<string, unknown>) => void;
   },
 ): Promise<{ slots: Slots; attempt: SlotAttempt; index: number } | null> {
   const attempts = deps.attempts ?? SLOT_ATTEMPTS;
   const log =
-    deps.log ?? ((event, detail) => console.error(`[voice] ${event}`, JSON.stringify(detail)));
+    deps.log ??
+    ((level, event, detail) => console[level](`[voice] ${event}`, JSON.stringify(detail)));
   for (const [index, attempt] of attempts.entries()) {
     if (attempt.pauseMs > 0) await deps.sleep(attempt.pauseMs);
     try {
       const slots = await deps.attempt(ctx, attempt);
       if (index > 0)
-        log("slot recovered", { index, variant: attempt.variant, model: attempt.model });
+        log("info", "slot recovered", { index, variant: attempt.variant, model: attempt.model });
       return { slots, attempt, index };
     } catch (e) {
       const err = e as { statusCode?: number; message?: string };
-      log("slot failed", {
+      log("error", "slot failed", {
         index,
         variant: attempt.variant,
         model: attempt.model,
@@ -361,6 +363,7 @@ export async function slotWithRetries(
         statusCode: err.statusCode,
         message: err.message,
       });
+      if (e instanceof VoiceAiError) throw e;
       if (err.statusCode === 429) throw new VoiceAiError("AI is busy — try again in a moment");
       if (err.statusCode === 402)
         throw new VoiceAiError("AI credits exhausted — add credits in workspace settings");
@@ -375,7 +378,7 @@ export async function slotTranscript(
   modelId = "google/gemini-3-flash-preview",
 ) {
   const apiKey = process.env.LOVABLE_API_KEY;
-  if (!apiKey) throw new Error("AI not configured");
+  if (!apiKey) throw new VoiceAiError("AI not configured");
   const gateway = createLovableAiGatewayProvider(apiKey, { structuredOutputs: true });
   const model = gateway(modelId);
 

@@ -162,4 +162,54 @@ describe("slotWithRetries", () => {
     });
     await expect(broke).rejects.toThrow("credits");
   });
+
+  it("still stops on a rate limit after an earlier schema failure", async () => {
+    const seen: SlotAttempt[] = [];
+    const busy = slotWithRetries(ctx, {
+      attempt: async (_c, a) => {
+        seen.push(a);
+        if (seen.length === 1) throw new Error("schema mismatch");
+        throw Object.assign(new Error("429"), { statusCode: 429 });
+      },
+      sleep: async () => {},
+      log: noLog,
+    });
+    await expect(busy).rejects.toThrow("AI is busy");
+    expect(seen.map((a) => a.variant)).toEqual(["full", "simple"]);
+  });
+
+  it("stops at once when the attempt itself says the AI is not configured", async () => {
+    let calls = 0;
+    const pauses: number[] = [];
+    const missingKey = slotWithRetries(ctx, {
+      attempt: async () => {
+        calls += 1;
+        throw new VoiceAiError("AI not configured");
+      },
+      sleep: async (ms) => {
+        pauses.push(ms);
+      },
+      log: noLog,
+    });
+    await expect(missingKey).rejects.toThrow("AI not configured");
+    expect(calls).toBe(1);
+    expect(pauses).toEqual([]);
+  });
+
+  it("logs a recovery at info level and failures at error level", async () => {
+    const levels: string[] = [];
+    let calls = 0;
+    await slotWithRetries(ctx, {
+      attempt: async () => {
+        calls += 1;
+        if (calls === 1) throw new Error("schema mismatch");
+        return slots;
+      },
+      sleep: async () => {},
+      log: (level, event) => {
+        levels.push(`${level}:${event}`);
+      },
+    });
+    expect(levels).toEqual(["error:slot failed", "info:slot recovered"]);
+  });
 });
