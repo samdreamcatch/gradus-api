@@ -3,103 +3,14 @@ import { Chip } from "@/components/ui/chip";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { Tag } from "@/components/ui/tag";
 import { cn } from "@/lib/utils";
-import {
-  normalizeName,
-  type BoardEvent,
-  type BoardPayload,
-  type BoardSkater,
-} from "@/lib/board-types";
+import { normalizeName } from "@/lib/board-types";
 
-export interface SkaterMatch {
-  key: string;
-  skater: BoardSkater;
-  event: BoardEvent;
-  /** How many skaters have posted a score in this event. */
-  done: number;
-  /** Skaters between this one and the ice. Negative once they have skated. */
-  ahead: number;
-  state: "scored" | "on-ice" | "up-next" | "waiting" | "scheduled";
-  sortAt: number;
-}
+// The pure helpers live in `@/lib/board-skaters` (shared with the server-side
+// Live Activity sync); re-exported here so existing imports keep working.
+import { allEvents, findMySkaters, type SkaterMatch } from "@/lib/board-skaters";
 
-/** Loose identity for an event: the schedule and the rink panel often label the
- *  same event slightly differently ("Name / Free Skate" vs name + segment). */
-function eventKey(name: string, segment: string, rink: string): string {
-  const text = `${name} ${segment}`
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, " ")
-    .trim()
-    .split(" ")
-    .filter((w, i, a) => a.indexOf(w) === i)
-    .join(" ");
-  return `${rink.toLowerCase().trim()}|${text}`;
-}
-
-/** Every event on the day, plus the live events held in the rink panels. */
-export function allEvents(payload: BoardPayload): BoardEvent[] {
-  const list = [...(payload.schedule ?? [])];
-  for (const rink of payload.rinks) {
-    const c = rink.current;
-    if (!c) continue;
-    const key = eventKey(c.event, c.segment, rink.name);
-    const known = list.find((e) => eventKey(e.name, e.segment, e.rink) === key);
-    if (known) {
-      if (known.results.length === 0) known.results = c.startOrder;
-      continue;
-    }
-
-    list.push({
-      file: `${rink.name}:${c.event}`,
-      name: c.event,
-      segment: c.segment,
-      rink: rink.name,
-      timeLabel: c.startLabel,
-      startIso: c.startIso,
-      status: "live",
-      count: c.skaters,
-      dayLabel: "",
-      dayKey: c.startIso ? c.startIso.slice(0, 10) : "",
-      results: c.startOrder,
-    });
-  }
-  return list;
-}
-
-/** Find every athlete this viewer follows anywhere in the day's schedule. */
-export function findMySkaters(payload: BoardPayload | null, names: string[]): SkaterMatch[] {
-  if (!payload || names.length === 0) return [];
-  const wanted = new Set(names.map(normalizeName));
-  const out: SkaterMatch[] = [];
-
-  for (const event of allEvents(payload)) {
-    const done = event.results.filter((s) => s.segScore).length;
-    for (const s of event.results) {
-      if (!wanted.has(normalizeName(s.name))) continue;
-      const ahead = s.start - done - 1;
-      const state: SkaterMatch["state"] = s.segScore
-        ? "scored"
-        : event.status !== "live"
-          ? "scheduled"
-          : ahead <= 0
-            ? "on-ice"
-            : ahead === 1
-              ? "up-next"
-              : "waiting";
-      const start = event.startIso ? new Date(event.startIso).getTime() : Number.MAX_SAFE_INTEGER;
-      out.push({
-        key: `${event.file}:${s.start}:${s.name}`,
-        skater: s,
-        event,
-        done,
-        ahead,
-        state,
-        sortAt: state === "scored" ? start + 1e11 : state === "scheduled" ? start : start - 1e11,
-      });
-    }
-  }
-
-  return out.sort((a, b) => a.sortAt - b.sortAt);
-}
+export { allEvents, findMySkaters };
+export type { SkaterMatch };
 
 /**
  * The right-hand tag: a time, not a jargon state. On the ice now and already

@@ -186,6 +186,7 @@ import { Route as ApiV1PlansIdIndexRouteImport } from './routes/api/v1/plans/$id
 import { Route as ApiV1ParentTeamIndexRouteImport } from './routes/api/v1/parent/team/index'
 import { Route as ApiV1ParentAthletesIndexRouteImport } from './routes/api/v1/parent/athletes/index'
 import { Route as ApiV1MeCelebrationsIndexRouteImport } from './routes/api/v1/me/celebrations/index'
+import { Route as ApiV1LiveActivitiesTokensIndexRouteImport } from './routes/api/v1/live-activities/tokens/index'
 import { Route as ApiV1GuardianClaimIndexRouteImport } from './routes/api/v1/guardian/claim/index'
 import { Route as ApiV1CoachWrapUpsIndexRouteImport } from './routes/api/v1/coach/wrap-ups/index'
 import { Route as ApiV1CoachRosterIndexRouteImport } from './routes/api/v1/coach/roster/index'
@@ -222,6 +223,7 @@ import { Route as ApiV1PlansImportTokenRouteImport } from './routes/api/v1/plans
 import { Route as ApiV1PlansIdStatusRouteImport } from './routes/api/v1/plans/$id/status'
 import { Route as ApiV1PlansIdShareTokenRouteImport } from './routes/api/v1/plans/$id/share-token'
 import { Route as ApiV1MeTermsAcceptRouteImport } from './routes/api/v1/me/terms_.accept'
+import { Route as ApiV1LiveActivitiesTokensTokenRouteImport } from './routes/api/v1/live-activities/tokens/$token'
 import { Route as ApiV1InvitesParentPreviewRouteImport } from './routes/api/v1/invites/parent/preview'
 import { Route as ApiV1InvitesParentClaimRouteImport } from './routes/api/v1/invites/parent/claim'
 import { Route as ApiV1InvitesAdultAthletePreviewRouteImport } from './routes/api/v1/invites/adult-athlete/preview'
@@ -1271,6 +1273,12 @@ const ApiV1MeCelebrationsIndexRoute =
     path: '/api/v1/me/celebrations/',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiV1LiveActivitiesTokensIndexRoute =
+  ApiV1LiveActivitiesTokensIndexRouteImport.update({
+    id: '/api/v1/live-activities/tokens/',
+    path: '/api/v1/live-activities/tokens/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiV1GuardianClaimIndexRoute = ApiV1GuardianClaimIndexRouteImport.update({
   id: '/api/v1/guardian/claim/',
   path: '/api/v1/guardian/claim/',
@@ -1465,6 +1473,12 @@ const ApiV1MeTermsAcceptRoute = ApiV1MeTermsAcceptRouteImport.update({
   path: '/api/v1/me/terms/accept',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiV1LiveActivitiesTokensTokenRoute =
+  ApiV1LiveActivitiesTokensTokenRouteImport.update({
+    id: '/api/v1/live-activities/tokens/$token',
+    path: '/api/v1/live-activities/tokens/$token',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiV1InvitesParentPreviewRoute =
   ApiV1InvitesParentPreviewRouteImport.update({
     id: '/api/v1/invites/parent/preview',
@@ -2202,6 +2216,7 @@ export interface FileRoutesByFullPath {
   '/api/v1/invites/adult-athlete/preview': typeof ApiV1InvitesAdultAthletePreviewRoute
   '/api/v1/invites/parent/claim': typeof ApiV1InvitesParentClaimRoute
   '/api/v1/invites/parent/preview': typeof ApiV1InvitesParentPreviewRoute
+  '/api/v1/live-activities/tokens/$token': typeof ApiV1LiveActivitiesTokensTokenRoute
   '/api/v1/me/terms/accept': typeof ApiV1MeTermsAcceptRoute
   '/api/v1/plans/$id/share-token': typeof ApiV1PlansIdShareTokenRoute
   '/api/v1/plans/$id/status': typeof ApiV1PlansIdStatusRoute
@@ -2238,6 +2253,7 @@ export interface FileRoutesByFullPath {
   '/api/v1/coach/roster/': typeof ApiV1CoachRosterIndexRoute
   '/api/v1/coach/wrap-ups/': typeof ApiV1CoachWrapUpsIndexRoute
   '/api/v1/guardian/claim/': typeof ApiV1GuardianClaimIndexRoute
+  '/api/v1/live-activities/tokens/': typeof ApiV1LiveActivitiesTokensIndexRoute
   '/api/v1/me/celebrations/': typeof ApiV1MeCelebrationsIndexRoute
   '/api/v1/parent/athletes/': typeof ApiV1ParentAthletesIndexRoute
   '/api/v1/parent/team/': typeof ApiV1ParentTeamIndexRoute
@@ -2500,6 +2516,7 @@ export interface FileRoutesByTo {
   '/api/v1/invites/adult-athlete/preview': typeof ApiV1InvitesAdultAthletePreviewRoute
   '/api/v1/invites/parent/claim': typeof ApiV1InvitesParentClaimRoute
   '/api/v1/invites/parent/preview': typeof ApiV1InvitesParentPreviewRoute
+  '/api/v1/live-activities/tokens/$token': typeof ApiV1LiveActivitiesTokensTokenRoute
   '/api/v1/me/terms/accept': typeof ApiV1MeTermsAcceptRoute
   '/api/v1/plans/$id/share-token': typeof ApiV1PlansIdShareTokenRoute
   '/api/v1/plans/$id/status': typeof ApiV1PlansIdStatusRoute
@@ -2536,6 +2553,7 @@ export interface FileRoutesByTo {
   '/api/v1/coach/roster': typeof ApiV1CoachRosterIndexRoute
   '/api/v1/coach/wrap-ups': typeof ApiV1CoachWrapUpsIndexRoute
   '/api/v1/guardian/claim': typeof ApiV1GuardianClaimIndexRoute
+  '/api/v1/live-activities/tokens': typeof ApiV1LiveActivitiesTokensIndexRoute
   '/api/v1/me/celebrations': typeof ApiV1MeCelebrationsIndexRoute
   '/api/v1/parent/athletes': typeof ApiV1ParentAthletesIndexRoute
   '/api/v1/parent/team': typeof ApiV1ParentTeamIndexRoute
@@ -2806,6 +2824,7 @@ export interface FileRoutesById {
   '/api/v1/invites/adult-athlete/preview': typeof ApiV1InvitesAdultAthletePreviewRoute
   '/api/v1/invites/parent/claim': typeof ApiV1InvitesParentClaimRoute
   '/api/v1/invites/parent/preview': typeof ApiV1InvitesParentPreviewRoute
+  '/api/v1/live-activities/tokens/$token': typeof ApiV1LiveActivitiesTokensTokenRoute
   '/api/v1/me/terms_/accept': typeof ApiV1MeTermsAcceptRoute
   '/api/v1/plans/$id/share-token': typeof ApiV1PlansIdShareTokenRoute
   '/api/v1/plans/$id/status': typeof ApiV1PlansIdStatusRoute
@@ -2842,6 +2861,7 @@ export interface FileRoutesById {
   '/api/v1/coach/roster/': typeof ApiV1CoachRosterIndexRoute
   '/api/v1/coach/wrap-ups/': typeof ApiV1CoachWrapUpsIndexRoute
   '/api/v1/guardian/claim/': typeof ApiV1GuardianClaimIndexRoute
+  '/api/v1/live-activities/tokens/': typeof ApiV1LiveActivitiesTokensIndexRoute
   '/api/v1/me/celebrations/': typeof ApiV1MeCelebrationsIndexRoute
   '/api/v1/parent/athletes/': typeof ApiV1ParentAthletesIndexRoute
   '/api/v1/parent/team/': typeof ApiV1ParentTeamIndexRoute
@@ -3112,6 +3132,7 @@ export interface FileRouteTypes {
     | '/api/v1/invites/adult-athlete/preview'
     | '/api/v1/invites/parent/claim'
     | '/api/v1/invites/parent/preview'
+    | '/api/v1/live-activities/tokens/$token'
     | '/api/v1/me/terms/accept'
     | '/api/v1/plans/$id/share-token'
     | '/api/v1/plans/$id/status'
@@ -3148,6 +3169,7 @@ export interface FileRouteTypes {
     | '/api/v1/coach/roster/'
     | '/api/v1/coach/wrap-ups/'
     | '/api/v1/guardian/claim/'
+    | '/api/v1/live-activities/tokens/'
     | '/api/v1/me/celebrations/'
     | '/api/v1/parent/athletes/'
     | '/api/v1/parent/team/'
@@ -3410,6 +3432,7 @@ export interface FileRouteTypes {
     | '/api/v1/invites/adult-athlete/preview'
     | '/api/v1/invites/parent/claim'
     | '/api/v1/invites/parent/preview'
+    | '/api/v1/live-activities/tokens/$token'
     | '/api/v1/me/terms/accept'
     | '/api/v1/plans/$id/share-token'
     | '/api/v1/plans/$id/status'
@@ -3446,6 +3469,7 @@ export interface FileRouteTypes {
     | '/api/v1/coach/roster'
     | '/api/v1/coach/wrap-ups'
     | '/api/v1/guardian/claim'
+    | '/api/v1/live-activities/tokens'
     | '/api/v1/me/celebrations'
     | '/api/v1/parent/athletes'
     | '/api/v1/parent/team'
@@ -3715,6 +3739,7 @@ export interface FileRouteTypes {
     | '/api/v1/invites/adult-athlete/preview'
     | '/api/v1/invites/parent/claim'
     | '/api/v1/invites/parent/preview'
+    | '/api/v1/live-activities/tokens/$token'
     | '/api/v1/me/terms_/accept'
     | '/api/v1/plans/$id/share-token'
     | '/api/v1/plans/$id/status'
@@ -3751,6 +3776,7 @@ export interface FileRouteTypes {
     | '/api/v1/coach/roster/'
     | '/api/v1/coach/wrap-ups/'
     | '/api/v1/guardian/claim/'
+    | '/api/v1/live-activities/tokens/'
     | '/api/v1/me/celebrations/'
     | '/api/v1/parent/athletes/'
     | '/api/v1/parent/team/'
@@ -3945,6 +3971,7 @@ export interface RootRouteChildren {
   ApiV1InvitesAdultAthletePreviewRoute: typeof ApiV1InvitesAdultAthletePreviewRoute
   ApiV1InvitesParentClaimRoute: typeof ApiV1InvitesParentClaimRoute
   ApiV1InvitesParentPreviewRoute: typeof ApiV1InvitesParentPreviewRoute
+  ApiV1LiveActivitiesTokensTokenRoute: typeof ApiV1LiveActivitiesTokensTokenRoute
   ApiV1MeTermsAcceptRoute: typeof ApiV1MeTermsAcceptRoute
   ApiV1PlansIdShareTokenRoute: typeof ApiV1PlansIdShareTokenRoute
   ApiV1PlansIdStatusRoute: typeof ApiV1PlansIdStatusRoute
@@ -3981,6 +4008,7 @@ export interface RootRouteChildren {
   ApiV1CoachRosterIndexRoute: typeof ApiV1CoachRosterIndexRoute
   ApiV1CoachWrapUpsIndexRoute: typeof ApiV1CoachWrapUpsIndexRoute
   ApiV1GuardianClaimIndexRoute: typeof ApiV1GuardianClaimIndexRoute
+  ApiV1LiveActivitiesTokensIndexRoute: typeof ApiV1LiveActivitiesTokensIndexRoute
   ApiV1MeCelebrationsIndexRoute: typeof ApiV1MeCelebrationsIndexRoute
   ApiV1ParentAthletesIndexRoute: typeof ApiV1ParentAthletesIndexRoute
   ApiV1ParentTeamIndexRoute: typeof ApiV1ParentTeamIndexRoute
@@ -5282,6 +5310,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1MeCelebrationsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/v1/live-activities/tokens/': {
+      id: '/api/v1/live-activities/tokens/'
+      path: '/api/v1/live-activities/tokens'
+      fullPath: '/api/v1/live-activities/tokens/'
+      preLoaderRoute: typeof ApiV1LiveActivitiesTokensIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/v1/guardian/claim/': {
       id: '/api/v1/guardian/claim/'
       path: '/api/v1/guardian/claim'
@@ -5532,6 +5567,13 @@ declare module '@tanstack/react-router' {
       path: '/api/v1/me/terms/accept'
       fullPath: '/api/v1/me/terms/accept'
       preLoaderRoute: typeof ApiV1MeTermsAcceptRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/live-activities/tokens/$token': {
+      id: '/api/v1/live-activities/tokens/$token'
+      path: '/api/v1/live-activities/tokens/$token'
+      fullPath: '/api/v1/live-activities/tokens/$token'
+      preLoaderRoute: typeof ApiV1LiveActivitiesTokensTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/v1/invites/parent/preview': {
@@ -6566,6 +6608,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiV1InvitesAdultAthletePreviewRoute: ApiV1InvitesAdultAthletePreviewRoute,
   ApiV1InvitesParentClaimRoute: ApiV1InvitesParentClaimRoute,
   ApiV1InvitesParentPreviewRoute: ApiV1InvitesParentPreviewRoute,
+  ApiV1LiveActivitiesTokensTokenRoute: ApiV1LiveActivitiesTokensTokenRoute,
   ApiV1MeTermsAcceptRoute: ApiV1MeTermsAcceptRoute,
   ApiV1PlansIdShareTokenRoute: ApiV1PlansIdShareTokenRoute,
   ApiV1PlansIdStatusRoute: ApiV1PlansIdStatusRoute,
@@ -6602,6 +6645,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiV1CoachRosterIndexRoute: ApiV1CoachRosterIndexRoute,
   ApiV1CoachWrapUpsIndexRoute: ApiV1CoachWrapUpsIndexRoute,
   ApiV1GuardianClaimIndexRoute: ApiV1GuardianClaimIndexRoute,
+  ApiV1LiveActivitiesTokensIndexRoute: ApiV1LiveActivitiesTokensIndexRoute,
   ApiV1MeCelebrationsIndexRoute: ApiV1MeCelebrationsIndexRoute,
   ApiV1ParentAthletesIndexRoute: ApiV1ParentAthletesIndexRoute,
   ApiV1ParentTeamIndexRoute: ApiV1ParentTeamIndexRoute,
