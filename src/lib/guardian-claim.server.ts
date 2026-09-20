@@ -24,7 +24,9 @@
 import { z } from "zod";
 import type { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { ApiError } from "./api/errors";
+import { inBackground } from "./background";
 import { dbError } from "./db-error";
+import { coachUserId, notifyUsers } from "./push-notify.server";
 import { ageInYears } from "./pending-athlete-dob";
 
 type Admin = typeof supabaseAdmin;
@@ -335,6 +337,28 @@ export async function claimGuardianAthlete(
     })
     .eq("id", athlete.data.id);
   if (upd.error) dbError(upd.error);
+
+  // The coach(es) who roster this athlete invited the guardian; tell them the claim landed.
+  const claimedAthleteId = athlete.data.id;
+  const claimedFirstName = athlete.data.first_name;
+  await inBackground("push:guardian-claimed", async () => {
+    const links = await admin
+      .from("coach_athletes")
+      .select("coach_id")
+      .eq("athlete_id", claimedAthleteId);
+    const coachIds = Array.from(
+      new Set(((links.data ?? []) as { coach_id: string }[]).map((r) => r.coach_id)),
+    );
+    const users = (await Promise.all(coachIds.map((id) => coachUserId(admin, id)))).filter(
+      (u): u is string => !!u,
+    );
+    await notifyUsers(admin, users, {
+      type: "connection",
+      route: "settings/connections",
+      title: "Guardian connected",
+      body: `${claimedFirstName}'s guardian claimed their account.`,
+    });
+  });
 
   return { ok: true, athleteFirstName: athlete.data.first_name };
 }

@@ -11,6 +11,8 @@
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { ApiError } from "./api/errors";
+import { inBackground } from "./background";
+import { athleteHouseholdUserIds, notifyUsers, withoutBlocked } from "./push-notify.server";
 import { dbError } from "./db-error";
 import type {
   MessageDTO,
@@ -1043,66 +1045,92 @@ export async function sendMessage(
     .single();
   if (error) dbError(error, "Couldn't send message");
 
-  // Bump the container's updated_at so list ordering reflects activity.
-  if (room.kind === "athlete") {
-    await supabaseAdmin
-      .from("message_rooms")
-      .update({ updated_at: new Date().toISOString() })
-      .eq("id", room.id);
-
-    // Guardian-on-file mirror: while a minor athlete's parent hasn't claimed
-    // their account yet, email them a copy of what the coach or the athlete
-    // sends so they keep full visibility without being forced to register.
-    if (role === "coach" || role === "athlete") {
-      try {
-        let mirrorBody: string;
-        if (data.kind === "text") {
-          mirrorBody = data.body;
-        } else {
-          const secs = data.durationSeconds;
-          const stamp = `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, "0")}`;
-          let transcript: string | null = null;
-          try {
-            if (!voiceBytes && audioPath) {
-              // Client-uploaded note: fetch it once for the transcript.
-              const { data: blob } = await supabaseAdmin.storage
-                .from("voice-notes")
-                .download(audioPath);
-              if (blob) voiceBytes = new Uint8Array(await blob.arrayBuffer());
-            }
-            if (voiceBytes) {
-              const { transcribeWithElevenLabs } = await import("./voice.server");
-              const blob = new Blob([voiceBytes as unknown as BlobPart], {
-                type: data.mimeType,
-              });
-              const text = await transcribeWithElevenLabs(blob);
-              transcript = text.trim() || null;
-            }
-          } catch (te) {
-            console.error("[messages] guardian voice transcription failed", te);
-          }
-          mirrorBody = transcript
-            ? `Voice note (${stamp}) — transcript:\n\n${transcript}`
-            : `Voice note (${stamp}) — transcript unavailable. Sign in to listen.`;
-        }
-
-        const { mirrorGuardianActivity } = await import("./guardian.server");
-        await mirrorGuardianActivity({
-          athleteId: room.athleteId!,
-          senderRole: role,
-          coachId: room.coachId ?? null,
-          body: mirrorBody,
-        });
-      } catch (e) {
-        console.error("[messages] guardian mirror failed", e);
-      }
+  // Push the other participants (PRD §6.6 "New message in a room"). Deferred
+  // past the response and never allowed to fail the send. Athlete rooms also
+  // reach co-guardians, whom `loadParticipants` leaves out.
+  await inBackground("push:message", async () => {
+    const participants = (await loadParticipants([room])).get(room.id) ?? [];
+    const ids = new Set(participants.map((p) => p.userId).filter((id): id is string => !!id));
+    if (room.kind === "athlete" && room.athleteId) {
+      for (const id of await athleteHouseholdUserIds(supabaseAdmin, room.athleteId)) ids.add(id);
     }
-  } else {
-    await supabaseAdmin
-      .from("direct_rooms")
-      .update({ updated_at: new Date().toISOString() })
-      .eq("id", room.id);
-  }
+    const recipients = await withoutBlocked(supabaseAdmin, userId, Array.from(ids));
+    if (recipients.length === 0) return;
+    const sender = participants.find((p) => p.userId === userId);
+    const senderName = sender ? `${sender.firstName} ${sender.lastName}`.trim() : "";
+    const title =
+      role === "coach" && sender?.firstName
+        ? `Coach ${sender.firstName}`
+        : senderName || "New message";
+    await notifyUsers(supabaseAdmin, recipients, {
+      type: "message",
+      route: `rooms/${room.id}`,
+      title,
+      body: data.kind === "text" ? data.body : "Sent a voice note",
+      threadId: `room:${room.id}`,
+    });
+
+    // Bump the container's updated_at so list ordering reflects activity.
+    if (room.kind === "athlete") {
+      await supabaseAdmin
+        .from("message_rooms")
+        .update({ updated_at: new Date().toISOString() })
+        .eq("id", room.id);
+
+      // Guardian-on-file mirror: while a minor athlete's parent hasn't claimed
+      // their account yet, email them a copy of what the coach or the athlete
+      // sends so they keep full visibility without being forced to register.
+      if (role === "coach" || role === "athlete") {
+        try {
+          let mirrorBody: string;
+          if (data.kind === "text") {
+            mirrorBody = data.body;
+          } else {
+            const secs = data.durationSeconds;
+            const stamp = `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, "0")}`;
+            let transcript: string | null = null;
+            try {
+              if (!voiceBytes && audioPath) {
+                // Client-uploaded note: fetch it once for the transcript.
+                const { data: blob } = await supabaseAdmin.storage
+                  .from("voice-notes")
+                  .download(audioPath);
+                if (blob) voiceBytes = new Uint8Array(await blob.arrayBuffer());
+              }
+              if (voiceBytes) {
+                const { transcribeWithElevenLabs } = await import("./voice.server");
+                const blob = new Blob([voiceBytes as unknown as BlobPart], {
+                  type: data.mimeType,
+                });
+                const text = await transcribeWithElevenLabs(blob);
+                transcript = text.trim() || null;
+              }
+            } catch (te) {
+              console.error("[messages] guardian voice transcription failed", te);
+            }
+            mirrorBody = transcript
+              ? `Voice note (${stamp}) — transcript:\n\n${transcript}`
+              : `Voice note (${stamp}) — transcript unavailable. Sign in to listen.`;
+          }
+
+          const { mirrorGuardianActivity } = await import("./guardian.server");
+          await mirrorGuardianActivity({
+            athleteId: room.athleteId!,
+            senderRole: role,
+            coachId: room.coachId ?? null,
+            body: mirrorBody,
+          });
+        } catch (e) {
+          console.error("[messages] guardian mirror failed", e);
+        }
+      }
+    } else {
+      await supabaseAdmin
+        .from("direct_rooms")
+        .update({ updated_at: new Date().toISOString() })
+        .eq("id", room.id);
+    }
+  });
 
   return { ok: true as const, id: inserted!.id };
 }

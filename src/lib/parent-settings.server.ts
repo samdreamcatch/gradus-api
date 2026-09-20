@@ -17,7 +17,9 @@ import { z } from "zod";
 import type { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { isMinorBirthdate } from "./athlete-age";
 import { ApiError } from "./api/errors";
+import { inBackground } from "./background";
 import { dbError } from "./db-error";
+import { coachUserId, notifyUsers } from "./push-notify.server";
 import { inviteCodeSchema } from "./invites.server";
 import { lessonSlotSchema } from "./parent-signup.server";
 import { ensureStarterPrograms } from "./starter-programs.server";
@@ -613,6 +615,18 @@ export async function linkParentAthleteToCoach(
   }));
   const scopeIns = await admin.from("coach_athlete_sports").insert(scopeRows);
   if (scopeIns.error) dbError(scopeIns.error);
+
+  // The coach issued the code; tell them a parent used it (PRD §6.6 "connection accepted").
+  await inBackground("push:coach-code-used", async () => {
+    const coachUser = await coachUserId(admin, coachId);
+    if (!coachUser) return;
+    await notifyUsers(admin, [coachUser], {
+      type: "connection",
+      route: "settings/connections",
+      title: "New athlete connection",
+      body: "A parent connected an athlete to you with your invite code.",
+    });
+  });
 
   return { ok: true };
 }

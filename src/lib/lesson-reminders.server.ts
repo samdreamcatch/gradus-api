@@ -17,6 +17,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { dbError } from "./db-error";
+import { notifyUsers, type PushDeps } from "./push-notify.server";
 // RINK_TZ is the one timezone constant this project already has; reused here
 // rather than re-declared, per the ijs-scrape.server.ts precedent.
 import { RINK_TZ } from "./ijs-scrape.server";
@@ -30,9 +31,10 @@ import {
 
 type Client = SupabaseClient<Database>;
 
-export type LessonReminderContext = { admin: Client };
+export type LessonReminderContext = { admin: Client; push?: PushDeps };
 
-export type LessonReminderResult = { scanned: number; wouldSend: number };
+/** `wouldSend` = occurrences handled this tick (kept for the hook's response shape); `sent` = pushes APNs accepted. */
+export type LessonReminderResult = { scanned: number; wouldSend: number; sent: number };
 
 /** Occurrences land in this window (minutes from "now") to trigger a reminder. */
 const WINDOW_MIN = 55;
@@ -102,7 +104,7 @@ export function nowInRinkTz(now: Date): { dateIso: string; minutes: number; dayO
 }
 
 /** `{ gradus: { type, route, v } }` — the push payload shape both recipients share. */
-function reminderPayload(route: "roster" | "plans") {
+function reminderPayload(route: "coach/roster" | "plans") {
   return { gradus: { type: "lesson_reminder" as const, route, v: 1 as const } };
 }
 
@@ -217,7 +219,7 @@ export async function computeLessonReminders(
   const candidates = candidateLists.flat();
 
   const scanned = candidates.length;
-  if (scanned === 0) return { scanned: 0, wouldSend: 0 };
+  if (scanned === 0) return { scanned: 0, wouldSend: 0, sent: 0 };
 
   // Candidates can span two different lesson dates (today and, near
   // midnight, tomorrow), so dedupe on the (slot_id, lesson_date) pair rather
@@ -237,7 +239,7 @@ export async function computeLessonReminders(
   );
 
   const toProcess = candidates.filter((c) => !alreadySent.has(`${c.slotId}|${c.lessonDate}`));
-  if (toProcess.length === 0) return { scanned, wouldSend: 0 };
+  if (toProcess.length === 0) return { scanned, wouldSend: 0, sent: 0 };
 
   // Resolve recipients: the coach's own user_id (when a coach is still
   // assigned — a slot can be coachless, see CandidateOccurrence.coachId),
@@ -355,6 +357,7 @@ export async function computeLessonReminders(
   );
 
   let wouldSend = 0;
+  let sent = 0;
   for (const c of toProcess) {
     // lost a race with another tick; already handled
     if (!insertedKeys.has(`${c.slotId}|${c.lessonDate}`)) continue;
@@ -364,11 +367,11 @@ export async function computeLessonReminders(
     const recipientUserId = recipientUserFor(c.athleteId);
     const coachTokens = coachUserId ? (tokensByUser.get(coachUserId) ?? []) : [];
     const recipientTokens = recipientUserId ? (tokensByUser.get(recipientUserId) ?? []) : [];
-    const coachPayload = reminderPayload("roster");
+    const coachPayload = reminderPayload("coach/roster");
     const recipientPayload = reminderPayload("plans");
 
     console.log(
-      "[api] lesson-reminders would-send",
+      "[api] lesson-reminders sending",
       JSON.stringify({
         slotId: c.slotId,
         athleteId: c.athleteId,
@@ -382,7 +385,59 @@ export async function computeLessonReminders(
         },
       }),
     );
+
+    // Real delivery (PRD §6.6 "Lesson reminders"). `notifyUsers` resolves tokens
+    // itself; the maps above stay for the log line and the existing tests.
+    const collapse = `lesson:${c.slotId}:${c.lessonDate}`;
+    // The reminder is only useful before the lesson; stop retrying at its start.
+    const expiresInSeconds = WINDOW_MAX * 60;
+    let occurrenceSent = 0;
+    let transientFailures = 0;
+    if (coachUserId && coachTokens.length) {
+      const r = await notifyUsers(
+        admin,
+        [coachUserId],
+        {
+          type: coachPayload.gradus.type,
+          route: coachPayload.gradus.route,
+          title: "Lesson in about an hour",
+          body: "Open Roster to see who is up and check their plan.",
+          collapseId: `${collapse}:coach`,
+          expiresInSeconds,
+        },
+        ctx.push,
+      );
+      occurrenceSent += r.sent;
+      transientFailures += r.failed - r.pruned;
+    }
+    if (recipientUserId && recipientTokens.length) {
+      const r = await notifyUsers(
+        admin,
+        [recipientUserId],
+        {
+          type: recipientPayload.gradus.type,
+          route: recipientPayload.gradus.route,
+          title: "Lesson in about an hour",
+          body: "Time to warm up. Your plan is in the app.",
+          collapseId: `${collapse}:athlete`,
+          expiresInSeconds,
+        },
+        ctx.push,
+      );
+      occurrenceSent += r.sent;
+      transientFailures += r.failed - r.pruned;
+    }
+    sent += occurrenceSent;
+    // Nothing got through and at least one failure was transient (APNs outage,
+    // timeout): release the dedupe row so the next tick inside the window retries.
+    if (occurrenceSent === 0 && transientFailures > 0) {
+      await admin
+        .from("lesson_reminders_sent")
+        .delete()
+        .eq("slot_id", c.slotId)
+        .eq("lesson_date", c.lessonDate);
+    }
   }
 
-  return { scanned, wouldSend };
+  return { scanned, wouldSend, sent };
 }

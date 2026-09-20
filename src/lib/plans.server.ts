@@ -581,6 +581,27 @@ export async function setPlanStatus(
       } catch (e) {
         console.error("[plans] guardian plan mirror failed", e);
       }
+
+      // Push the athlete and their guardians (PRD §6.6 "Plan activated or assigned").
+      // Dynamic imports: this module is re-exported into the client bundle
+      // (MAX_ACTIVE_PLANS_PER_ATHLETE), so the push stack must not join its
+      // static import graph — same reason `guardian.server` is imported lazily above.
+      const athleteId = owned.athlete_id;
+      const planTitle = owned.title ?? "Untitled plan";
+      const wasDraft = owned.status === "draft";
+      const { inBackground } = await import("./background");
+      await inBackground("push:plan-activated", async () => {
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const { athleteHouseholdUserIds, notifyUsers } = await import("./push-notify.server");
+        const recipients = await athleteHouseholdUserIds(supabaseAdmin, athleteId);
+        await notifyUsers(supabaseAdmin, recipients, {
+          type: "plan_assigned",
+          route: `plans/${id}`,
+          title: wasDraft ? "New plan" : "Plan activated",
+          body: `${planTitle} is ready to practice.`,
+          collapseId: `plan:${id}`,
+        });
+      });
     }
   } else {
     const { error } = await supabase

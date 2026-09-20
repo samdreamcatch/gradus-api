@@ -9,8 +9,12 @@
  * original plain messages via `rethrowPlain`.
  */
 import { z } from "zod";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/integrations/supabase/types";
 import { ApiError } from "./api/errors";
+import { inBackground } from "./background";
 import { dbError } from "./db-error";
+import { coachUserId, notifyUsers, withoutBlocked } from "./push-notify.server";
 import {
   athletesInBoardSport as athletesInBoardSportFor,
   loadBoardViewer,
@@ -300,6 +304,23 @@ async function messageCoaches(
       .from("message_rooms")
       .update({ updated_at: new Date().toISOString() })
       .eq("id", roomId);
+
+    // These inserts bypass `sendMessage`, so push the coach here (PRD §6.6).
+    const pushRoomId = roomId;
+    await inBackground("push:recap-message", async () => {
+      const typed = admin as unknown as SupabaseClient<Database>;
+      const coachUser = await coachUserId(typed, coachId);
+      if (!coachUser) return;
+      const recipients = await withoutBlocked(typed, senderUserId, [coachUser]);
+      if (recipients.length === 0) return;
+      await notifyUsers(typed, recipients, {
+        type: "message",
+        route: `rooms/${pushRoomId}`,
+        title: "Competition recap",
+        body,
+        threadId: `room:${pushRoomId}`,
+      });
+    });
   }
 }
 

@@ -24,7 +24,9 @@
 import { z } from "zod";
 import type { ApiContext } from "./api/auth";
 import { ApiError } from "./api/errors";
+import { inBackground } from "./background";
 import { dbError } from "./db-error";
+import { notifyUsers, parentUserId } from "./push-notify.server";
 import { throttleLookup } from "./invites.server";
 import {
   guardianAthleteAccess,
@@ -728,6 +730,19 @@ export async function claimGuardianInvite(
     })
     .eq("id", invite.id);
   if (upd.error) dbError(upd.error);
+
+  // The primary parent sent the invite; tell them it was accepted (PRD §6.6).
+  const invitedBy = invite.invited_by_parent_id as string;
+  await inBackground("push:team-invite-claimed", async () => {
+    const primaryUser = await parentUserId(admin, invitedBy);
+    if (!primaryUser) return;
+    await notifyUsers(admin, [primaryUser], {
+      type: "connection",
+      route: "settings/connections",
+      title: "Guardian joined",
+      body: "A guardian accepted your invite and joined your team.",
+    });
+  });
 
   return { ok: true, athleteId: invite.athlete_id };
 }
