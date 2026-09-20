@@ -298,11 +298,15 @@ SLOTS: athleteName "Leon"; moves[0].name "Single axel landings", description "La
 
 Cue = ONE short phrase. Why = ONE sentence. Don't lump everything into description. Every move needs a name.`;
 
-export async function slotTranscript(ctx: ParseContext, variant: "full" | "simple" = "full") {
+export async function slotTranscript(
+  ctx: ParseContext,
+  variant: "full" | "simple" = "full",
+  modelId = "google/gemini-3-flash-preview",
+) {
   const apiKey = process.env.LOVABLE_API_KEY;
   if (!apiKey) throw new Error("AI not configured");
   const gateway = createLovableAiGatewayProvider(apiKey, { structuredOutputs: true });
-  const model = gateway("google/gemini-3-flash-preview");
+  const model = gateway(modelId);
 
   const system = [
     "You convert a sports coach's spoken instructions into structured slots.",
