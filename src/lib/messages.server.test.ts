@@ -12,7 +12,10 @@ import type { RoomParticipant, RoomSummary } from "./messages-types";
 
 describe("page cursors", () => {
   it("round-trip and are opaque, URL-safe strings", () => {
-    const cursor = encodeCursor("2026-09-05T21:16:35.374+00:00", "8c1e2a60-1b2c-4d3e-9f00-000000000001");
+    const cursor = encodeCursor(
+      "2026-09-05T21:16:35.374+00:00",
+      "8c1e2a60-1b2c-4d3e-9f00-000000000001",
+    );
     expect(cursor).toMatch(/^[A-Za-z0-9_-]+$/);
     expect(decodeCursor(cursor)).toEqual({
       createdAt: "2026-09-05T21:16:35.374+00:00",
@@ -21,7 +24,12 @@ describe("page cursors", () => {
   });
 
   it("reject garbage with a 400 validation_failed", () => {
-    for (const bad of ["", "not-base64!", Buffer.from("{}").toString("base64url"), Buffer.from('{"c":"nope","i":"x"}').toString("base64url")]) {
+    for (const bad of [
+      "",
+      "not-base64!",
+      Buffer.from("{}").toString("base64url"),
+      Buffer.from('{"c":"nope","i":"x"}').toString("base64url"),
+    ]) {
       let caught: unknown;
       try {
         decodeCursor(bad);
@@ -55,7 +63,9 @@ describe("roomsDigest", () => {
     expect(a).toBe(roomsDigest([room({}), room({ id: "r2" })]));
     expect(a).toMatch(/^2\.[0-9a-f]{8}$/);
     expect(roomsDigest([room({ unreadCount: 1 }), room({ id: "r2" })])).not.toBe(a);
-    expect(roomsDigest([room({ updatedAt: "2026-09-06T00:00:00Z" }), room({ id: "r2" })])).not.toBe(a);
+    expect(roomsDigest([room({ updatedAt: "2026-09-06T00:00:00Z" }), room({ id: "r2" })])).not.toBe(
+      a,
+    );
     expect(roomsDigest([room({})])).not.toBe(a);
     expect(roomsDigest([])).toBe("0.811c9dc5");
   });
@@ -86,7 +96,39 @@ describe("toMessageDTO", () => {
     expect(dto.senderFirstName).toBe("Alyson");
     expect(dto.roomId).toBe("r1");
     expect(dto.senderDeletedAt).toBeNull();
-    const byRole = toMessageDTO({ ...base, sender_user_id: "someone-else", sender_role: "athlete" }, "r1", participants, [], null, null);
+    const byRole = toMessageDTO(
+      { ...base, sender_user_id: "someone-else", sender_role: "athlete" },
+      "r1",
+      participants,
+      [],
+      null,
+      null,
+    );
+    // transcript: only voice notes carry one, and an empty transcript reads as none
+    expect(
+      toMessageDTO(
+        { ...base, kind: "text", transcript: "ignored" },
+        "r1",
+        participants,
+        [],
+        null,
+        null,
+      ).transcript,
+    ).toBeNull();
+    expect(
+      toMessageDTO({ ...base, kind: "voice", transcript: "" }, "r1", participants, [], null, null)
+        .transcript,
+    ).toBeNull();
+    expect(
+      toMessageDTO(
+        { ...base, kind: "voice", transcript: "Nice loop." },
+        "r1",
+        participants,
+        [],
+        null,
+        null,
+      ).transcript,
+    ).toBe("Nice loop.");
     expect(byRole.senderFirstName).toBe("Ava");
   });
 
@@ -99,7 +141,16 @@ describe("toMessageDTO", () => {
 
   it("carries reads, plan tags, signed audio, and falls back to the room id", () => {
     const dto = toMessageDTO(
-      { ...base, room_id: null, direct_room_id: null, kind: "voice", body: null, audio_url: "r1/u/x.m4a", duration_seconds: 12, plan_id: "p1" },
+      {
+        ...base,
+        room_id: null,
+        direct_room_id: null,
+        kind: "voice",
+        body: null,
+        audio_url: "r1/u/x.m4a",
+        duration_seconds: 12,
+        plan_id: "p1",
+      },
       "fallback",
       participants,
       [{ userId: "ath-u", readAt: "2026-09-05T10:01:00Z" }],
@@ -131,7 +182,9 @@ describe("partitionByKind", () => {
       userA: null,
       userB: null,
     });
-    expect(partitionByKind([row("a", "athlete"), row("b", "coach_coach"), row("c", "coach_parent")])).toEqual({
+    expect(
+      partitionByKind([row("a", "athlete"), row("b", "coach_coach"), row("c", "coach_parent")]),
+    ).toEqual({
       athleteRoomIds: ["a"],
       directRoomIds: ["b", "c"],
     });

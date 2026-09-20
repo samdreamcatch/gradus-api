@@ -157,9 +157,12 @@ import { Route as ApiV1AthleteMeRouteImport } from './routes/api/v1/athlete/me'
 import { Route as ApiV1AdultAthleteOnboardingRouteImport } from './routes/api/v1/adult-athlete/onboarding'
 import { Route as ApiV1AdultAthleteGoalsRouteImport } from './routes/api/v1/adult-athlete/goals'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
+import { Route as ApiPublicHooksVoiceTranscriptsRouteImport } from './routes/api/public/hooks/voice-transcripts'
 import { Route as ApiPublicHooksLifecycleEmailsRouteImport } from './routes/api/public/hooks/lifecycle-emails'
+import { Route as ApiPublicHooksLessonWrapUpsRouteImport } from './routes/api/public/hooks/lesson-wrap-ups'
 import { Route as ApiPublicHooksLessonRemindersRouteImport } from './routes/api/public/hooks/lesson-reminders'
 import { Route as ApiPublicHooksErrorDigestRouteImport } from './routes/api/public/hooks/error-digest'
+import { Route as ApiPublicHooksCompetitionRecapsRouteImport } from './routes/api/public/hooks/competition-recaps'
 import { Route as ApiPublicHooksBillingNoticesRouteImport } from './routes/api/public/hooks/billing-notices'
 import { Route as ApiPublicBoardRefreshRouteImport } from './routes/api/public/board/refresh'
 import { Route as AuthenticatedParentSettingsAccountRouteImport } from './routes/_authenticated/parent.settings_.account'
@@ -1100,10 +1103,22 @@ const ApiPublicPaymentsWebhookRoute =
     path: '/api/public/payments/webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksVoiceTranscriptsRoute =
+  ApiPublicHooksVoiceTranscriptsRouteImport.update({
+    id: '/api/public/hooks/voice-transcripts',
+    path: '/api/public/hooks/voice-transcripts',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksLifecycleEmailsRoute =
   ApiPublicHooksLifecycleEmailsRouteImport.update({
     id: '/api/public/hooks/lifecycle-emails',
     path: '/api/public/hooks/lifecycle-emails',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksLessonWrapUpsRoute =
+  ApiPublicHooksLessonWrapUpsRouteImport.update({
+    id: '/api/public/hooks/lesson-wrap-ups',
+    path: '/api/public/hooks/lesson-wrap-ups',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicHooksLessonRemindersRoute =
@@ -1116,6 +1131,12 @@ const ApiPublicHooksErrorDigestRoute =
   ApiPublicHooksErrorDigestRouteImport.update({
     id: '/api/public/hooks/error-digest',
     path: '/api/public/hooks/error-digest',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksCompetitionRecapsRoute =
+  ApiPublicHooksCompetitionRecapsRouteImport.update({
+    id: '/api/public/hooks/competition-recaps',
+    path: '/api/public/hooks/competition-recaps',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicHooksBillingNoticesRoute =
@@ -2065,9 +2086,12 @@ export interface FileRoutesByFullPath {
   '/parent/settings/account': typeof AuthenticatedParentSettingsAccountRoute
   '/api/public/board/refresh': typeof ApiPublicBoardRefreshRoute
   '/api/public/hooks/billing-notices': typeof ApiPublicHooksBillingNoticesRoute
+  '/api/public/hooks/competition-recaps': typeof ApiPublicHooksCompetitionRecapsRoute
   '/api/public/hooks/error-digest': typeof ApiPublicHooksErrorDigestRoute
   '/api/public/hooks/lesson-reminders': typeof ApiPublicHooksLessonRemindersRoute
+  '/api/public/hooks/lesson-wrap-ups': typeof ApiPublicHooksLessonWrapUpsRoute
   '/api/public/hooks/lifecycle-emails': typeof ApiPublicHooksLifecycleEmailsRoute
+  '/api/public/hooks/voice-transcripts': typeof ApiPublicHooksVoiceTranscriptsRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/v1/adult-athlete/goals': typeof ApiV1AdultAthleteGoalsRoute
   '/api/v1/adult-athlete/onboarding': typeof ApiV1AdultAthleteOnboardingRoute
@@ -2360,9 +2384,12 @@ export interface FileRoutesByTo {
   '/parent/settings/account': typeof AuthenticatedParentSettingsAccountRoute
   '/api/public/board/refresh': typeof ApiPublicBoardRefreshRoute
   '/api/public/hooks/billing-notices': typeof ApiPublicHooksBillingNoticesRoute
+  '/api/public/hooks/competition-recaps': typeof ApiPublicHooksCompetitionRecapsRoute
   '/api/public/hooks/error-digest': typeof ApiPublicHooksErrorDigestRoute
   '/api/public/hooks/lesson-reminders': typeof ApiPublicHooksLessonRemindersRoute
+  '/api/public/hooks/lesson-wrap-ups': typeof ApiPublicHooksLessonWrapUpsRoute
   '/api/public/hooks/lifecycle-emails': typeof ApiPublicHooksLifecycleEmailsRoute
+  '/api/public/hooks/voice-transcripts': typeof ApiPublicHooksVoiceTranscriptsRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/v1/adult-athlete/goals': typeof ApiV1AdultAthleteGoalsRoute
   '/api/v1/adult-athlete/onboarding': typeof ApiV1AdultAthleteOnboardingRoute
@@ -2663,9 +2690,12 @@ export interface FileRoutesById {
   '/_authenticated/parent/settings_/account': typeof AuthenticatedParentSettingsAccountRoute
   '/api/public/board/refresh': typeof ApiPublicBoardRefreshRoute
   '/api/public/hooks/billing-notices': typeof ApiPublicHooksBillingNoticesRoute
+  '/api/public/hooks/competition-recaps': typeof ApiPublicHooksCompetitionRecapsRoute
   '/api/public/hooks/error-digest': typeof ApiPublicHooksErrorDigestRoute
   '/api/public/hooks/lesson-reminders': typeof ApiPublicHooksLessonRemindersRoute
+  '/api/public/hooks/lesson-wrap-ups': typeof ApiPublicHooksLessonWrapUpsRoute
   '/api/public/hooks/lifecycle-emails': typeof ApiPublicHooksLifecycleEmailsRoute
+  '/api/public/hooks/voice-transcripts': typeof ApiPublicHooksVoiceTranscriptsRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/v1/adult-athlete/goals': typeof ApiV1AdultAthleteGoalsRoute
   '/api/v1/adult-athlete/onboarding': typeof ApiV1AdultAthleteOnboardingRoute
@@ -2966,9 +2996,12 @@ export interface FileRouteTypes {
     | '/parent/settings/account'
     | '/api/public/board/refresh'
     | '/api/public/hooks/billing-notices'
+    | '/api/public/hooks/competition-recaps'
     | '/api/public/hooks/error-digest'
     | '/api/public/hooks/lesson-reminders'
+    | '/api/public/hooks/lesson-wrap-ups'
     | '/api/public/hooks/lifecycle-emails'
+    | '/api/public/hooks/voice-transcripts'
     | '/api/public/payments/webhook'
     | '/api/v1/adult-athlete/goals'
     | '/api/v1/adult-athlete/onboarding'
@@ -3261,9 +3294,12 @@ export interface FileRouteTypes {
     | '/parent/settings/account'
     | '/api/public/board/refresh'
     | '/api/public/hooks/billing-notices'
+    | '/api/public/hooks/competition-recaps'
     | '/api/public/hooks/error-digest'
     | '/api/public/hooks/lesson-reminders'
+    | '/api/public/hooks/lesson-wrap-ups'
     | '/api/public/hooks/lifecycle-emails'
+    | '/api/public/hooks/voice-transcripts'
     | '/api/public/payments/webhook'
     | '/api/v1/adult-athlete/goals'
     | '/api/v1/adult-athlete/onboarding'
@@ -3563,9 +3599,12 @@ export interface FileRouteTypes {
     | '/_authenticated/parent/settings_/account'
     | '/api/public/board/refresh'
     | '/api/public/hooks/billing-notices'
+    | '/api/public/hooks/competition-recaps'
     | '/api/public/hooks/error-digest'
     | '/api/public/hooks/lesson-reminders'
+    | '/api/public/hooks/lesson-wrap-ups'
     | '/api/public/hooks/lifecycle-emails'
+    | '/api/public/hooks/voice-transcripts'
     | '/api/public/payments/webhook'
     | '/api/v1/adult-athlete/goals'
     | '/api/v1/adult-athlete/onboarding'
@@ -3801,9 +3840,12 @@ export interface RootRouteChildren {
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicBoardRefreshRoute: typeof ApiPublicBoardRefreshRoute
   ApiPublicHooksBillingNoticesRoute: typeof ApiPublicHooksBillingNoticesRoute
+  ApiPublicHooksCompetitionRecapsRoute: typeof ApiPublicHooksCompetitionRecapsRoute
   ApiPublicHooksErrorDigestRoute: typeof ApiPublicHooksErrorDigestRoute
   ApiPublicHooksLessonRemindersRoute: typeof ApiPublicHooksLessonRemindersRoute
+  ApiPublicHooksLessonWrapUpsRoute: typeof ApiPublicHooksLessonWrapUpsRoute
   ApiPublicHooksLifecycleEmailsRoute: typeof ApiPublicHooksLifecycleEmailsRoute
+  ApiPublicHooksVoiceTranscriptsRoute: typeof ApiPublicHooksVoiceTranscriptsRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
   ApiV1AdultAthleteGoalsRoute: typeof ApiV1AdultAthleteGoalsRoute
   ApiV1AdultAthleteOnboardingRoute: typeof ApiV1AdultAthleteOnboardingRoute
@@ -5037,11 +5079,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPaymentsWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/voice-transcripts': {
+      id: '/api/public/hooks/voice-transcripts'
+      path: '/api/public/hooks/voice-transcripts'
+      fullPath: '/api/public/hooks/voice-transcripts'
+      preLoaderRoute: typeof ApiPublicHooksVoiceTranscriptsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/lifecycle-emails': {
       id: '/api/public/hooks/lifecycle-emails'
       path: '/api/public/hooks/lifecycle-emails'
       fullPath: '/api/public/hooks/lifecycle-emails'
       preLoaderRoute: typeof ApiPublicHooksLifecycleEmailsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/lesson-wrap-ups': {
+      id: '/api/public/hooks/lesson-wrap-ups'
+      path: '/api/public/hooks/lesson-wrap-ups'
+      fullPath: '/api/public/hooks/lesson-wrap-ups'
+      preLoaderRoute: typeof ApiPublicHooksLessonWrapUpsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/hooks/lesson-reminders': {
@@ -5056,6 +5112,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/hooks/error-digest'
       fullPath: '/api/public/hooks/error-digest'
       preLoaderRoute: typeof ApiPublicHooksErrorDigestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/competition-recaps': {
+      id: '/api/public/hooks/competition-recaps'
+      path: '/api/public/hooks/competition-recaps'
+      fullPath: '/api/public/hooks/competition-recaps'
+      preLoaderRoute: typeof ApiPublicHooksCompetitionRecapsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/hooks/billing-notices': {
@@ -6395,9 +6458,12 @@ const rootRouteChildren: RootRouteChildren = {
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicBoardRefreshRoute: ApiPublicBoardRefreshRoute,
   ApiPublicHooksBillingNoticesRoute: ApiPublicHooksBillingNoticesRoute,
+  ApiPublicHooksCompetitionRecapsRoute: ApiPublicHooksCompetitionRecapsRoute,
   ApiPublicHooksErrorDigestRoute: ApiPublicHooksErrorDigestRoute,
   ApiPublicHooksLessonRemindersRoute: ApiPublicHooksLessonRemindersRoute,
+  ApiPublicHooksLessonWrapUpsRoute: ApiPublicHooksLessonWrapUpsRoute,
   ApiPublicHooksLifecycleEmailsRoute: ApiPublicHooksLifecycleEmailsRoute,
+  ApiPublicHooksVoiceTranscriptsRoute: ApiPublicHooksVoiceTranscriptsRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
   ApiV1AdultAthleteGoalsRoute: ApiV1AdultAthleteGoalsRoute,
   ApiV1AdultAthleteOnboardingRoute: ApiV1AdultAthleteOnboardingRoute,
