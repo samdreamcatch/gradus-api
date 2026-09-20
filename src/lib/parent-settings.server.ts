@@ -22,6 +22,7 @@ import { dbError } from "./db-error";
 import { coachUserId, notifyUsers } from "./push-notify.server";
 import { inviteCodeSchema } from "./invites.server";
 import { lessonSlotSchema } from "./parent-signup.server";
+import { currentGoalValues, recordGoalsChange } from "./goals-history.server";
 import { ensureStarterPrograms } from "./starter-programs.server";
 import { guardianAthleteAccess } from "./team.server";
 
@@ -512,6 +513,7 @@ export async function setParentAthleteGoals(
   if (!coachId) {
     throw unprocessable("Link a coach who teaches this sport before setting goals.");
   }
+  const previous = await currentGoalValues(admin, athleteId, data.sport);
   const up = await admin.from("athlete_goals").upsert(
     {
       athlete_id: athleteId,
@@ -524,6 +526,14 @@ export async function setParentAthleteGoals(
     { onConflict: "athlete_id,sport" },
   );
   if (up.error) dbError(up.error);
+  await recordGoalsChange(admin, {
+    athleteId,
+    sport: data.sport,
+    role: "parent",
+    userId,
+    next: data,
+    previous,
+  });
 
   await ensureStarterPrograms(athleteId, data.sport, data.currentLevelKey);
 

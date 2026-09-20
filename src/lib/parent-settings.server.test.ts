@@ -937,6 +937,26 @@ describe("setParentAthleteGoals", () => {
         opts: { onConflict: "athlete_id,sport" },
         filters: [],
       },
+      // The change is recorded for the coach's "set by" / "differs from" note; the
+      // fake has no prior athlete_goals row, so it reads as a first save.
+      {
+        op: "insert",
+        table: "athlete_goals_history",
+        payload: {
+          athlete_id: A,
+          sport: "hockey",
+          changed_by_role: "parent",
+          changed_by_user_id: "u",
+          current_level_key: "l1",
+          season_goal_key: "g1",
+          long_term_goal: "Go",
+          previous_current_level_key: null,
+          previous_season_goal_key: null,
+          previous_long_term_goal: null,
+        },
+        opts: undefined,
+        filters: [],
+      },
     ]);
   });
 
@@ -967,6 +987,26 @@ describe("setParentAthleteGoals", () => {
         table: "athlete_goals",
         payload: goalRow(C),
         opts: { onConflict: "athlete_id,sport" },
+        filters: [],
+      },
+      // The change is recorded for the coach's "set by" / "differs from" note; the
+      // fake has no prior athlete_goals row, so it reads as a first save.
+      {
+        op: "insert",
+        table: "athlete_goals_history",
+        payload: {
+          athlete_id: A,
+          sport: "hockey",
+          changed_by_role: "parent",
+          changed_by_user_id: "u",
+          current_level_key: "l1",
+          season_goal_key: "g1",
+          long_term_goal: "Go",
+          previous_current_level_key: null,
+          previous_season_goal_key: null,
+          previous_long_term_goal: null,
+        },
+        opts: undefined,
         filters: [],
       },
     ]);

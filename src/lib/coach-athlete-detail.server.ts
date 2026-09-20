@@ -14,6 +14,7 @@ import type { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { createLovableAiGatewayProvider } from "./ai-gateway.server";
 import { ApiError } from "./api/errors";
 import { dbError } from "./db-error";
+import { goalsAuthorship } from "./goals-history.server";
 import { getSportLevel, getSport, getSuggestedHours } from "./coach-sports";
 import { PROMPT_INJECTION_GUARD, sanitizeUserContent, wrapUntrusted } from "./ai-prompt-safety";
 import type { SessionsByState } from "@/components/plans/flow-state-bars";
@@ -38,6 +39,21 @@ export interface AthleteGoalDTO {
   currentLevelLabel: string;
   seasonGoalLabel: string;
   longTermGoal: string;
+  /** Who saved this goal last (from athlete_goals_history); null when nothing is on record. */
+  lastSetBy: { role: "parent" | "athlete"; at: string } | null;
+  /**
+   * The other person's most recent goals, when they differ from what is saved
+   * now — the parent and the athlete want different things, and the coach
+   * should see both (Mariah, 2026-09-20). Null when they agree or only one of
+   * them has ever set goals.
+   */
+  differsFrom: {
+    role: "parent" | "athlete";
+    at: string;
+    currentLevelLabel: string;
+    seasonGoalLabel: string;
+    longTermGoal: string;
+  } | null;
 }
 
 export interface AthletePracticeTargetDTO {
@@ -322,13 +338,32 @@ export async function getCoachAthleteDetail(
     parent_profiles: { first_name: string; last_name: string } | null;
   };
 
-  const goals: AthleteGoalDTO[] = (goalsRes.data ?? []).map((g) => ({
-    sport: g.sport,
-    sportLabel: sportLabel(g.sport),
-    currentLevelLabel: labelLevel(g.sport, g.current_level_key),
-    seasonGoalLabel: labelLevel(g.sport, g.season_goal_key),
-    longTermGoal: g.long_term_goal ?? "",
-  }));
+  const authorship = await goalsAuthorship(
+    admin,
+    athleteId,
+    (goalsRes.data ?? []).map((g) => g.sport),
+  );
+  const goals: AthleteGoalDTO[] = (goalsRes.data ?? []).map((g) => {
+    const a = authorship.get(g.sport);
+    const other = a?.differsFrom ?? null;
+    return {
+      sport: g.sport,
+      sportLabel: sportLabel(g.sport),
+      currentLevelLabel: labelLevel(g.sport, g.current_level_key),
+      seasonGoalLabel: labelLevel(g.sport, g.season_goal_key),
+      longTermGoal: g.long_term_goal ?? "",
+      lastSetBy: a?.lastSetBy ?? null,
+      differsFrom: other
+        ? {
+            role: other.role,
+            at: other.at,
+            currentLevelLabel: labelLevel(g.sport, other.currentLevelKey),
+            seasonGoalLabel: labelLevel(g.sport, other.seasonGoalKey),
+            longTermGoal: other.longTermGoal,
+          }
+        : null,
+    };
+  });
 
   // Build per-plan summaries for every active OR benched plan.
   const stateKeys: (keyof SessionsByState)[] = [

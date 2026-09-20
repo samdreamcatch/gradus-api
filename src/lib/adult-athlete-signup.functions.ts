@@ -82,10 +82,7 @@ export const saveAdultAthleteGoals = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => adultGoalsInput.parse(input))
   .handler(async ({ data, context }) =>
-    saveAdultAthleteGoalsShared(
-      { userId: context.userId, supabase: context.supabase as Client },
-      data,
-    ),
+    saveAdultAthleteGoalsShared(await adultContext(context), data),
   );
 
 /** List the caller's linked coaches (with per-coach sport scoping). */

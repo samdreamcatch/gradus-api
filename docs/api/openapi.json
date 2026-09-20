@@ -5914,6 +5914,62 @@
                           },
                           "longTermGoal": {
                             "type": "string"
+                          },
+                          "lastSetBy": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "role": {
+                                "type": "string",
+                                "enum": [
+                                  "parent",
+                                  "athlete"
+                                ]
+                              },
+                              "at": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "role",
+                              "at"
+                            ]
+                          },
+                          "differsFrom": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "role": {
+                                "type": "string",
+                                "enum": [
+                                  "parent",
+                                  "athlete"
+                                ]
+                              },
+                              "at": {
+                                "type": "string"
+                              },
+                              "currentLevelLabel": {
+                                "type": "string"
+                              },
+                              "seasonGoalLabel": {
+                                "type": "string"
+                              },
+                              "longTermGoal": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "role",
+                              "at",
+                              "currentLevelLabel",
+                              "seasonGoalLabel",
+                              "longTermGoal"
+                            ]
                           }
                         },
                         "required": [
@@ -5921,7 +5977,9 @@
                           "sportLabel",
                           "currentLevelLabel",
                           "seasonGoalLabel",
-                          "longTermGoal"
+                          "longTermGoal",
+                          "lastSetBy",
+                          "differsFrom"
                         ]
                       }
                     },
