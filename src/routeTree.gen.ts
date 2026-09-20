@@ -49,6 +49,7 @@ import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/em
 import { Route as BoardSlugWallRouteImport } from './routes/board.$slug_.wall'
 import { Route as ApiV1MessageTargetsRouteImport } from './routes/api/v1/message-targets'
 import { Route as ApiV1FeedbackRouteImport } from './routes/api/v1/feedback'
+import { Route as ApiV1ErrorsRouteImport } from './routes/api/v1/errors'
 import { Route as ApiV1AskRouteImport } from './routes/api/v1/ask'
 import { Route as AuthenticatedParentTeamRouteImport } from './routes/_authenticated/parent.team'
 import { Route as AuthenticatedParentSettingsRouteImport } from './routes/_authenticated/parent.settings'
@@ -509,6 +510,11 @@ const ApiV1MessageTargetsRoute = ApiV1MessageTargetsRouteImport.update({
 const ApiV1FeedbackRoute = ApiV1FeedbackRouteImport.update({
   id: '/api/v1/feedback',
   path: '/api/v1/feedback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1ErrorsRoute = ApiV1ErrorsRouteImport.update({
+  id: '/api/v1/errors',
+  path: '/api/v1/errors',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiV1AskRoute = ApiV1AskRouteImport.update({
@@ -2027,6 +2033,7 @@ export interface FileRoutesByFullPath {
   '/parent/settings': typeof AuthenticatedParentSettingsRoute
   '/parent/team': typeof AuthenticatedParentTeamRoute
   '/api/v1/ask': typeof ApiV1AskRoute
+  '/api/v1/errors': typeof ApiV1ErrorsRoute
   '/api/v1/feedback': typeof ApiV1FeedbackRoute
   '/api/v1/message-targets': typeof ApiV1MessageTargetsRoute
   '/board/$slug/wall': typeof BoardSlugWallRoute
@@ -2321,6 +2328,7 @@ export interface FileRoutesByTo {
   '/parent/settings': typeof AuthenticatedParentSettingsRoute
   '/parent/team': typeof AuthenticatedParentTeamRoute
   '/api/v1/ask': typeof ApiV1AskRoute
+  '/api/v1/errors': typeof ApiV1ErrorsRoute
   '/api/v1/feedback': typeof ApiV1FeedbackRoute
   '/api/v1/message-targets': typeof ApiV1MessageTargetsRoute
   '/board/$slug/wall': typeof BoardSlugWallRoute
@@ -2623,6 +2631,7 @@ export interface FileRoutesById {
   '/_authenticated/parent/settings': typeof AuthenticatedParentSettingsRoute
   '/_authenticated/parent/team': typeof AuthenticatedParentTeamRoute
   '/api/v1/ask': typeof ApiV1AskRoute
+  '/api/v1/errors': typeof ApiV1ErrorsRoute
   '/api/v1/feedback': typeof ApiV1FeedbackRoute
   '/api/v1/message-targets': typeof ApiV1MessageTargetsRoute
   '/board/$slug_/wall': typeof BoardSlugWallRoute
@@ -2925,6 +2934,7 @@ export interface FileRouteTypes {
     | '/parent/settings'
     | '/parent/team'
     | '/api/v1/ask'
+    | '/api/v1/errors'
     | '/api/v1/feedback'
     | '/api/v1/message-targets'
     | '/board/$slug/wall'
@@ -3219,6 +3229,7 @@ export interface FileRouteTypes {
     | '/parent/settings'
     | '/parent/team'
     | '/api/v1/ask'
+    | '/api/v1/errors'
     | '/api/v1/feedback'
     | '/api/v1/message-targets'
     | '/board/$slug/wall'
@@ -3520,6 +3531,7 @@ export interface FileRouteTypes {
     | '/_authenticated/parent/settings'
     | '/_authenticated/parent/team'
     | '/api/v1/ask'
+    | '/api/v1/errors'
     | '/api/v1/feedback'
     | '/api/v1/message-targets'
     | '/board/$slug_/wall'
@@ -3782,6 +3794,7 @@ export interface RootRouteChildren {
   TeamTokenRoute: typeof TeamTokenRoute
   BoardIndexRoute: typeof BoardIndexRoute
   ApiV1AskRoute: typeof ApiV1AskRoute
+  ApiV1ErrorsRoute: typeof ApiV1ErrorsRoute
   ApiV1FeedbackRoute: typeof ApiV1FeedbackRoute
   ApiV1MessageTargetsRoute: typeof ApiV1MessageTargetsRoute
   BoardSlugWallRoute: typeof BoardSlugWallRoute
@@ -4266,6 +4279,13 @@ declare module '@tanstack/react-router' {
       path: '/api/v1/feedback'
       fullPath: '/api/v1/feedback'
       preLoaderRoute: typeof ApiV1FeedbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/errors': {
+      id: '/api/v1/errors'
+      path: '/api/v1/errors'
+      fullPath: '/api/v1/errors'
+      preLoaderRoute: typeof ApiV1ErrorsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/v1/ask': {
@@ -6368,6 +6388,7 @@ const rootRouteChildren: RootRouteChildren = {
   TeamTokenRoute: TeamTokenRoute,
   BoardIndexRoute: BoardIndexRoute,
   ApiV1AskRoute: ApiV1AskRoute,
+  ApiV1ErrorsRoute: ApiV1ErrorsRoute,
   ApiV1FeedbackRoute: ApiV1FeedbackRoute,
   ApiV1MessageTargetsRoute: ApiV1MessageTargetsRoute,
   BoardSlugWallRoute: BoardSlugWallRoute,

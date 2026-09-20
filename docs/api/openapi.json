@@ -15800,6 +15800,123 @@
         }
       }
     },
+    "/api/v1/errors": {
+      "post": {
+        "operationId": "reportError",
+        "summary": "Report an app error or MetricKit diagnostic",
+        "security": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 4000
+                  },
+                  "stack": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 16000
+                  },
+                  "route": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 1000
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "error",
+                      "crash",
+                      "hang"
+                    ],
+                    "default": "error"
+                  },
+                  "appVersion": {
+                    "type": "string",
+                    "maxLength": 32
+                  },
+                  "build": {
+                    "type": "string",
+                    "maxLength": 32
+                  },
+                  "osVersion": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 32
+                  },
+                  "device": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 64
+                  },
+                  "occurredAt": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "date-time"
+                  },
+                  "metadata": {
+                    "type": "object",
+                    "additionalProperties": {}
+                  }
+                },
+                "required": [
+                  "message",
+                  "appVersion",
+                  "build"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/coach/billing": {
       "get": {
         "operationId": "getCoachBilling",
