@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Eyebrow } from "@/components/ui/eyebrow";
 
 import { LessonSlotSheet, type LessonSlotSheetMode } from "./lesson-slot-sheet";
+import { expandSlotOccurrences } from "@/lib/lesson-recurrence";
 
 
 const DAY_LONG = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -139,7 +140,21 @@ export const WeekScheduleView = forwardRef<
         const dowIndex = (s.dayOfWeek + 6) % 7; // Mon=0..Sun=6
         const date = addDays(weekStart, dowIndex);
         const iso = toIsoDate(date);
+        // Non-weekly cadences only land in some weeks — use the same
+        // expansion invoicing and reminders use, so the board agrees.
+        const occurs = expandSlotOccurrences(
+          {
+            dayOfWeek: s.dayOfWeek,
+            frequency: s.frequency,
+            weeksOfMonth: s.weeksOfMonth,
+            startsOn: s.startsOn,
+          },
+          iso,
+          iso,
+        );
         const override = s.overrides.find((o) => o.date === iso);
+        // A rescheduled-in override still shows even outside the cadence.
+        if (occurs.length === 0 && override?.status !== "rescheduled") continue;
         if (override?.status === "canceled") continue;
         const startMinute =
           override?.status === "rescheduled" && override.startMinute != null
