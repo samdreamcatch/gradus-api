@@ -23,7 +23,7 @@ import {
 } from "./competitions.server";
 
 /** How long we keep asking after a competition wraps. */
-const ASK_WINDOW_DAYS = 7;
+export const ASK_WINDOW_DAYS = 7;
 
 const wrongRole = (message: string) => new ApiError({ code: "wrong_role", status: 403, message });
 const forbidden = (message: string) => new ApiError({ code: "forbidden", status: 403, message });

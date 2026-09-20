@@ -295,6 +295,9 @@ interface CompetitionRow {
   id: string;
   ijs_base_url: string;
   year: number;
+  /** Passed through to the Live Activity sync so it need not look them up on every refresh. */
+  slug?: string | null;
+  name?: string | null;
 }
 
 /**
@@ -360,6 +363,13 @@ export async function refreshCompetition(
       },
       { onConflict: "competition_id" },
     );
+    // Followers' Live Activities track this snapshot (PRD §6.9); never on the
+    // request's critical path and never allowed to fail the refresh.
+    const { inBackground } = await import("./background");
+    await inBackground("live-activities:sync", async () => {
+      const { syncBoardLiveActivities } = await import("./live-activities.server");
+      await syncBoardLiveActivities(mod.supabaseAdmin, comp, payload);
+    });
     return payload;
   } catch (err) {
     await db.from("competition_snapshots").upsert(

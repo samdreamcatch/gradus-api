@@ -56,6 +56,7 @@ export const messageSchema = z.object({
   body: z.string(),
   audioUrl: z.string().nullable(),
   durationSeconds: z.number().nullable(),
+  transcript: z.string().nullable(),
   createdAt: z.string(),
   readBy: z.array(z.object({ userId: z.string(), readAt: z.string() })),
   plan: z.object({ id: z.string(), title: z.string(), coachId: z.string().nullable() }).nullable(),

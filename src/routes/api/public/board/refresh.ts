@@ -20,7 +20,7 @@ export const Route = createFileRoute("/api/public/board/refresh")({
         const today = new Date().toISOString().slice(0, 10);
         const comps = await db
           .from("competitions")
-          .select("id, ijs_base_url, year, starts_on, ends_on, active")
+          .select("id, slug, name, ijs_base_url, year, starts_on, ends_on, active")
           .eq("active", true);
 
         const live = ((comps.data ?? []) as any[]).filter(
@@ -33,6 +33,8 @@ export const Route = createFileRoute("/api/public/board/refresh")({
             id: c.id,
             ijs_base_url: c.ijs_base_url,
             year: c.year,
+            slug: c.slug,
+            name: c.name,
           });
           if (payload) refreshed += 1;
         }
