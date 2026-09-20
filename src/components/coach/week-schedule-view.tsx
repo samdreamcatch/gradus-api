@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Eyebrow } from "@/components/ui/eyebrow";
 
 import { LessonSlotSheet, type LessonSlotSheetMode } from "./lesson-slot-sheet";
+import { expandSlotOccurrences } from "@/lib/lesson-recurrence";
 
 
 const DAY_LONG = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
