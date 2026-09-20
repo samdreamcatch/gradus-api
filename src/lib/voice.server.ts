@@ -298,13 +298,87 @@ SLOTS: athleteName "Leon"; moves[0].name "Single axel landings", description "La
 
 Cue = ONE short phrase. Why = ONE sentence. Don't lump everything into description. Every move needs a name.`;
 
+/** The structuring models, in the order `SLOT_ATTEMPTS` tries them. */
+export const VOICE_MODELS = {
+  primary: "google/gemini-3-flash-preview",
+  fallback: "google/gemini-2.5-flash",
+} as const;
+
+export type SlotAttempt = {
+  variant: "full" | "simple";
+  model: string;
+  /** Pause before this attempt: an immediate identical-timing retry tends to hit the same bad generation. */
+  pauseMs: number;
+};
+
+/**
+ * Three chances before the coach sees an empty draft: the full shape, then
+ * the reduced shape (no per-field source quotes) after a short pause, then
+ * the reduced shape on a second model. Length is where dictations fail, so
+ * every retry asks for less.
+ */
+export const SLOT_ATTEMPTS: readonly SlotAttempt[] = [
+  { variant: "full", model: VOICE_MODELS.primary, pauseMs: 0 },
+  { variant: "simple", model: VOICE_MODELS.primary, pauseMs: 750 },
+  { variant: "simple", model: VOICE_MODELS.fallback, pauseMs: 750 },
+];
+
+export class VoiceAiError extends Error {}
+
+/**
+ * Runs the attempts in order until one returns slots. A 429 or 402 from the
+ * gateway stops the run at once with the coach-facing message, and so does a
+ * `VoiceAiError` thrown by the attempt itself (a missing gateway key): none
+ * of those is fixed by waiting. Anything else moves on to the next attempt
+ * after its pause. Returns null when every attempt failed. Pure apart from
+ * `deps`, so the policy is unit-tested without a model call.
+ */
+export async function slotWithRetries(
+  ctx: ParseContext,
+  deps: {
+    attempt: (ctx: ParseContext, attempt: SlotAttempt) => Promise<Slots>;
+    sleep: (ms: number) => Promise<void>;
+    attempts?: readonly SlotAttempt[];
+    log?: (level: "info" | "error", event: string, detail: Record<string, unknown>) => void;
+  },
+): Promise<{ slots: Slots; attempt: SlotAttempt; index: number } | null> {
+  const attempts = deps.attempts ?? SLOT_ATTEMPTS;
+  const log =
+    deps.log ??
+    ((level, event, detail) => console[level](`[voice] ${event}`, JSON.stringify(detail)));
+  for (const [index, attempt] of attempts.entries()) {
+    if (attempt.pauseMs > 0) await deps.sleep(attempt.pauseMs);
+    try {
+      const slots = await deps.attempt(ctx, attempt);
+      if (index > 0)
+        log("info", "slot recovered", { index, variant: attempt.variant, model: attempt.model });
+      return { slots, attempt, index };
+    } catch (e) {
+      const err = e as { statusCode?: number; message?: string };
+      log("error", "slot failed", {
+        index,
+        variant: attempt.variant,
+        model: attempt.model,
+        transcriptLen: ctx.transcript.length,
+        statusCode: err.statusCode,
+        message: err.message,
+      });
+      if (e instanceof VoiceAiError) throw e;
+      if (err.statusCode === 429) throw new VoiceAiError("AI is busy — try again in a moment");
+      if (err.statusCode === 402)
+        throw new VoiceAiError("AI credits exhausted — add credits in workspace settings");
+    }
+  }
+  return null;
+}
+
 export async function slotTranscript(
   ctx: ParseContext,
   variant: "full" | "simple" = "full",
   modelId = "google/gemini-3-flash-preview",
 ) {
   const apiKey = process.env.LOVABLE_API_KEY;
-  if (!apiKey) throw new Error("AI not configured");
+  if (!apiKey) throw new VoiceAiError("AI not configured");
   const gateway = createLovableAiGatewayProvider(apiKey, { structuredOutputs: true });
   const model = gateway(modelId);
 
@@ -672,60 +746,21 @@ async function cleanupNotes(opts: {
 /* ---------------- Orchestrator: build draft ---------------- */
 
 export async function buildDraft(ctx: ParseContext): Promise<VoicePlanDraft> {
-  let slotted;
-  try {
-    slotted = await slotTranscript(ctx);
-  } catch (e) {
-    const err = e as { statusCode?: number; message?: string };
-    console.error(
-      "[voice] slot failed",
-      JSON.stringify({
-        transcriptLen: ctx.transcript.length,
-        statusCode: err.statusCode,
-        message: err.message,
-      }),
-    );
-    if (err.statusCode === 429) throw new Error("AI is busy — try again in a moment");
-    if (err.statusCode === 402)
-      throw new Error("AI credits exhausted — add credits in workspace settings");
-    // Schema/parse failures are common on long dictations — retry once before
-    // giving up, and never return a silent empty draft.
-    try {
-      // Short pause first — an immediate identical-timing retry tends to hit
-      // the same bad generation. Then the reduced shape (no per-field source
-      // quotes), so a long dictation gets a genuinely easier second chance.
-      await new Promise((r) => setTimeout(r, 750));
-      slotted = await slotTranscript(ctx, "simple");
-    } catch (e2) {
-      const err2 = e2 as { statusCode?: number; message?: string };
-      console.error(
-        "[voice] slot failed (retry)",
-        JSON.stringify({ transcriptLen: ctx.transcript.length, message: err2.message }),
-      );
-      if (err2.statusCode === 429) throw new Error("AI is busy — try again in a moment");
-      if (err2.statusCode === 402)
-        throw new Error("AI credits exhausted — add credits in workspace settings");
-      try {
-        // Last chance on a different model before the coach loses the draft.
-        await new Promise((r) => setTimeout(r, 750));
-        slotted = await slotTranscript(ctx, "simple", "google/gemini-2.5-flash");
-      } catch (e3) {
-        const err3 = e3 as { statusCode?: number; message?: string };
-        console.error(
-          "[voice] slot failed (fallback model)",
-          JSON.stringify({ transcriptLen: ctx.transcript.length, message: err3.message }),
-        );
-        if (err3.statusCode === 429) throw new Error("AI is busy — try again in a moment");
-        if (err3.statusCode === 402)
-          throw new Error("AI credits exhausted — add credits in workspace settings");
-        // Do NOT throw here: throwing skips applyDraft, and with it the
-        // `voice_transcript` write that keeps the coach's words on the plan.
-        // Return the empty fallback flagged aiFailed so the transcript is
-        // saved and the client can show an honest error instead of a success.
-        return { moves: [], aiFailed: true };
-      }
-    }
+  // Schema/parse failures are common on long dictations: `SLOT_ATTEMPTS`
+  // (full shape, reduced shape after a pause, reduced shape on a second
+  // model) before giving up, and never a silent empty draft.
+  const outcome = await slotWithRetries(ctx, {
+    attempt: (c, a) => slotTranscript(c, a.variant, a.model),
+    sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+  });
+  if (!outcome) {
+    // Do NOT throw here: throwing skips applyDraft, and with it the
+    // `voice_transcript` write that keeps the coach's words on the plan.
+    // Return the empty fallback flagged aiFailed so the transcript is
+    // saved and the client can show an honest error instead of a success.
+    return { moves: [], aiFailed: true };
   }
+  const slotted = outcome.slots;
 
   const { id: athleteId, unresolved } = resolveAthlete(slotted.athleteName, ctx.athletes);
   const resolvedAthlete = athleteId ? (ctx.athletes.find((a) => a.id === athleteId) ?? null) : null;

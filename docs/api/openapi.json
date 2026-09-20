@@ -9921,6 +9921,9 @@
                     "appliedMoveCount": {
                       "type": "integer"
                     },
+                    "droppedMoveCount": {
+                      "type": "integer"
+                    },
                     "aiFailed": {
                       "type": "boolean"
                     }
@@ -9931,6 +9934,7 @@
                     "touched",
                     "unresolvedAthleteName",
                     "appliedMoveCount",
+                    "droppedMoveCount",
                     "aiFailed"
                   ]
                 }
