@@ -53,16 +53,30 @@ export const setBoardFollow = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const table = (supabaseAdmin as unknown as { from: (t: string) => any }).from("board_follows");
     if (data.following) {
-      await table.upsert(
-        {
+      // The anonymous uniqueness index is partial (device_id present, no
+      // user_id), which PostgREST cannot target with ON CONFLICT — so check
+      // first and insert only when the row is missing.
+      const existing = await table
+        .select("id")
+        .is("user_id", null)
+        .eq("device_id", data.deviceId)
+        .eq("competition_slug", data.slug)
+        .eq("skater_name", data.skaterName)
+        .maybeSingle();
+      if (!existing.data) {
+        const { error } = await table.insert({
           user_id: null,
           device_id: data.deviceId,
           competition_slug: data.slug,
           skater_name: data.skaterName,
           source: "web",
-        },
-        { onConflict: "device_id,competition_slug,skater_name", ignoreDuplicates: true },
-      );
+        });
+        // A duplicate from a racing tap is fine; anything else must be visible.
+        if (error && error.code !== "23505") {
+          console.error("[board] follow insert failed", error);
+          throw new Error("Could not record the follow.");
+        }
+      }
     } else {
       await table
         .delete()
