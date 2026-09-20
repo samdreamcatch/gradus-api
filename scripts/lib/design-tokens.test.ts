@@ -81,7 +81,7 @@ describe("oklch → sRGB", () => {
     const chrome: [number, number, number, string][] = [
       [0.87, 0.17, 55, "#FFB35B"], // dark --pen-orange, linear red 1.41
       [0.86, 0.16, 8, "#FFA1BD"], // dark --pen-pink
-      [0.82, 0.15, 25, "#FF9B92"], // dark --destructive-ink
+      [0.82, 0.15, 25, "#FF9B92"], // a mid-light red (was the dark --destructive-ink)
       [0.86, 0.175, 310, "#F4AEFF"], // dark --pen-iris
       [0.339, 0.095, 119, "#333E00"], // light --pen-tennis-ink
       [0.965, 0.028, 235, "#E2F7FF"], // light --pen-pool-wash

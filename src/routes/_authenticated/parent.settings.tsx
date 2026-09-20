@@ -627,7 +627,6 @@ function TeamPeopleGroup({ athletes }: { athletes: AthleteData[] }) {
                                   <AlertDialogFooter>
                                     <AlertDialogCancel>Cancel</AlertDialogCancel>
                                     <AlertDialogAction
-                                      className="bg-destructive text-white"
                                       onClick={() => void handleUnlink(a.id, c.coachId)}
                                     >
                                       Unlink

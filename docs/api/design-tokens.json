@@ -52,6 +52,7 @@
     "card-foreground": "foreground",
     "destructive": "destructive-ink",
     "destructive-fill": "destructive",
+    "destructive-foreground": "destructive-foreground",
     "dialog": "dialog",
     "elevated": "elevated",
     "foreground": "foreground",
@@ -258,6 +259,28 @@
         "css": "oklch(0.175 0.028 226)"
       }
     },
+    "border-strong": {
+      "light": {
+        "hex": "#7A8187",
+        "srgb": {
+          "r": 0.4803,
+          "g": 0.5063,
+          "b": 0.5296,
+          "a": 1
+        },
+        "css": "oklch( 0.6 0.012 245 )"
+      },
+      "dark": {
+        "hex": "#80878D",
+        "srgb": {
+          "r": 0.5034,
+          "g": 0.5297,
+          "b": 0.5532,
+          "a": 1
+        },
+        "css": "oklch(0.62 0.012 245)"
+      }
+    },
     "card": {
       "light": {
         "hex": "#FFFFFF8C",
@@ -304,24 +327,24 @@
     },
     "destructive": {
       "light": {
-        "hex": "#DF202E",
+        "hex": "#A20519",
         "srgb": {
-          "r": 0.8742,
-          "g": 0.1266,
-          "b": 0.1802,
+          "r": 0.6345,
+          "g": 0.0184,
+          "b": 0.0979,
           "a": 1
         },
-        "css": "oklch(0.58 0.22 25)"
+        "css": "oklch(0.45 0.18 25)"
       },
       "dark": {
-        "hex": "#F66D67",
+        "hex": "#FF7E76",
         "srgb": {
-          "r": 0.9646,
-          "g": 0.4264,
-          "b": 0.4024,
+          "r": 1,
+          "g": 0.4923,
+          "b": 0.4635,
           "a": 1
         },
-        "css": "oklch(0.7 0.17 25)"
+        "css": "oklch(0.74 0.16 25)"
       }
     },
     "destructive-foreground": {
@@ -336,36 +359,36 @@
         "css": "oklch(0.98 0 0)"
       },
       "dark": {
-        "hex": "#F8F8F8",
+        "hex": "#011016",
         "srgb": {
-          "r": 0.9737,
-          "g": 0.9737,
-          "b": 0.9737,
+          "r": 0.0041,
+          "g": 0.0611,
+          "b": 0.0877,
           "a": 1
         },
-        "css": "oklch(0.98 0 0)"
+        "css": "oklch(0.16 0.028 226)"
       }
     },
     "destructive-ink": {
       "light": {
-        "hex": "#DF202E",
+        "hex": "#A20519",
         "srgb": {
-          "r": 0.8742,
-          "g": 0.1266,
-          "b": 0.1802,
+          "r": 0.6345,
+          "g": 0.0184,
+          "b": 0.0979,
           "a": 1
         },
-        "css": "oklch(0.58 0.22 25)"
+        "css": "oklch(0.45 0.18 25)"
       },
       "dark": {
-        "hex": "#FF9B92",
+        "hex": "#FFAEA5",
         "srgb": {
           "r": 1,
-          "g": 0.607,
-          "b": 0.5731,
+          "g": 0.6831,
+          "b": 0.6465,
           "a": 1
         },
-        "css": "oklch(0.82 0.15 25)"
+        "css": "oklch(0.88 0.15 25)"
       }
     },
     "dialog": {
@@ -723,14 +746,14 @@
         "css": "oklch(0.4 0.14 8)"
       },
       "dark": {
-        "hex": "#FFA1BD",
+        "hex": "#FFA8C3",
         "srgb": {
           "r": 1,
-          "g": 0.633,
-          "b": 0.7409,
+          "g": 0.6585,
+          "b": 0.7659,
           "a": 1
         },
-        "css": "oklch(0.86 0.16 8)"
+        "css": "oklch(0.88 0.16 8)"
       }
     },
     "pen-pink-wash": {
@@ -855,14 +878,14 @@
         "css": "oklch(0.339 0.095 119)"
       },
       "dark": {
-        "hex": "#ADC535",
+        "hex": "#B9D245",
         "srgb": {
-          "r": 0.6767,
-          "g": 0.7737,
-          "b": 0.2075,
+          "r": 0.7256,
+          "g": 0.825,
+          "b": 0.2722,
           "a": 1
         },
-        "css": "oklch(0.78 0.165 119)"
+        "css": "oklch(0.82 0.165 119)"
       }
     },
     "pen-tennis-wash": {
@@ -1307,14 +1330,14 @@
     },
     "text-tertiary": {
       "light": {
-        "hex": "#4E535B",
+        "hex": "#4B5058",
         "srgb": {
-          "r": 0.3048,
-          "g": 0.3248,
-          "b": 0.357,
+          "r": 0.2942,
+          "g": 0.3141,
+          "b": 0.3461,
           "a": 1
         },
-        "css": "oklch(0.44 0.015 260)"
+        "css": "oklch(0.43 0.015 260)"
       },
       "dark": {
         "hex": "#D0CABE",
