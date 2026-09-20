@@ -1,5 +1,15 @@
 import { describe, expect, it } from "bun:test";
-import { extractJsonObject, salvageSlots } from "./voice.server";
+import {
+  extractJsonObject,
+  salvageSlots,
+  SLOT_ATTEMPTS,
+  slotWithRetries,
+  VOICE_MODELS,
+  VoiceAiError,
+  type ParseContext,
+  type SlotAttempt,
+  type Slots,
+} from "./voice.server";
 
 describe("extractJsonObject", () => {
   it("pulls the object out of a code-fenced answer", () => {
@@ -50,5 +60,106 @@ describe("salvageSlots", () => {
     expect(salvageSlots(null)).toBeNull();
     expect(salvageSlots("nope")).toBeNull();
     expect(salvageSlots({ title: null, moves: [] })).toBeNull();
+  });
+});
+
+describe("slotWithRetries", () => {
+  const ctx: ParseContext = {
+    mode: "create",
+    transcript: "Plan for Leon, single axel five times",
+    athletes: [],
+    library: [],
+  };
+  const slots: Slots = {
+    title: null,
+    titleQuote: null,
+    athleteName: null,
+    athleteQuote: null,
+    moves: [],
+    leftover: null,
+  };
+  const noLog = () => {};
+
+  it("returns the first attempt's slots without pausing", async () => {
+    const pauses: number[] = [];
+    const seen: SlotAttempt[] = [];
+    const result = await slotWithRetries(ctx, {
+      attempt: async (_c, a) => {
+        seen.push(a);
+        return slots;
+      },
+      sleep: async (ms) => {
+        pauses.push(ms);
+      },
+      log: noLog,
+    });
+    expect(result?.index).toBe(0);
+    expect(pauses).toEqual([]);
+    expect(seen.map((a) => a.variant)).toEqual(["full"]);
+  });
+
+  it("pauses, then asks for the simple shape, then a second model", async () => {
+    const pauses: number[] = [];
+    const seen: SlotAttempt[] = [];
+    const result = await slotWithRetries(ctx, {
+      attempt: async (_c, a) => {
+        seen.push(a);
+        if (seen.length < 3) throw new Error("schema mismatch");
+        return slots;
+      },
+      sleep: async (ms) => {
+        pauses.push(ms);
+      },
+      log: noLog,
+    });
+    expect(result?.index).toBe(2);
+    expect(pauses).toEqual([750, 750]);
+    expect(seen.map((a) => [a.variant, a.model])).toEqual([
+      ["full", VOICE_MODELS.primary],
+      ["simple", VOICE_MODELS.primary],
+      ["simple", VOICE_MODELS.fallback],
+    ]);
+    expect(SLOT_ATTEMPTS.length).toBe(3);
+  });
+
+  it("returns null when every attempt fails", async () => {
+    let calls = 0;
+    const result = await slotWithRetries(ctx, {
+      attempt: async () => {
+        calls += 1;
+        throw new Error("nope");
+      },
+      sleep: async () => {},
+      log: noLog,
+    });
+    expect(result).toBeNull();
+    expect(calls).toBe(3);
+  });
+
+  it("stops at once on rate limits and exhausted credits", async () => {
+    let calls = 0;
+    const busy = slotWithRetries(ctx, {
+      attempt: async () => {
+        calls += 1;
+        throw Object.assign(new Error("429"), { statusCode: 429 });
+      },
+      sleep: async () => {},
+      log: noLog,
+    });
+    const error = await busy.then(
+      () => null,
+      (e: unknown) => e,
+    );
+    expect(error).toBeInstanceOf(VoiceAiError);
+    expect((error as Error).message).toContain("AI is busy");
+    expect(calls).toBe(1);
+    const broke = slotWithRetries(ctx, {
+      attempt: async () => {
+        throw Object.assign(new Error("402"), { statusCode: 402 });
+      },
+      sleep: async () => {},
+      log: noLog,
+    });
+    await expect(broke).rejects.toThrow("credits");
   });
 });
