@@ -14,7 +14,8 @@ const planId = (params: Record<string, string>) => z.string().uuid().parse(param
  * GET serves the coach, parent, or athlete view in one shape; PUT is the
  * whole-plan save (row plus a full replacement of its moves); PATCH is the
  * per-field update, which forks an active plan when its athlete changes;
- * DELETE only removes templates and drafts (422 `not_deletable` otherwise).
+ * DELETE removes templates, drafts, and benched plans (422 `not_deletable`
+ * for an active plan — bench it first).
  */
 export const Route = createFileRoute("/api/v1/plans/$id/")({
   server: {
@@ -59,7 +60,7 @@ export const Route = createFileRoute("/api/v1/plans/$id/")({
         path: "/api/v1/plans/{id}",
         operationId: "deletePlan",
         auth: "user",
-        summary: "Delete a template or draft plan",
+        summary: "Delete a template, draft, or benched plan",
         output: okSchema,
         handler: async ({ ctx, params }) => {
           const coach = await requirePlansCoach(requireContext(ctx));

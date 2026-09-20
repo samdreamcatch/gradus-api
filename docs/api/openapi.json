@@ -7699,7 +7699,7 @@
       },
       "delete": {
         "operationId": "deletePlan",
-        "summary": "Delete a template or draft plan",
+        "summary": "Delete a template, draft, or benched plan",
         "security": [
           {
             "bearerAuth": []
