@@ -1,6 +1,6 @@
 # Gradus for iOS — Product Requirements Document
 
-**Status:** Draft v1 for review · **Owner:** Mariah Gillespie · **Author:** Claude Code · **Date:** 2026-09-04 · **Amended:** 2026-09-19 (native-only release and the pre-QA gate, §10.6)
+**Status:** Draft v1 for review · **Owner:** Mariah Gillespie · **Author:** Claude Code · **Date:** 2026-09-04 · **Amended:** 2026-09-19 (native-only release and the pre-QA gate, §10.6) · 2026-09-20 (athlete learning loop and grounded Ask Gradus, §6.7 and §10.7)
 **Repos:** backend and web `mariah-gill/gradus-coach-start` · native app `mariah-gill/gradus-ios` (to be created) · **Web app:** https://gradus.training · **Bundle ID:** `training.gradus.app`
 
 This document specifies the native Swift rebuild of the Gradus progressive web app for iPhone. It is written to be executed by Claude Code with Mariah reviewing, so it is deliberately concrete: it names the endpoints, screens, data, and guarantees, and it records the decisions already made so future sessions do not re-litigate them.
@@ -35,6 +35,11 @@ Decisions confirmed with Mariah on 2026-09-04. Treat these as settled.
 | 11 | Team and format | Claude Code builds it with Mariah reviewing once a day. PRD lives in the repo as Markdown. First TestFlight as soon as App Store Connect is set up (enrollment approved 2026-09-19); the pre-QA gate in §10.6 comes first. |
 | 12 | Pace | **Milestone-driven, no time estimates.** One daytime Claude Code stream on iOS plus overnight backend runs; the next milestone starts when the current one is done (§10.1). |
 | 13 | Repositories | The native Swift app lives in a **new repo, `mariah-gill/gradus-ios`**. The backend API stays in `gradus-coach-start` because it runs in the Worker Lovable deploys. The OpenAPI document is the contract between them, pinned by commit. Kotlin later gets `gradus-android`. |
+| 14 | Athlete learning loop in 1.0 | **2026-09-20 (Mariah):** the site's promise that Gradus "learns each athlete's pace and seasonal trends" and "digests competition results into the next plan" becomes product, not copy. The data capture (skill events, level history), the flow-state label fix, and a longitudinal athlete profile that feeds the existing prompts all ship **before the native 1.0 submission** (§10.7). A *trained* per-athlete pace model is post-launch, once a season of real events exists to train on. |
+| 15 | Grounded Ask Gradus | **2026-09-20 (Mariah):** Ask Gradus answers from a curated, cited corpus (retrieval-augmented) instead of general model knowledge: The Athlete Survivors' Assist materials, the SafeSport Code and MAAPP, the rulebooks for each supported sport, the coaching and athlete-development sources Mariah picks (§12 #15), and each coach's own uploaded resources, scoped to that coach's athletes. Gates 1.0 (§10.7). |
+| 16 | Ask Gradus fallback | **2026-09-20 (Mariah):** when the corpus does not cover a question, answer from general model knowledge and **say so plainly** in the answer. Safety topics never fall back: they route to the Safe Sport panel content. |
+| 17 | Coach "why" prompt | **2026-09-20 (Mariah):** when a coach benches a plan or removes a move, the one-tap reason prompt (landed it / parking it / changed direction) is **skippable**. Only answered prompts become labeled skill events; the rest are inferred with a low-confidence flag. Coaches are never blocked. |
+| 18 | Canonical flow-state labels | **2026-09-20 (Mariah):** **Frustrated / Pushing / Steady / Locked in / Flowing** are the labels for every user, every screen, and every prompt. The coach's AI summary had its own mastery-flavored scale for the same index; web PR #127 removes it. |
 
 ---
 
@@ -56,7 +61,7 @@ This project rebuilds the coach, parent, and athlete experience as a native Swif
 - Org admin or internal admin features on iOS.
 - Purchasing subscriptions in-app.
 - Migrating off Lovable Cloud or changing the Supabase project. (Documented as a possible later project in §11.)
-- Rewriting AI prompts, the IJS scraper, the email system, Stripe webhooks, or any server behavior that is not required for the iOS client.
+- Rewriting AI prompts, the IJS scraper, the email system, Stripe webhooks, or any server behavior that is not required for the iOS client. *Amended 2026-09-20:* §6.7 and §10.7 now change the Ask Gradus, plan-draft, athlete-summary, and briefing prompts on purpose, under the §4.1 rules and with the web receiving the same improved answers. The rest of this bullet stands.
 - Redesigning the product. Screens may be reorganized to fit iOS idioms, but the information architecture, copy, and flows are ported, not reinvented.
 
 ---
@@ -70,6 +75,7 @@ This project rebuilds the coach, parent, and athlete experience as a native Swif
 3. **Nothing important is missed.** New messages, plan assignments, lesson wrap-up prompts, and Live Board moments arrive as notifications.
 4. **The Live Board is the best way to follow a competition on a phone.** Scan a QR code at the rink, follow your skaters, watch the Dynamic Island.
 5. **Feature parity with the web app for coaches, parents, and athletes**, so the web can be sunset for those roles.
+6. **Gradus learns each athlete and answers from vetted sources** *(added 2026-09-20)*. Every plan draft, briefing, and athlete summary reads a longitudinal profile of that athlete built from what coaches, athletes, parents, and judges have already recorded; Ask Gradus answers from a cited corpus. See §6.7.
 
 ### Success metrics (measure from launch)
 
@@ -82,6 +88,9 @@ This project rebuilds the coach, parent, and athlete experience as a native Swif
 | Live Board data age shown to a viewer (p50) | ≤ 45 s behind IJS |
 | App Store rating after 60 days | ≥ 4.6 |
 | Web weekly actives among coaches/parents/athletes 90 days after launch | trending to zero, gating the sunset (§10.4) |
+| Ask Gradus answers that cite at least one corpus source *(added 2026-09-20)* | ≥ 80% of answers; the rest carry the "not from Gradus sources" label |
+| Bench and move-removal prompts a coach answers rather than skips *(added 2026-09-20)* | ≥ 60% |
+| Athletes with at least one labeled or protocol-derived skill event 60 days after launch *(added 2026-09-20)* | ≥ 70% of athletes with an active plan |
 
 ### Guardrails (must not regress during the build)
 
@@ -166,7 +175,7 @@ Every screen for coach, parent, and athlete; navigation; auth UI; offline store 
 
 ### What is added server-side
 
-The `/api/v1` layer (§6.2); auth broker endpoints for Apple, Google, and password sign-in (§6.4); APNs sender and notification triggers (§6.6); idempotency and pagination support; OpenAPI spec generation; a small number of additive tables (`api_idempotency_keys`, `auth_identities`, `board_follows`, `live_activity_tokens`).
+The `/api/v1` layer (§6.2); auth broker endpoints for Apple, Google, and password sign-in (§6.4); APNs sender and notification triggers (§6.6); idempotency and pagination support; OpenAPI spec generation; a small number of additive tables (`api_idempotency_keys`, `auth_identities`, `board_follows`, `live_activity_tokens`). *Added 2026-09-20 (§6.7):* the `vector` extension and the tables `athlete_skill_events`, `athlete_level_history`, `knowledge_sources`, `knowledge_chunks`; a knowledge-ingestion path that runs inside the Worker; and a derived athlete profile that the existing prompts consume.
 
 ---
 
@@ -363,6 +372,30 @@ Lesson reminders ("lesson in 1 hour") are a P1 addition driven by pg_cron callin
 
 **On-device transcription.** Apple's `SpeechAnalyzer` (iOS 26+) is an attractive later option for offline dictation. Not in scope; the server pipeline is the source of truth so both platforms behave the same.
 
+**Athlete learning loop (added 2026-09-20; decisions #14, #17, #18).** The claim on gradussports.com is that Gradus learns how long a given athlete takes to develop a new skill, where their ups and downs fall across a season, and folds competition results into the next plan. Today the backend holds one flow state per practice session at the plan level, a coach action (edited / redeployed / dismissed) per lesson wrap-up, a plan status of active or benched with no reason, a level on `athlete_goals` that is overwritten in place, and, for figure skating, the full judged protocol per competition. Nothing records when a skill was first attempted or first landed, so nothing can be learned about pace. The loop closes in two stages:
+
+*Stage one, ships in 1.0 (§10.7 L1–L5): capture the signal and compute the trends deterministically.* There is no per-athlete machine learning in this stage, and none is needed to make the sentences on the website true.
+
+1. **Skill events.** A new additive table `athlete_skill_events` (athlete, coach, move or plan-move, event kind, source, confidence, occurred-at, plan and competition references). Event kinds: `attempted`, `landed`, `consistent`, `parked`, `dropped`. Sources: `coach` (the "why" prompt), `protocol` (a competition element executed clean with non-negative GOE and no `<` or `*` mark), `inferred` (below). Athletes and parents record nothing new; their session log stays a mood and flow measure (§7.6) and is never turned into a per-move checklist.
+2. **The coach "why" prompt.** When a coach benches a plan or removes a move from an athlete's plan, the client asks one question with three answers, *landed it / parking it / changed direction*, plus a one-tap skip (decision #17). The answer travels as an optional `reason` on the existing status and removal endpoints and becomes a `landed`, `parked`, or `dropped` event with `source = coach` and confidence 1.0. Skipping writes nothing. The prompt is a native alert on iOS, queued offline with the underlying edit.
+3. **Level history.** A trigger on `athlete_goals` appends every change of `current_level_key` to `athlete_level_history` (athlete, sport, from level, to level, changed-at, changed-by role). No UI change; this is the seasonal-pace signal.
+4. **Protocol-derived events.** When a competition result is linked to an athlete (§7.10), each executed element becomes an `attempted` event and each clean element a `landed` event with `source = protocol`. Figure skating only until other sports have structured results.
+5. **Inferred events.** A nightly pg_cron job (the existing cron pattern) looks for a move that left a plan without a coach answer, preceded by a sustained run of Locked-in or Flowing sessions on that plan, and writes a `landed` event with `source = inferred` and a confidence between 0 and 1. Inferred events are always shown to the coach as "likely" and are never promoted to certain without a coach or protocol event. The coach-labeled set is the check on the inference: the job's precision against coach labels is logged so the rule can be tuned or switched off.
+6. **The athlete profile.** A server-side derived read (SQL over the tables above, computed on request and cached by input hash like the briefing) that yields, per athlete and sport: median days from first attempt to first landing by move category; the flow-state trend over the last 30, 90, and 365 days; competition scores over time; level changes with dates; and the calendar weeks where dips cluster. It is prompt-sized text, contains no free text the gateway has not already seen, and is injected into three existing prompts: plan drafting (`generatePlanFromResults`, which also starts reading the athlete's whole results history rather than one competition, and takes its persona from the athlete's sport rather than a hard-coded figure skating coach), the coach's athlete summary, and the pre-lesson briefing. Each prompt keeps its current instruction to report only what the data shows.
+7. **Flow-state labels.** Every producer and consumer of `plan_sessions.state_index` uses the scale in `session-states.ts`: Frustrated / Pushing / Steady / Locked in / Flowing (decision #18). No module may carry its own scale for that column.
+
+*Stage two, after launch (§10.7 L6): a learned model.* Once enough athletes have a season of skill events, a simple survival or regression model for time-to-land per move category, fit across athletes, conditioned on level and age, and personalized per athlete, runs as a scheduled server job and writes predictions to a table the prompts read. It lives where the data lives. **No on-device model** (no Core ML, no Create ML, no on-device training): the one-backend rule in §6.1 means iOS, web, and later Android must see the same athlete, and on-device training would silently diverge between clients. Whether to start L6 is a decision taken on evidence (§12 #17), not a launch commitment.
+
+**Grounded Ask Gradus (added 2026-09-20; decisions #15, #16).** Ask Gradus today sends a persona system prompt and the question, nothing else, so it answers from general model knowledge. It becomes retrieval-augmented: the answer is written from passages retrieved out of a curated corpus, cites them, and says plainly when it had to fall back.
+
+1. **Corpus v1.** (a) The six Athlete Survivors' Assist documents already in the library since 2026-09-20 (Abuse in Sports; Appropriate Athlete–Coach Relationships; Barriers to Reporting Abuse in Sports; Power and Control Wheel; Survivor Safety Plan; What to Do: Abuse & Neglect) and any further Assist material Mariah licenses; (b) the U.S. Center for SafeSport Code and the Minor Athlete Abuse Prevention Policies; (c) one rulebook set per supported sport, starting with figure skating (U.S. Figure Skating rulebook and the ISU technical rules), tennis (USTA *Friend at Court*), and golf (USGA/R&A *Rules of Golf*); (d) the coaching and athlete-development sources Mariah names (§12 #15); (e) each coach's own uploaded resource PDFs, indexed per coach and retrievable only for that coach's athletes and their guardians. Every source has a row in `knowledge_sources` recording title, publisher, version or edition, the rights basis for quoting it, and the date ingested; `docs/knowledge/SOURCES.md` is the human-readable ledger. **Nothing is ingested without a recorded rights basis** (§12 #16).
+2. **Storage.** The `vector` extension; `knowledge_chunks` (source, sport or `all`, coach scope or null, chunk text, section heading, page, embedding, content hash). RLS: global chunks readable by the service role only (retrieval happens server-side); coach-scoped chunks carry the coach id and are filtered in the query. Chunking is per source type: rulebooks split on numbered clauses and keep tables whole; prose splits on headings with overlap. Chunk quality is verified against a fixed set of questions with known answer passages (`docs/api/vectors/knowledge/`), not by eyeballing.
+3. **Ingestion runs in the Worker.** No session holds a service-role key (§4.1 rule 10), so ingestion is not a local script. A source is registered from the internal admin panel (web-only, §3), the PDF is read from the `resource-pdfs` bucket, chunked, embedded through the same Lovable AI Gateway the app already uses (Gemini Embedding 2; text-embedding-3 as the alternative), and written in batches through a `pgmq` queue drained by pg_cron, so a 300-page rulebook never runs inside one request. A coach upload enqueues its own ingestion on insert. Re-ingesting a changed source replaces its chunks by content hash.
+4. **Retrieval and the prompt.** `askGradus` embeds the question, retrieves the top passages filtered by the asker's sport plus the sport-agnostic sources plus the asker's coach scope, and passes them to the model wrapped as untrusted content (the existing `ai-prompt-safety` helpers), with the instruction to answer only from the passages, to cite each one it uses, and to answer "not covered" when they do not cover the question. The audience personas and the minor-athlete safety rules stay exactly as they are.
+5. **Fallback (decision #16).** On "not covered", a second call answers from general knowledge under the same persona, and the answer opens with one plain sentence that it is not drawn from Gradus sources. The response carries `grounded: false`. **Safety topics never fall back:** a question the classifier or the retrieved passages mark as abuse, grooming, self-harm, disordered eating, or injury concealment returns the Safe Sport panel content (hotlines and reporting links, §7.9) verbatim above whatever else is said, for every audience.
+6. **Citations.** `POST /ask` returns `answer`, `grounded`, and `sources[]` (source title, section, page, and the resource id when the document is in the library so the client can open it). Saved answers keep their sources. The web server function keeps its current return shape; showing citations on the web is a later web change outside this PRD.
+7. **Provider coupling.** Embeddings are tied to the embedding model: if §12 #4 ever flips the gateway to a direct provider key, the corpus is re-embedded in the same job, and a `knowledge_sources.embedding_model` column records which model produced each source's vectors so mixed states are detectable.
+
 ### 6.8 Payments and entitlements
 
 **Decision.** No In-App Purchase, no StoreKit. Coach and Team subscriptions are purchased and managed on the web through Stripe. This is compliant provided the app follows the rules below, and it is the same posture the Capacitor submission plan already took.
@@ -481,6 +514,7 @@ Each table lists the web behavior being ported and what is specifically required
 | Plans list | Filters Active / Drafts / Benched / Templates × athlete × sport; plan cards with dismiss X; swipe to delete | Native list with filter bar; swipe actions; search. Cached offline. | P0 |
 | Plan detail and editor | Title, athlete, coach notes, moves from library (search), reorder, inline edit of name / description / cue / why / target reps or minutes, save to library, remove; flow-state bars; practice log; AI session summary; share to socials | Native editor with drag-to-reorder, inline sheets for move fields, library picker with search. Edits queued offline. AI summary and share need network. | P0 |
 | Status | Activate / Bench / Delete; max-active conflict detection | Native with the server's 422 mapped to the same friendly copy. | P0 |
+| Bench or remove: "why?" *(added 2026-09-20)* | — (new; §6.7) | On Bench, and on removing a move from an athlete's plan: a native alert with *Landed it / Parking it / Changed direction / Skip*. The answer rides on the existing status or removal call as an optional `reason`; Skip sends none. Queued offline with the edit; VoiceOver reads the four options; meets the §8.5 AAA rules. Never shown for templates or for deleting a whole plan. | P1 (§10.7 L2) |
 | Templates | Plans without an athlete; clone into real plans | Native. | P0 |
 | Move library | Browse, search, edit personal moves; sport and category dropdowns; archive | Native. | P0 |
 | Starter programs | Adopt the Gradus starter plan (new figure skating coaches) | Native. | P1 |
@@ -511,7 +545,7 @@ Each table lists the web behavior being ported and what is specifically required
 |---|---|---|---|
 | Plan detail for the runner | Moves with expandable How / What / Why; flow-state bars; practice log with attribution (who logged) | Native detail; large touch targets; readable at arm's length. | P0 |
 | Session timer | Start / pause / resume / end with screen wake lock; one active session across the app (persistent bar) | Timestamp-based timer; Live Activity; local notifications; persistent bar; keep-awake while the timer screen is visible. | P0 |
-| Flow-state feedback | 5-point (Frustrated / Pushing / Steady / Locked in / Flowing) + note on end | Native sheet; submission queued offline with idempotency. | P0 |
+| Flow-state feedback | 5-point (Frustrated / Pushing / Steady / Locked in / Flowing) + note on end | Native sheet; submission queued offline with idempotency. *2026-09-20:* these five words are canonical everywhere, including every server prompt that reads a session (decision #18). The log measures how practice felt; it is never extended into per-move mastery ratings (§6.7). | P0 |
 | Message coach about this plan | Pre-tagged message | Deep link into the room composer with the tag. | P0 |
 
 ### 7.7 Parent — athletes, coaches, goals, schedules, team
@@ -544,6 +578,7 @@ Each table lists the web behavior being ported and what is specifically required
 | Library | Curated PDFs by sport, searchable, signed-URL viewer (iframe) | `PDFKit` viewer; downloads cached; share sheet. | P1 |
 | Coach uploads | Upload a resource PDF for their athletes; delete | Files picker upload via signed upload URL. | P1 |
 | Ask Gradus | Sport-scoped Q&A; parent persona and youth-athlete persona with safety guardrails; markdown answers | Native chat-style screen; render markdown with `AttributedString`; network required. | P1 |
+| Grounded answers and sources *(added 2026-09-20)* | — (new; §6.7) | Each answer shows its sources as tappable rows under the text (title, section, page); a library source opens in the PDF viewer at that page. An answer with `grounded: false` shows the "not from Gradus sources" line the server already put first, styled as a note, not hidden. A safety-routed answer shows the Safe Sport panel inline above the text. Saved answers keep their sources. | P1 (§10.7 L5) |
 | Saved answers | Save, view, delete | Native; cached offline. | P1 |
 | Safe Sport panel | Hotlines and external reporting links for athletes | Static native panel; links open in Safari; **P0** because it is a safety feature, even though the rest of Resources is P1. | P0 |
 
@@ -724,6 +759,7 @@ gradus-ios/
 - Every new table: migration with GRANTs and RLS; no service-role-only tables without a written reason in the migration header. Every service-role-only function: explicit `REVOKE … FROM PUBLIC, anon, authenticated` (§4.1 rule 12). After merge: ask Lovable to apply pending migrations, then run the precheck (§4.1 rule 11).
 - Secrets (`APNS_KEY_P8`, `APNS_KEY_ID`, `APPLE_TEAM_ID`, `APPLE_SIWA_KEY_P8`, `GOOGLE_IOS_CLIENT_ID`, `AI_PROVIDER`, `GOOGLE_AI_API_KEY`, `API_V1_ENABLED`) are set in Lovable Cloud secrets and read with `process.env`, like the existing ones.
 - Idempotency keys expire after 24 h via pg_cron, matching the existing cron pattern.
+- *Added 2026-09-20:* knowledge ingestion and skill-event inference run inside the Worker or as pg_cron jobs, never as local scripts (no session holds a service-role key). Every prompt that reads `plan_sessions.state_index` imports `stateLabel` from `session-states.ts`. Every `knowledge_sources` row has a rights basis before its chunks are written.
 
 ### 9.5 Testing
 
@@ -796,9 +832,11 @@ Backend milestones live in the web repo and can run overnight in cloud sessions.
 | I14 | Import, share, starters, connections hub, in-app reset | 3.6, 3.7 | Schedule import; plan share and import; starter programs; Founding claim; password reset in-app |
 | I15 | Widget, lesson reminders, App Attest | 3.8 | Widget shows next up; reminders arrive; App Attest on auth |
 | C2 | Capacitor Android 1.0 to Google Play, **reopened 2026-09-19** (§12 #14) | Phase D | Mariah decides whether it ships at all |
-| I16 | Hardening and submission of native 1.0 (was 2.0) | Phase 4, plus 3.9 preparation; the pre-QA gate in §10.6 comes first | QA checklist passes; crash-free ≥ 99.5% on TestFlight; submitted |
+| L1–L5 | Athlete learning loop and grounded Ask Gradus *(added 2026-09-20)* | 3.10–3.12; the milestone table is §10.7 | Taken after the §10.6 gate, alongside T1/T2 QA, as TestFlight builds; all five merged before I16 |
+| I16 | Hardening and submission of native 1.0 (was 2.0) | Phase 4, plus 3.9 preparation; the pre-QA gate in §10.6 and the §10.7 milestones L1–L5 come first | QA checklist passes; crash-free ≥ 99.5% on TestFlight; submitted |
 | L | Native 1.0 live | | Approved; first store release, no shell migration |
 | K | Kotlin rebuild starts | its own PRD | |
+| L6 | Learned pace model *(added 2026-09-20; post-launch, not gating)* | 3.13 | Taken when §12 #17 says the data supports it |
 
 ### 10.3 Build order rationale
 
@@ -862,6 +900,23 @@ Mariah's definition of "ready to move to QA," recorded 2026-09-19: **(1) every A
 | P8 | Device pass and re-audit | iOS | Live VoiceOver, Switch Control, Voice Control, Full Keyboard Access and iPad on a device; re-run the audit harness; fix findings | Findings closed; harness clean |
 | P9 | QA prep | web, iOS | `docs/ios/QA.md`; `POST /errors` and the MetricKit upload; the real Google provider once the client ID exists; native reset on once the allow-list entry exists | T1 build installs; QA begins |
 
+### 10.7 Athlete learning loop and grounded Ask Gradus (2026-09-20)
+
+Mariah's decision, recorded 2026-09-20: the website's "How it works" promises (Gradus learns each athlete's pace and seasonal trends; competition results feed the next plan) and a source-grounded Ask Gradus are **part of native 1.0**, and a trained model is not. §6.7 has the design; this section is the delivery record. The milestones are taken after the §10.6 gate closes, in parallel with QA on TestFlight (T1, T2), and all of L1–L5 must be merged before I16 begins. Web PR #127 (the flow-state label fix, decision #18) is already open and is a prerequisite for L3.
+
+**Build milestones, in order (no dates, per §10.1):**
+
+| # | Milestone | Repo | Scope | Done when |
+|---|---|---|---|---|
+| L1 | Skill events and level history | web | Migrations for `athlete_skill_events` and `athlete_level_history` with GRANTs and RLS; the `athlete_goals` trigger; optional `reason` on `POST /plans/{id}/status` and `DELETE /plans/{id}/moves/{moveId}` (and on the matching web server functions, additive, default absent); protocol-derived events on results linking; OpenAPI and vectors | In Lovable preview: a bench with a reason, a removal with a reason, a level change, and a results link each produce the expected rows; a skipped prompt produces none |
+| L2 | Coach "why" prompt | iOS | The alert on Bench and on move removal (§7.3); `reason` on the outbox entry; contract re-sync; VoiceOver and AAA checks in the audit harness | Simulator: each answer round-trips to the preview and appears as an event; Skip sends no reason; offline edits drain with their reason |
+| L3 | Athlete profile in the prompts | web | The derived profile read with input-hash caching; the inference job and its precision log; profile injected into plan drafting, the athlete summary, and the briefing; `generatePlanFromResults` reads the full results history and is sport-aware; vectors for each prompt | Prompt snapshots in tests show the profile block; the inference job runs in preview and logs precision against coach labels; web answers unchanged in shape |
+| L4 | Knowledge corpus | web | `vector` extension; `knowledge_sources` and `knowledge_chunks`; the pgmq/pg_cron ingestion path; admin-panel registration; per-coach ingestion on resource insert; chunkers per source type; `docs/knowledge/SOURCES.md`; corpus v1 ingested (§6.7) with a rights basis for every source | Every corpus v1 source has chunks in preview; the known-answer question set retrieves the expected passage at top-3 for ≥ 90% of questions |
+| L5 | Grounded answers | web, then iOS | Retrieval in `askGradus`; citations, `grounded`, safety routing, fallback sentence; saved answers keep sources; OpenAPI; iOS sources rows, PDF deep-open, fallback note, inline Safe Sport panel | A parent question about a rule cites the rulebook; a minor's question about pain routes to the panel; an off-corpus question returns `grounded: false` with the sentence first; all three verified on iOS against preview |
+| L6 | Learned pace model *(post-launch)* | web | Scheduled fit of time-to-land per move category; predictions table; the profile reads predictions when present | Taken only when §12 #17 is decided yes; not part of 1.0 |
+
+**What the web gets for free.** Because the grounding and the profile live inside the shared server functions, web users receive the same grounded answers and sharper drafts the moment each milestone publishes. The web shows no citations until a separate web change; that is the only visible difference between the clients, and it is deliberate under §4.1.
+
 ---
 
 ## 11. Risks and dependencies
@@ -884,6 +939,11 @@ Mariah's definition of "ready to move to QA," recorded 2026-09-19: **(1) every A
 | 14 | Kotlin rebuild later | Rework if the API is iOS-shaped | OpenAPI as the contract, shared test vectors, platform-neutral string catalog, no iOS-only endpoints. |
 | 16 | ~~Capacitor 1.0 rejected under Guideline 4.2~~ **Moot 2026-09-19: the shell does not ship.** | — | — |
 | 15 | Leaving Lovable Cloud someday | Auth, DB, storage migration | Out of scope. Lovable now documents an export path ("Export project data" then connect your own Supabase) and third-party migrators preserve auth passwords; the API is the only client that would need re-pointing. Write a runbook before attempting it. |
+| 17 | *(2026-09-20)* Rights to quote corpus sources (USFS rulebook is member-gated; SafeSport Code and The Assist's materials carry no stated reuse license) | A source cannot be ingested, or must be linked rather than quoted | `knowledge_sources.rights_basis` is required; §12 #16 owns the confirmations; a source without a basis is listed in the library and cited by title only, never quoted. |
+| 18 | *(2026-09-20)* Retrieval quality on rulebooks (tables, numbered clauses) | Confident answers from the wrong clause | Per-source chunkers; the known-answer question set gates L4; answers cite section and page so a coach can check. |
+| 19 | *(2026-09-20)* Inferred skill events are wrong | A plan draft targets a skill the athlete has not landed | Inferred events are always "likely", never certain; drafts stay drafts the coach edits; the inference job's precision against coach labels is logged and the rule is switched off if it falls below the bar set in L3. |
+| 20 | *(2026-09-20)* Embedding model coupling to the Lovable gateway | A provider switch (§12 #4) silently mixes vector spaces | `embedding_model` recorded per source; the switch re-embeds in the same job; mixed states fail the precheck in `docs/api/SMOKE.md`. |
+| 21 | *(2026-09-20)* Minors' data in prompts | More athlete data reaches the model provider | The profile is derived aggregates plus fields the gateway already receives today; no new free text; no third party beyond the existing gateway; covered by the current privacy disclosure (§6.11). |
 
 ---
 
@@ -905,6 +965,10 @@ Mariah's definition of "ready to move to QA," recorded 2026-09-19: **(1) every A
 | 12 | Whether iPad gets full attention in native 2.0 or "works, not optimized" | Mariah | During I5 | Works, not optimized |
 | 13 | Capacitor iOS shell as interim 1.0 (§10.5) | Mariah | — | **Reversed 2026-09-19: no shell; native ships first as 1.0** |
 | 14 | Capacitor Android shell as interim Android app (§10.5) | Mariah | Before the Kotlin decision | **Reopened 2026-09-19:** with no iOS shell there is no "after iOS 1.0 is live" trigger; Mariah decides whether the Android shell ships at all or Android waits for Kotlin |
+| 15 | *(2026-09-20)* Which coaching and athlete-development sources join corpus v1 | Mariah | Before L4 | The USOPC American Development Model materials, plus The Assist's Compassionate Coach and Compassionate Parent course materials if licensed; nothing described only as "best practices" without a document behind it |
+| 16 | *(2026-09-20)* Rights confirmations for quoting the USFS rulebook, the SafeSport Code and MAAPP, and The Assist's six documents | Mariah | Before L4 | Ingest only sources with written permission or a public license; the rest are cited by title and linked, not quoted |
+| 17 | *(2026-09-20)* Whether and when to start L6, the learned pace model | Mariah, on Claude Code's evidence | After launch, when ≥ 30 athletes have a season of skill events | Not started; the deterministic profile stands in |
+| 18 | *(2026-09-20)* Whether athletes or parents ever see their skill history directly | Mariah | Before L2 | Not in 1.0: the coach sees "likely landed" hints in the plan editor; athletes and parents see it only as sharper plans |
 
 ---
 
@@ -981,8 +1045,8 @@ Every user-facing `createServerFn` and its `/api/v1` counterpart. Admin, org-adm
 | Endpoint | Source | Pri |
 |---|---|---|
 | `GET /coach/plans?status&athleteId&sport` `[etag]` · `POST /coach/plans` `[idem]` | `listPlans`, `createPlan` | P0 |
-| `GET /plans/{id}` (role-aware) · `PUT /plans/{id}` · `PATCH /plans/{id}` · `POST /plans/{id}/status` · `DELETE /plans/{id}` | `getPlan` / `getParentPlan` / `getAthletePlan`, `savePlan`, `updatePlan`, `setPlanStatus`, `deletePlan` | P0 |
-| `POST /plans/{id}/moves` · `POST /plans/{id}/moves/from-library` · `PATCH /plans/{id}/moves/{moveId}` · `DELETE ...` · `PUT /plans/{id}/moves/order` | `addMoveToPlan`, `addLibraryMovesToPlan`, `updatePlanMove`, `removePlanMove`, `reorderPlanMoves` | P0 |
+| `GET /plans/{id}` (role-aware) · `PUT /plans/{id}` · `PATCH /plans/{id}` · `POST /plans/{id}/status` (*2026-09-20:* optional `reason`: `landed` / `parked` / `dropped`) · `DELETE /plans/{id}` | `getPlan` / `getParentPlan` / `getAthletePlan`, `savePlan`, `updatePlan`, `setPlanStatus`, `deletePlan` | P0 |
+| `POST /plans/{id}/moves` · `POST /plans/{id}/moves/from-library` · `PATCH /plans/{id}/moves/{moveId}` · `DELETE ...` (*2026-09-20:* optional `reason`, same values) · `PUT /plans/{id}/moves/order` | `addMoveToPlan`, `addLibraryMovesToPlan`, `updatePlanMove`, `removePlanMove`, `reorderPlanMoves` | P0 |
 | `GET /coach/athletes/{id}/active-plans` | `getAthleteActivePlans` | P0 |
 | `GET /coach/moves` `[etag]` · `PUT /coach/moves` · `POST /coach/moves/{id}/archive` · `POST /coach/moves/from-plan-move` · `POST /coach/moves/{id}/update-from-plan-move` · `POST /coach/moves/fork-from-plan-move` | `listMoves`, `upsertMove`, `archiveMove`, `addPlanMoveToLibrary`, `updateLibraryMoveFromPlanMove`, `forkPlanMoveToLibrary` | P0 |
 | `GET /parent/plans?status&coachId&sport` `[etag]` · `GET /athlete/plans` `[etag]` | `listParentPlans`, `listAthletePlans` | P0 |
@@ -1012,7 +1076,7 @@ Every user-facing `createServerFn` and its `/api/v1` counterpart. Admin, org-adm
 | Endpoint | Source | Pri |
 |---|---|---|
 | `GET /resources` (role-aware) · `POST /resources/{id}/signed-url` · `POST /coach/resources` · `POST /coach/resources/upload-url` · `DELETE /coach/resources/{id}` | `getParentResources` / `getAthleteResources` / `listCoachResources`, `getResourceSignedUrl`, `createCoachResource`, `createCoachResourceUploadUrl`, `deleteCoachResource` | P1 |
-| `POST /ask` · `GET /saved-answers` · `POST /saved-answers` · `DELETE /saved-answers/{id}` | `askGradus`, `listSavedAnswers`, `saveAnswer`, `deleteSavedAnswer` | P1 |
+| `POST /ask` (*2026-09-20:* response adds `grounded` and `sources[]`) · `GET /saved-answers` · `POST /saved-answers` · `DELETE /saved-answers/{id}` | `askGradus`, `listSavedAnswers`, `saveAnswer`, `deleteSavedAnswer` | P1 |
 
 ### Live Board and competitions
 
@@ -1043,9 +1107,9 @@ Every user-facing `createServerFn` and its `/api/v1` counterpart. Admin, org-adm
 | Connections and invites | `coach_athletes`, `coach_athlete_sports`, `athlete_primary_coaches`, `athlete_guardians`, `guardian_invites`, `coach_invite_codes`, `parent_invite_codes`, `athlete_invite_codes`, `adult_athlete_invite_codes`, `invite_lookup_attempts`, `athlete_coach_visibility`, `coach_visibility_links` | Roster and coach lists (derived DTOs) |
 | Organizations | `organizations`, `organization_invite_codes`, `organization_leads`, `org_coach_invites`, `org_admin_actions` | Own org name only |
 | Schedule | `athlete_lesson_slots`, `lesson_slot_overrides`, `lesson_wrap_ups`, `coach_athlete_practice_targets`, `pre_lesson_briefings` | Slots and overrides for ±8 weeks; briefings as fetched |
-| Plans | `plans`, `plan_moves`, `moves`, `seed_moves`, `plan_sessions`, `athlete_goals` | All own plans and moves; sessions for opened plans |
+| Plans | `plans`, `plan_moves`, `moves`, `seed_moves`, `plan_sessions`, `athlete_goals`, new `athlete_skill_events`, new `athlete_level_history` | All own plans and moves; sessions for opened plans; skill events and level history are read only through the profile, not cached |
 | Messaging | `message_rooms`, `direct_rooms`, `messages`, `message_reads`, `user_blocks`, `user_reports` | Rooms; newest 200 messages per room; blocks |
-| Resources and AI | `resources`, `resource_sports`, `parent_saved_answers` | Lists; downloaded PDFs; saved answers |
+| Resources and AI | `resources`, `resource_sports`, `parent_saved_answers`, new `knowledge_sources`, new `knowledge_chunks` | Lists; downloaded PDFs; saved answers with their sources; knowledge tables are server-only |
 | Competitions | `competitions`, `competition_snapshots`, `competition_attendance`, `competition_recaps`, `athlete_competition_results`, `athlete_competition_skaters`, new `board_follows`, new `live_activity_tokens` | Board history and follows; last snapshot per visited board |
 | Billing | `billing_events`, `coach_athlete_rates`, `invoices`, `invoice_lines`, `promo_codes`, `user_applied_promo_codes` | Entitlement summary; invoices for opened athletes |
 | Platform | `device_tokens`, `client_errors`, `error_group_explanations`, `feedback`, `impersonation_events`, new `api_idempotency_keys` | Nothing |
@@ -1196,6 +1260,10 @@ The package numbers used by the milestones in §10.2 and by the briefs in `docs/
 - **3.7** Plan share and import, starter programs, Founding tier claim, connections hub, in-app password reset
 - **3.8** Home Screen widget, lesson reminders, App Attest
 - **3.9** Web voice-note format preference; the Capacitor iOS removal PR (can merge any time since 2026-09-19; the 2.0 welcome screen is no longer needed)
+- **3.10** *(2026-09-20)* Skill events, level history, the coach "why" prompt, protocol-derived events (L1, L2)
+- **3.11** *(2026-09-20)* Athlete profile, inference job, profile-fed prompts, sport-aware plan drafting from full results history (L3)
+- **3.12** *(2026-09-20)* Knowledge corpus, ingestion path, grounded Ask Gradus with citations and safety routing, iOS sources UI (L4, L5)
+- **3.13** *(2026-09-20)* Learned pace model, post-launch (L6)
 
 **Phase C — Capacitor iOS 1.0 to the App Store** — **Dropped 2026-09-19** (no shell ships)
 
