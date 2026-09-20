@@ -46,6 +46,8 @@ export type MessageDTO = {
   body: string;
   audioUrl: string | null;
   durationSeconds: number | null;
+  /** Server-side transcript of a voice note (PRD §6.7); null until transcribed, and always null for text. */
+  transcript: string | null;
   createdAt: string;
   readBy: { userId: string; readAt: string }[];
   plan: { id: string; title: string; coachId: string | null } | null;

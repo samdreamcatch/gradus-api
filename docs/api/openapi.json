@@ -13002,6 +13002,12 @@
                               "null"
                             ]
                           },
+                          "transcript": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
                           "createdAt": {
                             "type": "string"
                           },
@@ -13061,6 +13067,7 @@
                           "body",
                           "audioUrl",
                           "durationSeconds",
+                          "transcript",
                           "createdAt",
                           "readBy",
                           "plan"
