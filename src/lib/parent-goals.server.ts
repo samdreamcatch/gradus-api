@@ -47,6 +47,13 @@ export interface ParentGoalAthleteDTO {
   sports: ParentGoalSportDTO[];
   /** True for a co-guardian once the primary parent's Team plan has lapsed — `sports` is empty. */
   locked: boolean;
+  /**
+   * The caller's guardian role for this athlete. Only the primary parent (the
+   * account that owns the athlete — the Team plan payer, or the sole parent
+   * without one) can write goals: `PUT /parent/athletes/{id}/goals` answers
+   * 404 to a co-guardian. Clients use this to show or hide the editor.
+   */
+  guardianRole: "primary" | "co";
 }
 
 /** Every accessible athlete's goals, sorted by name. `[]` when the caller has no parent profile. */
@@ -71,6 +78,7 @@ export async function getParentGoalsDashboard(
   // client.
   const access = await guardianAthleteAccess(admin as any, parent.id);
   const lockedById = new Map(access.map((a) => [a.athleteId, a.locked]));
+  const roleById = new Map(access.map((a) => [a.athleteId, a.role]));
   const accessibleIds = access.length
     ? access.map((a) => a.athleteId)
     : ["00000000-0000-0000-0000-000000000000"];
@@ -180,6 +188,7 @@ export async function getParentGoalsDashboard(
           athleteName: `${a.first_name} ${a.last_name}`.trim(),
           sports: [],
           locked: true,
+          guardianRole: roleById.get(a.id) ?? "co",
         };
       }
 
@@ -217,6 +226,7 @@ export async function getParentGoalsDashboard(
         athleteName: `${a.first_name} ${a.last_name}`.trim(),
         sports,
         locked: false,
+        guardianRole: roleById.get(a.id) ?? "co",
       };
     })
     .sort((x, y) => x.athleteName.localeCompare(y.athleteName));

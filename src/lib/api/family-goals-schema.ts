@@ -30,6 +30,7 @@ export const parentGoalAthleteSchema = z.object({
   athleteName: z.string(),
   sports: z.array(parentGoalSportSchema),
   locked: z.boolean(),
+  guardianRole: z.enum(["primary", "co"]),
 }) satisfies z.ZodType<ParentGoalAthleteDTO>;
 
 export const parentGoalsResponseSchema = z.object({

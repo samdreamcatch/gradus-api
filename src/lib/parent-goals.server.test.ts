@@ -93,6 +93,8 @@ describe("getParentGoalsDashboard", () => {
       ],
     });
     expect(a.athleteName).toBe("Rory Gilmore");
+    expect(a.guardianRole).toBe("primary");
+    expect(a.locked).toBe(false);
     expect(a.sports[0].primaryCoachId).toBe("c1");
     expect(a.sports[0].hoursAtCurrent).toBe(6);
     expect(a.sports[0].hoursAtGoal).toBe(6);
@@ -209,6 +211,14 @@ describe("getParentGoalsDashboard", () => {
 
     expect(
       await getParentGoalsDashboard({ userId: "u2", supabase: client, admin: client }),
-    ).toEqual([{ athleteId: "a1", athleteName: "Rory Gilmore", sports: [], locked: true }]);
+    ).toEqual([
+      {
+        athleteId: "a1",
+        athleteName: "Rory Gilmore",
+        sports: [],
+        locked: true,
+        guardianRole: "co",
+      },
+    ]);
   });
 });
