@@ -16,6 +16,7 @@ import { ApiError } from "./api/errors";
 import { dbError } from "./db-error";
 import { getSportLevel, getSport, getSuggestedHours } from "./coach-sports";
 import { PROMPT_INJECTION_GUARD, sanitizeUserContent, wrapUntrusted } from "./ai-prompt-safety";
+import { stateLabel } from "./session-states";
 import type { SessionsByState } from "@/components/plans/flow-state-bars";
 
 type Admin = typeof supabaseAdmin;
@@ -664,7 +665,37 @@ export interface CoachAthleteAiSummaryDTO {
   empty: boolean;
 }
 
-const STATE_LABELS = ["Just learning", "Getting it", "Comfortable", "Flowing", "Mastered"];
+/**
+ * One practice-log line for the summary prompt. The flow-state label comes
+ * from `session-states`, the same scale the athlete or parent tapped when
+ * they logged the session (Frustrated / Pushing / Steady / Locked in /
+ * Flowing). This module used to carry its own five-word scale that read the
+ * same index as a mastery ladder ("Just learning" … "Mastered"), so a coach
+ * was told an athlete felt "Comfortable" when they had logged "Steady".
+ */
+export function summarySessionLine(
+  s: {
+    logged_at: string;
+    duration_seconds: number | null;
+    state_index: number | null;
+    parent_id: string | null;
+    note: string | null;
+    plan_id: string | null;
+  },
+  planById: ReadonlyMap<string, { title: string; status: string }>,
+): string {
+  const date = new Date(s.logged_at).toISOString().slice(0, 10);
+  const mins = Math.round((s.duration_seconds ?? 0) / 60);
+  const state = stateLabel(s.state_index);
+  const who = s.parent_id ? "parent-logged" : "athlete-logged";
+  const note = sanitizeUserContent(s.note, 400);
+  const planMeta = s.plan_id ? planById.get(s.plan_id) : null;
+  const planTag = planMeta
+    ? ` plan="${sanitizeUserContent(planMeta.title, 120)}" (${planMeta.status})`
+    : "";
+  const noteBlock = note ? `: ${wrapUntrusted("session_note", note)}` : "";
+  return `- ${date} (${who}, ${mins}m, "${state}"${planTag})${noteBlock}`;
+}
 
 export async function getCoachAthleteAiSummary(
   ctx: DetailContext,
@@ -810,21 +841,7 @@ export async function getCoachAthleteAiSummary(
     .map((p) => `- "${p.title || "Untitled plan"}" (${p.status})`)
     .join("\n");
 
-  const sessionLines = sessions
-    .map((s) => {
-      const date = new Date(s.logged_at).toISOString().slice(0, 10);
-      const mins = Math.round((s.duration_seconds ?? 0) / 60);
-      const state = STATE_LABELS[Math.max(0, Math.min(4, s.state_index ?? 0))];
-      const who = s.parent_id ? "parent-logged" : "athlete-logged";
-      const note = sanitizeUserContent(s.note, 400);
-      const planMeta = s.plan_id ? planById.get(s.plan_id) : null;
-      const planTag = planMeta
-        ? ` plan="${sanitizeUserContent(planMeta.title, 120)}" (${planMeta.status})`
-        : "";
-      const noteBlock = note ? `: ${wrapUntrusted("session_note", note)}` : "";
-      return `- ${date} (${who}, ${mins}m, "${state}"${planTag})${noteBlock}`;
-    })
-    .join("\n");
+  const sessionLines = sessions.map((s) => summarySessionLine(s, planById)).join("\n");
 
   const messageLines = messages
     .map((m) => {
