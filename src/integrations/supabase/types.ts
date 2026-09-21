@@ -2222,6 +2222,69 @@ export type Database = {
         }
         Relationships: []
       }
+      live_activity_sessions: {
+        Row: {
+          activity_key: string
+          competition_slug: string
+          ended_at: string | null
+          id: string
+          last_state: string
+          started_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          activity_key: string
+          competition_slug: string
+          ended_at?: string | null
+          id?: string
+          last_state: string
+          started_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          activity_key?: string
+          competition_slug?: string
+          ended_at?: string | null
+          id?: string
+          last_state?: string
+          started_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      live_activity_tokens: {
+        Row: {
+          activity_key: string | null
+          created_at: string
+          id: string
+          kind: string
+          token: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          activity_key?: string | null
+          created_at?: string
+          id?: string
+          kind: string
+          token: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          activity_key?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          token?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       message_reads: {
         Row: {
           message_id: string
