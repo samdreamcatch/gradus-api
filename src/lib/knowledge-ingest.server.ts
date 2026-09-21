@@ -17,10 +17,12 @@
  *               the database holds embeddings, sections and pages only.
  *
  * Why the loop lives in the Worker: no session holds a service-role key
- * (PRD §4.1 rule 10), so there is no local script. pg_cron calls
- * `/api/public/hooks/knowledge-ingest` every minute; `runKnowledgeIngest`
- * takes as many steps as fit in its time budget. The admin panel can call
- * the same function to avoid waiting for the cron.
+ * (PRD §4.1 rule 10), so there is no local script. The admin page drives a
+ * source to completion when it is registered or "Run ingestion now" is
+ * pressed (it keeps calling until the queue is empty); pg_cron calls
+ * `/api/public/hooks/knowledge-ingest` every six hours only to finish
+ * anything left half-done. `runKnowledgeIngest` takes as many steps as
+ * fit in its time budget.
  *
  * The admin client is typed loosely because the knowledge tables are not
  * in the generated Supabase types (same accommodation as competition

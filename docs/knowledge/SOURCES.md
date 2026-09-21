@@ -41,7 +41,7 @@ When a reply arrives: paste its date and sender into the source's `rights_basis`
 
 ## Operating notes
 
-- Ingestion runs inside the Worker: pg_cron calls `POST /api/public/hooks/knowledge-ingest` every minute, and "Run ingestion now" on the admin page takes the same steps without waiting. A 300-page PDF takes roughly 20 ticks.
+- Ingestion runs inside the Worker. Registering a source, or pressing "Run ingestion now", drives the queue to empty from the admin page (a 300-page PDF is roughly 20 server calls of 20 s each). A pg_cron sweep calls `POST /api/public/hooks/knowledge-ingest` every six hours to finish anything left half-done, such as a coach upload registered with no admin on the page.
 - Embeddings go through the Lovable AI Gateway; the model is `KNOWLEDGE_EMBEDDING_MODEL` (default `openai/text-embedding-3-small`, 1536 dimensions). Changing it requires re-ingesting every source; `knowledge_sources.embedding_model` shows which model produced each.
 - Quality gate: "Run known-answer set" on the admin page (cases in `src/lib/knowledge-known-answers.ts`). L4 is done when the expected source is in the top 3 for at least 90% of the cases whose source is registered.
 - The tables are service-role only. Retrieval for Ask Gradus (L5) runs server-side through `match_knowledge_chunks`.
