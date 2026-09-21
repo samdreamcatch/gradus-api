@@ -294,7 +294,7 @@ export async function getCoachAthleteDetail(
       ? Promise.resolve({ data: [], error: null } as const)
       : admin
           .from("athlete_goals")
-          .select("sport, current_level_key, season_goal_key, long_term_goal")
+          .select("sport, current_level_key, season_goal_key, long_term_goal, created_at")
           .eq("athlete_id", athleteId)
           .in("sport", coachSports),
     admin
@@ -341,7 +341,7 @@ export async function getCoachAthleteDetail(
   const authorship = await goalsAuthorship(
     admin,
     athleteId,
-    (goalsRes.data ?? []).map((g) => g.sport),
+    (goalsRes.data ?? []).map((g) => ({ sport: g.sport, created_at: g.created_at })),
   );
   const goals: AthleteGoalDTO[] = (goalsRes.data ?? []).map((g) => {
     const a = authorship.get(g.sport);
@@ -722,7 +722,7 @@ export async function getCoachAthleteAiSummary(
       ? Promise.resolve({ data: [], error: null } as const)
       : admin
           .from("athlete_goals")
-          .select("sport, current_level_key, season_goal_key, long_term_goal")
+          .select("sport, current_level_key, season_goal_key, long_term_goal, created_at")
           .eq("athlete_id", athleteId)
           .in("sport", coachSports),
     admin

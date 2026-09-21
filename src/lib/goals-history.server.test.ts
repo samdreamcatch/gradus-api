@@ -79,6 +79,26 @@ describe("authorshipFromRows", () => {
   });
 });
 
+describe("authorshipFromRows with a floor", () => {
+  it("ignores rows from before the goal now on file was created", () => {
+    const rows = [
+      row("parent", "2026-08-01T00:00:00Z", { season_goal_key: "juvenile" }),
+      row("athlete", "2026-09-13T16:10:00Z"),
+    ];
+    // The parent's row predates a re-created goal (coach unlinked, then re-set).
+    const fs = authorshipFromRows(rows, { figure_skating: "2026-09-01T00:00:00Z" }).get(
+      "figure_skating",
+    )!;
+    expect(fs.lastSetBy?.role).toBe("athlete");
+    expect(fs.differsFrom).toBeNull();
+    // No floor for the sport: every row counts.
+    expect(
+      authorshipFromRows(rows, { hockey: "2026-09-01T00:00:00Z" }).get("figure_skating")
+        ?.differsFrom?.role,
+    ).toBe("parent");
+  });
+});
+
 describe("recordGoalsChange", () => {
   const fakeAdmin = (calls: unknown[]) =>
     ({

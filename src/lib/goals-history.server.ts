@@ -121,10 +121,20 @@ export interface GoalsHistoryRow {
  * Pure: from one athlete's history rows (any order), per sport, who saved
  * last and — when the other author's latest version differs from that —
  * the other version. A sport with rows from one author only never differs.
+ *
+ * `since[sport]` is the current athlete_goals row's `created_at`: goals are
+ * deleted when a coach is unlinked (and on account deletion) while history
+ * stays, so rows older than the row now on file belong to an earlier era and
+ * are ignored. Without a floor every row counts.
  */
-export function authorshipFromRows(rows: GoalsHistoryRow[]): Map<string, GoalsAuthorship> {
+export function authorshipFromRows(
+  rows: GoalsHistoryRow[],
+  since: Record<string, string> = {},
+): Map<string, GoalsAuthorship> {
   const bySport = new Map<string, GoalsHistoryRow[]>();
   for (const r of rows) {
+    const floor = since[r.sport];
+    if (floor && r.created_at < floor) continue;
     const arr = bySport.get(r.sport) ?? [];
     arr.push(r);
     bySport.set(r.sport, arr);
@@ -149,13 +159,19 @@ export function authorshipFromRows(rows: GoalsHistoryRow[]): Map<string, GoalsAu
   return out;
 }
 
-/** Authorship per sport for one athlete, limited to `sports` (empty → nothing read). */
+/**
+ * Authorship per sport for one athlete. `goals` are the athlete_goals rows on
+ * file (sport + created_at), which bound both the sports read and the era
+ * considered; empty → nothing read.
+ */
 export async function goalsAuthorship(
   admin: Admin,
   athleteId: string,
-  sports: string[],
+  goals: { sport: string; created_at: string }[],
 ): Promise<Map<string, GoalsAuthorship>> {
+  const sports = goals.map((g) => g.sport);
   if (sports.length === 0) return new Map();
+  const since = Object.fromEntries(goals.map((g) => [g.sport, g.created_at]));
   const res = await admin
     .from("athlete_goals_history")
     .select("sport, changed_by_role, current_level_key, season_goal_key, long_term_goal, created_at")
@@ -163,5 +179,5 @@ export async function goalsAuthorship(
     .in("sport", sports)
     .order("created_at", { ascending: false });
   if (res.error) dbError(res.error);
-  return authorshipFromRows((res.data ?? []) as GoalsHistoryRow[]);
+  return authorshipFromRows((res.data ?? []) as GoalsHistoryRow[], since);
 }

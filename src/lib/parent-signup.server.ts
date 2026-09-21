@@ -10,6 +10,7 @@ import type { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { SPORT_KEYS } from "@/lib/coach-sports";
 import { ApiError } from "./api/errors";
 import { dbError } from "./db-error";
+import { currentGoalValues, recordGoalsChange } from "./goals-history.server";
 import { inviteCodeSchema } from "./invites.server";
 import { checkRosterRoom } from "./roster-limits";
 
@@ -444,6 +445,8 @@ export async function saveAthleteGoals(
     stampCoachId = resolvedPrimary.data?.coach_id ?? coachId;
   }
 
+  // Every goal write records its change (goals history, PRD §6.7 item 3).
+  const previous = await currentGoalValues(admin, data.athleteId, data.sport);
   const up = await admin.from("athlete_goals").upsert(
     {
       athlete_id: data.athleteId,
@@ -456,6 +459,14 @@ export async function saveAthleteGoals(
     { onConflict: "athlete_id,sport" },
   );
   if (up.error) dbError(up.error);
+  await recordGoalsChange(admin, {
+    athleteId: data.athleteId,
+    sport: data.sport,
+    role: "parent",
+    userId,
+    next: data,
+    previous,
+  });
 
   const { ensureStarterPrograms } = await import("./starter-programs.server");
   await ensureStarterPrograms(data.athleteId, data.sport, data.currentLevelKey);

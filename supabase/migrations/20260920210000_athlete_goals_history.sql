@@ -36,16 +36,25 @@ ALTER TABLE public.athlete_goals_history ENABLE ROW LEVEL SECURITY;
 -- Backfill: every goal on file today becomes its first history row, attributed
 -- to the athlete when the athlete owns the account (self_managed) and to the
 -- parent otherwise — the only two authors the app has ever had. Dated from
--- the goal's last update so "set by" reads sensibly from day one.
+-- the goal's last update so "set by" reads sensibly from day one. The
+-- previous_* columns equal the current values, so a backfilled row reads as
+-- "the level as of this date", never as a level change (PRD §6.7 item 3
+-- counts a change as previous_current_level_key IS DISTINCT FROM
+-- current_level_key).
 INSERT INTO public.athlete_goals_history (
   athlete_id, sport, changed_by_role, changed_by_user_id,
-  current_level_key, season_goal_key, long_term_goal, created_at
+  current_level_key, season_goal_key, long_term_goal,
+  previous_current_level_key, previous_season_goal_key, previous_long_term_goal,
+  created_at
 )
 SELECT
   g.athlete_id,
   g.sport,
   CASE WHEN COALESCE(a.self_managed, false) THEN 'athlete' ELSE 'parent' END,
   NULL,
+  g.current_level_key,
+  g.season_goal_key,
+  COALESCE(g.long_term_goal, ''),
   g.current_level_key,
   g.season_goal_key,
   COALESCE(g.long_term_goal, ''),
