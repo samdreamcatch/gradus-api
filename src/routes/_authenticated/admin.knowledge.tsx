@@ -176,6 +176,24 @@ function KnowledgePage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  // The list gets long once the whole library is registered: keep it folded
+  // away behind a count, with a filter and a "show all" step.
+  const [listOpen, setListOpen] = useState(false);
+  const [filter, setFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [showAll, setShowAll] = useState(false);
+  const allSources = sources.data?.sources ?? [];
+  const needle = filter.trim().toLowerCase();
+  const filtered = allSources.filter((s) => {
+    if (statusFilter !== "all" && s.status !== statusFilter) return false;
+    if (!needle) return true;
+    return [s.title, s.publisher, s.edition, s.sport, s.rightsBasis]
+      .join(" ")
+      .toLowerCase()
+      .includes(needle);
+  });
+  const visible = showAll ? filtered : filtered.slice(0, 10);
+
   const canRegister =
     common.rightsBasis.trim().length >= 3 &&
     (mode === "library"
