@@ -15,8 +15,8 @@ export const Route = createFileRoute("/api/v1/adult-athlete/goals")({
       input: adultGoalsInput,
       output: okSchema,
       handler: async ({ ctx, input }) => {
-        const { userId, supabase } = requireContext(ctx);
-        return saveAdultAthleteGoals({ userId, supabase }, input);
+        const { userId, supabase, admin } = requireContext(ctx);
+        return saveAdultAthleteGoals({ userId, supabase, admin }, input);
       },
     }),
   },

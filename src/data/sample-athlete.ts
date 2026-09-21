@@ -119,6 +119,16 @@ export function buildSampleAthleteDetail(): CoachAthleteDetailDTO {
         seasonGoalLabel: "Intermediate",
         longTermGoal:
           "Pass the Intermediate free skate test this season and qualify for regionals next year. Land a consistent double axel by spring.",
+        // The sample shows the parent-vs-athlete note: the athlete set a bolder
+        // season target a week after the parent's version.
+        lastSetBy: { role: "athlete", at: "2026-09-13T16:10:00.000Z" },
+        differsFrom: {
+          role: "parent",
+          at: "2026-09-06T14:30:00.000Z",
+          currentLevelLabel: "Juvenile",
+          seasonGoalLabel: "Juvenile",
+          longTermGoal: "Pass the Juvenile free skate test and enjoy the season.",
+        },
       },
     ],
     practiceTargets: [

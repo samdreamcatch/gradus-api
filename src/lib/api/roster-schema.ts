@@ -128,6 +128,16 @@ export const athleteDetailSchema = z.object({
       currentLevelLabel: z.string(),
       seasonGoalLabel: z.string(),
       longTermGoal: z.string(),
+      lastSetBy: z.object({ role: z.enum(["parent", "athlete"]), at: z.string() }).nullable(),
+      differsFrom: z
+        .object({
+          role: z.enum(["parent", "athlete"]),
+          at: z.string(),
+          currentLevelLabel: z.string(),
+          seasonGoalLabel: z.string(),
+          longTermGoal: z.string(),
+        })
+        .nullable(),
     }),
   ),
   practiceTargets: z.array(

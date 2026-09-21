@@ -163,7 +163,7 @@ function AthleteDetailBody({ athleteId }: { athleteId: string }) {
                 : `${d.parentFirstName ?? d.firstName} hasn't set goals yet.`}
           </EmptyLine>
         ) : (
-          <GoalsList goals={d.goals} />
+          <GoalsList goals={d.goals} athleteName={d.firstName} parentName={d.parentFirstName} />
         )}
       </section>
 
@@ -182,7 +182,6 @@ function AthleteDetailBody({ athleteId }: { athleteId: string }) {
           </div>
         </section>
       ) : null}
-
 
       {/* AI Summary */}
       <section>
@@ -252,10 +251,8 @@ function AthleteDetailBody({ athleteId }: { athleteId: string }) {
         )}
       </section>
 
-
       {/* Competition results (private to this athlete's circle) */}
       <CompetitionResultsSection athleteId={athleteId} firstName={d.firstName} />
-
 
       {/* Billing — available on every coach tier (2026-09-12) */}
       <AthleteBillingSection athleteId={athleteId} />
@@ -302,7 +299,7 @@ function SampleAthleteBody({ athleteId }: { athleteId: string }) {
 
       <section>
         <SectionHeader title="Goals from parent &amp; athlete" />
-        <GoalsList goals={[g]} />
+        <GoalsList goals={[g]} athleteName={d.firstName} parentName={d.parentFirstName} />
       </section>
 
       <section>
@@ -363,16 +360,41 @@ function formatSportList(labels: string[]): string {
   return `${labels.slice(0, -1).join(", ")}, or ${labels[labels.length - 1]}`;
 }
 
+type GoalAuthor = { role: "parent" | "athlete"; at: string };
+
 type GoalRow = {
   sport: string;
   sportLabel: string;
   currentLevelLabel: string;
   seasonGoalLabel: string;
   longTermGoal?: string | null;
+  /** Who saved it last; absent on older payloads. */
+  lastSetBy?: GoalAuthor | null;
+  /** The other person's latest version when it differs from what is saved (Mariah, 2026-09-20). */
+  differsFrom?:
+    | (GoalAuthor & { currentLevelLabel: string; seasonGoalLabel: string; longTermGoal: string })
+    | null;
 };
 
-/** One card per sport: where they are, where the season is headed, why. */
-function GoalsList({ goals }: { goals: GoalRow[] }) {
+function goalDate(iso: string): string {
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime())
+    ? ""
+    : d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+/** One card per sport: where they are, where the season is headed, why — and who said so. */
+function GoalsList({
+  goals,
+  athleteName,
+  parentName,
+}: {
+  goals: GoalRow[];
+  athleteName: string;
+  parentName?: string | null;
+}) {
+  const who = (role: "parent" | "athlete") =>
+    role === "athlete" ? athleteName : (parentName ?? "the parent");
   return (
     <ul className="mt-2 space-y-2">
       {goals.map((g) => (
@@ -396,12 +418,41 @@ function GoalsList({ goals }: { goals: GoalRow[] }) {
               <p className="mt-0.5 text-sm text-text-secondary">{g.longTermGoal}</p>
             </div>
           ) : null}
+          {g.lastSetBy ? (
+            <p className="mt-2 text-xs text-text-tertiary">
+              Set by {who(g.lastSetBy.role)} · {goalDate(g.lastSetBy.at)}
+            </p>
+          ) : null}
+          {g.differsFrom ? (
+            <div
+              className="mt-2 rounded-lg border border-attention/50 bg-attention-wash p-3"
+              role="note"
+              aria-label={`${who(g.differsFrom.role)} wants something different`}
+            >
+              <Eyebrow size="micro" tone="tertiary" weight="black">
+                {who(g.differsFrom.role)} had it as · {goalDate(g.differsFrom.at)}
+              </Eyebrow>
+              <div className="mt-1 flex items-baseline gap-2 text-sm">
+                <span className="font-bold text-text-primary">
+                  {g.differsFrom.currentLevelLabel}
+                </span>
+                <span className="text-text-tertiary">→</span>
+                <span className="font-bold text-text-primary">{g.differsFrom.seasonGoalLabel}</span>
+              </div>
+              {g.differsFrom.longTermGoal ? (
+                <p className="mt-1 text-sm text-text-secondary">{g.differsFrom.longTermGoal}</p>
+              ) : null}
+              <p className="mt-1 text-xs text-text-tertiary">
+                {who(g.lastSetBy?.role ?? (g.differsFrom.role === "parent" ? "athlete" : "parent"))}{" "}
+                and {who(g.differsFrom.role)} want different things — worth a conversation.
+              </p>
+            </div>
+          ) : null}
         </Card>
       ))}
     </ul>
   );
 }
-
 
 type PlanRow = {
   planId: string;
@@ -445,7 +496,6 @@ function PlanRowCard({ p }: { p: PlanRow }) {
           </Button>
         </div>
       ) : null}
-
     </div>
   );
 }
@@ -493,7 +543,6 @@ function PlansList({ plans }: { plans: PlanRow[] }) {
     </div>
   );
 }
-
 
 function ActivityCounts({
   practiceMinutesTotal,
@@ -562,7 +611,6 @@ function VerdictPill({ verdict, rationale }: { verdict: Verdict; rationale: stri
     </div>
   );
 }
-
 
 /** One editable weekly practice expectation for an athlete in one sport. */
 function PracticeTargetRow({
@@ -656,6 +704,5 @@ function PracticeTargetRow({
         </div>
       ) : null}
     </Card>
-
   );
 }

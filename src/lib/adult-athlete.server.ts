@@ -15,6 +15,7 @@ import type { Database } from "@/integrations/supabase/types";
 import type { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { ApiError } from "./api/errors";
 import { dbError } from "./db-error";
+import { currentGoalValues, recordGoalsChange } from "./goals-history.server";
 import { inviteCodeSchema } from "./invites.server";
 import { lessonSlotSchema } from "./parent-signup.server";
 import { ageInYears } from "./pending-athlete-dob";
@@ -317,11 +318,13 @@ export const adultGoalsInput = z.object({
 
 /** `saveAdultAthleteGoals`: upsert one sport's goal for the caller. */
 export async function saveAdultAthleteGoals(
-  ctx: Pick<AdultContext, "userId" | "supabase">,
+  ctx: Pick<AdultContext, "userId" | "supabase" | "admin">,
   data: z.infer<typeof adultGoalsInput>,
 ): Promise<{ ok: true }> {
-  const { supabase, userId } = ctx;
+  const { supabase, admin, userId } = ctx;
   const athleteId = await requireSelfManagedAthleteId(supabase, userId);
+  // Read before the upsert so the history row can carry what this replaces.
+  const previous = await currentGoalValues(admin, athleteId, data.sport);
 
   // If a primary coach for this sport exists, stamp coach_id so the row
   // matches the coach-visible RLS branch.
@@ -346,6 +349,14 @@ export async function saveAdultAthleteGoals(
     { onConflict: "athlete_id,sport" },
   );
   if (up.error) dbError(up.error);
+  await recordGoalsChange(admin, {
+    athleteId,
+    sport: data.sport,
+    role: "athlete",
+    userId,
+    next: data,
+    previous,
+  });
 
   const { ensureStarterPrograms } = await import("./starter-programs.server");
   await ensureStarterPrograms(athleteId, data.sport, data.currentLevelKey);

@@ -312,6 +312,51 @@ export type Database = {
         }
         Relationships: []
       }
+      athlete_goals_history: {
+        Row: {
+          athlete_id: string
+          changed_by_role: string
+          changed_by_user_id: string | null
+          created_at: string
+          current_level_key: string
+          id: string
+          long_term_goal: string
+          previous_current_level_key: string | null
+          previous_long_term_goal: string | null
+          previous_season_goal_key: string | null
+          season_goal_key: string
+          sport: string
+        }
+        Insert: {
+          athlete_id: string
+          changed_by_role: string
+          changed_by_user_id?: string | null
+          created_at?: string
+          current_level_key: string
+          id?: string
+          long_term_goal?: string
+          previous_current_level_key?: string | null
+          previous_long_term_goal?: string | null
+          previous_season_goal_key?: string | null
+          season_goal_key: string
+          sport: string
+        }
+        Update: {
+          athlete_id?: string
+          changed_by_role?: string
+          changed_by_user_id?: string | null
+          created_at?: string
+          current_level_key?: string
+          id?: string
+          long_term_goal?: string
+          previous_current_level_key?: string | null
+          previous_long_term_goal?: string | null
+          previous_season_goal_key?: string | null
+          season_goal_key?: string
+          sport?: string
+        }
+        Relationships: []
+      }
       athlete_guardians: {
         Row: {
           athlete_id: string
