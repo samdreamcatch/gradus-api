@@ -200,6 +200,90 @@ export const adminRegisterKnowledgeFromResource = createServerFn({ method: "POST
     });
   });
 
+/**
+ * Register every library PDF that isn't in the corpus yet, in one pass.
+ * Each document is tagged with its own sport; a file listed under several
+ * sports (the six safety PDFs) is registered once as "all". Coach uploads
+ * are left alone — they register themselves on upload, scoped to the coach.
+ */
+export const adminBulkRegisterLibraryPdfs = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        publisher: registerCommon.publisher,
+        edition: registerCommon.edition,
+        chunker: registerCommon.chunker,
+        rightsBasis: registerCommon.rightsBasis,
+        quoteAllowed: registerCommon.quoteAllowed,
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }): Promise<{ registered: number; skipped: number }> => {
+    const userId = await assertAdmin(context);
+    const admin = await adminClient();
+    const [res, src] = await Promise.all([
+      admin
+        .from("resources")
+        .select("id, title, sport, storage_path, coach_id")
+        .is("coach_id", null)
+        .not("storage_path", "is", null)
+        .order("title", { ascending: true })
+        .limit(1000),
+      admin.from("knowledge_sources").select("storage_path").not("storage_path", "is", null),
+    ]);
+    if (res.error) dbError(res.error);
+    if (src.error) dbError(src.error);
+
+    const already = new Set(
+      ((src.data ?? []) as Array<{ storage_path: string }>).map((r) => r.storage_path),
+    );
+
+    type Group = { id: string; title: string; sports: Set<string>; storagePath: string };
+    const groups = new Map<string, Group>();
+    for (const r of (res.data ?? []) as Array<{
+      id: string;
+      title: string;
+      sport: string;
+      storage_path: string;
+    }>) {
+      const g = groups.get(r.storage_path);
+      if (g) g.sports.add(r.sport);
+      else
+        groups.set(r.storage_path, {
+          id: r.id,
+          title: r.title,
+          sports: new Set([r.sport]),
+          storagePath: r.storage_path,
+        });
+    }
+
+    let registered = 0;
+    let skipped = 0;
+    for (const g of groups.values()) {
+      if (already.has(g.storagePath)) {
+        skipped += 1;
+        continue;
+      }
+      await registerKnowledgeSource(admin, {
+        title: g.title,
+        publisher: data.publisher,
+        edition: data.edition,
+        sport: g.sports.size === 1 ? [...g.sports][0] : "all",
+        resourceId: g.id,
+        kind: "pdf",
+        storagePath: g.storagePath,
+        chunker: data.chunker,
+        rightsBasis: data.rightsBasis,
+        quoteAllowed: data.quoteAllowed,
+        createdBy: userId,
+      });
+      already.add(g.storagePath);
+      registered += 1;
+    }
+    return { registered, skipped };
+  });
+
 export const adminRegisterKnowledgeText = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
