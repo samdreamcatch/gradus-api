@@ -113,6 +113,48 @@ export type Database = {
         }
         Relationships: []
       }
+      app_attest_keys: {
+        Row: {
+          bundle_id: string
+          created_at: string
+          environment: string
+          id: string
+          key_id: string
+          public_key: string
+          revoked_at: string | null
+          sign_count: number
+          team_id: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          bundle_id: string
+          created_at?: string
+          environment: string
+          id?: string
+          key_id: string
+          public_key: string
+          revoked_at?: string | null
+          sign_count?: number
+          team_id: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          bundle_id?: string
+          created_at?: string
+          environment?: string
+          id?: string
+          key_id?: string
+          public_key?: string
+          revoked_at?: string | null
+          sign_count?: number
+          team_id?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       athlete_coach_visibility: {
         Row: {
           athlete_id: string
@@ -1240,6 +1282,38 @@ export type Database = {
           },
         ]
       }
+      competition_recap_prompts_sent: {
+        Row: {
+          competition_id: string
+          created_at: string
+          id: string
+          sent_at: string | null
+          user_id: string
+        }
+        Insert: {
+          competition_id: string
+          created_at?: string
+          id?: string
+          sent_at?: string | null
+          user_id: string
+        }
+        Update: {
+          competition_id?: string
+          created_at?: string
+          id?: string
+          sent_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competition_recap_prompts_sent_competition_id_fkey"
+            columns: ["competition_id"]
+            isOneToOne: false
+            referencedRelation: "competitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       competition_recaps: {
         Row: {
           athlete_id: string
@@ -1963,6 +2037,178 @@ export type Database = {
           },
         ]
       }
+      knowledge_chunks: {
+        Row: {
+          coach_id: string | null
+          content: string
+          content_hash: string
+          created_at: string
+          embedding: string | null
+          id: string
+          ordinal: number
+          page: number | null
+          section: string
+          source_id: string
+          sport: string
+          token_estimate: number
+        }
+        Insert: {
+          coach_id?: string | null
+          content?: string
+          content_hash: string
+          created_at?: string
+          embedding?: string | null
+          id?: string
+          ordinal: number
+          page?: number | null
+          section?: string
+          source_id: string
+          sport?: string
+          token_estimate?: number
+        }
+        Update: {
+          coach_id?: string | null
+          content?: string
+          content_hash?: string
+          created_at?: string
+          embedding?: string | null
+          id?: string
+          ordinal?: number
+          page?: number | null
+          section?: string
+          source_id?: string
+          sport?: string
+          token_estimate?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_chunks_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      knowledge_pages: {
+        Row: {
+          page: number
+          source_id: string
+          text: string
+        }
+        Insert: {
+          page: number
+          source_id: string
+          text: string
+        }
+        Update: {
+          page?: number
+          source_id?: string
+          text?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_pages_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      knowledge_sources: {
+        Row: {
+          chunk_count: number
+          chunker: string
+          coach_id: string | null
+          created_at: string
+          created_by: string | null
+          edition: string
+          embedding_model: string | null
+          error: string | null
+          external_url: string | null
+          id: string
+          ingested_at: string | null
+          inline_text: string | null
+          kind: string
+          page_count: number | null
+          publisher: string
+          quote_allowed: boolean
+          resource_id: string | null
+          rights_basis: string
+          sport: string
+          status: string
+          storage_path: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          chunk_count?: number
+          chunker?: string
+          coach_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          edition?: string
+          embedding_model?: string | null
+          error?: string | null
+          external_url?: string | null
+          id?: string
+          ingested_at?: string | null
+          inline_text?: string | null
+          kind: string
+          page_count?: number | null
+          publisher?: string
+          quote_allowed?: boolean
+          resource_id?: string | null
+          rights_basis: string
+          sport?: string
+          status?: string
+          storage_path?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          chunk_count?: number
+          chunker?: string
+          coach_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          edition?: string
+          embedding_model?: string | null
+          error?: string | null
+          external_url?: string | null
+          id?: string
+          ingested_at?: string | null
+          inline_text?: string | null
+          kind?: string
+          page_count?: number | null
+          publisher?: string
+          quote_allowed?: boolean
+          resource_id?: string | null
+          rights_basis?: string
+          sport?: string
+          status?: string
+          storage_path?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_sources_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "coach_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "knowledge_sources_resource_id_fkey"
+            columns: ["resource_id"]
+            isOneToOne: false
+            referencedRelation: "resources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lesson_reminders_sent: {
         Row: {
           athlete_id: string
@@ -2033,6 +2279,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      lesson_wrap_up_prompts_sent: {
+        Row: {
+          athlete_id: string
+          coach_id: string
+          created_at: string
+          id: string
+          lesson_date: string
+          sent_at: string | null
+          slot_id: string
+        }
+        Insert: {
+          athlete_id: string
+          coach_id: string
+          created_at?: string
+          id?: string
+          lesson_date: string
+          sent_at?: string | null
+          slot_id: string
+        }
+        Update: {
+          athlete_id?: string
+          coach_id?: string
+          created_at?: string
+          id?: string
+          lesson_date?: string
+          sent_at?: string | null
+          slot_id?: string
+        }
+        Relationships: []
       }
       lesson_wrap_ups: {
         Row: {
@@ -2118,6 +2394,69 @@ export type Database = {
         }
         Relationships: []
       }
+      live_activity_sessions: {
+        Row: {
+          activity_key: string
+          competition_slug: string
+          ended_at: string | null
+          id: string
+          last_state: string
+          started_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          activity_key: string
+          competition_slug: string
+          ended_at?: string | null
+          id?: string
+          last_state: string
+          started_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          activity_key?: string
+          competition_slug?: string
+          ended_at?: string | null
+          id?: string
+          last_state?: string
+          started_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      live_activity_tokens: {
+        Row: {
+          activity_key: string | null
+          created_at: string
+          id: string
+          kind: string
+          token: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          activity_key?: string | null
+          created_at?: string
+          id?: string
+          kind: string
+          token: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          activity_key?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          token?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       message_reads: {
         Row: {
           message_id: string
@@ -2182,6 +2521,8 @@ export type Database = {
           sender_deleted_at: string | null
           sender_role: string
           sender_user_id: string | null
+          transcript: string | null
+          transcript_failed_at: string | null
         }
         Insert: {
           audio_url?: string | null
@@ -2196,6 +2537,8 @@ export type Database = {
           sender_deleted_at?: string | null
           sender_role: string
           sender_user_id?: string | null
+          transcript?: string | null
+          transcript_failed_at?: string | null
         }
         Update: {
           audio_url?: string | null
@@ -2210,6 +2553,8 @@ export type Database = {
           sender_deleted_at?: string | null
           sender_role?: string
           sender_user_id?: string | null
+          transcript?: string | null
+          transcript_failed_at?: string | null
         }
         Relationships: [
           {
@@ -3441,6 +3786,28 @@ export type Database = {
         Returns: boolean
       }
       is_service_caller: { Args: never; Returns: boolean }
+      match_knowledge_chunks: {
+        Args: {
+          p_coach_ids: string[]
+          p_limit: number
+          p_sport: string
+          query_embedding: string
+        }
+        Returns: {
+          chunk_id: string
+          content: string
+          edition: string
+          external_url: string
+          page: number
+          publisher: string
+          quote_allowed: boolean
+          resource_id: string
+          section: string
+          similarity: number
+          source_id: string
+          title: string
+        }[]
+      }
       move_to_dlq: {
         Args: {
           dlq_name: string
