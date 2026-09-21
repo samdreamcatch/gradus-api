@@ -72,6 +72,7 @@ function KnowledgePage() {
   const listFn = useServerFn(adminListKnowledgeSources);
   const pdfsFn = useServerFn(adminListLibraryPdfs);
   const fromResourceFn = useServerFn(adminRegisterKnowledgeFromResource);
+  const bulkLibraryFn = useServerFn(adminBulkRegisterLibraryPdfs);
   const fromUrlFn = useServerFn(adminRegisterKnowledgeFromUrl);
   const textFn = useServerFn(adminRegisterKnowledgeText);
   const requeueFn = useServerFn(adminRequeueKnowledgeSource);
@@ -107,6 +108,26 @@ function KnowledgePage() {
       setUrl("");
       setTitle("");
       setText("");
+      refresh();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const bulkLibrary = useMutation({
+    mutationFn: () =>
+      bulkLibraryFn({
+        data: {
+          publisher: common.publisher,
+          edition: common.edition,
+          chunker: common.chunker,
+          rightsBasis: common.rightsBasis,
+          quoteAllowed: common.quoteAllowed,
+        },
+      }),
+    onSuccess: (r) => {
+      toast.success(
+        `${r.registered} queued${r.skipped ? `, ${r.skipped} already registered` : ""}`,
+      );
       refresh();
     },
     onError: (e: Error) => toast.error(e.message),
