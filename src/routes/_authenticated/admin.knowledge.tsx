@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/select";
 import { SPORTS } from "@/lib/coach-sports";
 import {
+  adminBulkRegisterLibraryPdfs,
   adminDeleteKnowledgeSource,
   adminListKnowledgeSources,
   adminListLibraryPdfs,
