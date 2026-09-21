@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/select";
 import { SPORTS } from "@/lib/coach-sports";
 import {
+  adminBulkRegisterLibraryPdfs,
   adminDeleteKnowledgeSource,
   adminListKnowledgeSources,
   adminListLibraryPdfs,
@@ -49,11 +50,11 @@ type Common = {
 };
 
 const emptyCommon = (): Common => ({
-  publisher: "",
-  edition: "",
+  publisher: "Gradus Sports",
+  edition: "2026",
   sport: "all",
   chunker: "prose",
-  rightsBasis: "",
+  rightsBasis: "gradus_owned",
   quoteAllowed: false,
 });
 
@@ -71,6 +72,7 @@ function KnowledgePage() {
   const listFn = useServerFn(adminListKnowledgeSources);
   const pdfsFn = useServerFn(adminListLibraryPdfs);
   const fromResourceFn = useServerFn(adminRegisterKnowledgeFromResource);
+  const bulkLibraryFn = useServerFn(adminBulkRegisterLibraryPdfs);
   const fromUrlFn = useServerFn(adminRegisterKnowledgeFromUrl);
   const textFn = useServerFn(adminRegisterKnowledgeText);
   const requeueFn = useServerFn(adminRequeueKnowledgeSource);
@@ -106,6 +108,26 @@ function KnowledgePage() {
       setUrl("");
       setTitle("");
       setText("");
+      refresh();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const bulkLibrary = useMutation({
+    mutationFn: () =>
+      bulkLibraryFn({
+        data: {
+          publisher: common.publisher,
+          edition: common.edition,
+          chunker: common.chunker,
+          rightsBasis: common.rightsBasis,
+          quoteAllowed: common.quoteAllowed,
+        },
+      }),
+    onSuccess: (r) => {
+      toast.success(
+        `${r.registered} queued${r.skipped ? `, ${r.skipped} already registered` : ""}`,
+      );
       refresh();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -384,13 +406,32 @@ function KnowledgePage() {
             <Label htmlFor="k-quote">Passages may be quoted in answers (off = cite-only)</Label>
           </div>
         </div>
-        <Button
-          type="button"
-          onClick={() => register.mutate()}
-          disabled={!canRegister || register.isPending}
-        >
-          {register.isPending ? "Queuing…" : "Queue for ingestion"}
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            onClick={() => register.mutate()}
+            disabled={!canRegister || register.isPending}
+          >
+            {register.isPending ? "Queuing…" : "Queue for ingestion"}
+          </Button>
+          {mode === "library" ? (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                if (
+                  window.confirm(
+                    "Queue every library PDF that isn't in the corpus yet, each tagged to its own sport?",
+                  )
+                )
+                  bulkLibrary.mutate();
+              }}
+              disabled={!common.rightsBasis.trim() || bulkLibrary.isPending}
+            >
+              {bulkLibrary.isPending ? "Queuing…" : "Queue all library PDFs"}
+            </Button>
+          ) : null}
+        </div>
       </section>
 
       <section className="space-y-4">
