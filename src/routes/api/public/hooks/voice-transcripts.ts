@@ -3,22 +3,21 @@
 // Transcribes a few voice notes that still have no transcript (send-time
 // attempts that failed, and every note recorded before transcripts existed),
 // newest first, after replying 202. Same auth as the other hooks: the
-// Supabase publishable key.
+// service role key.
 
 import { createClient } from "@supabase/supabase-js";
 import { createFileRoute } from "@tanstack/react-router";
 import { inBackground } from "@/lib/background";
 import { sweepVoiceTranscripts } from "@/lib/voice-transcripts.server";
+import { cronKeyMatches } from "@/lib/cron-auth";
 
 export const Route = createFileRoute("/api/public/hooks/voice-transcripts")({
   server: {
     handlers: {
       POST: async ({ request }) => {
         const supabaseUrl = process.env.SUPABASE_URL ?? import.meta.env.VITE_SUPABASE_URL;
-        const publishable =
-          process.env.SUPABASE_PUBLISHABLE_KEY ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
         const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-        if (!supabaseUrl || !serviceKey || !publishable) {
+        if (!supabaseUrl || !serviceKey) {
           return Response.json({ error: "server misconfigured" }, { status: 500 });
         }
 
@@ -26,7 +25,7 @@ export const Route = createFileRoute("/api/public/hooks/voice-transcripts")({
           request.headers.get("apikey") ??
           request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ??
           "";
-        if (apikey !== publishable) {
+        if (!cronKeyMatches(apikey, serviceKey)) {
           return Response.json({ error: "unauthorized" }, { status: 401 });
         }
 
