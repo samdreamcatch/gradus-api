@@ -50,11 +50,11 @@ type Common = {
 };
 
 const emptyCommon = (): Common => ({
-  publisher: "",
-  edition: "",
+  publisher: "Gradus Sports",
+  edition: "2026",
   sport: "all",
   chunker: "prose",
-  rightsBasis: "",
+  rightsBasis: "gradus_owned",
   quoteAllowed: false,
 });
 
