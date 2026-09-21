@@ -2349,6 +2349,8 @@ export type Database = {
           sender_deleted_at: string | null
           sender_role: string
           sender_user_id: string | null
+          transcript: string | null
+          transcript_failed_at: string | null
         }
         Insert: {
           audio_url?: string | null
@@ -2363,6 +2365,8 @@ export type Database = {
           sender_deleted_at?: string | null
           sender_role: string
           sender_user_id?: string | null
+          transcript?: string | null
+          transcript_failed_at?: string | null
         }
         Update: {
           audio_url?: string | null
@@ -2377,6 +2381,8 @@ export type Database = {
           sender_deleted_at?: string | null
           sender_role?: string
           sender_user_id?: string | null
+          transcript?: string | null
+          transcript_failed_at?: string | null
         }
         Relationships: [
           {
