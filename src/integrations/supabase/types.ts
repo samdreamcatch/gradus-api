@@ -113,6 +113,48 @@ export type Database = {
         }
         Relationships: []
       }
+      app_attest_keys: {
+        Row: {
+          bundle_id: string
+          created_at: string
+          environment: string
+          id: string
+          key_id: string
+          public_key: string
+          revoked_at: string | null
+          sign_count: number
+          team_id: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          bundle_id: string
+          created_at?: string
+          environment: string
+          id?: string
+          key_id: string
+          public_key: string
+          revoked_at?: string | null
+          sign_count?: number
+          team_id: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          bundle_id?: string
+          created_at?: string
+          environment?: string
+          id?: string
+          key_id?: string
+          public_key?: string
+          revoked_at?: string | null
+          sign_count?: number
+          team_id?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       athlete_coach_visibility: {
         Row: {
           athlete_id: string
