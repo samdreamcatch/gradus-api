@@ -523,7 +523,7 @@ Each table lists the web behavior being ported and what is specifically required
 | Goals editor | Per sport: current level, season goal, long-term goal | Native form. Current level and season goal are also self-editable by the athlete regardless of age — see §7.8. | P0 |
 | Practice schedule | Per coach: days, times, frequency, start date | Native editor with the same rules as the coach side. | P0 |
 | Reset athlete password | Parent-issued | Native with confirmation. | P0 |
-| Goals dashboard | Plans / Goals tabs on the Plans screen | Native. | P0 |
+| Goals dashboard | Plans / Goals tabs on the Plans screen | Native. **Mariah's call, 2026-09-20:** the primary parent (the athlete's owning account — the Team plan payer, or the sole connected parent without a Team plan) edits current level, season goal, and long-term goal from the goal card here too, not only from Settings → Athletes. Co-guardians see the card read-only; `GET /parent/goals` carries `guardianRole` so the client knows which. | P0 |
 | Team plan and guardians | Up to three guardians per athlete; invite, resend, revoke, remove; Team plan status; billing on web | Guardian management native; plan status display; billing link per §6.8. | P1 |
 | Guardian activity mirroring | Guardians see the same rooms, plans, and sessions | Comes for free from the server; verify in QA. | P0 |
 
