@@ -406,13 +406,32 @@ function KnowledgePage() {
             <Label htmlFor="k-quote">Passages may be quoted in answers (off = cite-only)</Label>
           </div>
         </div>
-        <Button
-          type="button"
-          onClick={() => register.mutate()}
-          disabled={!canRegister || register.isPending}
-        >
-          {register.isPending ? "Queuing…" : "Queue for ingestion"}
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            onClick={() => register.mutate()}
+            disabled={!canRegister || register.isPending}
+          >
+            {register.isPending ? "Queuing…" : "Queue for ingestion"}
+          </Button>
+          {mode === "library" ? (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                if (
+                  window.confirm(
+                    "Queue every library PDF that isn't in the corpus yet, each tagged to its own sport?",
+                  )
+                )
+                  bulkLibrary.mutate();
+              }}
+              disabled={!common.rightsBasis.trim() || bulkLibrary.isPending}
+            >
+              {bulkLibrary.isPending ? "Queuing…" : "Queue all library PDFs"}
+            </Button>
+          ) : null}
+        </div>
       </section>
 
       <section className="space-y-4">
