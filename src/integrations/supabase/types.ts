@@ -1282,6 +1282,38 @@ export type Database = {
           },
         ]
       }
+      competition_recap_prompts_sent: {
+        Row: {
+          competition_id: string
+          created_at: string
+          id: string
+          sent_at: string | null
+          user_id: string
+        }
+        Insert: {
+          competition_id: string
+          created_at?: string
+          id?: string
+          sent_at?: string | null
+          user_id: string
+        }
+        Update: {
+          competition_id?: string
+          created_at?: string
+          id?: string
+          sent_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competition_recap_prompts_sent_competition_id_fkey"
+            columns: ["competition_id"]
+            isOneToOne: false
+            referencedRelation: "competitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       competition_recaps: {
         Row: {
           athlete_id: string
@@ -2075,6 +2107,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      lesson_wrap_up_prompts_sent: {
+        Row: {
+          athlete_id: string
+          coach_id: string
+          created_at: string
+          id: string
+          lesson_date: string
+          sent_at: string | null
+          slot_id: string
+        }
+        Insert: {
+          athlete_id: string
+          coach_id: string
+          created_at?: string
+          id?: string
+          lesson_date: string
+          sent_at?: string | null
+          slot_id: string
+        }
+        Update: {
+          athlete_id?: string
+          coach_id?: string
+          created_at?: string
+          id?: string
+          lesson_date?: string
+          sent_at?: string | null
+          slot_id?: string
+        }
+        Relationships: []
       }
       lesson_wrap_ups: {
         Row: {
