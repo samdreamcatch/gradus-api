@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Play, RefreshCw, Search, Trash2 } from "lucide-react";
+import { ChevronDown, Play, RefreshCw, Search, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -176,6 +176,24 @@ function KnowledgePage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  // The list gets long once the whole library is registered: keep it folded
+  // away behind a count, with a filter and a "show all" step.
+  const [listOpen, setListOpen] = useState(false);
+  const [filter, setFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [showAll, setShowAll] = useState(false);
+  const allSources = sources.data?.sources ?? [];
+  const needle = filter.trim().toLowerCase();
+  const filtered = allSources.filter((s) => {
+    if (statusFilter !== "all" && s.status !== statusFilter) return false;
+    if (!needle) return true;
+    return [s.title, s.publisher, s.edition, s.sport, s.rightsBasis]
+      .join(" ")
+      .toLowerCase()
+      .includes(needle);
+  });
+  const visible = showAll ? filtered : filtered.slice(0, 10);
+
   const canRegister =
     common.rightsBasis.trim().length >= 3 &&
     (mode === "library"
@@ -197,8 +215,20 @@ function KnowledgePage() {
       </header>
 
       <section className="space-y-4">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="font-display text-xl">Sources</h2>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <button
+            type="button"
+            className="flex items-center gap-2 press-soft"
+            onClick={() => setListOpen((v) => !v)}
+            aria-expanded={listOpen}
+          >
+            <ChevronDown
+              className={`size-4 transition-transform ${listOpen ? "" : "-rotate-90"}`}
+              aria-hidden
+            />
+            <h2 className="font-display text-xl">Sources</h2>
+            <Tag tone="muted">{allSources.length}</Tag>
+          </button>
           <Button
             type="button"
             variant="outline"
@@ -212,65 +242,108 @@ function KnowledgePage() {
         </div>
         {sources.isLoading ? (
           <p className="text-text-secondary">Loading…</p>
-        ) : !sources.data?.sources.length ? (
+        ) : !allSources.length ? (
           <p className="text-text-secondary">No sources yet.</p>
-        ) : (
-          <ul className="divide-y divide-divider rounded-lg border border-divider">
-            {sources.data.sources.map((s) => (
-              <li key={s.id} className="flex flex-wrap items-start gap-3 p-4">
-                <div className="min-w-0 flex-1 space-y-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-medium">{s.title}</span>
-                    {s.edition ? (
-                      <span className="text-text-tertiary text-sm">({s.edition})</span>
-                    ) : null}
-                    <Tag tone={STATUS_TONE[s.status]}>{s.status}</Tag>
-                    <Tag tone={s.quoteAllowed ? "accent" : "muted"}>
-                      {s.quoteAllowed ? "quotable" : "cite-only"}
-                    </Tag>
-                    <Tag tone="muted">{s.coachId ? "coach-scoped" : s.sport}</Tag>
-                  </div>
-                  <p className="text-sm text-text-secondary">
-                    {s.publisher || "—"} · {s.kind} · {s.chunker} chunker ·{" "}
-                    {s.pageCount != null ? `${s.pageCount} pages · ` : ""}
-                    {s.chunkCount} chunks
-                    {s.embeddingModel ? ` · ${s.embeddingModel}` : ""}
-                  </p>
-                  <p className="text-sm text-text-tertiary">Rights: {s.rightsBasis}</p>
-                  {s.error ? (
-                    <p className="text-sm text-destructive-ink" role="alert">
-                      Error: {s.error}
-                    </p>
-                  ) : null}
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => requeue.mutate(s.id)}
-                    aria-label={`Re-ingest ${s.title}`}
-                  >
-                    <RefreshCw className="size-4" aria-hidden />
-                    Re-ingest
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      if (window.confirm(`Remove "${s.title}" from the corpus?`))
-                        remove.mutate(s.id);
-                    }}
-                    aria-label={`Remove ${s.title}`}
-                  >
-                    <Trash2 className="size-4" aria-hidden />
-                    Remove
-                  </Button>
-                </div>
-              </li>
-            ))}
-          </ul>
+        ) : !listOpen ? null : (
+          <>
+            <div className="grid gap-3 sm:grid-cols-[1fr_12rem]">
+              <Input
+                value={filter}
+                onChange={(e) => {
+                  setFilter(e.target.value);
+                  setShowAll(false);
+                }}
+                placeholder="Search by title, publisher, sport or rights basis"
+                aria-label="Search sources"
+              />
+              <Select
+                value={statusFilter}
+                onValueChange={(v) => {
+                  setStatusFilter(v);
+                  setShowAll(false);
+                }}
+              >
+                <SelectTrigger aria-label="Filter by status">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Any status</SelectItem>
+                  {(
+                    ["queued", "extracting", "chunking", "embedding", "ready", "failed"] as const
+                  ).map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {s}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {!filtered.length ? (
+              <p className="text-text-secondary">No sources match that search.</p>
+            ) : (
+              <ul className="divide-y divide-divider rounded-lg border border-divider">
+                {visible.map((s) => (
+                  <li key={s.id} className="flex flex-wrap items-start gap-3 p-4">
+                    <div className="min-w-0 flex-1 space-y-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-medium">{s.title}</span>
+                        {s.edition ? (
+                          <span className="text-text-tertiary text-sm">({s.edition})</span>
+                        ) : null}
+                        <Tag tone={STATUS_TONE[s.status]}>{s.status}</Tag>
+                        <Tag tone={s.quoteAllowed ? "accent" : "muted"}>
+                          {s.quoteAllowed ? "quotable" : "cite-only"}
+                        </Tag>
+                        <Tag tone="muted">{s.coachId ? "coach-scoped" : s.sport}</Tag>
+                      </div>
+                      <p className="text-sm text-text-secondary">
+                        {s.publisher || "—"} · {s.kind} · {s.chunker} chunker ·{" "}
+                        {s.pageCount != null ? `${s.pageCount} pages · ` : ""}
+                        {s.chunkCount} chunks
+                        {s.embeddingModel ? ` · ${s.embeddingModel}` : ""}
+                      </p>
+                      <p className="text-sm text-text-tertiary">Rights: {s.rightsBasis}</p>
+                      {s.error ? (
+                        <p className="text-sm text-destructive-ink" role="alert">
+                          Error: {s.error}
+                        </p>
+                      ) : null}
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => requeue.mutate(s.id)}
+                        aria-label={`Re-ingest ${s.title}`}
+                      >
+                        <RefreshCw className="size-4" aria-hidden />
+                        Re-ingest
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          if (window.confirm(`Remove "${s.title}" from the corpus?`))
+                            remove.mutate(s.id);
+                        }}
+                        aria-label={`Remove ${s.title}`}
+                      >
+                        <Trash2 className="size-4" aria-hidden />
+                        Remove
+                      </Button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {filtered.length > visible.length ? (
+              <Button type="button" variant="outline" size="sm" onClick={() => setShowAll(true)}>
+                Show all {filtered.length}
+              </Button>
+            ) : null}
+          </>
         )}
       </section>
 
