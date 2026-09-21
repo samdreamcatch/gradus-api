@@ -1100,7 +1100,9 @@ export async function sendMessage(
 
   // Push the other participants (PRD §6.6 "New message in a room"). Deferred
   // past the response and never allowed to fail the send. Athlete rooms also
-  // reach co-guardians, whom `loadParticipants` leaves out.
+  // reach co-guardians, whom `loadParticipants` leaves out. Kept separate from
+  // the list-ordering bump and the guardian mirror below: those must run even
+  // when nobody has an app account to push to (unclaimed guardian on file).
   await inBackground("push:message", async () => {
     const participants = (await loadParticipants([room])).get(room.id) ?? [];
     const ids = new Set(participants.map((p) => p.userId).filter((id): id is string => !!id));
@@ -1122,48 +1124,50 @@ export async function sendMessage(
       body: data.kind === "text" ? data.body : "Sent a voice note",
       threadId: `room:${room.id}`,
     });
+  });
 
+  await inBackground("message:followups", async () => {
     // Bump the container's updated_at so list ordering reflects activity.
-    if (room.kind === "athlete") {
-      await supabaseAdmin
-        .from("message_rooms")
-        .update({ updated_at: new Date().toISOString() })
-        .eq("id", room.id);
-
-      // Guardian-on-file mirror: while a minor athlete's parent hasn't claimed
-      // their account yet, email them a copy of what the coach or the athlete
-      // sends so they keep full visibility without being forced to register.
-      if (role === "coach" || role === "athlete") {
-        try {
-          let mirrorBody: string;
-          if (data.kind === "text") {
-            mirrorBody = data.body;
-          } else {
-            const secs = data.durationSeconds;
-            const stamp = `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, "0")}`;
-            // The same transcription that lands on the message row (never throws).
-            const transcript = transcription ? (await transcription) || null : null;
-            mirrorBody = transcript
-              ? `Voice note (${stamp}) — transcript:\n\n${transcript}`
-              : `Voice note (${stamp}) — transcript unavailable. Sign in to listen.`;
-          }
-
-          const { mirrorGuardianActivity } = await import("./guardian.server");
-          await mirrorGuardianActivity({
-            athleteId: room.athleteId!,
-            senderRole: role,
-            coachId: room.coachId ?? null,
-            body: mirrorBody,
-          });
-        } catch (e) {
-          console.error("[messages] guardian mirror failed", e);
-        }
-      }
-    } else {
+    if (room.kind !== "athlete") {
       await supabaseAdmin
         .from("direct_rooms")
         .update({ updated_at: new Date().toISOString() })
         .eq("id", room.id);
+      return;
+    }
+
+    await supabaseAdmin
+      .from("message_rooms")
+      .update({ updated_at: new Date().toISOString() })
+      .eq("id", room.id);
+
+    // Guardian-on-file mirror: while a minor athlete's parent hasn't claimed
+    // their account yet, email them a copy of what the coach or the athlete
+    // sends so they keep full visibility without being forced to register.
+    if (role !== "coach" && role !== "athlete") return;
+    try {
+      let mirrorBody: string;
+      if (data.kind === "text") {
+        mirrorBody = data.body;
+      } else {
+        const secs = data.durationSeconds;
+        const stamp = `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, "0")}`;
+        // The same transcription that lands on the message row (never throws).
+        const transcript = transcription ? (await transcription) || null : null;
+        mirrorBody = transcript
+          ? `Voice note (${stamp}) — transcript:\n\n${transcript}`
+          : `Voice note (${stamp}) — transcript unavailable. Sign in to listen.`;
+      }
+
+      const { mirrorGuardianActivity } = await import("./guardian.server");
+      await mirrorGuardianActivity({
+        athleteId: room.athleteId!,
+        senderRole: role,
+        coachId: room.coachId ?? null,
+        body: mirrorBody,
+      });
+    } catch (e) {
+      console.error("[messages] guardian mirror failed", e);
     }
   });
 
