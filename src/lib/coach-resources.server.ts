@@ -219,6 +219,34 @@ export async function createCoachResource(
     dbError(tErr);
   }
 
+  // A coach's PDF joins the knowledge corpus scoped to that coach (PRD §6.7
+  // "Grounded Ask Gradus": retrievable only for their athletes and guardians).
+  // Best-effort: the upload never fails because the corpus did.
+  if (data.kind === "pdf" && data.storagePath) {
+    try {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { registerKnowledgeSource } = await import("./knowledge-ingest.server");
+      await registerKnowledgeSource(
+        supabaseAdmin as unknown as Parameters<typeof registerKnowledgeSource>[0],
+        {
+          title: data.title,
+          publisher: "Coach upload",
+          sport: "all",
+          coachId: coach.id,
+          resourceId: inserted.id,
+          kind: "pdf",
+          storagePath: data.storagePath,
+          chunker: "prose",
+          rightsBasis: "coach_upload",
+          quoteAllowed: true,
+          createdBy: userId,
+        },
+      );
+    } catch (err) {
+      console.error("[coach-resources] knowledge registration failed", err);
+    }
+  }
+
   return { id: inserted.id };
 }
 
