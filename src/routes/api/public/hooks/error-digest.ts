@@ -11,6 +11,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { createHash } from "node:crypto";
 import { ErrorDigestEmail, type DigestGroup } from "@/lib/email-templates/error-digest";
 import { buildAppEmailPayload } from "@/lib/email-queue-payload";
+import { cronKeyMatches } from "@/lib/cron-auth";
 
 const ALERT_RECIPIENTS = ["alyson@gradussports.com"];
 const SITE_NAME = "gradustraining";
@@ -54,12 +55,10 @@ export const Route = createFileRoute("/api/public/hooks/error-digest")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        // Verify the caller — pg_cron sends the Supabase publishable/anon key.
+        // Verify the caller — pg_cron sends the service role key (never client-side).
         const supabaseUrl = process.env.SUPABASE_URL ?? import.meta.env.VITE_SUPABASE_URL;
-        const publishable =
-          process.env.SUPABASE_PUBLISHABLE_KEY ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
         const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-        if (!supabaseUrl || !serviceKey || !publishable) {
+        if (!supabaseUrl || !serviceKey) {
           return new Response(JSON.stringify({ error: "server misconfigured" }), {
             status: 500,
             headers: { "Content-Type": "application/json" },
@@ -70,7 +69,7 @@ export const Route = createFileRoute("/api/public/hooks/error-digest")({
           request.headers.get("apikey") ??
           request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ??
           "";
-        if (apikey !== publishable) {
+        if (!cronKeyMatches(apikey, serviceKey)) {
           return new Response(JSON.stringify({ error: "unauthorized" }), {
             status: 401,
             headers: { "Content-Type": "application/json" },

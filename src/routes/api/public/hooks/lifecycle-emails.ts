@@ -17,6 +17,7 @@ import {
   type ActivationRole,
 } from "@/lib/email-templates/activation";
 import { buildAppEmailPayload } from "@/lib/email-queue-payload";
+import { cronKeyMatches } from "@/lib/cron-auth";
 
 const SITE_NAME = "gradustraining";
 const SENDER_DOMAIN = "support.gradussports.com";
@@ -88,10 +89,8 @@ export const Route = createFileRoute("/api/public/hooks/lifecycle-emails")({
     handlers: {
       POST: async ({ request }) => {
         const supabaseUrl = process.env.SUPABASE_URL ?? import.meta.env.VITE_SUPABASE_URL;
-        const publishable =
-          process.env.SUPABASE_PUBLISHABLE_KEY ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
         const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-        if (!supabaseUrl || !serviceKey || !publishable) {
+        if (!supabaseUrl || !serviceKey) {
           return Response.json({ error: "server misconfigured" }, { status: 500 });
         }
 
@@ -99,7 +98,7 @@ export const Route = createFileRoute("/api/public/hooks/lifecycle-emails")({
           request.headers.get("apikey") ??
           request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ??
           "";
-        if (apikey !== publishable) {
+        if (!cronKeyMatches(apikey, serviceKey)) {
           return Response.json({ error: "unauthorized" }, { status: 401 });
         }
 
