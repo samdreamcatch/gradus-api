@@ -4,10 +4,12 @@
 // Advances queued knowledge sources through extraction, chunking and
 // embedding inside a time budget (src/lib/knowledge-ingest.server.ts) and
 // returns quickly when nothing is queued. Same authorization as the other
-// hooks: the caller presents the publishable key in `apikey`.
+// hooks: the caller presents the service role key (from the vault, in the
+// cron job) in `apikey`; the publishable key is not a credential.
 
 import { createClient } from "@supabase/supabase-js";
 import { createFileRoute } from "@tanstack/react-router";
+import { cronKeyMatches } from "@/lib/cron-auth";
 import { runKnowledgeIngest } from "@/lib/knowledge-ingest.server";
 
 export const Route = createFileRoute("/api/public/hooks/knowledge-ingest")({
@@ -15,10 +17,8 @@ export const Route = createFileRoute("/api/public/hooks/knowledge-ingest")({
     handlers: {
       POST: async ({ request }) => {
         const supabaseUrl = process.env.SUPABASE_URL ?? import.meta.env.VITE_SUPABASE_URL;
-        const publishable =
-          process.env.SUPABASE_PUBLISHABLE_KEY ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
         const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-        if (!supabaseUrl || !serviceKey || !publishable) {
+        if (!supabaseUrl || !serviceKey) {
           return Response.json({ error: "server misconfigured" }, { status: 500 });
         }
 
@@ -26,7 +26,7 @@ export const Route = createFileRoute("/api/public/hooks/knowledge-ingest")({
           request.headers.get("apikey") ??
           request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ??
           "";
-        if (apikey !== publishable) {
+        if (!cronKeyMatches(apikey, serviceKey)) {
           return Response.json({ error: "unauthorized" }, { status: 401 });
         }
 

@@ -174,8 +174,9 @@ GRANT EXECUTE ON FUNCTION public.match_knowledge_chunks(extensions.vector, text,
   TO service_role;
 
 -- Drain the ingest queue every minute. The hook returns immediately when
--- nothing is queued. Same call shape as the push-prompt crons: the
--- publishable key in the `apikey` header is what the hook checks.
+-- nothing is queued. Authenticates like the re-keyed hook crons
+-- (20260921003705): the service role key read from the vault at call time,
+-- never the public anon key.
 DO $$ BEGIN
   PERFORM cron.unschedule('knowledge-ingest-every-minute');
 EXCEPTION WHEN OTHERS THEN NULL; END $$;
@@ -186,7 +187,10 @@ SELECT cron.schedule(
   $$
   SELECT net.http_post(
     url := 'https://project--d9b69d11-663e-4423-8783-c75a42c0e56f.lovable.app/api/public/hooks/knowledge-ingest',
-    headers := '{"Content-Type": "application/json", "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNkcWZhcXhtZG11anhxaHdscWRpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3NTQwNzMsImV4cCI6MjA5NTMzMDA3M30.wpJkFB8GO2tki58OxFPLJNlTKc4QTnDdHbbx5g2MA2k"}'::jsonb,
+    headers := jsonb_build_object(
+      'Content-Type', 'application/json',
+      'apikey', (SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = 'email_queue_service_role_key')
+    ),
     body := '{}'::jsonb
   );
   $$
