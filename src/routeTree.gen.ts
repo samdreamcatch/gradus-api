@@ -76,6 +76,7 @@ import { Route as AuthenticatedAdminParentInvitesRouteImport } from './routes/_a
 import { Route as AuthenticatedAdminOrganizationsRouteImport } from './routes/_authenticated/admin.organizations'
 import { Route as AuthenticatedAdminMapRouteImport } from './routes/_authenticated/admin.map'
 import { Route as AuthenticatedAdminLeadsRouteImport } from './routes/_authenticated/admin.leads'
+import { Route as AuthenticatedAdminKnowledgeRouteImport } from './routes/_authenticated/admin.knowledge'
 import { Route as AuthenticatedAdminImpersonationRouteImport } from './routes/_authenticated/admin.impersonation'
 import { Route as AuthenticatedAdminFeedbackRouteImport } from './routes/_authenticated/admin.feedback'
 import { Route as AuthenticatedAdminErrorsRouteImport } from './routes/_authenticated/admin.errors'
@@ -161,6 +162,7 @@ import { Route as ApiPublicHooksVoiceTranscriptsRouteImport } from './routes/api
 import { Route as ApiPublicHooksLifecycleEmailsRouteImport } from './routes/api/public/hooks/lifecycle-emails'
 import { Route as ApiPublicHooksLessonWrapUpsRouteImport } from './routes/api/public/hooks/lesson-wrap-ups'
 import { Route as ApiPublicHooksLessonRemindersRouteImport } from './routes/api/public/hooks/lesson-reminders'
+import { Route as ApiPublicHooksKnowledgeIngestRouteImport } from './routes/api/public/hooks/knowledge-ingest'
 import { Route as ApiPublicHooksErrorDigestRouteImport } from './routes/api/public/hooks/error-digest'
 import { Route as ApiPublicHooksCompetitionRecapsRouteImport } from './routes/api/public/hooks/competition-recaps'
 import { Route as ApiPublicHooksBillingNoticesRouteImport } from './routes/api/public/hooks/billing-notices'
@@ -673,6 +675,12 @@ const AuthenticatedAdminLeadsRoute = AuthenticatedAdminLeadsRouteImport.update({
   path: '/leads',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
+const AuthenticatedAdminKnowledgeRoute =
+  AuthenticatedAdminKnowledgeRouteImport.update({
+    id: '/knowledge',
+    path: '/knowledge',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminImpersonationRoute =
   AuthenticatedAdminImpersonationRouteImport.update({
     id: '/impersonation',
@@ -1127,6 +1135,12 @@ const ApiPublicHooksLessonRemindersRoute =
   ApiPublicHooksLessonRemindersRouteImport.update({
     id: '/api/public/hooks/lesson-reminders',
     path: '/api/public/hooks/lesson-reminders',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksKnowledgeIngestRoute =
+  ApiPublicHooksKnowledgeIngestRouteImport.update({
+    id: '/api/public/hooks/knowledge-ingest',
+    path: '/api/public/hooks/knowledge-ingest',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicHooksErrorDigestRoute =
@@ -2042,6 +2056,7 @@ export interface FileRoutesByFullPath {
   '/admin/errors': typeof AuthenticatedAdminErrorsRouteWithChildren
   '/admin/feedback': typeof AuthenticatedAdminFeedbackRoute
   '/admin/impersonation': typeof AuthenticatedAdminImpersonationRoute
+  '/admin/knowledge': typeof AuthenticatedAdminKnowledgeRoute
   '/admin/leads': typeof AuthenticatedAdminLeadsRoute
   '/admin/map': typeof AuthenticatedAdminMapRoute
   '/admin/organizations': typeof AuthenticatedAdminOrganizationsRoute
@@ -2102,6 +2117,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/billing-notices': typeof ApiPublicHooksBillingNoticesRoute
   '/api/public/hooks/competition-recaps': typeof ApiPublicHooksCompetitionRecapsRoute
   '/api/public/hooks/error-digest': typeof ApiPublicHooksErrorDigestRoute
+  '/api/public/hooks/knowledge-ingest': typeof ApiPublicHooksKnowledgeIngestRoute
   '/api/public/hooks/lesson-reminders': typeof ApiPublicHooksLessonRemindersRoute
   '/api/public/hooks/lesson-wrap-ups': typeof ApiPublicHooksLessonWrapUpsRoute
   '/api/public/hooks/lifecycle-emails': typeof ApiPublicHooksLifecycleEmailsRoute
@@ -2343,6 +2359,7 @@ export interface FileRoutesByTo {
   '/admin/errors': typeof AuthenticatedAdminErrorsRouteWithChildren
   '/admin/feedback': typeof AuthenticatedAdminFeedbackRoute
   '/admin/impersonation': typeof AuthenticatedAdminImpersonationRoute
+  '/admin/knowledge': typeof AuthenticatedAdminKnowledgeRoute
   '/admin/leads': typeof AuthenticatedAdminLeadsRoute
   '/admin/map': typeof AuthenticatedAdminMapRoute
   '/admin/organizations': typeof AuthenticatedAdminOrganizationsRoute
@@ -2402,6 +2419,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/billing-notices': typeof ApiPublicHooksBillingNoticesRoute
   '/api/public/hooks/competition-recaps': typeof ApiPublicHooksCompetitionRecapsRoute
   '/api/public/hooks/error-digest': typeof ApiPublicHooksErrorDigestRoute
+  '/api/public/hooks/knowledge-ingest': typeof ApiPublicHooksKnowledgeIngestRoute
   '/api/public/hooks/lesson-reminders': typeof ApiPublicHooksLessonRemindersRoute
   '/api/public/hooks/lesson-wrap-ups': typeof ApiPublicHooksLessonWrapUpsRoute
   '/api/public/hooks/lifecycle-emails': typeof ApiPublicHooksLifecycleEmailsRoute
@@ -2650,6 +2668,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/errors': typeof AuthenticatedAdminErrorsRouteWithChildren
   '/_authenticated/admin/feedback': typeof AuthenticatedAdminFeedbackRoute
   '/_authenticated/admin/impersonation': typeof AuthenticatedAdminImpersonationRoute
+  '/_authenticated/admin/knowledge': typeof AuthenticatedAdminKnowledgeRoute
   '/_authenticated/admin/leads': typeof AuthenticatedAdminLeadsRoute
   '/_authenticated/admin/map': typeof AuthenticatedAdminMapRoute
   '/_authenticated/admin/organizations': typeof AuthenticatedAdminOrganizationsRoute
@@ -2710,6 +2729,7 @@ export interface FileRoutesById {
   '/api/public/hooks/billing-notices': typeof ApiPublicHooksBillingNoticesRoute
   '/api/public/hooks/competition-recaps': typeof ApiPublicHooksCompetitionRecapsRoute
   '/api/public/hooks/error-digest': typeof ApiPublicHooksErrorDigestRoute
+  '/api/public/hooks/knowledge-ingest': typeof ApiPublicHooksKnowledgeIngestRoute
   '/api/public/hooks/lesson-reminders': typeof ApiPublicHooksLessonRemindersRoute
   '/api/public/hooks/lesson-wrap-ups': typeof ApiPublicHooksLessonWrapUpsRoute
   '/api/public/hooks/lifecycle-emails': typeof ApiPublicHooksLifecycleEmailsRoute
@@ -2958,6 +2978,7 @@ export interface FileRouteTypes {
     | '/admin/errors'
     | '/admin/feedback'
     | '/admin/impersonation'
+    | '/admin/knowledge'
     | '/admin/leads'
     | '/admin/map'
     | '/admin/organizations'
@@ -3018,6 +3039,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/billing-notices'
     | '/api/public/hooks/competition-recaps'
     | '/api/public/hooks/error-digest'
+    | '/api/public/hooks/knowledge-ingest'
     | '/api/public/hooks/lesson-reminders'
     | '/api/public/hooks/lesson-wrap-ups'
     | '/api/public/hooks/lifecycle-emails'
@@ -3259,6 +3281,7 @@ export interface FileRouteTypes {
     | '/admin/errors'
     | '/admin/feedback'
     | '/admin/impersonation'
+    | '/admin/knowledge'
     | '/admin/leads'
     | '/admin/map'
     | '/admin/organizations'
@@ -3318,6 +3341,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/billing-notices'
     | '/api/public/hooks/competition-recaps'
     | '/api/public/hooks/error-digest'
+    | '/api/public/hooks/knowledge-ingest'
     | '/api/public/hooks/lesson-reminders'
     | '/api/public/hooks/lesson-wrap-ups'
     | '/api/public/hooks/lifecycle-emails'
@@ -3565,6 +3589,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/errors'
     | '/_authenticated/admin/feedback'
     | '/_authenticated/admin/impersonation'
+    | '/_authenticated/admin/knowledge'
     | '/_authenticated/admin/leads'
     | '/_authenticated/admin/map'
     | '/_authenticated/admin/organizations'
@@ -3625,6 +3650,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/billing-notices'
     | '/api/public/hooks/competition-recaps'
     | '/api/public/hooks/error-digest'
+    | '/api/public/hooks/knowledge-ingest'
     | '/api/public/hooks/lesson-reminders'
     | '/api/public/hooks/lesson-wrap-ups'
     | '/api/public/hooks/lifecycle-emails'
@@ -3868,6 +3894,7 @@ export interface RootRouteChildren {
   ApiPublicHooksBillingNoticesRoute: typeof ApiPublicHooksBillingNoticesRoute
   ApiPublicHooksCompetitionRecapsRoute: typeof ApiPublicHooksCompetitionRecapsRoute
   ApiPublicHooksErrorDigestRoute: typeof ApiPublicHooksErrorDigestRoute
+  ApiPublicHooksKnowledgeIngestRoute: typeof ApiPublicHooksKnowledgeIngestRoute
   ApiPublicHooksLessonRemindersRoute: typeof ApiPublicHooksLessonRemindersRoute
   ApiPublicHooksLessonWrapUpsRoute: typeof ApiPublicHooksLessonWrapUpsRoute
   ApiPublicHooksLifecycleEmailsRoute: typeof ApiPublicHooksLifecycleEmailsRoute
@@ -4540,6 +4567,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminLeadsRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/knowledge': {
+      id: '/_authenticated/admin/knowledge'
+      path: '/knowledge'
+      fullPath: '/admin/knowledge'
+      preLoaderRoute: typeof AuthenticatedAdminKnowledgeRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/impersonation': {
       id: '/_authenticated/admin/impersonation'
       path: '/impersonation'
@@ -5133,6 +5167,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/hooks/lesson-reminders'
       fullPath: '/api/public/hooks/lesson-reminders'
       preLoaderRoute: typeof ApiPublicHooksLessonRemindersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/knowledge-ingest': {
+      id: '/api/public/hooks/knowledge-ingest'
+      path: '/api/public/hooks/knowledge-ingest'
+      fullPath: '/api/public/hooks/knowledge-ingest'
+      preLoaderRoute: typeof ApiPublicHooksKnowledgeIngestRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/hooks/error-digest': {
@@ -6234,6 +6275,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminErrorsRoute: typeof AuthenticatedAdminErrorsRouteWithChildren
   AuthenticatedAdminFeedbackRoute: typeof AuthenticatedAdminFeedbackRoute
   AuthenticatedAdminImpersonationRoute: typeof AuthenticatedAdminImpersonationRoute
+  AuthenticatedAdminKnowledgeRoute: typeof AuthenticatedAdminKnowledgeRoute
   AuthenticatedAdminLeadsRoute: typeof AuthenticatedAdminLeadsRoute
   AuthenticatedAdminMapRoute: typeof AuthenticatedAdminMapRoute
   AuthenticatedAdminOrganizationsRoute: typeof AuthenticatedAdminOrganizationsRoute
@@ -6263,6 +6305,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminErrorsRoute: AuthenticatedAdminErrorsRouteWithChildren,
   AuthenticatedAdminFeedbackRoute: AuthenticatedAdminFeedbackRoute,
   AuthenticatedAdminImpersonationRoute: AuthenticatedAdminImpersonationRoute,
+  AuthenticatedAdminKnowledgeRoute: AuthenticatedAdminKnowledgeRoute,
   AuthenticatedAdminLeadsRoute: AuthenticatedAdminLeadsRoute,
   AuthenticatedAdminMapRoute: AuthenticatedAdminMapRoute,
   AuthenticatedAdminOrganizationsRoute: AuthenticatedAdminOrganizationsRoute,
@@ -6502,6 +6545,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksBillingNoticesRoute: ApiPublicHooksBillingNoticesRoute,
   ApiPublicHooksCompetitionRecapsRoute: ApiPublicHooksCompetitionRecapsRoute,
   ApiPublicHooksErrorDigestRoute: ApiPublicHooksErrorDigestRoute,
+  ApiPublicHooksKnowledgeIngestRoute: ApiPublicHooksKnowledgeIngestRoute,
   ApiPublicHooksLessonRemindersRoute: ApiPublicHooksLessonRemindersRoute,
   ApiPublicHooksLessonWrapUpsRoute: ApiPublicHooksLessonWrapUpsRoute,
   ApiPublicHooksLifecycleEmailsRoute: ApiPublicHooksLifecycleEmailsRoute,

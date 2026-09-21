@@ -21,6 +21,7 @@ import {
   Sparkles,
   ShieldAlert,
   type LucideIcon,
+  BookOpen,
 } from "lucide-react";
 import {
   Sidebar,
@@ -74,7 +75,10 @@ const GROUPS: Group[] = [
   },
   {
     label: "Content",
-    items: [{ to: "/admin/social-plans", label: "Social plans", icon: Share2 }],
+    items: [
+      { to: "/admin/social-plans", label: "Social plans", icon: Share2 },
+      { to: "/admin/knowledge", label: "Knowledge corpus", icon: BookOpen },
+    ],
   },
   {
     label: "Trust & safety",
