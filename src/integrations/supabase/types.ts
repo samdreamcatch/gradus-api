@@ -2037,6 +2037,178 @@ export type Database = {
           },
         ]
       }
+      knowledge_chunks: {
+        Row: {
+          coach_id: string | null
+          content: string
+          content_hash: string
+          created_at: string
+          embedding: string | null
+          id: string
+          ordinal: number
+          page: number | null
+          section: string
+          source_id: string
+          sport: string
+          token_estimate: number
+        }
+        Insert: {
+          coach_id?: string | null
+          content?: string
+          content_hash: string
+          created_at?: string
+          embedding?: string | null
+          id?: string
+          ordinal: number
+          page?: number | null
+          section?: string
+          source_id: string
+          sport?: string
+          token_estimate?: number
+        }
+        Update: {
+          coach_id?: string | null
+          content?: string
+          content_hash?: string
+          created_at?: string
+          embedding?: string | null
+          id?: string
+          ordinal?: number
+          page?: number | null
+          section?: string
+          source_id?: string
+          sport?: string
+          token_estimate?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_chunks_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      knowledge_pages: {
+        Row: {
+          page: number
+          source_id: string
+          text: string
+        }
+        Insert: {
+          page: number
+          source_id: string
+          text: string
+        }
+        Update: {
+          page?: number
+          source_id?: string
+          text?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_pages_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      knowledge_sources: {
+        Row: {
+          chunk_count: number
+          chunker: string
+          coach_id: string | null
+          created_at: string
+          created_by: string | null
+          edition: string
+          embedding_model: string | null
+          error: string | null
+          external_url: string | null
+          id: string
+          ingested_at: string | null
+          inline_text: string | null
+          kind: string
+          page_count: number | null
+          publisher: string
+          quote_allowed: boolean
+          resource_id: string | null
+          rights_basis: string
+          sport: string
+          status: string
+          storage_path: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          chunk_count?: number
+          chunker?: string
+          coach_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          edition?: string
+          embedding_model?: string | null
+          error?: string | null
+          external_url?: string | null
+          id?: string
+          ingested_at?: string | null
+          inline_text?: string | null
+          kind: string
+          page_count?: number | null
+          publisher?: string
+          quote_allowed?: boolean
+          resource_id?: string | null
+          rights_basis: string
+          sport?: string
+          status?: string
+          storage_path?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          chunk_count?: number
+          chunker?: string
+          coach_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          edition?: string
+          embedding_model?: string | null
+          error?: string | null
+          external_url?: string | null
+          id?: string
+          ingested_at?: string | null
+          inline_text?: string | null
+          kind?: string
+          page_count?: number | null
+          publisher?: string
+          quote_allowed?: boolean
+          resource_id?: string | null
+          rights_basis?: string
+          sport?: string
+          status?: string
+          storage_path?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_sources_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "coach_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "knowledge_sources_resource_id_fkey"
+            columns: ["resource_id"]
+            isOneToOne: false
+            referencedRelation: "resources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lesson_reminders_sent: {
         Row: {
           athlete_id: string
@@ -3614,6 +3786,28 @@ export type Database = {
         Returns: boolean
       }
       is_service_caller: { Args: never; Returns: boolean }
+      match_knowledge_chunks: {
+        Args: {
+          p_coach_ids: string[]
+          p_limit: number
+          p_sport: string
+          query_embedding: string
+        }
+        Returns: {
+          chunk_id: string
+          content: string
+          edition: string
+          external_url: string
+          page: number
+          publisher: string
+          quote_allowed: boolean
+          resource_id: string
+          section: string
+          similarity: number
+          source_id: string
+          title: string
+        }[]
+      }
       move_to_dlq: {
         Args: {
           dlq_name: string
