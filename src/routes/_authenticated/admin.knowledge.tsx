@@ -215,8 +215,20 @@ function KnowledgePage() {
       </header>
 
       <section className="space-y-4">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="font-display text-xl">Sources</h2>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <button
+            type="button"
+            className="flex items-center gap-2 press-soft"
+            onClick={() => setListOpen((v) => !v)}
+            aria-expanded={listOpen}
+          >
+            <ChevronDown
+              className={`size-4 transition-transform ${listOpen ? "" : "-rotate-90"}`}
+              aria-hidden
+            />
+            <h2 className="font-display text-xl">Sources</h2>
+            <Tag tone="muted">{allSources.length}</Tag>
+          </button>
           <Button
             type="button"
             variant="outline"
@@ -230,11 +242,47 @@ function KnowledgePage() {
         </div>
         {sources.isLoading ? (
           <p className="text-text-secondary">Loading…</p>
-        ) : !sources.data?.sources.length ? (
+        ) : !allSources.length ? (
           <p className="text-text-secondary">No sources yet.</p>
-        ) : (
-          <ul className="divide-y divide-divider rounded-lg border border-divider">
-            {sources.data.sources.map((s) => (
+        ) : !listOpen ? null : (
+          <>
+            <div className="grid gap-3 sm:grid-cols-[1fr_12rem]">
+              <Input
+                value={filter}
+                onChange={(e) => {
+                  setFilter(e.target.value);
+                  setShowAll(false);
+                }}
+                placeholder="Search by title, publisher, sport or rights basis"
+                aria-label="Search sources"
+              />
+              <Select
+                value={statusFilter}
+                onValueChange={(v) => {
+                  setStatusFilter(v);
+                  setShowAll(false);
+                }}
+              >
+                <SelectTrigger aria-label="Filter by status">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Any status</SelectItem>
+                  {(["queued", "extracting", "chunking", "embedding", "ready", "failed"] as const).map(
+                    (s) => (
+                      <SelectItem key={s} value={s}>
+                        {s}
+                      </SelectItem>
+                    ),
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+            {!filtered.length ? (
+              <p className="text-text-secondary">No sources match that search.</p>
+            ) : (
+              <ul className="divide-y divide-divider rounded-lg border border-divider">
+                {visible.map((s) => (
               <li key={s.id} className="flex flex-wrap items-start gap-3 p-4">
                 <div className="min-w-0 flex-1 space-y-1">
                   <div className="flex flex-wrap items-center gap-2">
