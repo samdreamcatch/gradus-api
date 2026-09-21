@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Play, RefreshCw, Search, Trash2 } from "lucide-react";
+import { ChevronDown, Play, RefreshCw, Search, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -268,13 +268,13 @@ function KnowledgePage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Any status</SelectItem>
-                  {(["queued", "extracting", "chunking", "embedding", "ready", "failed"] as const).map(
-                    (s) => (
-                      <SelectItem key={s} value={s}>
-                        {s}
-                      </SelectItem>
-                    ),
-                  )}
+                  {(
+                    ["queued", "extracting", "chunking", "embedding", "ready", "failed"] as const
+                  ).map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {s}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -283,58 +283,58 @@ function KnowledgePage() {
             ) : (
               <ul className="divide-y divide-divider rounded-lg border border-divider">
                 {visible.map((s) => (
-              <li key={s.id} className="flex flex-wrap items-start gap-3 p-4">
-                <div className="min-w-0 flex-1 space-y-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-medium">{s.title}</span>
-                    {s.edition ? (
-                      <span className="text-text-tertiary text-sm">({s.edition})</span>
-                    ) : null}
-                    <Tag tone={STATUS_TONE[s.status]}>{s.status}</Tag>
-                    <Tag tone={s.quoteAllowed ? "accent" : "muted"}>
-                      {s.quoteAllowed ? "quotable" : "cite-only"}
-                    </Tag>
-                    <Tag tone="muted">{s.coachId ? "coach-scoped" : s.sport}</Tag>
-                  </div>
-                  <p className="text-sm text-text-secondary">
-                    {s.publisher || "—"} · {s.kind} · {s.chunker} chunker ·{" "}
-                    {s.pageCount != null ? `${s.pageCount} pages · ` : ""}
-                    {s.chunkCount} chunks
-                    {s.embeddingModel ? ` · ${s.embeddingModel}` : ""}
-                  </p>
-                  <p className="text-sm text-text-tertiary">Rights: {s.rightsBasis}</p>
-                  {s.error ? (
-                    <p className="text-sm text-destructive-ink" role="alert">
-                      Error: {s.error}
-                    </p>
-                  ) : null}
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => requeue.mutate(s.id)}
-                    aria-label={`Re-ingest ${s.title}`}
-                  >
-                    <RefreshCw className="size-4" aria-hidden />
-                    Re-ingest
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      if (window.confirm(`Remove "${s.title}" from the corpus?`))
-                        remove.mutate(s.id);
-                    }}
-                    aria-label={`Remove ${s.title}`}
-                  >
-                    <Trash2 className="size-4" aria-hidden />
-                    Remove
-                  </Button>
-                </div>
-              </li>
+                  <li key={s.id} className="flex flex-wrap items-start gap-3 p-4">
+                    <div className="min-w-0 flex-1 space-y-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-medium">{s.title}</span>
+                        {s.edition ? (
+                          <span className="text-text-tertiary text-sm">({s.edition})</span>
+                        ) : null}
+                        <Tag tone={STATUS_TONE[s.status]}>{s.status}</Tag>
+                        <Tag tone={s.quoteAllowed ? "accent" : "muted"}>
+                          {s.quoteAllowed ? "quotable" : "cite-only"}
+                        </Tag>
+                        <Tag tone="muted">{s.coachId ? "coach-scoped" : s.sport}</Tag>
+                      </div>
+                      <p className="text-sm text-text-secondary">
+                        {s.publisher || "—"} · {s.kind} · {s.chunker} chunker ·{" "}
+                        {s.pageCount != null ? `${s.pageCount} pages · ` : ""}
+                        {s.chunkCount} chunks
+                        {s.embeddingModel ? ` · ${s.embeddingModel}` : ""}
+                      </p>
+                      <p className="text-sm text-text-tertiary">Rights: {s.rightsBasis}</p>
+                      {s.error ? (
+                        <p className="text-sm text-destructive-ink" role="alert">
+                          Error: {s.error}
+                        </p>
+                      ) : null}
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => requeue.mutate(s.id)}
+                        aria-label={`Re-ingest ${s.title}`}
+                      >
+                        <RefreshCw className="size-4" aria-hidden />
+                        Re-ingest
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          if (window.confirm(`Remove "${s.title}" from the corpus?`))
+                            remove.mutate(s.id);
+                        }}
+                        aria-label={`Remove ${s.title}`}
+                      >
+                        <Trash2 className="size-4" aria-hidden />
+                        Remove
+                      </Button>
+                    </div>
+                  </li>
                 ))}
               </ul>
             )}
