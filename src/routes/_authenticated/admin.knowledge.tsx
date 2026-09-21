@@ -335,8 +335,15 @@ function KnowledgePage() {
                   </Button>
                 </div>
               </li>
-            ))}
-          </ul>
+                ))}
+              </ul>
+            )}
+            {filtered.length > visible.length ? (
+              <Button type="button" variant="outline" size="sm" onClick={() => setShowAll(true)}>
+                Show all {filtered.length}
+              </Button>
+            ) : null}
+          </>
         )}
       </section>
 
