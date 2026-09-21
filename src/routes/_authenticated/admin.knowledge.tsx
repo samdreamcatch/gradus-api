@@ -102,13 +102,14 @@ function KnowledgePage() {
       return textFn({ data: { title, text, ...common } });
     },
     onSuccess: () => {
-      toast.success("Source queued");
+      toast.success("Source queued; ingesting now");
       setCommon(emptyCommon());
       setResourceId("");
       setUrl("");
       setTitle("");
       setText("");
       refresh();
+      runNow.mutate();
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -134,13 +135,21 @@ function KnowledgePage() {
   });
 
   const runNow = useMutation({
-    mutationFn: () => runNowFn(),
-    onSuccess: (r) => {
-      toast.success(
-        r.idle ? `Queue drained (${r.steps.length} steps)` : `${r.steps.length} steps taken`,
-      );
-      refresh();
+    // Drive the queue to empty from here: each server call takes ~20 s of
+    // steps, so a long PDF finishes while the admin watches instead of
+    // waiting for the six-hourly sweep.
+    mutationFn: async () => {
+      let total = 0;
+      for (let i = 0; i < 60; i++) {
+        const r = await runNowFn();
+        total += r.steps.length;
+        refresh();
+        if (r.idle || r.steps.length === 0) return { total, idle: true };
+      }
+      return { total, idle: false };
     },
+    onSuccess: (r) =>
+      toast.success(r.idle ? `Done (${r.total} steps)` : `${r.total} steps taken; more remains`),
     onError: (e: Error) => toast.error(e.message),
   });
 

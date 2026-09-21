@@ -1,5 +1,5 @@
-// Knowledge ingest — called by pg_cron every minute (PRD §6.7 "Grounded
-// Ask Gradus", milestone L4).
+// Knowledge ingest — the six-hourly pg_cron sweep and the admin page's "Run
+// ingestion now" loop both land here (PRD §6.7 "Grounded Ask Gradus", L4).
 //
 // Advances queued knowledge sources through extraction, chunking and
 // embedding inside a time budget (src/lib/knowledge-ingest.server.ts) and
