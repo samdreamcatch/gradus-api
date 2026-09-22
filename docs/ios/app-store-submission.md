@@ -7,18 +7,18 @@
 
 ## 1. What blocks what, in order
 
-| # | Step | Who | Unblocks |
-|---|---|---|---|
-| 1 | Enrollment payment clears; membership shows **Active** | Apple / Mariah | Everything below |
-| 2 | Identifiers: App ID `training.gradus.app` (Push Notifications, Associated Domains, Sign in with Apple, App Groups), App ID `training.gradus.app.widgets` (App Groups), group `group.training.gradus.app` on both | Mariah | Signing any device build |
-| 3 | Keys: APNs (`.p8` + Key ID) and Sign in with Apple (`.p8` + Key ID) | Mariah | Push, Live Activities, Apple revoke on delete |
-| 4 | Team ID sent to the session | Mariah | `DEVELOPMENT_TEAM` in gradus-ios `project.yml`; the AASA file in this repo (one small PR each, same day) |
-| 5 | Lovable secrets `APNS_KEY_P8`, `APNS_KEY_ID`, `APPLE_TEAM_ID`, `APPLE_SIWA_KEY_P8`, `APPLE_SIWA_KEY_ID` | Mariah | Server push sender, App Attest, Apple revoke |
-| 6 | App Store Connect app record (§2) | Mariah | Xcode Cloud, TestFlight |
-| 7 | Xcode Cloud: connect `mariah-gill/gradus-ios`, workflow "archive `main` → TestFlight internal group" | Mariah (the session can walk through it) | **T1**, the first TestFlight build on her phone |
-| 8 | `API_V1_ENABLED=true` in Lovable secrets, then Publish | Mariah | The TestFlight build talking to production |
-| 9 | QA on TestFlight (`docs/ios/QA.md`), the device accessibility pass (gradus-ios `docs/device-accessibility-script.md`), and L1–L3 + L5 merged (PRD §10.7: all before I16) | Mariah + sessions | **I16**, submission |
-| 10 | Listing, privacy, age rating, review info (§3–§7), screenshots (§8) | Mariah pastes; session drafts and captures | Submit for review |
+| #   | Step                                                                                                                                                                                                             | Who                                        | Unblocks                                                                                                 |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ | -------------------------------------------------------------------------------------------------------- |
+| 1   | Enrollment payment clears; membership shows **Active**                                                                                                                                                           | Apple / Mariah                             | Everything below                                                                                         |
+| 2   | Identifiers: App ID `training.gradus.app` (Push Notifications, Associated Domains, Sign in with Apple, App Groups), App ID `training.gradus.app.widgets` (App Groups), group `group.training.gradus.app` on both | Mariah                                     | Signing any device build                                                                                 |
+| 3   | Keys: APNs (`.p8` + Key ID) and Sign in with Apple (`.p8` + Key ID)                                                                                                                                              | Mariah                                     | Push, Live Activities, Apple revoke on delete                                                            |
+| 4   | Team ID sent to the session                                                                                                                                                                                      | Mariah                                     | `DEVELOPMENT_TEAM` in gradus-ios `project.yml`; the AASA file in this repo (one small PR each, same day) |
+| 5   | Lovable secrets `APNS_KEY_P8`, `APNS_KEY_ID`, `APPLE_TEAM_ID`, `APPLE_SIWA_KEY_P8`, `APPLE_SIWA_KEY_ID`                                                                                                          | Mariah                                     | Server push sender, App Attest, Apple revoke                                                             |
+| 6   | App Store Connect app record (§2)                                                                                                                                                                                | Mariah                                     | Xcode Cloud, TestFlight                                                                                  |
+| 7   | Xcode Cloud: connect `mariah-gill/gradus-ios`, workflow "archive `main` → TestFlight internal group"                                                                                                             | Mariah (the session can walk through it)   | **T1**, the first TestFlight build on her phone                                                          |
+| 8   | `API_V1_ENABLED=true` in Lovable secrets, then Publish                                                                                                                                                           | Mariah                                     | The TestFlight build talking to production                                                               |
+| 9   | QA on TestFlight (`docs/ios/QA.md`), the device accessibility pass (gradus-ios `docs/device-accessibility-script.md`), and L1–L3 + L5 merged (PRD §10.7: all before I16)                                         | Mariah + sessions                          | **I16**, submission                                                                                      |
+| 10  | Listing, privacy, age rating, review info (§3–§7), screenshots (§8)                                                                                                                                              | Mariah pastes; session drafts and captures | Submit for review                                                                                        |
 
 Not blocking, but needed before the Google button and native password reset appear: a Google Cloud iOS OAuth client for `training.gradus.app` (client ID → session + secret `GOOGLE_IOS_CLIENT_ID`), and `gradus://reset-password` in the Supabase Auth redirect allow-list.
 
@@ -26,23 +26,23 @@ Not blocking, but needed before the Google button and native password reset appe
 
 ## 2. App record (App Store Connect → Apps → +)
 
-| Field | Value |
-|---|---|
-| Platform | iOS |
-| Name | **Gradus** (if taken on the store, fallback: *Gradus: Coach & Practice*) |
-| Primary language | English (U.S.) |
-| Bundle ID | `training.gradus.app` |
-| SKU | `gradus-ios-1` (internal only; any unique string) |
-| User access | Full access |
-| Version | **1.0.0**: must equal `MARKETING_VERSION` in gradus-ios, or uploads do not attach |
-| Primary category | Sports |
-| Secondary category | Education |
-| Price | Free |
-| Availability | United States only (PRD §12 #7 default) |
-| Copyright | 2026 Gradus Sports, Inc. |
-| Privacy policy URL | https://www.gradussports.com/privacy |
-| Support URL | https://www.gradussports.com/contact (live; `/support` returns 404 on both domains) |
-| Marketing URL | https://www.gradussports.com |
+| Field              | Value                                                                               |
+| ------------------ | ----------------------------------------------------------------------------------- |
+| Platform           | iOS                                                                                 |
+| Name               | **Gradus** (if taken on the store, fallback: _Gradus: Coach & Practice_)            |
+| Primary language   | English (U.S.)                                                                      |
+| Bundle ID          | `training.gradus.app`                                                               |
+| SKU                | `gradus-ios-1` (internal only; any unique string)                                   |
+| User access        | Full access                                                                         |
+| Version            | **1.0.0**: must equal `MARKETING_VERSION` in gradus-ios, or uploads do not attach   |
+| Primary category   | Sports                                                                              |
+| Secondary category | Education                                                                           |
+| Price              | Free                                                                                |
+| Availability       | United States only (PRD §12 #7 default)                                             |
+| Copyright          | 2026 Gradus Sports, Inc.                                                            |
+| Privacy policy URL | https://www.gradussports.com/privacy                                                |
+| Support URL        | https://www.gradussports.com/contact (live; `/support` returns 404 on both domains) |
+| Marketing URL      | https://www.gradussports.com                                                        |
 
 ---
 
@@ -102,25 +102,25 @@ Before pasting, check the description against the build. Every claim above is bu
 
 For each type below, answer: **collected — yes; linked to the user's identity — yes; used for tracking — no; purpose — App Functionality.**
 
-| Apple category → type | Why it is collected |
-|---|---|
-| Contact Info → Name | Account profiles; athlete first name |
-| Contact Info → Email Address | Sign-in; guardian email for under-18 athletes |
-| Identifiers → User ID | Account id |
-| Identifiers → Device ID | APNs push token, App Attest key id |
-| User Content → Audio Data | Voice notes in messages; voice plan capture |
-| User Content → Photos or Videos | Coach schedule-import photos and resource uploads |
-| User Content → Other User Content | Messages, plans, notes, goals, Ask Gradus questions |
-| Health & Fitness → Fitness | Practice session duration and the post-session flow check-in |
-| Purchases → Purchase History | Subscription status (bought on the website, shown in the app) |
-| Other Data → Other Data Types | Athlete date of birth |
-| Diagnostics → Crash Data | MetricKit crash reports → `POST /api/v1/errors` |
-| Diagnostics → Performance Data | MetricKit hang reports |
-| Diagnostics → Other Diagnostic Data | Client error reports → `POST /api/v1/errors` |
+| Apple category → type               | Why it is collected                                           |
+| ----------------------------------- | ------------------------------------------------------------- |
+| Contact Info → Name                 | Account profiles; athlete first name                          |
+| Contact Info → Email Address        | Sign-in; guardian email for under-18 athletes                 |
+| Identifiers → User ID               | Account id                                                    |
+| Identifiers → Device ID             | APNs push token, App Attest key id                            |
+| User Content → Audio Data           | Voice notes in messages; voice plan capture                   |
+| User Content → Photos or Videos     | Coach schedule-import photos and resource uploads             |
+| User Content → Other User Content   | Messages, plans, notes, goals, Ask Gradus questions           |
+| Health & Fitness → Fitness          | Practice session duration and the post-session flow check-in  |
+| Purchases → Purchase History        | Subscription status (bought on the website, shown in the app) |
+| Other Data → Other Data Types       | Athlete date of birth                                         |
+| Diagnostics → Crash Data            | MetricKit crash reports → `POST /api/v1/errors`               |
+| Diagnostics → Performance Data      | MetricKit hang reports                                        |
+| Diagnostics → Other Diagnostic Data | Client error reports → `POST /api/v1/errors`                  |
 
 Not collected: phone number, physical address, location, contacts, browsing/search history, health (non-fitness), financial info, sensitive info, advertising data, product-interaction analytics.
 
-Judgment calls, conservative on purpose (over-declaring is safe, under-declaring gets apps pulled): *Fitness* for practice logs, *Device ID* for push tokens, *Purchase History* for subscription status the app only reads.
+Judgment calls, conservative on purpose (over-declaring is safe, under-declaring gets apps pulled): _Fitness_ for practice logs, _Device ID_ for push tokens, _Purchase History_ for subscription status the app only reads.
 
 ---
 
@@ -128,18 +128,18 @@ Judgment calls, conservative on purpose (over-declaring is safe, under-declaring
 
 Apple's questionnaire (updated in 2025) computes the rating from the answers. Proposed answers:
 
-| Question | Answer |
-|---|---|
-| Violence, sexual content, profanity, horror, gambling, alcohol/tobacco/drugs, contests | None |
-| Mature or suggestive themes | **Mariah decides:** the Safe Sport panel and The Assist's documents discuss abuse prevention. Proposed: *Infrequent/Mild* |
-| Medical or treatment information | **Mariah decides:** Ask Gradus can answer injury and pain questions (minors are routed to the Safe Sport panel). Proposed: *Infrequent/Mild* |
-| Unrestricted web access | No (links open specific pages in Safari; there is no in-app browser) |
-| User-generated content | Yes: messages and uploaded resources, with Report and Block |
-| Messaging and chat | Yes: restricted to connected coaches, parents, and athletes |
-| Parental controls | Yes: parents create and oversee under-18 athlete accounts |
-| Age assurance | No |
-| Advertising | No |
-| Made for Kids | **No** (the Kids Category forbids external links, and billing links out) |
+| Question                                                                               | Answer                                                                                                                                       |
+| -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| Violence, sexual content, profanity, horror, gambling, alcohol/tobacco/drugs, contests | None                                                                                                                                         |
+| Mature or suggestive themes                                                            | **Mariah decides:** the Safe Sport panel and The Assist's documents discuss abuse prevention. Proposed: _Infrequent/Mild_                    |
+| Medical or treatment information                                                       | **Mariah decides:** Ask Gradus can answer injury and pain questions (minors are routed to the Safe Sport panel). Proposed: _Infrequent/Mild_ |
+| Unrestricted web access                                                                | No (links open specific pages in Safari; there is no in-app browser)                                                                         |
+| User-generated content                                                                 | Yes: messages and uploaded resources, with Report and Block                                                                                  |
+| Messaging and chat                                                                     | Yes: restricted to connected coaches, parents, and athletes                                                                                  |
+| Parental controls                                                                      | Yes: parents create and oversee under-18 athlete accounts                                                                                    |
+| Age assurance                                                                          | No                                                                                                                                           |
+| Advertising                                                                            | No                                                                                                                                           |
+| Made for Kids                                                                          | **No** (the Kids Category forbids external links, and billing links out)                                                                     |
 
 Expect the result above 4+ because of messaging and user content. That matters for youth athletes whose parents use Screen Time age limits. **Decision for Mariah:** accept Apple's computed rating, or override it upward. You can't set it lower than computed.
 
@@ -159,11 +159,11 @@ Expect the result above 4+ because of messaging and user content. That matters f
 **Contact:** Mariah (first/last name, phone, mariah@gradussports.com).
 **Demo accounts** (Mariah enters passwords in App Store Connect; never in this repo):
 
-| Role | Username | Notes |
-|---|---|---|
-| Coach | `alyson.stemas@gmail.com` | Needs an active Coach or Team plan so the reviewer sees full features |
-| Parent | `mariah.slone+1@gmail.com` | Linked to the coach above, with at least one athlete |
-| Athlete | *to create*: a username-login athlete under the parent above | PRD Appendix D asks for one; it doesn't exist yet |
+| Role    | Username                                                     | Notes                                                                 |
+| ------- | ------------------------------------------------------------ | --------------------------------------------------------------------- |
+| Coach   | `alyson.stemas@gmail.com`                                    | Needs an active Coach or Team plan so the reviewer sees full features |
+| Parent  | `mariah.slone+1@gmail.com`                                   | Linked to the coach above, with at least one athlete                  |
+| Athlete | _to create_: a username-login athlete under the parent above | PRD Appendix D asks for one; it doesn't exist yet                     |
 
 All three must be tested on the TestFlight build against production before submission.
 
