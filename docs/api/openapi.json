@@ -17121,11 +17121,11 @@
                   },
                   "appVersion": {
                     "type": "string",
-                    "maxLength": 40
+                    "pattern": "^[0-9A-Za-z .()_-]{0,40}$"
                   },
                   "osVersion": {
                     "type": "string",
-                    "maxLength": 40
+                    "pattern": "^[0-9A-Za-z .()_-]{0,40}$"
                   },
                   "events": {
                     "type": "array",

@@ -201,6 +201,37 @@ describe("recordAnalyticsBatch", () => {
     }
   });
 
+  it("judges an account with an athlete record as an athlete, even if it also has a coach profile", async () => {
+    const { admin, upserts } = fakeAdmin(
+      {
+        athletes: { id: "a1", birthdate: "2014-02-02" },
+        coach_profiles: { id: "c9", onboarded_at: "2026-01-01" },
+      },
+      {},
+    );
+    await recordAnalyticsBatch(admin, "user-kid", batch(), NOW);
+    expect(upserts[0].rows[0]).toMatchObject({
+      user_id: null,
+      subject: "minor_athlete",
+      role: "athlete",
+    });
+  });
+
+  it("refuses free text in the sport prop and version strings", () => {
+    expect(cleanProps("resource_open", { sport: "Nora's secret" })).toEqual({});
+    expect(cleanProps("resource_open", { sport: "figure_skating" })).toEqual({
+      sport: "figure_skating",
+    });
+    expect(
+      analyticsBatchInput.safeParse({
+        platform: "ios",
+        appVersion: "hello <script>",
+        osVersion: "26.0",
+        events: batch().events,
+      }).success,
+    ).toBe(false);
+  });
+
   it("treats an athlete with no birthdate on file as a minor", async () => {
     const { admin, upserts } = minorWorld(null);
     await recordAnalyticsBatch(admin, "user-kid", batch(), NOW);

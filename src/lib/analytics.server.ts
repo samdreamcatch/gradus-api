@@ -52,7 +52,11 @@ export const EVENT_PROPS = {
   resource_open: z
     .object({
       kind: z.enum(["pdf", "image", "link"]).optional(),
-      sport: z.string().max(40).optional(),
+      // A sport key ("figure_skating"), never free text.
+      sport: z
+        .string()
+        .regex(/^[a-z_]{1,40}$/)
+        .optional(),
       origin: z.enum(["library", "coach"]).optional(),
     })
     .strict(),
@@ -96,8 +100,9 @@ const eventSchema = z.object({
 
 export const analyticsBatchInput = z.object({
   platform: z.enum(["ios"]),
-  appVersion: z.string().max(40),
-  osVersion: z.string().max(40),
+  // Version-like text only ("1.0.0 (12)", "26.0").
+  appVersion: z.string().regex(/^[0-9A-Za-z .()_-]{0,40}$/),
+  osVersion: z.string().regex(/^[0-9A-Za-z .()_-]{0,40}$/),
   events: z.array(eventSchema).min(1).max(MAX_EVENTS_PER_BATCH),
 });
 
@@ -146,15 +151,26 @@ export interface Subject {
   hasClub: boolean;
 }
 
-/** Who the caller is for analytics, derived entirely server-side. */
+/**
+ * Who the caller is for analytics, derived entirely server-side. An account
+ * with an athlete record is always judged as an athlete first, whatever
+ * other profile rows it has, so role precedence can never let a minor
+ * through as an adult.
+ */
 export async function resolveSubject(
   admin: AnalyticsDb,
   userId: string,
   now: Date,
 ): Promise<Subject> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const role = (await resolveCallerRole(admin as any, userId)) ?? "none";
-  if (role !== "athlete") {
+  const athlete = await admin
+    .from("athletes")
+    .select("id, birthdate")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (athlete.error) dbError(athlete.error);
+  if (!athlete.data) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const role = (await resolveCallerRole(admin as any, userId)) ?? "none";
     return {
       userId,
       subject: "adult",
@@ -165,13 +181,8 @@ export async function resolveSubject(
       hasClub: false,
     };
   }
-  const athlete = await admin
-    .from("athletes")
-    .select("id, birthdate")
-    .eq("user_id", userId)
-    .maybeSingle();
-  if (athlete.error) dbError(athlete.error);
-  const band = ageBand(athlete.data?.birthdate ?? null, now);
+  const role = "athlete";
+  const band = ageBand(athlete.data.birthdate ?? null, now);
   if (band === "18_plus") {
     return {
       userId,
