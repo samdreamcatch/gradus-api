@@ -40,6 +40,7 @@ Decisions confirmed with Mariah on 2026-09-04. Treat these as settled.
 | 16 | Ask Gradus fallback | **2026-09-20 (Mariah):** when the corpus does not cover a question, answer from general model knowledge and **say so plainly** in the answer. Safety topics never fall back: they route to the Safe Sport panel content. |
 | 17 | Coach "why" prompt | **2026-09-20 (Mariah):** when a coach benches a plan or removes a move, the one-tap reason prompt (landed it / parking it / changed direction) is **skippable**. Only answered prompts become labeled skill events; the rest are inferred with a low-confidence flag. Coaches are never blocked. |
 | 18 | Canonical flow-state labels | **2026-09-20 (Mariah):** **Frustrated / Pushing / Steady / Locked in / Flowing** are the labels for every user, every screen, and every prompt. The coach's AI summary had its own mastery-flavored scale for the same index; web PR #127 removes it. |
+| 19 | Usage analytics | **2026-09-22 (Mariah):** Gradus measures **how much time users spend in each area of the app, Resources in particular**, from 1.0. This reverses the earlier "no analytics" lines in §6.11 and §9.2. Events are first-party by default (our own `/api/v1` endpoint and table, no SDK) unless §12 #19 picks a vendor; under-18 athletes' events are stored de-identified; users can turn it off in Settings. Design in §6.12, milestones A1–A2 in §10.8. Never used for ads or cross-app tracking. |
 
 ---
 
@@ -455,12 +456,34 @@ Custom scheme `gradus://` is registered as a fallback for QR codes and internal 
 - **Transport.** ATS defaults (HTTPS, TLS 1.2+, forward secrecy). **No certificate pinning** (see §4.2). Add a CAA record for gradus.training at the DNS level as the actual mitigation.
 - **Secrets.** The app ships only the Supabase publishable key and the Google iOS client ID. Everything else is server-side.
 - **Storage at rest.** Keychain for tokens; the SwiftData store uses `NSFileProtectionCompleteUntilFirstUserAuthentication`. Cached PDFs and voice notes are in the app's Caches directory and purgeable. Sign-out wipes the store.
-- **Minors.** Athlete accounts are created by parents and log in by username; the app never asks a minor for an email. Messaging keeps the athlete persona rules server-side. No third-party analytics or ads SDKs, so the App Privacy label lists only first-party collection (contact info, user content, identifiers for push, diagnostics) with the same answers already drafted for the Capacitor submission.
+- **Minors.** Athlete accounts are created by parents and log in by username; the app never asks a minor for an email. Messaging keeps the athlete persona rules server-side. No ads SDKs and no tracking. Usage analytics are first-party (§6.12, decision #19), and a minor athlete's events are stored without their user id. The App Privacy label lists first-party collection (contact info, user content, identifiers for push, diagnostics, and product interaction once A2 ships); the answers live in `docs/ios/app-store-submission.md`.
 - **User-generated content (Guideline 1.2).** Report and block are one tap away in every room and on every profile the user can see, using the existing `submitReport` / `blockUser` logic. Blocked users' messages are hidden client-side immediately and server-side thereafter.
 - **Account deletion (5.1.1(v)).** In-app, two taps from Settings, with the existing impact preview and confirmation phrase for accounts with minor athletes. Includes Apple token revocation.
 - **Error reporting.** `POST /errors` mirrors `reportClientError` so iOS errors land in the existing admin errors dashboard. MetricKit crash and hang diagnostics are uploaded on next launch through the same endpoint. No third-party crash SDK in v1.
 - **Screenshots and logging.** No PII in logs. Debug logging is compiled out of release builds.
 - **Impersonation.** Admin impersonation is web-only; the API rejects impersonation tokens on `/api/v1`.
+
+### 6.12 Usage analytics (added 2026-09-22)
+
+Decision #19. The question to answer: **where do coaches, parents and athletes spend their time, and which resources do they actually read?**
+
+**What is measured**
+- **Screen time.** Foreground time per screen, grouped into areas that match the tabs and major flows: `roster`, `schedule`, `plans`, `sessions`, `messages`, `board`, `resources`, `ask`, `settings`, `onboarding`. The clock runs only while the screen is visible and the app is active. Backgrounding, locking the phone, or presenting a sheet over the screen stops it. A single stretch longer than 30 minutes is capped at 30 and marked `capped`, so an app left open on the counter does not inflate the numbers.
+- **Resources, in detail.** Opened (resource id, kind, sport, library vs coach upload); read time per open; read depth (furthest PDF page reached ÷ page count); shared; downloaded for offline; library searches (a count and the result count, **never the query text**); Safe Sport panel opened; Ask Gradus question asked, answer saved, source row tapped (after L5).
+- **Envelope on every event:** random event id, per-launch session id, timestamp, platform, app version and build, OS version. The server adds role and age band itself; neither is trusted from the client.
+- **Never collected:** message, note, plan or question text; search terms; names; contacts; location; the advertising identifier; anything from another app.
+
+**Transport (iOS).** `AnalyticsTracker` in `GradusCore` buffers events on disk in the per-user cache (cap 1,000 events, drop anything older than 7 days) and sends batches of up to 100 to `POST /api/v1/analytics/events`, when the app backgrounds, every 60 s in the foreground, and at launch. Analytics never use the write outbox, never retry in a loop, and never show an error. Screens opt in with a `.trackedScreen(area:screen:)` modifier on each tab root and routed screen; the Resources viewer reports read depth itself.
+
+**Server (web repo).** Additive migration `analytics_events` (id, occurred_at, received_at, user_id nullable, subject `adult` or `minor_athlete`, role, age band, session_id, platform, app_version, event, area, screen, resource_id nullable, duration_ms, props jsonb allow-listed per event). RLS on with no client policies; the route inserts with the admin client after authenticating the caller. Event ids are unique, so a retried batch is a no-op. The route is authenticated, rate-limited, and capped at 64 KB and 100 events. **Minor athletes:** for an athlete account under 18, the server writes `user_id = null`, `subject = minor_athlete` and the age band only, so a minor's usage can be counted but never tied back to the child (Privacy Policy §5.3; COPPA's support-for-internal-operations exception). A pg_cron job deletes raw events after the retention in §12 #21 and keeps weekly aggregates.
+
+**Reporting.** A **Usage** page in the internal admin panel (web-only, decision #2): time per area per role per week; a Resources table with opens, unique users, total and median read time, median read depth, shares and offline saves per resource, filterable by sport and by library vs coach upload; Ask Gradus volume. Small groups (fewer than 5 users) show as "<5" so no individual can be picked out.
+
+**Opt-out.** Settings → Privacy → **Share usage data**, on by default. Off means nothing is recorded or sent and the buffer is cleared. The setting is per device.
+
+**The web.** Unchanged in 1.0 (§4.1). The endpoint and table are client-agnostic, so the web can send the same events later as a separate web change (§12 #20).
+
+**Apple and the policy.** First-party analytics is not tracking under App Tracking Transparency, so there is no ATT prompt. A2 adds `NSPrivacyCollectedDataTypeProductInteraction` with purpose `Analytics` to the privacy manifest, and App Privacy gains *Usage Data → Product Interaction → Analytics*, both before the collecting build ships. The published policy's §2.4 already covers features accessed, session duration and usage patterns; counsel confirms the minor de-identification and retention wording against §5.3 and §8.
 
 ---
 
@@ -741,7 +764,7 @@ gradus-ios/
 
 - **Swift 6** language mode with strict concurrency; SwiftUI throughout; `@Observable` view models; async/await; no Combine except where a framework demands it.
 - **Deployment target iOS 18.0**, built with the current Xcode. iPhone and iPad device families.
-- **Dependencies (kept minimal, all SPM):** `supabase-swift` (Auth, Realtime, Storage), `swift-openapi-generator` + `swift-openapi-urlsession`, `GoogleSignIn-iOS` (only if the native Google SDK path is chosen). No Firebase, no analytics SDK, no crash SDK, no UI kit. Markdown via `AttributedString`. PDFs via `PDFKit`. Audio via `AVFoundation`.
+- **Dependencies (kept minimal, all SPM):** `supabase-swift` (Auth, Realtime, Storage), `swift-openapi-generator` + `swift-openapi-urlsession`, `GoogleSignIn-iOS` (only if the native Google SDK path is chosen). No Firebase, no crash SDK, no UI kit, and no analytics SDK unless §12 #19 chooses one (usage analytics are first-party by default, §6.12). Markdown via `AttributedString`. PDFs via `PDFKit`. Audio via `AVFoundation`.
 - **UIKit** only where SwiftUI lacks coverage (camera capture, share activity items, WKWebView audio fallback).
 
 ### 9.3 Architecture inside the app
@@ -833,7 +856,8 @@ Backend milestones live in the web repo and can run overnight in cloud sessions.
 | I15 | Widget, lesson reminders, App Attest | 3.8 | Widget shows next up; reminders arrive; App Attest on auth |
 | C2 | Capacitor Android 1.0 to Google Play, **reopened 2026-09-19** (§12 #14) | Phase D | Mariah decides whether it ships at all |
 | L1–L5 | Athlete learning loop and grounded Ask Gradus *(added 2026-09-20)* | 3.10–3.12; the milestone table is §10.7 | Taken after the §10.6 gate, alongside T1/T2 QA, as TestFlight builds; all five merged before I16 |
-| I16 | Hardening and submission of native 1.0 (was 2.0) | Phase 4, plus 3.9 preparation; the pre-QA gate in §10.6 and the §10.7 milestones L1–L5 come first | QA checklist passes; crash-free ≥ 99.5% on TestFlight; submitted |
+| A1–A2 | Usage analytics *(added 2026-09-22)* | §6.12; the milestone table is §10.8 | Taken after the §10.6 gate, alongside L1–L5; both merged before I16 so launch has data |
+| I16 | Hardening and submission of native 1.0 (was 2.0) | Phase 4, plus 3.9 preparation; the pre-QA gate in §10.6, the §10.7 milestones L1–L5 and the §10.8 milestones A1–A2 come first | QA checklist passes; crash-free ≥ 99.5% on TestFlight; submitted |
 | L | Native 1.0 live | | Approved; first store release, no shell migration |
 | K | Kotlin rebuild starts | its own PRD | |
 | L6 | Learned pace model *(added 2026-09-20; post-launch, not gating)* | 3.13 | Taken when §12 #17 says the data supports it |
@@ -917,6 +941,15 @@ Mariah's decision, recorded 2026-09-20: the website's "How it works" promises (G
 
 **What the web gets for free.** Because the grounding and the profile live inside the shared server functions, web users receive the same grounded answers and sharper drafts the moment each milestone publishes. The web shows no citations until a separate web change; that is the only visible difference between the clients, and it is deliberate under §4.1.
 
+### 10.8 Usage analytics (2026-09-22)
+
+Decision #19; the design is §6.12. Taken after the §10.6 gate, in parallel with L1–L5 and TestFlight QA; both merged before I16.
+
+| # | Milestone | Repo | Scope | Done when |
+|---|---|---|---|---|
+| A1 | Events endpoint, table, admin report | web | Migration `analytics_events` with RLS, GRANTs and the retention cron; `POST /api/v1/analytics/events` (auth, rate limit, size caps, idempotent event ids, server-derived role and age band, minor de-identification); OpenAPI and an event-schema vector; the admin **Usage** page with the Resources table | Tests prove a minor athlete's batch is stored with no user id and a retried batch inserts nothing; in Lovable preview a batch is accepted and the Usage page shows it |
+| A2 | Tracker and instrumentation | iOS | Contract sync; `AnalyticsTracker` with the disk buffer and flush rules; `.trackedScreen` on every tab root and routed screen; Resources events (open, read time, read depth, share, offline save, search count, Safe Sport, Ask Gradus); Settings → Privacy toggle (AAA, VoiceOver); privacy manifest `ProductInteraction` / `Analytics`; App Privacy answers updated in `docs/ios/app-store-submission.md` | Simulator against preview: a walk through Resources produces the expected rows with sane durations; toggle off sends nothing; airplane mode buffers and flushes on reconnect; full suite green |
+
 ---
 
 ## 11. Risks and dependencies
@@ -969,6 +1002,9 @@ Mariah's decision, recorded 2026-09-20: the website's "How it works" promises (G
 | 16 | *(2026-09-20)* Rights confirmations for quoting the USFS rulebook, the SafeSport Code and MAAPP, and The Assist's six documents | Mariah | Before L4 | Ingest only sources with written permission or a public license; the rest are cited by title and linked, not quoted |
 | 17 | *(2026-09-20)* Whether and when to start L6, the learned pace model | Mariah, on Claude Code's evidence | After launch, when ≥ 30 athletes have a season of skill events | Not started; the deterministic profile stands in |
 | 18 | *(2026-09-20)* Whether athletes or parents ever see their skill history directly | Mariah | Before L2 | Not in 1.0: the coach sees "likely landed" hints in the plan editor; athletes and parents see it only as sharper plans |
+| 19 | *(2026-09-22)* Analytics vendor: first-party (own endpoint and table) vs a hosted tool (e.g., PostHog, Amplitude) | Mariah | Before A1 | First-party: no SDK, minors' data stays in our database, no third-party privacy manifest; the admin Usage page is the report |
+| 20 | *(2026-09-22)* Whether the web sends the same usage events | Mariah | Any time after A1 | Not in 1.0; a separate web change later |
+| 21 | *(2026-09-22)* Raw analytics event retention | Mariah, with counsel | Before A1 | 13 months raw, weekly aggregates kept indefinitely |
 
 ---
 
@@ -1114,6 +1150,7 @@ Every user-facing `createServerFn` and its `/api/v1` counterpart. Admin, org-adm
 | Billing | `billing_events`, `coach_athlete_rates`, `invoices`, `invoice_lines`, `promo_codes`, `user_applied_promo_codes` | Entitlement summary; invoices for opened athletes |
 | Platform | `device_tokens`, `client_errors`, `error_group_explanations`, `feedback`, `impersonation_events`, new `api_idempotency_keys` | Nothing |
 | Email (server only) | `email_send_log`, `email_send_state`, `email_template_overrides`, `email_template_override_history`, `email_unsubscribe_tokens`, `lifecycle_email_jobs`, `suppressed_emails` | Nothing |
+| Usage analytics *(2026-09-22, §6.12)* | new `analytics_events` | Unsent events only, in the per-user buffer (≤ 1,000, ≤ 7 days) |
 
 ---
 
@@ -1161,7 +1198,7 @@ Carried over from `docs/mobile/submission.md` and updated for the native app.
 **Before enrollment completes (do now)**
 - [ ] App name, subtitle, keywords, description, support URL, marketing URL, privacy policy URL (`https://www.gradussports.com/privacy`).
 - [ ] 6.7" and 6.5" screenshots from the simulator once P0 screens exist; App Preview video optional.
-- [ ] App Privacy questionnaire answers matching the policy (athlete email and commercial information are the load-bearing answers; add Diagnostics for crash reports).
+- [ ] App Privacy questionnaire answers matching the policy (athlete email and commercial information are the load-bearing answers; add Diagnostics for crash reports, and Usage Data → Product Interaction → Analytics once A2 ships).
 - [ ] Review notes draft (below) and demo accounts confirmed working: `mariah.slone+1@gmail.com` (parent) and `alyson.stemas@gmail.com` (coach); add a demo athlete username.
 - [ ] Age rating questionnaire (no Kids Category).
 - [ ] Decide storefront availability (default US only).
