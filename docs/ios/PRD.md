@@ -1198,7 +1198,7 @@ Carried over from `docs/mobile/submission.md` and updated for the native app.
 
 **Before enrollment completes (do now)**
 - [ ] App name, subtitle, keywords, description, support URL, marketing URL, privacy policy URL (`https://www.gradussports.com/privacy`).
-- [ ] 6.7" and 6.5" screenshots from the simulator once P0 screens exist; App Preview video optional.
+- [ ] iPhone 6.9" screenshots (1320 × 2868), plus iPad 13" while the app runs on iPad; sizes and the proposed set are in `docs/ios/app-store-submission.md` §8. App Preview video optional.
 - [ ] App Privacy questionnaire answers matching the policy (athlete email and commercial information are the load-bearing answers; add Diagnostics for crash reports, and Usage Data → Product Interaction → Analytics once A2 ships).
 - [ ] Review notes draft (below) and demo accounts confirmed working: `mariah.slone+1@gmail.com` (parent) and `alyson.stemas@gmail.com` (coach); add a demo athlete username.
 - [ ] Age rating questionnaire (no Kids Category).
