@@ -67,6 +67,7 @@ import { Route as AuthenticatedCoachOnboardingRouteImport } from './routes/_auth
 import { Route as AuthenticatedCoachCelebrationPreviewRouteImport } from './routes/_authenticated/coach/celebration-preview'
 import { Route as AuthenticatedAthleteSettingsRouteImport } from './routes/_authenticated/athlete.settings'
 import { Route as AuthenticatedAthleteOnboardingRouteImport } from './routes/_authenticated/athlete.onboarding'
+import { Route as AuthenticatedAdminUsageRouteImport } from './routes/_authenticated/admin.usage'
 import { Route as AuthenticatedAdminSocialPlansRouteImport } from './routes/_authenticated/admin.social-plans'
 import { Route as AuthenticatedAdminSessionsRouteImport } from './routes/_authenticated/admin.sessions'
 import { Route as AuthenticatedAdminReportsRouteImport } from './routes/_authenticated/admin.reports'
@@ -155,6 +156,7 @@ import { Route as ApiV1AuthAppleRouteImport } from './routes/api/v1/auth/apple'
 import { Route as ApiV1AthleteSettingsRouteImport } from './routes/api/v1/athlete/settings'
 import { Route as ApiV1AthletePlansRouteImport } from './routes/api/v1/athlete/plans'
 import { Route as ApiV1AthleteMeRouteImport } from './routes/api/v1/athlete/me'
+import { Route as ApiV1AnalyticsEventsRouteImport } from './routes/api/v1/analytics/events'
 import { Route as ApiV1AdultAthleteOnboardingRouteImport } from './routes/api/v1/adult-athlete/onboarding'
 import { Route as ApiV1AdultAthleteGoalsRouteImport } from './routes/api/v1/adult-athlete/goals'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
@@ -623,6 +625,11 @@ const AuthenticatedAthleteOnboardingRoute =
     path: '/onboarding',
     getParentRoute: () => AuthenticatedAthleteRoute,
   } as any)
+const AuthenticatedAdminUsageRoute = AuthenticatedAdminUsageRouteImport.update({
+  id: '/usage',
+  path: '/usage',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
 const AuthenticatedAdminSocialPlansRoute =
   AuthenticatedAdminSocialPlansRouteImport.update({
     id: '/social-plans',
@@ -1094,6 +1101,11 @@ const ApiV1AthletePlansRoute = ApiV1AthletePlansRouteImport.update({
 const ApiV1AthleteMeRoute = ApiV1AthleteMeRouteImport.update({
   id: '/api/v1/athlete/me',
   path: '/api/v1/athlete/me',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1AnalyticsEventsRoute = ApiV1AnalyticsEventsRouteImport.update({
+  id: '/api/v1/analytics/events',
+  path: '/api/v1/analytics/events',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiV1AdultAthleteOnboardingRoute =
@@ -2066,6 +2078,7 @@ export interface FileRoutesByFullPath {
   '/admin/reports': typeof AuthenticatedAdminReportsRoute
   '/admin/sessions': typeof AuthenticatedAdminSessionsRoute
   '/admin/social-plans': typeof AuthenticatedAdminSocialPlansRoute
+  '/admin/usage': typeof AuthenticatedAdminUsageRoute
   '/athlete/onboarding': typeof AuthenticatedAthleteOnboardingRoute
   '/athlete/settings': typeof AuthenticatedAthleteSettingsRoute
   '/coach/celebration-preview': typeof AuthenticatedCoachCelebrationPreviewRoute
@@ -2125,6 +2138,7 @@ export interface FileRoutesByFullPath {
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/v1/adult-athlete/goals': typeof ApiV1AdultAthleteGoalsRoute
   '/api/v1/adult-athlete/onboarding': typeof ApiV1AdultAthleteOnboardingRoute
+  '/api/v1/analytics/events': typeof ApiV1AnalyticsEventsRoute
   '/api/v1/athlete/me': typeof ApiV1AthleteMeRoute
   '/api/v1/athlete/plans': typeof ApiV1AthletePlansRoute
   '/api/v1/athlete/settings': typeof ApiV1AthleteSettingsRoute
@@ -2369,6 +2383,7 @@ export interface FileRoutesByTo {
   '/admin/reports': typeof AuthenticatedAdminReportsRoute
   '/admin/sessions': typeof AuthenticatedAdminSessionsRoute
   '/admin/social-plans': typeof AuthenticatedAdminSocialPlansRoute
+  '/admin/usage': typeof AuthenticatedAdminUsageRoute
   '/athlete/onboarding': typeof AuthenticatedAthleteOnboardingRoute
   '/athlete/settings': typeof AuthenticatedAthleteSettingsRoute
   '/coach/celebration-preview': typeof AuthenticatedCoachCelebrationPreviewRoute
@@ -2427,6 +2442,7 @@ export interface FileRoutesByTo {
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/v1/adult-athlete/goals': typeof ApiV1AdultAthleteGoalsRoute
   '/api/v1/adult-athlete/onboarding': typeof ApiV1AdultAthleteOnboardingRoute
+  '/api/v1/analytics/events': typeof ApiV1AnalyticsEventsRoute
   '/api/v1/athlete/me': typeof ApiV1AthleteMeRoute
   '/api/v1/athlete/plans': typeof ApiV1AthletePlansRoute
   '/api/v1/athlete/settings': typeof ApiV1AthleteSettingsRoute
@@ -2678,6 +2694,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/reports': typeof AuthenticatedAdminReportsRoute
   '/_authenticated/admin/sessions': typeof AuthenticatedAdminSessionsRoute
   '/_authenticated/admin/social-plans': typeof AuthenticatedAdminSocialPlansRoute
+  '/_authenticated/admin/usage': typeof AuthenticatedAdminUsageRoute
   '/_authenticated/athlete/onboarding': typeof AuthenticatedAthleteOnboardingRoute
   '/_authenticated/athlete/settings': typeof AuthenticatedAthleteSettingsRoute
   '/_authenticated/coach/celebration-preview': typeof AuthenticatedCoachCelebrationPreviewRoute
@@ -2737,6 +2754,7 @@ export interface FileRoutesById {
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/v1/adult-athlete/goals': typeof ApiV1AdultAthleteGoalsRoute
   '/api/v1/adult-athlete/onboarding': typeof ApiV1AdultAthleteOnboardingRoute
+  '/api/v1/analytics/events': typeof ApiV1AnalyticsEventsRoute
   '/api/v1/athlete/me': typeof ApiV1AthleteMeRoute
   '/api/v1/athlete/plans': typeof ApiV1AthletePlansRoute
   '/api/v1/athlete/settings': typeof ApiV1AthleteSettingsRoute
@@ -2988,6 +3006,7 @@ export interface FileRouteTypes {
     | '/admin/reports'
     | '/admin/sessions'
     | '/admin/social-plans'
+    | '/admin/usage'
     | '/athlete/onboarding'
     | '/athlete/settings'
     | '/coach/celebration-preview'
@@ -3047,6 +3066,7 @@ export interface FileRouteTypes {
     | '/api/public/payments/webhook'
     | '/api/v1/adult-athlete/goals'
     | '/api/v1/adult-athlete/onboarding'
+    | '/api/v1/analytics/events'
     | '/api/v1/athlete/me'
     | '/api/v1/athlete/plans'
     | '/api/v1/athlete/settings'
@@ -3291,6 +3311,7 @@ export interface FileRouteTypes {
     | '/admin/reports'
     | '/admin/sessions'
     | '/admin/social-plans'
+    | '/admin/usage'
     | '/athlete/onboarding'
     | '/athlete/settings'
     | '/coach/celebration-preview'
@@ -3349,6 +3370,7 @@ export interface FileRouteTypes {
     | '/api/public/payments/webhook'
     | '/api/v1/adult-athlete/goals'
     | '/api/v1/adult-athlete/onboarding'
+    | '/api/v1/analytics/events'
     | '/api/v1/athlete/me'
     | '/api/v1/athlete/plans'
     | '/api/v1/athlete/settings'
@@ -3599,6 +3621,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/reports'
     | '/_authenticated/admin/sessions'
     | '/_authenticated/admin/social-plans'
+    | '/_authenticated/admin/usage'
     | '/_authenticated/athlete/onboarding'
     | '/_authenticated/athlete/settings'
     | '/_authenticated/coach/celebration-preview'
@@ -3658,6 +3681,7 @@ export interface FileRouteTypes {
     | '/api/public/payments/webhook'
     | '/api/v1/adult-athlete/goals'
     | '/api/v1/adult-athlete/onboarding'
+    | '/api/v1/analytics/events'
     | '/api/v1/athlete/me'
     | '/api/v1/athlete/plans'
     | '/api/v1/athlete/settings'
@@ -3902,6 +3926,7 @@ export interface RootRouteChildren {
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
   ApiV1AdultAthleteGoalsRoute: typeof ApiV1AdultAthleteGoalsRoute
   ApiV1AdultAthleteOnboardingRoute: typeof ApiV1AdultAthleteOnboardingRoute
+  ApiV1AnalyticsEventsRoute: typeof ApiV1AnalyticsEventsRoute
   ApiV1AthleteMeRoute: typeof ApiV1AthleteMeRoute
   ApiV1AthletePlansRoute: typeof ApiV1AthletePlansRoute
   ApiV1AthleteSettingsRoute: typeof ApiV1AthleteSettingsRoute
@@ -4503,6 +4528,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/athlete/onboarding'
       preLoaderRoute: typeof AuthenticatedAthleteOnboardingRouteImport
       parentRoute: typeof AuthenticatedAthleteRoute
+    }
+    '/_authenticated/admin/usage': {
+      id: '/_authenticated/admin/usage'
+      path: '/usage'
+      fullPath: '/admin/usage'
+      preLoaderRoute: typeof AuthenticatedAdminUsageRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
     }
     '/_authenticated/admin/social-plans': {
       id: '/_authenticated/admin/social-plans'
@@ -5118,6 +5150,13 @@ declare module '@tanstack/react-router' {
       path: '/api/v1/athlete/me'
       fullPath: '/api/v1/athlete/me'
       preLoaderRoute: typeof ApiV1AthleteMeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/analytics/events': {
+      id: '/api/v1/analytics/events'
+      path: '/api/v1/analytics/events'
+      fullPath: '/api/v1/analytics/events'
+      preLoaderRoute: typeof ApiV1AnalyticsEventsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/v1/adult-athlete/onboarding': {
@@ -6285,6 +6324,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminReportsRoute: typeof AuthenticatedAdminReportsRoute
   AuthenticatedAdminSessionsRoute: typeof AuthenticatedAdminSessionsRoute
   AuthenticatedAdminSocialPlansRoute: typeof AuthenticatedAdminSocialPlansRoute
+  AuthenticatedAdminUsageRoute: typeof AuthenticatedAdminUsageRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
   AuthenticatedAdminEmailsNameRoute: typeof AuthenticatedAdminEmailsNameRoute
   AuthenticatedAdminListKindRoute: typeof AuthenticatedAdminListKindRoute
@@ -6315,6 +6355,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminReportsRoute: AuthenticatedAdminReportsRoute,
   AuthenticatedAdminSessionsRoute: AuthenticatedAdminSessionsRoute,
   AuthenticatedAdminSocialPlansRoute: AuthenticatedAdminSocialPlansRoute,
+  AuthenticatedAdminUsageRoute: AuthenticatedAdminUsageRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
   AuthenticatedAdminEmailsNameRoute: AuthenticatedAdminEmailsNameRoute,
   AuthenticatedAdminListKindRoute: AuthenticatedAdminListKindRoute,
@@ -6553,6 +6594,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
   ApiV1AdultAthleteGoalsRoute: ApiV1AdultAthleteGoalsRoute,
   ApiV1AdultAthleteOnboardingRoute: ApiV1AdultAthleteOnboardingRoute,
+  ApiV1AnalyticsEventsRoute: ApiV1AnalyticsEventsRoute,
   ApiV1AthleteMeRoute: ApiV1AthleteMeRoute,
   ApiV1AthletePlansRoute: ApiV1AthletePlansRoute,
   ApiV1AthleteSettingsRoute: ApiV1AthleteSettingsRoute,
