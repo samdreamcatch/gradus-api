@@ -101,25 +101,26 @@ Before pasting, check the description against the build. Every claim above is bu
 
 For each type below, answer: **collected — yes; linked to the user's identity — yes; used for tracking — no; purpose — App Functionality.**
 
-| Apple category → type               | Why it is collected                                           |
-| ----------------------------------- | ------------------------------------------------------------- |
-| Contact Info → Name                 | Account profiles; athlete name                                |
-| Contact Info → Email Address        | Sign-in; guardian email for under-18 athletes                 |
-| Identifiers → User ID               | Account id                                                    |
-| Identifiers → Device ID             | APNs push token, App Attest key id                            |
-| User Content → Audio Data           | Voice notes in messages; voice plan capture                   |
-| User Content → Photos or Videos     | Coach schedule-import photos and resource uploads             |
-| User Content → Other User Content   | Messages, plans, notes, goals, Ask Gradus questions           |
-| Health & Fitness → Fitness          | Practice session duration and the post-session flow check-in  |
-| Purchases → Purchase History        | Subscription status (bought on the website, shown in the app) |
-| Other Data → Other Data Types       | Athlete date of birth                                         |
-| Diagnostics → Crash Data            | MetricKit crash reports → `POST /api/v1/errors`               |
-| Diagnostics → Performance Data      | MetricKit hang reports                                        |
-| Diagnostics → Other Diagnostic Data | Client error reports → `POST /api/v1/errors`                  |
+| Apple category → type                                                           | Why it is collected                                                                                                   |
+| ------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Contact Info → Name                                                             | Account profiles; athlete name                                                                                        |
+| Contact Info → Email Address                                                    | Sign-in; guardian email for under-18 athletes                                                                         |
+| Identifiers → User ID                                                           | Account id                                                                                                            |
+| Identifiers → Device ID                                                         | APNs push token, App Attest key id                                                                                    |
+| User Content → Audio Data                                                       | Voice notes in messages; voice plan capture                                                                           |
+| User Content → Photos or Videos                                                 | Coach schedule-import photos and resource uploads                                                                     |
+| User Content → Other User Content                                               | Messages, plans, notes, goals, Ask Gradus questions                                                                   |
+| Health & Fitness → Fitness                                                      | Practice session duration and the post-session flow check-in                                                          |
+| Purchases → Purchase History                                                    | Subscription status (bought on the website, shown in the app)                                                         |
+| Other Data → Other Data Types                                                   | Athlete date of birth                                                                                                 |
+| Diagnostics → Crash Data                                                        | MetricKit crash reports → `POST /api/v1/errors`                                                                       |
+| Diagnostics → Performance Data                                                  | MetricKit hang reports                                                                                                |
+| Diagnostics → Other Diagnostic Data                                             | Client error reports → `POST /api/v1/errors`                                                                          |
+| Usage Data → Product Interaction (purpose **Analytics**, not App Functionality) | Screen time and Resources activity → `POST /api/v1/analytics/events` (A1/A2); minor athletes' events carry no user id |
 
-Not collected by the 1.0 build: phone number, physical address, location, contacts, browsing/search history, health (non-fitness), financial info, sensitive info, advertising data, product interaction.
+Not collected: phone number, physical address, location, contacts, browsing/search history, health (non-fitness), financial info, sensitive info, advertising data.
 
-**Product-interaction analytics are planned for 1.0** (PRD decision #19, §6.12, milestone A2, web PR #135). When A2 ships: add `NSPrivacyCollectedDataTypeProductInteraction` (purpose `NSPrivacyCollectedDataTypePurposeAnalytics`) to the privacy manifest, and answer _Usage Data → Product Interaction_: linked to the user (adults; minor athletes' events are stored without a user id), not used for tracking, purpose Analytics. First-party analytics isn't tracking under App Tracking Transparency, so there's no ATT prompt. The published policy's §2.4 already covers usage data.
+**Product interaction (built in A1/A2):** answer _Usage Data → Product Interaction_ as linked to the user (adults; minor athletes' events are stored without a user id), not used for tracking, purpose **Analytics**. The iOS privacy manifest declares `NSPrivacyCollectedDataTypeProductInteraction` with `NSPrivacyCollectedDataTypePurposeAnalytics` (gradus-ios A2). First-party analytics isn't tracking under App Tracking Transparency, so there's no ATT prompt; users can turn it off in Settings → Device → Privacy. The published policy's §2.4 already covers usage data.
 
 Judgment calls, conservative on purpose (over-declaring is safe, under-declaring gets apps pulled): _Fitness_ for practice logs, _Device ID_ for push tokens, _Purchase History_ for subscription status the app only reads.
 
