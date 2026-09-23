@@ -23,6 +23,7 @@ import { DONE_STATUSES, fetchPage, parseEvent, parseIndex } from "./ijs-scrape.s
 import { normalizeName } from "./board-types";
 import { DEMO_RESULTS_HOST, demoSkaterResults } from "./demo-competition-results.server";
 import type { SkaterProtocol } from "./board-types";
+import { deleteProtocolEvents, replaceProtocolEvents } from "./skill-events.server";
 import type { AdminDb } from "./competitions.server";
 
 /** One event a named skater appeared in, as published. */
@@ -430,7 +431,7 @@ export async function linkAthleteToSkater(
   userId: string,
   input: z.infer<typeof linkAthleteToSkaterInput>,
 ): Promise<{ linked: number }> {
-  await assertRosteredCoach(admin, userId, input.athleteId);
+  const coachId = await assertRosteredCoach(admin, userId, input.athleteId);
   const comp = await loadCompetition(admin, input.competitionId);
 
   const link = await admin
@@ -472,6 +473,21 @@ export async function linkAthleteToSkater(
     if (up.error) dbError(up.error);
   }
 
+  // Protocol-derived skill events (PRD §6.7 item 4). Best effort: the link and
+  // results above are what the coach asked for.
+  try {
+    await replaceProtocolEvents(admin, {
+      athleteId: input.athleteId,
+      coachId,
+      userId,
+      competitionId: comp.id,
+      occurredAt: comp.ends_on ? `${comp.ends_on}T12:00:00Z` : new Date().toISOString(),
+      results,
+    });
+  } catch (e) {
+    console.error("[competition-results] protocol skill events failed", e);
+  }
+
   return { linked: results.length };
 }
 
@@ -492,6 +508,14 @@ export async function unlinkAthleteCompetition(
   input: z.infer<typeof unlinkAthleteCompetitionInput>,
 ): Promise<{ ok: true }> {
   await assertRosteredCoach(admin, userId, input.athleteId);
+
+  // The protocol events describe the results being removed. Best effort, so
+  // unlinking still works before the skill-events migration is applied.
+  try {
+    await deleteProtocolEvents(admin, input.athleteId, input.competitionId);
+  } catch (e) {
+    console.error("[competition-results] protocol skill events delete failed", e);
+  }
 
   const delResults = await admin
     .from("athlete_competition_results")

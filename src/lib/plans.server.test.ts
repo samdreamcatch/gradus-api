@@ -3,7 +3,14 @@ import { ApiError } from "./api/errors";
 import { addPlanMoveToLibrary, updateLibraryMoveFromPlanMove } from "./moves.server";
 import { resolvePlanViewerRole } from "./plan-detail.server";
 import { listPlanSessionsQuery, submitSessionInput } from "./plan-sessions.server";
-import { deletePlan, savePlan, setPlanStatus, updatePlanMove } from "./plans.server";
+import {
+  deletePlan,
+  removePlanMove,
+  savePlan,
+  setPlanStatus,
+  updatePlanMove,
+  type CoachReasonInput,
+} from "./plans.server";
 import { assertAudioSize, audioFilename } from "./voice.server";
 
 /** A chainable fake: `rows[table]` answers `maybeSingle`/`single`; `lists[table]` answers awaited selects. */
@@ -89,6 +96,138 @@ describe("setPlanStatus", () => {
     );
     expect(err?.status).toBe(403);
     expect(err?.code).toBe("wrong_role");
+  });
+});
+
+describe('coach "why" answers (L1)', () => {
+  const recorder = () => {
+    const seen: CoachReasonInput[] = [];
+    return { seen, record: async (input: CoachReasonInput) => void seen.push(input) };
+  };
+
+  it("benching with a reason records every move of the plan, once, on the transition", async () => {
+    const supabase = fakeClient(
+      { ...coach, plans: { id: "p1", athlete_id: "a1", status: "active" } },
+      {
+        plan_moves: [
+          { id: "pm1", move_id: "m1", name: "Axel" },
+          { id: "pm2", move_id: null, name: "Spiral" },
+        ],
+      },
+    );
+    const r = recorder();
+    await setPlanStatus(
+      { userId: "u", supabase },
+      "p1",
+      { status: "benched", reason: "landed_it" },
+      r.record,
+    );
+    expect(r.seen).toHaveLength(1);
+    expect(r.seen[0]).toMatchObject({
+      athleteId: "a1",
+      coachId: "coach-1",
+      userId: "u",
+      planId: "p1",
+      reason: "landed_it",
+    });
+    expect(r.seen[0].moves).toEqual([
+      { planMoveId: "pm1", moveId: "m1", name: "Axel" },
+      { planMoveId: "pm2", moveId: null, name: "Spiral" },
+    ]);
+  });
+
+  it("records nothing when the plan was already benched (a replay), skipped, or has no athlete", async () => {
+    const r = recorder();
+    const already = fakeClient({
+      ...coach,
+      plans: { id: "p1", athlete_id: "a1", status: "benched" },
+    });
+    await setPlanStatus(
+      { userId: "u", supabase: already },
+      "p1",
+      { status: "benched", reason: "parking_it" },
+      r.record,
+    );
+    const skipped = fakeClient({
+      ...coach,
+      plans: { id: "p1", athlete_id: "a1", status: "active" },
+    });
+    await setPlanStatus({ userId: "u", supabase: skipped }, "p1", { status: "benched" }, r.record);
+    const shared = fakeClient({
+      ...coach,
+      plans: { id: "p1", athlete_id: null, status: "active" },
+    });
+    await setPlanStatus(
+      { userId: "u", supabase: shared },
+      "p1",
+      { status: "benched", reason: "parking_it" },
+      r.record,
+    );
+    const drafted = fakeClient({
+      ...coach,
+      plans: { id: "p1", athlete_id: "a1", status: "active" },
+    });
+    await setPlanStatus(
+      { userId: "u", supabase: drafted },
+      "p1",
+      { status: "draft", reason: "parking_it" },
+      r.record,
+    );
+    expect(r.seen).toHaveLength(0);
+  });
+
+  it("removing a move with a reason records that move for the plan's athlete", async () => {
+    const supabase = fakeClient({
+      ...coach,
+      plan_moves: { plan_id: "p1", move_id: "m1", name: "Axel" },
+      plans: { id: "p1", kind: "plan", status: "active", athlete_id: "a1" },
+    });
+    const r = recorder();
+    await removePlanMove(
+      { userId: "u", supabase },
+      "pm1",
+      "p1",
+      new Date(),
+      "changed_direction",
+      r.record,
+    );
+    expect(r.seen).toEqual([
+      {
+        athleteId: "a1",
+        coachId: "coach-1",
+        userId: "u",
+        planId: "p1",
+        reason: "changed_direction",
+        moves: [{ planMoveId: "pm1", moveId: "m1", name: "Axel" }],
+      },
+    ]);
+  });
+
+  it("removing a move that is already gone, or without a reason, records nothing", async () => {
+    const r = recorder();
+    const gone = fakeClient({ ...coach });
+    await removePlanMove(
+      { userId: "u", supabase: gone },
+      "pm1",
+      "p1",
+      new Date(),
+      "landed_it",
+      r.record,
+    );
+    const skipped = fakeClient({
+      ...coach,
+      plan_moves: { plan_id: "p1", move_id: "m1", name: "Axel" },
+      plans: { id: "p1", kind: "plan", status: "active", athlete_id: "a1" },
+    });
+    await removePlanMove(
+      { userId: "u", supabase: skipped },
+      "pm1",
+      "p1",
+      new Date(),
+      undefined,
+      r.record,
+    );
+    expect(r.seen).toHaveLength(0);
   });
 });
 
