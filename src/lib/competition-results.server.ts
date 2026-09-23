@@ -23,6 +23,7 @@ import { DONE_STATUSES, fetchPage, parseEvent, parseIndex } from "./ijs-scrape.s
 import { normalizeName } from "./board-types";
 import { DEMO_RESULTS_HOST, demoSkaterResults } from "./demo-competition-results.server";
 import type { SkaterProtocol } from "./board-types";
+import { deleteProtocolEvents, replaceProtocolEvents } from "./skill-events.server";
 import type { AdminDb } from "./competitions.server";
 
 /** One event a named skater appeared in, as published. */
@@ -430,7 +431,7 @@ export async function linkAthleteToSkater(
   userId: string,
   input: z.infer<typeof linkAthleteToSkaterInput>,
 ): Promise<{ linked: number }> {
-  await assertRosteredCoach(admin, userId, input.athleteId);
+  const coachId = await assertRosteredCoach(admin, userId, input.athleteId);
   const comp = await loadCompetition(admin, input.competitionId);
 
   const link = await admin
@@ -445,7 +446,7 @@ export async function linkAthleteToSkater(
       },
       { onConflict: "athlete_id,competition_id" },
     )
-    .select("id")
+    .select("id, created_at")
     .single();
   if (link.error) dbError(link.error);
 
@@ -470,6 +471,41 @@ export async function linkAthleteToSkater(
       .from("athlete_competition_results")
       .upsert(rows, { onConflict: "athlete_id,competition_id,event_name,segment" });
     if (up.error) dbError(up.error);
+  }
+
+  // Protocol-derived skill events (PRD §6.7 item 4). Best effort: the link and
+  // results above are what the coach asked for. Built from every result
+  // stored for this competition, not just this call's fetch, because stored
+  // rows are never pruned and a re-link whose page fetch failed must not
+  // erase events for results that are still on file. The demo competition
+  // is fabricated data and never feeds an athlete's history.
+  if (!comp.ijs_base_url.includes(DEMO_RESULTS_HOST)) {
+    try {
+      const stored = await admin
+        .from("athlete_competition_results")
+        .select("event_name, segment, protocol")
+        .eq("athlete_id", input.athleteId)
+        .eq("competition_id", comp.id);
+      if (stored.error) throw stored.error;
+      await replaceProtocolEvents(admin, {
+        athleteId: input.athleteId,
+        coachId,
+        userId,
+        competitionId: comp.id,
+        // The competition's last day; failing that, when it was first linked
+        // (stable across re-links, unlike "now").
+        occurredAt: comp.ends_on
+          ? `${comp.ends_on}T12:00:00Z`
+          : ((link.data?.created_at as string | undefined) ?? new Date().toISOString()),
+        results: ((stored.data ?? []) as any[]).map((r) => ({
+          eventName: r.event_name as string,
+          segment: r.segment as string,
+          protocol: (r.protocol ?? null) as SkaterProtocol | null,
+        })),
+      });
+    } catch (e) {
+      console.error("[competition-results] protocol skill events failed", e);
+    }
   }
 
   return { linked: results.length };
@@ -506,6 +542,15 @@ export async function unlinkAthleteCompetition(
     .eq("athlete_id", input.athleteId)
     .eq("competition_id", input.competitionId);
   if (delLink.error) dbError(delLink.error);
+
+  // The protocol events describe the results just removed; deleted last so a
+  // failed results delete never leaves results without their events. Best
+  // effort, so unlinking still works before the skill-events migration is applied.
+  try {
+    await deleteProtocolEvents(admin, input.athleteId, input.competitionId);
+  } catch (e) {
+    console.error("[competition-results] protocol skill events delete failed", e);
+  }
 
   return { ok: true };
 }

@@ -5,6 +5,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
 import { ApiError, rethrowPlain } from "./api/errors";
 import * as shared from "./plans.server";
+import { skillReasonSchema } from "./skill-events.server";
 import {
   addLibraryMovesInput,
   createPlanInput,
@@ -221,10 +222,18 @@ export const updatePlanMove = createServerFn({ method: "POST" })
 
 export const removePlanMove = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
+  .inputValidator((input) =>
+    z.object({ id: z.string().uuid(), reason: skillReasonSchema.optional() }).parse(input),
+  )
   .handler(async ({ context, data }) => {
     try {
-      return await shared.removePlanMove(ctxOf(context), data.id);
+      return await shared.removePlanMove(
+        ctxOf(context),
+        data.id,
+        undefined,
+        new Date(),
+        data.reason,
+      );
     } catch (err) {
       rethrow(err);
     }
