@@ -47,7 +47,9 @@ describe("coach reasons", () => {
   it("write one event per move, with the library move's sport and category", async () => {
     const { admin, calls } = recordingAdmin({
       moves: [{ id: "m1", sport: "tennis", category: "Serve" }],
-      athlete_goals: [{ sport: "tennis" }],
+      // The coach coaches this athlete in tennis only; the golf goal is another coach's.
+      coach_athlete_sports: [{ sport: "tennis" }],
+      athlete_goals: [{ sport: "tennis" }, { sport: "golf" }],
     });
     const n = await recordCoachReasonEvents(admin, {
       athleteId: "a1",
@@ -89,6 +91,7 @@ describe("coach reasons", () => {
 
   it("a benched plan with no moves still records one plan-level event", async () => {
     const { admin, calls } = recordingAdmin({
+      coach_athlete_sports: [],
       athlete_goals: [{ sport: "golf" }, { sport: "tennis" }],
     });
     await recordCoachReasonEvents(admin, {
@@ -120,7 +123,11 @@ describe("protocol elements", () => {
     expect(normalizeElementCode("3Fe+2T<")).toBe("3F+2T");
     expect(normalizeElementCode("3Sq")).toBe("3S");
     expect(normalizeElementCode("StSq2")).toBe("StSq2");
+    expect(normalizeElementCode("StSq")).toBe("StSq");
     expect(normalizeElementCode("CCoSp4")).toBe("CCoSp4");
+    expect(normalizeElementCode("2Axx")).toBe("2A");
+    expect(normalizeElementCode("3Lz+REP")).toBe("3Lz");
+    expect(normalizeElementCode("2A+1Eu+2S+SEQ")).toBe("2A+1Eu+2S");
   });
 
   it("group elements into families", () => {
@@ -130,8 +137,12 @@ describe("protocol elements", () => {
     expect(elementCategory("CCoSp3V")).toBe("spin");
     expect(elementCategory("FCSSp4")).toBe("spin");
     expect(elementCategory("StSq3")).toBe("step");
+    expect(elementCategory("StSq")).toBe("step");
+    expect(elementCategory("3Lz+REP")).toBe("jump");
     expect(elementCategory("ChSq1")).toBe("choreo");
     expect(elementCategory("5TLi4")).toBe("other");
+    expect(elementCategory("3Tw3")).toBe("other");
+    expect(normalizeElementCode("3Tw3")).toBe("3Tw3");
   });
 
   it("are clean only with non-negative GOE and no < or * mark", () => {
@@ -158,6 +169,8 @@ describe("protocol elements", () => {
         elements: [
           { planned: "2A", executed: "2A", baseValue: "3.30", goe: "0.33", score: "3.63" },
           { planned: "3T", executed: "3T<", baseValue: "3.36", goe: "-0.90", score: "2.46" },
+          // Planned but not skated: not an attempt.
+          { planned: "3Lo", executed: "", baseValue: "", goe: "", score: "" },
         ],
       },
     },

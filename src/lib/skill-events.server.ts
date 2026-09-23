@@ -93,7 +93,7 @@ export async function recordCoachReasonEvents(
       library.set(m.id, { sport: m.sport ?? "", category: m.category ?? "" });
     }
   }
-  const fallbackSport = await singleAthleteSport(admin, input.athleteId);
+  const fallbackSport = await singleAthleteSport(admin, input.athleteId, input.coachId);
 
   const base = {
     athlete_id: input.athleteId,
@@ -136,39 +136,73 @@ export async function recordCoachReasonEvents(
   return rows.length;
 }
 
-/** The athlete's sport when they have exactly one goals row; otherwise unknown (""). */
-async function singleAthleteSport(admin: SkillEventsDb, athleteId: string): Promise<string> {
+/**
+ * The sport a move with no library link belongs to: the one sport this coach
+ * coaches the athlete in, else the athlete's one sport on file, else unknown ("").
+ */
+async function singleAthleteSport(
+  admin: SkillEventsDb,
+  athleteId: string,
+  coachId: string | null,
+): Promise<string> {
+  const only = (rows: unknown[] | null) => {
+    const sports = [...new Set(((rows ?? []) as { sport: string }[]).map((r) => r.sport))];
+    return sports.length === 1 ? sports[0] : "";
+  };
+  if (coachId) {
+    const { data, error } = await admin
+      .from("coach_athlete_sports")
+      .select("sport")
+      .eq("coach_id", coachId)
+      .eq("athlete_id", athleteId);
+    if (error) dbError(error);
+    const sport = only(data);
+    if (sport) return sport;
+  }
   const { data, error } = await admin
     .from("athlete_goals")
     .select("sport")
     .eq("athlete_id", athleteId);
   if (error) dbError(error);
-  const sports = [...new Set(((data ?? []) as { sport: string }[]).map((g) => g.sport))];
-  return sports.length === 1 ? sports[0] : "";
+  return only(data);
 }
 
 /* -------------------------------------------------------------- protocol */
 
-/** Marks the IJS appends to an executed element code. */
-const MARK_PATTERN = /<<|<|\*|!|q$|x$/g;
+/** Marks the IJS can put on any element: under-rotation (<, <<), invalid (*), attention (!). */
+const ANY_MARK = /<<|<|\*|!/g;
+/**
+ * A jump token: 1–4 rotations, the jump, then only marks (edge e, quarter q,
+ * bonus x). Anything else after the letters ("3Tw3" twist, "5TLi4" lift) is
+ * not a jump.
+ */
+const JUMP = /^([1-4](?:Eu|Lo|Lz|A|T|S|F))[eqx]*$/;
+/** Combination suffixes that are not skills of their own. */
+const NOT_A_SKILL = new Set(["REP", "SEQ", "COMBO"]);
 
 /**
  * The executed code without its judging marks, so "3T<" and "3T" are the same
- * skill: under-rotation (<, <<), invalid (*), attention (!), quarter (q),
- * bonus-half (x), and the edge call "e" after Lz/F.
+ * skill. Jumps keep only rotations + jump ("3Lze" → "3Lz", "3Sq" → "3S",
+ * "2Ax" → "2A"); other elements lose only the universal marks, so "StSq" and
+ * spin levels survive; "+REP" and "+SEQ" are dropped.
  */
 export function normalizeElementCode(executed: string): string {
   return executed
     .trim()
     .split("+")
-    .map((part) => part.replace(MARK_PATTERN, "").replace(/^(\d?(?:Lz|F))e$/, "$1"))
+    .map((part) => part.trim())
+    .filter((part) => part && !NOT_A_SKILL.has(part.toUpperCase()))
+    .map((part) => {
+      const stripped = part.replace(ANY_MARK, "");
+      return stripped.match(JUMP)?.[1] ?? stripped;
+    })
     .join("+");
 }
 
 /** The element's family, the category L3 groups pace by. */
 export function elementCategory(code: string): string {
   const c = normalizeElementCode(code);
-  if (/^\d(A|T|S|Lo|F|Lz|Eu)(\+|$)/.test(c)) return "jump";
+  if (JUMP.test(c.split("+")[0] ?? "")) return "jump";
   if (/Sp[\dB]?V?$/.test(c)) return "spin";
   if (/^StSq/.test(c)) return "step";
   if (/^ChSq/.test(c)) return "choreo";
@@ -201,7 +235,9 @@ export function protocolEventRows(input: {
   for (const r of input.results) {
     const elements = r.protocol?.elements ?? [];
     elements.forEach((el, index) => {
-      const executed = (el.executed || el.planned || "").trim();
+      // What was skated, never what was planned: a planned element with no
+      // executed code was not attempted.
+      const executed = (el.executed ?? "").trim();
       if (!executed) return;
       const code = normalizeElementCode(executed);
       const common = {

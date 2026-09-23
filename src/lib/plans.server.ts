@@ -507,7 +507,8 @@ export interface CoachReasonInput {
   userId: string;
   planId: string;
   reason: SkillReason;
-  moves: ReasonMove[];
+  /** The moves the answer covers; omitted for a bench, which covers every move the plan has. */
+  moves?: ReasonMove[];
 }
 
 export type RecordCoachReason = (input: CoachReasonInput) => Promise<void>;
@@ -516,6 +517,12 @@ export type RecordCoachReason = (input: CoachReasonInput) => Promise<void>;
  * Writes the skill events for a "why" answer with the admin client (the
  * table is service-role only). Never throws: the bench or removal already
  * happened and must not fail because the learning signal did not land.
+ *
+ * Owning the plan is not enough: a plan keeps its `athlete_id` after the
+ * athlete leaves the roster (or is blocked), and `athlete_id` is writable on
+ * the coach's own plan. So the answer only lands when the coach still coaches
+ * that athlete, checked here against `coach_athletes`.
+ *
  * Dynamic imports keep the admin client out of this module's static graph,
  * which the client bundle reaches (see the push note in `setPlanStatus`).
  */
@@ -523,7 +530,27 @@ export const recordCoachReason: RecordCoachReason = async (input) => {
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { recordCoachReasonEvents } = await import("./skill-events.server");
-    await recordCoachReasonEvents(supabaseAdmin, input);
+    const link = await supabaseAdmin
+      .from("coach_athletes")
+      .select("athlete_id")
+      .eq("coach_id", input.coachId)
+      .eq("athlete_id", input.athleteId)
+      .maybeSingle();
+    if (link.error) throw link.error;
+    if (!link.data) {
+      console.info("[plans] skill event skipped: athlete is not on this coach's roster");
+      return;
+    }
+    let moves = input.moves;
+    if (!moves) {
+      const pm = await supabaseAdmin
+        .from("plan_moves")
+        .select("id, move_id, name")
+        .eq("plan_id", input.planId);
+      if (pm.error) throw pm.error;
+      moves = (pm.data ?? []).map((m) => ({ planMoveId: m.id, moveId: m.move_id, name: m.name }));
+    }
+    await recordCoachReasonEvents(supabaseAdmin, { ...input, moves });
   } catch (e) {
     console.error("[plans] skill event write failed", e);
   }
@@ -637,47 +664,36 @@ export async function setPlanStatus(
       });
     }
   } else {
-    // A "why" answer only counts on the transition into benched, so a
-    // replayed request (the iOS outbox) or a second tap records nothing.
-    const before =
-      data.status === "benched" && data.reason
-        ? await supabase
-            .from("plans")
-            .select("id, athlete_id, status")
-            .eq("id", id)
-            .eq("coach_id", coachId)
-            .maybeSingle()
-        : null;
-    if (before?.error) dbError(before.error);
-
-    const { error } = await supabase
-      .from("plans")
-      .update({ status: data.status })
-      .eq("id", id)
-      .eq("coach_id", coachId);
-    if (error) dbError(error);
-
-    const plan = before?.data as { id: string; athlete_id: string | null; status: string } | null;
-    if (data.reason && plan?.athlete_id && plan.status !== "benched") {
-      const { data: moves, error: movesErr } = await supabase
-        .from("plan_moves")
-        .select("id, move_id, name")
-        .eq("plan_id", id);
-      if (movesErr) dbError(movesErr);
-      await record({
-        athleteId: plan.athlete_id,
-        coachId,
-        userId: ctx.userId,
-        planId: id,
-        reason: data.reason,
-        moves: ((moves ?? []) as { id: string; move_id: string | null; name: string }[]).map(
-          (m) => ({
-            planMoveId: m.id,
-            moveId: m.move_id,
-            name: m.name,
-          }),
-        ),
-      });
+    if (data.status === "benched" && data.reason) {
+      // A "why" answer only counts on the transition into benched. The
+      // conditional update makes that atomic: a replayed request (the iOS
+      // outbox), a retry racing the first attempt, or a second tap changes
+      // no row and records nothing.
+      const { data: changed, error } = await supabase
+        .from("plans")
+        .update({ status: "benched" })
+        .eq("id", id)
+        .eq("coach_id", coachId)
+        .neq("status", "benched")
+        .select("id, athlete_id");
+      if (error) dbError(error);
+      const plan = (changed ?? [])[0] as { id: string; athlete_id: string | null } | undefined;
+      if (plan?.athlete_id) {
+        await record({
+          athleteId: plan.athlete_id,
+          coachId,
+          userId: ctx.userId,
+          planId: id,
+          reason: data.reason,
+        });
+      }
+    } else {
+      const { error } = await supabase
+        .from("plans")
+        .update({ status: data.status })
+        .eq("id", id)
+        .eq("coach_id", coachId);
+      if (error) dbError(error);
     }
   }
   return { ok: true };
@@ -1063,16 +1079,19 @@ export async function removePlanMove(
   if (expectedPlanId && pm.plan_id !== expectedPlanId) throw notFound("Plan move not found");
   const plan = await assertPlanOwned(supabase, pm.plan_id, coachId);
 
-  const { error } = await supabase
+  const { data: deleted, error } = await supabase
     .from("plan_moves")
     .delete()
     .eq("id", planMoveId)
-    .eq("plan_id", pm.plan_id);
+    .eq("plan_id", pm.plan_id)
+    .select("id");
   if (error) dbError(error);
 
   await supabase.from("plans").update({ updated_at: now.toISOString() }).eq("id", pm.plan_id);
 
-  if (reason && plan.athlete_id) {
+  // Only the request that actually deleted the row records the answer, so a
+  // retry racing the first attempt cannot double it.
+  if (reason && plan.athlete_id && (deleted ?? []).length > 0) {
     await record({
       athleteId: plan.athlete_id,
       coachId,
