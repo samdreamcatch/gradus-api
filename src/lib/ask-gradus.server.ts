@@ -84,7 +84,7 @@ export const NOT_FROM_SOURCES =
 
 /** A safety question the sources don't cover: no general-knowledge answer, only people who can help. */
 export const SAFETY_NOT_COVERED =
-  "This is important, and you don't have to handle it alone. The people below can help, and talking to one of them is always okay.";
+  "This is important, and you don't have to handle it alone. The people listed here can help, and talking to one of them is always okay.";
 
 const NOT_COVERED = "NOT_COVERED";
 /** Passages below this similarity are noise for text-embedding-3-small and are dropped. */
