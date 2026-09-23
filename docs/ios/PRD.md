@@ -40,7 +40,7 @@ Decisions confirmed with Mariah on 2026-09-04. Treat these as settled.
 | 16 | Ask Gradus fallback | **2026-09-20 (Mariah):** when the corpus does not cover a question, answer from general model knowledge and **say so plainly** in the answer. Safety topics never fall back: they route to the Safe Sport panel content. |
 | 17 | Coach "why" prompt | **2026-09-20 (Mariah):** when a coach benches a plan or removes a move, the one-tap reason prompt (landed it / parking it / changed direction) is **skippable**. Only answered prompts become labeled skill events; the rest are inferred with a low-confidence flag. Coaches are never blocked. |
 | 18 | Canonical flow-state labels | **2026-09-20 (Mariah):** **Frustrated / Pushing / Steady / Locked in / Flowing** are the labels for every user, every screen, and every prompt. The coach's AI summary had its own mastery-flavored scale for the same index; web PR #127 removes it. |
-| 19 | Usage analytics | **2026-09-22 (Mariah):** Gradus measures **how much time users spend in each area of the app, Resources in particular**, from 1.0. This reverses the earlier "no analytics" lines in §6.11 and §9.2. Events are first-party by default (our own `/api/v1` endpoint and table, no SDK) unless §12 #19 picks a vendor; under-18 athletes' events are stored de-identified; users can turn it off in Settings. Design in §6.12, milestones A1–A2 in §10.8. Never used for ads or cross-app tracking. |
+| 19 | Usage analytics | **2026-09-22 (Mariah):** Gradus measures **how much time users spend in each area of the app, Resources in particular**, from 1.0. This reverses the earlier "no analytics" lines in §6.11 and §9.2. Events are first-party (our own `/api/v1` endpoint and table, no SDK; §12 #19); under-18 athletes' events are stored de-identified; users can turn it off in Settings. Design in §6.12, milestones A1–A2 in §10.8. Never used for ads or cross-app tracking. |
 
 ---
 
@@ -481,7 +481,7 @@ Decision #19. The question to answer: **where do coaches, parents and athletes s
 
 **Opt-out.** Settings → Privacy → **Share usage data**, on by default. Off means nothing is recorded or sent and the buffer is cleared. The setting is per device.
 
-**The web.** Unchanged in 1.0 (§4.1). The endpoint and table are client-agnostic, so the web can send the same events later as a separate web change (§12 #20).
+**The web.** Does not send usage events (§12 #20, resolved no); the web app is unchanged (§4.1). The endpoint and table stay client-agnostic.
 
 **Apple and the policy.** First-party analytics is not tracking under App Tracking Transparency, so there is no ATT prompt. A2 adds `NSPrivacyCollectedDataTypeProductInteraction` with purpose `Analytics` to the privacy manifest, and App Privacy gains *Usage Data → Product Interaction → Analytics*, both before the collecting build ships. The published policy's §2.4 already covers features accessed, session duration and usage patterns; counsel confirms the minor de-identification and retention wording against §5.3 and §8.
 
@@ -764,7 +764,7 @@ gradus-ios/
 
 - **Swift 6** language mode with strict concurrency; SwiftUI throughout; `@Observable` view models; async/await; no Combine except where a framework demands it.
 - **Deployment target iOS 18.0**, built with the current Xcode. iPhone and iPad device families.
-- **Dependencies (kept minimal, all SPM):** `supabase-swift` (Auth, Realtime, Storage), `swift-openapi-generator` + `swift-openapi-urlsession`, `GoogleSignIn-iOS` (only if the native Google SDK path is chosen). No Firebase, no crash SDK, no UI kit, and no analytics SDK unless §12 #19 chooses one (usage analytics are first-party by default, §6.12). Markdown via `AttributedString`. PDFs via `PDFKit`. Audio via `AVFoundation`.
+- **Dependencies (kept minimal, all SPM):** `supabase-swift` (Auth, Realtime, Storage), `swift-openapi-generator` + `swift-openapi-urlsession`, `GoogleSignIn-iOS` (only if the native Google SDK path is chosen). No Firebase, no crash SDK, no UI kit, no analytics SDK (usage analytics are first-party, §6.12 and §12 #19). Markdown via `AttributedString`. PDFs via `PDFKit`. Audio via `AVFoundation`.
 - **UIKit** only where SwiftUI lacks coverage (camera capture, share activity items, WKWebView audio fallback).
 
 ### 9.3 Architecture inside the app
@@ -1002,9 +1002,9 @@ Decision #19; the design is §6.12. Taken after the §10.6 gate, in parallel wit
 | 16 | *(2026-09-20)* Rights confirmations for quoting the USFS rulebook, the SafeSport Code and MAAPP, and The Assist's six documents | Mariah | Before L4 | Ingest only sources with written permission or a public license; the rest are cited by title and linked, not quoted |
 | 17 | *(2026-09-20)* Whether and when to start L6, the learned pace model | Mariah, on Claude Code's evidence | After launch, when ≥ 30 athletes have a season of skill events | Not started; the deterministic profile stands in |
 | 18 | *(2026-09-20)* Whether athletes or parents ever see their skill history directly | Mariah | Before L2 | Not in 1.0: the coach sees "likely landed" hints in the plan editor; athletes and parents see it only as sharper plans |
-| 19 | *(2026-09-22)* Analytics vendor: first-party (own endpoint and table) vs a hosted tool (e.g., PostHog, Amplitude) | Mariah | Before A1 | First-party: no SDK, minors' data stays in our database, no third-party privacy manifest; the admin Usage page is the report |
-| 20 | *(2026-09-22)* Whether the web sends the same usage events | Mariah | Any time after A1 | Not in 1.0; a separate web change later |
-| 21 | *(2026-09-22)* Raw analytics event retention | Mariah, with counsel | Before A1 | 13 months raw, weekly aggregates kept indefinitely |
+| 19 | *(2026-09-22)* Analytics vendor: first-party (own endpoint and table) vs a hosted tool (e.g., PostHog, Amplitude) | Mariah | — | **Resolved 2026-09-22: first-party (in-house).** No SDK; minors' data stays in our database; the admin Usage page is the report |
+| 20 | *(2026-09-22)* Whether the web sends the same usage events | Mariah | — | **Resolved 2026-09-22: no.** The web does not send usage events |
+| 21 | *(2026-09-22)* Raw analytics event retention | Mariah | — | **Resolved 2026-09-22: 13 months raw**, weekly aggregates kept; counsel confirms the policy §8 wording |
 
 ---
 
