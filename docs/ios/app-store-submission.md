@@ -80,10 +80,9 @@ coach,figure skating,tennis,golf,practice plan,lesson,drills,athlete,parent,trai
 > FOR ATHLETES
 > • Your plan, your goals, and a practice timer that logs every session.
 > • Check in after practice so your coach knows how it felt.
-> • Ask Gradus questions about technique, rules, and training.
 >
 > BUILT FOR YOUTH SPORT
-> • Athlete accounts for minors are created with a parent. There are no private coach–athlete channels.
+> • Athlete accounts for minors are created with a parent. There are no private coach–minor athlete channels.
 > • Report and block in every conversation, and Safe Sport resources built in.
 > • Works offline: sessions, notes, and messages sync when you're back online.
 > • Live Activities for the practice timer and for competitions you follow, plus a Home Screen widget.
@@ -104,7 +103,7 @@ For each type below, answer: **collected — yes; linked to the user's identity 
 
 | Apple category → type               | Why it is collected                                           |
 | ----------------------------------- | ------------------------------------------------------------- |
-| Contact Info → Name                 | Account profiles; athlete first name                          |
+| Contact Info → Name                 | Account profiles; athlete name                                |
 | Contact Info → Email Address        | Sign-in; guardian email for under-18 athletes                 |
 | Identifiers → User ID               | Account id                                                    |
 | Identifiers → Device ID             | APNs push token, App Attest key id                            |
@@ -118,7 +117,9 @@ For each type below, answer: **collected — yes; linked to the user's identity 
 | Diagnostics → Performance Data      | MetricKit hang reports                                        |
 | Diagnostics → Other Diagnostic Data | Client error reports → `POST /api/v1/errors`                  |
 
-Not collected: phone number, physical address, location, contacts, browsing/search history, health (non-fitness), financial info, sensitive info, advertising data, product-interaction analytics.
+Not collected by the 1.0 build: phone number, physical address, location, contacts, browsing/search history, health (non-fitness), financial info, sensitive info, advertising data, product interaction.
+
+**Adding product-interaction analytics later is allowed.** In the same PR that starts sending events: add `NSPrivacyCollectedDataTypeProductInteraction` (purpose `NSPrivacyCollectedDataTypePurposeAnalytics`) to the app's privacy manifest, and update App Privacy in App Store Connect to _Usage Data → Product Interaction → Analytics_ (answers can change without a new build, but must be accurate before the collecting build ships). First-party analytics isn't _tracking_ under App Tracking Transparency, so no ATT prompt, as long as events are never combined with third-party data for ads or shared with data brokers. The published policy already covers it (§2.4: features accessed, session duration, usage patterns). For minor athletes, keep events to internal product use only, never profiling or ads (policy §5.3, COPPA's internal-operations exception); the PRD's "no third-party analytics SDK" rule (§6.11, §9.2) favours first-party events through `/api/v1`, like `/errors`, over an SDK.
 
 Judgment calls, conservative on purpose (over-declaring is safe, under-declaring gets apps pulled): _Fitness_ for practice logs, _Device ID_ for push tokens, _Purchase History_ for subscription status the app only reads.
 
