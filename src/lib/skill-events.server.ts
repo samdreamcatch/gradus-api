@@ -87,6 +87,59 @@ export async function recordCoachReasonEvents(
     now?: Date;
   },
 ): Promise<number> {
+  return recordPlanEvents(admin, {
+    athleteId: input.athleteId,
+    coachId: input.coachId,
+    userId: input.userId,
+    planId: input.planId,
+    kind: REASON_KIND[input.reason],
+    source: "coach",
+    origin: input.origin,
+    confidence: 1,
+    moves: input.moves,
+    occurredAt: (input.now ?? new Date()).toISOString(),
+  });
+}
+
+/**
+ * The inference job's "likely landed" events (L3, PRD §6.7 item 5): same
+ * shape as a coach answer, `source = inferred`, confidence in (0, 1).
+ */
+export async function recordInferredEvents(
+  admin: SkillEventsDb,
+  input: {
+    athleteId: string;
+    coachId: string | null;
+    planId: string;
+    confidence: number;
+    moves: ReasonMove[];
+    occurredAt: string;
+  },
+): Promise<number> {
+  return recordPlanEvents(admin, {
+    ...input,
+    userId: null,
+    kind: "landed",
+    source: "inferred",
+    origin: "inference",
+  });
+}
+
+async function recordPlanEvents(
+  admin: SkillEventsDb,
+  input: {
+    athleteId: string;
+    coachId: string | null;
+    userId: string | null;
+    planId: string;
+    kind: SkillEventKind;
+    source: "coach" | "inferred";
+    origin: SkillEventOrigin;
+    confidence: number;
+    moves: ReasonMove[];
+    occurredAt: string;
+  },
+): Promise<number> {
   const libraryIds = [
     ...new Set(input.moves.map((m) => m.moveId).filter((id): id is string => !!id)),
   ];
@@ -106,15 +159,15 @@ export async function recordCoachReasonEvents(
   const base = {
     athlete_id: input.athleteId,
     coach_id: input.coachId,
-    kind: REASON_KIND[input.reason],
-    source: "coach" as const,
-    confidence: 1,
+    kind: input.kind,
+    source: input.source,
+    confidence: input.confidence,
     plan_id: input.planId,
     competition_id: null,
     element_code: null,
     element_ref: null,
     origin: input.origin,
-    occurred_at: (input.now ?? new Date()).toISOString(),
+    occurred_at: input.occurredAt,
     created_by_user_id: input.userId,
   };
   const rows: EventRow[] = input.moves.length
