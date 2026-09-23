@@ -88,7 +88,27 @@ export const uploadUrlSchema = z.object({
   url: z.string(),
 });
 
-export const askGradusOutputSchema = z.object({ answer: z.string() });
+/** One source an answer cites as [index] (PRD §6.7 "Grounded Ask Gradus" item 6). */
+export const askSourceSchema = z.object({
+  index: z.number().int(),
+  title: z.string(),
+  publisher: z.string(),
+  edition: z.string(),
+  section: z.string(),
+  page: z.number().int().nullable(),
+  /** Set when the document is in the library: open it in the viewer at `page`. */
+  resourceId: z.string().nullable(),
+  externalUrl: z.string().nullable(),
+});
+
+export const askGradusOutputSchema = z.object({
+  answer: z.string(),
+  /** True when written from Gradus sources; false answers open with a sentence saying so. */
+  grounded: z.boolean(),
+  /** A safety topic: show the Safe Sport panel above the answer. */
+  safety: z.boolean(),
+  sources: z.array(askSourceSchema),
+});
 
 export const savedAnswerSchema = z.object({
   id: z.string(),
@@ -96,6 +116,11 @@ export const savedAnswerSchema = z.object({
   question: z.string(),
   answer: z.string(),
   createdAt: z.string(),
+  /** Cited sources (L5); empty for answers saved before L5 or from the web. */
+  sources: z.array(askSourceSchema),
+  /** Null when unknown (saved before L5 or from the web). */
+  grounded: z.boolean().nullable(),
+  safety: z.boolean(),
 }) satisfies z.ZodType<SavedAnswerDTO>;
 
 export const savedAnswersSchema = z.object({ answers: z.array(savedAnswerSchema) });

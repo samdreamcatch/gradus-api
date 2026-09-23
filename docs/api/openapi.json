@@ -17076,10 +17076,70 @@
                   "properties": {
                     "answer": {
                       "type": "string"
+                    },
+                    "grounded": {
+                      "type": "boolean"
+                    },
+                    "safety": {
+                      "type": "boolean"
+                    },
+                    "sources": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "index": {
+                            "type": "integer"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "publisher": {
+                            "type": "string"
+                          },
+                          "edition": {
+                            "type": "string"
+                          },
+                          "section": {
+                            "type": "string"
+                          },
+                          "page": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "resourceId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "externalUrl": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "index",
+                          "title",
+                          "publisher",
+                          "edition",
+                          "section",
+                          "page",
+                          "resourceId",
+                          "externalUrl"
+                        ]
+                      }
                     }
                   },
                   "required": [
-                    "answer"
+                    "answer",
+                    "grounded",
+                    "safety",
+                    "sources"
                   ]
                 }
               }
@@ -17134,6 +17194,66 @@
                           },
                           "createdAt": {
                             "type": "string"
+                          },
+                          "sources": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "index": {
+                                  "type": "integer"
+                                },
+                                "title": {
+                                  "type": "string"
+                                },
+                                "publisher": {
+                                  "type": "string"
+                                },
+                                "edition": {
+                                  "type": "string"
+                                },
+                                "section": {
+                                  "type": "string"
+                                },
+                                "page": {
+                                  "type": [
+                                    "integer",
+                                    "null"
+                                  ]
+                                },
+                                "resourceId": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "externalUrl": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "index",
+                                "title",
+                                "publisher",
+                                "edition",
+                                "section",
+                                "page",
+                                "resourceId",
+                                "externalUrl"
+                              ]
+                            }
+                          },
+                          "grounded": {
+                            "type": [
+                              "boolean",
+                              "null"
+                            ]
+                          },
+                          "safety": {
+                            "type": "boolean"
                           }
                         },
                         "required": [
@@ -17141,7 +17261,10 @@
                           "sport",
                           "question",
                           "answer",
-                          "createdAt"
+                          "createdAt",
+                          "sources",
+                          "grounded",
+                          "safety"
                         ]
                       }
                     }
@@ -17193,6 +17316,72 @@
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 20000
+                  },
+                  "sources": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "index": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 99
+                        },
+                        "title": {
+                          "type": "string",
+                          "maxLength": 300
+                        },
+                        "publisher": {
+                          "type": "string",
+                          "maxLength": 200
+                        },
+                        "edition": {
+                          "type": "string",
+                          "maxLength": 120
+                        },
+                        "section": {
+                          "type": "string",
+                          "maxLength": 300
+                        },
+                        "page": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "resourceId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "format": "uuid"
+                        },
+                        "externalUrl": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "maxLength": 2000
+                        }
+                      },
+                      "required": [
+                        "index",
+                        "title",
+                        "publisher",
+                        "edition",
+                        "section",
+                        "page",
+                        "resourceId",
+                        "externalUrl"
+                      ]
+                    },
+                    "maxItems": 12
+                  },
+                  "grounded": {
+                    "type": "boolean"
+                  },
+                  "safety": {
+                    "type": "boolean"
                   }
                 },
                 "required": [

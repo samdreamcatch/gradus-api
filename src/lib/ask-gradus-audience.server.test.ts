@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import { ApiError } from "./api/errors";
-import { resolveAskGradusAudience } from "./ask-gradus-audience.server";
+import { askerCoachIds, resolveAskGradusAudience } from "./ask-gradus-audience.server";
 
 /** Admin fake: `profiles[table]` answers that table's `maybeSingle` — used
  * for both `resolveCallerRole`'s profile lookups and the athlete birthdate
@@ -163,5 +163,51 @@ describe("resolveAskGradusAudience", () => {
     await expect(
       resolveAskGradusAudience({ userId: "u1", supabase: fakeSupabase, admin }, "athlete"),
     ).rejects.toThrow();
+  });
+});
+
+describe("askerCoachIds (L5: whose own uploads may ground an answer)", () => {
+  /** Answers each table from `rows`; `in`/`eq` filters are recorded, not applied. */
+  function admin(rows: Record<string, unknown>) {
+    const from = (table: string) => {
+      const self: Record<string, unknown> = {};
+      for (const m of ["select", "eq", "in"]) self[m] = () => self;
+      const value = rows[table];
+      self.maybeSingle = async () => ({
+        data: Array.isArray(value) ? null : (value ?? null),
+        error: null,
+      });
+      self.then = (resolve: (v: unknown) => void) =>
+        resolve({ data: Array.isArray(value) ? value : [], error: null });
+      return self;
+    };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return { from } as any;
+  }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const ctx = (a: unknown) => ({ userId: "u1", supabase: {} as any, admin: a as any });
+
+  it("a parent gets the coaches of the athletes they parent or co-guard", async () => {
+    const ids = await askerCoachIds(
+      ctx(
+        admin({
+          parent_profiles: { id: "p1" },
+          athletes: [{ id: "a1" }],
+          athlete_guardians: [{ athlete_id: "a2" }],
+          coach_athletes: [{ coach_id: "c1" }, { coach_id: "c2" }, { coach_id: "c1" }],
+        }),
+      ),
+    );
+    expect(ids.sort()).toEqual(["c1", "c2"]);
+  });
+
+  it("a coach gets only themselves; nobody gets anything on a failed read", async () => {
+    expect(await askerCoachIds(ctx(admin({ coach_profiles: { id: "c9" } })))).toEqual(["c9"]);
+    const broken = {
+      from: () => {
+        throw new Error("db down");
+      },
+    };
+    expect(await askerCoachIds(ctx(broken))).toEqual([]);
   });
 });
