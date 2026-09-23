@@ -204,7 +204,7 @@ Tests: a chainable fake Supabase client lives in `src/lib/coach-roster.server.te
 - `JSONEncoder` key order is not stable across launches; anything hashed or fingerprinted uses `.sortedKeys` or a hand-written canonical form (App Attest and schedule-import both got bitten).
 - Web: `defineApiRoute` JSON-parses the body when `input` is set; `routeTree.gen.ts` is regenerated only by `bun run build`. Cloudflare briefly edge-cached a `/api/v1` GET despite `no-store`; treat per-user GETs with suspicion.
 - Lovable publish does **not** apply migration files from GitHub (PRD §4.1 rule 11).
-- Do not propose certificate pinning, In-App Purchase, Firebase/analytics SDKs, or a Supabase data migration.
+- Do not propose certificate pinning, In-App Purchase, Firebase, a third-party analytics SDK (usage analytics are first-party, PRD §6.12 and §12 #19), or a Supabase data migration.
 - Known schema gap: `parent_profiles.user_id` and `athletes.user_id` lack `auth.users` FKs.
 - The web's `getPlan` creates a coach profile on first read for any non-parent — deliberate web parity; do not extend it.
 - Every iOS colour (all 57) is generated from `Contract/design-tokens.json`, which is exported from the web's `src/styles.css` by `scripts/export-design-tokens.ts`; CI fails if `Colors.xcassets` drifts. **A token fix is a web change first** (P6).
