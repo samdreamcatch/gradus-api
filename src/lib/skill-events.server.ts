@@ -41,7 +41,11 @@ export interface ReasonMove {
   planMoveId: string;
   moveId: string | null;
   name: string;
+  /** When the move was added to the plan (`plan_moves.created_at`), if known. */
+  startedAt?: string | null;
 }
+
+export type SkillEventOrigin = "bench" | "remove" | "protocol" | "inference";
 
 interface EventRow {
   athlete_id: string;
@@ -58,6 +62,8 @@ interface EventRow {
   move_category: string;
   element_code: string | null;
   element_ref: string | null;
+  origin: SkillEventOrigin;
+  started_at: string | null;
   occurred_at: string;
   created_by_user_id: string | null;
 }
@@ -75,6 +81,8 @@ export async function recordCoachReasonEvents(
     userId: string;
     planId: string;
     reason: SkillReason;
+    /** A bench answer covers the plan; a removal answer covers one move. */
+    origin: "bench" | "remove";
     moves: ReasonMove[];
     now?: Date;
   },
@@ -105,6 +113,7 @@ export async function recordCoachReasonEvents(
     competition_id: null,
     element_code: null,
     element_ref: null,
+    origin: input.origin,
     occurred_at: (input.now ?? new Date()).toISOString(),
     created_by_user_id: input.userId,
   };
@@ -118,6 +127,7 @@ export async function recordCoachReasonEvents(
           plan_move_id: m.planMoveId,
           move_name: m.name ?? "",
           move_category: lib?.category ?? "",
+          started_at: m.startedAt ?? null,
         };
       })
     : [
@@ -128,6 +138,7 @@ export async function recordCoachReasonEvents(
           plan_move_id: null,
           move_name: "",
           move_category: "",
+          started_at: null,
         },
       ];
 
@@ -254,6 +265,8 @@ export function protocolEventRows(input: {
         move_category: elementCategory(code),
         element_code: executed,
         element_ref: `${r.eventName}|${r.segment}|${index}`,
+        origin: "protocol" as const,
+        started_at: null,
         occurred_at: input.occurredAt,
         created_by_user_id: input.userId,
       };

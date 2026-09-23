@@ -57,8 +57,9 @@ describe("coach reasons", () => {
       userId: "u1",
       planId: "p1",
       reason: "parking_it",
+      origin: "bench",
       moves: [
-        { planMoveId: "pm1", moveId: "m1", name: "Kick serve" },
+        { planMoveId: "pm1", moveId: "m1", name: "Kick serve", startedAt: "2026-08-01T00:00:00Z" },
         { planMoveId: "pm2", moveId: null, name: "Footwork ladder" },
       ],
       now: new Date("2026-09-22T10:00:00Z"),
@@ -78,6 +79,8 @@ describe("coach reasons", () => {
       plan_move_id: "pm1",
       plan_id: "p1",
       move_category: "Serve",
+      origin: "bench",
+      started_at: "2026-08-01T00:00:00Z",
       occurred_at: "2026-09-22T10:00:00.000Z",
     });
     // No library link: the athlete's only sport, no category.
@@ -100,6 +103,7 @@ describe("coach reasons", () => {
       userId: "u1",
       planId: "p1",
       reason: "changed_direction",
+      origin: "bench",
       moves: [],
     });
     const rows = calls.find((c) => c.op === "insert")?.arg as Record<string, unknown>[];
@@ -196,6 +200,7 @@ describe("protocol elements", () => {
       source: "protocol",
       element_code: "3T<",
       element_ref: "Juvenile Girls|Free Skate|1",
+      origin: "protocol",
       move_category: "jump",
       competition_id: "comp1",
     });

@@ -511,6 +511,10 @@ export interface CoachReasonInput {
   moves?: ReasonMove[];
 }
 
+/** A bench answer covers the plan; a removal answer (moves given) covers one move. */
+const originOf = (input: CoachReasonInput): "bench" | "remove" =>
+  input.moves ? "remove" : "bench";
+
 export type RecordCoachReason = (input: CoachReasonInput) => Promise<void>;
 
 /**
@@ -545,12 +549,17 @@ export const recordCoachReason: RecordCoachReason = async (input) => {
     if (!moves) {
       const pm = await supabaseAdmin
         .from("plan_moves")
-        .select("id, move_id, name")
+        .select("id, move_id, name, created_at")
         .eq("plan_id", input.planId);
       if (pm.error) throw pm.error;
-      moves = (pm.data ?? []).map((m) => ({ planMoveId: m.id, moveId: m.move_id, name: m.name }));
+      moves = (pm.data ?? []).map((m) => ({
+        planMoveId: m.id,
+        moveId: m.move_id,
+        name: m.name,
+        startedAt: m.created_at,
+      }));
     }
-    await recordCoachReasonEvents(supabaseAdmin, { ...input, moves });
+    await recordCoachReasonEvents(supabaseAdmin, { ...input, origin: originOf(input), moves });
   } catch (e) {
     console.error("[plans] skill event write failed", e);
   }
@@ -1070,7 +1079,7 @@ export async function removePlanMove(
 
   const { data: pm, error: pmErr } = await supabase
     .from("plan_moves")
-    .select("plan_id, move_id, name")
+    .select("plan_id, move_id, name, created_at")
     .eq("id", planMoveId)
     .maybeSingle();
   if (pmErr) dbError(pmErr);
@@ -1098,7 +1107,14 @@ export async function removePlanMove(
       userId: ctx.userId,
       planId: pm.plan_id,
       reason,
-      moves: [{ planMoveId, moveId: pm.move_id ?? null, name: pm.name ?? "" }],
+      moves: [
+        {
+          planMoveId,
+          moveId: pm.move_id ?? null,
+          name: pm.name ?? "",
+          startedAt: (pm as { created_at?: string }).created_at ?? null,
+        },
+      ],
     });
   }
   return { ok: true };

@@ -172,7 +172,7 @@ describe('coach "why" answers (L1)', () => {
         userId: "u",
         planId: "p1",
         reason: "changed_direction",
-        moves: [{ planMoveId: "pm1", moveId: "m1", name: "Axel" }],
+        moves: [{ planMoveId: "pm1", moveId: "m1", name: "Axel", startedAt: null }],
       },
     ]);
   });

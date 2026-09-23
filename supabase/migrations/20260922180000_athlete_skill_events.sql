@@ -42,6 +42,13 @@ CREATE TABLE IF NOT EXISTS public.athlete_skill_events (
   -- Protocol events only: "<event name>|<segment>|<element index>", so
   -- re-linking a competition replaces its events instead of doubling them.
   element_ref text,
+  -- What wrote the row: a bench answer, a move-removal answer, a linked
+  -- protocol, or the inference job. The job treats only bench answers as the
+  -- label for a whole plan (a removal answers for one move).
+  origin text CHECK (origin IN ('bench', 'remove', 'protocol', 'inference')),
+  -- When the skill entered practice, if known: the plan move's created_at for
+  -- a coach answer. L3 measures pace from here rather than from the plan.
+  started_at timestamptz,
   occurred_at timestamptz NOT NULL DEFAULT now(),
   created_by_user_id uuid,
   created_at timestamptz NOT NULL DEFAULT now()
