@@ -56,10 +56,10 @@ Character limits are Apple's. Counts were checked when this file was written.
 
 > Structured practice between lessons. Coaches build the plan, athletes and parents follow it, and everyone sees how practice is going before the next lesson.
 
-**Keywords** (100 max, comma-separated, no spaces after commas; don't repeat the app name or category):
+**Keywords** (100 max, comma-separated, no spaces after commas; don't repeat the app name, the category, or words already in the subtitle):
 
 ```
-coach,figure skating,tennis,golf,practice plan,lesson,drills,athlete,parent,training log,skate,club
+coach,figure skating,tennis,golf,training plan,lesson,drills,athlete,parent,skate,club,timer,goals
 ```
 
 **Description** (4,000 max):
@@ -70,7 +70,7 @@ coach,figure skating,tennis,golf,practice plan,lesson,drills,athlete,parent,trai
 > • Build between-lesson practice plans from your move library, or talk a plan out loud and let Gradus draft it.
 > • Keep your roster, lesson schedule, and invoices in one place. Photograph a paper schedule to import it.
 > • Get a briefing before each lesson on how practice has actually gone.
-> • Message athletes and their parents in shared threads. Every conversation includes the parent.
+> • Message athletes and their parents in shared threads. A minor athlete's conversations always include their parent.
 >
 > FOR PARENTS
 > • See what your child's coach is working on, with talking points and drills you can use at home without playing coach.
@@ -170,7 +170,7 @@ All three must be tested on the TestFlight build against production before submi
 
 **Notes** (paste; update if anything changes in QA):
 
-> 1. Gradus is a multiplatform coaching service for coaches, parents, and athletes. Coach and Team subscriptions are purchased on our website; the app unlocks previously purchased subscriptions. There is no purchase flow in the app. On the US storefront the app links to our website to manage a plan (Guideline 3.1.1(a)).
+> 1. Gradus is a coaching service for coaches, parents, and athletes. Coach and Team subscriptions are purchased on our website; the app unlocks subscriptions bought there and has no purchase flow. The app is offered on the United States storefront only, where the Guidelines allow a link to our website to buy or manage a plan.
 > 2. Coaches can create invoices for in-person lessons they teach; this is a real-world service consumed outside the app (Guideline 3.1.3(e)). No payment is processed in the app.
 > 3. Sign in with Apple is offered alongside email sign-in.
 > 4. User-generated content: every conversation offers Report and Block (message long-press → Report this message; conversation menu → Block). Blocked users are hidden immediately (Guideline 1.2).
@@ -178,6 +178,8 @@ All three must be tested on the TestFlight build against production before submi
 > 6. Athlete accounts for minors are created by a parent, or require a parent's email, and sign in with a username. There are no private channels between a coach and a minor that exclude the parent. The app is not in the Kids Category.
 > 7. Demo accounts: coach, parent, and athlete are provided above. The Live Board works with any public competition code; [add a live or demo board code at submission].
 > 8. Live Activities are used for the practice timer and for competitions the user follows.
+
+Note 1 deliberately doesn't call Gradus a multiplatform service. Guideline 3.1.3(b) (Multiplatform Services) allows unlocking web-bought subscriptions only when they are also sold as in-app purchases, and Gradus sells none. The note relies on the US-storefront exception instead, so availability must stay US-only (§2). Check the current wording of that exception in the App Review Guidelines before pasting, and add its guideline number then.
 
 ---
 
