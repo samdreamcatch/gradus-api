@@ -1156,6 +1156,8 @@ Size: S < 200 lines, M 200–500, L 500–1000, XL > 1000 lines of TSX in the we
 
 Carried over from `docs/mobile/submission.md` and updated for the native app.
 
+**Content (2026-09-22):** the listing copy, App Privacy answers, age rating, review notes, and screenshot plan are drafted in `docs/ios/app-store-submission.md`, ready to paste once App Store Connect is active.
+
 **One submission (amended 2026-09-19).** The native app is the only iOS submission, at version 1.0. Nothing from the shell plan applies: no Capacitor Sign in with Apple plugin, no welcome screen for a one-time sign-in, no version ordering against 1.x builds. The Android shell notes in `docs/mobile/submission.md` stay until §12 #14 is decided.
 
 **Before enrollment completes (do now)**
