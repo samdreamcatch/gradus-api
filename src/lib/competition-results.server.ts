@@ -24,6 +24,8 @@ import { normalizeName } from "./board-types";
 import { DEMO_RESULTS_HOST, demoSkaterResults } from "./demo-competition-results.server";
 import type { SkaterProtocol } from "./board-types";
 import { deleteProtocolEvents, replaceProtocolEvents } from "./skill-events.server";
+import { loadCoachAthleteProfile, type LoadCoachAthleteProfile } from "./athlete-profile.server";
+import { getSport } from "./coach-sports";
 import type { AdminDb } from "./competitions.server";
 
 /** One event a named skater appeared in, as published. */
@@ -695,14 +697,47 @@ export const generatePlanFromResultsInput = z.object({
   competitionId: z.string().uuid(),
 });
 
+type DraftPlan = { title: string; notes: string; moves: z.infer<typeof moveSchema>[] };
+
+const draftPlanSchema = z.object({
+  title: z.string().min(1).max(120).describe("Plan title, max 8 words, no emoji"),
+  notes: z.string().max(800).describe("1-2 sentence competition takeaway"),
+  moves: z.array(moveSchema).min(1).max(8).describe("The practice moves"),
+});
+
+/** Seams for tests: the model call and the athlete profile (L3). */
+export interface PlanFromResultsDeps {
+  generate?: (args: { prompt: string; apiKey: string }) => Promise<DraftPlan>;
+  loadProfile?: LoadCoachAthleteProfile;
+}
+
+const defaultDraftGenerate: NonNullable<PlanFromResultsDeps["generate"]> = async ({
+  prompt,
+  apiKey,
+}) => {
+  const gateway = createLovableAiGatewayProvider(apiKey);
+  const generated = await generateObject({
+    model: gateway("google/gemini-2.5-flash"),
+    schema: draftPlanSchema,
+    prompt,
+  });
+  return generated.object;
+};
+
 /**
  * Draft a practice plan from the athlete's stored protocol. The result is a
  * draft the coach edits before sharing — never auto-assigned.
+ *
+ * L3 (PRD §6.7 item 6): the prompt also carries the athlete profile, which
+ * includes every linked competition's scores (the whole results history, not
+ * just this one) and the athlete's pace and level changes; the coach persona
+ * comes from the sport this coach coaches the athlete in, not a fixed one.
  */
 export async function generatePlanFromResults(
   admin: AdminDb,
   userId: string,
   input: z.infer<typeof generatePlanFromResultsInput>,
+  deps: PlanFromResultsDeps = {},
 ): Promise<GeneratedPlanResultDTO> {
   const coachId = await assertRosteredCoach(admin, userId, input.athleteId);
 
@@ -727,7 +762,28 @@ export async function generatePlanFromResults(
 
   const apiKey = process.env["LOVABLE_API_KEY"];
   if (!apiKey) throw aiUnavailable("AI service is unavailable. Please try again later.");
-  const gateway = createLovableAiGatewayProvider(apiKey);
+
+  // Judged protocols are IJS, so figure skating unless this coach coaches the
+  // athlete in exactly one other sport.
+  const sportRows = await admin
+    .from("coach_athlete_sports")
+    .select("sport")
+    .eq("coach_id", coachId)
+    .eq("athlete_id", input.athleteId);
+  const coachSports = [
+    ...new Set(((sportRows.data ?? []) as { sport: string }[]).map((r) => r.sport)),
+  ];
+  const sport =
+    coachSports.length === 1 && coachSports[0] !== "figure_skating"
+      ? coachSports[0]
+      : "figure_skating";
+  const persona = (getSport(sport)?.label ?? "figure skating").toLowerCase();
+
+  const profile = await (deps.loadProfile ?? loadCoachAthleteProfile)(
+    admin,
+    coachId,
+    input.athleteId,
+  );
 
   const detail = rows
     .map((r) =>
@@ -749,10 +805,17 @@ export async function generatePlanFromResults(
   const firstName = sanitizeUserContent(athlete.data?.first_name ?? "the skater", 40);
   const prompt = `${PROMPT_INJECTION_GUARD}
 
-You are a figure skating coach writing an off-ice and on-ice practice plan for ${firstName}, based only on the judged protocol below from ${sanitizeUserContent(comp.name, 100)}.
+You are a ${persona} coach writing an off-ice and on-ice practice plan for ${firstName}, based only on the judged protocol below from ${sanitizeUserContent(comp.name, 100)}.
 
 ${sanitizeUserContent(detail, 6000)}
-
+${
+  profile.text
+    ? `
+${profile.text}
+Use the profile only to size the plan and to notice a problem that repeats across competitions (the score history above); the moves must still target what this protocol shows.
+`
+    : ""
+}
 Write 3 to 6 practice moves that target exactly what the protocol shows lost value — underrotations, negative GOE elements, falls, and the lowest program components. Do not invent problems the protocol does not show. For each move give:
 - name: short and specific (max 6 words)
 - description: 1-2 sentences on how to practise it
@@ -763,18 +826,9 @@ Write 3 to 6 practice moves that target exactly what the protocol shows lost val
 
 Return an object with exactly these keys: "title" (the plan title, max 8 words, no emoji), "notes" (1-2 sentence summary of the competition takeaway), and "moves" (the array of practice moves).`;
 
-  let object: { title: string; notes: string; moves: z.infer<typeof moveSchema>[] };
+  let object: DraftPlan;
   try {
-    const generated = await generateObject({
-      model: gateway("google/gemini-2.5-flash"),
-      schema: z.object({
-        title: z.string().min(1).max(120).describe("Plan title, max 8 words, no emoji"),
-        notes: z.string().max(800).describe("1-2 sentence competition takeaway"),
-        moves: z.array(moveSchema).min(1).max(8).describe("The practice moves"),
-      }),
-      prompt,
-    });
-    object = generated.object;
+    object = await (deps.generate ?? defaultDraftGenerate)({ prompt, apiKey });
   } catch (err) {
     console.error("[competition plan draft]", err);
     throw aiUnavailable("Could not draft the plan. Please try again.");

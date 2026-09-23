@@ -13,11 +13,32 @@ import type { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { createLovableAiGatewayProvider } from "./ai-gateway.server";
 import { PROMPT_INJECTION_GUARD, sanitizeUserContent, wrapUntrusted } from "./ai-prompt-safety";
 import { ApiError } from "./api/errors";
+import { loadCoachAthleteProfile, type LoadCoachAthleteProfile } from "./athlete-profile.server";
 import { dbError } from "./db-error";
 
 type Admin = typeof supabaseAdmin;
 
 export type BriefingContext = { userId: string; admin: Admin };
+
+/** Seams for tests: the model call and the athlete profile (L3). */
+export interface BriefingDeps {
+  generate?: (args: { system: string; prompt: string; apiKey: string }) => Promise<string>;
+  loadProfile?: LoadCoachAthleteProfile;
+}
+
+const defaultGenerate: NonNullable<BriefingDeps["generate"]> = async ({
+  system,
+  prompt,
+  apiKey,
+}) => {
+  const gateway = createLovableAiGatewayProvider(apiKey);
+  const result = await generateText({
+    model: gateway("google/gemini-3-flash-preview"),
+    system,
+    prompt,
+  });
+  return result.text;
+};
 
 const PRE_LESSON_BRIEFING_SYSTEM = `You are a factual reporting assistant for a sports coaching platform. Your only job is to report what is explicitly present in the data you receive. You do not infer, speculate, add encouragement, or use generic coaching language to fill gaps. If a section has no data, skip it — do not write around it. A one-sentence output is always better than three vague ones.`;
 
@@ -53,9 +74,12 @@ export async function getPreLessonBriefing(
   data: z.infer<typeof briefingInput>,
   env: NodeJS.ProcessEnv = process.env,
   now: Date = new Date(),
+  deps: BriefingDeps = {},
 ): Promise<PreLessonBriefing> {
   const { admin, userId } = ctx;
   const input = { athleteId, lessonDate: data.lessonDate, refresh: !!data.refresh };
+  const generate = deps.generate ?? defaultGenerate;
+  const loadProfile = deps.loadProfile ?? loadCoachAthleteProfile;
   // 1) Resolve coach
   const coachRes = await admin
     .from("coach_profiles")
@@ -215,8 +239,13 @@ export async function getPreLessonBriefing(
     recentMessages = (msgs.data ?? []) as typeof recentMessages;
   }
 
-  // 9) Build hash of inputs
+  // 9) The athlete profile (PRD §6.7 item 6): pace, seasonal dips, level
+  // changes, results history, for this coach's sports. Never throws.
+  const athleteProfile = await loadProfile(admin, coachId, input.athleteId, now);
+
+  // 10) Build hash of inputs (the profile's own hash changes only when it does)
   const sourceHash = stableHash({
+    profile: athleteProfile.profile.hash,
     sinceDate: sinceIso,
     myPlanId: myPlan.data?.id ?? null,
     myPlanUpdated: myPlan.data?.updated_at ?? null,
@@ -226,7 +255,7 @@ export async function getPreLessonBriefing(
     messages: recentMessages.map((m) => `${m.sender_role}@${m.created_at}`),
   });
 
-  // 10) Check cache
+  // 11) Check cache
   if (!input.refresh) {
     const cached = await admin
       .from("pre_lesson_briefings")
@@ -244,7 +273,7 @@ export async function getPreLessonBriefing(
     }
   }
 
-  // 11) Generate via Lovable AI
+  // 12) Generate via Lovable AI
   const apiKey = env.LOVABLE_API_KEY;
   if (!apiKey)
     throw new ApiError({ code: "internal", status: 500, message: "Missing LOVABLE_API_KEY" });
@@ -295,6 +324,13 @@ export async function getPreLessonBriefing(
           )
           .join("\n")
       : "No recent messages.",
+    ...(athleteProfile.text
+      ? [
+          "",
+          "## Longer-term picture (use only if it bears on this lesson; never repeat it wholesale)",
+          athleteProfile.text,
+        ]
+      : []),
   ];
 
   const prompt = `${PROMPT_INJECTION_GUARD}
@@ -313,13 +349,7 @@ ${context_lines.filter(Boolean).join("\n")}`;
 
   let narrative = "";
   try {
-    const gateway = createLovableAiGatewayProvider(apiKey);
-    const result = await generateText({
-      model: gateway("google/gemini-3-flash-preview"),
-      system: PRE_LESSON_BRIEFING_SYSTEM,
-      prompt,
-    });
-    narrative = result.text.trim();
+    narrative = (await generate({ system: PRE_LESSON_BRIEFING_SYSTEM, prompt, apiKey })).trim();
   } catch (err) {
     console.error("[pre-lesson-briefing] AI error", err);
     throw aiUnavailable("Couldn't generate the briefing right now. Please try again.");
@@ -328,7 +358,7 @@ ${context_lines.filter(Boolean).join("\n")}`;
     throw aiUnavailable("AI returned an empty briefing.");
   }
 
-  // 12) Upsert cache
+  // 13) Upsert cache
   const up = await admin
     .from("pre_lesson_briefings")
     .upsert(
