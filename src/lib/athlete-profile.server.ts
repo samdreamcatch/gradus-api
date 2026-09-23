@@ -38,6 +38,8 @@ export interface SkillEventInput {
   move_category: string;
   plan_id: string | null;
   occurred_at: string;
+  /** When the move entered practice (L1 `started_at`), for coach answers. */
+  started_at?: string | null;
 }
 
 export interface ProfileInputs {
@@ -133,6 +135,8 @@ export const DIP_MIN_SESSIONS = 20;
 const DIP_MIN_WEEK_SESSIONS = 2;
 /** A dip week's mean flow sits at least this far below the athlete's own year mean. */
 const DIP_GAP = 0.75;
+/** A month counts as a dip only with at least this many low weeks in it. */
+const DIP_MIN_WEEKS_PER_MONTH = 2;
 
 function dipMonths(sessions: ProfileInputs["sessions"]): string[] {
   if (sessions.length < DIP_MIN_SESSIONS) return [];
@@ -151,10 +155,14 @@ function dipMonths(sessions: ProfileInputs["sessions"]): string[] {
       counts.set(month, (counts.get(month) ?? 0) + 1);
     }
   }
-  return [...counts.entries()]
-    .sort((a, b) => b[1] - a[1] || a[0] - b[0])
-    .slice(0, 3)
-    .map(([m]) => MONTHS[m]);
+  return (
+    [...counts.entries()]
+      // One rough week is a week, not a pattern.
+      .filter(([, weeks]) => weeks >= DIP_MIN_WEEKS_PER_MONTH)
+      .sort((a, b) => b[1] - a[1] || a[0] - b[0])
+      .slice(0, 3)
+      .map(([m]) => MONTHS[m])
+  );
 }
 
 function skillKey(e: SkillEventInput): string {
@@ -173,15 +181,20 @@ function sportProfile(sport: string, inputs: ProfileInputs): SportProfile {
   for (const e of certain) {
     const key = skillKey(e);
     const at = Date.parse(e.occurred_at);
-    const s = skills.get(key) ?? { category: e.move_category || "uncategorized" };
+    const s = skills.get(key) ?? { category: oneLine(e.move_category, 40) || "uncategorized" };
     if (e.kind === "attempted") s.start = Math.min(s.start ?? at, at);
     if (e.kind === "landed" || e.kind === "consistent") s.landed = Math.min(s.landed ?? at, at);
     if (e.kind === "parked" || e.kind === "dropped") s.setAside = true;
     // A coach answer closes a skill whose first attempt was never recorded:
-    // the plan it lived in started it.
-    if (e.source === "coach" && e.plan_id && inputs.planCreatedAt[e.plan_id]) {
-      const planStart = Date.parse(inputs.planCreatedAt[e.plan_id]);
-      s.start = Math.min(s.start ?? planStart, planStart);
+    // it started when the move entered the plan (`started_at`), or, for
+    // events written without it, when the plan itself was created.
+    if (e.source === "coach") {
+      const began = e.started_at
+        ? Date.parse(e.started_at)
+        : e.plan_id && inputs.planCreatedAt[e.plan_id]
+          ? Date.parse(inputs.planCreatedAt[e.plan_id])
+          : NaN;
+      if (Number.isFinite(began)) s.start = Math.min(s.start ?? began, began);
     }
     skills.set(key, s);
   }
@@ -223,14 +236,13 @@ function sportProfile(sport: string, inputs: ProfileInputs): SportProfile {
     .sort((a, b) => a.created_at.localeCompare(b.created_at))
     .map((h) => ({
       date: h.created_at.slice(0, 10),
-      from:
-        getSportLevel(sport, h.previous_current_level_key!)?.label ?? h.previous_current_level_key!,
-      to: getSportLevel(sport, h.current_level_key)?.label ?? h.current_level_key,
+      from: levelLabel(sport, h.previous_current_level_key!),
+      to: levelLabel(sport, h.current_level_key),
     }));
 
   return {
     sport,
-    sportLabel: getSport(sport)?.label ?? sport,
+    sportLabel: getSport(sport)?.label ?? oneLine(sport, 40),
     levelChanges,
     pace,
     inProgress,
@@ -241,9 +253,16 @@ function sportProfile(sport: string, inputs: ProfileInputs): SportProfile {
 
 /** Pure: the profile for one athlete. `sports` limits the per-sport sections (the coach's sports). */
 export function computeAthleteProfile(inputs: ProfileInputs, sports?: string[]): AthleteProfile {
-  const now = inputs.now.getTime();
+  // Windows end at the start of today (UTC), so the profile, and its hash in
+  // the briefing's cache key, only change when the data or the day does.
+  const n = inputs.now;
+  const now = Date.UTC(n.getUTCFullYear(), n.getUTCMonth(), n.getUTCDate());
+  const within = (iso: string, days: number) => {
+    const age = now - Date.parse(iso);
+    return age <= days * DAY && age > -DAY;
+  };
   const flow: FlowWindow[] = ([30, 90, 365] as const).map((days) => {
-    const inWindow = inputs.sessions.filter((s) => now - Date.parse(s.logged_at) <= days * DAY);
+    const inWindow = inputs.sessions.filter((s) => within(s.logged_at, days));
     if (!inWindow.length) return { days, sessions: 0, mean: null, label: null };
     const mean = inWindow.reduce((s, x) => s + x.state_index, 0) / inWindow.length;
     return { days, sessions: inWindow.length, mean: round1(mean), label: flowLabel(mean) };
@@ -259,11 +278,16 @@ export function computeAthleteProfile(inputs: ProfileInputs, sports?: string[]):
 
   const profile = {
     flow,
-    dipMonths: dipMonths(inputs.sessions.filter((s) => now - Date.parse(s.logged_at) <= 365 * DAY)),
+    dipMonths: dipMonths(inputs.sessions.filter((s) => within(s.logged_at, 365))),
     sports: wanted.map((s) => sportProfile(s, inputs)),
   };
   const hash = createHash("sha256").update(JSON.stringify(profile)).digest("hex").slice(0, 32);
   return { ...profile, hash };
+}
+
+/** The catalog label for a level key; a key the catalog doesn't know is shown one-lined. */
+function levelLabel(sport: string, key: string): string {
+  return getSportLevel(sport, key)?.label ?? oneLine(key, 60);
 }
 
 /** Sanitized and on one line, so a stored name can never start a new prompt line. */
@@ -294,7 +318,7 @@ export function formatProfileForPrompt(p: AthleteProfile): string {
     .filter((f) => f.sessions > 0)
     .map(
       (f) =>
-        `last ${f.days} days ${f.sessions} session${f.sessions === 1 ? "" : "s"}, mostly ${f.label}`,
+        `last ${f.days} days ${f.sessions} session${f.sessions === 1 ? "" : "s"}, averaging ${f.label}`,
     );
   if (flow.length) lines.push(`- Practice flow: ${flow.join("; ")}.`);
   if (p.dipMonths.length) {
@@ -370,10 +394,12 @@ export async function loadAthleteProfile(
     rows<SkillEventInput>(
       admin
         .from("athlete_skill_events")
-        .select("sport, kind, source, move_id, move_name, move_category, plan_id, occurred_at")
+        .select(
+          "sport, kind, source, move_id, move_name, move_category, plan_id, occurred_at, started_at",
+        )
         .eq("athlete_id", athleteId)
-        .order("occurred_at", { ascending: true })
-        .limit(2000),
+        .order("occurred_at", { ascending: false })
+        .limit(1000),
     ),
     rows<{ state_index: number; logged_at: string }>(
       admin
@@ -381,7 +407,7 @@ export async function loadAthleteProfile(
         .select("state_index, logged_at")
         .eq("athlete_id", athleteId)
         .gte("logged_at", yearAgo)
-        .order("logged_at", { ascending: true })
+        .order("logged_at", { ascending: false })
         .limit(1000),
     ),
     rows<ProfileInputs["levelHistory"][number]>(
@@ -389,7 +415,7 @@ export async function loadAthleteProfile(
         .from("athlete_goals_history")
         .select("sport, created_at, previous_current_level_key, current_level_key")
         .eq("athlete_id", athleteId)
-        .order("created_at", { ascending: true })
+        .order("created_at", { ascending: false })
         .limit(200),
     ),
     rows<{ competition_id: string; event_name: string; segment: string; segment_score: string }>(
@@ -397,6 +423,7 @@ export async function loadAthleteProfile(
         .from("athlete_competition_results")
         .select("competition_id, event_name, segment, segment_score")
         .eq("athlete_id", athleteId)
+        .order("created_at", { ascending: false })
         .limit(200),
     ),
   ]);
@@ -431,10 +458,11 @@ export async function loadAthleteProfile(
   const profile = computeAthleteProfile(
     {
       now,
-      events,
+      // Read newest first (so a cap drops the oldest), used oldest first.
+      events: [...events].reverse(),
       planCreatedAt: Object.fromEntries(plans.map((p) => [p.id, p.created_at])),
-      sessions,
-      levelHistory,
+      sessions: [...sessions].reverse(),
+      levelHistory: [...levelHistory].reverse(),
       results: dated,
     },
     opts.sports,
@@ -445,24 +473,30 @@ export async function loadAthleteProfile(
 /**
  * The profile as one coach may see it: per-sport sections only for the
  * sports this coach coaches the athlete in (`coach_athlete_sports`), so a
- * tennis coach never reads the athlete's golf pace. Links from before sports
- * were recorded have no rows; those see every sport, as their summary does.
+ * tennis coach never reads the athlete's golf pace. No rows means no sport
+ * sections at all, the same rule the athlete summary applies to goals.
+ * `onlySports` replaces the lookup where the caller already knows the sport
+ * (plan drafting from IJS results is figure skating by definition).
  */
 export async function loadCoachAthleteProfile(
   admin: ProfileDb,
   coachId: string,
   athleteId: string,
   now: Date = new Date(),
+  onlySports?: string[],
 ): Promise<{ profile: AthleteProfile; text: string }> {
-  const sports = await rows<{ sport: string }>(
-    admin
-      .from("coach_athlete_sports")
-      .select("sport")
-      .eq("coach_id", coachId)
-      .eq("athlete_id", athleteId),
-  );
-  const list = [...new Set(sports.map((s) => s.sport))];
-  return loadAthleteProfile(admin, athleteId, { now, sports: list.length ? list : undefined });
+  let list = onlySports;
+  if (!list) {
+    const sports = await rows<{ sport: string }>(
+      admin
+        .from("coach_athlete_sports")
+        .select("sport")
+        .eq("coach_id", coachId)
+        .eq("athlete_id", athleteId),
+    );
+    list = [...new Set(sports.map((s) => s.sport))];
+  }
+  return loadAthleteProfile(admin, athleteId, { now, sports: list });
 }
 
 export type LoadCoachAthleteProfile = typeof loadCoachAthleteProfile;

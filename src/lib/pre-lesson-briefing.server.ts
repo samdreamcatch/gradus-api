@@ -102,6 +102,10 @@ export async function getPreLessonBriefing(
   if (link.error) dbError(link.error);
   if (!link.data) throw unprocessable("Athlete is not on your roster");
 
+  // The athlete profile (PRD §6.7 item 6) loads alongside the reads below;
+  // never throws.
+  const profilePromise = loadProfile(admin, coachId, input.athleteId, now);
+
   // 3) Find previous lesson date (most recent wrap-up before this lesson_date)
   const prevWrap = await admin
     .from("lesson_wrap_ups")
@@ -239,9 +243,9 @@ export async function getPreLessonBriefing(
     recentMessages = (msgs.data ?? []) as typeof recentMessages;
   }
 
-  // 9) The athlete profile (PRD §6.7 item 6): pace, seasonal dips, level
-  // changes, results history, for this coach's sports. Never throws.
-  const athleteProfile = await loadProfile(admin, coachId, input.athleteId, now);
+  // 9) The athlete profile: pace, seasonal dips, level changes, results
+  // history, for this coach's sports.
+  const athleteProfile = await profilePromise;
 
   // 10) Build hash of inputs (the profile's own hash changes only when it does)
   const sourceHash = stableHash({

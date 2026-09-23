@@ -697,6 +697,9 @@ export const generatePlanFromResultsInput = z.object({
   competitionId: z.string().uuid(),
 });
 
+/** The sport of the results this module stores (IJS judged protocols). */
+const RESULTS_SPORT = "figure_skating";
+
 type DraftPlan = { title: string; notes: string; moves: z.infer<typeof moveSchema>[] };
 
 const draftPlanSchema = z.object({
@@ -730,8 +733,8 @@ const defaultDraftGenerate: NonNullable<PlanFromResultsDeps["generate"]> = async
  *
  * L3 (PRD §6.7 item 6): the prompt also carries the athlete profile, which
  * includes every linked competition's scores (the whole results history, not
- * just this one) and the athlete's pace and level changes; the coach persona
- * comes from the sport this coach coaches the athlete in, not a fixed one.
+ * just this one) and the athlete's pace and level changes; the persona comes
+ * from the results' sport (`RESULTS_SPORT`), not a string in the prompt.
  */
 export async function generatePlanFromResults(
   admin: AdminDb,
@@ -763,26 +766,17 @@ export async function generatePlanFromResults(
   const apiKey = process.env["LOVABLE_API_KEY"];
   if (!apiKey) throw aiUnavailable("AI service is unavailable. Please try again later.");
 
-  // Judged protocols are IJS, so figure skating unless this coach coaches the
-  // athlete in exactly one other sport.
-  const sportRows = await admin
-    .from("coach_athlete_sports")
-    .select("sport")
-    .eq("coach_id", coachId)
-    .eq("athlete_id", input.athleteId);
-  const coachSports = [
-    ...new Set(((sportRows.data ?? []) as { sport: string }[]).map((r) => r.sport)),
-  ];
-  const sport =
-    coachSports.length === 1 && coachSports[0] !== "figure_skating"
-      ? coachSports[0]
-      : "figure_skating";
+  // Results are judged IJS protocols, which exist only for figure skating
+  // today, so the persona and the profile are that sport's; a sport with its
+  // own structured results would pass its key here.
+  const sport = RESULTS_SPORT;
   const persona = (getSport(sport)?.label ?? "figure skating").toLowerCase();
-
   const profile = await (deps.loadProfile ?? loadCoachAthleteProfile)(
     admin,
     coachId,
     input.athleteId,
+    new Date(),
+    [sport],
   );
 
   const detail = rows

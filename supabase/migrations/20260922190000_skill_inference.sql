@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS public.skill_inference_runs (
   precision numeric(4, 3),
   written_plans integer NOT NULL DEFAULT 0,
   written_events integer NOT NULL DEFAULT 0,
+  failed_plans integer NOT NULL DEFAULT 0,
   enabled boolean NOT NULL DEFAULT true
 );
 

@@ -779,6 +779,13 @@ export async function getCoachAthleteAiSummary(
   const since = new Date(now.getTime() - WINDOW_DAYS * 86400_000).toISOString();
 
   const coachSports = await getCoachAthleteSports(admin, coachId, athleteId);
+  // The athlete profile (PRD §6.7 item 6) loads alongside the reads below.
+  const profilePromise = (deps.loadProfile ?? loadCoachAthleteProfile)(
+    admin,
+    coachId,
+    athleteId,
+    now,
+  );
 
   const [athleteRes, goalsRes, plansRes, sessionsRes, roomRes] = await Promise.all([
     admin.from("athletes").select("first_name").eq("id", athleteId).single(),
@@ -935,12 +942,7 @@ export async function getCoachAthleteAiSummary(
 
   // The athlete profile (PRD §6.7 item 6): the longer view behind the last
   // ${WINDOW_DAYS} days, for this coach's sports. Empty for a new athlete.
-  const profile = await (deps.loadProfile ?? loadCoachAthleteProfile)(
-    admin,
-    coachId,
-    athleteId,
-    now,
-  );
+  const profile = await profilePromise;
   const profileBlock = profile.text
     ? `\n${profile.text}\nUse the profile only to put the last ${WINDOW_DAYS} days in context (for example, a dip that matches the season, or a pace faster than usual); the summary and verdict still rest on the data above.\n`
     : "";
