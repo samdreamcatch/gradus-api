@@ -217,6 +217,18 @@ describe("grounded answers", () => {
     expect(systems[1]).not.toContain("NOT_COVERED");
   });
 
+  it("treats NOT_COVERED anywhere in the reply as not covered, even with a citation", async () => {
+    let calls = 0;
+    const ask: AskFn = async () => ({
+      text: ++calls === 1 ? "Here is something [1]. NOT_COVERED" : "General.",
+    });
+    const result = await withApiKey("k", () =>
+      askGradus(golf("What should we pack?"), ask, { retrieve: async () => [hit({})] }),
+    );
+    expect(result.grounded).toBe(false);
+    expect(result.answer.startsWith(NOT_FROM_SOURCES)).toBe(true);
+  });
+
   it("treats an answer that cites nothing as not covered, and drops weak passages", async () => {
     let calls = 0;
     const ask: AskFn = async () => ({ text: ++calls === 1 ? "Just relax." : "General." });
@@ -290,6 +302,13 @@ describe("safety classification", () => {
       "He keeps skating through the pain in his knee",
       "What do I do after a concussion?",
       "Someone touched me in the locker room",
+      "Her coach asked her to keep secrets from us",
+      "The coach texts my daughter late at night",
+      "The coach hits the kids when they fall",
+      "Is it normal to have weekly weigh-ins at 11?",
+      "She's been vomiting after meals",
+      "He said he doesn't want to be alive anymore",
+      "My son is always alone with the coach after practice",
     ]) {
       expect(isSafetyQuestion(q)).toBe(true);
     }
@@ -300,6 +319,7 @@ describe("safety classification", () => {
       "How many times a week should she practice her axel?",
       "What's a good warm-up before a tennis match?",
       "How do I read a putt?",
+      "What's the secret to a good spin?",
     ]) {
       expect(isSafetyQuestion(q)).toBe(false);
     }

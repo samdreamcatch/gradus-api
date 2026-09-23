@@ -93,11 +93,11 @@ const MAX_PASSAGES = 6;
 
 const SAFETY_PATTERNS: RegExp[] = [
   // Abuse and grooming.
-  /\b(abus(e|ed|es|ing|ive)|groom(ing|ed|s)?|molest\w*|sexual\w*|sext\w*|nudes?|naked|inappropriate(ly)? touch\w*|touch(ed|es|ing)? (me|her|him)|keeps? (it|this) (a )?secret|kiss(ed|es)? (me|her|him))\b/i,
+  /\b(abus(e|ed|es|ing|ive)|groom(ing|ed|s)?|molest\w*|sexual\w*|sext\w*|nudes?|naked|inappropriate(ly)? touch\w*|touch(ed|es|ing)? (me|her|him)|(keep|keeps|keeping|kept) (it |this |that )?(a )?secrets?|secrets? (from|with) (us|me|you|her|him|his|their|the) ?\w*|kiss(ed|es)? (me|her|him)|alone with (a |the |my |her |his )?coach|(hit|hits|hitting|slap\w*|punch\w*|shov\w*|kick(s|ed)?) (me|her|him|them|kids|the kids|athletes|skaters|players)|text(s|ed|ing)? (me|her|him|my \w+) (late|at night)|(yell|scream)(s|ed|ing)? at (me|her|him|them|kids))\b/i,
   // Self-harm.
-  /\b(suicid\w*|kill (myself|herself|himself)|self[- ]?harm\w*|cut(ting)? (myself|herself|himself)|hurt(ing)? (myself|herself|himself)|want(s)? to die)\b/i,
+  /\b(suicid\w*|kill (myself|herself|himself)|self[- ]?harm\w*|cut(ting)? (myself|herself|himself)|hurt(ing)? (myself|herself|himself)|want(s)? to die|wants? to be dead|(doesn't|does not|don't|do not) want to (live|be alive|be here))\b/i,
   // Disordered eating and weight pressure.
-  /\b(anorexi\w*|bulimi\w*|eating disorder|purg(e|es|ed|ing)|laxatives?|starv\w*|stop(ped)? eating|not eating|skip(ping|s)? meals|throw(ing)? up after|lose weight fast|call(s|ed)? (me|her|him) fat|too fat|weigh(s|ed)? (me|us|her|him|the team))\b/i,
+  /\b(anorexi\w*|bulimi\w*|eating disorder|purg(e|es|ed|ing)|laxatives?|vomit\w*|weigh[- ]?ins?|starv\w*|stop(ped)? eating|not eating|skip(ping|s)? meals|throw(ing)? up after|lose weight fast|call(s|ed)? (me|her|him) fat|too fat|weigh(s|ed)? (me|us|her|him|the team))\b/i,
   // Pain and hiding injuries.
   /\b(pain(ful)?|hurts?|hurting|hid(e|es|ing)? (an |my |her |his |the )?injur\w*|(train|skate|play|push)(ing)? through (the )?(pain|injury)|concussion\w*|numb\w*)\b/i,
 ];
@@ -224,7 +224,9 @@ export async function askGradus(
       `${PROMPT_INJECTION_GUARD}\n\nPASSAGES:\n${block}\n\nQUESTION:\n${data.question}`,
     );
     const cited = citedIndices(text).filter((n) => n >= 1 && n <= citations.length);
-    if (!text.startsWith(NOT_COVERED) && cited.length) {
+    // NOT_COVERED anywhere (not just first) means the model gave up on the
+    // passages; an answer that cites none of them is not grounded either.
+    if (!text.includes(NOT_COVERED) && cited.length) {
       const byIndex = new Map(citations.map((c: Citation) => [c.index, c]));
       return {
         answer: text,
