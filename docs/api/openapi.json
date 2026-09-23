@@ -7844,6 +7844,14 @@
                   "replaceId": {
                     "type": "string",
                     "format": "uuid"
+                  },
+                  "reason": {
+                    "type": "string",
+                    "enum": [
+                      "landed_it",
+                      "parking_it",
+                      "changed_direction"
+                    ]
                   }
                 },
                 "required": [
@@ -8236,6 +8244,19 @@
             "required": true,
             "name": "moveId",
             "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "landed_it",
+                "parking_it",
+                "changed_direction"
+              ]
+            },
+            "required": false,
+            "name": "reason",
+            "in": "query"
           }
         ],
         "responses": {

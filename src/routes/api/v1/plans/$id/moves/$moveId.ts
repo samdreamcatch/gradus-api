@@ -5,6 +5,7 @@ import { requireContext } from "@/lib/api/auth";
 import { okSchema } from "@/lib/api/onboarding-schema";
 import { requirePlansCoach } from "@/lib/plan-detail.server";
 import { planMovePatch, removePlanMove, updatePlanMove } from "@/lib/plans.server";
+import { skillReasonSchema } from "@/lib/skill-events.server";
 
 const ids = (params: Record<string, string>) => ({
   planId: z.string().uuid().parse(params.id),
@@ -35,11 +36,14 @@ export const Route = createFileRoute("/api/v1/plans/$id/moves/$moveId")({
         operationId: "removePlanMove",
         auth: "user",
         summary: "Remove a move from a plan",
+        // The coach's optional "why" answer (PRD §7.3): records a skill event
+        // for the plan's athlete. Omitted when the coach skips.
+        query: z.object({ reason: skillReasonSchema.optional() }),
         output: okSchema,
-        handler: async ({ ctx, params }) => {
+        handler: async ({ ctx, params, query }) => {
           const coach = await requirePlansCoach(requireContext(ctx));
           const { planId, moveId } = ids(params);
-          return removePlanMove(coach, moveId, planId);
+          return removePlanMove(coach, moveId, planId, new Date(), query.reason);
         },
       }),
     },

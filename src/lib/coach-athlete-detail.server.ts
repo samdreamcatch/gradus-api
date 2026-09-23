@@ -15,6 +15,7 @@ import { createLovableAiGatewayProvider } from "./ai-gateway.server";
 import { ApiError } from "./api/errors";
 import { dbError } from "./db-error";
 import { goalsAuthorship } from "./goals-history.server";
+import { loadCoachAthleteProfile, type LoadCoachAthleteProfile } from "./athlete-profile.server";
 import { getSportLevel, getSport, getSuggestedHours } from "./coach-sports";
 import { PROMPT_INJECTION_GUARD, sanitizeUserContent, wrapUntrusted } from "./ai-prompt-safety";
 import { stateLabel } from "./session-states";
@@ -732,11 +733,43 @@ export function summarySessionLine(
   return `- ${date} (${who}, ${mins}m, "${state}"${planTag})${noteBlock}`;
 }
 
+/** Seams for tests: the model call and the athlete profile (L3). */
+export interface SummaryDeps {
+  generate?: (args: {
+    system: string;
+    prompt: string;
+    apiKey: string;
+  }) => Promise<{ summary: string; verdict: "increase" | "hold" | "reduce"; rationale: string }>;
+  loadProfile?: LoadCoachAthleteProfile;
+}
+
+const summarySchema = z.object({
+  summary: z.string().min(1).max(600),
+  verdict: z.enum(["increase", "hold", "reduce"]),
+  rationale: z.string().min(1).max(280),
+});
+
+const defaultSummaryGenerate: NonNullable<SummaryDeps["generate"]> = async ({
+  system,
+  prompt,
+  apiKey,
+}) => {
+  const gateway = createLovableAiGatewayProvider(apiKey);
+  const { object } = await generateObject({
+    model: gateway("google/gemini-2.5-flash"),
+    system,
+    schema: summarySchema,
+    prompt,
+  });
+  return object;
+};
+
 export async function getCoachAthleteAiSummary(
   ctx: DetailContext,
   athleteId: string,
   env: NodeJS.ProcessEnv = process.env,
   now: Date = new Date(),
+  deps: SummaryDeps = {},
 ): Promise<CoachAthleteAiSummaryDTO> {
   const { admin, userId } = ctx;
   const coachId = await getCoachId(admin, userId);
@@ -746,6 +779,13 @@ export async function getCoachAthleteAiSummary(
   const since = new Date(now.getTime() - WINDOW_DAYS * 86400_000).toISOString();
 
   const coachSports = await getCoachAthleteSports(admin, coachId, athleteId);
+  // The athlete profile (PRD §6.7 item 6) loads alongside the reads below.
+  const profilePromise = (deps.loadProfile ?? loadCoachAthleteProfile)(
+    admin,
+    coachId,
+    athleteId,
+    now,
+  );
 
   const [athleteRes, goalsRes, plansRes, sessionsRes, roomRes] = await Promise.all([
     admin.from("athletes").select("first_name").eq("id", athleteId).single(),
@@ -900,6 +940,13 @@ export async function getCoachAthleteAiSummary(
 
   const safeName = sanitizeUserContent(firstName, 80);
 
+  // The athlete profile (PRD §6.7 item 6): the longer view behind the last
+  // ${WINDOW_DAYS} days, for this coach's sports. Empty for a new athlete.
+  const profile = await profilePromise;
+  const profileBlock = profile.text
+    ? `\n${profile.text}\nUse the profile only to put the last ${WINDOW_DAYS} days in context (for example, a dip that matches the season, or a pace faster than usual); the summary and verdict still rest on the data above.\n`
+    : "";
+
   const prompt = `${PROMPT_INJECTION_GUARD}
 
 You are summarizing the last ${WINDOW_DAYS} days for a coach about their athlete ${safeName}.
@@ -918,7 +965,7 @@ ${recapLines || "- (none)"}
 
 MESSAGES FROM ATHLETE OR PARENT (most recent first):
 ${messageLines || "- (none)"}
-
+${profileBlock}
 Write a 2–3 sentence summary of what ${safeName} has been doing based strictly on the data above. Reference only plans, flow states, session notes, competition recaps, and messages that appear explicitly in the context. Do not use hedging language ("appears to," "seems like") as cover for inference — if you cannot point to a specific data entry, do not include it. If data is sparse, write fewer sentences and say so plainly rather than filling in gaps.
 
 
@@ -932,20 +979,12 @@ Provide a single-sentence rationale that cites a specific data point (a session 
   const apiKey = env.LOVABLE_API_KEY;
   if (!apiKey)
     throw new ApiError({ code: "internal", status: 500, message: "Missing LOVABLE_API_KEY" });
-  const gateway = createLovableAiGatewayProvider(apiKey);
-
-  const schema = z.object({
-    summary: z.string().min(1).max(600),
-    verdict: z.enum(["increase", "hold", "reduce"]),
-    rationale: z.string().min(1).max(280),
-  });
 
   try {
-    const { object } = await generateObject({
-      model: gateway("google/gemini-2.5-flash"),
+    const object = await (deps.generate ?? defaultSummaryGenerate)({
       system: ATHLETE_SUMMARY_SYSTEM,
-      schema,
       prompt,
+      apiKey,
     });
     return {
       summary: object.summary,
