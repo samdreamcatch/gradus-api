@@ -3,7 +3,7 @@ import { defineApiRoute } from "@/lib/api/define-route";
 import { requireContext } from "@/lib/api/auth";
 import { askGradusOutputSchema } from "@/lib/api/resources-schema";
 import { askGradus, askGradusInput } from "@/lib/ask-gradus.server";
-import { resolveAskGradusAudience } from "@/lib/ask-gradus-audience.server";
+import { askerCoachIds, resolveAskGradusAudience } from "@/lib/ask-gradus-audience.server";
 
 /**
  * Thin wrapper over the shared `askGradus` (PRD §7.9, Appendix A "Resources
@@ -33,7 +33,9 @@ export const Route = createFileRoute("/api/v1/ask")({
           { userId, supabase, admin },
           input.audience,
         );
-        return askGradus({ ...input, audience });
+        // Grounded answers (L5): the corpus plus the asker's coaches' own uploads.
+        const coachIds = await askerCoachIds({ userId, supabase, admin });
+        return askGradus({ ...input, audience }, undefined, { coachIds });
       },
     }),
   },

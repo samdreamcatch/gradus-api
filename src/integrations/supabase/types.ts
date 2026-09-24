@@ -580,6 +580,111 @@ export type Database = {
           },
         ]
       }
+      athlete_skill_events: {
+        Row: {
+          athlete_id: string
+          coach_id: string | null
+          competition_id: string | null
+          confidence: number
+          created_at: string
+          created_by_user_id: string | null
+          element_code: string | null
+          element_ref: string | null
+          id: string
+          kind: string
+          move_category: string
+          move_id: string | null
+          move_name: string
+          occurred_at: string
+          origin: string | null
+          plan_id: string | null
+          plan_move_id: string | null
+          source: string
+          sport: string
+          started_at: string | null
+        }
+        Insert: {
+          athlete_id: string
+          coach_id?: string | null
+          competition_id?: string | null
+          confidence?: number
+          created_at?: string
+          created_by_user_id?: string | null
+          element_code?: string | null
+          element_ref?: string | null
+          id?: string
+          kind: string
+          move_category?: string
+          move_id?: string | null
+          move_name?: string
+          occurred_at?: string
+          origin?: string | null
+          plan_id?: string | null
+          plan_move_id?: string | null
+          source: string
+          sport?: string
+          started_at?: string | null
+        }
+        Update: {
+          athlete_id?: string
+          coach_id?: string | null
+          competition_id?: string | null
+          confidence?: number
+          created_at?: string
+          created_by_user_id?: string | null
+          element_code?: string | null
+          element_ref?: string | null
+          id?: string
+          kind?: string
+          move_category?: string
+          move_id?: string | null
+          move_name?: string
+          occurred_at?: string
+          origin?: string | null
+          plan_id?: string | null
+          plan_move_id?: string | null
+          source?: string
+          sport?: string
+          started_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "athlete_skill_events_athlete_id_fkey"
+            columns: ["athlete_id"]
+            isOneToOne: false
+            referencedRelation: "athletes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "athlete_skill_events_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "coach_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "athlete_skill_events_competition_id_fkey"
+            columns: ["competition_id"]
+            isOneToOne: false
+            referencedRelation: "competitions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "athlete_skill_events_move_id_fkey"
+            columns: ["move_id"]
+            isOneToOne: false
+            referencedRelation: "moves"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "athlete_skill_events_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       athletes: {
         Row: {
           added_by_coach_id: string | null
@@ -3444,6 +3549,51 @@ export type Database = {
           name?: string
           sport?: string
           why?: string
+        }
+        Relationships: []
+      }
+      skill_inference_runs: {
+        Row: {
+          candidates: number
+          enabled: boolean
+          failed_plans: number
+          false_negative: number
+          false_positive: number
+          id: string
+          labeled: number
+          precision: number | null
+          ran_at: string
+          true_positive: number
+          written_events: number
+          written_plans: number
+        }
+        Insert: {
+          candidates?: number
+          enabled?: boolean
+          failed_plans?: number
+          false_negative?: number
+          false_positive?: number
+          id?: string
+          labeled?: number
+          precision?: number | null
+          ran_at?: string
+          true_positive?: number
+          written_events?: number
+          written_plans?: number
+        }
+        Update: {
+          candidates?: number
+          enabled?: boolean
+          failed_plans?: number
+          false_negative?: number
+          false_positive?: number
+          id?: string
+          labeled?: number
+          precision?: number | null
+          ran_at?: string
+          true_positive?: number
+          written_events?: number
+          written_plans?: number
         }
         Relationships: []
       }
