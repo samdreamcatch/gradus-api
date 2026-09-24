@@ -3114,24 +3114,33 @@ export type Database = {
         Row: {
           answer: string
           created_at: string
+          grounded: boolean | null
           id: string
           question: string
+          safety: boolean
+          sources: Json
           sport: string
           user_id: string
         }
         Insert: {
           answer: string
           created_at?: string
+          grounded?: boolean | null
           id?: string
           question: string
+          safety?: boolean
+          sources?: Json
           sport: string
           user_id: string
         }
         Update: {
           answer?: string
           created_at?: string
+          grounded?: boolean | null
           id?: string
           question?: string
+          safety?: boolean
+          sources?: Json
           sport?: string
           user_id?: string
         }
