@@ -78,3 +78,45 @@ export async function resolveAskGradusAudience(
   }
   return "athlete";
 }
+
+/**
+ * The coaches whose own uploaded resources may ground this asker's answers
+ * (PRD §6.7 "Grounded Ask Gradus" item 1e: a coach's uploads are
+ * retrievable only for that coach's athletes and their guardians):
+ * - a coach: themselves;
+ * - a parent: every coach of every athlete they parent or co-guard;
+ * - an athlete: their own coaches.
+ * Never throws: an empty list only means no coach uploads are searched.
+ */
+export async function askerCoachIds(ctx: AskGradusAudienceContext): Promise<string[]> {
+  try {
+    const [coach, parent, athlete] = await Promise.all([
+      ctx.admin.from("coach_profiles").select("id").eq("user_id", ctx.userId).maybeSingle(),
+      ctx.admin.from("parent_profiles").select("id").eq("user_id", ctx.userId).maybeSingle(),
+      ctx.admin.from("athletes").select("id").eq("user_id", ctx.userId).maybeSingle(),
+    ]);
+    const athleteIds = new Set<string>();
+    if (athlete.data?.id) athleteIds.add(athlete.data.id);
+    if (parent.data?.id) {
+      const [own, guarded] = await Promise.all([
+        ctx.admin.from("athletes").select("id").eq("parent_id", parent.data.id),
+        ctx.admin.from("athlete_guardians").select("athlete_id").eq("parent_id", parent.data.id),
+      ]);
+      for (const a of own.data ?? []) athleteIds.add(a.id);
+      for (const g of guarded.data ?? []) athleteIds.add(g.athlete_id);
+    }
+    const ids = new Set<string>();
+    if (coach.data?.id) ids.add(coach.data.id);
+    if (athleteIds.size) {
+      const links = await ctx.admin
+        .from("coach_athletes")
+        .select("coach_id")
+        .in("athlete_id", [...athleteIds]);
+      for (const l of links.data ?? []) ids.add(l.coach_id);
+    }
+    return [...ids];
+  } catch (e) {
+    console.warn("[ask-gradus] coach scope unavailable", e);
+    return [];
+  }
+}
