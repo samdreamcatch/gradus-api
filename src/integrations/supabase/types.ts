@@ -68,6 +68,114 @@ export type Database = {
           },
         ]
       }
+      analytics_events: {
+        Row: {
+          age_band: string | null
+          app_version: string
+          area: string
+          capped: boolean
+          duration_ms: number | null
+          event: string
+          has_club: boolean
+          id: string
+          occurred_at: string
+          org_ids: string[]
+          os_version: string
+          platform: string
+          props: Json
+          received_at: string
+          regions: string[]
+          resource_id: string | null
+          role: string
+          screen: string
+          session_id: string
+          subject: string
+          user_id: string | null
+        }
+        Insert: {
+          age_band?: string | null
+          app_version?: string
+          area: string
+          capped?: boolean
+          duration_ms?: number | null
+          event: string
+          has_club?: boolean
+          id: string
+          occurred_at: string
+          org_ids?: string[]
+          os_version?: string
+          platform?: string
+          props?: Json
+          received_at?: string
+          regions?: string[]
+          resource_id?: string | null
+          role: string
+          screen?: string
+          session_id: string
+          subject: string
+          user_id?: string | null
+        }
+        Update: {
+          age_band?: string | null
+          app_version?: string
+          area?: string
+          capped?: boolean
+          duration_ms?: number | null
+          event?: string
+          has_club?: boolean
+          id?: string
+          occurred_at?: string
+          org_ids?: string[]
+          os_version?: string
+          platform?: string
+          props?: Json
+          received_at?: string
+          regions?: string[]
+          resource_id?: string | null
+          role?: string
+          screen?: string
+          session_id?: string
+          subject?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      analytics_weekly: {
+        Row: {
+          age_band: string
+          area: string
+          event: string
+          events: number
+          resource_id: string | null
+          role: string
+          subject: string
+          total_duration_ms: number
+          week_start: string
+        }
+        Insert: {
+          age_band?: string
+          area: string
+          event: string
+          events: number
+          resource_id?: string | null
+          role: string
+          subject: string
+          total_duration_ms?: number
+          week_start: string
+        }
+        Update: {
+          age_band?: string
+          area?: string
+          event?: string
+          events?: number
+          resource_id?: string | null
+          role?: string
+          subject?: string
+          total_duration_ms?: number
+          week_start?: string
+        }
+        Relationships: []
+      }
       api_idempotency_keys: {
         Row: {
           created_at: string
@@ -3114,24 +3222,33 @@ export type Database = {
         Row: {
           answer: string
           created_at: string
+          grounded: boolean | null
           id: string
           question: string
+          safety: boolean
+          sources: Json
           sport: string
           user_id: string
         }
         Insert: {
           answer: string
           created_at?: string
+          grounded?: boolean | null
           id?: string
           question: string
+          safety?: boolean
+          sources?: Json
           sport: string
           user_id: string
         }
         Update: {
           answer?: string
           created_at?: string
+          grounded?: boolean | null
           id?: string
           question?: string
+          safety?: boolean
+          sources?: Json
           sport?: string
           user_id?: string
         }
@@ -3819,6 +3936,79 @@ export type Database = {
     Functions: {
       activate_plan: { Args: { _plan_id: string }; Returns: undefined }
       admin_run_readonly_sql: { Args: { _sql: string }; Returns: Json }
+      analytics_apply_retention: { Args: never; Returns: number }
+      analytics_area_report: {
+        Args: { p_since: string }
+        Returns: {
+          adult_users: number
+          area: string
+          role: string
+          screen_events: number
+          total_ms: number
+          week_start: string
+        }[]
+      }
+      analytics_ask_report: {
+        Args: { p_since: string }
+        Returns: {
+          grounded: number
+          questions: number
+          safety: number
+          saved: number
+          source_taps: number
+          week_start: string
+        }[]
+      }
+      analytics_is_minor: { Args: { p_birthdate: string }; Returns: boolean }
+      analytics_minor_group_report: {
+        Args: { p_since: string }
+        Returns: {
+          events: number
+          key: string
+          kind: string
+          resource_opens: number
+          safe_sport_opens: number
+          screen_ms: number
+        }[]
+      }
+      analytics_minor_no_club_count: { Args: never; Returns: number }
+      analytics_minor_roster: {
+        Args: never
+        Returns: {
+          minors: number
+          org_id: string
+          org_name: string
+          region: string
+        }[]
+      }
+      analytics_org_minor_counts: {
+        Args: { p_org_ids: string[] }
+        Returns: {
+          minors: number
+          org_id: string
+        }[]
+      }
+      analytics_region_minor_counts: {
+        Args: { p_regions: string[] }
+        Returns: {
+          minors: number
+          region: string
+        }[]
+      }
+      analytics_resource_report: {
+        Args: { p_since: string }
+        Returns: {
+          adult_users: number
+          depth_median: number
+          minor_opens: number
+          offline_saves: number
+          opens: number
+          read_ms_median: number
+          read_ms_total: number
+          resource_id: string
+          shares: number
+        }[]
+      }
       athlete_can_self_connect: {
         Args: { _athlete_id: string }
         Returns: boolean
