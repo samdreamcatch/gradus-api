@@ -160,6 +160,7 @@ import "../src/routes/api/v1/coach/resources/index";
 import "../src/routes/api/v1/coach/resources/upload-url";
 import "../src/routes/api/v1/coach/resources/$id";
 import "../src/routes/api/v1/ask";
+import "../src/routes/api/v1/analytics/events";
 import "../src/routes/api/v1/saved-answers/index";
 import "../src/routes/api/v1/saved-answers/$id";
 import "../src/routes/api/v1/coach/athletes/$id/rate";

@@ -216,6 +216,15 @@ export function createApiRouteHandler<TInput, TOutput, TQuery = undefined>(
         rawBody = fields;
       } else if (options.input) {
         const text = await request.text();
+        // Opt-in cap for JSON bodies (a route that sets `maxBodyBytes`
+        // without `body: "multipart"`); others are unchanged.
+        if (options.maxBodyBytes && new TextEncoder().encode(text).length > options.maxBodyBytes) {
+          throw new ApiError({
+            code: "payload_too_large",
+            status: 413,
+            message: "That request is too large.",
+          });
+        }
         if (text) {
           try {
             rawBody = JSON.parse(text);

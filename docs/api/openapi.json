@@ -17179,6 +17179,159 @@
         }
       }
     },
+    "/api/v1/analytics/events": {
+      "post": {
+        "operationId": "recordAnalyticsEvents",
+        "summary": "Record a batch of usage analytics events",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "platform": {
+                    "type": "string",
+                    "enum": [
+                      "ios"
+                    ]
+                  },
+                  "appVersion": {
+                    "type": "string",
+                    "pattern": "^[0-9A-Za-z .()_-]{0,40}$"
+                  },
+                  "osVersion": {
+                    "type": "string",
+                    "pattern": "^[0-9A-Za-z .()_-]{0,40}$"
+                  },
+                  "events": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "sessionId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "occurredAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "event": {
+                          "type": "string",
+                          "enum": [
+                            "screen_time",
+                            "resource_open",
+                            "resource_read",
+                            "resource_share",
+                            "resource_offline_save",
+                            "library_search",
+                            "safe_sport_open",
+                            "ask_question",
+                            "ask_answer_saved",
+                            "ask_source_tap"
+                          ]
+                        },
+                        "area": {
+                          "type": "string",
+                          "enum": [
+                            "roster",
+                            "schedule",
+                            "plans",
+                            "sessions",
+                            "messages",
+                            "board",
+                            "resources",
+                            "ask",
+                            "settings",
+                            "onboarding"
+                          ]
+                        },
+                        "screen": {
+                          "type": "string",
+                          "maxLength": 80,
+                          "pattern": "^[A-Za-z0-9._-]*$"
+                        },
+                        "resourceId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "durationMs": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 1800000
+                        },
+                        "capped": {
+                          "type": "boolean"
+                        },
+                        "props": {
+                          "type": "object",
+                          "additionalProperties": {}
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "sessionId",
+                        "occurredAt",
+                        "event",
+                        "area",
+                        "screen"
+                      ]
+                    },
+                    "minItems": 1,
+                    "maxItems": 100
+                  }
+                },
+                "required": [
+                  "platform",
+                  "appVersion",
+                  "osVersion",
+                  "events"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "accepted": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "accepted"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/saved-answers": {
       "get": {
         "operationId": "listSavedAnswers",

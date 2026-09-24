@@ -1,0 +1,129 @@
+{
+  "description": "Usage analytics allow-list (PRD §6.12): the areas a screen belongs to, the event names, and the props each event may carry. Anything else is dropped server-side.",
+  "source": "src/lib/analytics.server.ts",
+  "cases": [
+    {
+      "name": "areas",
+      "input": {
+        "list": "areas"
+      },
+      "expected": [
+        "roster",
+        "schedule",
+        "plans",
+        "sessions",
+        "messages",
+        "board",
+        "resources",
+        "ask",
+        "settings",
+        "onboarding"
+      ]
+    },
+    {
+      "name": "screen_time",
+      "input": {
+        "event": "screen_time"
+      },
+      "expected": {
+        "props": []
+      }
+    },
+    {
+      "name": "resource_open",
+      "input": {
+        "event": "resource_open"
+      },
+      "expected": {
+        "props": [
+          "kind",
+          "origin",
+          "sport"
+        ]
+      }
+    },
+    {
+      "name": "resource_read",
+      "input": {
+        "event": "resource_read"
+      },
+      "expected": {
+        "props": [
+          "depth",
+          "pages"
+        ]
+      }
+    },
+    {
+      "name": "resource_share",
+      "input": {
+        "event": "resource_share"
+      },
+      "expected": {
+        "props": []
+      }
+    },
+    {
+      "name": "resource_offline_save",
+      "input": {
+        "event": "resource_offline_save"
+      },
+      "expected": {
+        "props": []
+      }
+    },
+    {
+      "name": "library_search",
+      "input": {
+        "event": "library_search"
+      },
+      "expected": {
+        "props": [
+          "resultCount"
+        ]
+      }
+    },
+    {
+      "name": "safe_sport_open",
+      "input": {
+        "event": "safe_sport_open"
+      },
+      "expected": {
+        "props": []
+      }
+    },
+    {
+      "name": "ask_question",
+      "input": {
+        "event": "ask_question"
+      },
+      "expected": {
+        "props": [
+          "grounded",
+          "safety",
+          "sourceCount"
+        ]
+      }
+    },
+    {
+      "name": "ask_answer_saved",
+      "input": {
+        "event": "ask_answer_saved"
+      },
+      "expected": {
+        "props": []
+      }
+    },
+    {
+      "name": "ask_source_tap",
+      "input": {
+        "event": "ask_source_tap"
+      },
+      "expected": {
+        "props": [
+          "index"
+        ]
+      }
+    }
+  ]
+}

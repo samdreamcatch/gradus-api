@@ -1,5 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
+  Timer,
   Users,
   Network,
   Ticket,
@@ -44,6 +45,7 @@ const GROUPS: Group[] = [
     label: "Reporting",
     items: [
       { to: "/admin/reporting", label: "Overview", icon: BarChart3 },
+      { to: "/admin/usage", label: "App usage", icon: Timer },
       { to: "/admin/ask", label: "Ask the data", icon: Sparkles },
       { to: "/admin/active", label: "Active users", icon: UserCheck },
       { to: "/admin/sessions", label: "Sessions", icon: ClipboardList },

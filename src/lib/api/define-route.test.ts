@@ -650,3 +650,30 @@ describe("multipart body cap", () => {
     expect((await response.json()).error.code).toBe("payload_too_large");
   });
 });
+
+describe("JSON body size cap (opt-in)", () => {
+  const route = (maxBodyBytes?: number) =>
+    createApiRouteHandler(
+      {
+        method: "POST",
+        path: "/api/v1/test",
+        auth: "public",
+        maxBodyBytes,
+        input: z.object({ note: z.string() }),
+        output: z.object({ ok: z.boolean() }),
+        handler: async () => ({ ok: true }),
+      },
+      { admin: createFakeAdmin(), authenticate: async () => null },
+    );
+
+  it("answers 413 when a route with maxBodyBytes gets a bigger JSON body", async () => {
+    process.env.API_V1_ENABLED = "true";
+    const body = JSON.stringify({ note: "x".repeat(2000) });
+    const capped = await route(1024).POST!({ request: makeRequest({ method: "POST", body }) });
+    expect(capped.status).toBe(413);
+    expect((await capped.json()).error.code).toBe("payload_too_large");
+    // Routes without the option are unchanged.
+    const open = await route().POST!({ request: makeRequest({ method: "POST", body }) });
+    expect(open.status).toBe(200);
+  });
+});
