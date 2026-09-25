@@ -148,6 +148,7 @@ import { Route as ApiV1CompetitionsFinishedRouteImport } from './routes/api/v1/c
 import { Route as ApiV1CoachProfileRouteImport } from './routes/api/v1/coach/profile'
 import { Route as ApiV1CoachOrgRouteImport } from './routes/api/v1/coach/org'
 import { Route as ApiV1CoachLevelsRouteImport } from './routes/api/v1/coach/levels'
+import { Route as ApiV1CoachChecklistRouteImport } from './routes/api/v1/coach/checklist'
 import { Route as ApiV1CoachBillingRouteImport } from './routes/api/v1/coach/billing'
 import { Route as ApiV1BoardsMySkatersRouteImport } from './routes/api/v1/boards/my-skaters'
 import { Route as ApiV1AuthRecoverRouteImport } from './routes/api/v1/auth/recover'
@@ -1064,6 +1065,11 @@ const ApiV1CoachOrgRoute = ApiV1CoachOrgRouteImport.update({
 const ApiV1CoachLevelsRoute = ApiV1CoachLevelsRouteImport.update({
   id: '/api/v1/coach/levels',
   path: '/api/v1/coach/levels',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1CoachChecklistRoute = ApiV1CoachChecklistRouteImport.update({
+  id: '/api/v1/coach/checklist',
+  path: '/api/v1/coach/checklist',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiV1CoachBillingRoute = ApiV1CoachBillingRouteImport.update({
@@ -2164,6 +2170,7 @@ export interface FileRoutesByFullPath {
   '/api/v1/auth/recover': typeof ApiV1AuthRecoverRoute
   '/api/v1/boards/my-skaters': typeof ApiV1BoardsMySkatersRoute
   '/api/v1/coach/billing': typeof ApiV1CoachBillingRoute
+  '/api/v1/coach/checklist': typeof ApiV1CoachChecklistRoute
   '/api/v1/coach/levels': typeof ApiV1CoachLevelsRoute
   '/api/v1/coach/org': typeof ApiV1CoachOrgRoute
   '/api/v1/coach/profile': typeof ApiV1CoachProfileRoute
@@ -2470,6 +2477,7 @@ export interface FileRoutesByTo {
   '/api/v1/auth/recover': typeof ApiV1AuthRecoverRoute
   '/api/v1/boards/my-skaters': typeof ApiV1BoardsMySkatersRoute
   '/api/v1/coach/billing': typeof ApiV1CoachBillingRoute
+  '/api/v1/coach/checklist': typeof ApiV1CoachChecklistRoute
   '/api/v1/coach/levels': typeof ApiV1CoachLevelsRoute
   '/api/v1/coach/org': typeof ApiV1CoachOrgRoute
   '/api/v1/coach/profile': typeof ApiV1CoachProfileRoute
@@ -2784,6 +2792,7 @@ export interface FileRoutesById {
   '/api/v1/auth/recover': typeof ApiV1AuthRecoverRoute
   '/api/v1/boards/my-skaters': typeof ApiV1BoardsMySkatersRoute
   '/api/v1/coach/billing': typeof ApiV1CoachBillingRoute
+  '/api/v1/coach/checklist': typeof ApiV1CoachChecklistRoute
   '/api/v1/coach/levels': typeof ApiV1CoachLevelsRoute
   '/api/v1/coach/org': typeof ApiV1CoachOrgRoute
   '/api/v1/coach/profile': typeof ApiV1CoachProfileRoute
@@ -3098,6 +3107,7 @@ export interface FileRouteTypes {
     | '/api/v1/auth/recover'
     | '/api/v1/boards/my-skaters'
     | '/api/v1/coach/billing'
+    | '/api/v1/coach/checklist'
     | '/api/v1/coach/levels'
     | '/api/v1/coach/org'
     | '/api/v1/coach/profile'
@@ -3404,6 +3414,7 @@ export interface FileRouteTypes {
     | '/api/v1/auth/recover'
     | '/api/v1/boards/my-skaters'
     | '/api/v1/coach/billing'
+    | '/api/v1/coach/checklist'
     | '/api/v1/coach/levels'
     | '/api/v1/coach/org'
     | '/api/v1/coach/profile'
@@ -3717,6 +3728,7 @@ export interface FileRouteTypes {
     | '/api/v1/auth/recover'
     | '/api/v1/boards/my-skaters'
     | '/api/v1/coach/billing'
+    | '/api/v1/coach/checklist'
     | '/api/v1/coach/levels'
     | '/api/v1/coach/org'
     | '/api/v1/coach/profile'
@@ -3963,6 +3975,7 @@ export interface RootRouteChildren {
   ApiV1AuthRecoverRoute: typeof ApiV1AuthRecoverRoute
   ApiV1BoardsMySkatersRoute: typeof ApiV1BoardsMySkatersRoute
   ApiV1CoachBillingRoute: typeof ApiV1CoachBillingRoute
+  ApiV1CoachChecklistRoute: typeof ApiV1CoachChecklistRoute
   ApiV1CoachLevelsRoute: typeof ApiV1CoachLevelsRoute
   ApiV1CoachOrgRoute: typeof ApiV1CoachOrgRoute
   ApiV1CoachProfileRoute: typeof ApiV1CoachProfileRoute
@@ -5121,6 +5134,13 @@ declare module '@tanstack/react-router' {
       path: '/api/v1/coach/levels'
       fullPath: '/api/v1/coach/levels'
       preLoaderRoute: typeof ApiV1CoachLevelsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/coach/checklist': {
+      id: '/api/v1/coach/checklist'
+      path: '/api/v1/coach/checklist'
+      fullPath: '/api/v1/coach/checklist'
+      preLoaderRoute: typeof ApiV1CoachChecklistRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/v1/coach/billing': {
@@ -6648,6 +6668,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiV1AuthRecoverRoute: ApiV1AuthRecoverRoute,
   ApiV1BoardsMySkatersRoute: ApiV1BoardsMySkatersRoute,
   ApiV1CoachBillingRoute: ApiV1CoachBillingRoute,
+  ApiV1CoachChecklistRoute: ApiV1CoachChecklistRoute,
   ApiV1CoachLevelsRoute: ApiV1CoachLevelsRoute,
   ApiV1CoachOrgRoute: ApiV1CoachOrgRoute,
   ApiV1CoachProfileRoute: ApiV1CoachProfileRoute,

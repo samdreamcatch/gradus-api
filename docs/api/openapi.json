@@ -1028,6 +1028,70 @@
         }
       }
     },
+    "/api/v1/coach/checklist": {
+      "get": {
+        "operationId": "getCoachChecklist",
+        "summary": "Getting-started progress for the coach helpers",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "coachId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "scheduleDone": {
+                      "type": "boolean",
+                      "description": "Any lesson slot attached to this coach, whoever entered it."
+                    },
+                    "scheduleFromFamilies": {
+                      "type": "boolean",
+                      "description": "The schedule exists only because a connected family entered it."
+                    },
+                    "inviteDone": {
+                      "type": "boolean",
+                      "description": "At least one rostered athlete has been invited or already has an account."
+                    },
+                    "planDone": {
+                      "type": "boolean",
+                      "description": "The coach has created at least one practice plan."
+                    }
+                  },
+                  "required": [
+                    "coachId",
+                    "scheduleDone",
+                    "scheduleFromFamilies",
+                    "inviteDone",
+                    "planDone"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/invites/resolve": {
       "post": {
         "operationId": "postInvitesResolve",

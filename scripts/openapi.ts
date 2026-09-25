@@ -22,6 +22,7 @@ import "../src/routes/api/v1/coach/onboarding/complete";
 import "../src/routes/api/v1/coach/invite-code/index";
 import "../src/routes/api/v1/coach/invite-code/rotate";
 import "../src/routes/api/v1/coach/org";
+import "../src/routes/api/v1/coach/checklist";
 import "../src/routes/api/v1/invites/resolve";
 import "../src/routes/api/v1/invites/parent/preview";
 import "../src/routes/api/v1/invites/parent/claim";
