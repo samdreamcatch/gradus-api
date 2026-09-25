@@ -130,27 +130,27 @@ Judgment calls, conservative on purpose (over-declaring is safe, under-declaring
 
 Apple's questionnaire (updated in 2025) computes the rating from the answers. Proposed answers:
 
-| Question                                                                               | Answer                                                                                                                                       |
-| -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| Violence, sexual content, profanity, horror, gambling, alcohol/tobacco/drugs, contests | None                                                                                                                                         |
-| Mature or suggestive themes                                                            | **Mariah decides:** the Safe Sport panel and The Assist's documents discuss abuse prevention. Proposed: _Infrequent/Mild_                    |
-| Medical or treatment information                                                       | **Mariah decides:** Ask Gradus can answer injury and pain questions (minors are routed to the Safe Sport panel). Proposed: _Infrequent/Mild_ |
-| Unrestricted web access                                                                | No (links open specific pages in Safari; there is no in-app browser)                                                                         |
-| User-generated content                                                                 | Yes: messages and uploaded resources, with Report and Block                                                                                  |
-| Messaging and chat                                                                     | Yes: restricted to connected coaches, parents, and athletes                                                                                  |
-| Parental controls                                                                      | Yes: parents create and oversee under-18 athlete accounts                                                                                    |
-| Age assurance                                                                          | No                                                                                                                                           |
-| Advertising                                                                            | No                                                                                                                                           |
-| Made for Kids                                                                          | **No** (the Kids Category forbids external links, and billing links out)                                                                     |
+| Question                                                                               | Answer                                                                                                                                                                                                                     |
+| -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Violence, sexual content, profanity, horror, gambling, alcohol/tobacco/drugs, contests | None                                                                                                                                                                                                                       |
+| Mature or suggestive themes                                                            | **None** (Mariah, 2026-09-24). The Assist's documents and the safety PDFs are out of the iOS 1.0 library (PRD decision #23); the Safe Sport panel is hotlines and reporting links only                                     |
+| Medical or treatment information                                                       | **None** (Mariah, 2026-09-24). Ask Gradus is hidden in iOS 1.0 (PRD decision #22) and no library PDF gives injury or treatment guidance                                                                                    |
+| Unrestricted web access                                                                | No (links open specific pages in Safari; there is no in-app browser)                                                                                                                                                       |
+| User-generated content                                                                 | Yes: messages and uploaded resources, with Report and Block                                                                                                                                                                |
+| Messaging and chat                                                                     | Yes: restricted to connected coaches, parents, and athletes                                                                                                                                                                |
+| Parental controls                                                                      | Yes: parents create and oversee under-18 athlete accounts                                                                                                                                                                  |
+| Age assurance                                                                          | **No** (Mariah, 2026-09-24): the app records a parent-entered birthdate and does not verify anyone's age. A third-party age-assurance vendor is under evaluation; revisit this answer when one is integrated (PRD §12 #23) |
+| Advertising                                                                            | No                                                                                                                                                                                                                         |
+| Made for Kids                                                                          | **No** (the Kids Category forbids external links, and billing links out)                                                                                                                                                   |
 
-Expect the result above 4+ because of messaging and user content. That matters for youth athletes whose parents use Screen Time age limits. **Decision for Mariah:** accept Apple's computed rating, or override it upward. You can't set it lower than computed.
+Expect the result above 4+ because of messaging and user content. That matters for youth athletes whose parents use Screen Time age limits. **Decided 2026-09-24:** accept Apple's computed rating; no upward override.
 
 ---
 
 ## 6. Other App Store Connect questions
 
 - **Export compliance:** answered by the build. `ITSAppUsesNonExemptEncryption = false` (HTTPS/TLS only), so App Store Connect won't ask.
-- **Content rights:** "Does your app contain, show, or access third-party content?" **Yes**: rulebooks, SafeSport materials, and The Assist's documents in Resources and Ask Gradus. You then confirm you have the rights. This ties to PRD §12 #16, which is still open. Until rights are confirmed, those sources stay cite-only (title + link), as L4 built them.
+- **Content rights:** "Does your app contain, show, or access third-party content?" For 1.0 the answer is **No** (Mariah, 2026-09-24): Ask Gradus is hidden for every role (PRD decision #22) and the library lists only rows marked Gradus-authored or licensed (decision #23; Admin → Content → Library rights, every existing row starts pending). Before submission, confirm in that admin page that nothing marked _licensed_ lacks a written permission or public licence on file. When Ask Gradus returns, the answer becomes Yes and PRD §12 #16 must be closed first.
 - **Sign in with Apple:** Guideline 4.8 applies only when a third-party login is offered. Google is hidden until its client ID exists, but Sign in with Apple ships regardless.
 - **Advertising identifier (IDFA):** No.
 
@@ -166,6 +166,8 @@ Expect the result above 4+ because of messaging and user content. That matters f
 | Coach   | `alyson.stemas@gmail.com`                                    | Needs an active Coach or Team plan so the reviewer sees full features |
 | Parent  | `mariah.slone+1@gmail.com`                                   | Linked to the coach above, with at least one athlete                  |
 | Athlete | _to create_: a username-login athlete under the parent above | PRD Appendix D asks for one; it doesn't exist yet                     |
+
+**Decided 2026-09-24 (PRD decision #26):** the review set becomes a dedicated coach, parent and minor athlete (username login) created and seeded by the admin-only demo-account tool (Admin → Membership → Demo accounts), with invented names and a gradussports.com mailbox Mariah provides. Replace the two personal accounts above with the seeded ones once the tool has run against production; passwords go into App Store Connect only.
 
 All three must be tested on the TestFlight build against production before submission.
 
@@ -199,5 +201,7 @@ Note 1 deliberately doesn't call Gradus a multiplatform service. Guideline 3.1.3
 1. **Privacy manifests:** added in gradus-ios PR #58 (neither target had one; App Store uploads need them for UserDefaults). Also adds `NSPhotoLibraryAddUsageDescription`, because the share sheet's Save Image on a shared resource would otherwise terminate the app.
 2. **Policy vs app (counsel):** the policy says Gradus doesn't collect photographs from or about athletes. Coaches can upload schedule photos and resource images; confirm that wording still holds. §4.2's provider list doesn't name Apple (push delivery, Sign in with Apple). Once L5 ships, Ask Gradus questions are embedded through the Lovable gateway's OpenAI model (`openai/text-embedding-3-small`), and the policy names only Google for AI inference. Counsel decides wording; this repo's `/privacy` mirrors the published text verbatim.
 3. **Support page:** `/support` is a 404 on both domains; `/contact` works and is used above.
-4. **Demo athlete account** doesn't exist yet (§7).
-5. **Scope before I16** (PRD §10.7): L1, L2, L3, and L5 are part of 1.0 and not yet built. L4 is merged.
+4. **Demo accounts:** create the three seeded accounts with the admin tool against production (§7) and verify each on the TestFlight build.
+5. **Library rights:** apply migration `20260924120000_resources_rights` and mark each curated document in Admin → Content → Library rights; unmarked rows stay off the iOS library.
+6. **Names in dummy data:** the "Gradus Demo Invitational" competition was inserted by hand through Lovable; if its rows carry real names, replace them the way web #143 did for the demo board.
+7. **Scope before I16** (PRD §10.7): L1, L2, L3, and L5 are part of 1.0 and not yet built. L4 is merged.
