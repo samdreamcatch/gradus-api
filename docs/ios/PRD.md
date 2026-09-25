@@ -50,6 +50,11 @@ Decisions confirmed with Mariah on 2026-09-04. Treat these as settled.
 | 26 | Demo accounts | **2026-09-24 (Mariah):** App Review gets a coach, a parent and a **minor athlete under that parent** (username login), created and seeded by an admin-only server tool (repeatable for screenshots and future reviews), with invented names. Dummy data must contain no real people: the demo board and preview names lifted from IJS results were replaced (web #143, iOS #66). |
 | 27 | Onboarding before the account | **2026-09-24 (Mariah):** for every role, onboarding happens **before** account creation and payment. A coach picks their **primary sport** (Strength & Conditioning always included) during onboarding and adds further sports later in Settings when on Coach Pro or Club; the "Sports and levels" editor becomes native. |
 | 28 | Onboarding helpers | **2026-09-24 (Mariah):** the PWA's coach helpers (roster "Get set up" checklist, plans "How to make a plan") ship natively (web #142 for the checklist endpoint, iOS #65). |
+| 29 | Parent adult verification | **2026-09-24 (Mariah):** every parent account that links a minor athlete is verified as an adult **once**, through Kids Web Services (KWS) Parent Verification, **payment card only** in the US. Stored on the parent profile with the KWS transaction id. Closes §12 #23. Design §6.13, delivery §10.9. |
+| 30 | Under-13 accounts start with the parent | **2026-09-24 (Mariah):** no under-13 athlete account is ever created by the athlete. The athlete entry screen asks for a birthdate first; under 13 it offers only "ask your parent" (the existing share message) and stores nothing. The child joins through the parent's invite code once the parent is verified. **Coaches invite the parent, never the athlete, for any athlete under 18** (or with no birthdate on file). |
+| 31 | Provisional accounts for 13–17 | **2026-09-24 (Mariah):** a 13–17 self-sign-up creates a **provisional** account (own goals and plans visible; no coach connection, no rooms) until a verified guardian claims it. A room that includes a minor opens only when a verified adult who is not the coach is a participant. The email mirror to unclaimed guardians is retired. |
+| 32 | Minors send text only | **2026-09-24 (Mariah):** under-18 athlete accounts cannot record voice notes in 1.0; coach voice notes to a minor keep their coach-side transcripts. No separate consent scope for transcription (Mariah's reading: transcription is coach input; and with no minor audio stored there is no child recording for the amended COPPA Rule to reach). Reopen if athlete voice returns. |
+| 33 | Apple age signals | **2026-09-24 (Mariah):** adopt Declared Age Range (tighten-only), PermissionKit significant-change asks, the StoreKit age-rating watcher, and the `RESCIND_CONSENT` server notification. Required for the Texas App Store Accountability Act on the US storefront (#25) and for California from 2027-01-01. A coach SafeSport-training attestation at onboarding was proposed and **declined**. |
 
 ---
 
@@ -119,12 +124,12 @@ Gradus resolves a signed-in user's role server-side from which profile rows exis
 |---|---|---|---|
 | **Coach** | Private-lesson coaches, mostly figure skating; also multi-sport and strength & conditioning | Yes | Subscription tiers: Coach, Coach Pro, Club (via organization). Founding Coaches (onboarded before 2026-11-01) are free for life. |
 | **Parent / guardian** | Parent of a minor athlete; up to three guardians per athlete on the Team plan | Yes | Creates athletes, links coaches, runs sessions for young athletes, manages the athlete's login. |
-| **Athlete (minor)** | Created by a parent, logs in with a **username** (no email) | Yes | Restricted messaging persona, Safe Sport resources, youth-safe Ask Gradus. |
+| **Athlete (minor)** | Created by a parent, logs in with a **username** (no email) | Yes | Restricted messaging persona, Safe Sport resources, youth-safe Ask Gradus. *2026-09-24:* 13–17 may also self-sign-up into a **provisional** account with a parent email; under 13 never self-sign-up (§6.13). |
 | **Athlete (adult, self-managed)** | Signs up directly, links coaches themselves | Yes | Has an invite code for coaches; can manage own schedules and goals. |
 | Org admin | Club purchaser or director | **No** (web) | Roster of club coaches, coach invites, templates, calendar. |
 | Internal admin | Gradus staff | **No** (web) | 30 admin routes: users, billing, emails, errors, impersonation, competitions, promo codes. |
 
-Minors: the app never markets to children and does not enroll in Apple's Kids Category (it forbids external links and third-party analytics). Athlete birthdates are collected by the parent; the app must surface age-appropriate personas exactly as the web does.
+Minors: the app never markets to children and does not enroll in Apple's Kids Category (it forbids external links and third-party analytics). Athlete birthdates are collected by the parent; the app must surface age-appropriate personas exactly as the web does. *2026-09-24:* every parent account linked to a minor is a **verified adult**, and a minor's account, coach links and rooms wait on that verification (§6.13, decisions #29–#33).
 
 ---
 
@@ -453,6 +458,7 @@ The app claims `applinks:gradus.training`. The `apple-app-site-association` file
 | `/login`, `/signup/*` | Native auth screens | P0 |
 | `/coach/*`, `/parent/*`, `/athlete/*` | Mapped to the equivalent native screen (Appendix C); unknown subpaths open the role home | P0 |
 | `/g/:token` | Guardian claim flow | P1 |
+| `/verified` | Return from KWS parent verification; resumes the claim or onboarding step that started it (§6.13) | P0 |
 | `/team/:token` | Guardian team invite | P1 |
 | `/p/:token` | Shared plan preview and import | P1 |
 | `/reset-password` | Native reset (requires the recovery token to reach the app; until then this path is excluded so Safari opens the web page) | P1 |
@@ -465,7 +471,7 @@ Custom scheme `gradus://` is registered as a fallback for QR codes and internal 
 - **Transport.** ATS defaults (HTTPS, TLS 1.2+, forward secrecy). **No certificate pinning** (see §4.2). Add a CAA record for gradus.training at the DNS level as the actual mitigation.
 - **Secrets.** The app ships only the Supabase publishable key and the Google iOS client ID. Everything else is server-side.
 - **Storage at rest.** Keychain for tokens; the SwiftData store uses `NSFileProtectionCompleteUntilFirstUserAuthentication`. Cached PDFs and voice notes are in the app's Caches directory and purgeable. Sign-out wipes the store.
-- **Minors.** Athlete accounts are created by parents and log in by username; the app never asks a minor for an email. Messaging keeps the athlete persona rules server-side. No ads SDKs and no tracking. Usage analytics are first-party (§6.12, decision #19), and a minor athlete's events are stored without their user id. The App Privacy label lists first-party collection (contact info, user content, identifiers for push, diagnostics, and product interaction once A2 ships); the answers live in `docs/ios/app-store-submission.md`.
+- **Minors.** Athlete accounts are created by parents and log in by username, and that path never asks a minor for an email; the 13–17 self-sign-up path takes the teen's email plus a parent email and stays provisional until a verified guardian claims (§6.13). Messaging keeps the athlete persona rules server-side; minors send text only (decision #32). No ads SDKs and no tracking. Usage analytics are first-party (§6.12, decision #19), and a minor athlete's events are stored without their user id. The App Privacy label lists first-party collection (contact info, user content, identifiers for push, diagnostics, and product interaction once A2 ships); the answers live in `docs/ios/app-store-submission.md`. Consent, adult verification of parents, Apple's age signals and the SafeSport messaging rules are §6.13.
 - **User-generated content (Guideline 1.2).** Report and block are one tap away in every room and on every profile the user can see, using the existing `submitReport` / `blockUser` logic. Blocked users' messages are hidden client-side immediately and server-side thereafter.
 - **Account deletion (5.1.1(v)).** In-app, two taps from Settings, with the existing impact preview and confirmation phrase for accounts with minor athletes. Includes Apple token revocation.
 - **Error reporting.** `POST /errors` mirrors `reportClientError` so iOS errors land in the existing admin errors dashboard. MetricKit crash and hang diagnostics are uploaded on next launch through the same endpoint. No third-party crash SDK in v1.
@@ -494,6 +500,47 @@ Decision #19. The question to answer: **where do coaches, parents and athletes s
 
 **Apple and the policy.** First-party analytics is not tracking under App Tracking Transparency, so there is no ATT prompt. A2 adds `NSPrivacyCollectedDataTypeProductInteraction` with purpose `Analytics` to the privacy manifest, and App Privacy gains *Usage Data → Product Interaction → Analytics*, both before the collecting build ships. The published policy's §2.4 already covers features accessed, session duration and usage patterns; counsel confirms the minor de-identification and retention wording against §5.3 and §8.
 
+### 6.13 Consent, adult verification, age signals, and SafeSport (added 2026-09-24)
+
+Decisions #29–#33. **Why.** The live privacy policy already promises verifiable parental consent and parent-created athlete profiles, and the product did not back either: a minor of any age could self-sign-up on web and iOS with any typed "parent" email, the account was live at once, nothing was gated on the guardian claim, and coach messages were mirrored to that unverified inbox. The amended COPPA Rule (compliance deadline 2026-04-22) counts a stored child's voice recording as personal information and requires a written retention policy and a written security program. The Texas App Store Accountability Act is in force on the US storefront (#25) and California's Digital Age Assurance Act follows on 2027-01-01; both require the app to read Apple's age signal. SafeSport's MAAPP electronic-communications policy requires a parent or another adult on every adult–minor communication and requires honoring a parent's request to stop contact.
+
+**What stays (guardrails).** No coach↔minor room can exist without the athlete's guardians as participants: athlete rooms are three-way by construction and the only direct rooms are coach↔coach and coach↔parent. Report and block stay one tap away and a `minor_safety` report still emails admins immediately. Minors never reach Ask Gradus (#22). No ads and no third-party SDKs.
+
+**A. Consent backbone (server; both clients inherit it).**
+
+1. **One adult verification per parent account (#29).** A parent account that links a minor is verified as an adult once, through KWS Parent Verification, **payment card only** in the US. `parent_profiles` gains `adult_verified_at`, `adult_verification_method` (`kws_card` or `admin`) and `adult_verification_ref` (the KWS transaction id). Triggered at the first minor link or claim: after account creation in parent onboarding (onboarding itself stays before the account, #27) and inside the guardian claim flow. Never at coach or adult-athlete sign-up. Parent profiles that exist when the S1 migration runs are marked `legacy` and are never prompted or gated (§12 #27, Mariah 2026-09-24); verification applies to parent accounts created afterwards.
+2. **KWS flow.** Server-side only. Client-credentials token, then `send-email` with the parent's **own account email** (never the address a child typed), `location` `US`, `language` `en`, `userContext` `parent`, and `externalPayload` carrying the parent profile id and a nonce. KWS emails the parent, hosts the white-labeled card check, posts the signed `parent-verified` webhook, and redirects the parent to `https://gradus.training/verified` with a signed query (KWS's "Verification Response": `status`, `externalPayload`, `signature`, HMAC over `status:externalPayload` with the verification secret). The page and the app forward that query to `POST /guardian/verification/complete`, so either channel alone completes the verification. Webhook handling: HMAC-SHA256 over `timestamp.rawBody` against `x-kws-signature` (accept either signature during a secret rotation), idempotent on transaction id, a `webhook_receipts` row, and a 2xx only after the parent row is updated. Secrets live in Lovable Cloud (`KWS_CLIENT_ID`, `KWS_API_KEY`, `KWS_WEBHOOK_SECRET`, `KWS_VERIFICATION_SECRET`), test and production sets. The KWS test environment carries preview and CI; production waits on KWS's go-live review. Demo and review accounts (#26) are seeded verified with method `admin`, because App Review cannot pass a card check.
+3. **Consent ledger.** `guardian_consents` (athlete, parent, scope, granted at, revoked at, method, evidence). Scopes in 1.0: `account` and `messaging`. Granted when a verified parent creates or claims the athlete; revoked on unlink, athlete removal, account deletion, or `RESCIND_CONSENT` (B4). No `voice` scope, because minors send text only (#32). No separate third-party-disclosure scope; §12 #24 carries the counsel check.
+4. **Athlete account states** (`athletes.account_state`: `active`, `provisional`, `paused`). Age comes from the birthdate on file; no birthdate means minor (the D8 posture).
+   - **Under 13 (#30).** No self-created account. The athlete entry screen asks for the birthdate first; under 13 it shows only "Ask your parent to set up Gradus" with the existing share message, stores nothing server-side, and remembers the outcome for the session so a second birthdate does not reopen the flow. `createSelfManagedAthlete` refuses under-13 input (`parent_required`, 422). The child joins through the parent's invite code after the parent is verified.
+   - **13–17 (#31).** Self-sign-up creates a `provisional` account with a parent email on file: own goals and plans visible; no coach connection, no rooms, no coach-side claim, until a verified guardian claims. Provisional accounts nobody claims are deleted after 3 months (§12 #25), and the direct notice says so.
+   - **Parent-created minors.** `active` once the parent is verified. Before that the athlete's invite code (their login) is not issued, coaches cannot be linked, and rooms do not open.
+   - **18+.** Unchanged.
+5. **Coaches invite the parent, never the athlete, for anyone under 18 (#30).** `addAthleteWithGuardian` accepts `inviteRecipient: "athlete"` only when a birthdate is on file and the athlete is 18+; the roster shows "waiting for parent" until the parent verifies and claims; `claimAthleteSelf` keeps refusing under-18.
+6. **The room rule (#31).** A room that includes a minor athlete opens, and accepts sends, only when a verified adult who is not the coach is a participant. `mirrorGuardianActivity` (the email copy to an unclaimed guardian) is retired: it sent coach messages to an unverified address.
+7. **Text only for minors (#32).** `sendMessage` refuses a voice send from a minor athlete's session and the voice-note upload policy refuses their uploads; the composer hides the microphone for minors and says why in the VoiceOver label.
+8. **Direct notice.** The parent invite and the KWS email carry the COPPA direct notice: what is collected (name, birthdate, username, messages, goals, practice logs), how it is used, the processors the privacy policy names, that parent contact details and unclaimed provisional accounts are deleted after the §12 #25 window, and how to review or delete.
+9. **Retention.** A scheduled job deletes expired provisional accounts and their guardian emails; the public retention policy (§12 #24) states the windows.
+
+**B. Apple signals (iOS; #33).**
+
+1. **Declared Age Range** (`DeclaredAgeRange`, iOS 26+, entitlement `com.apple.developer.declared-age-range`), requested at the sign-up entry and on launch with gates 13, 16 and 18. It satisfies Texas now and California later, and it is a **tighten-only** cross-check: a device band under 18 blocks coach, parent and adult-athlete sign-up on that device and routes to the minor flow; a band under 13 routes straight to the parent-only screen. A self-declared 18+ never loosens anything. `declinedSharing`, and `notAvailable` on iOS 18–25, fall back to the birthdate path and never block, because App Review rejects apps that do.
+2. **PermissionKit.** `SignificantAppUpdateTopic` when the age rating or a gated feature changes (required in Texas). The `CommunicationTopic` ask-a-parent flow for coach connections on Child Accounts with Communication Limits is additive and post-1.0 (§12 #26). The ledger, not Apple, is the record.
+3. **StoreKit age-rating watcher** triggers the significant-change ask when the app's rating changes on the device.
+4. **`RESCIND_CONSENT`** from App Store Server Notifications V2 reaches `POST /webhooks/app-store` (signed JWS, idempotent), sets the athlete `paused`, revokes the ledger scopes, and notifies the parent and every linked coach.
+5. **Age-rating answers (#24).** "Age assurance" becomes **Yes** once S1 and S3 ship (parent adult verification; Declared Age Range on device); messaging stays declared as restricted to connected users. Under-13 Child Accounts install through Ask to Buy, which now covers free downloads.
+
+**C. SafeSport in the product.**
+
+- The no-private-channel rule above is a guardrail: never add coach↔athlete direct rooms.
+- **Parent pause.** A parent can pause a coach's messaging with their athlete (`coach_athletes.messaging_paused_at`); sends are refused server-side in both directions while paused and the coach sees why. This honors the MAAPP rule that a parent's request to discontinue contact is honored.
+- **Reports.** A published contact address and a response commitment in the listing and in the Safe Sport panel (Guideline 1.2); `minor_safety` reports keep their urgent admin email.
+- **Not adopted.** A coach SafeSport-training attestation at onboarding (Mariah, 2026-09-24).
+
+**D. Paper (Mariah with counsel; §12 #24).** Privacy policy reconciled with what is actually collected (username, messages, goals, practice logs; no minor audio), KWS named as a processor, the direct-notice copy, the public retention policy, and the written information-security program the amended rule requires.
+
+**What the web gets for free.** A and C live in the shared server functions, so the web has the same states, the same room rule and the same verification step the moment S1 publishes; only B is iOS-only. Kotlin later uses Google's Play Age Signals API in B's place.
+
 ---
 
 ## 7. Feature requirements
@@ -510,14 +557,15 @@ Each table lists the web behavior being ported and what is specifically required
 | Coach sign-up | Email + password or Google; promo code field; optional `?invite=` parent code; terms checkbox | Native equivalents; promo code applied via `/me/promo-code`; invite carried from `/i/:code`. | P0 |
 | Coach onboarding | Name → sports coached → levels and hours per week per sport → invite code share; sample athlete and starter plan for new figure skating coaches; join a club by search or code | Native multi-step with progress; sport multiselect with the primary-sport cap rule; club join can be skipped and finished in Settings. | P0 |
 | Parent sign-up | Email + password, beta code check, athletes (name + birthdate) → goals per athlete → practice schedule per coach; mid-flow recovery; invite coach card | Native multi-step; birthdate picker; schedule editor; resume where left off from `getParentSignupStatus`. | P0 |
-| Athlete (minor) sign-up | Enter parent's 8-char code → confirm prefilled identity → choose username (availability check) + password | Native; username availability debounced via `/auth/username/check`; guardian and coach shown for confirmation. | P0 |
-| Adult athlete sign-up | Direct sign-up, then coach link by code, goals, schedule | Native; same server flow. | P0 |
+| Athlete (minor) sign-up | Enter parent's 8-char code → confirm prefilled identity → choose username (availability check) + password | Native; username availability debounced via `/auth/username/check`; guardian and coach shown for confirmation. *2026-09-24:* the code is issued only after the parent is verified (§6.13 A4). | P0 |
+| Adult athlete sign-up | Direct sign-up, then coach link by code, goals, schedule | Native; same server flow. | P0 *2026-09-24 (#30, #31):* the athlete entry asks for the birthdate first. Under 13: a parent-only screen with the share message, nothing stored, remembered for the session. 13–17: a provisional self-managed account with a parent email (§6.13 A4); "Waiting for your parent" state with resend. 18+: unchanged. |
 | Athlete onboarding (post sign-up) | Profile → coach → goals | Native. | P0 |
 | Invite entry `/i/:code` | Resolves code kind and routes | Universal link handler; manual code entry screen with the 8-char alphabet keyboard rules. | P0 |
 | Forgot / reset password | Email link to web reset page | Request from app; complete on web in the P0 wave; in-app in P1. | P0 / P1 |
 | Terms acceptance | Blocking when version changes | Blocking sheet; version from `/me`. | P0 |
 | Connection celebration | Full-screen moment when a coach–athlete link completes | Native animation with haptic; respects Reduce Motion. | P1 |
-| Guardian claim `/g/:token` and team invite `/team/:token` | Claim an athlete as guardian, merge options if a parent account exists | Native flows. | P1 |
+| Guardian claim `/g/:token` and team invite `/team/:token` | Claim an athlete as guardian, merge options if a parent account exists | Native flows. | P1 *2026-09-24:* the claim includes the KWS adult-verification step for an unverified parent (§6.13 A1–A2) and completes only after the webhook lands; `/verified` resumes it. |
+| Parent adult verification (new, 2026-09-24) | — | "Verify you're an adult" step after account creation in parent onboarding and inside the claim flow: `POST /guardian/verification/start` sends the KWS email; a "check your email" screen with resend; the `/verified` universal link and `GET /guardian/verification/status` resume the flow; `/me` carries `parentVerified`. Until verified: no athlete invite codes, no coach links, no rooms (§6.13 A4). | P0 |
 
 ### 7.2 Coach — roster and schedule
 
@@ -527,7 +575,7 @@ Each table lists the web behavior being ported and what is specifically required
 | Week schedule | Navigable week, lesson occurrences per athlete per day, color from practice flow states, expand row for actions | Native week strip with horizontal paging; day agenda list; occurrence card actions in a context menu and swipe. Cached offline. | P0 |
 | Lesson slots | Create, edit, cancel one occurrence, reschedule occurrence, delete recurring; frequencies weekly / biweekly / twice monthly / monthly | Native sheet with date and time pickers; recurrence expansion done client-side with the same rules as `lesson-recurrence.ts` (ported to Swift with shared test vectors). Queued offline. | P0 |
 | Athlete detail sheet | Parent, goals, practice and lesson minutes, active plans, trends, AI summary with refresh, also-coached-by list, practice target, competition results section, billing section | Native detail screen; AI summary shows cached copy with "as of" and a refresh action. Competition results and billing sections follow their own priorities. **Mariah's call, 2026-09-20:** each goal says who set it last (parent or athlete, from `athlete_goals_history`) and, when the other person's latest version differs, shows that version too so the coach sees both. | P0 |
-| Add athlete with guardian | Coach adds an athlete and invites the guardian by email; name-conflict dialog | Native. | P0 |
+| Add athlete with guardian | Coach adds an athlete and invites the guardian by email; name-conflict dialog | Native. *2026-09-24 (#30):* the invite goes to the **parent** for any athlete under 18 or with no birthdate; the athlete-recipient option appears only for a known 18+. The roster row shows "waiting for parent" until the parent verifies and claims; no room opens before that (§6.13 A5–A6). | P0 |
 | Remove athlete | With confirmation | Native confirmation dialog. | P0 |
 | Invite code | Persistent 8-char coach code, copy and share, rotate | Share sheet with link and code; rotate with confirmation. | P0 |
 | Roster settings | Roster limits, default practice expectations | Native. | P0 |
@@ -565,9 +613,9 @@ Each table lists the web behavior being ported and what is specifically required
 | Feature | Web today | iOS requirement | Pri |
 |---|---|---|---|
 | Conversations list | Rooms with last message, unread badges; new conversation from targets list; recipient chips for coaches | Native list; unread counts from push and realtime; new-conversation picker. Cached offline. | P0 |
-| Room view | Three-way rooms (coach ↔ parent ↔ athlete), direct coach–coach and coach–parent rooms; text, voice notes, plan-tagged messages, "message coach about this plan" pre-tag; read marks; realtime; 500-message cap today | Native thread with cursor pagination, realtime, optimistic send with "Sending…", retry and delete-draft on failure; voice note record and play (§6.7); plan tag chip opens the plan. Keyboard-safe composer. | P0 |
+| Room view | Three-way rooms (coach ↔ parent ↔ athlete), direct coach–coach and coach–parent rooms; text, voice notes, plan-tagged messages, "message coach about this plan" pre-tag; read marks; realtime; 500-message cap today | Native thread with cursor pagination, realtime, optimistic send with "Sending…", retry and delete-draft on failure; voice note record and play (§6.7); plan tag chip opens the plan. Keyboard-safe composer. | P0 *2026-09-24:* a room with a minor opens and accepts sends only with a verified adult who is not the coach as a participant; minors get a text-only composer (mic hidden, VoiceOver label says why); a parent-paused coach sees a "paused by the parent" state instead of the composer (§6.13 A6–A7, C). |
 | Unread total | Badge on tab | Tab badge and app icon badge. | P0 |
-| Report and block | Report a user or message with reason; block and unblock; blocked users list in Settings | One tap from the room header and the message context menu; blocked list in Settings. | P0 |
+| Report and block | Report a user or message with reason; block and unblock; blocked users list in Settings | One tap from the room header and the message context menu; blocked list in Settings. | P0 *2026-09-24:* the Safe Sport panel and the listing state a contact address and a response commitment (Guideline 1.2). |
 | Report a resource | Parents and athletes can report a resource | With Resources (§7.9). | P1 |
 | Competition recaps in messages | Recaps appear in the room | Native rendering of the recap message type. | P1 |
 
@@ -584,14 +632,15 @@ Each table lists the web behavior being ported and what is specifically required
 
 | Feature | Web today | iOS requirement | Pri |
 |---|---|---|---|
-| My athletes | Edit name and birthdate; athlete invite code and claim link (minors only); account status; add and remove athletes | Native disclosure per athlete. | P0 |
+| My athletes | Edit name and birthdate; athlete invite code and claim link (minors only); account status; add and remove athletes | Native disclosure per athlete. | P0 *2026-09-24:* shows the athlete's state (`active`, `provisional`, `paused`) and the parent's own verification state; invite codes appear only once the parent is verified. |
 | Coaches per athlete | Link by coach invite code with preview; unlink; update sports; primary coach per sport; coach visibility toggles | Native. | P0 (visibility toggles P1) |
+| Pause messaging with a coach (new, 2026-09-24) | — | Per coach per athlete: pause and resume (`PUT /parent/athletes/{id}/coaches/{coachId}/messaging`); confirmation alert; the coach is told the room is paused. Honors the MAAPP discontinue-contact rule (§6.13 C). | P0 |
 | Goals editor | Per sport: current level, season goal, long-term goal | Native form. Current level and season goal are also self-editable by the athlete regardless of age — see §7.8. | P0 |
 | Practice schedule | Per coach: days, times, frequency, start date | Native editor with the same rules as the coach side. | P0 |
 | Reset athlete password | Parent-issued | Native with confirmation. | P0 |
 | Goals dashboard | Plans / Goals tabs on the Plans screen | Native. **Mariah's call, 2026-09-20:** the primary parent (the athlete's owning account — the Team plan payer, or the sole connected parent without a Team plan) edits current level, season goal, and long-term goal from the goal card here too, not only from Settings → Athletes. Co-guardians see the card read-only; `GET /parent/goals` carries `guardianRole` so the client knows which. | P0 |
 | Team plan and guardians | Up to three guardians per athlete; invite, resend, revoke, remove; Team plan status; billing on web | Guardian management native; plan status display; billing link per §6.8. | P1 |
-| Guardian activity mirroring | Guardians see the same rooms, plans, and sessions | Comes for free from the server; verify in QA. | P0 |
+| Guardian activity mirroring | Guardians see the same rooms, plans, and sessions; ~~unclaimed guardians get email copies of coach and athlete messages~~ | Comes for free from the server; verify in QA. *2026-09-24:* the email mirror to unclaimed guardians is retired (§6.13 A6); a guardian sees a minor's rooms only as a verified, claimed participant. | P0 |
 
 ### 7.8 Athlete — goals and motivation
 
@@ -601,7 +650,7 @@ Each table lists the web behavior being ported and what is specifically required
 | Motivation card | Editable "What motivates you?" up to 500 chars; editable long-term goal | Native. | P0 |
 | Goal editor (self) | Current level and season goal were parent-only in the original scope | **Mariah's call, 2026-09-16: wrong — editable by the athlete too, minor or adult.** Native level/season-goal picker on the athlete's own goal card, same fields as the parent's editor (§7.7). Uses the existing `PUT /adult-athlete/goals`: despite the path name, its RLS check (`athlete_can_self_connect`) is ownership-only (`athletes.user_id = auth.uid()`), not gated on `self_managed` or age — so it already authorizes a minor's own session. No backend change needed, only the iOS client and this doc were behind. | P0 |
 | Coaches | Add a coach by code (parent-managed and adult athletes) | Native. | P0 |
-| Parent or guardian | Guardian email on file, invite a guardian (adult athletes) | Native. | P1 |
+| Parent or guardian | Guardian email on file, invite a guardian (adult athletes) | Native. *2026-09-24:* a provisional 13–17 athlete sees "Waiting for your parent" with resend and what unlocks after the claim; a minor's composer is text-only (§6.13 A4, A7). | P1 |
 
 ### 7.9 Resources and Ask Gradus
 
@@ -959,6 +1008,18 @@ Decision #19; the design is §6.12. Taken after the §10.6 gate, in parallel wit
 | A1 | Events endpoint, table, admin report | web | Migration `analytics_events` with RLS, GRANTs and the retention cron; `POST /api/v1/analytics/events` (auth, rate limit, size caps, idempotent event ids, server-derived role, age band, club and region, minor de-identification); OpenAPI and an event-schema vector; the admin **Usage** page with the Resources table and the minors-by-club/region view | Tests prove a minor athlete's batch is stored with no user id and no coach id but with its club and region, an athlete with no birthdate on file is stored as a minor, a club with fewer than 10 minor athletes is neither stored in a row nor shown by name, no report cell or region-minus-clubs residual describes fewer than 10 minor athletes, and a retried batch inserts nothing; in Lovable preview a batch is accepted and the Usage page shows it |
 | A2 | Tracker and instrumentation | iOS | Contract sync; `AnalyticsTracker` with the disk buffer and flush rules; `.trackedScreen` on every tab root and routed screen; Resources events (open, read time, read depth, share, offline save, search count, Safe Sport, Ask Gradus); Settings → Privacy toggle (AAA, VoiceOver); privacy manifest `ProductInteraction` / `Analytics`; App Privacy answers updated in `docs/ios/app-store-submission.md` | Simulator against preview: a walk through Resources produces the expected rows with sane durations; toggle off sends nothing; airplane mode buffers and flushes on reconnect; full suite green |
 
+### 10.9 Consent, age assurance and SafeSport (2026-09-24)
+
+Decisions #29–#33; the design is §6.13. Taken after the §10.6 gate, in parallel with the L and A milestones and TestFlight QA. S1 is first; S2 and S3 follow it and can run in parallel; S1–S4 are merged before I16, and S5 is done before submission. Milestone prefix S, since C1/C2 in §10.2 already name the shell milestones.
+
+| # | Milestone | Repo | Scope | Done when |
+|---|---|---|---|---|
+| S1 | Consent backbone | web | Migrations: the `parent_profiles` verification columns, `guardian_consents`, `athletes.account_state`, `coach_athletes.messaging_paused_at`, `webhook_receipts`, with GRANTs and RLS; the KWS client (token, `send-email`, exponential-backoff retries) and `POST /webhooks/kws` plus the Verification Response channel; `POST /guardian/verification/start`, `GET /guardian/verification/status`, `parentVerified` on `/me`; under-13 refusal and the provisional state in `createSelfManagedAthlete`; the parent-recipient rule in `addAthleteWithGuardian`; the room rule in `ensureRoom*` and `sendMessage`; the mirror retired; gating of invite-code issuance and coach links on verification; the text-only rule for minor senders and their uploads; the pause endpoint; direct-notice copy in the parent invite and KWS emails; the retention cron; the demo seeder marks its parent verified (`admin`); OpenAPI and vectors; the web's verification step and the new states (§4.1) | In Lovable preview against the KWS test environment: a parent verifies with a test card and the webhook flips the row; an under-13 birthdate is refused server-side; a 13–17 sign-up cannot open a room or link a coach until a verified guardian claims; a coach cannot pick a minor as invite recipient; a paused coach cannot send; a minor's voice send and upload are refused; a retried webhook inserts nothing; tests cover each; web guardrails (§2) unchanged |
+| S2 | iOS parent and athlete flows | iOS | Contract sync; the "Verify you're an adult" step after account creation in parent onboarding and in the claim flow (send, "check your email", resend, resume on `/verified`, status poll); the provisional and pending states; the birthdate-first athlete entry with the parent-only screen and its session memory; the text-only composer for minors; the roster "waiting for parent" state and the recipient rule; the parent pause control; AAA and VoiceOver checks in the audit harness | Simulator against preview: each flow round-trips; the harness passes on every new screen |
+| S3 | Apple signals | iOS, web | The Declared Age Range capability and request with the tighten-only rules; the PermissionKit significant-change ask; the StoreKit age-rating watcher; `POST /webhooks/app-store` for `RESCIND_CONSENT` with pause, ledger revocation and both notifications; App Store Server Notifications V2 URL configured; privacy manifest unchanged (no new data types) | On an iOS 26 device with a Child Account the band routes as §6.13 B1 says and a self-declared adult changes nothing; a sandbox `RESCIND_CONSENT` pauses the athlete and both notifications arrive |
+| S4 | SafeSport behaviors and QA | web, iOS | The report contact address and response commitment in the listing copy and the Safe Sport panel; `docs/ios/QA.md` rows for every rule in §6.13; review notes updated; `docs/ios/app-store-submission.md` §5 and §7 updated | The QA rows pass on a device; submission kit matches §6.13 |
+| S5 | Paper | Mariah, counsel | Privacy policy, direct notice, public retention policy, written security program, the App Store age-assurance answer, KWS terms accepted in the Epic developer portal and production go-live approved | Published; App Store Connect answers match the policy |
+
 ---
 
 ## 11. Risks and dependencies
@@ -986,6 +1047,11 @@ Decision #19; the design is §6.12. Taken after the §10.6 gate, in parallel wit
 | 19 | *(2026-09-20)* Inferred skill events are wrong | A plan draft targets a skill the athlete has not landed | Inferred events are always "likely", never certain; drafts stay drafts the coach edits; the inference job's precision against coach labels is logged and the rule is switched off if it falls below the bar set in L3. |
 | 20 | *(2026-09-20)* Embedding model coupling to the Lovable gateway | A provider switch (§12 #4) silently mixes vector spaces | `embedding_model` recorded per source; the switch re-embeds in the same job; mixed states fail the precheck in `docs/api/SMOKE.md`. |
 | 21 | *(2026-09-20)* Minors' data in prompts | More athlete data reaches the model provider | The profile is derived aggregates plus fields the gateway already receives today; no new free text; no third party beyond the existing gateway; covered by the current privacy disclosure (§6.11). |
+| 22 | *(2026-09-24)* KWS terms and go-live review | Production verification cannot start until KWS approves the product | Portal setup and terms in S1's first PR; the test environment carries preview and CI; the `admin` method covers demo accounts only and is admin-tool-only. |
+| 23 | *(2026-09-24)* Card-check completion: some parents will not complete a card verification for a coaching app | Minors stuck provisional; coaches lose athletes | KWS skips the check for parents already verified in its network; resend from the roster and the athlete's screen; coach↔parent direct rooms work as soon as the parent has an account; completion is measured on the admin Usage page. |
+| 24 | *(2026-09-24)* App Review walks the parent flow | Reviewers cannot pass a card check | The demo parent is seeded verified (#26) and the review note says so. |
+| 25 | *(2026-09-24)* Declared Age Range unavailable (iOS 18–25, declined sharing, non-US accounts) | No device signal | The birthdate path stands; the signal only ever tightens. |
+| 26 | *(2026-09-24)* Apple's computed rating vs under-13 Child Accounts | A Child Account cannot install a 13+ app without the parent | Ask to Buy now covers free downloads; the listing says a parent installs it; revisit if the computed rating lands above 13+. |
 
 ---
 
@@ -1015,8 +1081,11 @@ Decision #19; the design is §6.12. Taken after the §10.6 gate, in parallel wit
 | 20 | *(2026-09-22)* Whether the web sends the same usage events | Mariah | — | **Resolved 2026-09-22: no.** The web does not send usage events |
 | 21 | *(2026-09-22)* Raw analytics event retention | Mariah | — | **Resolved 2026-09-22: 13 months raw**, weekly aggregates kept; counsel confirms the policy §8 wording |
 | 22 | *(2026-09-22)* Whether minors' usage (e.g., Safe Sport opens) is ever broken down **per coach** | Mariah, with counsel | Not before a written safeguarding protocol exists | **Not built.** Mariah chose club/region level (§6.12). Per-coach needs counsel review, a written protocol (review trigger, reviewer, the route to the U.S. Center for SafeSport, handling false signals), and policy disclosure first, because small rosters re-identify children and the signal is weak evidence against a coach |
-| 23 | *(2026-09-24)* Age-assurance vendor: whether and which third-party provider verifies age | Mariah | Before a release that claims age assurance | None; the parent-entered birthdate stands and the App Store answer stays "No" |
-| 24 | *(2026-09-24)* Privacy-policy wording for counsel (photos, providers, personalization, analytics, audio, age assurance) | Mariah with counsel | Before submission | The proposals in `docs/legal/privacy-policy-brief-2026-09-24.md`; this repo's `/privacy` mirrors whatever counsel publishes |
+| 23 | *(2026-09-24)* Age-assurance vendor: whether and which third-party provider verifies age | Mariah | — | **Resolved 2026-09-24: KWS Parent Verification, card only, for every parent of a minor (decision #29), plus Apple's Declared Age Range on device (decision #33).** The App Store age-assurance answer flips to Yes when S1 and S3 ship (§6.13 B5) |
+| 24 | *(2026-09-24)* Privacy-policy wording for counsel (photos, providers, personalization, analytics, audio, age assurance) | Mariah with counsel | Before submission | The proposals in `docs/legal/privacy-policy-brief-2026-09-24.md`; this repo's `/privacy` mirrors whatever counsel publishes. *Extended 2026-09-24 (§6.13 D):* KWS as a processor, the COPPA direct notice, the public retention policy, the written security program, text-only messaging for minors, and whether coach voice-note transcription needs its own third-party-disclosure consent |
+| 25 | *(2026-09-24)* Deletion window for unclaimed provisional accounts and unconsented parent contact details | Mariah with counsel | — | **Resolved 2026-09-24 (Mariah): 3 months from creation**, stated in the direct notice |
+| 26 | *(2026-09-24)* PermissionKit ask-a-parent (`CommunicationTopic`) for coach connections on Child Accounts | Mariah | After 1.0 | Not in 1.0; significant-change asks only (§6.13 B2) |
+| 27 | *(2026-09-24)* Existing web parents and adult verification | Mariah | — | **Resolved 2026-09-24 (Mariah): left alone.** Parent profiles that exist when S1's migration runs are marked `adult_verification_method = 'legacy'` and are never prompted or gated; verification applies to parent accounts created afterwards |
 
 ---
 
@@ -1058,9 +1127,17 @@ Every user-facing `createServerFn` and its `/api/v1` counterpart. Admin, org-adm
 | `POST /invites/parent/lookup` `[pub]` · `POST /invites/parent/claim` | `getParentByInviteCode`, `claimParentInvite` | P0 |
 | `GET /athlete/invite-code` · `POST /invites/adult-athlete/lookup` `[pub]` · `POST /invites/adult-athlete/claim` | `getOrCreateAdultAthleteInviteCode`, `getAdultAthleteByInviteCode`, `claimAdultAthleteInvite` | P0 |
 | `POST /guardian/claim/summary` `[pub]` · `GET /guardian/claim/context` · `POST /guardian/claim` · `POST /guardian/claim/merge-options` · `POST /guardian/claim/merge` · `POST /guardian/claim/self` · `POST /guardian/invites/{id}/resend` · `GET /guardian/status` | `getGuardianClaimSummary`, `getGuardianClaimContext`, `claimGuardianAthlete`, `getGuardianClaimMergeOptions`, `mergeGuardianClaim`, `claimAthleteSelf`, `resendGuardianInvite`, `getMyGuardianStatus` | P1 |
+| `POST /guardian/verification/start` · `GET /guardian/verification/status` *(new, 2026-09-24)* | new: KWS `send-email` for the signed-in parent (60 s resend cooldown, 6/hour); verification state incl. `required` (the `PARENT_VERIFICATION_REQUIRED` switch) and `available` (KWS configured) (§6.13 A1–A2) | P0 |
 | `GET /parent/team/guardians` · `POST /parent/team/guardians/invites` · `DELETE /parent/team/guardians/invites/{id}` · `DELETE /parent/team/guardians/{id}` · `POST /team-invites/preview` `[pub]` · `POST /team-invites/claim` | `listTeamGuardians`, `inviteGuardian`, `revokeGuardianInvite`, `removeGuardian`, `previewGuardianInvite`, `claimGuardianInvite` | P1 |
 | `GET /coach/visibility` · `PUT /coach/visibility` · `GET /coach/visibility/mine` · `POST /coach/visibility/{id}/respond` · `DELETE /coach/visibility/{id}` | `listCoachVisibility`, `setCoachVisibility`, `listMyCoachVisibility`, `respondToCoachVisibility`, `disconnectCoachVisibility` | P1 |
 | `GET /coach/athletes/{id}/other-plan` | `getOtherCoachPlanForMessage` | P0 |
+
+### Consent webhooks (new, 2026-09-24)
+
+| Endpoint | Source | Pri |
+|---|---|---|
+| `POST /api/public/webhooks/kws` (outside the `/api/v1` kill switch) · `POST /guardian/verification/complete` `[pub]` | new: KWS `parent-verified` (HMAC over `timestamp.rawBody`, idempotent on transaction id, `webhook_receipts`), and the Verification Response: KWS's signed redirect to `/verified` (`status`, `externalPayload`, `signature` query; HMAC over `status:externalPayload`), which the web page and the iOS app forward to `complete` (§6.13 A2) | P0 |
+| `POST /webhooks/app-store` `[pub]` | new: App Store Server Notifications V2, signed JWS; `RESCIND_CONSENT` pauses the athlete and revokes ledger scopes; other types acknowledged and ignored (§6.13 B4) | P0 |
 
 ### Sign-up and onboarding
 
@@ -1114,7 +1191,7 @@ Every user-facing `createServerFn` and its `/api/v1` counterpart. Admin, org-adm
 
 | Endpoint | Source | Pri |
 |---|---|---|
-| `GET /parent/settings` `[etag]` · `PATCH /parent/profile` · `POST /parent/athletes` · `PATCH /parent/athletes/{id}` · `DELETE /parent/athletes/{id}` · `PUT /parent/athletes/{id}/goals` · `POST /parent/athletes/{id}/reset-password` · `POST /parent/athletes/{id}/coaches` · `DELETE /parent/athletes/{id}/coaches/{coachId}` · `PUT .../coaches/{coachId}/sports` · `PUT /parent/athletes/{id}/primary-coach` · `PUT /parent/athletes/{id}/schedule` | `getParentSettings`, `updateParentProfile`, `addAthlete`, `updateAthlete`, `removeAthlete`, `updateAthleteGoals`, `resetAthletePassword`, `linkAthleteToCoach`, `unlinkAthleteFromCoach`, `updateCoachAthleteSports`, `setPrimaryCoach`, `replaceAthleteSchedule` | P0 |
+| `GET /parent/settings` `[etag]` · `PATCH /parent/profile` · `POST /parent/athletes` · `PATCH /parent/athletes/{id}` · `DELETE /parent/athletes/{id}` · `PUT /parent/athletes/{id}/goals` · `POST /parent/athletes/{id}/reset-password` · `POST /parent/athletes/{id}/coaches` · `DELETE /parent/athletes/{id}/coaches/{coachId}` · `PUT .../coaches/{coachId}/sports` · `PUT /parent/athletes/{id}/primary-coach` · `PUT /parent/athletes/{id}/schedule` | `getParentSettings`, `updateParentProfile`, `addAthlete`, `updateAthlete`, `removeAthlete`, `updateAthleteGoals`, `resetAthletePassword`, `linkAthleteToCoach`, `unlinkAthleteFromCoach`, `updateCoachAthleteSports`, `setPrimaryCoach`, `replaceAthleteSchedule` | P0 *2026-09-24:* plus `PUT /parent/athletes/{id}/coaches/{coachId}/messaging` (pause and resume, §6.13 C); `addAthlete` and `linkAthleteToCoach` refuse for an unverified parent (`parent_unverified`, 403) |
 | `GET /parent/goals` | `getParentGoalsDashboard` | P0 |
 | `GET /parent/team` | `getTeamPlanStatus` | P0 (display) |
 | `GET /athlete/settings` · `PATCH /athlete/me` · `GET /athlete/goals` · `PUT /athlete/goals/long-term` · `PUT /athlete/goals/motivation` | `getAthleteSettings`, `updateAthleteSelf`, `getAthleteGoalsDashboard`, `updateAthleteLongTermGoal`, `updateAthleteMotivation` | P0 |
@@ -1151,8 +1228,8 @@ Every user-facing `createServerFn` and its `/api/v1` counterpart. Admin, org-adm
 
 | Domain | Tables | Cached on iOS |
 |---|---|---|
-| Identity and roles | `coach_profiles`, `parent_profiles`, `athletes`, `user_roles`, `org_admins`, `admin_allowlist`, `terms_acceptances`, `soft_deleted_users`, `deleted_accounts`, new `auth_identities` | Own profile summary via `/me` |
-| Connections and invites | `coach_athletes`, `coach_athlete_sports`, `athlete_primary_coaches`, `athlete_guardians`, `guardian_invites`, `coach_invite_codes`, `parent_invite_codes`, `athlete_invite_codes`, `adult_athlete_invite_codes`, `invite_lookup_attempts`, `athlete_coach_visibility`, `coach_visibility_links` | Roster and coach lists (derived DTOs) |
+| Identity and roles | `coach_profiles`, `parent_profiles`, `athletes`, `user_roles`, `org_admins`, `admin_allowlist`, `terms_acceptances`, `soft_deleted_users`, `deleted_accounts`, new `auth_identities`, new `guardian_consents` (2026-09-24); `parent_profiles.adult_verified_at` / `adult_verification_method` / `adult_verification_ref` and `athletes.account_state` (2026-09-24) | Own profile summary via `/me`, including `parentVerified` and the athlete state |
+| Connections and invites | `coach_athletes`, `coach_athlete_sports`, `athlete_primary_coaches`, `athlete_guardians`, `guardian_invites`, `coach_invite_codes`, `parent_invite_codes`, `athlete_invite_codes`, `adult_athlete_invite_codes`, `invite_lookup_attempts`, `athlete_coach_visibility`, `coach_visibility_links`; `coach_athletes.messaging_paused_at` (2026-09-24) | Roster and coach lists (derived DTOs) |
 | Organizations | `organizations`, `organization_invite_codes`, `organization_leads`, `org_coach_invites`, `org_admin_actions` | Own org name only |
 | Schedule | `athlete_lesson_slots`, `lesson_slot_overrides`, `lesson_wrap_ups`, `coach_athlete_practice_targets`, `pre_lesson_briefings` | Slots and overrides for ±8 weeks; briefings as fetched |
 | Plans | `plans`, `plan_moves`, `moves`, `seed_moves`, `plan_sessions`, `athlete_goals`, new `athlete_skill_events`, new `athlete_goals_history` (PR #129) | All own plans and moves; sessions for opened plans; skill events and goals history are read only through the profile, not cached |
@@ -1160,7 +1237,7 @@ Every user-facing `createServerFn` and its `/api/v1` counterpart. Admin, org-adm
 | Resources and AI | `resources`, `resource_sports`, `parent_saved_answers`, new `knowledge_sources`, new `knowledge_chunks` | Lists; downloaded PDFs; saved answers with their sources; knowledge tables are server-only |
 | Competitions | `competitions`, `competition_snapshots`, `competition_attendance`, `competition_recaps`, `athlete_competition_results`, `athlete_competition_skaters`, new `board_follows`, new `live_activity_tokens` | Board history and follows; last snapshot per visited board |
 | Billing | `billing_events`, `coach_athlete_rates`, `invoices`, `invoice_lines`, `promo_codes`, `user_applied_promo_codes` | Entitlement summary; invoices for opened athletes |
-| Platform | `device_tokens`, `client_errors`, `error_group_explanations`, `feedback`, `impersonation_events`, new `api_idempotency_keys` | Nothing |
+| Platform | `device_tokens`, `client_errors`, `error_group_explanations`, `feedback`, `impersonation_events`, new `api_idempotency_keys`, new `webhook_receipts` (2026-09-24) | Nothing |
 | Email (server only) | `email_send_log`, `email_send_state`, `email_template_overrides`, `email_template_override_history`, `email_unsubscribe_tokens`, `lifecycle_email_jobs`, `suppressed_emails` | Nothing |
 | Usage analytics *(2026-09-22, §6.12)* | new `analytics_events` | Unsent events only, in the per-user buffer (≤ 1,000, ≤ 7 days) |
 
@@ -1214,7 +1291,7 @@ Carried over from `docs/mobile/submission.md` and updated for the native app.
 - [ ] iPhone 6.9" screenshots (1320 × 2868), plus iPad 13" while the app runs on iPad; sizes and the proposed set are in `docs/ios/app-store-submission.md` §8. App Preview video optional.
 - [ ] App Privacy questionnaire answers matching the policy (athlete email and commercial information are the load-bearing answers; add Diagnostics for crash reports, and Usage Data → Product Interaction → Analytics once A2 ships).
 - [ ] Review notes draft (below) and demo accounts confirmed working: `mariah.slone+1@gmail.com` (parent) and `alyson.stemas@gmail.com` (coach); add a demo athlete username.
-- [ ] Age rating questionnaire (no Kids Category).
+- [ ] Age rating questionnaire (no Kids Category; "Age assurance" is Yes once S1 and S3 ship, §6.13 B5).
 - [ ] Decide storefront availability (default US only).
 
 **At App Store Connect setup (enrollment approved 2026-09-19)**
@@ -1223,6 +1300,7 @@ Carried over from `docs/mobile/submission.md` and updated for the native app.
 - [ ] `apple-app-site-association` published with the Team ID and the paths in §6.10; verify with Apple's CDN check.
 - [ ] Xcode Cloud workflow; internal TestFlight group.
 - [ ] Live Activities frequent updates: already declared in Info.plist (`NSSupportsLiveActivitiesFrequentUpdates`); nothing to request.
+- [ ] *(2026-09-24)* Declared Age Range capability on the App ID; App Store Server Notifications V2 URL set to `/api/v1/webhooks/app-store`; KWS terms accepted in the Epic developer portal, production go-live approved, and the four `KWS_*` secrets in Lovable Cloud (§6.13 A2).
 
 **Review notes (draft)**
 1. Gradus is a multiplatform coaching service. Coach and Team subscriptions are purchased on our website; the app unlocks access to previously purchased subscriptions. There is no purchase flow in the app. On the US storefront the app links to our website to manage a plan, per Guideline 3.1.1(a); no entitlement is required.
@@ -1230,7 +1308,7 @@ Carried over from `docs/mobile/submission.md` and updated for the native app.
 3. Sign in with Apple is offered alongside Google and email sign-in (Guideline 4.8).
 4. User-generated content: every conversation offers Report and Block; blocked users are hidden immediately (Guideline 1.2).
 5. Account deletion is in Settings → Account & security → Delete account (Guideline 5.1.1(v)); it deletes the account and revokes the Sign in with Apple token.
-6. The app collects a guardian email for athletes under 18; athlete accounts are created by parents and sign in with a username. We are not in the Kids Category.
+6. Athlete accounts for minors are created by a parent, or (13–17 only) stay provisional until a parent claims them; every parent linked to a minor is verified as an adult through Kids Web Services before any coach can be linked or any conversation opened. Under-13 athletes cannot create accounts themselves. Minors sign in with a username and can only send text. There are no channels between a coach and a minor that exclude the parent, and a parent can pause a coach's messaging at any time. The demo parent is pre-verified for review. We are not in the Kids Category.
 7. Demo accounts are in the notes field; a live competition board is available at the URL provided (or the demo board if no competition is running).
 
 **Before each submission**

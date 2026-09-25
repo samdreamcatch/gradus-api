@@ -41,9 +41,9 @@ Each item states what the product does today, the wording problem, and the propo
 
 ## 6. Age assurance (§5, new)
 
-**Today.** Age is a parent-entered birthdate at athlete creation; nothing is verified. Mariah is evaluating third-party age-assurance vendors.
+**Today.** Age is a parent-entered birthdate at athlete creation; nothing is verified. **Decided 2026-09-24 (PRD §6.13, decisions #29–#33):** every parent account linked to a minor is verified as an adult once through Kids Web Services (KWS) Parent Verification, payment card only; the iOS app also reads Apple's Declared Age Range signal on device.
 
-**Proposal (forward-looking clause).** Add a sentence to §5.2 along the lines of: "We may use a third-party age-assurance provider to confirm a user's age. If we do, we will list the provider in Section 4.2, collect only what the check requires, and not retain the underlying identity documents." The provider entry is added to §4.2 when chosen.
+**Proposal.** In §5.2: "Before a parent can connect a coach to, or message about, an athlete under 18, we confirm that the parent is an adult through Kids Web Services (Epic Games), which performs a nominal payment-card check. Gradus receives only the result and a transaction reference, never the card details." Add Kids Web Services to §4.2 as a processor (adult verification of parents; receives the parent's email address). On the device, the iOS app may request an age range from Apple; Gradus receives an age band, never a birthdate, and uses it only to route sign-up to the right flow.
 
 ## 7. Minor items counsel may want to align
 
@@ -52,6 +52,19 @@ Each item states what the product does today, the wording problem, and the propo
 - **Crash reports** (§2.4) come from Apple's own crash reporting (TestFlight and App Store) rather than a third-party SDK; no change needed.
 - **Location.** The app collects no device location. Only organizations (clubs) carry a city and region; "region" in the analytics section refers to those.
 - **Scope.** The app is offered on the United States storefront only; §1's "within the United States" stands.
+
+## 8. Children's accounts, consent and retention (added 2026-09-24, PRD §6.13)
+
+**Today.** The policy says athlete accounts for under-18s require a parent's input and that parents give verifiable consent. The product did not back that: a minor of any age could sign up with any typed "parent" email and the account was live at once.
+
+**Decided.** Under-13 athletes never create their own account; a parent creates it after adult verification. Ages 13–17 may start a provisional account that cannot connect a coach or open a conversation until a verified parent claims it. Coaches invite the parent, never the athlete, for anyone under 18. A conversation with a minor exists only with a verified adult (not the coach) as a participant, and a parent can pause a coach's messaging. Under-18 athletes send text only: no voice recordings of minors are stored or transcribed.
+
+**Proposals for counsel.**
+- §2 (what we collect from athletes): add username, messages, goals and practice logs; state that no audio is collected from athletes under 18.
+- §5 (children): describe the flows above; state that the parent invite email is the COPPA direct notice; state that a provisional account or a parent's contact details are deleted if consent does not arrive within the window in PRD §12 #25 (default 30 days).
+- §7 (retention): publish the written retention policy the amended COPPA Rule requires (messages, practice logs, voice notes from coaches, verification records, analytics per §4), with the deletion windows.
+- Internal, not policy text: the written information-security program the amended rule requires (owner, annual risk assessment, safeguards, vendor confirmations). Counsel to advise on scope.
+- Confirm whether coach voice-note transcription (ElevenLabs) needs a separate third-party-disclosure consent, or is integral to the service (Mariah's reading: integral, coach-side input only).
 
 ## What the app declares to Apple
 
