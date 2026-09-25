@@ -61,6 +61,7 @@ const GROUPS: Group[] = [
       { to: "/admin/parent-invites", label: "Parent invites", icon: MailPlus },
       { to: "/admin/leads", label: "Waitlist & leads", icon: UserPlus },
       { to: "/admin/impersonation", label: "Impersonation", icon: UserCheck },
+      { to: "/admin/demo-accounts", label: "Demo accounts", icon: UserPlus },
     ],
   },
   {

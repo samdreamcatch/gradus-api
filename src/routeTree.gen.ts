@@ -83,6 +83,7 @@ import { Route as AuthenticatedAdminImpersonationRouteImport } from './routes/_a
 import { Route as AuthenticatedAdminFeedbackRouteImport } from './routes/_authenticated/admin.feedback'
 import { Route as AuthenticatedAdminErrorsRouteImport } from './routes/_authenticated/admin.errors'
 import { Route as AuthenticatedAdminEmailHealthRouteImport } from './routes/_authenticated/admin.email-health'
+import { Route as AuthenticatedAdminDemoAccountsRouteImport } from './routes/_authenticated/admin.demo-accounts'
 import { Route as AuthenticatedAdminCompetitionsRouteImport } from './routes/_authenticated/admin.competitions'
 import { Route as AuthenticatedAdminBillingRouteImport } from './routes/_authenticated/admin.billing'
 import { Route as AuthenticatedAdminAskRouteImport } from './routes/_authenticated/admin.ask'
@@ -719,6 +720,12 @@ const AuthenticatedAdminEmailHealthRoute =
   AuthenticatedAdminEmailHealthRouteImport.update({
     id: '/email-health',
     path: '/email-health',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminDemoAccountsRoute =
+  AuthenticatedAdminDemoAccountsRouteImport.update({
+    id: '/demo-accounts',
+    path: '/demo-accounts',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
 const AuthenticatedAdminCompetitionsRoute =
@@ -2084,6 +2091,7 @@ export interface FileRoutesByFullPath {
   '/admin/ask': typeof AuthenticatedAdminAskRoute
   '/admin/billing': typeof AuthenticatedAdminBillingRoute
   '/admin/competitions': typeof AuthenticatedAdminCompetitionsRoute
+  '/admin/demo-accounts': typeof AuthenticatedAdminDemoAccountsRoute
   '/admin/email-health': typeof AuthenticatedAdminEmailHealthRoute
   '/admin/errors': typeof AuthenticatedAdminErrorsRouteWithChildren
   '/admin/feedback': typeof AuthenticatedAdminFeedbackRoute
@@ -2392,6 +2400,7 @@ export interface FileRoutesByTo {
   '/admin/ask': typeof AuthenticatedAdminAskRoute
   '/admin/billing': typeof AuthenticatedAdminBillingRoute
   '/admin/competitions': typeof AuthenticatedAdminCompetitionsRoute
+  '/admin/demo-accounts': typeof AuthenticatedAdminDemoAccountsRoute
   '/admin/email-health': typeof AuthenticatedAdminEmailHealthRoute
   '/admin/errors': typeof AuthenticatedAdminErrorsRouteWithChildren
   '/admin/feedback': typeof AuthenticatedAdminFeedbackRoute
@@ -2706,6 +2715,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/ask': typeof AuthenticatedAdminAskRoute
   '/_authenticated/admin/billing': typeof AuthenticatedAdminBillingRoute
   '/_authenticated/admin/competitions': typeof AuthenticatedAdminCompetitionsRoute
+  '/_authenticated/admin/demo-accounts': typeof AuthenticatedAdminDemoAccountsRoute
   '/_authenticated/admin/email-health': typeof AuthenticatedAdminEmailHealthRoute
   '/_authenticated/admin/errors': typeof AuthenticatedAdminErrorsRouteWithChildren
   '/_authenticated/admin/feedback': typeof AuthenticatedAdminFeedbackRoute
@@ -3021,6 +3031,7 @@ export interface FileRouteTypes {
     | '/admin/ask'
     | '/admin/billing'
     | '/admin/competitions'
+    | '/admin/demo-accounts'
     | '/admin/email-health'
     | '/admin/errors'
     | '/admin/feedback'
@@ -3329,6 +3340,7 @@ export interface FileRouteTypes {
     | '/admin/ask'
     | '/admin/billing'
     | '/admin/competitions'
+    | '/admin/demo-accounts'
     | '/admin/email-health'
     | '/admin/errors'
     | '/admin/feedback'
@@ -3642,6 +3654,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/ask'
     | '/_authenticated/admin/billing'
     | '/_authenticated/admin/competitions'
+    | '/_authenticated/admin/demo-accounts'
     | '/_authenticated/admin/email-health'
     | '/_authenticated/admin/errors'
     | '/_authenticated/admin/feedback'
@@ -4679,6 +4692,13 @@ declare module '@tanstack/react-router' {
       path: '/email-health'
       fullPath: '/admin/email-health'
       preLoaderRoute: typeof AuthenticatedAdminEmailHealthRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/demo-accounts': {
+      id: '/_authenticated/admin/demo-accounts'
+      path: '/demo-accounts'
+      fullPath: '/admin/demo-accounts'
+      preLoaderRoute: typeof AuthenticatedAdminDemoAccountsRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
     '/_authenticated/admin/competitions': {
@@ -6371,6 +6391,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminAskRoute: typeof AuthenticatedAdminAskRoute
   AuthenticatedAdminBillingRoute: typeof AuthenticatedAdminBillingRoute
   AuthenticatedAdminCompetitionsRoute: typeof AuthenticatedAdminCompetitionsRoute
+  AuthenticatedAdminDemoAccountsRoute: typeof AuthenticatedAdminDemoAccountsRoute
   AuthenticatedAdminEmailHealthRoute: typeof AuthenticatedAdminEmailHealthRoute
   AuthenticatedAdminErrorsRoute: typeof AuthenticatedAdminErrorsRouteWithChildren
   AuthenticatedAdminFeedbackRoute: typeof AuthenticatedAdminFeedbackRoute
@@ -6403,6 +6424,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminAskRoute: AuthenticatedAdminAskRoute,
   AuthenticatedAdminBillingRoute: AuthenticatedAdminBillingRoute,
   AuthenticatedAdminCompetitionsRoute: AuthenticatedAdminCompetitionsRoute,
+  AuthenticatedAdminDemoAccountsRoute: AuthenticatedAdminDemoAccountsRoute,
   AuthenticatedAdminEmailHealthRoute: AuthenticatedAdminEmailHealthRoute,
   AuthenticatedAdminErrorsRoute: AuthenticatedAdminErrorsRouteWithChildren,
   AuthenticatedAdminFeedbackRoute: AuthenticatedAdminFeedbackRoute,
