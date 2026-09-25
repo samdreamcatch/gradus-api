@@ -68,84 +68,6 @@ export type Database = {
           },
         ]
       }
-      guardian_consents: {
-        Row: {
-          athlete_id: string
-          evidence: Json
-          granted_at: string
-          id: string
-          method: string
-          parent_id: string | null
-          revoked_at: string | null
-          revoked_reason: string | null
-          scope: string
-        }
-        Insert: {
-          athlete_id: string
-          evidence?: Json
-          granted_at?: string
-          id?: string
-          method: string
-          parent_id?: string | null
-          revoked_at?: string | null
-          revoked_reason?: string | null
-          scope: string
-        }
-        Update: {
-          athlete_id?: string
-          evidence?: Json
-          granted_at?: string
-          id?: string
-          method?: string
-          parent_id?: string | null
-          revoked_at?: string | null
-          revoked_reason?: string | null
-          scope?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "guardian_consents_athlete_id_fkey"
-            columns: ["athlete_id"]
-            isOneToOne: false
-            referencedRelation: "athletes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "guardian_consents_parent_id_fkey"
-            columns: ["parent_id"]
-            isOneToOne: false
-            referencedRelation: "parent_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      webhook_receipts: {
-        Row: {
-          event: string
-          external_id: string
-          id: string
-          payload: Json
-          received_at: string
-          source: string
-        }
-        Insert: {
-          event: string
-          external_id: string
-          id?: string
-          payload?: Json
-          received_at?: string
-          source: string
-        }
-        Update: {
-          event?: string
-          external_id?: string
-          id?: string
-          payload?: Json
-          received_at?: string
-          source?: string
-        }
-        Relationships: []
-      }
       analytics_events: {
         Row: {
           age_band: string | null
@@ -873,7 +795,6 @@ export type Database = {
       }
       athletes: {
         Row: {
-          account_state: string
           added_by_coach_id: string | null
           birthdate: string | null
           created_at: string
@@ -896,7 +817,6 @@ export type Database = {
           username: string | null
         }
         Insert: {
-          account_state?: string
           added_by_coach_id?: string | null
           birthdate?: string | null
           created_at?: string
@@ -919,7 +839,6 @@ export type Database = {
           username?: string | null
         }
         Update: {
-          account_state?: string
           added_by_coach_id?: string | null
           birthdate?: string | null
           created_at?: string
@@ -1261,7 +1180,6 @@ export type Database = {
       }
       coach_athletes: {
         Row: {
-          messaging_paused_at: string | null
           athlete_id: string
           coach_ack_at: string | null
           coach_id: string
@@ -1270,7 +1188,6 @@ export type Database = {
           other_ack_at: string | null
         }
         Insert: {
-          messaging_paused_at?: string | null
           athlete_id: string
           coach_ack_at?: string | null
           coach_id: string
@@ -1279,7 +1196,6 @@ export type Database = {
           other_ack_at?: string | null
         }
         Update: {
-          messaging_paused_at?: string | null
           athlete_id?: string
           coach_ack_at?: string | null
           coach_id?: string
@@ -3232,10 +3148,6 @@ export type Database = {
       }
       parent_profiles: {
         Row: {
-          adult_verified_at: string | null
-          adult_verification_method: string | null
-          adult_verification_ref: string | null
-          adult_verification_requested_at: string | null
           coach_id: string | null
           created_at: string
           current_period_end: string | null
@@ -3254,10 +3166,6 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          adult_verified_at?: string | null
-          adult_verification_method?: string | null
-          adult_verification_ref?: string | null
-          adult_verification_requested_at?: string | null
           coach_id?: string | null
           created_at?: string
           current_period_end?: string | null
@@ -3276,10 +3184,6 @@ export type Database = {
           user_id: string
         }
         Update: {
-          adult_verified_at?: string | null
-          adult_verification_method?: string | null
-          adult_verification_ref?: string | null
-          adult_verification_requested_at?: string | null
           coach_id?: string | null
           created_at?: string
           current_period_end?: string | null
