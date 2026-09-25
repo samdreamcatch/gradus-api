@@ -13139,6 +13139,12 @@
                             "string",
                             "null"
                           ]
+                        },
+                        "messagingPausedByParent": {
+                          "type": "boolean"
+                        },
+                        "viewerTextOnly": {
+                          "type": "boolean"
                         }
                       },
                       "required": [
@@ -13149,7 +13155,9 @@
                         "participants",
                         "myRole",
                         "myUserId",
-                        "myCoachId"
+                        "myCoachId",
+                        "messagingPausedByParent",
+                        "viewerTextOnly"
                       ]
                     },
                     "items": {
@@ -13464,7 +13472,12 @@
                           "type": "string",
                           "enum": [
                             "blocked",
-                            "coach_unlinked"
+                            "coach_unlinked",
+                            "guardian_required",
+                            "provisional",
+                            "paused",
+                            "paused_by_parent",
+                            "text_only"
                           ]
                         },
                         "message": {
@@ -21338,6 +21351,89 @@
                     "verified",
                     "duplicate",
                     "reason"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/parent/athletes/{id}/coaches/{coachId}/messaging": {
+      "put": {
+        "operationId": "setParentAthleteCoachMessagingPause",
+        "summary": "Pause or resume messaging between a coach and the athlete",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "coachId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "paused": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "paused"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "paused": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "paused"
                   ]
                 }
               }

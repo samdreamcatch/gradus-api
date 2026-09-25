@@ -87,6 +87,9 @@ export const GuardianInviteEmail = ({
                 </Link>
               </Text>
               <Text style={sign}>{renderTemplateString(c.signOff, vars)}</Text>
+              <Text style={{ ...text, marginTop: "20px", fontSize: "13px" }}>
+                {parse(renderTemplateString(c.notice, vars))}
+              </Text>
               <Hr style={divider} />
               <Text style={footer}>
                 {parse(renderTemplateString(c.footer, vars))}{" "}

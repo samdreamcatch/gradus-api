@@ -19,6 +19,7 @@ import { currentGoalValues, recordGoalsChange } from "./goals-history.server";
 import { inviteCodeSchema } from "./invites.server";
 import { lessonSlotSchema } from "./parent-signup.server";
 import { ageInYears } from "./pending-athlete-dob";
+import { isUnderThirteen } from "./guardian-verification.server";
 
 type Client = SupabaseClient<Database>;
 type Admin = typeof supabaseAdmin;
@@ -76,6 +77,17 @@ export async function createSelfManagedAthlete(
   const { supabase, userId } = ctx;
   const isMinor = ageInYears(data.birthdate) < 18;
 
+  // Decision #30 (PRD §6.13 A4): no under-13 athlete ever creates their own
+  // account; the parent starts it and the child joins with the parent's code.
+  if (isUnderThirteen(data.birthdate)) {
+    throw new ApiError({
+      code: "parent_required",
+      status: 422,
+      message:
+        "Athletes under 13 need a parent or guardian to set up their account. Ask them to sign up for Gradus and add you.",
+    });
+  }
+
   // Idempotent: don't error if the user already has a row (e.g. the signup
   // form was submitted twice, or they returned to onboarding).
   const existing = await supabase
@@ -107,6 +119,8 @@ export async function createSelfManagedAthlete(
       guardian_email: guardianEmail,
       guardian_claim_token: guardianToken,
       guardian_invited_at: guardianEmail ? new Date().toISOString() : null,
+      // Decision #31: a 13–17 self-sign-up waits on a verified guardian.
+      account_state: isMinor ? "provisional" : "active",
     })
     .select("id")
     .single();
@@ -138,7 +152,11 @@ export function athleteCanConnectCoach(row: {
   birthdate: string | null;
   guardian_email: string | null;
   parent_id: string | null;
+  account_state?: string | null;
 }): boolean {
+  // PRD §6.13 A4: a provisional (unclaimed 13–17) or paused account never connects a coach.
+  const state = row.account_state ?? "active";
+  if (state === "provisional" || state === "paused") return false;
   const minor = row.birthdate ? ageInYears(row.birthdate) < 18 : false;
   if (!minor) return true;
   return Boolean(row.guardian_email) || Boolean(row.parent_id);
@@ -148,10 +166,22 @@ function assertCanConnectCoach(row: {
   birthdate: string | null;
   guardian_email: string | null;
   parent_id: string | null;
+  account_state?: string | null;
 }) {
-  if (!athleteCanConnectCoach(row)) {
-    throw unprocessable("Add a parent or guardian email in Settings before connecting a coach.");
+  if (athleteCanConnectCoach(row)) return;
+  const state = row.account_state ?? "active";
+  if (state === "provisional") {
+    throw new ApiError({
+      code: "provisional",
+      status: 403,
+      message:
+        "Your parent or guardian needs to claim your account before you can connect a coach. Check that they got the email, or resend it from Settings.",
+    });
   }
+  if (state === "paused") {
+    throw new ApiError({ code: "paused", status: 403, message: "This account is paused." });
+  }
+  throw unprocessable("Add a parent or guardian email in Settings before connecting a coach.");
 }
 
 async function coachIdForCode(admin: Admin, code: string): Promise<string> {
@@ -182,7 +212,7 @@ export async function previewCoachForAdultAthlete(
   const { admin, userId } = ctx;
   const me = await admin
     .from("athletes")
-    .select("id, self_managed, birthdate, guardian_email, parent_id")
+    .select("id, self_managed, birthdate, guardian_email, parent_id, account_state")
     .eq("user_id", userId)
     .maybeSingle();
   if (me.error) dbError(me.error);
@@ -218,7 +248,7 @@ export async function linkAdultAthleteToCoach(
   // Resolve the caller's self-managed athlete.
   const me = await supabase
     .from("athletes")
-    .select("id, self_managed, birthdate, guardian_email, parent_id")
+    .select("id, self_managed, birthdate, guardian_email, parent_id, account_state")
     .eq("user_id", userId)
     .maybeSingle();
   if (me.error) dbError(me.error);
@@ -377,7 +407,7 @@ export async function listAdultAthleteCoaches(ctx: AdultContext): Promise<AdultC
   const { supabase, admin, userId } = ctx;
   const me = await supabase
     .from("athletes")
-    .select("id, self_managed, birthdate, guardian_email, parent_id")
+    .select("id, self_managed, birthdate, guardian_email, parent_id, account_state")
     .eq("user_id", userId)
     .maybeSingle();
   if (me.error) dbError(me.error);

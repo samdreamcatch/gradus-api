@@ -8,7 +8,15 @@ const outputSchema = z.discriminatedUnion("ok", [
   z.object({ ok: z.literal(true), id: z.string() }),
   z.object({
     ok: z.literal(false),
-    reason: z.enum(["blocked", "coach_unlinked"]),
+    reason: z.enum([
+      "blocked",
+      "coach_unlinked",
+      "guardian_required",
+      "provisional",
+      "paused",
+      "paused_by_parent",
+      "text_only",
+    ]),
     message: z.string(),
   }),
 ]);

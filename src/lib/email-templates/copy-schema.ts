@@ -44,8 +44,6 @@ const COACH_VISIBILITY_VARS = [
 ] as const;
 const TEAM_INVITE_VARS = ["athleteName", "inviterName", "claimUrl", "code", "siteUrl"] as const;
 
-
-
 const GUARDIAN_ACTIVITY_VARS = [
   "athleteName",
   "senderName",
@@ -262,6 +260,12 @@ export const EMAIL_COPY_SCHEMA: Record<string, TemplateCopy> = {
       { key: "ctaLabel", label: "Button label", kind: "text", variables: GUARDIAN_INVITE_VARS },
       { key: "fallbackHelp", label: "Button-not-working help", kind: "text" },
       { key: "signOff", label: "Handwritten sign-off", kind: "text" },
+      {
+        key: "notice",
+        label: "Direct notice (COPPA: what we collect, why, and the deletion window)",
+        kind: "textarea",
+        variables: GUARDIAN_INVITE_VARS,
+      },
       { key: "footer", label: "Fine-print footer", kind: "textarea" },
     ],
     defaults: {
@@ -274,10 +278,12 @@ export const EMAIL_COPY_SCHEMA: Record<string, TemplateCopy> = {
         "Coach {coachName} added {athleteName} to Gradus, the training app their coach uses to assign plans, track practice, and message about lessons.",
       intro:
         "{athleteName} joined Gradus, the training app their coach uses to assign plans, track practice, and message about lessons.",
-      body: "You were listed as their parent or guardian, so we'll email you a copy of what their coach sends. Create your free parent account to see plans, practice logs, and messages in one place — nothing to pay, and it takes about a minute.",
+      body: "You were listed as their parent or guardian. Until you claim the account, {athleteName} can see their goals and plans but can't connect a coach or message anyone. Create your free parent account to open that up and see plans, practice logs, and messages in one place — nothing to pay, and it takes about a minute.",
       ctaLabel: "See {athleteName}'s training",
       fallbackHelp: "Or paste this link into your browser:",
       signOff: "— The Gradus team",
+      notice:
+        "What Gradus keeps for {athleteName}: their name, date of birth, a username, practice logs, goals, and text messages with their coach, which you can always read. We use it only to run their training, never for advertising, and our service providers are listed in our privacy policy at {siteUrl}/privacy. Athletes under 18 can't send voice recordings. If nobody claims this account within three months, it and this email address are deleted. From your parent account you can review or delete their information at any time.",
       footer:
         "If you don't recognize this athlete, you can ignore this email and no account will be created.",
     },
@@ -315,7 +321,12 @@ export const EMAIL_COPY_SCHEMA: Record<string, TemplateCopy> = {
         kind: "textarea",
         variables: GUARDIAN_INVITE_VARS,
       },
-      { key: "body", label: "Secondary paragraph", kind: "textarea", variables: GUARDIAN_INVITE_VARS },
+      {
+        key: "body",
+        label: "Secondary paragraph",
+        kind: "textarea",
+        variables: GUARDIAN_INVITE_VARS,
+      },
       { key: "ctaLabel", label: "Button label", kind: "text", variables: GUARDIAN_INVITE_VARS },
       { key: "fallbackHelp", label: "Button-not-working help", kind: "text" },
       { key: "signOff", label: "Handwritten sign-off", kind: "text" },
@@ -349,8 +360,18 @@ export const EMAIL_COPY_SCHEMA: Record<string, TemplateCopy> = {
       { key: "subject", label: "Subject line", kind: "text", variables: COACH_VISIBILITY_VARS },
       { key: "eyebrow", label: "Small caps eyebrow", kind: "text" },
       { key: "heading", label: "Big headline", kind: "text", variables: COACH_VISIBILITY_VARS },
-      { key: "intro", label: "Intro paragraph", kind: "textarea", variables: COACH_VISIBILITY_VARS },
-      { key: "body", label: "Secondary paragraph", kind: "textarea", variables: COACH_VISIBILITY_VARS },
+      {
+        key: "intro",
+        label: "Intro paragraph",
+        kind: "textarea",
+        variables: COACH_VISIBILITY_VARS,
+      },
+      {
+        key: "body",
+        label: "Secondary paragraph",
+        kind: "textarea",
+        variables: COACH_VISIBILITY_VARS,
+      },
       { key: "ctaLabel", label: "Button label", kind: "text", variables: COACH_VISIBILITY_VARS },
       { key: "fallbackHelp", label: "Button-not-working help", kind: "text" },
       { key: "signOff", label: "Handwritten sign-off", kind: "text" },
@@ -684,8 +705,7 @@ export const EMAIL_COPY_SCHEMA: Record<string, TemplateCopy> = {
   "club-invite": {
     displayName: "Club coach invite",
     category: "App",
-    description:
-      "Sent to a coach when a club admin invites them to join the club's Gradus plan.",
+    description: "Sent to a coach when a club admin invites them to join the club's Gradus plan.",
     slots: [
       { key: "preview", label: "Inbox preview", kind: "text", variables: ["orgName"] },
       { key: "subject", label: "Subject line", kind: "text", variables: ["orgName"] },
@@ -767,7 +787,6 @@ export const EMAIL_COPY_SCHEMA: Record<string, TemplateCopy> = {
     },
   },
 };
-
 
 /** Pseudo-template holding CC/BCC that applies to every email the app sends. */
 export const GLOBAL_DELIVERY_TEMPLATE = "__global";

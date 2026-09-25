@@ -398,6 +398,7 @@ export async function addAthleteWithGuardian(
     1,
   );
 
+  let knownAdult = false;
   if (data.birthdate) {
     const [y, m, d] = data.birthdate.split("-").map(Number);
     const dob = new Date(Date.UTC(y, m - 1, d));
@@ -408,6 +409,15 @@ export async function addAthleteWithGuardian(
     if (age < 18 && !data.guardianEmail) {
       throw unprocessable("Athletes under 18 need a parent or guardian email.");
     }
+    knownAdult = age >= 18;
+  }
+
+  // Decision #30 (PRD §6.13 A5): the invite goes to the parent for anyone
+  // under 18 or with no birthdate on file; only a known adult is invited directly.
+  if (data.emailRecipient === "athlete" && !knownAdult) {
+    throw unprocessable(
+      "Invite the parent or guardian for athletes under 18. To invite an athlete directly, enter a birthdate that makes them 18 or over.",
+    );
   }
 
   const guardianEmail = data.guardianEmail ?? null;

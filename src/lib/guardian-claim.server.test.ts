@@ -314,6 +314,60 @@ describe("getGuardianClaimSummary", () => {
 /* ================================================================== claim */
 
 describe("claimGuardianAthlete", () => {
+  it("activates the athlete and records consent on the claim (PRD §6.13 A3–A4)", async () => {
+    const { admin, tables } = fakeAdmin({
+      athletes: [pendingAthlete({ account_state: "provisional", user_id: "teen-user" })],
+      parent_profiles: [PARENT],
+      guardian_consents: [],
+    });
+    await claimGuardianAthlete(admin, USER, { token: TOKEN });
+    const athlete = tables.athletes[0];
+    expect(athlete.account_state).toBe("active");
+    expect(athlete.parent_id).toBe(PARENT.id);
+    const consents = tables.guardian_consents ?? [];
+    expect(consents.map((c: Record<string, unknown>) => c.scope).sort()).toEqual([
+      "account",
+      "messaging",
+    ]);
+    expect(consents.every((c: Record<string, unknown>) => c.method === "guardian_claim")).toBe(
+      true,
+    );
+  });
+
+  it("with the regime switch on, an unverified parent is refused with parent_unverified", async () => {
+    const previous = process.env.PARENT_VERIFICATION_REQUIRED;
+    process.env.PARENT_VERIFICATION_REQUIRED = "true";
+    try {
+      const { admin, tables } = fakeAdmin({
+        athletes: [pendingAthlete()],
+        parent_profiles: [{ ...PARENT, adult_verified_at: null, adult_verification_method: null }],
+        guardian_consents: [],
+      });
+      await expect(claimGuardianAthlete(admin, USER, { token: TOKEN })).rejects.toMatchObject({
+        code: "parent_unverified",
+        status: 403,
+      });
+      expect(tables.athletes[0].parent_id).toBeNull();
+
+      const verified = fakeAdmin({
+        athletes: [pendingAthlete()],
+        parent_profiles: [
+          {
+            ...PARENT,
+            adult_verified_at: "2026-01-01T00:00:00Z",
+            adult_verification_method: "legacy",
+          },
+        ],
+        guardian_consents: [],
+      });
+      await claimGuardianAthlete(verified.admin, USER, { token: TOKEN });
+      expect(verified.tables.athletes[0].parent_id).toBe(PARENT.id);
+    } finally {
+      if (previous === undefined) delete process.env.PARENT_VERIFICATION_REQUIRED;
+      else process.env.PARENT_VERIFICATION_REQUIRED = previous;
+    }
+  });
+
   it("creates the parent profile and links the athlete (first claim)", async () => {
     const { admin, tables, inserted } = fakeAdmin({ athletes: [pendingAthlete()] });
     const out = await claimGuardianAthlete(admin, USER, {

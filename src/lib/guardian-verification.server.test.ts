@@ -1,17 +1,22 @@
 import { describe, expect, it } from "bun:test";
 import {
+  activateAthletesForVerifiedParent,
   assertParentVerified,
+  athleteRoomGate,
   completeVerificationFromRedirect,
   grantGuardianConsent,
   handleKwsWebhook,
+  isUnderThirteen,
   provisionalCutoff,
   recordParentVerification,
   revokeGuardianConsent,
+  setCoachMessagingPause,
   startParentVerification,
   sweepProvisionalAthletes,
   toParentVerificationDTO,
 } from "./guardian-verification.server";
 import { encodeExternalPayload, hmacSha256Hex } from "./kws.server";
+import { isMinorOrUnconfirmed } from "./athlete-age";
 
 /* -------------------------------------------------------------------------- */
 /* A small in-memory Supabase-shaped fake: the chains this module uses         */
@@ -95,6 +100,10 @@ function fakeAdmin(
       },
       lt: (c: string, v: any) => {
         st.filters.push((r) => r[c] < v);
+        return api;
+      },
+      in: (c: string, vs: unknown[]) => {
+        st.filters.push((r) => vs.includes(r[c]));
         return api;
       },
       order: (c: string, o?: { ascending?: boolean }) => {
@@ -590,5 +599,205 @@ describe("sweepProvisionalAthletes", () => {
       },
     });
     expect(result).toEqual({ scanned: 2, deleted: 1, failed: 1 });
+  });
+});
+
+/* ------------------------------------------------------------------ rules */
+
+const yearsAgo = (n: number) => {
+  const d = new Date(NOW.getTime());
+  d.setUTCFullYear(d.getUTCFullYear() - n);
+  return d.toISOString().slice(0, 10);
+};
+
+describe("age helpers", () => {
+  it("treats a missing or unparseable birthdate as a minor, and 13 as not under 13", () => {
+    expect(isMinorOrUnconfirmed(null)).toBe(true);
+    expect(isMinorOrUnconfirmed("nope")).toBe(true);
+    expect(isMinorOrUnconfirmed(yearsAgo(17))).toBe(true);
+    expect(isMinorOrUnconfirmed(yearsAgo(30))).toBe(false);
+    expect(isUnderThirteen(yearsAgo(12))).toBe(true);
+    expect(isUnderThirteen(yearsAgo(13))).toBe(false);
+  });
+});
+
+describe("athleteRoomGate", () => {
+  const COACH = "c1";
+  const minorRow = (extra: Row = {}) => ({
+    id: "ath",
+    birthdate: yearsAgo(14),
+    parent_id: null,
+    account_state: "active",
+    ...extra,
+  });
+  const linkRow = (extra: Row = {}) => ({
+    coach_id: COACH,
+    athlete_id: "ath",
+    messaging_paused_at: null,
+    ...extra,
+  });
+
+  it("with the switch off, a minor with no parent is only blocked when provisional or paused", async () => {
+    expect(
+      await athleteRoomGate(
+        fakeAdmin({ athletes: [minorRow()], coach_athletes: [linkRow()] }),
+        "ath",
+        COACH,
+        OFF,
+      ),
+    ).toEqual({ restriction: null, minor: true });
+    expect(
+      await athleteRoomGate(
+        fakeAdmin({
+          athletes: [minorRow({ account_state: "provisional" })],
+          coach_athletes: [linkRow()],
+        }),
+        "ath",
+        COACH,
+        OFF,
+      ),
+    ).toEqual({ restriction: "provisional", minor: true });
+    expect(
+      await athleteRoomGate(
+        fakeAdmin({
+          athletes: [minorRow({ account_state: "paused" })],
+          coach_athletes: [linkRow()],
+        }),
+        "ath",
+        COACH,
+        OFF,
+      ),
+    ).toEqual({ restriction: "paused", minor: true });
+  });
+
+  it("with the switch on, a minor needs a verified parent as a participant", async () => {
+    const noParent = fakeAdmin({ athletes: [minorRow()], coach_athletes: [linkRow()] });
+    expect(await athleteRoomGate(noParent, "ath", COACH, REQUIRED)).toEqual({
+      restriction: "guardian_required",
+      minor: true,
+    });
+
+    const unverified = fakeAdmin({
+      athletes: [minorRow({ parent_id: PARENT })],
+      coach_athletes: [linkRow()],
+      parent_profiles: [unverifiedParent()],
+    });
+    expect(await athleteRoomGate(unverified, "ath", COACH, REQUIRED)).toEqual({
+      restriction: "guardian_required",
+      minor: true,
+    });
+
+    const legacy = fakeAdmin({
+      athletes: [minorRow({ parent_id: PARENT })],
+      coach_athletes: [linkRow()],
+      parent_profiles: [
+        {
+          ...unverifiedParent(),
+          adult_verified_at: "2026-01-01T00:00:00Z",
+          adult_verification_method: "legacy",
+        },
+      ],
+    });
+    expect(await athleteRoomGate(legacy, "ath", COACH, REQUIRED)).toEqual({
+      restriction: null,
+      minor: true,
+    });
+  });
+
+  it("a parent's pause stops the room for anyone, adults included; adults are otherwise free", async () => {
+    const adultPaused = fakeAdmin({
+      athletes: [minorRow({ birthdate: yearsAgo(25) })],
+      coach_athletes: [linkRow({ messaging_paused_at: NOW.toISOString() })],
+    });
+    expect(await athleteRoomGate(adultPaused, "ath", COACH, REQUIRED)).toEqual({
+      restriction: "paused_by_parent",
+      minor: false,
+    });
+    const adult = fakeAdmin({
+      athletes: [minorRow({ birthdate: yearsAgo(25) })],
+      coach_athletes: [linkRow()],
+    });
+    expect(await athleteRoomGate(adult, "ath", COACH, REQUIRED)).toEqual({
+      restriction: null,
+      minor: false,
+    });
+    expect(await athleteRoomGate(fakeAdmin({ athletes: [] }), "missing", COACH, OFF)).toEqual({
+      restriction: "guardian_required",
+      minor: true,
+    });
+  });
+});
+
+describe("activateAthletesForVerifiedParent / setCoachMessagingPause", () => {
+  it("turns the parent's provisional athletes active and records consent for all of them", async () => {
+    const admin = fakeAdmin({
+      athletes: [
+        { id: "a1", parent_id: PARENT, account_state: "provisional" },
+        { id: "a2", parent_id: PARENT, account_state: "active" },
+        { id: "other", parent_id: "someone-else", account_state: "provisional" },
+      ],
+      guardian_consents: [],
+    });
+    const result = await activateAthletesForVerifiedParent(admin, PARENT, {
+      now: NOW,
+      evidence: { verification: "kws_card" },
+    });
+    expect(result).toEqual({ activated: 1, athletes: 2 });
+    expect(admin.tables.athletes.find((a) => a.id === "a1")?.account_state).toBe("active");
+    expect(admin.tables.athletes.find((a) => a.id === "other")?.account_state).toBe("provisional");
+    expect(admin.tables.guardian_consents).toHaveLength(4);
+    expect(admin.tables.guardian_consents.every((c) => c.method === "parent_created")).toBe(true);
+    // Idempotent on a second run.
+    expect(await activateAthletesForVerifiedParent(admin, PARENT, { now: NOW })).toEqual({
+      activated: 0,
+      athletes: 2,
+    });
+    expect(admin.tables.guardian_consents).toHaveLength(4);
+  });
+
+  it("a KWS verification activates the parent's athletes too", async () => {
+    const admin = fakeAdmin({
+      parent_profiles: [unverifiedParent()],
+      athletes: [{ id: "a1", parent_id: PARENT, account_state: "provisional" }],
+      guardian_consents: [],
+      webhook_receipts: [],
+    });
+    await recordParentVerification(admin, {
+      source: "kws",
+      event: "parent-verified",
+      transactionId: "tx",
+      verified: true,
+      parentId: PARENT,
+      userId: USER,
+      payload: {},
+      now: NOW,
+    });
+    expect(admin.tables.athletes[0].account_state).toBe("active");
+    expect(admin.tables.guardian_consents.map((c) => c.scope).sort()).toEqual([
+      "account",
+      "messaging",
+    ]);
+  });
+
+  it("pauses and resumes a coach link, and 404s an unknown link", async () => {
+    const admin = fakeAdmin({
+      coach_athletes: [{ id: "l1", coach_id: "c1", athlete_id: "ath", messaging_paused_at: null }],
+    });
+    expect(
+      await setCoachMessagingPause(admin, {
+        athleteId: "ath",
+        coachId: "c1",
+        paused: true,
+        now: NOW,
+      }),
+    ).toEqual({ ok: true, paused: true });
+    expect(admin.tables.coach_athletes[0].messaging_paused_at).toBe(NOW.toISOString());
+    expect(
+      await setCoachMessagingPause(admin, { athleteId: "ath", coachId: "c1", paused: false }),
+    ).toEqual({ ok: true, paused: false });
+    expect(admin.tables.coach_athletes[0].messaging_paused_at).toBeNull();
+    await expect(
+      setCoachMessagingPause(admin, { athleteId: "ath", coachId: "nope", paused: true }),
+    ).rejects.toMatchObject({ code: "not_found" });
   });
 });

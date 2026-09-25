@@ -326,6 +326,7 @@ import { Route as ApiV1ParentTeamGuardiansInvitesIdIndexRouteImport } from './ro
 import { Route as ApiV1ParentAthletesIdCoachesCoachIdIndexRouteImport } from './routes/api/v1/parent/athletes/$id/coaches/$coachId/index'
 import { Route as ApiV1ParentTeamGuardiansInvitesIdResendRouteImport } from './routes/api/v1/parent/team/guardians/invites/$id/resend'
 import { Route as ApiV1ParentAthletesIdCoachesCoachIdSportsRouteImport } from './routes/api/v1/parent/athletes/$id/coaches/$coachId/sports'
+import { Route as ApiV1ParentAthletesIdCoachesCoachIdMessagingRouteImport } from './routes/api/v1/parent/athletes/$id/coaches/$coachId/messaging'
 import { Route as ApiV1CoachLessonSlotsIdOccurrencesDateRescheduleRouteImport } from './routes/api/v1/coach/lesson-slots/$id/occurrences/$date/reschedule'
 import { Route as ApiV1CoachLessonSlotsIdOccurrencesDateOverrideRouteImport } from './routes/api/v1/coach/lesson-slots/$id/occurrences/$date/override'
 import { Route as ApiV1CoachLessonSlotsIdOccurrencesDateCancelRouteImport } from './routes/api/v1/coach/lesson-slots/$id/occurrences/$date/cancel'
@@ -2088,6 +2089,12 @@ const ApiV1ParentAthletesIdCoachesCoachIdSportsRoute =
     path: '/api/v1/parent/athletes/$id/coaches/$coachId/sports',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiV1ParentAthletesIdCoachesCoachIdMessagingRoute =
+  ApiV1ParentAthletesIdCoachesCoachIdMessagingRouteImport.update({
+    id: '/api/v1/parent/athletes/$id/coaches/$coachId/messaging',
+    path: '/api/v1/parent/athletes/$id/coaches/$coachId/messaging',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiV1CoachLessonSlotsIdOccurrencesDateRescheduleRoute =
   ApiV1CoachLessonSlotsIdOccurrencesDateRescheduleRouteImport.update({
     id: '/api/v1/coach/lesson-slots/$id/occurrences/$date/reschedule',
@@ -2423,6 +2430,7 @@ export interface FileRoutesByFullPath {
   '/api/v1/coach/lesson-slots/$id/occurrences/$date/cancel': typeof ApiV1CoachLessonSlotsIdOccurrencesDateCancelRoute
   '/api/v1/coach/lesson-slots/$id/occurrences/$date/override': typeof ApiV1CoachLessonSlotsIdOccurrencesDateOverrideRoute
   '/api/v1/coach/lesson-slots/$id/occurrences/$date/reschedule': typeof ApiV1CoachLessonSlotsIdOccurrencesDateRescheduleRoute
+  '/api/v1/parent/athletes/$id/coaches/$coachId/messaging': typeof ApiV1ParentAthletesIdCoachesCoachIdMessagingRoute
   '/api/v1/parent/athletes/$id/coaches/$coachId/sports': typeof ApiV1ParentAthletesIdCoachesCoachIdSportsRoute
   '/api/v1/parent/team/guardians/invites/$id/resend': typeof ApiV1ParentTeamGuardiansInvitesIdResendRoute
   '/api/v1/parent/athletes/$id/coaches/$coachId/': typeof ApiV1ParentAthletesIdCoachesCoachIdIndexRoute
@@ -2738,6 +2746,7 @@ export interface FileRoutesByTo {
   '/api/v1/coach/lesson-slots/$id/occurrences/$date/cancel': typeof ApiV1CoachLessonSlotsIdOccurrencesDateCancelRoute
   '/api/v1/coach/lesson-slots/$id/occurrences/$date/override': typeof ApiV1CoachLessonSlotsIdOccurrencesDateOverrideRoute
   '/api/v1/coach/lesson-slots/$id/occurrences/$date/reschedule': typeof ApiV1CoachLessonSlotsIdOccurrencesDateRescheduleRoute
+  '/api/v1/parent/athletes/$id/coaches/$coachId/messaging': typeof ApiV1ParentAthletesIdCoachesCoachIdMessagingRoute
   '/api/v1/parent/athletes/$id/coaches/$coachId/sports': typeof ApiV1ParentAthletesIdCoachesCoachIdSportsRoute
   '/api/v1/parent/team/guardians/invites/$id/resend': typeof ApiV1ParentTeamGuardiansInvitesIdResendRoute
   '/api/v1/parent/athletes/$id/coaches/$coachId': typeof ApiV1ParentAthletesIdCoachesCoachIdIndexRoute
@@ -3061,6 +3070,7 @@ export interface FileRoutesById {
   '/api/v1/coach/lesson-slots/$id/occurrences/$date/cancel': typeof ApiV1CoachLessonSlotsIdOccurrencesDateCancelRoute
   '/api/v1/coach/lesson-slots/$id/occurrences/$date/override': typeof ApiV1CoachLessonSlotsIdOccurrencesDateOverrideRoute
   '/api/v1/coach/lesson-slots/$id/occurrences/$date/reschedule': typeof ApiV1CoachLessonSlotsIdOccurrencesDateRescheduleRoute
+  '/api/v1/parent/athletes/$id/coaches/$coachId/messaging': typeof ApiV1ParentAthletesIdCoachesCoachIdMessagingRoute
   '/api/v1/parent/athletes/$id/coaches/$coachId/sports': typeof ApiV1ParentAthletesIdCoachesCoachIdSportsRoute
   '/api/v1/parent/team/guardians/invites/$id/resend': typeof ApiV1ParentTeamGuardiansInvitesIdResendRoute
   '/api/v1/parent/athletes/$id/coaches/$coachId/': typeof ApiV1ParentAthletesIdCoachesCoachIdIndexRoute
@@ -3384,6 +3394,7 @@ export interface FileRouteTypes {
     | '/api/v1/coach/lesson-slots/$id/occurrences/$date/cancel'
     | '/api/v1/coach/lesson-slots/$id/occurrences/$date/override'
     | '/api/v1/coach/lesson-slots/$id/occurrences/$date/reschedule'
+    | '/api/v1/parent/athletes/$id/coaches/$coachId/messaging'
     | '/api/v1/parent/athletes/$id/coaches/$coachId/sports'
     | '/api/v1/parent/team/guardians/invites/$id/resend'
     | '/api/v1/parent/athletes/$id/coaches/$coachId/'
@@ -3699,6 +3710,7 @@ export interface FileRouteTypes {
     | '/api/v1/coach/lesson-slots/$id/occurrences/$date/cancel'
     | '/api/v1/coach/lesson-slots/$id/occurrences/$date/override'
     | '/api/v1/coach/lesson-slots/$id/occurrences/$date/reschedule'
+    | '/api/v1/parent/athletes/$id/coaches/$coachId/messaging'
     | '/api/v1/parent/athletes/$id/coaches/$coachId/sports'
     | '/api/v1/parent/team/guardians/invites/$id/resend'
     | '/api/v1/parent/athletes/$id/coaches/$coachId'
@@ -4021,6 +4033,7 @@ export interface FileRouteTypes {
     | '/api/v1/coach/lesson-slots/$id/occurrences/$date/cancel'
     | '/api/v1/coach/lesson-slots/$id/occurrences/$date/override'
     | '/api/v1/coach/lesson-slots/$id/occurrences/$date/reschedule'
+    | '/api/v1/parent/athletes/$id/coaches/$coachId/messaging'
     | '/api/v1/parent/athletes/$id/coaches/$coachId/sports'
     | '/api/v1/parent/team/guardians/invites/$id/resend'
     | '/api/v1/parent/athletes/$id/coaches/$coachId/'
@@ -4264,6 +4277,7 @@ export interface RootRouteChildren {
   ApiV1CoachLessonSlotsIdOccurrencesDateCancelRoute: typeof ApiV1CoachLessonSlotsIdOccurrencesDateCancelRoute
   ApiV1CoachLessonSlotsIdOccurrencesDateOverrideRoute: typeof ApiV1CoachLessonSlotsIdOccurrencesDateOverrideRoute
   ApiV1CoachLessonSlotsIdOccurrencesDateRescheduleRoute: typeof ApiV1CoachLessonSlotsIdOccurrencesDateRescheduleRoute
+  ApiV1ParentAthletesIdCoachesCoachIdMessagingRoute: typeof ApiV1ParentAthletesIdCoachesCoachIdMessagingRoute
   ApiV1ParentAthletesIdCoachesCoachIdSportsRoute: typeof ApiV1ParentAthletesIdCoachesCoachIdSportsRoute
   ApiV1ParentTeamGuardiansInvitesIdResendRoute: typeof ApiV1ParentTeamGuardiansInvitesIdResendRoute
   ApiV1ParentAthletesIdCoachesCoachIdIndexRoute: typeof ApiV1ParentAthletesIdCoachesCoachIdIndexRoute
@@ -6491,6 +6505,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1ParentAthletesIdCoachesCoachIdSportsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/v1/parent/athletes/$id/coaches/$coachId/messaging': {
+      id: '/api/v1/parent/athletes/$id/coaches/$coachId/messaging'
+      path: '/api/v1/parent/athletes/$id/coaches/$coachId/messaging'
+      fullPath: '/api/v1/parent/athletes/$id/coaches/$coachId/messaging'
+      preLoaderRoute: typeof ApiV1ParentAthletesIdCoachesCoachIdMessagingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/v1/coach/lesson-slots/$id/occurrences/$date/reschedule': {
       id: '/api/v1/coach/lesson-slots/$id/occurrences/$date/reschedule'
       path: '/api/v1/coach/lesson-slots/$id/occurrences/$date/reschedule'
@@ -7041,6 +7062,8 @@ const rootRouteChildren: RootRouteChildren = {
     ApiV1CoachLessonSlotsIdOccurrencesDateOverrideRoute,
   ApiV1CoachLessonSlotsIdOccurrencesDateRescheduleRoute:
     ApiV1CoachLessonSlotsIdOccurrencesDateRescheduleRoute,
+  ApiV1ParentAthletesIdCoachesCoachIdMessagingRoute:
+    ApiV1ParentAthletesIdCoachesCoachIdMessagingRoute,
   ApiV1ParentAthletesIdCoachesCoachIdSportsRoute:
     ApiV1ParentAthletesIdCoachesCoachIdSportsRoute,
   ApiV1ParentTeamGuardiansInvitesIdResendRoute:

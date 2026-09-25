@@ -695,6 +695,12 @@ export async function claimGuardianInvite(
     throw conflict("You're already the primary parent for this athlete.");
   }
 
+  // PRD §6.13 A1: every parent linked to a minor is a verified adult, co-guardians included.
+  {
+    const { assertParentVerified } = await import("./guardian-verification.server");
+    await assertParentVerified(admin, parentId);
+  }
+
   // Cap seats at claim time too (existing links only — this invite is one of them).
   const alreadyLinked = await admin
     .from("athlete_guardians")
@@ -719,6 +725,16 @@ export async function claimGuardianInvite(
       { onConflict: "athlete_id,parent_id" },
     );
   if (link.error) dbError(link.error);
+
+  {
+    const { grantGuardianConsent } = await import("./guardian-verification.server");
+    await grantGuardianConsent(admin, {
+      athleteId: invite.athlete_id,
+      parentId,
+      method: "guardian_claim",
+      evidence: { via: "team_invite", inviteId: invite.id },
+    });
+  }
 
   const upd = await admin
     .from("guardian_invites")

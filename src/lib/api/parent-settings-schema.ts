@@ -64,6 +64,11 @@ export const addParentAthleteResultSchema = z.object({
   athleteId: z.string(),
 });
 
+export const messagingPauseResultSchema = z.object({
+  ok: z.literal(true),
+  paused: z.boolean(),
+});
+
 export const resetAthletePasswordResultSchema = z.object({
   ok: z.literal(true),
   username: z.string().nullable(),

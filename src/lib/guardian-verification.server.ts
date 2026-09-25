@@ -18,6 +18,8 @@ import type { supabaseAdmin } from "@/integrations/supabase/client.server";
 import type { Json } from "@/integrations/supabase/types";
 import { ApiError } from "./api/errors";
 import { dbError } from "./db-error";
+import { isMinorOrUnconfirmed } from "./athlete-age";
+import { ageInYears } from "./pending-athlete-dob";
 import {
   decodeExternalPayload,
   encodeExternalPayload,
@@ -340,6 +342,10 @@ export async function recordParentVerification(
     })
     .eq("id", parent.id);
   if (upd.error) dbError(upd.error);
+  await activateAthletesForVerifiedParent(admin, parent.id, {
+    now,
+    evidence: { verification: "kws_card", ref: args.transactionId },
+  });
   return { applied: true, duplicate: false };
 }
 
@@ -359,6 +365,10 @@ export async function markParentVerifiedByAdmin(
     })
     .eq("id", parentId);
   if (upd.error) dbError(upd.error);
+  await activateAthletesForVerifiedParent(admin, parentId, {
+    now,
+    evidence: { verification: "admin", ref },
+  });
 }
 
 /* ---------------------------------------------------------------- webhook */
@@ -492,6 +502,165 @@ export async function completeVerificationFromRedirect(
   return { ok: true, verified: status.verified, duplicate: result.duplicate, reason: null };
 }
 
+/* ------------------------------------------------------------- age rules */
+
+/** Under 13 by calendar age; an unparseable birthdate is not under 13 here (the schema rejects it first). */
+export function isUnderThirteen(birthdate: string): boolean {
+  const age = ageInYears(birthdate);
+  return Number.isFinite(age) && age < 13;
+}
+
+export type AthleteRoomRestriction =
+  | "guardian_required"
+  | "provisional"
+  | "paused"
+  | "paused_by_parent";
+
+export interface AthleteRoomGate {
+  /** Why the coach and this athlete cannot exchange messages, or null. */
+  restriction: AthleteRoomRestriction | null;
+  /** The athlete is under 18 (or has no birthdate): text only for them (§6.13 A7). */
+  minor: boolean;
+}
+
+export const ROOM_RESTRICTION_MESSAGES: Record<AthleteRoomRestriction, string> = {
+  guardian_required:
+    "This athlete's parent or guardian needs to claim and verify their account before messages can start.",
+  provisional:
+    "This athlete's account is waiting on their parent or guardian. Messages open once the parent claims it.",
+  paused: "This athlete's account is paused.",
+  paused_by_parent: "The parent has paused messaging with this coach.",
+};
+
+export const TEXT_ONLY_MESSAGE = "Athletes under 18 send text messages only.";
+
+/**
+ * The room rule (§6.13 A6, C): a room that includes a minor opens, and
+ * accepts sends, only with a verified adult who is not the coach as a
+ * participant; a provisional or paused account never does; a parent's pause
+ * on the coach link stops both directions. Adults are only subject to the
+ * pause. With the regime switch off, "verified" is any linked parent and an
+ * unclaimed guardian on file keeps the legacy email-mirror behaviour.
+ */
+export async function athleteRoomGate(
+  admin: Admin,
+  athleteId: string,
+  coachId: string,
+  env: NodeJS.ProcessEnv = process.env,
+): Promise<AthleteRoomGate> {
+  const athlete = await admin
+    .from("athletes")
+    .select("id, birthdate, parent_id, account_state")
+    .eq("id", athleteId)
+    .maybeSingle();
+  if (athlete.error) dbError(athlete.error);
+  if (!athlete.data) return { restriction: "guardian_required", minor: true };
+  const row = athlete.data as {
+    birthdate: string | null;
+    parent_id: string | null;
+    account_state?: string | null;
+  };
+  const minor = isMinorOrUnconfirmed(row.birthdate);
+  const state = row.account_state ?? "active";
+
+  if (state === "paused") return { restriction: "paused", minor };
+
+  const link = await admin
+    .from("coach_athletes")
+    .select("messaging_paused_at")
+    .eq("coach_id", coachId)
+    .eq("athlete_id", athleteId)
+    .maybeSingle();
+  if (link.error) dbError(link.error);
+  if ((link.data as { messaging_paused_at?: string | null } | null)?.messaging_paused_at) {
+    return { restriction: "paused_by_parent", minor };
+  }
+
+  if (!minor) return { restriction: null, minor };
+  if (state === "provisional") return { restriction: "provisional", minor };
+  if (!verificationRequired(env)) return { restriction: null, minor };
+  if (!row.parent_id) return { restriction: "guardian_required", minor };
+  const parent = await loadParentById(admin, row.parent_id);
+  if (!parent || !parent.adult_verified_at) return { restriction: "guardian_required", minor };
+  return { restriction: null, minor };
+}
+
+/** 403 with the restriction as the code, for the room-opening endpoints. */
+export function roomRestrictionError(restriction: AthleteRoomRestriction): ApiError {
+  return new ApiError({
+    code: restriction,
+    status: 403,
+    message: ROOM_RESTRICTION_MESSAGES[restriction],
+  });
+}
+
+/**
+ * When a parent becomes verified, every provisional athlete of theirs turns
+ * active and the ledger records consent for all their athletes (§6.13 A3–A4).
+ * Idempotent; also used after the admin/seeder path.
+ */
+export async function activateAthletesForVerifiedParent(
+  admin: Admin,
+  parentId: string,
+  opts: { now?: Date; evidence?: Record<string, unknown> } = {},
+): Promise<{ activated: number; athletes: number }> {
+  const now = opts.now ?? new Date();
+  const athletes = await admin
+    .from("athletes")
+    .select("id, account_state")
+    .eq("parent_id", parentId);
+  if (athletes.error) dbError(athletes.error);
+  const rows = (athletes.data ?? []) as { id: string; account_state?: string | null }[];
+
+  const provisional = rows.filter((a) => (a.account_state ?? "active") === "provisional");
+  if (provisional.length > 0) {
+    const upd = await admin
+      .from("athletes")
+      .update({ account_state: "active" })
+      .in(
+        "id",
+        provisional.map((a) => a.id),
+      );
+    if (upd.error) dbError(upd.error);
+  }
+
+  for (const a of rows) {
+    await grantGuardianConsent(admin, {
+      athleteId: a.id,
+      parentId,
+      method: "parent_created",
+      evidence: opts.evidence ?? {},
+      now,
+    });
+  }
+  return { activated: provisional.length, athletes: rows.length };
+}
+
+/**
+ * The parent pause (§6.13 C): stops messages between this coach and this
+ * athlete in both directions until resumed. Ownership is the caller's check.
+ */
+export async function setCoachMessagingPause(
+  admin: Admin,
+  args: { athleteId: string; coachId: string; paused: boolean; now?: Date },
+): Promise<{ ok: true; paused: boolean }> {
+  const res = await admin
+    .from("coach_athletes")
+    .update({ messaging_paused_at: args.paused ? (args.now ?? new Date()).toISOString() : null })
+    .eq("athlete_id", args.athleteId)
+    .eq("coach_id", args.coachId)
+    .select("id");
+  if (res.error) dbError(res.error);
+  if ((res.data ?? []).length === 0) {
+    throw new ApiError({
+      code: "not_found",
+      status: 404,
+      message: "That coach isn't linked to this athlete.",
+    });
+  }
+  return { ok: true, paused: args.paused };
+}
+
 /* ----------------------------------------------------------------- ledger */
 
 export type ConsentScope = "account" | "messaging";
@@ -511,14 +680,17 @@ export async function grantGuardianConsent(
   },
 ): Promise<{ granted: ConsentScope[] }> {
   const scopes = args.scopes ?? ALL_CONSENT_SCOPES;
-  const active = await admin
+  const existing = await admin
     .from("guardian_consents")
-    .select("scope")
+    .select("scope, revoked_at")
     .eq("athlete_id", args.athleteId)
-    .eq("parent_id", args.parentId)
-    .is("revoked_at", null);
-  if (active.error) dbError(active.error);
-  const have = new Set((active.data ?? []).map((r) => r.scope as ConsentScope));
+    .eq("parent_id", args.parentId);
+  if (existing.error) dbError(existing.error);
+  const have = new Set(
+    ((existing.data ?? []) as { scope: string; revoked_at: string | null }[])
+      .filter((r) => r.revoked_at == null)
+      .map((r) => r.scope as ConsentScope),
+  );
   const missing = scopes.filter((s) => !have.has(s));
   if (missing.length === 0) return { granted: [] };
   const ins = await admin.from("guardian_consents").insert(

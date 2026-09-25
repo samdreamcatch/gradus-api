@@ -208,6 +208,8 @@ import "../src/routes/api/v1/guardian/status";
 import "../src/routes/api/v1/guardian/verification/start";
 import "../src/routes/api/v1/guardian/verification/status";
 import "../src/routes/api/v1/guardian/verification/complete";
+// S1 consent rules (PRD §6.13 C): the parent pause on a coach link
+import "../src/routes/api/v1/parent/athletes/$id/coaches/$coachId/messaging";
 // I13 visibility (PRD 3.5): parent coach-visibility + coach visibility
 import "../src/routes/api/v1/parent/coach-visibility";
 import "../src/routes/api/v1/coach/visibility/mine";

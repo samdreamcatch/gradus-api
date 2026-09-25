@@ -20,7 +20,11 @@ import { ApiError } from "./api/errors";
 import { inBackground } from "./background";
 import { dbError } from "./db-error";
 import {
+  assertParentVerified,
   getParentVerificationById,
+  grantGuardianConsent,
+  parentVerificationSatisfied,
+  setCoachMessagingPause,
   type AthleteAccountState,
   type ParentVerificationDTO,
   verificationAvailable,
@@ -31,7 +35,7 @@ import { inviteCodeSchema } from "./invites.server";
 import { lessonSlotSchema } from "./parent-signup.server";
 import { currentGoalValues, recordGoalsChange } from "./goals-history.server";
 import { ensureStarterPrograms } from "./starter-programs.server";
-import { guardianAthleteAccess } from "./team.server";
+import { guardianAthleteAccess, resolveAthleteAccess } from "./team.server";
 
 type Admin = typeof supabaseAdmin;
 
@@ -167,6 +171,8 @@ export const primaryCoachInput = z.object({
 });
 
 /** Schedules are per coach, so the coach travels in the body (there is no coach path segment on the schedule route). */
+export const messagingPauseInput = z.object({ paused: z.boolean() });
+
 export const parentScheduleInput = z.object({
   coachId: z.string().uuid(),
   slots: z.array(lessonSlotSchema).max(20),
@@ -217,15 +223,22 @@ async function getParentProfile(
  * shared guardian's own goal-editing capability (if any) belongs on a
  * separate, explicitly plan-gated path — not by widening this check.
  */
-async function assertOwnsAthlete(admin: Admin, userId: string, athleteId: string) {
+async function assertOwnsAthlete(
+  admin: Admin,
+  userId: string,
+  athleteId: string,
+): Promise<{ parentId: string | null }> {
   const row = await admin
     .from("athletes")
-    .select("id, parent_profiles!inner(user_id)")
+    .select("id, parent_id, parent_profiles!inner(user_id)")
     .eq("id", athleteId)
     .maybeSingle();
   if (row.error) dbError(row.error);
   const pp = row.data?.parent_profiles as unknown as { user_id: string } | undefined;
   if (!row.data || pp?.user_id !== userId) throw notFound("Athlete not found.");
+  return {
+    parentId: ((row.data as { parent_id?: string | null }).parent_id ?? null) as string | null,
+  };
 }
 
 /** Resolve primary coach for (athlete, sport); auto-pick earliest eligible coach if none. */
@@ -349,9 +362,26 @@ export async function getParentSettings(ctx: ParentSettingsContext): Promise<Par
     scopedSports.get(k)!.add(r.sport);
   }
 
+  const verification: ParentVerificationDTO = (await getParentVerificationById(
+    admin,
+    parent.id,
+  )) ?? {
+    required: verificationRequired(),
+    available: verificationAvailable(),
+    verified: false,
+    method: null,
+    verifiedAt: null,
+    requestedAt: null,
+  };
+  // PRD §6.13 A4: an athlete's login code exists only once the parent is verified.
+  const codesAllowed = parentVerificationSatisfied(verification);
+
   // Lazily generate invite codes for athletes missing one
-  const codeMap = new Map((codesRes.data ?? []).map((r) => [r.athlete_id, r.code]));
+  const codeMap = new Map(
+    codesAllowed ? (codesRes.data ?? []).map((r) => [r.athlete_id, r.code]) : [],
+  );
   for (const a of athletes) {
+    if (!codesAllowed) break;
     if (codeMap.has(a.id)) continue;
     // Only the primary parent mints invite codes; co-guardians just read them.
     if ((a as { parent_id: string | null }).parent_id !== parent.id) continue;
@@ -374,17 +404,6 @@ export async function getParentSettings(ctx: ParentSettingsContext): Promise<Par
     }
   }
 
-  const verification: ParentVerificationDTO = (await getParentVerificationById(
-    admin,
-    parent.id,
-  )) ?? {
-    required: verificationRequired(),
-    available: verificationAvailable(),
-    verified: false,
-    method: null,
-    verifiedAt: null,
-    requestedAt: null,
-  };
   const stateOf = (a: { account_state?: string | null }): AthleteAccountState =>
     (a.account_state as AthleteAccountState | null | undefined) ?? "active";
 
@@ -608,7 +627,9 @@ export async function linkParentAthleteToCoach(
   data: z.infer<typeof linkCoachInput>,
 ): Promise<{ ok: true }> {
   const { admin, userId } = ctx;
-  await assertOwnsAthlete(admin, userId, athleteId);
+  const owner = await assertOwnsAthlete(admin, userId, athleteId);
+  // PRD §6.13 A4: no coach link before the parent is a verified adult.
+  if (owner.parentId) await assertParentVerified(admin, owner.parentId);
 
   const codeLookup = await admin
     .from("coach_invite_codes")
@@ -869,19 +890,76 @@ export async function addParentAthlete(
     .single();
   if (ins.error) dbError(ins.error);
 
-  // Best-effort invite code
-  for (let attempt = 0; attempt < 5; attempt++) {
-    const code = genCode(8);
-    const c = await admin.from("athlete_invite_codes").insert({
-      parent_id: parent.id,
-      athlete_id: ins.data.id,
-      code,
-      promo_code: parent.promo_code,
+  // PRD §6.13 A3–A4: a verified parent's consent is recorded now and the
+  // athlete's login code minted; an unverified parent gets both on
+  // verification (activateAthletesForVerifiedParent) or via lazy minting.
+  const verification = await getParentVerificationById(admin, parent.id);
+  if (verification && parentVerificationSatisfied(verification)) {
+    await grantGuardianConsent(admin, {
+      athleteId: ins.data.id,
+      parentId: parent.id,
+      method: "parent_created",
+      evidence: { verification: verification.method ?? "not_required" },
     });
-    if (!c.error) break;
+    // Best-effort invite code
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const code = genCode(8);
+      const c = await admin.from("athlete_invite_codes").insert({
+        parent_id: parent.id,
+        athlete_id: ins.data.id,
+        code,
+        promo_code: parent.promo_code,
+      });
+      if (!c.error) break;
+    }
   }
 
   return { ok: true, athleteId: ins.data.id };
+}
+
+/**
+ * `setCoachMessagingPause` (PRD §6.13 C): the parent pauses or resumes
+ * messaging between one coach and their athlete. Both directions stop while
+ * paused; the coach is told, and the room stays readable.
+ */
+export async function setParentAthleteCoachMessagingPause(
+  ctx: ParentSettingsContext,
+  athleteId: string,
+  coachId: string,
+  data: z.infer<typeof messagingPauseInput>,
+): Promise<{ ok: true; paused: boolean }> {
+  const { admin, userId } = ctx;
+  // Any guardian who may write for the athlete (the primary parent, or a
+  // co-guardian while the Team plan is active) can pause; view-only cannot.
+  const parent = await getParentProfile(admin, userId);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const access = await resolveAthleteAccess(admin as any, parent.id, athleteId);
+  if (!access) throw notFound("Athlete not found.");
+  if (!access.canWrite) {
+    throw forbidden("Additional guardians have view-only access while the Team plan is inactive.");
+  }
+  const result = await setCoachMessagingPause(admin, { athleteId, coachId, paused: data.paused });
+
+  const athlete = await admin
+    .from("athletes")
+    .select("first_name")
+    .eq("id", athleteId)
+    .maybeSingle();
+  const firstName = athlete.data?.first_name ?? "An athlete";
+  await inBackground("push:messaging-pause", async () => {
+    const coachUser = await coachUserId(admin, coachId);
+    if (!coachUser) return;
+    await notifyUsers(admin, [coachUser], {
+      type: "connection",
+      route: "settings/connections",
+      title: data.paused ? "Messaging paused" : "Messaging resumed",
+      body: data.paused
+        ? `${firstName}'s parent paused messaging with you.`
+        : `${firstName}'s parent resumed messaging with you.`,
+    });
+  });
+
+  return result;
 }
 
 /** `removeAthlete`: delete one of the parent's athletes (never the last one) and their dependent rows. */

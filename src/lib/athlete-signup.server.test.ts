@@ -175,4 +175,18 @@ describe("athleteCanConnectCoach", () => {
       true,
     );
   });
+
+  it("a provisional or paused account never connects a coach (PRD §6.13 A4)", () => {
+    const base = { birthdate: `${year - 14}-01-01`, guardian_email: "p@x.com", parent_id: null };
+    expect(athleteCanConnectCoach({ ...base, account_state: "provisional" })).toBe(false);
+    expect(athleteCanConnectCoach({ ...base, account_state: "paused" })).toBe(false);
+    expect(athleteCanConnectCoach({ ...base, account_state: "active" })).toBe(true);
+    expect(
+      athleteCanConnectCoach({
+        ...base,
+        birthdate: `${year - 30}-01-01`,
+        account_state: "provisional",
+      }),
+    ).toBe(false);
+  });
 });

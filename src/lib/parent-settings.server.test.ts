@@ -889,7 +889,16 @@ describe("addParentAthlete", () => {
         { firstName: "Rory", lastName: "Gilmore", birthdate: "2014-09-08" },
       ),
     ).toEqual({ ok: true, athleteId: A });
-    expect(calls).toEqual([
+    // PRD §6.13 A3: a parent whose verification is satisfied (here: the
+    // regime switch is off) gets consent rows before the login code.
+    const consents = calls.filter((c) => c.table === "guardian_consents");
+    expect(consents).toHaveLength(1);
+    expect(consents[0].op).toBe("insert");
+    expect((consents[0].payload as Array<Record<string, unknown>>).map((r) => r.scope)).toEqual([
+      "account",
+      "messaging",
+    ]);
+    expect(calls.filter((c) => c.table !== "guardian_consents")).toEqual([
       {
         op: "insert",
         table: "athletes",

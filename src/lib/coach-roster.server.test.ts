@@ -212,6 +212,47 @@ describe("addAthleteWithGuardian", () => {
     expect(err?.message).toBe("Athletes under 18 need a parent or guardian email.");
   });
 
+  it("invites the parent, never the athlete, for a minor or an athlete with no birthdate (decision #30)", async () => {
+    for (const birthdate of ["2014-09-08", undefined]) {
+      const data = addAthleteInput.parse({
+        firstName: "Rory",
+        lastName: "Gilmore",
+        birthdate,
+        guardianEmail: "parent@example.com",
+        emailRecipient: "athlete",
+      });
+      const err = await caught(() =>
+        addAthleteWithGuardian(
+          { userId: "u", admin: fakeClient({ coach_profiles: { id: "coach-1" } }) },
+          data,
+          new Date("2026-09-06T12:00:00Z"),
+        ),
+      );
+      expect(err?.status).toBe(422);
+      expect(err?.message).toMatch(/Invite the parent or guardian/);
+    }
+  });
+
+  it("a known adult may be invited directly", async () => {
+    const data = addAthleteInput.parse({
+      firstName: "Lane",
+      lastName: "Kim",
+      birthdate: "1990-01-01",
+      guardianEmail: "lane@example.com",
+      emailRecipient: "athlete",
+    });
+    const admin = fakeClient({
+      coach_profiles: { id: "coach-1", subscription_tier: "coach_pro" },
+      athletes: { id: "new-athlete" },
+    });
+    const result = await addAthleteWithGuardian(
+      { userId: "u", admin },
+      data,
+      new Date("2026-09-06T12:00:00Z"),
+    );
+    expect(result.athleteId).toBe("new-athlete");
+  });
+
   it("a birthdate in the future is refused", async () => {
     const data = addAthleteInput.parse({ firstName: "R", lastName: "G", birthdate: "2030-01-01" });
     const err = await caught(() =>

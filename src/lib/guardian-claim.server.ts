@@ -28,6 +28,7 @@ import { inBackground } from "./background";
 import { dbError } from "./db-error";
 import { coachUserId, notifyUsers } from "./push-notify.server";
 import { ageInYears } from "./pending-athlete-dob";
+import { assertParentVerified, grantGuardianConsent } from "./guardian-verification.server";
 
 type Admin = typeof supabaseAdmin;
 
@@ -327,6 +328,11 @@ export async function claimGuardianAthlete(
     }
   }
 
+  // PRD §6.13 A1: with the regime switch on, an unverified parent gets 403
+  // `parent_unverified` here. Their profile stays (it is what the KWS email
+  // is bound to); the claim page starts verification and retries the claim.
+  await assertParentVerified(admin, parentId);
+
   const upd = await admin
     .from("athletes")
     .update({
@@ -336,9 +342,18 @@ export async function claimGuardianAthlete(
       ...(athlete.data.self_managed ? { self_managed: false } : {}),
       guardian_claimed_at: new Date().toISOString(),
       guardian_claim_token: null,
+      // Decision #31: a provisional 13–17 self-sign-up turns active on the claim.
+      account_state: "active",
     })
     .eq("id", athlete.data.id);
   if (upd.error) dbError(upd.error);
+
+  await grantGuardianConsent(admin, {
+    athleteId: athlete.data.id,
+    parentId,
+    method: "guardian_claim",
+    evidence: { via: "claim_link" },
+  });
 
   // The coach(es) who roster this athlete invited the guardian; tell them the claim landed.
   const claimedAthleteId = athlete.data.id;
@@ -622,6 +637,16 @@ export async function mergeGuardianClaim(
   userId: string,
   input: z.infer<typeof mergeGuardianClaimInput>,
 ): Promise<GuardianClaimResultDTO> {
+  {
+    // PRD §6.13 A1: same gate as the plain claim.
+    const owner = await admin
+      .from("parent_profiles")
+      .select("id")
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (owner.error) dbError(owner.error);
+    if (owner.data) await assertParentVerified(admin, owner.data.id);
+  }
   const pending = await admin
     .from("athletes")
     .select("id, first_name, parent_id, guardian_claimed_at")

@@ -243,6 +243,17 @@ export async function linkAthletesToCoach(
   }
   const parentId = parent.data.id;
 
+  const {
+    assertParentVerified,
+    getParentVerificationById,
+    grantGuardianConsent,
+    parentVerificationSatisfied,
+  } = await import("./guardian-verification.server");
+  // PRD §6.13 A4: athletes may be entered, but no coach is linked before
+  // the parent is a verified adult (403 `parent_unverified`; the wizard's
+  // verification step comes first once the regime switch is on).
+  if (coachId) await assertParentVerified(admin, parentId);
+
   if (coachId) {
     // Plan cap: the DB trigger (enforce_coach_roster_cap) is the backstop,
     // but we stop short of it so the parent gets one friendly "Roster full"
@@ -283,6 +294,20 @@ export async function linkAthletesToCoach(
 
   const athletesIns = await admin.from("athletes").insert(athleteRows).select("id");
   if (athletesIns.error) dbError(athletesIns.error);
+
+  // PRD §6.13 A3: a verified parent's consent is recorded at creation; an
+  // unverified one gets it when the verification lands.
+  const verification = await getParentVerificationById(admin, parentId);
+  if (verification && parentVerificationSatisfied(verification)) {
+    for (const a of athletesIns.data ?? []) {
+      await grantGuardianConsent(admin, {
+        athleteId: a.id,
+        parentId,
+        method: "parent_created",
+        evidence: { verification: verification.method ?? "not_required" },
+      });
+    }
+  }
 
   if (coachId) {
     // Auto-ack the parent side — the signup wizard's final screen already

@@ -71,6 +71,8 @@ export const roomDetailRoomSchema = z.object({
   myRole: roleInRoomSchema,
   myUserId: z.string(),
   myCoachId: z.string().nullable(),
+  messagingPausedByParent: z.boolean(),
+  viewerTextOnly: z.boolean(),
 }) satisfies z.ZodType<RoomDetail["room"]>;
 
 export const messageTargetSchema = z.discriminatedUnion("kind", [

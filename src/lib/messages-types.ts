@@ -64,6 +64,10 @@ export type RoomDetail = {
     myUserId: string;
     /** The viewer's coach profile id, when the viewer is a coach. */
     myCoachId: string | null;
+    /** Athlete rooms: the parent paused messaging with this coach (PRD §6.13 C); sends are refused both ways. */
+    messagingPausedByParent: boolean;
+    /** The viewer is an athlete under 18: text only, no voice notes (PRD §6.13 A7). */
+    viewerTextOnly: boolean;
   };
   messages: MessageDTO[];
 };

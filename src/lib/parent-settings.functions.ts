@@ -26,6 +26,7 @@ import {
   unlinkParentAthleteFromCoach,
   updateParentAthlete,
   updateParentProfile as updateParentProfileShared,
+  setParentAthleteCoachMessagingPause,
 } from "./parent-settings.server";
 
 export type {
@@ -223,6 +224,28 @@ export const resetAthletePassword = createServerFn({ method: "POST" })
     try {
       const { athleteId, ...rest } = data;
       return await resetParentAthletePassword(await parentContext(context), athleteId, rest);
+    } catch (err) {
+      rethrowPlain(err);
+    }
+  });
+
+/**
+ * Pause or resume messaging between one coach and the athlete (PRD §6.13 C,
+ * the SafeSport discontinue-contact rule). Both directions stop while paused.
+ */
+export const setCoachMessagingPause = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    athleteCoachIdsInput.extend({ paused: z.boolean() }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    try {
+      return await setParentAthleteCoachMessagingPause(
+        await parentContext(context),
+        data.athleteId,
+        data.coachId,
+        { paused: data.paused },
+      );
     } catch (err) {
       rethrowPlain(err);
     }

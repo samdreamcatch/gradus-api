@@ -35,3 +35,14 @@ export function canAskGradus(birthdate: string | null | undefined): boolean {
   if (Number.isNaN(dob.getTime())) return false;
   return !isMinorBirthdate(birthdate);
 }
+
+/**
+ * The conservative reading used by every safety gate (PRD §6.13, D8): under
+ * 18 by calendar age, or no usable birthdate at all. `isMinorBirthdate`
+ * above treats a missing date as "not a minor", which is right for display
+ * labels and wrong for anything that grants access; use this one there.
+ */
+export function isMinorOrUnconfirmed(birthdate: string | null | undefined): boolean {
+  if (!birthdate || !/^\d{4}-\d{2}-\d{2}$/.test(birthdate)) return true;
+  return isMinorBirthdate(birthdate);
+}

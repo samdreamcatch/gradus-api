@@ -14,6 +14,13 @@ import { ApiError } from "./api/errors";
 import { inBackground } from "./background";
 import { athleteHouseholdUserIds, notifyUsers, withoutBlocked } from "./push-notify.server";
 import { transcribeVoiceNote } from "./voice-transcripts.server";
+import {
+  athleteRoomGate,
+  ROOM_RESTRICTION_MESSAGES,
+  roomRestrictionError,
+  TEXT_ONLY_MESSAGE,
+  verificationRequired,
+} from "./guardian-verification.server";
 import { dbError } from "./db-error";
 import type {
   MessageDTO,
@@ -489,7 +496,18 @@ export type MessageTargetDTO =
 
 export type SendMessageResult =
   | { ok: true; id: string }
-  | { ok: false; reason: "blocked" | "coach_unlinked"; message: string };
+  | {
+      ok: false;
+      reason:
+        | "blocked"
+        | "coach_unlinked"
+        | "guardian_required"
+        | "provisional"
+        | "paused"
+        | "paused_by_parent"
+        | "text_only";
+      message: string;
+    };
 
 /* ------------------------------------------------------------------------ */
 /* Pure helpers (unit-tested)                                                */
@@ -747,6 +765,15 @@ async function roomHeader(
       .maybeSingle();
     myCoachId = cp?.id ?? null;
   }
+  // §6.13 A7, C: the composer needs to know about a parent's pause and,
+  // for a minor athlete viewing their own room, that voice is off.
+  let messagingPausedByParent = false;
+  let viewerTextOnly = false;
+  if (room.kind === "athlete" && room.coachId && room.athleteId) {
+    const gate = await athleteRoomGate(supabaseAdmin, room.athleteId, room.coachId);
+    messagingPausedByParent = gate.restriction === "paused_by_parent";
+    viewerTextOnly = myRoleByRoom.get(room.id) === "athlete" && gate.minor;
+  }
   return {
     id: room.id,
     kind: room.kind,
@@ -756,7 +783,15 @@ async function roomHeader(
     myRole: myRoleByRoom.get(room.id)!,
     myUserId: userId,
     myCoachId,
+    messagingPausedByParent,
+    viewerTextOnly,
   };
+}
+
+/** The room rule (PRD §6.13 A6, C) for the room-opening endpoints: 403 with the restriction as the code. */
+async function assertAthleteRoomOpen(coachId: string, athleteId: string): Promise<void> {
+  const gate = await athleteRoomGate(supabaseAdmin, athleteId, coachId);
+  if (gate.restriction) throw roomRestrictionError(gate.restriction);
 }
 
 async function createAthleteRoom(coachId: string, athleteId: string): Promise<{ id: string }> {
@@ -1002,6 +1037,19 @@ export async function sendMessage(
         message: "This coach is no longer connected to this athlete. New messages can't be sent.",
       };
     }
+
+    // The room rule (PRD §6.13 A6, C) and text-only minors (A7).
+    const gate = await athleteRoomGate(supabaseAdmin, room.athleteId!, room.coachId!);
+    if (gate.restriction) {
+      return {
+        ok: false as const,
+        reason: gate.restriction,
+        message: ROOM_RESTRICTION_MESSAGES[gate.restriction],
+      };
+    }
+    if (role === "athlete" && gate.minor && data.kind === "voice") {
+      return { ok: false as const, reason: "text_only" as const, message: TEXT_ONLY_MESSAGE };
+    }
   }
 
   // Plan tagging works in athlete-scoped rooms and coach↔coach direct rooms.
@@ -1133,7 +1181,10 @@ export async function sendMessage(
       // Guardian-on-file mirror: while a minor athlete's parent hasn't claimed
       // their account yet, email them a copy of what the coach or the athlete
       // sends so they keep full visibility without being forced to register.
-      if (role === "coach" || role === "athlete") {
+      // Retired once PARENT_VERIFICATION_REQUIRED is on (decision #31): a
+      // room with a minor then needs a verified parent as a participant, so
+      // there is no unclaimed guardian left to copy.
+      if ((role === "coach" || role === "athlete") && !verificationRequired()) {
         try {
           let mirrorBody: string;
           if (data.kind === "text") {
@@ -1276,6 +1327,7 @@ export async function ensureAthleteRoom(
     .maybeSingle();
   if (!link) throw unprocessable("Athlete is not on this coach's roster");
 
+  await assertAthleteRoomOpen(data.coachId, data.athleteId);
   return createAthleteRoom(data.coachId, data.athleteId);
 }
 
@@ -1296,6 +1348,7 @@ export async function ensureRoomForMyAthlete(
     .maybeSingle();
   if (!link) throw unprocessable("Athlete is not on your roster");
 
+  await assertAthleteRoomOpen(me.coach.id, data.athleteId);
   return createAthleteRoom(me.coach.id, data.athleteId);
 }
 
@@ -1463,6 +1516,7 @@ export async function ensureRoomForTarget(
     .maybeSingle();
   if (!link) throw unprocessable("That coach and athlete aren't linked");
 
+  await assertAthleteRoomOpen(data.coachId, data.athleteId);
   return createAthleteRoom(data.coachId, data.athleteId);
 }
 
