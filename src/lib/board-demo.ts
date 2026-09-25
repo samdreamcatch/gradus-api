@@ -18,7 +18,7 @@ export const DEMO_SLUG = "demo";
 
 const DEMO_NAME = "Demo Competition (sample data)";
 const DEMO_DATES = "Sample day";
-const DEMO_LOCATION = "Detroit Skating Club, Bloomfield Hills, MI";
+const DEMO_LOCATION = "Northwind Skating Club, Lakeside, MI";
 
 function iso(minutesFromNow: number): string {
   return new Date(Date.now() + minutesFromNow * 60_000).toISOString();
@@ -82,47 +82,63 @@ function skater(
 }
 
 const A_ORDER: BoardSkater[] = [
-  skater(1, 12, "Harper Lindqvist", "Detroit SC", {
+  skater(1, 12, "Maren Holloway", "Northwind SC", {
     segScore: "54.18",
     total: "54.18",
     place: "5",
   }),
-  skater(2, 12, "Mia Okonkwo", "Ann Arbor FSC", { segScore: "58.02", total: "58.02", place: "3" }),
-  skater(3, 12, "Sofia Renaldi", "Onyx-Suburban SA", {
+  skater(2, 12, "Pia Castellanos", "Riverbend FSC", {
+    segScore: "58.02",
+    total: "58.02",
+    place: "3",
+  }),
+  skater(3, 12, "Lucia Ferrante", "Lakeshore SA", {
     segScore: "49.77",
     total: "49.77",
     place: "7",
   }),
-  skater(4, 12, "Claire Beaumont", "Lansing SC", {
+  skater(4, 12, "Odette Marchand", "Pinecrest SC", {
     segScore: "51.30",
     total: "51.30",
     place: "6",
   }),
-  skater(5, 12, "Ava Petrenko", "Detroit SC", { segScore: "60.11", total: "60.11", place: "2" }),
-  skater(6, 12, "Emilia Vasquez", "Fraser FSC", { segScore: "56.44", total: "56.44", place: "4" }),
-  skater(7, 12, "Josephine Marr", "Detroit SC", {
+  skater(5, 12, "Zara Kowalczyk", "Northwind SC", {
+    segScore: "60.11",
+    total: "60.11",
+    place: "2",
+  }),
+  skater(6, 12, "Ines Villanueva", "Harborview FSC", {
+    segScore: "56.44",
+    total: "56.44",
+    place: "4",
+  }),
+  skater(7, 12, "Juniper Hale", "Northwind SC", {
     segScore: "62.41",
     total: "62.41",
     place: "1",
   }),
-  skater(8, 12, "Nora Donaldson", "Onyx-Suburban SA"),
-  skater(9, 12, "Addie DiMuro", "Ann Arbor FSC"),
-  skater(10, 12, "Leon Gillespie", "Detroit SC"),
-  skater(11, 12, "Wren Castellano", "Lansing SC"),
-  skater(12, 12, "Talia Bergström", "Fraser FSC"),
+  skater(8, 12, "Nora Donaldson", "Lakeshore SA"),
+  skater(9, 12, "Delphine Rocca", "Riverbend FSC"),
+  skater(10, 12, "Leon Gillespie", "Northwind SC"),
+  skater(11, 12, "Wren Delacroix", "Pinecrest SC"),
+  skater(12, 12, "Thea Solberg", "Harborview FSC"),
 ];
 
 const C_ORDER: BoardSkater[] = [
-  skater(1, 8, "Theo Marchetti", "Fraser FSC"),
-  skater(2, 8, "Bennett Shaw", "Detroit SC"),
-  skater(3, 8, "Kai Nakamura", "Ann Arbor FSC"),
-  skater(4, 8, "Elias Brandt", "Lansing SC"),
+  skater(1, 8, "Theo Marsh", "Harborview FSC"),
+  skater(2, 8, "Barnaby Quill", "Northwind SC"),
+  skater(3, 8, "Kaito Sorensen", "Riverbend FSC"),
+  skater(4, 8, "Elio Sandoval", "Pinecrest SC"),
 ];
 
 const B_DONE: BoardSkater[] = [
-  skater(1, 6, "Isla Fontaine", "Detroit SC", { segScore: "38.92", total: "38.92", place: "1" }),
-  skater(2, 6, "Jamie Gilmore", "Fraser FSC", { segScore: "35.10", total: "35.10", place: "2" }),
-  skater(3, 6, "Sam Jean", "Lansing SC", { segScore: "31.44", total: "31.44", place: "3" }),
+  skater(1, 6, "Isolde Faraday", "Northwind SC", { segScore: "38.92", total: "38.92", place: "1" }),
+  skater(2, 6, "Jamie Gilmore", "Harborview FSC", {
+    segScore: "35.10",
+    total: "35.10",
+    place: "2",
+  }),
+  skater(3, 6, "Sam Ashby", "Pinecrest SC", { segScore: "31.44", total: "31.44", place: "3" }),
 ];
 
 const A_CURRENT: BoardCurrent = {
@@ -186,7 +202,7 @@ const RINKS: BoardRink[] = [
     },
     justFinished: {
       event: "Pre-Juvenile Ladies Free Skate",
-      winner: { name: "Isla Fontaine", club: "Detroit SC", score: "38.92" },
+      winner: { name: "Isolde Faraday", club: "Northwind SC", score: "38.92" },
     },
     alsoLive: [],
     dayEvents: 7,
@@ -249,23 +265,23 @@ const DAY_MIN = 60 * 24;
 
 /** Yesterday's finished event, so past-day standings are visible in the demo. */
 const YESTERDAY_RESULTS: BoardSkater[] = [
-  skater(1, 5, "Nora Blomqvist", "Detroit SC", {
+  skater(1, 5, "Nora Lindgren", "Northwind SC", {
     segScore: "61.44",
     total: "61.44",
     place: "2",
   }),
-  skater(2, 5, "Elise Marchetti", "Fraser FSC", {
+  skater(2, 5, "Elowen Marsh", "Harborview FSC", {
     segScore: "64.90",
     total: "64.90",
     place: "1",
   }),
-  skater(3, 5, "Priya Raman", "Lansing SC", { segScore: "58.31", total: "58.31", place: "3" }),
-  skater(4, 5, "Tessa Halvorsen", "Ann Arbor FSC", {
+  skater(3, 5, "Priya Sandhu", "Pinecrest SC", { segScore: "58.31", total: "58.31", place: "3" }),
+  skater(4, 5, "Tamsin Whitlock", "Riverbend FSC", {
     segScore: "52.07",
     total: "52.07",
     place: "4",
   }),
-  skater(5, 5, "Junie Park", "Onyx-Suburban SA", {
+  skater(5, 5, "Juno Aldridge", "Lakeshore SA", {
     segScore: "47.85",
     total: "47.85",
     place: "5",

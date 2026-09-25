@@ -244,7 +244,10 @@ describe("addAthleteWithGuardian", () => {
   it("a coach_pro coach under their 50-athlete cap is not blocked", async () => {
     const data = addAthleteInput.parse({ firstName: "R", lastName: "G" });
     const admin = fakeClient(
-      { coach_profiles: { id: "coach-1", subscription_tier: "coach_pro" }, athletes: { id: "new-athlete" } },
+      {
+        coach_profiles: { id: "coach-1", subscription_tier: "coach_pro" },
+        athletes: { id: "new-athlete" },
+      },
       { coach_athletes: [1, 2, 3, 4, 5].map((n) => ({ athlete_id: `a${n}` })) },
     );
     const result = await addAthleteWithGuardian({ userId: "u", admin }, data);
@@ -272,7 +275,7 @@ describe("getPendingLessonWrapUps", () => {
         plans: [{ id: "plan-1", athlete_id: "a1" }],
         athletes: [
           { id: "a1", first_name: "Rory", last_name: "Gilmore" },
-          { id: "a2", first_name: "Ava", last_name: "Petrenko" },
+          { id: "a2", first_name: "Ava", last_name: "Kowalczyk" },
         ],
       },
     );

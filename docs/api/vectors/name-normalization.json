@@ -3,20 +3,20 @@
   "source": "src/lib/board-types.ts normalizeName",
   "cases": [
     {
-      "input": "Harper Lindqvist",
-      "expected": "harper lindqvist"
+      "input": "Maren Holloway",
+      "expected": "maren holloway"
     },
     {
-      "input": "  harper   lindqvist ",
-      "expected": "harper lindqvist"
+      "input": "  maren   holloway ",
+      "expected": "maren holloway"
     },
     {
-      "input": "HARPER LINDQVIST",
-      "expected": "harper lindqvist"
+      "input": "MAREN HOLLOWAY",
+      "expected": "maren holloway"
     },
     {
-      "input": "Talia Bergström",
-      "expected": "talia bergstrom"
+      "input": "Thea Solberg",
+      "expected": "thea solberg"
     },
     {
       "input": "Renée O'Connor",
