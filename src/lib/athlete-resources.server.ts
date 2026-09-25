@@ -11,7 +11,12 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { dbError } from "./db-error";
 import { canAskGradus } from "./athlete-age";
-import type { ResourceDTO, ResourceKind } from "./parent-resources.server";
+import {
+  STORE_SAFE_RIGHTS,
+  type ResourceDTO,
+  type ResourceFeedOptions,
+  type ResourceKind,
+} from "./parent-resources.server";
 
 type Client = SupabaseClient<Database>;
 
@@ -33,6 +38,7 @@ export interface AthleteResourcesDTO {
 
 export async function getAthleteResources(
   ctx: AthleteResourcesContext,
+  options: ResourceFeedOptions = {},
 ): Promise<AthleteResourcesDTO> {
   const { supabase, userId } = ctx;
 
@@ -66,12 +72,15 @@ export async function getAthleteResources(
   if (!sports.length) return { sports: [], resources: [], canAskGradus: eligibleForAskGradus };
 
   // Gradus library rows (coach_id IS NULL, published, sport in scope)
-  const { data: libraryRows, error: rErr } = await supabase
+  let libraryQuery = supabase
     .from("resources")
     .select("id, sport, title, description, kind, external_url")
     .is("coach_id", null)
     .in("sport", sports)
-    .eq("published", true)
+    .eq("published", true);
+  // See `ResourceFeedOptions`: the store app lists only rights-confirmed rows.
+  if (options.storeSafeOnly) libraryQuery = libraryQuery.in("rights", [...STORE_SAFE_RIGHTS]);
+  const { data: libraryRows, error: rErr } = await libraryQuery
     .order("display_order", { ascending: true })
     .order("title", { ascending: true });
   if (rErr) dbError(rErr);

@@ -16,6 +16,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { ApiError } from "./api/errors";
 import { dbError } from "./db-error";
+import { STORE_SAFE_RIGHTS, type ResourceFeedOptions } from "./parent-resources.server";
 
 type Client = SupabaseClient<Database>;
 
@@ -77,7 +78,10 @@ function computeTier(coach: {
   return "coach";
 }
 
-export async function listCoachResources(ctx: CoachResourcesContext): Promise<CoachResourcesDTO> {
+export async function listCoachResources(
+  ctx: CoachResourcesContext,
+  options: ResourceFeedOptions = {},
+): Promise<CoachResourcesDTO> {
   const { supabase, userId } = ctx;
   const coach = await getCallerCoach(supabase, userId);
   if (!coach) {
@@ -121,12 +125,15 @@ export async function listCoachResources(ctx: CoachResourcesContext): Promise<Co
 
   let libraryResources: LibraryResourceDTO[] = [];
   if (sports.length) {
-    const { data: libRows, error: libErr } = await supabase
+    let libraryQuery = supabase
       .from("resources")
       .select("id, sport, title, description, kind, external_url")
       .is("coach_id", null)
       .in("sport", sports)
-      .eq("published", true)
+      .eq("published", true);
+    // See `ResourceFeedOptions`: the store app lists only rights-confirmed rows.
+    if (options.storeSafeOnly) libraryQuery = libraryQuery.in("rights", [...STORE_SAFE_RIGHTS]);
+    const { data: libRows, error: libErr } = await libraryQuery
       .order("display_order", { ascending: true })
       .order("title", { ascending: true });
     if (libErr) dbError(libErr);

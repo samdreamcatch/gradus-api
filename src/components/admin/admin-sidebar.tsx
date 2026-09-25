@@ -80,6 +80,7 @@ const GROUPS: Group[] = [
     items: [
       { to: "/admin/social-plans", label: "Social plans", icon: Share2 },
       { to: "/admin/knowledge", label: "Knowledge corpus", icon: BookOpen },
+      { to: "/admin/library-rights", label: "Library rights", icon: BookOpen },
     ],
   },
   {

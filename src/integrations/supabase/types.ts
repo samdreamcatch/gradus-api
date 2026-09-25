@@ -3573,6 +3573,7 @@ export type Database = {
           kind: string
           organization_id: string | null
           published: boolean
+          rights: string
           sport: string
           storage_path: string | null
           title: string
@@ -3590,6 +3591,7 @@ export type Database = {
           kind?: string
           organization_id?: string | null
           published?: boolean
+          rights?: string
           sport: string
           storage_path?: string | null
           title: string
@@ -3607,6 +3609,7 @@ export type Database = {
           kind?: string
           organization_id?: string | null
           published?: boolean
+          rights?: string
           sport?: string
           storage_path?: string | null
           title?: string

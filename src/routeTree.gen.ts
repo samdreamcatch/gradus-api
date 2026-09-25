@@ -76,6 +76,7 @@ import { Route as AuthenticatedAdminPromoCodesRouteImport } from './routes/_auth
 import { Route as AuthenticatedAdminParentInvitesRouteImport } from './routes/_authenticated/admin.parent-invites'
 import { Route as AuthenticatedAdminOrganizationsRouteImport } from './routes/_authenticated/admin.organizations'
 import { Route as AuthenticatedAdminMapRouteImport } from './routes/_authenticated/admin.map'
+import { Route as AuthenticatedAdminLibraryRightsRouteImport } from './routes/_authenticated/admin.library-rights'
 import { Route as AuthenticatedAdminLeadsRouteImport } from './routes/_authenticated/admin.leads'
 import { Route as AuthenticatedAdminKnowledgeRouteImport } from './routes/_authenticated/admin.knowledge'
 import { Route as AuthenticatedAdminImpersonationRouteImport } from './routes/_authenticated/admin.impersonation'
@@ -678,6 +679,12 @@ const AuthenticatedAdminMapRoute = AuthenticatedAdminMapRouteImport.update({
   path: '/map',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
+const AuthenticatedAdminLibraryRightsRoute =
+  AuthenticatedAdminLibraryRightsRouteImport.update({
+    id: '/library-rights',
+    path: '/library-rights',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminLeadsRoute = AuthenticatedAdminLeadsRouteImport.update({
   id: '/leads',
   path: '/leads',
@@ -2077,6 +2084,7 @@ export interface FileRoutesByFullPath {
   '/admin/impersonation': typeof AuthenticatedAdminImpersonationRoute
   '/admin/knowledge': typeof AuthenticatedAdminKnowledgeRoute
   '/admin/leads': typeof AuthenticatedAdminLeadsRoute
+  '/admin/library-rights': typeof AuthenticatedAdminLibraryRightsRoute
   '/admin/map': typeof AuthenticatedAdminMapRoute
   '/admin/organizations': typeof AuthenticatedAdminOrganizationsRoute
   '/admin/parent-invites': typeof AuthenticatedAdminParentInvitesRoute
@@ -2383,6 +2391,7 @@ export interface FileRoutesByTo {
   '/admin/impersonation': typeof AuthenticatedAdminImpersonationRoute
   '/admin/knowledge': typeof AuthenticatedAdminKnowledgeRoute
   '/admin/leads': typeof AuthenticatedAdminLeadsRoute
+  '/admin/library-rights': typeof AuthenticatedAdminLibraryRightsRoute
   '/admin/map': typeof AuthenticatedAdminMapRoute
   '/admin/organizations': typeof AuthenticatedAdminOrganizationsRoute
   '/admin/parent-invites': typeof AuthenticatedAdminParentInvitesRoute
@@ -2695,6 +2704,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/impersonation': typeof AuthenticatedAdminImpersonationRoute
   '/_authenticated/admin/knowledge': typeof AuthenticatedAdminKnowledgeRoute
   '/_authenticated/admin/leads': typeof AuthenticatedAdminLeadsRoute
+  '/_authenticated/admin/library-rights': typeof AuthenticatedAdminLibraryRightsRoute
   '/_authenticated/admin/map': typeof AuthenticatedAdminMapRoute
   '/_authenticated/admin/organizations': typeof AuthenticatedAdminOrganizationsRoute
   '/_authenticated/admin/parent-invites': typeof AuthenticatedAdminParentInvitesRoute
@@ -3008,6 +3018,7 @@ export interface FileRouteTypes {
     | '/admin/impersonation'
     | '/admin/knowledge'
     | '/admin/leads'
+    | '/admin/library-rights'
     | '/admin/map'
     | '/admin/organizations'
     | '/admin/parent-invites'
@@ -3314,6 +3325,7 @@ export interface FileRouteTypes {
     | '/admin/impersonation'
     | '/admin/knowledge'
     | '/admin/leads'
+    | '/admin/library-rights'
     | '/admin/map'
     | '/admin/organizations'
     | '/admin/parent-invites'
@@ -3625,6 +3637,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/impersonation'
     | '/_authenticated/admin/knowledge'
     | '/_authenticated/admin/leads'
+    | '/_authenticated/admin/library-rights'
     | '/_authenticated/admin/map'
     | '/_authenticated/admin/organizations'
     | '/_authenticated/admin/parent-invites'
@@ -4604,6 +4617,13 @@ declare module '@tanstack/react-router' {
       path: '/map'
       fullPath: '/admin/map'
       preLoaderRoute: typeof AuthenticatedAdminMapRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/library-rights': {
+      id: '/_authenticated/admin/library-rights'
+      path: '/library-rights'
+      fullPath: '/admin/library-rights'
+      preLoaderRoute: typeof AuthenticatedAdminLibraryRightsRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
     '/_authenticated/admin/leads': {
@@ -6337,6 +6357,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminImpersonationRoute: typeof AuthenticatedAdminImpersonationRoute
   AuthenticatedAdminKnowledgeRoute: typeof AuthenticatedAdminKnowledgeRoute
   AuthenticatedAdminLeadsRoute: typeof AuthenticatedAdminLeadsRoute
+  AuthenticatedAdminLibraryRightsRoute: typeof AuthenticatedAdminLibraryRightsRoute
   AuthenticatedAdminMapRoute: typeof AuthenticatedAdminMapRoute
   AuthenticatedAdminOrganizationsRoute: typeof AuthenticatedAdminOrganizationsRoute
   AuthenticatedAdminParentInvitesRoute: typeof AuthenticatedAdminParentInvitesRoute
@@ -6368,6 +6389,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminImpersonationRoute: AuthenticatedAdminImpersonationRoute,
   AuthenticatedAdminKnowledgeRoute: AuthenticatedAdminKnowledgeRoute,
   AuthenticatedAdminLeadsRoute: AuthenticatedAdminLeadsRoute,
+  AuthenticatedAdminLibraryRightsRoute: AuthenticatedAdminLibraryRightsRoute,
   AuthenticatedAdminMapRoute: AuthenticatedAdminMapRoute,
   AuthenticatedAdminOrganizationsRoute: AuthenticatedAdminOrganizationsRoute,
   AuthenticatedAdminParentInvitesRoute: AuthenticatedAdminParentInvitesRoute,

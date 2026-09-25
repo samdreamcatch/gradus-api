@@ -57,8 +57,19 @@ const unprocessable = (message: string) =>
   new ApiError({ code: "unprocessable", status: 422, message });
 const notFound = (message: string) => new ApiError({ code: "not_found", status: 404, message });
 
+/**
+ * `storeSafeOnly` (the iOS feed): curated library rows are listed only when
+ * their `rights` is confirmed (`gradus` or `licensed`), never `pending`.
+ * The web passes nothing and keeps showing every published row. Coach
+ * uploads are unaffected either way.
+ */
+export type ResourceFeedOptions = { storeSafeOnly?: boolean };
+
+export const STORE_SAFE_RIGHTS = ["gradus", "licensed"] as const;
+
 export async function getParentResources(
   ctx: ParentResourcesContext & { admin: Admin },
+  options: ResourceFeedOptions = {},
 ): Promise<ParentResourcesDTO> {
   const { supabase, admin, userId } = ctx;
 
@@ -102,12 +113,14 @@ export async function getParentResources(
   if (!sports.length) return { sports: [], resources: [], canAskGradus: true };
 
   // Library rows (coach_id IS NULL, published, sport in scope)
-  const { data: libraryRows, error: rErr } = await supabase
+  let libraryQuery = supabase
     .from("resources")
     .select("id, sport, title, description, kind, external_url")
     .is("coach_id", null)
     .in("sport", sports)
-    .eq("published", true)
+    .eq("published", true);
+  if (options.storeSafeOnly) libraryQuery = libraryQuery.in("rights", [...STORE_SAFE_RIGHTS]);
+  const { data: libraryRows, error: rErr } = await libraryQuery
     .order("display_order", { ascending: true })
     .order("title", { ascending: true });
   if (rErr) dbError(rErr);

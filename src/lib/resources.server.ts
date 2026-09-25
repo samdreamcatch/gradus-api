@@ -59,19 +59,34 @@ export async function getResourcesForCaller(ctx: ResourcesContext): Promise<Role
   const inner = { userId: ctx.userId, supabase: ctx.supabase, admin: ctx.admin };
   const empty = { role: "parent" as const, coach: null, parent: null, athlete: null };
 
+  // The store app lists curated rows only when their rights are confirmed
+  // (`resources.rights`, migration 20260924120000; PRD §12 #16). This
+  // dispatcher serves `GET /api/v1/resources` alone, so the web keeps its
+  // full library.
+  const storeSafe = { storeSafeOnly: true };
   if (role === "coach") {
-    return { role: "coach", coach: await listCoachResources(inner), parent: null, athlete: null };
+    return {
+      role: "coach",
+      coach: await listCoachResources(inner, storeSafe),
+      parent: null,
+      athlete: null,
+    };
   }
   if (role === "athlete") {
     return {
       role: "athlete",
       coach: null,
       parent: null,
-      athlete: await getAthleteResources(inner),
+      athlete: await getAthleteResources(inner, storeSafe),
     };
   }
   if (role === "parent") {
-    return { role: "parent", coach: null, parent: await getParentResources(inner), athlete: null };
+    return {
+      role: "parent",
+      coach: null,
+      parent: await getParentResources(inner, storeSafe),
+      athlete: null,
+    };
   }
   // No profile at all: nothing to show either way (judgment call — see file doc comment).
   return empty;

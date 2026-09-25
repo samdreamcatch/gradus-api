@@ -32,7 +32,11 @@ function fakeClient(config: Config) {
       if (table === "athlete_guardians" && col === "parent_id") return self;
       return self;
     };
-    self.in = () => self;
+    let rightsFilter: string[] | null = null;
+    self.in = (col: string, values: string[]) => {
+      if (col === "rights") rightsFilter = values;
+      return self;
+    };
     self.is = (col: string) => {
       if (col === "coach_id") coachIdIsNull = true;
       return self;
@@ -54,7 +58,12 @@ function fakeClient(config: Config) {
       if (table === "coach_athlete_sports")
         return resolve({ data: config.coachSports ?? [], error: null });
       if (table === "resources") {
-        if (coachIdIsNull) return resolve({ data: config.libraryRows ?? [], error: null });
+        if (coachIdIsNull) {
+          const rows = (config.libraryRows ?? []) as { rights?: string }[];
+          const filter = rightsFilter;
+          const data = filter ? rows.filter((r) => filter.includes(r.rights ?? "pending")) : rows;
+          return resolve({ data, error: null });
+        }
         if (coachIdNotNull) return resolve({ data: config.coachRows ?? [], error: null });
       }
       return resolve({ data: [], error: null });
@@ -91,6 +100,54 @@ async function withFakeAdminStorage<T>(
 }
 
 describe("getParentResources", () => {
+  it("the store feed (storeSafeOnly) lists only rights-confirmed library rows; the web feed lists all", async () => {
+    const config = {
+      parent: { id: "p1" },
+      ownAthletes: [{ id: "a1" }],
+      goals: [{ sport: "golf" }],
+      libraryRows: [
+        {
+          id: "r1",
+          sport: "golf",
+          title: "Ours",
+          description: "",
+          kind: "pdf",
+          external_url: null,
+          rights: "gradus",
+        },
+        {
+          id: "r2",
+          sport: "golf",
+          title: "Licensed",
+          description: "",
+          kind: "link",
+          external_url: "https://x",
+          rights: "licensed",
+        },
+        {
+          id: "r3",
+          sport: "golf",
+          title: "Rulebook",
+          description: "",
+          kind: "pdf",
+          external_url: null,
+          rights: "pending",
+        },
+      ],
+    };
+    const store = await getParentResources(
+      { userId: "u1", supabase: fakeClient(config), admin: fakeClient(config) },
+      { storeSafeOnly: true },
+    );
+    expect(store.resources.map((r) => r.id)).toEqual(["r1", "r2"]);
+    const web = await getParentResources({
+      userId: "u1",
+      supabase: fakeClient(config),
+      admin: fakeClient(config),
+    });
+    expect(web.resources.map((r) => r.id)).toEqual(["r1", "r2", "r3"]);
+  });
+
   it("returns empty when the caller has no parent profile", async () => {
     const supabase = fakeClient({ parent: null });
     expect(await getParentResources({ userId: "u1", supabase, admin: supabase })).toEqual({

@@ -24,6 +24,38 @@ function emptySupabase() {
 }
 
 describe("getResourcesForCaller", () => {
+  it("serves the store app: the curated library is filtered to confirmed rights", async () => {
+    // An athlete with a golf goal, so the library query actually runs.
+    const seen = { rightsFilters: [] as string[][] };
+    const chain = (table: string) => {
+      const self: Record<string, unknown> = {};
+      for (const m of ["select", "eq", "is", "not", "order", "limit"]) self[m] = () => self;
+      self.in = (col: string, values: string[]) => {
+        if (col === "rights") seen.rightsFilters.push(values);
+        return self;
+      };
+      self.maybeSingle = async () => ({
+        data: table === "athletes" ? { id: "a1", birthdate: null } : null,
+        error: null,
+      });
+      self.then = (resolve: (v: unknown) => void) => {
+        if (table === "athlete_goals") return resolve({ data: [{ sport: "golf" }], error: null });
+        return resolve({ data: [], error: null });
+      };
+      return self;
+    };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const supabase = { from: (table: string) => chain(table) } as any;
+    const admin = fakeAdmin({
+      coach_profiles: null,
+      parent_profiles: null,
+      athletes: { id: "a1" },
+    });
+    const result = await getResourcesForCaller({ userId: "u1", supabase, admin });
+    expect(result.role).toBe("athlete");
+    expect(seen.rightsFilters).toEqual([["gradus", "licensed"]]);
+  });
+
   it("dispatches to the coach feed, tagged role: coach, when a coach_profiles row exists", async () => {
     const admin = fakeAdmin({ coach_profiles: { id: "c1" } });
     const result = await getResourcesForCaller({ userId: "u1", supabase: emptySupabase(), admin });
