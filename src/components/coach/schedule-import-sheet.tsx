@@ -135,7 +135,6 @@ export function ScheduleImportSheet({
     if (!o) reset();
   };
 
-
   const parseImage = useMutation({
     mutationFn: async (file: File) => {
       const dataUrl = await fileToDataUrl(file);
@@ -161,21 +160,22 @@ export function ScheduleImportSheet({
           groups: groups
             .filter((g) => !skipped.includes(nameKey(g.firstName, g.lastName)))
             .map((g) => ({
-            key: g.key,
-            firstName: g.firstName,
-            lastName: g.lastName,
-            guardianEmail: g.guardianEmail,
-            athleteEmail: g.athleteEmail,
-            sport: g.sport || defaultSport,
-            emailRecipient:
-              g.athleteEmail && !g.guardianEmail ? ("athlete" as const) : ("guardian" as const),
-            slots: g.rows.map((r) => ({
-              dayOfWeek: r.dayOfWeek as number,
-              startMinute: r.startMinute as number,
-              endMinute: (r.startMinute as number) + (r.lengthMinutes as number),
-              frequency: r.frequency,
+              key: g.key,
+              firstName: g.firstName,
+              lastName: g.lastName,
+              guardianEmail: g.guardianEmail,
+              athleteEmail: g.athleteEmail,
+              sport: g.sport || defaultSport,
+              // Decision #30 (PRD §6.13 A5): an import carries no birthdate, so
+              // every invite goes to a parent or guardian.
+              emailRecipient: "guardian" as const,
+              slots: g.rows.map((r) => ({
+                dayOfWeek: r.dayOfWeek as number,
+                startMinute: r.startMinute as number,
+                endMinute: (r.startMinute as number) + (r.lengthMinutes as number),
+                frequency: r.frequency,
+              })),
             })),
-          })),
         },
       }),
     onSuccess: (res) => {
@@ -291,7 +291,6 @@ export function ScheduleImportSheet({
         ) : null}
 
         {step === "done" ? <DoneStep outcomes={outcomes} /> : null}
-
 
         <SheetFooter className="mt-6 flex-row justify-end gap-2">
           {step === "review" ? (
@@ -590,9 +589,7 @@ function ReviewStep({
               </div>
             ) : null}
             {isSkipped ? (
-              <p className="text-[11px] text-text-tertiary">
-                Left out of this import.
-              </p>
+              <p className="text-[11px] text-text-tertiary">Left out of this import.</p>
             ) : isOver ? (
               <p className="text-[11px] text-destructive">Won't import — roster full.</p>
             ) : onRoster ? (
@@ -600,7 +597,6 @@ function ReviewStep({
                 Already on your roster — lessons will be added.
               </p>
             ) : null}
-
 
             <div className="mt-0.5">
               {group.rows.map((row) => {
@@ -771,11 +767,8 @@ function RowSummary({
   const otherErrors = Object.entries(errors)
     .filter(([k]) => k !== "guardianEmail" && k !== "athleteEmail")
     .map(([, v]) => v);
-  // Which inbox this address belongs to decides the voice of the invite email.
-  const [recipient, setRecipient] = useState<"guardian" | "athlete">(
-    row.athleteEmail && !row.guardianEmail ? "athlete" : "guardian",
-  );
-
+  // Decision #30 (PRD §6.13 A5): the invite always goes to a parent or
+  // guardian; an import has no birthdate to prove anyone is an adult.
   return (
     <>
       {!collecting ? (
@@ -783,54 +776,23 @@ function RowSummary({
       ) : (
         <div className="mt-2 space-y-2">
           <div>
-            <span className={LABEL}>Who should we email?</span>
-            <Select
-              value={recipient}
-              onValueChange={(v) => {
-                const next = v === "athlete" ? "athlete" : "guardian";
-                setRecipient(next);
-                onChange(
-                  row.id,
-                  next === "athlete"
-                    ? { athleteEmail: email, guardianEmail: "" }
-                    : { guardianEmail: email, athleteEmail: "" },
-                );
-              }}
-            >
-              <SelectTrigger className="h-9 w-full bg-card">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="guardian">A parent or guardian</SelectItem>
-                <SelectItem value="athlete">The athlete (18+)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <span className={LABEL}>Email</span>
+            <span className={LABEL}>Parent or guardian email</span>
             <Input
               type="email"
               inputMode="email"
-              placeholder={recipient === "athlete" ? "athlete@example.com" : "parent@example.com"}
+              placeholder="parent@example.com"
               value={email}
               onBlur={() => {
                 if (row.guardianEmail || row.athleteEmail) setCollecting(false);
               }}
               onChange={(e) => {
                 const v = e.target.value.toLowerCase();
-                onChange(
-                  row.id,
-                  recipient === "athlete"
-                    ? { athleteEmail: v, guardianEmail: "" }
-                    : { guardianEmail: v, athleteEmail: "" },
-                );
+                onChange(row.id, { guardianEmail: v, athleteEmail: "" });
               }}
               className="h-9 w-full"
             />
             <p className="mt-1 text-[11px] text-text-tertiary">
-              {recipient === "athlete"
-                ? "Adult athletes only — use a parent/guardian email for anyone under 18"
-                : "Enter a parent/guardian email for athletes under 18"}
+              The parent or guardian claims the athlete&apos;s account from this email.
             </p>
           </div>
         </div>
@@ -1051,7 +1013,6 @@ function DoneStep({ outcomes }: { outcomes: ImportOutcome[] }) {
         </p>
       ) : null}
     </div>
-
   );
 }
 

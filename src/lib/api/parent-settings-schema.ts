@@ -16,6 +16,7 @@ const parentSettingsCoachSchema = z.object({
   coachId: z.string(),
   coachName: z.string(),
   sports: z.array(z.string()),
+  messagingPaused: z.boolean(),
 });
 
 const parentSettingsSportSchema = z.object({

@@ -552,11 +552,14 @@ export async function commitScheduleImport(
 
   for (const g of input.groups) {
     const name = `${g.firstName} ${g.lastName}`.trim();
-    // One address either way; the toggle only decides which voice the email uses.
+    // One address either way. Decision #30 (PRD §6.13 A5): an import carries
+    // no birthdate, so the invite is always voiced for a parent or guardian;
+    // an "athlete" choice only decides which address wins when both exist.
     const inviteEmail =
       (g.emailRecipient === "athlete"
         ? g.athleteEmail || g.guardianEmail
         : g.guardianEmail || g.athleteEmail) || null;
+    const inviteRecipient = "guardian" as const;
 
     for (const s of g.slots) {
       if (s.endMinute <= s.startMinute) {
@@ -619,7 +622,7 @@ export async function commitScheduleImport(
             guardian_claim_token: token,
             guardian_invited_at: inviteEmail ? now().toISOString() : null,
             added_by_coach_id: coachId,
-            invite_recipient: g.emailRecipient,
+            invite_recipient: inviteRecipient,
           })
           .select("id")
           .single();
@@ -647,7 +650,7 @@ export async function commitScheduleImport(
             athleteName: name,
             coachName,
             token,
-            recipient: g.emailRecipient,
+            recipient: inviteRecipient,
           });
           invited = inviteEmail;
         }

@@ -388,13 +388,25 @@ export function RoomView({ roomId, viewerRole }: { roomId: string; viewerRole?: 
         </div>
       </div>
 
-      <Composer
-        roomId={roomId}
-        roomKind={room.kind}
-        viewerRole={viewerRole}
-        disabled={sendTextMutation.isPending}
-        onSendText={(body, planId) => sendTextMutation.mutate({ body, planId })}
-      />
+      {room.messagingPausedByParent ? (
+        <p
+          role="status"
+          className="mt-3 rounded-xl border border-divider bg-elevated p-3 text-center text-sm text-text-secondary"
+        >
+          {room.myRole === "parent"
+            ? "You paused messaging with this coach. Resume it from Settings."
+            : "Messaging in this conversation is paused by the athlete's parent."}
+        </p>
+      ) : (
+        <Composer
+          roomId={roomId}
+          roomKind={room.kind}
+          viewerRole={viewerRole}
+          disabled={sendTextMutation.isPending}
+          textOnly={room.viewerTextOnly}
+          onSendText={(body, planId) => sendTextMutation.mutate({ body, planId })}
+        />
+      )}
       <OtherCoachPlansSheet
         coach={otherPlanData?.coach ?? null}
         athleteFirstName={otherPlanData?.athleteFirstName ?? ""}
@@ -428,12 +440,15 @@ function Composer({
   roomKind,
   viewerRole,
   disabled,
+  textOnly = false,
   onSendText,
 }: {
   roomId: string;
   roomKind: RoomKind;
   viewerRole?: RoleInRoom;
   disabled: boolean;
+  /** PRD §6.13 A7: an athlete under 18 types; no dictation, no recordings. */
+  textOnly?: boolean;
   onSendText: (body: string, planId: string | null) => void;
 }) {
   const [text, setText] = useState("");
@@ -603,11 +618,11 @@ function Composer({
             rows={1}
             className="focus-input min-h-10 max-h-32 flex-1 resize-none rounded-2xl border border-divider bg-card px-3.5 py-2 text-sm text-text-primary placeholder:text-text-tertiary"
           />
-          {text.trim().length > 0 ? (
+          {text.trim().length > 0 || textOnly ? (
             <button
               type="button"
               onClick={submit}
-              disabled={disabled || processing}
+              disabled={disabled || processing || text.trim().length === 0}
               aria-label="Send"
               className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-accent text-accent-foreground shadow-sm disabled:opacity-50"
             >

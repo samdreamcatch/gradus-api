@@ -48,6 +48,8 @@ export type AthleteSettingsDTO = {
   guardianInvitedAt: string | null;
   /** A guardian "on file" becomes a guardian "in app" once they claim the athlete or the athlete is attached to a parent profile. */
   guardianClaimed: boolean;
+  /** PRD §6.13 A4: `provisional` until a guardian claims a 13–17 self-sign-up. */
+  accountState: "active" | "provisional" | "paused";
 };
 
 export const athleteSelfInput = z.object({
@@ -68,7 +70,7 @@ export async function getAthleteSettings(
   const row = await admin
     .from("athletes")
     .select(
-      "id, first_name, last_name, birthdate, username, parent_id, guardian_email, guardian_invited_at, guardian_claimed_at",
+      "id, first_name, last_name, birthdate, username, parent_id, guardian_email, guardian_invited_at, guardian_claimed_at, account_state",
     )
     .eq("user_id", userId)
     .maybeSingle();
@@ -85,6 +87,13 @@ export async function getAthleteSettings(
     // A guardian "on file" becomes a guardian "in app" once they claim the
     // athlete or the athlete is attached to a parent profile.
     guardianClaimed: Boolean(row.data.guardian_claimed_at) || Boolean(row.data.parent_id),
+    accountState:
+      ((row.data as { account_state?: string | null }).account_state as
+        | "active"
+        | "provisional"
+        | "paused"
+        | null
+        | undefined) ?? "active",
   };
 }
 

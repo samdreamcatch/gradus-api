@@ -13,6 +13,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { PromoCodeField } from "@/components/signup/promo-code-field";
 import { savePendingPromoCode } from "@/lib/pending-promo-code";
+import { ParentVerificationStep } from "@/components/consent/parent-verification-step";
+import { getMyParentVerification } from "@/lib/guardian-verification.functions";
 
 import {
   getCoachByInviteCode,
@@ -43,6 +45,15 @@ function ParentAthletesPage() {
   const fetchCoach = useServerFn(getCoachByInviteCode);
   const linkAthletes = useServerFn(linkAthletesToCoach);
   const startSignup = useServerFn(startParentSignup);
+  const fetchVerification = useServerFn(getMyParentVerification);
+  // PRD §6.13 A1: after the parent profile exists and before any athlete is
+  // linked, an unverified parent verifies once. The athletes typed so far
+  // wait in state and are submitted the moment the verification lands.
+  const [pendingLink, setPendingLink] = useState<{
+    code: string | null;
+    athletes: { firstName: string; lastName: string; birthdate: string }[];
+    effectiveCode: string | undefined;
+  } | null>(null);
 
   // Editable coach-invite code. Prefill from the `?code=` URL param (set by
   // /signup/parent when it forwarded a `/i/CODE` invite) or from the
@@ -95,7 +106,6 @@ function ParentAthletesPage() {
   const [codesOpen, setCodesOpen] = useState<boolean>(hasPrefill);
   useEffect(() => {
     if (hasPrefill) setCodesOpen(true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasPrefill]);
 
   const updateAthlete = (i: number, field: "firstName" | "lastName" | "birthdate", v: string) => {
@@ -144,19 +154,54 @@ function ParentAthletesPage() {
       const { code: normalized } = await startSignup({
         data: { firstName: parentFirst, lastName: parentLast, code: effectiveCode },
       });
-      await linkAthletes({
-        data: { code: normalized ?? effectiveCode ?? null, athletes: cleaned },
-      });
-      navigate({
-        to: "/signup/parent/goals",
-        search: effectiveCode ? { code: effectiveCode } : {},
-      });
+      const linkInput = { code: normalized ?? effectiveCode ?? null, athletes: cleaned };
+      const verification = await fetchVerification();
+      if (verification && verification.required && !verification.verified) {
+        setPendingLink({ ...linkInput, effectiveCode });
+        return;
+      }
+      await finishLink(linkInput, effectiveCode);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");
     } finally {
       setSubmitting(false);
     }
   };
+
+  const finishLink = async (
+    linkInput: {
+      code: string | null;
+      athletes: { firstName: string; lastName: string; birthdate: string }[];
+    },
+    effectiveCode: string | undefined,
+  ) => {
+    await linkAthletes({ data: linkInput });
+    navigate({
+      to: "/signup/parent/goals",
+      search: effectiveCode ? { code: effectiveCode } : {},
+    });
+  };
+
+  if (pendingLink) {
+    return (
+      <div className="flex min-h-dvh items-center justify-center px-4 py-12">
+        <div className="w-full max-w-md rounded-2xl bg-card p-8 shadow-card">
+          <ParentVerificationStep
+            athleteName={pendingLink.athletes[0]?.firstName ?? null}
+            onVerified={() => {
+              const { effectiveCode, ...linkInput } = pendingLink;
+              setPendingLink(null);
+              setSubmitting(true);
+              finishLink(linkInput, effectiveCode)
+                .catch((e) => setError(e instanceof Error ? e.message : "Something went wrong"))
+                .finally(() => setSubmitting(false));
+            }}
+          />
+          {error ? <p className="mt-4 text-sm text-destructive">{error}</p> : null}
+        </div>
+      </div>
+    );
+  }
 
   const coachName = coach ? `${coach.firstName} ${coach.lastName}`.trim() : null;
 

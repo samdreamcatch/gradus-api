@@ -14313,12 +14313,16 @@
                                   "items": {
                                     "type": "string"
                                   }
+                                },
+                                "messagingPaused": {
+                                  "type": "boolean"
                                 }
                               },
                               "required": [
                                 "coachId",
                                 "coachName",
-                                "sports"
+                                "sports",
+                                "messagingPaused"
                               ]
                             }
                           },
@@ -15658,6 +15662,14 @@
                         },
                         "guardianClaimed": {
                           "type": "boolean"
+                        },
+                        "accountState": {
+                          "type": "string",
+                          "enum": [
+                            "active",
+                            "provisional",
+                            "paused"
+                          ]
                         }
                       },
                       "required": [
@@ -15668,7 +15680,8 @@
                         "username",
                         "guardianEmail",
                         "guardianInvitedAt",
-                        "guardianClaimed"
+                        "guardianClaimed",
+                        "accountState"
                       ]
                     }
                   },

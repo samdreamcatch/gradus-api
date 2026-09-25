@@ -66,6 +66,8 @@ export type ParentSettingsCoachDTO = {
   coachId: string;
   coachName: string;
   sports: string[];
+  /** PRD §6.13 C: the parent paused messaging with this coach. */
+  messagingPaused: boolean;
 };
 
 export type ParentSettingsSportDTO = {
@@ -323,7 +325,9 @@ export async function getParentSettings(ctx: ParentSettingsContext): Promise<Par
   const [linksRes, sportsScopeRes, goalsRes, slotsRes, primaryRes, codesRes] = await Promise.all([
     admin
       .from("coach_athletes")
-      .select("athlete_id, coach_id, created_at, coach_profiles!inner(first_name, last_name)")
+      .select(
+        "athlete_id, coach_id, created_at, messaging_paused_at, coach_profiles!inner(first_name, last_name)",
+      )
       .in("athlete_id", safeIds)
       .order("created_at", { ascending: true }),
     admin
@@ -438,6 +442,9 @@ export async function getParentSettings(ctx: ParentSettingsContext): Promise<Par
           coachId: l.coach_id as string,
           coachName: `${cp.first_name} ${cp.last_name}`.trim(),
           sports: Array.from(scopedSports.get(scopeKey(a.id, l.coach_id)) ?? []) as string[],
+          messagingPaused: Boolean(
+            (l as { messaging_paused_at?: string | null }).messaging_paused_at,
+          ),
         };
       });
 

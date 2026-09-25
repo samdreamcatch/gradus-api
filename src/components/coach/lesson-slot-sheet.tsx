@@ -622,7 +622,9 @@ function NewAthleteForm({
   const [guardianEmail, setGuardianEmail] = useState("");
   const [sport, setSport] = useState<string>(coachSports[0] ?? "");
   const [showErrors, setShowErrors] = useState(false);
-  const [emailRecipient, setEmailRecipient] = useState<"guardian" | "athlete">("guardian");
+  // Decision #30 (PRD §6.13 A5): without a birthdate on this form the invite
+  // always goes to a parent or guardian; the server refuses anything else.
+  const emailRecipient = "guardian" as const;
 
   useEffect(() => {
     if (!sport && coachSports.length > 0) setSport(coachSports[0]);
@@ -709,36 +711,20 @@ function NewAthleteForm({
         : null}
 
       {field(
-        "Who should we email?",
-        <Select
-          value={emailRecipient}
-          onValueChange={(v) => setEmailRecipient(v as "guardian" | "athlete")}
-        >
-          <SelectTrigger className="w-full bg-card">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="guardian">A parent or guardian</SelectItem>
-            <SelectItem value="athlete">The athlete (18+)</SelectItem>
-          </SelectContent>
-        </Select>,
-        null,
-      )}
-
-      {field(
-        "EMAIL",
+        "Parent or guardian email",
         <Input
           type="email"
           inputMode="email"
           value={guardianEmail}
           onChange={(e) => setGuardianEmail(e.target.value)}
-          placeholder={emailRecipient === "athlete" ? "athlete@example.com" : "parent@example.com"}
+          placeholder="parent@example.com"
         />,
         errors.guardianEmail,
       )}
 
       <p className="text-xs text-text-secondary">
-        Enter a parent/guardian email for athletes under 18
+        The invite goes to the parent or guardian, who claims the athlete&apos;s account. Adult
+        athletes (18+) can be added with their birthdate from the schedule import.
       </p>
 
       <SheetFooter className="mt-2 flex-row justify-end gap-2">

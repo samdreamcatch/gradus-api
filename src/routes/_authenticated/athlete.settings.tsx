@@ -430,6 +430,7 @@ function GuardianRow({
     guardianEmail: string | null;
     guardianInvitedAt: string | null;
     guardianClaimed: boolean;
+    accountState?: "active" | "provisional" | "paused";
   };
 }) {
   const qc = useQueryClient();
@@ -476,6 +477,16 @@ function GuardianRow({
       label="Parent or guardian"
       value={athlete.guardianEmail ?? "Needed"}
     >
+      {athlete.accountState === "provisional" ? (
+        <p
+          className="mb-3 rounded-lg border border-divider bg-elevated p-3 text-xs text-text-secondary"
+          role="status"
+        >
+          Waiting for your parent. Until they claim your account you can set goals and see plans,
+          but you can&apos;t connect a coach or message. Check they got the email, or resend it
+          below.
+        </p>
+      ) : null}
       <p className="mb-3 text-xs text-text-secondary">
         {athlete.guardianInvitedAt
           ? "We emailed them a link to follow along. They haven't joined yet — check the address or send it again."

@@ -15,7 +15,8 @@ import {
   getGuardianClaimSummary,
   mergeGuardianClaim,
 } from "@/lib/guardian.functions";
-
+import { ParentVerificationStep } from "@/components/consent/parent-verification-step";
+import { getMyParentVerification } from "@/lib/guardian-verification.functions";
 
 export const Route = createFileRoute("/g/$token")({
   component: GuardianClaimPage,
@@ -53,6 +54,11 @@ function GuardianClaimPage() {
   const mergeOptionsFn = useServerFn(getGuardianClaimMergeOptions);
   const mergeFn = useServerFn(mergeGuardianClaim);
   const contextFn = useServerFn(getGuardianClaimContext);
+  const verificationFn = useServerFn(getMyParentVerification);
+  // PRD §6.13 A1: a parent claim needs a verified adult. A returning parent
+  // sees the step before the button; a brand-new one has no profile yet, so
+  // the first claim creates it and answers "verify first", which flips this.
+  const [needsVerification, setNeedsVerification] = useState(false);
 
   const [signedIn, setSignedIn] = useState<boolean | null>(null);
   const [firstName, setFirstName] = useState("");
@@ -61,7 +67,6 @@ function GuardianClaimPage() {
   const [error, setError] = useState<string | null>(null);
   const [claiming, setClaiming] = useState(false);
   const [showOthers, setShowOthers] = useState(false);
-
 
   useEffect(() => {
     let cancelled = false;
@@ -105,6 +110,15 @@ function GuardianClaimPage() {
   });
   const knownParent = claimContext?.hasParentProfile === true;
 
+  const { data: verification } = useQuery({
+    queryKey: ["parent-verification"],
+    queryFn: () => verificationFn(),
+    enabled: signedIn === true && knownParent && !isAdultInvite,
+    retry: false,
+  });
+  useEffect(() => {
+    if (verification && verification.required && !verification.verified) setNeedsVerification(true);
+  }, [verification]);
 
   const handleClaim = async () => {
     setError(null);
@@ -126,7 +140,16 @@ function GuardianClaimPage() {
       });
       navigate({ to: "/parent/plans" });
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Something went wrong");
+      // The claim created the parent profile and now wants the adult check
+      // (403 parent_unverified on the API; the web sees the message). Show
+      // the step; it re-runs the claim once the verification lands.
+      const latest = await verificationFn().catch(() => null);
+      if (latest && latest.required && !latest.verified) {
+        setNeedsVerification(true);
+        setError(null);
+      } else {
+        setError(e instanceof Error ? e.message : "Something went wrong");
+      }
     } finally {
       setClaiming(false);
     }
@@ -161,7 +184,6 @@ function GuardianClaimPage() {
 
         {isLoading || signedIn === null ? (
           <p className="text-center text-text-tertiary">Checking your link…</p>
-
         ) : summaryError ? (
           <div className="space-y-4 text-center">
             <p className="text-sm text-destructive">{(summaryError as Error).message}</p>
@@ -303,7 +325,6 @@ function GuardianClaimPage() {
                   </div>
                 )}
 
-
                 {isAdultInvite || summary?.needsBirthdate ? (
                   <div className="space-y-2">
                     <Label htmlFor="g-dob">
@@ -325,13 +346,26 @@ function GuardianClaimPage() {
                   </div>
                 ) : null}
 
+                {needsVerification && !isAdultInvite ? (
+                  <ParentVerificationStep
+                    athleteName={summary?.athleteFirstName ?? null}
+                    compact
+                    onVerified={() => {
+                      setNeedsVerification(false);
+                      void handleClaim();
+                    }}
+                  />
+                ) : null}
+
                 {error && <p className="text-sm text-destructive">{error}</p>}
 
                 <Button
                   className="w-full"
                   onClick={handleClaim}
                   disabled={
-                    claiming || ((isAdultInvite || Boolean(summary?.needsBirthdate)) && !birthdate)
+                    claiming ||
+                    needsVerification ||
+                    ((isAdultInvite || Boolean(summary?.needsBirthdate)) && !birthdate)
                   }
                 >
                   {claiming

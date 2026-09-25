@@ -3,6 +3,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { ParentVerificationStep } from "@/components/consent/parent-verification-step";
 import {
   LogOut,
   Mail,
@@ -91,6 +92,7 @@ import {
   removeAthlete,
   linkAthleteToCoach,
   unlinkAthleteFromCoach,
+  setCoachMessagingPause,
   previewCoachByInviteCode,
   updateCoachAthleteSports,
   resetAthletePassword,
@@ -154,8 +156,9 @@ type AthleteData = {
   birthdate: string | null;
   username: string | null;
   hasAccount: boolean;
+  accountState: "active" | "provisional" | "paused";
   inviteCode: string | null;
-  coaches: { coachId: string; coachName: string; sports: string[] }[];
+  coaches: { coachId: string; coachName: string; sports: string[]; messagingPaused: boolean }[];
   sports: SportEntry[];
   schedulesByCoach: CoachSchedule[];
 };
@@ -217,6 +220,16 @@ function ParentSettingsPage() {
                 />
               </SettingsList>
             </SettingsGroup>
+
+            {data.verification.required && !data.verification.verified ? (
+              <SettingsGroup label="Verification">
+                <ParentVerificationStep
+                  compact
+                  athleteName={data.athletes[0]?.firstName ?? null}
+                  onVerified={() => void qc.invalidateQueries({ queryKey: ["parent-settings"] })}
+                />
+              </SettingsGroup>
+            ) : null}
 
             <SettingsGroup label="My athletes">
               <AthletesList
@@ -886,8 +899,25 @@ function CoachesSection({
   const link = useServerFn(linkAthleteToCoach);
   const unlink = useServerFn(unlinkAthleteFromCoach);
   const updateSports = useServerFn(updateCoachAthleteSports);
+  const setPause = useServerFn(setCoachMessagingPause);
   const [saving, setSaving] = useState(false);
   const [removingId, setRemovingId] = useState<string | null>(null);
+  const [pausingId, setPausingId] = useState<string | null>(null);
+
+  // PRD §6.13 C (SafeSport): a parent can stop a coach's messaging with
+  // their athlete at any time, both directions, and resume it later.
+  const handlePause = async (coachId: string, paused: boolean) => {
+    setPausingId(coachId);
+    try {
+      await setPause({ data: { athleteId: athlete.id, coachId, paused } });
+      toast.success(paused ? "Messaging paused" : "Messaging resumed");
+      qc.invalidateQueries({ queryKey: ["parent-settings"] });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Couldn't update messaging");
+    } finally {
+      setPausingId(null);
+    }
+  };
   const [editingCoachId, setEditingCoachId] = useState<string | null>(null);
   const [editSports, setEditSports] = useState<string[]>([]);
   const [editOptions, setEditOptions] = useState<string[]>([]);
@@ -1024,9 +1054,27 @@ function CoachesSection({
                       {c.sports.length === 0
                         ? "No sports set"
                         : c.sports.map((s) => getSport(s)?.label ?? s).join(", ")}
+                      {c.messagingPaused ? " · Messaging paused" : ""}
                     </div>
                   </div>
                   <div className="flex shrink-0 gap-1">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handlePause(c.coachId, !c.messagingPaused)}
+                      disabled={pausingId === c.coachId}
+                      aria-label={
+                        c.messagingPaused
+                          ? `Resume messaging with ${c.coachName}`
+                          : `Pause messaging with ${c.coachName}`
+                      }
+                    >
+                      {pausingId === c.coachId
+                        ? "Saving…"
+                        : c.messagingPaused
+                          ? "Resume messaging"
+                          : "Pause messaging"}
+                    </Button>
                     {!isEditing && c.sports.length > 0 && (
                       <Button
                         size="sm"
@@ -1561,7 +1609,9 @@ function InviteSubrow({ athlete }: { athlete: AthleteData }) {
       value={athlete.inviteCode ?? "—"}
     >
       <p className="mb-3 text-xs text-text-tertiary">
-        Share this so {athlete.firstName} can sign in to their own account.
+        {athlete.inviteCode
+          ? `Share this so ${athlete.firstName} can sign in to their own account.`
+          : `${athlete.firstName}'s login code appears here once you've verified you're an adult.`}
       </p>
       <div className="max-w-xs">
         <AthleteInviteCard

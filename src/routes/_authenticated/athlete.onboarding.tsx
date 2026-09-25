@@ -133,7 +133,9 @@ function ProfileStep({ onDone }: { onDone: () => void }) {
   const dateWellFormed = /^\d{4}-\d{2}-\d{2}$/.test(birthdate);
   const age = dateWellFormed ? ageInYears(birthdate) : null;
   const isMinor = age !== null && age < 18;
-  const birthdateValid = age !== null && age >= 0 && age < 120;
+  // Decision #30 (PRD §6.13 A4): under 13 never self-sign-up; the server refuses too.
+  const underThirteen = age !== null && age >= 0 && age < 13;
+  const birthdateValid = age !== null && age >= 0 && age < 120 && !underThirteen;
   const guardianValid = !isMinor || /^\S+@\S+\.\S+$/.test(guardianEmail.trim());
 
   const namesValid = firstName.trim().length > 0 && lastName.trim().length > 0;
@@ -213,7 +215,14 @@ function ProfileStep({ onDone }: { onDone: () => void }) {
           />
         </div>
 
-        {isMinor && (
+        {underThirteen && (
+          <p className="rounded-xl border border-divider bg-elevated p-4 text-sm text-text-secondary">
+            Athletes under 13 get their account from a parent or guardian: they sign up for Gradus,
+            add you, and give you a code to log in with.
+          </p>
+        )}
+
+        {isMinor && !underThirteen && (
           <div className="space-y-2 rounded-xl border border-divider bg-elevated p-4">
             <Label htmlFor="guardianEmail">Parent or guardian email</Label>
             <Input
@@ -228,8 +237,8 @@ function ProfileStep({ onDone }: { onDone: () => void }) {
               placeholder="parent@example.com"
             />
             <p className="text-xs text-text-tertiary">
-              We&apos;ll email them a link so they can follow along and join whenever they&apos;re
-              ready.
+              We&apos;ll email them a link. Once they claim your account you can connect a coach and
+              message; until then you can set up your goals.
             </p>
           </div>
         )}

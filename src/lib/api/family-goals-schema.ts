@@ -57,6 +57,7 @@ export const athleteSettingsSchema = z.object({
   guardianEmail: z.string().nullable(),
   guardianInvitedAt: z.string().nullable(),
   guardianClaimed: z.boolean(),
+  accountState: z.enum(["active", "provisional", "paused"]),
 }) satisfies z.ZodType<AthleteSettingsDTO>;
 
 export const athleteSettingsResponseSchema = z.object({

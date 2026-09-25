@@ -808,7 +808,7 @@ describe("commitScheduleImport", () => {
     expect(commitScheduleImportResultSchema.safeParse(out).success).toBe(true);
   });
 
-  it("the recipient toggle picks the email voice: an athlete-addressed group invites the athlete's address in athlete voice", async () => {
+  it("an athlete-addressed group still invites that address, but in guardian voice (decision #30: an import has no birthdate)", async () => {
     const { admin, inserted } = fakeAdmin({ coach_profiles: [COACH] });
     const { deps, sent } = commitDeps();
     const out = await commitScheduleImport(
@@ -833,12 +833,12 @@ describe("commitScheduleImport", () => {
         athleteName: "Leo Lee",
         coachName: "Sam Ortiz",
         token: MINTED,
-        recipient: "athlete",
+        recipient: "guardian",
       },
     ]);
     expect(inserted.athletes![0]).toMatchObject({
       guardian_email: "leo@example.com",
-      invite_recipient: "athlete",
+      invite_recipient: "guardian",
     });
   });
 

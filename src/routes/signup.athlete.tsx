@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -167,11 +167,66 @@ function AthleteEntryPage() {
  * Adults continue straight to account creation. Minors keep their own login
  * but must put a parent/guardian email on file, which we carry into onboarding.
  */
+const UNDER_13_KEY = "gradus.athleteEntryUnder13";
+
+function rememberUnder13() {
+  try {
+    sessionStorage.setItem(UNDER_13_KEY, "1");
+  } catch {
+    /* ignore */
+  }
+}
+
+function wasUnder13(): boolean {
+  try {
+    return sessionStorage.getItem(UNDER_13_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Decision #30 (PRD §6.13 A4): athletes under 13 never create their own
+ * account. Nothing is stored server-side; the answer is remembered for the
+ * session so a second birthdate doesn't reopen the flow.
+ */
+function ParentOnlyStep() {
+  return (
+    <div className="space-y-6">
+      <div className="text-center">
+        <p className="font-display text-2xl text-text-primary">Ask your parent to set you up</p>
+        <p className="mt-2 text-sm text-text-secondary">
+          Athletes under 13 get their Gradus account from a parent or guardian. They sign up, add
+          you, and give you a code to log in with. Nothing about you is saved until then.
+        </p>
+      </div>
+      <ShareInviteButton
+        url="https://gradus.training/signup/parent"
+        title="Join me on Gradus"
+        text="Hey — I want to use Gradus for training. Can you make a parent account and add me?"
+        label="Send my parent an invite"
+        className="w-full"
+      />
+      <Button asChild variant="ghost" className="w-full">
+        <Link to="/signup/athlete" search={{ stage: "code" }}>
+          I already have my parent&apos;s code
+        </Link>
+      </Button>
+    </div>
+  );
+}
+
 function AgeStep() {
   const navigate = useNavigate();
   const [birthdate, setBirthdate] = useState("");
   const [guardianEmail, setGuardianEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
+  // Read after mount: the server renders the birthdate step, so an initial
+  // state from sessionStorage would mismatch on hydration.
+  const [parentOnly, setParentOnly] = useState(false);
+  useEffect(() => {
+    if (wasUnder13()) setParentOnly(true);
+  }, []);
 
   const valid = /^\d{4}-\d{2}-\d{2}$/.test(birthdate);
   const age = valid ? ageInYears(birthdate) : null;
@@ -181,6 +236,11 @@ function AgeStep() {
     setError(null);
     if (!valid || age === null || age < 0 || age > 120) {
       setError("Enter your date of birth.");
+      return;
+    }
+    if (age < 13) {
+      rememberUnder13();
+      setParentOnly(true);
       return;
     }
     if (isMinor && !/^\S+@\S+\.\S+$/.test(guardianEmail.trim())) {
@@ -193,6 +253,8 @@ function AgeStep() {
     });
     navigate({ to: "/signup/athlete/adult" });
   };
+
+  if (parentOnly) return <ParentOnlyStep />;
 
   return (
     <div className="space-y-6">
@@ -227,8 +289,8 @@ function AgeStep() {
             onChange={(e) => setGuardianEmail(e.target.value)}
           />
           <p className="text-xs text-text-tertiary">
-            You&apos;ll get your own account right away. We&apos;ll email your parent a link so they
-            can see everything your coach sends — they can join whenever they&apos;re ready.
+            You&apos;ll get your own account right away and can set your goals. We&apos;ll email
+            your parent a link; once they claim your account you can connect a coach and message.
           </p>
         </div>
       )}

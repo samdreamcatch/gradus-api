@@ -306,7 +306,14 @@ describe("parent profile", () => {
         accountState: "active",
         inviteCode: "ABCDEFGH",
         locked: false,
-        coaches: [{ coachId: C, coachName: "Dean Forester", sports: ["figure_skating"] }],
+        coaches: [
+          {
+            coachId: C,
+            coachName: "Dean Forester",
+            sports: ["figure_skating"],
+            messagingPaused: false,
+          },
+        ],
         sports: [
           {
             sport: "figure_skating",

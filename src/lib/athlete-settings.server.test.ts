@@ -112,6 +112,7 @@ describe("getAthleteSettings", () => {
       guardianEmail: "lorelai@example.com",
       guardianInvitedAt: "2026-09-01T00:00:00Z",
       guardianClaimed: false,
+      accountState: "active",
     });
   });
 
