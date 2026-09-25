@@ -116,7 +116,6 @@ function CoachResourcesPage() {
             onChange={setView}
             options={[
               { key: "library", label: "Library" },
-              { key: "ask", label: "Ask Gradus" },
               { key: "saved", label: "Saved" },
             ]}
           />
