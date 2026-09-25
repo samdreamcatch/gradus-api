@@ -496,8 +496,16 @@ export async function getAthleteActivePlans(
 export const setPlanStatusInput = z.object({
   status: z.enum(["active", "benched", "draft"]),
   replaceId: z.string().uuid().optional(),
-  /** The coach's answer to the "why" prompt on bench (PRD §7.3, decision #17); ignored for other statuses. */
-  reason: skillReasonSchema.optional(),
+  /**
+   * The coach's answer to the "why" prompt (PRD §7.3, decision #17). On a
+   * bench it covers this plan; on an activate with `replaceId` it covers the
+   * plan being benched to make room. Ignored otherwise.
+   */
+  reason: skillReasonSchema
+    .optional()
+    .describe(
+      'The coach\'s "why" answer. On a bench it covers this plan; on an activate with replaceId it covers the plan benched to make room. Ignored otherwise.',
+    ),
 });
 
 /** What a "why" answer covers: the plan's athlete and the moves the answer is about. */
@@ -620,12 +628,30 @@ export async function setPlanStatus(
         if (!activeOthers.some((p) => p.id === data.replaceId)) {
           throw unprocessable("Selected plan is not active.");
         }
-        const { error: bErr } = await supabase
+        // Making room benches the other plan, so the coach's "why" answer
+        // belongs to it, not to the plan being activated. The conditional
+        // update keeps the answer atomic with the transition (same rule as
+        // a plain bench below): a replay changes no row and records nothing.
+        const { data: benched, error: bErr } = await supabase
           .from("plans")
           .update({ status: "benched" })
           .eq("id", data.replaceId)
-          .eq("coach_id", coachId);
+          .eq("coach_id", coachId)
+          .neq("status", "benched")
+          .select("id, athlete_id");
         if (bErr) dbError(bErr);
+        const replaced = (benched ?? [])[0] as
+          | { id: string; athlete_id: string | null }
+          | undefined;
+        if (data.reason && replaced?.athlete_id) {
+          await record({
+            athleteId: replaced.athlete_id,
+            coachId,
+            userId: ctx.userId,
+            planId: replaced.id,
+            reason: data.reason,
+          });
+        }
       }
     }
 

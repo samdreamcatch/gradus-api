@@ -120,6 +120,46 @@ describe('coach "why" answers (L1)', () => {
     ]);
   });
 
+  it("making room on activate records the reason against the plan it benches", async () => {
+    // `lists.plans` answers both the active-others select and the
+    // conditional bench update, so the benched row carries the athlete.
+    const supabase = fakeClient(
+      { ...coach, plans: { id: "p1", athlete_id: "a1", title: "New", status: "benched" } },
+      { plans: [{ id: "p2", title: "Edges", athlete_id: "a1" }] },
+    );
+    const r = recorder();
+    await setPlanStatus(
+      { userId: "u", supabase },
+      "p1",
+      { status: "active", replaceId: "p2", reason: "changed_direction" },
+      r.record,
+    );
+    expect(r.seen).toEqual([
+      {
+        athleteId: "a1",
+        coachId: "coach-1",
+        userId: "u",
+        planId: "p2",
+        reason: "changed_direction",
+      },
+    ]);
+  });
+
+  it("making room without a reason, or when the other plan was already benched, records nothing", async () => {
+    const r = recorder();
+    const skipped = fakeClient(
+      { ...coach, plans: { id: "p1", athlete_id: "a1", title: "New", status: "benched" } },
+      { plans: [{ id: "p2", title: "Edges", athlete_id: "a1" }] },
+    );
+    await setPlanStatus(
+      { userId: "u", supabase: skipped },
+      "p1",
+      { status: "active", replaceId: "p2" },
+      r.record,
+    );
+    expect(r.seen).toHaveLength(0);
+  });
+
   it("records nothing when no row changed (a replay or racing retry), when skipped, or with no athlete", async () => {
     const r = recorder();
     const unchanged = fakeClient({ ...coach }, { plans: [] });

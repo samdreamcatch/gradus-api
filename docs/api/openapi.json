@@ -7851,7 +7851,8 @@
                       "landed_it",
                       "parking_it",
                       "changed_direction"
-                    ]
+                    ],
+                    "description": "The coach's \"why\" answer. On a bench it covers this plan; on an activate with replaceId it covers the plan benched to make room. Ignored otherwise."
                   }
                 },
                 "required": [
