@@ -23,7 +23,10 @@ select to_regclass('public.api_rate_limits')      as rate_limits,
        to_regprocedure('public.match_knowledge_chunks(extensions.vector, text, uuid[], integer)') as knowledge_match_fn,
        to_regprocedure('public.find_confirmed_user_by_email(text)') as lookup_fn,
        to_regprocedure('public.protect_coach_billing_columns()')     as coach_guard,
-       to_regprocedure('public.protect_parent_billing_columns()')    as parent_guard;
+       to_regprocedure('public.protect_parent_billing_columns()')    as parent_guard,
+       to_regclass('public.guardian_consents')    as guardian_consents,
+       to_regclass('public.webhook_receipts')     as webhook_receipts,
+       to_regprocedure('public.protect_parent_verification_columns()') as verification_guard;
 ```
 
 Every column must be non-null. If any is null, ask Lovable to apply the pending files in

@@ -17,6 +17,7 @@ import { dbError } from "./db-error";
 import { getSport } from "./coach-sports";
 import { syntheticEmailForAthlete } from "./api/auth-broker";
 import { deleteAccountForUser } from "./account-deletion.server";
+import { grantGuardianConsent, markParentVerifiedByAdmin } from "./guardian-verification.server";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyClient = any;
@@ -290,6 +291,9 @@ export const adminSeedDemoAccounts = createServerFn({ method: "POST" })
       .single();
     if (parentProfile.error) dbError(parentProfile.error);
     const parentId = parentProfile.data.id as string;
+    // App Review cannot pass a card check (PRD §6.13 A2, risk #24): the demo
+    // parent is verified by the admin tool, method `admin`.
+    await markParentVerifiedByAdmin(admin, parentId, "admin-demo-accounts");
 
     // ---- Athlete (minor, username login) ----
     const athleteRow = await admin
@@ -307,6 +311,12 @@ export const adminSeedDemoAccounts = createServerFn({ method: "POST" })
       .single();
     if (athleteRow.error) dbError(athleteRow.error);
     const athleteId = athleteRow.data.id as string;
+    await grantGuardianConsent(admin, {
+      athleteId,
+      parentId,
+      method: "admin",
+      evidence: { seeder: "admin-demo-accounts" },
+    });
 
     const athleteUser = await admin.auth.admin.createUser({
       email: syntheticEmailForAthlete(athleteId),

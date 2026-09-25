@@ -700,6 +700,7 @@ describe("getMyGuardianStatus", () => {
       guardianEmail: "guardian@example.com",
       claimed: false,
       invitedAt: "2026-09-01T00:00:00.000Z",
+      accountState: "active",
     });
   });
 
@@ -721,6 +722,7 @@ describe("getMyGuardianStatus", () => {
       guardianEmail: null,
       claimed: true,
       invitedAt: null,
+      accountState: "active",
     });
   });
 

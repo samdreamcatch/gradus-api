@@ -207,13 +207,74 @@
                         "version",
                         "acceptedAt"
                       ]
+                    },
+                    "parentVerification": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "required": {
+                          "type": "boolean"
+                        },
+                        "available": {
+                          "type": "boolean"
+                        },
+                        "verified": {
+                          "type": "boolean"
+                        },
+                        "method": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "enum": [
+                            "kws_card",
+                            "admin",
+                            "legacy"
+                          ]
+                        },
+                        "verifiedAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "requestedAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "required",
+                        "available",
+                        "verified",
+                        "method",
+                        "verifiedAt",
+                        "requestedAt"
+                      ]
+                    },
+                    "athleteAccountState": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "enum": [
+                        "active",
+                        "provisional",
+                        "paused"
+                      ]
                     }
                   },
                   "required": [
                     "userId",
                     "role",
                     "onboardingComplete",
-                    "terms"
+                    "terms",
+                    "parentVerification",
+                    "athleteAccountState"
                   ]
                 }
               }
@@ -14135,6 +14196,51 @@
                         "lastName"
                       ]
                     },
+                    "verification": {
+                      "type": "object",
+                      "properties": {
+                        "required": {
+                          "type": "boolean"
+                        },
+                        "available": {
+                          "type": "boolean"
+                        },
+                        "verified": {
+                          "type": "boolean"
+                        },
+                        "method": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "enum": [
+                            "kws_card",
+                            "admin",
+                            "legacy"
+                          ]
+                        },
+                        "verifiedAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "requestedAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "required",
+                        "available",
+                        "verified",
+                        "method",
+                        "verifiedAt",
+                        "requestedAt"
+                      ]
+                    },
                     "athletes": {
                       "type": "array",
                       "items": {
@@ -14163,6 +14269,14 @@
                           },
                           "hasAccount": {
                             "type": "boolean"
+                          },
+                          "accountState": {
+                            "type": "string",
+                            "enum": [
+                              "active",
+                              "provisional",
+                              "paused"
+                            ]
                           },
                           "inviteCode": {
                             "type": [
@@ -14341,6 +14455,7 @@
                           "birthdate",
                           "username",
                           "hasAccount",
+                          "accountState",
                           "inviteCode",
                           "coaches",
                           "sports",
@@ -14352,6 +14467,7 @@
                   },
                   "required": [
                     "profile",
+                    "verification",
                     "athletes"
                   ]
                 }
@@ -20979,6 +21095,14 @@
                             "string",
                             "null"
                           ]
+                        },
+                        "accountState": {
+                          "type": "string",
+                          "enum": [
+                            "active",
+                            "provisional",
+                            "paused"
+                          ]
                         }
                       },
                       "required": [
@@ -20986,12 +21110,234 @@
                         "isMinor",
                         "guardianEmail",
                         "claimed",
-                        "invitedAt"
+                        "invitedAt",
+                        "accountState"
                       ]
                     }
                   },
                   "required": [
                     "status"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/guardian/verification/start": {
+      "post": {
+        "operationId": "startParentVerification",
+        "summary": "Email the signed-in parent their KWS adult-verification link",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "email_sent",
+                        "already_verified",
+                        "not_configured",
+                        "rate_limited"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/guardian/verification/status": {
+      "get": {
+        "operationId": "getParentVerificationStatus",
+        "summary": "The signed-in parent's adult-verification state",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "verification": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "required": {
+                          "type": "boolean"
+                        },
+                        "available": {
+                          "type": "boolean"
+                        },
+                        "verified": {
+                          "type": "boolean"
+                        },
+                        "method": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "enum": [
+                            "kws_card",
+                            "admin",
+                            "legacy"
+                          ]
+                        },
+                        "verifiedAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "requestedAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "required",
+                        "available",
+                        "verified",
+                        "method",
+                        "verifiedAt",
+                        "requestedAt"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "verification"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/guardian/verification/complete": {
+      "post": {
+        "operationId": "completeParentVerification",
+        "summary": "Record a KWS Verification Response (the signed /verified redirect)",
+        "security": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2000
+                  },
+                  "externalPayload": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2000
+                  },
+                  "signatures": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 256
+                    },
+                    "minItems": 1,
+                    "maxItems": 4
+                  }
+                },
+                "required": [
+                  "status",
+                  "externalPayload",
+                  "signatures"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    },
+                    "verified": {
+                      "type": "boolean"
+                    },
+                    "duplicate": {
+                      "type": "boolean"
+                    },
+                    "reason": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "verified",
+                    "duplicate",
+                    "reason"
                   ]
                 }
               }

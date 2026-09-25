@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as VerifiedRouteImport } from './routes/verified'
 import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
@@ -163,6 +164,7 @@ import { Route as ApiV1AthleteMeRouteImport } from './routes/api/v1/athlete/me'
 import { Route as ApiV1AnalyticsEventsRouteImport } from './routes/api/v1/analytics/events'
 import { Route as ApiV1AdultAthleteOnboardingRouteImport } from './routes/api/v1/adult-athlete/onboarding'
 import { Route as ApiV1AdultAthleteGoalsRouteImport } from './routes/api/v1/adult-athlete/goals'
+import { Route as ApiPublicWebhooksKwsRouteImport } from './routes/api/public/webhooks/kws'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 import { Route as ApiPublicHooksVoiceTranscriptsRouteImport } from './routes/api/public/hooks/voice-transcripts'
 import { Route as ApiPublicHooksSkillInferenceRouteImport } from './routes/api/public/hooks/skill-inference'
@@ -171,6 +173,7 @@ import { Route as ApiPublicHooksLessonWrapUpsRouteImport } from './routes/api/pu
 import { Route as ApiPublicHooksLessonRemindersRouteImport } from './routes/api/public/hooks/lesson-reminders'
 import { Route as ApiPublicHooksKnowledgeIngestRouteImport } from './routes/api/public/hooks/knowledge-ingest'
 import { Route as ApiPublicHooksErrorDigestRouteImport } from './routes/api/public/hooks/error-digest'
+import { Route as ApiPublicHooksConsentRetentionRouteImport } from './routes/api/public/hooks/consent-retention'
 import { Route as ApiPublicHooksCompetitionRecapsRouteImport } from './routes/api/public/hooks/competition-recaps'
 import { Route as ApiPublicHooksBillingNoticesRouteImport } from './routes/api/public/hooks/billing-notices'
 import { Route as ApiPublicBoardRefreshRouteImport } from './routes/api/public/board/refresh'
@@ -237,6 +240,9 @@ import { Route as ApiV1InvitesParentPreviewRouteImport } from './routes/api/v1/i
 import { Route as ApiV1InvitesParentClaimRouteImport } from './routes/api/v1/invites/parent/claim'
 import { Route as ApiV1InvitesAdultAthletePreviewRouteImport } from './routes/api/v1/invites/adult-athlete/preview'
 import { Route as ApiV1InvitesAdultAthleteClaimRouteImport } from './routes/api/v1/invites/adult-athlete/claim'
+import { Route as ApiV1GuardianVerificationStatusRouteImport } from './routes/api/v1/guardian/verification/status'
+import { Route as ApiV1GuardianVerificationStartRouteImport } from './routes/api/v1/guardian/verification/start'
+import { Route as ApiV1GuardianVerificationCompleteRouteImport } from './routes/api/v1/guardian/verification/complete'
 import { Route as ApiV1GuardianClaimSummaryRouteImport } from './routes/api/v1/guardian/claim/summary'
 import { Route as ApiV1GuardianClaimSelfRouteImport } from './routes/api/v1/guardian/claim/self'
 import { Route as ApiV1GuardianClaimMergeOptionsRouteImport } from './routes/api/v1/guardian/claim/merge-options'
@@ -324,6 +330,11 @@ import { Route as ApiV1CoachLessonSlotsIdOccurrencesDateRescheduleRouteImport } 
 import { Route as ApiV1CoachLessonSlotsIdOccurrencesDateOverrideRouteImport } from './routes/api/v1/coach/lesson-slots/$id/occurrences/$date/override'
 import { Route as ApiV1CoachLessonSlotsIdOccurrencesDateCancelRouteImport } from './routes/api/v1/coach/lesson-slots/$id/occurrences/$date/cancel'
 
+const VerifiedRoute = VerifiedRouteImport.update({
+  id: '/verified',
+  path: '/verified',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const UnsubscribeRoute = UnsubscribeRouteImport.update({
   id: '/unsubscribe',
   path: '/unsubscribe',
@@ -1147,6 +1158,11 @@ const ApiV1AdultAthleteGoalsRoute = ApiV1AdultAthleteGoalsRouteImport.update({
   path: '/api/v1/adult-athlete/goals',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicWebhooksKwsRoute = ApiPublicWebhooksKwsRouteImport.update({
+  id: '/api/public/webhooks/kws',
+  path: '/api/public/webhooks/kws',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicPaymentsWebhookRoute =
   ApiPublicPaymentsWebhookRouteImport.update({
     id: '/api/public/payments/webhook',
@@ -1193,6 +1209,12 @@ const ApiPublicHooksErrorDigestRoute =
   ApiPublicHooksErrorDigestRouteImport.update({
     id: '/api/public/hooks/error-digest',
     path: '/api/public/hooks/error-digest',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksConsentRetentionRoute =
+  ApiPublicHooksConsentRetentionRouteImport.update({
+    id: '/api/public/hooks/consent-retention',
+    path: '/api/public/hooks/consent-retention',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicHooksCompetitionRecapsRoute =
@@ -1560,6 +1582,24 @@ const ApiV1InvitesAdultAthleteClaimRoute =
   ApiV1InvitesAdultAthleteClaimRouteImport.update({
     id: '/api/v1/invites/adult-athlete/claim',
     path: '/api/v1/invites/adult-athlete/claim',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1GuardianVerificationStatusRoute =
+  ApiV1GuardianVerificationStatusRouteImport.update({
+    id: '/api/v1/guardian/verification/status',
+    path: '/api/v1/guardian/verification/status',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1GuardianVerificationStartRoute =
+  ApiV1GuardianVerificationStartRouteImport.update({
+    id: '/api/v1/guardian/verification/start',
+    path: '/api/v1/guardian/verification/start',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1GuardianVerificationCompleteRoute =
+  ApiV1GuardianVerificationCompleteRouteImport.update({
+    id: '/api/v1/guardian/verification/complete',
+    path: '/api/v1/guardian/verification/complete',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiV1GuardianClaimSummaryRoute =
@@ -2075,6 +2115,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
   '/unsubscribe': typeof UnsubscribeRoute
+  '/verified': typeof VerifiedRoute
   '/.well-known/apple-app-site-association': typeof DotwellKnownAppleAppSiteAssociationRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/athlete': typeof AuthenticatedAthleteRouteWithChildren
@@ -2166,6 +2207,7 @@ export interface FileRoutesByFullPath {
   '/api/public/board/refresh': typeof ApiPublicBoardRefreshRoute
   '/api/public/hooks/billing-notices': typeof ApiPublicHooksBillingNoticesRoute
   '/api/public/hooks/competition-recaps': typeof ApiPublicHooksCompetitionRecapsRoute
+  '/api/public/hooks/consent-retention': typeof ApiPublicHooksConsentRetentionRoute
   '/api/public/hooks/error-digest': typeof ApiPublicHooksErrorDigestRoute
   '/api/public/hooks/knowledge-ingest': typeof ApiPublicHooksKnowledgeIngestRoute
   '/api/public/hooks/lesson-reminders': typeof ApiPublicHooksLessonRemindersRoute
@@ -2174,6 +2216,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/skill-inference': typeof ApiPublicHooksSkillInferenceRoute
   '/api/public/hooks/voice-transcripts': typeof ApiPublicHooksVoiceTranscriptsRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
+  '/api/public/webhooks/kws': typeof ApiPublicWebhooksKwsRoute
   '/api/v1/adult-athlete/goals': typeof ApiV1AdultAthleteGoalsRoute
   '/api/v1/adult-athlete/onboarding': typeof ApiV1AdultAthleteOnboardingRoute
   '/api/v1/analytics/events': typeof ApiV1AnalyticsEventsRoute
@@ -2281,6 +2324,9 @@ export interface FileRoutesByFullPath {
   '/api/v1/guardian/claim/merge-options': typeof ApiV1GuardianClaimMergeOptionsRoute
   '/api/v1/guardian/claim/self': typeof ApiV1GuardianClaimSelfRoute
   '/api/v1/guardian/claim/summary': typeof ApiV1GuardianClaimSummaryRoute
+  '/api/v1/guardian/verification/complete': typeof ApiV1GuardianVerificationCompleteRoute
+  '/api/v1/guardian/verification/start': typeof ApiV1GuardianVerificationStartRoute
+  '/api/v1/guardian/verification/status': typeof ApiV1GuardianVerificationStatusRoute
   '/api/v1/invites/adult-athlete/claim': typeof ApiV1InvitesAdultAthleteClaimRoute
   '/api/v1/invites/adult-athlete/preview': typeof ApiV1InvitesAdultAthletePreviewRoute
   '/api/v1/invites/parent/claim': typeof ApiV1InvitesParentClaimRoute
@@ -2390,6 +2436,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
   '/unsubscribe': typeof UnsubscribeRoute
+  '/verified': typeof VerifiedRoute
   '/.well-known/apple-app-site-association': typeof DotwellKnownAppleAppSiteAssociationRoute
   '/board/$slug': typeof BoardSlugRoute
   '/dev/paywall-preview': typeof DevPaywallPreviewRoute
@@ -2475,6 +2522,7 @@ export interface FileRoutesByTo {
   '/api/public/board/refresh': typeof ApiPublicBoardRefreshRoute
   '/api/public/hooks/billing-notices': typeof ApiPublicHooksBillingNoticesRoute
   '/api/public/hooks/competition-recaps': typeof ApiPublicHooksCompetitionRecapsRoute
+  '/api/public/hooks/consent-retention': typeof ApiPublicHooksConsentRetentionRoute
   '/api/public/hooks/error-digest': typeof ApiPublicHooksErrorDigestRoute
   '/api/public/hooks/knowledge-ingest': typeof ApiPublicHooksKnowledgeIngestRoute
   '/api/public/hooks/lesson-reminders': typeof ApiPublicHooksLessonRemindersRoute
@@ -2483,6 +2531,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/skill-inference': typeof ApiPublicHooksSkillInferenceRoute
   '/api/public/hooks/voice-transcripts': typeof ApiPublicHooksVoiceTranscriptsRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
+  '/api/public/webhooks/kws': typeof ApiPublicWebhooksKwsRoute
   '/api/v1/adult-athlete/goals': typeof ApiV1AdultAthleteGoalsRoute
   '/api/v1/adult-athlete/onboarding': typeof ApiV1AdultAthleteOnboardingRoute
   '/api/v1/analytics/events': typeof ApiV1AnalyticsEventsRoute
@@ -2590,6 +2639,9 @@ export interface FileRoutesByTo {
   '/api/v1/guardian/claim/merge-options': typeof ApiV1GuardianClaimMergeOptionsRoute
   '/api/v1/guardian/claim/self': typeof ApiV1GuardianClaimSelfRoute
   '/api/v1/guardian/claim/summary': typeof ApiV1GuardianClaimSummaryRoute
+  '/api/v1/guardian/verification/complete': typeof ApiV1GuardianVerificationCompleteRoute
+  '/api/v1/guardian/verification/start': typeof ApiV1GuardianVerificationStartRoute
+  '/api/v1/guardian/verification/status': typeof ApiV1GuardianVerificationStatusRoute
   '/api/v1/invites/adult-athlete/claim': typeof ApiV1InvitesAdultAthleteClaimRoute
   '/api/v1/invites/adult-athlete/preview': typeof ApiV1InvitesAdultAthletePreviewRoute
   '/api/v1/invites/parent/claim': typeof ApiV1InvitesParentClaimRoute
@@ -2701,6 +2753,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
   '/unsubscribe': typeof UnsubscribeRoute
+  '/verified': typeof VerifiedRoute
   '/.well-known/apple-app-site-association': typeof DotwellKnownAppleAppSiteAssociationRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/_authenticated/athlete': typeof AuthenticatedAthleteRouteWithChildren
@@ -2792,6 +2845,7 @@ export interface FileRoutesById {
   '/api/public/board/refresh': typeof ApiPublicBoardRefreshRoute
   '/api/public/hooks/billing-notices': typeof ApiPublicHooksBillingNoticesRoute
   '/api/public/hooks/competition-recaps': typeof ApiPublicHooksCompetitionRecapsRoute
+  '/api/public/hooks/consent-retention': typeof ApiPublicHooksConsentRetentionRoute
   '/api/public/hooks/error-digest': typeof ApiPublicHooksErrorDigestRoute
   '/api/public/hooks/knowledge-ingest': typeof ApiPublicHooksKnowledgeIngestRoute
   '/api/public/hooks/lesson-reminders': typeof ApiPublicHooksLessonRemindersRoute
@@ -2800,6 +2854,7 @@ export interface FileRoutesById {
   '/api/public/hooks/skill-inference': typeof ApiPublicHooksSkillInferenceRoute
   '/api/public/hooks/voice-transcripts': typeof ApiPublicHooksVoiceTranscriptsRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
+  '/api/public/webhooks/kws': typeof ApiPublicWebhooksKwsRoute
   '/api/v1/adult-athlete/goals': typeof ApiV1AdultAthleteGoalsRoute
   '/api/v1/adult-athlete/onboarding': typeof ApiV1AdultAthleteOnboardingRoute
   '/api/v1/analytics/events': typeof ApiV1AnalyticsEventsRoute
@@ -2907,6 +2962,9 @@ export interface FileRoutesById {
   '/api/v1/guardian/claim/merge-options': typeof ApiV1GuardianClaimMergeOptionsRoute
   '/api/v1/guardian/claim/self': typeof ApiV1GuardianClaimSelfRoute
   '/api/v1/guardian/claim/summary': typeof ApiV1GuardianClaimSummaryRoute
+  '/api/v1/guardian/verification/complete': typeof ApiV1GuardianVerificationCompleteRoute
+  '/api/v1/guardian/verification/start': typeof ApiV1GuardianVerificationStartRoute
+  '/api/v1/guardian/verification/status': typeof ApiV1GuardianVerificationStatusRoute
   '/api/v1/invites/adult-athlete/claim': typeof ApiV1InvitesAdultAthleteClaimRoute
   '/api/v1/invites/adult-athlete/preview': typeof ApiV1InvitesAdultAthletePreviewRoute
   '/api/v1/invites/parent/claim': typeof ApiV1InvitesParentClaimRoute
@@ -3018,6 +3076,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/terms'
     | '/unsubscribe'
+    | '/verified'
     | '/.well-known/apple-app-site-association'
     | '/admin'
     | '/athlete'
@@ -3109,6 +3168,7 @@ export interface FileRouteTypes {
     | '/api/public/board/refresh'
     | '/api/public/hooks/billing-notices'
     | '/api/public/hooks/competition-recaps'
+    | '/api/public/hooks/consent-retention'
     | '/api/public/hooks/error-digest'
     | '/api/public/hooks/knowledge-ingest'
     | '/api/public/hooks/lesson-reminders'
@@ -3117,6 +3177,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/skill-inference'
     | '/api/public/hooks/voice-transcripts'
     | '/api/public/payments/webhook'
+    | '/api/public/webhooks/kws'
     | '/api/v1/adult-athlete/goals'
     | '/api/v1/adult-athlete/onboarding'
     | '/api/v1/analytics/events'
@@ -3224,6 +3285,9 @@ export interface FileRouteTypes {
     | '/api/v1/guardian/claim/merge-options'
     | '/api/v1/guardian/claim/self'
     | '/api/v1/guardian/claim/summary'
+    | '/api/v1/guardian/verification/complete'
+    | '/api/v1/guardian/verification/start'
+    | '/api/v1/guardian/verification/status'
     | '/api/v1/invites/adult-athlete/claim'
     | '/api/v1/invites/adult-athlete/preview'
     | '/api/v1/invites/parent/claim'
@@ -3333,6 +3397,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/terms'
     | '/unsubscribe'
+    | '/verified'
     | '/.well-known/apple-app-site-association'
     | '/board/$slug'
     | '/dev/paywall-preview'
@@ -3418,6 +3483,7 @@ export interface FileRouteTypes {
     | '/api/public/board/refresh'
     | '/api/public/hooks/billing-notices'
     | '/api/public/hooks/competition-recaps'
+    | '/api/public/hooks/consent-retention'
     | '/api/public/hooks/error-digest'
     | '/api/public/hooks/knowledge-ingest'
     | '/api/public/hooks/lesson-reminders'
@@ -3426,6 +3492,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/skill-inference'
     | '/api/public/hooks/voice-transcripts'
     | '/api/public/payments/webhook'
+    | '/api/public/webhooks/kws'
     | '/api/v1/adult-athlete/goals'
     | '/api/v1/adult-athlete/onboarding'
     | '/api/v1/analytics/events'
@@ -3533,6 +3600,9 @@ export interface FileRouteTypes {
     | '/api/v1/guardian/claim/merge-options'
     | '/api/v1/guardian/claim/self'
     | '/api/v1/guardian/claim/summary'
+    | '/api/v1/guardian/verification/complete'
+    | '/api/v1/guardian/verification/start'
+    | '/api/v1/guardian/verification/status'
     | '/api/v1/invites/adult-athlete/claim'
     | '/api/v1/invites/adult-athlete/preview'
     | '/api/v1/invites/parent/claim'
@@ -3643,6 +3713,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/terms'
     | '/unsubscribe'
+    | '/verified'
     | '/.well-known/apple-app-site-association'
     | '/_authenticated/admin'
     | '/_authenticated/athlete'
@@ -3734,6 +3805,7 @@ export interface FileRouteTypes {
     | '/api/public/board/refresh'
     | '/api/public/hooks/billing-notices'
     | '/api/public/hooks/competition-recaps'
+    | '/api/public/hooks/consent-retention'
     | '/api/public/hooks/error-digest'
     | '/api/public/hooks/knowledge-ingest'
     | '/api/public/hooks/lesson-reminders'
@@ -3742,6 +3814,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/skill-inference'
     | '/api/public/hooks/voice-transcripts'
     | '/api/public/payments/webhook'
+    | '/api/public/webhooks/kws'
     | '/api/v1/adult-athlete/goals'
     | '/api/v1/adult-athlete/onboarding'
     | '/api/v1/analytics/events'
@@ -3849,6 +3922,9 @@ export interface FileRouteTypes {
     | '/api/v1/guardian/claim/merge-options'
     | '/api/v1/guardian/claim/self'
     | '/api/v1/guardian/claim/summary'
+    | '/api/v1/guardian/verification/complete'
+    | '/api/v1/guardian/verification/start'
+    | '/api/v1/guardian/verification/status'
     | '/api/v1/invites/adult-athlete/claim'
     | '/api/v1/invites/adult-athlete/preview'
     | '/api/v1/invites/parent/claim'
@@ -3960,6 +4036,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   TermsRoute: typeof TermsRoute
   UnsubscribeRoute: typeof UnsubscribeRoute
+  VerifiedRoute: typeof VerifiedRoute
   DotwellKnownAppleAppSiteAssociationRoute: typeof DotwellKnownAppleAppSiteAssociationRoute
   BoardSlugRoute: typeof BoardSlugRoute
   DevPaywallPreviewRoute: typeof DevPaywallPreviewRoute
@@ -3982,6 +4059,7 @@ export interface RootRouteChildren {
   ApiPublicBoardRefreshRoute: typeof ApiPublicBoardRefreshRoute
   ApiPublicHooksBillingNoticesRoute: typeof ApiPublicHooksBillingNoticesRoute
   ApiPublicHooksCompetitionRecapsRoute: typeof ApiPublicHooksCompetitionRecapsRoute
+  ApiPublicHooksConsentRetentionRoute: typeof ApiPublicHooksConsentRetentionRoute
   ApiPublicHooksErrorDigestRoute: typeof ApiPublicHooksErrorDigestRoute
   ApiPublicHooksKnowledgeIngestRoute: typeof ApiPublicHooksKnowledgeIngestRoute
   ApiPublicHooksLessonRemindersRoute: typeof ApiPublicHooksLessonRemindersRoute
@@ -3990,6 +4068,7 @@ export interface RootRouteChildren {
   ApiPublicHooksSkillInferenceRoute: typeof ApiPublicHooksSkillInferenceRoute
   ApiPublicHooksVoiceTranscriptsRoute: typeof ApiPublicHooksVoiceTranscriptsRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
+  ApiPublicWebhooksKwsRoute: typeof ApiPublicWebhooksKwsRoute
   ApiV1AdultAthleteGoalsRoute: typeof ApiV1AdultAthleteGoalsRoute
   ApiV1AdultAthleteOnboardingRoute: typeof ApiV1AdultAthleteOnboardingRoute
   ApiV1AnalyticsEventsRoute: typeof ApiV1AnalyticsEventsRoute
@@ -4086,6 +4165,9 @@ export interface RootRouteChildren {
   ApiV1GuardianClaimMergeOptionsRoute: typeof ApiV1GuardianClaimMergeOptionsRoute
   ApiV1GuardianClaimSelfRoute: typeof ApiV1GuardianClaimSelfRoute
   ApiV1GuardianClaimSummaryRoute: typeof ApiV1GuardianClaimSummaryRoute
+  ApiV1GuardianVerificationCompleteRoute: typeof ApiV1GuardianVerificationCompleteRoute
+  ApiV1GuardianVerificationStartRoute: typeof ApiV1GuardianVerificationStartRoute
+  ApiV1GuardianVerificationStatusRoute: typeof ApiV1GuardianVerificationStatusRoute
   ApiV1InvitesAdultAthleteClaimRoute: typeof ApiV1InvitesAdultAthleteClaimRoute
   ApiV1InvitesAdultAthletePreviewRoute: typeof ApiV1InvitesAdultAthletePreviewRoute
   ApiV1InvitesParentClaimRoute: typeof ApiV1InvitesParentClaimRoute
@@ -4190,6 +4272,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/verified': {
+      id: '/verified'
+      path: '/verified'
+      fullPath: '/verified'
+      preLoaderRoute: typeof VerifiedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/unsubscribe': {
       id: '/unsubscribe'
       path: '/unsubscribe'
@@ -5268,6 +5357,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1AdultAthleteGoalsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/webhooks/kws': {
+      id: '/api/public/webhooks/kws'
+      path: '/api/public/webhooks/kws'
+      fullPath: '/api/public/webhooks/kws'
+      preLoaderRoute: typeof ApiPublicWebhooksKwsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/payments/webhook': {
       id: '/api/public/payments/webhook'
       path: '/api/public/payments/webhook'
@@ -5322,6 +5418,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/hooks/error-digest'
       fullPath: '/api/public/hooks/error-digest'
       preLoaderRoute: typeof ApiPublicHooksErrorDigestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/consent-retention': {
+      id: '/api/public/hooks/consent-retention'
+      path: '/api/public/hooks/consent-retention'
+      fullPath: '/api/public/hooks/consent-retention'
+      preLoaderRoute: typeof ApiPublicHooksConsentRetentionRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/hooks/competition-recaps': {
@@ -5784,6 +5887,27 @@ declare module '@tanstack/react-router' {
       path: '/api/v1/invites/adult-athlete/claim'
       fullPath: '/api/v1/invites/adult-athlete/claim'
       preLoaderRoute: typeof ApiV1InvitesAdultAthleteClaimRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/guardian/verification/status': {
+      id: '/api/v1/guardian/verification/status'
+      path: '/api/v1/guardian/verification/status'
+      fullPath: '/api/v1/guardian/verification/status'
+      preLoaderRoute: typeof ApiV1GuardianVerificationStatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/guardian/verification/start': {
+      id: '/api/v1/guardian/verification/start'
+      path: '/api/v1/guardian/verification/start'
+      fullPath: '/api/v1/guardian/verification/start'
+      preLoaderRoute: typeof ApiV1GuardianVerificationStartRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/guardian/verification/complete': {
+      id: '/api/v1/guardian/verification/complete'
+      path: '/api/v1/guardian/verification/complete'
+      fullPath: '/api/v1/guardian/verification/complete'
+      preLoaderRoute: typeof ApiV1GuardianVerificationCompleteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/v1/guardian/claim/summary': {
@@ -6670,6 +6794,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   TermsRoute: TermsRoute,
   UnsubscribeRoute: UnsubscribeRoute,
+  VerifiedRoute: VerifiedRoute,
   DotwellKnownAppleAppSiteAssociationRoute:
     DotwellKnownAppleAppSiteAssociationRoute,
   BoardSlugRoute: BoardSlugRoute,
@@ -6693,6 +6818,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicBoardRefreshRoute: ApiPublicBoardRefreshRoute,
   ApiPublicHooksBillingNoticesRoute: ApiPublicHooksBillingNoticesRoute,
   ApiPublicHooksCompetitionRecapsRoute: ApiPublicHooksCompetitionRecapsRoute,
+  ApiPublicHooksConsentRetentionRoute: ApiPublicHooksConsentRetentionRoute,
   ApiPublicHooksErrorDigestRoute: ApiPublicHooksErrorDigestRoute,
   ApiPublicHooksKnowledgeIngestRoute: ApiPublicHooksKnowledgeIngestRoute,
   ApiPublicHooksLessonRemindersRoute: ApiPublicHooksLessonRemindersRoute,
@@ -6701,6 +6827,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksSkillInferenceRoute: ApiPublicHooksSkillInferenceRoute,
   ApiPublicHooksVoiceTranscriptsRoute: ApiPublicHooksVoiceTranscriptsRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
+  ApiPublicWebhooksKwsRoute: ApiPublicWebhooksKwsRoute,
   ApiV1AdultAthleteGoalsRoute: ApiV1AdultAthleteGoalsRoute,
   ApiV1AdultAthleteOnboardingRoute: ApiV1AdultAthleteOnboardingRoute,
   ApiV1AnalyticsEventsRoute: ApiV1AnalyticsEventsRoute,
@@ -6800,6 +6927,10 @@ const rootRouteChildren: RootRouteChildren = {
   ApiV1GuardianClaimMergeOptionsRoute: ApiV1GuardianClaimMergeOptionsRoute,
   ApiV1GuardianClaimSelfRoute: ApiV1GuardianClaimSelfRoute,
   ApiV1GuardianClaimSummaryRoute: ApiV1GuardianClaimSummaryRoute,
+  ApiV1GuardianVerificationCompleteRoute:
+    ApiV1GuardianVerificationCompleteRoute,
+  ApiV1GuardianVerificationStartRoute: ApiV1GuardianVerificationStartRoute,
+  ApiV1GuardianVerificationStatusRoute: ApiV1GuardianVerificationStatusRoute,
   ApiV1InvitesAdultAthleteClaimRoute: ApiV1InvitesAdultAthleteClaimRoute,
   ApiV1InvitesAdultAthletePreviewRoute: ApiV1InvitesAdultAthletePreviewRoute,
   ApiV1InvitesParentClaimRoute: ApiV1InvitesParentClaimRoute,

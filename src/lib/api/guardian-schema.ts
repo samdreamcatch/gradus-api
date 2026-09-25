@@ -59,6 +59,7 @@ export const guardianStatusSchema = z.object({
   guardianEmail: z.string().nullable(),
   claimed: z.boolean(),
   invitedAt: z.string().nullable(),
+  accountState: z.enum(["active", "provisional", "paused"]),
 }) satisfies z.ZodType<GuardianStatusDTO>;
 
 /** `{ status: null }` when the caller has no athlete row (wrapped like `athleteSettingsResponseSchema`). */

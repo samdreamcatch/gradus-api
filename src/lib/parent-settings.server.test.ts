@@ -232,6 +232,14 @@ describe("parent profile", () => {
     const settings = await getParentSettings({ userId: "u", admin });
     expect(settings).toEqual({
       profile: { firstName: "Lorelai", lastName: "Gilmore" },
+      verification: {
+        required: false,
+        available: false,
+        verified: false,
+        method: null,
+        verifiedAt: null,
+        requestedAt: null,
+      },
       athletes: [],
     });
   });
@@ -295,6 +303,7 @@ describe("parent profile", () => {
         birthdate: "2014-09-08",
         username: "rory",
         hasAccount: true,
+        accountState: "active",
         inviteCode: "ABCDEFGH",
         locked: false,
         coaches: [{ coachId: C, coachName: "Dean Forester", sports: ["figure_skating"] }],
@@ -391,6 +400,7 @@ describe("parent profile", () => {
         birthdate: null,
         username: null,
         hasAccount: false,
+        accountState: "active",
         inviteCode: null,
         coaches: [],
         sports: [],

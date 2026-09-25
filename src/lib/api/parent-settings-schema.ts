@@ -7,6 +7,10 @@
 import { z } from "zod";
 import type { ParentSettingsDTO } from "@/lib/parent-settings.server";
 import { scheduleSlotSchema } from "./athlete-schema";
+import {
+  athleteAccountStateSchema,
+  parentVerificationSchema,
+} from "./guardian-verification-schema";
 
 const parentSettingsCoachSchema = z.object({
   coachId: z.string(),
@@ -41,6 +45,7 @@ export const parentSettingsAthleteSchema = z.object({
   birthdate: z.string().nullable(),
   username: z.string().nullable(),
   hasAccount: z.boolean(),
+  accountState: athleteAccountStateSchema,
   inviteCode: z.string().nullable(),
   coaches: z.array(parentSettingsCoachSchema),
   sports: z.array(parentSettingsSportSchema),
@@ -50,6 +55,7 @@ export const parentSettingsAthleteSchema = z.object({
 
 export const parentSettingsSchema = z.object({
   profile: z.object({ firstName: z.string(), lastName: z.string() }),
+  verification: parentVerificationSchema,
   athletes: z.array(parentSettingsAthleteSchema),
 }) satisfies z.ZodType<ParentSettingsDTO>;
 

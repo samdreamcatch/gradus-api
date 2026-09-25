@@ -19,6 +19,13 @@ import { isMinorBirthdate } from "./athlete-age";
 import { ApiError } from "./api/errors";
 import { inBackground } from "./background";
 import { dbError } from "./db-error";
+import {
+  getParentVerificationById,
+  type AthleteAccountState,
+  type ParentVerificationDTO,
+  verificationAvailable,
+  verificationRequired,
+} from "./guardian-verification.server";
 import { coachUserId, notifyUsers } from "./push-notify.server";
 import { inviteCodeSchema } from "./invites.server";
 import { lessonSlotSchema } from "./parent-signup.server";
@@ -87,6 +94,8 @@ export type ParentSettingsAthleteDTO = {
   birthdate: string | null;
   username: string | null;
   hasAccount: boolean;
+  /** PRD §6.13 A4: `active`, `provisional` (waiting on a verified guardian) or `paused` (consent withdrawn). */
+  accountState: AthleteAccountState;
   inviteCode: string | null;
   coaches: ParentSettingsCoachDTO[];
   sports: ParentSettingsSportDTO[];
@@ -97,6 +106,8 @@ export type ParentSettingsAthleteDTO = {
 
 export type ParentSettingsDTO = {
   profile: { firstName: string; lastName: string };
+  /** PRD §6.13 A1: the parent's own adult-verification state. */
+  verification: ParentVerificationDTO;
   athletes: ParentSettingsAthleteDTO[];
 };
 
@@ -288,7 +299,7 @@ export async function getParentSettings(ctx: ParentSettingsContext): Promise<Par
     : ["00000000-0000-0000-0000-000000000000"];
   const athletesRes = await admin
     .from("athletes")
-    .select("id, first_name, last_name, birthdate, username, user_id, parent_id")
+    .select("id, first_name, last_name, birthdate, username, user_id, parent_id, account_state")
     .in("id", accessibleAthleteIds)
     .order("created_at", { ascending: true });
   if (athletesRes.error) dbError(athletesRes.error);
@@ -363,11 +374,26 @@ export async function getParentSettings(ctx: ParentSettingsContext): Promise<Par
     }
   }
 
+  const verification: ParentVerificationDTO = (await getParentVerificationById(
+    admin,
+    parent.id,
+  )) ?? {
+    required: verificationRequired(),
+    available: verificationAvailable(),
+    verified: false,
+    method: null,
+    verifiedAt: null,
+    requestedAt: null,
+  };
+  const stateOf = (a: { account_state?: string | null }): AthleteAccountState =>
+    (a.account_state as AthleteAccountState | null | undefined) ?? "active";
+
   return {
     profile: {
       firstName: parent.first_name,
       lastName: parent.last_name,
     },
+    verification,
     athletes: athletes.map((a) => {
       if (lockedById.get(a.id)) {
         return {
@@ -377,6 +403,7 @@ export async function getParentSettings(ctx: ParentSettingsContext): Promise<Par
           birthdate: null,
           username: null,
           hasAccount: false,
+          accountState: stateOf(a),
           inviteCode: null,
           coaches: [],
           sports: [],
@@ -451,6 +478,7 @@ export async function getParentSettings(ctx: ParentSettingsContext): Promise<Par
         birthdate: a.birthdate as string | null,
         username: (a as { username: string | null }).username ?? null,
         hasAccount: !!(a as { user_id: string | null }).user_id,
+        accountState: stateOf(a),
         inviteCode: codeMap.get(a.id) ?? null,
         coaches,
         sports,

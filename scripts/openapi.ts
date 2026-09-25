@@ -204,6 +204,10 @@ import "../src/routes/api/v1/guardian/claim/merge";
 import "../src/routes/api/v1/guardian/claim/self";
 import "../src/routes/api/v1/guardian/invites/$id/resend";
 import "../src/routes/api/v1/guardian/status";
+// S1 consent backbone (PRD §6.13 A1–A2): parent adult verification
+import "../src/routes/api/v1/guardian/verification/start";
+import "../src/routes/api/v1/guardian/verification/status";
+import "../src/routes/api/v1/guardian/verification/complete";
 // I13 visibility (PRD 3.5): parent coach-visibility + coach visibility
 import "../src/routes/api/v1/parent/coach-visibility";
 import "../src/routes/api/v1/coach/visibility/mine";

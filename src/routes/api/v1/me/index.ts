@@ -5,6 +5,16 @@ import { requireContext } from "@/lib/api/auth";
 import { ApiError } from "@/lib/api/errors";
 import { deleteMyAccountRoute } from "@/lib/api/account-routes";
 import { CURRENT_TERMS_VERSION } from "@/lib/terms";
+import {
+  athleteAccountStateSchema,
+  parentVerificationSchema,
+} from "@/lib/api/guardian-verification-schema";
+import {
+  PARENT_VERIFICATION_COLUMNS,
+  toParentVerificationDTO,
+  type AthleteAccountState,
+  type ParentVerificationRow,
+} from "@/lib/guardian-verification.server";
 
 const outputSchema = z.object({
   userId: z.string(),
@@ -17,6 +27,10 @@ const outputSchema = z.object({
     version: z.string(),
     acceptedAt: z.string().nullable(),
   }),
+  /** Parent only (PRD §6.13 A1): adult-verification state; `null` for other roles. */
+  parentVerification: parentVerificationSchema.nullable(),
+  /** Athlete only (PRD §6.13 A4): `active`, `provisional` or `paused`; `null` for other roles. */
+  athleteAccountState: athleteAccountStateSchema.nullable(),
 });
 
 /**
@@ -24,7 +38,9 @@ const outputSchema = z.object({
  * status, which is what the iOS app shell needs to pick the tab bar and the
  * blocking terms sheet (milestone I1). It grows into the full composite
  * (profile summary, entitlement, guardian status, flags, unread count, ETag)
- * in B3 by adding fields, never changing these.
+ * in B3 by adding fields, never changing these. S1 (2026-09-24) added the
+ * parent's adult-verification state and the athlete's account state
+ * (PRD §6.13 A1, A4).
  *
  * Role resolution reproduces `getMyRole` in
  * `src/lib/parent-signup.functions.ts` through `ctx.admin` (same tables,
@@ -53,8 +69,14 @@ export const Route = createFileRoute("/api/v1/me/")({
               .select("id, onboarded_at")
               .eq("user_id", userId)
               .maybeSingle(),
-            admin.from("parent_profiles").select("id").eq("user_id", userId).maybeSingle(),
-            admin.from("athletes").select("id").eq("user_id", userId).limit(1).maybeSingle(),
+            admin
+              .from("parent_profiles")
+              .select(PARENT_VERIFICATION_COLUMNS)
+              .eq("user_id", userId)
+              .maybeSingle(),
+            // No .limit(1): the row's account_state is read, so a duplicate
+            // user_id must surface (PGRST116) instead of an arbitrary row.
+            admin.from("athletes").select("id, account_state").eq("user_id", userId).maybeSingle(),
             admin.from("org_admins").select("id").eq("user_id", userId).limit(1).maybeSingle(),
             admin
               .from("terms_acceptances")
@@ -85,6 +107,9 @@ export const Route = createFileRoute("/api/v1/me/")({
             onboardingComplete = false;
           } else if (orgAdmin.data) role = "org_admin";
 
+          const parentRow = parent.data as ParentVerificationRow | null;
+          const athleteRow = athlete.data as { account_state?: string | null } | null;
+
           return {
             userId,
             role,
@@ -94,6 +119,10 @@ export const Route = createFileRoute("/api/v1/me/")({
               version: CURRENT_TERMS_VERSION,
               acceptedAt: terms.data?.accepted_at ?? null,
             },
+            parentVerification: parentRow ? toParentVerificationDTO(parentRow) : null,
+            athleteAccountState: athleteRow
+              ? ((athleteRow.account_state as AthleteAccountState | null | undefined) ?? "active")
+              : null,
           };
         },
       }),

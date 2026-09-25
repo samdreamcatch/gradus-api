@@ -105,7 +105,7 @@ async function deIdentifyAthlete(athleteId: string): Promise<void> {
  * are cleared first; the athlete row cascades the rest (plans, sessions,
  * coach links, invoices, invites).
  */
-async function purgeAthlete(athleteId: string): Promise<void> {
+export async function purgeAthlete(athleteId: string): Promise<void> {
   const { data: rooms } = await supabaseAdmin
     .from("message_rooms")
     .select("id")
@@ -268,6 +268,21 @@ export async function deleteAccountForUser(
         await purgeAthlete(athlete.id);
         athletesDeleted += 1;
       }
+    }
+
+    // PRD §6.13 A3: the consent ledger keeps a revoked record rather than
+    // losing the row with the profile (the FK sets parent_id to null).
+    try {
+      const { revokeGuardianConsent } = await import("./guardian-verification.server");
+      for (const athlete of athletes ?? []) {
+        await revokeGuardianConsent(supabaseAdmin, {
+          athleteId: athlete.id,
+          parentId: parent.id,
+          reason: "parent_account_deleted",
+        });
+      }
+    } catch (err) {
+      console.error("[account-deletion] consent revocation failed", err);
     }
 
     await supabaseAdmin.from("parent_profiles").delete().eq("id", parent.id);

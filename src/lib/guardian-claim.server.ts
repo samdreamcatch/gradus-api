@@ -108,6 +108,8 @@ export interface GuardianStatusDTO {
   guardianEmail: string | null;
   claimed: boolean;
   invitedAt: string | null;
+  /** PRD §6.13 A4: `provisional` until a verified guardian claims a 13–17 self-sign-up. */
+  accountState: "active" | "provisional" | "paused";
 }
 
 export interface GuardianClaimContextDTO {
@@ -460,7 +462,9 @@ export async function getMyGuardianStatus(
 ): Promise<GuardianStatusDTO | null> {
   const res = await admin
     .from("athletes")
-    .select("id, birthdate, parent_id, guardian_email, guardian_claimed_at, guardian_invited_at")
+    .select(
+      "id, birthdate, parent_id, guardian_email, guardian_claimed_at, guardian_invited_at, account_state",
+    )
     .eq("user_id", userId)
     .maybeSingle();
   if (res.error) dbError(res.error);
@@ -479,6 +483,13 @@ export async function getMyGuardianStatus(
     guardianEmail: res.data.guardian_email ?? null,
     claimed: Boolean(res.data.parent_id) || Boolean(res.data.guardian_claimed_at),
     invitedAt: res.data.guardian_invited_at ?? null,
+    accountState:
+      ((res.data as { account_state?: string | null }).account_state as
+        | "active"
+        | "provisional"
+        | "paused"
+        | null
+        | undefined) ?? "active",
   };
 }
 
