@@ -8,7 +8,7 @@ import { buildAppEmailPayload } from "./email-queue-payload";
 /** Fixed address used by the "send a test" button in the email admin. */
 export const TEST_EMAIL_ADDRESS = "support@gradussports.com";
 
-const SITE_NAME = "gradustraining";
+const SITE_NAME = "Gradus Training";
 const SENDER_DOMAIN = "support.gradussports.com";
 const FROM_DOMAIN = "gradussports.com";
 const SITE_URL = "https://gradus.training";

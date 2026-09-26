@@ -12,7 +12,7 @@ import { buildAppEmailPayload } from "./email-queue-payload";
 import { REPORT_REASON_LABELS, reportInput, type ReportReason } from "./safety-types";
 
 const ALERT_RECIPIENTS = ["alyson@gradussports.com"];
-const SITE_NAME = "gradustraining";
+const SITE_NAME = "Gradus Training";
 const SENDER_DOMAIN = "support.gradussports.com";
 const FROM_DOMAIN = "gradussports.com";
 const SITE_URL = "https://gradus.training";
