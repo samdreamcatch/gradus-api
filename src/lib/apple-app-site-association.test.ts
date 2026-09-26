@@ -43,6 +43,8 @@ describe("apple-app-site-association", () => {
       "/g/*",
       "/team/*",
       "/p/*",
+      "/verified",
+      "/verified/*",
     ]) {
       expect(UNIVERSAL_LINK_PATHS).toContain(p);
     }

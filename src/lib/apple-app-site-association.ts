@@ -48,6 +48,8 @@ export const UNIVERSAL_LINK_PATHS = [
   "/g/*",
   "/team/*",
   "/p/*",
+  "/verified",
+  "/verified/*",
 ] as const;
 
 export type AppleAppSiteAssociation = {
