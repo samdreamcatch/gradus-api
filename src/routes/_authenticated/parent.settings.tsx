@@ -221,10 +221,14 @@ function ParentSettingsPage() {
               </SettingsList>
             </SettingsGroup>
 
-            {data.verification.required && !data.verification.verified ? (
+            {/* PRD §6.13 A1: required once the switch is on; before that an opt-in
+                while KWS is configured, so parents can verify ahead of the gates. */}
+            {!data.verification.verified &&
+            (data.verification.required || data.verification.available) ? (
               <SettingsGroup label="Verification">
                 <ParentVerificationStep
                   compact
+                  optional={!data.verification.required}
                   athleteName={data.athletes[0]?.firstName ?? null}
                   onVerified={() => void qc.invalidateQueries({ queryKey: ["parent-settings"] })}
                 />

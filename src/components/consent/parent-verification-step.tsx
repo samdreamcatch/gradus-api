@@ -17,17 +17,25 @@ export const PARENT_VERIFICATION_QUERY_KEY = ["parent-verification"] as const;
  * `/verified` redirect to land, polling the status. Calls `onVerified` as
  * soon as the parent is verified, or immediately when the regime switch is
  * off (nothing to do) so callers can drop it into any flow unconditionally.
+ *
+ * `optional` is the opt-in mode for parent Settings while the switch is off:
+ * the step stays visible until the parent is actually verified, so a parent
+ * can verify ahead of the gates (and so the KWS test environment can be
+ * exercised on production before `PARENT_VERIFICATION_REQUIRED` is set).
  */
 export function ParentVerificationStep({
   onVerified,
   athleteName,
   compact = false,
+  optional = false,
 }: {
   onVerified: () => void;
   /** Used in the copy when known ("before you can connect a coach to Rory"). */
   athleteName?: string | null;
   /** Card styling for Settings; the default is the sign-up wizard's bare layout. */
   compact?: boolean;
+  /** Show until verified even when the switch is off (parent Settings opt-in). */
+  optional?: boolean;
 }) {
   const qc = useQueryClient();
   const fetchStatus = useServerFn(getMyParentVerification);
@@ -42,12 +50,13 @@ export function ParentVerificationStep({
     queryFn: () => fetchStatus(),
     refetchInterval: (query) => {
       const v = query.state.data;
-      if (!v || v.verified || !v.required) return false;
+      if (!v || v.verified) return false;
+      if (!optional && !v.required) return false;
       return v.requestedAt ? 5000 : false;
     },
   });
 
-  const done = !!verification && (!verification.required || verification.verified);
+  const done = !!verification && (verification.verified || (!optional && !verification.required));
 
   useEffect(() => {
     if (done && !fired.current) {
@@ -118,9 +127,11 @@ export function ParentVerificationStep({
               compact ? "mt-1 text-xs text-text-secondary" : "mt-2 text-sm text-text-secondary"
             }
           >
-            {athleteName
-              ? `Before you can connect a coach to ${athleteName} or open their conversations, we confirm once that you're an adult.`
-              : "Before you can connect a coach or open a conversation for an athlete under 18, we confirm once that you're an adult."}{" "}
+            {optional
+              ? "Soon, every parent of an athlete under 18 confirms once that they're an adult before connecting a coach or opening a conversation. You can do it now so nothing pauses later."
+              : athleteName
+                ? `Before you can connect a coach to ${athleteName} or open their conversations, we confirm once that you're an adult.`
+                : "Before you can connect a coach or open a conversation for an athlete under 18, we confirm once that you're an adult."}{" "}
             Our partner Kids Web Services runs a quick payment-card check; Gradus never sees the
             card.
           </p>
