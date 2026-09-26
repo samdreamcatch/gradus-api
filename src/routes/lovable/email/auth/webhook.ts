@@ -164,7 +164,7 @@ export const Route = createFileRoute("/lovable/email/auth/webhook")({
             run_id,
             message_id: messageId,
             to: payload.data.email,
-            from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
+            from: `Gradus Training <noreply@${FROM_DOMAIN}>`,
             sender_domain: SENDER_DOMAIN,
             subject: copyOverrides.subject ?? EMAIL_SUBJECTS[emailType] ?? "Notification",
             html,
@@ -194,7 +194,7 @@ export const Route = createFileRoute("/lovable/email/auth/webhook")({
           payload: {
             message_id: messageId,
             to: payload.data.email,
-            from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
+            from: `Gradus Training <noreply@${FROM_DOMAIN}>`,
             sender_domain: SENDER_DOMAIN,
             subject: copyOverrides.subject ?? EMAIL_SUBJECTS[emailType] ?? "Notification",
             html,

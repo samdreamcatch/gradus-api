@@ -15,7 +15,7 @@ import {
 } from "@/lib/email-templates/billing-notice";
 import { buildAppEmailPayload } from "@/lib/email-queue-payload";
 
-const SITE_NAME = "gradustraining";
+const SITE_NAME = "Gradus Training";
 const SENDER_DOMAIN = "support.gradussports.com";
 const FROM_DOMAIN = "gradussports.com";
 const SITE_URL = "https://gradus.training";

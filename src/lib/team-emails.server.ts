@@ -8,7 +8,7 @@ import { TeamInviteEmail, teamInviteSubject } from "./email-templates/team-invit
 import { fetchOverridesFor } from "./email-templates/overrides.server";
 import { buildAppEmailPayload } from "./email-queue-payload";
 
-const SITE_NAME = "gradustraining";
+const SITE_NAME = "Gradus Training";
 const SENDER_DOMAIN = "support.gradussports.com";
 const FROM_DOMAIN = "gradussports.com";
 export const SITE_URL = "https://gradus.training";

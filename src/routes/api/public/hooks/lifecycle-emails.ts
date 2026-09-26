@@ -19,7 +19,7 @@ import {
 import { buildAppEmailPayload } from "@/lib/email-queue-payload";
 import { cronKeyMatches } from "@/lib/cron-auth";
 
-const SITE_NAME = "gradustraining";
+const SITE_NAME = "Gradus Training";
 const SENDER_DOMAIN = "support.gradussports.com";
 const FROM_DOMAIN = "gradussports.com";
 const SITE_URL = "https://gradus.training";
