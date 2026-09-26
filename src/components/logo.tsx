@@ -4,7 +4,10 @@ type LogoProps = {
 
 /**
  * Gradus wordmark — serif display type with a flat highlighter stripe
- * running through the lower-middle band, extending past the right edge.
+ * running through the lower-middle band, extending a little past the right
+ * edge of the glyphs. `width: max-content` keeps the box at the glyphs' width
+ * even when the wordmark is a stretched flex item, so the stripe can never run
+ * across the page.
  */
 export function Logo({ className }: LogoProps) {
   return (
@@ -13,6 +16,7 @@ export function Logo({ className }: LogoProps) {
       style={{
         position: "relative",
         display: "inline-block",
+        width: "max-content",
         fontFamily: "var(--font-wordmark)",
         fontWeight: 600,
         fontVariationSettings: '"SOFT" 100, "WONK" 1, "opsz" 144',

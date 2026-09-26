@@ -68,7 +68,9 @@ function VerifiedPage() {
   return (
     <main className="min-h-screen bg-background text-foreground">
       <div className="mx-auto flex w-full max-w-md flex-col gap-6 px-4 py-12">
-        <Logo />
+        <div>
+          <Logo className="text-4xl" />
+        </div>
         {outcome.kind === "loading" && (
           <p className="text-muted-foreground" role="status">
             Finishing your verification…
